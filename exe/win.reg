@@ -1,0 +1,15 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\erp]
+@="erp Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\erp\DefaultIcon]
+@="C:\\Users\\26513\\Desktop\\test.exe"
+
+[HKEY_CLASSES_ROOT\erp\shell]
+
+[HKEY_CLASSES_ROOT\erp\shell\open]
+
+[HKEY_CLASSES_ROOT\erp\shell\open\command]
+@="\"C:\\Users\\26513\\Desktop\\test.exe\" \"%1\""

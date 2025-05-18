@@ -1,0 +1,447 @@
+{
+  "cat1Id": 9711,
+  "cat2Id": 11730,
+  "cat3Id": 11731,
+  "cat4Id": 11733,
+  "cat5Id": 11736,
+  "cat6Id": 0,
+  "cat7Id": 0,
+  "cat8Id": 0,
+  "cat9Id": 0,
+  "cat10Id": 0,
+  "productName": "1pc  Artistic Fish and Flower Shower Curtain, Soft and Durable Bathroom Curtain Ocean Theme Design, 71x71 Inches Polyester Waterproof Hanging Curtain with Hooks, All-Season Bathroom Decor for Bathtubs & Showers, Perfect for Modern Bathrooms",
+  "carouselImageUrls": [
+    "https://img.kwcdn.com/product/open/5fe86839f76e473e83a16fb861a0e222-goods.jpeg",
+    "https://img.kwcdn.com/product/open/e4e42544298645f184feabecfd711e59-goods.jpeg",
+    "https://img.kwcdn.com/product/open/a2d45fc8664346ad8c82b1b99df71f77-goods.jpeg",
+    "https://img.kwcdn.com/product/open/8f07a1b2d5ef49e0b0871f64c8379eee-goods.jpeg",
+    "https://img.kwcdn.com/product/open/98618e644ec3423389cbb5bd3050e6e9-goods.jpeg",
+    "https://img.kwcdn.com/product/open/9aeea97c676f4c1aafd871db03b47bea-goods.jpeg",
+    "https://img.kwcdn.com/product/open/6ef9035bc2f142b79affd96d06e2932b-goods.jpeg",
+    "https://img.kwcdn.com/product/open/5f59c29ac86f4247af7ca0b3e47c295b-goods.jpeg",
+    "https://img.kwcdn.com/product/open/c9d4e571c8e644b2a3742c054c2b8d33-goods.jpeg",
+    "https://img.kwcdn.com/product/open/cbbcc153a0b64c2f8682e558bf0db760-goods.jpeg"
+  ],
+  "productOuterPackageImageReqs": [
+    {
+      "imageUrl": "https://kjpfs-cn.kuajingmaihuo.com/product-material-private-tag/2013f778ba8/a333cec1-fc7f-49b8-9d29-912177994a4c_646x657.png"
+    }
+  ],
+  "materialImgUrl": "https://img.kwcdn.com/product/open/5fe86839f76e473e83a16fb861a0e222-goods.jpeg",
+  "productPropertyReqs": [
+    {
+      "templatePid": 1281905,
+      "pid": 4,
+      "refPid": 20,
+      "propName": "护理说明",
+      "vid": 2211,
+      "propValue": "机洗",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281899,
+      "pid": 10,
+      "refPid": 26,
+      "propName": "图案",
+      "vid": 29370,
+      "propValue": "其他图案",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281911,
+      "pid": 89,
+      "refPid": 121,
+      "propName": "材料",
+      "vid": 2197,
+      "propValue": "涤纶",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281904,
+      "pid": 91,
+      "refPid": 125,
+      "propName": "包含的组件",
+      "vid": 3522,
+      "propValue": "索环",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281896,
+      "pid": 94,
+      "refPid": 143,
+      "propName": "特殊功能",
+      "vid": 2898,
+      "propValue": "可水洗",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281898,
+      "pid": 127,
+      "refPid": 202,
+      "propName": "编织类型",
+      "vid": 29391,
+      "propValue": "其他编织类型",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281906,
+      "pid": 125,
+      "refPid": 203,
+      "propName": "四季",
+      "vid": 2827,
+      "propValue": "四季",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281897,
+      "pid": 128,
+      "refPid": 441,
+      "propName": "动物主题",
+      "vid": 29504,
+      "propValue": "其他主题",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281902,
+      "pid": 155,
+      "refPid": 444,
+      "propName": "窗帘主题",
+      "vid": 3438,
+      "propValue": "时尚",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281903,
+      "pid": 154,
+      "refPid": 445,
+      "propName": "窗帘材质",
+      "vid": 3396,
+      "propValue": "涤纶",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    },
+    {
+      "templatePid": 1281909,
+      "pid": 1224,
+      "refPid": 1192,
+      "propName": "织造方式",
+      "vid": 29810,
+      "propValue": "梭织",
+      "valueUnit": "",
+      "numberInputValue": "",
+      "valueExtendInfo": ""
+    }
+  ],
+  "productSpecPropertyReqs": [],
+  "productSaleExtAttrReq": {},
+  "productWhExtAttrReq": {
+    "outerGoodsUrl": "",
+    "productOrigin": {
+      "region1ShortName": "CN",
+      "region2Id": 43000000000018
+    }
+  },
+  "productSkcReqs": [
+    {
+      "previewImgUrls": [
+        "https://img.kwcdn.com/product/open/5fe86839f76e473e83a16fb861a0e222-goods.jpeg"
+      ],
+      "mainProductSkuSpecReqs": [
+        {
+          "parentSpecId": 0,
+          "parentSpecName": "",
+          "specId": 0,
+          "specName": ""
+        }
+      ],
+      "productSkuReqs": [
+        {
+          "thumbUrl": "https://img.kwcdn.com/product/open/cbbcc153a0b64c2f8682e558bf0db760-goods.jpeg",
+          "currencyType": "CNY",
+          "productSkuSpecReqs": [
+            {
+              "parentSpecId": 3001,
+              "parentSpecName": "尺码",
+              "specId": 108368951,
+              "specName": "71*71inches(180*180cm)"
+            }
+          ],
+          "supplierPrice": 6000,
+          "productSkuMultiPackReq": {
+            "numberOfPieces": 1,
+            "productSkuNetContentReq": {},
+            "skuClassification": 1,
+            "pieceUnitCode": 1
+          },
+          "productSkuSuggestedPriceReq": {
+            "suggestedPrice": "NA"
+          },
+          "productSkuWhExtAttrReq": {
+            "productSkuWeightReq": {
+              "value": 380000
+            },
+            "productSkuSensitiveLimitReq": {},
+            "productSkuVolumeReq": {
+              "len": 250,
+              "width": 200,
+              "height": 40
+            },
+            "productSkuSensitiveAttrReq": {
+              "isSensitive": 0,
+              "sensitiveList": []
+            }
+          },
+          "extCode": "ZSYCZ13"
+        },
+        {
+          "thumbUrl": "https://img.kwcdn.com/product/open/b19664dca20b46b1a1093358340286b6-goods.jpeg",
+          "currencyType": "CNY",
+          "productSkuSpecReqs": [
+            {
+              "parentSpecId": 3001,
+              "parentSpecName": "尺码",
+              "specId": 121009803,
+              "specName": "79*71inches(200*180cm)"
+            }
+          ],
+          "supplierPrice": 7000,
+          "productSkuMultiPackReq": {
+            "numberOfPieces": 1,
+            "productSkuNetContentReq": {},
+            "skuClassification": 1,
+            "pieceUnitCode": 1
+          },
+          "productSkuSuggestedPriceReq": {
+            "suggestedPrice": "NA"
+          },
+          "productSkuWhExtAttrReq": {
+            "productSkuWeightReq": {
+              "value": 400000
+            },
+            "productSkuSensitiveLimitReq": {},
+            "productSkuVolumeReq": {
+              "len": 250,
+              "width": 200,
+              "height": 40
+            },
+            "productSkuSensitiveAttrReq": {
+              "isSensitive": 0,
+              "sensitiveList": []
+            }
+          },
+          "extCode": "ZSYCZ13"
+        }
+      ],
+      "extCode": "ECYL"
+    }
+  ],
+  "sizeTemplateIds": [],
+  "showSizeTemplateIds": [],
+  "productOuterPackageReq": {
+    "packageShape": 0,
+    "packageType": 2
+  },
+  "goodsLayerDecorationReqs": [
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "text",
+      "priority": 0,
+      "contentList": [
+        {
+          "text": "Product Features: \n【Waterproof & Quick-Dry for a Fresh Bathroom】 Made from high-quality waterproof material, this shower curtain effectively repels water to keep your bathroom clean and dry. The quick-drying design prevents mold and mildew buildup, ensuring a hygienic and comfortable bathing experience.",
+          "textModuleDetails": {
+            "fontSize": 12,
+            "fontColor": "#333333",
+            "align": "left",
+            "backgroundColor": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "text",
+      "priority": 1,
+      "contentList": [
+        {
+          "text": "【HD Printing with Stunning Visuals】 Featuring advanced high-definition 3D printing technology, this shower curtain presents vibrant colors and intricate details. The fade-resistant and long-lasting design adds a unique artistic touch to your bathroom, instantly elevating your home décor.",
+          "textModuleDetails": {
+            "fontSize": 12,
+            "fontColor": "#333333",
+            "align": "left",
+            "backgroundColor": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "text",
+      "priority": 2,
+      "contentList": [
+        {
+          "text": "【Large Size for Universal Fit】 With a standard 180x180cm (71x71 inches) size, 180x200cm (71x79 inches) size，this shower curtain fits most bathtubs and shower spaces. Whether in a home bathroom, hotel, dorm, or apartment, this versatile curtain ensures complete privacy and adds elegance to any setting.",
+          "textModuleDetails": {
+            "fontSize": 12,
+            "fontColor": "#333333",
+            "align": "left",
+            "backgroundColor": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "text",
+      "priority": 3,
+      "contentList": [
+        {
+          "text": "【Durable, Mildew-Resistant & Easy to Install】 Made from premium thickened fabric, this shower curtain is tear-resistant and built to last. The mildew-resistant coating ensures a healthier shower environment. Comes with durable plastic hooks for quick and easy installation – no extra tools required.",
+          "textModuleDetails": {
+            "fontSize": 12,
+            "fontColor": "#333333",
+            "align": "left",
+            "backgroundColor": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "text",
+      "priority": 4,
+      "contentList": [
+        {
+          "text": "【Multi-Purpose & Ideal Gift Choice】 Not just a shower curtain! Use it as a decorative backdrop, window curtain, or room divider. With various styles available, it complements modern, boho, minimalist, or vintage home décor. A thoughtful gift for housewarming, birthdays, or holiday celebrations.",
+          "textModuleDetails": {
+            "fontSize": 12,
+            "fontColor": "#333333",
+            "align": "left",
+            "backgroundColor": "#ffffff"
+          }
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 5,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/5fe86839f76e473e83a16fb861a0e222-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 6,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/8f07a1b2d5ef49e0b0871f64c8379eee-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 7,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/9aeea97c676f4c1aafd871db03b47bea-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 8,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/6ef9035bc2f142b79affd96d06e2932b-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 9,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/5f59c29ac86f4247af7ca0b3e47c295b-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 10,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/c9d4e571c8e644b2a3742c054c2b8d33-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    },
+    {
+      "lang": "zh",
+      "key": "DecImage",
+      "type": "image",
+      "priority": 11,
+      "contentList": [
+        {
+          "imgUrl": "https://img.kwcdn.com/product/open/ab3f7cec93d848a0ab56f5ec177749c1-goods.jpeg",
+          "height": 800,
+          "width": 800
+        }
+      ]
+    }
+  ],
+  "type": "bg.goods.add",
+  "access_token": "lmmfojabdalqlml6kjjxfjy0tarcjswcc3pwpr72wbn0myg66815ajho",
+  "app_key": "21061f9248384dc64ad524995bbeea9b",
+  "data_type": "JSON",
+  "timestamp": 1745202647,
+  "sign": "0417C267F1471DEB6901970511E3CA77"
+}
