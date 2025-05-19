@@ -154,6 +154,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
       breadcrumb: false
     }
   },
+  {
+    path: '/resource',
+    component: Layout,
+    name: 'Resource',
+    meta: {
+      hidden: true
+    },
+    children: [
+      {
+        path: 'material',
+        component: () => import('@/views/material/index/index.vue'),
+        name: 'Material',
+        meta: {
+          canTo: true,
+          hidden: true,
+          noTagsView: false,
+          icon: 'ep:user',
+          title: '素材库'
+        }
+      },
+    ]
+  },
 ]
 
 export default remainingRouter
