@@ -60,7 +60,7 @@ const toDocument = () => {
   <ElDropdown class="custom-hover" :class="prefixCls" trigger="click">
     <div class=" flex items-center" >
       <div class="relative">
-        <div :class="{reddot:!userStore.ws.isOnline,greendot:userStore.ws.isOnline}" class="absolute ws-dot" style="width:8px;height:8px;border-radius: 50%;top:-0px;right:-0px;"></div>
+        <!-- <div :class="{reddot:!userStore.ws.isOnline,greendot:userStore.ws.isOnline}" class="absolute ws-dot" style="width:8px;height:8px;border-radius: 50%;top:-0px;right:-0px;"></div> -->
         <ElAvatar style="width: 32px;height:32px;" :src="avatar" alt="" class="rounded-[50%]" />
       </div>
       <span class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">

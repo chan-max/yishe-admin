@@ -93,7 +93,6 @@
                       :prefix-icon="iconLock"
                       show-password
                       type="password"
-                      @keyup.enter="getCode()"
                     />
                   </el-form-item>
                 </el-col>
@@ -128,7 +127,6 @@
                       :title="t('login.login')"
                       class="w-[100%]"
                       type="primary"
-                      @click="getCode()"
                     />
                   </el-form-item>
                 </el-col>
@@ -200,24 +198,24 @@ const loginData = reactive({
   tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE !== 'false',
   loginForm: {
     tenantName: '',
-    username: 'admin',
-    password: 'admin123',
+    username: 'jackie',
+    password: '666666',
     captchaVerification: '',
     rememberMe: false
   }
 })
 
 // 获取验证码
-const getCode = async () => {
-  // 情况一，未开启：则直接登录
-  if (!loginData.captchaEnable) {
-    await handleLogin({})
-  } else {
-    // 情况二，已开启：则展示验证码；只有完成验证码的情况，才进行登录
-    // 弹出验证码
-    verify.value.show()
-  }
-}
+// const getCode = async () => {
+//   // 情况一，未开启：则直接登录
+//   if (!loginData.captchaEnable) {
+//     await handleLogin({})
+//   } else {
+//     // 情况二，已开启：则展示验证码；只有完成验证码的情况，才进行登录
+//     // 弹出验证码
+//     verify.value.show()
+//   }
+// }
 //获取租户ID
 const getTenantId = async () => {
   if (loginData.tenantEnable) {

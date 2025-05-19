@@ -67,7 +67,7 @@ import { UploadType, useBeforeUpload } from '@/views/mp/hooks/useUpload'
 import { NewsItem } from './types'
 const message = useMessage()
 
-const UPLOAD_URL = import.meta.env.VITE_BASE_URL + '/admin-api/mp/material/upload-permanent' // 上传永久素材的地址
+const UPLOAD_URL = import.meta.env.VITE_BASE_URL + '/api/mp/material/upload-permanent' // 上传永久素材的地址
 const HEADERS = { Authorization: 'Bearer ' + getAccessToken() } // 设置上传的请求头部
 
 const props = defineProps<{

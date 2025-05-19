@@ -35,12 +35,12 @@ const goMyList = () => {
 // ========== 初始化 =========
 onMounted(() => {
   // 首次加载小红点
-  getUnreadCount()
+  // getUnreadCount()
   // 轮询刷新小红点
   setInterval(
     () => {
       if (userStore.getIsSetUser) {
-        getUnreadCount()
+        // getUnreadCount()
       } else {
         unreadCount.value = 0
       }

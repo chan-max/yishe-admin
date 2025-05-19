@@ -40,6 +40,7 @@ export const useDictStore = defineStore('dict', {
   },
   actions: {
     async setDictMap() {
+      return
       const dictMap = wsCache.get(CACHE_KEY.DICT_CACHE)
       if (dictMap) {
         this.dictMap = dictMap
@@ -74,6 +75,7 @@ export const useDictStore = defineStore('dict', {
       return this.dictMap[type]
     },
     async resetDict() {
+      return
       wsCache.delete(CACHE_KEY.DICT_CACHE)
       const res = await getSimpleDictDataList()
       // 设置数据

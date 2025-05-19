@@ -1,20 +1,21 @@
+/*
+ * @Author: chan-max jackieontheway666@gmail.com
+ * @Date: 2025-04-01 07:04:47
+ * @LastEditors: chan-max jackieontheway666@gmail.com
+ * @LastEditTime: 2025-05-19 07:48:21
+ * @FilePath: /yudao-ui-admin-vue3/src/api/login/types.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 export type UserLoginVO = {
   username: string
   password: string
-  captchaVerification: string
   socialType?: string
   socialCode?: string
   socialState?: string
 }
 
 export type TokenType = {
-  id: number // 编号
-  accessToken: string // 访问令牌
-  refreshToken: string // 刷新令牌
-  userId: number // 用户编号
-  userType: number //用户类型
-  clientId: string //客户端编号
-  expiresTime: number //过期时间
+  token: string // 访问令牌
 }
 
 export type UserVO = {
@@ -31,8 +32,6 @@ export type UserVO = {
 }
 
 export type RegisterVO = {
-  tenantName: string
   username: string
   password: string
-  captchaVerification: string
 }

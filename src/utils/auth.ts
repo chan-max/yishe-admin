@@ -14,6 +14,11 @@ export const getAccessToken = () => {
   return accessToken ? accessToken : wsCache.get('ACCESS_TOKEN')
 }
 
+export const setAccessToken = (token) => {
+  return  wsCache.set('ACCESS_TOKEN',token)
+}
+
+
 // 刷新token
 export const getRefreshToken = () => {
   return wsCache.get(RefreshTokenKey)

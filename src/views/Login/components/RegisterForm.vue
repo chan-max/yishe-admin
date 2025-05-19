@@ -253,7 +253,7 @@ watch(
 )
 onMounted(() => {
   // getCookie()
-  getTenantByWebsite()
+  // getTenantByWebsite()
 })
 </script>
 

@@ -68,15 +68,15 @@ export const useUserStore = defineStore('admin-user', {
       if (!userInfo) {
         userInfo = await getInfo()
       }
-      this.permissions = new Set(userInfo.permissions)
-      this.roles = userInfo.roles
-      this.user = userInfo.user
+      // this.permissions = new Set(userInfo.permissions)
+      // this.roles = userInfo.roles
+      this.user = userInfo
       this.isSetUser = true
       wsCache.set(CACHE_KEY.USER, userInfo)
       wsCache.set(CACHE_KEY.ROLE_ROUTERS, userInfo.menus)
 
-      this.initWebsocket();
-      this.initOSS()
+      // this.initWebsocket();
+      // this.initOSS()
       console.log('setUserInfoAction', '初始化项目位置')
     },
     async setUserAvatarAction(avatar: string) {

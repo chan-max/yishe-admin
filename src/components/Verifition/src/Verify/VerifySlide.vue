@@ -360,9 +360,11 @@ const refresh = async () => {
 
 // 请求背景图片和验证图片
 const getPictrue = async () => {
+  return
   let data = {
     captchaType: captchaType.value
   }
+
   const res = await getCode(data)
   if (res.repCode == '0000') {
     backImgBase.value = res.repData.originalImageBase64
