@@ -269,18 +269,31 @@ const handleLogin = async () => {
       authUtil.removeLoginForm();
     }
     // 存储token
-    // authUtil.setToken(res)
-
     setAccessToken(res.token);
 
-    if (!redirect.value) {
-      redirect.value = "/";
-    }
-    // 判断是否为SSO登录
-    if (redirect.value.indexOf("sso") !== -1) {
-      window.location.href = window.location.href.replace("/login?redirect=", "");
-    } else {
-      await push({ path: redirect.value || permissionStore.addRouters[0].path });
+    // 获取用户信息和权限
+    const userStore = useUserStoreWithOut();
+    const permissionStore = usePermissionStoreWithOut();
+    
+    try {
+      // 获取用户信息
+      await userStore.setUserInfoAction();
+      // 生成路由
+      await permissionStore.generateRoutes();
+      
+      if (!redirect.value) {
+        redirect.value = "/home/index";
+      }
+      
+      // 判断是否为SSO登录
+      if (redirect.value.indexOf("sso") !== -1) {
+        window.location.href = window.location.href.replace("/login?redirect=", "");
+      } else {
+        await push({ path: redirect.value });
+      }
+    } catch (error) {
+      console.error("获取用户信息或生成路由失败:", error);
+      message.error("系统初始化失败，请刷新页面重试");
     }
   } finally {
     loginLoading.value = false;

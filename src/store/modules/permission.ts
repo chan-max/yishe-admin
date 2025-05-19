@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { store } from '@/store'
 import { cloneDeep } from 'lodash-es'
 import remainingRouter from '@/router/modules/remaining'
-import { flatMultiLevelRoutes, generateRoute } from '@/utils/routerHelper'
+import { viewsRouter } from '@/router/modules/views'
+import { flatMultiLevelRoutes } from '@/utils/routerHelper'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 
 const { wsCache } = useCache()
@@ -33,19 +34,10 @@ export const usePermissionStore = defineStore('permission', {
   actions: {
     async generateRoutes(): Promise<unknown> {
       return new Promise<void>(async (resolve) => {
-        // 获得菜单列表，它在登录的时候，setUserInfoAction 方法中已经进行获取
-        let res: AppCustomRouteRecordRaw[] = []
-        const roleRouters = wsCache.get(CACHE_KEY.ROLE_ROUTERS)
-        if (roleRouters) {
-          res = roleRouters as AppCustomRouteRecordRaw[]
-        }
-        const routerMap: AppRouteRecordRaw[] = generateRoute(res)
-        // 动态路由，404一定要放到最后面
-        // preschooler：vue-router@4以后已支持静态404路由，此处可不再追加
-        this.addRouters = routerMap.concat([
+        // 使用固定路由配置
+        this.addRouters = viewsRouter.concat([
           {
             path: '/:path(.*)*',
-            // redirect: '/404',
             component: () => import('@/views/Error/404.vue'),
             name: '404Page',
             meta: {
@@ -54,8 +46,8 @@ export const usePermissionStore = defineStore('permission', {
             }
           }
         ])
-        // 渲染菜单的所有路由
-        this.routers = cloneDeep(remainingRouter).concat(routerMap)
+        // 渲染菜单的所有路由，remainingRouter 包含基础路由（如首页、登录页等）
+        this.routers = cloneDeep(remainingRouter)
         resolve()
       })
     },
