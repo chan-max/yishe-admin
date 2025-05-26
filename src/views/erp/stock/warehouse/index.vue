@@ -1,4 +1,4 @@
-<!-- ERP 仓库列表 -->
+<!-- YiShe 仓库列表 -->
 <template>
   <doc-alert title="【库存】产品库存、库存明细" url="https://doc.iocoder.cn/erp/stock/" />
 
@@ -125,7 +125,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -143,7 +143,7 @@ import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import WarehouseForm from './WarehouseForm.vue'
 import { erpPriceTableColumnFormatter } from '@/utils'
 
-/** ERP 仓库列表 */
+/** YiShe 仓库列表 */
 defineOptions({ name: 'ErpWarehouse' })
 
 const message = useMessage() // 消息弹窗
@@ -153,7 +153,7 @@ const loading = ref(true) // 列表的加载中
 const list = ref<WarehouseVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   name: undefined,
   status: undefined
@@ -175,7 +175,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

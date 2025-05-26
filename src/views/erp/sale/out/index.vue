@@ -134,7 +134,7 @@
       <el-form-item label="审核状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable class="!w-240px">
           <el-option
-            v-for="dict in getIntDictOptions(DICT_TYPE.ERP_AUDIT_STATUS)"
+            v-for="dict in getIntDictOptions(DICT_TYPE.YiShe_AUDIT_STATUS)"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -232,7 +232,7 @@
       </el-table-column>
       <el-table-column label="审核状态" align="center" fixed="right" width="90" prop="status">
         <template #default="scope">
-          <dict-tag :type="DICT_TYPE.ERP_AUDIT_STATUS" :value="scope.row.status" />
+          <dict-tag :type="DICT_TYPE.YiShe_AUDIT_STATUS" :value="scope.row.status" />
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" fixed="right" width="220">
@@ -285,7 +285,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -313,7 +313,7 @@ import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
 import { WarehouseApi, WarehouseVO } from '@/api/erp/stock/warehouse'
 import { AccountApi, AccountVO } from '@/api/erp/finance/account'
 
-/** ERP 销售出库列表 */
+/** YiShe 销售出库列表 */
 defineOptions({ name: 'ErpSaleOut' })
 
 const message = useMessage() // 消息弹窗
@@ -323,7 +323,7 @@ const loading = ref(true) // 列表的加载中
 const list = ref<SaleOutVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   no: undefined,
   customerId: undefined,
@@ -359,7 +359,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

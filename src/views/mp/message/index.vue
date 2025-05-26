@@ -62,7 +62,7 @@
     <Pagination
       v-show="total > 0"
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -96,7 +96,7 @@ const list = ref<any[]>([]) // 当前页的列表数据
 
 // 搜索参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   openid: '',
   accountId: -1,
@@ -114,13 +114,13 @@ const messageBox = reactive({
 /** 侦听accountId */
 const onAccountChanged = (id: number) => {
   queryParams.accountId = id
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   handleQuery()
 }
 
 /** 查询列表 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

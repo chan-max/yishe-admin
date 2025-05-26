@@ -77,7 +77,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -104,7 +104,7 @@ const loading = ref(false) // 列表的加载中
 const sendLoading = ref(false) // 发送按钮的加载中
 const dialogVisible = ref(false) // 弹窗的是否展示
 const queryParams = ref({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   name: null,
   canTakeTypes: [CouponTemplateTakeTypeEnum.ADMIN.type]
@@ -137,7 +137,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.value.pageNo = 1
+  queryParams.value.currentPage = 1
   getList()
 }
 

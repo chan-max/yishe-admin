@@ -22,7 +22,7 @@ const userStore = useUserStoreWithOut()
 
 async function initUserList() {
   const res = await getUserPage({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99,
   })
   let targetId = userStore.user.id;

@@ -54,7 +54,7 @@ const loading = ref(false) // 消息列表是否正在加载中
 const hasMore = ref(true) // 是否可以加载更多
 const list = ref<any[]>([]) // 消息列表
 const queryParams = reactive({
-  pageNo: 1, // 当前页数
+  currentPage: 1, // 当前页数
   pageSize: 14, // 每页显示多少条
   accountId: accountId
 })
@@ -115,7 +115,7 @@ const sendMsg = async () => {
 }
 
 const loadMore = () => {
-  queryParams.pageNo++
+  queryParams.currentPage++
   getPage(queryParams, null)
 }
 
@@ -124,7 +124,7 @@ const getPage = async (page: any, params: any = null) => {
   let dataTemp = await getMessagePage(
     Object.assign(
       {
-        pageNo: page.pageNo,
+        currentPage: page.currentPage,
         pageSize: page.pageSize,
         userId: props.userId,
         accountId: page.accountId
@@ -141,10 +141,10 @@ const getPage = async (page: any, params: any = null) => {
   if (data.length < queryParams.pageSize || data.length === 0) {
     hasMore.value = false
   }
-  queryParams.pageNo = page.pageNo
+  queryParams.currentPage = page.currentPage
   queryParams.pageSize = page.pageSize
   // 滚动到原来的位置
-  if (queryParams.pageNo === 1) {
+  if (queryParams.currentPage === 1) {
     // 定位到消息底部
     await scrollToBottom()
   } else if (data.length !== 0) {

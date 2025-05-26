@@ -153,7 +153,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -177,7 +177,7 @@ const loading = ref(true) // 列表的加载中
 const list = ref<ImageVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   userId: undefined,
   platform: undefined,
@@ -202,7 +202,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

@@ -176,7 +176,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -205,7 +205,7 @@ const deliveryExpressList = ref<DeliveryExpressApi.DeliveryExpressVO[]>([]) // �
 const queryFormRef = ref<FormInstance>() // 搜索的表单
 // 表单搜索
 const queryParams = ref({
-  pageNo: 1, // 页数
+  currentPage: 1, // 页数
   pageSize: 10, // 每页显示数量
   userId: userId,
   status: undefined, // 订单状态
@@ -243,7 +243,7 @@ const inputChangeSelect = (val: string) => {
 
 /** 搜索按钮操作 */
 const handleQuery = async () => {
-  queryParams.value.pageNo = 1
+  queryParams.value.currentPage = 1
   await getList()
 }
 

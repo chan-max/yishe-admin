@@ -21,7 +21,7 @@
         </div>
       </div>
       <!-- 分页组件 -->
-      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getMaterialPageFun" />
     </div>
     <!-- 类型：voice -->
@@ -45,7 +45,7 @@
         </el-table-column>
       </el-table>
       <!-- 分页组件 -->
-      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getPage" />
     </div>
     <!-- 类型：video -->
@@ -71,7 +71,7 @@
         </el-table-column>
       </el-table>
       <!-- 分页组件 -->
-      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getMaterialPageFun" />
     </div>
     <!-- 类型：news -->
@@ -90,7 +90,7 @@
         </div>
       </div>
       <!-- 分页组件 -->
-      <Pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <Pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getMaterialPageFun" />
     </div>
   </div>
@@ -129,7 +129,7 @@ const total = ref(0)
 const list = ref<any[]>([])
 // 查询参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   accountId: props.accountId
 })

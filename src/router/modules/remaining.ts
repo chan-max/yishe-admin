@@ -159,7 +159,11 @@ const remainingRouter: AppRouteRecordRaw[] = [
     component: Layout,
     name: 'Resource',
     meta: {
-      hidden: true
+      hidden: false,
+      title: '设计资源',
+      icon: 'ep:home-filled',
+      noCache: false,
+      affix: true
     },
     children: [
       {
@@ -168,10 +172,31 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'Material',
         meta: {
           canTo: true,
-          hidden: true,
+          hidden: false,
           noTagsView: false,
-          icon: 'ep:user',
-          title: '素材库'
+          title: '图片素材'
+        }
+      },
+      {
+        path: 'font',
+        component: () => import('@/views/material/fontTemplate/index.vue'),
+        name: 'Font',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '字体'
+        }
+      },
+      {
+        path: 'psd',
+        component: () => import('@/views/material/psdTemplate/index.vue'),
+        name: 'Psd',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: 'psd套图'
         }
       },
     ]

@@ -46,7 +46,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getSpuList"
     />
@@ -79,7 +79,7 @@ const handleDateRangeChange = (times: any[]) => {
 const shortcutDateRangePicker = ref()
 // 查询参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   times: [],
   sortingFields: {}

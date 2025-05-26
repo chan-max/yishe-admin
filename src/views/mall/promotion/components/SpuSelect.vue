@@ -98,7 +98,7 @@
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"
-        v-model:page="queryParams.pageNo"
+        v-model:page="queryParams.currentPage"
         :total="total"
         @pagination="getList"
       />
@@ -138,7 +138,7 @@ const loading = ref(false) // 列表的加载中
 const dialogVisible = ref(false) // 弹窗的是否展示
 const dialogTitle = ref('') // 弹窗的标题
 const queryParams = ref({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   tabType: 0, // 默认获取上架的商品
   name: '',
@@ -294,7 +294,7 @@ const handleQuery = () => {
 /** 重置按钮操作 */
 const resetQuery = () => {
   queryParams.value = {
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 10,
     tabType: 0, // 默认获取上架的商品
     name: '',

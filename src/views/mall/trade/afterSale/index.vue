@@ -165,7 +165,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -196,7 +196,7 @@ const statusTabs = ref([
 const queryFormRef = ref() // 搜索的表单
 // 查询参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   no: null,
   status: '0',
@@ -227,7 +227,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = async () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   await getList()
 }
 

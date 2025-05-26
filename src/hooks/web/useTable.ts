@@ -60,7 +60,7 @@ export const useTable = <T = any>(config?: UseTableConfig<T>) => {
     return {
       ...tableObject.params,
       pageSize: tableObject.pageSize,
-      pageNo: tableObject.currentPage
+      currentPage: tableObject.currentPage
     }
   })
 
@@ -155,7 +155,7 @@ export const useTable = <T = any>(config?: UseTableConfig<T>) => {
     setSearchParams: (data: Recordable) => {
       tableObject.params = Object.assign(tableObject.params, {
         pageSize: tableObject.pageSize,
-        pageNo: 1,
+        currentPage: 1,
         ...data
       })
       // 页码不等于1时更新页码重新获取数据，页码等于1时重新获取数据

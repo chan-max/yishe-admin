@@ -186,7 +186,6 @@ watch(() => props.modelValue, (newVal) => {
 
 <style scoped>
 .enhanced-time-range-picker {
-  padding: 20px;
   max-width: 600px;
 }
 

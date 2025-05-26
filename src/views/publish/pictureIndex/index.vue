@@ -12,7 +12,7 @@
 
       <form-item label="套图状态">
         <el-select v-model="queryParams.selectHasComposite" style="width: 100px" @change="() => {
-          queryParams.pageNo = 1;
+          queryParams.currentPage = 1;
           getList();
         }">
           <el-option v-for="item in compositeOptions" :label="item.label" :value="item.value" :key="item.value">
@@ -159,7 +159,7 @@
 
     <!-- 分页 -->
     <div class=" flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </div>
 
@@ -390,7 +390,7 @@ const completionOptions = computed(() => {
 
 // 查询条件
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 20,
   selectCompletion: null,
   sortingFields: defaultSortingValue(),
@@ -533,7 +533,7 @@ const publishTemplateList = ref([])
 
 async function initPublishTemplate() {
   let res = await getPublishTemplateList({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99
   })
   publishTemplateList.value = res.list
@@ -557,7 +557,7 @@ getList();
 
 // 操作函数
 function handleQuery() {
-  queryParams.pageNo = 1;
+  queryParams.currentPage = 1;
 }
 
 

@@ -215,7 +215,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -246,7 +246,7 @@ const list = ref<TradeOrderApi.OrderVO[]>([]) // 列表的数据
 const queryFormRef = ref<FormInstance>() // 搜索的表单
 // 表单搜索
 const queryParams = ref({
-  pageNo: 1, // 页数
+  currentPage: 1, // 页数
   pageSize: 10, // 每页显示数量
   status: undefined, // 订单状态
   payChannelCode: undefined, // 支付方式
@@ -296,7 +296,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = async () => {
-  queryParams.value.pageNo = 1
+  queryParams.value.currentPage = 1
   await getList()
 }
 
@@ -304,7 +304,7 @@ const handleQuery = async () => {
 const resetQuery = () => {
   queryFormRef.value?.resetFields()
   queryParams.value = {
-    pageNo: 1, // 页数
+    currentPage: 1, // 页数
     pageSize: 10, // 每页显示数量
     status: undefined, // 订单状态
     payChannelCode: undefined, // 支付方式

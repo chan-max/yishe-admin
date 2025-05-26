@@ -1,6 +1,6 @@
 import request from '@/config/axios'
 
-// ERP 库存盘点单 VO
+// YiShe 库存盘点单 VO
 export interface StockCheckVO {
   id: number // 出库编号
   no: string // 出库单号
@@ -11,7 +11,7 @@ export interface StockCheckVO {
   remark: string // 备注
 }
 
-// ERP 库存盘点单 API
+// YiShe 库存盘点单 API
 export const StockCheckApi = {
   // 查询库存盘点单分页
   getStockCheckPage: async (params: any) => {

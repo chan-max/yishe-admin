@@ -107,7 +107,7 @@
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"
-        v-model:page="queryParams.pageNo"
+        v-model:page="queryParams.currentPage"
         :total="total"
         @pagination="getList"
       />
@@ -155,7 +155,7 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 // 查询参数
 const queryParams = ref({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   name: null,
   status: undefined
@@ -202,14 +202,14 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.value.pageNo = 1
+  queryParams.value.currentPage = 1
   getList()
 }
 
 /** 重置按钮操作 */
 const resetQuery = () => {
   queryParams.value = {
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 10,
     name: null,
     status: undefined

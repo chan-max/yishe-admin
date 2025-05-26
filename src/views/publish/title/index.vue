@@ -86,7 +86,7 @@
 
     <!-- 分页 -->
     <div class=" flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </div>
 
@@ -227,7 +227,7 @@ import { getUserPage } from "@/api/system/user";
 import useListSelect from '@/components/common/userListSelect.vue'
 // 查询条件
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 20,
   selectMaterial: null,
   sortingFields: defaultSortingValue(),
@@ -382,7 +382,7 @@ const titleTemplateList = ref([])
 
 async function initTitleTemplate() {
   let res = await getTitleTemplateList({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99
   })
   titleTemplateList.value = res.list
@@ -393,7 +393,7 @@ const publishTemplateList = ref([])
 
 async function initPublishTemplate() {
   let res = await getPublishTemplateList({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99
   })
   publishTemplateList.value = res.list
@@ -402,7 +402,7 @@ initPublishTemplate()
 
 // 操作函数
 function handleQuery() {
-  queryParams.pageNo = 1;
+  queryParams.currentPage = 1;
 }
 
 function resetQuery() {
@@ -446,7 +446,7 @@ const shopList = ref([
 
 async function initShopList() {
   const res = await ShopApi.getShopPage({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99
   });
   shopList.value = res.list
@@ -458,7 +458,7 @@ const shopCategoryList = ref([])
 
 async function initShopCategory() {
   const res = await ShopCategoryApi.getShopCategoryPage({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 20,
   })
 

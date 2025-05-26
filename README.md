@@ -89,7 +89,7 @@
 * 数据报表
 * 商城系统
 * 微信公众号
-* ERP 系统
+* YiShe 系统
 * CRM 系统
 
 ### 系统功能
@@ -201,7 +201,7 @@ ps：核心功能已经实现，正在对接微信小程序中...
 
 ![功能图](/.image/common/mall-preview.png)
 
-### ERP 系统
+### YiShe 系统
 
 演示地址：<https://doc.iocoder.cn/erp-preview/>
 

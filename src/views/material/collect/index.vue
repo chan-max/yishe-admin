@@ -274,7 +274,7 @@
 
     <!-- 分页 -->
     <div class=" flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </div>
 
@@ -310,9 +310,6 @@
                 <template v-if="materialCheckForm.materialCategoryDisplayLabel">
                   <span class="text-xs font-bold opacity-70">{{ materialCheckForm.materialCategoryDisplayLabel }}
                   </span>
-
-
-
                   <el-button link size="small" type="danger" @click="() => {
                     materialCheckForm.materialCategoryDisplayLabel = ''
                     materialCheckForm.classificationIds = ''
@@ -409,7 +406,7 @@ function isCrawlerOperationUsable(key) {
 }
 
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 20,
   sortingFields: defaultSortingValue(),
 });
@@ -676,7 +673,7 @@ getList();
 
 // 操作函数
 function handleQuery() {
-  queryParams.pageNo = 1;
+  queryParams.currentPage = 1;
 }
 
 function resetQuery() {
@@ -758,10 +755,6 @@ const materialCheckRules = {
 const materialCheckLoading = ref(false)
 
 async function ensureCheck() {
-
-  if (!userStore.user.shortName) {
-    return ElMessage.warning('请去个人中心设置用户简称后再上传')
-  }
   await materialCheckFormRef.value.validate();
   if (isMultipleStorage.value) {
     handleCheck([...ids.value]);

@@ -42,7 +42,7 @@
 
     <!-- 分页 -->
     <div class="py-4 flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </div>
 
@@ -79,7 +79,7 @@ import { ShopPlatformApi } from "@/api/shop/platform";
 
 // 查询条件
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 20,
   sortingFields: defaultSortingValue(),
 });
@@ -162,7 +162,7 @@ getList();
 
 // 操作函数
 function handleQuery() {
-  queryParams.pageNo = 1;
+  queryParams.currentPage = 1;
 }
 
 function resetQuery() {

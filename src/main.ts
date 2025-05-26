@@ -1,3 +1,11 @@
+/*
+ * @Author: chan-max jackieontheway666@gmail.com
+ * @Date: 2025-05-19 05:55:18
+ * @LastEditors: chan-max jackieontheway666@gmail.com
+ * @LastEditTime: 2025-05-26 06:44:10
+ * @FilePath: /yishe-admin/src/main.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 // 引入unocss css
 import '@/plugins/unocss'
 
@@ -52,7 +60,7 @@ import 'vxe-pc-ui/lib/style.css'
 import VxeUITable from 'vxe-table'
 import 'vxe-table/lib/style.css'
 import { GlobalDefine } from './utils/global'
-
+import { psdTest } from './psd'
 
 // import * as vue3videoPlay from 'vue3-video-play' // 引入组件
 // import 'vue3-video-play/dist/style.css' // 引入css
@@ -100,5 +108,7 @@ const setupAll = async () => {
 }
 
 setupAll()
+
+// psdTest()
 
 Logger.prettyPrimary(`欢迎使用`, import.meta.env.VITE_APP_TITLE)

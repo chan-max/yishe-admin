@@ -23,14 +23,14 @@ defineOptions({ name: 'ProductBrowsingHistory' })
 const list = ref<any>([]) // 列表
 const total = ref(0) // 总数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   userId: 0,
   userDeleted: false
 })
 const skipGetMessageList = computed(() => {
   // 已加载到最后一页的话则不触发新的消息获取
-  return total.value > 0 && Math.ceil(total.value / queryParams.pageSize) === queryParams.pageNo
+  return total.value > 0 && Math.ceil(total.value / queryParams.pageSize) === queryParams.currentPage
 }) // 跳过消息获取
 
 /** 获得浏览记录 */
@@ -46,7 +46,7 @@ const loadMore = async () => {
   if (skipGetMessageList.value) {
     return
   }
-  queryParams.pageNo += 1
+  queryParams.currentPage += 1
   const res = await getBrowseHistoryPage(queryParams)
   total.value = res.total
   concat(list.value, res.list)

@@ -89,7 +89,7 @@ const list = ref<any[]>([]) // 自动回复列表
 const formRef = ref<InstanceType<typeof ReplyForm> | null>(null) // 表单 ref
 // 查询参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   accountId: accountId
 })
@@ -107,7 +107,7 @@ const reply = ref<Reply>({
 const onAccountChanged = (id: number) => {
   accountId.value = id
   reply.value.accountId = id
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 
@@ -128,7 +128,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

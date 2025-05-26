@@ -28,7 +28,7 @@
         <!-- 分页组件 -->
         <Pagination
           :total="total"
-          v-model:page="queryParams.pageNo"
+          v-model:page="queryParams.currentPage"
           v-model:limit="queryParams.pageSize"
           @pagination="getList"
         />
@@ -51,7 +51,7 @@
         <!-- 分页组件 -->
         <Pagination
           :total="total"
-          v-model:page="queryParams.pageNo"
+          v-model:page="queryParams.currentPage"
           v-model:limit="queryParams.pageSize"
           @pagination="getList"
         />
@@ -76,7 +76,7 @@
         <!-- 分页组件 -->
         <Pagination
           :total="total"
-          v-model:page="queryParams.pageNo"
+          v-model:page="queryParams.currentPage"
           v-model:limit="queryParams.pageSize"
           @pagination="getList"
         />
@@ -105,7 +105,7 @@ provide('accountId', accountId)
 
 // 查询参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   accountId: accountId,
   permanent: true
@@ -116,7 +116,7 @@ const showCreateVideo = ref(false) // 是否新建视频的弹窗
 const onAccountChanged = (id: number) => {
   accountId.value = id
   queryParams.accountId = id
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 
@@ -137,7 +137,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

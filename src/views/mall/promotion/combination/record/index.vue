@@ -193,7 +193,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -215,7 +215,7 @@ const queryParams = ref({
   status: undefined, // 拼团状态
   createTime: undefined, // 创建时间
   pageSize: 10,
-  pageNo: 1
+  currentPage: 1
 })
 const queryFormRef = ref() // 搜索的表单
 const combinationRecordListRef = ref() // 查询表单 Ref
@@ -251,7 +251,7 @@ const openRecordListDialog = (row: CombinationRecordApi.CombinationRecordVO) => 
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.value.pageNo = 1
+  queryParams.value.currentPage = 1
   getList()
 }
 

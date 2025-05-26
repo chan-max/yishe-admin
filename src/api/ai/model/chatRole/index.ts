@@ -20,7 +20,7 @@ export interface ChatRolePageReqVO {
   name?: string // 角色名称
   category?: string // 角色类别
   publicStatus: boolean // 是否公开
-  pageNo: number // 是否公开
+  currentPage: number // 是否公开
   pageSize: number // 是否公开
 }
 

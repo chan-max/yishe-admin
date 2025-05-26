@@ -224,7 +224,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -282,7 +282,7 @@ const tabsData = ref([
 ])
 
 const queryParams = ref({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   tabType: 0,
   name: '',

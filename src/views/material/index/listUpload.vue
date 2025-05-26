@@ -4,11 +4,16 @@
     <div class="image-preview-container">
       <div class="image-preview-list">
         <div v-for="(file, index) in fileList" :key="file.uid" class="image-preview-item">
-          <el-image :src="usePreview ? file.url : 'empty'" alt="preview" class="preview-image" loading="lazy"
-            fit="contain">
+          <el-image
+            :src="usePreview ? file.url : 'empty'"
+            alt="preview"
+            class="preview-image"
+            loading="lazy"
+            fit="contain"
+          >
             <template #error>
-              <div class="w-full h-full flex items-center justify-center ">
-                <el-icon style="z-index: 0;" size="24" color="#999">
+              <div class="w-full h-full flex items-center justify-center">
+                <el-icon style="z-index: 0" size="24" color="#999">
                   <PictureFilled />
                 </el-icon>
               </div>
@@ -19,9 +24,9 @@
             <div>
               {{ file.name }}
             </div>
-            <div class="pt-2 flex gap-2 flex-wrap" style="overflow:auto;">
+            <div class="pt-2 flex gap-2 flex-wrap" style="overflow: auto">
               <el-tag link round size="small" type="primary">
-                {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
+                {{ (file.size / 1024 / 1024).toFixed(2) + "Mb" }}
               </el-tag>
               <el-tag v-if="file.rename" round size="small" link type="primary">
                 重命名: {{ file.rename }}
@@ -33,7 +38,11 @@
           </div>
 
           <div class="actions">
-            <el-icon v-if="file.status !== 'uploading'" @click="handleRemove(index)" size="20">
+            <el-icon
+              v-if="file.status !== 'uploading'"
+              @click="handleRemove(index)"
+              size="20"
+            >
               <Close />
             </el-icon>
           </div>
@@ -44,74 +53,106 @@
             </el-icon>
             上传中...
           </div>
-          <div v-if="file.status === 'fail'" class="status fail" @click="handleRetry(index)">上传失败，点击重试</div>
+          <div
+            v-if="file.status === 'fail'"
+            class="status fail"
+            @click="handleRetry(index)"
+          >
+            上传失败，点击重试
+          </div>
           <div v-if="file.status === 'success'" class="status success">上传成功</div>
         </div>
       </div>
     </div>
 
     <div class="operation-container">
-      <div class="font-bold py-2" style="color:#bbb;border-bottom: 1px solid #ddd;"> 上传路径 : <span
-          style="font-size: .8em;">{{ currentUploadInfo.path
-          }}</span>
+      <div class="font-bold py-2" style="color: #bbb; border-bottom: 1px solid #ddd">
+        上传路径 : <span style="font-size: 0.8em">{{ currentUploadInfo.path }}</span>
       </div>
       <div class="stats">
-        <span> 选择
-          <span class="stats-num" style="color:var(--el-color-primary);">{{ totalCount }}</span>
-          张</span>
-        <span>成功 <span class="stats-num" style="color:var(--el-color-success);">{{ successCount }}</span> 张</span>
-        <span>失败 <span class="stats-num" style="color:var(--el-color-danger);">{{ failCount }}</span>张</span>
+        <span>
+          选择
+          <span class="stats-num" style="color: var(--el-color-primary)">{{
+            totalCount
+          }}</span>
+          张</span
+        >
+        <span
+          >成功
+          <span class="stats-num" style="color: var(--el-color-success)">{{
+            successCount
+          }}</span>
+          张</span
+        >
+        <span
+          >失败
+          <span class="stats-num" style="color: var(--el-color-danger)">{{
+            failCount
+          }}</span
+          >张</span
+        >
 
-        <span>上传中 <span class="stats-num" style="color:var(--el-color-warning);">{{ loadingCount }}</span>张</span>
+        <span
+          >上传中
+          <span class="stats-num" style="color: var(--el-color-warning)">{{
+            loadingCount
+          }}</span
+          >张</span
+        >
       </div>
 
-      <el-progress :format="() => `${successCount}/${totalCount}`" :text-inside="true" :stroke-width="24"
-        :percentage="totalCount ? successCount / totalCount * 100 : totalCount" :striped-flow="someLoading"
-        :striped="someLoading" :status="totalCount == successCount ? 'success' : 'warning'" />
+      <el-progress
+        :format="() => `${successCount}/${totalCount}`"
+        :text-inside="true"
+        :stroke-width="24"
+        :percentage="totalCount ? (successCount / totalCount) * 100 : totalCount"
+        :striped-flow="someLoading"
+        :striped="someLoading"
+        :status="totalCount == successCount ? 'success' : 'warning'"
+      />
 
       <div class="local-select">
-        <el-upload action="#" accept="image/*" list-type="text" :auto-upload="false" :on-change="handleFileChange"
-          :show-file-list="false" multiple>
+        <el-upload
+          action="#"
+          accept="image/*"
+          list-type="text"
+          :auto-upload="false"
+          :on-change="handleFileChange"
+          :show-file-list="false"
+          multiple
+        >
           <el-button type="primary" plain :icon="UploadFilled">选择图片</el-button>
         </el-upload>
       </div>
 
-
-
-      <el-form label-width="90px" ref="materialCheckFormRef" label-position="right" :rules="materialCheckRules" :model="materialCheckForm">
-        <el-form-item label="序号前缀:">
-          <template v-if="userStore.user.shortName">
-            <el-tag>{{ userStore.user.shortName }}</el-tag>
-          </template>
-          <template v-else>
-            <el-button size="small" type="warning" :icon="TopRight" link @click="() => {
-              $router.push({
-                path: '/user/profile'
-              })
-            }"> 暂未设置，去用户中心设置 </el-button>
-          </template>
-        </el-form-item>
-
-        <el-form-item label="起始序号:" prop="materialOrder">
-          <el-input v-model="materialCheckForm.materialOrder" type="number" :min="maxOrder + 1"
-            placeholder="非必填,不填写时不会处理"></el-input>
-        </el-form-item>
-
-      </el-form>
       <div>
-        <el-button class="w-full" type="primary" @click="handleUpload" :disabled="totalCount === 0">
+        <el-button
+          class="w-full"
+          type="primary"
+          @click="handleUpload"
+          :disabled="totalCount === 0"
+        >
           上传
         </el-button>
       </div>
 
       <!-- 清空按钮 -->
       <div>
-        <el-button class="w-full" type="danger" @click="handleClear" :disabled="totalCount === 0">
+        <el-button
+          class="w-full"
+          type="danger"
+          @click="handleClear"
+          :disabled="totalCount === 0"
+        >
           清空
         </el-button>
       </div>
       <div class="flex items-center gap-2">
-        <el-switch v-model="usePreview" size="small" active-text="开启图片预览(预览会占用大量资源)"></el-switch>
+        <el-switch
+          v-model="usePreview"
+          size="small"
+          active-text="开启图片预览(预览会占用大量资源)"
+        ></el-switch>
         <!-- <el-alert  size="small" type="warning"  description=" " /> -->
       </div>
     </div>
@@ -121,98 +162,44 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { ElMessage, ElNotification } from "element-plus";
-import { Plus, Close, Loading, Upload, UploadFilled, PictureFilled, TopRight } from "@element-plus/icons-vue";
+import {
+  Plus,
+  Close,
+  Loading,
+  Upload,
+  UploadFilled,
+  PictureFilled,
+  TopRight,
+} from "@element-plus/icons-vue";
 import { useDebounceFn } from "@vueuse/core";
 import { throttleLoop, throttleLoopWithRAF } from "@/common/render";
 import { getMaterialMaxOrder, uploadMaterialFile } from "@/api/material";
 import { useUserStore } from "@/store/modules/user";
 import { VxeRadioGroup } from "vxe-pc-ui";
-import {getImageDimensionsViaImageBitmap} from '@/common/img';
-import { uploadOSSFile } from "@/api/oss";
+import { getImageDimensionsViaImageBitmap } from "@/common/img";
+import { uploadToCOS } from "@/api/cos";
 
 const props = defineProps({
   currentUploadInfo: {
-    default: {}
-  }
-})
+    default: {},
+  },
+});
 
-const userStore = useUserStore()
-
-const materialCheckForm = ref({
-  materialOrder: null
-})
-
-const materialCheckFormRef = ref()
-const materialCheckRules = {
-  materialOrder: [{
-    required: true, trigger: "change",
-    validator: (rule: any, value: any, callback: any) => {
-      value = Number(value)
-      if (!value) {
-        return callback(new Error('请输入序号'))
-      }
-      if (!Number.isInteger(value)) {
-        callback(new Error('请输入数字'))
-      } else {
-        if (value <= maxOrder.value) {
-          callback(new Error(`起始序号必须大于当前最大序号 (${maxOrder.value})`))
-        } else {
-          callback()
-        }
-      }
-    }
-  }],
-}
+const userStore = useUserStore();
 
 // 文件列表
 const fileList = ref([]);
 
-
-watch([materialCheckForm, fileList], () => {
-
-  if (!materialCheckForm.value.materialOrder) {
-    return
-  }
-
-  fileList.value.forEach((file, index) => {
-    file.order = Number(materialCheckForm.value.materialOrder) + index
-    file.rename = userStore.user.shortName + (Number(materialCheckForm.value.materialOrder) + index)
-  })
-
-}, {
-  deep: true,
-  immediate: true,
-})
-
-const emits = defineEmits(['single-file-uploaded'])
-
-/**
- * @初始化素材已使用的序号
-*/
-
-const maxOrder = ref(0)
-
-async function initMaterialOrder() {
-  var res = await getMaterialMaxOrder({
-    shortName: userStore.user.shortName
-  })
-  if (!res) {
-    res = 0
-  }
-  materialCheckForm.value.materialOrder = res + 1
-  maxOrder.value = res
-}
-
-initMaterialOrder()
+const emits = defineEmits(["single-file-uploaded"]);
 
 enum UploadStatus {
-  Waiting = 'waiting',
-  Uploading = 'uploading',
-  Success = 'success',
-  Fail = 'fail'
+  Waiting = "waiting",
+  Uploading = "uploading",
+  Success = "success",
+  Fail = "fail",
 }
 
-const usePreview = ref(false)
+const usePreview = ref(true);
 
 // 统计信息
 const totalCount = computed(() => fileList.value.length);
@@ -229,31 +216,31 @@ const failCount = computed(
 
 // 任意图片正在上传
 const someLoading = computed(() => {
-  return fileList.value.some((item) => item.status == 'uploading')
-})
+  return fileList.value.some((item) => item.status == "uploading");
+});
 
 const handleFileChange = async (file) => {
   const url = URL.createObjectURL(file.raw); // 生成 Blob URL
 
   // const info = await getImageDimensionsViaImageBitmap(file.raw)
   const info = {
-    width:0,
-    height:0,
+    width: 0,
+    height: 0,
+  };
+
+  if (file.size > 10 * 1024 * 1024) {
+    return ElMessage.warning(`图片${file.name}大于10mb`);
   }
 
-  if(file.size > 10 * 1024 * 1024){
-    return ElMessage.warning(`图片${file.name}大于10mb`)
-  }
-  
   fileList.value.push({
     uid: file.uid,
     name: file.name,
     url, // 使用 Blob URL
     size: file.size,
     raw: file.raw,
-    width:info.width,
-    height:info.height,
-    rename: '', // 该图片的重命名
+    width: info.width,
+    height: info.height,
+    rename: "", // 该图片的重命名
     status: "waiting", // waiting, uploading, success, fail
   });
 };
@@ -267,27 +254,23 @@ const handleRemove = (index) => {
 const handleRetry = async (index) => {
   const file = fileList.value[index];
   file.status = "uploading";
-  await uploadFile(file, index);
+  await uploadFile(file);
 };
 
 // 上传所有图片
 const handleUpload = async () => {
 
-  if(!userStore.user.shortName){
-    return ElMessage.warning('请去个人中心设置用户简称后再上传')
+  if (fileList.value.length && successCount.value == fileList.value.length) {
+    return ElNotification.success("图片都上传成功了，请再选择新素材吧~");
   }
 
-  await materialCheckFormRef.value.validate();
-  if (fileList.value.length && successCount.value == fileList.value.length) {
-    return ElNotification.success('图片都上传成功了，请再选择新素材吧~')
-  }
 
   for (let i = 0; i < fileList.value.length; i++) {
     const file = fileList.value[i];
     if (file.status === "waiting" || file.status === "fail") {
       file.status = "uploading";
       //   await uploadFile(file, i);
-      uploadFile(file, i);
+      uploadFile(file,);
     }
   }
 };
@@ -295,47 +278,29 @@ const handleUpload = async () => {
 // 清空所有图片
 const handleClear = () => {
   if (fileList.value.length && failCount.value) {
-    return ElNotification.error('有上传失败的图片，请上传成功后再清空')
+    return ElNotification.error("有上传失败的图片，请上传成功后再清空");
   }
   fileList.value = [];
 };
 
 // 上传单个文件
-const uploadFile = async (file, index) => {
+const uploadFile = async (file) => {
   try {
-    const ossRes = await uploadOSSFile(file.raw,'imagePath')
-    const { name, url } = ossRes
+    const cos = await uploadToCOS({
+      file:file.raw,
+    });
+    const { key, url } = cos;
     await uploadMaterialFile({
-      imageName:file.rename,
-      imageNum:file.order,
-      ossPath:name,
-      ossObjectName:url,
-      resolutionHeight:file.height,
-      resolutionWidth:file.width,
-      source:1,
-      imageFormat:file.name.split('.').pop(),
-      classificationIds:props.currentUploadInfo.ids,
+      url,
+      thumbnail: cos,
     });
     file.status = "success";
-    emits('single-file-uploaded')
+    emits("single-file-uploaded");
   } catch (error) {
     file.status = "fail";
     ElMessage.error(`文件 ${file.name} 上传失败`);
   }
 };
-
-// 模拟上传接口
-// const mockUploadApi = (file) => {
-//   return new Promise((resolve, reject) => {
-//     setTimeout(() => {
-//       if (Math.random() > 0.2) {
-//         resolve({ success: true });
-//       } else {
-//         reject(new Error("上传失败"));
-//       }
-//     }, Math.random() * 5000);
-//   });
-// };
 </script>
 
 <style scoped>
@@ -398,8 +363,6 @@ const uploadFile = async (file, index) => {
     transform: scale(1.1);
   }
 }
-
-
 
 .status {
   position: absolute;
@@ -485,7 +448,6 @@ const uploadFile = async (file, index) => {
 
 <style lang="less">
 .local-select {
-
   .el-upload,
   .el-button {
     width: 100%;

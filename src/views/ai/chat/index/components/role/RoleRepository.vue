@@ -81,12 +81,12 @@ const loading = ref<boolean>(false) // 加载中
 const activeTab = ref<string>('my-role') // 选中的角色 Tab
 const search = ref<string>('') // 加载中
 const myRoleParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 50
 })
 const myRoleList = ref<ChatRoleVO[]>([]) // my 分页大小
 const publicRoleParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 50
 })
 const publicRoleList = ref<ChatRoleVO[]>([]) // public 分页大小
@@ -135,10 +135,10 @@ const getPublicRole = async (append?: boolean) => {
 /** 获取选中的 tabs 角色 */
 const getActiveTabsRole = async () => {
   if (activeTab.value === 'my-role') {
-    myRoleParams.pageNo = 1
+    myRoleParams.currentPage = 1
     await getMyRole()
   } else {
-    publicRoleParams.pageNo = 1
+    publicRoleParams.currentPage = 1
     await getPublicRole()
   }
 }
@@ -184,10 +184,10 @@ const handlerCardPage = async (type) => {
   try {
     loading.value = true
     if (type === 'public') {
-      publicRoleParams.pageNo++
+      publicRoleParams.currentPage++
       await getPublicRole(true)
     } else {
-      myRoleParams.pageNo++
+      myRoleParams.currentPage++
       await getMyRole(true)
     }
   } finally {

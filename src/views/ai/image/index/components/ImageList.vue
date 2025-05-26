@@ -18,7 +18,7 @@
     <div class="task-image-pagination">
       <Pagination
         :total="pageTotal"
-        v-model:page="queryParams.pageNo"
+        v-model:page="queryParams.currentPage"
         v-model:limit="queryParams.pageSize"
         @pagination="getImageList"
       />
@@ -50,7 +50,7 @@ const router = useRouter() // 路由
 
 // 图片分页相关的参数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10
 })
 const pageTotal = ref<number>(0) // page size

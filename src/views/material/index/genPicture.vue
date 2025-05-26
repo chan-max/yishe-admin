@@ -160,7 +160,7 @@ import { categoryOptions } from "@/views/material/collect";
 import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category"; // 实际接口导入
 import { ShopApi } from "@/api/shop/shopIndex";
-import { ShopTemplateApi } from "@/api/shoptemplate";
+import { psdTemplateApi } from "@/api/psdTemplate";
 import { getProductTemplateList } from "@/api/publish/template";
 
 const emits = defineEmits(['config-change'])
@@ -181,7 +181,7 @@ function configChange() {
 
 // 查询条件
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 99,
   name: "",
   categoryId: '',
@@ -203,8 +203,8 @@ async function initPsdTemplate() {
     return
   }
 
-  let res = await ShopTemplateApi.getShopTemplatePage({
-    pageNo: 1,
+  let res = await psdTemplateApi.getPsdTemplatePage({
+    currentPage: 1,
     pageSize: 99,
     shopId,
     categoryId
@@ -278,7 +278,7 @@ const shopCategoryList = ref([])
 
 async function initShopCategory() {
   const res = await ShopCategoryApi.getShopCategoryPage({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 20,
   })
   shopCategoryList.value = res.list
@@ -292,7 +292,7 @@ const shopList = ref([
 
 async function initShopList() {
   const res = await ShopApi.getShopPage({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99
   });
   shopList.value = res.list
@@ -314,7 +314,7 @@ const titleTemplateList = ref([])
 
 async function initTitleTemplate(psdTemplateId?) {
   let res = await getTitleTemplateList({
-    pageNo: 1,
+    currentPage: 1,
     pageSize: 99,
     psdTemplateId
   })
@@ -512,3 +512,4 @@ async function initPublishTemplate() {
 </script>
 
 <style lang="less"></style>
+@/api/psdTemplate

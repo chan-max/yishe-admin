@@ -111,7 +111,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -129,7 +129,7 @@ import download from '@/utils/download'
 import { ProductCategoryApi, ProductCategoryVO } from '@/api/erp/product/category'
 import ProductCategoryForm from './ProductCategoryForm.vue'
 
-/** ERP 产品分类 列表 */
+/** YiShe 产品分类 列表 */
 defineOptions({ name: 'ErpProductCategory' })
 
 const message = useMessage() // 消息弹窗
@@ -157,7 +157,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

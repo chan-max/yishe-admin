@@ -27,10 +27,10 @@
         </el-form-item>
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item prop="username">
+        <el-form-item prop="account">
           <el-input
-            v-model="loginData.loginForm.username"
-            :placeholder="t('login.usernamePlaceholder')"
+            v-model="loginData.loginForm.account"
+            :placeholder="t('login.accountPlaceholder')"
             :prefix-icon="iconAvatar"
           />
         </el-form-item>
@@ -180,17 +180,17 @@ const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN);
 
 const LoginRules = {
   tenantName: [required],
-  username: [required],
+  account: [required],
   password: [required],
 };
 const loginData = reactive({
   isShowPassword: false,
   tenantEnable: import.meta.env.VITE_APP_TENANT_ENABLE,
   loginForm: {
-    tenantName: import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT || "",
-    username: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || "",
+    // tenantName: import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT || "",
+    account: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || "",
     password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || "",
-    rememberMe: true, // 默认记录我。如果不需要，可手动修改
+    // rememberMe: true, // 默认记录我。如果不需要，可手动修改
   },
 });
 
@@ -225,7 +225,7 @@ const getLoginFormCache = () => {
   if (loginForm) {
     loginData.loginForm = {
       ...loginData.loginForm,
-      username: loginForm.username ? loginForm.username : loginData.loginForm.username,
+      account: loginForm.account ? loginForm.account : loginData.loginForm.account,
       password: loginForm.password ? loginForm.password : loginData.loginForm.password,
       rememberMe: loginForm.rememberMe,
       tenantName: loginForm.tenantName

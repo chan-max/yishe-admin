@@ -93,7 +93,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams0.pageSize"
-      v-model:page="queryParams0.pageNo"
+      v-model:page="queryParams0.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -112,7 +112,7 @@ defineOptions({ name: 'BusinessSummary' })
 
 const props = defineProps<{ queryParams: any }>() // 搜索参数
 const queryParams0 = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10
 })
 const loading = ref(false) // 加载中

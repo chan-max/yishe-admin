@@ -204,7 +204,7 @@
     <!-- 分页 -->
     <Pagination
       v-model:limit="queryParams.pageSize"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       :total="total"
       @pagination="getList"
     />
@@ -243,7 +243,7 @@ const list = ref<TradeOrderApi.OrderVO[]>([]) // 列表的数据
 const queryFormRef = ref<FormInstance>() // 搜索的表单
 const INIT_QUERY_PARAMS = {
   // 页数
-  pageNo: 1,
+  currentPage: 1,
   // 每页显示数量
   pageSize: 10,
   // 创建时间
@@ -300,7 +300,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = async () => {
-  queryParams.value.pageNo = 1
+  queryParams.value.currentPage = 1
   await getList()
 }
 

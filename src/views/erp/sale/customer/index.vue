@@ -100,7 +100,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -117,7 +117,7 @@ import download from '@/utils/download'
 import { CustomerApi, CustomerVO } from '@/api/erp/sale/customer'
 import CustomerForm from './CustomerForm.vue'
 
-/** ERP 客户 列表 */
+/** YiShe 客户 列表 */
 defineOptions({ name: 'ErpCustomer' })
 
 const message = useMessage() // 消息弹窗
@@ -127,7 +127,7 @@ const loading = ref(true) // 列表的加载中
 const list = ref<CustomerVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   name: undefined,
   mobile: undefined,
@@ -150,7 +150,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

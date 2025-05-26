@@ -150,7 +150,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -178,7 +178,7 @@ const list = ref([]) // 列表的数据
 const formFields = ref()
 const processDefinitionId = query.processDefinitionId as string
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   startUserId: undefined,
   name: '',
@@ -225,7 +225,7 @@ const parseFormCreateFields = (formFields?: string[]) => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

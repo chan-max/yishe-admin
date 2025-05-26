@@ -8,11 +8,8 @@ import { getPaginationMockData, toPromiseData } from '../mock';
 
 export function uploadMaterialFile(data) {
   return request.post({
-    url: '/asset/material-management/uploadFile',
+    url: '/sticker/create',
     data,
-    // headers: {
-    //   'Content-Type': 'multipart/form-data',
-    // },
   })
 }
 
@@ -106,14 +103,8 @@ export function deleteLabel(data) {
 */
 
 export const getMaterialList = async (data) => {
-  // let data: any = await getPaginationMockData(params)
-  // data.records.forEach(element => {
-  //   element.checkType = params.checkType
-  // });
-  // return data
-
   return request.post({
-    url: '/asset/material-management/page'
+    url: '/sticker/page'
     , data
   })
 }

@@ -132,7 +132,7 @@
 
     <!-- 分页 -->
     <div class=" flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.pageNo" v-model:limit="queryParams.pageSize"
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </div>
 
@@ -250,12 +250,12 @@ import { getCompositeInfo, compositeConfig } from "@/common/ps";
 import { preview } from "@/components/PreviewImage/index";
 import { useWindowSize } from "@vueuse/core";
 import { getTitleStatusInfo, titleConfig } from "@/common/title";
-import { ShopTemplateApi } from "@/api/shoptemplate";
+import { psdTemplateApi } from "@/api/psdTemplate";
 import useListSelect from '@/components/common/userListSelect.vue'
 
 // 查询条件
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 20,
   selectHasComposite: null,
   sortingFields: defaultSortingValue(),
@@ -282,8 +282,8 @@ const compositeOptions = computed(() => {
 const psdTemplateList = ref([])
 
 async function initPsdTemplate() {
-  let res = await ShopTemplateApi.getShopTemplatePage({
-    pageNo: 1,
+  let res = await psdTemplateApi.getPsdTemplatePage({
+    currentPage: 1,
     pageSize: 99
   })
   psdTemplateList.value = res.list
@@ -480,7 +480,7 @@ getList();
 
 // 操作函数
 function handleQuery() {
-  queryParams.pageNo = 1;
+  queryParams.currentPage = 1;
 }
 
 function resetQuery() {
@@ -652,7 +652,7 @@ function handleMultipleUpdateTemplate() {
 }
 
 function selectHasCompositeChange() {
-  queryParams.pageNo = 1;
+  queryParams.currentPage = 1;
   getList();
 }
 
@@ -739,3 +739,4 @@ const submitForm = async () => {
   transform: scale(1.05);
 }
 </style>
+@/api/psdTemplate

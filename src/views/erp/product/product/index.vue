@@ -1,4 +1,4 @@
-<!-- ERP 产品列表 -->
+<!-- YiShe 产品列表 -->
 <template>
   <doc-alert title="【产品】产品信息、分类、单位" url="https://doc.iocoder.cn/erp/product/" />
 
@@ -117,7 +117,7 @@
     <!-- 分页 -->
     <Pagination
       :total="total"
-      v-model:page="queryParams.pageNo"
+      v-model:page="queryParams.currentPage"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
@@ -137,7 +137,7 @@ import { DICT_TYPE } from '@/utils/dict'
 import { defaultProps, handleTree } from '@/utils/tree'
 import { erpPriceTableColumnFormatter } from '@/utils'
 
-/** ERP 产品列表 */
+/** YiShe 产品列表 */
 defineOptions({ name: 'ErpProduct' })
 
 const message = useMessage() // 消息弹窗
@@ -147,7 +147,7 @@ const loading = ref(true) // 列表的加载中
 const list = ref<ProductVO[]>([]) // 列表的数据
 const total = ref(0) // 列表的总页数
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   name: undefined,
   categoryId: undefined
@@ -170,7 +170,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 

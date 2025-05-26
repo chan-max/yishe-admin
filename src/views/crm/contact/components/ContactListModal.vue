@@ -64,7 +64,7 @@
       <!-- 分页 -->
       <Pagination
         v-model:limit="queryParams.pageSize"
-        v-model:page="queryParams.pageNo"
+        v-model:page="queryParams.currentPage"
         :total="total"
         @pagination="getList"
       />
@@ -96,7 +96,7 @@ const list = ref([]) // 列表的数据
 const queryFormRef = ref() // 搜索的表单
 const formLoading = ref(false) // 表单的加载中：1）修改时的数据加载；2）提交的按钮禁用
 const queryParams = reactive({
-  pageNo: 1,
+  currentPage: 1,
   pageSize: 10,
   name: undefined,
   customerId: props.customerId
@@ -124,7 +124,7 @@ const getList = async () => {
 
 /** 搜索按钮操作 */
 const handleQuery = () => {
-  queryParams.pageNo = 1
+  queryParams.currentPage = 1
   getList()
 }
 
