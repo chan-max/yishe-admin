@@ -1,5 +1,6 @@
 <template>
-  <el-image v-bind="$attrs" style="width: 120px;min-height:80px; object-fit: contain" :src="src"
+  <el-image
+  v-bind="$attrs" style="width: 120px; object-fit: contain" :src="src"
     class="cursor-pointer" @click="doPreview(src)">
     <template #placeholder>
       <div class="img-loading" style="min-width: 120px;min-height:120px;">
@@ -66,7 +67,7 @@ async function doPreview(url) {
 
 </script>
 
-<style>
+<style lang="less">
 .img-loading {
   width: 100%;
   height: 100%;
@@ -84,6 +85,24 @@ async function doPreview(url) {
 
   100% {
     background-position: 0 50%;
+  }
+}
+
+
+.cursor-pointer{
+
+}
+
+// .cursor-pointer,
+.viewer-canvas {
+  img {
+    background-image: linear-gradient(45deg, rgba(240, 240, 240, 0.8) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(240, 240, 240, 0.8) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(240, 240, 240, 0.8) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(240, 240, 240, 0.8) 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: rgba(245, 245, 245, 0.5);
   }
 }
 </style>
