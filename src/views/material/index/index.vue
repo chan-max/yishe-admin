@@ -20,32 +20,28 @@
           @change="
             (val) => {
               if (!val) {
-                getList();
+                getList()
               }
             }
           "
         />
       </form-item>
-      <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
+      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
 
       <form-item label="按时间查询">
         <DateRangePicker
           @change="
             (val) => {
-              queryParams.startTime = val.start;
-              queryParams.endTime = val.end;
-              getList();
+              queryParams.startTime = val.start
+              queryParams.endTime = val.end
+              getList()
             }
           "
         />
       </form-item>
 
       <form-item label="时间排序">
-        <el-select
-          v-model="queryParams.sortingFields"
-          style="width: 160px"
-          @change="getList"
-        >
+        <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
           <el-option
             v-for="item in sortTypeOptions"
             :key="item.value"
@@ -60,7 +56,7 @@
           type="primary"
           @click="
             () => {
-              uploadModalVisible = true;
+              uploadModalVisible = true
             }
           "
         >
@@ -76,10 +72,10 @@
           @click="
             () => {
               if (!ids.length) {
-                return ElMessage.warning('请选择要制作的素材');
+                return ElMessage.warning('请选择要制作的素材')
               }
-              currentRow = null;
-              genPicturesModalVisible = true;
+              currentRow = null
+              genPicturesModalVisible = true
             }
           "
         >
@@ -88,7 +84,7 @@
 
         <!-- <el-button type="warning" @click="handleMultipleCheck(0)">
           取消入库 ({{ ids.length }})</el-button> -->
-        <el-button type="danger" @click="handleDelete(null)" :icon="Delete">
+        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
           批量删除({{ ids.length }})
         </el-button>
       </div>
@@ -107,7 +103,7 @@
           >
             <template #previewDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
-                <single-image :src="row.url"/>
+                <single-image :src="row.url" />
               </div>
             </template>
 
@@ -122,30 +118,23 @@
                   link
                   @click="
                     () => {
-                      currentRow = row;
-                      genPicturesModalVisible = true;
+                      currentRow = row
+                      genPicturesModalVisible = true
                     }
                   "
                 >
                   制作套图
                 </el-button>
 
-                <el-button type="default" link @click="handleDownload(row)" size="small">
+                <el-button type="default" link size="small" @click="handleDownload(row)">
                   下载
                 </el-button>
 
-                <el-button
-                  type="danger"
-                  link
-                  @click="handleDelete(row)"
-                  danger
-                  size="small"
-                >
+                <el-button type="danger" link danger size="small" @click="handleDelete(row)">
                   删除
                 </el-button>
               </div>
             </template>
-
           </vxe-grid>
         </div>
 
@@ -168,8 +157,8 @@
                   @delete="imgCardDelete"
                   @picture="
                     (_info) => {
-                      currentRow = _info;
-                      genPicturesModalVisible = true;
+                      currentRow = _info
+                      genPicturesModalVisible = true
                     }
                   "
                 />
@@ -187,9 +176,9 @@
         <!-- 分页 -->
         <div class="flex justify-end">
           <pagination
-            :total="total"
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
+            :total="total"
             @pagination="getList"
           />
         </div>
@@ -209,38 +198,38 @@
     >
       <div style="height: 100%">
         <list-upload
-          :currentUploadInfo="currentUploadInfo"
+          :current-upload-info="currentUploadInfo"
           @single-file-uploaded="singleFileUploaded"
         />
       </div>
     </el-dialog>
 
     <el-dialog
-      draggable
       v-model="genPicturesModalVisible"
+      draggable
       title="制作套图"
       width="800px"
       align-center
       :destroy-on-close="true"
       @close="
         () => {
-          currentGenPictureConfig = [];
+          currentGenPictureConfig = []
         }
       "
     >
       <el-form
+        ref="genPicturesFormRef"
         :model="genPicturesForm"
         :rules="genPicturesFormRules"
-        ref="genPicturesFormRef"
         label-width="100"
       >
         <el-row style="padding: 1em">
           <el-col :span="24">
-            <gen-picture @config-change="configChange"/>
+            <gen-picture @config-change="configChange" />
           </el-col>
           <el-col class="py-4">
             <el-form-item label="是否制作视频">
-              <el-switch v-model="genPicturesForm.isMakeVideo"/>
+              <el-switch v-model="genPicturesForm.isMakeVideo" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -263,8 +252,8 @@ import {
   onUnmounted,
   watch,
   handleError,
-  watchEffect,
-} from "vue";
+  watchEffect
+} from 'vue'
 
 import {
   getMaterialList,
@@ -274,51 +263,42 @@ import {
   materialCreatePictures,
   materialDistribute,
   getMaterialDetail,
-  handleDropMaterial,
-} from "@/api/material"; // 实际接口导入
+  handleDropMaterial
+} from '@/api/material' // 实际接口导入
 
-import { commonGridOptions } from "@/common/table";
-import { formatTimestamp } from "@/common/date";
-import CryptoJS from "crypto-js";
+import { commonGridOptions } from '@/common/table'
+import { formatTimestamp } from '@/common/date'
+import CryptoJS from 'crypto-js'
 
-import {
-  useDebounceFn,
-  useLocalStorage,
-  useSessionStorage,
-  useWindowSize,
-} from "@vueuse/core";
-import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
-import { saveAs } from "file-saver";
+import { useDebounceFn, useLocalStorage, useSessionStorage, useWindowSize } from '@vueuse/core'
+import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
+import { saveAs } from 'file-saver'
 
-import { useUserStore } from "@/store/modules/user";
-import imgCard from "./imgCard.vue";
-import listUpload from "./listUpload.vue";
-import {
-  materialConfig,
-  getMaterialConfig,
-  categoryOptions,
-} from "@/views/material/collect/index";
-import { ElButton, ElNotification } from "element-plus";
-import { Delete, Plus, Search, TopRight, Upload } from "@element-plus/icons-vue";
-import tree from "./tree.vue";
-import { materialStatusOptions } from ".";
-import { getPsdTemplateList, getShopList } from "@/api/shop";
-import { ShopApi } from "@/api/shop/shopIndex";
-import { psdTemplateApi } from "@/api/psdTemplate";
-import { formatDate } from "@/utils/formatTime";
-import { getTitleTemplateList } from "@/api/publish";
-import { downloadCrossOriginImage, downloadFileByElement } from "@/common/download";
-import { useRouter } from "vue-router";
-import { ShopCategoryApi } from "@/api/shop/category";
-import { getConfigTemplateList } from "@/api/publish/config";
-import genPicture from "./genPicture.vue";
-import { getAccessToken } from "@/utils/auth";
-import { getTenantId } from "@/utils/auth";
-import useListSelect from "@/components/common/userListSelect.vue";
+import { useUserStore } from '@/store/modules/user'
+import imgCard from './imgCard.vue'
+import listUpload from './listUpload.vue'
+import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
+import { ElButton, ElNotification } from 'element-plus'
+import { Delete, Plus, Search, TopRight, Upload } from '@element-plus/icons-vue'
+import tree from './tree.vue'
+import { materialStatusOptions } from '.'
+import { getPsdTemplateList, getShopList } from '@/api/shop'
+import { ShopApi } from '@/api/shop/shopIndex'
+import { psdTemplateApi } from '@/api/psdTemplate'
+import { formatDate } from '@/utils/formatTime'
+import { getTitleTemplateList } from '@/api/publish'
+import { downloadCrossOriginImage, downloadFileByElement } from '@/common/download'
+import { useRouter } from 'vue-router'
+import { ShopCategoryApi } from '@/api/shop/category'
+import { getConfigTemplateList } from '@/api/publish/config'
+import genPicture from './genPicture.vue'
+import { getAccessToken } from '@/utils/auth'
+import { getTenantId } from '@/utils/auth'
+import useListSelect from '@/components/common/userListSelect.vue'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
-const form = ref({});
+const form = ref({})
 
 const queryParams = reactive({
   // materialStatus: '',
@@ -332,248 +312,224 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue(),
   creator: null, // 创建人查询
   startTime: null,
-  endTime: null,
-});
+  endTime: null
+})
 
 // 展示模式
-const picMode = useLocalStorage("material_view_mode", false);
+const picMode = useLocalStorage('material_view_mode', false)
 
 watch(picMode, () => {
-  ids.value = [];
-});
+  ids.value = []
+})
 
+const gridRef = ref()
 
-const gridRef = ref();
- 
 function resetCheckStatus() {
   if (gridRef.value?.clearCheckboxRow) {
-    gridRef.value?.clearCheckboxRow();
+    gridRef.value?.clearCheckboxRow()
   }
   if (gridRef.value?.clearCheckboxReserve) {
-    gridRef.value?.clearCheckboxReserve();
+    gridRef.value?.clearCheckboxReserve()
   }
-  ids.value = [];
+  ids.value = []
 }
 
 const gridOptions = ref({
   ...commonGridOptions,
   maxHeight: null,
   rowConfig: {
-    keyField: "id",
+    keyField: 'id'
   },
   checkboxConfig: {
-    reserve: true,
+    reserve: true
   },
   columns: [
-    { type: "checkbox", width: 50, ellipsis: true, reserve: true },
+    { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     {
-      title: "图片预览",
-      field: "url",
-      width: "auto",
+      title: '图片预览',
+      field: 'url',
+      width: 'auto',
       slots: {
-        default: "previewDefaultSlot",
-      },
+        default: 'previewDefaultSlot'
+      }
     },
-    { title: "图片名称", field: "name", minWidth: 180, className: "font-bold" },
+    { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
 
     {
-      title: "创建时间",
-      field: "createTime",
+      title: '创建时间',
+      field: 'createTime',
       width: 150,
       ellipsis: true,
       formatter: (e) => {
-        return formatTimestamp(e.cellValue);
-      },
+        return formatTimestamp(e.cellValue)
+      }
     },
     {
-      title: "修改时间",
-      field: "updateTime",
+      title: '修改时间',
+      field: 'updateTime',
       width: 150,
       ellipsis: true,
       formatter: (e) => {
-        return formatTimestamp(e.cellValue);
-      },
+        return formatTimestamp(e.cellValue)
+      }
     },
     {
-      title: "操作",
-      fixed: "right",
-      width: "auto",
-      field: "operation",
+      title: '操作',
+      fixed: 'right',
+      width: 'auto',
+      field: 'operation',
       slots: {
-        default: "operationDefaultSlot",
-      },
-    },
-  ],
-});
+        default: 'operationDefaultSlot'
+      }
+    }
+  ]
+})
 
-const { height } = useWindowSize();
-
+const { height } = useWindowSize()
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 280;
-});
+  gridOptions.value.maxHeight = height.value - 280
+})
 
-const dataSource = ref([]);
-const loading = ref(false);
-const open = ref(false);
-const title = ref("");
-const ids = ref([]);
-const single = ref(false);
-const multiple = ref(true);
-const total = ref(0);
-const formRef = ref();
-const dialogTitle = ref("");
-const dialogVisible = ref(false);
-const isEdit = ref(true);
-const currentRow = ref();
-const submitLoading = ref(false);
+const dataSource = ref([])
+const loading = ref(false)
+const open = ref(false)
+const title = ref('')
+const ids = ref([])
+const single = ref(false)
+const multiple = ref(true)
+const total = ref(0)
+const formRef = ref()
+const dialogTitle = ref('')
+const dialogVisible = ref(false)
+const isEdit = ref(true)
+const currentRow = ref()
+const submitLoading = ref(false)
 
 const rules = {
-  name: [{ required: true, message: "", trigger: "blur" }],
-};
+  name: [{ required: true, message: '', trigger: 'blur' }]
+}
 
-
-
-const genPicturesModalVisible = ref(false);
+const genPicturesModalVisible = ref(false)
 
 // 处理上传
 
-const uploadModalVisible = ref(false);
+const uploadModalVisible = ref(false)
 
 function uploadModalClose() {}
 
 async function getList() {
-  loading.value = true;
+  loading.value = true
   let res = await getMaterialList({
-    ...queryParams,
+    ...queryParams
   }).finally(() => {
-    loading.value = false;
-  });
+    loading.value = false
+  })
 
-  dataSource.value = res.list;
-  total.value = res.total;
+  dataSource.value = res.list
+  total.value = res.total
   // ids.value = [];
 }
 
 function imgCardDelete(row) {
-  handleDelete(row);
+  handleDelete(row)
 }
 
-getList();
+getList()
 
 // 操作函数
 function handleQuery() {
-  queryParams.currentPage = 1;
+  queryParams.currentPage = 1
 }
 
 function resetQuery() {
-  getList();
+  getList()
 }
 
 // 下载
 function handleMultiDownload() {
   if (!ids.value.length) {
-    return ElMessage.warning("请选择要下载的数据");
+    return ElMessage.warning('请选择要下载的数据')
   }
 
   // 处理图片下载
   try {
     ids.value.forEach(async (id, index) => {
       let row = dataSource.value.find((item) => {
-        return item.id == id;
-      });
+        return item.id == id
+      })
 
       if (!row) {
-        return;
+        return
       }
       // saveAs(row.ossObjectName, row.imageName);
 
       setTimeout(() => {
-        downloadFileByElement(row.ossObjectName, row.imageName);
-      }, 500 * index);
+        downloadFileByElement(row.ossObjectName, row.imageName)
+      }, 500 * index)
 
       // await downloadCrossOriginImage(row.ossObjectName, row.imageName)
       // ElNotification.success(`图片${row.imageName}下载成功`);
-    });
+    })
   } catch (e) {}
 }
 
 function handleDelete(row?) {
-  let delIds: any = null;
+  let delIds: any = null
   if (row) {
-    delIds = [row.id];
+    delIds = [row.id]
   } else {
-    delIds = [...ids.value];
+    delIds = [...ids.value]
     if (!delIds.length) {
-      return ElMessage.warning("请选择要删除的数据");
+      return ElMessage.warning('请选择要删除的数据')
     }
   }
 
-  ElMessageBox.confirm("确认删除该数据吗", "删除提示", {
-    confirmButtonText: "确认",
-    cancelButtonText: "取消",
-    type: "error",
+  ElMessageBox.confirm('确认删除该数据吗', '删除提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'error'
   })
     .then(async () => {
-      delIds = delIds.map((id) => String(id));
-      await deleteAssetLibrary({ materialIds: delIds });
-      ElNotification.success("删除成功");
-      resetCheckStatus();
-      getList();
+      delIds = delIds.map((id) => String(id))
+      await deleteAssetLibrary({ ids: delIds })
+      ElNotification.success('删除成功')
+      resetCheckStatus()
+      getList()
     })
-    .catch(() => {});
+    .catch(() => {})
 }
 function checkboxChange(e) {
-  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)];
+  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
 }
 
 function checkboxAllChange(e) {
-  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)];
+  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
 }
 
 function handleDownload(row) {
   // 处理图片下载
   try {
     // saveAs(row.ossObjectName, row.imageName);
-    downloadFileByElement(row.ossObjectName, row.imageName);
-    ElNotification.success(`图片${row.imageName}下载成功`);
+    downloadFileByElement(row.ossObjectName, row.imageName)
+    ElNotification.success(`图片${row.imageName}下载成功`)
   } catch (e) {}
 }
 
-
 const delayUpdateList = useDebounceFn(() => {
-  getList();
-}, 1999);
+  getList()
+}, 1999)
 
 function singleFileUploaded() {
-  console.log("单个文件上传");
-  delayUpdateList();
+  console.log('单个文件上传')
+  delayUpdateList()
 }
-
 
 /**
  * @group
  */
 
-
-const genPicturesFormRef = ref();
-
-
-async function genPicturesSubmitLocal() {
- 
-  function openApp() {
-
-    var data = encodeURIComponent(JSON.stringify(''));
-
-    var url = `ossLink://?data=${data}`;
-    // var url = `erp://?id=id&name=name`
-    console.log(url);
-    window.location.href = url;
-  }
-}
-
-
-
+const genPicturesFormRef = ref()
 </script>
 
 <style scoped>
@@ -602,4 +558,3 @@ h1 {
   }
 }
 </style>
-@/api/psdTemplate

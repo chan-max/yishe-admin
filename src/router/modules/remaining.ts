@@ -201,6 +201,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
     ]
   },
+  {
+    path: '/product',
+    component: Layout,
+    name: 'Product',
+    meta: {
+      title: '商品管理',
+      icon: 'ep:goods',
+      order: 2
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/product/index/index.vue'),
+        name: 'ProductIndex',
+        meta: {
+          title: '商品列表',
+          icon: 'ep:list'
+        }
+      }
+    ]
+  }
 ]
 
 export default remainingRouter

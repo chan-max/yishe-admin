@@ -26,7 +26,7 @@
             </div>
             <div class="pt-2 flex gap-2 flex-wrap" style="overflow: auto">
               <el-tag link round size="small" type="primary">
-                {{ (file.size / 1024 / 1024).toFixed(2) + "Mb" }}
+                {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
               </el-tag>
               <el-tag v-if="file.rename" round size="small" link type="primary">
                 重命名: {{ file.rename }}
@@ -38,11 +38,7 @@
           </div>
 
           <div class="actions">
-            <el-icon
-              v-if="file.status !== 'uploading'"
-              @click="handleRemove(index)"
-              size="20"
-            >
+            <el-icon v-if="file.status !== 'uploading'" size="20" @click="handleRemove(index)">
               <Close />
             </el-icon>
           </div>
@@ -53,11 +49,7 @@
             </el-icon>
             上传中...
           </div>
-          <div
-            v-if="file.status === 'fail'"
-            class="status fail"
-            @click="handleRetry(index)"
-          >
+          <div v-if="file.status === 'fail'" class="status fail" @click="handleRetry(index)">
             上传失败，点击重试
           </div>
           <div v-if="file.status === 'success'" class="status success">上传成功</div>
@@ -72,31 +64,22 @@
       <div class="stats">
         <span>
           选择
-          <span class="stats-num" style="color: var(--el-color-primary)">{{
-            totalCount
-          }}</span>
+          <span class="stats-num" style="color: var(--el-color-primary)">{{ totalCount }}</span>
           张</span
         >
         <span
           >成功
-          <span class="stats-num" style="color: var(--el-color-success)">{{
-            successCount
-          }}</span>
+          <span class="stats-num" style="color: var(--el-color-success)">{{ successCount }}</span>
           张</span
         >
         <span
-          >失败
-          <span class="stats-num" style="color: var(--el-color-danger)">{{
-            failCount
-          }}</span
+          >失败 <span class="stats-num" style="color: var(--el-color-danger)">{{ failCount }}</span
           >张</span
         >
 
         <span
           >上传中
-          <span class="stats-num" style="color: var(--el-color-warning)">{{
-            loadingCount
-          }}</span
+          <span class="stats-num" style="color: var(--el-color-warning)">{{ loadingCount }}</span
           >张</span
         >
       </div>
@@ -126,24 +109,14 @@
       </div>
 
       <div>
-        <el-button
-          class="w-full"
-          type="primary"
-          @click="handleUpload"
-          :disabled="totalCount === 0"
-        >
+        <el-button class="w-full" type="primary" :disabled="totalCount === 0" @click="handleUpload">
           上传
         </el-button>
       </div>
 
       <!-- 清空按钮 -->
       <div>
-        <el-button
-          class="w-full"
-          type="danger"
-          @click="handleClear"
-          :disabled="totalCount === 0"
-        >
+        <el-button class="w-full" type="danger" :disabled="totalCount === 0" @click="handleClear">
           清空
         </el-button>
       </div>
@@ -160,8 +133,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
-import { ElMessage, ElNotification } from "element-plus";
+import { ref, computed, watch } from 'vue'
+import { ElMessage, ElNotification } from 'element-plus'
 import {
   Plus,
   Close,
@@ -169,67 +142,65 @@ import {
   Upload,
   UploadFilled,
   PictureFilled,
-  TopRight,
-} from "@element-plus/icons-vue";
-import { useDebounceFn } from "@vueuse/core";
-import { throttleLoop, throttleLoopWithRAF } from "@/common/render";
-import { getMaterialMaxOrder, uploadMaterialFile } from "@/api/material";
-import { useUserStore } from "@/store/modules/user";
-import { VxeRadioGroup } from "vxe-pc-ui";
-import { getImageDimensionsViaImageBitmap } from "@/common/img";
-import { uploadToCOS } from "@/api/cos";
+  TopRight
+} from '@element-plus/icons-vue'
+import { useDebounceFn } from '@vueuse/core'
+import { throttleLoop, throttleLoopWithRAF } from '@/common/render'
+import { getMaterialMaxOrder, uploadMaterialFile } from '@/api/material'
+import { useUserStore } from '@/store/modules/user'
+import { VxeRadioGroup } from 'vxe-pc-ui'
+import { getImageDimensionsViaImageBitmap } from '@/common/img'
+import { uploadToCOS } from '@/api/cos'
 
 const props = defineProps({
   currentUploadInfo: {
-    default: {},
-  },
-});
+    default: {}
+  }
+})
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 
 // 文件列表
-const fileList = ref([]);
+const fileList = ref([])
 
-const emits = defineEmits(["single-file-uploaded"]);
+const emits = defineEmits(['single-file-uploaded'])
 
 enum UploadStatus {
-  Waiting = "waiting",
-  Uploading = "uploading",
-  Success = "success",
-  Fail = "fail",
+  Waiting = 'waiting',
+  Uploading = 'uploading',
+  Success = 'success',
+  Fail = 'fail'
 }
 
-const usePreview = ref(true);
+const usePreview = ref(true)
 
 // 统计信息
-const totalCount = computed(() => fileList.value.length);
+const totalCount = computed(() => fileList.value.length)
 const successCount = computed(
-  () => fileList.value.filter((file) => file.status === "success").length
-);
+  () => fileList.value.filter((file) => file.status === 'success').length
+)
 
 const loadingCount = computed(
-  () => fileList.value.filter((file) => file.status === "uploading").length
-);
-const failCount = computed(
-  () => fileList.value.filter((file) => file.status === "fail").length
-);
+  () => fileList.value.filter((file) => file.status === 'uploading').length
+)
+const failCount = computed(() => fileList.value.filter((file) => file.status === 'fail').length)
 
 // 任意图片正在上传
 const someLoading = computed(() => {
-  return fileList.value.some((item) => item.status == "uploading");
-});
+  return fileList.value.some((item) => item.status == 'uploading')
+})
 
 const handleFileChange = async (file) => {
-  const url = URL.createObjectURL(file.raw); // 生成 Blob URL
+  const url = URL.createObjectURL(file.raw) // 生成 Blob URL
 
   // const info = await getImageDimensionsViaImageBitmap(file.raw)
   const info = {
     width: 0,
-    height: 0,
-  };
+    height: 0
+  }
 
   if (file.size > 10 * 1024 * 1024) {
-    return ElMessage.warning(`图片${file.name}大于10mb`);
+    return ElMessage.warning(`图片${file.name}大于10mb`)
   }
 
   fileList.value.push({
@@ -240,67 +211,65 @@ const handleFileChange = async (file) => {
     raw: file.raw,
     width: info.width,
     height: info.height,
-    rename: "", // 该图片的重命名
-    status: "waiting", // waiting, uploading, success, fail
-  });
-};
+    rename: '', // 该图片的重命名
+    status: 'waiting' // waiting, uploading, success, fail
+  })
+}
 
 // 移除图片
 const handleRemove = (index) => {
-  fileList.value.splice(index, 1);
-};
+  fileList.value.splice(index, 1)
+}
 
 // 重试上传
 const handleRetry = async (index) => {
-  const file = fileList.value[index];
-  file.status = "uploading";
-  await uploadFile(file);
-};
+  const file = fileList.value[index]
+  file.status = 'uploading'
+  await uploadFile(file)
+}
 
 // 上传所有图片
 const handleUpload = async () => {
-
   if (fileList.value.length && successCount.value == fileList.value.length) {
-    return ElNotification.success("图片都上传成功了，请再选择新素材吧~");
+    return ElNotification.success('图片都上传成功了，请再选择新素材吧~')
   }
-
 
   for (let i = 0; i < fileList.value.length; i++) {
-    const file = fileList.value[i];
-    if (file.status === "waiting" || file.status === "fail") {
-      file.status = "uploading";
+    const file = fileList.value[i]
+    if (file.status === 'waiting' || file.status === 'fail') {
+      file.status = 'uploading'
       //   await uploadFile(file, i);
-      uploadFile(file,);
+      uploadFile(file)
     }
   }
-};
+}
 
 // 清空所有图片
 const handleClear = () => {
   if (fileList.value.length && failCount.value) {
-    return ElNotification.error("有上传失败的图片，请上传成功后再清空");
+    return ElNotification.error('有上传失败的图片，请上传成功后再清空')
   }
-  fileList.value = [];
-};
+  fileList.value = []
+}
 
 // 上传单个文件
 const uploadFile = async (file) => {
   try {
     const cos = await uploadToCOS({
-      file:file.raw,
-    });
-    const { key, url } = cos;
+      file: file.raw
+    })
+    const { key, url } = cos
     await uploadMaterialFile({
       url,
-      thumbnail: cos,
-    });
-    file.status = "success";
-    emits("single-file-uploaded");
+      name: file.name
+    })
+    file.status = 'success'
+    emits('single-file-uploaded')
   } catch (error) {
-    file.status = "fail";
-    ElMessage.error(`文件 ${file.name} 上传失败`);
+    file.status = 'fail'
+    ElMessage.error(`文件 ${file.name} 上传失败`)
   }
-};
+}
 </script>
 
 <style scoped>
