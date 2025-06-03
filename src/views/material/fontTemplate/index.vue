@@ -263,6 +263,8 @@ const gridOptions = ref({
   ],
 });
 
+
+
 const { height } = useWindowSize();
 
 watchEffect(() => {
