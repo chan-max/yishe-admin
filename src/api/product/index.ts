@@ -6,7 +6,7 @@ export interface ProductVO {
   name: string
   description: string
   type: string
-  images: string
+  images: string[]
   price: number
   salePrice: number
   stock: number
@@ -49,9 +49,9 @@ export const updateProduct = (data: ProductVO) => {
 }
 
 // 删除商品
-export const deleteProduct = (id: string) => {
+export const deleteProduct = (ids: string[]) => {
   return request.post({
     url: '/product/delete',
-    data: { id }
+    data: { ids }
   })
 }

@@ -208,7 +208,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: '商品管理',
       icon: 'ep:goods',
-      order: 2
+      order: 2,
+      alwaysShow: true   
     },
     children: [
       {
