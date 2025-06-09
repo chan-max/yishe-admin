@@ -40,22 +40,7 @@
             <el-button type="primary" link size="small" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button type="primary" link size="small" @click="handlePreview(row)">
-              预览
-            </el-button>
-            <el-button
-              type="primary"
-              link
-              size="small"
-              @click="
-                () => {
-                  downloadFileByElement(row.url, row.name);
-                }
-              "
-            >
-              下载源文件
-            </el-button>
-
+   
             <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
