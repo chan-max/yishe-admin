@@ -87209,7 +87209,7 @@
                 "children": []
               },
               {
-                "catId": 7788,
+                "catId": 1520,
                 "catName": "手术单",
                 "parentCatId": 7775,
                 "catType": 0,
@@ -191792,7 +191792,7 @@
                         "children": []
                       },
                       {
-                        "catId": 17788,
+                        "catId": 11520,
                         "catName": "鼓槌",
                         "parentCatId": 17785,
                         "catType": 0,
@@ -298998,7 +298998,7 @@
                         ]
                       },
                       {
-                        "catId": 27788,
+                        "catId": 21520,
                         "catName": "男童运动长裤",
                         "parentCatId": 27782,
                         "catType": 1,
@@ -409962,7 +409962,7 @@
                             "children": []
                           },
                           {
-                            "catId": 37788,
+                            "catId": 31520,
                             "catName": "马术肚带",
                             "parentCatId": 37785,
                             "catType": 0,
@@ -456697,7 +456697,7 @@
                     "children": []
                   },
                   {
-                    "catId": 47788,
+                    "catId": 41520,
                     "catName": "一般癌症",
                     "parentCatId": 47778,
                     "catType": 0,
