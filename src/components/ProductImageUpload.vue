@@ -158,6 +158,26 @@ onUnmounted(() => {
     }
   })
 })
+
+// 添加 reset 方法
+const reset = () => {
+  // 清理所有本地预览URL
+  localFiles.value.forEach(file => {
+    if (file.raw && !file.url) {
+      window.URL.revokeObjectURL(getPreviewUrl(file))
+    }
+  })
+  // 重置本地文件列表
+  localFiles.value = []
+  // 重置父组件的值
+  emit('update:modelValue', [])
+  emit('files-change', [])
+}
+
+// 暴露方法给父组件
+defineExpose({
+  reset
+})
 </script>
 
 <style scoped>

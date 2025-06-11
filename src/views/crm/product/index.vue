@@ -32,7 +32,7 @@
       <el-form-item>
         <el-button @click="handleQuery"> <Icon icon="ep:search" class="mr-5px" /> 搜索 </el-button>
         <el-button @click="resetQuery"> <Icon icon="ep:refresh" class="mr-5px" /> 重置 </el-button>
-        <el-button type="primary" @click="openForm('create')" v-hasPermi="['crm:product:create']">
+        <el-button type="primary" @click="openForm('create')">
           <Icon icon="ep:plus" class="mr-5px" /> 新增
         </el-button>
         <el-button
@@ -40,7 +40,6 @@
           plain
           @click="handleExport"
           :loading="exportLoading"
-          v-hasPermi="['crm:product:export']"
         >
           <Icon icon="ep:download" class="mr-5px" />
           导出
@@ -100,8 +99,16 @@
           <el-button
             link
             type="primary"
+            @click="openSocialMediaDialog()"
+      
+          >
+            发布到社交媒体
+          </el-button>
+          <el-button
+            link
+            type="primary"
             @click="openForm('update', scope.row.id)"
-            v-hasPermi="['crm:product:update']"
+      
           >
             编辑
           </el-button>
@@ -109,7 +116,7 @@
             link
             type="danger"
             @click="handleDelete(scope.row.id)"
-            v-hasPermi="['crm:product:delete']"
+   
           >
             删除
           </el-button>
@@ -127,6 +134,8 @@
 
   <!-- 表单弹窗：添加/修改 -->
   <ProductForm ref="formRef" @success="getList" />
+  <!-- 社交媒体发布弹窗 -->
+  <SocialMediaDialog ref="socialMediaDialogRef" />
 </template>
 
 <script setup lang="ts">
@@ -135,6 +144,7 @@ import { dateFormatter } from '@/utils/formatTime'
 import download from '@/utils/download'
 import * as ProductApi from '@/api/crm/product'
 import ProductForm from './ProductForm.vue'
+import SocialMediaDialog from './SocialMediaDialog.vue'
 import { erpPriceTableColumnFormatter } from '@/utils'
 
 defineOptions({ name: 'CrmProduct' })
@@ -180,12 +190,18 @@ const resetQuery = () => {
 
 /** 添加/修改操作 */
 const formRef = ref()
+const socialMediaDialogRef = ref()
 const openForm = (type: string, id?: number) => {
   formRef.value.open(type, id)
 }
 
+/** 打开社交媒体发布弹窗 */
+const openSocialMediaDialog = () => {
+  socialMediaDialogRef.value.open()
+}
+
 /** 打开详情 */
-const { currentRoute, push } = useRouter()
+const { push } = useRouter()
 const openDetail = (id: number) => {
   push({ name: 'CrmProductDetail', params: { id } })
 }

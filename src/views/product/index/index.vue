@@ -44,6 +44,10 @@
             <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
+
+            <el-button type="success" link size="small" @click="handlePublish(row)">
+              发布到社交媒体
+            </el-button>
           </div>
         </template>
 
@@ -160,6 +164,7 @@
           <el-col :span="24">
             <el-form-item label="商品图片" prop="images">
               <ProductImageUpload 
+                ref="productImageUploadRef"
                 v-model="form.images" 
                 :max-count="10" 
                 @files-change="handleFilesChange"
@@ -175,6 +180,61 @@
       </template>
     </el-dialog>
 
+    <!-- 发布弹窗 -->
+    <el-dialog
+      title="发布到多媒体平台"
+      v-model="publishDialogVisible"
+      width="100%"
+      :fullscreen="true"
+      @close="publishDialogClose"
+      align-center
+    >
+      <div class="p-4">
+        <h3 class="text-lg font-medium mb-4">选择发布平台</h3>
+        
+        <!-- 平台选择 -->
+        <el-checkbox-group v-model="selectedPlatforms" class="mb-6">
+          <el-checkbox label="douyin">抖音</el-checkbox>
+          <el-checkbox label="xiaohongshu">小红书</el-checkbox>
+          <el-checkbox label="weibo">微博</el-checkbox>
+        </el-checkbox-group>
+
+        <!-- 平台表单 -->
+        <div v-for="platform in selectedPlatforms" :key="platform" class="mb-8">
+          <el-card class="platform-form">
+            <template #header>
+              <div class="flex items-center">
+                <span class="text-lg font-medium">{{ getPlatformName(platform) }}</span>
+              </div>
+            </template>
+            
+            <el-form :model="publishForm[platform]" label-width="80px">
+              <el-form-item label="标题" required>
+                <el-input 
+                  v-model="publishForm[platform]!.title" 
+                  :placeholder="`请输入${getPlatformName(platform)}标题`"
+                />
+              </el-form-item>
+              
+              <el-form-item label="描述" required>
+                <el-input 
+                  v-model="publishForm[platform]!.description" 
+                  type="textarea" 
+                  :rows="4"
+                  :placeholder="`请输入${getPlatformName(platform)}描述`"
+                />
+              </el-form-item>
+            </el-form>
+          </el-card>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="publishDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handlePublishSubmit" :loading="publishLoading">确定发布</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 图片预览 -->
     <el-dialog v-model="previewVisible" title="预览">
       <img :src="previewUrl" alt="Preview" style="width: 100%" />
@@ -183,7 +243,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -209,6 +269,7 @@ import { ShopApi } from "@/api/shop/shopIndex";
 import { PsdPreview } from "@/components/PsdPreview";
 import { fontTemplateApi } from "@/api/fontTemplate";
 import ProductImageUpload from '@/components/ProductImageUpload.vue'
+import { publishToSocialMedia } from "@/api/client";
 
 // 查询条件
 const queryParams = reactive({
@@ -233,6 +294,7 @@ const gridOptions = ref({
       },
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
+    { title: "商品描述", field: "description", width: 240, showOverflow: true },
     { title: "商品类型", field: "type", width: 120, showOverflow: true },
     { title: "价格", field: "price", width: 100, showOverflow: true },
     { title: "促销价格", field: "salePrice", width: 100, showOverflow: true },
@@ -292,6 +354,46 @@ const previewUrl = ref('');
 const fileList = ref([]);
 const pendingFiles = ref([]);
 const existingImages = ref([]);
+const publishDialogVisible = ref(false);
+const publishLoading = ref(false);
+const currentPublishRow = ref<{ id?: string }>({});
+const productImageUploadRef = ref();
+
+// 定义平台表单类型
+interface PlatformForm {
+  title: string;
+  description: string;
+}
+
+interface PublishForm {
+  douyin: PlatformForm | null;
+  xiaohongshu: PlatformForm | null;
+  weibo: PlatformForm | null;
+}
+
+// 发布相关的状态
+const selectedPlatforms = ref<string[]>([]);
+const publishForm = ref<PublishForm>({
+  douyin: null,
+  xiaohongshu: null,
+  weibo: null
+});
+
+// 监听平台选择变化
+watch(selectedPlatforms, (newPlatforms) => {
+  // 重置所有平台表单为null
+  Object.keys(publishForm.value).forEach(platform => {
+    publishForm.value[platform as keyof PublishForm] = null;
+  });
+  
+  // 为选中的平台初始化表单
+  newPlatforms.forEach(platform => {
+    publishForm.value[platform as keyof PublishForm] = {
+      title: '',
+      description: ''
+    };
+  });
+});
 
 interface ProductForm {
   id?: string;
@@ -400,6 +502,7 @@ const submitForm = async () => {
     dialogVisible.value = false;
     resetQuery(); // 重置查询参数
     getList(); // 重新获取列表
+    productImageUploadRef.value?.reset(); // 重置图片上传组件
   } catch (e) {
     console.error('提交表单错误:', e);
     ElMessage.error("操作失败");
@@ -518,6 +621,8 @@ function handleEdit(row) {
   dialogVisible.value = true;
   dialogTitle.value = "编辑商品";
 
+  form.value = {}
+
   // 确保images是字符串数组
   const images = Array.isArray(row.images) ? row.images : [];
   
@@ -536,6 +641,76 @@ function handleEdit(row) {
   } else {
     fileList.value = [];
     pendingFiles.value = [];
+  }
+}
+
+// 处理发布按钮点击
+function handlePublish(row) {
+  currentPublishRow.value = row;
+  publishDialogVisible.value = true;
+}
+
+// 获取平台名称
+const getPlatformName = (platform: string) => {
+  const platformNames = {
+    douyin: '抖音',
+    xiaohongshu: '小红书',
+    weibo: '微博'
+  };
+  return platformNames[platform] || platform;
+};
+
+// 关闭发布弹窗
+function publishDialogClose() {
+  publishDialogVisible.value = false;
+  publishLoading.value = false;
+  currentPublishRow.value = {};
+  selectedPlatforms.value = [];
+  // 重置所有平台表单为null
+  Object.keys(publishForm.value).forEach(platform => {
+    publishForm.value[platform as keyof PublishForm] = null;
+  });
+}
+
+// 处理发布提交
+async function handlePublishSubmit() {
+  publishLoading.value = true;
+  try {
+    // 验证表单
+    if (selectedPlatforms.value.length === 0) {
+      ElMessage.warning('请至少选择一个发布平台');
+      return;
+    }
+
+    // 验证每个选中平台的表单
+    for (const platform of selectedPlatforms.value) {
+      const form = publishForm.value[platform as keyof PublishForm];
+      if (!form || !form.title || !form.description) {
+        ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+        return;
+      }
+    }
+
+    // 构建发布数据
+    const publishData = {
+      productId: currentPublishRow.value.id,
+      platforms: selectedPlatforms.value.map(platform => ({
+        platform,
+        ...publishForm.value[platform as keyof PublishForm]!
+      }))
+    };
+
+    // TODO: 调用发布API
+    console.log('发布数据:', publishData);
+
+    await publishToSocialMedia(publishData)
+    
+    ElMessage.success('发布成功');
+    publishDialogVisible.value = false;
+  } catch (error) {
+    ElMessage.error('发布失败');
+  } finally {
+    publishLoading.value = false;
   }
 }
 </script>
