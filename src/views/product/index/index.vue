@@ -315,7 +315,7 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    { title: "ID", field: "id", width: 140, showOverflow: true },
+    // { title: "ID", field: "id", width: 140, showOverflow: true },
     {
       title: "商品图片",
       field: "images",

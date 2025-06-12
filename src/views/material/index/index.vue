@@ -13,6 +13,7 @@
 
       <form-item label="按名称搜索">
         <el-input
+        
           v-model="queryParams.imageName"
           placeholder="请输入图片名称"
           style="width: 160px"
@@ -109,27 +110,9 @@
 
             <template #operationDefaultSlot="{ row }">
               <div class="table-operation-column">
-                <el-button size="small" type="primary" link @click="handleDetail(row)">
-                  详情
-                </el-button>
-                <el-button
-                  size="small"
-                  type="primary"
-                  link
-                  @click="
-                    () => {
-                      currentRow = row
-                      genPicturesModalVisible = true
-                    }
-                  "
-                >
-                  制作套图
-                </el-button>
-
                 <el-button type="default" link size="small" @click="handleDownload(row)">
                   下载
                 </el-button>
-
                 <el-button type="danger" link danger size="small" @click="handleDelete(row)">
                   删除
                 </el-button>
