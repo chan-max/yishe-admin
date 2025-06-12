@@ -161,6 +161,15 @@
             </el-form-item>
           </el-col>
 
+          <el-col :span="12">
+            <el-form-item label="商品番号" prop="code">
+              <div class="flex gap-2">
+                <el-input v-model="form.code" placeholder="请输入商品番号" />
+                <el-button type="primary" @click="handleGenerateCode">生成番号</el-button>
+              </div>
+            </el-form-item>
+          </el-col>
+
           <el-col :span="24">
             <el-form-item label="商品图片" prop="images">
               <ProductImageUpload 
@@ -198,7 +207,6 @@
           <el-checkbox label="xiaohongshu">小红书</el-checkbox>
           <el-checkbox label="weibo">微博</el-checkbox>
         </el-checkbox-group>
-
         <!-- 平台表单 -->
         <div v-for="platform in selectedPlatforms" :key="platform" class="mb-8">
           <el-card class="platform-form">
@@ -209,10 +217,10 @@
             </template>
             
             <el-form :model="publishForm[platform]" label-width="80px">
-              <el-form-item label="标题" required>
+              <el-form-item label="名称" required>
                 <el-input 
-                  v-model="publishForm[platform]!.title" 
-                  :placeholder="`请输入${getPlatformName(platform)}标题`"
+                  v-model="publishForm[platform]!.name" 
+                  :placeholder="`请输入${getPlatformName(platform)}名称`"
                 />
               </el-form-item>
               
@@ -223,6 +231,28 @@
                   :rows="4"
                   :placeholder="`请输入${getPlatformName(platform)}描述`"
                 />
+              </el-form-item>
+
+              <el-form-item label="商品图片">
+                <el-checkbox-group v-model="publishForm[platform]!.selectedImages">
+                  <div class="flex flex-wrap gap-4">
+                    <div v-for="(url, index) in publishForm[platform]!.images" :key="index" class="relative">
+                      <el-checkbox 
+                        :value="url"
+                        class="absolute top-2 left-2 z-10"
+                      />
+                      <el-image 
+                        :src="url"
+                        class="w-32 h-32 object-cover rounded"
+                        :preview-src-list="publishForm[platform]!.images"
+                        :initial-index="index"
+                      />
+                      <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                        {{ index + 1 }}/{{ publishForm[platform]!.images.length }}
+                      </div>
+                    </div>
+                  </div>
+                </el-checkbox-group>
               </el-form-item>
             </el-form>
           </el-card>
@@ -270,6 +300,7 @@ import { PsdPreview } from "@/components/PsdPreview";
 import { fontTemplateApi } from "@/api/fontTemplate";
 import ProductImageUpload from '@/components/ProductImageUpload.vue'
 import { publishToSocialMedia } from "@/api/client";
+import { generateProductCode } from "@/common/code";
 
 // 查询条件
 const queryParams = reactive({
@@ -356,13 +387,20 @@ const pendingFiles = ref([]);
 const existingImages = ref([]);
 const publishDialogVisible = ref(false);
 const publishLoading = ref(false);
-const currentPublishRow = ref<{ id?: string }>({});
+const currentPublishRow = ref<{ 
+  id?: string; 
+  name?: string;
+  description?: string;
+  images?: string[];
+}>({});
 const productImageUploadRef = ref();
 
 // 定义平台表单类型
 interface PlatformForm {
-  title: string;
+  name: string;
   description: string;
+  images: string[];
+  selectedImages: string[];
 }
 
 interface PublishForm {
@@ -388,15 +426,19 @@ watch(selectedPlatforms, (newPlatforms) => {
   
   // 为选中的平台初始化表单
   newPlatforms.forEach(platform => {
+    const images = currentPublishRow.value?.images || [];
     publishForm.value[platform as keyof PublishForm] = {
-      title: '',
-      description: ''
+      name: currentPublishRow.value?.name || '',
+      description: currentPublishRow.value?.description || '',
+      images: images,
+      selectedImages: [...images]
     };
   });
 });
 
 interface ProductForm {
   id?: string;
+  code: string;
   name: string;
   description: string;
   type: string;
@@ -414,6 +456,7 @@ interface ProductForm {
 }
 
 const form = ref<ProductForm>({
+  code: '',
   name: '',
   description: '',
   type: '',
@@ -464,6 +507,9 @@ const submitForm = async () => {
     const formData = { ...form.value };
     // 确保isLimitedEdition是数字类型
     formData.isLimitedEdition = Number(formData.isLimitedEdition);
+    // 确保价格是数字类型
+    formData.price = Number(formData.price);
+    formData.salePrice = Number(formData.salePrice);
     delete formData.file;
     delete formData.createTime;
     delete formData.updateTime;
@@ -648,6 +694,9 @@ function handleEdit(row) {
 function handlePublish(row) {
   currentPublishRow.value = row;
   publishDialogVisible.value = true;
+  
+  // 默认选中所有平台
+  selectedPlatforms.value = ['douyin', 'xiaohongshu', 'weibo'];
 }
 
 // 获取平台名称
@@ -664,7 +713,6 @@ const getPlatformName = (platform: string) => {
 function publishDialogClose() {
   publishDialogVisible.value = false;
   publishLoading.value = false;
-  currentPublishRow.value = {};
   selectedPlatforms.value = [];
   // 重置所有平台表单为null
   Object.keys(publishForm.value).forEach(platform => {
@@ -672,7 +720,7 @@ function publishDialogClose() {
   });
 }
 
-// 处理发布提交
+// 修改发布提交方法
 async function handlePublishSubmit() {
   publishLoading.value = true;
   try {
@@ -685,8 +733,12 @@ async function handlePublishSubmit() {
     // 验证每个选中平台的表单
     for (const platform of selectedPlatforms.value) {
       const form = publishForm.value[platform as keyof PublishForm];
-      if (!form || !form.title || !form.description) {
+      if (!form || !form.name || !form.description) {
         ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+        return;
+      }
+      if (form.selectedImages.length === 0) {
+        ElMessage.warning(`请至少选择一张${getPlatformName(platform)}的图片`);
         return;
       }
     }
@@ -696,12 +748,11 @@ async function handlePublishSubmit() {
       productId: currentPublishRow.value.id,
       platforms: selectedPlatforms.value.map(platform => ({
         platform,
-        ...publishForm.value[platform as keyof PublishForm]!
+        name: publishForm.value[platform as keyof PublishForm]!.name,
+        description: publishForm.value[platform as keyof PublishForm]!.description,
+        images: publishForm.value[platform as keyof PublishForm]!.selectedImages
       }))
     };
-
-    // TODO: 调用发布API
-    console.log('发布数据:', publishData);
 
     await publishToSocialMedia(publishData)
     
@@ -713,6 +764,11 @@ async function handlePublishSubmit() {
     publishLoading.value = false;
   }
 }
+
+// 添加生成番号的处理函数
+const handleGenerateCode = () => {
+  form.value.code = generateProductCode();
+};
 </script>
 
 <style lang="less">

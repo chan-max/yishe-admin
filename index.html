@@ -1,3 +1,11 @@
+<!--
+ * @Author: chan-max jackieontheway666@gmail.com
+ * @Date: 2025-06-09 18:32:06
+ * @LastEditors: chan-max jackieontheway666@gmail.com
+ * @LastEditTime: 2025-06-12 07:18:08
+ * @FilePath: /yishe-admin/index.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -25,7 +33,7 @@
           justify-content: center;
           align-items: center;
           flex-direction: column;
-          background: #f0f2f5;
+          background: #1a1a1a;
         }
 
         .app-loading .app-loading-wrap {
@@ -52,97 +60,35 @@
           margin: 0 auto 15px auto;
         }
 
-        .app-loading .app-loading-item {
-          position: relative;
-          display: inline-block;
-          width: 60px;
-          height: 60px;
-          vertical-align: middle;
-          border-radius: 50%;
+        .loader {
+          width: fit-content;
+          font-weight: bold;
+          font-family: monospace;
+          color: #ffffff;
+          text-shadow: 
+            0 0 0 rgb(255 0 0), 
+            0 0 0 rgb(0 255 0), 
+            0 0 0 rgb(0 0 255);
+          font-size: 30px;
+          animation: l32 1s infinite cubic-bezier(0.5,-2000,0.5,2000);
         }
 
-        .app-loading .app-loading-outter {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border: 4px solid #2d8cf0;
-          border-bottom: 0;
-          border-left-color: transparent;
-          border-radius: 50%;
-          animation: loader-outter 1s cubic-bezier(0.42, 0.61, 0.58, 0.41) infinite;
+        .loader:before {
+          content:"Loading...";
         }
 
-        .app-loading .app-loading-inner {
-          position: absolute;
-          top: calc(50% - 20px);
-          left: calc(50% - 20px);
-          width: 40px;
-          height: 40px;
-          border: 4px solid #87bdff;
-          border-right: 0;
-          border-top-color: transparent;
-          border-radius: 50%;
-          animation: loader-inner 1s cubic-bezier(0.42, 0.61, 0.58, 0.41) infinite;
-        }
-
-        @-webkit-keyframes loader-outter {
-          0% {
-            -webkit-transform: rotate(0deg);
-            transform: rotate(0deg);
-          }
-
-          100% {
-            -webkit-transform: rotate(360deg);
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes loader-outter {
-          0% {
-            -webkit-transform: rotate(0deg);
-            transform: rotate(0deg);
-          }
-
-          100% {
-            -webkit-transform: rotate(360deg);
-            transform: rotate(360deg);
-          }
-        }
-
-        @-webkit-keyframes loader-inner {
-          0% {
-            -webkit-transform: rotate(0deg);
-            transform: rotate(0deg);
-          }
-
-          100% {
-            -webkit-transform: rotate(-360deg);
-            transform: rotate(-360deg);
-          }
-        }
-
-        @keyframes loader-inner {
-          0% {
-            -webkit-transform: rotate(0deg);
-            transform: rotate(0deg);
-          }
-
-          100% {
-            -webkit-transform: rotate(-360deg);
-            transform: rotate(-360deg);
+        @keyframes l32{
+          25%,100% {
+            text-shadow: 
+              0.03px -0.01px 0.01px rgb(255 0 0), 
+              0.02px  0.02px 0     rgb(0 255 0), 
+              -0.02px  0.02px 0     rgb(0 0 255);
           }
         }
       </style>
       <div class="app-loading">
         <div class="app-loading-wrap">
-          <div class="app-loading-title">
-            <img src="/logo.gif" class="app-loading-logo" alt="Logo" />
-            <div class="app-loading-title">%VITE_APP_TITLE%</div>
-          </div>
-          <div class="app-loading-item">
-            <div class="app-loading-outter"></div>
-            <div class="app-loading-inner"></div>
-          </div>
+          <div class="loader"></div>
         </div>
       </div>
     </div>

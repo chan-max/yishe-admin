@@ -161,7 +161,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       hidden: false,
       title: '设计资源',
-      icon: 'ep:home-filled',
+      icon: 'ep:collection',
       noCache: false,
       affix: true
     },
