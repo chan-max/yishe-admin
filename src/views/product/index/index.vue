@@ -473,8 +473,8 @@ const form = ref<ProductForm>({
 
 const rules = {
   name: [{ required: true, message: "请输入商品名称", trigger: "blur" }],
-  description: [{ required: true, message: "请输入商品描述", trigger: "blur" }],
-  type: [{ required: true, message: "请选择商品类型", trigger: "blur" }],
+  description: [{ required: false, message: "请输入商品描述", trigger: "blur" }],
+  type: [{ required: false, message: "请选择商品类型", trigger: "blur" }],
   price: [{ required: true, message: "请输入商品价格", trigger: "blur" }],
 };
 
@@ -523,12 +523,17 @@ const submitForm = async () => {
           return result.url;
         } catch (error) {
           ElMessage.error(`图片 ${file.name} 上传失败`);
-          return null;
+          throw error; // 抛出错误，中断整个上传过程
         }
       });
       
-      const results = await Promise.all(uploadPromises);
-      newImageUrls = results.filter(url => url !== null);
+      try {
+        const results = await Promise.all(uploadPromises);
+        newImageUrls = results.filter(url => url !== null);
+      } catch (error) {
+        ElMessage.error('图片上传失败，请重试');
+        return; // 如果上传失败，直接返回，不继续执行创建/更新操作
+      }
     }
 
     // 合并已有图片和新上传的图片URL
