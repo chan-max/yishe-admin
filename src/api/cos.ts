@@ -2,11 +2,12 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-05-24 15:47:05
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-06-02 05:39:11
+ * @LastEditTime: 2025-06-18 07:22:31
  * @FilePath: /yishe-admin/src/api/cos.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 
+import { generateUUID } from '@/utils'
 import COS from 'cos-js-sdk-v5'
 import { saveAs } from 'file-saver'
 
@@ -37,7 +38,7 @@ export const getCOS = () => {
 
 export async function uploadToCOS({
   file,
-  key = new Date().getTime() + '_1s_' + crypto.randomUUID()
+  key = new Date().getTime() + '_1s_' + generateUUID()
 }) {
   const cos = getCOS()
   try {
