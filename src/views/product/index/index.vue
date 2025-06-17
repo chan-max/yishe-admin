@@ -500,6 +500,8 @@ const handleFilesChange = (files) => {
 }
 
 const submitForm = async () => {
+
+
   submitLoading.value = true;
   try {
     await formRef.value.validate();
@@ -517,11 +519,15 @@ const submitForm = async () => {
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     if (pendingFiles.value.length > 0) {
+
+
+
       const uploadPromises = pendingFiles.value.map(async (file) => {
         try {
           const result = await uploadToCOS({ file });
           return result.url;
         } catch (error) {
+          console.log('error' ,error)
           ElMessage.error(`图片 ${file.name} 上传失败`);
           throw error; // 抛出错误，中断整个上传过程
         }
@@ -531,6 +537,8 @@ const submitForm = async () => {
         const results = await Promise.all(uploadPromises);
         newImageUrls = results.filter(url => url !== null);
       } catch (error) {
+
+        console.log('error' ,error)
         ElMessage.error('图片上传失败，请重试');
         return; // 如果上传失败，直接返回，不继续执行创建/更新操作
       }
