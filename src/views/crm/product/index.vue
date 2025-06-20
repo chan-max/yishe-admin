@@ -96,14 +96,7 @@
       />
       <el-table-column label="操作" align="center" fixed="right" width="160">
         <template #default="scope">
-          <el-button
-            link
-            type="primary"
-            @click="openSocialMediaDialog()"
-      
-          >
-            发布到社交媒体
-          </el-button>
+          
           <el-button
             link
             type="primary"

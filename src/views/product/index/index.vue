@@ -45,6 +45,15 @@
               删除
             </el-button>
 
+            <el-button 
+              :type="row.isPublish ? 'warning' : 'success'" 
+              link 
+              size="small" 
+              @click="handleTogglePublish(row)"
+            >
+              {{ row.isPublish ? '下架' : '发布' }}
+            </el-button>
+
             <el-button type="success" link size="small" @click="handlePublish(row)">
               发布到社交媒体
             </el-button>
@@ -313,6 +322,9 @@ const queryParams = reactive({
 
 const gridOptions = ref({
   ...commonGridOptions,
+  rowClassName: ({ row }) => {
+    return row.isPublish ? '' : 'unpublished-row';
+  },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
     // { title: "ID", field: "id", width: 140, showOverflow: true },
@@ -336,6 +348,13 @@ const gridOptions = ref({
       width: 100, 
       showOverflow: true,
       formatter: ({ cellValue }) => cellValue === 1 ? '是' : '否'
+    },
+    { 
+      title: "发布状态", 
+      field: "isPublish", 
+      width: 100, 
+      showOverflow: true,
+      formatter: ({ cellValue }) => cellValue ? '已发布' : '未发布'
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
@@ -450,6 +469,7 @@ interface ProductForm {
   tags: string;
   isActive: boolean;
   isLimitedEdition: number;
+  isPublish?: boolean;
   createTime?: Date;
   updateTime?: Date;
   file: any;
@@ -468,6 +488,7 @@ const form = ref<ProductForm>({
   tags: '',
   isActive: true,
   isLimitedEdition: 0,
+  isPublish: false,
   file: null,
 });
 
@@ -500,8 +521,6 @@ const handleFilesChange = (files) => {
 }
 
 const submitForm = async () => {
-
-
   submitLoading.value = true;
   try {
     await formRef.value.validate();
@@ -519,9 +538,6 @@ const submitForm = async () => {
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     if (pendingFiles.value.length > 0) {
-
-
-
       const uploadPromises = pendingFiles.value.map(async (file) => {
         try {
           const result = await uploadToCOS({ file });
@@ -537,7 +553,6 @@ const submitForm = async () => {
         const results = await Promise.all(uploadPromises);
         newImageUrls = results.filter(url => url !== null);
       } catch (error) {
-
         console.log('error' ,error)
         ElMessage.error('图片上传失败，请重试');
         return; // 如果上传失败，直接返回，不继续执行创建/更新操作
@@ -657,6 +672,7 @@ function handleAdd() {
   dialogVisible.value = true;
   dialogTitle.value = "新建商品";
   form.value = {
+    code: '',
     name: '',
     description: '',
     type: '',
@@ -668,6 +684,7 @@ function handleAdd() {
     tags: '',
     isActive: true,
     isLimitedEdition: 0,
+    isPublish: false,
     file: null,
   };
   fileList.value = [];
@@ -679,8 +696,6 @@ function handleEdit(row) {
   isEdit.value = true;
   dialogVisible.value = true;
   dialogTitle.value = "编辑商品";
-
-  form.value = {}
 
   // 确保images是字符串数组
   const images = Array.isArray(row.images) ? row.images : [];
@@ -700,6 +715,35 @@ function handleEdit(row) {
   } else {
     fileList.value = [];
     pendingFiles.value = [];
+  }
+}
+
+// 处理发布/下架切换
+async function handleTogglePublish(row) {
+  const action = row.isPublish ? '下架' : '发布';
+  try {
+    await ElMessageBox.confirm(
+      `确认${action}商品"${row.name}"吗？`,
+      `${action}确认`,
+      {
+        confirmButtonText: "确认",
+        cancelButtonText: "取消",
+        type: "warning",
+      }
+    );
+    
+    // 调用更新接口，传递isPublish参数
+    await updateProduct({
+      ...row,
+      isPublish: !row.isPublish
+    });
+    
+    ElMessage.success(`${action}成功`);
+    getList(); // 重新获取列表
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(`${action}失败`);
+    }
   }
 }
 
@@ -789,11 +833,11 @@ const handleGenerateCode = () => {
   position: relative;
   padding: 0 20px;
   
-  :deep(.el-carousel__container) {
+  .el-carousel__container {
     margin: 0 -20px;
   }
 
-  :deep(.el-carousel__arrow) {
+  .el-carousel__arrow {
     background-color: rgba(0, 0, 0, 0.3);
     border-radius: 50%;
     width: 24px;
@@ -805,10 +849,10 @@ const handleGenerateCode = () => {
       font-size: 14px;
     }
   }
-  :deep(.el-carousel__arrow--left) {
+  .el-carousel__arrow--left {
     left: 0;
   }
-  :deep(.el-carousel__arrow--right) {
+  .el-carousel__arrow--right {
     right: 0;
   }
 }
@@ -830,6 +874,23 @@ const handleGenerateCode = () => {
         max-width: 90vw;
         max-height: 90vh;
       }
+    }
+  }
+}
+
+// 未发布商品行的样式
+.unpublished-row {
+  opacity: 0.4;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+  
+  .el-button {
+    opacity: 0.8;
+    
+    &:hover {
+      opacity: 1;
     }
   }
 }

@@ -13,6 +13,7 @@ export interface ProductVO {
   specifications: string
   tags: string
   isActive: boolean
+  isPublish?: boolean // 是否已发布
   createTime: Date
   updateTime: Date
 }
