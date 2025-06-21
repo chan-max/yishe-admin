@@ -130,6 +130,12 @@
             </el-form-item>
           </el-col>
 
+          <el-col :span="24">
+            <el-form-item label="关键词" prop="keywords">
+              <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
+            </el-form-item>
+          </el-col>
+
           <el-col :span="12">
             <el-form-item label="商品价格" prop="price">
               <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
@@ -338,6 +344,7 @@ const gridOptions = ref({
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: true },
+    { title: "关键词", field: "keywords", width: 200, showOverflow: true },
     { title: "商品类型", field: "type", width: 120, showOverflow: true },
     { title: "价格", field: "price", width: 100, showOverflow: true },
     { title: "促销价格", field: "salePrice", width: 100, showOverflow: true },
@@ -460,6 +467,7 @@ interface ProductForm {
   code: string;
   name: string;
   description: string;
+  keywords: string;
   type: string;
   images: string[];
   price: number;
@@ -479,6 +487,7 @@ const form = ref<ProductForm>({
   code: '',
   name: '',
   description: '',
+  keywords: '',
   type: '',
   images: [] as string[],
   price: 0,
@@ -675,6 +684,7 @@ function handleAdd() {
     code: '',
     name: '',
     description: '',
+    keywords: '',
     type: '',
     images: [] as string[],
     price: 0,

@@ -35,6 +35,7 @@ export interface Spu {
   name?: string // 商品名称
   categoryId?: number // 商品分类
   keyword?: string // 关键字
+  keywords?: string // 关键词标签，用逗号分隔
   unit?: number | undefined // 单位
   picUrl?: string // 商品封面图
   sliderPicUrls?: string[] // 商品轮播图

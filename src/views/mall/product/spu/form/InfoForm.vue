@@ -37,6 +37,13 @@
     <el-form-item label="商品关键字" prop="keyword">
       <el-input v-model="formData.keyword" class="w-80!" placeholder="请输入商品关键字" />
     </el-form-item>
+    <el-form-item label="关键词标签" prop="keywords">
+      <KeywordsInput 
+        v-model="formData.keywords" 
+        placeholder="请输入关键词，用逗号分隔，如：热门,推荐,新品"
+        :show-tags="true"
+      />
+    </el-form-item>
     <el-form-item label="商品简介" prop="introduction">
       <el-input
         v-model="formData.introduction"
@@ -67,6 +74,7 @@ import * as ProductCategoryApi from '@/api/mall/product/category'
 import { CategoryVO } from '@/api/mall/product/category'
 import * as ProductBrandApi from '@/api/mall/product/brand'
 import { BrandVO } from '@/api/mall/product/brand'
+import KeywordsInput from '@/components/KeywordsInput'
 
 defineOptions({ name: 'ProductSpuInfoForm' })
 const props = defineProps({
@@ -87,12 +95,14 @@ const formData = reactive<Spu>({
   picUrl: '', // 商品封面图
   sliderPicUrls: [], // 商品轮播图
   introduction: '', // 商品简介
-  brandId: undefined // 商品品牌
+  brandId: undefined, // 商品品牌
+  keywords: '' // 关键词标签
 })
 const rules = reactive({
   name: [required],
   categoryId: [required],
   keyword: [required],
+  keywords: [required],
   introduction: [required],
   picUrl: [required],
   sliderPicUrls: [required],

@@ -20,6 +20,31 @@ const crudSchemas = reactive<CrudSchema[]>([
     }
   },
   {
+    label: '关键词标签',
+    field: 'keywords',
+    isSearch: true,
+    search: {
+      componentProps: {
+        placeholder: '请输入关键词搜索',
+        style: {
+          width: '240px'
+        }
+      }
+    },
+    form: {
+      component: 'Input',
+      componentProps: {
+        placeholder: '请输入关键词，用逗号分隔，如：热门,推荐,新品',
+        maxlength: 200,
+        showWordLimit: true
+      },
+      labelMessage: '多个关键词请用逗号分隔'
+    },
+    table: {
+      width: 200
+    }
+  },
+  {
     label: '积分商城活动商品',
     field: 'spuId',
     isTable: true,
