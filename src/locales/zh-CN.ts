@@ -158,7 +158,8 @@ export default {
     socialLogin: '社交登录',
     home: '首页',
     analysis: '分析页',
-    workplace: '工作台'
+    workplace: '工作台',
+    draft: '草稿管理'
   },
   analysis: {
     newUser: '新增用户',

@@ -178,6 +178,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'draft',
+        component: () => import('@/views/draft/index/index.vue'),
+        name: 'Draft',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '草稿图'
+        }
+      },
+      {
         path: 'font',
         component: () => import('@/views/material/fontTemplate/index.vue'),
         name: 'Font',

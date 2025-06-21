@@ -86,6 +86,47 @@ export function deleteCOSFile(key) {
   })
 }
 
+// 复制COS对象
+export function copyCOSObject(sourceUrl, targetKey = null) {
+  return new Promise((resolve, reject) => {
+    const cos = getCOS()
+    
+    // 从URL中提取源对象的key
+    let sourceKey = sourceUrl
+    if (sourceUrl.startsWith('http')) {
+      // 移除域名部分，只保留路径
+      const urlObj = new URL(sourceUrl)
+      sourceKey = urlObj.pathname.substring(1) // 移除开头的斜杠
+    }
+    
+    // 如果没有指定目标key，则生成一个新的
+    if (!targetKey) {
+      targetKey = new Date().getTime() + '_1s_' + generateUUID()
+    }
+    
+    cos.copyObject(
+      {
+        Bucket: cos.options.Bucket,
+        Region: cos.options.Region,
+        Key: targetKey,
+        CopySource: `${cos.options.Bucket}.cos.${cos.options.Region}.myqcloud.com/${sourceKey}`
+      },
+      function (err, data) {
+        if (err) {
+          console.error('复制文件失败:', err)
+          reject(err)
+        } else {
+          console.log('复制文件成功:', data)
+          resolve({
+            url: `https://${data.Location}`,
+            key: targetKey
+          })
+        }
+      }
+    )
+  })
+}
+
 function removeProtocol(url) {
   if (url.startsWith('http://')) {
     return url.replace('http://', '')

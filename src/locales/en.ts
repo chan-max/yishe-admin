@@ -156,7 +156,8 @@ export default {
     login: 'Login',
     home: 'Home',
     analysis: 'Analysis',
-    workplace: 'Workplace'
+    workplace: 'Workplace',
+    draft: 'Draft Management'
   },
   analysis: {
     newUser: 'New user',
