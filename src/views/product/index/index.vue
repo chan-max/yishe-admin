@@ -1,5 +1,55 @@
 <template>
   <div>
+    <!-- 社交媒体登录状态检测区域 -->
+    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-medium text-gray-700">社交媒体登录状态</h3>
+        <el-button 
+          type="primary" 
+          :icon="Refresh" 
+          @click="checkLoginStatus" 
+          :loading="checkingStatus"
+          size="small"
+        >
+          检测登录状态
+        </el-button>
+      </div>
+      
+      <div v-if="loginStatus" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div 
+          v-for="(status, platform) in loginStatus" 
+          :key="platform"
+          class="flex items-center p-3 bg-white rounded border"
+          :class="{
+            'border-green-200 bg-green-50': status.isLoggedIn,
+            'border-red-200 bg-red-50': !status.isLoggedIn && status.status === 'error',
+            'border-yellow-200 bg-yellow-50': !status.isLoggedIn && status.status !== 'error'
+          }"
+        >
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <div 
+                class="w-2 h-2 rounded-full"
+                :class="{
+                  'bg-green-500': status.isLoggedIn,
+                  'bg-red-500': !status.isLoggedIn && status.status === 'error',
+                  'bg-yellow-500': !status.isLoggedIn && status.status !== 'error'
+                }"
+              ></div>
+              <span class="font-medium text-sm text-black">{{ getPlatformDisplayName(String(platform)) }}</span>
+            </div>
+            <div class="text-xs text-gray-600">
+              {{ status.isLoggedIn ? '已登录' : status.message || '未登录' }}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div v-else class="text-center text-gray-500 py-4">
+        点击"检测登录状态"按钮查看各平台登录情况
+      </div>
+    </div>
+
     <div class="py-4 flex justify-between gap-4 items-center">
       <!-- 导出按钮 -->
       <div style="flex: 1"></div>
@@ -292,16 +342,13 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
-import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
+import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Search,
   Plus,
   Delete,
-  TopRight,
-  Edit,
-  CirclePlusFilled,
-  CirclePlus,
+  Refresh,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement } from "@/common/download";
@@ -314,8 +361,18 @@ import { ShopApi } from "@/api/shop/shopIndex";
 import { PsdPreview } from "@/components/PsdPreview";
 import { fontTemplateApi } from "@/api/fontTemplate";
 import ProductImageUpload from '@/components/ProductImageUpload.vue'
-import { publishToSocialMedia } from "@/api/client";
+import { publishToSocialMedia, checkSocialMediaLogin } from "@/api/client";
 import { generateProductCode } from "@/common/code";
+
+// 社交媒体登录状态相关
+interface PlatformStatus {
+  isLoggedIn: boolean;
+  status: string;
+  message: string;
+}
+
+const loginStatus = ref<{ [key: string]: PlatformStatus } | null>(null);
+const checkingStatus = ref(false);
 
 // 查询条件
 const queryParams = reactive({
@@ -396,7 +453,6 @@ const gridOptions = ref({
 
 const dataSource = ref([]);
 const loading = ref(false);
-const open = ref(false);
 const ids = ref([]);
 const single = ref(false);
 const total = ref(0);
@@ -609,7 +665,6 @@ const copyUrl = (url: string) => {
     });
 };
 
-getList() 
 async function getList() {
   loading.value = true;
 
@@ -776,6 +831,18 @@ const getPlatformName = (platform: string) => {
   return platformNames[platform] || platform;
 };
 
+// 获取平台显示名称（包含更多平台）
+const getPlatformDisplayName = (platform: string) => {
+  const platformNames = {
+    douyin: '抖音',
+    xiaohongshu: '小红书',
+    weibo: '微博',
+    kuaishou: '快手',
+    bilibili: 'B站'
+  };
+  return platformNames[platform] || platform;
+};
+
 // 关闭发布弹窗
 function publishDialogClose() {
   publishDialogVisible.value = false;
@@ -835,6 +902,20 @@ async function handlePublishSubmit() {
 // 添加生成番号的处理函数
 const handleGenerateCode = () => {
   form.value.code = generateProductCode();
+};
+
+// 检查社交媒体登录状态
+const checkLoginStatus = async () => {
+  checkingStatus.value = true;
+  try {
+    const res = await checkSocialMediaLogin();
+    loginStatus.value = res;
+    ElMessage.success("登录状态检查完成");
+  } catch (error) {
+    ElMessage.error("登录状态检查失败");
+  } finally {
+    checkingStatus.value = false;
+  }
 };
 </script>
 
