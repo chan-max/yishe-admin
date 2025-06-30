@@ -1,53 +1,40 @@
 <template>
   <div>
     <!-- 社交媒体登录状态检测区域 -->
-    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="text-lg font-medium text-gray-700">社交媒体登录状态</h3>
-        <el-button 
-          type="primary" 
-          :icon="Refresh" 
-          @click="checkLoginStatus" 
-          :loading="checkingStatus"
-          size="small"
-        >
-          检测登录状态
-        </el-button>
-      </div>
-      
-      <div v-if="loginStatus" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div class="mb-2 px-4 py-2 bg-gray-900 rounded-lg flex items-center min-h-[48px]">
+      <h3 class="text-base font-medium text-gray-100 mr-4 whitespace-nowrap">社交媒体登录状态</h3>
+      <div v-if="loginStatus" class="flex gap-2 flex-1">
         <div 
           v-for="(status, platform) in loginStatus" 
           :key="platform"
-          class="flex items-center p-3 bg-white rounded border"
-          :class="{
-            'border-green-200 bg-green-50': status.isLoggedIn,
-            'border-red-200 bg-red-50': !status.isLoggedIn && status.status === 'error',
-            'border-yellow-200 bg-yellow-50': !status.isLoggedIn && status.status !== 'error'
-          }"
+          class="flex items-center px-3 py-1 rounded border min-w-[120px]"
+          :class="[
+            status.isLoggedIn ? 'border-green-400 bg-green-900' : (status.status === 'error' ? 'border-red-400 bg-red-900' : 'border-yellow-400 bg-yellow-900'),
+            'bg-opacity-80'
+          ]"
         >
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <div 
-                class="w-2 h-2 rounded-full"
-                :class="{
-                  'bg-green-500': status.isLoggedIn,
-                  'bg-red-500': !status.isLoggedIn && status.status === 'error',
-                  'bg-yellow-500': !status.isLoggedIn && status.status !== 'error'
-                }"
-              ></div>
-              <span class="font-medium text-sm text-black">{{ getPlatformDisplayName(String(platform)) }}</span>
-            </div>
-            <div class="text-xs text-gray-600">
-              {{ status.isLoggedIn ? '已登录' : status.message || '未登录' }}
-            </div>
-          </div>
+          <div class="w-2 h-2 rounded-full mr-2"
+            :class="{
+              'bg-green-400': status.isLoggedIn,
+              'bg-red-400': !status.isLoggedIn && status.status === 'error',
+              'bg-yellow-400': !status.isLoggedIn && status.status !== 'error'
+            }"
+          ></div>
+          <span class="font-medium text-sm text-gray-100 mr-1">{{ getPlatformDisplayName(String(platform)) }}</span>
+          <span class="text-xs text-gray-300">{{ status.isLoggedIn ? '已登录' : status.message || '未登录' }}</span>
         </div>
       </div>
-      
-      <div v-else class="text-center text-gray-500 py-4">
-        点击"检测登录状态"按钮查看各平台登录情况
-      </div>
+      <div v-else class="flex-1 text-gray-400 text-sm pl-2">点击"检测登录状态"按钮查看各平台登录情况</div>
+      <el-button 
+        type="primary" 
+        :icon="Refresh" 
+        @click="checkLoginStatus" 
+        :loading="checkingStatus"
+        size="small"
+        class="dark-btn ml-4"
+      >
+        检测登录状态
+      </el-button>
     </div>
 
     <div class="py-4 flex justify-between gap-4 items-center">
@@ -984,5 +971,15 @@ const checkLoginStatus = async () => {
       opacity: 1;
     }
   }
+}
+
+.dark-btn {
+  background: linear-gradient(90deg, #232526 0%, #414345 100%);
+  color: #fff !important;
+  border: none;
+}
+.dark-btn:hover {
+  background: linear-gradient(90deg, #414345 0%, #232526 100%);
+  color: #fff !important;
 }
 </style>
