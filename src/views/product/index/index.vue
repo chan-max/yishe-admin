@@ -269,19 +269,19 @@
             </template>
             
             <el-form :model="publishForm[platform]" label-width="80px">
-              <el-form-item label="名称" required>
+              <el-form-item v-if="platform !== 'weibo'" label="标题" required>
                 <el-input 
-                  v-model="publishForm[platform]!.name" 
-                  :placeholder="`请输入${getPlatformName(platform)}名称`"
+                  v-model="publishForm[platform]!.title" 
+                  :placeholder="`请输入${getPlatformName(platform)}标题`"
                 />
               </el-form-item>
               
-              <el-form-item label="描述" required>
+              <el-form-item label="内容" required>
                 <el-input 
-                  v-model="publishForm[platform]!.description" 
+                  v-model="publishForm[platform]!.content" 
                   type="textarea" 
                   :rows="4"
-                  :placeholder="`请输入${getPlatformName(platform)}描述`"
+                  :placeholder="`请输入${getPlatformName(platform)}内容`"
                 />
               </el-form-item>
 
@@ -314,6 +314,74 @@
       <template #footer>
         <el-button @click="publishDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handlePublishSubmit" :loading="publishLoading">确定发布</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 发布结果弹窗 -->
+    <el-dialog
+      title="发布结果"
+      v-model="publishResultVisible"
+      width="600px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      align-center
+    >
+      <div class="p-4">
+        <div v-if="publishResults.length > 0">
+          <div v-for="result in publishResults" :key="result.platform" class="mb-4">
+            <div class="flex items-center justify-between p-3 rounded-lg border" 
+                 :class="{
+                   'border-green-200 bg-green-50': result.success,
+                   'border-red-200 bg-red-50': !result.success
+                 }">
+              <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full mr-3"
+                     :class="{
+                       'bg-green-500': result.success,
+                       'bg-red-500': !result.success
+                     }"></div>
+                <span class="font-medium">{{ getPlatformName(result.platform) }}</span>
+              </div>
+              <div class="text-right">
+                <div class="font-medium"
+                     :class="{
+                       'text-green-600': result.success,
+                       'text-red-600': !result.success
+                     }">
+                  {{ result.success ? '发布成功' : '发布失败' }}
+                </div>
+                <div class="text-sm text-gray-500 mt-1">{{ result.message }}</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 总体结果 -->
+          <div class="mt-4 p-3 rounded-lg border"
+               :class="{
+                 'border-green-200 bg-green-50': publishSummary.success,
+                 'border-yellow-200 bg-yellow-50': publishSummary.partial,
+                 'border-red-200 bg-red-50': publishSummary.failed
+               }">
+            <div class="text-center">
+              <div class="font-medium"
+                   :class="{
+                     'text-green-600': publishSummary.success,
+                     'text-yellow-600': publishSummary.partial,
+                     'text-red-600': publishSummary.failed
+                   }">
+                {{ publishSummary.message }}
+              </div>
+              <div class="text-sm text-gray-500 mt-1">
+                成功：{{ publishSummary.successCount }} 个，失败：{{ publishSummary.failCount }} 个
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button type="primary" @click="publishResultVisible = false">确认</el-button>
       </template>
     </el-dialog>
 
@@ -464,10 +532,48 @@ const currentPublishRow = ref<{
 }>({});
 const productImageUploadRef = ref();
 
+// 发布结果相关
+const publishResultVisible = ref(false);
+const publishResults = ref<Array<{
+  platform: string;
+  success: boolean;
+  message: string;
+  data?: any;
+}>>([]);
+
+// 发布结果汇总
+const publishSummary = computed(() => {
+  if (publishResults.value.length === 0) {
+    return {
+      success: false,
+      partial: false,
+      failed: false,
+      message: '',
+      successCount: 0,
+      failCount: 0
+    };
+  }
+  
+  const successCount = publishResults.value.filter(r => r.success).length;
+  const failCount = publishResults.value.filter(r => !r.success).length;
+  const total = publishResults.value.length;
+  
+  return {
+    success: successCount === total,
+    partial: successCount > 0 && failCount > 0,
+    failed: failCount === total,
+    message: successCount === total ? '所有平台发布成功！' : 
+             successCount > 0 ? `部分平台发布成功` : 
+             '所有平台发布失败',
+    successCount,
+    failCount
+  };
+});
+
 // 定义平台表单类型
 interface PlatformForm {
-  name: string;
-  description: string;
+  title: string;
+  content: string;
   images: string[];
   selectedImages: string[];
 }
@@ -497,8 +603,8 @@ watch(selectedPlatforms, (newPlatforms) => {
   newPlatforms.forEach(platform => {
     const images = currentPublishRow.value?.images || [];
     publishForm.value[platform as keyof PublishForm] = {
-      name: currentPublishRow.value?.name || '',
-      description: currentPublishRow.value?.description || '',
+      title: currentPublishRow.value?.name || '',
+      content: currentPublishRow.value?.description || '',
       images: images,
       selectedImages: [...images]
     };
@@ -652,6 +758,7 @@ const copyUrl = (url: string) => {
     });
 };
 
+getList()
 async function getList() {
   loading.value = true;
 
@@ -839,6 +946,8 @@ function publishDialogClose() {
   Object.keys(publishForm.value).forEach(platform => {
     publishForm.value[platform as keyof PublishForm] = null;
   });
+  // 清空发布结果
+  publishResults.value = [];
 }
 
 // 修改发布提交方法
@@ -854,7 +963,11 @@ async function handlePublishSubmit() {
     // 验证每个选中平台的表单
     for (const platform of selectedPlatforms.value) {
       const form = publishForm.value[platform as keyof PublishForm];
-      if (!form || !form.name || !form.description) {
+      if (platform !== 'weibo' && (!form || !form.title || !form.content)) {
+        ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+        return;
+      }
+      if (platform === 'weibo' && (!form || !form.content)) {
         ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
         return;
       }
@@ -867,20 +980,52 @@ async function handlePublishSubmit() {
     // 构建发布数据
     const publishData = {
       productId: currentPublishRow.value.id,
-      platforms: selectedPlatforms.value.map(platform => ({
-        platform,
-        name: publishForm.value[platform as keyof PublishForm]!.name,
-        description: publishForm.value[platform as keyof PublishForm]!.description,
-        images: publishForm.value[platform as keyof PublishForm]!.selectedImages
-      }))
+      platforms: selectedPlatforms.value.map(platform => {
+        const base = {
+          platform,
+          content: publishForm.value[platform as keyof PublishForm]!.content,
+          images: publishForm.value[platform as keyof PublishForm]!.selectedImages
+        };
+        if (platform !== 'weibo') {
+          return {
+            ...base,
+            title: publishForm.value[platform as keyof PublishForm]!.title
+          };
+        }
+        return base;
+      })
     };
 
-    await publishToSocialMedia(publishData)
+    const response = await publishToSocialMedia(publishData);
     
-    ElMessage.success('发布成功');
+    // 处理发布结果
+    if (response && response && response.results) {
+      const results = response.results;
+        
+      // 存储发布结果
+      publishResults.value = results.map(result => ({
+        platform: result.platform,
+        success: result.success,
+        message: result.message,
+        data: result.data
+      }));
+      
+      // 显示发布结果弹窗
+      publishResultVisible.value = true;
+    } else {
+      // 如果没有详细结果，显示简单提示
+      publishResults.value = [{
+        platform: 'unknown',
+        success: false,
+        message: '发布请求已提交，但未收到详细结果'
+      }];
+      publishResultVisible.value = true;
+    }
+    
     publishDialogVisible.value = false;
   } catch (error) {
-    ElMessage.error('发布失败');
+    console.error('发布失败:', error);
+    ElMessage.error('发布失败，请重试');
   } finally {
     publishLoading.value = false;
   }
