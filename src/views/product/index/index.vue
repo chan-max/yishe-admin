@@ -126,6 +126,20 @@
             <span v-else class="text-gray-400">暂无图片</span>
           </div>
         </template>
+
+        <template #videoDefaultSlot="{ row }">
+          <div class="flex items-center gap-2">
+            <template v-if="row.videos && row.videos.length > 0">
+              <div v-for="(url, index) in row.videos" :key="index" class="relative cursor-pointer" @click="handleVideoPreview(row.videos, index)">
+                <video :src="url" class="w-28 h-28 object-cover rounded border border-gray-400" muted preload="metadata" style="width:120px;height:120px;object-fit:cover;border-radius:4px;background:#000;" />
+                <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                  {{ index + 1 }}/{{ row.videos.length }}
+                </div>
+              </div>
+            </template>
+            <span v-else class="text-gray-400">暂无视频</span>
+          </div>
+        </template>
       </vxe-grid>
     </div>
 
@@ -229,6 +243,17 @@
                 v-model="form.images" 
                 :max-count="10" 
                 @files-change="handleFilesChange"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="商品视频" prop="videos">
+              <ProductVideoUpload
+                ref="productVideoUploadRef"
+                v-model="form.videos"
+                :max-count="5"
+                @files-change="handleVideoFilesChange"
               />
             </el-form-item>
           </el-col>
@@ -391,6 +416,29 @@
     <el-dialog v-model="previewVisible" title="预览">
       <img :src="previewUrl" alt="Preview" style="width: 100%" />
     </el-dialog>
+
+    <!-- 视频预览弹窗 -->
+    <el-dialog v-model="videoPreviewVisible" title="视频预览" width="600px" :close-on-click-modal="true">
+      <div v-if="videoPreviewList.length > 0" class="flex flex-col items-center">
+        <video
+          :src="videoPreviewList[videoPreviewIndex]"
+          controls
+          autoplay
+          style="width: 100%; max-height: 400px; border-radius: 8px; background: #000;"
+        />
+        <div class="flex gap-2 mt-2">
+          <el-button
+            v-for="(url, idx) in videoPreviewList"
+            :key="idx"
+            size="small"
+            :type="idx === videoPreviewIndex ? 'primary' : 'default'"
+            @click="videoPreviewIndex = idx"
+          >
+            {{ idx + 1 }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -418,6 +466,7 @@ import { ShopApi } from "@/api/shop/shopIndex";
 import { PsdPreview } from "@/components/PsdPreview";
 import { fontTemplateApi } from "@/api/fontTemplate";
 import ProductImageUpload from '@/components/ProductImageUpload.vue'
+import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
 import { publishToSocialMedia, checkSocialMediaLogin } from "@/api/client";
 import { generateProductCode } from "@/common/code";
 
@@ -435,7 +484,6 @@ const checkingStatus = ref(false);
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  sortingFields: defaultSortingValue(),
   name: '',
   search: '',
 });
@@ -447,13 +495,20 @@ const gridOptions = ref({
   },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    // { title: "ID", field: "id", width: 140, showOverflow: true },
     {
       title: "商品图片",
       field: "images",
       width: 300,
       slots: {
         default: "urlDefaultSlot",
+      },
+    },
+    {
+      title: "商品视频",
+      field: "videos",
+      width: 180,
+      slots: {
+        default: "videoDefaultSlot",
       },
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
@@ -524,6 +579,9 @@ const previewUrl = ref('');
 const fileList = ref([]);
 const pendingFiles = ref([]);
 const existingImages = ref([]);
+const videoFileList = ref([]);
+const pendingVideoFiles = ref([]);
+const existingVideos = ref([]);
 const publishDialogVisible = ref(false);
 const publishLoading = ref(false);
 const currentPublishRow = ref<{ 
@@ -531,8 +589,10 @@ const currentPublishRow = ref<{
   name?: string;
   description?: string;
   images?: string[];
+  videos?: string[];
 }>({});
 const productImageUploadRef = ref();
+const productVideoUploadRef = ref();
 
 // 发布结果相关
 const publishResultVisible = ref(false);
@@ -621,6 +681,7 @@ interface ProductForm {
   keywords: string;
   type: string;
   images: string[];
+  videos: string[];
   price: number;
   salePrice: number;
   stock: number;
@@ -641,6 +702,7 @@ const form = ref<ProductForm>({
   keywords: '',
   type: '',
   images: [] as string[],
+  videos: [] as string[],
   price: 0,
   salePrice: 0,
   stock: 0,
@@ -664,6 +726,9 @@ const dialogClose = () => {
   fileList.value = [];
   pendingFiles.value = [];
   existingImages.value = [];
+  videoFileList.value = [];
+  pendingVideoFiles.value = [];
+  existingVideos.value = [];
   submitLoading.value = false;
 };
 
@@ -680,21 +745,22 @@ const handleFilesChange = (files) => {
   pendingFiles.value = files.filter(file => file.raw).map(file => file.raw)
 }
 
+// 处理视频文件列表变化
+const handleVideoFilesChange = (files) => {
+  pendingVideoFiles.value = files.filter(file => file.raw).map(file => file.raw)
+}
+
 const submitForm = async () => {
   submitLoading.value = true;
   try {
     await formRef.value.validate();
-    
     const formData = { ...form.value };
-    // 确保isLimitedEdition是数字类型
     formData.isLimitedEdition = Number(formData.isLimitedEdition);
-    // 确保价格是数字类型
     formData.price = Number(formData.price);
     formData.salePrice = Number(formData.salePrice);
     delete formData.file;
     delete formData.createTime;
     delete formData.updateTime;
-
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     if (pendingFiles.value.length > 0) {
@@ -703,42 +769,55 @@ const submitForm = async () => {
           const result = await uploadToCOS({ file });
           return result.url;
         } catch (error) {
-          console.log('error' ,error)
           ElMessage.error(`图片 ${file.name} 上传失败`);
-          throw error; // 抛出错误，中断整个上传过程
+          throw error;
         }
       });
-      
       try {
         const results = await Promise.all(uploadPromises);
         newImageUrls = results.filter(url => url !== null);
       } catch (error) {
-        console.log('error' ,error)
         ElMessage.error('图片上传失败，请重试');
-        return; // 如果上传失败，直接返回，不继续执行创建/更新操作
+        return;
       }
     }
-
+    // 上传所有待上传的视频到COS
+    let newVideoUrls: string[] = [];
+    if (pendingVideoFiles.value.length > 0) {
+      const uploadPromises = pendingVideoFiles.value.map(async (file) => {
+        try {
+          const result = await uploadToCOS({ file });
+          return result.url;
+        } catch (error) {
+          ElMessage.error(`视频 ${file.name} 上传失败`);
+          throw error;
+        }
+      });
+      try {
+        const results = await Promise.all(uploadPromises);
+        newVideoUrls = results.filter(url => url !== null);
+      } catch (error) {
+        ElMessage.error('视频上传失败，请重试');
+        return;
+      }
+    }
     // 合并已有图片和新上传的图片URL
     formData.images = [...form.value.images, ...newImageUrls];
-
+    // 合并已有视频和新上传的视频URL
+    formData.videos = [...form.value.videos, ...newVideoUrls];
     if (isEdit.value) {
-      // 修改时保留id
       await updateProduct(formData);
       ElMessage.success("更新成功");
     } else {
-      // 创建时删除id
       delete formData.id;
       await createProduct(formData);
       ElMessage.success("添加成功");
     }
-
     dialogVisible.value = false;
     resetQuery(); // 重置查询参数
     getList(); // 重新获取列表
     productImageUploadRef.value?.reset(); // 重置图片上传组件
   } catch (e) {
-    console.error('提交表单错误:', e);
     ElMessage.error("操作失败");
   } finally {
     submitLoading.value = false;
@@ -768,7 +847,6 @@ async function getList() {
     currentPage: queryParams.currentPage,
     pageSize: queryParams.pageSize,
     search: queryParams.name,
-    sortingFields: queryParams.sortingFields,
   };
 
   try {
@@ -791,7 +869,6 @@ const resetQuery = () => {
   queryParams.pageSize = 20;
   queryParams.name = '';
   queryParams.search = '';
-  queryParams.sortingFields = defaultSortingValue();
 };
 
 // 搜索按钮点击事件
@@ -838,6 +915,7 @@ function handleAdd() {
     keywords: '',
     type: '',
     images: [] as string[],
+    videos: [] as string[],
     price: 0,
     salePrice: 0,
     stock: 0,
@@ -850,6 +928,8 @@ function handleAdd() {
   };
   fileList.value = [];
   pendingFiles.value = [];
+  videoFileList.value = [];
+  pendingVideoFiles.value = [];
 }
 
 function handleEdit(row) {
@@ -857,16 +937,13 @@ function handleEdit(row) {
   isEdit.value = true;
   dialogVisible.value = true;
   dialogTitle.value = "编辑商品";
-
-  // 确保images是字符串数组
   const images = Array.isArray(row.images) ? row.images : [];
-  
+  const videos = Array.isArray(row.videos) ? row.videos : [];
   form.value = {
     ...row,
     images,
+    videos,
   };
-  
-  // 处理图片列表
   if (images.length > 0) {
     fileList.value = images.map((url, index) => ({
       name: `图片${index + 1}`,
@@ -876,6 +953,16 @@ function handleEdit(row) {
   } else {
     fileList.value = [];
     pendingFiles.value = [];
+  }
+  if (videos.length > 0) {
+    videoFileList.value = videos.map((url, index) => ({
+      name: `视频${index + 1}`,
+      url: url
+    }));
+    pendingVideoFiles.value = [];
+  } else {
+    videoFileList.value = [];
+    pendingVideoFiles.value = [];
   }
 }
 
@@ -1071,6 +1158,17 @@ const checkLoginStatus = async () => {
     checkingStatus.value = false;
   }
 };
+
+// 视频预览相关
+const videoPreviewVisible = ref(false);
+const videoPreviewList = ref<string[]>([]);
+const videoPreviewIndex = ref(0);
+
+function handleVideoPreview(list: string[], index: number) {
+  videoPreviewList.value = list;
+  videoPreviewIndex.value = index;
+  videoPreviewVisible.value = true;
+}
 </script>
 
 <style lang="less">
