@@ -129,14 +129,23 @@
 
         <template #videoDefaultSlot="{ row }">
           <div class="flex items-center gap-2">
-            <template v-if="row.videos && row.videos.length > 0">
-              <div v-for="(url, index) in row.videos" :key="index" class="relative cursor-pointer" @click="handleVideoPreview(row.videos, index)">
-                <video :src="url" class="w-28 h-28 object-cover rounded border border-gray-400" muted preload="metadata" style="width:120px;height:120px;object-fit:cover;border-radius:4px;background:#000;" />
-                <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                  {{ index + 1 }}/{{ row.videos.length }}
+            <el-carousel 
+              v-if="row.videos && row.videos.length > 0"
+              :interval="3000"
+              height="120px"
+              indicator-position="none"
+              :arrow="row.videos.length > 1 ? 'always' : 'never'"
+              class="w-48 custom-carousel"
+            >
+              <el-carousel-item v-for="(url, index) in row.videos" :key="index">
+                <div class="relative cursor-pointer w-full h-full" @click="handleVideoPreview(row.videos, index)">
+                  <video :src="url" class="w-full h-full object-cover rounded" muted preload="metadata" />
+                  <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                    {{ index + 1 }}/{{ row.videos.length }}
+                  </div>
                 </div>
-              </div>
-            </template>
+              </el-carousel-item>
+            </el-carousel>
             <span v-else class="text-gray-400">暂无视频</span>
           </div>
         </template>
@@ -506,7 +515,7 @@ const gridOptions = ref({
     {
       title: "商品视频",
       field: "videos",
-      width: 180,
+      width: 'auto',
       slots: {
         default: "videoDefaultSlot",
       },
