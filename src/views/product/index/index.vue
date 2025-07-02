@@ -321,58 +321,60 @@
     <el-dialog
       title="发布结果"
       v-model="publishResultVisible"
-      width="600px"
+      width="900px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :show-close="false"
       align-center
     >
-      <div class="p-4">
+      <div class="p-4 publish-result-dark-bg">
         <div v-if="publishResults.length > 0">
-          <div v-for="result in publishResults" :key="result.platform" class="mb-4">
-            <div class="flex items-center justify-between p-3 rounded-lg border" 
-                 :class="{
-                   'border-green-200 bg-green-50': result.success,
-                   'border-red-200 bg-red-50': !result.success
-                 }">
-              <div class="flex items-center">
-                <div class="w-3 h-3 rounded-full mr-3"
-                     :class="{
-                       'bg-green-500': result.success,
-                       'bg-red-500': !result.success
-                     }"></div>
-                <span class="font-medium">{{ getPlatformName(result.platform) }}</span>
-              </div>
-              <div class="text-right">
-                <div class="font-medium"
-                     :class="{
-                       'text-green-600': result.success,
-                       'text-red-600': !result.success
-                     }">
-                  {{ result.success ? '发布成功' : '发布失败' }}
+          <div class="flex flex-wrap gap-4 mb-4">
+            <div v-for="result in publishResults" :key="result.platform" class="publish-result-card">
+              <div class="flex items-center justify-between p-3 rounded-lg border publish-result-dark-item"
+                   :class="{
+                     'border-green-400 bg-green-900 bg-opacity-80': result.success,
+                     'border-red-400 bg-red-900 bg-opacity-80': !result.success
+                   }">
+                <div class="flex items-center">
+                  <div class="w-3 h-3 rounded-full mr-2"
+                       :class="{
+                         'bg-green-400': result.success,
+                         'bg-red-400': !result.success
+                       }"></div>
+                  <span class="font-medium text-gray-100">{{ getPlatformName(result.platform) }}</span>
                 </div>
-                <div class="text-sm text-gray-500 mt-1">{{ result.message }}</div>
+                <div class="text-right ml-2">
+                  <div class="font-medium"
+                       :class="{
+                         'text-green-400': result.success,
+                         'text-red-400': !result.success
+                       }">
+                    {{ result.success ? '发布成功' : '发布失败' }}
+                  </div>
+                  <div class="text-xs text-gray-300 mt-1 max-w-[180px] break-words">{{ result.message }}</div>
+                </div>
               </div>
             </div>
           </div>
           
           <!-- 总体结果 -->
-          <div class="mt-4 p-3 rounded-lg border"
+          <div class="mt-4 p-3 rounded-lg border publish-result-dark-item"
                :class="{
-                 'border-green-200 bg-green-50': publishSummary.success,
-                 'border-yellow-200 bg-yellow-50': publishSummary.partial,
-                 'border-red-200 bg-red-50': publishSummary.failed
+                 'border-green-400 bg-green-900 bg-opacity-80': publishSummary.success,
+                 'border-yellow-400 bg-yellow-900 bg-opacity-80': publishSummary.partial,
+                 'border-red-400 bg-red-900 bg-opacity-80': publishSummary.failed
                }">
             <div class="text-center">
               <div class="font-medium"
                    :class="{
-                     'text-green-600': publishSummary.success,
-                     'text-yellow-600': publishSummary.partial,
-                     'text-red-600': publishSummary.failed
+                     'text-green-400': publishSummary.success,
+                     'text-yellow-400': publishSummary.partial,
+                     'text-red-400': publishSummary.failed
                    }">
                 {{ publishSummary.message }}
               </div>
-              <div class="text-sm text-gray-500 mt-1">
+              <div class="text-sm text-gray-300 mt-1">
                 成功：{{ publishSummary.successCount }} 个，失败：{{ publishSummary.failCount }} 个
               </div>
             </div>
@@ -381,7 +383,7 @@
       </div>
 
       <template #footer>
-        <el-button type="primary" @click="publishResultVisible = false">确认</el-button>
+        <el-button type="primary" @click="closePublishResultDialog">确认</el-button>
       </template>
     </el-dialog>
 
@@ -937,6 +939,23 @@ const getPlatformDisplayName = (platform: string) => {
   return platformNames[platform] || platform;
 };
 
+// 格式化发布结果的message
+function formatPublishMessage(result: any) {
+  const platformName = getPlatformName(result.platform);
+  if (result.data) {
+    if (result.data.loginStatus === 'not_logged_in') {
+      return `${platformName}未登录，请先登录该平台`;
+    }
+    if (result.data.loginStatus === 'error') {
+      return `${platformName}接口异常：${result.data.error || result.message || '未知错误'}`;
+    }
+    if (result.data.loginStatus === 'logged_in' && !result.success) {
+      return `${platformName}已登录，但发布失败：${result.message || '未知错误'}`;
+    }
+  }
+  return result.message || '未知错误';
+}
+
 // 关闭发布弹窗
 function publishDialogClose() {
   publishDialogVisible.value = false;
@@ -998,22 +1017,20 @@ async function handlePublishSubmit() {
 
     const response = await publishToSocialMedia(publishData);
     
-    // 处理发布结果
-    if (response && response && response.results) {
-      const results = response.results;
-        
-      // 存储发布结果
+    let results = [];
+    if (response && response.results) {
+      results = response.results;
+    }
+
+    if (results.length > 0) {
       publishResults.value = results.map(result => ({
         platform: result.platform,
         success: result.success,
-        message: result.message,
+        message: formatPublishMessage(result),
         data: result.data
       }));
-      
-      // 显示发布结果弹窗
       publishResultVisible.value = true;
     } else {
-      // 如果没有详细结果，显示简单提示
       publishResults.value = [{
         platform: 'unknown',
         success: false,
@@ -1021,14 +1038,19 @@ async function handlePublishSubmit() {
       }];
       publishResultVisible.value = true;
     }
-    
-    publishDialogVisible.value = false;
   } catch (error) {
     console.error('发布失败:', error);
     ElMessage.error('发布失败，请重试');
   } finally {
     publishLoading.value = false;
   }
+}
+
+// 发布结果弹窗关闭时清空结果，并关闭发布弹窗
+function closePublishResultDialog() {
+  publishResultVisible.value = false;
+  publishResults.value = [];
+  publishDialogVisible.value = false;
 }
 
 // 添加生成番号的处理函数
@@ -1126,5 +1148,41 @@ const checkLoginStatus = async () => {
 .dark-btn:hover {
   background: linear-gradient(90deg, #414345 0%, #232526 100%);
   color: #fff !important;
+}
+
+// 夜间模式风格的发布结果弹窗
+.publish-result-dark-dialog .el-dialog__header {
+  background: #232526;
+  color: #fff;
+  border-bottom: 1px solid #333;
+}
+.publish-result-dark-bg {
+  background: #18191c;
+}
+.publish-result-dark-item {
+  background: #232526 !important;
+  border-color: #333 !important;
+}
+.publish-result-dark-dialog .el-dialog__body {
+  background: #18191c;
+}
+.publish-result-dark-dialog .el-dialog__footer {
+  background: #232526;
+  border-top: 1px solid #333;
+}
+
+.publish-result-card {
+  width: 29%;
+  min-width: 220px;
+  max-width: 32%;
+  margin-bottom: 0 !important;
+  flex: 1 1 29%;
+  box-sizing: border-box;
+}
+@media (max-width: 900px) {
+  .publish-result-card {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 </style>
