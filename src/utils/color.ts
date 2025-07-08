@@ -154,6 +154,7 @@ const subtractLight = (color: string, amount: number) => {
 
 // 预设颜色
 export const PREDEFINE_COLORS = [
+  '#6900ff',
   '#ff4500',
   '#ff8c00',
   '#ffd700',

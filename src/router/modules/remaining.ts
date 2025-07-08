@@ -210,6 +210,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: 'psd套图'
         }
       },
+      {
+        path: 'designModel',
+        component: () => import('@/views/material/designModel/index.vue'),
+        name: 'DesignModel',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '设计模型'
+        }
+      },
     ]
   },
   {
