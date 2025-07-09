@@ -6,6 +6,12 @@ export const isLocalConnected = ref(false)
 // 远程服务连接状态
 export const isRemoteConnected = ref(false)
 
+// 设计工具连接状态
+export const isDesignToolConnected = ref(false)
+export const setDesignToolConnected = (val: boolean) => {
+  isDesignToolConnected.value = val
+}
+
 // 检查本地客户端连接
 export const checkLocalConnection = async () => {
   try {

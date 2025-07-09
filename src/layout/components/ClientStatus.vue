@@ -12,6 +12,7 @@ import { ElTooltip } from 'element-plus'
 import { 
   isLocalConnected, 
   isRemoteConnected,
+  isDesignToolConnected,
   startConnectionChecks,
   clearConnectionChecks
 } from '@/stores/connectionStatus'
@@ -33,6 +34,7 @@ export default defineComponent({
 
     return () => (
       <div class="flex items-center">
+        {/* 本地客户端状态 */}
         <ElTooltip
           content={isLocalConnected.value ? '本地客户端已启动' : '本地客户端未启动'}
           placement="bottom"
@@ -56,6 +58,7 @@ export default defineComponent({
           </div>
         </ElTooltip>
 
+        {/* 远程服务状态 */}
         <ElTooltip
           content={isRemoteConnected.value ? '远程服务已连接' : '远程服务未连接'}
           placement="bottom"
@@ -75,6 +78,30 @@ export default defineComponent({
               style={{ color: isRemoteConnected.value ? '#67C23A' : '#F56C6C' }}
             >
               {isRemoteConnected.value ? '远程已连接' : '远程未连接'}
+            </span>
+          </div>
+        </ElTooltip>
+
+        {/* 设计工具连接状态 */}
+        <ElTooltip
+          content={isDesignToolConnected.value ? '设计工具已连接' : '设计工具未连接'}
+          placement="bottom"
+        >
+          <div class="custom-hover flex items-center gap-1">
+            <div
+              class="w-2 h-2 rounded-full mr-1"
+              style={{
+                backgroundColor: isDesignToolConnected.value ? '#67C23A' : '#F56C6C',
+                boxShadow: isDesignToolConnected.value 
+                  ? '0 0 8px rgba(103, 194, 58, 0.5)' 
+                  : '0 0 8px rgba(245, 108, 108, 0.5)'
+              }}
+            />
+            <span 
+              class="text-[10px] font-bold" 
+              style={{ color: isDesignToolConnected.value ? '#67C23A' : '#F56C6C' }}
+            >
+              {isDesignToolConnected.value ? '设计工具已连接' : '设计工具未连接'}
             </span>
           </div>
         </ElTooltip>
