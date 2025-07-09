@@ -55,7 +55,7 @@ const message = computed(() => appStore.getMessage)
 // 新增通信逻辑
 let messenger: NativeWindowMessenger | null = null
 function openDesignTool() {
-  const url = 'http://localhost:1522'
+  const url = import.meta.env.PROD ? 'http://49.232.186.238:1522' : 'http://localhost:1522'
   messenger = new NativeWindowMessenger()
   messenger.openChild(url, '_blank')
   // 监听子窗口消息
