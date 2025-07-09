@@ -7,7 +7,7 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
 <script lang="tsx">
-import { defineComponent, computed, ref } from 'vue'
+import { defineComponent, computed, ref, provide } from 'vue'
 import { Message } from '@/layout/components//Message'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
@@ -58,9 +58,32 @@ let messenger: NativeWindowMessenger | null = null
 let pingInterval: number | null = null
 let pongTimeout: number | null = null
 const adminConnected = ref(false)
+provide('adminConnected', adminConnected)
 let adminPingTimeout: number | null = null
 
+function cleanupMessenger() {
+  if (messenger) {
+    messenger.destroy && messenger.destroy()
+    messenger = null
+  }
+  if (pingInterval) {
+    clearInterval(pingInterval)
+    pingInterval = null
+  }
+  if (pongTimeout) {
+    clearTimeout(pongTimeout)
+    pongTimeout = null
+  }
+  if (adminPingTimeout) {
+    clearTimeout(adminPingTimeout)
+    adminPingTimeout = null
+  }
+  adminConnected.value = false
+  setDesignToolConnected(false)
+}
+
 function openDesignTool() {
+  cleanupMessenger()
   const url = import.meta.env.PROD ? 'http://49.232.186.238:1522/#/design' : 'http://localhost:1522/#/design'
   messenger = new NativeWindowMessenger()
   messenger.openChild(url, '_blank')
@@ -79,24 +102,20 @@ function openDesignTool() {
   // 监听 adminPing 并回复 adminPong
   messenger.on('adminPing', () => {
     messenger?.send('adminPong', null)
-    // 只要收到 adminPing 就认为管理系统已连接
     if (!adminConnected.value) {
       adminConnected.value = true
     }
-    // 3秒后如果没再收到新的 adminPing，则判为断开
     if (adminPingTimeout) clearTimeout(adminPingTimeout)
     adminPingTimeout = window.setTimeout(() => {
       adminConnected.value = false
     }, 3500)
   })
-  // 定时发送 ping
   pingInterval = window.setInterval(() => {
     messenger?.send('ping', null)
     pongTimeout = window.setTimeout(() => {
       setDesignToolConnected(false)
       ElMessage.error('子窗口无响应，连接断开！')
-      if (pingInterval) clearInterval(pingInterval)
-      pingInterval = null
+      cleanupMessenger()
     }, 3000)
   }, 5000)
   setTimeout(() => {
