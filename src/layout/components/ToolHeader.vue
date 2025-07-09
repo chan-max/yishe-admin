@@ -19,6 +19,8 @@ import RouterSearch from '@/components/RouterSearch/index.vue'
 import ClientStatus from '@/layout/components/ClientStatus.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
+import { ElButton, ElMessage } from 'element-plus'
+import { NativeWindowMessenger } from '@/utils/nativeWindowMessenger'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -50,6 +52,25 @@ const locale = computed(() => appStore.getLocale)
 // 消息图标
 const message = computed(() => appStore.getMessage)
 
+// 新增通信逻辑
+let messenger: NativeWindowMessenger | null = null
+function openDesignTool() {
+  const url = 'http://localhost:1522'
+  messenger = new NativeWindowMessenger()
+  messenger.openChild(url, '_blank')
+  // 监听子窗口消息
+
+  console.log('messenger',messenger)
+
+  messenger.on('customEvent', (data) => {
+    ElMessage.info('收到子窗口消息: ' + JSON.stringify(data))
+  })
+  // 发送消息给子窗口（可选）
+  setTimeout(() => {
+    messenger?.send('test', null)
+  }, 1000)
+}
+
 export default defineComponent({
   name: 'ToolHeader',
   setup() {
@@ -71,6 +92,8 @@ export default defineComponent({
           </div>
         ) : undefined}
         <div class="h-full flex items-center">
+          {/* 打开设计工具 */}
+          <ElButton type="primary" size="small" onClick={openDesignTool} style="margin-right: 8px;">打开设计工具</ElButton>
           <ClientStatus />
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>

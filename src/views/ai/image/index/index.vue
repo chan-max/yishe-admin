@@ -1,6 +1,8 @@
 <!-- image -->
 <template>
   <div class="ai-image">
+    <div style="margin-bottom: 16px;">
+    </div>
     <div class="left">
       <div class="segmented">
         <el-segmented v-model="selectPlatform" :options="platformOptions" />
@@ -39,6 +41,9 @@ import Dall3 from './components/dall3/index.vue'
 import Midjourney from './components/midjourney/index.vue'
 import StableDiffusion from './components/stableDiffusion/index.vue'
 import Other from './components/other/index.vue'
+
+import { ElMessage } from 'element-plus'
+
 
 const imageListRef = ref<any>() // image 列表 ref
 const dall3Ref = ref<any>() // dall3(openai) ref
