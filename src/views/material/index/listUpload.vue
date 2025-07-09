@@ -22,7 +22,26 @@
 
           <div class="preview-placeholder">
             <div>
-              {{ file.name }}
+              <el-input
+                v-model="file.name"
+                size="small"
+                placeholder="图片名称"
+                class="mt-1 white-input"
+              />
+              <el-input
+                v-model="file.description"
+                size="small"
+                type="textarea"
+                :rows="2"
+                placeholder="图片描述"
+                class="mt-1 white-input"
+              />
+              <el-input
+                v-model="file.keywords"
+                size="small"
+                placeholder="关键词（用英文逗号分隔）"
+                class="mt-1 white-input"
+              />
             </div>
             <div class="pt-2 flex gap-2 flex-wrap" style="overflow: auto">
               <el-tag link round size="small" type="primary">
@@ -212,7 +231,9 @@ const handleFileChange = async (file) => {
     width: info.width,
     height: info.height,
     rename: '', // 该图片的重命名
-    status: 'waiting' // waiting, uploading, success, fail
+    status: 'waiting', // waiting, uploading, success, fail
+    description: '', // 新增字段
+    keywords: '' // 新增字段
   })
 }
 
@@ -261,7 +282,9 @@ const uploadFile = async (file) => {
     const { key, url } = cos
     await uploadMaterialFile({
       url,
-      name: file.name
+      name: file.name,
+      description: file.description, // 新增字段
+      keywords: file.keywords // 新增字段
     })
     file.status = 'success'
     emits('single-file-uploaded')
@@ -404,7 +427,7 @@ const uploadFile = async (file) => {
 .preview-placeholder {
   top: 0;
   left: 0px;
-  padding: 12px;
+  padding: 16px;
   position: absolute;
   font-size: 11px;
   width: 100%;
@@ -412,6 +435,18 @@ const uploadFile = async (file) => {
   overflow: auto;
   text-overflow: ellipsis;
   display: block;
+  background: rgba(0,0,0,0.85);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.white-input .el-input__inner,
+.white-input .el-textarea__inner {
+  color: #fff;
+  background: rgba(0,0,0,0.7);
+  border-color: #bbb;
+  font-weight: bold;
+  font-size: 16px;
 }
 </style>
 
