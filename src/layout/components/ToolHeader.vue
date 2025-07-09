@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-04-01 07:04:47
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-09 19:27:29
+ * @LastEditTime: 2025-07-10 05:36:21
  * @FilePath: /yishe-admin/src/layout/components/ToolHeader.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -22,6 +22,7 @@ import { useDesign } from '@/hooks/web/useDesign'
 import { ElButton, ElMessage } from 'element-plus'
 import { NativeWindowMessenger } from '@/utils/nativeWindowMessenger'
 import { setDesignToolConnected } from '@/stores/connectionStatus'
+import { getAccessToken } from '@/utils/auth'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -84,7 +85,9 @@ function cleanupMessenger() {
 
 function openDesignTool() {
   cleanupMessenger()
-  const url = import.meta.env.PROD ? 'http://49.232.186.238:1522/#/design' : 'http://localhost:1522/#/design'
+  const token = getAccessToken()
+  const baseUrl = import.meta.env.PROD ? 'http://49.232.186.238:1522' : 'http://localhost:1522'
+  const url = `${baseUrl}/#/design?token=${encodeURIComponent(token)}`
   messenger = new NativeWindowMessenger()
   messenger.openChild(url, '_blank')
   // 监听子窗口消息

@@ -2,7 +2,7 @@ import { store } from '@/store'
 import { defineStore } from 'pinia'
 import { getAccessToken, getRefreshToken, removeToken } from '@/utils/auth'
 import { CACHE_KEY, useCache, deleteUserCache } from '@/hooks/web/useCache'
-import { getInfo, loginOut } from '@/api/login'
+import { getInfo } from '@/api/login'
 import { useGlobalWebsocket } from '@/common/websocket'
 import { useEventBus, useWebSocket } from '@vueuse/core'
 import { initOssClient } from '@/api/oss'
@@ -100,10 +100,13 @@ export const useUserStore = defineStore('admin-user', {
       wsCache.set(CACHE_KEY.USER, userInfo)
     },
     async loginOut() {
-      await loginOut()
+      // 暂时不需要调用接口，直接清空登录信息
       removeToken()
       deleteUserCache() // 删除用户缓存
       this.resetState()
+      
+      // 跳转到首页
+      window.location.href = '/'
     },
     resetState() {
       this.permissions = new Set<string>()

@@ -284,18 +284,8 @@ const userStore = useUserStore()
 const form = ref({})
 
 const queryParams = reactive({
-  // materialStatus: '',
-  imageName: null,
-  shopId: null,
-  classificationId: null,
   currentPage: 1,
   pageSize: 20,
-  usageStatus: null,
-  deprecated: null,
-  sortingFields: defaultSortingValue(),
-  creator: null, // 创建人查询
-  startTime: null,
-  endTime: null
 })
 
 // 展示模式
