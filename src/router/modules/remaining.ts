@@ -199,26 +199,39 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '字体'
         }
       },
+      // {
+      //   path: 'psd',
+      //   component: () => import('@/views/material/psdTemplate/index.vue'),
+      //   name: 'Psd',
+      //   meta: {
+      //     canTo: true,
+      //     hidden: false,
+      //     noTagsView: false,
+      //     title: 'psd套图'
+      //   }
+      // },
+
       {
-        path: 'psd',
-        component: () => import('@/views/material/psdTemplate/index.vue'),
-        name: 'Psd',
+        path: 'sentence',
+        component: () => import('@/views/material/sentence/index.vue'),
+        name: 'Sentence',
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: 'psd套图'
+          title: '句子管理'
         }
       },
+
       {
-        path: 'designModel',
-        component: () => import('@/views/material/designModel/index.vue'),
-        name: 'DesignModel',
+        path: 'productModel',
+        component: () => import('@/views/material/productModel/index.vue'),
+        name: 'ProductModel',
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '设计模型'
+          title: '商品模型'
         }
       },
     ]
@@ -241,6 +254,24 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: '商品列表',
           icon: 'ep:list'
+        }
+      },
+      {
+        path: 'designRequest',
+        component: () => import('@/views/material/designRequest/index.vue'),
+        name: 'DesignRequest',
+        meta: {
+          title: '设计请求',
+          icon: 'ep:edit'
+        }
+      },
+      {
+        path: 'designModel',
+        component: () => import('@/views/material/designModel/index.vue'),
+        name: 'DesignModel',
+        meta: {
+          title: '设计模型',
+          icon: 'ep:magic-stick'
         }
       }
     ]
