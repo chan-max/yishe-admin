@@ -5,12 +5,9 @@ export class NativeWindowMessenger {
   private handlers: Record<string, MessageHandler[]> = {}
 
   openChild(url: string, target = '_blank') {
-    // 定义独立窗口的特性参数
+    // 定义独立窗口的特性参数 - 全屏模式
     const windowFeatures = [
-      'width=1200',
-      'height=800',
-      'left=100',
-      'top=100',
+      'fullscreen=yes',
       'resizable=yes',
       'scrollbars=yes',
       'status=yes',
