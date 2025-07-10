@@ -152,6 +152,10 @@ service.interceptors.response.use(
     } else if (message.includes('Request failed with status code')) {
       message = t('sys.api.apiRequestFailed') + message.substr(message.length - 3)
     }
+    // 新增401处理
+    if (error.response && error.response.status === 401) {
+      return handleAuthorized()
+    }
     ElMessage.error(message)
     return Promise.reject(error)
   }
