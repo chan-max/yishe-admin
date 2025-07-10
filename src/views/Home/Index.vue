@@ -8,7 +8,6 @@
 -->
 <template>
   <div>
-    <a href="yishe://"> 启动客户端 </a>
   </div>
  </template>
 <script lang="ts" setup>
