@@ -119,6 +119,18 @@ export default defineComponent({
 
     return () => (
       <div class="flex items-center">
+        {/* 客户端下载链接，未启动时显示 */}
+        {(
+          <a
+            href="http://49.232.186.238:1525"
+            target="_blank"
+            style="margin-right:8px;color:#409EFF;text-decoration:underline;font-size:10px;"
+            onclick="event.stopPropagation()"
+            onClick={e => e.stopPropagation()}
+          >
+            客户端下载
+          </a>
+        )}
         {/* 本地客户端状态 */}
         <ElTooltip
           content={isLocalConnected.value ? '本地客户端已启动' : '点击启动客户端'}
@@ -145,17 +157,6 @@ export default defineComponent({
                     <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
                   </circle>
                 </svg>
-              )}
-              {!isLocalConnected.value && !clientLoading.value && (
-                <a
-                  href="http://49.232.186.238:1525"
-                  target="_blank"
-                  style="margin-left:8px;color:#409EFF;text-decoration:underline;font-size:10px;"
-                  onclick="event.stopPropagation()"
-                  onClick={e => e.stopPropagation()}
-                >
-                  客户端下载
-                </a>
               )}
             </span>
           </div>
