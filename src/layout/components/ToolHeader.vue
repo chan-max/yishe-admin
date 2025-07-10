@@ -83,48 +83,7 @@ function cleanupMessenger() {
   setDesignToolConnected(false)
 }
 
-function openDesignTool() {
-  cleanupMessenger()
-  const token = getAccessToken()
-  const baseUrl = import.meta.env.PROD ? 'http://49.232.186.238:1522' : 'http://localhost:1522'
-  const url = `${baseUrl}/#/design?token=${encodeURIComponent(token)}`
-  messenger = new NativeWindowMessenger()
-  messenger.openChild(url)
-  // 监听子窗口消息
-  messenger.on('customEvent', (data) => {
-    ElMessage.success('收到子窗口消息: ' + JSON.stringify(data))
-  })
-  // 监听 pong
-  messenger.on('pong', () => {
-    setDesignToolConnected(true)
-    if (pongTimeout) {
-      clearTimeout(pongTimeout)
-      pongTimeout = null
-    }
-  })
-  // 监听 adminPing 并回复 adminPong
-  messenger.on('adminPing', () => {
-    messenger?.send('adminPong', null)
-    if (!adminConnected.value) {
-      adminConnected.value = true
-    }
-    if (adminPingTimeout) clearTimeout(adminPingTimeout)
-    adminPingTimeout = window.setTimeout(() => {
-      adminConnected.value = false
-    }, 3500)
-  })
-  pingInterval = window.setInterval(() => {
-    messenger?.send('ping', null)
-    pongTimeout = window.setTimeout(() => {
-      setDesignToolConnected(false)
-      ElMessage.error('子窗口无响应，连接断开！')
-      cleanupMessenger()
-    }, 3000)
-  }, 5000)
-  setTimeout(() => {
-    messenger?.send('test', null)
-  }, 1000)
-}
+// 删除 openDesignTool 相关函数和引用
 
 export default defineComponent({
   name: 'ToolHeader',
@@ -148,7 +107,6 @@ export default defineComponent({
         ) : undefined}
         <div class="h-full flex items-center">
           {/* 打开设计工具 */}
-          <ElButton type="primary" size="small" onClick={openDesignTool} style="margin-right: 8px;">打开设计工具</ElButton>
           <ClientStatus />
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
