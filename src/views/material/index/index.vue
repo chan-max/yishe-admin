@@ -83,6 +83,36 @@
           制作套图({{ ids.length }})
         </el-button>
 
+        <el-button
+          type="success"
+          @click="
+            () => {
+              if (!ids.length) {
+                return ElMessage.warning('请选择要制作的素材')
+              }
+              selectedMaterialIds.value = [...ids.value]
+              designModelModalVisible = true
+            }
+          "
+        >
+          制作设计模型({{ ids.length }})
+        </el-button>
+
+        <el-button
+          type="warning"
+          @click="
+            () => {
+              if (!ids.length) {
+                return ElMessage.warning('请选择要制作的素材')
+              }
+              selectedMaterialIds.value = [...ids.value]
+              batchDesignModelModalVisible = true
+            }
+          "
+        >
+          批量制作({{ ids.length }})
+        </el-button>
+
         <!-- <el-button type="warning" @click="handleMultipleCheck(0)">
           取消入库 ({{ ids.length }})</el-button> -->
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
@@ -112,6 +142,12 @@
               <div class="table-operation-column">
                 <el-button type="default" link size="small" @click="handleDownload(row)">
                   下载
+                </el-button>
+                <el-button type="success" link size="small" @click="handleDesignModel(row)">
+                  制作设计模型
+                </el-button>
+                <el-button type="warning" link size="small" @click="handleBatchDesignModel(row)">
+                  批量制作
                 </el-button>
                 <el-button type="danger" link danger size="small" @click="handleDelete(row)">
                   删除
@@ -223,6 +259,64 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 制作设计模型弹窗 -->
+    <el-dialog
+      v-model="designModelModalVisible"
+      title="制作设计模型"
+      width="100%"
+      style="height: 100%"
+      align-center
+      :footer="false"
+      :destroy-on-close="true"
+      class="design-model-dialog"
+    >
+      <div style="height: 100%">
+        <div class="p-4">
+          <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
+          <div class="flex flex-wrap gap-4">
+            <template v-for="id in selectedMaterialIds" :key="id">
+              <div v-if="dataSource.find(item => item.id === id)" class="text-center">
+                <img 
+                  :src="dataSource.find(item => item.id === id).url" 
+                  :alt="dataSource.find(item => item.id === id).name"
+                  class="w-20 h-20 object-cover rounded border"
+                />
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 批量制作弹窗 -->
+    <el-dialog
+      v-model="batchDesignModelModalVisible"
+      title="批量制作"
+      width="100%"
+      style="height: 100%"
+      align-center
+      :footer="false"
+      :destroy-on-close="true"
+      class="batch-design-model-dialog"
+    >
+      <div style="height: 100%">
+        <div class="p-4">
+          <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
+          <div class="flex flex-wrap gap-4">
+            <template v-for="id in selectedMaterialIds" :key="id">
+              <div v-if="dataSource.find(item => item.id === id)" class="text-center">
+                <img 
+                  :src="dataSource.find(item => item.id === id).url" 
+                  :alt="dataSource.find(item => item.id === id).name"
+                  class="w-20 h-20 object-cover rounded border"
+                />
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -261,7 +355,7 @@ import { useUserStore } from '@/store/modules/user'
 import imgCard from './imgCard.vue'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
-import { ElButton, ElNotification } from 'element-plus'
+import { ElButton, ElNotification, ElMessage } from 'element-plus'
 import { Delete, Plus, Search, TopRight, Upload } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
@@ -270,7 +364,7 @@ import { ShopApi } from '@/api/shop/shopIndex'
 import { psdTemplateApi } from '@/api/psdTemplate'
 import { formatDate } from '@/utils/formatTime'
 import { getTitleTemplateList } from '@/api/publish'
-import { downloadCrossOriginImage, downloadFileByElement } from '@/common/download'
+import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '@/common/download'
 import { useRouter } from 'vue-router'
 import { ShopCategoryApi } from '@/api/shop/category'
 import { getConfigTemplateList } from '@/api/publish/config'
@@ -384,6 +478,9 @@ const rules = {
 }
 
 const genPicturesModalVisible = ref(false)
+const designModelModalVisible = ref(false)
+const batchDesignModelModalVisible = ref(false)
+const selectedMaterialIds = ref([])
 
 // 处理上传
 
@@ -435,16 +532,29 @@ function handleMultiDownload() {
       if (!row) {
         return
       }
-      // saveAs(row.ossObjectName, row.imageName);
-
-      setTimeout(() => {
-        downloadFileByElement(row.ossObjectName, row.imageName)
+      setTimeout(async () => {
+        try {
+          const downloadUrl = row.url || row.ossObjectName
+          const fileName = row.name || row.imageName || `image_${id}.jpg`
+          
+          if (!downloadUrl) {
+            ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`)
+            return
+          }
+          
+          // 使用新的下载函数，确保文件被下载而不是打开新页面
+          await downloadImage(downloadUrl, fileName)
+          ElNotification.success(`图片 ${fileName} 下载成功`)
+        } catch (error) {
+          console.error('下载失败:', error)
+          ElMessage.error(`图片下载失败：${error.message}`)
+        }
       }, 500 * index)
-
-      // await downloadCrossOriginImage(row.ossObjectName, row.imageName)
-      // ElNotification.success(`图片${row.imageName}下载成功`);
     })
-  } catch (e) {}
+  } catch (e) {
+    console.error('批量下载失败:', e)
+    ElMessage.error('批量下载失败')
+  }
 }
 
 function handleDelete(row?) {
@@ -480,13 +590,34 @@ function checkboxAllChange(e) {
   ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
 }
 
-function handleDownload(row) {
+async function handleDownload(row) {
   // 处理图片下载
   try {
-    // saveAs(row.ossObjectName, row.imageName);
-    downloadFileByElement(row.ossObjectName, row.imageName)
-    ElNotification.success(`图片${row.imageName}下载成功`)
-  } catch (e) {}
+    const downloadUrl = row.url || row.ossObjectName
+    const fileName = row.name || row.imageName || `image_${row.id}.jpg`
+    
+    if (!downloadUrl) {
+      ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`)
+      return
+    }
+    
+    // 使用新的下载函数，确保文件被下载而不是打开新页面
+    await downloadImage(downloadUrl, fileName)
+    ElNotification.success(`图片 ${fileName} 下载成功`)
+  } catch (error) {
+    console.error('下载失败:', error)
+    ElMessage.error(`图片下载失败：${error.message}`)
+  }
+}
+
+function handleDesignModel(row) {
+  selectedMaterialIds.value = [row.id]
+  designModelModalVisible.value = true
+}
+
+function handleBatchDesignModel(row) {
+  selectedMaterialIds.value = [row.id]
+  batchDesignModelModalVisible.value = true
 }
 
 const delayUpdateList = useDebounceFn(() => {
@@ -518,6 +649,18 @@ h1 {
 
 <style lang="less">
 .material-upload-dialog {
+  .el-dialog__body {
+    height: calc(100% - 40px);
+  }
+}
+
+.design-model-dialog {
+  .el-dialog__body {
+    height: calc(100% - 40px);
+  }
+}
+
+.batch-design-model-dialog {
   .el-dialog__body {
     height: calc(100% - 40px);
   }
