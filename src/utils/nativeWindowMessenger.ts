@@ -38,7 +38,15 @@ export class NativeWindowMessenger {
 
   send(type: string, data: any) {
     if (this.childWindow && !this.childWindow.closed) {
-      this.childWindow.postMessage({ type, data }, '*')
+      try {
+        // 确保数据可以被序列化
+        const serializedData = data === null ? null : JSON.parse(JSON.stringify(data))
+        this.childWindow.postMessage({ type, data: serializedData }, '*')
+      } catch (error) {
+        console.error('数据序列化失败:', error)
+        // 如果序列化失败，尝试发送基本数据
+        this.childWindow.postMessage({ type, data: null }, '*')
+      }
     }
   }
 

@@ -43,7 +43,7 @@
                 class="mt-1 white-input"
               />
             </div>
-            <div class="pt-2 flex gap-2 flex-wrap" style="overflow: auto">
+            <div class="pt-2 flex gap-2 flex-wrap" style="overflow: hidden">
               <el-tag link round size="small" type="primary">
                 {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
               </el-tag>
@@ -323,17 +323,20 @@ const uploadFile = async (file) => {
 
 .image-preview-item {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 200px;
+  height: 380px;
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .preview-image {
   width: 100%;
-  height: 100%;
+  height: 200px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
 .actions {
@@ -425,28 +428,25 @@ const uploadFile = async (file) => {
 }
 
 .preview-placeholder {
-  top: 0;
-  left: 0px;
-  padding: 16px;
-  position: absolute;
+  padding: 12px;
   font-size: 11px;
   width: 100%;
-  height: 100%;
-  overflow: auto;
+  height: 180px;
+  overflow: hidden;
   text-overflow: ellipsis;
   display: block;
-  background: rgba(0,0,0,0.85);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  background: #000;
+  border-radius: 0 0 4px 4px;
+  flex: 1;
 }
 
 .white-input .el-input__inner,
 .white-input .el-textarea__inner {
   color: #fff;
-  background: rgba(0,0,0,0.7);
-  border-color: #bbb;
-  font-weight: bold;
-  font-size: 16px;
+  background: rgba(255,255,255,0.1);
+  border-color: #666;
+  font-weight: normal;
+  font-size: 12px;
 }
 </style>
 

@@ -83,6 +83,24 @@
           制作套图({{ ids.length }})
         </el-button>
 
+        <el-button
+          type="success"
+          @click="
+            async () => {
+              if (!ids.length) {
+                return ElMessage.warning('请选择要制作的素材')
+              }
+              selectedDesignModelIds.value = []
+              designModelModalVisible = true
+              await loadDesignModels()
+            }
+          "
+        >
+          制作设计模型({{ ids.length }})
+        </el-button>
+
+
+
         <!-- <el-button type="warning" @click="handleMultipleCheck(0)">
           取消入库 ({{ ids.length }})</el-button> -->
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
@@ -112,6 +130,9 @@
               <div class="table-operation-column">
                 <el-button type="default" link size="small" @click="handleDownload(row)">
                   下载
+                </el-button>
+                <el-button type="success" link size="small" @click="handleDesignModel(row)">
+                  制作设计模型
                 </el-button>
                 <el-button type="danger" link danger size="small" @click="handleDelete(row)">
                   删除
@@ -223,6 +244,106 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 制作设计模型弹窗 -->
+    <el-dialog
+      v-model="designModelModalVisible"
+      title="制作设计模型"
+      width="100%"
+      style="height: 100%"
+      align-center
+      :destroy-on-close="true"
+      class="design-model-dialog"
+    >
+      <div class="design-model-content" style="height: calc(100% - 120px); overflow-y: auto;">
+        <div class="p-4">
+          <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
+          <div class="flex flex-wrap gap-4 mb-6">
+            <template v-for="id in ids" :key="id">
+              <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
+                <img 
+                  :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                  :alt="dataSource.find(item => String(item.id) === String(id)).name"
+                  class="w-20 h-20 object-cover rounded border"
+                />
+                <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
+              </div>
+            </template>
+          </div>
+          
+          <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
+          
+          <div class="design-model-list">
+            <div v-if="designModelLoading" class="text-center py-4">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span class="ml-2">加载中...</span>
+            </div>
+            
+            <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
+              暂无设计模型
+            </div>
+            
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div
+                v-for="model in designModelList"
+                :key="model.id"
+                class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
+                :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
+                @click="selectDesignModel(model)"
+              >
+                <div class="flex items-center space-x-3">
+                  <img
+                    v-if="model.thumbnail"
+                    :src="model.thumbnail"
+                    :alt="model.name"
+                    class="w-16 h-16 object-cover rounded"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-gray-900 truncate">{{ model.name }}</h4>
+                    <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
+                    <p class="text-xs text-gray-400">{{ model.createTime }}</p>
+                  </div>
+                </div>
+                
+                <!-- 选中状态图标 -->
+                <div 
+                  v-if="selectedDesignModelIds.includes(model.id)"
+                  class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                >
+                  <el-icon class="text-white text-sm">
+                    <Check />
+                  </el-icon>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <div class="flex-1 text-sm text-gray-600 mr-4">
+            <span>已选择 {{ ids.length }} 个素材</span>
+            <span class="mx-2">×</span>
+            <span>{{ selectedDesignModelIds.length }} 个模板</span>
+            <span class="mx-2">=</span>
+            <span class="font-semibold text-blue-600">{{ ids.length * selectedDesignModelIds.length }} 个新设计模型</span>
+          </div>
+          <div class="flex gap-2">
+            <el-button @click="designModelModalVisible = false">取消</el-button>
+            <el-button 
+              type="primary" 
+              @click="handleDesignModelConfirm"
+              :disabled="!selectedDesignModelIds.length"
+            >
+              确定 ({{ selectedDesignModelIds.length }})
+            </el-button>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
+
+
   </div>
 </template>
 
@@ -261,8 +382,8 @@ import { useUserStore } from '@/store/modules/user'
 import imgCard from './imgCard.vue'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
-import { ElButton, ElNotification } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload } from '@element-plus/icons-vue'
+import { ElButton, ElNotification, ElMessage } from 'element-plus'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -270,7 +391,7 @@ import { ShopApi } from '@/api/shop/shopIndex'
 import { psdTemplateApi } from '@/api/psdTemplate'
 import { formatDate } from '@/utils/formatTime'
 import { getTitleTemplateList } from '@/api/publish'
-import { downloadCrossOriginImage, downloadFileByElement } from '@/common/download'
+import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '@/common/download'
 import { useRouter } from 'vue-router'
 import { ShopCategoryApi } from '@/api/shop/category'
 import { getConfigTemplateList } from '@/api/publish/config'
@@ -278,6 +399,8 @@ import genPicture from './genPicture.vue'
 import { getAccessToken } from '@/utils/auth'
 import { getTenantId } from '@/utils/auth'
 import useListSelect from '@/components/common/userListSelect.vue'
+import { getDesignModelList } from '@/api/designModel'
+import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 
 const userStore = useUserStore()
 
@@ -368,7 +491,7 @@ const dataSource = ref([])
 const loading = ref(false)
 const open = ref(false)
 const title = ref('')
-const ids = ref([])
+const ids = ref<string[]>([])
 const single = ref(false)
 const multiple = ref(true)
 const total = ref(0)
@@ -384,6 +507,12 @@ const rules = {
 }
 
 const genPicturesModalVisible = ref(false)
+const designModelModalVisible = ref(false)
+
+// 设计模型相关
+const designModelList = ref([])
+const designModelLoading = ref(false)
+const selectedDesignModelIds = ref([])
 
 // 处理上传
 
@@ -435,16 +564,29 @@ function handleMultiDownload() {
       if (!row) {
         return
       }
-      // saveAs(row.ossObjectName, row.imageName);
-
-      setTimeout(() => {
-        downloadFileByElement(row.ossObjectName, row.imageName)
+      setTimeout(async () => {
+        try {
+          const downloadUrl = row.url || row.ossObjectName
+          const fileName = row.name || row.imageName || `image_${id}.jpg`
+          
+          if (!downloadUrl) {
+            ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`)
+            return
+          }
+          
+          // 使用新的下载函数，确保文件被下载而不是打开新页面
+          await downloadImage(downloadUrl, fileName)
+          ElNotification.success(`图片 ${fileName} 下载成功`)
+        } catch (error) {
+          console.error('下载失败:', error)
+          ElMessage.error(`图片下载失败：${error.message}`)
+        }
       }, 500 * index)
-
-      // await downloadCrossOriginImage(row.ossObjectName, row.imageName)
-      // ElNotification.success(`图片${row.imageName}下载成功`);
     })
-  } catch (e) {}
+  } catch (e) {
+    console.error('批量下载失败:', e)
+    ElMessage.error('批量下载失败')
+  }
 }
 
 function handleDelete(row?) {
@@ -452,7 +594,7 @@ function handleDelete(row?) {
   if (row) {
     delIds = [row.id]
   } else {
-    delIds = [...ids.value]
+    delIds = Array.isArray(ids.value) ? [...ids.value] : []
     if (!delIds.length) {
       return ElMessage.warning('请选择要删除的数据')
     }
@@ -473,21 +615,98 @@ function handleDelete(row?) {
     .catch(() => {})
 }
 function checkboxChange(e) {
-  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
 }
 
 function checkboxAllChange(e) {
-  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
 }
 
-function handleDownload(row) {
+async function handleDownload(row) {
   // 处理图片下载
   try {
-    // saveAs(row.ossObjectName, row.imageName);
-    downloadFileByElement(row.ossObjectName, row.imageName)
-    ElNotification.success(`图片${row.imageName}下载成功`)
-  } catch (e) {}
+    const downloadUrl = row.url || row.ossObjectName
+    const fileName = row.name || row.imageName || `image_${row.id}.jpg`
+    
+    if (!downloadUrl) {
+      ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`)
+      return
+    }
+    
+    // 使用新的下载函数，确保文件被下载而不是打开新页面
+    await downloadImage(downloadUrl, fileName)
+    ElNotification.success(`图片 ${fileName} 下载成功`)
+  } catch (error) {
+    console.error('下载失败:', error)
+    ElMessage.error(`图片下载失败：${error.message}`)
+  }
 }
+
+async function handleDesignModel(row) {
+  // 设置当前选中的素材为单个素材
+  ids.value = [row.id]
+  selectedDesignModelIds.value = []
+  designModelModalVisible.value = true
+  await loadDesignModels()
+}
+
+async function loadDesignModels() {
+  designModelLoading.value = true
+  try {
+    const res = await getDesignModelList({
+      currentPage: 1,
+      pageSize: 100
+    })
+    designModelList.value = res.list || []
+  } catch (error) {
+    console.error('加载设计模型失败:', error)
+    ElMessage.error('加载设计模型失败')
+  } finally {
+    designModelLoading.value = false
+  }
+}
+
+
+
+function selectDesignModel(model) {
+  const index = selectedDesignModelIds.value.indexOf(model.id)
+  if (index > -1) {
+    // 如果已选中，则取消选中
+    selectedDesignModelIds.value.splice(index, 1)
+  } else {
+    // 如果未选中，则添加到选中列表
+    selectedDesignModelIds.value.push(model.id)
+  }
+}
+
+function handleDesignModelConfirm() {
+  if (!selectedDesignModelIds.value.length) {
+    ElMessage.warning('请选择设计模型')
+    return
+  }
+  
+  // 打印最终数据
+  console.log('素材图ID数组:', ids.value)
+  console.log('设计模型ID数组:', selectedDesignModelIds.value)
+  
+  // 发送数据到设计工具
+  const designToolMessenger = getDesignToolMessenger()
+  const success = designToolMessenger.sendDesignModelData({
+    materialIds: Array.isArray(ids.value) ? [...ids.value] : [],
+    designModelIds: selectedDesignModelIds.value
+  })
+  
+  if (success) {
+    ElMessage.success('数据已发送到设计工具')
+    // designModelModalVisible.value = false
+  }
+}
+
+
 
 const delayUpdateList = useDebounceFn(() => {
   getList()
@@ -522,6 +741,26 @@ h1 {
     height: calc(100% - 40px);
   }
 }
+
+.design-model-dialog {
+  .el-dialog__body {
+    height: calc(100% - 120px);
+    padding: 0;
+  }
+  
+  .design-model-content {
+    padding: 16px;
+  }
+  
+    .dialog-footer {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+
 
 .preview-label {
   span {

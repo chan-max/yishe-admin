@@ -48,7 +48,6 @@
       </form-item>
 
       <div class="flex shrink-0">
-        <el-button type="primary" @click="handleGenerate(null)"> 批量制作({{ ids.length }}) </el-button>
         <el-button type="danger" @click="handleDelete(null)"> 批量删除({{ ids.length }}) </el-button>
       </div>
     </div>

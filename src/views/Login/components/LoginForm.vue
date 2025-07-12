@@ -280,17 +280,8 @@ const handleLogin = async () => {
       await userStore.setUserInfoAction();
       // 生成路由
       await permissionStore.generateRoutes();
-      
-      if (!redirect.value) {
-        redirect.value = "/home/index";
-      }
-      
-      // 判断是否为SSO登录
-      if (redirect.value.indexOf("sso") !== -1) {
-        window.location.href = window.location.href.replace("/login?redirect=", "");
-      } else {
-        await push({ path: redirect.value });
-      }
+    
+      await push({ path: '/' });
     } catch (error) {
       console.error("获取用户信息或生成路由失败:", error);
       message.error("系统初始化失败，请刷新页面重试");
