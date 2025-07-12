@@ -17,84 +17,38 @@ import {
   clearConnectionChecks,
   setDesignToolConnected
 } from '@/stores/connectionStatus'
-import { NativeWindowMessenger } from '@/utils/nativeWindowMessenger'
-import { getAccessToken } from '@/utils/auth'
+import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { ElMessage } from 'element-plus'
 
 export default defineComponent({
   name: 'ClientStatus',
   setup() {
     let timers: { localTimer: number, remoteTimer: number } | null = null
-    // openDesignTool 相关变量
-    let messenger: NativeWindowMessenger | null = null
-    let pingInterval: number | null = null
-    let pongTimeout: number | null = null
-    let adminPingTimeout: number | null = null
     const loading = ref(false)
     const clientLoading = ref(false)
-    // 断开清理
-    function cleanupMessenger() {
-      if (messenger) {
-        messenger.destroy && messenger.destroy()
-        messenger = null
-      }
-      if (pingInterval) {
-        clearInterval(pingInterval)
-        pingInterval = null
-      }
-      if (pongTimeout) {
-        clearTimeout(pongTimeout)
-        pongTimeout = null
-      }
-      if (adminPingTimeout) {
-        clearTimeout(adminPingTimeout)
-        adminPingTimeout = null
-      }
-      loading.value = false
-      setDesignToolConnected(false)
-    }
+    
+    // 获取设计工具通信实例
+    const designToolMessenger = getDesignToolMessenger()
+    
     // 打开设计工具逻辑
-    function openDesignTool() {
+    async function openDesignTool() {
       loading.value = true
-      cleanupMessenger()
-      const token = getAccessToken()
-      const baseUrl = import.meta.env.PROD ? 'http://49.232.186.238:1522' : 'http://localhost:1522'
-      const url = `${baseUrl}/#/design?token=${encodeURIComponent(token)}`
-      messenger = new NativeWindowMessenger()
-      messenger.openChild(url)
-      // 监听子窗口消息
-      messenger.on('customEvent', (data) => {
-        ElMessage.success(JSON.stringify(data))
-      })
-      // 监听 pong
-      messenger.on('pong', () => {
-        setDesignToolConnected(true)
-        loading.value = false
-        if (pongTimeout) {
-          clearTimeout(pongTimeout)
-          pongTimeout = null
+      try {
+        const success = await designToolMessenger.openDesignTool()
+        if (success) {
+          setDesignToolConnected(true)
         }
-      })
-      // 监听 adminPing 并回复 adminPong
-      messenger.on('adminPing', () => {
-        messenger?.send('adminPong', null)
-        if (adminPingTimeout) clearTimeout(adminPingTimeout)
-        adminPingTimeout = window.setTimeout(() => {
-          setDesignToolConnected(false)
-        }, 3500)
-      })
-      pingInterval = window.setInterval(() => {
-        messenger?.send('ping', null)
-        pongTimeout = window.setTimeout(() => {
-          setDesignToolConnected(false)
-          loading.value = false
-          ElMessage.error('子窗口无响应，连接断开！')
-          cleanupMessenger()
-        }, 3000)
-      }, 5000)
-      setTimeout(() => {
-        messenger?.send('test', null)
-      }, 1000)
+      } catch (error) {
+        console.error('打开设计工具失败:', error)
+        ElMessage.error('打开设计工具失败')
+      } finally {
+        loading.value = false
+      }
+    }
+    
+    // 监听连接状态变化
+    designToolMessenger.onConnectionChange = (connected: boolean) => {
+      setDesignToolConnected(connected)
     }
 
     // 启动客户端

@@ -86,32 +86,21 @@
         <el-button
           type="success"
           @click="
-            () => {
+            async () => {
               if (!ids.length) {
                 return ElMessage.warning('请选择要制作的素材')
               }
               selectedMaterialIds.value = [...ids.value]
+              selectedDesignModelIds.value = []
               designModelModalVisible = true
+              await loadDesignModels()
             }
           "
         >
           制作设计模型({{ ids.length }})
         </el-button>
 
-        <el-button
-          type="warning"
-          @click="
-            () => {
-              if (!ids.length) {
-                return ElMessage.warning('请选择要制作的素材')
-              }
-              selectedMaterialIds.value = [...ids.value]
-              batchDesignModelModalVisible = true
-            }
-          "
-        >
-          批量制作({{ ids.length }})
-        </el-button>
+
 
         <!-- <el-button type="warning" @click="handleMultipleCheck(0)">
           取消入库 ({{ ids.length }})</el-button> -->
@@ -145,9 +134,6 @@
                 </el-button>
                 <el-button type="success" link size="small" @click="handleDesignModel(row)">
                   制作设计模型
-                </el-button>
-                <el-button type="warning" link size="small" @click="handleBatchDesignModel(row)">
-                  批量制作
                 </el-button>
                 <el-button type="danger" link danger size="small" @click="handleDelete(row)">
                   删除
@@ -267,14 +253,13 @@
       width="100%"
       style="height: 100%"
       align-center
-      :footer="false"
       :destroy-on-close="true"
       class="design-model-dialog"
     >
-      <div style="height: 100%">
+      <div class="design-model-content" style="height: calc(100% - 120px); overflow-y: auto;">
         <div class="p-4">
           <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
-          <div class="flex flex-wrap gap-4">
+          <div class="flex flex-wrap gap-4 mb-6">
             <template v-for="id in selectedMaterialIds" :key="id">
               <div v-if="dataSource.find(item => item.id === id)" class="text-center">
                 <img 
@@ -285,38 +270,80 @@
               </div>
             </template>
           </div>
+          
+          <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
+          
+          <div class="design-model-list">
+            <div v-if="designModelLoading" class="text-center py-4">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span class="ml-2">加载中...</span>
+            </div>
+            
+            <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
+              暂无设计模型
+            </div>
+            
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div
+                v-for="model in designModelList"
+                :key="model.id"
+                class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
+                :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
+                @click="selectDesignModel(model)"
+              >
+                <div class="flex items-center space-x-3">
+                  <img
+                    v-if="model.thumbnail"
+                    :src="model.thumbnail"
+                    :alt="model.name"
+                    class="w-16 h-16 object-cover rounded"
+                  />
+                  <div class="flex-1 min-w-0">
+                    <h4 class="font-medium text-gray-900 truncate">{{ model.name }}</h4>
+                    <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
+                    <p class="text-xs text-gray-400">{{ model.createTime }}</p>
+                  </div>
+                </div>
+                
+                <!-- 选中状态图标 -->
+                <div 
+                  v-if="selectedDesignModelIds.includes(model.id)"
+                  class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                >
+                  <el-icon class="text-white text-sm">
+                    <Check />
+                  </el-icon>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <div class="flex-1 text-sm text-gray-600 mr-4">
+            <span>已选择 {{ selectedMaterialIds.length }} 个素材</span>
+            <span class="mx-2">×</span>
+            <span>{{ selectedDesignModelIds.length }} 个模板</span>
+            <span class="mx-2">=</span>
+            <span class="font-semibold text-blue-600">{{ selectedMaterialIds.length * selectedDesignModelIds.length }} 个新设计模型</span>
+          </div>
+          <div class="flex gap-2">
+            <el-button @click="designModelModalVisible = false">取消</el-button>
+            <el-button 
+              type="primary" 
+              @click="handleDesignModelConfirm"
+              :disabled="!selectedDesignModelIds.length"
+            >
+              确定 ({{ selectedDesignModelIds.length }})
+            </el-button>
+          </div>
+        </div>
+      </template>
     </el-dialog>
 
-    <!-- 批量制作弹窗 -->
-    <el-dialog
-      v-model="batchDesignModelModalVisible"
-      title="批量制作"
-      width="100%"
-      style="height: 100%"
-      align-center
-      :footer="false"
-      :destroy-on-close="true"
-      class="batch-design-model-dialog"
-    >
-      <div style="height: 100%">
-        <div class="p-4">
-          <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
-          <div class="flex flex-wrap gap-4">
-            <template v-for="id in selectedMaterialIds" :key="id">
-              <div v-if="dataSource.find(item => item.id === id)" class="text-center">
-                <img 
-                  :src="dataSource.find(item => item.id === id).url" 
-                  :alt="dataSource.find(item => item.id === id).name"
-                  class="w-20 h-20 object-cover rounded border"
-                />
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-    </el-dialog>
+
   </div>
 </template>
 
@@ -356,7 +383,7 @@ import imgCard from './imgCard.vue'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -372,6 +399,8 @@ import genPicture from './genPicture.vue'
 import { getAccessToken } from '@/utils/auth'
 import { getTenantId } from '@/utils/auth'
 import useListSelect from '@/components/common/userListSelect.vue'
+import { getDesignModelList } from '@/api/designModel'
+import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 
 const userStore = useUserStore()
 
@@ -479,8 +508,12 @@ const rules = {
 
 const genPicturesModalVisible = ref(false)
 const designModelModalVisible = ref(false)
-const batchDesignModelModalVisible = ref(false)
 const selectedMaterialIds = ref([])
+
+// 设计模型相关
+const designModelList = ref([])
+const designModelLoading = ref(false)
+const selectedDesignModelIds = ref([])
 
 // 处理上传
 
@@ -610,15 +643,66 @@ async function handleDownload(row) {
   }
 }
 
-function handleDesignModel(row) {
+async function handleDesignModel(row) {
   selectedMaterialIds.value = [row.id]
+  selectedDesignModelIds.value = []
   designModelModalVisible.value = true
+  await loadDesignModels()
 }
 
-function handleBatchDesignModel(row) {
-  selectedMaterialIds.value = [row.id]
-  batchDesignModelModalVisible.value = true
+async function loadDesignModels() {
+  designModelLoading.value = true
+  try {
+    const res = await getDesignModelList({
+      currentPage: 1,
+      pageSize: 100
+    })
+    designModelList.value = res.list || []
+  } catch (error) {
+    console.error('加载设计模型失败:', error)
+    ElMessage.error('加载设计模型失败')
+  } finally {
+    designModelLoading.value = false
+  }
 }
+
+
+
+function selectDesignModel(model) {
+  const index = selectedDesignModelIds.value.indexOf(model.id)
+  if (index > -1) {
+    // 如果已选中，则取消选中
+    selectedDesignModelIds.value.splice(index, 1)
+  } else {
+    // 如果未选中，则添加到选中列表
+    selectedDesignModelIds.value.push(model.id)
+  }
+}
+
+function handleDesignModelConfirm() {
+  if (!selectedDesignModelIds.value.length) {
+    ElMessage.warning('请选择设计模型')
+    return
+  }
+  
+  // 打印最终数据
+  console.log('素材图ID数组:', selectedMaterialIds.value)
+  console.log('设计模型ID数组:', selectedDesignModelIds.value)
+  
+  // 发送数据到设计工具
+  const designToolMessenger = getDesignToolMessenger()
+  const success = designToolMessenger.sendDesignModelData({
+    materialIds: selectedMaterialIds.value,
+    designModelIds: selectedDesignModelIds.value
+  })
+  
+  if (success) {
+    ElMessage.success('数据已发送到设计工具')
+    // designModelModalVisible.value = false
+  }
+}
+
+
 
 const delayUpdateList = useDebounceFn(() => {
   getList()
@@ -656,15 +740,23 @@ h1 {
 
 .design-model-dialog {
   .el-dialog__body {
-    height: calc(100% - 40px);
+    height: calc(100% - 120px);
+    padding: 0;
+  }
+  
+  .design-model-content {
+    padding: 16px;
+  }
+  
+    .dialog-footer {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 }
 
-.batch-design-model-dialog {
-  .el-dialog__body {
-    height: calc(100% - 40px);
-  }
-}
+
 
 .preview-label {
   span {
