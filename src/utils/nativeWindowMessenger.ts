@@ -64,10 +64,16 @@ export class NativeWindowMessenger {
 
   destroy() {
     window.removeEventListener('message', this._onMessage)
-    if (this.childWindow && !this.childWindow.closed) {
-      this.childWindow.close()
-    }
+    // 不再自动关闭子窗口
+    // if (this.childWindow && !this.childWindow.closed) {
+    //   this.childWindow.close()
+    // }
     this.childWindow = null
     this.handlers = {}
+  }
+
+  // 检查子窗口是否仍然存在
+  isWindowOpen(): boolean {
+    return !!(this.childWindow && !this.childWindow.closed)
   }
 } 

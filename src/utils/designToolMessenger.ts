@@ -9,20 +9,102 @@ export interface DesignModelData {
 
 export class DesignToolMessenger {
   private messenger: NativeWindowMessenger | null = null
-  private pingInterval: number | null = null
-  private pongTimeout: number | null = null
+  private adminPingInterval: number | null = null
   private adminPingTimeout: number | null = null
   private isConnected = false
+  private connectionChangeTimeout: number | null = null
+  private windowCheckInterval: number | null = null
   public onConnectionChange?: (connected: boolean) => void
 
   constructor(onConnectionChange?: (connected: boolean) => void) {
     this.onConnectionChange = onConnectionChange
   }
 
+  // 防抖的状态变化通知
+  private notifyConnectionChange(connected: boolean) {
+    if (this.connectionChangeTimeout) {
+      clearTimeout(this.connectionChangeTimeout)
+    }
+    
+    this.connectionChangeTimeout = window.setTimeout(() => {
+      // 总是更新状态并通知回调，确保状态同步
+      this.isConnected = connected
+      this.onConnectionChange?.(connected)
+    }, 100) // 100ms 防抖
+  }
+
+  // 启动心跳检测
+  private startHeartbeat() {
+    // 清理旧的心跳检测
+    this.stopHeartbeat()
+    
+    // 监听 adminPong 响应
+    this.messenger?.on('adminPong', () => {
+      // 收到 adminPong 说明连接正常，重置超时
+      if (this.adminPingTimeout) {
+        clearTimeout(this.adminPingTimeout)
+        this.adminPingTimeout = null
+      }
+      // 设置新的超时检测 - 但不立即断开，只是标记为可能断开
+      this.adminPingTimeout = window.setTimeout(() => {
+        // 检查窗口是否还存在
+        if (this.messenger && this.messenger.isWindowOpen()) {
+          // 窗口存在，保持连接状态，继续尝试心跳
+          console.log('心跳超时但窗口存在，保持连接状态')
+          this.adminPingTimeout = null
+        } else {
+          // 窗口不存在，才真正断开
+          this.isConnected = false
+          this.notifyConnectionChange(false)
+          ElMessage.error('设计工具窗口已关闭，连接断开！')
+          this.cleanup()
+        }
+      }, 5000) // 5秒超时
+    })
+
+    // 定时发送 adminPing
+    this.adminPingInterval = window.setInterval(() => {
+      this.messenger?.send('adminPing', null)
+    }, 5000) // 每5秒发送一次
+
+    // 监听窗口状态变化
+    this.windowCheckInterval = window.setInterval(() => {
+      if (this.messenger && !this.messenger.isWindowOpen()) {
+        // 窗口已关闭，断开连接
+        this.isConnected = false
+        this.notifyConnectionChange(false)
+        ElMessage.error('设计工具窗口已关闭，连接断开！')
+        this.cleanup()
+      }
+    }, 2000) // 每2秒检查一次窗口状态
+
+    // 首次立即发送
+    setTimeout(() => {
+      this.messenger?.send('adminPing', null)
+    }, 1000)
+  }
+
+  // 停止心跳检测
+  private stopHeartbeat() {
+    if (this.adminPingInterval) {
+      clearInterval(this.adminPingInterval)
+      this.adminPingInterval = null
+    }
+    if (this.adminPingTimeout) {
+      clearTimeout(this.adminPingTimeout)
+      this.adminPingTimeout = null
+    }
+    if (this.windowCheckInterval) {
+      clearInterval(this.windowCheckInterval)
+      this.windowCheckInterval = null
+    }
+  }
+
   // 打开设计工具窗口
   openDesignTool(): Promise<boolean> {
     return new Promise((resolve) => {
-      this.cleanup()
+      // 清理旧的连接，但不立即设置状态为false
+      this.cleanupWithoutStateChange()
       
       const token = getAccessToken()
       const baseUrl = import.meta.env.PROD ? 'http://49.232.186.238:1522' : 'http://localhost:1522'
@@ -31,52 +113,29 @@ export class DesignToolMessenger {
       this.messenger = new NativeWindowMessenger()
       this.messenger.openChild(url)
 
-      // 监听 pong
-      this.messenger.on('pong', () => {
-        this.isConnected = true
-        this.onConnectionChange?.(true)
-        if (this.pongTimeout) {
-          clearTimeout(this.pongTimeout)
-          this.pongTimeout = null
-        }
-        resolve(true)
-      })
-
-      // 监听 customEvent 也作为连接成功的标志
+      // 监听 customEvent 作为连接成功的标志
       this.messenger.on('customEvent', (data) => {
         if (!this.isConnected) {
           this.isConnected = true
-          this.onConnectionChange?.(true)
+          this.notifyConnectionChange(true)
         }
         ElMessage.success(JSON.stringify(data))
       })
 
-      // 监听 adminPing 并回复 adminPong
-      this.messenger.on('adminPing', () => {
-        this.messenger?.send('adminPong', null)
-        if (this.adminPingTimeout) clearTimeout(this.adminPingTimeout)
-        this.adminPingTimeout = window.setTimeout(() => {
-          this.isConnected = false
-          this.onConnectionChange?.(false)
-        }, 3500)
-      })
-
       // 启动心跳检测
-      this.pingInterval = window.setInterval(() => {
-        this.messenger?.send('ping', null)
-        this.pongTimeout = window.setTimeout(() => {
-          this.isConnected = false
-          this.onConnectionChange?.(false)
-          ElMessage.error('设计工具无响应，连接断开！')
-          this.cleanup()
-          resolve(false)
-        }, 3000)
-      }, 5000)
+      this.startHeartbeat()
 
       // 发送测试消息
       setTimeout(() => {
         this.messenger?.send('test', null)
       }, 1000)
+      
+      // 设置连接超时
+      setTimeout(() => {
+        if (!this.isConnected) {
+          resolve(false)
+        }
+      }, 10000) // 10秒后如果还没连接成功，认为失败
     })
   }
 
@@ -103,26 +162,23 @@ export class DesignToolMessenger {
     return this.isConnected
   }
 
-  // 清理资源
-  cleanup() {
+  // 清理资源，但不立即设置连接状态为false
+  private cleanupWithoutStateChange() {
     if (this.messenger) {
       this.messenger.destroy && this.messenger.destroy()
       this.messenger = null
     }
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval)
-      this.pingInterval = null
+    this.stopHeartbeat() // 清理心跳检测
+    if (this.connectionChangeTimeout) {
+      clearTimeout(this.connectionChangeTimeout)
+      this.connectionChangeTimeout = null
     }
-    if (this.pongTimeout) {
-      clearTimeout(this.pongTimeout)
-      this.pongTimeout = null
-    }
-    if (this.adminPingTimeout) {
-      clearTimeout(this.adminPingTimeout)
-      this.adminPingTimeout = null
-    }
-    this.isConnected = false
-    this.onConnectionChange?.(false)
+  }
+
+  // 清理资源
+  cleanup() {
+    this.cleanupWithoutStateChange()
+    this.notifyConnectionChange(false)
   }
 
   // 销毁实例

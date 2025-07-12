@@ -32,25 +32,32 @@ export default defineComponent({
     
     // 打开设计工具逻辑
     async function openDesignTool() {
+      if (loading.value) return // 防止重复点击
+      
       loading.value = true
-      try {
-        const success = await designToolMessenger.openDesignTool()
-        if (success) {
-          setDesignToolConnected(true)
+      
+      // 设置loading超时，防止一直显示
+      const loadingTimeout = setTimeout(() => {
+        if (loading.value) {
+          loading.value = false
+          ElMessage.warning('连接超时，请重试')
         }
+      }, 15000) // 15秒超时
+      
+      try {
+        await designToolMessenger.openDesignTool()
+        // 连接成功或失败后，loading会在状态变化回调中处理
       } catch (error) {
         console.error('打开设计工具失败:', error)
         ElMessage.error('打开设计工具失败')
-      } finally {
-        loading.value = false
+        loading.value = false // 出错时立即停止loading
+        clearTimeout(loadingTimeout)
       }
+      
+      // 保存超时定时器引用，供状态变化回调使用
+      ;(window as any).__designToolLoadingTimeout = loadingTimeout
     }
     
-    // 监听连接状态变化
-    designToolMessenger.onConnectionChange = (connected: boolean) => {
-      setDesignToolConnected(connected)
-    }
-
     // 启动客户端
     function openClient() {
       if (clientLoading.value) return
@@ -63,12 +70,30 @@ export default defineComponent({
 
     onMounted(() => {
       timers = startConnectionChecks()
+      
+      // 先设置监听器，确保状态变化能被捕获
+      designToolMessenger.onConnectionChange = (connected: boolean) => {
+        setDesignToolConnected(connected)
+        // 连接状态变化时停止loading并清理超时定时器
+        if (loading.value) {
+          loading.value = false
+          if ((window as any).__designToolLoadingTimeout) {
+            clearTimeout((window as any).__designToolLoadingTimeout)
+            ;(window as any).__designToolLoadingTimeout = null
+          }
+        }
+      }
+      
+      // 然后同步当前状态
+      setDesignToolConnected(designToolMessenger.isDesignToolConnected())
     })
 
     onUnmounted(() => {
       if (timers) {
         clearConnectionChecks(timers)
       }
+      // 清理连接状态监听
+      designToolMessenger.onConnectionChange = undefined
     })
 
     return () => (
