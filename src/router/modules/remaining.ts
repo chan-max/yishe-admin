@@ -253,7 +253,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'ProductIndex',
         meta: {
           title: '商品列表',
-          icon: 'ep:list'
         }
       },
       {
@@ -262,7 +261,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'DesignRequest',
         meta: {
           title: '设计请求',
-          icon: 'ep:edit'
         }
       },
       {
@@ -271,7 +269,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'DesignModel',
         meta: {
           title: '设计模型',
-          icon: 'ep:magic-stick'
         }
       }
     ]
