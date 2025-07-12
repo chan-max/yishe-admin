@@ -90,7 +90,6 @@ export class DesignToolMessenger {
     try {
       // 直接发送数据，NativeWindowMessenger 会自动处理序列化
       this.messenger.send('designModelData', data)
-      ElMessage.success('')
       return true
     } catch (error) {
       ElMessage.error('发送数据失败')

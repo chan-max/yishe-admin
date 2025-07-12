@@ -90,7 +90,6 @@
               if (!ids.length) {
                 return ElMessage.warning('请选择要制作的素材')
               }
-              selectedMaterialIds.value = [...ids.value]
               selectedDesignModelIds.value = []
               designModelModalVisible = true
               await loadDesignModels()
@@ -260,13 +259,14 @@
         <div class="p-4">
           <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
           <div class="flex flex-wrap gap-4 mb-6">
-            <template v-for="id in selectedMaterialIds" :key="id">
-              <div v-if="dataSource.find(item => item.id === id)" class="text-center">
+            <template v-for="id in ids" :key="id">
+              <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
                 <img 
-                  :src="dataSource.find(item => item.id === id).url" 
-                  :alt="dataSource.find(item => item.id === id).name"
+                  :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                  :alt="dataSource.find(item => String(item.id) === String(id)).name"
                   class="w-20 h-20 object-cover rounded border"
                 />
+                <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
               </div>
             </template>
           </div>
@@ -323,11 +323,11 @@
       <template #footer>
         <div class="dialog-footer">
           <div class="flex-1 text-sm text-gray-600 mr-4">
-            <span>已选择 {{ selectedMaterialIds.length }} 个素材</span>
+            <span>已选择 {{ ids.length }} 个素材</span>
             <span class="mx-2">×</span>
             <span>{{ selectedDesignModelIds.length }} 个模板</span>
             <span class="mx-2">=</span>
-            <span class="font-semibold text-blue-600">{{ selectedMaterialIds.length * selectedDesignModelIds.length }} 个新设计模型</span>
+            <span class="font-semibold text-blue-600">{{ ids.length * selectedDesignModelIds.length }} 个新设计模型</span>
           </div>
           <div class="flex gap-2">
             <el-button @click="designModelModalVisible = false">取消</el-button>
@@ -491,7 +491,7 @@ const dataSource = ref([])
 const loading = ref(false)
 const open = ref(false)
 const title = ref('')
-const ids = ref([])
+const ids = ref<string[]>([])
 const single = ref(false)
 const multiple = ref(true)
 const total = ref(0)
@@ -508,7 +508,6 @@ const rules = {
 
 const genPicturesModalVisible = ref(false)
 const designModelModalVisible = ref(false)
-const selectedMaterialIds = ref([])
 
 // 设计模型相关
 const designModelList = ref([])
@@ -595,7 +594,7 @@ function handleDelete(row?) {
   if (row) {
     delIds = [row.id]
   } else {
-    delIds = [...ids.value]
+    delIds = Array.isArray(ids.value) ? [...ids.value] : []
     if (!delIds.length) {
       return ElMessage.warning('请选择要删除的数据')
     }
@@ -616,11 +615,15 @@ function handleDelete(row?) {
     .catch(() => {})
 }
 function checkboxChange(e) {
-  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
 }
 
 function checkboxAllChange(e) {
-  ids.value = [...e.records.map((item) => item.id), ...e.reserves.map((item) => item.id)]
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
 }
 
 async function handleDownload(row) {
@@ -644,7 +647,8 @@ async function handleDownload(row) {
 }
 
 async function handleDesignModel(row) {
-  selectedMaterialIds.value = [row.id]
+  // 设置当前选中的素材为单个素材
+  ids.value = [row.id]
   selectedDesignModelIds.value = []
   designModelModalVisible.value = true
   await loadDesignModels()
@@ -686,13 +690,13 @@ function handleDesignModelConfirm() {
   }
   
   // 打印最终数据
-  console.log('素材图ID数组:', selectedMaterialIds.value)
+  console.log('素材图ID数组:', ids.value)
   console.log('设计模型ID数组:', selectedDesignModelIds.value)
   
   // 发送数据到设计工具
   const designToolMessenger = getDesignToolMessenger()
   const success = designToolMessenger.sendDesignModelData({
-    materialIds: selectedMaterialIds.value,
+    materialIds: Array.isArray(ids.value) ? [...ids.value] : [],
     designModelIds: selectedDesignModelIds.value
   })
   
