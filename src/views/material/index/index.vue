@@ -702,6 +702,10 @@ function handleDesignModelConfirm() {
   
   if (success) {
     ElMessage.success('数据已发送到设计工具')
+    // 聚焦到子窗口
+    if (designToolMessenger.childWindow && typeof designToolMessenger.childWindow.focus === 'function') {
+      designToolMessenger.childWindow.focus()
+    }
     // designModelModalVisible.value = false
   }
 }
