@@ -122,6 +122,12 @@ export class DesignToolMessenger {
         ElMessage.success(JSON.stringify(data))
       })
 
+      // 监听模型保存成功消息
+      this.messenger.on('modelSaved', (data) => {
+        // data: { modelId, materialId }
+        ElMessage.success(`模型保存成功：模型ID=${data.modelId}，素材ID=${data.materialId}`)
+      })
+
       // 启动心跳检测
       this.startHeartbeat()
 
