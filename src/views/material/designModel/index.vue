@@ -30,7 +30,7 @@
         <template #operationDefaultSlot="{ row }">
           <div class="flex table-operation-column">
             <el-button type="success" link size="small" @click="viewRelatedDrafts(row)">
-              查看草稿
+              查看草稿截图
             </el-button>
             <el-button type="primary" link size="small" @click="handleEdit(row)">
               编辑
@@ -38,6 +38,8 @@
             <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
+
+            
           </div>
         </template>
         <template #thumbnailSlot="{ row }">
@@ -136,8 +138,19 @@
               />
             </div>
             <div class="draft-info p-3">
-              <div class="draft-name text-sm font-medium truncate">
-                {{ draft.name || '未命名' }}
+              <div class="draft-header flex justify-between items-start mb-2">
+                <div class="draft-name text-sm font-medium truncate flex-1">
+                  {{ draft.name || '未命名' }}
+                </div>
+                <el-button 
+                  type="danger" 
+                  link 
+                  size="small" 
+                  @click="deleteDraftItem(draft)"
+                  class="ml-2 flex-shrink-0"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
               </div>
               <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
                 {{ draft.description }}
@@ -161,7 +174,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Delete } from '@element-plus/icons-vue'
 import { getDesignModelList, updateDesignModel, deleteDesignModel } from '@/api/designModel'
-import { getDraftList } from '@/api/draft'
+import { getDraftList, deleteDraft } from '@/api/draft'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import type { DesignModelVO } from '@/api/designModel'
@@ -238,6 +251,34 @@ async function viewRelatedDrafts(model: any) {
   } catch (error) {
     ElMessage.error('获取关联草稿失败')
     relatedDrafts.value = []
+  }
+}
+
+// 删除单个草稿
+async function deleteDraftItem(draft: any) {
+  try {
+    await ElMessageBox.confirm(
+      `确认删除草稿"${draft.name || '未命名'}"吗？`, 
+      '删除提示', 
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    await deleteDraft([draft.id])
+    ElMessage.success('删除成功')
+    
+    // 从当前列表中移除已删除的草稿
+    const index = relatedDrafts.value.findIndex(item => item.id === draft.id)
+    if (index > -1) {
+      relatedDrafts.value.splice(index, 1)
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
   }
 }
 
@@ -354,8 +395,23 @@ const submitForm = async () => {
     background: var(--el-bg-color);
   }
   
-  .draft-name {
-    font-weight: 500;
+  .draft-header {
+    .draft-name {
+      font-weight: 500;
+    }
+    
+    .el-button {
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+  
+  .draft-item:hover .draft-header .el-button {
+    opacity: 1;
   }
   
   .draft-desc {
