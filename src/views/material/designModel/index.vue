@@ -13,8 +13,8 @@
       <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
       <div class="shrink-0">
         <!-- 删除按钮 -->
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除
+        <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
+          批量删除({{ ids.length }})
         </el-button>
       </div>
     </div>
@@ -105,6 +105,7 @@ import { commonGridOptions } from '@/common/table'
 import type { DesignModelVO } from '@/api/designModel'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
+import Pagination from '@/components/Pagination/index.vue'
 
 
 const queryParams = reactive({
@@ -114,8 +115,14 @@ const queryParams = reactive({
 })
 const gridOptions = ref({
   ...commonGridOptions,
-  columns: [
-    { type: 'checkbox', width: 50 },
+  rowConfig: {
+    keyField: 'id'
+  },
+  checkboxConfig: {
+    reserve: true
+  },
+      columns: [
+      { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     // { title: 'ID', field: 'id', width: 240 },
     { title: '缩略图', field: 'thumbnail', width: 120, slots: { default: 'thumbnailSlot' } },
     { title: '模型名称', field: 'name', width: 200 },
@@ -166,10 +173,16 @@ async function getList() {
 onMounted(getList)
 
 function checkboxChange(e) {
-  ids.value = e.records.map((item) => item.id)
+  // 兼容跨页多选
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...new Set([...records, ...reserves].map(item => item.id))]
 }
 function checkboxAllChange(e) {
-  ids.value = e.records.map((item) => item.id)
+  // 兼容跨页多选
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...new Set([...records, ...reserves].map(item => item.id))]
 }
 function handleEdit(row) {
   isEdit.value = true
@@ -178,7 +191,7 @@ function handleEdit(row) {
   form.value = { ...row }
 }
 function handleDelete(row?) {
-  let delIds = null
+  let delIds: string[] = []
   if (row) {
     delIds = [row.id]
   } else if (!ids.value.length) {
@@ -186,15 +199,21 @@ function handleDelete(row?) {
   } else {
     delIds = [...ids.value]
   }
-  ElMessageBox.confirm('确认删除该数据吗', '删除提示', {
+
+  ElMessageBox.confirm(`确认删除选中的${delIds.length}条数据吗`, '删除提示', {
     confirmButtonText: '确认',
     cancelButtonText: '取消',
     type: 'error'
   })
     .then(async () => {
-      await deleteDesignModel(delIds)
-      ElMessage.success('删除成功')
-      getList()
+      try {
+        await deleteDesignModel(delIds)
+        ElMessage.success('删除成功')
+        ids.value = []
+        getList()
+      } catch (error) {
+        ElMessage.error('删除失败')
+      }
     })
     .catch(() => {})
 }

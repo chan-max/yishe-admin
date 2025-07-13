@@ -92,6 +92,7 @@ import {
   getDraftList, 
   deleteDraft
 } from '@/api/draft'
+import Pagination from '@/components/Pagination/index.vue'
 
 // 查询条件
 const queryParams = reactive({

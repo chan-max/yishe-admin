@@ -44,9 +44,9 @@ export const updateDesignModel = (data: DesignModelVO) => {
 }
 
 // 删除设计模型
-export const deleteDesignModel = (ids: string[]) => {
+export const deleteDesignModel = (ids: string | string[]) => {
   return request.post({
     url: '/custom-model/delete',
-    data: { id: ids[0] } // 后端只接收单个id
+    data: { ids }
   })
 } 
