@@ -29,6 +29,9 @@
       >
         <template #operationDefaultSlot="{ row }">
           <div class="flex table-operation-column">
+            <el-button type="success" link size="small" @click="viewRelatedDrafts(row)">
+              查看草稿
+            </el-button>
             <el-button type="primary" link size="small" @click="handleEdit(row)">
               编辑
             </el-button>
@@ -94,6 +97,63 @@
     <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
       <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
     </el-dialog>
+    
+    <!-- 关联草稿弹窗 -->
+    <el-dialog 
+      v-model="draftDialogVisible" 
+      title="关联草稿" 
+      width="80%" 
+      :close-on-click-modal="false"
+    >
+      <div class="draft-dialog-content">
+        <div class="draft-info mb-4">
+          <h3 class="text-lg font-medium mb-2">
+            模型：{{ currentModel?.name || currentModel?.id }}
+          </h3>
+          <p v-if="currentModel?.description" class="text-color-regular">
+            {{ currentModel.description }}
+          </p>
+        </div>
+        
+        <div v-if="relatedDrafts.length === 0" class="empty-state text-center py-8">
+          <el-empty description="暂无关联草稿" />
+        </div>
+        
+        <div v-else class="draft-grid">
+          <div 
+            v-for="draft in relatedDrafts" 
+            :key="draft.id" 
+            class="draft-item"
+          >
+            <div class="draft-preview">
+              <el-image 
+                :src="draft.url" 
+                fit="cover" 
+                class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[draft.url]"
+                :preview-teleported="true"
+                :z-index="9999"
+              />
+            </div>
+            <div class="draft-info p-3">
+              <div class="draft-name text-sm font-medium truncate">
+                {{ draft.name || '未命名' }}
+              </div>
+              <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
+                {{ draft.description }}
+              </div>
+              <div class="draft-meta text-xs text-color-placeholder mt-2">
+                <span>{{ formatTimestamp(draft.createTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <el-button @click="draftDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script setup lang="ts">
@@ -101,7 +161,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Delete } from '@element-plus/icons-vue'
 import { getDesignModelList, updateDesignModel, deleteDesignModel } from '@/api/designModel'
+import { getDraftList } from '@/api/draft'
 import { commonGridOptions } from '@/common/table'
+import { formatTimestamp } from '@/common/date'
 import type { DesignModelVO } from '@/api/designModel'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
@@ -153,9 +215,30 @@ const form = ref<Partial<DesignModelVO>>({})
 const submitLoading = ref(false)
 const metaDialogVisible = ref(false)
 const metaDialogContent = ref('')
+const draftDialogVisible = ref(false)
+const currentModel = ref(null)
+const relatedDrafts = ref([])
 function showMetaDetail(meta: any) {
   metaDialogContent.value = JSON.stringify(meta, null, 2)
   metaDialogVisible.value = true
+}
+
+// 查看关联草稿
+async function viewRelatedDrafts(model: any) {
+  currentModel.value = model
+  draftDialogVisible.value = true
+  
+  try {
+    const res = await getDraftList({
+      customModelId: model.id,
+      currentPage: 1,
+      pageSize: 100 // 获取较多数据
+    })
+    relatedDrafts.value = res.list || []
+  } catch (error) {
+    ElMessage.error('获取关联草稿失败')
+    relatedDrafts.value = []
+  }
 }
 
 async function getList() {
@@ -241,4 +324,54 @@ const submitForm = async () => {
   }
 }
 </script>
-<style lang="less"></style> 
+<style lang="less">
+.draft-dialog-content {
+  .draft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  
+  .draft-item {
+    border: 1px solid var(--el-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: var(--el-box-shadow-light);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .draft-preview {
+    position: relative;
+  }
+  
+  .draft-info {
+    background: var(--el-bg-color);
+  }
+  
+  .draft-name {
+    font-weight: 500;
+  }
+  
+  .draft-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .draft-meta {
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding-top: 8px;
+  }
+}
+
+.empty-state {
+  color: var(--el-text-color-placeholder);
+}
+</style> 

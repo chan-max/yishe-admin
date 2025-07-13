@@ -21,6 +21,18 @@
             style="width: 160px"
           />
         </form-item>
+        <form-item label="关联状态">
+          <el-select
+            v-model="queryParams.hasModel"
+            clearable
+            placeholder="选择关联状态"
+            style="width: 120px"
+          >
+            <el-option label="全部" value="" />
+            <el-option label="已关联" value="true" />
+            <el-option label="未关联" value="false" />
+          </el-select>
+        </form-item>
         <el-button type="primary" @click="handleSearch" :icon="Search">
           搜索
         </el-button>
@@ -29,6 +41,8 @@
         </el-button>
       </div>
     </div>
+
+
 
     <!-- 表格展示 -->
     <div class="common-table">
@@ -59,6 +73,26 @@
             </el-button>
           </div>
         </template>
+
+        <template #modelRelationSlot="{ row }">
+          <div class="model-relation-detail">
+            <div v-if="row.customModelId" class="model-info">
+              <div class="model-name">
+                <el-icon class="mr-1 text-green-500"><Link /></el-icon>
+                <span class="text-green-600 font-medium">{{ row.customModel?.name || row.customModelId }}</span>
+              </div>
+              <div v-if="row.customModel?.description" class="model-desc text-xs text-gray-400 mt-1 max-w-32 truncate">
+                {{ row.customModel.description }}
+              </div>
+            </div>
+            <div v-else class="no-model">
+              <el-tag type="info" size="small">
+                <el-icon class="mr-1"><Link /></el-icon>
+                未关联模型
+              </el-tag>
+            </div>
+          </div>
+        </template>
       </vxe-grid>
     </div>
 
@@ -75,7 +109,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, watchEffect } from 'vue'
+import { ref, reactive, watchEffect, computed } from 'vue'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { useWindowSize } from '@vueuse/core'
@@ -85,7 +119,8 @@ import {
   Search,
   Delete,
   Download,
-  Refresh
+  Refresh,
+  Link
 } from '@element-plus/icons-vue'
 import { downloadFileByElement } from '@/common/download'
 import { 
@@ -101,6 +136,7 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue(),
   imageName: '',
   search: '',
+  hasModel: '', // 关联状态筛选
 })
 
 const gridRef = ref()
@@ -128,6 +164,14 @@ const gridOptions = ref({
     { title: '草稿描述', field: 'description', minWidth: 200, showOverflow: true },
     { title: '文件大小', field: 'size', width: 100, showOverflow: true },
     { title: '创建人', field: 'creatorName', minWidth: 100, showOverflow: true },
+    {
+      title: '关联模型',
+      field: 'customModelId',
+      width: 220,
+      slots: {
+        default: 'modelRelationSlot'
+      }
+    },
     {
       title: '创建时间',
       field: 'createTime',
@@ -169,6 +213,8 @@ const loading = ref(false)
 const ids = ref([])
 const total = ref(0)
 
+
+
 // 获取列表
 async function getList() {
   loading.value = true
@@ -209,6 +255,7 @@ const resetQuery = () => {
   queryParams.pageSize = 20
   queryParams.imageName = ''
   queryParams.search = ''
+  queryParams.hasModel = ''
   queryParams.sortingFields = defaultSortingValue()
   getList()
 }
@@ -266,6 +313,8 @@ function handleMultiDownload() {
   }
 }
 
+
+
 // 初始化
 getList()
 </script>
@@ -273,5 +322,27 @@ getList()
 <style lang="less">
 .table-operation-column {
   gap: 8px;
+}
+
+.model-relation-detail {
+  .model-info {
+    .model-name {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+    
+    .model-desc {
+      line-height: 1.2;
+      word-break: break-all;
+    }
+  }
+  
+  .no-model {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 </style> 
