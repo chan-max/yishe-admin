@@ -168,6 +168,11 @@ export class DesignToolMessenger {
     return this.isConnected
   }
 
+  // 新增：获取子窗口 window 对象
+  getChildWindow(): Window | null {
+    return this.messenger ? (this.messenger as any).childWindow : null;
+  }
+
   // 清理资源，但不立即设置连接状态为false
   private cleanupWithoutStateChange() {
     if (this.messenger) {

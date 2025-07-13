@@ -695,6 +695,8 @@ function handleDesignModelConfirm() {
   
   // 发送数据到设计工具
   const designToolMessenger = getDesignToolMessenger()
+  const childWindow = designToolMessenger.getChildWindow()
+
   const success = designToolMessenger.sendDesignModelData({
     materialIds: Array.isArray(ids.value) ? [...ids.value] : [],
     designModelIds: selectedDesignModelIds.value
@@ -702,11 +704,9 @@ function handleDesignModelConfirm() {
   
   if (success) {
     ElMessage.success('数据已发送到设计工具')
-    // 聚焦到子窗口
-    if (designToolMessenger.childWindow && typeof designToolMessenger.childWindow.focus === 'function') {
-      designToolMessenger.childWindow.focus()
-    }
-    // designModelModalVisible.value = false
+    if (childWindow && typeof childWindow.focus === 'function') {
+    childWindow.focus()
+  }
   }
 }
 
