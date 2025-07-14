@@ -38,8 +38,7 @@
             <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
-
-            
+            <el-button type="warning" link size="small" @click="generateProduct(row)">生成产品</el-button>
           </div>
         </template>
         <template #thumbnailSlot="{ row }">
@@ -181,6 +180,7 @@ import type { DesignModelVO } from '@/api/designModel'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import Pagination from '@/components/Pagination/index.vue'
+import { createProduct } from '@/api/product' // 假设有该API，无则需新建
 
 
 const queryParams = reactive({
@@ -279,6 +279,30 @@ async function deleteDraftItem(draft: any) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
     }
+  }
+}
+
+// 生成产品
+async function generateProduct(model: any) {
+  const params = {
+    code: 'MODEL_' + (model.id || Date.now()),
+    name: model.name || '未命名产品',
+    description: model.description || '',
+    type: '自定义模型',
+    images: model.thumbnail ? [model.thumbnail] : [],
+    price: 99.99,
+    stock: 100,
+    customModelId: model.id,
+    keywords: model.keywords || '',
+    isActive: true,
+    isPublish: false,
+    isLimitedEdition: 0
+  }
+  try {
+    await createProduct(params)
+    ElMessage.success('生成产品成功')
+  } catch (e) {
+    ElMessage.error('生成产品失败')
   }
 }
 

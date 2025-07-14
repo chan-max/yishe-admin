@@ -247,14 +247,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       alwaysShow: true   
     },
     children: [
-      {
-        path: 'index',
-        component: () => import('@/views/product/index/index.vue'),
-        name: 'ProductIndex',
-        meta: {
-          title: '商品列表',
-        }
-      },
+
       {
         path: 'designRequest',
         component: () => import('@/views/material/designRequest/index.vue'),
@@ -270,7 +263,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: '设计模型',
         }
-      }
+      },
+      {
+        path: 'index',
+        component: () => import('@/views/product/index/index.vue'),
+        name: 'ProductIndex',
+        meta: {
+          title: '商品列表',
+        }
+      },
     ]
   }
 ]
