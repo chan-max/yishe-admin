@@ -134,6 +134,9 @@
                 <el-button type="success" link size="small" @click="handleDesignModel(row)">
                   制作设计模型
                 </el-button>
+                <el-button type="warning" link size="small" @click="handleAiAnalyze(row)">
+                  ai分析内容
+                </el-button>
                 <el-button type="danger" link danger size="small" @click="handleDelete(row)">
                   删除
                 </el-button>
@@ -165,6 +168,7 @@
                       genPicturesModalVisible = true
                     }
                   "
+                  @ai-analyze="handleAiAnalyze"
                 />
               </template>
             </div>
@@ -726,6 +730,12 @@ function singleFileUploaded() {
  */
 
 const genPicturesFormRef = ref()
+
+// AI分析内容按钮回调
+function handleAiAnalyze(row) {
+  // 这里后续可以调用AI分析接口
+  console.log('AI分析内容:', row)
+}
 </script>
 
 <style scoped>

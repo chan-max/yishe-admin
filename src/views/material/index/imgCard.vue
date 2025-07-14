@@ -54,6 +54,9 @@
         <div>
           <el-button size="small" type="primary" round @click="doPicture">套图</el-button>
         </div>
+        <div>
+          <el-button size="small" type="warning" round @click="doAiAnalyze">ai分析内容</el-button>
+        </div>
       </div>
     </transition>
   </span>
@@ -91,7 +94,7 @@ watch(() => props.isChecked, (newVal) => {
 });
 
 
-const emits = defineEmits(['delete', 'preview', 'check', 'picture']);
+const emits = defineEmits(['delete', 'preview', 'check', 'picture', 'ai-analyze']);
 
 // 切换选中状态
 function doCheck() {
@@ -150,6 +153,11 @@ function doPreview() {
       },
     },
   });
+}
+
+// ai分析内容
+function doAiAnalyze() {
+  emits('ai-analyze', props.info);
 }
 
 // 鼠标悬停状态
