@@ -289,7 +289,7 @@ async function generateProduct(model: any) {
     name: model.name || '未命名产品',
     description: model.description || '',
     type: '自定义模型',
-    images: model.thumbnail ? [model.thumbnail] : [],
+    images: [],
     price: 99.99,
     stock: 100,
     customModelId: model.id,
