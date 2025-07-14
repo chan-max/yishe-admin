@@ -17,14 +17,20 @@
         @checkbox-all="checkboxAllChange"
       >
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              编辑
+          <el-dropdown trigger="click">
+            <el-button circle size="small" style="border: 1px solid #d9d9d9; background: #f4f6fa; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+              <el-icon><More /></el-icon>
             </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
+                <el-dropdown-item divided @click="handleDelete(row)">
+                  <span style="color:var(--el-color-danger)">删除</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
         <template #nameSlot="{ row }">
           <div class="text-wrap" style="max-width: 200px; word-break: break-all;">
@@ -53,7 +59,7 @@
           <el-image 
             v-if="row.thumbnail" 
             :src="row.thumbnail" 
-            style="width: 50px; height: 50px; object-fit: cover;"
+            style="width: 120px; height: 120px; object-fit: cover;"
             :preview-src-list="[row.thumbnail]"
           />
           <span v-else>-</span>
@@ -105,39 +111,13 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="价格" prop="price">
-              <el-input 
-                v-model="form.price" 
-                placeholder="请输入价格（可选）" 
-                maxlength="1000"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="关键词" prop="keywords">
               <el-input 
                 v-model="form.keywords" 
                 placeholder="请输入关键词（可选）" 
                 maxlength="1000"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="模型地址" prop="url">
-              <el-input 
-                v-model="form.url" 
-                placeholder="请输入模型地址（可选）" 
-                maxlength="1000"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="24">
-            <el-form-item label="缩略图地址" prop="thumbnail">
-              <el-input 
-                v-model="form.thumbnail" 
-                placeholder="请输入缩略图地址（可选）" 
-                maxlength="1000"
+                show-word-limit
               />
             </el-form-item>
           </el-col>
@@ -148,15 +128,38 @@
         <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
+    <el-dialog
+      v-model="aiGenDialogVisible"
+      title="AI自动生成内容"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
+        请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）
+      </div>
+      <el-input
+        v-model="aiGenPrompt"
+        type="textarea"
+        :rows="6"
+        placeholder="如：请用艺术化语言描述商品图片..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
+      />
+      <template #footer>
+        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete } from '@element-plus/icons-vue'
+import { Delete, More } from '@element-plus/icons-vue'
 import { getProductModelPage, updateProductModel, deleteProductModel } from '@/api/productModel'
 import { commonGridOptions } from '@/common/table'
+import request from '@/config/axios'
 
 const queryParams = reactive({
   currentPage: 1,
@@ -167,19 +170,17 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: 'ID', field: 'id', width: 80 },
+    { title: '缩略图', field: 'thumbnail', width: 150, slots: { default: 'thumbnailSlot' } },
     { title: '模型名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     { title: '模型描述', field: 'description', minWidth: 300, slots: { default: 'descriptionSlot' } },
-    { title: '价格', field: 'price', width: 100, slots: { default: 'priceSlot' } },
     { title: '关键词', field: 'keywords', minWidth: 200, slots: { default: 'keywordsSlot' } },
-    { title: '缩略图', field: 'thumbnail', width: 80, slots: { default: 'thumbnailSlot' } },
     { title: '引用次数', field: 'ref_count', width: 100 },
     { title: '点赞次数', field: 'like_count', width: 100 },
     { title: '收藏次数', field: 'save_count', width: 100 },
     { title: '链接次数', field: 'link_count', width: 100 },
     { title: '创建时间', field: 'createTime', width: 160, slots: { default: 'createTimeSlot' } },
     { title: '更新时间', field: 'updateTime', width: 160, slots: { default: 'updateTimeSlot' } },
-    { title: '操作', fixed: 'right', width: 120, slots: { default: 'operationDefaultSlot' } }
+    { title: '操作', fixed: 'right', width: 'auto', slots: { default: 'operationDefaultSlot' } }
   ]
 })
 
@@ -194,19 +195,59 @@ const form = ref<{
   id?: string
   name: string
   description: string
-  price: string
-  url: string
   keywords: string
-  thumbnail: string
 }>({
   name: '',
   description: '',
-  price: '',
-  url: '',
-  keywords: '',
-  thumbnail: ''
+  keywords: ''
 })
 const submitLoading = ref(false)
+
+const aiGenDialogVisible = ref(false)
+const aiGenPrompt = ref('')
+const aiGenDialogLoading = ref(false)
+let aiGenRow: any = null
+
+function onAiTableAutoGenerate(row) {
+  aiGenRow = row
+  aiGenPrompt.value = ''
+  aiGenDialogVisible.value = true
+}
+
+async function submitAiGenDialog() {
+  if (!aiGenRow) return
+  aiGenDialogLoading.value = true
+  try {
+    const res = await request.post({
+      url: '/product-model/ai-generate-info',
+      data: {
+        id: aiGenRow.id,
+        prompt: aiGenPrompt.value
+      }
+    })
+
+    if (res && res.data) {
+      // 如果当前在编辑弹窗，直接填充
+      if (dialogVisible.value && form.value.id === aiGenRow.id) {
+        form.value.name = res.data.name
+        form.value.description = res.data.description
+        form.value.keywords = res.data.keywords
+      }
+      // 也可以直接更新表格行
+      aiGenRow.name = res.data.name
+      aiGenRow.description = res.data.description
+      aiGenRow.keywords = res.data.keywords
+    }
+    ElMessage.success('AI自动生成内容成功')
+    getList(); // 新增：AI生成成功后刷新列表
+    aiGenDialogVisible.value = false
+    aiGenRow = null
+  } catch (e) {
+    ElMessage.error('AI自动生成内容失败')
+  } finally {
+    aiGenDialogLoading.value = false
+  }
+}
 
 // 格式化日期时间
 function formatDateTime(dateStr: string) {
@@ -255,10 +296,7 @@ function handleEdit(row) {
     id: row.id,
     name: row.name || '',
     description: row.description || '',
-    price: row.price || '',
-    url: row.url || '',
-    keywords: row.keywords || '',
-    thumbnail: row.thumbnail || ''
+    keywords: row.keywords || ''
   }
 }
 
@@ -303,17 +341,8 @@ const rules = {
   description: [
     { max: 1000, message: '描述长度不能超过 1000 个字符', trigger: 'blur' }
   ],
-  price: [
-    { max: 1000, message: '价格长度不能超过 1000 个字符', trigger: 'blur' }
-  ],
-  url: [
-    { max: 1000, message: '模型地址长度不能超过 1000 个字符', trigger: 'blur' }
-  ],
   keywords: [
     { max: 1000, message: '关键词长度不能超过 1000 个字符', trigger: 'blur' }
-  ],
-  thumbnail: [
-    { max: 1000, message: '缩略图地址长度不能超过 1000 个字符', trigger: 'blur' }
   ]
 }
 
@@ -334,10 +363,7 @@ const submitForm = async () => {
       id: form.value.id,
       name: form.value.name,
       description: form.value.description,
-      price: form.value.price,
-      url: form.value.url,
-      keywords: form.value.keywords,
-      thumbnail: form.value.thumbnail
+      keywords: form.value.keywords
     })
     
     ElMessage.success('更新成功')
