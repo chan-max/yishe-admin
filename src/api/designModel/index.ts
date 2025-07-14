@@ -29,9 +29,10 @@ export const getDesignModelList = (data) => {
 }
 
 // 获取设计模型详情
-export const getDesignModel = (id: string) => {
-  return request.get({
-    url: `/custom-model?id=${id}`
+export const getDesignModel = (data) => {
+  return request.post({
+    url: `/custom-model`,
+    data
   })
 }
 

@@ -149,6 +149,15 @@
             <span v-else class="text-gray-400">暂无视频</span>
           </div>
         </template>
+
+        <template #customModelSlot="{ row }">
+          <span v-if="row.customModelId">
+            <el-button type="primary" link size="small" @click="showCustomModelDetail(row.customModelId)">
+              查看（{{ row.customModelId }}）
+            </el-button>
+          </span>
+          <span v-else>无</span>
+        </template>
       </vxe-grid>
     </div>
 
@@ -448,6 +457,42 @@
         </div>
       </div>
     </el-dialog>
+
+    <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true" :close-on-click-modal="false">
+      <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
+        <el-form label-width="100px" label-position="left">
+          <el-row :gutter="32">
+            <el-col :span="8" class="flex flex-col items-center justify-center">
+              <el-image v-if="customModelDetail.thumbnail" :src="customModelDetail.thumbnail" style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001;" />
+              <div v-else class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded">无缩略图</div>
+            </el-col>
+            <el-col :span="16">
+              <el-form-item label="ID">
+                <span>{{ customModelDetail.id }}</span>
+              </el-form-item>
+              <el-form-item label="名称">
+                <span>{{ customModelDetail.name }}</span>
+              </el-form-item>
+              <el-form-item label="描述">
+                <span>{{ customModelDetail.description || '无' }}</span>
+              </el-form-item>
+              <el-form-item v-if="customModelDetail.keywords" label="关键词">
+                <span>{{ customModelDetail.keywords }}</span>
+              </el-form-item>
+              <el-form-item v-if="customModelDetail.meta" label="元数据">
+                <el-scrollbar style="max-height: 200px;">
+                  <pre style="background:none;padding:0;margin:0;font-size:13px;">{{ JSON.stringify(customModelDetail.meta, null, 2) }}</pre>
+                </el-scrollbar>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </div>
+      <div v-else class="p-8 text-center text-gray-400">暂无详情</div>
+      <template #footer>
+        <el-button @click="customModelDetailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -478,6 +523,7 @@ import ProductImageUpload from '@/components/ProductImageUpload.vue'
 import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
 import { publishToSocialMedia, checkSocialMediaLogin } from "@/api/client";
 import { generateProductCode } from "@/common/code";
+import { getDesignModel } from '@/api/designModel'
 
 // 社交媒体登录状态相关
 interface PlatformStatus {
@@ -520,13 +566,22 @@ const gridOptions = ref({
         default: "videoDefaultSlot",
       },
     },
+    { 
+      title: "关联设计模型", 
+      field: "customModelId", 
+      width: 200, 
+      showOverflow: true,
+      slots: { default: 'customModelSlot' }
+    },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: true },
     { title: "关键词", field: "keywords", width: 200, showOverflow: true },
+
     { title: "商品类型", field: "type", width: 120, showOverflow: true },
     { title: "价格", field: "price", width: 100, showOverflow: true },
     { title: "促销价格", field: "salePrice", width: 100, showOverflow: true },
     { title: "库存", field: "stock", width: 100, showOverflow: true },
+
     { 
       title: "是否绝版", 
       field: "isLimitedEdition", 
@@ -1178,6 +1233,19 @@ function handleVideoPreview(list: string[], index: number) {
   videoPreviewIndex.value = index;
   videoPreviewVisible.value = true;
 }
+
+const customModelDetailVisible = ref(false)
+const customModelDetail = ref<any>(null)
+
+async function showCustomModelDetail(id: string) {
+  try {
+    const res = await getDesignModel({id})
+    customModelDetail.value = res.data || res // 兼容不同返回结构
+    customModelDetailVisible.value = true
+  } catch (e) {
+    ElMessage.error('获取模型详情失败')
+  }
+}
 </script>
 
 <style lang="less">
@@ -1290,6 +1358,24 @@ function handleVideoPreview(list: string[], index: number) {
   .publish-result-card {
     width: 100%;
     max-width: 100%;
+  }
+}
+
+.custom-model-detail-dialog {
+  min-height: 320px;
+  .el-form-item {
+    margin-bottom: 18px;
+  }
+  .el-form-item__label {
+    font-weight: 500;
+    font-size: 15px;
+  }
+  pre {
+    border-radius: 4px;
+    padding: 0;
+    font-size: 13px;
+    margin: 0;
+    background: none;
   }
 }
 </style>

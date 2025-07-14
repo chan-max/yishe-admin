@@ -43,17 +43,20 @@
                 class="mt-1 white-input"
               />
             </div>
-            <div class="pt-2 flex gap-2 flex-wrap" style="overflow: hidden">
-              <el-tag link round size="small" type="primary">
-                {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
-              </el-tag>
+            <div class="pt-2 flex gap-2 flex-wrap" style="overflow: hidden; justify-content: center; margin-top: 4px;">
               <el-tag v-if="file.rename" round size="small" link type="primary">
                 重命名: {{ file.rename }}
               </el-tag>
-              <!-- <el-tag round size="small" link type="primary">
-                比例: {{ file.width + ' x ' + file.height }}
-              </el-tag> -->
             </div>
+          </div>
+          <!-- 尺寸与信息标签，移到AI分析按钮上方，避免遮挡 -->
+          <div class="pt-2 flex gap-2 flex-wrap" style="overflow: hidden; justify-content: center; margin-top: 4px;">
+            <el-tag link round size="small" type="primary">
+              {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
+            </el-tag>
+            <el-tag round size="small" link type="primary">
+              尺寸: {{ file.width + ' x ' + file.height }}
+            </el-tag>
           </div>
 
           <div class="actions">
@@ -324,7 +327,7 @@ const uploadFile = async (file) => {
 .image-preview-item {
   position: relative;
   width: 200px;
-  height: 380px;
+  /* height: 440px; */
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
