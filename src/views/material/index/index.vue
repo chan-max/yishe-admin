@@ -134,7 +134,7 @@
                 <el-button type="success" link size="small" @click="handleDesignModel(row)">
                   制作设计模型
                 </el-button>
-                <el-button type="warning" link size="small" @click="handleAiAnalyze(row)">
+                <el-button type="warning" link size="small" @click="handleAiAnalyzeWithPrompt(row)">
                   ai分析内容
                 </el-button>
                 <el-button type="danger" link danger size="small" @click="handleDelete(row)">
@@ -347,6 +347,17 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="aiDialogVisible"
+      title="AI分析结果"
+      width="600px"
+      :destroy-on-close="true"
+    >
+      <div style="white-space: pre-wrap; word-break: break-all; max-height: 60vh; overflow-y: auto;">
+        {{ aiDialogContent }}
+      </div>
+    </el-dialog>
+
 
   </div>
 </template>
@@ -386,7 +397,7 @@ import { useUserStore } from '@/store/modules/user'
 import imgCard from './imgCard.vue'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
-import { ElButton, ElNotification, ElMessage } from 'element-plus'
+import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Plus, Search, TopRight, Upload, Loading, Check } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
@@ -405,6 +416,7 @@ import { getTenantId } from '@/utils/auth'
 import useListSelect from '@/components/common/userListSelect.vue'
 import { getDesignModelList } from '@/api/designModel'
 import { getDesignToolMessenger } from '@/utils/designToolMessenger'
+import request from '@/config/axios'
 
 const userStore = useUserStore()
 
@@ -413,6 +425,10 @@ const form = ref({})
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
+  imageName: '',
+  startTime: '',
+  endTime: '',
+  sortingFields: '',
 })
 
 // 展示模式
@@ -731,10 +747,58 @@ function singleFileUploaded() {
 
 const genPicturesFormRef = ref()
 
+const aiDialogVisible = ref(false)
+const aiDialogContent = ref('')
+
+function extractJsonFromString(str) {
+  // 匹配第一个 { 到最后一个 } 之间的内容
+  const match = str.match(/{[\s\S]*}/)
+  if (match) {
+    try {
+      return JSON.parse(match[0])
+    } catch (e) {
+      return str
+    }
+  }
+  return str
+}
 // AI分析内容按钮回调
-function handleAiAnalyze(row) {
-  // 这里后续可以调用AI分析接口
-  console.log('AI分析内容:', row)
+async function handleAiAnalyzeWithPrompt(row) {
+  // 弹窗输入提示词
+  const { value: prompt } = await ElMessageBox.prompt('请输入分析提示词', 'AI分析', {
+    confirmButtonText: '分析',
+    cancelButtonText: '取消',
+    inputPlaceholder: '如：请分析图片内容',
+    inputType: 'textarea',
+    inputValue: "请分析这张图片内容，并以如下 JSON 格式返回：{name:'图片名称', description:'图片描述', keywords:'图片关键字'}。只返回 JSON，不要其他解释，也不要用```json或```包裹。"
+  }).catch(() => ({ value: null }))
+  if (!prompt) return
+
+  const params = {
+    model: 'qwen-vl-max',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: row.url || row.ossObjectName } },
+          { type: 'text', text: prompt }
+        ]
+      }
+    ]
+  }
+  try {
+    const res = await request.post({ url: '/ai/qwen-chat', data: params })
+    const text = res.choices?.[0]?.message?.content || JSON.stringify(res)
+    const parsed = extractJsonFromString(text)
+    if (typeof parsed === 'object') {
+      aiDialogContent.value = JSON.stringify(parsed, null, 2)
+    } else {
+      aiDialogContent.value = text
+    }
+    aiDialogVisible.value = true
+  } catch (e) {
+    ElMessage.error('AI分析失败')
+  }
 }
 </script>
 
