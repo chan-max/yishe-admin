@@ -200,3 +200,23 @@ export const getMaterialMaxOrder = async (params) => {
     params
   })
 }
+
+/**
+ * AI自动生成素材内容
+ */
+export function aiAutoGenerateMaterialInfo(data) {
+  return request.post({
+    url: '/sticker/ai-generate-info',
+    data
+  })
+}
+
+/**
+ * 编辑素材信息
+ */
+export function updateAssetLibrary(data) {
+  return request.post({
+    url: '/sticker/update',
+    data
+  })
+}

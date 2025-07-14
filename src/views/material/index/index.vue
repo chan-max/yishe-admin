@@ -1,14 +1,6 @@
 <template>
   <div>
     <div class="py-4 flex flex-wrap justify-end gap-4 items-center">
-      <el-switch
-        v-model="picMode"
-        size="small"
-        active-text="网格"
-        inactive-text="列表"
-        inline-prompt
-      />
-
       <div style="flex: 1"></div>
 
       <form-item label="按名称搜索">
@@ -41,16 +33,6 @@
         />
       </form-item>
 
-      <form-item label="时间排序">
-        <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
-          <el-option
-            v-for="item in sortTypeOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </form-item>
 
       <div class="flex shrink-0">
         <el-button
@@ -111,7 +93,7 @@
 
     <div class="flex gap-4">
       <div class="content-container" :style="{ width: '100%' }">
-        <div v-if="!picMode" class="common-table">
+        <div class="common-table">
           <vxe-grid
             ref="gridRef"
             v-bind="gridOptions"
@@ -126,59 +108,38 @@
               </div>
             </template>
 
+            <template #resolutionSlot="{ row }">
+              <span>{{ row.resolutionWidth && row.resolutionHeight ? row.resolutionWidth + '×' + row.resolutionHeight : '-' }}</span>
+            </template>
+            <template #originWebSlot="{ row }">
+              <span>{{ row.originWeb || '-' }}</span>
+            </template>
+            <template #sizeSlot="{ row }">
+              <span>{{ row.size ? (row.size / 1024).toFixed(1) + ' KB' : '-' }}</span>
+            </template>
+
             <template #operationDefaultSlot="{ row }">
-              <div class="table-operation-column">
-                <el-button type="default" link size="small" @click="handleDownload(row)">
-                  下载
-                </el-button>
-                <el-button type="success" link size="small" @click="handleDesignModel(row)">
-                  制作设计模型
-                </el-button>
-                <el-button type="warning" link size="small" @click="handleAiAnalyzeWithPrompt(row)">
-                  ai分析内容
-                </el-button>
-                <el-button type="danger" link danger size="small" @click="handleDelete(row)">
-                  删除
-                </el-button>
+              <div class="flex items-center">
+                <el-dropdown trigger="click">
+                  <el-button circle size="small" style="border: 1px solid #d9d9d9; background: #f4f6fa; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                    <el-icon><More /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                      <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
+                      <el-dropdown-item @click="handleDesignModel(row)">制作设计模型</el-dropdown-item>
+                      <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
+                      <el-dropdown-item divided @click="handleDelete(row)">
+                        <span style="color:var(--el-color-danger)">删除</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+                <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#409EFF;font-size:18px;" />
               </div>
             </template>
           </vxe-grid>
-        </div>
-
-        <div v-else>
-          <template v-if="loading">
-            <div class="w-full h-8 flex justify-center">...</div>
-          </template>
-
-          <template v-else-if="total">
-            <div
-              :style="{ height: gridOptions.maxHeight + 'px' }"
-              style="overflow: auto"
-              class="flex justify-center p-4 gap-4 flex-wrap"
-            >
-              <template v-for="info in dataSource">
-                <img-card
-                  :is-checked="ids.includes(info.id)"
-                  :info="info"
-                  :ids="ids"
-                  @delete="imgCardDelete"
-                  @picture="
-                    (_info) => {
-                      currentRow = _info
-                      genPicturesModalVisible = true
-                    }
-                  "
-                  @ai-analyze="handleAiAnalyze"
-                />
-              </template>
-            </div>
-          </template>
-
-          <el-empty v-if="!loading && !total" :image-size="64" style="padding: 48px">
-            <template #description>
-              <span style="font-size: 11px; color: #aaa"> 暂无素材 </span>
-            </template>
-          </el-empty>
         </div>
 
         <!-- 分页 -->
@@ -347,15 +308,43 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="800px" :destroy-on-close="true" align-center>
+      <el-form :model="editForm" label-width="80px">
+        <el-form-item label="名称">
+          <el-input v-model="editForm.name" placeholder="请输入名称" style="font-size:16px;height:48px;width:100%;" />
+        </el-form-item>
+        <el-form-item label="描述">
+          <el-input v-model="editForm.description" type="textarea" :rows="5" placeholder="请输入描述" style="font-size:16px;min-height:100px;width:100%;" />
+        </el-form-item>
+        <el-form-item label="关键字">
+          <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog
-      v-model="aiDialogVisible"
-      title="AI分析结果"
-      width="600px"
+      v-model="aiGenDialogVisible"
+      title="AI自动生成内容"
+      width="500px"
+      align-center
       :destroy-on-close="true"
     >
-      <div style="white-space: pre-wrap; word-break: break-all; max-height: 60vh; overflow-y: auto;">
-        {{ aiDialogContent }}
-      </div>
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
+      <el-input
+        v-model="aiGenPrompt"
+        type="textarea"
+        :rows="6"
+        placeholder="如：请用艺术化语言描述图片内容..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
+      />
+      <template #footer>
+        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+      </template>
     </el-dialog>
 
 
@@ -382,7 +371,9 @@ import {
   materialCreatePictures,
   materialDistribute,
   getMaterialDetail,
-  handleDropMaterial
+  handleDropMaterial,
+  aiAutoGenerateMaterialInfo,
+  updateAssetLibrary
 } from '@/api/material' // 实际接口导入
 
 import { commonGridOptions } from '@/common/table'
@@ -394,11 +385,10 @@ import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
 import { saveAs } from 'file-saver'
 
 import { useUserStore } from '@/store/modules/user'
-import imgCard from './imgCard.vue'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -461,16 +451,16 @@ const gridOptions = ref({
   },
   columns: [
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
+    // { title: 'ID', field: 'id', width: 80, ellipsis: true },
     {
       title: '图片预览',
       field: 'url',
-      width: 'auto',
-      slots: {
-        default: 'previewDefaultSlot'
-      }
+      width: 120,
+      slots: { default: 'previewDefaultSlot' }
     },
     { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
-
+    { title: '描述', field: 'description', minWidth: 200 },
+    { title: '关键词', field: 'keywords', minWidth: 160 },
     {
       title: '创建时间',
       field: 'createTime',
@@ -494,9 +484,7 @@ const gridOptions = ref({
       fixed: 'right',
       width: 'auto',
       field: 'operation',
-      slots: {
-        default: 'operationDefaultSlot'
-      }
+      slots: { default: 'operationDefaultSlot' }
     }
   ]
 })
@@ -747,57 +735,81 @@ function singleFileUploaded() {
 
 const genPicturesFormRef = ref()
 
-const aiDialogVisible = ref(false)
-const aiDialogContent = ref('')
+const aiGenDialogVisible = ref(false)
+const aiGenPrompt = ref('')
+const aiGenDialogLoading = ref(false)
+let aiGenRow = null
 
-function extractJsonFromString(str) {
-  // 匹配第一个 { 到最后一个 } 之间的内容
-  const match = str.match(/{[\s\S]*}/)
-  if (match) {
-    try {
-      return JSON.parse(match[0])
-    } catch (e) {
-      return str
-    }
-  }
-  return str
+const aiTableLoading = ref<Record<string, boolean>>({})
+
+function onAiTableAutoGenerate(row) {
+  if (aiTableLoading.value[row.id]) return
+  aiGenRow = row
+  aiGenPrompt.value = ''
+  aiGenDialogVisible.value = true
 }
-// AI分析内容按钮回调
-async function handleAiAnalyzeWithPrompt(row) {
-  // 弹窗输入提示词
-  const { value: prompt } = await ElMessageBox.prompt('请输入分析提示词', 'AI分析', {
-    confirmButtonText: '分析',
-    cancelButtonText: '取消',
-    inputPlaceholder: '如：请分析图片内容',
-    inputType: 'textarea',
-    inputValue: "请分析这张图片内容，并以如下 JSON 格式返回：{name:'图片名称', description:'图片描述', keywords:'图片关键字'}。只返回 JSON，不要其他解释，也不要用```json或```包裹。"
-  }).catch(() => ({ value: null }))
-  if (!prompt) return
 
-  const params = {
-    model: 'qwen-vl-max',
-    messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'image_url', image_url: { url: row.url || row.ossObjectName } },
-          { type: 'text', text: prompt }
-        ]
-      }
-    ]
-  }
+async function submitAiGenDialog() {
+  if (!aiGenRow) return
+  aiGenDialogLoading.value = true
+  aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: true }
   try {
-    const res = await request.post({ url: '/ai/qwen-chat', data: params })
-    const text = res.choices?.[0]?.message?.content || JSON.stringify(res)
-    const parsed = extractJsonFromString(text)
-    if (typeof parsed === 'object') {
-      aiDialogContent.value = JSON.stringify(parsed, null, 2)
-    } else {
-      aiDialogContent.value = text
-    }
-    aiDialogVisible.value = true
+    await handleAiAutoGenerate(aiGenRow, () => {
+      aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: false }
+      aiGenDialogLoading.value = false
+      aiGenDialogVisible.value = false
+      aiGenRow = null
+    }, aiGenPrompt.value)
   } catch (e) {
-    ElMessage.error('AI分析失败')
+    aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: false }
+    aiGenDialogLoading.value = false
+    aiGenDialogVisible.value = false
+    aiGenRow = null
+  }
+}
+
+async function handleAiAutoGenerate(row, cb, prompt) {
+  try {
+    const res = await aiAutoGenerateMaterialInfo({
+      id: row.id,
+      prompt: prompt || ''
+    })
+    // 更新行数据
+    if (res && res.data) {
+      row.name = res.data.name
+      row.description = res.data.description
+      row.keywords = res.data.keywords
+      // 你可以根据实际返回结构调整
+    }
+    ElNotification.success('AI自动生成内容成功')
+    if (typeof cb === 'function') cb()
+    getList()
+  } catch (e) {
+    ElNotification.error('AI自动生成内容失败')
+    if (typeof cb === 'function') cb()
+  }
+}
+
+const editDialogVisible = ref(false)
+const editForm = ref({ id: '', name: '', description: '', keywords: '' })
+const editLoading = ref(false)
+
+function handleEdit(row) {
+  editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords }
+  editDialogVisible.value = true
+}
+
+async function submitEdit() {
+  editLoading.value = true
+  try {
+    await updateAssetLibrary(editForm.value)
+    ElNotification.success('保存成功')
+    editDialogVisible.value = false
+    getList()
+  } catch (e) {
+    ElNotification.error('保存失败')
+  } finally {
+    editLoading.value = false
   }
 }
 </script>
