@@ -71,8 +71,16 @@ export const useUserStore = defineStore('admin-user', {
           resolve(null)
         }, 999);
       })
-      if (!userInfo) {
+      // if (!userInfo) {
+      //   userInfo = await getInfo()
+      // }
+      // 强制每次都调用获取用户信息
+      try {
         userInfo = await getInfo()
+      } catch (e) {
+        // 获取用户信息失败，退出登录并跳转首页
+        await this.loginOut();
+        return;
       }
       // this.permissions = new Set(userInfo.permissions)
       // this.roles = userInfo.roles
