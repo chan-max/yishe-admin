@@ -150,13 +150,37 @@
           </div>
         </template>
 
-        <template #customModelSlot="{ row }">
-          <span v-if="row.customModelId">
-            <el-button type="primary" link size="small" @click="showCustomModelDetail(row.customModelId)">
-              查看（{{ row.customModelId }}）
-            </el-button>
-          </span>
-          <span v-else>无</span>
+        <template #customModelDetailSlot="{ row }">
+          <div v-if="row.customModel" style="margin: 8px 0;">
+            <vxe-grid
+              :data="[row.customModel]"
+              :show-header="true"
+              border
+              size="mini"
+              style="margin: 0; padding: 0; background: none;"
+              :columns="[
+                { field: 'thumbnail', title: '缩略图', width: 'auto', slots: { default: 'customModelThumbnailSlot' } },
+                { field: 'name', title: '名称', minWidth: 80 },
+                { field: 'description', title: '描述', minWidth: 120 },
+                { field: 'keywords', title: '关键词', minWidth: 100 },
+                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } }
+              ]"
+            >
+              <template #customModelThumbnailSlot="{ row }">
+                <img
+                  v-if="row.thumbnail"
+                  :src="row.thumbnail"
+                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  @click="preview(0, [row.thumbnail])"
+                />
+                <span v-else class="text-gray-400">无</span>
+              </template>
+              <template #customModelUpdateTimeSlot="{ row }">
+                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+              </template>
+            </vxe-grid>
+          </div>
+          <span v-else class="text-gray-400">无</span>
         </template>
       </vxe-grid>
     </div>
@@ -336,11 +360,10 @@
                         :value="url"
                         class="absolute top-2 left-2 z-10"
                       />
-                      <el-image 
+                      <img 
                         :src="url"
-                        class="w-32 h-32 object-cover rounded"
-                        :preview-src-list="publishForm[platform]!.images"
-                        :initial-index="index"
+                        class="w-32 h-32 object-cover rounded cursor-pointer"
+                        @click="preview(index, publishForm[platform]!.images)"
                       />
                       <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
                         {{ index + 1 }}/{{ publishForm[platform]!.images.length }}
@@ -460,33 +483,47 @@
 
     <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true" :close-on-click-modal="false">
       <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
-        <el-form label-width="100px" label-position="left">
-          <el-row :gutter="32">
-            <el-col :span="8" class="flex flex-col items-center justify-center">
-              <el-image v-if="customModelDetail.thumbnail" :src="customModelDetail.thumbnail" style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001;" />
-              <div v-else class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded">无缩略图</div>
-            </el-col>
-            <el-col :span="16">
-              <el-form-item label="ID">
-                <span>{{ customModelDetail.id }}</span>
-              </el-form-item>
-              <el-form-item label="名称">
-                <span>{{ customModelDetail.name }}</span>
-              </el-form-item>
-              <el-form-item label="描述">
-                <span>{{ customModelDetail.description || '无' }}</span>
-              </el-form-item>
-              <el-form-item v-if="customModelDetail.keywords" label="关键词">
-                <span>{{ customModelDetail.keywords }}</span>
-              </el-form-item>
-              <el-form-item v-if="customModelDetail.meta" label="元数据">
-                <el-scrollbar style="max-height: 200px;">
-                  <pre style="background:none;padding:0;margin:0;font-size:13px;">{{ JSON.stringify(customModelDetail.meta, null, 2) }}</pre>
-                </el-scrollbar>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
+        <el-row :gutter="32">
+          <!-- 左侧图片区 -->
+          <el-col :span="8" class="flex flex-col items-center justify-center">
+            <img v-if="customModelDetail.thumbnail" :src="customModelDetail.thumbnail" style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin-bottom: 16px; cursor:pointer;" @click="preview(0, [customModelDetail.thumbnail])" />
+            <div v-else class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded mb-4">无缩略图</div>
+            <!-- 预留更多图片展示（如有） -->
+            <template v-if="customModelDetail.images && customModelDetail.images.length">
+              <div class="flex flex-wrap gap-2 mt-2">
+                <img v-for="(img, idx) in customModelDetail.images" :key="idx" :src="img" style="width: 60px; height: 60px; border-radius: 6px; object-fit: cover; cursor:pointer;" @click="preview(idx, customModelDetail.images)" />
+              </div>
+            </template>
+          </el-col>
+          <!-- 右侧基础信息区 -->
+          <el-col :span="16">
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="ID">{{ customModelDetail.id }}</el-descriptions-item>
+              <el-descriptions-item label="名称">{{ customModelDetail.name }}</el-descriptions-item>
+              <el-descriptions-item label="描述" :span="2">{{ customModelDetail.description || '无' }}</el-descriptions-item>
+              <el-descriptions-item label="关键词">{{ customModelDetail.keywords || '无' }}</el-descriptions-item>
+              <el-descriptions-item label="标签">{{ customModelDetail.tags || '无' }}</el-descriptions-item>
+              <el-descriptions-item label="作者">
+                <template v-if="customModelDetail.uploader && (customModelDetail.uploader.name || customModelDetail.uploader.account)">
+                  {{ customModelDetail.uploader.name || customModelDetail.uploader.account }}
+                </template>
+                <template v-else>无</template>
+              </el-descriptions-item>
+              <el-descriptions-item label="创建时间">{{ customModelDetail.createTime ? (customModelDetail.createTime + '').replace('T', ' ').slice(0, 19) : '无' }}</el-descriptions-item>
+              <el-descriptions-item label="更新时间">{{ customModelDetail.updateTime ? (customModelDetail.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</el-descriptions-item>
+              <el-descriptions-item v-if="customModelDetail.url" label="模型文件">
+                <el-link :href="customModelDetail.url" target="_blank" type="primary">下载/预览</el-link>
+              </el-descriptions-item>
+            </el-descriptions>
+          </el-col>
+        </el-row>
+        <!-- 元数据结构化展示 -->
+        <div v-if="customModelDetail.meta" class="mt-6">
+          <h4 class="font-medium mb-2">元数据</h4>
+          <el-scrollbar style="max-height: 200px;">
+            <pre style="background:none;padding:0;margin:0;font-size:13px;">{{ JSON.stringify(customModelDetail.meta, null, 2) }}</pre>
+          </el-scrollbar>
+        </div>
       </div>
       <div v-else class="p-8 text-center text-gray-400">暂无详情</div>
       <template #footer>
@@ -524,6 +561,7 @@ import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
 import { publishToSocialMedia, checkSocialMediaLogin } from "@/api/client";
 import { generateProductCode } from "@/common/code";
 import { getDesignModel } from '@/api/designModel'
+import { preview } from "@/components/PreviewImage/index";
 
 // 社交媒体登录状态相关
 interface PlatformStatus {
@@ -548,6 +586,9 @@ const gridOptions = ref({
   rowClassName: ({ row }) => {
     return row.isPublish ? '' : 'unpublished-row';
   },
+  rowConfig:{
+    height:'auto'
+  },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
     // {
@@ -569,9 +610,8 @@ const gridOptions = ref({
     { 
       title: "关联设计模型", 
       field: "customModelId", 
-      width: 200, 
-      showOverflow: true,
-      slots: { default: 'customModelSlot' }
+      width: 'auto', 
+      slots: { default: 'customModelDetailSlot' }
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: true },
@@ -1377,5 +1417,10 @@ async function showCustomModelDetail(id: string) {
     margin: 0;
     background: none;
   }
+}
+
+// 修复 el-image 预览层级问题
+.el-image-viewer__wrapper {
+  z-index: 4000 !important;
 }
 </style>

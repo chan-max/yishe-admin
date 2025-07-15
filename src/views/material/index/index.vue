@@ -104,7 +104,12 @@
           >
             <template #previewDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
-                <single-image :src="row.url" />
+                <el-image
+                  :src="row.url"
+                  :preview-src-list="[row.url]"
+                  :initial-index="0"
+                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                />
               </div>
             </template>
 

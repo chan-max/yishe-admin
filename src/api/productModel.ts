@@ -15,10 +15,6 @@ export interface ProductModel {
   price?: string
   url?: string
   keywords?: string
-  ref_count?: number
-  like_count?: number
-  save_count?: number
-  link_count?: number
   thumbnail?: string
   meta?: any
   createTime: string
