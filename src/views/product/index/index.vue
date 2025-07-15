@@ -550,22 +550,22 @@ const gridOptions = ref({
   },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    {
-      title: "商品图片",
-      field: "images",
-      width: 300,
-      slots: {
-        default: "urlDefaultSlot",
-      },
-    },
-    {
-      title: "商品视频",
-      field: "videos",
-      width: 'auto',
-      slots: {
-        default: "videoDefaultSlot",
-      },
-    },
+    // {
+    //   title: "商品图片",
+    //   field: "images",
+    //   width: 300,
+    //   slots: {
+    //     default: "urlDefaultSlot",
+    //   },
+    // },
+    // {
+    //   title: "商品视频",
+    //   field: "videos",
+    //   width: 'auto',
+    //   slots: {
+    //     default: "videoDefaultSlot",
+    //   },
+    // },
     { 
       title: "关联设计模型", 
       field: "customModelId", 
