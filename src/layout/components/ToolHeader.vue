@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-04-01 07:04:47
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-10 07:36:15
+ * @LastEditTime: 2025-07-16 21:26:57
  * @FilePath: /yishe-admin/src/layout/components/ToolHeader.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -23,6 +23,8 @@ import { ElButton, ElMessage } from 'element-plus'
 import { NativeWindowMessenger } from '@/utils/nativeWindowMessenger'
 import { setDesignToolConnected } from '@/stores/connectionStatus'
 import { getAccessToken } from '@/utils/auth'
+import { saveTokenToClient } from '@/api/user'
+import { checkClientAuthorized } from '@/stores/connectionStatus'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -85,6 +87,21 @@ function cleanupMessenger() {
 
 // 删除 openDesignTool 相关函数和引用
 
+const handleClientAuth = async () => {
+  const token = getAccessToken();
+  if (!token) {
+    ElMessage.error('未获取到 token');
+    return;
+  }
+  try {
+    await saveTokenToClient(token);
+    ElMessage.success('客户端授权成功');
+    checkClientAuthorized();
+  } catch (e) {
+    ElMessage.error('客户端授权失败');
+  }
+};
+
 export default defineComponent({
   name: 'ToolHeader',
   setup() {
@@ -108,6 +125,7 @@ export default defineComponent({
         <div class="h-full flex items-center">
           {/* 打开设计工具 */}
           <ClientStatus />
+
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
           ) : undefined}

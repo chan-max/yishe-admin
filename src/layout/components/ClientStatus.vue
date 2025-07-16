@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-06-11 06:42:44
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-11 05:50:02
+ * @LastEditTime: 2025-07-16 20:32:21
  * @FilePath: /yishe-admin/src/layout/components/ClientStatus.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -15,10 +15,14 @@ import {
   isDesignToolConnected,
   startConnectionChecks,
   clearConnectionChecks,
-  setDesignToolConnected
+  setDesignToolConnected,
+  isClientAuthorized,
+  checkClientAuthorized
 } from '@/stores/connectionStatus'
 import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { ElMessage } from 'element-plus'
+import { saveTokenToClient } from '@/api/user'
+import { getAccessToken } from '@/utils/auth'
 
 export default defineComponent({
   name: 'ClientStatus',
@@ -68,13 +72,49 @@ export default defineComponent({
       }, 2000)
     }
 
+    // 客户端授权逻辑
+    const handleClientAuth = async () => {
+      const token = getAccessToken();
+      if (!token) {
+        ElMessage.error('未获取到 token');
+        return;
+      }
+      try {
+        await saveTokenToClient(token);
+        ElMessage.success('客户端授权成功');
+        checkClientAuthorized();
+      } catch (e) {
+        ElMessage.error('客户端授权失败');
+      }
+    }
+
+    // 新的本地客户端连接和授权检测
+    const checkLocalAndAuthStatus = async () => {
+      try {
+        const res = await fetch('http://localhost:1519/api/health');
+        isLocalConnected.value = res.ok;
+        if (res.ok) {
+          const data = await res.json();
+          isClientAuthorized.value = !!data.isAuthorized;
+        } else {
+          isClientAuthorized.value = false;
+        }
+      } catch {
+        isLocalConnected.value = false;
+        isClientAuthorized.value = false;
+      }
+    }
+
     onMounted(() => {
-      timers = startConnectionChecks()
-      
+      checkLocalAndAuthStatus();
+      timers = {
+        localTimer: window.setInterval(checkLocalAndAuthStatus, 5000),
+        remoteTimer: window.setInterval(startConnectionChecks, 10000) // 远程服务依然用原逻辑
+      };
+
       // 先设置监听器，确保状态变化能被捕获
       designToolMessenger.onConnectionChange = (connected: boolean) => {
         setDesignToolConnected(connected)
-        // 连接状态变化时停止loading并清理超时定时器
         if (loading.value) {
           loading.value = false
           if ((window as any).__designToolLoadingTimeout) {
@@ -83,8 +123,6 @@ export default defineComponent({
           }
         }
       }
-      
-      // 然后同步当前状态
       setDesignToolConnected(designToolMessenger.isDesignToolConnected())
     })
 
@@ -137,6 +175,30 @@ export default defineComponent({
                   </circle>
                 </svg>
               )}
+            </span>
+          </div>
+        </ElTooltip>
+
+                {/* 客户端授权状态 */}
+                <ElTooltip
+          content={isClientAuthorized.value ? '客户端已授权' : '点击进行客户端授权'}
+          placement="bottom"
+        >
+          <div class="custom-hover flex items-center gap-1" style={{cursor: isClientAuthorized.value ? 'default' : 'pointer'}} onClick={() => { if (!isClientAuthorized.value) handleClientAuth() }}>
+            <div
+              class="w-2 h-2 rounded-full mr-1"
+              style={{
+                backgroundColor: isClientAuthorized.value ? '#67C23A' : '#F56C6C',
+                boxShadow: isClientAuthorized.value 
+                  ? '0 0 8px rgba(103, 194, 58, 0.5)' 
+                  : '0 0 8px rgba(245, 108, 108, 0.5)'
+              }}
+            />
+            <span 
+              class="text-[10px] font-bold" 
+              style={{ color: isClientAuthorized.value ? '#67C23A' : '#F56C6C' }}
+            >
+              {isClientAuthorized.value ? '客户端已授权' : '客户端未授权'}
             </span>
           </div>
         </ElTooltip>

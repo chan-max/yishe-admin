@@ -1,3 +1,11 @@
+/*
+ * @Author: chan-max jackieontheway666@gmail.com
+ * @Date: 2025-07-09 19:04:50
+ * @LastEditors: chan-max jackieontheway666@gmail.com
+ * @LastEditTime: 2025-07-16 20:30:58
+ * @FilePath: /design-server/Users/jackie/workspace/yishe-admin/src/stores/connectionStatus.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
 import { ref } from 'vue'
 
 // 本地客户端连接状态
@@ -10,6 +18,23 @@ export const isRemoteConnected = ref(false)
 export const isDesignToolConnected = ref(false)
 export const setDesignToolConnected = (val: boolean) => {
   isDesignToolConnected.value = val
+}
+
+// 客户端授权状态
+export const isClientAuthorized = ref(false)
+export const setClientAuthorized = (val: boolean) => {
+  isClientAuthorized.value = val
+}
+
+import { isClientAuthorized as checkClientAuthApi } from '@/api/user'
+
+export const checkClientAuthorized = async () => {
+  try {
+    const authorized = await checkClientAuthApi()
+    setClientAuthorized(authorized)
+  } catch {
+    setClientAuthorized(false)
+  }
 }
 
 // 检查本地客户端连接
