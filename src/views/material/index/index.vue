@@ -269,7 +269,7 @@
                     class="w-16 h-16 object-cover rounded"
                   />
                   <div class="flex-1 min-w-0">
-                    <h4 class="font-medium text-gray-900 truncate">{{ model.name }}</h4>
+                    <h4 class="font-medium  truncate">{{ model.name }}</h4>
                     <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
                     <p class="text-xs text-gray-400">{{ model.createTime }}</p>
                   </div>
