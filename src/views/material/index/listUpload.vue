@@ -283,11 +283,20 @@ const uploadFile = async (file) => {
       file: file.raw
     })
     const { key, url } = cos
+    // 自动识别文件后缀
+    let suffix = ''
+    if (file.raw && file.raw.name) {
+      const match = file.raw.name.match(/\.([a-zA-Z0-9]+)$/)
+      if (match) {
+        suffix = match[1].toLowerCase()
+      }
+    }
     await uploadMaterialFile({
       url,
       name: file.name,
       description: file.description, // 新增字段
-      keywords: file.keywords // 新增字段
+      keywords: file.keywords, // 新增字段
+      suffix // 新增字段，图片类型后缀
     })
     file.status = 'success'
     emits('single-file-uploaded')

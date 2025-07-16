@@ -1340,19 +1340,19 @@ async function showCustomModelDetail(id: string) {
 
 // 未发布商品行的样式
 .unpublished-row {
-  opacity: 0.4;
+  // opacity: 0.4;
   
-  &:hover {
-    opacity: 0.8;
-  }
+  // &:hover {
+  //   opacity: 0.8;
+  // }
   
-  .el-button {
-    opacity: 0.8;
+  // .el-button {
+  //   opacity: 0.8;
     
-    &:hover {
-      opacity: 1;
-    }
-  }
+  //   &:hover {
+  //     opacity: 1;
+  //   }
+  // }
 }
 
 .dark-btn {

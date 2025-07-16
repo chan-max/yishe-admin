@@ -466,6 +466,7 @@ const gridOptions = ref({
     { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
+    { title: '后缀', field: 'suffix', width: 80 }, // 新增后缀列
     {
       title: '创建时间',
       field: 'createTime',
