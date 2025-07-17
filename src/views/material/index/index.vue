@@ -224,6 +224,7 @@
       align-center
       :destroy-on-close="true"
       class="design-model-dialog"
+<<<<<<< HEAD
       @close="resetDesignModelSteps"
     >
       <!-- 步骤指示器 -->
@@ -359,11 +360,53 @@
                     <el-icon class="text-white text-sm">
                       <Check />
                     </el-icon>
+=======
+      :footer="null"
+      @close="resetDesignModelSteps"
+    >
+      <!-- 新增flex容器，左右布局 -->
+      <div class="design-model-flex">
+        <!-- 步骤指示器，纵向 -->
+        <el-steps direction="vertical" :active="currentStep" finish-status="success" align-center class="steps-vertical">
+          <el-step v-for="step in designModelSteps" :key="step.key" :title="step.title" :description="step.description" />
+        </el-steps>
+        <!-- 步骤内容区域 -->
+        <div class="design-model-content" style="height: 100%; overflow-y: auto;">
+          <div class="steps-all">
+            <!-- 步骤1：选择素材 -->
+            <div
+              class="step-content"
+              :class="{ 'step-active': currentStep === 0, 'step-inactive': currentStep !== 0 }"
+            >
+              <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
+              <div class="flex flex-wrap gap-4 mb-6">
+                <template v-for="id in ids" :key="id">
+                  <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
+                    <img 
+                      :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                      :alt="dataSource.find(item => String(item.id) === String(id)).name"
+                      class="w-20 h-20 object-cover rounded border"
+                    />
+                    <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
+                  </div>
+                </template>
+              </div>
+              
+              <div class="border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                  <el-icon class="text-blue-500 mt-0.5 mr-2">
+                    <InfoFilled />
+                  </el-icon>
+                  <div class="text-sm text-blue-700">
+                    <p class="font-medium mb-1">已选择 {{ ids.length }} 个素材</p>
+                    <p>这些素材将用于制作设计模型，请确认选择无误后点击下一步。</p>
+>>>>>>> d4033dddebb93c25259a0cce16b73631a93a1f53
                   </div>
                 </div>
               </div>
             </div>
 
+<<<<<<< HEAD
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
               <div class="flex items-start">
                 <el-icon class="text-blue-500 mt-0.5 mr-2">
@@ -425,12 +468,163 @@
                     {{ ids.length }} × {{ selectedDesignModelIds.length }} = {{ ids.length * selectedDesignModelIds.length }}
                   </div>
                   <div class="text-sm text-blue-700">将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</div>
+=======
+            <!-- 步骤2：选择设计模型 -->
+            <div
+              class="step-content"
+              :class="{ 'step-active': currentStep === 1, 'step-inactive': currentStep !== 1 }"
+            >
+              <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
+              
+              <div class="design-model-list">
+                <div v-if="designModelLoading" class="text-center py-4">
+                  <el-icon class="is-loading"><Loading /></el-icon>
+                  <span class="ml-2">加载中...</span>
+                </div>
+                
+                <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
+                  暂无设计模型
+                </div>
+                
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div
+                    v-for="model in designModelList"
+                    :key="model.id"
+                    class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
+                    :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
+                    @click="selectDesignModel(model)"
+                  >
+                    <div class="flex items-center space-x-3">
+                      <img
+                        v-if="model.thumbnail"
+                        :src="model.thumbnail"
+                        :alt="model.name"
+                        class="w-16 h-16 object-cover rounded"
+                      />
+                      <div class="flex-1 min-w-0">
+                        <h4 class="font-medium truncate">{{ model.name }}</h4>
+                        <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
+                        <p class="text-xs text-gray-400">{{ model.createTime }}</p>
+                      </div>
+                    </div>
+                    
+                    <!-- 选中状态图标 -->
+                    <div 
+                      v-if="selectedDesignModelIds.includes(model.id)"
+                      class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                    >
+                      <el-icon class="text-sm">
+                        <Check />
+                      </el-icon>
+                    </div>
+                  </div>
+>>>>>>> d4033dddebb93c25259a0cce16b73631a93a1f53
+                </div>
+              </div>
+
+              <div class=" border border-blue-200 rounded-lg p-4 mt-4">
+                <div class="flex items-start">
+                  <el-icon class="text-blue-500 mt-0.5 mr-2">
+                    <InfoFilled />
+                  </el-icon>
+                  <div class="text-sm text-blue-700">
+                    <p class="font-medium mb-1">已选择 {{ selectedDesignModelIds.length }} 个设计模型</p>
+                    <p>将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 步骤3：确认制作 -->
+            <div
+              class="step-content"
+              :class="{ 'step-active': currentStep === 2, 'step-inactive': currentStep !== 2 }"
+            >
+              <h3 class="text-lg font-bold mb-4">确认制作信息：</h3>
+              
+              <div class="bg-gray-50 rounded-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <!-- 素材信息 -->
+                  <div>
+                    <h4 class="font-medium text-gray-700 mb-3">选择的素材 ({{ ids.length }}个)</h4>
+                    <div class="space-y-2">
+                      <template v-for="id in ids" :key="id">
+                        <div v-if="dataSource.find(item => String(item.id) === String(id))" class="flex items-center space-x-2">
+                          <img 
+                            :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                            :alt="dataSource.find(item => String(item.id) === String(id)).name"
+                            class="w-8 h-8 object-cover rounded"
+                          />
+                          <span class="text-sm text-gray-600">{{ dataSource.find(item => String(item.id) === String(id)).name }}</span>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- 设计模型信息 -->
+                  <div>
+                    <h4 class="font-medium text-gray-700 mb-3">选择的设计模型 ({{ selectedDesignModelIds.length }}个)</h4>
+                    <div class="space-y-2">
+                      <template v-for="modelId in selectedDesignModelIds" :key="modelId">
+                        <div v-if="designModelList.find(model => model.id === modelId)" class="flex items-center space-x-2">
+                          <img 
+                            v-if="designModelList.find(model => model.id === modelId).thumbnail"
+                            :src="designModelList.find(model => model.id === modelId).thumbnail" 
+                            :alt="designModelList.find(model => model.id === modelId).name"
+                            class="w-8 h-8 object-cover rounded"
+                          />
+                          <span class="text-sm text-gray-600">{{ designModelList.find(model => model.id === modelId).name }}</span>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600 mb-2">
+                      {{ ids.length }} × {{ selectedDesignModelIds.length }} = {{ ids.length * selectedDesignModelIds.length }}
+                    </div>
+                    <div class="text-sm text-blue-700">将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+          <!-- 步骤导航按钮，移到内容底部 -->
+          <div class="dialog-footer" style="margin-top: 16px;">
+            <div class="flex-1 text-sm text-gray-600">
+              <span>步骤 {{ currentStep + 1 }} / {{ designModelSteps.length }}</span>
+            </div>
+            <div class="flex gap-2">
+              <el-button 
+                v-if="currentStep > 0"
+                @click="prevStep"
+              >
+                上一步
+              </el-button>
+              <el-button 
+                v-if="currentStep < designModelSteps.length - 1"
+                type="primary" 
+                @click="nextStep"
+                :disabled="!canProceedToNextStep"
+              >
+                下一步
+              </el-button>
+              <el-button 
+                v-if="currentStep === designModelSteps.length - 1"
+                type="success" 
+                @click="handleDesignModelConfirm"
+                :disabled="!selectedDesignModelIds.length"
+              >
+                开始制作
+              </el-button>
+              <el-button @click="designModelModalVisible = false">取消</el-button>
+            </div>
+          </div>
         </div>
       </div>
+<<<<<<< HEAD
       
       <!-- 步骤导航按钮 -->
       <template #footer>
@@ -465,6 +659,9 @@
           </div>
         </div>
       </template>
+=======
+      <!-- 移除el-dialog的footer插槽 -->
+>>>>>>> d4033dddebb93c25259a0cce16b73631a93a1f53
     </el-dialog>
 
     <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="800px" :destroy-on-close="true" align-center>
@@ -1039,6 +1236,46 @@ async function submitEdit() {
 h1 {
   font-size: 1rem;
 }
+/* 步骤内容区块统一透明背景风格 */
+.step-content {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  padding: 24px;
+  transition: box-shadow 0.2s, background 0.2s, opacity 0.2s;
+  background: transparent;
+  color: #fff;
+}
+.step-active {
+  box-shadow: 0 0 0 3px #409eff44;
+  background: rgba(64, 158, 255, 0.10) !important; /* 高亮：主色+透明 */
+  opacity: 1;
+}
+.step-inactive {
+  background: rgba(100, 100, 100, 0.06) !important; /* 弱化：深灰+透明 */
+  opacity: 0.6;
+  filter: grayscale(0.2);
+}
+/* 去除步骤内容内部的白色/灰色背景 */
+.bg-gray-50,
+.border-blue-200,
+.bg-blue-50 {
+  background: transparent !important;
+  border-color: rgba(64,158,255,0.15) !important;
+}
+.design-model-flex {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+.steps-vertical {
+  flex-shrink: 0;
+  min-width: 180px;
+  margin-right: 32px;
+}
+.design-model-content {
+  flex: 1;
+  overflow-y: auto;
+}
 </style>
 
 <style lang="less">
@@ -1048,9 +1285,10 @@ h1 {
   }
 }
 
+
 .design-model-dialog {
   .el-dialog__body {
-    height: calc(100% - 120px);
+    height: calc(100% - 40px);
     padding: 0;
   }
   
@@ -1068,12 +1306,34 @@ h1 {
   .steps-indicator {
     padding: 20px;
     border-bottom: 1px solid #e5e7eb;
+<<<<<<< HEAD
     background: #f9fafb;
+=======
+>>>>>>> d4033dddebb93c25259a0cce16b73631a93a1f53
   }
 
   .step-content {
     min-height: 400px;
   }
+<<<<<<< HEAD
+=======
+
+  /* 缩小步骤条样式 */
+  .el-steps {
+    margin-bottom: 12px !important;
+    padding: 0 !important;
+  }
+  .el-step__title {
+    font-size: 14px !important;
+  }
+  .el-step__description {
+    font-size: 12px !important;
+  }
+  .el-step {
+    min-width: 80px !important;
+    padding: 0 8px !important;
+  }
+>>>>>>> d4033dddebb93c25259a0cce16b73631a93a1f53
 }
 
 
