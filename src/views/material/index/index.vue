@@ -72,7 +72,7 @@
               if (!ids.length) {
                 return ElMessage.warning('请选择要制作的素材')
               }
-              selectedDesignModelIds.value = []
+              resetDesignModelSteps()
               designModelModalVisible = true
               await loadDesignModels()
             }
@@ -224,65 +224,207 @@
       align-center
       :destroy-on-close="true"
       class="design-model-dialog"
+      @close="resetDesignModelSteps"
     >
-      <div class="design-model-content" style="height: calc(100% - 120px); overflow-y: auto;">
-        <div class="p-4">
-          <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
-          <div class="flex flex-wrap gap-4 mb-6">
-            <template v-for="id in ids" :key="id">
-              <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
-                <img 
-                  :src="dataSource.find(item => String(item.id) === String(id)).url" 
-                  :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                  class="w-20 h-20 object-cover rounded border"
-                />
-                <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
-              </div>
-            </template>
-          </div>
-          
-          <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
-          
-          <div class="design-model-list">
-            <div v-if="designModelLoading" class="text-center py-4">
-              <el-icon class="is-loading"><Loading /></el-icon>
-              <span class="ml-2">加载中...</span>
+      <!-- 步骤指示器 -->
+      <div class="steps-indicator mb-6">
+        <div class="flex items-center justify-center">
+          <div 
+            v-for="(step, index) in designModelSteps" 
+            :key="step.key"
+            class="flex items-center"
+          >
+            <!-- 步骤圆圈 -->
+            <div 
+              class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-300"
+              :class="{
+                'bg-blue-500 text-white': currentStep >= index,
+                'bg-gray-200 text-gray-500': currentStep < index
+              }"
+            >
+              <el-icon v-if="currentStep > index">
+                <Check />
+              </el-icon>
+              <span v-else>{{ index + 1 }}</span>
             </div>
             
-            <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
-              暂无设计模型
-            </div>
-            
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div
-                v-for="model in designModelList"
-                :key="model.id"
-                class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
-                :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
-                @click="selectDesignModel(model)"
+            <!-- 步骤标题 -->
+            <div class="ml-3">
+              <div 
+                class="text-sm font-medium transition-colors duration-300"
+                :class="{
+                  'text-blue-600': currentStep >= index,
+                  'text-gray-500': currentStep < index
+                }"
               >
-                <div class="flex items-center space-x-3">
-                  <img
-                    v-if="model.thumbnail"
-                    :src="model.thumbnail"
-                    :alt="model.name"
-                    class="w-16 h-16 object-cover rounded"
+                {{ step.title }}
+              </div>
+              <div 
+                class="text-xs transition-colors duration-300"
+                :class="{
+                  'text-blue-400': currentStep >= index,
+                  'text-gray-400': currentStep < index
+                }"
+              >
+                {{ step.description }}
+              </div>
+            </div>
+            
+            <!-- 连接线 -->
+            <div 
+              v-if="index < designModelSteps.length - 1"
+              class="w-16 h-0.5 mx-4 transition-colors duration-300"
+              :class="{
+                'bg-blue-500': currentStep > index,
+                'bg-gray-200': currentStep <= index
+              }"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 步骤内容区域 -->
+      <div class="design-model-content" style="height: calc(100% - 200px); overflow-y: auto;">
+        <div class="p-4">
+          <!-- 步骤1：选择素材 -->
+          <div v-if="currentStep === 0" class="step-content">
+            <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
+            <div class="flex flex-wrap gap-4 mb-6">
+              <template v-for="id in ids" :key="id">
+                <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
+                  <img 
+                    :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                    :alt="dataSource.find(item => String(item.id) === String(id)).name"
+                    class="w-20 h-20 object-cover rounded border"
                   />
-                  <div class="flex-1 min-w-0">
-                    <h4 class="font-medium  truncate">{{ model.name }}</h4>
-                    <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
-                    <p class="text-xs text-gray-400">{{ model.createTime }}</p>
+                  <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
+                </div>
+              </template>
+            </div>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <el-icon class="text-blue-500 mt-0.5 mr-2">
+                  <InfoFilled />
+                </el-icon>
+                <div class="text-sm text-blue-700">
+                  <p class="font-medium mb-1">已选择 {{ ids.length }} 个素材</p>
+                  <p>这些素材将用于制作设计模型，请确认选择无误后点击下一步。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 步骤2：选择设计模型 -->
+          <div v-if="currentStep === 1" class="step-content">
+            <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
+            
+            <div class="design-model-list">
+              <div v-if="designModelLoading" class="text-center py-4">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                <span class="ml-2">加载中...</span>
+              </div>
+              
+              <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
+                暂无设计模型
+              </div>
+              
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div
+                  v-for="model in designModelList"
+                  :key="model.id"
+                  class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
+                  :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
+                  @click="selectDesignModel(model)"
+                >
+                  <div class="flex items-center space-x-3">
+                    <img
+                      v-if="model.thumbnail"
+                      :src="model.thumbnail"
+                      :alt="model.name"
+                      class="w-16 h-16 object-cover rounded"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <h4 class="font-medium truncate">{{ model.name }}</h4>
+                      <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
+                      <p class="text-xs text-gray-400">{{ model.createTime }}</p>
+                    </div>
+                  </div>
+                  
+                  <!-- 选中状态图标 -->
+                  <div 
+                    v-if="selectedDesignModelIds.includes(model.id)"
+                    class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
+                  >
+                    <el-icon class="text-white text-sm">
+                      <Check />
+                    </el-icon>
                   </div>
                 </div>
-                
-                <!-- 选中状态图标 -->
-                <div 
-                  v-if="selectedDesignModelIds.includes(model.id)"
-                  class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
-                >
-                  <el-icon class="text-white text-sm">
-                    <Check />
-                  </el-icon>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+              <div class="flex items-start">
+                <el-icon class="text-blue-500 mt-0.5 mr-2">
+                  <InfoFilled />
+                </el-icon>
+                <div class="text-sm text-blue-700">
+                  <p class="font-medium mb-1">已选择 {{ selectedDesignModelIds.length }} 个设计模型</p>
+                  <p>将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 步骤3：确认制作 -->
+          <div v-if="currentStep === 2" class="step-content">
+            <h3 class="text-lg font-bold mb-4">确认制作信息：</h3>
+            
+            <div class="bg-gray-50 rounded-lg p-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 素材信息 -->
+                <div>
+                  <h4 class="font-medium text-gray-700 mb-3">选择的素材 ({{ ids.length }}个)</h4>
+                  <div class="space-y-2">
+                    <template v-for="id in ids" :key="id">
+                      <div v-if="dataSource.find(item => String(item.id) === String(id))" class="flex items-center space-x-2">
+                        <img 
+                          :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                          :alt="dataSource.find(item => String(item.id) === String(id)).name"
+                          class="w-8 h-8 object-cover rounded"
+                        />
+                        <span class="text-sm text-gray-600">{{ dataSource.find(item => String(item.id) === String(id)).name }}</span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+
+                <!-- 设计模型信息 -->
+                <div>
+                  <h4 class="font-medium text-gray-700 mb-3">选择的设计模型 ({{ selectedDesignModelIds.length }}个)</h4>
+                  <div class="space-y-2">
+                    <template v-for="modelId in selectedDesignModelIds" :key="modelId">
+                      <div v-if="designModelList.find(model => model.id === modelId)" class="flex items-center space-x-2">
+                        <img 
+                          v-if="designModelList.find(model => model.id === modelId).thumbnail"
+                          :src="designModelList.find(model => model.id === modelId).thumbnail" 
+                          :alt="designModelList.find(model => model.id === modelId).name"
+                          class="w-8 h-8 object-cover rounded"
+                        />
+                        <span class="text-sm text-gray-600">{{ designModelList.find(model => model.id === modelId).name }}</span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="text-center">
+                  <div class="text-2xl font-bold text-blue-600 mb-2">
+                    {{ ids.length }} × {{ selectedDesignModelIds.length }} = {{ ids.length * selectedDesignModelIds.length }}
+                  </div>
+                  <div class="text-sm text-blue-700">将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</div>
                 </div>
               </div>
             </div>
@@ -290,24 +432,36 @@
         </div>
       </div>
       
+      <!-- 步骤导航按钮 -->
       <template #footer>
         <div class="dialog-footer">
-          <div class="flex-1 text-sm text-gray-600 mr-4">
-            <span>已选择 {{ ids.length }} 个素材</span>
-            <span class="mx-2">×</span>
-            <span>{{ selectedDesignModelIds.length }} 个模板</span>
-            <span class="mx-2">=</span>
-            <span class="font-semibold text-blue-600">{{ ids.length * selectedDesignModelIds.length }} 个新设计模型</span>
+          <div class="flex-1 text-sm text-gray-600">
+            <span>步骤 {{ currentStep + 1 }} / {{ designModelSteps.length }}</span>
           </div>
           <div class="flex gap-2">
-            <el-button @click="designModelModalVisible = false">取消</el-button>
             <el-button 
+              v-if="currentStep > 0"
+              @click="prevStep"
+            >
+              上一步
+            </el-button>
+            <el-button 
+              v-if="currentStep < designModelSteps.length - 1"
               type="primary" 
+              @click="nextStep"
+              :disabled="!canProceedToNextStep"
+            >
+              下一步
+            </el-button>
+            <el-button 
+              v-if="currentStep === designModelSteps.length - 1"
+              type="success" 
               @click="handleDesignModelConfirm"
               :disabled="!selectedDesignModelIds.length"
             >
-              确定 ({{ selectedDesignModelIds.length }})
+              开始制作
             </el-button>
+            <el-button @click="designModelModalVisible = false">取消</el-button>
           </div>
         </div>
       </template>
@@ -393,7 +547,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -527,6 +681,59 @@ const designModelModalVisible = ref(false)
 const designModelList = ref([])
 const designModelLoading = ref(false)
 const selectedDesignModelIds = ref([])
+
+// 分步骤相关
+const currentStep = ref(0)
+const designModelSteps = ref([
+  {
+    key: 'select-materials',
+    title: '选择素材',
+    description: '确认要使用的素材'
+  },
+  {
+    key: 'select-models',
+    title: '选择设计模型',
+    description: '选择要应用的设计模型'
+  },
+  {
+    key: 'confirm',
+    title: '确认制作',
+    description: '确认制作信息并开始制作'
+  }
+])
+
+// 计算是否可以进入下一步
+const canProceedToNextStep = computed(() => {
+  switch (currentStep.value) {
+    case 0: // 选择素材步骤
+      return ids.value.length > 0
+    case 1: // 选择设计模型步骤
+      return selectedDesignModelIds.value.length > 0
+    case 2: // 确认制作步骤
+      return true
+    default:
+      return false
+  }
+})
+
+// 步骤导航方法
+function nextStep() {
+  if (currentStep.value < designModelSteps.value.length - 1 && canProceedToNextStep.value) {
+    currentStep.value++
+  }
+}
+
+function prevStep() {
+  if (currentStep.value > 0) {
+    currentStep.value--
+  }
+}
+
+// 重置步骤状态
+function resetDesignModelSteps() {
+  currentStep.value = 0
+  selectedDesignModelIds.value = []
+}
 
 // 处理上传
 
@@ -663,7 +870,7 @@ async function handleDownload(row) {
 async function handleDesignModel(row) {
   // 设置当前选中的素材为单个素材
   ids.value = [row.id]
-  selectedDesignModelIds.value = []
+  resetDesignModelSteps()
   designModelModalVisible.value = true
   await loadDesignModels()
 }
@@ -719,8 +926,11 @@ function handleDesignModelConfirm() {
   if (success) {
     ElMessage.success('数据已发送到设计工具')
     if (childWindow && typeof childWindow.focus === 'function') {
-    childWindow.focus()
-  }
+      childWindow.focus()
+    }
+    // 关闭弹窗并重置步骤
+    designModelModalVisible.value = false
+    resetDesignModelSteps()
   }
 }
 
@@ -848,11 +1058,21 @@ h1 {
     padding: 16px;
   }
   
-    .dialog-footer {
+  .dialog-footer {
     padding: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .steps-indicator {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+  }
+
+  .step-content {
+    min-height: 400px;
   }
 }
 
