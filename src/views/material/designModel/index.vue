@@ -39,6 +39,7 @@
                 <el-dropdown-item @click="handleDelete(row)"><span style="color:var(--el-color-danger)">删除</span></el-dropdown-item>
                 <el-dropdown-item @click="generateProduct(row)">生成产品</el-dropdown-item>
                 <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
+                <el-dropdown-item @click="enterDesignToolWithId(row)">进入设计工具查看</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -208,6 +209,7 @@ import type { DesignModelVO } from '@/api/designModel'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import Pagination from '@/components/Pagination/index.vue'
+import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 
 
 const queryParams = reactive({
@@ -238,7 +240,7 @@ const gridOptions = ref({
     {
       title: '操作',
       fixed: 'right',
-      width: 'auto',
+      minWidth: 'auto',
       slots: { default: 'operationDefaultSlot' }
     }
   ]
@@ -426,6 +428,35 @@ function handleDelete(row?) {
     })
     .catch(() => {})
 }
+function enterDesignTool(row: any) {
+  const messenger = getDesignToolMessenger()
+  // 打开设计工具窗口（如未打开）
+  if (!messenger.isDesignToolConnected()) {
+    messenger.openDesignTool().then(() => {
+      messenger.sendDesignModelData({
+        materialIds: [],
+        designModelIds: [row.id]
+      })
+    })
+  } else {
+    messenger.sendDesignModelData({
+      materialIds: [],
+      designModelIds: [row.id]
+    })
+  }
+}
+function enterDesignToolWithId(row: any) {
+  const messenger = getDesignToolMessenger()
+  if (!messenger.isDesignToolConnected()) {
+    ElMessage.warning('设计工具未打开，请先打开设计工具子系统')
+    return
+  }
+  messenger.sendOpenDesignModel(row.id)
+  const childWindow = messenger.getChildWindow && messenger.getChildWindow()
+  if (childWindow && typeof childWindow.focus === 'function') {
+    childWindow.focus()
+  }
+}
 const rules = {
   name: [{ required: true, message: '请输入模型名称', trigger: 'blur' }],
   // 可选：keywords校验
@@ -515,5 +546,16 @@ const submitForm = async () => {
 
 .empty-state {
   color: var(--el-text-color-placeholder);
+}
+
+.operation-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
+  min-width: 120px;
+  max-width: 200px;
+  justify-content: center;
+  align-items: center;
+  row-gap: 4px;
 }
 </style> 

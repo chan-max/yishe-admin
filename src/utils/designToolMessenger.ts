@@ -173,6 +173,15 @@ export class DesignToolMessenger {
     return this.messenger ? (this.messenger as any).childWindow : null;
   }
 
+  // 新增：发送打开设计模型消息
+  public sendOpenDesignModel(designModelId: string) {
+    if (this.messenger) {
+      this.messenger.send('openDesignModel', { designModelId })
+    } else {
+      ElMessage.error('设计工具未连接，请先连接设计工具')
+    }
+  }
+
   // 清理资源，但不立即设置连接状态为false
   private cleanupWithoutStateChange() {
     if (this.messenger) {
