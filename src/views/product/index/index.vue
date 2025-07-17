@@ -159,24 +159,38 @@
               size="mini"
               style="margin: 0; padding: 0; background: none;"
               :columns="[
-                { field: 'thumbnail', title: '缩略图', width: 'auto', slots: { default: 'customModelThumbnailSlot' } },
+                { field: 'thumbnail', title: '缩略图', width: '120', slots: { default: 'customModelThumbnailSlot' } },
                 { field: 'name', title: '名称', minWidth: 80 },
                 { field: 'description', title: '描述', minWidth: 120 },
                 { field: 'keywords', title: '关键词', minWidth: 100 },
-                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } }
+                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
+                { title: '操作', field: 'operation', width: 100, slots: { default: 'customModelOperationSlot' } }
               ]"
             >
               <template #customModelThumbnailSlot="{ row }">
-                <img
+
+                <div class="flex items-center justify-center p-2">
+                <el-image
+                  :src="row.thumbnail"
+                  :preview-src-list="[row.thumbnail]"
+                  :initial-index="0"
+                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                />
+              </div>
+
+                <!-- <img
                   v-if="row.thumbnail"
                   :src="row.thumbnail"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
                   @click="preview(0, [row.thumbnail])"
                 />
-                <span v-else class="text-gray-400">无</span>
+                <span v-else class="text-gray-400">无</span> -->
               </template>
               <template #customModelUpdateTimeSlot="{ row }">
                 <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+              </template>
+              <template #customModelOperationSlot="{ row }">
+                <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
               </template>
             </vxe-grid>
           </div>
@@ -530,6 +544,52 @@
         <el-button @click="customModelDetailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog 
+      v-model="customModelDraftDialogVisible" 
+      title="关联草稿" 
+      width="80%" 
+      :close-on-click-modal="false"
+      align-center
+    >
+      <div v-if="customModelDrafts.length === 0" class="empty-state text-center py-8">
+        <el-empty description="暂无关联草稿" />
+      </div>
+      <div v-else class="draft-grid">
+        <div 
+          v-for="draft in customModelDrafts" 
+          :key="draft.id" 
+          class="draft-item"
+        >
+          <div class="draft-preview">
+            <el-image 
+              :src="draft.url" 
+              fit="cover" 
+              class="w-full h-32 rounded cursor-pointer"
+              :preview-src-list="[draft.url]"
+              :preview-teleported="true"
+              :z-index="9999"
+            />
+          </div>
+          <div class="draft-info p-3">
+            <div class="draft-header flex justify-between items-start mb-2">
+              <div class="draft-name text-sm font-medium truncate flex-1">
+                {{ draft.name || '未命名' }}
+              </div>
+            </div>
+            <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
+              {{ draft.description }}
+            </div>
+            <div class="draft-meta text-xs text-color-placeholder mt-2">
+              <span>{{ formatTimestamp(draft.createTime) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="customModelDraftDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -562,6 +622,7 @@ import { publishToSocialMedia, checkSocialMediaLogin } from "@/api/client";
 import { generateProductCode } from "@/common/code";
 import { getDesignModel } from '@/api/designModel'
 import { preview } from "@/components/PreviewImage/index";
+import { getDraftList } from '@/api/draft'
 
 // 社交媒体登录状态相关
 interface PlatformStatus {
@@ -1286,6 +1347,26 @@ async function showCustomModelDetail(id: string) {
     ElMessage.error('获取模型详情失败')
   }
 }
+
+const customModelDraftDialogVisible = ref(false)
+const customModelDrafts = ref([])
+const customModelDraftModel = ref<any>(null)
+
+async function showCustomModelDrafts(model) {
+  customModelDraftModel.value = model
+  customModelDraftDialogVisible.value = true
+  try {
+    const res = await getDraftList({
+      customModelId: model.id,
+      currentPage: 1,
+      pageSize: 100
+    })
+    customModelDrafts.value = res.list || []
+  } catch (error) {
+    ElMessage.error('获取关联草稿失败')
+    customModelDrafts.value = []
+  }
+}
 </script>
 
 <style lang="less">
@@ -1422,5 +1503,47 @@ async function showCustomModelDetail(id: string) {
 // 修复 el-image 预览层级问题
 .el-image-viewer__wrapper {
   z-index: 4000 !important;
+}
+
+.draft-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.draft-item {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  &:hover {
+    box-shadow: var(--el-box-shadow-light);
+    transform: translateY(-2px);
+  }
+}
+.draft-preview {
+  position: relative;
+}
+.draft-info {
+  background: var(--el-bg-color);
+}
+.draft-header {
+  .draft-name {
+    font-weight: 500;
+  }
+}
+.draft-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.draft-meta {
+  border-top: 1px solid var(--el-border-color-lighter);
+  padding-top: 8px;
+}
+.empty-state {
+  color: var(--el-text-color-placeholder);
 }
 </style>
