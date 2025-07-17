@@ -348,28 +348,26 @@
                 <span class="text-lg font-medium">{{ getPlatformName(platform) }}</span>
               </div>
             </template>
-            
-            <el-form :model="publishForm[platform]" label-width="80px">
+            <!-- 只在表单已初始化时渲染 -->
+            <el-form v-if="publishForm[platform]" :model="publishForm[platform]" label-width="80px">
               <el-form-item v-if="platform !== 'weibo'" label="标题" required>
                 <el-input 
-                  v-model="publishForm[platform]!.title" 
+                  v-model="publishForm[platform].title" 
                   :placeholder="`请输入${getPlatformName(platform)}标题`"
                 />
               </el-form-item>
-              
               <el-form-item label="内容" required>
                 <el-input 
-                  v-model="publishForm[platform]!.content" 
+                  v-model="publishForm[platform].content" 
                   type="textarea" 
                   :rows="4"
                   :placeholder="`请输入${getPlatformName(platform)}内容`"
                 />
               </el-form-item>
-
               <el-form-item label="商品图片">
-                <el-checkbox-group v-model="publishForm[platform]!.selectedImages">
+                <el-checkbox-group v-model="publishForm[platform].selectedImages">
                   <div class="flex flex-wrap gap-4">
-                    <div v-for="(url, index) in publishForm[platform]!.images" :key="index" class="relative">
+                    <div v-for="(url, index) in publishForm[platform].images" :key="index" class="relative">
                       <el-checkbox 
                         :value="url"
                         class="absolute top-2 left-2 z-10"
@@ -377,10 +375,10 @@
                       <img 
                         :src="url"
                         class="w-32 h-32 object-cover rounded cursor-pointer"
-                        @click="preview(index, publishForm[platform]!.images)"
+                        @click="preview(index, publishForm[platform].images)"
                       />
                       <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                        {{ index + 1 }}/{{ publishForm[platform]!.images.length }}
+                        {{ index + 1 }}/{{ publishForm[platform].images.length }}
                       </div>
                     </div>
                   </div>
@@ -820,15 +818,35 @@ const publishForm = ref<PublishForm>({
 });
 
 // 监听平台选择变化
-watch(selectedPlatforms, (newPlatforms) => {
+watch(selectedPlatforms, async (newPlatforms) => {
   // 重置所有平台表单为null
   Object.keys(publishForm.value).forEach(platform => {
     publishForm.value[platform as keyof PublishForm] = null;
   });
-  
+
+  // 查询草稿图片
+  let images: string[] = [];
+  // 使用 any 断言，避免 TS 报错
+  let customModelId = (currentPublishRow.value as any)?.customModelId;
+  // 兼容 customModelId 可能在 customModel.id 下
+  if (!customModelId && (currentPublishRow.value as any)?.customModel && (currentPublishRow.value as any).customModel.id) {
+    customModelId = (currentPublishRow.value as any).customModel.id;
+  }
+  if (customModelId) {
+    try {
+      const res = await getDraftList({
+        customModelId,
+        currentPage: 1,
+        pageSize: 100
+      });
+      images = (res.list || []).map(draft => draft.url).filter(Boolean);
+    } catch (e) {
+      images = [];
+    }
+  }
+
   // 为选中的平台初始化表单
   newPlatforms.forEach(platform => {
-    const images = currentPublishRow.value?.images || [];
     publishForm.value[platform as keyof PublishForm] = {
       title: currentPublishRow.value?.name || '',
       content: currentPublishRow.value?.description || '',
