@@ -34,4 +34,11 @@ export function deleteSentence(id: string) {
   return request.delete({
     url: `/sentences/${id}`,
   });
+}
+
+export function aiGenerateSentence(data) {
+  return request.post({
+    url: '/sentences/ai-generate',
+    data,
+  });
 } 

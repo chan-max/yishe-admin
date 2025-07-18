@@ -14,11 +14,19 @@
       <el-button @click="resetQuery" :icon="Refresh"> 重置 </el-button>
       <div class="shrink-0">
         <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
+        <el-button type="primary" :icon="Plus" @click="aiDialogVisible = true" style="margin-left: 8px;">AI生成新句子</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
           批量删除
         </el-button>
       </div>
     </div>
+    <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
+      <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
+      <template #footer>
+        <el-button @click="aiDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd">生成并添加</el-button>
+      </template>
+    </el-dialog>
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -110,7 +118,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Delete, Plus, Refresh } from '@element-plus/icons-vue'
-import { getSentenceList, createSentence, updateSentence, deleteSentence } from '@/api/sentence'
+import { getSentenceList, createSentence, updateSentence, deleteSentence, aiGenerateSentence } from '@/api/sentence'
 import { commonGridOptions } from '@/common/table'
 
 const queryParams = reactive({
@@ -145,6 +153,10 @@ const form = ref({
   description: ''
 })
 const submitLoading = ref(false)
+const aiPromptTop = ref('')
+const aiLoadingTop = ref(false)
+const aiDialogVisible = ref(false)
+const editId = ref<string | null>(null)
 
 // 格式化日期时间
 function formatDateTime(dateStr: string) {
@@ -206,8 +218,8 @@ function handleEdit(row) {
   isEdit.value = true
   dialogVisible.value = true
   dialogTitle.value = '编辑句子'
-  form.value = { 
-    id: row.id,
+  editId.value = row.id
+  form.value = {
     content: row.content,
     description: row.description || ''
   }
@@ -247,6 +259,26 @@ function handleDelete(row?) {
     .catch(() => {})
 }
 
+async function handleAIGenerateAndAdd() {
+  aiLoadingTop.value = true
+  try {
+    const res = await aiGenerateSentence({ prompt: aiPromptTop.value })
+    if (res.content) {
+      await createSentence({ content: res.content, description: res.description || '' })
+      ElMessage.success('AI生成并添加成功')
+      aiDialogVisible.value = false
+      aiPromptTop.value = ''
+      getList()
+    } else {
+      ElMessage.error('AI未返回内容')
+    }
+  } catch (e) {
+    ElMessage.error('AI生成失败')
+  } finally {
+    aiLoadingTop.value = false
+  }
+}
+
 const rules = {
   content: [
     { required: true, message: '请输入句子内容', trigger: 'blur' },
@@ -271,7 +303,7 @@ const submitForm = async () => {
     submitLoading.value = true
     
     if (isEdit.value) {
-      await updateSentence(form.value.id, {
+      await updateSentence(editId.value, {
         content: form.value.content,
         description: form.value.description
       })
