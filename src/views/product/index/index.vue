@@ -339,6 +339,7 @@
           <el-checkbox label="douyin">抖音</el-checkbox>
           <el-checkbox label="xiaohongshu">小红书</el-checkbox>
           <el-checkbox label="weibo">微博</el-checkbox>
+          <el-checkbox label="kuaishou">快手</el-checkbox>
         </el-checkbox-group>
         <!-- 平台表单 -->
         <div v-for="platform in selectedPlatforms" :key="platform" class="mb-8">
@@ -811,50 +812,51 @@ interface PublishForm {
 
 // 发布相关的状态
 const selectedPlatforms = ref<string[]>([]);
-const publishForm = ref<PublishForm>({
+const publishForm = ref<PublishForm & { kuaishou: PlatformForm | null }>({
   douyin: null,
   xiaohongshu: null,
-  weibo: null
+  weibo: null,
+  kuaishou: null
 });
 
 // 监听平台选择变化
-watch(selectedPlatforms, async (newPlatforms) => {
-  // 重置所有平台表单为null
-  Object.keys(publishForm.value).forEach(platform => {
-    publishForm.value[platform as keyof PublishForm] = null;
-  });
-
-  // 查询草稿图片
-  let images: string[] = [];
-  // 使用 any 断言，避免 TS 报错
-  let customModelId = (currentPublishRow.value as any)?.customModelId;
-  // 兼容 customModelId 可能在 customModel.id 下
-  if (!customModelId && (currentPublishRow.value as any)?.customModel && (currentPublishRow.value as any).customModel.id) {
-    customModelId = (currentPublishRow.value as any).customModel.id;
-  }
-  if (customModelId) {
-    try {
-      const res = await getDraftList({
-        customModelId,
-        currentPage: 1,
-        pageSize: 100
-      });
-      images = (res.list || []).map(draft => draft.url).filter(Boolean);
-    } catch (e) {
-      images = [];
-    }
-  }
-
-  // 为选中的平台初始化表单
-  newPlatforms.forEach(platform => {
-    publishForm.value[platform as keyof PublishForm] = {
-      title: currentPublishRow.value?.name || '',
-      content: currentPublishRow.value?.description || '',
-      images: images,
-      selectedImages: [...images]
-    };
-  });
-});
+// watch(selectedPlatforms, async (newPlatforms) => {
+//   // 重置所有平台表单为null
+//   Object.keys(publishForm.value).forEach(platform => {
+//     publishForm.value[platform as keyof PublishForm] = null;
+//   });
+// 
+//   // 查询草稿图片
+//   let images: string[] = [];
+//   // 使用 any 断言，避免 TS 报错
+//   let customModelId = (currentPublishRow.value as any)?.customModelId;
+//   // 兼容 customModelId 可能在 customModel.id 下
+//   if (!customModelId && (currentPublishRow.value as any)?.customModel && (currentPublishRow.value as any).customModel.id) {
+//     customModelId = (currentPublishRow.value as any).customModel.id;
+//   }
+//   if (customModelId) {
+//     try {
+//       const res = await getDraftList({
+//         customModelId,
+//         currentPage: 1,
+//         pageSize: 100
+//       });
+//       images = (res.list || []).map(draft => draft.url).filter(Boolean);
+//     } catch (e) {
+//       images = [];
+//     }
+//   }
+// 
+//   // 为选中的平台初始化表单
+//   newPlatforms.forEach(platform => {
+//     publishForm.value[platform as keyof PublishForm] = {
+//       title: currentPublishRow.value?.name || '',
+//       content: currentPublishRow.value?.description || '',
+//       images: images,
+//       selectedImages: [...images]
+//     };
+//   });
+// });
 
 interface ProductForm {
   id?: string;
@@ -1182,9 +1184,46 @@ async function handleTogglePublish(row) {
 function handlePublish(row) {
   currentPublishRow.value = row;
   publishDialogVisible.value = true;
-  
   // 默认选中所有平台
-  selectedPlatforms.value = ['douyin', 'xiaohongshu', 'weibo'];
+  selectedPlatforms.value = ['douyin', 'xiaohongshu', 'weibo', 'kuaishou'];
+  // 初始化表单
+  initPublishForm(row, selectedPlatforms.value);
+}
+
+async function initPublishForm(row, platforms) {
+  // 查询草稿图片
+  let images = [];
+  let customModelId = (row as any)?.customModelId;
+  if (!customModelId && (row as any)?.customModel && (row as any).customModel.id) {
+    customModelId = (row as any).customModel.id;
+  }
+  if (customModelId) {
+    try {
+      const res = await getDraftList({
+        customModelId,
+        currentPage: 1,
+        pageSize: 100
+      });
+      images = (res.list || []).map(draft => draft.url).filter(Boolean);
+    } catch (e) {
+      images = [];
+    }
+  }
+  // 初始化每个平台的表单
+  platforms.forEach(platform => {
+    publishForm.value[platform as keyof PublishForm | 'kuaishou'] = {
+      title: row?.name || '',
+      content: row?.description || '',
+      images: images,
+      selectedImages: [...images]
+    };
+  });
+  // 清理未选中的平台
+  Object.keys(publishForm.value).forEach(platform => {
+    if (!platforms.includes(platform)) {
+      publishForm.value[platform as keyof PublishForm | 'kuaishou'] = null;
+    }
+  });
 }
 
 // 获取平台名称
@@ -1192,7 +1231,8 @@ const getPlatformName = (platform: string) => {
   const platformNames = {
     douyin: '抖音',
     xiaohongshu: '小红书',
-    weibo: '微博'
+    weibo: '微博',
+    kuaishou: '快手'
   };
   return platformNames[platform] || platform;
 };
@@ -1233,7 +1273,7 @@ function publishDialogClose() {
   selectedPlatforms.value = [];
   // 重置所有平台表单为null
   Object.keys(publishForm.value).forEach(platform => {
-    publishForm.value[platform as keyof PublishForm] = null;
+    publishForm.value[platform as keyof PublishForm | 'kuaishou'] = null;
   });
   // 清空发布结果
   publishResults.value = [];
@@ -1251,7 +1291,7 @@ async function handlePublishSubmit() {
 
     // 验证每个选中平台的表单
     for (const platform of selectedPlatforms.value) {
-      const form = publishForm.value[platform as keyof PublishForm];
+      const form = publishForm.value[platform as keyof PublishForm | 'kuaishou'];
       if (platform !== 'weibo' && (!form || !form.title || !form.content)) {
         ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
         return;
@@ -1272,13 +1312,13 @@ async function handlePublishSubmit() {
       platforms: selectedPlatforms.value.map(platform => {
         const base = {
           platform,
-          content: publishForm.value[platform as keyof PublishForm]!.content,
-          images: publishForm.value[platform as keyof PublishForm]!.selectedImages
+          content: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.content,
+          images: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.selectedImages
         };
         if (platform !== 'weibo') {
           return {
             ...base,
-            title: publishForm.value[platform as keyof PublishForm]!.title
+            title: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.title
           };
         }
         return base;
