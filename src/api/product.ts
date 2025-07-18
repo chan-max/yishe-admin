@@ -37,4 +37,12 @@ export function deleteProduct(ids: string[]) {
     method: 'post',
     data: { ids },
   });
+}
+
+export function aiGenerateProductInfo(data: { id: string; prompt?: string }) {
+  return request.post({
+    url: '/product/ai-generate-info',
+    method: 'post',
+    data,
+  });
 } 

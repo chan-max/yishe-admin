@@ -94,6 +94,9 @@
             <el-button type="success" link size="small" @click="handlePublish(row)">
               发布到社交媒体
             </el-button>
+            <el-button type="info" link size="small" @click="onAiProductAutoGenerate(row)">
+              AI自动生成内容
+            </el-button>
           </div>
         </template>
 
@@ -589,6 +592,27 @@
         <el-button @click="customModelDraftDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="aiGenDialogVisible"
+      title="AI自动生成内容"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
+      <el-input
+        v-model="aiGenPrompt"
+        type="textarea"
+        :rows="6"
+        placeholder="如：请用艺术化语言描述商品内容..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
+      />
+      <template #footer>
+        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -622,6 +646,7 @@ import { generateProductCode } from "@/common/code";
 import { getDesignModel } from '@/api/designModel'
 import { preview } from "@/components/PreviewImage/index";
 import { getDraftList } from '@/api/draft'
+import { aiGenerateProductInfo } from '@/api/product'
 
 // 社交媒体登录状态相关
 interface PlatformStatus {
@@ -1423,6 +1448,44 @@ async function showCustomModelDrafts(model) {
   } catch (error) {
     ElMessage.error('获取关联草稿失败')
     customModelDrafts.value = []
+  }
+}
+
+const aiGenDialogVisible = ref(false)
+const aiGenPrompt = ref('')
+const aiGenDialogLoading = ref(false)
+const aiGenRow = ref<any>(null)
+
+function onAiProductAutoGenerate(row) {
+  if (aiGenDialogLoading.value) return
+  aiGenRow.value = row
+  aiGenPrompt.value = ''
+  aiGenDialogVisible.value = true
+}
+
+async function submitAiGenDialog() {
+  if (!aiGenRow.value) return
+  aiGenDialogLoading.value = true
+  try {
+    const res = await aiGenerateProductInfo({
+      id: aiGenRow.value.id,
+      prompt: aiGenPrompt.value || ''
+    })
+    if (res && res.name) {
+      aiGenRow.value.name = res.name
+      aiGenRow.value.description = res.description
+      aiGenRow.value.keywords = res.keywords
+      ElMessage.success('AI自动生成内容成功')
+      getList()
+    } else {
+      ElMessage.error('AI生成内容失败，未返回有效数据')
+    }
+    aiGenDialogVisible.value = false
+  } catch (e) {
+    ElMessage.error('AI自动生成内容失败')
+  } finally {
+    aiGenDialogLoading.value = false
+    aiGenRow.value = null
   }
 }
 </script>
