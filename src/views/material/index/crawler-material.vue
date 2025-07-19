@@ -87,6 +87,9 @@
         <el-form-item label="关键字">
           <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
+        <el-form-item label="来源">
+          <el-input v-model="editForm.source" placeholder="请输入来源" style="font-size:16px;height:48px;width:100%;" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
@@ -125,6 +128,7 @@ const gridOptions = ref({
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
     { title: '后缀', field: 'suffix', width: 80 },
+    { title: '来源', field: 'source', minWidth: 120 }, // 新增来源列
     { title: '创建时间', field: 'createTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '修改时间', field: 'updateTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '操作', fixed: 'right', width: 'auto', field: 'operation', slots: { default: 'operationDefaultSlot' } }
@@ -137,7 +141,7 @@ const loading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', description: '', keywords: '' })
+const editForm = ref({ id: '', name: '', description: '', keywords: '', source: '' })
 const editLoading = ref(false)
 function getList() {
   loading.value = true
@@ -194,7 +198,7 @@ function handleDelete(row?) {
     .catch(() => { })
 }
 function handleEdit(row) {
-  editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords }
+  editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords, source: row.source }
   editDialogVisible.value = true
 }
 async function submitEdit() {
