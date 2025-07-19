@@ -1,0 +1,47 @@
+/*
+ * @Author: chan-max jackieontheway666@gmail.com
+ * @Date: 2025-01-20 10:00:00
+ * @LastEditors: chan-max jackieontheway666@gmail.com
+ * @LastEditTime: 2025-07-19 07:38:07
+ * @FilePath: /yishe-admin/src/api/crawler-material/index.ts
+ * @Description: 爬图素材模块 API
+ */
+import request from '@/config/axios'
+
+// 爬图素材 VO
+export interface CrawlerMaterialVO {
+  id: string
+  url: string
+  key: string
+  keywords: string
+  name: string
+  description: string
+  suffix: string
+  uploaderId: string
+  meta: any
+  createTime: Date
+  updateTime: Date
+}
+
+// 爬图素材 API
+export const CrawlerMaterialApi = {
+  // 分页获取爬图素材
+  getCrawlerMaterialPage: async (data: any) => {
+    return await request.post({ url: `/crawler/material/page`, data })
+  },
+
+  // 获取单个素材
+  getCrawlerMaterial: async (params: any) => {
+    return await request.get({ url: `/crawler/material`, params })
+  },
+
+  // 更新素材
+  updateCrawlerMaterial: async (data: any) => {
+    return await request.post({ url: `/crawler/material/update`, data })
+  },
+
+  // 删除素材
+  deleteCrawlerMaterial: async (data: any) => {
+    return await request.post({ url: `/crawler/material/delete`, data })
+  }
+} 

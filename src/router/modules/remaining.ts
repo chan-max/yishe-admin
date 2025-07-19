@@ -178,6 +178,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'crawler-material',
+        component: () => import('@/views/material/index/crawler-material.vue'),
+        name: 'CrawlerMaterial',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '爬图素材'
+        }
+      },
+      {
         path: 'draft',
         component: () => import('@/views/draft/index/index.vue'),
         name: 'Draft',

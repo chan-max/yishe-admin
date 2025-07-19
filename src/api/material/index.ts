@@ -220,3 +220,39 @@ export function updateAssetLibrary(data) {
     data
   })
 }
+
+/**
+ * @api 爬图素材相关
+ */
+
+// 分页获取爬图素材
+export const getCrawlerMaterialPage = (data) => {
+  return request.post({
+    url: '/crawler/material/page',
+    data
+  })
+}
+
+// 获取单个素材
+export const getCrawlerMaterial = (params) => {
+  return request.get({
+    url: '/crawler/material',
+    params
+  })
+}
+
+// 更新素材
+export const updateCrawlerMaterial = (data) => {
+  return request.post({
+    url: '/crawler/material/update',
+    data
+  })
+}
+
+// 删除素材
+export const deleteCrawlerMaterial = (data) => {
+  return request.post({
+    url: '/crawler/material/delete',
+    data
+  })
+}
