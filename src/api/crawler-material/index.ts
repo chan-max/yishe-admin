@@ -43,5 +43,10 @@ export const CrawlerMaterialApi = {
   // 删除素材
   deleteCrawlerMaterial: async (data: any) => {
     return await request.post({ url: `/crawler/material/delete`, data })
+  },
+
+  // 批量入库到贴纸
+  batchImportToSticker: async (data: { ids: string[], uploaderId?: string }) => {
+    return await request.post({ url: `/crawler/material/import-to-sticker`, data })
   }
 } 

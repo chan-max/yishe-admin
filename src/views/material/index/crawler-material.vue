@@ -18,6 +18,7 @@
         />
       </form-item>
       <div class="flex shrink-0">
+        <el-button type="success" :icon="Upload" @click="handleBatchImport" :loading="importLoading">批量入库({{ ids.length }})</el-button>
         <el-button type="default" @click="handleMultiDownload(null)">下载 ({{ ids.length }})</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
@@ -56,6 +57,7 @@
                     <el-dropdown-menu>
                       <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
                       <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
+                      <el-dropdown-item @click="handleSingleImport(row)">入库</el-dropdown-item>
                       <el-dropdown-item divided @click="handleDelete(row)">
                         <span style="color:var(--el-color-danger)">删除</span>
                       </el-dropdown-item>
@@ -103,10 +105,13 @@ import { ref, reactive, watchEffect } from 'vue'
 import { CrawlerMaterialApi } from '@/api/crawler-material'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
-import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Search, More } from '@element-plus/icons-vue'
+import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Search, More, Upload } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { downloadImage } from '@/common/download'
+import { useUserStore } from '@/store/modules/user'
+
+const userStore = useUserStore()
 
 const queryParams = reactive({
   currentPage: 1,
@@ -138,11 +143,13 @@ const { height } = useWindowSize()
 watchEffect(() => { gridOptions.value.maxHeight = height.value - 280 })
 const dataSource = ref([])
 const loading = ref(false)
+const importLoading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
 const editDialogVisible = ref(false)
 const editForm = ref({ id: '', name: '', description: '', keywords: '', source: '' })
 const editLoading = ref(false)
+
 function getList() {
   loading.value = true
   CrawlerMaterialApi.getCrawlerMaterialPage({ ...queryParams }).then(res => {
@@ -150,16 +157,19 @@ function getList() {
     total.value = res.total
   }).finally(() => { loading.value = false })
 }
+
 function checkboxChange(e) {
   const records = Array.isArray(e.records) ? e.records : []
   const reserves = Array.isArray(e.reserves) ? e.reserves : []
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
 }
+
 function checkboxAllChange(e) {
   const records = Array.isArray(e.records) ? e.records : []
   const reserves = Array.isArray(e.reserves) ? e.reserves : []
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
 }
+
 function handleDownload(row) {
   try {
     const downloadUrl = row.url
@@ -174,6 +184,22 @@ function handleDownload(row) {
     ElMessage.error('图片下载失败')
   }
 }
+
+function handleMultiDownload() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要下载的数据')
+  }
+  // 处理批量下载逻辑
+  ids.value.forEach((id, index) => {
+    const row = dataSource.value.find(item => item.id === id)
+    if (row) {
+      setTimeout(() => {
+        handleDownload(row)
+      }, 500 * index)
+    }
+  })
+}
+
 function handleDelete(row?) {
   let delIds: any = null
   if (row) {
@@ -197,10 +223,12 @@ function handleDelete(row?) {
     })
     .catch(() => { })
 }
+
 function handleEdit(row) {
   editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords, source: row.source }
   editDialogVisible.value = true
 }
+
 async function submitEdit() {
   editLoading.value = true
   try {
@@ -214,5 +242,71 @@ async function submitEdit() {
     editLoading.value = false
   }
 }
+
+// 批量入库到贴纸
+async function handleBatchImport() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要入库的数据')
+  }
+  
+  ElMessageBox.confirm(`确认将选中的 ${ids.value.length} 个素材入库到贴纸吗？\n注意：入库成功后，这些素材将从爬虫素材列表中删除。`, '入库确认', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'info'
+  })
+    .then(async () => {
+      importLoading.value = true
+      try {
+        const result = await CrawlerMaterialApi.batchImportToSticker({
+          ids: ids.value,
+          uploaderId: String(userStore.user.id)
+        })
+        
+        if (result.success.length > 0) {
+          ElNotification.success(`成功入库 ${result.success.length} 个素材`)
+        }
+        if (result.failed.length > 0) {
+          ElNotification.warning(`入库失败 ${result.failed.length} 个素材`)
+        }
+        
+        // 清空选择
+        ids.value = []
+        // 刷新列表
+        getList()
+      } catch (error) {
+        ElNotification.error('入库失败：' + error.message)
+      } finally {
+        importLoading.value = false
+      }
+    })
+    .catch(() => { })
+}
+
+// 单个入库到贴纸
+async function handleSingleImport(row) {
+  ElMessageBox.confirm(`确认将素材"${row.name}"入库到贴纸吗？\n注意：入库成功后，该素材将从爬虫素材列表中删除。`, '入库确认', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'info'
+  })
+    .then(async () => {
+      try {
+        const result = await CrawlerMaterialApi.batchImportToSticker({
+          ids: [row.id],
+          uploaderId: String(userStore.user.id)
+        })
+        
+        if (result.success.length > 0) {
+          ElNotification.success('入库成功')
+        } else if (result.failed.length > 0) {
+          ElNotification.error('入库失败：' + result.failed[0].error)
+        }
+      } catch (error) {
+        ElNotification.error('入库失败：' + error.message)
+      }
+    })
+    .catch(() => { })
+}
+
 getList()
 </script> 
