@@ -167,17 +167,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: 'material',
-        component: () => import('@/views/material/index/index.vue'),
-        name: 'Material',
-        meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: '图片素材'
-        }
-      },
-      {
         path: 'crawler-material',
         component: () => import('@/views/material/index/crawler-material.vue'),
         name: 'CrawlerMaterial',
@@ -188,6 +177,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '爬图素材'
         }
       },
+      {
+        path: 'material',
+        component: () => import('@/views/material/index/index.vue'),
+        name: 'Material',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '图片素材'
+        }
+      },
+
       {
         path: 'draft',
         component: () => import('@/views/draft/index/index.vue'),
