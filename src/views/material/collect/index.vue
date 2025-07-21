@@ -278,7 +278,7 @@
         @pagination="getList" />
     </div>
 
-    <el-dialog title="素材入库" v-model="materialCheckModalVisible" @close="materialCheckModalCancel" width="600px"
+    <el-dialog title="素材入库" v-model="materialCheckModalVisible" @close="onMaterialCheckModalClose" width="600px"
       :closable="true" align-center>
       <el-form label-width="100px" ref="materialCheckFormRef" :rules="materialCheckRules" :model="materialCheckForm">
         <el-row>
@@ -780,7 +780,7 @@ async function handleCheck(ids) {
     ElMessage.success("操作成功");
     resetCheckStatus()
     materialCheckModalVisible.value = false;
-    getList();
+    getList(); // 入库接口调用成功后立即刷新页面
   } catch (e) {
     ElMessage.error("操作失败");
   } finally {
@@ -914,6 +914,10 @@ async function initMaterialOrder() {
 // onUnmounted(() => {
 //   userStore.ws.offMessage(wsHandler);
 // });
+
+function onMaterialCheckModalClose() {
+  // 不再这里刷新页面，刷新已在 handleCheck 成功后完成
+}
 </script>
 
 <style scoped></style>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class=" flex flex-wrap justify-end gap-4 items-center">
+    <div class=" flex pb-4 flex-wrap justify-end gap-4 items-center">
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input

@@ -133,7 +133,7 @@ const gridOptions = ref({
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
     { title: '后缀', field: 'suffix', width: 80 },
-    { title: '来源', field: 'source', minWidth: 120 }, // 新增来源列
+    { title: '来源', field: 'source', minWidth: 160 }, // 新增来源列
     { title: '创建时间', field: 'createTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '修改时间', field: 'updateTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '操作', fixed: 'right', width: 'auto', field: 'operation', slots: { default: 'operationDefaultSlot' } }
@@ -268,10 +268,9 @@ async function handleBatchImport() {
         if (result.failed.length > 0) {
           ElNotification.warning(`入库失败 ${result.failed.length} 个素材`)
         }
-        
         // 清空选择
         ids.value = []
-        // 刷新列表
+        // 刷新列表（入库成功后立即刷新）
         getList()
       } catch (error) {
         ElNotification.error('入库失败：' + error.message)
@@ -298,6 +297,7 @@ async function handleSingleImport(row) {
         
         if (result.success.length > 0) {
           ElNotification.success('入库成功')
+          getList() // 单个入库成功后立即刷新
         } else if (result.failed.length > 0) {
           ElNotification.error('入库失败：' + result.failed[0].error)
         }
