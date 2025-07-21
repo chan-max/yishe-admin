@@ -67,7 +67,7 @@
               <el-link
                 style="float: right"
                 type="primary"
-                @click="setLoginState(LoginStateEnum.RESET_PASSWORD)"
+                @click="handleForgetPassword"
               >
                 {{ t("login.forgetPassword") }}
               </el-link>
@@ -146,6 +146,31 @@
       </el-col> -->
     </el-row>
   </el-form>
+  <el-dialog
+    v-model="showForgetDialog"
+    width="370px"
+    align-center
+    :show-close="true"
+    :close-on-click-modal="true"
+    :close-on-press-escape="true"
+  >
+    <template #header>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <el-icon size="22"><i class="el-icon-lock"></i></el-icon>
+        <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px;">忘记密码？</span>
+      </div>
+    </template>
+    <div style="text-align: center; padding: 18px 0 10px 0;">
+      <div style="font-size: 17px; margin-bottom: 10px; font-weight: 500;">请联系管理员重置密码</div>
+      <div style="font-size: 16px; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px;">
+        <span>TEL</span> & <span>WECHAT</span>：18742539196
+      </div>
+      <el-tag type="success" effect="plain" style="margin-top: 4px;">24小时在线</el-tag>
+    </div>
+    <template #footer>
+      <el-button type="primary" style="width: 100%; font-size: 16px;" @click="showForgetDialog = false">我知道了</el-button>
+    </template>
+  </el-dialog>
 </template>
 <script lang="ts" setup>
 import { ElLoading } from "element-plus";
@@ -175,6 +200,7 @@ const { currentRoute, push } = useRouter();
 const redirect = ref<string>("");
 const loginLoading = ref(false);
 const loading = ref(); // ElLoading.service 返回的实例
+const showForgetDialog = ref(false);
 
 const getShow = computed(() => unref(getLoginState) === LoginStateEnum.LOGIN);
 
@@ -327,6 +353,9 @@ const handleLogin = async () => {
 //     window.location.href = await LoginApi.socialAuthRedirect(type, encodeURIComponent(redirectUri))
 //   }
 // }
+const handleForgetPassword = () => {
+  showForgetDialog.value = true;
+};
 watch(
   () => currentRoute.value,
   (route: RouteLocationNormalizedLoaded) => {

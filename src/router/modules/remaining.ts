@@ -163,7 +163,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
       title: '设计资源',
       icon: 'ep:collection',
       noCache: false,
-      affix: true
+      affix: false
     },
     children: [
       {

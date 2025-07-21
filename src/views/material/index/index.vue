@@ -2,10 +2,8 @@
   <div>
     <div class="py-4 flex flex-wrap justify-end gap-4 items-center">
       <div style="flex: 1"></div>
-
       <form-item label="按名称搜索">
         <el-input
-        
           v-model="queryParams.imageName"
           placeholder="请输入图片名称"
           style="width: 160px"
