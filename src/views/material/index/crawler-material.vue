@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="py-4 flex flex-wrap justify-end gap-4 items-center">
+    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center">
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input
@@ -140,7 +140,7 @@ const gridOptions = ref({
   ]
 })
 const { height } = useWindowSize()
-watchEffect(() => { gridOptions.value.maxHeight = height.value - 280 })
+watchEffect(() => { gridOptions.value.maxHeight = height.value - 210 })
 const dataSource = ref([])
 const loading = ref(false)
 const importLoading = ref(false)
