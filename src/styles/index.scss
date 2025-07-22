@@ -3,58 +3,81 @@
 @use './theme.scss';
 @use 'element-plus/theme-chalk/dark/css-vars.css';
 
-.reset-margin [class*='el-icon'] + span {
-  margin-left: 2px !important;
+.reset-margin [class*='el-icon']+span {
+    margin-left: 2px !important;
 }
 
 // 解决抽屉弹出时，body宽度变化的问题
 .el-popup-parent--hidden {
-  width: 100% !important;
+    width: 100% !important;
 }
 
 // 解决表格内容超过表格总宽度后，横向滚动条前端顶不到表格边缘的问题
 .el-scrollbar__bar {
-  display: flex;
-  justify-content: flex-start;
+    display: flex;
+    justify-content: flex-start;
 }
 
 /* nprogress 适配 element-plus 的主题色 */
 #nprogress {
-  & .bar {
-    background-color: var(--el-color-primary) !important;
-  }
+    & .bar {
+        background-color: var(--el-color-primary) !important;
+    }
 
-  & .peg {
-    box-shadow:
-      0 0 10px var(--el-color-primary),
-      0 0 5px var(--el-color-primary) !important;
-  }
+    & .peg {
+        box-shadow:
+            0 0 10px var(--el-color-primary),
+            0 0 5px var(--el-color-primary) !important;
+    }
 
-  & .spinner-icon {
-    border-top-color: var(--el-color-primary);
-    border-left-color: var(--el-color-primary);
-  }
+    & .spinner-icon {
+        border-top-color: var(--el-color-primary);
+        border-left-color: var(--el-color-primary);
+    }
 }
 
 /* WebKit 浏览器 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+    width: 8px;
+    height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  border-radius: 4px;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  border-radius: 4px;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+    background: #a8a8a8;
 }
 
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #aaa transparent;
+    scrollbar-width: thin;
+    scrollbar-color: #aaa transparent;
+}
+
+/* 修复 Element Plus 图片预览在移动端被父容器遮挡的问题 */
+.el-image-viewer__wrapper,
+.el-image-viewer__mask {
+    z-index: 3000 !important;
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: visible !important;
+}
+
+.content-container,
+.common-table,
+.vxe-table--body-wrapper,
+.vxe-table--main-wrapper {
+    overflow: visible !important;
+}
+
+.el-dialog__body {
+    overflow: visible !important;
 }

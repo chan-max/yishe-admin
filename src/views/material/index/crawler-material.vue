@@ -90,7 +90,7 @@
           <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
         <el-form-item label="来源">
-          <el-input v-model="editForm.source" placeholder="请输入来源" style="font-size:16px;height:48px;width:100%;" />
+          <el-input v-model="editForm.source"  placeholder="请输入来源" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
       </el-form>
       <template #footer>
