@@ -59,17 +59,7 @@
     scrollbar-color: #aaa transparent;
 }
 
-/* 修复 Element Plus 图片预览在移动端被父容器遮挡的问题 */
-.el-image-viewer__wrapper,
-.el-image-viewer__mask {
-    z-index: 3000 !important;
-    position: fixed !important;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    overflow: visible !important;
-}
+
 
 .content-container,
 .common-table,
