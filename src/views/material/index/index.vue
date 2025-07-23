@@ -577,6 +577,7 @@ const gridOptions = ref({
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
     { title: '后缀', field: 'suffix', width: 80 }, // 新增后缀列
+    { title: '感知哈希', field: 'phash', width: 80 }, // 新增后缀列
     {
       title: '创建时间',
       field: 'createTime',
