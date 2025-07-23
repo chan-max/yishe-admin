@@ -9,7 +9,7 @@
       @click="toggleMenu"
     >
       <el-icon>
-        <Plus v-if="!isMenuOpen" />
+        <Tools v-if="!isMenuOpen" />
         <Close v-else />
       </el-icon>
     </el-button>
@@ -36,80 +36,32 @@
       </div>
     </transition>
 
-    <!-- Phash 对比弹窗 -->
-    <el-dialog
-      v-model="phashDialogVisible"
-      title="Phash 相似度对比"
-      width="600px"
-      :before-close="handlePhashDialogClose"
-    >
-      <div class="phash-comparison">
-        <div class="input-group">
-          <label>Phash 1:</label>
-          <el-input
-            v-model="phash1"
-            placeholder="请输入第一个 phash 值"
-            type="textarea"
-            :rows="3"
-          />
-        </div>
-        <div class="input-group">
-          <label>Phash 2:</label>
-          <el-input
-            v-model="phash2"
-            placeholder="请输入第二个 phash 值"
-            type="textarea"
-            :rows="3"
-          />
-        </div>
-        <div class="comparison-result" v-if="comparisonResult !== null">
-          <h4>对比结果:</h4>
-          <p>编辑距离: <strong>{{ comparisonResult.distance }}</strong></p>
-          <p>相似度: <strong>{{ comparisonResult.similarity }}%</strong></p>
-          <p>
-            相似程度: 
-            <el-tag :type="getSimilarityTagType(comparisonResult.similarity)">
-              {{ getSimilarityLevel(comparisonResult.similarity) }}
-            </el-tag>
-          </p>
-        </div>
-      </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="clearPhashInputs">清空</el-button>
-          <el-button type="primary" @click="comparePhash" :disabled="!canCompare">
-            对比
-          </el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <!-- 功能组件 -->
+    <PhashComparison v-model="phashDialogVisible" />
+    <Calculator v-model="calculatorDialogVisible" />
+    <ColorPicker v-model="colorPickerDialogVisible" />
+    <TextTools v-model="textToolsDialogVisible" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Plus, Close, Document, DataAnalysis, Brush, EditPen } from '@element-plus/icons-vue'
-// import leven from 'leven'
+import { ref } from 'vue'
+import { Tools, Close, Document, DataAnalysis, Brush, EditPen } from '@element-plus/icons-vue'
+import PhashComparison from './PhashComparison.vue'
+import Calculator from './Calculator.vue'
+import ColorPicker from './ColorPicker.vue'
+import TextTools from './TextTools.vue'
 
 defineOptions({ name: 'FloatingUtilityButton' })
 
 // 菜单状态
 const isMenuOpen = ref(false)
 
-// Phash 对比相关
+// 各功能组件的显示状态
 const phashDialogVisible = ref(false)
-const phash1 = ref('')
-const phash2 = ref('')
-const comparisonResult = ref<{
-  distance: number
-  similarity: number
-} | null>(null)
-
-// 计算属性
-const canCompare = computed(() => {
-  return phash1.value.trim() !== '' && phash2.value.trim() !== ''
-})
+const calculatorDialogVisible = ref(false)
+const colorPickerDialogVisible = ref(false)
+const textToolsDialogVisible = ref(false)
 
 // 方法
 const toggleMenu = () => {
@@ -126,68 +78,18 @@ const openPhashComparison = () => {
 }
 
 const openCalculator = () => {
-  ElMessage.info('计算器功能开发中...')
+  calculatorDialogVisible.value = true
   closeMenu()
 }
 
 const openColorPicker = () => {
-  ElMessage.info('颜色选择器功能开发中...')
+  colorPickerDialogVisible.value = true
   closeMenu()
 }
 
 const openTextTools = () => {
-  ElMessage.info('文本工具功能开发中...')
+  textToolsDialogVisible.value = true
   closeMenu()
-}
-
-const comparePhash = () => {
-  if (!canCompare.value) return
-
-  const hash1 = phash1.value.trim()
-  const hash2 = phash2.value.trim()
-
-  try {
-    // 使用 leven 计算编辑距离
-    const distance = leven(hash1, hash2)
-    
-    // 计算相似度百分比
-    const maxLength = Math.max(hash1.length, hash2.length)
-    const similarity = Math.round(((maxLength - distance) / maxLength) * 100)
-
-    comparisonResult.value = {
-      distance,
-      similarity
-    }
-
-    ElMessage.success('对比完成！')
-  } catch (error) {
-    ElMessage.error('对比过程中出现错误')
-    console.error('Phash comparison error:', error)
-  }
-}
-
-const clearPhashInputs = () => {
-  phash1.value = ''
-  phash2.value = ''
-  comparisonResult.value = null
-}
-
-const handlePhashDialogClose = () => {
-  phashDialogVisible.value = false
-}
-
-const getSimilarityTagType = (similarity: number) => {
-  if (similarity >= 90) return 'success'
-  if (similarity >= 70) return 'warning'
-  return 'danger'
-}
-
-const getSimilarityLevel = (similarity: number) => {
-  if (similarity >= 95) return '极高相似'
-  if (similarity >= 90) return '高度相似'
-  if (similarity >= 70) return '中等相似'
-  if (similarity >= 50) return '低度相似'
-  return '差异较大'
 }
 
 // 点击外部关闭菜单
@@ -210,9 +112,9 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .floating-utility-button {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  z-index: 9999;
+  bottom: 120px;
+  right: 16px;
+  z-index: 99999;
 
   .main-fab {
     width: 56px;
@@ -277,45 +179,7 @@ onUnmounted(() => {
   transform: translateY(10px) scale(0.9);
 }
 
-.phash-comparison {
-  .input-group {
-    margin-bottom: 20px;
 
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 500;
-      color: #303133;
-    }
-  }
-
-  .comparison-result {
-    margin-top: 20px;
-    padding: 16px;
-    background-color: #f8f9fa;
-    border-radius: 6px;
-
-    h4 {
-      margin: 0 0 12px 0;
-      color: #303133;
-    }
-
-    p {
-      margin: 8px 0;
-      color: #606266;
-
-      strong {
-        color: #303133;
-      }
-    }
-  }
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
 
 // 暗色主题适配
 .dark {
@@ -340,28 +204,6 @@ onUnmounted(() => {
     }
   }
 
-  .phash-comparison {
-    .input-group {
-      label {
-        color: #e5eaf3;
-      }
-    }
 
-    .comparison-result {
-      background-color: #2d2d2d;
-
-      h4 {
-        color: #e5eaf3;
-      }
-
-      p {
-        color: #a3a6ad;
-
-        strong {
-          color: #e5eaf3;
-        }
-      }
-    }
-  }
 }
 </style>
