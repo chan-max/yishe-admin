@@ -974,15 +974,15 @@ async function handleGeneratePhash(row) {
     const { phash } = await calculatePhash({ url: row.url, ext: row.suffix || 'jpg' });
     if (phash && phash !== '000000000000') {
       row.phash = phash;
-      ElNotification.success('哈希生成成功: ' + phash);
+      ElMessage.success('哈希生成成功: ' + phash);
       // 可选：自动保存到后端
       await updateAssetLibrary({ id: row.id, phash });
       getList();
     } else {
-      ElNotification.warning('哈希生成失败');
+      ElMessage.warning('哈希生成失败');
     }
   } catch (e) {
-    ElNotification.error('哈希生成失败');
+    ElMessage.error('哈希生成失败');
   }
 }
 
