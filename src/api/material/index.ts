@@ -256,3 +256,13 @@ export const deleteCrawlerMaterial = (data) => {
     data
   })
 }
+
+/**
+ * 计算图片感知哈希
+ */
+export function calculatePhash(data) {
+  return request.post({
+    url: '/sticker/phash',
+    data
+  })
+}

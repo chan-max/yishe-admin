@@ -133,6 +133,7 @@
                       <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
                       <el-dropdown-item @click="handleDesignModel(row)">制作设计模型</el-dropdown-item>
                       <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
+                      <el-dropdown-item @click="handleGeneratePhash(row)">生成哈希</el-dropdown-item>
                       <el-dropdown-item divided @click="handleDelete(row)">
                         <span style="color:var(--el-color-danger)">删除</span>
                       </el-dropdown-item>
@@ -488,7 +489,8 @@ import {
   getMaterialDetail,
   handleDropMaterial,
   aiAutoGenerateMaterialInfo,
-  updateAssetLibrary
+  updateAssetLibrary,
+  calculatePhash // 新增
 } from '@/api/material' // 实际接口导入
 
 import { commonGridOptions } from '@/common/table'
@@ -963,6 +965,27 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   }
 }
 
+async function handleGeneratePhash(row) {
+  if (!row.url) {
+    ElMessage.error('图片无有效链接，无法生成哈希');
+    return;
+  }
+  try {
+    const { phash } = await calculatePhash({ url: row.url, ext: row.suffix || 'jpg' });
+    if (phash && phash !== '000000000000') {
+      row.phash = phash;
+      ElNotification.success('哈希生成成功: ' + phash);
+      // 可选：自动保存到后端
+      await updateAssetLibrary({ id: row.id, phash });
+      getList();
+    } else {
+      ElNotification.warning('哈希生成失败');
+    }
+  } catch (e) {
+    ElNotification.error('哈希生成失败');
+  }
+}
+
 const editDialogVisible = ref(false)
 const editForm = ref({ id: '', name: '', description: '', keywords: '' })
 const editLoading = ref(false)
@@ -985,6 +1008,8 @@ async function submitEdit() {
     editLoading.value = false
   }
 }
+
+defineExpose({ handleGeneratePhash });
 </script>
 
 <style scoped>
