@@ -112,7 +112,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .floating-utility-button {
   position: fixed;
-  bottom: 120px;
+  bottom: 120px; 
   right: 16px;
   z-index: 99999;
 
