@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-04-01 07:04:47
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-22 21:28:29
+ * @LastEditTime: 2025-07-23 22:05:37
  * @FilePath: /yishe-admin/src/layout/components/ToolHeader.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -25,6 +25,7 @@ import { setDesignToolConnected } from '@/stores/connectionStatus'
 import { getAccessToken } from '@/utils/auth'
 import { saveTokenToClient } from '@/api/user'
 import { checkClientAuthorized } from '@/stores/connectionStatus'
+import FloatingUtilityButton from '@/components/FloatingUtilityButton/index.vue'
 
 const { getPrefixCls, variables } = useDesign()
 
@@ -131,6 +132,8 @@ export default defineComponent({
           ) : undefined}
     
           <UserInfo></UserInfo>
+
+          <FloatingUtilityButton/>
         </div>
       </div>
     )
