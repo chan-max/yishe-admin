@@ -1,45 +1,14 @@
 <template>
   <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <!-- 左侧操作按钮 -->
-      <div class="flex gap-2">
-        <el-button type="success" :icon="Download" @click="handleMultiDownload" :disabled="!ids.length">
-          批量下载
-        </el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
-          批量删除
-        </el-button>
-      </div>
-
-      <!-- 右侧搜索区域 -->
-      <div class="flex gap-2 items-center">
-        <form-item label="按名称搜索">
-          <el-input
-            v-model="queryParams.imageName"
-            clearable
-            placeholder="请输入草稿名称"
-            style="width: 160px"
-          />
-        </form-item>
-        <form-item label="关联状态">
-          <el-select
-            v-model="queryParams.hasModel"
-            clearable
-            placeholder="选择关联状态"
-            style="width: 120px"
-          >
-            <el-option label="全部" value="" />
-            <el-option label="已关联" value="true" />
-            <el-option label="未关联" value="false" />
-          </el-select>
-        </form-item>
-        <el-button type="primary" @click="handleSearch" :icon="Search">
-          搜索
-        </el-button>
-        <el-button @click="resetQuery" :icon="Refresh">
-          重置
-        </el-button>
-      </div>
+    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+      <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
+      <!-- 示例：
+      <form-item label="按名称搜索">
+        <el-input v-model="queryParams.imageName" placeholder="请输入图片名称" style="width: 160px" clearable @change="(val) => { if (!val) getList() }" />
+      </form-item>
+      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+      ...其它表单项和按钮... 
+      -->
     </div>
 
 

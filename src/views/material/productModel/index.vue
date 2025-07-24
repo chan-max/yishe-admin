@@ -1,12 +1,7 @@
 <template>
   <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <div style="flex: 1"></div>
-      <div class="shrink-0">
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除
-        </el-button>
-      </div>
+    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+      <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
     </div>
     <div class="common-table">
       <vxe-grid
@@ -382,5 +377,41 @@ const submitForm = async () => {
 .text-wrap {
   white-space: normal;
   line-height: 1.5;
+}
+.pb-4.flex, .search-bar {
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pb-4.flex > *, .search-bar > * {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .pb-4.flex, .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .pb-4.flex > *, .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .content-container {
+    padding: 0 4px !important;
+  }
+  .common-table {
+    overflow-x: auto;
+  }
 }
 </style> 

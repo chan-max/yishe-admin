@@ -1,29 +1,7 @@
 <template>
   <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <!-- 导出按钮 -->
-      <div style="flex: 1"></div>
-
-      <form-item label="按名称搜索">
-        <el-input
-          v-model="queryParams.name"
-          clearable
-          placeholder="请输入名称"
-          style="width: 160px"
-        />
-      </form-item>
-      <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
-
-      <div class="shrink-0">
-        <!-- 修改按钮 -->
-        <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
-          新增
-        </el-button>
-        <!-- 删除按钮 -->
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除
-        </el-button>
-      </div>
+    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+      <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
     </div>
 
     <!-- 表格展示 -->
@@ -517,4 +495,41 @@ const copyUrl = (url: string) => {
 };
 </script>
 
-<style lang="less"></style>
+<style scoped>
+.pb-4.flex, .search-bar {
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pb-4.flex > *, .search-bar > * {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .pb-4.flex, .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .pb-4.flex > *, .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .content-container {
+    padding: 0 4px !important;
+  }
+  .common-table {
+    overflow-x: auto;
+  }
+}
+</style>

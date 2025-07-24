@@ -138,7 +138,7 @@ export default defineComponent({
         ) : undefined}
         <div class="h-full flex items-center">
           {/* 打开设计工具 */}
-          {isWideScreen.value ? <ClientStatus /> : null}
+          <div class="client-status-wrapper"><ClientStatus /></div>
 
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
@@ -159,5 +159,10 @@ $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} {
   transition: left var(--transition-time-02);
+}
+@media (max-width: 767px) {
+  .client-status-wrapper {
+    display: none !important;
+  }
 }
 </style>

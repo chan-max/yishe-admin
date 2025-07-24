@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center">
+    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮 -->
+    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input
@@ -12,15 +13,21 @@
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <form-item label="按时间查询">
+      <form-item label="排序">
+        <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
+          <el-option label="创建时间倒序" value="createTime DESC" />
+          <el-option label="创建时间正序" value="createTime ASC" />
+        </el-select>
+      </form-item>
+      <form-item label="按时间查询" class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
         />
       </form-item>
       <div class="flex shrink-0">
         <el-button type="success" :icon="Upload" @click="handleBatchImport" :loading="importLoading">批量入库({{ ids.length }})</el-button>
-        <el-button type="default" @click="handleMultiDownload(null)">下载 ({{ ids.length }})</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+        <el-button type="danger" :icon="Delete" @click="handleDelete">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
     <div class="flex gap-4">
@@ -109,7 +116,7 @@
   </div>
 </template>
 <script setup lang="tsx">
-import { ref, reactive, watchEffect } from 'vue'
+import { ref, reactive, watchEffect, computed, onMounted, onUnmounted } from 'vue'
 import { CrawlerMaterialApi } from '@/api/crawler-material'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -127,6 +134,7 @@ const queryParams = reactive({
   imageName: '',
   startTime: '',
   endTime: '',
+  sortingFields: 'createTime DESC', // 默认倒序
 })
 const gridRef = ref()
 const gridOptions = ref({
@@ -162,6 +170,8 @@ const editLoading = ref(false)
 // 图片预览相关状态
 const imagePreviewVisible = ref(false)
 const currentImageUrl = ref('')
+
+// 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
 
 function getList() {
   loading.value = true
@@ -340,3 +350,54 @@ function handleImageError(event: Event) {
 
 getList()
 </script> 
+<style scoped>
+/* PC端优化 */
+.pb-4.flex, .search-bar {
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pb-4.flex > *, .search-bar > * {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .pb-4.flex, .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .pb-4.flex > *, .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .date-range-picker {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .date-range-picker .el-date-editor,
+  .date-range-picker .el-range-editor {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .content-container {
+    padding: 0 4px !important;
+  }
+  .common-table {
+    overflow-x: auto;
+  }
+}
+</style> 

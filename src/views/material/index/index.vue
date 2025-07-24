@@ -1,6 +1,7 @@
 <template>
   <div>
-    <div class=" flex pb-4 flex-wrap justify-end gap-4 items-center">
+    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮 -->
+    <div v-if="!isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input
@@ -8,86 +9,54 @@
           placeholder="请输入图片名称"
           style="width: 160px"
           clearable
-          @change="
-            (val) => {
-              if (!val) {
-                getList()
-              }
-            }
-          "
+          @change="(val) => { if (!val) getList() }"
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-
-      <form-item label="按时间查询">
+      <form-item label="排序">
+        <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
+          <el-option label="创建时间倒序" value="createTime DESC" />
+          <el-option label="创建时间正序" value="createTime ASC" />
+        </el-select>
+      </form-item>
+      <form-item label="按时间查询" class="date-range-picker">
         <DateRangePicker
-          @change="
-            (val) => {
-              queryParams.startTime = val.start
-              queryParams.endTime = val.end
-              getList()
-            }
-          "
+          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
         />
       </form-item>
-
-
       <div class="flex shrink-0">
-        <el-button
-          type="primary"
-          @click="
-            () => {
-              uploadModalVisible = true
-            }
-          "
-        >
-          上传
-        </el-button>
-
-        <el-button type="default" @click="handleMultiDownload(null)">
-          下载 ({{ ids.length }})
-        </el-button>
-
-        <el-button
-          type="primary"
-          @click="
-            () => {
-              if (!ids.length) {
-                return ElMessage.warning('请选择要制作的素材')
-              }
-              currentRow = null
-              genPicturesModalVisible = true
-            }
-          "
-        >
-          制作套图({{ ids.length }})
-        </el-button>
-
-        <el-button
-          type="success"
-          @click="
-            async () => {
-              if (!ids.length) {
-                return ElMessage.warning('请选择要制作的素材')
-              }
-              resetDesignModelSteps()
-              designModelModalVisible = true
-              await loadDesignModels()
-            }
-          "
-        >
-          制作设计模型({{ ids.length }})
-        </el-button>
-
-
-
-        <!-- <el-button type="warning" @click="handleMultipleCheck(0)">
-          取消入库 ({{ ids.length }})</el-button> -->
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除({{ ids.length }})
-        </el-button>
+        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+        <el-button type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } currentRow = null; genPicturesModalVisible = true }">制作套图({{ ids.length }})</el-button>
+        <el-button type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+        <el-button type="danger" :icon="Delete" @click="handleDelete">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
+    <div v-else class="flex pb-4 justify-end">
+      <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
+    </div>
+    <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
+      <el-form :model="queryParams" label-width="80px">
+        <el-form-item label="按名称搜索">
+          <el-input v-model="queryParams.imageName" placeholder="请输入图片名称" clearable />
+        </el-form-item>
+        <el-form-item label="排序">
+          <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
+            <el-option label="创建时间倒序" value="createTime DESC" />
+            <el-option label="创建时间正序" value="createTime ASC" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="按时间查询">
+          <DateRangePicker
+            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end }"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="filterDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
+      </template>
+    </el-dialog>
 
     <div class="flex gap-4">
       <div class="content-container" :style="{ width: '100%' }">
@@ -542,7 +511,7 @@ const queryParams = reactive({
   imageName: '',
   startTime: '',
   endTime: '',
-  sortingFields: '',
+  sortingFields: 'createTime DESC', // 默认倒序
 })
 
 // 展示模式
@@ -1038,9 +1007,61 @@ function handleImageError(event: Event) {
 }
 
 defineExpose({ handleGeneratePhash });
+
+// 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
+
 </script>
 
 <style scoped>
+/* PC端优化 */
+.flex.pb-4, .search-bar {
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.flex.pb-4 > *, .search-bar > * {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .flex.pb-4, .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .flex.pb-4 > *, .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .date-range-picker {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .date-range-picker .el-date-editor,
+  .date-range-picker .el-range-editor {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .content-container {
+    padding: 0 4px !important;
+  }
+  .common-table {
+    overflow-x: auto;
+  }
+}
 .table-header {
   border-radius: 4px;
   box-shadow: rgba(17, 17, 26, 0.15) 0px 1px 0px;

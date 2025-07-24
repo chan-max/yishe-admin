@@ -1,24 +1,7 @@
 <template>
   <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <div style="flex: 1"></div>
-      <form-item label="按内容搜索">
-        <el-input
-          v-model="queryParams.search"
-          clearable
-          placeholder="请输入句子内容或描述"
-          style="width: 200px"
-        />
-      </form-item>
-      <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
-      <el-button @click="resetQuery" :icon="Refresh"> 重置 </el-button>
-      <div class="shrink-0">
-        <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
-        <el-button type="primary" :icon="Plus" @click="aiDialogVisible = true" style="margin-left: 8px;">AI生成新句子</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除
-        </el-button>
-      </div>
+    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+      <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
     </div>
     <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
       <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
@@ -328,8 +311,40 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
-.text-wrap {
-  white-space: normal;
-  line-height: 1.5;
+.pb-4.flex, .search-bar {
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pb-4.flex > *, .search-bar > * {
+  margin-bottom: 0;
+}
+@media (max-width: 600px) {
+  .pb-4.flex, .search-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+  .pb-4.flex > *, .search-bar > * {
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+  .el-input,
+  .el-select,
+  .el-button,
+  .el-date-editor {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .content-container {
+    padding: 0 4px !important;
+  }
+  .common-table {
+    overflow-x: auto;
+  }
 }
 </style> 
