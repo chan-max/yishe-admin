@@ -2,6 +2,11 @@
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
+      <form-item class="date-range-picker">
+        <DateRangePicker
+          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
+        />
+      </form-item>
     </div>
     <div class="common-table">
       <vxe-grid

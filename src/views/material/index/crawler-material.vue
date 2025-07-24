@@ -19,7 +19,7 @@
           <el-option label="创建时间正序" value="createTime ASC" />
         </el-select>
       </form-item>
-      <form-item label="按时间查询" class="date-range-picker">
+      <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
         />
