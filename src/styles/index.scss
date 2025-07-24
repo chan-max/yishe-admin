@@ -71,3 +71,8 @@
 .el-dialog__body {
     overflow: visible !important;
 }
+
+
+.el-image-viewer__wrapper {
+    z-index: 99999999999999999 !important;
+}

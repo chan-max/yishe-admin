@@ -1519,26 +1519,6 @@ async function submitAiGenDialog() {
   }
 }
 
-.custom-image-preview {
-  .el-image-viewer__wrapper {
-    .el-image-viewer__btn {
-      opacity: 0.8;
-      &:hover {
-        opacity: 1;
-      }
-    }
-    .el-image-viewer__actions {
-      background-color: rgba(0, 0, 0, 0.5);
-      border-radius: 4px;
-    }
-    .el-image-viewer__canvas {
-      img {
-        max-width: 90vw;
-        max-height: 90vh;
-      }
-    }
-  }
-}
 
 // 未发布商品行的样式
 .unpublished-row {
@@ -1621,10 +1601,6 @@ async function submitAiGenDialog() {
   }
 }
 
-// 修复 el-image 预览层级问题
-.el-image-viewer__wrapper {
-  z-index: 4000 !important;
-}
 
 .draft-grid {
   display: grid;
