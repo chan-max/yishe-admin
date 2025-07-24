@@ -100,7 +100,7 @@
       </template>
     </el-dialog>
     
-    <!-- 图片预览弹窗 -->
+    <!-- 图片预览弹窗，点击蒙层可关闭（由 ImagePreview 组件实现） -->
     <ImagePreview
       :visible="imagePreviewVisible"
       :image-url="currentImageUrl"

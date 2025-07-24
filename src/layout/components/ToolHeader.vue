@@ -7,7 +7,7 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
 <script lang="tsx">
-import { defineComponent, computed, ref, provide } from 'vue'
+import { defineComponent, computed, ref, provide, onMounted, onUnmounted } from 'vue'
 import { Message } from '@/layout/components//Message'
 import { Collapse } from '@/layout/components/Collapse'
 import { UserInfo } from '@/layout/components/UserInfo'
@@ -103,6 +103,19 @@ const handleClientAuth = async () => {
   }
 };
 
+// 新增响应式屏幕宽度判断
+const isWideScreen = ref(true)
+function updateScreen() {
+  isWideScreen.value = window.innerWidth >= 768
+}
+onMounted(() => {
+  updateScreen()
+  window.addEventListener('resize', updateScreen)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScreen)
+})
+
 export default defineComponent({
   name: 'ToolHeader',
   setup() {
@@ -125,7 +138,7 @@ export default defineComponent({
         ) : undefined}
         <div class="h-full flex items-center">
           {/* 打开设计工具 */}
-          {!appStore.getMobile ? <ClientStatus /> : null}
+          {isWideScreen.value ? <ClientStatus /> : null}
 
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
