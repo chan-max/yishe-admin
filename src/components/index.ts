@@ -5,6 +5,7 @@ import SingleImage from './SingleImage.vue'
 import RemoteSelect from './RemoteSelect/index.vue'
 import DateRangePicker from './DateRangePicker.vue'
 import FontPreview from './FontPreview.vue'
+import ImagePreview from './ImagePreview/index.vue'
 
 export const setupGlobCom = (app: App<Element>): void => {
   app.component('DateRangePicker', DateRangePicker)
@@ -13,4 +14,5 @@ export const setupGlobCom = (app: App<Element>): void => {
   app.component('RemoteSelect', RemoteSelect)
   app.component('Icon', Icon)
   app.component('FontPreview', FontPreview)
+  app.component('ImagePreview', ImagePreview)
 }

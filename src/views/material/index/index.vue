@@ -102,11 +102,12 @@
           >
             <template #previewDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
-                <el-image
+                <img
                   :src="row.url"
-                  :preview-src-list="[row.url]"
-                  :initial-index="0"
+                  :alt="row.name || '素材图片'"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  @click="openImagePreview(row.url, row.name)"
+                  @error="handleImageError"
                 />
               </div>
             </template>
@@ -463,6 +464,12 @@
       </template>
     </el-dialog>
 
+    <!-- 图片预览弹窗 -->
+    <ImagePreview
+      :visible="imagePreviewVisible"
+      :image-url="currentImageUrl"
+      @close="closeImagePreview"
+    />
 
   </div>
 </template>
@@ -990,6 +997,10 @@ const editDialogVisible = ref(false)
 const editForm = ref({ id: '', name: '', description: '', keywords: '' })
 const editLoading = ref(false)
 
+// 图片预览相关状态
+const imagePreviewVisible = ref(false)
+const currentImageUrl = ref('')
+
 function handleEdit(row) {
   editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords }
   editDialogVisible.value = true
@@ -1007,6 +1018,23 @@ async function submitEdit() {
   } finally {
     editLoading.value = false
   }
+}
+
+// 图片预览相关方法
+function openImagePreview(imageUrl: string, imageName?: string) {
+  currentImageUrl.value = imageUrl
+  imagePreviewVisible.value = true
+}
+
+function closeImagePreview() {
+  imagePreviewVisible.value = false
+  currentImageUrl.value = ''
+}
+
+function handleImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  img.src = '/src/assets/images/image-error.png' // 错误图片占位符，可以根据实际情况调整
+  console.warn('图片加载失败:', img.alt)
 }
 
 defineExpose({ handleGeneratePhash });
