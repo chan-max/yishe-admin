@@ -141,6 +141,7 @@ const gridOptions = ref({
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
     { title: '后缀', field: 'suffix', width: 80 },
+    { title: '感知哈希', field: 'phash', width: 80 }, // 新增后缀列
     { title: '来源', field: 'source', minWidth: 160 }, // 新增来源列
     { title: '创建时间', field: 'createTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '修改时间', field: 'updateTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
