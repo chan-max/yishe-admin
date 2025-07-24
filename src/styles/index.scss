@@ -76,3 +76,50 @@
 .el-image-viewer__wrapper {
     z-index: 99999999999999999 !important;
 }
+
+/* 移动端防缩放防滑动 */
+@media only screen and (max-width: 768px) {
+  html, body {
+    /* 防止页面整体左右滑动 */
+    overflow-x: hidden;
+    /* 防止页面被拖拽 */
+    overscroll-behavior: none;
+    /* 防止双击缩放 */
+    touch-action: manipulation;
+    /* 防止选择文本时的拖拽 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* 防止长按菜单 */
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* 确保根容器不会超出视口 */
+  #app {
+    width: 100vw;
+    max-width: 100vw;
+    overflow-x: hidden;
+    /* 防止弹性滚动 */
+    overscroll-behavior: none;
+    /* 防止缩放手势 */
+    touch-action: pan-y;
+  }
+  
+  /* 防止所有元素被缩放 */
+  * {
+    /* 防止双击缩放 */
+    touch-action: manipulation;
+  }
+  
+  /* 对于需要滚动的元素，只允许垂直滚动 */
+  .scrollable {
+    touch-action: pan-y;
+  }
+  
+  /* 对于表格等可能需要水平滚动的元素 */
+  .vxe-table, .el-table {
+    touch-action: pan-x pan-y;
+  }
+}

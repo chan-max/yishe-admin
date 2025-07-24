@@ -18,6 +18,9 @@ import { setupI18n } from '@/plugins/vueI18n'
 // 引入状态管理
 import { setupStore } from '@/store'
 
+// 引入移动端手势防护
+import '@/utils/mobileGestureGuard'
+
 // 全局组件
 import { setupGlobCom } from '@/components'
 
