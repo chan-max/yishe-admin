@@ -12,6 +12,15 @@
           @change="(val) => { if (!val) getList() }"
         />
       </form-item>
+      <form-item label="ID精确查询">
+        <el-input
+          v-model="queryParams.id"
+          placeholder="请输入ID"
+          style="width: 120px"
+          clearable
+          @change="(val) => { if (!val) getList() }"
+        />
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <form-item label="排序">
         <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
@@ -87,6 +96,15 @@
                 </el-dropdown>
               </div>
             </template>
+            <template #idSlot="{ row }">
+              <span style="color: #999; font-size: 12px;">{{ row.id }}</span>
+            </template>
+            <template #phashSlot="{ row }">
+              <code style="font-size: 12px; background: #f4f4f4; padding: 2px 6px; border-radius: 4px;">{{ row.phash || '-' }}</code>
+            </template>
+            <template #suffixSlot="{ row }">
+              <el-tag :type="getSuffixTagType(row.suffix)" size="small">{{ row.suffix || '-' }}</el-tag>
+            </template>
           </vxe-grid>
         </div>
         <div class="flex justify-end">
@@ -149,6 +167,7 @@ const queryParams = reactive({
   endTime: '',
   sortingFields: 'createTime DESC', // 默认倒序
   suffix: '', // 新增后缀参数
+  id: '', // 新增ID精确查询参数
 })
 const gridRef = ref()
 const gridOptions = ref({
@@ -162,8 +181,9 @@ const gridOptions = ref({
     { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
-    { title: '后缀', field: 'suffix', width: 80 },
-    { title: '感知哈希', field: 'phash', width: 80 }, // 新增后缀列
+    { title: '后缀', field: 'suffix', width: 80,  },
+    { title: '感知哈希', field: 'phash', width: 80,  },
+    { title: 'ID', field: 'id', width: 80, },
     { title: '来源', field: 'source', minWidth: 160 }, // 新增来源列
     { title: '创建时间', field: 'createTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '修改时间', field: 'updateTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
@@ -360,6 +380,28 @@ function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement
   img.src = '/src/assets/images/image-error.png' // 错误图片占位符，可以根据实际情况调整
   console.warn('图片加载失败:', img.alt)
+}
+
+function getSuffixTagType(suffix) {
+  switch ((suffix || '').toLowerCase()) {
+    case 'jpg':
+    case 'jpeg':
+      return 'warning';
+    case 'png':
+      return 'success';
+    case 'gif':
+      return 'danger';
+    case 'svg':
+      return 'info';
+    case 'webp':
+      return '';
+    case 'bmp':
+      return 'info';
+    case 'tiff':
+      return 'info';
+    default:
+      return '';
+  }
 }
 
 getList()

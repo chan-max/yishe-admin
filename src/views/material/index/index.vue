@@ -32,6 +32,15 @@
           <el-option label="tiff" value="tiff" />
         </el-select>
       </form-item>
+      <form-item label="ID精确查询">
+        <el-input
+          v-model="queryParams.id"
+          placeholder="请输入ID"
+          style="width: 120px"
+          clearable
+          @change="(val) => { if (!val) getList() }"
+        />
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -526,6 +535,7 @@ const queryParams = reactive({
   endTime: '',
   sortingFields: 'createTime DESC', // 默认倒序
   suffix: '', // 新增后缀参数
+  id: '', // 新增ID精确查询参数
 })
 
 // 展示模式
@@ -568,8 +578,9 @@ const gridOptions = ref({
     { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
-    { title: '后缀', field: 'suffix', width: 80 }, // 新增后缀列
-    { title: '感知哈希', field: 'phash', width: 80 }, // 新增后缀列
+    { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
+    { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
+    { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
     {
       title: '创建时间',
       field: 'createTime',
@@ -697,10 +708,8 @@ async function getList() {
   }).finally(() => {
     loading.value = false
   })
-
   dataSource.value = res.list
   total.value = res.total
-  // ids.value = [];
 }
 
 function imgCardDelete(row) {
@@ -1023,6 +1032,28 @@ function handleImageError(event: Event) {
 defineExpose({ handleGeneratePhash });
 
 // 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
+
+function getSuffixTagType(suffix) {
+  switch ((suffix || '').toLowerCase()) {
+    case 'jpg':
+    case 'jpeg':
+      return 'warning';
+    case 'png':
+      return 'success';
+    case 'gif':
+      return 'danger';
+    case 'svg':
+      return 'info';
+    case 'webp':
+      return '';
+    case 'bmp':
+      return 'info';
+    case 'tiff':
+      return 'info';
+    default:
+      return '';
+  }
+}
 
 </script>
 
