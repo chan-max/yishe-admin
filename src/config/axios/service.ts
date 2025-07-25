@@ -177,7 +177,7 @@ const handleAuthorized = () => {
       confirmButtonText: t('login.relogin'),
       type: 'warning'
     }).then(() => {
-      resetRouter() // 重置静态路由表
+      // resetRouter() // 重置静态路由表
       deleteUserCache() // 删除用户缓存
       removeToken()
       isRelogin.show = false

@@ -10,6 +10,9 @@
           style="width: 160px"
         />
       </form-item>
+      <form-item label="只看母版">
+        <el-switch v-model="queryParams.isTemplate" :active-value="true" :inactive-value="false" @change="getList" />
+      </form-item>
       <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
       <div class="shrink-0">
         <!-- 删除按钮 -->
@@ -40,6 +43,10 @@
                 <el-dropdown-item @click="generateProduct(row)">生成产品</el-dropdown-item>
                 <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
                 <el-dropdown-item @click="enterDesignToolWithId(row)">进入设计工具查看</el-dropdown-item>
+                <el-dropdown-item @click="toggleTemplate(row)">
+                  <span v-if="!row.isTemplate">设为母版</span>
+                  <span v-else>取消母版</span>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -60,6 +67,10 @@
         </template>
         <template #uploaderSlot="{ row }">
           <span>{{ row.uploader?.nickname || row.uploader?.name || row.uploaderId || '' }}</span>
+        </template>
+        <template #isTemplateSlot="{ row }">
+          <span v-if="row.isTemplate" class="is-template-tag">是</span>
+          <span v-else class="not-template-tag">否</span>
         </template>
       </vxe-grid>
     </div>
@@ -215,7 +226,8 @@ import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  name: ''
+  name: '',
+  isTemplate: false // 初始为false
 })
 const gridOptions = ref({
   ...commonGridOptions,
@@ -233,7 +245,7 @@ const gridOptions = ref({
     { title: '描述', field: 'description', minWidth: 300 },
     { title: '关键词', field: 'keywords', width: 180 },
     { title: '元数据', field: 'meta', width: 120, slots: { default: 'metaSlot' } },
-    { title: '作者ID', field: 'uploaderId', width: 120 },
+    { title: '是否母版', field: 'isTemplate', width: 100, slots: { default: 'isTemplateSlot' } },
     { title: '作者', field: 'uploader', width: 120, slots: { default: 'uploaderSlot' } },
     { title: '创建时间', field: 'createTime', width: 150 },
     { title: '修改时间', field: 'updateTime', width: 150 },
@@ -264,6 +276,7 @@ const aiGenDialogVisible = ref(false)
 const aiGenPrompt = ref('')
 const aiGenDialogLoading = ref(false)
 let aiGenRow = null
+const templateLoading = ref({})
 
 function showMetaDetail(meta: any) {
   metaDialogContent.value = JSON.stringify(meta, null, 2)
@@ -373,6 +386,7 @@ async function getList() {
   loading.value = true
   try {
     const params = { ...queryParams }
+    if (!params.isTemplate) delete params.isTemplate // 只查母版时才传
     const res = await getDesignModelList(params)
     dataSource.value = res.list || []
     total.value = res.total || 0
@@ -455,6 +469,19 @@ function enterDesignToolWithId(row: any) {
   const childWindow = messenger.getChildWindow && messenger.getChildWindow()
   if (childWindow && typeof childWindow.focus === 'function') {
     childWindow.focus()
+  }
+}
+async function toggleTemplate(row) {
+  templateLoading.value[row.id] = true
+  const newVal = !row.isTemplate
+  try {
+    await updateDesignModel({ ...row, isTemplate: newVal })
+    ElMessage.success(newVal ? '已设为母版' : '已取消母版')
+    getList()
+  } catch (e) {
+    ElMessage.error('操作失败')
+  } finally {
+    templateLoading.value[row.id] = false
   }
 }
 const rules = {
@@ -557,5 +584,29 @@ const submitForm = async () => {
   justify-content: center;
   align-items: center;
   row-gap: 4px;
+}
+.is-template-tag, .not-template-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+.is-template-tag {
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #FFD700 0%, #FFB300 100%);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.12);
+  border: 1.5px solid #FFD700;
+}
+.not-template-tag {
+  font-weight: 500;
+  color: rgba(120,120,120,0.25);
+  background: rgba(220,220,220,0.12);
+  border: 1px solid rgba(200,200,200,0.12);
+  transition: all 0.2s;
 }
 </style> 
