@@ -64,6 +64,7 @@ import VxeUITable from 'vxe-table'
 import 'vxe-table/lib/style.css'
 import { GlobalDefine } from './utils/global'
 import { psdTest } from './psd'
+import { initCOS } from '@/api/cos'
 
 // import * as vue3videoPlay from 'vue3-video-play' // 引入组件
 // import 'vue3-video-play/dist/style.css' // 引入css
@@ -90,7 +91,13 @@ const setupAll = async () => {
 
   await router.isReady()
 
-
+  // 初始化COS配置
+  try {
+    await initCOS()
+    console.log('COS配置初始化成功')
+  } catch (error) {
+    console.error('COS配置初始化失败:', error)
+  }
 
   app.use(VueDOMPurifyHTML)
 
