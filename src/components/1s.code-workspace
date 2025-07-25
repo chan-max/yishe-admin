@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../../yishe-scripts"
+		},
+		{
+			"path": "../../../yishe-docs"
+		},
+		{
+			"path": "../../../design-server"
+		},
+		{
+			"path": "../.."
+		}
+	],
+	"settings": {}
+}

@@ -948,7 +948,7 @@ async function handleGeneratePhash(row) {
   }
   try {
     const { phash } = await calculatePhash({ url: row.url, ext: row.suffix || 'jpg' });
-    if (phash && phash !== '000000000000') {
+    if (phash) {
       row.phash = phash;
       ElMessage.success('哈希生成成功: ' + phash);
       // 可选：自动保存到后端
