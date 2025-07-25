@@ -836,9 +836,11 @@ async function handleDesignModel(row) {
 async function loadDesignModels() {
   designModelLoading.value = true
   try {
+    // 只查母版模型
     const res = await getDesignModelList({
       currentPage: 1,
-      pageSize: 100
+      pageSize: 100,
+      isTemplate: true
     })
     designModelList.value = res.list || []
   } catch (error) {
