@@ -19,6 +19,19 @@
           <el-option label="创建时间正序" value="createTime ASC" />
         </el-select>
       </form-item>
+      <form-item label="后缀">
+        <el-select v-model="queryParams.suffix" placeholder="请选择后缀" style="width: 120px" clearable @change="getList">
+          <el-option label="全部" value="" />
+          <el-option label="jpg" value="jpg" />
+          <el-option label="jpeg" value="jpeg" />
+          <el-option label="png" value="png" />
+          <el-option label="gif" value="gif" />
+          <el-option label="webp" value="webp" />
+          <el-option label="svg" value="svg" />
+          <el-option label="bmp" value="bmp" />
+          <el-option label="tiff" value="tiff" />
+        </el-select>
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -512,6 +525,7 @@ const queryParams = reactive({
   startTime: '',
   endTime: '',
   sortingFields: 'createTime DESC', // 默认倒序
+  suffix: '', // 新增后缀参数
 })
 
 // 展示模式
