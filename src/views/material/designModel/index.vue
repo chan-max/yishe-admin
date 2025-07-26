@@ -68,6 +68,19 @@
         <template #uploaderSlot="{ row }">
           <span>{{ row.uploader?.nickname || row.uploader?.name || row.uploaderId || '' }}</span>
         </template>
+        <template #phashSlot="{ row }">
+          <div class="phash-display">
+            <el-tooltip 
+              v-if="row.phash" 
+              :content="row.phash" 
+              placement="top" 
+              :show-after="500"
+            >
+              <span class="phash-text">{{ formatPhash(row.phash) }}</span>
+            </el-tooltip>
+            <span v-else class="no-phash">未生成</span>
+          </div>
+        </template>
         <template #isTemplateSlot="{ row }">
           <span v-if="row.isTemplate" class="is-template-tag">是</span>
           <span v-else class="not-template-tag">否</span>
@@ -222,6 +235,16 @@ import 'vue-json-pretty/lib/styles.css';
 import Pagination from '@/components/Pagination/index.vue'
 import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 
+// 格式化哈希显示
+function formatPhash(phash: string): string {
+  if (!phash) return '';
+  // 显示前8位和后8位，中间用...省略
+  if (phash.length > 16) {
+    return `${phash.substring(0, 8)}...${phash.substring(phash.length - 8)}`;
+  }
+  return phash;
+}
+
 
 const queryParams = reactive({
   currentPage: 1,
@@ -244,6 +267,7 @@ const gridOptions = ref({
     { title: '模型名称', field: 'name', width: 200 },
     { title: '描述', field: 'description', minWidth: 300 },
     { title: '关键词', field: 'keywords', width: 180 },
+    { title: '感知哈希', field: 'phash', width: 200, slots: { default: 'phashSlot' } },
     { title: '元数据', field: 'meta', width: 120, slots: { default: 'metaSlot' } },
     { title: '是否母版', field: 'isTemplate', width: 100, slots: { default: 'isTemplateSlot' } },
     { title: '作者', field: 'uploader', width: 120, slots: { default: 'uploaderSlot' } },
@@ -608,5 +632,30 @@ const submitForm = async () => {
   background: rgba(220,220,220,0.12);
   border: 1px solid rgba(200,200,200,0.12);
   transition: all 0.2s;
+}
+
+.phash-display {
+  .phash-text {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #409eff;
+    background: rgba(64, 158, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: rgba(64, 158, 255, 0.2);
+      color: #337ecc;
+    }
+  }
+  
+  .no-phash {
+    color: #909399;
+    font-size: 12px;
+    font-style: italic;
+  }
 }
 </style> 
