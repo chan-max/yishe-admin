@@ -181,8 +181,8 @@ const handleAuthorized = () => {
       deleteUserCache() // 删除用户缓存
       removeToken()
       isRelogin.show = false
-      // 干掉token后再走一次路由让它过router.beforeEach的校验
-      window.location.href = window.location.href
+      // 直接跳转到登录页，而不是刷新当前页面
+      window.location.href = '/#/login'
     })
   }
   return Promise.reject(t('sys.api.timeoutMessage'))
