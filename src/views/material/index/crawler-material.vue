@@ -79,17 +79,27 @@
             </template>
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center">
-                <el-dropdown trigger="click">
-                  <el-button circle size="small" style="border: 1px solid #d9d9d9; background: #f4f6fa; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-                    <el-icon><More /></el-icon>
+                <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+                  <el-button type="primary" link size="small">
+                    操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                      <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
-                      <el-dropdown-item @click="handleSingleImport(row)">入库</el-dropdown-item>
-                      <el-dropdown-item divided @click="handleDelete(row)">
-                        <span style="color:var(--el-color-danger)">删除</span>
+                      <el-dropdown-item command="edit">
+                        <el-icon><Edit /></el-icon>
+                        编辑
+                      </el-dropdown-item>
+                      <el-dropdown-item command="download">
+                        <el-icon><Download /></el-icon>
+                        下载
+                      </el-dropdown-item>
+                      <el-dropdown-item command="import">
+                        <el-icon><Upload /></el-icon>
+                        入库
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" divided>
+                        <el-icon><Delete /></el-icon>
+                        删除
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -152,7 +162,7 @@ import { CrawlerMaterialApi } from '@/api/crawler-material'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Search, More, Upload } from '@element-plus/icons-vue'
+import { Delete, Search, More, Upload, ArrowDown, Edit, Download } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { downloadImage } from '@/common/download'
 import { useUserStore } from '@/store/modules/user'
@@ -404,6 +414,26 @@ function getSuffixTagType(suffix) {
   }
 }
 
+// 处理dropdown操作命令
+function handleOperationCommand(command: string, row: any) {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'download':
+      handleDownload(row);
+      break;
+    case 'import':
+      handleSingleImport(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    default:
+      console.warn('未知的操作命令:', command);
+  }
+}
+
 getList()
 </script> 
 <style scoped>
@@ -454,6 +484,19 @@ getList()
   }
   .common-table {
     overflow-x: auto;
+  }
+}
+
+/* 操作dropdown样式 */
+.operation-dropdown {
+  .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .el-icon {
+      margin-right: 4px;
+    }
   }
 }
 </style> 

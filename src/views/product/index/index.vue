@@ -1,37 +1,38 @@
 <template>
   <div>
     <!-- 社交媒体登录状态检测区域 -->
-    <div class="mb-2 px-4 py-2 bg-gray-900 rounded-lg flex items-center min-h-[48px]">
-      <h3 class="text-base font-medium text-gray-100 mr-4 whitespace-nowrap">社交媒体登录状态</h3>
-      <div v-if="loginStatus" class="flex gap-2 flex-1">
+    <div class="mb-2 px-3 py-1.5 flex items-center min-h-[36px]">
+      <h3 class="text-sm font-medium text-gray-700 mr-3 whitespace-nowrap">社交媒体登录状态</h3>
+      <div v-if="loginStatus" class="flex gap-1.5 flex-1">
         <div 
           v-for="(status, platform) in loginStatus" 
           :key="platform"
-          class="flex items-center px-3 py-1 rounded border min-w-[120px]"
+          class="flex items-start px-2 py-1 rounded border min-w-[100px] max-w-[120px]"
           :class="[
-            status.isLoggedIn ? 'border-green-400 bg-green-900' : (status.status === 'error' ? 'border-red-400 bg-red-900' : 'border-yellow-400 bg-yellow-900'),
-            'bg-opacity-80'
+            status.isLoggedIn ? 'border-green-400 bg-green-50' : (status.status === 'error' ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-yellow-50')
           ]"
         >
-          <div class="w-2 h-2 rounded-full mr-2"
+          <div class="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0 mt-0.5"
             :class="{
               'bg-green-400': status.isLoggedIn,
               'bg-red-400': !status.isLoggedIn && status.status === 'error',
               'bg-yellow-400': !status.isLoggedIn && status.status !== 'error'
             }"
           ></div>
-          <span class="font-medium text-sm text-gray-100 mr-1">{{ getPlatformDisplayName(String(platform)) }}</span>
-          <span class="text-xs text-gray-300">{{ status.isLoggedIn ? '已登录' : status.message || '未登录' }}</span>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-xs text-gray-700 truncate">{{ getPlatformDisplayName(String(platform)) }}</div>
+            <div class="text-xs text-gray-500 truncate">{{ status.isLoggedIn ? '已登录' : status.message || '未登录' }}</div>
+          </div>
         </div>
       </div>
-      <div v-else class="flex-1 text-gray-400 text-sm pl-2">点击"检测登录状态"按钮查看各平台登录情况</div>
+      <div v-else class="flex-1 text-gray-400 text-xs pl-2 whitespace-nowrap">点击"检测登录状态"按钮查看各平台登录情况</div>
       <el-button 
         type="primary" 
         :icon="Refresh" 
         @click="checkLoginStatus" 
         :loading="checkingStatus"
         size="small"
-        class="dark-btn ml-4"
+        class="ml-3 flex-shrink-0"
       >
         检测登录状态
       </el-button>
@@ -73,31 +74,38 @@
       >
 
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              编辑
+          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+            <el-button type="primary" link size="small">
+              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
-   
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-
-            <el-button 
-              :type="row.isPublish ? 'warning' : 'success'" 
-              link 
-              size="small" 
-              @click="handleTogglePublish(row)"
-            >
-              {{ row.isPublish ? '下架' : '发布' }}
-            </el-button>
-
-            <el-button type="success" link size="small" @click="handlePublish(row)">
-              发布到社交媒体
-            </el-button>
-            <el-button type="info" link size="small" @click="onAiProductAutoGenerate(row)">
-              AI自动生成内容
-            </el-button>
-          </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="edit">
+                  <el-icon><Edit /></el-icon>
+                  编辑
+                </el-dropdown-item>
+                <el-dropdown-item command="delete" divided>
+                  <el-icon><Delete /></el-icon>
+                  删除
+                </el-dropdown-item>
+                <el-dropdown-item 
+                  :command="row.isPublish ? 'unpublish' : 'publish'"
+                  :class="row.isPublish ? 'text-orange-500' : 'text-green-500'"
+                >
+                  <el-icon><Upload /></el-icon>
+                  {{ row.isPublish ? '下架' : '发布' }}
+                </el-dropdown-item>
+                <el-dropdown-item command="social-publish">
+                  <el-icon><Share /></el-icon>
+                  发布到社交媒体
+                </el-dropdown-item>
+                <el-dropdown-item command="ai-generate">
+                  <el-icon><MagicStick /></el-icon>
+                  AI自动生成内容
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
 
         <template #urlDefaultSlot="{ row }">
@@ -628,6 +636,11 @@ import {
   Plus,
   Delete,
   Refresh,
+  ArrowDown,
+  Edit,
+  Upload,
+  Share,
+  MagicStick,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement } from "@/common/download";
@@ -699,8 +712,8 @@ const gridOptions = ref({
       slots: { default: 'customModelDetailSlot' }
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
-    { title: "商品描述", field: "description", width: 240, showOverflow: true },
-    { title: "关键词", field: "keywords", width: 200, showOverflow: true },
+    { title: "商品描述", field: "description", width: 240, showOverflow: false },
+    { title: "关键词", field: "keywords", width: 200, showOverflow: false },
 
     { title: "商品类型", field: "type", width: 120, showOverflow: true },
     { title: "价格", field: "price", width: 100, showOverflow: true },
@@ -1488,6 +1501,30 @@ async function submitAiGenDialog() {
     aiGenRow.value = null
   }
 }
+
+// 处理dropdown操作命令
+function handleOperationCommand(command: string, row: any) {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    case 'publish':
+    case 'unpublish':
+      handleTogglePublish(row);
+      break;
+    case 'social-publish':
+      handlePublish(row);
+      break;
+    case 'ai-generate':
+      onAiProductAutoGenerate(row);
+      break;
+    default:
+      console.warn('未知的操作命令:', command);
+  }
+}
 </script>
 
 <style lang="less">
@@ -1642,5 +1679,26 @@ async function submitAiGenDialog() {
 }
 .empty-state {
   color: var(--el-text-color-placeholder);
+}
+
+// 操作dropdown样式
+.operation-dropdown {
+  .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .el-icon {
+      margin-right: 4px;
+    }
+  }
+  
+  .text-orange-500 {
+    color: #f97316;
+  }
+  
+  .text-green-500 {
+    color: #22c55e;
+  }
 }
 </style>

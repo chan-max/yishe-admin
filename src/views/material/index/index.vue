@@ -115,19 +115,35 @@
 
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center">
-                <el-dropdown trigger="click">
-                  <el-button circle size="small" style="border: 1px solid #d9d9d9; background: #f4f6fa; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-                    <el-icon><More /></el-icon>
+                <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+                  <el-button type="primary" link size="small">
+                    操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                      <el-dropdown-item @click="handleDownload(row)">下载</el-dropdown-item>
-                      <el-dropdown-item @click="handleDesignModel(row)">制作设计模型</el-dropdown-item>
-                      <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
-                      <el-dropdown-item @click="handleGeneratePhash(row)">生成哈希</el-dropdown-item>
-                      <el-dropdown-item divided @click="handleDelete(row)">
-                        <span style="color:var(--el-color-danger)">删除</span>
+                      <el-dropdown-item command="edit">
+                        <el-icon><Edit /></el-icon>
+                        编辑
+                      </el-dropdown-item>
+                      <el-dropdown-item command="download">
+                        <el-icon><Download /></el-icon>
+                        下载
+                      </el-dropdown-item>
+                      <el-dropdown-item command="design-model">
+                        <el-icon><Picture /></el-icon>
+                        制作设计模型
+                      </el-dropdown-item>
+                      <el-dropdown-item command="ai-generate">
+                        <el-icon><MagicStick /></el-icon>
+                        AI自动生成内容
+                      </el-dropdown-item>
+                      <el-dropdown-item command="generate-phash">
+                        <el-icon><Key /></el-icon>
+                        生成哈希
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" divided>
+                        <el-icon><Delete /></el-icon>
+                        删除
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -503,7 +519,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -1057,6 +1073,32 @@ function getSuffixTagType(suffix) {
   }
 }
 
+// 处理dropdown操作命令
+function handleOperationCommand(command: string, row: any) {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'download':
+      handleDownload(row);
+      break;
+    case 'design-model':
+      handleDesignModel(row);
+      break;
+    case 'ai-generate':
+      onAiTableAutoGenerate(row);
+      break;
+    case 'generate-phash':
+      handleGeneratePhash(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    default:
+      console.warn('未知的操作命令:', command);
+  }
+}
+
 </script>
 
 <style scoped>
@@ -1217,6 +1259,19 @@ h1 {
     font-size: 1.8em;
     color: var(--el-color-primary);
     font-weight: bold;
+  }
+}
+
+// 操作dropdown样式
+.operation-dropdown {
+  .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .el-icon {
+      margin-right: 4px;
+    }
   }
 }
 </style>

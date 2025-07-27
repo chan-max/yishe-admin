@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-06-11 06:42:44
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-16 20:32:21
+ * @LastEditTime: 2025-07-27 12:44:20
  * @FilePath: /yishe-admin/src/layout/components/ClientStatus.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -92,16 +92,45 @@ export default defineComponent({
     const checkLocalAndAuthStatus = async () => {
       try {
         const res = await fetch('http://localhost:1519/api/health');
+        const wasConnected = isLocalConnected.value;
         isLocalConnected.value = res.ok;
+        
         if (res.ok) {
           const data = await res.json();
+          const wasAuthorized = isClientAuthorized.value;
           isClientAuthorized.value = !!data.isAuthorized;
+          
+          // 如果客户端刚启动且未授权，自动进行授权
+          if (wasConnected === false && isLocalConnected.value === true && !isClientAuthorized.value) {
+            console.log('检测到客户端启动，自动进行授权');
+            await handleAutoAuth();
+          }
         } else {
           isClientAuthorized.value = false;
         }
       } catch {
         isLocalConnected.value = false;
         isClientAuthorized.value = false;
+      }
+    }
+
+    // 自动授权逻辑
+    const handleAutoAuth = async () => {
+      const token = getAccessToken();
+      if (!token) {
+        console.warn('未获取到 token，无法自动授权');
+        return;
+      }
+      
+      try {
+        console.log('开始自动授权...');
+        await saveTokenToClient(token);
+        console.log('自动授权成功');
+        isClientAuthorized.value = true;
+        ElMessage.success('客户端自动授权成功');
+      } catch (error) {
+        console.error('自动授权失败:', error);
+        ElMessage.error('客户端自动授权失败');
       }
     }
 
@@ -181,24 +210,61 @@ export default defineComponent({
 
                 {/* 客户端授权状态 */}
                 <ElTooltip
-          content={isClientAuthorized.value ? '客户端已授权' : '点击进行客户端授权'}
+          content={
+            isClientAuthorized.value 
+              ? '客户端已授权' 
+              : isLocalConnected.value 
+                ? '点击进行手动授权' 
+                : '客户端未启动，无法授权'
+          }
           placement="bottom"
         >
-          <div class="custom-hover flex items-center gap-1" style={{cursor: isClientAuthorized.value ? 'default' : 'pointer'}} onClick={() => { if (!isClientAuthorized.value) handleClientAuth() }}>
+          <div 
+            class="custom-hover flex items-center gap-1" 
+            style={{
+              cursor: isClientAuthorized.value 
+                ? 'default' 
+                : isLocalConnected.value 
+                  ? 'pointer' 
+                  : 'not-allowed'
+            }} 
+            onClick={() => { 
+              if (!isClientAuthorized.value && isLocalConnected.value) {
+                handleClientAuth();
+              }
+            }}
+          >
             <div
               class="w-2 h-2 rounded-full mr-1"
               style={{
-                backgroundColor: isClientAuthorized.value ? '#67C23A' : '#F56C6C',
+                backgroundColor: isClientAuthorized.value 
+                  ? '#67C23A' 
+                  : isLocalConnected.value 
+                    ? '#E6A23C' 
+                    : '#F56C6C',
                 boxShadow: isClientAuthorized.value 
                   ? '0 0 8px rgba(103, 194, 58, 0.5)' 
-                  : '0 0 8px rgba(245, 108, 108, 0.5)'
+                  : isLocalConnected.value 
+                    ? '0 0 8px rgba(230, 162, 60, 0.5)' 
+                    : '0 0 8px rgba(245, 108, 108, 0.5)'
               }}
             />
             <span 
               class="text-[10px] font-bold" 
-              style={{ color: isClientAuthorized.value ? '#67C23A' : '#F56C6C' }}
+              style={{ 
+                color: isClientAuthorized.value 
+                  ? '#67C23A' 
+                  : isLocalConnected.value 
+                    ? '#E6A23C' 
+                    : '#F56C6C' 
+              }}
             >
-              {isClientAuthorized.value ? '客户端已授权' : '客户端未授权'}
+              {isClientAuthorized.value 
+                ? '客户端已授权' 
+                : isLocalConnected.value 
+                  ? '客户端未授权' 
+                  : '客户端未启动'
+              }
             </span>
           </div>
         </ElTooltip>

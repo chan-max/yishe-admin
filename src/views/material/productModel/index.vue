@@ -17,16 +17,23 @@
         @checkbox-all="checkboxAllChange"
       >
         <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click">
-            <el-button circle size="small" style="border: 1px solid #d9d9d9; background: #f4f6fa; color: #333; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
-              <el-icon><More /></el-icon>
+          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+            <el-button type="primary" link size="small">
+              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                <el-dropdown-item @click="onAiTableAutoGenerate(row)">AI自动生成内容</el-dropdown-item>
-                <el-dropdown-item divided @click="handleDelete(row)">
-                  <span style="color:var(--el-color-danger)">删除</span>
+                <el-dropdown-item command="edit">
+                  <el-icon><Edit /></el-icon>
+                  编辑
+                </el-dropdown-item>
+                <el-dropdown-item command="ai-generate">
+                  <el-icon><MagicStick /></el-icon>
+                  AI自动生成内容
+                </el-dropdown-item>
+                <el-dropdown-item command="delete" divided>
+                  <el-icon><Delete /></el-icon>
+                  删除
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -156,7 +163,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, More } from '@element-plus/icons-vue'
+import { Delete, More, ArrowDown, Edit, MagicStick } from '@element-plus/icons-vue'
 import { getProductModelPage, updateProductModel, deleteProductModel } from '@/api/productModel'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
@@ -376,6 +383,23 @@ const submitForm = async () => {
     submitLoading.value = false
   }
 }
+
+// 处理dropdown操作命令
+function handleOperationCommand(command: string, row: any) {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'ai-generate':
+      onAiTableAutoGenerate(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    default:
+      console.warn('未知的操作命令:', command);
+  }
+}
 </script>
 
 <style scoped>
@@ -417,6 +441,19 @@ const submitForm = async () => {
   }
   .common-table {
     overflow-x: auto;
+  }
+}
+
+/* 操作dropdown样式 */
+.operation-dropdown {
+  .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .el-icon {
+      margin-right: 4px;
+    }
   }
 }
 </style> 
