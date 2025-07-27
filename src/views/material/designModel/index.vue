@@ -31,43 +31,53 @@
         @checkbox-all="checkboxAllChange"
       >
         <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
-            <el-button type="primary" link size="small">
-              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          <div class="operation-buttons">
+            <!-- 生成产品按钮 - 独立显示，便于看到loading状态 -->
+            <el-button 
+              type="primary" 
+              size="small" 
+              :loading="generateProductLoading[row.id]"
+              @click="generateProduct(row)"
+              style="margin-right: 8px;"
+            >
+              {{ generateProductLoading[row.id] ? '生成中...' : '生成产品' }}
             </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="view-drafts">
-                  <el-icon><Picture /></el-icon>
-                  查看草稿截图
-                </el-dropdown-item>
-                <el-dropdown-item command="edit">
-                  <el-icon><Edit /></el-icon>
-                  编辑
-                </el-dropdown-item>
-                <el-dropdown-item command="generate-product">
-                  <el-icon><Goods /></el-icon>
-                  生成产品
-                </el-dropdown-item>
-                <el-dropdown-item command="ai-generate">
-                  <el-icon><MagicStick /></el-icon>
-                  AI自动生成内容
-                </el-dropdown-item>
-                <el-dropdown-item command="enter-design-tool">
-                  <el-icon><View /></el-icon>
-                  进入设计工具查看
-                </el-dropdown-item>
-                <el-dropdown-item command="toggle-template">
-                  <el-icon><Star /></el-icon>
-                  {{ row.isTemplate ? '取消母版' : '设为母版' }}
-                </el-dropdown-item>
-                <el-dropdown-item command="delete" divided>
-                  <el-icon><Delete /></el-icon>
-                  删除
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+            
+            <!-- 其他操作下拉菜单 -->
+            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+              <el-button type="primary" link size="small">
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="view-drafts">
+                    <el-icon><Picture /></el-icon>
+                    查看草稿截图
+                  </el-dropdown-item>
+                  <el-dropdown-item command="edit">
+                    <el-icon><Edit /></el-icon>
+                    编辑
+                  </el-dropdown-item>
+                  <el-dropdown-item command="ai-generate" :disabled="aiGenerateLoading[row.id]">
+                    <el-icon><MagicStick /></el-icon>
+                    {{ aiGenerateLoading[row.id] ? 'AI生成中...' : 'AI自动生成内容' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="enter-design-tool">
+                    <el-icon><View /></el-icon>
+                    进入设计工具查看
+                  </el-dropdown-item>
+                  <el-dropdown-item command="toggle-template" :disabled="templateLoading[row.id]">
+                    <el-icon><Star /></el-icon>
+                    {{ templateLoading[row.id] ? '处理中...' : (row.isTemplate ? '取消母版' : '设为母版') }}
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided :disabled="deleteLoading[row.id]">
+                    <el-icon><Delete /></el-icon>
+                    {{ deleteLoading[row.id] ? '删除中...' : '删除' }}
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </template>
         <template #thumbnailSlot="{ row }">
           <el-image
@@ -319,6 +329,9 @@ const aiGenPrompt = ref('')
 const aiGenDialogLoading = ref(false)
 let aiGenRow = null
 const templateLoading = ref({})
+const generateProductLoading = ref({})
+const aiGenerateLoading = ref({})
+const deleteLoading = ref({})
 
 function showMetaDetail(meta: any) {
   metaDialogContent.value = JSON.stringify(meta, null, 2)
@@ -373,11 +386,14 @@ async function deleteDraftItem(draft: any) {
 
 // 生成产品
 async function generateProduct(model: any) {
+  generateProductLoading.value[model.id] = true
   try {
     await toProduct(model.id)
     ElMessage.success('生成产品成功')
   } catch (e) {
     ElMessage.error('生成产品失败')
+  } finally {
+    generateProductLoading.value[model.id] = false
   }
 }
 
@@ -405,6 +421,7 @@ async function submitAiGenDialog() {
 }
 
 async function handleAiAutoGenerate(row, cb, prompt) {
+  aiGenerateLoading.value[row.id] = true
   try {
     const res = await aiAutoGenerateDesignModelInfo({
       id: row.id,
@@ -421,6 +438,8 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   } catch (e) {
     ElMessage.error('AI自动生成内容失败')
     if (typeof cb === 'function') cb()
+  } finally {
+    aiGenerateLoading.value[row.id] = false
   }
 }
 
@@ -461,6 +480,7 @@ function handleDelete(row?) {
   let delIds: string[] = []
   if (row) {
     delIds = [row.id]
+    deleteLoading.value[row.id] = true
   } else if (!ids.value.length) {
     return ElMessage.warning('请选择要删除的数据')
   } else {
@@ -480,9 +500,17 @@ function handleDelete(row?) {
         getList()
       } catch (error) {
         ElMessage.error('删除失败')
+      } finally {
+        if (row) {
+          deleteLoading.value[row.id] = false
+        }
       }
     })
-    .catch(() => {})
+    .catch(() => {
+      if (row) {
+        deleteLoading.value[row.id] = false
+      }
+    })
 }
 function enterDesignTool(row: any) {
   const messenger = getDesignToolMessenger()
@@ -535,9 +563,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'edit':
       handleEdit(row);
-      break;
-    case 'generate-product':
-      generateProduct(row);
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
@@ -644,6 +669,17 @@ const submitForm = async () => {
 
 .empty-state {
   color: var(--el-text-color-placeholder);
+}
+
+// 操作按钮样式
+.operation-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .el-button {
+    flex-shrink: 0;
+  }
 }
 
 // 操作dropdown样式

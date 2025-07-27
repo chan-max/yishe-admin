@@ -367,6 +367,15 @@
       align-center
     >
       <div class="p-4">
+        <el-alert
+          title="图片说明"
+          description="默认引用设计模型缩略图和所有的相关截图，可勾选选择"
+          type="info"
+          :closable="false"
+          show-icon
+          class="mb-4"
+        />
+        
         <h3 class="text-lg font-medium mb-4">选择发布平台</h3>
         
         <!-- 平台选择 -->
@@ -585,6 +594,7 @@
       width="80%" 
       :close-on-click-modal="false"
       align-center
+      :destroy-on-close="true"
     >
       <div v-if="customModelDrafts.length === 0" class="empty-state text-center py-8">
         <el-empty description="暂无关联草稿" />
