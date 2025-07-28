@@ -9,6 +9,14 @@
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       ...其它表单项和按钮... 
       -->
+      <el-button
+        type="danger"
+        :icon="Delete"
+        @click="handleDelete"
+        :disabled="!ids.length"
+      >
+        批量删除
+      </el-button>
     </div>
 
 

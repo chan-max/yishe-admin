@@ -7,6 +7,13 @@
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
         />
       </form-item>
+      <el-button
+        type="danger"
+        :disabled="!ids.length"
+        @click="handleDelete"
+      >
+        批量删除
+      </el-button>
     </div>
     <div class="common-table">
       <vxe-grid

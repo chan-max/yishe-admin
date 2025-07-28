@@ -2,6 +2,14 @@
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
+      <el-button
+        type="danger"
+        :icon="Delete"
+        @click="handleDelete"
+        :disabled="!ids.length"
+      >
+        批量删除
+      </el-button>
     </div>
     <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
       <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
@@ -113,7 +121,7 @@ const queryParams = reactive({
 const gridOptions = ref({
   ...commonGridOptions,
   columns: [
-    { type: 'checkbox', width: 50 },
+    { type: 'checkbox' as const, field: 'selection', width: 50 },
     { title: 'ID', field: 'id', width: 80 },
     { title: '句子内容', field: 'content', minWidth: 300, slots: { default: 'contentSlot' } },
     { title: '描述', field: 'description', minWidth: 200, slots: { default: 'descriptionSlot' } },
