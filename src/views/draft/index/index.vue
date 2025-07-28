@@ -54,12 +54,9 @@
         <template #modelRelationSlot="{ row }">
           <div class="model-relation-detail">
             <div v-if="row.customModelId" class="model-info">
-              <div class="model-name">
+              <div class="model-name" @click="handleShowModelInfo(row)">
                 <el-icon class="mr-1 text-green-500"><Link /></el-icon>
                 <span class="text-green-600 font-medium">{{ row.customModel?.name || row.customModelId }}</span>
-              </div>
-              <div v-if="row.customModel?.description" class="model-desc text-xs text-gray-400 mt-1 max-w-32 truncate">
-                {{ row.customModel.description }}
               </div>
             </div>
             <div v-else class="no-model">
@@ -83,6 +80,33 @@
       />
     </div>
   </div>
+
+  <el-dialog v-model="showModelDialog" title="设计模型信息" width="900px" :center="true">
+    <div v-if="modelInfo" style="display: flex; flex-direction: row; align-items: center; justify-content: center; min-height: 260px;">
+      <el-image
+        v-if="modelInfo.thumbnail || modelInfo.cover"
+        :src="modelInfo.thumbnail || modelInfo.cover"
+        style="width: 260px; height: 260px; border-radius: 8px; margin-right: 48px; object-fit: cover;"
+        fit="cover"
+      />
+      <el-form label-width="120px" style="flex: 1;">
+        <el-form-item label="模型名称">
+          <span>{{ modelInfo.name }}</span>
+        </el-form-item>
+        <el-form-item label="模型ID">
+          <span>{{ modelInfo.id }}</span>
+        </el-form-item>
+        <el-form-item label="描述">
+          <span>{{ modelInfo.description }}</span>
+        </el-form-item>
+        <el-form-item label="创建时间">
+          <span>{{ modelInfo.createTime ? modelInfo.createTime : '无' }}</span>
+        </el-form-item>
+        <!-- 可根据实际字段补充 -->
+      </el-form>
+    </div>
+    <!-- 移除footer关闭按钮 -->
+  </el-dialog>
 </template>
 
 <script setup lang="tsx">
@@ -105,6 +129,7 @@ import {
   deleteDraft
 } from '@/api/draft'
 import Pagination from '@/components/Pagination/index.vue'
+import { getCustomModelById } from '@/api/customModel'
 
 // 查询条件
 const queryParams = reactive({
@@ -137,11 +162,7 @@ const gridOptions = ref({
         default: 'previewDefaultSlot'
       }
     },
-    { title: '草稿名称', field: 'name', minWidth: 180, className: 'font-bold' },
-    { title: '草稿描述', field: 'description', minWidth: 200, showOverflow: true },
-    { title: '文件大小', field: 'size', width: 100, showOverflow: true },
-    { title: '创建人', field: 'creatorName', minWidth: 100, showOverflow: true },
-    {
+    { title: '草稿名称', field: 'name', minWidth: 180, className: 'font-bold' },  {
       title: '关联模型',
       field: 'customModelId',
       width: 220,
@@ -182,7 +203,7 @@ const gridOptions = ref({
 const { height } = useWindowSize()
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 280
+  gridOptions.value.maxHeight = height.value - 240
 })
 
 const dataSource = ref([])
@@ -190,6 +211,17 @@ const loading = ref(false)
 const ids = ref([])
 const total = ref(0)
 
+const showModelDialog = ref(false)
+const modelInfo = ref<any>(null)
+
+function handleShowModelInfo(row) {
+  const id = row.customModelId
+  if (!id) return
+  getCustomModelById(id).then(res => {
+    modelInfo.value = res
+    showModelDialog.value = true
+  })
+}
 
 
 // 获取列表
