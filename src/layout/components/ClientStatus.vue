@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-06-11 06:42:44
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-27 12:44:20
+ * @LastEditTime: 2025-07-30 07:40:35
  * @FilePath: /yishe-admin/src/layout/components/ClientStatus.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -30,6 +30,16 @@ export default defineComponent({
     let timers: { localTimer: number, remoteTimer: number } | null = null
     const loading = ref(false)
     const clientLoading = ref(false)
+    
+    // 节流相关状态（仅用于本地客户端状态检测）
+    const lastLocalCheck = ref(0)
+    const THROTTLE_DELAY = 5000 // 5秒节流
+    
+    // 节流函数
+    const throttle = (lastCheck: number, delay: number) => {
+      const now = Date.now()
+      return now - lastCheck >= delay
+    }
     
     // 获取设计工具通信实例
     const designToolMessenger = getDesignToolMessenger()
@@ -88,8 +98,15 @@ export default defineComponent({
       }
     }
 
-    // 新的本地客户端连接和授权检测
+    // 新的本地客户端连接和授权检测（带节流）
     const checkLocalAndAuthStatus = async () => {
+      // 检查是否需要节流
+      if (!throttle(lastLocalCheck.value, THROTTLE_DELAY)) {
+        return
+      }
+      
+      lastLocalCheck.value = Date.now()
+      
       try {
         const res = await fetch('http://localhost:1519/api/health');
         const wasConnected = isLocalConnected.value;
@@ -135,10 +152,12 @@ export default defineComponent({
     }
 
     onMounted(() => {
+      // 初始化时立即检查一次
       checkLocalAndAuthStatus();
+      
       timers = {
         localTimer: window.setInterval(checkLocalAndAuthStatus, 5000),
-        remoteTimer: window.setInterval(startConnectionChecks, 10000) // 远程服务依然用原逻辑
+        remoteTimer: window.setInterval(startConnectionChecks, 10000) // 远程服务使用 store 中的节流逻辑
       };
 
       // 先设置监听器，确保状态变化能被捕获

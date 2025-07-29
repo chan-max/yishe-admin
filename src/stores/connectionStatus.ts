@@ -37,8 +37,26 @@ export const checkClientAuthorized = async () => {
   }
 }
 
-// 检查本地客户端连接
+// 节流相关状态
+let lastLocalCheck = 0
+let lastRemoteCheck = 0
+const THROTTLE_DELAY = 5000 // 5秒节流
+
+// 节流函数
+const throttle = (lastCheck: number, delay: number) => {
+  const now = Date.now()
+  return now - lastCheck >= delay
+}
+
+// 检查本地客户端连接（带节流）
 export const checkLocalConnection = async () => {
+  // 检查是否需要节流
+  if (!throttle(lastLocalCheck, THROTTLE_DELAY)) {
+    return
+  }
+  
+  lastLocalCheck = Date.now()
+  
   try {
     const response = await fetch('http://localhost:1519')
     isLocalConnected.value = response.ok
@@ -47,8 +65,15 @@ export const checkLocalConnection = async () => {
   }
 }
 
-// 检查远程服务连接
+// 检查远程服务连接（带节流）
 export const checkRemoteConnection = async () => {
+  // 检查是否需要节流
+  if (!throttle(lastRemoteCheck, THROTTLE_DELAY)) {
+    return
+  }
+  
+  lastRemoteCheck = Date.now()
+  
   try {
     const response = await fetch('https://1s.design:1520/api/test')
     isRemoteConnected.value = response.ok
@@ -59,6 +84,7 @@ export const checkRemoteConnection = async () => {
 
 // 启动所有连接检查
 export const startConnectionChecks = () => {
+  // 初始化时立即检查一次
   checkLocalConnection()
   checkRemoteConnection()
   
