@@ -2,12 +2,24 @@
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
-      <el-button
-        type="danger"
-        :icon="Delete"
-        @click="handleDelete"
-        :disabled="!ids.length"
-      >
+      <div style="flex: 1"></div>
+      <form-item label="按内容搜索">
+        <el-input
+          v-model="queryParams.search"
+          placeholder="请输入句子内容关键词"
+          style="width: 200px"
+          clearable
+          @change="(val) => { if (!val) getList() }"
+        />
+      </form-item>
+      <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+      <el-button type="primary" :icon="Plus" @click="handleAdd">
+        添加句子
+      </el-button>
+      <el-button type="success" :icon="MagicStick" @click="aiDialogVisible = true">
+        AI生成新句子
+      </el-button>
+      <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
         批量删除
       </el-button>
     </div>
@@ -106,11 +118,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Delete, Plus, Refresh } from '@element-plus/icons-vue'
+import { Search, Delete, Plus, Refresh, MagicStick } from '@element-plus/icons-vue'
 import { getSentenceList, createSentence, updateSentence, deleteSentence, aiGenerateSentence } from '@/api/sentence'
 import { commonGridOptions } from '@/common/table'
+import FormItem from '@/components/Erp/formItem.vue'
+import Pagination from '@/components/Pagination/index.vue'
+import { useWindowSize } from '@vueuse/core'
+
+const { height } = useWindowSize()
 
 const queryParams = reactive({
   currentPage: 1,
@@ -120,15 +137,23 @@ const queryParams = reactive({
 
 const gridOptions = ref({
   ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: { keyField: 'id' },
+  checkboxConfig: { reserve: true },
   columns: [
-    { type: 'checkbox' as const, field: 'selection', width: 50 },
+    { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     { title: 'ID', field: 'id', width: 80 },
     { title: '句子内容', field: 'content', minWidth: 300, slots: { default: 'contentSlot' } },
     { title: '描述', field: 'description', minWidth: 200, slots: { default: 'descriptionSlot' } },
     { title: '创建时间', field: 'createdAt', width: 160, slots: { default: 'createdAtSlot' } },
     { title: '更新时间', field: 'updatedAt', width: 160, slots: { default: 'updatedAtSlot' } },
-    { title: '操作', fixed: 'right', width: 120, slots: { default: 'operationDefaultSlot' } }
+    { title: '操作', fixed: 'right' as const, width: 120, slots: { default: 'operationDefaultSlot' } }
   ]
+} as any)
+
+// 监听窗口大小变化，动态调整表格高度
+watchEffect(() => { 
+  gridOptions.value.maxHeight = height.value - 240 
 })
 
 const dataSource = ref([])
@@ -198,11 +223,17 @@ function handleAdd() {
 onMounted(getList)
 
 function checkboxChange(e) {
-  ids.value = e.records.map((item) => item.id)
+  const records = Array.isArray(e.checkedRecords) ? e.checkedRecords : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+  console.log('checkboxChange - ids:', ids.value) // 添加调试信息
 }
 
 function checkboxAllChange(e) {
-  ids.value = e.records.map((item) => item.id)
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+  console.log('checkboxAllChange - ids:', ids.value) // 添加调试信息
 }
 
 function handleEdit(row) {

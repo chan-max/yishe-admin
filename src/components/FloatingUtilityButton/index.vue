@@ -113,7 +113,7 @@ onUnmounted(() => {
 .floating-utility-button {
   position: fixed;
   bottom: 60px; 
-  right: 16px;
+  left: 16px;
   z-index: 99999;
 
   .main-fab {
