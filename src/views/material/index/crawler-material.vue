@@ -49,7 +49,7 @@
       <div class="flex shrink-0">
         <el-button type="success" :icon="Upload" @click="handleBatchImport" :loading="importLoading">批量入库({{ ids.length }})</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete">批量删除({{ ids.length }})</el-button>
+        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
     <div class="flex gap-4">
@@ -201,7 +201,7 @@ const gridOptions = ref({
   ]
 })
 const { height } = useWindowSize()
-watchEffect(() => { gridOptions.value.maxHeight = height.value - 210 })
+watchEffect(() => { gridOptions.value.maxHeight = height.value - 260 })
 const dataSource = ref([])
 const loading = ref(false)
 const importLoading = ref(false)
@@ -226,15 +226,17 @@ function getList() {
 }
 
 function checkboxChange(e) {
-  const records = Array.isArray(e.records) ? e.records : []
+  const records = Array.isArray(e.checkedRecords) ? e.checkedRecords : []
   const reserves = Array.isArray(e.reserves) ? e.reserves : []
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+  console.log('checkboxChange - ids:', ids.value) // 添加调试信息
 }
 
 function checkboxAllChange(e) {
   const records = Array.isArray(e.records) ? e.records : []
   const reserves = Array.isArray(e.reserves) ? e.reserves : []
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+  console.log('checkboxAllChange - ids:', ids.value) // 添加调试信息
 }
 
 function handleDownload(row) {
@@ -284,9 +286,18 @@ function handleDelete(row?) {
   })
     .then(async () => {
       delIds = delIds.map((id) => String(id))
-      await CrawlerMaterialApi.deleteCrawlerMaterial({ ids: delIds })
-      ElNotification.success('删除成功')
-      getList()
+      console.log('删除参数:', { ids: delIds }) // 添加调试信息
+      console.log('ids.value:', ids.value) // 添加调试信息
+      console.log('delIds:', delIds) // 添加调试信息
+      try {
+        const result = await CrawlerMaterialApi.deleteCrawlerMaterial({ ids: delIds })
+        console.log('删除结果:', result) // 添加调试信息
+        ElNotification.success('删除成功')
+        getList()
+      } catch (error) {
+        console.error('删除失败:', error) // 添加调试信息
+        ElNotification.error('删除失败: ' + error.message)
+      }
     })
     .catch(() => { })
 }
