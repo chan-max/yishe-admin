@@ -628,7 +628,7 @@ const gridOptions = ref({
 const { height } = useWindowSize()
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 280
+  gridOptions.value.maxHeight = height.value - 260
 })
 
 const dataSource = ref([])
