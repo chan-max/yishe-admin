@@ -226,7 +226,7 @@ function getList() {
 }
 
 function checkboxChange(e) {
-  const records = Array.isArray(e.checkedRecords) ? e.checkedRecords : []
+  const records = Array.isArray(e.records) ? e.records : []
   const reserves = Array.isArray(e.reserves) ? e.reserves : []
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
   console.log('checkboxChange - ids:', ids.value) // 添加调试信息
