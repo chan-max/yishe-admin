@@ -32,24 +32,17 @@
       >
         <template #operationDefaultSlot="{ row }">
           <div class="operation-buttons">
-            <!-- 生成产品按钮 - 独立显示，便于看到loading状态 -->
-            <el-button 
-              type="primary" 
-              size="small" 
-              :loading="generateProductLoading[row.id]"
-              @click="generateProduct(row)"
-              style="margin-right: 8px;"
-            >
-              {{ generateProductLoading[row.id] ? '生成中...' : '生成产品' }}
-            </el-button>
-            
-            <!-- 其他操作下拉菜单 -->
+            <!-- 操作下拉菜单 -->
             <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
               <el-button type="primary" link size="small">
                 操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <el-dropdown-item command="generate-product" :disabled="generateProductLoading[row.id]">
+                    <el-icon><Goods /></el-icon>
+                    {{ generateProductLoading[row.id] ? '生成中...' : '生成产品' }}
+                  </el-dropdown-item>
                   <el-dropdown-item command="view-drafts">
                     <el-icon><Picture /></el-icon>
                     查看草稿截图
@@ -543,6 +536,9 @@ async function toggleTemplate(row) {
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
+    case 'generate-product':
+      generateProduct(row);
+      break;
     case 'view-drafts':
       viewRelatedDrafts(row);
       break;
