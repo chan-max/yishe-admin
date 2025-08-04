@@ -265,7 +265,14 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(240, 240, 240, 0.95);
+  background-image: 
+    linear-gradient(45deg, #b0b0b0 25%, transparent 25%), 
+    linear-gradient(-45deg, #b0b0b0 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #b0b0b0 75%), 
+    linear-gradient(-45deg, transparent 75%, #b0b0b0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
   z-index: 99999999;
   display: flex;
   align-items: center;
