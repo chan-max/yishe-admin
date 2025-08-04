@@ -744,6 +744,13 @@ const gridOptions = ref({
   ],
 });
 
+
+const { height } = useWindowSize()
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 250
+})
+
 const dataSource = ref([]);
 const loading = ref(false);
 const ids = ref([]);

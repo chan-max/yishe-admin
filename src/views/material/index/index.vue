@@ -1109,29 +1109,7 @@ function showMetaDetail(meta: any) {
 
 defineExpose({ handleGeneratePhash });
 
-// 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
 
-function getSuffixTagType(suffix) {
-  switch ((suffix || '').toLowerCase()) {
-    case 'jpg':
-    case 'jpeg':
-      return 'warning';
-    case 'png':
-      return 'success';
-    case 'gif':
-      return 'danger';
-    case 'svg':
-      return 'info';
-    case 'webp':
-      return '';
-    case 'bmp':
-      return 'info';
-    case 'tiff':
-      return 'info';
-    default:
-      return '';
-  }
-}
 
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
