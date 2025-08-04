@@ -41,7 +41,7 @@
           @change="(val) => { if (!val) getList() }"
         />
       </form-item>
-      <form-item label="自定义标识">
+      <form-item label="自定义贴纸">
         <el-select v-model="queryParams.isCustom" placeholder="请选择类型" style="width: 120px" clearable @change="getList">
           <el-option label="全部" :value="null" />
           <el-option label="是" :value="true" />
@@ -75,7 +75,7 @@
             <el-option label="创建时间正序" value="createTime ASC" />
           </el-select>
         </el-form-item>
-        <el-form-item label="自定义标识">
+        <el-form-item label="自定义贴纸">
           <el-select v-model="queryParams.isCustom" placeholder="请选择类型">
             <el-option label="全部" :value="null" />
             <el-option label="是" :value="true" />
@@ -456,7 +456,7 @@
     </el-dialog>
 
     <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="800px" :destroy-on-close="true" align-center>
-      <el-form :model="editForm" label-width="80px">
+      <el-form :model="editForm" label-width="100px">
         <el-form-item label="名称">
           <el-input v-model="editForm.name" placeholder="请输入名称" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
@@ -466,7 +466,7 @@
         <el-form-item label="关键字">
           <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
-        <el-form-item label="自定义标识">
+        <el-form-item label="自定义贴纸">
           <el-tag 
             :type="editForm.isCustom ? 'success' : 'info'" 
             size="large"
@@ -583,7 +583,7 @@ const queryParams = reactive({
   endTime: '',
   suffix: '', // 新增后缀参数
   id: '', // 新增ID精确查询参数
-  isCustom: null, // 新增自定义标识过滤参数，使用null而不是空字符串
+  isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
 })
 
 // 展示模式
@@ -630,7 +630,7 @@ const gridOptions = ref({
     { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
     { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
     { 
-      title: '自定义标识', 
+      title: '自定义贴纸', 
       field: 'isCustom', 
       width: 100,
       slots: { default: 'isCustomSlot' }
@@ -764,10 +764,6 @@ async function getList() {
   })
   dataSource.value = res.list
   total.value = res.total
-}
-
-function imgCardDelete(row) {
-  handleDelete(row)
 }
 
 getList()
