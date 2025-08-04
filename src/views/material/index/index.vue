@@ -164,6 +164,10 @@
                         <el-icon><Key /></el-icon>
                         生成哈希
                       </el-dropdown-item>
+                      <el-dropdown-item command="view-meta">
+                        <el-icon><Document /></el-icon>
+                        查看元数据
+                      </el-dropdown-item>
                       <el-dropdown-item command="delete" divided>
                         <el-icon><Delete /></el-icon>
                         删除
@@ -503,6 +507,10 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
+      <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
+    </el-dialog>
+
     <!-- 图片预览弹窗 -->
     <ImagePreview
       :visible="imagePreviewVisible"
@@ -551,7 +559,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -570,6 +578,8 @@ import useListSelect from '@/components/common/userListSelect.vue'
 import { getDesignModelList } from '@/api/designModel'
 import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import request from '@/config/axios'
+import VueJsonPretty from 'vue-json-pretty';
+import 'vue-json-pretty/lib/styles.css';
 
 const userStore = useUserStore()
 
@@ -968,6 +978,10 @@ let aiGenRow = null
 
 const aiTableLoading = ref<Record<string, boolean>>({})
 
+// meta相关变量
+const metaDialogVisible = ref(false)
+const metaDialogContent = ref('')
+
 function onAiTableAutoGenerate(row) {
   if (aiTableLoading.value[row.id]) return
   aiGenRow = row
@@ -1087,6 +1101,12 @@ function handleImageError(event: Event) {
   console.warn('图片加载失败:', img.alt)
 }
 
+// 显示meta详情
+function showMetaDetail(meta: any) {
+  metaDialogContent.value = JSON.stringify(meta, null, 2)
+  metaDialogVisible.value = true
+}
+
 defineExpose({ handleGeneratePhash });
 
 // 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
@@ -1130,6 +1150,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'generate-phash':
       handleGeneratePhash(row);
+      break;
+    case 'view-meta':
+      showMetaDetail(row.meta);
       break;
     case 'delete':
       handleDelete(row);
