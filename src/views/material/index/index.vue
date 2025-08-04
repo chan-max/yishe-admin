@@ -41,6 +41,13 @@
           @change="(val) => { if (!val) getList() }"
         />
       </form-item>
+      <form-item label="自定义标识">
+        <el-select v-model="queryParams.isCustom" placeholder="请选择类型" style="width: 120px" clearable @change="getList">
+          <el-option label="全部" :value="null" />
+          <el-option label="是" :value="true" />
+          <el-option label="否" :value="false" />
+        </el-select>
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -66,6 +73,13 @@
           <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
             <el-option label="创建时间倒序" value="createTime DESC" />
             <el-option label="创建时间正序" value="createTime ASC" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="自定义标识">
+          <el-select v-model="queryParams.isCustom" placeholder="请选择类型">
+            <el-option label="全部" :value="null" />
+            <el-option label="是" :value="true" />
+            <el-option label="否" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="按时间查询">
@@ -111,6 +125,15 @@
             </template>
             <template #sizeSlot="{ row }">
               <span>{{ row.size ? (row.size / 1024).toFixed(1) + ' KB' : '-' }}</span>
+            </template>
+
+            <template #isCustomSlot="{ row }">
+              <el-tag 
+                :type="row.isCustom ? 'success' : 'info'" 
+                size="small"
+              >
+                {{ row.isCustom ? '是' : '否' }}
+              </el-tag>
             </template>
 
             <template #operationDefaultSlot="{ row }">
@@ -443,6 +466,15 @@
         <el-form-item label="关键字">
           <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
+        <el-form-item label="自定义标识">
+          <el-tag 
+            :type="editForm.isCustom ? 'success' : 'info'" 
+            size="large"
+            style="font-size:16px;padding:8px 16px;"
+          >
+            {{ editForm.isCustom ? '是' : '否' }}
+          </el-tag>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
@@ -549,9 +581,9 @@ const queryParams = reactive({
   imageName: '',
   startTime: '',
   endTime: '',
-  sortingFields: 'createTime DESC', // 默认倒序
   suffix: '', // 新增后缀参数
   id: '', // 新增ID精确查询参数
+  isCustom: null, // 新增自定义标识过滤参数，使用null而不是空字符串
 })
 
 // 展示模式
@@ -597,6 +629,12 @@ const gridOptions = ref({
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
     { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
     { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
+    { 
+      title: '自定义标识', 
+      field: 'isCustom', 
+      width: 100,
+      slots: { default: 'isCustomSlot' }
+    },
     {
       title: '创建时间',
       field: 'createTime',
@@ -1004,7 +1042,7 @@ async function handleGeneratePhash(row) {
 }
 
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', description: '', keywords: '' })
+const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false })
 const editLoading = ref(false)
 
 // 图片预览相关状态
@@ -1012,7 +1050,13 @@ const imagePreviewVisible = ref(false)
 const currentImageUrl = ref('')
 
 function handleEdit(row) {
-  editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords }
+  editForm.value = { 
+    id: row.id, 
+    name: row.name, 
+    description: row.description, 
+    keywords: row.keywords,
+    isCustom: row.isCustom || false
+  }
   editDialogVisible.value = true
 }
 
