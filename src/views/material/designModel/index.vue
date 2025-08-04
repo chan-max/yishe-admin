@@ -512,23 +512,8 @@ function handleDelete(row?) {
       }
     })
 }
-function enterDesignTool(row: any) {
-  const messenger = getDesignToolMessenger()
-  // 打开设计工具窗口（如未打开）
-  if (!messenger.isDesignToolConnected()) {
-    messenger.openDesignTool().then(() => {
-      messenger.sendDesignModelData({
-        materialIds: [],
-        designModelIds: [row.id]
-      })
-    })
-  } else {
-    messenger.sendDesignModelData({
-      materialIds: [],
-      designModelIds: [row.id]
-    })
-  }
-}
+
+
 function enterDesignToolWithId(row: any) {
   const messenger = getDesignToolMessenger()
   if (!messenger.isDesignToolConnected()) {

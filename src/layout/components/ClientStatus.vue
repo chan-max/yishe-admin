@@ -69,7 +69,7 @@ export default defineComponent({
       }
       
       // 保存超时定时器引用，供状态变化回调使用
-      ;(window as any).__designToolLoadingTimeout = loadingTimeout
+      (window as any).__designToolLoadingTimeout = loadingTimeout
     }
     
     // 启动客户端

@@ -113,8 +113,8 @@ export class DesignToolMessenger {
       this.messenger = new NativeWindowMessenger()
       this.messenger.openChild(url)
 
-      // 监听 customEvent 作为连接成功的标志
-      this.messenger.on('customEvent', (data) => {
+      // 监听 connectionSuccess 作为连接成功的标志
+      this.messenger.on('connectionSuccess', (data) => {
         if (!this.isConnected) {
           this.isConnected = true
           this.notifyConnectionChange(true)
@@ -133,7 +133,7 @@ export class DesignToolMessenger {
 
       // 发送测试消息
       setTimeout(() => {
-        this.messenger?.send('test', null)
+        this.messenger?.send('testConnection', null)
       }, 1000)
       
       // 设置连接超时
