@@ -558,7 +558,25 @@
           class="draft-item"
         >
           <div class="draft-preview">
+            <!-- 视频预览 -->
+            <div 
+              v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
+              class="video-preview-container"
+              @click="handleDraftVideoPlay(draft)"
+            >
+              <video 
+                :src="draft.url" 
+                class="w-full h-32 rounded cursor-pointer object-cover"
+                preload="metadata"
+                muted
+              />
+              <div class="video-overlay">
+                <el-icon class="play-icon"><VideoPlay /></el-icon>
+              </div>
+            </div>
+            <!-- 图片预览 -->
             <el-image 
+              v-else
               :src="draft.url" 
               fit="cover" 
               class="w-full h-32 rounded cursor-pointer"
@@ -627,6 +645,7 @@ import {
   Upload,
   Share,
   MagicStick,
+  VideoPlay,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement } from "@/common/download";
@@ -1502,6 +1521,13 @@ function handleOperationCommand(command: string, row: any) {
       console.warn('未知的操作命令:', command);
   }
 }
+
+// 处理草稿视频预览
+function handleDraftVideoPlay(draft: any) {
+  videoPreviewList.value = [draft.url];
+  videoPreviewIndex.value = 0;
+  videoPreviewVisible.value = true;
+}
 </script>
 
 <style lang="less">
@@ -1676,6 +1702,65 @@ function handleOperationCommand(command: string, row: any) {
   
   .text-green-500 {
     color: #22c55e;
+  }
+}
+
+// 视频对话框样式
+.video-dialog {
+  .el-message-box__content {
+    padding: 30px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .el-message-box__message {
+    margin: 0;
+  }
+  
+  video {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 70vh;
+    object-fit: contain;
+  }
+}
+
+.video-preview-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .video-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .play-icon {
+    font-size: 30px;
+    color: #fff;
   }
 }
 </style>

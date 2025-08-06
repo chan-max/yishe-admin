@@ -9,6 +9,30 @@
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       ...其它表单项和按钮... 
       -->
+      <el-input 
+        v-model="queryParams.search" 
+        placeholder="搜索草稿名称" 
+        style="width: 200px" 
+        clearable 
+        @change="handleSearch"
+      />
+      <el-select 
+        v-model="queryParams.suffix" 
+        placeholder="文件类型" 
+        style="width: 120px" 
+        clearable
+        @change="handleSearch"
+      >
+        <el-option label="全部" value="" />
+        <el-option label="图片" value="image" />
+        <el-option label="视频" value="video" />
+        <el-option label="PNG" value="png" />
+        <el-option label="JPG" value="jpg" />
+        <el-option label="WEBM" value="webm" />
+        <el-option label="MP4" value="mp4" />
+      </el-select>
+      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
+      <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
       <el-button
         type="danger"
         :icon="Delete"
@@ -32,12 +56,42 @@
         ref="gridRef"
       >
         <template #previewDefaultSlot="{ row }">
+          <!-- 视频预览 -->
+          <div 
+            v-if="row.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(row.suffix.toLowerCase())"
+            class="video-preview-container"
+            @click="handleVideoPlay(row)"
+          >
+            <video 
+              :src="row.url" 
+              class="w-20 h-20 rounded cursor-pointer object-cover"
+              preload="metadata"
+              muted
+            />
+            <div class="video-overlay">
+              <el-icon class="play-icon"><VideoPlay /></el-icon>
+            </div>
+          </div>
+          <!-- 图片预览 -->
           <el-image 
+            v-else
             :src="row.url" 
             fit="cover" 
-            class="w-16 h-16 rounded cursor-pointer"
+            class="w-20 h-20 rounded cursor-pointer"
             :preview-src-list="[row.url]"
           />
+        </template>
+
+        <template #suffixDefaultSlot="{ row }">
+          <el-tag 
+            v-if="row.suffix" 
+            size="small" 
+            type="info"
+            class="suffix-tag"
+          >
+            {{ row.suffix.toUpperCase() }}
+          </el-tag>
+          <span v-else class="text-gray-400">-</span>
         </template>
 
         <template #operationDefaultSlot="{ row }">
@@ -121,7 +175,8 @@ import {
   Delete,
   Download,
   Refresh,
-  Link
+  Link,
+  VideoPlay
 } from '@element-plus/icons-vue'
 import { downloadFileByElement } from '@/common/download'
 import { 
@@ -139,6 +194,7 @@ const queryParams = reactive({
   imageName: '',
   search: '',
   hasModel: '', // 关联状态筛选
+  suffix: '', // 文件类型筛选
 })
 
 const gridRef = ref()
@@ -157,12 +213,22 @@ const gridOptions = ref({
     {
       title: '图片预览',
       field: 'url',
-      width: 'auto',
+      width: 120,
       slots: {
         default: 'previewDefaultSlot'
       }
     },
-    { title: '草稿名称', field: 'name', minWidth: 180, className: 'font-bold' },  {
+    { title: '草稿名称', field: 'name', minWidth: 180, className: 'font-bold' },
+    { 
+      title: '文件后缀', 
+      field: 'suffix', 
+      width: 100, 
+      className: 'text-center',
+      slots: {
+        default: 'suffixDefaultSlot'
+      }
+    },
+    {
       title: '关联模型',
       field: 'customModelId',
       width: 220,
@@ -265,6 +331,7 @@ const resetQuery = () => {
   queryParams.imageName = ''
   queryParams.search = ''
   queryParams.hasModel = ''
+  queryParams.suffix = ''
   queryParams.sortingFields = defaultSortingValue()
   getList()
 }
@@ -300,6 +367,34 @@ function handleDelete(row?) {
 // 下载草稿
 function handleDownload(row) {
   downloadFileByElement(row.url, row.name)
+}
+
+// 播放视频
+function handleVideoPlay(row) {
+  // 在当前页面显示视频
+  ElMessageBox.alert(
+    `<div style="text-align: center; padding: 20px;">
+      <video 
+        src="${row.url}" 
+        controls 
+        style="width: 100%; max-width: 800px; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);"
+        autoplay
+        preload="metadata"
+      ></video>
+    </div>`,
+    `播放视频 - ${row.name}`,
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: '关闭',
+      customClass: 'video-dialog',
+      center: true,
+      showClose: true,
+      customStyle: {
+        width: '900px',
+        maxWidth: '90vw'
+      }
+    }
+  )
 }
 
 // 批量下载
@@ -352,6 +447,83 @@ getList()
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+}
+
+// 后缀字段样式
+.suffix-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+}
+
+// 视频预览样式
+.video-preview-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.05);
+    
+    .video-overlay {
+      opacity: 1;
+    }
+  }
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  .video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+
+    .play-icon {
+      font-size: 28px;
+      color: #fff;
+    }
+  }
+}
+
+// 视频对话框样式
+.video-dialog {
+  .el-message-box__content {
+    padding: 30px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .el-message-box__message {
+    margin: 0;
+  }
+  
+  video {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 70vh;
+    object-fit: contain;
   }
 }
 </style> 
