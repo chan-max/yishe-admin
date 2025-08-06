@@ -159,7 +159,12 @@ export default {
     home: '首页',
     analysis: '分析页',
     workplace: '工作台',
-    draft: '草稿管理'
+    draft: '草稿管理',
+    system: '系统管理',
+    systemUser: '用户管理',
+    systemRole: '角色管理',
+    systemMenu: '菜单管理',
+    systemDept: '部门管理'
   },
   analysis: {
     newUser: '新增用户',

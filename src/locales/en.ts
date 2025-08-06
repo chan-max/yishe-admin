@@ -157,7 +157,12 @@ export default {
     home: 'Home',
     analysis: 'Analysis',
     workplace: 'Workplace',
-    draft: 'Draft Management'
+    draft: 'Draft Management',
+    system: 'System Management',
+    systemUser: 'User Management',
+    systemRole: 'Role Management',
+    systemMenu: 'Menu Management',
+    systemDept: 'Department Management'
   },
   analysis: {
     newUser: 'New user',

@@ -259,7 +259,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       alwaysShow: true   
     },
     children: [
-
       {
         path: 'designRequest',
         component: () => import('@/views/material/designRequest/index.vue'),
@@ -285,7 +284,37 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
     ]
+  },
+  {
+    path: '/system',
+    component: Layout,
+    name: 'System',
+    meta: {
+      title: '系统管理',
+      icon: 'ep:setting',
+      order: 3,
+      alwaysShow: true   
+    },
+    children: [
+      {
+        path: 'company',
+        component: () => import('@/views/system/company/index.vue'),
+        name: 'Company',
+        meta: {
+          title: '公司管理',
+        }
+      },
+      {
+        path: 'user',
+        component: () => import('@/views/system/user/index.vue'),
+        name: 'User',
+        meta: {
+          title: '用户管理',
+        }
+      },
+    ]
   }
+
 ]
 
 export default remainingRouter

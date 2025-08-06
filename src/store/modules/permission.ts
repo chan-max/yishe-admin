@@ -47,7 +47,7 @@ export const usePermissionStore = defineStore('permission', {
           }
         ])
         // 渲染菜单的所有路由，remainingRouter 包含基础路由（如首页、登录页等）
-        this.routers = cloneDeep(remainingRouter)
+        this.routers = cloneDeep(remainingRouter.concat(viewsRouter))
         resolve()
       })
     },
