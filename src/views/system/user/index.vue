@@ -94,6 +94,7 @@
       :title="dialogTitle" 
       width="600px" 
       :center="false"
+      align-center
       @close="resetForm"
     >
       <el-form 
@@ -195,6 +196,7 @@
       title="重置密码" 
       width="400px" 
       :center="false"
+      align-center
     >
       <el-form 
         ref="passwordFormRef" 

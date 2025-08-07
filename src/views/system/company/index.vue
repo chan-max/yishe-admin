@@ -61,7 +61,8 @@
       v-model="dialogVisible" 
       :title="dialogTitle" 
       width="500px" 
-      :center="true"
+      :center="false"
+      align-center
       @close="resetForm"
     >
       <el-form 
@@ -86,10 +87,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </div>
