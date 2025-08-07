@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <el-form-item label="按账号搜索">
+      <form-item label="按账号搜索">
         <el-input 
           v-model="queryParams.account" 
           placeholder="请输入用户账号" 
@@ -9,8 +9,8 @@
           clearable 
           @change="(val) => { if (!val) getList() }" 
         />
-      </el-form-item>
-      <el-form-item label="按姓名搜索">
+      </form-item>
+      <form-item label="按姓名搜索">
         <el-input 
           v-model="queryParams.name" 
           placeholder="请输入用户姓名" 
@@ -18,7 +18,7 @@
           clearable 
           @change="(val) => { if (!val) getList() }" 
         />
-      </el-form-item>
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
@@ -167,6 +167,18 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="所属公司" prop="companyId">
+              <el-select v-model="formData.companyId" placeholder="请选择所属公司" style="width: 100%">
+                <el-option 
+                  v-for="company in companyList" 
+                  :key="company.id" 
+                  :label="company.name" 
+                  :value="company.id" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
 
         <el-form-item label="头像地址" prop="avatar">
@@ -253,6 +265,7 @@ import {
   deleteUser,
   updateUserPassword
 } from '@/api/user'
+import { getCompanyList } from '@/api/company'
 import Pagination from '@/components/Pagination/index.vue'
 
 // 查询条件
@@ -266,6 +279,21 @@ const queryParams = reactive({
 })
 
 const gridRef = ref()
+const companyList = ref([]) // 公司列表
+
+// 获取公司列表
+async function getCompanyListData() {
+  try {
+    const res = await getCompanyList({
+      currentPage: 1,
+      pageSize: 1000, // 获取所有公司
+    })
+    companyList.value = res.list || []
+  } catch (error) {
+    console.error('获取公司列表失败:', error)
+    companyList.value = []
+  }
+}
 
 const gridOptions = ref({
   ...commonGridOptions,
@@ -296,6 +324,15 @@ const gridOptions = ref({
       width: 80,
       formatter: (e) => {
         return e.cellValue === 1 ? '男' : e.cellValue === 0 ? '女' : '-'
+      }
+    },
+    {
+      title: '所属公司',
+      field: 'company.name',
+      width: 150,
+      showOverflow: true,
+      formatter: (e) => {
+        return e.cellValue || '-'
       }
     },
     {
@@ -370,7 +407,8 @@ const formData = reactive({
   status: 'active',
   isAdmin: false,
   avatar: '',
-  password: ''
+  password: '',
+  companyId: '' // 新增公司ID字段
 })
 
 const formRules = {
@@ -516,13 +554,16 @@ async function handleSubmit() {
   try {
     await formRef.value.validate()
     
+    const submitData = { ...formData }
+    
     if (formData.id) {
       // 编辑
-      await updateUser(formData)
+      await updateUser(submitData)
       ElMessage.success('更新成功')
     } else {
-      // 新增
-      await createUser(formData)
+      // 新增 - 删除 id 字段，避免数据库报错
+      delete submitData.id
+      await createUser(submitData)
       ElMessage.success('创建成功')
     }
     
@@ -563,13 +604,15 @@ function resetForm() {
     status: 'active',
     isAdmin: false,
     avatar: '',
-    password: ''
+    password: '',
+    companyId: '' // 重置公司ID
   })
   formRef.value?.clearValidate()
 }
 
 // 初始化
 getList()
+getCompanyListData()
 </script>
 
 <style lang="less">

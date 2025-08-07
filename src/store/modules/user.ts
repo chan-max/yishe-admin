@@ -13,9 +13,15 @@ const { wsCache } = useCache()
 interface UserVO {
   id: number
   avatar: string
-  nickname: string
+  name: string
   deptId: number
   shortName: string
+  company?: {
+    id: string
+    name: string
+    inviteCode: string
+    description: string
+  }
 }
 
 interface UserInfoVO {
@@ -39,9 +45,10 @@ export const useUserStore = defineStore('admin-user', {
     user: {
       id: 0,
       avatar: '',
-      nickname: '',
+      name: '',
       deptId: 0,
-      shortName: ''
+      shortName: '',
+      company: undefined
     }
   }),
   getters: {

@@ -24,7 +24,12 @@ const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('user-info')
 
 const avatar = computed(() => userStore.user.avatar || avatarImg)
-const userName = computed(() => userStore.user.nickname ?? 'Admin')
+const userName = computed(() => userStore.user.name || userStore.user.account || 'Admin')
+
+// 公司信息
+const companyName = computed(() => {
+  return userStore.user.company?.name || null
+})
 
 // 锁定屏幕
 const lockStore = useLockStore()
@@ -63,9 +68,10 @@ const toDocument = () => {
         <!-- <div :class="{reddot:!userStore.ws.isOnline,greendot:userStore.ws.isOnline}" class="absolute ws-dot" style="width:8px;height:8px;border-radius: 50%;top:-0px;right:-0px;"></div> -->
         <ElAvatar style="width: 32px;height:32px;" :src="avatar" alt="" class="rounded-[50%]" />
       </div>
-      <span class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
-        {{ userName }}
-      </span>
+      <div class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
+        <div>{{ userName }}</div>
+        <div v-if="companyName" class="text-xs text-blue-600 font-medium mt-1">{{ companyName }}</div>
+      </div>
     </div>
     <template #dropdown>
       <ElDropdownMenu>

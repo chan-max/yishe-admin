@@ -75,7 +75,11 @@
           <el-input v-model="formData.name" placeholder="请输入公司名称" />
         </el-form-item>
         <el-form-item label="邀请码" prop="inviteCode">
-          <el-input v-model="formData.inviteCode" placeholder="系统自动生成" disabled />
+          <el-input v-model="formData.inviteCode" placeholder="系统自动生成">
+            <template #append>
+              <el-button @click="formData.inviteCode = generateInviteCode()" type="primary" plain size="small">随机生成</el-button>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="公司描述" prop="description">
           <el-input 
@@ -245,11 +249,18 @@ const resetQuery = () => {
   getList()
 }
 
+// 生成邀请码函数
+function generateInviteCode() {
+  // 8位随机码，可根据需要自定义
+  return Math.random().toString(36).slice(-8)
+}
+
 // 新增
 function handleAdd() {
   dialogTitle.value = '新增公司'
   dialogVisible.value = true
   resetForm()
+  formData.inviteCode = generateInviteCode() // 新增时自动生成邀请码
 }
 
 // 编辑
@@ -316,7 +327,7 @@ function resetForm() {
   Object.assign(formData, {
     id: '',
     name: '',
-    inviteCode: '',
+    inviteCode: generateInviteCode(), // 重置时也生成新邀请码
     description: ''
   })
   formRef.value?.clearValidate()
