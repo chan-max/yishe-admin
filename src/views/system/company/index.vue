@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <el-form-item label="按名称搜索">
+      <form-item label="按名称搜索">
         <el-input 
           v-model="queryParams.name" 
           placeholder="请输入公司名称" 
@@ -9,7 +9,7 @@
           clearable 
           @change="(val) => { if (!val) getList() }" 
         />
-      </el-form-item>
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
