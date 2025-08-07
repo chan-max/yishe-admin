@@ -93,7 +93,7 @@
       v-model="dialogVisible" 
       :title="dialogTitle" 
       width="600px" 
-      :center="true"
+      :center="false"
       @close="resetForm"
     >
       <el-form 
@@ -182,10 +182,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
 
@@ -194,7 +194,7 @@
       v-model="passwordDialogVisible" 
       title="重置密码" 
       width="400px" 
-      :center="true"
+      :center="false"
     >
       <el-form 
         ref="passwordFormRef" 
@@ -220,10 +220,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="passwordDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleResetPasswordSubmit">确定</el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </div>
