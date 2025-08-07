@@ -557,12 +557,18 @@ async function handleSubmit() {
     const submitData = { ...formData }
     
     if (formData.id) {
-      // 编辑
-      await updateUser(submitData)
+      // 编辑 - 只传递需要更新的字段，不包含 id
+      const updateData = { ...submitData }
+      delete updateData.id
+      delete updateData.createTime
+      delete updateData.updateTime
+      await updateUser(updateData)
       ElMessage.success('更新成功')
     } else {
-      // 新增 - 删除 id 字段，避免数据库报错
+      // 新增 - 严格清理 ID 相关字段，避免主键冲突
       delete submitData.id
+      delete submitData.createTime
+      delete submitData.updateTime
       await createUser(submitData)
       ElMessage.success('创建成功')
     }
