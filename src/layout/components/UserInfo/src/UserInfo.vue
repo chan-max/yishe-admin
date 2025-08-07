@@ -31,6 +31,11 @@ const companyName = computed(() => {
   return userStore.user.company?.name || null
 })
 
+// 是否为管理员
+const isAdmin = computed(() => {
+  return userStore.user.isAdmin || false
+})
+
 // 锁定屏幕
 const lockStore = useLockStore()
 const getIsLock = computed(() => lockStore.getLockInfo?.isLock ?? false)
@@ -69,7 +74,10 @@ const toDocument = () => {
         <ElAvatar style="width: 32px;height:32px;" :src="avatar" alt="" class="rounded-[50%]" />
       </div>
       <div class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
-        <div>{{ userName }}</div>
+        <div class="flex items-center gap-2">
+          <span>{{ userName }}</span>
+          <el-tag v-if="isAdmin" type="warning" size="small">管理员</el-tag>
+        </div>
         <div v-if="companyName" class="text-xs text-blue-600 font-medium mt-1">{{ companyName }}</div>
       </div>
     </div>

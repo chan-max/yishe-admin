@@ -16,6 +16,7 @@ interface UserVO {
   name: string
   deptId: number
   shortName: string
+  isAdmin?: boolean
   company?: {
     id: string
     name: string
@@ -48,6 +49,7 @@ export const useUserStore = defineStore('admin-user', {
       name: '',
       deptId: 0,
       shortName: '',
+      isAdmin: false,
       company: undefined
     }
   }),
