@@ -49,7 +49,7 @@
           </div>
         </template>
         <template #contentSlot="{ row }">
-          <div class="text-wrap" style="max-width: 300px; word-break: break-all;">
+          <div class="sentence-content">
             {{ row.content }}
           </div>
         </template>
@@ -358,6 +358,16 @@ const submitForm = async () => {
 .pb-4.flex > *, .search-bar > * {
   margin-bottom: 0;
 }
+
+/* 句子内容样式优化 */
+.sentence-content {
+  max-width: 300px;
+  word-break: break-all;
+  line-height: 1.6;
+  font-size: 16px;
+  font-weight: 500;
+}
+
 @media (max-width: 600px) {
   .pb-4.flex, .search-bar {
     flex-direction: column !important;
@@ -384,6 +394,11 @@ const submitForm = async () => {
   }
   .common-table {
     overflow-x: auto;
+  }
+  
+  .sentence-content {
+    max-width: 100%;
+    margin: 0 4px;
   }
 }
 </style> 

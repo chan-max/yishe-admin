@@ -318,113 +318,119 @@
       @close="publishDialogClose"
       align-center
     >
-      <div class="p-4">
+      <div class="p-3">
         <el-alert
           title="多媒体说明"
           description="默认引用设计模型缩略图、相关截图和视频，可勾选选择图片和视频"
           type="info"
           :closable="false"
           show-icon
-          class="mb-4"
+          class="mb-3"
         />
         
-        <h3 class="text-lg font-medium my-4">选择发布平台</h3>
+        <h3 class="text-base font-medium my-2">选择发布平台</h3>
         
         <!-- 平台选择 -->
-        <el-checkbox-group v-model="selectedPlatforms" class="mb-6">
+        <el-checkbox-group v-model="selectedPlatforms" class="mb-4">
           <el-checkbox label="douyin">抖音</el-checkbox>
           <el-checkbox label="xiaohongshu">小红书</el-checkbox>
           <el-checkbox label="weibo">微博</el-checkbox>
           <el-checkbox label="kuaishou">快手</el-checkbox>
         </el-checkbox-group>
+        
         <!-- 平台表单 -->
-        <div v-for="platform in selectedPlatforms" :key="platform" class="mb-8">
-          <el-card class="platform-form">
-            <template #header>
-              <div class="flex items-center">
-                <span class="text-lg font-medium">{{ getPlatformName(platform) }}</span>
-              </div>
-            </template>
-            <!-- 只在表单已初始化时渲染 -->
-            <el-form v-if="publishForm[platform]" :model="publishForm[platform]" label-width="80px">
-              <el-form-item v-if="platform !== 'weibo'" label="标题" required>
-                <el-input 
-                  v-model="publishForm[platform].title" 
-                  :placeholder="`请输入${getPlatformName(platform)}标题`"
-                />
-              </el-form-item>
-              <el-form-item label="内容" required>
-                <el-input 
-                  v-model="publishForm[platform].content" 
-                  type="textarea" 
-                  :rows="4"
-                  :placeholder="`请输入${getPlatformName(platform)}内容`"
-                />
-              </el-form-item>
-              <el-form-item label="商品图片">
-                <div class="flex flex-wrap gap-4">
-                  <div 
-                    v-for="(url, index) in publishForm[platform].images" 
-                    :key="index" 
-                    class="relative cursor-pointer select-item"
-                    :class="{ 'selected': publishForm[platform].selectedImages.includes(url) }"
-                    @click="toggleImageSelection(platform, url)"
-                  >
-                    <img 
-                      :src="url"
-                      class="w-32 h-32 object-cover rounded transition-all duration-200"
-                      @click.stop="preview(index, publishForm[platform].images)"
-                    />
-                    <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                      {{ index + 1 }}/{{ publishForm[platform].images.length }}
-                    </div>
-                    <div class="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
-                      <el-icon v-if="publishForm[platform].selectedImages.includes(url)" class="text-blue-600 text-sm">
-                        <el-icon><Check /></el-icon>
-                      </el-icon>
+        <div class="platform-grid">
+          <div v-for="platform in selectedPlatforms" :key="platform" class="platform-item">
+            <el-card class="platform-form-compact" shadow="hover">
+              <template #header>
+                <div class="flex items-center">
+                  <span class="text-base font-medium">{{ getPlatformName(platform) }}</span>
+                </div>
+              </template>
+              <!-- 只在表单已初始化时渲染 -->
+              <el-form v-if="publishForm[platform]" :model="publishForm[platform]" label-width="60px" size="small" :data-platform="platform">
+                <el-form-item v-if="platform !== 'weibo'" label="标题" required>
+                  <el-input 
+                    v-model="publishForm[platform].title" 
+                    :placeholder="`请输入${getPlatformName(platform)}标题`"
+                  />
+                </el-form-item>
+                <el-form-item label="内容" required>
+                  <el-input 
+                    v-model="publishForm[platform].content" 
+                    type="textarea" 
+                    :rows="2"
+                    :autosize="{ minRows: 2, maxRows: 8 }"
+                    :placeholder="`请输入${getPlatformName(platform)}内容`"
+                    @input="handleContentInput(platform)"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="商品图片">
+                  <div class="flex flex-wrap gap-1">
+                    <div 
+                      v-for="(url, index) in publishForm[platform].images" 
+                      :key="index" 
+                      class="relative cursor-pointer select-item-compact"
+                      :class="{ 'selected': publishForm[platform].selectedImages.includes(url) }"
+                      @click="toggleImageSelection(platform, url)"
+                    >
+                      <img 
+                        :src="url"
+                        class="w-20 h-20 object-cover rounded transition-all duration-200"
+                        @click.stop="preview(index, publishForm[platform].images)"
+                      />
+                      <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                        {{ index + 1 }}/{{ publishForm[platform].images.length }}
+                      </div>
+                      <div class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-md">
+                        <el-icon v-if="publishForm[platform].selectedImages.includes(url)" class="text-blue-600 text-xs check-icon">
+                          <Check />
+                        </el-icon>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </el-form-item>
-              
-              <el-form-item label="商品视频" v-if="publishForm[platform].videos && publishForm[platform].videos.length > 0">
-                <div class="flex flex-wrap gap-4">
-                  <div 
-                    v-for="(url, index) in publishForm[platform].videos" 
-                    :key="index" 
-                    class="relative cursor-pointer select-item"
-                    :class="{ 'selected': publishForm[platform].selectedVideos.includes(url) }"
-                    @click="toggleVideoSelection(platform, url)"
-                  >
+                </el-form-item>
+                
+                <el-form-item label="商品视频" v-if="publishForm[platform].videos && publishForm[platform].videos.length > 0">
+                  <div class="flex flex-wrap gap-1">
                     <div 
-                      class="w-32 h-32 bg-black rounded relative overflow-hidden transition-all duration-200"
-                      @click.stop="handlePublishVideoPreview(publishForm[platform].videos, index)"
+                      v-for="(url, index) in publishForm[platform].videos" 
+                      :key="index" 
+                      class="relative cursor-pointer select-item-compact"
+                      :class="{ 'selected': publishForm[platform].selectedVideos.includes(url) }"
+                      @click="toggleVideoSelection(platform, url)"
                     >
-                      <video 
-                        :src="url" 
-                        class="w-full h-full object-cover"
-                        muted 
-                        preload="metadata"
-                      />
-                      <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="w-12 h-12 bg-black bg-opacity-60 rounded-full flex items-center justify-center">
-                          <el-icon class="text-white text-xl"><VideoPlay /></el-icon>
+                      <div 
+                        class="w-20 h-20 bg-black rounded relative overflow-hidden transition-all duration-200"
+                        @click.stop="handlePublishVideoPreview(publishForm[platform].videos, index)"
+                      >
+                        <video 
+                          :src="url" 
+                          class="w-full h-full object-cover"
+                          muted 
+                          preload="metadata"
+                        />
+                        <div class="absolute inset-0 flex items-center justify-center">
+                          <div class="w-6 h-6 bg-black bg-opacity-60 rounded-full flex items-center justify-center">
+                            <el-icon class="text-white text-xs"><VideoPlay /></el-icon>
+                          </div>
+                        </div>
+                        <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                          {{ index + 1 }}/{{ publishForm[platform].videos.length }}
                         </div>
                       </div>
-                      <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                        {{ index + 1 }}/{{ publishForm[platform].videos.length }}
+                      <div class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-md">
+                        <el-icon v-if="publishForm[platform].selectedVideos.includes(url)" class="text-blue-600 text-xs check-icon">
+                          <Check />
+                        </el-icon>
                       </div>
                     </div>
-                    <div class="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
-                      <el-icon v-if="publishForm[platform].selectedVideos.includes(url)" class="text-blue-600 text-sm">
-                        <el-icon><Check /></el-icon>
-                      </el-icon>
-                    </div>
                   </div>
-                </div>
-              </el-form-item>
-            </el-form>
-          </el-card>
+                </el-form-item>
+              </el-form>
+            </el-card>
+          </div>
         </div>
       </div>
 
@@ -1395,6 +1401,12 @@ function publishDialogClose() {
   currentPublishRow.value = {};
 }
 
+// 处理内容输入，自适应textarea高度
+function handleContentInput(platform: string) {
+  // Element Plus的autosize属性会自动处理高度调整
+  // 这里可以添加其他逻辑，比如字数统计等
+}
+
 // 修改发布提交方法
 async function handlePublishSubmit() {
   publishLoading.value = true;
@@ -1891,6 +1903,126 @@ function toggleVideoSelection(platform: string, url: string) {
   }
 }
 
+// 紧凑版平台表单样式
+.platform-form-compact {
+  .el-form-item {
+    margin-bottom: 12px;
+  }
+  
+  .el-form-item__label {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  .el-input__inner,
+  .el-textarea__inner {
+    font-size: 13px;
+  }
+  
+  .el-card__header {
+    padding: 12px 16px;
+  }
+  
+  .el-card__body {
+    padding: 12px 16px;
+  }
+  
+  video {
+    border-radius: 6px;
+    transition: transform 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+  
+  .el-checkbox-group {
+    .el-checkbox {
+      margin-right: 0;
+      margin-bottom: 0;
+    }
+  }
+}
+
+// 自适应平台网格布局
+.platform-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  align-items: start;
+}
+
+.platform-item {
+  min-width: 0; // 防止内容溢出
+}
+
+// 响应式断点优化
+@media (min-width: 1400px) {
+  .platform-grid {
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  }
+}
+
+@media (min-width: 1600px) {
+  .platform-grid {
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .platform-grid {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  }
+}
+
+@media (max-width: 1399px) {
+  .platform-grid {
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  }
+}
+
+@media (max-width: 1199px) {
+  .platform-grid {
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  }
+}
+
+@media (max-width: 991px) {
+  .platform-grid {
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .platform-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .platform-form-compact {
+    .el-card__header {
+      padding: 8px 12px;
+    }
+    
+    .el-card__body {
+      padding: 8px 12px;
+    }
+    
+    .el-form-item {
+      margin-bottom: 8px;
+    }
+    
+    .el-form-item__label {
+      font-size: 12px;
+    }
+    
+    .el-input__inner,
+    .el-textarea__inner {
+      font-size: 12px;
+    }
+  }
+}
+
 // 选择项样式
 .select-item {
   position: relative;
@@ -1908,6 +2040,44 @@ function toggleVideoSelection(platform: string, url: string) {
   
   .w-32 {
     transition: all 0.2s ease;
+  }
+}
+
+// 紧凑版选择项样式
+.select-item-compact {
+  position: relative;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  &.selected {
+    .w-20 {
+      box-shadow: 0 0 0 4px #3b82f6, 0 3px 12px rgba(59, 130, 246, 0.4);
+    }
+  }
+  
+  .w-20 {
+    transition: all 0.2s ease;
+  }
+}
+
+// Check图标样式优化
+.check-icon {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #2563eb !important; /* 蓝色 */
+  
+  svg {
+    width: 12px;
+    height: 12px;
+    color: inherit;
+    stroke-width: 5;
+    font-weight: bold;
   }
 }
 </style>
