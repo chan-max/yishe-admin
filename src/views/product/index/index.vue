@@ -328,7 +328,7 @@
           class="mb-4"
         />
         
-        <h3 class="text-lg font-medium mb-4">选择发布平台</h3>
+        <h3 class="text-lg font-medium my-4">选择发布平台</h3>
         
         <!-- 平台选择 -->
         <el-checkbox-group v-model="selectedPlatforms" class="mb-6">
