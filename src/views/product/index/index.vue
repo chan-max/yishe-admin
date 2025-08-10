@@ -320,8 +320,8 @@
     >
       <div class="p-4">
         <el-alert
-          title="图片说明"
-          description="默认引用设计模型缩略图和所有的相关截图，可勾选选择"
+          title="多媒体说明"
+          description="默认引用设计模型缩略图、相关截图和视频，可勾选选择图片和视频"
           type="info"
           :closable="false"
           show-icon
@@ -362,24 +362,66 @@
                 />
               </el-form-item>
               <el-form-item label="商品图片">
-                <el-checkbox-group v-model="publishForm[platform].selectedImages">
-                  <div class="flex flex-wrap gap-4">
-                    <div v-for="(url, index) in publishForm[platform].images" :key="index" class="relative">
-                      <el-checkbox 
-                        :value="url"
-                        class="absolute top-2 left-2 z-10"
-                      />
-                      <img 
-                        :src="url"
-                        class="w-32 h-32 object-cover rounded cursor-pointer"
-                        @click="preview(index, publishForm[platform].images)"
-                      />
-                      <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                        {{ index + 1 }}/{{ publishForm[platform].images.length }}
-                      </div>
+                <div class="flex flex-wrap gap-4">
+                  <div 
+                    v-for="(url, index) in publishForm[platform].images" 
+                    :key="index" 
+                    class="relative cursor-pointer select-item"
+                    :class="{ 'selected': publishForm[platform].selectedImages.includes(url) }"
+                    @click="toggleImageSelection(platform, url)"
+                  >
+                    <img 
+                      :src="url"
+                      class="w-32 h-32 object-cover rounded transition-all duration-200"
+                      @click.stop="preview(index, publishForm[platform].images)"
+                    />
+                    <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                      {{ index + 1 }}/{{ publishForm[platform].images.length }}
+                    </div>
+                    <div class="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
+                      <el-icon v-if="publishForm[platform].selectedImages.includes(url)" class="text-blue-600 text-sm">
+                        <el-icon><Check /></el-icon>
+                      </el-icon>
                     </div>
                   </div>
-                </el-checkbox-group>
+                </div>
+              </el-form-item>
+              
+              <el-form-item label="商品视频" v-if="publishForm[platform].videos && publishForm[platform].videos.length > 0">
+                <div class="flex flex-wrap gap-4">
+                  <div 
+                    v-for="(url, index) in publishForm[platform].videos" 
+                    :key="index" 
+                    class="relative cursor-pointer select-item"
+                    :class="{ 'selected': publishForm[platform].selectedVideos.includes(url) }"
+                    @click="toggleVideoSelection(platform, url)"
+                  >
+                    <div 
+                      class="w-32 h-32 bg-black rounded relative overflow-hidden transition-all duration-200"
+                      @click.stop="handlePublishVideoPreview(publishForm[platform].videos, index)"
+                    >
+                      <video 
+                        :src="url" 
+                        class="w-full h-full object-cover"
+                        muted 
+                        preload="metadata"
+                      />
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="w-12 h-12 bg-black bg-opacity-60 rounded-full flex items-center justify-center">
+                          <el-icon class="text-white text-xl"><VideoPlay /></el-icon>
+                        </div>
+                      </div>
+                      <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                        {{ index + 1 }}/{{ publishForm[platform].videos.length }}
+                      </div>
+                    </div>
+                    <div class="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
+                      <el-icon v-if="publishForm[platform].selectedVideos.includes(url)" class="text-blue-600 text-sm">
+                        <el-icon><Check /></el-icon>
+                      </el-icon>
+                    </div>
+                  </div>
+                </div>
               </el-form-item>
             </el-form>
           </el-card>
@@ -646,6 +688,7 @@ import {
   Share,
   MagicStick,
   VideoPlay,
+  Check,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement } from "@/common/download";
@@ -845,6 +888,8 @@ interface PlatformForm {
   content: string;
   images: string[];
   selectedImages: string[];
+  videos: string[];
+  selectedVideos: string[];
 }
 
 interface PublishForm {
@@ -1239,6 +1284,7 @@ function handlePublish(row) {
 async function initPublishForm(row, platforms) {
   // 查询草稿图片
   let images = [];
+  let videos = [];
   let customModelId = (row as any)?.customModelId;
   if (!customModelId && (row as any)?.customModel && (row as any).customModel.id) {
     customModelId = (row as any).customModel.id;
@@ -1250,9 +1296,21 @@ async function initPublishForm(row, platforms) {
         currentPage: 1,
         pageSize: 100
       });
-      images = (res.list || []).map(draft => draft.url).filter(Boolean);
+      // 分离图片和视频
+      const drafts = res.list || [];
+      drafts.forEach(draft => {
+        if (draft.url) {
+          const isVideo = draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase());
+          if (isVideo) {
+            videos.push(draft.url);
+          } else {
+            images.push(draft.url);
+          }
+        }
+      });
     } catch (e) {
       images = [];
+      videos = [];
     }
   }
   
@@ -1265,13 +1323,23 @@ async function initPublishForm(row, platforms) {
     }
   }
   
+  // 添加商品本身的图片和视频
+  if (row.images && Array.isArray(row.images)) {
+    images = [...images, ...row.images];
+  }
+  if (row.videos && Array.isArray(row.videos)) {
+    videos = [...videos, ...row.videos];
+  }
+  
   // 初始化每个平台的表单
   platforms.forEach(platform => {
     publishForm.value[platform as keyof PublishForm | 'kuaishou'] = {
       title: row?.name || '',
       content: row?.description || '',
       images: images,
-      selectedImages: [...images]
+      selectedImages: [...images],
+      videos: videos,
+      selectedVideos: [...videos]
     };
   });
   // 清理未选中的平台
@@ -1323,6 +1391,8 @@ function publishDialogClose() {
   });
   // 清空发布结果
   publishResults.value = [];
+  // 重置当前发布行
+  currentPublishRow.value = {};
 }
 
 // 修改发布提交方法
@@ -1346,8 +1416,8 @@ async function handlePublishSubmit() {
         ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
         return;
       }
-      if (form.selectedImages.length === 0) {
-        ElMessage.warning(`请至少选择一张${getPlatformName(platform)}的图片`);
+      if (form.selectedImages.length === 0 && form.selectedVideos.length === 0) {
+        ElMessage.warning(`请至少选择一张图片或一个视频用于${getPlatformName(platform)}发布`);
         return;
       }
     }
@@ -1359,7 +1429,8 @@ async function handlePublishSubmit() {
         const base = {
           platform,
           content: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.content,
-          images: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.selectedImages
+          images: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.selectedImages,
+          videos: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.selectedVideos
         };
         if (platform !== 'weibo') {
           return {
@@ -1527,6 +1598,39 @@ function handleDraftVideoPlay(draft: any) {
   videoPreviewList.value = [draft.url];
   videoPreviewIndex.value = 0;
   videoPreviewVisible.value = true;
+}
+
+// 处理发布弹窗中的视频预览
+function handlePublishVideoPreview(videos: string[], index: number) {
+  videoPreviewList.value = videos;
+  videoPreviewIndex.value = index;
+  videoPreviewVisible.value = true;
+}
+
+// 切换图片选择状态
+function toggleImageSelection(platform: string, url: string) {
+  const form = publishForm.value[platform as keyof PublishForm | 'kuaishou'];
+  if (!form) return;
+  
+  const index = form.selectedImages.indexOf(url);
+  if (index > -1) {
+    form.selectedImages.splice(index, 1);
+  } else {
+    form.selectedImages.push(url);
+  }
+}
+
+// 切换视频选择状态
+function toggleVideoSelection(platform: string, url: string) {
+  const form = publishForm.value[platform as keyof PublishForm | 'kuaishou'];
+  if (!form) return;
+  
+  const index = form.selectedVideos.indexOf(url);
+  if (index > -1) {
+    form.selectedVideos.splice(index, 1);
+  } else {
+    form.selectedVideos.push(url);
+  }
 }
 </script>
 
@@ -1761,6 +1865,49 @@ function handleDraftVideoPlay(draft: any) {
   .play-icon {
     font-size: 30px;
     color: #fff;
+  }
+}
+
+// 发布弹窗中视频样式
+.platform-form {
+  .el-form-item {
+    margin-bottom: 20px;
+  }
+  
+  video {
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+  
+  .el-checkbox-group {
+    .el-checkbox {
+      margin-right: 0;
+      margin-bottom: 0;
+    }
+  }
+}
+
+// 选择项样式
+.select-item {
+  position: relative;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+  }
+  
+  &.selected {
+    .w-32 {
+      box-shadow: 0 0 0 4px #3b82f6, 0 6px 20px rgba(59, 130, 246, 0.4);
+    }
+  }
+  
+  .w-32 {
+    transition: all 0.2s ease;
   }
 }
 </style>
