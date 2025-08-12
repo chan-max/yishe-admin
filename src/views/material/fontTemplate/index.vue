@@ -16,6 +16,14 @@
         >
           批量AI补全 ({{ ids.length }})
         </el-button>
+        <el-button 
+          type="primary" 
+          @click="handleBatchGenerateThumbnail"
+          :disabled="!ids.length"
+          :loading="batchGenerateThumbnailLoading"
+        >
+          批量生成缩略图 ({{ ids.length }})
+        </el-button>
       </div>
     </div>
 
@@ -72,6 +80,10 @@
                   <el-dropdown-item command="preview">
                     <el-icon><View /></el-icon>
                     预览
+                  </el-dropdown-item>
+                  <el-dropdown-item command="generate-thumbnail">
+                    <el-icon><Picture /></el-icon>
+                    生成缩略图
                   </el-dropdown-item>
                   <el-dropdown-item command="font-params">
                     <el-icon><Picture /></el-icon>
@@ -260,6 +272,203 @@
       </template>
     </el-dialog>
 
+    <!-- 生成缩略图弹窗 -->
+    <el-dialog
+      v-model="generateThumbnailDialogVisible"
+      title="生成字体模板缩略图"
+      width="90%"
+      max-width="700px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <el-form :model="thumbnailForm" :rules="thumbnailRules" ref="thumbnailFormRef" label-width="120px">
+        <el-form-item label="字体模板名称">
+          <el-input v-model="currentRow.name" disabled />
+        </el-form-item>
+        
+        <el-form-item label="模板文字" prop="templateText">
+          <el-input
+            v-model="thumbnailForm.templateText"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界&#10;字体设计&#10;创意无限"
+            style="font-family: monospace;"
+          />
+          <div style="margin-top: 8px; font-size: 12px; color: #909399;">
+            支持换行，每行将显示为不同的文字行。默认包含：大写字母、小写字母、数字、常用符号、中文字符。
+          </div>
+        </el-form-item>
+
+        <el-form-item label="图片样式设置">
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <div class="form-item-wrapper">
+                <label class="form-label">字体大小</label>
+                <el-input-number 
+                  v-model="thumbnailForm.options.fontSize" 
+                  :min="20" 
+                  :max="200" 
+                  :step="10"
+                  style="width: 100%"
+                />
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-item-wrapper">
+                <label class="form-label">文字颜色</label>
+                <el-color-picker v-model="thumbnailForm.options.textColor" />
+              </div>
+            </el-col>
+          </el-row>
+          
+          <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
+            <div style="font-size: 13px; color: #1e40af; font-weight: 500;">智能尺寸</div>
+            <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">
+              画布尺寸将根据文字内容和字体大小自动计算，确保最佳显示效果
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="预览效果">
+          <div class="preview-container">
+            <div class="preview-header">预览效果（仅供参考）</div>
+            <div class="preview-content">
+              <div 
+                class="preview-image"
+                :style="{
+                  width: 'auto',
+                  height: 'auto',
+                  minWidth: '120px',
+                  minHeight: '60px',
+                  padding: '16px',
+                  color: thumbnailForm.options.textColor,
+                  fontSize: '14px',
+                  backgroundColor: 'transparent'
+                }"
+              >
+                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界\n字体设计\n创意无限' }}
+              </div>
+            </div>
+            <div style="margin-top: 12px; font-size: 12px; color: #909399; text-align: center;">
+              实际生成的图片将根据文字内容自动调整尺寸，背景透明
+            </div>
+          </div>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="generateThumbnailDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="generateThumbnailLoading" @click="submitGenerateThumbnail">生成缩略图</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量生成缩略图弹窗 -->
+    <el-dialog
+      v-model="batchGenerateThumbnailDialogVisible"
+      title="批量生成字体模板缩略图"
+      width="95%"
+      max-width="800px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
+        将为选中的 <strong>{{ ids.length }}</strong> 个字体模板生成缩略图
+      </div>
+      
+      <el-form :model="batchThumbnailForm" :rules="batchThumbnailRules" ref="batchThumbnailFormRef" label-width="120px">
+        <el-form-item label="模板文字" prop="templateText">
+          <el-input
+            v-model="batchThumbnailForm.templateText"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界&#10;字体设计&#10;创意无限"
+            style="font-family: monospace;"
+          />
+        </el-form-item>
+
+        <el-form-item label="图片样式设置">
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <div class="form-item-wrapper">
+                <label class="form-label">字体大小</label>
+                <el-input-number 
+                  v-model="batchThumbnailForm.options.fontSize" 
+                  :min="20" 
+                  :max="200" 
+                  :step="10"
+                  style="width: 100%"
+                />
+              </div>
+            </el-col>
+            <el-col :span="12">
+              <div class="form-item-wrapper">
+                <label class="form-label">文字颜色</label>
+                <el-color-picker v-model="batchThumbnailForm.options.textColor" />
+              </div>
+            </el-col>
+          </el-row>
+          
+          <div style="margin-top: 16px; padding: 12px; background: #f0f9ff; border-radius: 6px; border-left: 4px solid #3b82f6;">
+            <div style="font-size: 13px; color: #1e40af; font-weight: 500;">智能尺寸</div>
+            <div style="font-size: 12px; color: #3b82f6; margin-top: 4px;">
+              画布尺寸将根据文字内容和字体大小自动计算，确保最佳显示效果
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="批处理设置">
+          <el-row :gutter="16">
+            <el-col :span="12">
+              <div class="form-item-wrapper">
+                <label class="form-label">批处理大小</label>
+                <el-input-number 
+                  v-model="batchThumbnailForm.batchSize" 
+                  :min="1" 
+                  :max="10" 
+                  :step="1"
+                  style="width: 100%"
+                />
+                <div style="margin-top: 4px; font-size: 12px; color: #909399;">
+                  建议设置为3-5，避免同时处理过多图片
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </el-form-item>
+      </el-form>
+
+      <!-- 进度显示 -->
+      <div v-if="batchThumbnailProgress.total > 0" style="margin-top: 16px;">
+        <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span>生成进度</span>
+          <span>{{ batchThumbnailProgress.processed }}/{{ batchThumbnailProgress.total }}</span>
+        </div>
+        <el-progress 
+          :percentage="Math.round((batchThumbnailProgress.processed / batchThumbnailProgress.total) * 100)"
+          :status="batchThumbnailProgress.processed === batchThumbnailProgress.total ? 'success' : ''"
+        />
+        <div style="margin-top: 8px; font-size: 12px; color: #909399;">
+          成功: {{ batchThumbnailProgress.success }} | 失败: {{ batchThumbnailProgress.failed }}
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; padding: 12px; background: #f5f7fa; border-radius: 4px; font-size: 14px; color: #606266;">
+        <div style="margin-bottom: 8px;"><strong>操作说明：</strong></div>
+        <div>• 系统将分批处理，避免同时生成过多图片</div>
+        <div>• 如果字体模板已有缩略图，将被新生成的覆盖</div>
+        <div>• 处理过程中会显示进度和结果</div>
+        <div style="margin-top: 8px; color: #e6a23c;"><strong>注意事项：</strong></div>
+        <div>• 确保选中的字体模板都有字体文件</div>
+        <div>• 生成过程可能需要一些时间，请耐心等待</div>
+        <div>• 建议批处理大小设置为3-5，避免资源占用过多</div>
+      </div>
+
+      <template #footer>
+        <el-button @click="batchGenerateThumbnailDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="batchGenerateThumbnailLoading" @click="submitBatchGenerateThumbnail">开始批量生成</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 图片预览弹窗 -->
     <ImagePreview
       :visible="imagePreviewVisible"
@@ -419,6 +628,43 @@ const batchAiDialogVisible = ref(false);
 const batchAiPrompt = ref('');
 const batchAiDialogLoading = ref(false);
 const batchProgress = ref({
+  total: 0,
+  processed: 0,
+  success: 0,
+  failed: 0
+});
+
+// 生成缩略图相关
+const generateThumbnailDialogVisible = ref(false);
+const generateThumbnailLoading = ref(false);
+const thumbnailFormRef = ref();
+const thumbnailForm = ref({
+  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界\n字体设计\n创意无限',
+  options: {
+    fontSize: 100,
+    textColor: '#000000'
+  }
+});
+const thumbnailRules = {
+  templateText: [{ required: true, message: '请输入模板文字', trigger: 'blur' }]
+};
+
+// 批量生成缩略图相关
+const batchGenerateThumbnailDialogVisible = ref(false);
+const batchGenerateThumbnailLoading = ref(false);
+const batchThumbnailFormRef = ref();
+const batchThumbnailForm = ref({
+  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界\n字体设计\n创意无限',
+  options: {
+    fontSize: 100,
+    textColor: '#000000'
+  },
+  batchSize: 3
+});
+const batchThumbnailRules = {
+  templateText: [{ required: true, message: '请输入模板文字', trigger: 'blur' }]
+};
+const batchThumbnailProgress = ref({
   total: 0,
   processed: 0,
   success: 0,
@@ -775,6 +1021,125 @@ async function submitBatchAiDialog() {
   }
 }
 
+// 生成缩略图相关方法
+function handleGenerateThumbnail(row) {
+  currentRow.value = row;
+  // 如果已有缩略图，提示用户
+  if (row.thumbnail) {
+    ElMessage.info('该字体模板已有缩略图，生成新的将覆盖现有缩略图');
+  }
+  // 重置为默认值并打开弹窗
+  thumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()';
+  generateThumbnailDialogVisible.value = true;
+}
+
+async function submitGenerateThumbnail() {
+  if (!thumbnailFormRef.value) return;
+  
+  try {
+    await thumbnailFormRef.value.validate();
+    generateThumbnailLoading.value = true;
+    
+    // 调用后端API生成缩略图
+    await fontTemplateApi.generateThumbnail(currentRow.value.id, {
+      templateText: thumbnailForm.value.templateText,
+      options: thumbnailForm.value.options
+    });
+    
+    ElMessage.success('缩略图生成成功');
+    generateThumbnailDialogVisible.value = false;
+    getList(); // 刷新列表
+  } catch (error) {
+    console.error('缩略图生成失败:', error);
+    ElMessage.error('缩略图生成失败，请稍后重试');
+  } finally {
+    generateThumbnailLoading.value = false;
+  }
+}
+
+// 批量生成缩略图相关方法
+function handleBatchGenerateThumbnail() {
+  if (!ids.value.length) {
+    ElMessage.warning('请先选择要批量操作的数据');
+    return;
+  }
+  batchThumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()'; // 重置为默认值
+  batchGenerateThumbnailDialogVisible.value = true;
+}
+
+async function submitBatchGenerateThumbnail() {
+  if (!ids.value.length) return;
+  
+  batchGenerateThumbnailLoading.value = true;
+  
+  // 初始化进度
+  batchThumbnailProgress.value = {
+    total: ids.value.length,
+    processed: 0,
+    success: 0,
+    failed: 0
+  };
+  
+  try {
+    // 显示确认信息
+    ElMessage.info(`开始处理 ${ids.value.length} 个字体模板，请耐心等待...`);
+    
+    const res = await fontTemplateApi.batchGenerateThumbnail({
+      ids: ids.value,
+      templateText: batchThumbnailForm.value.templateText,
+      options: batchThumbnailForm.value.options,
+      batchSize: batchThumbnailForm.value.batchSize
+    });
+    
+    // 更新最终进度
+    batchThumbnailProgress.value.processed = res.processed;
+    batchThumbnailProgress.value.success = res.success;
+    batchThumbnailProgress.value.failed = res.failed;
+    
+    if (res.success > 0) {
+      // 显示详细结果
+      let message = `批量缩略图生成完成：成功 ${res.success} 个，失败 ${res.failed} 个`;
+      
+      if (res.failed > 0 && res.errors && res.errors.length > 0) {
+        message += `\n失败项目：${res.errors.slice(0, 3).map(e => e.id).join(', ')}${res.errors.length > 3 ? '...' : ''}`;
+      }
+      
+      ElMessage.success(message);
+      
+      // 刷新列表
+      getList();
+      // 清空选择
+      ids.value = [];
+      // 延迟关闭弹窗，让用户看到最终结果
+      setTimeout(() => {
+        batchGenerateThumbnailDialogVisible.value = false;
+        // 重置进度
+        batchThumbnailProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
+      }, 3000);
+    } else {
+      ElMessage.error('批量缩略图生成失败，请检查网络连接和AI服务状态');
+    }
+  } catch (error) {
+    console.error('批量缩略图生成失败:', error);
+    
+    // 根据错误类型显示不同的提示
+    let errorMessage = '批量缩略图生成失败';
+    if (error.response?.status === 500) {
+      errorMessage = '服务器内部错误，请稍后重试';
+    } else if (error.response?.status === 429) {
+      errorMessage = '请求过于频繁，请稍后重试';
+    } else if (error.message?.includes('timeout')) {
+      errorMessage = '请求超时，请检查网络连接';
+    }
+    
+    ElMessage.error(errorMessage);
+    // 重置进度
+    batchThumbnailProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
+  } finally {
+    batchGenerateThumbnailLoading.value = false;
+  }
+}
+
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
@@ -783,6 +1148,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'preview':
       handlePreview(row);
+      break;
+    case 'generate-thumbnail':
+      handleGenerateThumbnail(row);
       break;
     case 'font-params':
       handleFontParams(row);
@@ -823,6 +1191,8 @@ function closeImagePreview() {
   imagePreviewVisible.value = false;
   currentImageUrl.value = '';
 }
+
+
 </script>
 
 <style scoped>
@@ -872,6 +1242,121 @@ function closeImagePreview() {
     .el-icon {
       margin-right: 4px;
     }
+  }
+}
+
+/* 自定义表单项样式 */
+.form-item-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  
+  .form-label {
+    font-size: 14px;
+    color: #606266;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  
+  .el-input-number,
+  .el-color-picker {
+    width: 100%;
+  }
+  
+  .el-color-picker {
+    height: 32px;
+  }
+}
+
+/* 弹窗内容样式优化 */
+.el-dialog__body {
+  .el-form {
+    .el-form-item {
+      margin-bottom: 20px;
+      
+      .el-form-item__label {
+        font-weight: 500;
+        color: #303133;
+      }
+    }
+  }
+}
+
+/* 预览效果样式 */
+.preview-container {
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+  
+  .preview-header {
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #909399;
+    text-align: center;
+    font-weight: 500;
+  }
+  
+  .preview-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+    
+    .preview-image {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #dcdfe6;
+      border-radius: 6px;
+      font-family: monospace;
+      white-space: pre-line;
+      text-align: center;
+      line-height: 1.2;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      
+      &:hover {
+        border-color: #409eff;
+        box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+      }
+    }
+  }
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+  .form-item-wrapper {
+    .form-label {
+      font-size: 13px;
+    }
+  }
+  
+  .preview-container {
+    padding: 12px;
+    
+    .preview-header {
+      font-size: 12px;
+    }
+    
+    .preview-content {
+      min-height: 60px;
+      
+      .preview-image {
+        min-width: 80px !important;
+        min-height: 40px !important;
+        font-size: 10px !important;
+      }
+    }
+  }
+  
+  .el-dialog {
+    width: 95% !important;
+    margin: 5vh auto !important;
+  }
+  
+  .el-form-item__label {
+    font-size: 13px !important;
   }
 }
 </style>

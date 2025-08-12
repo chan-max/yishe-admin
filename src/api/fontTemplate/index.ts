@@ -60,4 +60,34 @@ export const fontTemplateApi = {
       data 
     })
   },
+
+  // 生成字体模板缩略图
+  generateThumbnail: async (id: string, data: {
+    templateText?: string,
+    options?: {
+      fontSize?: number;
+      textColor?: string;
+    }
+  }) => {
+    return await request.post({ 
+      url: `/font-template/generate-thumbnail/${id}`, 
+      data 
+    })
+  },
+
+  // 批量生成字体模板缩略图
+  batchGenerateThumbnail: async (data: { 
+    ids: string[], 
+    templateText?: string,
+    options?: {
+      fontSize?: number;
+      textColor?: string;
+    },
+    batchSize?: number
+  }) => {
+    return await request.post({ 
+      url: `/font-template/batch-generate-thumbnails`, 
+      data 
+    })
+  },
 }
