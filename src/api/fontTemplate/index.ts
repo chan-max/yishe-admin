@@ -40,4 +40,24 @@ export const fontTemplateApi = {
   deleteShopTemplate: async (data) => {
     return await request.delete({ url: `/font-template/delete`,data })
   },
+
+  // AI补全字体模板内容
+  aiCompleteContent: async (id: string, prompt?: string) => {
+    return await request.post({ 
+      url: `/font-template/ai-complete/${id}`, 
+      data: { prompt } 
+    })
+  },
+
+  // 批量AI补全字体模板内容
+  batchAiCompleteContent: async (data: { 
+    ids: string[], 
+    prompt?: string, 
+    batchSize?: number 
+  }) => {
+    return await request.post({ 
+      url: `/font-template/ai-complete-batch`, 
+      data 
+    })
+  },
 }
