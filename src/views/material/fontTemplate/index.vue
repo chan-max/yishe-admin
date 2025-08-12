@@ -291,7 +291,7 @@
             v-model="thumbnailForm.templateText"
             type="textarea"
             :rows="4"
-            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界&#10;字体设计&#10;创意无限"
+            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界字体设计创意无限中文排版艺术字体设计美学&#10;字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体"
             style="font-family: monospace;"
           />
           <div style="margin-top: 8px; font-size: 12px; color: #909399;">
@@ -346,7 +346,7 @@
                   backgroundColor: 'transparent'
                 }"
               >
-                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界\n字体设计\n创意无限' }}
+                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
               </div>
             </div>
             <div style="margin-top: 12px; font-size: 12px; color: #909399; text-align: center;">
@@ -381,7 +381,7 @@
             v-model="batchThumbnailForm.templateText"
             type="textarea"
             :rows="3"
-            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界&#10;字体设计&#10;创意无限"
+            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界字体设计创意无限中文排版艺术字体设计美学&#10;字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体"
             style="font-family: monospace;"
           />
         </el-form-item>
@@ -639,7 +639,7 @@ const generateThumbnailDialogVisible = ref(false);
 const generateThumbnailLoading = ref(false);
 const thumbnailFormRef = ref();
 const thumbnailForm = ref({
-  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界\n字体设计\n创意无限',
+  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体',
   options: {
     fontSize: 100,
     textColor: '#000000'
@@ -654,7 +654,7 @@ const batchGenerateThumbnailDialogVisible = ref(false);
 const batchGenerateThumbnailLoading = ref(false);
 const batchThumbnailFormRef = ref();
 const batchThumbnailForm = ref({
-  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界\n字体设计\n创意无限',
+  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体',
   options: {
     fontSize: 100,
     textColor: '#000000'
@@ -1029,7 +1029,7 @@ function handleGenerateThumbnail(row) {
     ElMessage.info('该字体模板已有缩略图，生成新的将覆盖现有缩略图');
   }
   // 重置为默认值并打开弹窗
-  thumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()';
+  thumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体';
   generateThumbnailDialogVisible.value = true;
 }
 
@@ -1063,7 +1063,7 @@ function handleBatchGenerateThumbnail() {
     ElMessage.warning('请先选择要批量操作的数据');
     return;
   }
-  batchThumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()'; // 重置为默认值
+  batchThumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体'; // 重置为默认值
   batchGenerateThumbnailDialogVisible.value = true;
 }
 
