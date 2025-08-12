@@ -304,7 +304,6 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  transition: background-color 0.2s;
 }
 
 .image-preview-close:hover {
@@ -323,7 +322,6 @@ onUnmounted(() => {
 .image-preview-img {
   max-width: none;
   max-height: none;
-  transition: transform 0.2s ease;
   user-select: none;
   -webkit-user-drag: none;
 }
@@ -353,7 +351,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s;
 }
 
 .toolbar-btn:hover {
