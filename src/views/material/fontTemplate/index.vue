@@ -80,10 +80,6 @@
                     <el-icon><Edit /></el-icon>
                     编辑
                   </el-dropdown-item>
-                  <el-dropdown-item command="preview">
-                    <el-icon><View /></el-icon>
-                    预览
-                  </el-dropdown-item>
                   <el-dropdown-item command="generate-thumbnail">
                     <el-icon><Picture /></el-icon>
                     生成缩略图
@@ -198,10 +194,7 @@
       </template>
     </el-dialog>
 
-    <FontPreview
-      v-model="previewVisible"
-      :font-url="currentPreviewUrl"
-    />
+
 
     <!-- 字体参数设置弹窗 -->
     <el-dialog
@@ -366,42 +359,11 @@
           <div class="preview-container compact">
             <div class="preview-header compact">
               <span>实时预览</span>
-              <el-button 
-                type="primary" 
-                size="small" 
-                style="margin-left: 8px;"
-                @click="showFontPreview"
-              >
-                查看字体
-              </el-button>
             </div>
             <div class="preview-content compact">
-              <!-- 字体预览区域 -->
+              <!-- 预览区域 -->
               <div 
-                v-if="currentRow.url && fontPreviewLoaded"
-                class="preview-image font-preview compact"
-                :style="{
-                  width: 'auto',
-                  height: 'auto',
-                  minWidth: '120px',
-                  minHeight: '60px',
-                  padding: '12px',
-                  color: thumbnailForm.options.textColor,
-                  fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
-                  backgroundColor: 'transparent',
-                  border: '1px dashed #d9d9d9',
-                  borderRadius: '4px',
-                  fontFamily: currentFontFamily,
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: '1.3'
-                }"
-              >
-                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
-              </div>
-              
-              <!-- 默认预览区域 -->
-              <div 
-                v-else
+                v-if="currentRow.url"
                 class="preview-image compact"
                 :style="{
                   width: 'auto',
@@ -418,10 +380,35 @@
                   lineHeight: '1.3'
                 }"
               >
+                <div style="margin-bottom: 8px; font-size: 10px; color: #909399;">
+                  <i class="el-icon-info"></i> 
+                  <span>点击"查看字体"按钮预览字体效果</span>
+                </div>
+                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+              </div>
+              
+              <!-- 默认预览区域 -->
+              <div 
+                v-else
+                class="preview-image compact"
+                :style="{
+                  width: 'auto',
+                  height: 'auto',
+                  minWidth: '120px',
+                  minHeight: '60px',
+                  padding: '12px',
+                  color: thumbnailForm.options.options.textColor,
+                  fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
+                  backgroundColor: 'transparent',
+                  border: '1px dashed #d9d9d9',
+                  borderRadius: '4px',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: '1.3'
+                }"
+              >
                 <div style="margin-bottom: 4px; font-size: 10px; color: #909399;">
                   <i class="el-icon-info"></i> 
                   <span v-if="!currentRow.url">请先选择字体模板</span>
-                  <span v-else-if="!fontPreviewLoaded">字体加载中...</span>
                   <span v-else>当前预览使用系统默认字体</span>
                 </div>
                 {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
@@ -516,20 +503,12 @@
           <div class="preview-container compact">
             <div class="preview-header compact">
               <span>实时预览</span>
-              <el-button 
-                type="primary" 
-                size="small" 
-                style="margin-left: 8px;"
-                @click="showBatchFontPreview"
-              >
-                查看字体
-              </el-button>
             </div>
             <div class="preview-content compact">
-              <!-- 字体预览区域 -->
+              <!-- 预览区域 -->
               <div 
-                v-if="batchThumbnailForm.fontUrl && batchFontPreviewLoaded"
-                class="preview-image font-preview compact"
+                v-if="batchThumbnailForm.fontUrl"
+                class="preview-image compact"
                 :style="{
                   width: 'auto',
                   height: 'auto',
@@ -541,11 +520,14 @@
                   backgroundColor: 'transparent',
                   border: '1px dashed #d9d9d9',
                   borderRadius: '4px',
-                  fontFamily: batchCurrentFontFamily,
                   whiteSpace: 'pre-wrap',
                   lineHeight: '1.3'
                 }"
               >
+                <div style="margin-bottom: 8px; font-size: 10px; color: #909399;">
+                  <i class="el-icon-info"></i> 
+                  <span>点击"查看字体"按钮预览字体效果</span>
+                </div>
                 {{ batchThumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
               </div>
               
@@ -571,7 +553,6 @@
                 <div style="margin-bottom: 4px; font-size: 10px; color: #909399;">
                   <i class="el-icon-info"></i> 
                   <span v-if="!batchThumbnailForm.fontUrl">请先选择字体文件</span>
-                  <span v-else-if="!batchFontPreviewLoaded">字体加载中...</span>
                   <span v-else>当前预览使用系统默认字体</span>
                 </div>
                 {{ batchThumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
@@ -680,7 +661,7 @@ import { uploadToCOS } from "@/api/cos";
 import PsdPreview from '@/components/PsdPreview/index.vue'
 import { fontTemplateApi } from "@/api/fontTemplate";
 import { ImagePreview } from '@/components/ImagePreview';
-import FontPreview from '@/components/FontPreview.vue';
+
 
 // 查询条件
 const queryParams = reactive({
@@ -847,15 +828,9 @@ const batchThumbnailProgress = ref({
 const imagePreviewVisible = ref(false);
 const currentImageUrl = ref('');
 
-// 字体预览相关
-const previewVisible = ref(false);
-const currentPreviewUrl = ref('');
-const fontPreviewLoaded = ref(false);
-const currentFontFamily = ref('');
+
 
 // 批量生成缩略图预览相关
-const batchFontPreviewLoaded = ref(false);
-const batchCurrentFontFamily = ref('');
 
 async function getList() {
   loading.value = true;
@@ -1045,10 +1020,7 @@ const beforeUpload = (file) => {
   return true;
 };
 
-function handlePreview(row) {
-  previewVisible.value = true
-  currentRow.value = row
-}
+
 
 function handleFontParams(row) {
   fontParamsForm.value.fontId = row.id;
@@ -1398,151 +1370,11 @@ function closeImagePreview() {
   currentImageUrl.value = '';
 }
 
-function showFontPreview() {
-  if (currentRow.value && currentRow.value.url) {
-    previewVisible.value = true;
-    currentPreviewUrl.value = currentRow.value.url;
-  } else {
-    ElMessage.warning('请先选择一个字体模板并生成缩略图，然后才能预览字体效果。');
-  }
-}
 
-// 加载字体预览
-async function loadFontPreview() {
-  if (!currentRow.value?.url) {
-    fontPreviewLoaded.value = false;
-    currentFontFamily.value = '';
-    return;
-  }
 
-  try {
-    fontPreviewLoaded.value = false;
-    
-    // 创建唯一的字体名称
-    const fontName = `FontPreview_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    
-    // 创建 @font-face 规则
-    const style = document.createElement('style');
-    style.textContent = `
-      @font-face {
-        font-family: '${fontName}';
-        src: url('${currentRow.value.url}') format('woff2'),
-             url('${currentRow.value.url}') format('woff'),
-             url('${currentRow.value.url}') format('truetype'),
-             url('${currentRow.value.url}') format('opentype');
-        font-display: swap;
-      }
-    `;
-    
-    // 移除之前的样式（如果存在）
-    const existingStyle = document.getElementById('font-preview-style');
-    if (existingStyle) {
-      existingStyle.remove();
-    }
-    
-    style.id = 'font-preview-style';
-    document.head.appendChild(style);
-    
-    // 创建字体加载检测
-    const font = new FontFace(fontName, `url(${currentRow.value.url})`);
-    await font.load();
-    
-    // 字体加载完成
-    currentFontFamily.value = fontName;
-    fontPreviewLoaded.value = true;
-    
-    console.log('字体预览加载成功:', fontName);
-    
-  } catch (error) {
-    console.error('字体预览加载失败:', error);
-    fontPreviewLoaded.value = false;
-    currentFontFamily.value = '';
-    ElMessage.warning('字体预览加载失败，将使用系统默认字体');
-  }
-}
 
-// 监听当前行变化，自动加载字体预览
-watch(() => currentRow.value?.url, (newUrl) => {
-  if (newUrl) {
-    loadFontPreview();
-  } else {
-    fontPreviewLoaded.value = false;
-    currentFontFamily.value = '';
-  }
-}, { immediate: true });
 
-// 监听批量字体URL变化，自动加载字体预览
-watch(() => batchThumbnailForm.value.fontUrl, (newUrl) => {
-  if (newUrl) {
-    loadBatchFontPreview();
-  } else {
-    batchFontPreviewLoaded.value = false;
-    batchCurrentFontFamily.value = '';
-  }
-}, { immediate: true });
 
-// 加载批量字体预览
-async function loadBatchFontPreview() {
-  if (!batchThumbnailForm.value.fontUrl) {
-    batchFontPreviewLoaded.value = false;
-    batchCurrentFontFamily.value = '';
-    return;
-  }
-
-  try {
-    batchFontPreviewLoaded.value = false;
-    
-    // 创建唯一的字体名称
-    const fontName = `BatchFontPreview_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    
-    // 创建 @font-face 规则
-    const style = document.createElement('style');
-    style.textContent = `
-      @font-face {
-        font-family: '${fontName}';
-        src: url('${batchThumbnailForm.value.fontUrl}') format('woff2'),
-             url('${batchThumbnailForm.value.fontUrl}') format('woff'),
-             url('${batchThumbnailForm.value.fontUrl}') format('truetype'),
-             url('${batchThumbnailForm.value.fontUrl}') format('opentype');
-        font-display: swap;
-      }
-    `;
-    
-    // 移除之前的样式（如果存在）
-    const existingStyle = document.getElementById('batch-font-preview-style');
-    if (existingStyle) {
-      existingStyle.remove();
-    }
-    
-    style.id = 'batch-font-preview-style';
-    document.head.appendChild(style);
-    
-    // 创建字体加载检测
-    const font = new FontFace(fontName, `url(${batchThumbnailForm.value.fontUrl})`);
-    await font.load();
-    
-    // 字体加载完成
-    batchCurrentFontFamily.value = fontName;
-    batchFontPreviewLoaded.value = true;
-    
-    console.log('批量字体预览加载成功:', fontName);
-    
-  } catch (error) {
-    console.error('批量字体预览加载失败:', error);
-    batchFontPreviewLoaded.value = false;
-    batchCurrentFontFamily.value = '';
-    ElMessage.warning('字体预览加载失败，将使用系统默认字体');
-  }
-}
-
-function showBatchFontPreview() {
-  if (batchThumbnailForm.value.fontUrl) {
-    previewVisible.value = true;
-    currentPreviewUrl.value = batchThumbnailForm.value.fontUrl;
-  } else {
-    ElMessage.warning('请先选择一个字体文件用于预览效果');
-  }
-}
 
 function getFontUrlById(id: string) {
   const item = dataSource.value.find(item => item.id === id);
@@ -1698,14 +1530,7 @@ function getFontUrlById(id: string) {
   transform: translateY(-1px);
 }
 
-.font-preview {
-  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
-              linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
-              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
-}
+
 
 .form-item-wrapper {
   margin-bottom: 16px;
