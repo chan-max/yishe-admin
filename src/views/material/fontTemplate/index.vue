@@ -768,7 +768,11 @@ const formRef = ref();
 const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
-const currentRow = ref<{url?: string}>({});
+const currentRow = ref<{
+  url?: string;
+  id?: number;
+  name?: string;
+}>({});
 const submitLoading = ref(false);
 
 // 字体参数相关
@@ -903,7 +907,7 @@ function handleDelete(row?) {
   })
     .then(async () => {
       console.log("执行删除");
-      await fontTemplateApi.deleteShopTemplate({ ids: delIds });
+      await fontTemplateApi.deleteFontTemplate({ ids: delIds });
       ElMessage.success("删除成功");
       getList();
     })
@@ -939,6 +943,8 @@ const form = ref<{
   file?: any;
   name: string;
   id?: number;
+  description?: string;
+  keywords?: string;
 }>({
   file: null,
   name: "",
@@ -1234,13 +1240,13 @@ function handleGenerateThumbnail(row) {
 
 async function submitGenerateThumbnail() {
   if (!thumbnailFormRef.value) return;
-  
+   
   try {
     await thumbnailFormRef.value.validate();
     generateThumbnailLoading.value = true;
     
     // 调用后端API生成缩略图
-    await fontTemplateApi.generateThumbnail(currentRow.value.id, {
+    await fontTemplateApi.generateThumbnail(currentRow.value.id?.toString() || '', {
       templateText: thumbnailForm.value.templateText,
       options: thumbnailForm.value.options
     });

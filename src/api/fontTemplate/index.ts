@@ -36,9 +36,9 @@ export const fontTemplateApi = {
     return await request.post({ url: `/font-template/update`, data, })
   },
 
-  // 删除YiShe 模板
-  deleteShopTemplate: async (data) => {
-    return await request.delete({ url: `/font-template/delete`,data })
+  // 删除字体模板（支持单个和批量删除）
+  deleteFontTemplate: async (data: { id?: string, ids?: string[] }) => {
+    return await request.post({ url: `/font-template/delete`, data })
   },
 
   // AI补全字体模板内容
