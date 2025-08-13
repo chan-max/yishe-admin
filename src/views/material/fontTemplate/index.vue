@@ -703,11 +703,11 @@ const gridOptions = ref({
         default: "thumbnailDefaultSlot"
       }
     },
-    { title: "ID", field: "id", width: 140, showOverflow: true },
+    // { title: "ID", field: "id", width: 140, showOverflow: true },
     { 
       title: "文件地址", 
       field: "url", 
-      width: 300,
+      width: 360,
       slots: {
         default: "urlDefaultSlot"
       }
