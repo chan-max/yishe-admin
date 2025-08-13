@@ -299,8 +299,7 @@
     <el-dialog
       v-model="generateThumbnailDialogVisible"
       title="生成字体模板缩略图"
-      width="90%"
-      max-width="700px"
+      fullscreen
       align-center
       :destroy-on-close="true"
     >
