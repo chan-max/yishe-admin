@@ -7,6 +7,9 @@
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
         />
       </form-item>
+      <el-button type="primary" @click="handleAdd" :icon="Plus">
+        新增字体
+      </el-button>
     </div>
 
     <!-- 表格展示 -->
@@ -165,7 +168,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -192,12 +195,15 @@ import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
 import { PsdPreview } from '@/components/PsdPreview'
 import { fontTemplateApi } from "@/api/fontTemplate";
+import FontPreview from '@/components/FontPreview.vue';
 
 // 查询条件
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
   sortingFields: defaultSortingValue(),
+  startTime: '',
+  endTime: ''
 });
 
 const gridOptions = ref({
@@ -244,9 +250,8 @@ const gridOptions = ref({
       },
     },
   ],
+  maxHeight: 400
 });
-
-
 
 const { height } = useWindowSize();
 
@@ -266,7 +271,7 @@ const formRef = ref();
 const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
-const currentRow = ref({});
+const currentRow = ref<{url?: string}>({});
 const submitLoading = ref(false);
 const previewVisible = ref(false)
 const currentPreviewUrl = ref('')
@@ -342,8 +347,11 @@ function handleDelete(row?) {
 function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
-  dialogTitle.value = "新建模板";
-  form.value = {};
+  dialogTitle.value = "新建字体模板";
+  form.value = {
+    file: null,
+    name: "",
+  };
 }
 
 function handleEdit(row) {
@@ -361,15 +369,18 @@ function cancel() {
   open.value = false;
 }
 
-const form = ref({
+const form = ref<{
+  file?: any;
+  name: string;
+  id?: number;
+}>({
   file: null,
   name: "",
 });
 
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
-  // titleTemplateId: [{ required: true, message: "请选择标题模板", trigger: "blur" }],
-  file: [{ required: true, message: "请选择 PSD 文件", trigger: "blur" }],
+  file: [{ required: true, message: "请选择字体文件", trigger: "blur" }],
 };
 
 const dialogClose = () => {
@@ -395,7 +406,7 @@ const submitForm = async () => {
   try {
     if (isEdit.value) {
       submitLoading.value = true;
-      await fontTemplateApi.updatePsdTemplate({
+      await fontTemplateApi.updateFontTemplate({
         id: form.value.id,
         name: form.value.name,
       });
@@ -403,11 +414,15 @@ const submitForm = async () => {
       getList();
     } else {
       submitLoading.value = true;
+      
       const cos = await uploadToCOS({ file: form.value.file });
       const { key, url } = cos;
+      
       await fontTemplateApi.createFontTemplate({
         name: form.value.name,
         url,
+        size: form.value.file.size,
+        type: form.value.file.name.split(".").pop(),
         file: null,
       });
       ElMessage.success("添加成功");
@@ -423,7 +438,7 @@ const submitForm = async () => {
 };
 
 /**
- * @psd文件处理
+ * @字体文件处理
  */
 
 const fileList = ref([]);
@@ -431,7 +446,7 @@ const fileList = ref([]);
 // 文件选择改变时的回调
 const handleFileChange = (file, files) => {
   fileList.value = files; // 更新文件列表
-  form.value.name = file.name;
+  form.value.name = file.name.replace(/\.[^/.]+$/, ""); // 去掉文件扩展名
   form.value.file = file.raw; // 将文件绑定到表单数据
 };
 
@@ -509,6 +524,7 @@ const copyUrl = (url: string) => {
 .pb-4.flex > *, .search-bar > * {
   margin-bottom: 0;
 }
+
 @media (max-width: 600px) {
   .pb-4.flex, .search-bar {
     flex-direction: column !important;
