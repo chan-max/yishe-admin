@@ -444,8 +444,7 @@
     <el-dialog
       v-model="batchGenerateThumbnailDialogVisible"
       title="批量生成字体模板缩略图"
-      width="95%"
-      max-width="800px"
+      fullscreen
       align-center
       :destroy-on-close="true"
     >
