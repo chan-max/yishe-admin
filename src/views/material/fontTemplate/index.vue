@@ -123,7 +123,7 @@
     </div>
 
     <!-- 分页 -->
-    <div class="py-4 flex justify-end">
+    <div class=" flex justify-end">
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -753,7 +753,7 @@ const gridOptions = ref({
 const { height } = useWindowSize();
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 260;
+  gridOptions.value.maxHeight = height.value - 220;
 });
 
 const dataSource = ref([]);
