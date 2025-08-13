@@ -135,7 +135,7 @@
     </div>
   </div>
 
-  <el-dialog v-model="showModelDialog" title="设计模型信息" width="900px" :center="true">
+  <el-dialog v-model="showModelDialog" title="设计模型信息" width="900px" :align-center="true">
     <div v-if="modelInfo" style="display: flex; flex-direction: row; align-items: center; justify-content: center; min-height: 260px;">
       <el-image
         v-if="modelInfo.thumbnail || modelInfo.cover"
