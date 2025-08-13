@@ -40,4 +40,54 @@ export const fontTemplateApi = {
   deleteShopTemplate: async (data) => {
     return await request.delete({ url: `/font-template/delete`,data })
   },
+
+  // AI补全字体模板内容
+  aiCompleteContent: async (id: string, prompt?: string) => {
+    return await request.post({ 
+      url: `/font-template/ai-complete/${id}`, 
+      data: { prompt } 
+    })
+  },
+
+  // 批量AI补全字体模板内容
+  batchAiCompleteContent: async (data: { 
+    ids: string[], 
+    prompt?: string, 
+    batchSize?: number 
+  }) => {
+    return await request.post({ 
+      url: `/font-template/ai-complete-batch`, 
+      data 
+    })
+  },
+
+  // 生成字体模板缩略图
+  generateThumbnail: async (id: string, data: {
+    templateText?: string,
+    options?: {
+      fontSize?: number;
+      textColor?: string;
+    }
+  }) => {
+    return await request.post({ 
+      url: `/font-template/generate-thumbnail/${id}`, 
+      data 
+    })
+  },
+
+  // 批量生成字体模板缩略图
+  batchGenerateThumbnail: async (data: { 
+    ids: string[], 
+    templateText?: string,
+    options?: {
+      fontSize?: number;
+      textColor?: string;
+    },
+    batchSize?: number
+  }) => {
+    return await request.post({ 
+      url: `/font-template/batch-generate-thumbnails`, 
+      data 
+    })
+  },
 }
