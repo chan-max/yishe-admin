@@ -183,6 +183,10 @@
                         <el-icon><MagicStick /></el-icon>
                         AI自动生成内容
                       </el-dropdown-item>
+                      <el-dropdown-item command="ai-judge-infringement">
+                        <el-icon><Warning /></el-icon>
+                        AI判断侵权(知名IP)
+                      </el-dropdown-item>
                       <el-dropdown-item command="generate-phash">
                         <el-icon><Key /></el-icon>
                         生成哈希
@@ -536,6 +540,35 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="aiJudgeInfringementDialogVisible"
+      title="AI判断侵权"
+      width="600px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #666; font-size: 14px; line-height: 1.5;">
+        <div style="margin-bottom: 8px; font-weight: 500; color: #333;">AI判断标准说明：</div>
+        <div style="margin-bottom: 12px;">• 知名IP角色：迪士尼、漫威、DC、任天堂等公司的角色形象</div>
+        <div style="margin-bottom: 12px;">• 知名品牌：Nike、Adidas、Apple、Coca-Cola等品牌标识</div>
+        <div style="margin-bottom: 12px;">• 知名商标：麦当劳、星巴克、肯德基等商标</div>
+        <div style="margin-bottom: 12px;">• 可能追究版权的：知名电影、游戏、动漫中的角色或场景</div>
+        <div style="color: #409EFF; font-size: 13px;">注意：未知的原创设计、普通插画、风景照片等会被标记为非侵权</div>
+      </div>
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI判断侵权的特定角度或要求（可选，留空则使用默认判断标准）</div>
+      <el-input
+        v-model="aiJudgeInfringementPrompt"
+        type="textarea"
+        :rows="4"
+        placeholder="如：请重点关注某个特定品牌或IP..."
+        style="font-size:16px;min-height:100px;width:100%;resize:vertical;"
+      />
+      <template #footer>
+        <el-button @click="aiJudgeInfringementDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiJudgeInfringementLoading" @click="submitAiJudgeInfringementDialog">确定</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
       <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
     </el-dialog>
@@ -573,7 +606,8 @@ import {
   handleDropMaterial,
   aiAutoGenerateMaterialInfo,
   updateAssetLibrary,
-  calculatePhash // 新增
+  calculatePhash, // 新增
+  aiJudgeInfringement // 新增AI判断侵权接口
 } from '@/api/material' // 实际接口导入
 
 import { commonGridOptions } from '@/common/table'
@@ -588,7 +622,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document, Warning } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -1012,6 +1046,11 @@ const aiGenPrompt = ref('')
 const aiGenDialogLoading = ref(false)
 let aiGenRow = null
 
+const aiJudgeInfringementDialogVisible = ref(false)
+const aiJudgeInfringementPrompt = ref('')
+const aiJudgeInfringementLoading = ref(false)
+let aiJudgeInfringementRow = null
+
 const aiTableLoading = ref<Record<string, boolean>>({})
 
 // meta相关变量
@@ -1023,6 +1062,13 @@ function onAiTableAutoGenerate(row) {
   aiGenRow = row
   aiGenPrompt.value = ''
   aiGenDialogVisible.value = true
+}
+
+function onAiJudgeInfringement(row) {
+  if (aiTableLoading.value[row.id]) return
+  aiJudgeInfringementRow = row
+  aiJudgeInfringementPrompt.value = ''
+  aiJudgeInfringementDialogVisible.value = true
 }
 
 async function submitAiGenDialog() {
@@ -1044,6 +1090,25 @@ async function submitAiGenDialog() {
   }
 }
 
+async function submitAiJudgeInfringementDialog() {
+  if (!aiJudgeInfringementRow) return
+  aiJudgeInfringementLoading.value = true
+  aiTableLoading.value = { ...aiTableLoading.value, [aiJudgeInfringementRow.id]: true }
+  try {
+    await handleAiJudgeInfringement(aiJudgeInfringementRow, () => {
+      aiTableLoading.value = { ...aiTableLoading.value, [aiJudgeInfringementRow.id]: false }
+      aiJudgeInfringementLoading.value = false
+      aiJudgeInfringementDialogVisible.value = false
+      aiJudgeInfringementRow = null
+    }, aiJudgeInfringementPrompt.value)
+  } catch (e) {
+    aiTableLoading.value = { ...aiTableLoading.value, [aiJudgeInfringementRow.id]: false }
+    aiJudgeInfringementLoading.value = false
+    aiJudgeInfringementDialogVisible.value = false
+    aiJudgeInfringementRow = null
+  }
+}
+
 async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     const res = await aiAutoGenerateMaterialInfo({
@@ -1062,6 +1127,37 @@ async function handleAiAutoGenerate(row, cb, prompt) {
     getList()
   } catch (e) {
     ElNotification.error('AI自动生成内容失败')
+    if (typeof cb === 'function') cb()
+  }
+}
+
+async function handleAiJudgeInfringement(row, cb, prompt) {
+  try {
+    const res = await aiJudgeInfringement({
+      id: row.id,
+      prompt: prompt || ''
+    })
+    
+    // 更新行数据
+    if (res) {
+      row.isInfringement = res.isInfringement
+      
+      // 显示AI判断结果
+      const resultText = res.isInfringement ? '侵权' : '非侵权'
+      const resultType = res.isInfringement ? 'warning' : 'success'
+      
+      ElNotification({
+        title: 'AI判断侵权完成',
+        message: `判断结果：${resultText}，置信度：${(res.confidence * 100).toFixed(1)}%，理由：${res.reason}`,
+        duration: 5000,
+        type: resultType
+      })
+    }
+    
+    if (typeof cb === 'function') cb()
+    getList()
+  } catch (e) {
+    ElNotification.error(`AI判断侵权失败：${e.message || '未知错误'}`)
     if (typeof cb === 'function') cb()
   }
 }
@@ -1162,6 +1258,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
+      break;
+    case 'ai-judge-infringement':
+      onAiJudgeInfringement(row);
       break;
     case 'generate-phash':
       handleGeneratePhash(row);

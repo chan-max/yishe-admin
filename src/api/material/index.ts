@@ -266,3 +266,13 @@ export function calculatePhash(data) {
     data
   })
 }
+
+/**
+ * AI判断贴纸是否侵权
+ */
+export function aiJudgeInfringement(data) {
+  return request.post({
+    url: '/sticker/ai-judge-infringement',
+    data
+  })
+}
