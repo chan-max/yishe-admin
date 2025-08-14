@@ -295,6 +295,7 @@
       fullscreen
       align-center
       :destroy-on-close="true"
+      @close="resetFontPreview"
     >
       <el-form :model="thumbnailForm" :rules="thumbnailRules" ref="thumbnailFormRef" label-width="100px" size="small">
         <!-- 基本信息行 -->
@@ -359,12 +360,17 @@
           <div class="preview-container compact">
             <div class="preview-header compact">
               <span>实时预览</span>
+              <div v-if="fontLoading" class="font-loading-indicator">
+                <el-icon class="is-loading" style="margin-right: 4px; color: #409EFF;"><Loading /></el-icon>
+                <span style="color: #409EFF; font-size: 12px;">字体加载中...</span>
+              </div>
+              <!-- 字体预览会自动加载，无需手动点击 -->
             </div>
             <div class="preview-content compact">
               <!-- 预览区域 -->
               <div 
                 v-if="currentRow.url"
-                class="preview-image compact"
+                class="preview-image compact single-preview"
                 :style="{
                   width: 'auto',
                   height: 'auto',
@@ -377,12 +383,18 @@
                   border: '1px dashed #d9d9d9',
                   borderRadius: '4px',
                   whiteSpace: 'pre-wrap',
-                  lineHeight: '1.3'
+                  lineHeight: '1.3',
+                  fontFamily: loadedFontFamily || 'inherit'
                 }"
               >
                 <div style="margin-bottom: 8px; font-size: 10px; color: #909399;">
                   <i class="el-icon-info"></i> 
-                  <span>点击"查看字体"按钮预览字体效果</span>
+                  <span v-if="fontLoading">
+                    <el-icon class="is-loading" style="margin-right: 4px;"><Loading /></el-icon>
+                    正在加载字体预览...
+                  </span>
+                  <span v-else-if="!loadedFontFamily">等待加载字体预览...</span>
+                  <span v-else>当前使用字体: {{ currentRow.name }}</span>
                 </div>
                 {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
               </div>
@@ -397,7 +409,7 @@
                   minWidth: '120px',
                   minHeight: '60px',
                   padding: '12px',
-                  color: thumbnailForm.options.options.textColor,
+                  color: thumbnailForm.options.textColor,
                   fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
                   backgroundColor: 'transparent',
                   border: '1px dashed #d9d9d9',
@@ -415,7 +427,80 @@
               </div>
             </div>
             <div style="margin-top: 6px; font-size: 10px; color: #909399; text-align: center;">
-              预览效果会实时显示字体大小和颜色
+              字体预览会自动加载，实时显示字体大小、颜色和字体样式
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="生成方式说明">
+          <div style="padding: 12px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
+            <div style="margin-bottom: 8px; font-size: 13px; color: #1e40af; font-weight: 500;">生成方式对比：</div>
+            <div style="font-size: 12px; color: #3b82f6; line-height: 1.5;">
+              <div><strong>前端生成：</strong>直接使用页面中的实时预览效果生成PNG，速度快，支持自定义字体，所见即所得</div>
+              <div><strong>后端生成：</strong>使用服务器AI服务生成，质量更高，但速度较慢，适合最终成品</div>
+              <div style="margin-top: 4px; color: #e6a23c;"><strong>建议：</strong>先使用前端生成快速预览效果，确认满意后再使用后端生成高质量版本</div>
+            </div>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="字体状态检查">
+          <div style="padding: 12px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;">
+            <div style="margin-bottom: 8px; font-size: 13px; color: #92400e; font-weight: 500;">字体加载状态：</div>
+            <div style="font-size: 12px; color: #92400e; line-height: 1.5;">
+              <div v-if="fontLoading">
+                <strong>🔄 字体加载中...</strong>
+                <div style="margin-top: 4px; font-size: 11px; color: #d97706;">
+                  正在加载字体文件，请稍候...
+                </div>
+              </div>
+              <div v-else-if="loadedFontFamily">
+                <strong>✅ 字体已加载：</strong>{{ loadedFontFamily }}
+                <div style="margin-top: 4px; font-size: 11px; color: #d97706;">
+                  当前预览区域使用自定义字体，前端生成缩略图将包含此字体效果
+                </div>
+                <div style="margin-top: 4px; font-size: 11px; color: #059669;">
+                  💡 提示：字体已正确加载，可以安全使用前端生成功能
+                </div>
+              </div>
+              <div v-else>
+                <strong>⚠️ 字体未加载：</strong>当前使用系统默认字体
+                <div style="margin-top: 4px; font-size: 11px; color: #d97706;">
+                  字体预览会自动加载，如果长时间未加载成功，请检查字体文件URL是否可访问
+                </div>
+                <div style="margin-top: 4px; font-size: 11px; color: #dc2626;">
+                  ⚠️ 警告：使用系统字体生成缩略图可能无法体现字体模板的真实效果
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 8px; padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 4px;">
+              <div style="font-size: 11px; color: #92400e;">
+                <strong>调试信息：</strong>
+                <div>字体URL: {{ currentRow.url || '未设置' }}</div>
+                <div>加载状态: {{ fontLoading ? '加载中' : (loadedFontFamily ? '已加载' : '未加载') }}</div>
+                <div>字体名称: {{ loadedFontFamily || '系统默认' }}</div>
+              </div>
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+              <el-button 
+                type="warning" 
+                size="small" 
+                @click="reloadFont"
+                :loading="fontLoading"
+                :disabled="!currentRow.url"
+              >
+                <el-icon><Refresh /></el-icon>
+                重新加载字体
+              </el-button>
+              <el-button 
+                type="info" 
+                size="small" 
+                @click="testFontRendering"
+                :disabled="!loadedFontFamily"
+                style="margin-left: 8px;"
+              >
+                <el-icon><View /></el-icon>
+                测试字体渲染
+              </el-button>
             </div>
           </div>
         </el-form-item>
@@ -423,7 +508,8 @@
 
       <template #footer>
         <el-button @click="generateThumbnailDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="generateThumbnailLoading" @click="submitGenerateThumbnail">生成缩略图</el-button>
+        <el-button type="success" :loading="frontendGenerateLoading" @click="submitFrontendGenerateThumbnail">前端生成缩略图</el-button>
+        <el-button type="primary" :loading="generateThumbnailLoading" @click="submitGenerateThumbnail">后端生成缩略图</el-button>
       </template>
     </el-dialog>
 
@@ -434,6 +520,7 @@
       fullscreen
       align-center
       :destroy-on-close="true"
+      @close="resetFontPreview"
     >
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
         将为选中的 <strong>{{ ids.length }}</strong> 个字体模板生成缩略图
@@ -503,12 +590,17 @@
           <div class="preview-container compact">
             <div class="preview-header compact">
               <span>实时预览</span>
+              <div v-if="batchFontLoading" class="font-loading-indicator">
+                <el-icon class="is-loading" style="margin-right: 4px; color: #409EFF;"><Loading /></el-icon>
+                <span style="color: #409EFF; font-size: 12px;">字体加载中...</span>
+              </div>
+              <!-- 字体预览会自动加载，无需手动点击 -->
             </div>
             <div class="preview-content compact">
               <!-- 预览区域 -->
               <div 
                 v-if="batchThumbnailForm.fontUrl"
-                class="preview-image compact"
+                class="preview-image compact batch-preview"
                 :style="{
                   width: 'auto',
                   height: 'auto',
@@ -521,12 +613,18 @@
                   border: '1px dashed #d9d9d9',
                   borderRadius: '4px',
                   whiteSpace: 'pre-wrap',
-                  lineHeight: '1.3'
+                  lineHeight: '1.3',
+                  fontFamily: batchLoadedFontFamily || 'inherit'
                 }"
               >
                 <div style="margin-bottom: 8px; font-size: 10px; color: #909399;">
                   <i class="el-icon-info"></i> 
-                  <span>点击"查看字体"按钮预览字体效果</span>
+                  <span v-if="batchFontLoading">
+                    <el-icon class="is-loading" style="margin-right: 4px;"><Loading /></el-icon>
+                    正在加载字体预览...
+                  </span>
+                  <span v-else-if="!batchLoadedFontFamily">等待加载字体预览...</span>
+                  <span v-else>当前使用字体预览</span>
                 </div>
                 {{ batchThumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
               </div>
@@ -559,7 +657,7 @@
               </div>
             </div>
             <div style="margin-top: 6px; font-size: 10px; color: #909399; text-align: center;">
-              预览效果会实时显示字体大小和颜色
+              字体预览会自动加载，实时显示字体大小、颜色和字体样式
             </div>
           </div>
         </el-form-item>
@@ -602,18 +700,22 @@
 
       <div style="margin-top: 16px; padding: 12px; background: #f5f7fa; border-radius: 4px; font-size: 14px; color: #606266;">
         <div style="margin-bottom: 8px;"><strong>操作说明：</strong></div>
+        <div>• <strong>前端生成：</strong>直接使用页面中的实时预览效果生成PNG，速度快，支持自定义字体，所见即所得</div>
+        <div>• <strong>后端生成：</strong>使用服务器AI服务生成，质量更高，但速度较慢</div>
         <div>• 系统将分批处理，避免同时生成过多图片</div>
         <div>• 如果字体模板已有缩略图，将被新生成的覆盖</div>
         <div>• 处理过程中会显示进度和结果</div>
         <div style="margin-top: 8px; color: #e6a23c;"><strong>注意事项：</strong></div>
-        <div>• 确保选中的字体模板都有字体文件</div>
+        <div>• 前端生成需要字体已加载，建议先点击"加载字体预览"</div>
+        <div>• 后端生成需要确保选中的字体模板都有字体文件</div>
         <div>• 生成过程可能需要一些时间，请耐心等待</div>
         <div>• 建议批处理大小设置为3-5，避免资源占用过多</div>
       </div>
 
       <template #footer>
         <el-button @click="batchGenerateThumbnailDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="batchGenerateThumbnailLoading" @click="submitBatchGenerateThumbnail">开始批量生成</el-button>
+        <el-button type="success" :loading="batchFrontendGenerateLoading" @click="submitBatchFrontendGenerateThumbnail">前端批量生成</el-button>
+        <el-button type="primary" :loading="batchGenerateThumbnailLoading" @click="submitBatchGenerateThumbnail">后端批量生成</el-button>
       </template>
     </el-dialog>
 
@@ -648,6 +750,7 @@ import {
   Picture,
   Download,
   MagicStick,
+  Refresh,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 
@@ -789,6 +892,7 @@ const batchProgress = ref({
 // 生成缩略图相关
 const generateThumbnailDialogVisible = ref(false);
 const generateThumbnailLoading = ref(false);
+const frontendGenerateLoading = ref(false);
 const thumbnailFormRef = ref();
 const thumbnailForm = ref({
   templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体',
@@ -804,6 +908,7 @@ const thumbnailRules = {
 // 批量生成缩略图相关
 const batchGenerateThumbnailDialogVisible = ref(false);
 const batchGenerateThumbnailLoading = ref(false);
+const batchFrontendGenerateLoading = ref(false);
 const batchThumbnailFormRef = ref();
 const batchThumbnailForm = ref({
   fontUrl: '',
@@ -828,7 +933,11 @@ const batchThumbnailProgress = ref({
 const imagePreviewVisible = ref(false);
 const currentImageUrl = ref('');
 
-
+// 字体预览相关状态
+const fontLoading = ref(false);
+const loadedFontFamily = ref('');
+const batchFontLoading = ref(false);
+const batchLoadedFontFamily = ref('');
 
 // 批量生成缩略图预览相关
 
@@ -937,6 +1046,31 @@ const dialogClose = () => {
   dialogVisible.value = false;
   fileList.value = [];
   submitLoading.value = false;
+};
+
+// 重置字体预览状态
+const resetFontPreview = () => {
+  // 清理单个字体样式
+  if (loadedFontFamily.value) {
+    const fontStyles = document.querySelectorAll('style');
+    fontStyles.forEach(style => {
+      if (style.innerHTML.includes(loadedFontFamily.value)) {
+        style.remove();
+      }
+    });
+    loadedFontFamily.value = '';
+  }
+  
+  // 清理批量字体样式
+  if (batchLoadedFontFamily.value) {
+    const fontStyles = document.querySelectorAll('style');
+    fontStyles.forEach(style => {
+      if (style.innerHTML.includes(batchLoadedFontFamily.value)) {
+        style.remove();
+      }
+    });
+    batchLoadedFontFamily.value = '';
+  }
 };
 
 function checkboxChange(e) {
@@ -1203,9 +1337,18 @@ function handleGenerateThumbnail(row) {
   if (row.thumbnail) {
     ElMessage.info('该字体模板已有缩略图，生成新的将覆盖现有缩略图');
   }
+  // 重置字体预览状态
+  resetFontPreview();
   // 重置为默认值并打开弹窗
   thumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体';
   generateThumbnailDialogVisible.value = true;
+  
+  // 弹窗打开后自动加载字体预览
+  setTimeout(() => {
+    if (currentRow.value?.url) {
+      loadFontForPreview();
+    }
+  }, 300);
 }
 
 async function submitGenerateThumbnail() {
@@ -1232,17 +1375,125 @@ async function submitGenerateThumbnail() {
   }
 }
 
+// 前端生成缩略图
+async function submitFrontendGenerateThumbnail() {
+  if (!thumbnailFormRef.value) return;
+   
+  try {
+    await thumbnailFormRef.value.validate();
+    frontendGenerateLoading.value = true;
+    
+    // 直接使用页面中的实时预览元素
+    const previewElement = document.querySelector('.single-preview');
+    if (!previewElement) {
+      ElMessage.error('找不到预览元素，请确保预览区域已正确显示');
+      return;
+    }
+    
+    // 确保字体完全加载和应用
+    if (loadedFontFamily.value) {
+      console.log('开始等待字体加载完成...');
+      
+      // 等待字体加载完成
+      await document.fonts.ready;
+      console.log('字体加载完成，等待渲染...');
+      
+      // 强制应用字体到预览元素
+      previewElement.style.fontFamily = loadedFontFamily.value;
+      
+      // 触发重排，确保字体样式被应用
+      previewElement.offsetHeight;
+      
+      // 等待更长时间确保字体完全渲染
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 再次检查字体是否已应用
+      const computedStyle = window.getComputedStyle(previewElement);
+      console.log('当前字体:', computedStyle.fontFamily);
+      
+      // 如果字体还没有应用，再等待一段时间
+      if (!computedStyle.fontFamily.includes(loadedFontFamily.value)) {
+        console.log('字体未应用，继续等待...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 再次强制应用字体
+        previewElement.style.fontFamily = loadedFontFamily.value;
+        previewElement.offsetHeight;
+      }
+    }
+    
+    console.log('开始生成图片...');
+    
+    // 使用html-to-image生成图片，添加字体相关配置
+    const { toPng } = await import('html-to-image');
+    const dataUrl = await toPng(previewElement, {
+      quality: 0.95,
+      backgroundColor: 'white',
+      width: previewElement.scrollWidth,
+      height: previewElement.scrollHeight,
+      // 确保字体被包含在生成的图片中
+      filter: (node) => {
+        // 不过滤任何节点，确保字体样式被保留
+        return true;
+      },
+      // 设置字体嵌入选项
+      fontEmbedCSS: true,
+      // 等待字体加载
+      waitForFonts: true,
+      // 添加更多字体相关配置
+      cacheBust: true,
+      // 确保使用正确的字体
+      useCORS: true
+    });
+    
+    console.log('图片生成完成');
+    
+    // 将base64转换为文件
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    const file = new File([blob], `${currentRow.value.name || 'font'}_thumbnail.png`, { type: 'image/png' });
+    
+    // 上传到COS
+    const cos = await uploadToCOS({ file });
+    const { url } = cos;
+    
+    // 调用后端API更新缩略图路径
+    await fontTemplateApi.updateFontTemplate({
+      id: currentRow.value.id,
+      thumbnail: url
+    });
+    
+    ElMessage.success('前端缩略图生成成功');
+    generateThumbnailDialogVisible.value = false;
+    getList(); // 刷新列表
+    
+  } catch (error) {
+    console.error('前端缩略图生成失败:', error);
+    ElMessage.error('前端缩略图生成失败，请稍后重试');
+  } finally {
+    frontendGenerateLoading.value = false;
+  }
+}
+
 // 批量生成缩略图相关方法
 function handleBatchGenerateThumbnail() {
   if (!ids.value.length) {
     ElMessage.warning('请先选择要批量操作的数据');
     return;
   }
+  // 重置字体预览状态
+  resetFontPreview();
   // 设置默认字体URL为第一个选中项的字体URL
   const firstItem = dataSource.value.find(item => item.id === ids.value[0]);
   batchThumbnailForm.value.fontUrl = firstItem?.url || '';
   batchThumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体'; // 重置为默认值
   batchGenerateThumbnailDialogVisible.value = true;
+  
+  // 弹窗打开后自动加载字体预览
+  setTimeout(() => {
+    if (batchThumbnailForm.value.fontUrl) {
+      loadBatchFontForPreview();
+    }
+  }, 300);
 }
 
 async function submitBatchGenerateThumbnail() {
@@ -1318,6 +1569,150 @@ async function submitBatchGenerateThumbnail() {
   }
 }
 
+// 批量前端生成缩略图
+async function submitBatchFrontendGenerateThumbnail() {
+  if (!ids.value.length) return;
+  
+  batchFrontendGenerateLoading.value = true;
+  
+  // 初始化进度
+  batchThumbnailProgress.value = {
+    total: ids.value.length,
+    processed: 0,
+    success: 0,
+    failed: 0
+  };
+  
+  try {
+    // 显示确认信息
+    ElMessage.info(`开始前端批量生成 ${ids.value.length} 个字体模板缩略图，请耐心等待...`);
+    
+    // 获取选中的字体模板数据
+    const selectedFonts = dataSource.value.filter(item => ids.value.includes(item.id));
+    
+    // 分批处理
+    const batchSize = batchThumbnailForm.value.batchSize || 3;
+    const batches = [];
+    for (let i = 0; i < selectedFonts.length; i += batchSize) {
+      batches.push(selectedFonts.slice(i, i + batchSize));
+    }
+    
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      
+      // 并行处理当前批次
+      const batchPromises = batch.map(async (fontItem) => {
+        try {
+          // 直接使用页面中的批量预览元素
+          const batchPreviewElement = document.querySelector('.batch-preview');
+          if (!batchPreviewElement) {
+            throw new Error('找不到批量预览元素');
+          }
+          
+          // 确保字体完全加载（批量处理使用系统字体，但也要确保字体加载完成）
+          await document.fonts.ready;
+          
+          // 如果有自定义字体，确保字体完全应用
+          if (batchLoadedFontFamily.value) {
+            // 强制应用字体到预览元素
+            batchPreviewElement.style.fontFamily = batchLoadedFontFamily.value;
+            // 触发重排，确保字体样式被应用
+            batchPreviewElement.offsetHeight;
+            // 等待更长时间确保字体完全渲染
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } else {
+            // 使用系统字体，等待渲染完成
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          
+          // 使用html-to-image生成图片，添加字体相关配置
+          const { toPng } = await import('html-to-image');
+          const dataUrl = await toPng(batchPreviewElement, {
+            quality: 0.95,
+            backgroundColor: 'white',
+            width: batchPreviewElement.scrollWidth,
+            height: batchPreviewElement.scrollHeight,
+            // 确保字体被包含在生成的图片中
+            filter: (node) => {
+              // 不过滤任何节点，确保字体样式被保留
+              return true;
+            },
+            // 设置字体嵌入选项
+            fontEmbedCSS: true,
+            // 等待字体加载
+            waitForFonts: true
+          });
+          
+          // 将base64转换为文件
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          const file = new File([blob], `${fontItem.name || 'font'}_thumbnail.png`, { type: 'image/png' });
+          
+          // 上传到COS
+          const cos = await uploadToCOS({ file });
+          const { url } = cos;
+          
+          // 调用后端API更新缩略图路径
+          await fontTemplateApi.updateFontTemplate({
+            id: fontItem.id,
+            thumbnail: url
+          });
+          
+          return { success: true, id: fontItem.id };
+        } catch (error) {
+          console.error(`字体模板 ${fontItem.id} 前端缩略图生成失败:`, error);
+          return { success: false, id: fontItem.id, error: error.message };
+        }
+      });
+      
+      // 等待当前批次完成
+      const batchResults = await Promise.all(batchPromises);
+      
+      // 更新进度
+      for (const result of batchResults) {
+        batchThumbnailProgress.value.processed++;
+        if (result.success) {
+          batchThumbnailProgress.value.success++;
+        } else {
+          batchThumbnailProgress.value.failed++;
+        }
+      }
+      
+      // 批次间延迟，避免过于频繁的请求
+      if (batchIndex < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    // 显示最终结果
+    if (batchThumbnailProgress.value.success > 0) {
+      let message = `前端批量缩略图生成完成：成功 ${batchThumbnailProgress.value.success} 个，失败 ${batchThumbnailProgress.value.failed} 个`;
+      ElMessage.success(message);
+      
+      // 刷新列表
+      getList();
+      // 清空选择
+      ids.value = [];
+      // 延迟关闭弹窗，让用户看到最终结果
+      setTimeout(() => {
+        batchGenerateThumbnailDialogVisible.value = false;
+        // 重置进度
+        batchThumbnailProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
+      }, 3000);
+    } else {
+      ElMessage.error('前端批量缩略图生成失败，请检查网络连接');
+    }
+    
+  } catch (error) {
+    console.error('前端批量缩略图生成失败:', error);
+    ElMessage.error('前端批量缩略图生成失败，请稍后重试');
+    // 重置进度
+    batchThumbnailProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
+  } finally {
+    batchFrontendGenerateLoading.value = false;
+  }
+}
+
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
@@ -1376,9 +1771,230 @@ function closeImagePreview() {
 
 
 
+// 字体加载预览相关方法
+async function loadFontForPreview() {
+  if (!currentRow.value?.url) {
+    return;
+  }
+  
+  // 重置之前的状态
+  loadedFontFamily.value = '';
+  fontLoading.value = true;
+  
+  try {
+    console.log('开始加载字体:', currentRow.value.url);
+    
+    // 创建字体ID
+    const fontId = `font_${Date.now()}`;
+    
+    // 创建字体样式标签
+    const fontStyle = document.createElement("style");
+    fontStyle.innerHTML = `
+      @font-face {
+        font-family: ${fontId};
+        src: url("${currentRow.value.url}") format("woff2"), 
+             url("${currentRow.value.url}") format("woff"),
+             url("${currentRow.value.url}") format("truetype"),
+             url("${currentRow.value.url}") format("opentype");
+        font-display: swap;
+      }
+    `;
+    
+    // 添加到文档头部
+    document.head.appendChild(fontStyle);
+    
+    // 等待字体加载完成
+    console.log('等待字体加载...');
+    await document.fonts.ready;
+    
+    // 检查字体是否真的加载成功
+    const fontFace = new FontFace(fontId, `url(${currentRow.value.url})`);
+    await fontFace.load();
+    
+    // 将字体添加到字体集合
+    document.fonts.add(fontFace);
+    
+    // 设置字体名称
+    loadedFontFamily.value = fontId;
+    
+    // 强制触发字体重新渲染
+    const previewElement = document.querySelector('.single-preview');
+    if (previewElement) {
+      previewElement.style.fontFamily = fontId;
+      // 触发重排
+      previewElement.offsetHeight;
+      
+      // 等待字体应用
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 验证字体是否已应用
+      const computedStyle = window.getComputedStyle(previewElement);
+      console.log('字体应用状态:', computedStyle.fontFamily);
+    }
+    
+    console.log('字体加载成功:', fontId);
+    
+  } catch (error) {
+    console.error('字体加载失败:', error);
+    // 静默失败，不显示错误消息
+    // 重置字体状态
+    loadedFontFamily.value = '';
+  } finally {
+    fontLoading.value = false;
+  }
+}
+
+async function loadBatchFontForPreview() {
+  if (!batchThumbnailForm.value.fontUrl) {
+    return;
+  }
+  
+  // 重置之前的状态
+  batchLoadedFontFamily.value = '';
+  batchFontLoading.value = true;
+  
+  try {
+    console.log('开始加载批量字体:', batchThumbnailForm.value.fontUrl);
+    
+    // 创建字体ID
+    const fontId = `batch_font_${Date.now()}`;
+    
+    // 创建字体样式标签
+    const fontStyle = document.createElement("style");
+    fontStyle.innerHTML = `
+      @font-face {
+        font-family: ${fontId};
+        src: url("${batchThumbnailForm.value.fontUrl}") format("woff2"), 
+             url("${batchThumbnailForm.value.fontUrl}") format("woff"),
+             url("${batchThumbnailForm.value.fontUrl}") format("truetype"),
+             url("${batchThumbnailForm.value.fontUrl}") format("opentype");
+        font-display: swap;
+      }
+    `;
+    
+    // 添加到文档头部
+    document.head.appendChild(fontStyle);
+    
+    // 等待字体加载完成
+    console.log('等待批量字体加载...');
+    await document.fonts.ready;
+    
+    // 检查字体是否真的加载成功
+    const fontFace = new FontFace(fontId, `url(${batchThumbnailForm.value.fontUrl})`);
+    await fontFace.load();
+    
+    // 将字体添加到字体集合
+    document.fonts.add(fontFace);
+    
+    // 设置字体名称
+    batchLoadedFontFamily.value = fontId;
+    
+    // 强制触发字体重新渲染
+    const batchPreviewElement = document.querySelector('.batch-preview');
+    if (batchPreviewElement) {
+      batchPreviewElement.style.fontFamily = fontId;
+      // 触发重排
+      batchPreviewElement.offsetHeight;
+      
+      // 等待字体应用
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 验证字体是否已应用
+      const computedStyle = window.getComputedStyle(batchPreviewElement);
+      console.log('批量字体应用状态:', computedStyle.fontFamily);
+    }
+    
+    console.log('批量字体加载成功:', fontId);
+    
+  } catch (error) {
+    console.error('批量字体加载失败:', error);
+    // 静默失败，不显示错误消息
+    // 重置字体状态
+    batchLoadedFontFamily.value = '';
+  } finally {
+    batchFontLoading.value = false;
+  }
+}
+
 function getFontUrlById(id: string) {
   const item = dataSource.value.find(item => item.id === id);
   return item?.url || '';
+}
+
+// 重新加载字体
+async function reloadFont() {
+  if (!currentRow.value?.url) {
+    ElMessage.warning('没有可用的字体文件');
+    return;
+  }
+  
+  // 重置字体状态
+  resetFontPreview();
+  
+  // 重新加载字体
+  await loadFontForPreview();
+  
+  if (loadedFontFamily.value) {
+    ElMessage.success('字体重新加载成功');
+  } else {
+    ElMessage.error('字体重新加载失败，请检查字体文件URL');
+  }
+}
+
+// 测试字体渲染
+async function testFontRendering() {
+  if (!loadedFontFamily.value) {
+    ElMessage.warning('请先加载字体');
+    return;
+  }
+  
+  try {
+    // 创建一个测试元素
+    const testElement = document.createElement('div');
+    testElement.style.cssText = `
+      position: fixed;
+      top: -1000px;
+      left: -1000px;
+      font-family: ${loadedFontFamily.value};
+      font-size: 48px;
+      color: #000;
+      background: white;
+      padding: 20px;
+      border: 2px solid #333;
+      z-index: 9999;
+    `;
+    testElement.textContent = '字体测试 ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n你好世界字体设计';
+    
+    document.body.appendChild(testElement);
+    
+    // 等待字体渲染
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // 使用html-to-image生成测试图片
+    const { toPng } = await import('html-to-image');
+    const testImage = await toPng(testElement, {
+      quality: 0.95,
+      backgroundColor: 'white',
+      fontEmbedCSS: true,
+      waitForFonts: true
+    });
+    
+    // 清理测试元素
+    document.body.removeChild(testElement);
+    
+    // 显示测试结果
+    ElMessage.success('字体渲染测试完成，请检查生成的图片是否包含正确的字体效果');
+    
+    // 可选：下载测试图片
+    const link = document.createElement('a');
+    link.href = testImage;
+    link.download = 'font_test.png';
+    link.click();
+    
+  } catch (error) {
+    console.error('字体渲染测试失败:', error);
+    ElMessage.error('字体渲染测试失败');
+  }
 }
 
 </script>
@@ -1477,6 +2093,42 @@ function getFontUrlById(id: string) {
   border-radius: 6px;
   padding: 16px;
   background: #fafafa;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.preview-header.compact {
+  margin-bottom: 12px;
+}
+
+/* 字体加载指示器样式 */
+.font-loading-indicator {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(64, 158, 255, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .preview-container.compact {

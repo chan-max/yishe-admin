@@ -55,6 +55,7 @@
     "ffmpeg.js": "^4.2.9003",
     "file-saver": "^2.0.5",
     "highlight.js": "^11.9.0",
+    "html-to-image": "^1.11.13",
     "jsencrypt": "^3.3.2",
     "less": "^4.2.2",
     "leven": "^4.0.0",
