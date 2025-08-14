@@ -594,14 +594,14 @@ const gridOptions = ref({
       }
     },
     // { title: "ID", field: "id", width: 140, showOverflow: true },
-    { 
-      title: "文件地址", 
-      field: "url", 
-      width: 360,
-      slots: {
-        default: "urlDefaultSlot"
-      }
-    },
+    // { 
+    //   title: "文件地址", 
+    //   field: "url", 
+    //   width: 360,
+    //   slots: {
+    //     default: "urlDefaultSlot"
+    //   }
+    // },
     { title: "字体名称", field: "name", width: 240, showOverflow: true },
     { title: "描述", field: "description", minWidth: 200, showOverflow: true },
     { title: "关键字", field: "keywords", minWidth: 160, showOverflow: true },
