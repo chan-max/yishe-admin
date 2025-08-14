@@ -75,19 +75,5 @@ export const fontTemplateApi = {
     })
   },
 
-  // 批量生成字体模板缩略图
-  batchGenerateThumbnail: async (data: { 
-    ids: string[], 
-    templateText?: string,
-    options?: {
-      fontSize?: number;
-      textColor?: string;
-    },
-    batchSize?: number
-  }) => {
-    return await request.post({ 
-      url: `/font-template/batch-generate-thumbnails`, 
-      data 
-    })
-  },
+
 }
