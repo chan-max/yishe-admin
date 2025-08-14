@@ -491,16 +491,6 @@
                 <el-icon><Refresh /></el-icon>
                 重新加载字体
               </el-button>
-              <el-button 
-                type="info" 
-                size="small" 
-                @click="testFontRendering"
-                :disabled="!loadedFontFamily"
-                style="margin-left: 8px;"
-              >
-                <el-icon><View /></el-icon>
-                测试字体渲染
-              </el-button>
             </div>
           </div>
         </el-form-item>
@@ -1384,7 +1374,7 @@ async function submitFrontendGenerateThumbnail() {
     frontendGenerateLoading.value = true;
     
     // 直接使用页面中的实时预览元素
-    const previewElement = document.querySelector('.single-preview');
+    const previewElement = document.querySelector('.single-preview') as HTMLElement;
     if (!previewElement) {
       ElMessage.error('找不到预览元素，请确保预览区域已正确显示');
       return;
@@ -1423,7 +1413,7 @@ async function submitFrontendGenerateThumbnail() {
     
     console.log('开始生成图片...');
     
-    // 使用html-to-image生成图片，添加字体相关配置
+    // 使用html-to-image生成图片，参考1s项目的成功做法
     const { toPng } = await import('html-to-image');
     const dataUrl = await toPng(previewElement, {
       quality: 0.95,
@@ -1604,7 +1594,7 @@ async function submitBatchFrontendGenerateThumbnail() {
       const batchPromises = batch.map(async (fontItem) => {
         try {
           // 直接使用页面中的批量预览元素
-          const batchPreviewElement = document.querySelector('.batch-preview');
+          const batchPreviewElement = document.querySelector('.batch-preview') as HTMLElement;
           if (!batchPreviewElement) {
             throw new Error('找不到批量预览元素');
           }
@@ -1625,7 +1615,7 @@ async function submitBatchFrontendGenerateThumbnail() {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
           
-          // 使用html-to-image生成图片，添加字体相关配置
+          // 使用html-to-image生成图片，参考1s项目的成功做法
           const { toPng } = await import('html-to-image');
           const dataUrl = await toPng(batchPreviewElement, {
             quality: 0.95,
@@ -1720,7 +1710,7 @@ function handleOperationCommand(command: string, row: any) {
       handleEdit(row);
       break;
     case 'preview':
-      handlePreview(row);
+      // handlePreview(row);
       break;
     case 'generate-thumbnail':
       handleGenerateThumbnail(row);
@@ -1787,16 +1777,21 @@ async function loadFontForPreview() {
     // 创建字体ID
     const fontId = `font_${Date.now()}`;
     
+    // 先下载字体文件，然后创建Blob URL（参考1s项目的成功做法）
+    const response = await fetch(currentRow.value.url);
+    const fontBlob = await response.blob();
+    const fontBlobUrl = URL.createObjectURL(fontBlob);
+    
     // 创建字体样式标签
     const fontStyle = document.createElement("style");
     fontStyle.innerHTML = `
       @font-face {
         font-family: ${fontId};
-        src: url("${currentRow.value.url}") format("woff2"), 
-             url("${currentRow.value.url}") format("woff"),
-             url("${currentRow.value.url}") format("truetype"),
-             url("${currentRow.value.url}") format("opentype");
-        font-display: swap;
+        src: url("${fontBlobUrl}") format("woff2"), 
+             url("${fontBlobUrl}") format("woff"),
+             url("${fontBlobUrl}") format("truetype"),
+             url("${fontBlobUrl}") format("opentype");
+        font-display: block;
       }
     `;
     
@@ -1807,18 +1802,22 @@ async function loadFontForPreview() {
     console.log('等待字体加载...');
     await document.fonts.ready;
     
-    // 检查字体是否真的加载成功
-    const fontFace = new FontFace(fontId, `url(${currentRow.value.url})`);
+    // 使用FontFace API检查字体加载状态
+    const fontFace = new FontFace(fontId, `url(${fontBlobUrl})`);
     await fontFace.load();
     
-    // 将字体添加到字体集合
-    document.fonts.add(fontFace);
+    // 将字体添加到字体集合（兼容性处理）
+    try {
+      (document.fonts as any).add(fontFace);
+    } catch (error) {
+      console.warn('FontFace API add方法不支持，跳过:', error);
+    }
     
     // 设置字体名称
     loadedFontFamily.value = fontId;
     
     // 强制触发字体重新渲染
-    const previewElement = document.querySelector('.single-preview');
+    const previewElement = document.querySelector('.single-preview') as HTMLElement;
     if (previewElement) {
       previewElement.style.fontFamily = fontId;
       // 触发重排
@@ -1859,16 +1858,21 @@ async function loadBatchFontForPreview() {
     // 创建字体ID
     const fontId = `batch_font_${Date.now()}`;
     
+    // 先下载字体文件，然后创建Blob URL（参考1s项目的成功做法）
+    const response = await fetch(batchThumbnailForm.value.fontUrl);
+    const fontBlob = await response.blob();
+    const fontBlobUrl = URL.createObjectURL(fontBlob);
+    
     // 创建字体样式标签
     const fontStyle = document.createElement("style");
     fontStyle.innerHTML = `
       @font-face {
         font-family: ${fontId};
-        src: url("${batchThumbnailForm.value.fontUrl}") format("woff2"), 
-             url("${batchThumbnailForm.value.fontUrl}") format("woff"),
-             url("${batchThumbnailForm.value.fontUrl}") format("truetype"),
-             url("${batchThumbnailForm.value.fontUrl}") format("opentype");
-        font-display: swap;
+        src: url("${fontBlobUrl}") format("woff2"), 
+             url("${fontBlobUrl}") format("woff"),
+             url("${fontBlobUrl}") format("truetype"),
+             url("${fontBlobUrl}") format("opentype");
+        font-display: block;
       }
     `;
     
@@ -1879,18 +1883,22 @@ async function loadBatchFontForPreview() {
     console.log('等待批量字体加载...');
     await document.fonts.ready;
     
-    // 检查字体是否真的加载成功
-    const fontFace = new FontFace(fontId, `url(${batchThumbnailForm.value.fontUrl})`);
+    // 使用FontFace API检查字体加载状态
+    const fontFace = new FontFace(fontId, `url(${fontBlobUrl})`);
     await fontFace.load();
     
-    // 将字体添加到字体集合
-    document.fonts.add(fontFace);
+    // 将字体添加到字体集合（兼容性处理）
+    try {
+      (document.fonts as any).add(fontFace);
+    } catch (error) {
+      console.warn('FontFace API add方法不支持，跳过:', error);
+    }
     
     // 设置字体名称
     batchLoadedFontFamily.value = fontId;
     
     // 强制触发字体重新渲染
-    const batchPreviewElement = document.querySelector('.batch-preview');
+    const batchPreviewElement = document.querySelector('.batch-preview') as HTMLElement;
     if (batchPreviewElement) {
       batchPreviewElement.style.fontFamily = fontId;
       // 触发重排
@@ -1941,61 +1949,6 @@ async function reloadFont() {
   }
 }
 
-// 测试字体渲染
-async function testFontRendering() {
-  if (!loadedFontFamily.value) {
-    ElMessage.warning('请先加载字体');
-    return;
-  }
-  
-  try {
-    // 创建一个测试元素
-    const testElement = document.createElement('div');
-    testElement.style.cssText = `
-      position: fixed;
-      top: -1000px;
-      left: -1000px;
-      font-family: ${loadedFontFamily.value};
-      font-size: 48px;
-      color: #000;
-      background: white;
-      padding: 20px;
-      border: 2px solid #333;
-      z-index: 9999;
-    `;
-    testElement.textContent = '字体测试 ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n你好世界字体设计';
-    
-    document.body.appendChild(testElement);
-    
-    // 等待字体渲染
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // 使用html-to-image生成测试图片
-    const { toPng } = await import('html-to-image');
-    const testImage = await toPng(testElement, {
-      quality: 0.95,
-      backgroundColor: 'white',
-      fontEmbedCSS: true,
-      waitForFonts: true
-    });
-    
-    // 清理测试元素
-    document.body.removeChild(testElement);
-    
-    // 显示测试结果
-    ElMessage.success('字体渲染测试完成，请检查生成的图片是否包含正确的字体效果');
-    
-    // 可选：下载测试图片
-    const link = document.createElement('a');
-    link.href = testImage;
-    link.download = 'font_test.png';
-    link.click();
-    
-  } catch (error) {
-    console.error('字体渲染测试失败:', error);
-    ElMessage.error('字体渲染测试失败');
-  }
-}
 
 </script>
 
