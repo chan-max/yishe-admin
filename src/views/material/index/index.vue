@@ -48,6 +48,13 @@
           <el-option label="否" :value="false" />
         </el-select>
       </form-item>
+      <form-item label="侵权状态">
+        <el-select v-model="queryParams.isInfringement" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
+          <el-option label="全部" :value="null" />
+          <el-option label="侵权" :value="true" />
+          <el-option label="非侵权" :value="false" />
+        </el-select>
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -80,6 +87,13 @@
             <el-option label="全部" :value="null" />
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="侵权状态">
+          <el-select v-model="queryParams.isInfringement" placeholder="请选择状态">
+            <el-option label="全部" :value="null" />
+            <el-option label="侵权" :value="true" />
+            <el-option label="非侵权" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="按时间查询">
@@ -133,6 +147,15 @@
                 size="small"
               >
                 {{ row.isCustom ? '是' : '否' }}
+              </el-tag>
+            </template>
+
+            <template #isInfringementSlot="{ row }">
+              <el-tag 
+                :type="row.isInfringement ? 'danger' : 'success'" 
+                size="small"
+              >
+                {{ row.isInfringement ? '侵权' : '非侵权' }}
               </el-tag>
             </template>
 
@@ -479,6 +502,12 @@
             {{ editForm.isCustom ? '是' : '否' }}
           </el-tag>
         </el-form-item>
+        <el-form-item label="侵权状态">
+          <el-select v-model="editForm.isInfringement" placeholder="请选择侵权状态" style="font-size:16px;height:48px;width:100%;">
+            <el-option label="非侵权" :value="false" />
+            <el-option label="侵权" :value="true" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
@@ -594,6 +623,7 @@ const queryParams = reactive({
   suffix: '', // 新增后缀参数
   id: '', // 新增ID精确查询参数
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
+  isInfringement: null, // 新增侵权状态过滤参数
 })
 
 // 展示模式
@@ -644,6 +674,12 @@ const gridOptions = ref({
       field: 'isCustom', 
       width: 100,
       slots: { default: 'isCustomSlot' }
+    },
+    { 
+      title: '侵权状态', 
+      field: 'isInfringement', 
+      width: 100,
+      slots: { default: 'isInfringementSlot' }
     },
     {
       title: '创建时间',
@@ -1052,7 +1088,7 @@ async function handleGeneratePhash(row) {
 }
 
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false })
+const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false, isInfringement: false })
 const editLoading = ref(false)
 
 // 图片预览相关状态
@@ -1065,7 +1101,8 @@ function handleEdit(row) {
     name: row.name, 
     description: row.description, 
     keywords: row.keywords,
-    isCustom: row.isCustom || false
+    isCustom: row.isCustom || false,
+    isInfringement: row.isInfringement || false
   }
   editDialogVisible.value = true
 }
