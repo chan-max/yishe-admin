@@ -360,27 +360,29 @@
               <!-- 字体预览会自动加载，无需手动点击 -->
             </div>
             <div class="preview-content compact">
-              <!-- 预览区域 -->
+              <!-- 预览区域 - 自适应高度 -->
               <div 
                 v-if="currentRow.url"
                 class="preview-image compact single-preview"
                 :style="{
-                  width: 'auto',
-                  height: 'auto',
-                  minWidth: '120px',
-                  minHeight: '60px',
-                  padding: '12px',
+                  width: '800px',
+                  minHeight: '400px',
+                  padding: '24px',
                   color: thumbnailForm.options.textColor,
                   fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
-                  backgroundColor: 'transparent',
+                  backgroundColor: 'white',
                   border: '1px dashed #d9d9d9',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   whiteSpace: 'pre-wrap',
-                  lineHeight: '1.3',
-                  fontFamily: loadedFontFamily || 'inherit'
+                  lineHeight: '1',
+                  fontFamily: loadedFontFamily || 'inherit',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }"
               >
-                <div style="margin-bottom: 8px; font-size: 10px; color: #909399;">
+                <!-- 状态信息区域 -->
+                <div style="margin-bottom: 8px; font-size: 10px; color: #909399; flex-shrink: 0;">
                   <i class="el-icon-info"></i> 
                   <span v-if="fontLoading">
                     <el-icon class="is-loading" style="margin-right: 4px;"><Loading /></el-icon>
@@ -389,7 +391,23 @@
                   <span v-else-if="!loadedFontFamily">等待加载字体预览...</span>
                   <span v-else>当前使用字体: {{ currentRow.name }}</span>
                 </div>
-                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+                
+                <!-- 文字内容区域 -->
+                <div 
+                  class="preview-text-content"
+                  :style="{
+                    flex: '1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    wordBreak: 'break-word',
+                    wordWrap: 'break-word'
+                  }"
+                >
+                  {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+                </div>
               </div>
               
               <!-- 默认预览区域 -->
@@ -397,30 +415,48 @@
                 v-else
                 class="preview-image compact"
                 :style="{
-                  width: 'auto',
-                  height: 'auto',
-                  minWidth: '120px',
-                  minHeight: '60px',
-                  padding: '12px',
+                  width: '800px',
+                  minHeight: '400px',
+                  padding: '24px',
                   color: thumbnailForm.options.textColor,
                   fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
-                  backgroundColor: 'transparent',
+                  backgroundColor: 'white',
                   border: '1px dashed #d9d9d9',
-                  borderRadius: '4px',
+                  borderRadius: '8px',
                   whiteSpace: 'pre-wrap',
-                  lineHeight: '1.3'
+                  lineHeight: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }"
               >
-                <div style="margin-bottom: 4px; font-size: 10px; color: #909399;">
+                <!-- 状态信息区域 -->
+                <div style="margin-bottom: 8px; font-size: 10px; color: #909399; flex-shrink: 0;">
                   <i class="el-icon-info"></i> 
                   <span v-if="!currentRow.url">请先选择字体模板</span>
                   <span v-else>当前预览使用系统默认字体</span>
                 </div>
-                {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+                
+                <!-- 文字内容区域 -->
+                <div 
+                  class="preview-text-content"
+                  :style="{
+                    flex: '1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    wordBreak: 'break-word',
+                    wordWrap: 'break-word'
+                  }"
+                >
+                  {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+                </div>
               </div>
             </div>
             <div style="margin-top: 6px; font-size: 10px; color: #909399; text-align: center;">
-              字体预览会自动加载，实时显示字体大小、颜色和字体样式
+              字体预览会自动加载，实时显示字体大小、颜色和字体样式（自适应高度，固定宽度800px，宽高比2:1）
             </div>
           </div>
         </el-form-item>
@@ -1129,6 +1165,9 @@ async function submitFrontendGenerateThumbnail() {
       return;
     }
     
+    // 确保预览元素有正确的尺寸
+    console.log('预览元素尺寸:', previewElement.offsetWidth, 'x', previewElement.offsetHeight);
+    
     // 确保字体完全加载和应用
     if (loadedFontFamily.value) {
       console.log('开始等待字体加载完成...');
@@ -1506,10 +1545,11 @@ async function loadFontForPreview() {
 }
 
 .preview-content.compact {
-  min-height: 80px;
+  min-height: 460px;
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  padding: 24px 0;
 }
 
 .preview-image {
@@ -1522,6 +1562,12 @@ async function loadFontForPreview() {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   word-break: break-word;
   word-wrap: break-word;
+  /* 自适应高度，固定宽度 */
+  width: 800px !important;
+  min-width: 800px !important;
+  max-width: 800px !important;
+  min-height: 400px !important;
+  height: auto !important;
 }
 
 .preview-image:hover {
@@ -1532,6 +1578,19 @@ async function loadFontForPreview() {
 .preview-image.compact:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-1px);
+}
+
+/* 文字内容区域样式 */
+.preview-text-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  word-break: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 
@@ -1562,9 +1621,36 @@ async function loadFontForPreview() {
     gap: 8px;
   }
   
-  .preview-image {
-    min-width: 100px !important;
-    min-height: 50px !important;
+  .preview-image.compact {
+    /* 在小屏幕上自适应高度 */
+    width: 640px !important;
+    min-width: 640px !important;
+    max-width: 640px !important;
+    min-height: 320px !important;
+    height: auto !important;
+  }
+  
+  .preview-content.compact {
+    min-height: 380px;
+    padding: 20px 0;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-image.compact {
+    /* 在更小的屏幕上自适应高度 */
+    width: 520px !important;
+    min-width: 520px !important;
+    max-width: 520px !important;
+    min-height: 260px !important;
+    height: auto !important;
+  }
+  
+  .preview-content.compact {
+    min-height: 320px;
+    padding: 16px 0;
+    align-items: flex-start;
   }
 }
 </style>
