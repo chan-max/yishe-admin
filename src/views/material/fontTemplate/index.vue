@@ -443,6 +443,102 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="Canvas预览">
+          <div class="preview-container compact">
+            <div class="preview-header compact">
+              <span>Canvas元素预览</span>
+              <div v-if="frontendGenerateLoading" class="font-loading-indicator">
+                <el-icon class="is-loading" style="margin-right: 4px; color: #409EFF;"><Loading /></el-icon>
+                <span style="color: #409EFF; font-size: 12px;">正在生成Canvas...</span>
+              </div>
+            </div>
+            <div class="preview-content compact">
+              <!-- Canvas元素始终存在，但根据状态显示不同样式 -->
+              <div 
+                class="canvas-display-area"
+                :style="generatedCanvas ? {
+                  width: 'auto',
+                  height: 'auto',
+                  minWidth: '120px',
+                  minHeight: '60px',
+                  padding: '12px',
+                  border: '2px solid #409EFF',
+                  borderRadius: '8px',
+                  background: '#f8f9fa',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                } : {
+                  width: 'auto',
+                  height: 'auto',
+                  minWidth: '120px',
+                  minHeight: '60px',
+                  padding: '12px',
+                  border: '1px dashed #d9d9d9',
+                  borderRadius: '4px',
+                  background: '#fafafa',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  color: '#909399',
+                  fontSize: '12px'
+                }"
+              >
+                <!-- Canvas元素始终渲染 -->
+                <canvas 
+                  ref="canvasDisplay"
+                  :width="canvasWidth"
+                  :height="canvasHeight"
+                  :style="generatedCanvas ? {
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    display: 'block'
+                  } : {
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '4px',
+                    opacity: '0.3',
+                    display: 'block'
+                  }"
+                ></canvas>
+                
+                <!-- 默认提示覆盖层，当未生成时显示 -->
+                <div 
+                  v-if="!generatedCanvas"
+                  style="
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    text-align: center;
+                    pointer-events: none;
+                  "
+                >
+                  <el-icon style="font-size: 24px; margin-bottom: 8px; color: #c0c4cc;"><Picture /></el-icon>
+                  <div>点击"预览字体到Canvas"按钮显示字体预览</div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 6px; font-size: 10px; color: #909399; text-align: center;">
+              Canvas元素将显示在页面上，方便查看生成效果
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+              <el-button 
+                size="small" 
+                type="info" 
+                @click="testCanvasDisplay"
+                style="font-size: 11px; padding: 4px 8px;"
+              >
+                预览字体到Canvas
+              </el-button>
+            </div>
+          </div>
+        </el-form-item>
+
         <el-form-item label="字体状态检查">
           <div style="padding: 12px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;">
             <div style="margin-bottom: 8px; font-size: 13px; color: #92400e; font-weight: 500;">字体加载状态：</div>
@@ -719,7 +815,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watchEffect, nextTick } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -929,6 +1025,12 @@ const loadedFontFamily = ref('');
 const batchFontLoading = ref(false);
 const batchLoadedFontFamily = ref('');
 
+// Canvas显示相关状态
+const generatedCanvas = ref(false);
+const canvasWidth = ref(400);
+const canvasHeight = ref(300);
+const canvasDisplay = ref<HTMLCanvasElement>();
+
 // 批量生成缩略图预览相关
 
 async function getList() {
@@ -1038,6 +1140,92 @@ const dialogClose = () => {
   submitLoading.value = false;
 };
 
+// 测试Canvas显示功能 - 直接显示字体预览内容
+const testCanvasDisplay = async () => {
+  console.log('测试Canvas显示功能 - 显示字体预览内容');
+  console.log('canvasDisplay.value:', canvasDisplay.value);
+  console.log('generatedCanvas.value:', generatedCanvas.value);
+  
+  // 获取字体预览元素
+  const previewElement = document.querySelector('.single-preview') as HTMLElement;
+  if (!previewElement) {
+    ElMessage.error('找不到字体预览元素，请确保预览区域已正确显示');
+    return;
+  }
+  
+  try {
+    // 使用html-to-image生成canvas
+    const { toCanvas } = await import('html-to-image');
+    const canvas = await toCanvas(previewElement, {
+      backgroundColor: 'white',
+      width: previewElement.scrollWidth,
+      height: previewElement.scrollHeight,
+      filter: (node) => true,
+      fontEmbedCSS: true,
+      waitForFonts: true,
+      cacheBust: true,
+      useCORS: true
+    });
+    
+    console.log('测试Canvas生成完成，尺寸:', canvas.width, 'x', canvas.height);
+    
+    // 等待下一个tick确保DOM更新
+    await nextTick();
+    console.log('nextTick后 canvasDisplay.value:', canvasDisplay.value);
+    
+    if (canvasDisplay.value) {
+      const ctx = canvasDisplay.value.getContext('2d');
+      console.log('测试获取canvas context:', ctx);
+      
+      if (ctx) {
+        console.log('测试canvas当前尺寸:', canvasDisplay.value.width, 'x', canvasDisplay.value.height);
+        
+        // 先更新Vue响应式数据
+        canvasWidth.value = canvas.width;
+        canvasHeight.value = canvas.height;
+        
+        // 等待Vue更新DOM
+        await nextTick();
+        
+        // 设置canvas尺寸（这会重置上下文）
+        canvasDisplay.value.width = canvas.width;
+        canvasDisplay.value.height = canvas.height;
+        
+        console.log('测试设置canvas尺寸后:', canvasDisplay.value.width, 'x', canvasDisplay.value.height);
+        
+        // 重新获取上下文
+        const newCtx = canvasDisplay.value.getContext('2d');
+        if (newCtx) {
+          // 清空canvas
+          newCtx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // 将生成的canvas内容绘制到显示用的canvas上
+          newCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+          
+          console.log('测试Canvas绘制完成');
+          
+          // 标记canvas已生成
+          generatedCanvas.value = true;
+          
+          ElMessage.success('Canvas测试绘制完成，显示的是字体预览内容');
+        } else {
+          console.error('测试重新获取canvas context失败');
+          ElMessage.error('测试重新获取canvas context失败');
+        }
+      } else {
+        console.error('无法获取canvas context');
+        ElMessage.error('无法获取canvas context');
+      }
+    } else {
+      console.error('canvasDisplay.value 为空');
+      ElMessage.error('canvasDisplay.value 为空，请检查DOM元素');
+    }
+  } catch (error) {
+    console.error('测试Canvas生成失败:', error);
+    ElMessage.error('测试Canvas生成失败: ' + error.message);
+  }
+};
+
 // 重置字体预览状态
 const resetFontPreview = () => {
   // 清理单个字体样式
@@ -1061,6 +1249,11 @@ const resetFontPreview = () => {
     });
     batchLoadedFontFamily.value = '';
   }
+  
+  // 重置Canvas显示状态
+  generatedCanvas.value = false;
+  canvasWidth.value = 400;
+  canvasHeight.value = 300;
 };
 
 function checkboxChange(e) {
@@ -1413,10 +1606,9 @@ async function submitFrontendGenerateThumbnail() {
     
     console.log('开始生成图片...');
     
-    // 使用html-to-image生成图片，参考1s项目的成功做法
-    const { toPng } = await import('html-to-image');
-    const dataUrl = await toPng(previewElement, {
-      quality: 0.95,
+    // 使用html-to-image生成canvas，参考1s项目的成功做法
+    const { toCanvas } = await import('html-to-image');
+    const canvas = await toCanvas(previewElement, {
       backgroundColor: 'white',
       width: previewElement.scrollWidth,
       height: previewElement.scrollHeight,
@@ -1435,11 +1627,74 @@ async function submitFrontendGenerateThumbnail() {
       useCORS: true
     });
     
-    console.log('图片生成完成');
+    console.log('Canvas生成完成，开始导出PNG...');
     
-    // 将base64转换为文件
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
+    // 显示Canvas到页面上 - 直接显示字体预览内容
+    console.log('准备显示Canvas到页面，canvasDisplay.value:', canvasDisplay.value);
+    
+    // 等待下一个tick确保DOM更新
+    await nextTick();
+    console.log('nextTick后 canvasDisplay.value:', canvasDisplay.value);
+    
+    if (canvasDisplay.value) {
+      const ctx = canvasDisplay.value.getContext('2d');
+      console.log('获取到canvas context:', ctx);
+      if (ctx) {
+        console.log('原始canvas尺寸:', canvas.width, 'x', canvas.height);
+        console.log('显示canvas当前尺寸:', canvasDisplay.value.width, 'x', canvasDisplay.value.height);
+        
+        // 先更新Vue响应式数据
+        canvasWidth.value = canvas.width;
+        canvasHeight.value = canvas.height;
+        
+        // 等待Vue更新DOM
+        await nextTick();
+        
+        // 然后设置canvas的实际尺寸（这会重置上下文，所以要在绘制前设置）
+        canvasDisplay.value.width = canvas.width;
+        canvasDisplay.value.height = canvas.height;
+        
+        console.log('设置canvas尺寸后:', canvasDisplay.value.width, 'x', canvasDisplay.value.height);
+        
+        // 重新获取上下文（因为设置width/height会重置上下文）
+        const newCtx = canvasDisplay.value.getContext('2d');
+        if (newCtx) {
+          // 清空canvas
+          newCtx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          // 将生成的canvas内容绘制到显示用的canvas上
+          newCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+          
+          console.log('Canvas绘制完成');
+          
+          // 标记canvas已生成
+          generatedCanvas.value = true;
+          
+          console.log('Canvas已显示在页面上，generatedCanvas.value:', generatedCanvas.value);
+          
+          // 强制Vue重新渲染
+          await nextTick();
+        } else {
+          console.error('重新获取canvas context失败');
+        }
+      } else {
+        console.error('无法获取canvas context');
+      }
+    } else {
+      console.error('canvasDisplay.value 为空，无法显示Canvas');
+    }
+    
+    // 将canvas导出为PNG blob
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject(new Error('Canvas导出失败'));
+        }
+      }, 'image/png', 0.95);
+    });
+    
     const file = new File([blob], `${currentRow.value.name || 'font'}_thumbnail.png`, { type: 'image/png' });
     
     // 上传到COS
@@ -1452,8 +1707,9 @@ async function submitFrontendGenerateThumbnail() {
       thumbnail: url
     });
     
-    ElMessage.success('前端缩略图生成成功');
-    generateThumbnailDialogVisible.value = false;
+    ElMessage.success('前端缩略图生成成功，Canvas已显示在页面上');
+    // 不关闭弹窗，让用户可以看到Canvas预览
+    // generateThumbnailDialogVisible.value = false;
     getList(); // 刷新列表
     
   } catch (error) {
@@ -1615,10 +1871,9 @@ async function submitBatchFrontendGenerateThumbnail() {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
           
-          // 使用html-to-image生成图片，参考1s项目的成功做法
-          const { toPng } = await import('html-to-image');
-          const dataUrl = await toPng(batchPreviewElement, {
-            quality: 0.95,
+          // 使用html-to-image生成canvas，参考1s项目的成功做法
+          const { toCanvas } = await import('html-to-image');
+          const canvas = await toCanvas(batchPreviewElement, {
             backgroundColor: 'white',
             width: batchPreviewElement.scrollWidth,
             height: batchPreviewElement.scrollHeight,
@@ -1633,9 +1888,79 @@ async function submitBatchFrontendGenerateThumbnail() {
             waitForFonts: true
           });
           
-          // 将base64转换为文件
-          const response = await fetch(dataUrl);
-          const blob = await response.blob();
+          // 显示Canvas到页面上（显示最后一个处理的字体预览内容）
+          if (batchIndex === batches.length - 1 && batch.indexOf(fontItem) === batch.length - 1) {
+            console.log('准备显示批量Canvas到页面，canvasDisplay.value:', canvasDisplay.value);
+            
+            // 等待下一个tick确保DOM更新
+            await nextTick();
+            console.log('nextTick后批量 canvasDisplay.value:', canvasDisplay.value);
+            
+            if (canvasDisplay.value) {
+              const ctx = canvasDisplay.value.getContext('2d');
+              console.log('获取到批量canvas context:', ctx);
+              if (ctx) {
+                console.log('批量原始canvas尺寸:', canvas.width, 'x', canvas.height);
+                console.log('批量显示canvas当前尺寸:', canvasDisplay.value.width, 'x', canvasDisplay.value.height);
+                
+                // 先更新Vue响应式数据
+                canvasWidth.value = canvas.width;
+                canvasHeight.value = canvas.height;
+                
+                // 等待Vue更新DOM
+                await nextTick();
+                
+                // 然后设置canvas的实际尺寸（这会重置上下文，所以要在绘制前设置）
+                canvasDisplay.value.width = canvas.width;
+                canvasDisplay.value.height = canvas.height;
+                
+                console.log('批量设置canvas尺寸后:', canvasDisplay.value.width, 'x', canvasDisplay.value.height);
+                
+                // 重新获取上下文（因为设置width/height会重置上下文）
+                const newCtx = canvasDisplay.value.getContext('2d');
+                if (newCtx) {
+                  // 清空canvas
+                  newCtx.clearRect(0, 0, canvas.width, canvas.height);
+                  
+                  // 将生成的canvas内容绘制到显示用的canvas上
+                  newCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+                  
+                  console.log('批量Canvas绘制完成');
+                  
+                  // 标记canvas已生成
+                  generatedCanvas.value = true;
+                  
+                  console.log('批量Canvas已显示在页面上，generatedCanvas.value:', generatedCanvas.value);
+                  
+                  // 强制Vue重新渲染
+                  await nextTick();
+                } else {
+                  console.error('批量重新获取canvas context失败');
+                }
+              } else {
+                console.error('无法获取批量canvas context');
+              }
+            } else {
+              console.error('批量canvasDisplay.value 为空，无法显示Canvas');
+            }
+          } else {
+            console.log('跳过批量Canvas显示，条件不满足:', {
+              isLastBatch: batchIndex === batches.length - 1,
+              isLastItem: batch.indexOf(fontItem) === batch.length - 1
+            });
+          }
+          
+          // 将canvas导出为PNG blob
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Canvas导出失败'));
+              }
+            }, 'image/png', 0.95);
+          });
+          
           const file = new File([blob], `${fontItem.name || 'font'}_thumbnail.png`, { type: 'image/png' });
           
           // 上传到COS
