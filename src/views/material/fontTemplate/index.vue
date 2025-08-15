@@ -19,7 +19,14 @@
         >
           批量AI补全 ({{ ids.length }})
         </el-button>
-
+        <el-button 
+          type="danger" 
+          @click="handleBatchDelete"
+          :disabled="!ids.length"
+          :loading="batchDeleteLoading"
+        >
+          批量删除 ({{ ids.length }})
+        </el-button>
       </div>
     </div>
 
@@ -695,6 +702,9 @@ const batchProgress = ref({
   failed: 0
 });
 
+// 批量删除相关
+const batchDeleteLoading = ref(false);
+
 // 生成缩略图相关
 const generateThumbnailDialogVisible = ref(false);
 const generateThumbnailLoading = ref(false);
@@ -754,6 +764,7 @@ function resetQuery() {
   getList();
 }
 
+// 单个删除功能
 function handleDelete(row?) {
   let delIds: any = null;
   if (row) {
@@ -776,6 +787,46 @@ function handleDelete(row?) {
       getList();
     })
     .catch(() => {});
+}
+
+// 批量删除功能
+async function handleBatchDelete() {
+  if (!ids.value.length) {
+    ElMessage.warning('请先选择要删除的数据');
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认删除选中的 ${ids.value.length} 个字体模板吗？\n\n删除后将同时删除：\n• 字体文件\n• 缩略图\n\n此操作不可恢复！`, 
+      "批量删除确认", 
+      {
+        confirmButtonText: "确认删除",
+        cancelButtonText: "取消",
+        type: "warning",
+        dangerouslyUseHTMLString: true
+      }
+    );
+
+    batchDeleteLoading.value = true;
+    
+    // 调用删除API
+    await fontTemplateApi.deleteFontTemplate({ ids: ids.value });
+    
+    ElMessage.success(`成功删除 ${ids.value.length} 个字体模板`);
+    
+    // 清空选择并刷新列表
+    ids.value = [];
+    getList();
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('批量删除失败:', error);
+      ElMessage.error('批量删除失败，请稍后重试');
+    }
+  } finally {
+    batchDeleteLoading.value = false;
+  }
 }
 
 function handleAdd() {
