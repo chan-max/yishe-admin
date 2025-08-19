@@ -286,6 +286,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/common-url',
+    component: Layout,
+    name: 'CommonUrl',
+    meta: {
+      title: '常用网址',
+      icon: 'ep:link',
+      order: 4,
+      alwaysShow: true   
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/material/commonUrl/index.vue'),
+        name: 'CommonUrlIndex',
+        meta: {
+          title: '网址管理',
+        }
+      },
+    ]
+  },
+  {
     path: '/system',
     component: Layout,
     name: 'System',
