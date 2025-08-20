@@ -188,7 +188,7 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: 'ID', field: 'id', width: 80 },
+    // { title: 'ID', field: 'id', width: 80 },
     { title: '网址名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     { title: '网址链接', field: 'url', minWidth: 300, slots: { default: 'urlSlot' } },
     { title: '详细描述', field: 'description', minWidth: 300, slots: { default: 'descriptionSlot' } },
