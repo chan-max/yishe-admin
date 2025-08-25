@@ -137,7 +137,7 @@
                 { field: 'description', title: '描述', minWidth: 120 },
                 { field: 'keywords', title: '关键词', minWidth: 100 },
                 { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 100, slots: { default: 'customModelOperationSlot' } }
+                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'customModelOperationSlot' } }
               ]"
             >
               <template #customModelThumbnailSlot="{ row }">
@@ -163,7 +163,18 @@
                 <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
               </template>
               <template #customModelOperationSlot="{ row }">
-                <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
+                <div class="flex gap-2">
+                  <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
+                  <el-button 
+                    v-if="row.thumbnail" 
+                    type="success" 
+                    link 
+                    size="small" 
+                    @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')"
+                  >
+                    下载缩略图
+                  </el-button>
+                </div>
               </template>
             </vxe-grid>
           </div>
@@ -697,7 +708,7 @@ import {
   Check,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
-import { downloadFileByElement } from "@/common/download";
+import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
 import { createProduct, getProductList, updateProduct, deleteProduct } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
@@ -1642,6 +1653,29 @@ function toggleVideoSelection(platform: string, url: string) {
     form.selectedVideos.splice(index, 1);
   } else {
     form.selectedVideos.push(url);
+  }
+}
+
+// 下载缩略图
+async function downloadThumbnail(url: string, filename: string) {
+  try {
+    ElMessage.info('正在准备下载...');
+    
+    const result = await downloadImageEnhanced(url, filename, {
+      showMessage: false, // 关闭通用方法的console消息，使用我们的ElMessage
+      fallbackToNewWindow: true
+    });
+    
+    if (result.success) {
+      ElMessage.success('下载完成');
+    } else if (result.fallback) {
+      ElMessage.warning(result.message);
+    } else {
+      ElMessage.error(result.message);
+    }
+  } catch (error) {
+    console.error('下载失败:', error);
+    ElMessage.error('下载失败，请重试');
   }
 }
 </script>

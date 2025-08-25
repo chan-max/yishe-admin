@@ -94,7 +94,11 @@ const download = {
     return new File([u8arr], `${fileName}.${suffix}`, {
       type: type
     })
-  }
+  },
+  
+
 }
+
+
 
 export default download

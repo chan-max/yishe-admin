@@ -1,5 +1,12 @@
 import { api as viewerApi } from "v-viewer";
 
+// 导出下载相关方法
+export {
+  downloadCrossOriginImage,
+  downloadFileByElement,
+  downloadImage,
+  downloadImageEnhanced
+} from './download';
 
 export async function singleImagePreview(url) {
   viewerApi({
