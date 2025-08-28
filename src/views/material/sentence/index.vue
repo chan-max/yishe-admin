@@ -58,6 +58,11 @@
             {{ row.description || '-' }}
           </div>
         </template>
+        <template #keywordsSlot="{ row }">
+          <div class="text-wrap" style="max-width: 200px; word-break: break-all;">
+            {{ row.keywords || '-' }}
+          </div>
+        </template>
         <template #createdAtSlot="{ row }">
           <span>{{ formatDateTime(row.createdAt) }}</span>
         </template>
@@ -107,6 +112,18 @@
               />
             </el-form-item>
           </el-col>
+          <el-col :span="24">
+            <el-form-item label="关键词" prop="keywords">
+              <el-input 
+                v-model="form.keywords" 
+                type="textarea" 
+                :rows="2"
+                placeholder="请输入关键词，多个关键词用逗号分隔（可选）" 
+                maxlength="200"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
       <template #footer>
@@ -145,6 +162,7 @@ const gridOptions = ref({
     { title: 'ID', field: 'id', width: 80 },
     { title: '句子内容', field: 'content', minWidth: 300, slots: { default: 'contentSlot' } },
     { title: '描述', field: 'description', minWidth: 200, slots: { default: 'descriptionSlot' } },
+    { title: '关键词', field: 'keywords', minWidth: 150, slots: { default: 'keywordsSlot' } },
     { title: '创建时间', field: 'createdAt', width: 160, slots: { default: 'createdAtSlot' } },
     { title: '更新时间', field: 'updatedAt', width: 160, slots: { default: 'updatedAtSlot' } },
     { title: '操作', fixed: 'right' as const, width: 120, slots: { default: 'operationDefaultSlot' } }
@@ -166,7 +184,8 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const form = ref({
   content: '',
-  description: ''
+  description: '',
+  keywords: ''
 })
 const submitLoading = ref(false)
 const aiPromptTop = ref('')
@@ -216,7 +235,8 @@ function handleAdd() {
   dialogTitle.value = '新增句子'
   form.value = {
     content: '',
-    description: ''
+    description: '',
+    keywords: ''
   }
 }
 
@@ -243,7 +263,8 @@ function handleEdit(row) {
   editId.value = row.id
   form.value = {
     content: row.content,
-    description: row.description || ''
+    description: row.description || '',
+    keywords: row.keywords || ''
   }
 }
 
@@ -286,7 +307,11 @@ async function handleAIGenerateAndAdd() {
   try {
     const res = await aiGenerateSentence({ prompt: aiPromptTop.value })
     if (res.content) {
-      await createSentence({ content: res.content, description: res.description || '' })
+      await createSentence({ 
+        content: res.content, 
+        description: res.description || '',
+        keywords: res.keywords || ''
+      })
       ElMessage.success('AI生成并添加成功')
       aiDialogVisible.value = false
       aiPromptTop.value = ''
@@ -308,6 +333,9 @@ const rules = {
   ],
   description: [
     { max: 500, message: '描述长度不能超过 500 个字符', trigger: 'blur' }
+  ],
+  keywords: [
+    { max: 200, message: '关键词长度不能超过 200 个字符', trigger: 'blur' }
   ]
 }
 
@@ -327,13 +355,15 @@ const submitForm = async () => {
     if (isEdit.value) {
       await updateSentence(editId.value, {
         content: form.value.content,
-        description: form.value.description
+        description: form.value.description,
+        keywords: form.value.keywords
       })
       ElMessage.success('更新成功')
     } else {
       await createSentence({
         content: form.value.content,
-        description: form.value.description
+        description: form.value.description,
+        keywords: form.value.keywords
       })
       ElMessage.success('新增成功')
     }
