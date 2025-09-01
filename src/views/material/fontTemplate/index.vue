@@ -1,7 +1,29 @@
 <template>
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
+      <!-- 搜索输入框 -->
+      <div class="flex items-center gap-2">
+        <el-input
+          v-model="queryParams.searchKeyword"
+          placeholder="搜索字体名称、描述、关键字"
+          style="width: 300px;"
+          clearable
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button type="primary" @click="handleSearch" :icon="Search">
+          搜索
+        </el-button>
+        <el-button @click="handleReset">
+          重置
+        </el-button>
+      </div>
+      
+      <!-- 日期范围选择器 -->
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -585,7 +607,8 @@ const queryParams = reactive({
   pageSize: 20,
   sortingFields: defaultSortingValue(),
   startTime: '',
-  endTime: ''
+  endTime: '',
+  searchKeyword: '' // 搜索关键字
 });
 
 const gridOptions = ref({
@@ -758,6 +781,21 @@ getList();
 // 操作函数
 function handleQuery() {
   queryParams.currentPage = 1;
+}
+
+// 搜索功能
+function handleSearch() {
+  queryParams.currentPage = 1;
+  getList();
+}
+
+// 重置功能
+function handleReset() {
+  queryParams.searchKeyword = '';
+  queryParams.startTime = '';
+  queryParams.endTime = '';
+  queryParams.currentPage = 1;
+  getList();
 }
 
 function resetQuery() {
