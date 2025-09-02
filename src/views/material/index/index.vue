@@ -5,8 +5,8 @@
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input
-          v-model="queryParams.imageName"
-          placeholder="请输入图片名称"
+          v-model="queryParams.keyword"
+          placeholder="请输入名称、描述或关键词"
           style="width: 160px"
           clearable
           @change="(val) => { if (!val) getList() }"
@@ -74,7 +74,7 @@
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
       <el-form :model="queryParams" label-width="80px">
         <el-form-item label="按名称搜索">
-          <el-input v-model="queryParams.imageName" placeholder="请输入图片名称" clearable />
+          <el-input v-model="queryParams.keyword" placeholder="请输入名称、描述或关键词" clearable />
         </el-form-item>
         <el-form-item label="排序">
           <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
@@ -651,7 +651,7 @@ const form = ref({})
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  imageName: '',
+  keyword: '',
   startTime: '',
   endTime: '',
   suffix: '', // 新增后缀参数
