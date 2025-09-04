@@ -90,6 +90,11 @@ export async function uploadToCOS({
   const cos = getCOS()
   try {
     console.log('开始上传文件到COS...')
+    console.log('文件对象:', file)
+    console.log('文件类型:', typeof file)
+    console.log('文件大小:', file?.size)
+    console.log('文件名称:', file?.name)
+    
     const res = await cos.uploadFile({
       Key: String(key),
       Body: file,

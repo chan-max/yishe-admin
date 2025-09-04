@@ -188,6 +188,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '图片素材'
         }
       },
+      {
+        path: 'clip-material',
+        component: () => import('@/views/material/clip-material/index.vue'),
+        name: 'ClipMaterial',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '剪辑素材'
+        }
+      },
 
       {
         path: 'draft',
