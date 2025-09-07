@@ -5,8 +5,8 @@
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input
-          v-model="queryParams.keyword"
-          placeholder="请输入名称、描述或关键词"
+          v-model="queryParams.imageName"
+          placeholder="请输入图片名称"
           style="width: 160px"
           clearable
           @change="(val) => { if (!val) getList() }"
@@ -62,6 +62,7 @@
       </form-item>
       <div class="flex shrink-0">
         <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete">批量删除({{ ids.length }})</el-button>
@@ -236,6 +237,77 @@
           @single-file-uploaded="singleFileUploaded"
         />
       </div>
+    </el-dialog>
+
+    <!-- URL上传弹窗 -->
+    <el-dialog
+      v-model="urlUploadModalVisible"
+      title="URL上传素材"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+      @close="resetUrlUploadForm"
+    >
+      <el-form
+        ref="urlUploadFormRef"
+        :model="urlUploadForm"
+        :rules="urlUploadFormRules"
+        label-width="80px"
+      >
+        <el-form-item label="图片URL" prop="url">
+          <el-input
+            v-model="urlUploadForm.url"
+            placeholder="请输入图片的完整URL地址"
+            style="width: 100%"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="文件名" prop="name">
+          <el-input
+            v-model="urlUploadForm.name"
+            placeholder="请输入文件名"
+            style="width: 100%"
+            clearable
+          />
+        </el-form-item>
+      </el-form>
+      
+      <!-- 预览区域 -->
+      <div class="preview-section">
+        <div class="preview-label">图片预览</div>
+        <div v-if="urlUploadForm.url && urlPreviewVisible" class="image-preview">
+          <img
+            :src="urlUploadForm.url"
+            alt="预览图片"
+            class="preview-image"
+            @error="handlePreviewError"
+            @load="handlePreviewLoad"
+          />
+          <div v-if="imageInfo" class="image-info">
+            <el-tag size="small" type="info">尺寸: {{ imageInfo.width }} × {{ imageInfo.height }}</el-tag>
+          </div>
+        </div>
+        <div v-else-if="urlUploadForm.url && !urlPreviewVisible" class="preview-error">
+          <el-icon size="32" color="#f56c6c">
+            <PictureFilled />
+          </el-icon>
+          <p>图片预览加载失败</p>
+          <p class="error-text">请检查URL是否正确</p>
+        </div>
+        <div v-else class="preview-placeholder">
+          <el-icon size="32" color="#c0c4cc">
+            <PictureFilled />
+          </el-icon>
+          <p>请输入图片URL后显示预览</p>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="urlUploadModalVisible = false">取消</el-button>
+          <el-button type="primary" :loading="urlUploadLoading" @click="handleUrlUpload">上传</el-button>
+        </div>
+      </template>
     </el-dialog>
 
     <!-- 制作设计模型弹窗 -->
@@ -609,6 +681,9 @@ import {
   aiJudgeInfringement // 新增AI判断侵权接口
 } from '@/api/material' // 实际接口导入
 
+import { uploadToCOS } from '@/api/cos'
+import { uploadMaterialFile } from '@/api/material'
+
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import CryptoJS from 'crypto-js'
@@ -621,7 +696,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document, Warning } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { getPsdTemplateList, getShopList } from '@/api/shop'
@@ -1272,6 +1347,175 @@ function handleOperationCommand(command: string, row: any) {
   }
 }
 
+// URL上传相关
+const urlUploadModalVisible = ref(false)
+const urlUploadLoading = ref(false)
+const urlUploadFormRef = ref()
+const urlPreviewVisible = ref(false)
+const imageInfo = ref(null)
+
+const urlUploadForm = reactive({
+  url: '',
+  name: '',
+  description: '',
+  keywords: '',
+  isCustom: false,
+  isInfringement: false
+})
+
+const urlUploadFormRules = {
+  url: [
+    { required: true, message: '请输入图片URL', trigger: 'blur' },
+    { 
+      pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i, 
+      message: '请输入有效的图片URL', 
+      trigger: 'blur' 
+    }
+  ],
+  name: [
+    { required: true, message: '请输入文件名', trigger: 'blur' }
+  ]
+}
+
+// 重置URL上传表单
+function resetUrlUploadForm() {
+  urlUploadForm.url = ''
+  urlUploadForm.name = ''
+  urlUploadForm.description = ''
+  urlUploadForm.keywords = ''
+  urlUploadForm.isCustom = false
+  urlUploadForm.isInfringement = false
+  urlPreviewVisible.value = false
+  imageInfo.value = null
+}
+
+// 监听URL变化，自动显示预览
+watch(() => urlUploadForm.url, (newUrl) => {
+  if (newUrl && isValidImageUrl(newUrl)) {
+    urlPreviewVisible.value = true
+    imageInfo.value = null
+  } else {
+    urlPreviewVisible.value = false
+    imageInfo.value = null
+  }
+})
+
+// 验证是否为有效的图片URL
+function isValidImageUrl(url) {
+  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i
+  return imageExtensions.test(url)
+}
+
+// 处理预览图片加载成功
+function handlePreviewLoad(event) {
+  const img = event.target
+  imageInfo.value = {
+    width: img.naturalWidth,
+    height: img.naturalHeight,
+    size: '未知'
+  }
+}
+
+// 处理预览图片加载失败
+function handlePreviewError() {
+  ElMessage.warning('图片预览加载失败，请检查URL是否正确')
+  urlPreviewVisible.value = false
+}
+
+// 从URL获取图片文件
+async function fetchImageFromUrl(url) {
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'image/*'
+      }
+    })
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    const contentType = response.headers.get('content-type')
+    if (!contentType || !contentType.startsWith('image/')) {
+      throw new Error('URL指向的不是图片文件')
+    }
+    
+    const blob = await response.blob()
+    
+    // 检查文件大小（限制10MB）
+    if (blob.size > 10 * 1024 * 1024) {
+      throw new Error('图片文件过大，请选择小于10MB的图片')
+    }
+    
+    // 从URL或content-type获取文件扩展名
+    let extension = 'jpg'
+    const urlMatch = url.match(/\.([a-zA-Z0-9]+)(\?.*)?$/i)
+    if (urlMatch) {
+      extension = urlMatch[1].toLowerCase()
+    } else if (contentType) {
+      const typeMatch = contentType.match(/image\/([a-zA-Z0-9]+)/i)
+      if (typeMatch) {
+        extension = typeMatch[1].toLowerCase()
+        if (extension === 'jpeg') extension = 'jpg'
+      }
+    }
+    
+    // 创建File对象
+    const fileName = urlUploadForm.name || `image_${Date.now()}.${extension}`
+    const file = new File([blob], fileName, { type: blob.type })
+    
+    return { file, extension }
+  } catch (error) {
+    console.error('获取图片失败:', error)
+    throw new Error(`获取图片失败: ${error.message}`)
+  }
+}
+
+// 处理URL上传
+async function handleUrlUpload() {
+  if (!urlUploadFormRef.value) return
+  
+  try {
+    // 验证表单
+    await urlUploadFormRef.value.validate()
+    
+    urlUploadLoading.value = true
+    
+    // 获取图片文件
+    const { file, extension } = await fetchImageFromUrl(urlUploadForm.url)
+    
+    // 上传到COS
+    const cos = await uploadToCOS({ file })
+    const { key, url } = cos
+    
+    // 上传到服务器
+    await uploadMaterialFile({
+      url,
+      name: urlUploadForm.name,
+      description: urlUploadForm.description,
+      keywords: urlUploadForm.keywords,
+      suffix: extension,
+      isCustom: urlUploadForm.isCustom,
+      isInfringement: urlUploadForm.isInfringement
+    })
+    
+    ElNotification.success('图片上传成功')
+    urlUploadModalVisible.value = false
+    resetUrlUploadForm()
+    
+    // 刷新列表
+    getList()
+    
+  } catch (error) {
+    console.error('URL上传失败:', error)
+    ElMessage.error(`上传失败: ${error.message}`)
+  } finally {
+    urlUploadLoading.value = false
+  }
+}
+
 </script>
 
 <style scoped>
@@ -1372,79 +1616,106 @@ h1 {
   flex: 1;
   overflow-y: auto;
 }
-</style>
 
-<style lang="less">
-.material-upload-dialog {
-  .el-dialog__body {
-    height: calc(100% - 40px);
-  }
+/* URL上传容器布局 */
+.url-upload-container {
+  display: flex;
+  gap: 20px;
+  min-height: 300px;
 }
 
-
-.design-model-dialog {
-  .el-dialog__body {
-    height: calc(100% - 40px);
-    padding: 0;
-  }
-  
-  .design-model-content {
-    padding: 16px;
-  }
-  
-  .dialog-footer {
-    padding: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .steps-indicator {
-    padding: 20px;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .step-content {
-    min-height: 400px;
-  }
-
-  /* 缩小步骤条样式 */
-  .el-steps {
-    margin-bottom: 12px !important;
-    padding: 0 !important;
-  }
-  .el-step__title {
-    font-size: 14px !important;
-  }
-  .el-step__description {
-    font-size: 12px !important;
-  }
-  .el-step {
-    min-width: 80px !important;
-    padding: 0 8px !important;
-  }
+.form-section {
+  flex: 1;
+  min-width: 0;
 }
 
-
+.preview-section {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
 .preview-label {
-  span {
-    font-size: 1.8em;
-    color: var(--el-color-primary);
-    font-weight: bold;
-  }
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: #606266;
+  font-size: 14px;
 }
 
-// 操作dropdown样式
-.operation-dropdown {
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    .el-icon {
-      margin-right: 4px;
-    }
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background-color: #fafafa;
+  padding: 16px;
+  min-height: 200px;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  object-fit: contain;
+}
+
+.image-info {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preview-placeholder,
+.preview-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  background-color: #fafafa;
+  padding: 16px;
+  min-height: 200px;
+  color: #909399;
+  text-align: center;
+}
+
+.preview-error {
+  color: #f56c6c;
+}
+
+.error-text {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.preview-placeholder p,
+.preview-error p {
+  margin: 8px 0 0 0;
+  font-size: 14px;
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .url-upload-container {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .preview-section {
+    min-height: 150px;
+  }
+  
+  .image-preview,
+  .preview-placeholder,
+  .preview-error {
+    min-height: 150px;
   }
 }
 </style>
