@@ -63,7 +63,6 @@
       <div class="flex shrink-0">
         <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } currentRow = null; genPicturesModalVisible = true }">制作套图({{ ids.length }})</el-button>
         <el-button type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete">批量删除({{ ids.length }})</el-button>
       </div>
@@ -239,10 +238,11 @@
       </div>
     </el-dialog>
 
+    <!-- 制作设计模型弹窗 -->
     <el-dialog
-      v-model="genPicturesModalVisible"
+      v-model="designModelModalVisible"
       draggable
-      title="制作套图"
+      title="制作设计模型"
       width="800px"
       align-center
       :destroy-on-close="true"
@@ -600,7 +600,6 @@ import {
   deleteAssetLibrary,
   checkAssetLibrary,
   pullAsset,
-  materialCreatePictures,
   materialDistribute,
   getMaterialDetail,
   handleDropMaterial,
@@ -768,7 +767,6 @@ const rules = {
   name: [{ required: true, message: '', trigger: 'blur' }]
 }
 
-const genPicturesModalVisible = ref(false)
 const designModelModalVisible = ref(false)
 
 // 设计模型相关
@@ -1038,8 +1036,6 @@ function singleFileUploaded() {
 /**
  * @group
  */
-
-const genPicturesFormRef = ref()
 
 const aiGenDialogVisible = ref(false)
 const aiGenPrompt = ref('')
