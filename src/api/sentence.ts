@@ -41,4 +41,11 @@ export function aiGenerateSentence(data) {
     url: '/sentences/ai-generate',
     data,
   });
+}
+
+export function aiAnalyzeSentence(id: number, prompt?: string) {
+  return request.post({
+    url: '/sentences/ai-analyze',
+    data: { id, prompt }
+  });
 } 

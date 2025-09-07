@@ -30,6 +30,28 @@
         <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd">生成并添加</el-button>
       </template>
     </el-dialog>
+
+    <!-- AI分析句子弹窗 -->
+    <el-dialog
+      v-model="aiAnalyzeDialogVisible"
+      title="AI分析句子"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的角度或要求（可选，留空则使用默认分析标准）</div>
+      <el-input
+        v-model="aiAnalyzePrompt"
+        type="textarea"
+        :rows="4"
+        placeholder="如：请重点关注句子的情感色彩和主题..."
+        style="font-size:16px;min-height:100px;width:100%;resize:vertical;"
+      />
+      <template #footer>
+        <el-button @click="aiAnalyzeDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiAnalyzeLoading" @click="submitAiAnalyzeDialog">确定</el-button>
+      </template>
+    </el-dialog>
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -43,9 +65,13 @@
             <el-button type="primary" link size="small" @click="handleEdit(row)">
               编辑
             </el-button>
+            <el-button type="success" link size="small" @click="handleAiAnalyze(row)" :loading="aiTableLoading?.[row?.id]">
+              AI分析
+            </el-button>
             <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
+            <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#409EFF;font-size:18px;" />
           </div>
         </template>
         <template #contentSlot="{ row }">
@@ -138,7 +164,7 @@
 import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Delete, Plus, Refresh, MagicStick } from '@element-plus/icons-vue'
-import { getSentenceList, createSentence, updateSentence, deleteSentence, aiGenerateSentence } from '@/api/sentence'
+import { getSentenceList, createSentence, updateSentence, deleteSentence, aiGenerateSentence, aiAnalyzeSentence } from '@/api/sentence'
 import { commonGridOptions } from '@/common/table'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
@@ -192,6 +218,13 @@ const aiPromptTop = ref('')
 const aiLoadingTop = ref(false)
 const aiDialogVisible = ref(false)
 const editId = ref<string | null>(null)
+
+// AI分析相关
+const aiAnalyzeDialogVisible = ref(false)
+const aiAnalyzePrompt = ref('')
+const aiAnalyzeLoading = ref(false)
+const aiTableLoading = ref<Record<string, boolean>>({})
+let aiAnalyzeRow = null
 
 // 格式化日期时间
 function formatDateTime(dateStr: string) {
@@ -323,6 +356,50 @@ async function handleAIGenerateAndAdd() {
     ElMessage.error('AI生成失败')
   } finally {
     aiLoadingTop.value = false
+  }
+}
+
+// AI分析句子
+function handleAiAnalyze(row) {
+  if (aiTableLoading.value[row.id]) return
+  aiAnalyzeRow = row
+  aiAnalyzePrompt.value = ''
+  aiAnalyzeDialogVisible.value = true
+}
+
+async function submitAiAnalyzeDialog() {
+  if (!aiAnalyzeRow) return
+  aiAnalyzeLoading.value = true
+  aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: true }
+  try {
+    await handleAiAnalyzeSentence(aiAnalyzeRow, () => {
+      aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: false }
+      aiAnalyzeLoading.value = false
+      aiAnalyzeDialogVisible.value = false
+      aiAnalyzeRow = null
+    }, aiAnalyzePrompt.value)
+  } catch (e) {
+    aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: false }
+    aiAnalyzeLoading.value = false
+    aiAnalyzeDialogVisible.value = false
+    aiAnalyzeRow = null
+  }
+}
+
+async function handleAiAnalyzeSentence(row, cb, prompt) {
+  try {
+    const res = await aiAnalyzeSentence(row.id, prompt || '')
+    // 更新行数据
+    if (res) {
+      row.description = res.description
+      row.keywords = res.keywords
+    }
+    ElMessage.success('AI分析完成')
+    if (typeof cb === 'function') cb()
+    getList()
+  } catch (e) {
+    ElMessage.error(`AI分析失败：${e.message || '未知错误'}`)
+    if (typeof cb === 'function') cb()
   }
 }
 
