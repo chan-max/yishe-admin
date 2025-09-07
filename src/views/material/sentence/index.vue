@@ -475,6 +475,45 @@ const submitForm = async () => {
   font-weight: 500;
 }
 
+/* 表格选中状态文字颜色优化 */
+:deep(.vxe-table .vxe-body--row.row--current) {
+  background-color: #f0f9ff !important;
+}
+
+:deep(.vxe-table .vxe-body--row.row--current .vxe-cell) {
+  color: #1f2937 !important;
+  font-weight: 500 !important;
+}
+
+:deep(.vxe-table .vxe-body--row.row--current .sentence-content) {
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+}
+
+:deep(.vxe-table .vxe-body--row.row--current .text-wrap) {
+  color: #374151 !important;
+  font-weight: 500 !important;
+}
+
+/* 表格悬停状态 */
+:deep(.vxe-table .vxe-body--row:hover) {
+  background-color: #f8fafc !important;
+}
+
+:deep(.vxe-table .vxe-body--row:hover .vxe-cell) {
+  color: #1f2937 !important;
+}
+
+/* 表格选中复选框样式 */
+:deep(.vxe-table .vxe-checkbox.is--checked .vxe-checkbox--icon) {
+  background-color: #409eff !important;
+  border-color: #409eff !important;
+}
+
+:deep(.vxe-table .vxe-checkbox.is--checked .vxe-checkbox--icon::after) {
+  color: #ffffff !important;
+}
+
 @media (max-width: 600px) {
   .pb-4.flex, .search-bar {
     flex-direction: column !important;
