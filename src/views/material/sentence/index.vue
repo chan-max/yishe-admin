@@ -191,7 +191,7 @@ const gridOptions = ref({
     { title: '关键词', field: 'keywords', minWidth: 150, slots: { default: 'keywordsSlot' } },
     { title: '创建时间', field: 'createdAt', width: 160, slots: { default: 'createdAtSlot' } },
     { title: '更新时间', field: 'updatedAt', width: 160, slots: { default: 'updatedAtSlot' } },
-    { title: '操作', fixed: 'right' as const, width: 120, slots: { default: 'operationDefaultSlot' } }
+    { title: '操作', fixed: 'right' as const, width: 160, slots: { default: 'operationDefaultSlot' } }
   ]
 } as any)
 
