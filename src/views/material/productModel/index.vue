@@ -10,7 +10,7 @@
       <el-button
         type="danger"
         :disabled="!ids.length"
-        @click="handleDelete"
+        @click="handleDelete(null)"
       >
         批量删除
       </el-button>
