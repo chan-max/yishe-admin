@@ -13,11 +13,24 @@
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+      <form-item label="发布状态">
+        <el-select v-model="queryParams.isPublish" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
+          <el-option label="全部" :value="null" />
+          <el-option label="已发布" :value="true" />
+          <el-option label="未发布" :value="false" />
+        </el-select>
+      </form-item>
       <el-button type="primary" :icon="Plus" @click="handleAdd">
         添加句子
       </el-button>
       <el-button type="success" :icon="MagicStick" @click="aiDialogVisible = true">
         AI生成新句子
+      </el-button>
+      <el-button type="warning" @click="handleBatchPublish" :disabled="!ids.length">
+        批量发布({{ ids.length }})
+      </el-button>
+      <el-button type="info" @click="handleBatchUnpublish" :disabled="!ids.length">
+        批量下架({{ ids.length }})
       </el-button>
       <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
         批量删除
@@ -61,16 +74,36 @@
         @checkbox-all="checkboxAllChange"
       >
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button type="success" link size="small" @click="handleAiAnalyze(row)" :loading="aiTableLoading?.[row?.id]">
-              AI分析
-            </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
+          <div class="flex items-center">
+            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+              <el-button type="primary" link size="small">
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="edit">
+                    <el-icon><Edit /></el-icon>
+                    编辑
+                  </el-dropdown-item>
+                  <el-dropdown-item command="ai-analyze">
+                    <el-icon><MagicStick /></el-icon>
+                    AI分析
+                  </el-dropdown-item>
+                  <el-dropdown-item command="publish" v-if="!row.isPublish">
+                    <el-icon><Upload /></el-icon>
+                    发布
+                  </el-dropdown-item>
+                  <el-dropdown-item command="unpublish" v-if="row.isPublish">
+                    <el-icon><Download /></el-icon>
+                    下架
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>
+                    <el-icon><Delete /></el-icon>
+                    删除
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#409EFF;font-size:18px;" />
           </div>
         </template>
@@ -88,6 +121,14 @@
           <div class="text-wrap" style="max-width: 200px; word-break: break-all;">
             {{ row.keywords || '-' }}
           </div>
+        </template>
+        <template #isPublishSlot="{ row }">
+          <el-tag 
+            :type="row.isPublish ? 'success' : 'info'" 
+            size="small"
+          >
+            {{ row.isPublish ? '已发布' : '未发布' }}
+          </el-tag>
         </template>
         <template #createdAtSlot="{ row }">
           <span>{{ formatDateTime(row.createdAt) }}</span>
@@ -150,6 +191,14 @@
               />
             </el-form-item>
           </el-col>
+          <el-col :span="24">
+            <el-form-item label="发布状态">
+              <el-select v-model="form.isPublish" placeholder="请选择发布状态" style="width: 100%">
+                <el-option label="未发布" :value="false" />
+                <el-option label="已发布" :value="true" />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
       <template #footer>
@@ -163,7 +212,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Delete, Plus, Refresh, MagicStick } from '@element-plus/icons-vue'
+import { Search, Delete, Plus, Refresh, MagicStick, ArrowDown, Edit, Upload, Download } from '@element-plus/icons-vue'
 import { getSentenceList, createSentence, updateSentence, deleteSentence, aiGenerateSentence, aiAnalyzeSentence } from '@/api/sentence'
 import { commonGridOptions } from '@/common/table'
 import FormItem from '@/components/Erp/formItem.vue'
@@ -175,7 +224,8 @@ const { height } = useWindowSize()
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  search: ''
+  search: '',
+  isPublish: null
 })
 
 const gridOptions = ref({
@@ -189,9 +239,10 @@ const gridOptions = ref({
     { title: '句子内容', field: 'content', minWidth: 300, slots: { default: 'contentSlot' } },
     { title: '描述', field: 'description', minWidth: 200, slots: { default: 'descriptionSlot' } },
     { title: '关键词', field: 'keywords', minWidth: 150, slots: { default: 'keywordsSlot' } },
+    { title: '发布状态', field: 'isPublish', width: 100, slots: { default: 'isPublishSlot' } },
     { title: '创建时间', field: 'createdAt', width: 160, slots: { default: 'createdAtSlot' } },
     { title: '更新时间', field: 'updatedAt', width: 160, slots: { default: 'updatedAtSlot' } },
-    { title: '操作', fixed: 'right' as const, width: 160, slots: { default: 'operationDefaultSlot' } }
+    { title: '操作', fixed: 'right' as const, width: 100, slots: { default: 'operationDefaultSlot' } }
   ]
 } as any)
 
@@ -211,7 +262,8 @@ const isEdit = ref(false)
 const form = ref({
   content: '',
   description: '',
-  keywords: ''
+  keywords: '',
+  isPublish: false
 })
 const submitLoading = ref(false)
 const aiPromptTop = ref('')
@@ -269,7 +321,8 @@ function handleAdd() {
   form.value = {
     content: '',
     description: '',
-    keywords: ''
+    keywords: '',
+    isPublish: false
   }
 }
 
@@ -297,7 +350,8 @@ function handleEdit(row) {
   form.value = {
     content: row.content,
     description: row.description || '',
-    keywords: row.keywords || ''
+    keywords: row.keywords || '',
+    isPublish: row.isPublish || false
   }
 }
 
@@ -403,6 +457,95 @@ async function handleAiAnalyzeSentence(row, cb, prompt) {
   }
 }
 
+// 发布句子
+async function handlePublish(row) {
+  try {
+    await updateSentence(row.id, {
+      isPublish: true
+    })
+    row.isPublish = true
+    ElMessage.success('发布成功')
+    getList()
+  } catch (e) {
+    ElMessage.error('发布失败')
+  }
+}
+
+// 下架句子
+async function handleUnpublish(row) {
+  try {
+    await updateSentence(row.id, {
+      isPublish: false
+    })
+    row.isPublish = false
+    ElMessage.success('下架成功')
+    getList()
+  } catch (e) {
+    ElMessage.error('下架失败')
+  }
+}
+
+// 批量发布
+async function handleBatchPublish() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要发布的句子')
+  }
+  
+  try {
+    const promises = ids.value.map(id => 
+      updateSentence(id, { isPublish: true })
+    )
+    await Promise.all(promises)
+    ElMessage.success(`成功发布 ${ids.value.length} 个句子`)
+    ids.value = []
+    getList()
+  } catch (e) {
+    ElMessage.error('批量发布失败')
+  }
+}
+
+// 批量下架
+async function handleBatchUnpublish() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要下架的句子')
+  }
+  
+  try {
+    const promises = ids.value.map(id => 
+      updateSentence(id, { isPublish: false })
+    )
+    await Promise.all(promises)
+    ElMessage.success(`成功下架 ${ids.value.length} 个句子`)
+    ids.value = []
+    getList()
+  } catch (e) {
+    ElMessage.error('批量下架失败')
+  }
+}
+
+// 处理dropdown操作命令
+function handleOperationCommand(command: string, row: any) {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'ai-analyze':
+      handleAiAnalyze(row);
+      break;
+    case 'publish':
+      handlePublish(row);
+      break;
+    case 'unpublish':
+      handleUnpublish(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    default:
+      console.warn('未知的操作命令:', command);
+  }
+}
+
 const rules = {
   content: [
     { required: true, message: '请输入句子内容', trigger: 'blur' },
@@ -433,14 +576,16 @@ const submitForm = async () => {
       await updateSentence(editId.value, {
         content: form.value.content,
         description: form.value.description,
-        keywords: form.value.keywords
+        keywords: form.value.keywords,
+        isPublish: form.value.isPublish
       })
       ElMessage.success('更新成功')
     } else {
       await createSentence({
         content: form.value.content,
         description: form.value.description,
-        keywords: form.value.keywords
+        keywords: form.value.keywords,
+        isPublish: form.value.isPublish
       })
       ElMessage.success('新增成功')
     }
@@ -510,5 +655,16 @@ const submitForm = async () => {
     max-width: 100%;
     margin: 0 4px;
   }
+}
+
+/* 操作列样式优化 */
+.operation-dropdown {
+  margin-right: 8px;
+}
+
+.table-operation-column {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 </style> 

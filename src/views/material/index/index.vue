@@ -55,6 +55,13 @@
           <el-option label="非侵权" :value="false" />
         </el-select>
       </form-item>
+      <form-item label="发布状态">
+        <el-select v-model="queryParams.isPublish" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
+          <el-option label="全部" :value="null" />
+          <el-option label="已发布" :value="true" />
+          <el-option label="未发布" :value="false" />
+        </el-select>
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -65,6 +72,8 @@
         <el-button type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+        <el-button type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
+        <el-button type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
@@ -94,6 +103,13 @@
             <el-option label="全部" :value="null" />
             <el-option label="侵权" :value="true" />
             <el-option label="非侵权" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="发布状态">
+          <el-select v-model="queryParams.isPublish" placeholder="请选择状态">
+            <el-option label="全部" :value="null" />
+            <el-option label="已发布" :value="true" />
+            <el-option label="未发布" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="按时间查询">
@@ -159,6 +175,15 @@
               </el-tag>
             </template>
 
+            <template #isPublishSlot="{ row }">
+              <el-tag 
+                :type="row.isPublish ? 'success' : 'info'" 
+                size="small"
+              >
+                {{ row.isPublish ? '已发布' : '未发布' }}
+              </el-tag>
+            </template>
+
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center">
                 <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
@@ -190,6 +215,14 @@
                       <el-dropdown-item command="generate-phash">
                         <el-icon><Key /></el-icon>
                         生成哈希
+                      </el-dropdown-item>
+                      <el-dropdown-item command="publish" v-if="!row.isPublish">
+                        <el-icon><Upload /></el-icon>
+                        发布
+                      </el-dropdown-item>
+                      <el-dropdown-item command="unpublish" v-if="row.isPublish">
+                        <el-icon><Download /></el-icon>
+                        下架
                       </el-dropdown-item>
                       <el-dropdown-item command="view-meta">
                         <el-icon><Document /></el-icon>
@@ -584,6 +617,12 @@
             <el-option label="侵权" :value="true" />
           </el-select>
         </el-form-item>
+        <el-form-item label="发布状态">
+          <el-select v-model="editForm.isPublish" placeholder="请选择发布状态" style="font-size:16px;height:48px;width:100%;">
+            <el-option label="未发布" :value="false" />
+            <el-option label="已发布" :value="true" />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
@@ -732,6 +771,7 @@ const queryParams = reactive({
   id: '', // 新增ID精确查询参数
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
+  isPublish: null, // 新增发布状态过滤参数
 })
 
 // 展示模式
@@ -788,6 +828,12 @@ const gridOptions = ref({
       field: 'isInfringement', 
       width: 100,
       slots: { default: 'isInfringementSlot' }
+    },
+    { 
+      title: '发布状态', 
+      field: 'isPublish', 
+      width: 100,
+      slots: { default: 'isPublishSlot' }
     },
     {
       title: '创建时间',
@@ -1254,8 +1300,70 @@ async function handleGeneratePhash(row) {
   }
 }
 
+// 发布贴纸
+async function handlePublish(row) {
+  try {
+    await updateAssetLibrary({ id: row.id, isPublish: true });
+    row.isPublish = true;
+    ElMessage.success('发布成功');
+    getList();
+  } catch (e) {
+    ElMessage.error('发布失败');
+  }
+}
+
+// 下架贴纸
+async function handleUnpublish(row) {
+  try {
+    await updateAssetLibrary({ id: row.id, isPublish: false });
+    row.isPublish = false;
+    ElMessage.success('下架成功');
+    getList();
+  } catch (e) {
+    ElMessage.error('下架失败');
+  }
+}
+
+// 批量发布
+async function handleBatchPublish() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要发布的素材');
+  }
+  
+  try {
+    const promises = ids.value.map(id => 
+      updateAssetLibrary({ id, isPublish: true })
+    );
+    await Promise.all(promises);
+    ElMessage.success(`成功发布 ${ids.value.length} 个素材`);
+    resetCheckStatus();
+    getList();
+  } catch (e) {
+    ElMessage.error('批量发布失败');
+  }
+}
+
+// 批量下架
+async function handleBatchUnpublish() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要下架的素材');
+  }
+  
+  try {
+    const promises = ids.value.map(id => 
+      updateAssetLibrary({ id, isPublish: false })
+    );
+    await Promise.all(promises);
+    ElMessage.success(`成功下架 ${ids.value.length} 个素材`);
+    resetCheckStatus();
+    getList();
+  } catch (e) {
+    ElMessage.error('批量下架失败');
+  }
+}
+
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false, isInfringement: false })
+const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false, isInfringement: false, isPublish: false })
 const editLoading = ref(false)
 
 // 图片预览相关状态
@@ -1269,7 +1377,8 @@ function handleEdit(row) {
     description: row.description, 
     keywords: row.keywords,
     isCustom: row.isCustom || false,
-    isInfringement: row.isInfringement || false
+    isInfringement: row.isInfringement || false,
+    isPublish: row.isPublish || false
   }
   editDialogVisible.value = true
 }
@@ -1336,6 +1445,12 @@ function handleOperationCommand(command: string, row: any) {
     case 'generate-phash':
       handleGeneratePhash(row);
       break;
+    case 'publish':
+      handlePublish(row);
+      break;
+    case 'unpublish':
+      handleUnpublish(row);
+      break;
     case 'view-meta':
       showMetaDetail(row.meta);
       break;
@@ -1360,7 +1475,8 @@ const urlUploadForm = reactive({
   description: '',
   keywords: '',
   isCustom: false,
-  isInfringement: false
+  isInfringement: false,
+  isPublish: false
 })
 
 const urlUploadFormRules = {
@@ -1385,6 +1501,7 @@ function resetUrlUploadForm() {
   urlUploadForm.keywords = ''
   urlUploadForm.isCustom = false
   urlUploadForm.isInfringement = false
+  urlUploadForm.isPublish = false
   urlPreviewVisible.value = false
   imageInfo.value = null
 }
@@ -1498,7 +1615,8 @@ async function handleUrlUpload() {
       keywords: urlUploadForm.keywords,
       suffix: extension,
       isCustom: urlUploadForm.isCustom,
-      isInfringement: urlUploadForm.isInfringement
+      isInfringement: urlUploadForm.isInfringement,
+      isPublish: urlUploadForm.isPublish
     })
     
     ElNotification.success('图片上传成功')
