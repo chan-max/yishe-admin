@@ -329,7 +329,6 @@ function handleAdd() {
 onMounted(getList)
 
 function checkboxChange(e) {
-  debugger
   const records = Array.isArray(e.records) ? e.records : []
   const reserves = Array.isArray(e.reserves) ? e.reserves : []
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
