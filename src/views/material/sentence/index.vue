@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+    <div class="pb-2 flex flex-wrap justify-end gap-2 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
       <div style="flex: 1"></div>
       <form-item label="按内容搜索">
@@ -602,12 +602,12 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
-.pb-4.flex, .search-bar {
-  gap: 16px;
+.pb-2.flex, .search-bar {
+  gap: 8px;
   flex-wrap: wrap;
   align-items: center;
 }
-.pb-4.flex > *, .search-bar > * {
+.pb-2.flex > *, .search-bar > * {
   margin-bottom: 0;
 }
 
@@ -624,17 +624,17 @@ const submitForm = async () => {
 
 
 @media (max-width: 600px) {
-  .pb-4.flex, .search-bar {
+  .pb-2.flex, .search-bar {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 8px !important;
-    padding-bottom: 8px !important;
+    gap: 6px !important;
+    padding-bottom: 6px !important;
   }
-  .pb-4.flex > *, .search-bar > * {
+  .pb-2.flex > *, .search-bar > * {
     width: 100% !important;
     min-width: 0 !important;
     margin-right: 0 !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 6px !important;
   }
   .el-input,
   .el-select,
