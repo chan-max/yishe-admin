@@ -18,6 +18,8 @@ export interface DesignModelVO {
   createTime?: Date
   updateTime?: Date
   keywords?: string
+  isTemplate?: boolean
+  isPublic?: boolean
   // 可根据后端返回字段补充
 }
 
