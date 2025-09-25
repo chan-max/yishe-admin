@@ -155,44 +155,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import {
-  Plus,
   Close,
   Loading,
-  Upload,
   UploadFilled,
-  PictureFilled,
-  TopRight
+  PictureFilled
 } from '@element-plus/icons-vue'
-import { useDebounceFn } from '@vueuse/core'
-import { throttleLoop, throttleLoopWithRAF } from '@/common/render'
-import { getMaterialMaxOrder, uploadMaterialFile } from '@/api/material'
-import { useUserStore } from '@/store/modules/user'
-import { VxeRadioGroup } from 'vxe-pc-ui'
-import { getImageDimensionsViaImageBitmap } from '@/common/img'
+import { uploadMaterialFile } from '@/api/material'
 import { uploadToCOS } from '@/api/cos'
 
-const props = defineProps({
+defineProps({
   currentUploadInfo: {
-    default: {}
+    type: Object,
+    default: () => ({ path: '' })
   }
 })
-
-const userStore = useUserStore()
 
 // 文件列表
 const fileList = ref([])
 
 const emits = defineEmits(['single-file-uploaded'])
-
-enum UploadStatus {
-  Waiting = 'waiting',
-  Uploading = 'uploading',
-  Success = 'success',
-  Fail = 'fail'
-}
 
 const usePreview = ref(true)
 
@@ -282,7 +266,7 @@ const uploadFile = async (file) => {
     const cos = await uploadToCOS({
       file: file.raw
     })
-    const { key, url } = cos
+    const { url } = cos
     // 自动识别文件后缀
     let suffix = ''
     if (file.raw && file.raw.name) {
@@ -311,6 +295,7 @@ const uploadFile = async (file) => {
 .multi-image-upload-container {
   display: flex;
   height: 100%;
+  max-height: 86vh;
   /* 设置高度为 100% */
   width: 100%;
   /* 设置宽度为 100% */
@@ -324,6 +309,8 @@ const uploadFile = async (file) => {
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 10px;
+  max-height: 81vh;
+  min-height: 720px;
 }
 
 .image-preview-list {
@@ -331,17 +318,19 @@ const uploadFile = async (file) => {
   flex-wrap: wrap;
   justify-content: start;
   gap: 10px;
+  align-content: flex-start;
 }
 
 .image-preview-item {
   position: relative;
   width: 200px;
-  /* height: 440px; */
+  height: 400px;
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .preview-image {
@@ -444,7 +433,7 @@ const uploadFile = async (file) => {
   font-size: 11px;
   width: 100%;
   height: 180px;
-  overflow: hidden;
+  overflow-y: auto;
   text-overflow: ellipsis;
   display: block;
   background: #000;
