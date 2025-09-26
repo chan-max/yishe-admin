@@ -23,7 +23,7 @@
             :alt="alt"
             class="image-preview-img"
             :style="imageStyle"
-            @click="close"
+            @click="handleImageClick"
             @load="handleImageLoad"
             @error="handleImageError"
             @wheel="handleWheel"
@@ -114,6 +114,7 @@ const translateX = ref(0)
 const translateY = ref(0)
 const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0 })
+const hasDragged = ref(false)
 const imageRef = ref<HTMLImageElement>()
 
 // 计算属性
@@ -131,7 +132,14 @@ const close = () => {
 
 const handleOverlayClick = (e: MouseEvent) => {
   console.log('handleOverlayClick',e)
-  close()
+  // close()
+}
+
+const handleImageClick = (e: MouseEvent) => {
+  // 只有在没有拖动的情况下才关闭预览
+  if (!hasDragged.value) {
+    close()
+  }
 }
 
 const zoomIn = () => {
@@ -200,17 +208,23 @@ const handleWheel = (e: WheelEvent) => {
 
 const handleMouseDown = (e: MouseEvent) => {
   isDragging.value = true
+  hasDragged.value = false
   dragStart.value = { x: e.clientX - translateX.value, y: e.clientY - translateY.value }
 }
 
 const handleMouseMove = (e: MouseEvent) => {
   if (!isDragging.value) return
+  hasDragged.value = true
   translateX.value = e.clientX - dragStart.value.x
   translateY.value = e.clientY - dragStart.value.y
 }
 
 const handleMouseUp = () => {
   isDragging.value = false
+  // 延迟重置hasDragged，确保click事件能正确判断
+  setTimeout(() => {
+    hasDragged.value = false
+  }, 100)
 }
 
 // 键盘事件处理

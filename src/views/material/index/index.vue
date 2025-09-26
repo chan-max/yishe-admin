@@ -41,6 +41,48 @@
           @change="(val) => { if (!val) getList() }"
         />
       </form-item>
+      <form-item label="phash相似度搜索">
+        <div class="flex gap-4 items-center flex-wrap">
+          <el-input
+            v-model="queryParams.phash"
+            placeholder="请输入phash值"
+            style="width: 200px"
+            clearable
+            @blur="onPhashInputBlur"
+          />
+          
+          <!-- 相似度范围滑块 -->
+          <div class="flex flex-col gap-2" style="min-width: 300px">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">相似度范围:</span>
+              <span class="text-sm font-medium text-blue-600">
+                {{ phashRange[0] === phashRange[1] ? `${phashRange[0]}%` : `${phashRange[0]}% - ${phashRange[1]}%` }}
+              </span>
+              <el-tag v-if="phashRange[0] === phashRange[1]" size="small" type="info">精确匹配</el-tag>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-gray-500 w-8">0%</span>
+              <el-slider
+                v-model="phashRange"
+                range
+                :min="0"
+                :max="100"
+                :step="1"
+                :show-tooltip="true"
+                :format-tooltip="(val) => `${val}%`"
+                style="flex: 1"
+                @change="onPhashRangeChange"
+              />
+              <span class="text-xs text-gray-500 w-8 text-right">100%</span>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <el-button type="primary" @click="handlePhashSearch">搜索</el-button>
+            <el-button @click="clearPhashSearch">清空</el-button>
+          </div>
+        </div>
+      </form-item>
       <form-item label="自定义贴纸">
         <el-select v-model="queryParams.isCustom" placeholder="请选择类型" style="width: 120px" clearable @change="getList">
           <el-option label="全部" :value="null" />
@@ -182,6 +224,17 @@
               >
                 {{ row.isPublish ? '已发布' : '未发布' }}
               </el-tag>
+            </template>
+
+            <template #similaritySlot="{ row }">
+              <el-tag 
+                v-if="row.similarity !== undefined"
+                :type="row.similarity >= 90 ? 'success' : row.similarity >= 70 ? 'warning' : 'info'" 
+                size="small"
+              >
+                {{ row.similarity.toFixed(1) }}%
+              </el-tag>
+              <span v-else>-</span>
             </template>
 
             <template #operationDefaultSlot="{ row }">
@@ -765,14 +818,22 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
   keyword: '',
+  imageName: '', // 按名称搜索
+  sortingFields: 'createTime DESC', // 排序字段
   startTime: '',
   endTime: '',
   suffix: '', // 新增后缀参数
   id: '', // 新增ID精确查询参数
+  phash: '', // phash值
+  phashSimilarityMin: undefined, // phash相似度最小值
+  phashSimilarityMax: undefined, // phash相似度最大值
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
   isPublish: null, // 新增发布状态过滤参数
 })
+
+// phash相似度范围滑块
+const phashRange = ref([70, 90]) // [最小值, 最大值]
 
 // 展示模式
 const picMode = useLocalStorage('material_view_mode', false)
@@ -816,6 +877,12 @@ const gridOptions = ref({
     { title: '关键词', field: 'keywords', minWidth: 160 },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
     { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
+    { 
+      title: '相似度', 
+      field: 'similarity', 
+      width: 80,
+      slots: { default: 'similaritySlot' }
+    }, // 新增相似度列
     { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
     { 
       title: '自定义贴纸', 
@@ -889,6 +956,8 @@ const rules = {
 }
 
 const designModelModalVisible = ref(false)
+const filterDialogVisible = ref(false)
+const isMobile = ref(false)
 
 // 设计模型相关
 const designModelList = ref([])
@@ -965,6 +1034,54 @@ async function getList() {
   total.value = res.total
 }
 
+// phash相似度搜索
+async function handlePhashSearch() {
+  // 去除phash值的前后空格
+  queryParams.phash = queryParams.phash.trim()
+  
+  if (!queryParams.phash) {
+    ElMessage.warning('请输入phash值')
+    return
+  }
+  
+  // 验证范围值
+  if (phashRange.value[0] < 0 || phashRange.value[0] > 100 || 
+      phashRange.value[1] < 0 || phashRange.value[1] > 100) {
+    ElMessage.warning('相似度范围必须在0-100之间')
+    return
+  }
+  
+  if (phashRange.value[0] > phashRange.value[1]) {
+    ElMessage.warning('最小值不能大于最大值')
+    return
+  }
+  
+  // 重置页码
+  queryParams.currentPage = 1
+  // 调用现有的getList函数，它会自动检测phash参数并调用相似度搜索
+  await getList()
+}
+
+// phash范围滑块变更
+function onPhashRangeChange(value) {
+  // 同步到queryParams
+  queryParams.phashSimilarityMin = value[0]
+  queryParams.phashSimilarityMax = value[1]
+}
+
+// phash输入框失去焦点时自动trim
+function onPhashInputBlur() {
+  queryParams.phash = queryParams.phash.trim()
+}
+
+// 清空phash搜索
+function clearPhashSearch() {
+  queryParams.phash = ''
+  phashRange.value = [70, 90]
+  queryParams.phashSimilarityMin = undefined
+  queryParams.phashSimilarityMax = undefined
+}
+
 getList()
 
 // 操作函数
@@ -973,6 +1090,12 @@ function handleQuery() {
 }
 
 function resetQuery() {
+  getList()
+}
+
+// 移动端筛选提交
+function onMobileFilterSubmit() {
+  filterDialogVisible.value = false
   getList()
 }
 
@@ -1365,6 +1488,18 @@ async function handleBatchUnpublish() {
 const editDialogVisible = ref(false)
 const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false, isInfringement: false, isPublish: false })
 const editLoading = ref(false)
+
+// 其他缺少的变量
+const currentUploadInfo = ref({ path: '' })
+const currentGenPictureConfig = ref([])
+const genPicturesForm = ref({})
+const genPicturesFormRules = ref({})
+const genPicturesModalVisible = ref(false)
+
+// 配置变更函数
+function configChange(config) {
+  currentGenPictureConfig.value = config
+}
 
 // 图片预览相关状态
 const imagePreviewVisible = ref(false)
