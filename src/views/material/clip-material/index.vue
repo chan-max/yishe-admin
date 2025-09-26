@@ -42,6 +42,13 @@
           <el-option label="其他" value="其他" />
         </el-select>
       </form-item>
+      <form-item label="公开状态">
+        <el-select v-model="queryParams.isPublic" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
+          <el-option label="全部" value="" />
+          <el-option label="公开" :value="true" />
+          <el-option label="私有" :value="false" />
+        </el-select>
+      </form-item>
       <form-item label="ID精确查询">
         <el-input
           v-model="queryParams.id"
@@ -59,6 +66,8 @@
       <div class="flex shrink-0">
         <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+        <el-button type="success" @click="handleBatchSetPublic" :disabled="!ids.length" :loading="batchSetPublicLoading">批量设为公开({{ ids.length }})</el-button>
+        <el-button type="warning" @click="handleBatchSetPrivate" :disabled="!ids.length" :loading="batchSetPrivateLoading">批量设为私有({{ ids.length }})</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
@@ -88,6 +97,13 @@
             <el-option label="建筑" value="建筑" />
             <el-option label="动画" value="动画" />
             <el-option label="其他" value="其他" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="公开状态">
+          <el-select v-model="queryParams.isPublic" placeholder="请选择状态">
+            <el-option label="全部" value="" />
+            <el-option label="公开" :value="true" />
+            <el-option label="私有" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="按时间查询">
@@ -177,6 +193,10 @@
                       <el-dropdown-item command="preview" v-if="isVideoFile(row.suffix)">
                         <el-icon><VideoPlay /></el-icon>
                         预览
+                      </el-dropdown-item>
+                      <el-dropdown-item command="toggle-public" divided>
+                        <el-icon><View /></el-icon>
+                        {{ row.isPublic ? '设为私有' : '设为公开' }}
                       </el-dropdown-item>
                       <el-dropdown-item command="delete" divided>
                         <el-icon><Delete /></el-icon>
@@ -315,6 +335,7 @@ const queryParams = reactive({
   suffix: '',
   id: '',
   category: '',
+  isPublic: '',
   sortingFields: 'createTime DESC'
 })
 
@@ -583,6 +604,10 @@ const editForm = ref({
 })
 const editLoading = ref(false)
 
+// 批量操作loading状态
+const batchSetPublicLoading = ref(false)
+const batchSetPrivateLoading = ref(false)
+
 function handleEdit(row) {
   editForm.value = { 
     id: row.id, 
@@ -668,6 +693,72 @@ function getCategoryTagType(category: string) {
   return typeMap[category] || ''
 }
 
+// 切换公开状态
+async function handleTogglePublic(row: any) {
+  const newStatus = !row.isPublic
+  const statusText = newStatus ? '公开' : '私有'
+  
+  try {
+    // 直接调用更新接口
+    await updateClipMaterial({
+      id: row.id,
+      isPublic: newStatus
+    })
+    
+    ElMessage.success(`已设为${statusText}`)
+    getList() // 刷新列表
+  } catch (error) {
+    console.error('切换公开状态失败:', error)
+    ElMessage.error('切换公开状态失败，请稍后重试')
+  }
+}
+
+// 批量设为公开
+async function handleBatchSetPublic() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要设为公开的素材')
+  }
+  
+  batchSetPublicLoading.value = true
+  try {
+    const promises = ids.value.map(id => 
+      updateClipMaterial({ id, isPublic: true })
+    )
+    await Promise.all(promises)
+    ElMessage.success(`成功设为公开 ${ids.value.length} 个素材`)
+    resetCheckStatus()
+    getList()
+  } catch (error) {
+    console.error('批量设为公开失败:', error)
+    ElMessage.error('批量设为公开失败，请稍后重试')
+  } finally {
+    batchSetPublicLoading.value = false
+  }
+}
+
+// 批量设为私有
+async function handleBatchSetPrivate() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要设为私有的素材')
+  }
+  
+  batchSetPrivateLoading.value = true
+  try {
+    const promises = ids.value.map(id => 
+      updateClipMaterial({ id, isPublic: false })
+    )
+    await Promise.all(promises)
+    ElMessage.success(`成功设为私有 ${ids.value.length} 个素材`)
+    resetCheckStatus()
+    getList()
+  } catch (error) {
+    console.error('批量设为私有失败:', error)
+    ElMessage.error('批量设为私有失败，请稍后重试')
+  } finally {
+    batchSetPrivateLoading.value = false
+  }
+}
+
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
@@ -679,6 +770,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'preview':
       openVideoPreview(row.url, row.name);
+      break;
+    case 'toggle-public':
+      handleTogglePublic(row);
       break;
     case 'delete':
       handleDelete(row);

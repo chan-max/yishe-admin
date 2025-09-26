@@ -43,7 +43,7 @@
         <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd">生成并添加</el-button>
       </template>
     </el-dialog>
-
+    
     <!-- AI分析句子弹窗 -->
     <el-dialog
       v-model="aiAnalyzeDialogVisible"
