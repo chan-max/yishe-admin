@@ -135,7 +135,7 @@ onUnmounted(() => {
   .utility-menu {
     position: absolute;
     bottom: 70px;
-    right: 0;
+    left: 0;
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
