@@ -371,7 +371,7 @@ import { useUserStore } from "@/store/modules/user";
 import imgCard from "./imgCard.vue";
 import { materialConfig, getMaterialConfig, categoryOptions } from "./index";
 import { useWindowSize } from "@vueuse/core";
-import { ElNotification } from "element-plus";
+import { ElNotification, ElMessage, ElMessageBox } from "element-plus";
 import { api as viewerApi } from "v-viewer";
 import { CircleCheckFilled, CircleCloseFilled, CloseBold, Delete, Loading, Refresh, TopRight } from "@element-plus/icons-vue";
 import tree from '@/views/material/index/tree.vue'
