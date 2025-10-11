@@ -21,6 +21,10 @@ import { setupStore } from '@/store'
 // 引入移动端手势防护
 import '@/utils/mobileGestureGuard'
 
+// 引入移动端调试工具
+import { initVConsole } from '@/utils/vconsole'
+import { initVConsoleFromCDN } from '@/utils/vconsole-fallback'
+
 // 全局组件
 import { setupGlobCom } from '@/components'
 
@@ -98,6 +102,16 @@ const setupAll = async () => {
   } catch (error) {
     console.error('COS配置初始化失败:', error)
   }
+
+  // 初始化移动端调试工具
+  initVConsole().catch(async (error) => {
+    console.error('vConsole 模块导入失败，尝试CDN方式:', error)
+    try {
+      await initVConsoleFromCDN()
+    } catch (cdnError) {
+      console.error('vConsole CDN方式也失败:', cdnError)
+    }
+  })
 
   app.use(VueDOMPurifyHTML)
 
