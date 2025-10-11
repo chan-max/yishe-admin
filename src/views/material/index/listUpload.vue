@@ -294,11 +294,9 @@ const uploadFile = async (file) => {
 <style scoped>
 .multi-image-upload-container {
   display: flex;
-  height: 100%;
-  max-height: 86vh;
-  /* 设置高度为 100% */
+  height: calc(100vh - 100px);
+  max-height: calc(100vh - 100px);
   width: 100%;
-  /* 设置宽度为 100% */
   gap: 20px;
   /* 左右两侧间距 */
 }
@@ -309,8 +307,8 @@ const uploadFile = async (file) => {
   border: 1px solid #ddd;
   border-radius: 4px;
   padding: 10px;
-  max-height: 81vh;
-  min-height: 720px;
+  height: 100%;
+  min-height: 0;
 }
 
 .image-preview-list {
