@@ -225,7 +225,11 @@ function openImageOption(row) {
     const key = `imageOption${idx + 1}`
     const val = row[key]
     try {
-      return val ? JSON.stringify(val, null, 2) : ''
+      if (val === undefined || val === null) return ''
+      // 如果是字符串，直接展示原始字符串，避免出现被加上引号的情况
+      if (typeof val === 'string') return val
+      // 对象/数组等再进行格式化
+      return JSON.stringify(val, null, 2)
     } catch (e) {
       return ''
     }
@@ -238,19 +242,44 @@ async function saveImageOptions() {
   try {
     imageOptionSaving.value = true
     const payload: any = {}
-    imageOptionsDraft.value.forEach((txt, idx) => {
+    // 需要是合理的 JSON 或 JS 对象表达式；否则阻止保存
+    const parseJsonOrObject = (text: string): any => {
+      // 优先尝试严格 JSON
+      try {
+        return JSON.parse(text)
+      } catch {}
+      // 其次尝试 JS 对象/数组/原始表达式（例如 {a:1}, [1,2], 'abc'）
+      try {
+        // 使用 Function 包裹并以表达式方式返回
+        // 管理端内网使用，输入来源可控；这里用于配置解析
+        // eslint-disable-next-line no-new-func
+        const fn = new Function(`return ( ${text} )`)
+        const v = fn()
+        // 仅接受对象或数组，避免意外的可执行代码产生副作用
+        if (v !== null && (Array.isArray(v) || typeof v === 'object')) {
+          return v
+        }
+        throw new Error('表达式不是对象或数组')
+      } catch (e) {
+        throw new Error('无效的 JSON 或对象字面量')
+      }
+    }
+
+    for (let idx = 0; idx < imageOptionsDraft.value.length; idx++) {
+      const txt = imageOptionsDraft.value[idx]
       const key = `imageOption${idx + 1}`
       if (txt && txt.trim()) {
         try {
-          payload[key] = JSON.parse(txt)
-        } catch (e) {
-          // 解析失败则直接以字符串形式保存，避免发送空值
-          payload[key] = txt
+          const parsed = parseJsonOrObject(txt.trim())
+          payload[key] = parsed
+        } catch (e: any) {
+          ElMessage.error(`第 ${idx + 1} 张图片的模板信息不是有效的 JSON/对象：${e?.message || ''}`)
+          return
         }
       } else {
         payload[key] = null
       }
-    })
+    }
     await updateTemplateGroup2D(currentImageRow.value.id, payload)
     ElMessage.success('已保存图片模板信息')
     imageOptionDialogVisible.value = false
