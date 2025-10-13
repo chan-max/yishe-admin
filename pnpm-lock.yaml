@@ -170,6 +170,9 @@ importers:
       v-viewer:
         specifier: ^3.0.21
         version: 3.0.21(viewerjs@1.11.7)(vue@3.5.12(typescript@5.3.3))
+      vconsole:
+        specifier: ^3.15.1
+        version: 3.15.1
       video.js:
         specifier: ^7.21.6
         version: 7.21.6
@@ -2824,6 +2827,10 @@ packages:
     resolution: {integrity: sha512-XgZ0pFcakEUlbwQEVNg3+QAis1FyTL3Qel9FYy8pSkQqoG3PNoT0bOCQtOXcOkur21r2Eq2kI+IE+gsmAEVlYw==}
     engines: {node: '>=0.10.0'}
 
+  copy-text-to-clipboard@3.2.2:
+    resolution: {integrity: sha512-T6SqyLd1iLuqPA90J5N4cTalrtovCySh58iiZDGJ6FGznbclKh4UI+FGacQSgFzwKG77W7XT5gwbVEbd9cIH1A==}
+    engines: {node: '>=12'}
+
   copy-to@2.0.1:
     resolution: {integrity: sha512-3DdaFaU/Zf1AnpLiFDeNCD4TOWe3Zl2RZaTzUvWiIk5ERzcCodOE20Vqq4fzCbNoHURFHT4/us/Lfq+S2zyY4w==}
 
@@ -4638,6 +4645,9 @@ packages:
   muggle-string@0.3.1:
     resolution: {integrity: sha512-ckmWDJjphvd/FvZawgygcUeQCxzvohjFO5RxTjj4eq8kw359gFF3E1brjfI+viLMxss5JrHTDRHZvu2/tuy0Qg==}
 
+  mutation-observer@1.0.3:
+    resolution: {integrity: sha512-M/O/4rF2h776hV7qGMZUH3utZLO/jK7p8rnNgGkjKUw8zCGjRQPxB8z6+5l8+VjRUQ3dNYu4vjqXYLr+U8ZVNA==}
+
   mux.js@6.0.1:
     resolution: {integrity: sha512-22CHb59rH8pWGcPGW5Og7JngJ9s+z4XuSlYvnxhLuc58cA1WqGDQPzuG8I+sPm1/p0CdgpzVTaKW408k5DNn8w==}
     engines: {node: '>=8', npm: '>=5'}
@@ -5911,6 +5921,9 @@ packages:
   vary@1.1.2:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
+
+  vconsole@3.15.1:
+    resolution: {integrity: sha512-KH8XLdrq9T5YHJO/ixrjivHfmF2PC2CdVoK6RWZB4yftMykYIaXY1mxZYAic70vADM54kpMQF+dYmvl5NRNy1g==}
 
   video.js@7.21.6:
     resolution: {integrity: sha512-m41TbODrUCToVfK1aljVd296CwDQnCRewpIm5tTXMuV87YYSGw1H+VDOaV45HlpcWSsTWWLF++InDgGJfthfUw==}
@@ -9120,6 +9133,8 @@ snapshots:
 
   copy-descriptor@0.1.1: {}
 
+  copy-text-to-clipboard@3.2.2: {}
+
   copy-to@2.0.1: {}
 
   core-js-compat@3.41.0:
@@ -11125,6 +11140,8 @@ snapshots:
 
   muggle-string@0.3.1: {}
 
+  mutation-observer@1.0.3: {}
+
   mux.js@6.0.1:
     dependencies:
       '@babel/runtime': 7.26.9
@@ -12538,6 +12555,13 @@ snapshots:
       vue: 3.5.12(typescript@5.3.3)
 
   vary@1.1.2: {}
+
+  vconsole@3.15.1:
+    dependencies:
+      '@babel/runtime': 7.26.9
+      copy-text-to-clipboard: 3.2.2
+      core-js: 3.41.0
+      mutation-observer: 1.0.3
 
   video.js@7.21.6:
     dependencies:

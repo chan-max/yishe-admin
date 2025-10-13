@@ -65,7 +65,7 @@
                   </el-dropdown-item>
                   <el-dropdown-item command="download-drafts">
                     <el-icon><Download /></el-icon>
-                    下载所有草稿
+                    下载草稿
                   </el-dropdown-item>
                   <el-dropdown-item command="copy-info" divided>
                     <el-icon><CopyDocument /></el-icon>
@@ -74,6 +74,10 @@
                   <el-dropdown-item command="view-meta">
                     <el-icon><Document /></el-icon>
                     查看元数据
+                  </el-dropdown-item>
+                  <el-dropdown-item command="view-stickers">
+                    <el-icon><Picture /></el-icon>
+                    查看关联贴纸
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-template" :disabled="templateLoading[row.id]">
                     <el-icon><Star /></el-icon>
@@ -281,6 +285,203 @@
       </template>
     </el-dialog>
 
+    <!-- 草稿下载弹窗 -->
+    <el-dialog 
+      v-model="draftDownloadDialogVisible" 
+      title="下载草稿" 
+      :width="isMobile ? '95%' : '80%'" 
+      :close-on-click-modal="false"
+      :fullscreen="isMobile"
+    >
+      <div class="draft-download-content">
+        <div class="draft-info mb-4">
+          <h3 class="text-lg font-medium mb-2">
+            模型：{{ currentModel?.name || currentModel?.id }}
+          </h3>
+          <p v-if="currentModel?.description" class="text-color-regular">
+            {{ currentModel.description }}
+          </p>
+        </div>
+        
+        <div v-if="relatedDrafts.length === 0" class="empty-state text-center py-8">
+          <el-empty description="暂无关联草稿" />
+        </div>
+        
+        <div v-else class="draft-grid" :class="{ 'mobile-grid': isMobile }">
+          <div 
+            v-for="draft in relatedDrafts" 
+            :key="draft.id" 
+            class="draft-item"
+            :class="{ 'mobile-item': isMobile }"
+          >
+            <div class="draft-preview">
+              <!-- 视频预览 -->
+              <div 
+                v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
+                class="video-preview-container"
+                @click="handleDraftVideoPlay(draft)"
+              >
+                <video 
+                  :src="draft.url" 
+                  class="w-full h-32 rounded cursor-pointer object-cover"
+                  preload="metadata"
+                  muted
+                />
+                <div class="video-overlay">
+                  <el-icon class="play-icon"><VideoPlay /></el-icon>
+                </div>
+              </div>
+              <!-- 图片预览 -->
+              <el-image 
+                v-else
+                :src="draft.url" 
+                fit="cover" 
+                class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[draft.url]"
+                :preview-teleported="true"
+                :z-index="9999"
+              />
+            </div>
+            <div class="draft-info p-3">
+              <div class="draft-header flex justify-between items-start mb-2">
+                <div class="draft-name text-sm font-medium truncate flex-1">
+                  {{ draft.name || '未命名' }}
+                </div>
+                <el-button 
+                  type="primary" 
+                  link 
+                  size="small" 
+                  @click="downloadSingleDraft(draft)"
+                  class="ml-2 flex-shrink-0"
+                >
+                  <el-icon><Download /></el-icon>
+                </el-button>
+              </div>
+              <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
+                {{ draft.description }}
+              </div>
+              <div class="draft-meta text-xs text-color-placeholder mt-2">
+                <span>{{ formatTimestamp(draft.createTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer" :class="{ 'mobile-footer': isMobile }">
+          <div class="flex justify-between items-center" :class="{ 'mobile-footer-content': isMobile }">
+            <div class="text-sm text-gray-600">
+              共 {{ relatedDrafts.length }} 个草稿
+            </div>
+            <div class="flex gap-2" :class="{ 'mobile-buttons': isMobile }">
+              <el-button 
+                type="success" 
+                @click="downloadAllDrafts"
+                :disabled="relatedDrafts.length === 0"
+                :size="isMobile ? 'large' : 'default'"
+              >
+                <el-icon><Download /></el-icon>
+                下载所有草稿
+              </el-button>
+              <el-button 
+                @click="draftDownloadDialogVisible = false"
+                :size="isMobile ? 'large' : 'default'"
+              >
+                关闭
+              </el-button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 关联贴纸弹窗 -->
+    <el-dialog 
+      v-model="stickersDialogVisible" 
+      title="关联贴纸" 
+      width="80%" 
+      :close-on-click-modal="false"
+    >
+      <div class="stickers-dialog-content">
+        <div class="stickers-info mb-4">
+          <h3 class="text-lg font-medium mb-2">
+            模型：{{ currentModel?.name || currentModel?.id }}
+          </h3>
+          <p v-if="currentModel?.description" class="text-color-regular">
+            {{ currentModel.description }}
+          </p>
+        </div>
+        
+        <div v-if="relatedStickers.length === 0" class="empty-state text-center py-8">
+          <el-empty description="暂无关联贴纸" />
+        </div>
+        
+        <div v-else class="stickers-grid">
+          <div 
+            v-for="sticker in relatedStickers" 
+            :key="sticker.id" 
+            class="sticker-item"
+          >
+            <div class="sticker-preview">
+              <el-image 
+                :src="sticker.url" 
+                fit="cover" 
+                class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[sticker.url]"
+                :preview-teleported="true"
+                :z-index="9999"
+              />
+            </div>
+            <div class="sticker-info p-3">
+              <div class="sticker-header flex justify-between items-start mb-2">
+                <div class="sticker-name text-sm font-medium truncate flex-1">
+                  {{ sticker.name || '未命名' }}
+                </div>
+                <el-button 
+                  type="primary" 
+                  link 
+                  size="small" 
+                  @click="downloadSticker(sticker)"
+                  class="ml-2 flex-shrink-0"
+                >
+                  <el-icon><Download /></el-icon>
+                </el-button>
+              </div>
+              <div v-if="sticker.description" class="sticker-desc text-xs text-color-regular mt-1 line-clamp-2">
+                {{ sticker.description }}
+              </div>
+              <div class="sticker-meta text-xs text-color-placeholder mt-2">
+                <div class="flex justify-between">
+                  <span>{{ formatTimestamp(sticker.createTime) }}</span>
+                  <span>{{ sticker.suffix || 'unknown' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="flex justify-between items-center">
+          <div class="text-sm text-gray-600">
+            共 {{ relatedStickers.length }} 个贴纸
+          </div>
+          <div class="flex gap-2">
+            <el-button 
+              type="success" 
+              @click="downloadAllStickers"
+              :disabled="relatedStickers.length === 0"
+            >
+              <el-icon><Download /></el-icon>
+              下载所有贴纸
+            </el-button>
+            <el-button @click="stickersDialogVisible = false">关闭</el-button>
+          </div>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 复制信息弹窗 -->
     <el-dialog
       v-model="copyInfoDialogVisible"
@@ -377,6 +578,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Delete, ArrowDown, Edit, Picture, Goods, MagicStick, View, Star, Document, VideoPlay, Share, Download, CopyDocument } from '@element-plus/icons-vue'
 import { getDesignModelList, updateDesignModel, deleteDesignModel, aiAutoGenerateDesignModelInfo, toProduct } from '@/api/designModel'
 import { getDraftList, deleteDraft } from '@/api/draft'
+import { getStickerById } from '@/api/material'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import type { DesignModelVO } from '@/api/designModel'
@@ -466,6 +668,9 @@ const deleteLoading = ref({})
 const copyInfoDialogVisible = ref(false)
 const currentCopyModel = ref(null)
 const copyAllLoading = ref(false)
+const stickersDialogVisible = ref(false)
+const relatedStickers = ref([])
+const draftDownloadDialogVisible = ref(false)
 
 function showMetaDetail(meta: any) {
   metaDialogContent.value = JSON.stringify(meta, null, 2)
@@ -710,13 +915,16 @@ function handleOperationCommand(command: string, row: any) {
       downloadThumbnail(row);
       break;
     case 'download-drafts':
-      downloadAllDrafts(row);
+      showDraftDownloadDialog(row);
       break;
     case 'copy-info':
       showCopyInfoDialog(row);
       break;
     case 'view-meta':
       showMetaDetail(row.meta);
+      break;
+    case 'view-stickers':
+      viewRelatedStickers(row);
       break;
     case 'toggle-template':
       toggleTemplate(row);
@@ -807,26 +1015,66 @@ async function downloadThumbnail(model: any) {
   }
 }
 
-// 下载所有关联草稿
-async function downloadAllDrafts(model: any) {
+// 显示草稿下载弹窗
+async function showDraftDownloadDialog(model: any) {
+  currentModel.value = model
+  draftDownloadDialogVisible.value = true
+  
   try {
     const res = await getDraftList({
       customModelId: model.id,
       currentPage: 1,
       pageSize: 100
     })
+    relatedDrafts.value = res.list || []
+  } catch (error) {
+    ElMessage.error('获取关联草稿失败')
+    relatedDrafts.value = []
+  }
+}
+
+// 下载单个草稿
+async function downloadSingleDraft(draft: any) {
+  if (!draft.url) {
+    ElMessage.warning('该草稿没有下载链接')
+    return
+  }
+  
+  try {
+    const response = await fetch(draft.url)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
     
-    const drafts = res.list || []
-    if (drafts.length === 0) {
-      ElMessage.info('该模型没有关联草稿')
-      return
-    }
+    // 根据文件类型设置扩展名
+    const extension = draft.suffix || getFileExtension(draft.url)
+    const filename = `${currentModel.value?.name || 'model'}_${draft.name || 'draft'}.${extension}`
+    link.download = filename
     
-    ElMessage.info(`开始下载 ${drafts.length} 个草稿文件...`)
-    
-    for (let i = 0; i < drafts.length; i++) {
-      const draft = drafts[i]
-      try {
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('草稿下载成功')
+  } catch (error) {
+    ElMessage.error('草稿下载失败')
+  }
+}
+
+// 下载所有关联草稿
+async function downloadAllDrafts() {
+  if (relatedDrafts.value.length === 0) {
+    ElMessage.warning('没有可下载的草稿')
+    return
+  }
+  
+  ElMessage.info(`开始下载 ${relatedDrafts.value.length} 个草稿文件...`)
+  
+  for (let i = 0; i < relatedDrafts.value.length; i++) {
+    const draft = relatedDrafts.value[i]
+    try {
+      if (draft.url) {
         const response = await fetch(draft.url)
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
@@ -835,7 +1083,7 @@ async function downloadAllDrafts(model: any) {
         
         // 根据文件类型设置扩展名
         const extension = draft.suffix || getFileExtension(draft.url)
-        const filename = `${model.name || 'model'}_draft_${i + 1}_${draft.name || 'unnamed'}.${extension}`
+        const filename = `${currentModel.value?.name || 'model'}_draft_${i + 1}_${draft.name || 'unnamed'}.${extension}`
         link.download = filename
         
         document.body.appendChild(link)
@@ -844,18 +1092,16 @@ async function downloadAllDrafts(model: any) {
         window.URL.revokeObjectURL(url)
         
         // 添加延迟避免浏览器阻止多个下载
-        if (i < drafts.length - 1) {
+        if (i < relatedDrafts.value.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500))
         }
-      } catch (error) {
-        console.error(`下载草稿 ${draft.name} 失败:`, error)
       }
+    } catch (error) {
+      console.error(`下载草稿 ${draft.name} 失败:`, error)
     }
-    
-    ElMessage.success(`草稿下载完成，共 ${drafts.length} 个文件`)
-  } catch (error) {
-    ElMessage.error('获取草稿列表失败')
   }
+  
+  ElMessage.success(`草稿下载完成，共 ${relatedDrafts.value.length} 个文件`)
 }
 
 // 获取文件扩展名
@@ -917,6 +1163,107 @@ async function copyAllInfo() {
 function showCopyInfoDialog(model: any) {
   currentCopyModel.value = model
   copyInfoDialogVisible.value = true
+}
+
+// 查看关联贴纸
+async function viewRelatedStickers(model: any) {
+  currentModel.value = model
+  stickersDialogVisible.value = true
+  
+  try {
+    // 从模型的meta中提取贴纸ID
+    const decals = model.meta?.modelInfo?.decals || []
+    const stickerIds = decals.map(decal => decal.id).filter(id => id)
+    
+    if (stickerIds.length === 0) {
+      relatedStickers.value = []
+      return
+    }
+    
+    // 循环查询每个贴纸的详情
+    const stickers = []
+    for (const id of stickerIds) {
+      try {
+        const res = await getStickerById(id)
+        if (res && res.list && res.list.length > 0) {
+          stickers.push(res.list[0])
+        }
+      } catch (error) {
+        console.warn(`获取贴纸 ${id} 失败:`, error)
+        // 继续查询其他贴纸，不中断整个流程
+      }
+    }
+    
+    relatedStickers.value = stickers
+  } catch (error) {
+    ElMessage.error('获取关联贴纸失败')
+    relatedStickers.value = []
+  }
+}
+
+// 下载单个贴纸
+async function downloadSticker(sticker: any) {
+  if (!sticker.url) {
+    ElMessage.warning('该贴纸没有下载链接')
+    return
+  }
+  
+  try {
+    const response = await fetch(sticker.url)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${sticker.name || 'sticker'}.${sticker.suffix || 'jpg'}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('贴纸下载成功')
+  } catch (error) {
+    ElMessage.error('贴纸下载失败')
+  }
+}
+
+// 下载所有贴纸
+async function downloadAllStickers() {
+  if (relatedStickers.value.length === 0) {
+    ElMessage.warning('没有可下载的贴纸')
+    return
+  }
+  
+  ElMessage.info(`开始下载 ${relatedStickers.value.length} 个贴纸...`)
+  
+  for (let i = 0; i < relatedStickers.value.length; i++) {
+    const sticker = relatedStickers.value[i]
+    try {
+      if (sticker.url) {
+        const response = await fetch(sticker.url)
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        
+        const extension = sticker.suffix || 'jpg'
+        const filename = `${sticker.name || 'sticker'}_${i + 1}.${extension}`
+        link.download = filename
+        
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        // 添加延迟避免浏览器阻止多个下载
+        if (i < relatedStickers.value.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+    } catch (error) {
+      console.error(`下载贴纸 ${sticker.name} 失败:`, error)
+    }
+  }
+  
+  ElMessage.success(`贴纸下载完成，共 ${relatedStickers.value.length} 个文件`)
 }
 </script>
 <style lang="less">
@@ -1023,6 +1370,265 @@ function showCopyInfoDialog(model: any) {
 
 .empty-state {
   color: var(--el-text-color-placeholder);
+}
+
+// 草稿下载弹窗样式
+.draft-download-content {
+  .draft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+    
+    &.mobile-grid {
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      max-height: 70vh;
+    }
+  }
+  
+  .draft-item {
+    border: 1px solid var(--el-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: var(--el-box-shadow-light);
+      transform: translateY(-2px);
+    }
+    
+    &.mobile-item {
+      border-radius: 6px;
+      
+      &:hover {
+        transform: none;
+        box-shadow: var(--el-box-shadow-light);
+      }
+    }
+  }
+  
+  .draft-preview {
+    position: relative;
+  }
+
+  .video-preview-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #000;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .video-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+
+      .play-icon {
+        font-size: 30px;
+        color: #fff;
+      }
+    }
+  }
+  
+  .draft-info {
+    background: var(--el-bg-color);
+  }
+  
+  .draft-header {
+    .draft-name {
+      font-weight: 500;
+    }
+    
+    .el-button {
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+  
+  .draft-item:hover .draft-header .el-button {
+    opacity: 1;
+  }
+  
+  .draft-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .draft-meta {
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding-top: 8px;
+  }
+}
+
+// 移动端弹窗底部样式
+.mobile-footer {
+  padding: 16px;
+  
+  .mobile-footer-content {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+  
+  .mobile-buttons {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    
+    .el-button {
+      width: 100%;
+      height: 48px;
+      font-size: 16px;
+    }
+  }
+}
+
+// 移动端响应式适配
+@media (max-width: 768px) {
+  .draft-download-content {
+    .draft-info {
+      padding: 0 8px;
+      
+      h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+      }
+      
+      p {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+    }
+    
+    .draft-item {
+      .draft-info {
+        padding: 12px;
+        
+        .draft-header {
+          margin-bottom: 8px;
+          
+          .draft-name {
+            font-size: 14px;
+          }
+          
+          .el-button {
+            padding: 4px 8px;
+            font-size: 12px;
+          }
+        }
+        
+        .draft-desc {
+          font-size: 12px;
+          margin-top: 6px;
+        }
+        
+        .draft-meta {
+          font-size: 11px;
+          padding-top: 6px;
+        }
+      }
+    }
+  }
+  
+  .mobile-footer {
+    .text-sm {
+      font-size: 14px;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+  }
+}
+
+// 关联贴纸弹窗样式
+.stickers-dialog-content {
+  .stickers-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  
+  .sticker-item {
+    border: 1px solid var(--el-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: var(--el-box-shadow-light);
+      transform: translateY(-2px);
+    }
+  }
+  
+  .sticker-preview {
+    position: relative;
+  }
+  
+  .sticker-info {
+    background: var(--el-bg-color);
+  }
+  
+  .sticker-header {
+    .sticker-name {
+      font-weight: 500;
+    }
+    
+    .el-button {
+      opacity: 0.6;
+      transition: opacity 0.3s ease;
+      
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+  
+  .sticker-item:hover .sticker-header .el-button {
+    opacity: 1;
+  }
+  
+  .sticker-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .sticker-meta {
+    border-top: 1px solid var(--el-border-color-lighter);
+    padding-top: 8px;
+  }
 }
 
 // 操作按钮样式

@@ -276,3 +276,17 @@ export function aiJudgeInfringement(data) {
     data
   })
 }
+
+/**
+ * 根据ID查询单个贴纸详情
+ */
+export function getStickerById(id) {
+  return request.post({
+    url: `/sticker/page`,
+    data: {
+      id: id,
+      currentPage: 1,
+      pageSize: 1
+    }
+  })
+}
