@@ -55,6 +55,20 @@
             {{ row.description || '-' }}
           </div>
         </template>
+        <template #keywordsSlot="{ row }">
+          <div v-if="row.keywords" class="keywords-container">
+            <el-tag 
+              v-for="keyword in getKeywordsArray(row.keywords)" 
+              :key="keyword"
+              size="small"
+              type="info"
+              class="keyword-tag"
+            >
+              {{ keyword.trim() }}
+            </el-tag>
+          </div>
+          <span v-else>-</span>
+        </template>
         <template #categorySlot="{ row }">
           <el-tag v-if="row.category" :type="getCategoryTagType(row.category)">
             {{ row.category }}
@@ -126,6 +140,19 @@
               />
             </el-form-item>
           </el-col>
+          <el-col :span="24">
+            <el-form-item label="关键字" prop="keywords">
+              <el-input 
+                v-model="form.keywords" 
+                placeholder="请输入关键字，多个关键字用逗号分隔（可选）" 
+                maxlength="500"
+                show-word-limit
+              />
+              <div class="form-tip">
+                <span class="text-gray-500 text-sm">例如：设计,工具,在线,免费</span>
+              </div>
+            </el-form-item>
+          </el-col>
           <el-col :span="12">
             <el-form-item label="分类" prop="category">
               <el-select 
@@ -192,6 +219,7 @@ const gridOptions = ref({
     { title: '网址名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     { title: '网址链接', field: 'url', minWidth: 300, slots: { default: 'urlSlot' } },
     { title: '详细描述', field: 'description', minWidth: 300, slots: { default: 'descriptionSlot' } },
+    { title: '关键字', field: 'keywords', minWidth: 200, slots: { default: 'keywordsSlot' } },
     { title: '分类', field: 'category', width: 120, slots: { default: 'categorySlot' } },
     { title: '状态', field: 'isActive', width: 80, slots: { default: 'statusSlot' } },
     { title: '排序', field: 'sort', width: 80 },
@@ -215,6 +243,7 @@ const form = ref<{
   name: string
   url: string
   description: string
+  keywords: string
   category: string
   icon: string
   sort: number
@@ -223,6 +252,7 @@ const form = ref<{
   name: '',
   url: '',
   description: '',
+  keywords: '',
   category: '',
   icon: '',
   sort: 0,
@@ -240,6 +270,12 @@ function getCategoryTagType(category: string) {
     '其他': 'default'
   }
   return typeMap[category] || 'default'
+}
+
+// 处理关键字字符串，转换为数组
+function getKeywordsArray(keywords: string) {
+  if (!keywords) return []
+  return keywords.split(',').filter(keyword => keyword.trim())
 }
 
 // 格式化日期时间
@@ -275,11 +311,6 @@ async function getList() {
   }
 }
 
-function resetQuery() {
-  queryParams.currentPage = 1
-  getList()
-}
-
 function handleAdd() {
   isEdit.value = false
   dialogVisible.value = true
@@ -288,6 +319,7 @@ function handleAdd() {
     name: '',
     url: '',
     description: '',
+    keywords: '',
     category: '',
     icon: '',
     sort: 0,
@@ -295,16 +327,8 @@ function handleAdd() {
   }
 }
 
-// 测试删除功能
-function testDelete() {
-  console.log('当前选中的ID:', ids.value)
-  console.log('当前数据源:', dataSource.value)
-}
-
 onMounted(() => {
   getList()
-  // 添加测试方法到全局
-  window.testDelete = testDelete
 })
 
 function checkboxChange(e) {
@@ -326,6 +350,7 @@ function handleEdit(row) {
     name: row.name,
     url: row.url,
     description: row.description || '',
+    keywords: row.keywords || '',
     category: row.category || '',
     icon: row.icon || '',
     sort: row.sort || 0,
@@ -401,6 +426,9 @@ const rules = {
   description: [
     { max: 1000, message: '描述长度不能超过 1000 个字符', trigger: 'blur' }
   ],
+  keywords: [
+    { max: 500, message: '关键字长度不能超过 500 个字符', trigger: 'blur' }
+  ],
   category: [
     { max: 50, message: '分类长度不能超过 50 个字符', trigger: 'blur' }
   ],
@@ -427,6 +455,7 @@ const submitForm = async () => {
         name: form.value.name,
         url: form.value.url,
         description: form.value.description,
+        keywords: form.value.keywords,
         category: form.value.category,
         icon: form.value.icon,
         sort: form.value.sort,
@@ -438,6 +467,7 @@ const submitForm = async () => {
         name: form.value.name,
         url: form.value.url,
         description: form.value.description,
+        keywords: form.value.keywords,
         category: form.value.category,
         icon: form.value.icon,
         sort: form.value.sort,
@@ -461,5 +491,31 @@ const submitForm = async () => {
 .text-wrap {
   white-space: normal;
   line-height: 1.5;
+}
+
+.keywords-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 200px;
+}
+
+.keyword-tag {
+  margin: 2px;
+  font-size: 12px;
+  border-radius: 12px;
+  background-color: #f0f9ff;
+  border-color: #0ea5e9;
+  color: #0369a1;
+}
+
+.keyword-tag:hover {
+  background-color: #e0f2fe;
+  border-color: #0284c7;
+  color: #0c4a6e;
+}
+
+.form-tip {
+  margin-top: 4px;
 }
 </style> 

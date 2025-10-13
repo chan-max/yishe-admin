@@ -13,6 +13,7 @@ export interface CommonUrl {
   name: string
   url: string
   description?: string
+  keywords?: string
   category?: string
   icon?: string
   sort?: number
@@ -30,6 +31,7 @@ export interface CreateCommonUrlDto {
   name: string
   url: string
   description?: string
+  keywords?: string
   category?: string
   icon?: string
   sort?: number
@@ -41,6 +43,7 @@ export interface UpdateCommonUrlDto {
   name?: string
   url?: string
   description?: string
+  keywords?: string
   category?: string
   icon?: string
   sort?: number
