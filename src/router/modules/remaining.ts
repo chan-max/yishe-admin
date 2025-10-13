@@ -257,6 +257,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '商品模型'
         }
       },
+      {
+        path: 'template-group-2d',
+        component: () => import('@/views/material/templateGroup2D/index.vue'),
+        name: 'TemplateGroup2D',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '二维模板组'
+        }
+      },
     ]
   },
   {
