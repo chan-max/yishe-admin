@@ -305,6 +305,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '商品列表',
         }
       },
+      {
+        path: 'product-image-2d',
+        component: () => import('@/views/product/productImage2D/index.vue'),
+        name: 'ProductImage2D',
+        meta: {
+          title: '二维设计商品图',
+        }
+      },
     ]
   },
   {

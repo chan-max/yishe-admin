@@ -114,6 +114,7 @@
         <el-button type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+        <el-button type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请先勾选素材') } linkRow = null; openLinkTemplate2D(null) }">根据二维模板组制作商品图({{ ids.length }})</el-button>
         <el-button type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
         <el-button type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
@@ -281,6 +282,7 @@
                         <el-icon><Document /></el-icon>
                         查看元数据
                       </el-dropdown-item>
+                      
                       <el-dropdown-item command="delete" divided>
                         <el-icon><Delete /></el-icon>
                         删除
@@ -305,6 +307,61 @@
         </div>
       </div>
     </div>
+
+    <el-dialog
+      v-model="linkTemplate2DDialogVisible"
+      title="根据二维模板组制作商品图"
+      width="1000px"
+      align-center
+    >
+      <div class="link-2d-body">
+        <div class="selected-materials">
+          <div class="section-title">已选择素材 ({{ ids.length }})</div>
+          <div class="thumbs">
+            <div
+              v-for="id in ids"
+              :key="id"
+              class="thumb"
+            >
+              <img :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url" />
+            </div>
+          </div>
+        </div>
+
+        <div class="template-selector">
+          <div class="section-title">选择二维模板组（可多选）</div>
+          <div class="template-list">
+            <el-checkbox-group v-model="selectedTemplateGroup2DIds" class="template-grid">
+              <el-checkbox
+                v-for="tpl in templateGroup2DOptions"
+                :key="tpl.id"
+                :label="tpl.id"
+                class="template-card"
+                :class="{ 'is-checked': selectedTemplateGroup2DIds.includes(tpl.id) }"
+              >
+                <div class="tpl-thumb">
+                  <img :src="tpl.image1 || tpl.image2 || tpl.image3 || tpl.image4 || tpl.image5 || tpl.image6 || tpl.image7 || tpl.image8 || tpl.image9 || tpl.image10" alt="thumb" />
+                </div>
+                <div class="tpl-name" :title="tpl.name">{{ tpl.name || '未命名' }}</div>
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </div>
+
+        <div class="result-info">
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            :title="`将生成 ${ids.length} × ${selectedTemplateGroup2DIds.length} = ${ids.length * selectedTemplateGroup2DIds.length} 条商品图记录`"
+          />
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="linkTemplate2DDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="linkingTemplate2D" @click="confirmLinkTemplate2D">确定</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog
       v-model="uploadModalVisible"
@@ -809,6 +866,8 @@ import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
+import { pageTemplateGroup2D } from '@/api/templateGroup2D'
+import { createProductImage2D, batchCreateProductImage2D } from '@/api/productImage2D'
 
 const userStore = useUserStore()
 
@@ -1518,6 +1577,49 @@ function handleEdit(row) {
   editDialogVisible.value = true
 }
 
+// 关联二维模板组
+const linkTemplate2DDialogVisible = ref(false)
+const selectedTemplateGroup2DId = ref('') // 保留以兼容旧逻辑（未使用）
+const selectedTemplateGroup2DIds = ref<string[]>([])
+const linkingTemplate2D = ref(false)
+const templateGroup2DOptions = ref<any[]>([])
+let linkRow: any = null
+
+async function openLinkTemplate2D(row: any) {
+  linkRow = row
+  selectedTemplateGroup2DId.value = ''
+  selectedTemplateGroup2DIds.value = []
+  linkTemplate2DDialogVisible.value = true
+  try {
+    const res = await pageTemplateGroup2D({ page: 1, pageSize: 200 })
+    templateGroup2DOptions.value = res.list || []
+  } catch (e) {
+    ElMessage.error('加载二维模板组失败')
+  }
+}
+
+async function confirmLinkTemplate2D() {
+  if (!selectedTemplateGroup2DIds.value.length) {
+    ElMessage.warning('请选择二维模板组')
+    return
+  }
+  try {
+    linkingTemplate2D.value = true
+    const materialIds = linkRow ? [String(linkRow.id)] : (Array.isArray(ids.value) ? [...ids.value] : [])
+    if (!materialIds.length) {
+      ElMessage.warning('请先勾选素材或从行操作进入')
+      return
+    }
+    await batchCreateProductImage2D({ materialIds: materialIds.map(String), templateGroup2DIds: [...selectedTemplateGroup2DIds.value] })
+    ElMessage.success(`制作成功，共 ${materialIds.length * selectedTemplateGroup2DIds.value.length} 条`) 
+    linkTemplate2DDialogVisible.value = false
+  } catch (e: any) {
+    ElMessage.error(`关联失败：${e?.message || ''}`)
+  } finally {
+    linkingTemplate2D.value = false
+  }
+}
+
 async function submitEdit() {
   editLoading.value = true
   try {
@@ -1772,6 +1874,22 @@ async function handleUrlUpload() {
 </script>
 
 <style scoped>
+.
+.link-2d-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.selected-materials .thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
+.selected-materials .thumb { width: 72px; height: 72px; border: 1px solid var(--el-border-color); border-radius: 4px; overflow: hidden; background: var(--el-fill-color-lighter); }
+.selected-materials .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.template-selector .template-list { min-height: 320px; max-height: 560px; overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; }
+.template-selector .section-title { margin-top: 8px; }
+.template-selector .template-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.template-selector .template-card { display: flex; flex-direction: column; align-items: center; padding: 10px; border: 1px solid var(--el-border-color); border-radius: 10px; background: var(--el-fill-color-lighter); transition: box-shadow .2s ease, border-color .2s ease, background-color .2s ease; }
+.template-selector .template-card:hover { border-color: var(--el-color-primary); box-shadow: 0 4px 14px rgba(64,158,255,0.16); background: rgba(64,158,255,0.06); }
+.template-selector .template-card.is-checked { border-color: var(--el-color-primary); box-shadow: 0 6px 18px rgba(64,158,255,0.24); background: rgba(64,158,255,0.10); }
+.template-selector .tpl-thumb { width: 100%; height: 90px; border-radius: 4px; overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center; }
+.template-selector .tpl-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.template-selector .tpl-name { margin-top: 6px; font-size: 12px; color: var(--el-text-color-regular); width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.section-title { font-size: 14px; color: var(--el-text-color-regular); margin-bottom: 8px; }
+.result-info { grid-column: 1 / -1; }
 /* PC端优化 */
 .flex.pb-4, .search-bar {
   gap: 16px;

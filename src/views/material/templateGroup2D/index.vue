@@ -77,6 +77,8 @@
                   :auto-upload="false"
                   :show-file-list="false"
                   multiple
+                  accept="image/*"
+                  :before-upload="beforeUploadImage"
                   :on-change="handleFileChange"
                 >
                   <el-button type="primary">选择图片</el-button>
@@ -341,6 +343,10 @@ function handleFileChange(file) {
   // 仅本地缓存，点击“确定”时再统一上传到COS
   const raw = file?.raw
   if (!raw) return
+  if (!raw.type || !raw.type.startsWith('image/')) {
+    ElMessage.error('只能选择图片文件')
+    return
+  }
   const preview = URL.createObjectURL(raw)
   imageItems.value.push({ file: raw, preview })
 }
@@ -352,11 +358,23 @@ function replaceImage(index: number) {
   input.onchange = () => {
     const file = (input.files && input.files[0]) as File
     if (!file) return
+    if (!file.type || !file.type.startsWith('image/')) {
+      ElMessage.error('只能选择图片文件')
+      return
+    }
     const preview = URL.createObjectURL(file)
     const old = imageItems.value[index]
     imageItems.value[index] = { file, preview, url: old?.url }
   }
   input.click()
+}
+
+function beforeUploadImage(file: File) {
+  if (!file || !file.type || !file.type.startsWith('image/')) {
+    ElMessage.error('只能选择图片文件')
+    return false
+  }
+  return true
 }
 
 function removeImage(index: number) {
