@@ -14,6 +14,22 @@
         @checkbox-change="onCheckboxChange"
         @checkbox-all="onCheckboxAll"
       >
+        <template #imagesSlot="{ row }">
+          <div class="image-preview-container">
+            <div v-for="(image, index) in getImageList(row)" :key="index" class="image-item">
+              <el-image
+                :src="image"
+                :preview-src-list="getImageList(row)"
+                :initial-index="index"
+                fit="cover"
+                class="preview-image"
+              />
+            </div>
+            <div v-if="!getImageList(row).length" class="no-images">
+              暂无合成图片
+            </div>
+          </div>
+        </template>
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button link type="primary" size="small">
@@ -55,6 +71,7 @@ const gridOptions = ref<any>({
     { title: 'ID', field: 'id', width: 200 },
     { title: '素材ID', field: 'materialId', width: 200 },
     { title: '二维模板组ID', field: 'templateGroup2DId', width: 'auto' },
+    { title: '合成图片', field: 'images', width: 300, slots: { default: 'imagesSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
     { title: '操作', field: 'operation', width: 80, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
@@ -70,12 +87,14 @@ const selectedIds = ref<string[]>([])
 async function getList() {
   loading.value = true
   try {
-    // 简易占位：如果后端未提供列表接口，这里暂用空数组
-    // 可在后续加上真实分页接口：GET/POST /product-image-2d/page
+    console.log('获取二维设计商品图列表...')
     const res = await request.post({ url: '/product-image-2d/page', data: { page: queryParams.currentPage, pageSize: queryParams.pageSize } })
+    console.log('获取到的数据:', res)
     dataSource.value = res.list || []
     total.value = res.total || 0
+    console.log('数据源长度:', dataSource.value.length)
   } catch (e) {
+    console.error('获取列表失败:', e)
     dataSource.value = []
     total.value = 0
   } finally {
@@ -86,6 +105,18 @@ async function getList() {
 onMounted(() => {
   getList()
 })
+
+// 获取图片列表
+function getImageList(row: any): string[] {
+  const images: string[] = []
+  for (let i = 1; i <= 10; i++) {
+    const imageUrl = row[`image${i}`]
+    if (imageUrl && imageUrl.trim()) {
+      images.push(imageUrl)
+    }
+  }
+  return images
+}
 
 function onCheckboxChange(e: any) {
   const records = Array.isArray(e.records) ? e.records : []
@@ -145,6 +176,38 @@ async function handleBatchDelete() {
 </script>
 
 <style scoped>
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 280px;
+}
+
+.image-item {
+  width: 60px;
+  height: 60px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.preview-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-images {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  width: 100%;
+  border: 1px dashed var(--el-border-color-light);
+  border-radius: 4px;
+}
 </style>
 
 
