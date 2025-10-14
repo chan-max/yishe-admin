@@ -181,28 +181,6 @@
                     </div>
                   </div>
 
-                  <!-- 混合模式和透明度 -->
-                  <div class="control-group">
-                    <label>混合模式:</label>
-                    <el-select v-model="manualConfigs[index].blendMode" @change="onManualConfigChange(index)">
-                      <el-option label="multiply" value="multiply" />
-                      <el-option label="overlay" value="overlay" />
-                      <el-option label="screen" value="screen" />
-                      <el-option label="soft-light" value="soft-light" />
-                    </el-select>
-                  </div>
-
-                  <div class="control-group">
-                    <label>透明度:</label>
-                    <el-slider
-                      v-model="manualConfigs[index].opacity"
-                      :min="0"
-                      :max="1"
-                      :step="0.1"
-                      show-input
-                      @change="onManualConfigChange(index)"
-                    />
-                  </div>
                 </div>
 
                 <!-- JSON配置 -->
@@ -241,16 +219,12 @@ const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 const jsonPlaceholder = `请输入JSON配置，例如：
 {
   "position": { "x": 0, "y": 0 },
-  "size": { "scale": 0.4 },
-  "blendMode": "multiply",
-  "opacity": 0.8
+  "size": { "widthPercent": 30 }
 }
 
 参数说明：
-• position: { x, y } - 素材中心坐标(像素)，0,0表示居中
-• size: { scale: 0.1-1.0 } 或 { maxSize: 像素值 } 或 { width, height }
-• blendMode: "multiply"|"overlay"|"screen"|"soft-light"
-• opacity: 0.0-1.0 (透明度)`
+• position: { x, y } - 素材左上角坐标(像素)，0,0表示左上角
+• size: { widthPercent: 1-100 } - 素材宽度占模板宽度的百分比`
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
@@ -359,18 +333,14 @@ function openImageOption(row) {
 function getDefaultImageOption() {
   return JSON.stringify({
     position: { x: 0, y: 0 },
-    size: { scale: 0.3 },
-    blendMode: "multiply",
-    opacity: 0.8
+    size: { widthPercent: 30 }
   }, null, 2)
 }
 
 function getDefaultManualConfig() {
   return {
     position: { x: 0, y: 0 },
-    size: { scale: 0.3 },
-    blendMode: "multiply",
-    opacity: 0.8
+    size: { widthPercent: 30 }
   }
 }
 
