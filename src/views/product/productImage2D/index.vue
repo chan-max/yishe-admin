@@ -143,6 +143,16 @@ function handleOperationCommand(command: string, row: any) {
 async function handleDelete(row: any) {
   if (!row?.id) return
   try {
+    await ElMessageBox.confirm(
+      '确定要删除该记录吗？',
+      '删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
     await request.delete({ url: `/product-image-2d/${row.id}` })
     ElMessage.success('删除成功')
     getList()
@@ -156,7 +166,7 @@ async function handleBatchDelete() {
     await ElMessageBox.confirm(
       `确定要删除选中的 ${selectedIds.value.length} 条记录吗？`,
       '批量删除确认',
-      {
+      { 
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -189,7 +199,7 @@ async function handleBatchDelete() {
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid var(--el-border-color-light);
-}
+} 
 
 .preview-image {
   width: 100%;
