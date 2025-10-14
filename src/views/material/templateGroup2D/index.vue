@@ -181,6 +181,36 @@
                     </div>
                   </div>
 
+                  <!-- 透明度控制 -->
+                  <div class="control-group">
+                    <label>透明度:</label>
+                    <div class="control-item">
+                      <span>透明度%:</span>
+                      <el-slider
+                        v-model="manualConfigs[index].opacity"
+                        :min="0"
+                        :max="100"
+                        :step="1"
+                        show-input
+                        @change="onManualConfigChange(index)"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- 保持原图开关 -->
+                  <div class="control-group">
+                    <label>保持原图:</label>
+                    <div class="control-item">
+                      <el-switch
+                        v-model="manualConfigs[index].keepOriginal"
+                        @change="onManualConfigChange(index)"
+                      />
+                      <span style="margin-left: 8px; font-size: 12px; color: var(--el-text-color-secondary);">
+                        开启时不进行图片组合，直接使用模板原图
+                      </span>
+                    </div>
+                  </div>
+
                 </div>
 
                 <!-- JSON配置 -->
@@ -219,12 +249,16 @@ const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 const jsonPlaceholder = `请输入JSON配置，例如：
 {
   "position": { "x": 0, "y": 0 },
-  "size": { "widthPercent": 30 }
+  "size": { "widthPercent": 30 },
+  "opacity": 100,
+  "keepOriginal": false
 }
 
 参数说明：
 • position: { x, y } - 素材左上角坐标(像素)，0,0表示左上角
-• size: { widthPercent: 1-100 } - 素材宽度占模板宽度的百分比`
+• size: { widthPercent: 1-100 } - 素材宽度占模板宽度的百分比
+• opacity: 0-100 - 素材透明度百分比，100表示完全不透明
+• keepOriginal: true/false - 是否保持原图，true时直接使用模板原图，不进行图片组合处理`
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
@@ -333,14 +367,18 @@ function openImageOption(row) {
 function getDefaultImageOption() {
   return JSON.stringify({
     position: { x: 0, y: 0 },
-    size: { widthPercent: 30 }
+    size: { widthPercent: 30 },
+    opacity: 100,
+    keepOriginal: false
   }, null, 2)
 }
 
 function getDefaultManualConfig() {
   return {
     position: { x: 0, y: 0 },
-    size: { widthPercent: 30 }
+    size: { widthPercent: 30 },
+    opacity: 100,
+    keepOriginal: false
   }
 }
 
