@@ -262,6 +262,10 @@
                         <el-icon><Picture /></el-icon>
                         制作设计模型
                       </el-dropdown-item>
+                      <el-dropdown-item command="link-template-2d">
+                        <el-icon><Grid /></el-icon>
+                        二维模板制作商品图
+                      </el-dropdown-item>
                       <el-dropdown-item command="ai-generate">
                         <el-icon><MagicStick /></el-icon>
                         AI自动生成内容
@@ -819,7 +823,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1233,6 +1237,13 @@ async function handleDesignModel(row) {
   resetDesignModelSteps()
   designModelModalVisible.value = true
   await loadDesignModels()
+}
+
+// 处理单个素材的二维模板制作
+async function handleLinkTemplate2D(row) {
+  // 设置当前选中的素材为单个素材
+  ids.value = [row.id]
+  await openLinkTemplate2D(row)
 }
 
 async function loadDesignModels() {
@@ -1668,6 +1679,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'design-model':
       handleDesignModel(row);
+      break;
+    case 'link-template-2d':
+      handleLinkTemplate2D(row);
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
