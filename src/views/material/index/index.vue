@@ -1949,10 +1949,10 @@ async function handleUrlUpload() {
 .template-selector .template-list { min-height: 320px; max-height: 560px; overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; }
 .template-selector .section-title { margin-top: 8px; }
 .template-selector .template-list-rows { display: flex; flex-direction: column; gap: 10px; }
-.template-selector .template-row { display: flex !important; align-items: center; gap: 12px; padding: 10px; border: 2px solid var(--el-border-color); border-radius: 10px; background: transparent; width: 100%; height: 160px; }
+.template-selector .template-row { display: flex !important; align-items: center; gap: 12px; padding: 8px; border: 2px solid var(--el-border-color); border-radius: 10px; background: transparent; width: 100%; height: 100px; }
 .template-selector .template-row:hover { border-color: var(--el-color-primary); box-shadow: 0 4px 12px rgba(64,158,255,0.12); background: rgba(64,158,255,0.06); }
 .template-selector .template-row.is-checked { border-color: var(--el-color-primary); box-shadow: 0 0 0 2px var(--el-color-primary) inset; }
-.template-selector .row-thumb { width: 200px; height: 120px; background: #f9fafb; border-radius: 6px; display:flex; align-items:center; justify-content:center; overflow: hidden; }
+.template-selector .row-thumb { width: 120px; height: 80px; background: #f9fafb; border-radius: 6px; display:flex; align-items:center; justify-content:center; overflow: hidden; }
 .template-selector .row-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .template-selector .row-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .template-selector .row-title { font-size: 14px; font-weight: 500; color: var(--el-text-color-primary); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
