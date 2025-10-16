@@ -6,6 +6,93 @@
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
       </div>
     </div>
+    
+    <!-- 素材详情弹窗 -->
+    <el-dialog
+      v-model="materialDialogVisible"
+      title="素材详情"
+      width="800px"
+      :before-close="handleCloseMaterialDialog"
+    >
+      <div v-if="materialDetail" class="material-detail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="素材ID">{{ materialDetail.id }}</el-descriptions-item>
+          <el-descriptions-item label="素材名称">{{ materialDetail.name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="文件后缀">{{ materialDetail.suffix || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="素材分组">{{ materialDetail.group || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="是否公开">{{ materialDetail.isPublic ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="是否材质">{{ materialDetail.isTexture ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="是否自定义">{{ materialDetail.isCustom ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="是否侵权">{{ materialDetail.isInfringement ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="是否发布">{{ materialDetail.isPublish ? '是' : '否' }}</el-descriptions-item>
+          <el-descriptions-item label="上传者">{{ materialDetail.uploader?.name || materialDetail.uploader?.account || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ materialDetail.createTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ materialDetail.updateTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="关键词" :span="2">{{ materialDetail.keywords || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="素材描述" :span="2">{{ materialDetail.description || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <div v-if="materialDetail.url" class="mt-4">
+          <h4>素材图片：</h4>
+          <div class="material-images">
+            <el-image
+              :src="materialDetail.url"
+              :preview-src-list="[materialDetail.url]"
+              fit="cover"
+              class="material-image"
+            />
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-center py-8">
+        <el-icon class="text-4xl text-gray-400"><Loading /></el-icon>
+        <p class="mt-2 text-gray-500">加载中...</p>
+      </div>
+    </el-dialog>
+
+    <!-- 模板详情弹窗 -->
+    <el-dialog
+      v-model="templateDialogVisible"
+      title="模板详情"
+      width="800px"
+      :before-close="handleCloseTemplateDialog"
+    >
+      <div v-if="templateDetail" class="template-detail">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="模板组ID">{{ templateDetail.id }}</el-descriptions-item>
+          <el-descriptions-item label="模板组名称">{{ templateDetail.name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ templateDetail.createTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="更新时间">{{ templateDetail.updateTime || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="关键词" :span="2">{{ templateDetail.keywords || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="模板描述" :span="2">{{ templateDetail.description || '-' }}</el-descriptions-item>
+        </el-descriptions>
+        <div v-if="getTemplateImages(templateDetail).length" class="mt-4">
+          <h4>模板图片：</h4>
+          <div class="template-images">
+            <div v-for="(image, index) in getTemplateImages(templateDetail)" :key="index" class="template-image-item">
+              <div class="template-image-info">
+                <p><strong>图片{{ index + 1 }}：</strong></p>
+                <p v-if="getTemplateImageOption(templateDetail, index + 1)" class="text-sm text-gray-600">
+                  配置：{{ getTemplateImageOption(templateDetail, index + 1) }}
+                </p>
+              </div>
+              <div class="template-image-preview">
+                <el-image
+                  :src="image"
+                  :preview-src-list="getTemplateImages(templateDetail)"
+                  :initial-index="index"
+                  fit="cover"
+                  class="preview-thumb"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="text-center py-8">
+        <el-icon class="text-4xl text-gray-400"><Loading /></el-icon>
+        <p class="mt-2 text-gray-500">加载中...</p>
+      </div>
+    </el-dialog>
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -28,6 +115,34 @@
             <div v-if="!getImageList(row).length" class="no-images">
               暂无合成图片
             </div>
+          </div>
+        </template>
+        <template #materialIdSlot="{ row }">
+          <div class="flex items-center gap-2">
+            <span>{{ row.materialId }}</span>
+            <el-button 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleViewMaterial(row.materialId)"
+              :disabled="!row.materialId"
+            >
+              查看
+            </el-button>
+          </div>
+        </template>
+        <template #templateGroup2DIdSlot="{ row }">
+          <div class="flex items-center gap-2">
+            <span>{{ row.templateGroup2DId }}</span>
+            <el-button 
+              link 
+              type="primary" 
+              size="small" 
+              @click="handleViewTemplate(row.templateGroup2DId)"
+              :disabled="!row.templateGroup2DId"
+            >
+              查看
+            </el-button>
           </div>
         </template>
         <template #operationDefaultSlot="{ row }">
@@ -60,7 +175,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { ArrowDown, Loading } from '@element-plus/icons-vue'
+import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 
 const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 
@@ -68,13 +184,13 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: 'ID', field: 'id', width: 200 },
-    { title: '素材ID', field: 'materialId', width: 200 },
-    { title: '二维模板组ID', field: 'templateGroup2DId', width: 'auto' },
     { title: '合成图片', field: 'images', width: 300, slots: { default: 'imagesSlot' } },
+    { title: 'ID', field: 'id', width: 200 },
+    { title: '素材ID', field: 'materialId', width: 200, slots: { default: 'materialIdSlot' } },
+    { title: '二维模板组ID', field: 'templateGroup2DId', width: 'auto', slots: { default: 'templateGroup2DIdSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
-    { title: '操作', field: 'operation', width: 80, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
+    { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
   ],
   checkboxConfig: { reserve: true },
 })
@@ -83,6 +199,12 @@ const dataSource = ref<any[]>([])
 const loading = ref(false)
 const total = ref(0)
 const selectedIds = ref<string[]>([])
+
+// 弹窗相关状态
+const materialDialogVisible = ref(false)
+const templateDialogVisible = ref(false)
+const materialDetail = ref<any>(null)
+const templateDetail = ref<any>(null)
 
 async function getList() {
   loading.value = true
@@ -116,6 +238,34 @@ function getImageList(row: any): string[] {
     }
   }
   return images
+}
+
+// 获取模板图片列表
+function getTemplateImages(template: any): string[] {
+  const images: string[] = []
+  for (let i = 1; i <= 10; i++) {
+    const imageUrl = template[`image${i}`]
+    if (imageUrl && imageUrl.trim()) {
+      images.push(imageUrl)
+    }
+  }
+  return images
+}
+
+// 获取模板图片配置
+function getTemplateImageOption(template: any, index: number): string {
+  const option = template[`imageOption${index}`]
+  if (option && option.trim()) {
+    try {
+      // 尝试解析JSON配置
+      const parsed = JSON.parse(option)
+      return JSON.stringify(parsed, null, 2)
+    } catch {
+      // 如果不是JSON，直接返回字符串
+      return option
+    }
+  }
+  return ''
 }
 
 function onCheckboxChange(e: any) {
@@ -183,6 +333,86 @@ async function handleBatchDelete() {
     }
   }
 }
+
+// 查看关联素材
+async function handleViewMaterial(materialId: string) {
+  if (!materialId) {
+    ElMessage.warning('素材ID为空')
+    return
+  }
+  
+  materialDialogVisible.value = true
+  materialDetail.value = null
+  
+  try {
+    // 根据后端接口定义，使用 sticker/page 接口获取素材详情
+    // 使用 POST 方式：POST /sticker/page
+    const res = await request.post({ 
+      url: `/sticker/page`, 
+      data: { 
+        id: materialId, 
+        currentPage: 1, 
+        pageSize: 1 
+      } 
+    })
+    materialDetail.value = res.list?.[0] || res
+  } catch (e) {
+    console.error('获取素材详情失败:', e)
+    ElMessage.error('获取素材详情失败')
+    materialDetail.value = {
+      id: materialId,
+      name: '获取失败',
+      type: '-',
+      category: '-',
+      createTime: '-',
+      updateTime: '-',
+      description: '获取素材详情失败，请稍后重试'
+    }
+  }
+}
+
+// 查看关联模板
+async function handleViewTemplate(templateGroup2DId: string) {
+  if (!templateGroup2DId) {
+    ElMessage.warning('模板组ID为空')
+    return
+  }
+  
+  templateDialogVisible.value = true
+  templateDetail.value = null
+  
+  try {
+    // 使用现有的API函数获取模板详情
+    // 由于分页接口不支持ID过滤，我们需要获取所有模板然后过滤
+    const res = await pageTemplateGroup2D({ page: 1, pageSize: 1000 })
+    const template = res.list?.find((item: any) => item.id === templateGroup2DId)
+    templateDetail.value = template || null
+  } catch (e) {
+    console.error('获取模板详情失败:', e)
+    ElMessage.error('获取模板详情失败')
+    templateDetail.value = {
+      id: templateGroup2DId,
+      name: '获取失败',
+      type: '-',
+      category: '-',
+      createTime: '-',
+      updateTime: '-',
+      description: '获取模板详情失败，请稍后重试'
+    }
+  }
+}
+
+// 关闭素材详情弹窗
+function handleCloseMaterialDialog() {
+  materialDialogVisible.value = false
+  materialDetail.value = null
+}
+
+// 关闭模板详情弹窗
+function handleCloseTemplateDialog() {
+  templateDialogVisible.value = false
+  templateDetail.value = null
+}
 </script>
 
 <style scoped>
@@ -217,6 +447,66 @@ async function handleBatchDelete() {
   width: 100%;
   border: 1px dashed var(--el-border-color-light);
   border-radius: 4px;
+}
+
+/* 弹窗样式 */
+.material-detail,
+.template-detail {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.material-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.material-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.template-images {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.template-image-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 4px;
+  background-color: var(--el-bg-color-page);
+}
+
+.template-image-info {
+  flex: 1;
+}
+
+.template-image-info p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.template-image-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.preview-thumb {
+  width: 100%;
+  height: 100%;
 }
 </style>
 
