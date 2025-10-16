@@ -249,23 +249,13 @@
                     操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
-                    <el-dropdown-menu>
+                  <el-dropdown-menu>
                       <el-dropdown-item command="edit">
                         <el-icon><Edit /></el-icon>
                         编辑
                       </el-dropdown-item>
-                      <el-dropdown-item command="download">
-                        <el-icon><Download /></el-icon>
-                        下载
-                      </el-dropdown-item>
-                      <el-dropdown-item command="design-model">
-                        <el-icon><Picture /></el-icon>
-                        制作设计模型
-                      </el-dropdown-item>
-                      <el-dropdown-item command="link-template-2d">
-                        <el-icon><Grid /></el-icon>
-                        二维模板制作商品图
-                      </el-dropdown-item>
+
+                      <el-dropdown-item disabled>内容相关</el-dropdown-item>
                       <el-dropdown-item command="ai-generate">
                         <el-icon><MagicStick /></el-icon>
                         AI自动生成内容
@@ -274,10 +264,26 @@
                         <el-icon><Warning /></el-icon>
                         AI判断侵权(知名IP)
                       </el-dropdown-item>
+                      <el-dropdown-item command="view-meta">
+                        <el-icon><Document /></el-icon>
+                        查看元数据
+                      </el-dropdown-item>
+
+                      <el-dropdown-item divided disabled>文件操作</el-dropdown-item>
+                      <el-dropdown-item command="download">
+                        <el-icon><Download /></el-icon>
+                        下载
+                      </el-dropdown-item>
+                      <el-dropdown-item command="copy">
+                        <el-icon><Document /></el-icon>
+                        复制
+                      </el-dropdown-item>
                       <el-dropdown-item command="generate-phash">
                         <el-icon><Key /></el-icon>
                         生成哈希
                       </el-dropdown-item>
+
+                      <el-dropdown-item divided disabled>发布</el-dropdown-item>
                       <el-dropdown-item command="publish" v-if="!row.isPublish">
                         <el-icon><Upload /></el-icon>
                         发布
@@ -286,11 +292,17 @@
                         <el-icon><Download /></el-icon>
                         下架
                       </el-dropdown-item>
-                      <el-dropdown-item command="view-meta">
-                        <el-icon><Document /></el-icon>
-                        查看元数据
+
+                      <el-dropdown-item divided disabled>制作</el-dropdown-item>
+                      <el-dropdown-item command="design-model">
+                        <el-icon><Picture /></el-icon>
+                        制作设计模型
                       </el-dropdown-item>
-                      
+                      <el-dropdown-item command="link-template-2d">
+                        <el-icon><Grid /></el-icon>
+                        二维模板制作商品图
+                      </el-dropdown-item>
+
                       <el-dropdown-item command="delete" divided class="text-red-500">
                         <el-icon><Delete /></el-icon>
                         <span class="text-red-500">删除</span>
@@ -809,7 +821,7 @@ import {
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
-import { uploadMaterialFile } from '@/api/material'
+import { uploadMaterialFile, copyStickers } from '@/api/material'
 
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -1228,6 +1240,18 @@ async function handleDownload(row) {
   } catch (error) {
     console.error('下载失败:', error)
     ElMessage.error(`图片下载失败：${error.message}`)
+  }
+}
+
+// 复制单个素材
+async function handleCopy(row) {
+  try {
+    const res = await copyStickers({ ids: String(row.id) })
+    const count = Array.isArray(res?.list) ? res.list.length : 1
+    ElMessage.success(`复制成功 ${count} 条`)
+    getList()
+  } catch (e) {
+    ElMessage.error('复制失败')
   }
 }
 
@@ -1700,6 +1724,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'view-meta':
       showMetaDetail(row.meta);
+      break;
+    case 'copy':
+      handleCopy(row);
       break;
     case 'delete':
       handleDelete(row);

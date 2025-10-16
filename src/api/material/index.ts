@@ -290,3 +290,13 @@ export function getStickerById(id) {
     }
   })
 }
+
+/**
+ * 复制素材（贴纸）
+ */
+export function copyStickers(data: { ids: string[] | string }) {
+  return request.post({
+    url: '/sticker/copy',
+    data
+  })
+}
