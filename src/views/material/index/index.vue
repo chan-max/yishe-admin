@@ -291,9 +291,9 @@
                         查看元数据
                       </el-dropdown-item>
                       
-                      <el-dropdown-item command="delete" divided>
+                      <el-dropdown-item command="delete" divided class="text-red-500">
                         <el-icon><Delete /></el-icon>
-                        删除
+                        <span class="text-red-500">删除</span>
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
