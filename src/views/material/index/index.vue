@@ -243,73 +243,65 @@
             </template>
 
             <template #operationDefaultSlot="{ row }">
-              <div class="flex items-center">
-                <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+              <div class="flex items-center gap-1">
+                <!-- 普通操作 -->
+                <el-dropdown trigger="click" class="operation-dropdown">
                   <el-button type="primary" link size="small">
                     操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
-                  <el-dropdown-menu>
-                      <el-dropdown-item command="edit">
-                        <el-icon><Edit /></el-icon>
-                        编辑
-                      </el-dropdown-item>
+                    <div class="op-menu">
+                      <div class="op-item">
+                        <span class="op-label">内容相关</span>
+                        <div class="op-submenu">
+                          <div class="op-btn" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
+                          <div class="op-btn" @click="() => handleOperationCommand('ai-judge-infringement', row)">AI判断侵权(知名IP)</div>
+                          <div class="op-btn" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
+                        </div>
+                      </div>
 
-                      <el-dropdown-item disabled>内容相关</el-dropdown-item>
-                      <el-dropdown-item command="ai-generate">
-                        <el-icon><MagicStick /></el-icon>
-                        AI自动生成内容
-                      </el-dropdown-item>
-                      <el-dropdown-item command="ai-judge-infringement">
-                        <el-icon><Warning /></el-icon>
-                        AI判断侵权(知名IP)
-                      </el-dropdown-item>
-                      <el-dropdown-item command="view-meta">
-                        <el-icon><Document /></el-icon>
-                        查看元数据
-                      </el-dropdown-item>
+                      <div class="op-item">
+                        <span class="op-label">发布</span>
+                        <div class="op-submenu">
+                          <div v-if="!row.isPublish" class="op-btn" @click="() => handleOperationCommand('publish', row)">发布</div>
+                          <div v-else class="op-btn" @click="() => handleOperationCommand('unpublish', row)">下架</div>
+                        </div>
+                      </div>
 
-                      <el-dropdown-item divided disabled>文件操作</el-dropdown-item>
-                      <el-dropdown-item command="download">
-                        <el-icon><Download /></el-icon>
-                        下载
-                      </el-dropdown-item>
-                      <el-dropdown-item command="copy">
-                        <el-icon><Document /></el-icon>
-                        复制
-                      </el-dropdown-item>
-                      <el-dropdown-item command="generate-phash">
-                        <el-icon><Key /></el-icon>
-                        生成哈希
-                      </el-dropdown-item>
+                      <div class="op-item">
+                        <span class="op-label">制作</span>
+                        <div class="op-submenu">
+                          <div class="op-btn" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
+                          <div class="op-btn" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
+                        </div>
+                      </div>
 
-                      <el-dropdown-item divided disabled>发布</el-dropdown-item>
-                      <el-dropdown-item command="publish" v-if="!row.isPublish">
-                        <el-icon><Upload /></el-icon>
-                        发布
-                      </el-dropdown-item>
-                      <el-dropdown-item command="unpublish" v-if="row.isPublish">
-                        <el-icon><Download /></el-icon>
-                        下架
-                      </el-dropdown-item>
-
-                      <el-dropdown-item divided disabled>制作</el-dropdown-item>
-                      <el-dropdown-item command="design-model">
-                        <el-icon><Picture /></el-icon>
-                        制作设计模型
-                      </el-dropdown-item>
-                      <el-dropdown-item command="link-template-2d">
-                        <el-icon><Grid /></el-icon>
-                        二维模板制作商品图
-                      </el-dropdown-item>
-
-                      <el-dropdown-item command="delete" divided class="text-red-500">
-                        <el-icon><Delete /></el-icon>
-                        <span class="text-red-500">删除</span>
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
+                      <div class="op-divider"></div>
+                      <div class="op-btn" @click="() => handleOperationCommand('edit', row)">编辑</div>
+                      <div class="op-btn danger" @click="() => handleOperationCommand('delete', row)">删除</div>
+                    </div>
                   </template>
                 </el-dropdown>
+
+                <!-- 图片操作 -->
+                <el-dropdown trigger="click" class="operation-dropdown">
+                  <el-button type="primary" link size="small">
+                    图片<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <div class="op-menu">
+                      <div class="op-item">
+                        <span class="op-label">图片操作</span>
+                        <div class="op-submenu">
+                          <div class="op-btn" @click="() => handleOperationCommand('copy', row)">复制</div>
+                          <div class="op-btn" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
+                          <div class="op-btn" @click="() => handleOperationCommand('download', row)">下载</div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </el-dropdown>
+
                 <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#409EFF;font-size:18px;" />
               </div>
             </template>
@@ -862,7 +854,7 @@ const form = ref({})
 
 const queryParams = reactive({
   currentPage: 1,
-  pageSize: 20,
+  pageSize: 10,
   keyword: '',
   imageName: '', // 按名称搜索
   sortingFields: 'createTime DESC', // 排序字段
@@ -2137,3 +2129,13 @@ h1 {
   }
 }
 </style>
+  <style scoped>
+  .op-menu { min-width: 180px; padding: 4px 0; }
+  .op-item { padding: 4px 8px; }
+  .op-label { display: block; font-size: 11px; color: var(--el-text-color-secondary); margin-bottom: 2px; }
+  .op-submenu { display: flex; flex-direction: column; gap: 2px; }
+  .op-btn { padding: 4px 6px; font-size: 12px; line-height: 1.2; color: var(--el-text-color-regular); cursor: pointer; }
+  .op-btn:hover { background: var(--el-fill-color-light); }
+  .op-btn.danger { color: var(--el-color-danger); }
+  .op-divider { height: 1px; background: var(--el-border-color-lighter); margin: 4px 0; }
+  </style>
