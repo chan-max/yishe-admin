@@ -179,14 +179,18 @@
             @checkbox-all="checkboxAllChange"
           >
             <template #previewDefaultSlot="{ row }">
-              <div class="flex items-center justify-center p-2">
+              <div class="flex flex-col items-center justify-center p-2">
                 <img
                   :src="row.url"
                   :alt="row.name || '素材图片'"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
                   @click="openImagePreview(row.url, row.name)"
                   @error="handleImageError"
+                  @load="(event) => handleImageLoad(event, row)"
                 />
+                <div v-if="row.imageDimensions" class="text-xs text-gray-500 mt-1 text-center">
+                  {{ row.imageDimensions.width }} × {{ row.imageDimensions.height }}
+                </div>
               </div>
             </template>
 
@@ -1626,6 +1630,21 @@ function handleImageError(event: Event) {
   const img = event.target as HTMLImageElement
   img.src = '/src/assets/images/image-error.png' // 错误图片占位符，可以根据实际情况调整
   console.warn('图片加载失败:', img.alt)
+}
+
+// 处理图片加载完成事件
+function handleImageLoad(event: Event, row: any) {
+  const img = event.target as HTMLImageElement
+  if (img.naturalWidth && img.naturalHeight) {
+    // 将图片尺寸信息存储到行数据中
+    row.imageDimensions = {
+      width: img.naturalWidth,
+      height: img.naturalHeight
+    }
+    console.log(`图片 ${row.name || row.id} 尺寸: ${img.naturalWidth} × ${img.naturalHeight}`)
+  } else {
+    console.warn(`图片 ${row.name || row.id} 无法获取尺寸信息`)
+  }
 }
 
 // 显示meta详情
