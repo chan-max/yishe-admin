@@ -1,7 +1,15 @@
 <template>
   <div>
-    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮 -->
-    <div v-if="!isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
+    <!-- 折叠开关 -->
+    <div class="flex pb-2 justify-between items-center">
+      <div></div>
+      <el-button link size="small" @click="actionsCollapsed = !actionsCollapsed">
+        {{ actionsCollapsed ? '展开筛选与操作' : '收起筛选与操作' }}
+      </el-button>
+    </div>
+
+    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮（可折叠） -->
+    <div v-show="!actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
         <el-input
@@ -120,7 +128,7 @@
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
-    <div v-else class="flex pb-4 justify-end">
+    <div v-if="isMobile && !actionsCollapsed" class="flex pb-4 justify-end">
       <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
     </div>
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
@@ -296,6 +304,7 @@
                           <div class="op-btn" @click="() => handleOperationCommand('copy', row)">复制</div>
                           <div class="op-btn" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
                           <div class="op-btn" @click="() => handleOperationCommand('download', row)">下载</div>
+                          <div v-if="(row.suffix || '').toLowerCase() === 'png'" class="op-btn" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
                         </div>
                       </div>
                     </div>
@@ -813,7 +822,7 @@ import {
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
-import { uploadMaterialFile, copyStickers } from '@/api/material'
+import { uploadMaterialFile, copyStickers, trimPng } from '@/api/material'
 
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -971,7 +980,7 @@ const gridOptions = ref({
 const { height } = useWindowSize()
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 260
+  gridOptions.value.maxHeight = height.value - 200
 })
 
 const dataSource = ref([])
@@ -996,6 +1005,7 @@ const rules = {
 const designModelModalVisible = ref(false)
 const filterDialogVisible = ref(false)
 const isMobile = ref(false)
+const actionsCollapsed = ref(true)
 
 // 设计模型相关
 const designModelList = ref([])
@@ -1244,6 +1254,25 @@ async function handleCopy(row) {
     getList()
   } catch (e) {
     ElMessage.error('复制失败')
+  }
+}
+
+// 生成无空白PNG（仅对 png 后缀显示）
+async function handleTrimPng(row) {
+  if ((row.suffix || '').toLowerCase() !== 'png') {
+    ElMessage.warning('仅支持 PNG 图片');
+    return;
+  }
+  try {
+    const res = await trimPng({ id: String(row.id) })
+    if (res && res.id) {
+      ElMessage.success('生成成功');
+    } else {
+      ElMessage.success('生成成功');
+    }
+    getList()
+  } catch (e) {
+    ElMessage.error('生成失败')
   }
 }
 
@@ -1716,6 +1745,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'view-meta':
       showMetaDetail(row.meta);
+      break;
+    case 'trim-png':
+      handleTrimPng(row);
       break;
     case 'copy':
       handleCopy(row);

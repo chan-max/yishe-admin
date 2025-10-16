@@ -300,3 +300,13 @@ export function copyStickers(data: { ids: string[] | string }) {
     data
   })
 }
+
+/**
+ * 生成无空白PNG（仅支持 PNG 后缀）
+ */
+export function trimPng(data: { id: string, threshold?: number }) {
+  return request.post({
+    url: '/sticker/trim-png',
+    data
+  })
+}
