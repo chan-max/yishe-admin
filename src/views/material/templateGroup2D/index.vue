@@ -13,16 +13,39 @@
         :loading="loading"
       >
         <template #imagesSlot="{ row }">
-          <div class="images larger">
-            <div class="img-wrap" v-for="(url, i) in getImages(row)" :key="i">
-              <el-image
-                :src="url"
-                :preview-src-list="getImages(row)"
-                :initial-index="i"
-                fit="cover"
-                @load="() => ensureImageMeta(url)"
-              />
-              
+          <div class="images-with-config" :class="{ 'template-group': getImages(row).length > 1 }">
+            <div v-for="(url, i) in getImages(row)" :key="i" class="image-config-item">
+              <div class="image-preview">
+                <el-image
+                  :src="url"
+                  :preview-src-list="getImages(row)"
+                  :initial-index="i"
+                  fit="cover"
+                  @load="() => ensureImageMeta(url)"
+                />
+                <div class="image-label">图片{{ i + 1 }}</div>
+              </div>
+              <div class="config-info">
+                <div v-if="getImageConfig(row, i + 1)" class="config-details">
+                  <div class="config-line">
+                    <span class="label">位置:</span>
+                    <span class="value">{{ getImageConfig(row, i + 1).position?.xPercent || 0 }}%, {{ getImageConfig(row, i + 1).position?.yPercent || 0 }}%</span>
+                  </div>
+                  <div class="config-line">
+                    <span class="label">尺寸:</span>
+                    <span class="value">{{ getImageConfig(row, i + 1).size?.widthPercent || 30 }}%</span>
+                  </div>
+                  <div class="config-line">
+                    <span class="label">透明度:</span>
+                    <span class="value">{{ getImageConfig(row, i + 1).opacity || 100 }}%</span>
+                  </div>
+                  <div class="config-line" v-if="getImageConfig(row, i + 1).keepOriginal">
+                    <span class="label">保持原图:</span>
+                    <span class="value">是</span>
+                  </div>
+                </div>
+                <div v-else class="config-default">默认配置</div>
+              </div>
             </div>
           </div>
         </template>
@@ -138,26 +161,26 @@
                   <h4>手动配置</h4>
                   <!-- 位置控制 -->
                   <div class="control-group">
-                    <label>位置 (左上角为原点，单位: 像素):</label>
+                    <label>位置 (左上角为原点，单位: 百分比):</label>
                         <div class="position-controls">
                           <div class="control-item">
-                            <span>X:</span>
+                            <span>X%:</span>
                             <el-slider
-                              v-model="manualConfigs[index].position.x"
+                              v-model="manualConfigs[index].position.xPercent"
                               :min="0"
-                              :max="imageMetaMap[url]?.w ? Math.floor(imageMetaMap[url].w) : 2000"
-                              :step="1"
+                              :max="100"
+                              :step="0.1"
                               show-input
                               @change="onManualConfigChange(index)"
                             />
                           </div>
                           <div class="control-item">
-                            <span>Y:</span>
+                            <span>Y%:</span>
                             <el-slider
-                              v-model="manualConfigs[index].position.y"
+                              v-model="manualConfigs[index].position.yPercent"
                               :min="0"
-                              :max="imageMetaMap[url]?.h ? Math.floor(imageMetaMap[url].h) : 2000"
-                              :step="1"
+                              :max="100"
+                              :step="0.1"
                               show-input
                               @change="onManualConfigChange(index)"
                             />
@@ -248,14 +271,14 @@ import { commonGridOptions } from '@/common/table'
 const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 const jsonPlaceholder = `请输入JSON配置，例如：
 {
-  "position": { "x": 0, "y": 0 },
+  "position": { "xPercent": 0, "yPercent": 0 },
   "size": { "widthPercent": 30 },
   "opacity": 100,
   "keepOriginal": false
 }
 
 参数说明：
-• position: { x, y } - 素材左上角坐标(像素)，0,0表示左上角
+• position: { xPercent, yPercent } - 素材左上角坐标(百分比)，0,0表示左上角，100,100表示右下角
 • size: { widthPercent: 1-100 } - 素材宽度占模板宽度的百分比
 • opacity: 0-100 - 素材透明度百分比，100表示完全不透明
 • keepOriginal: true/false - 是否保持原图，true时直接使用模板原图，不进行图片组合处理`
@@ -264,7 +287,7 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: '图片', field: 'images', minWidth: 360, slots: { default: 'imagesSlot' } },
+    { title: '图片与配置', field: 'images', minWidth: 500, slots: { default: 'imagesSlot' } },
     { title: '名称', field: 'name', minWidth: 240 },
     { title: '关键字', field: 'keywords', minWidth: 240 },
     { title: '描述', field: 'description', minWidth: 320 },
@@ -366,7 +389,7 @@ function openImageOption(row) {
 
 function getDefaultImageOption() {
   return JSON.stringify({
-    position: { x: 0, y: 0 },
+    position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
     opacity: 100,
     keepOriginal: false
@@ -375,7 +398,7 @@ function getDefaultImageOption() {
 
 function getDefaultManualConfig() {
   return {
-    position: { x: 0, y: 0 },
+    position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
     opacity: 100,
     keepOriginal: false
@@ -426,9 +449,13 @@ function getOverlayStyle(url: string, index: number) {
   const scaleX = imgWidth / (meta.w || 1)
   const scaleY = imgHeight / (meta.h || 1)
 
-  // 位置（真实像素，左上角为原点），映射到显示坐标
-  let posX = imgLeft + (config.position?.x || 0) * scaleX
-  let posY = imgTop + (config.position?.y || 0) * scaleY
+  // 位置（百分比转换为像素，左上角为原点），映射到显示坐标
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
 
   // 尺寸：使用宽度百分比（相对于模板宽度）
   let realSize = 0
@@ -534,6 +561,27 @@ function getImages(row) {
     if (row[key]) urls.push(row[key])
   }
   return urls
+}
+
+function getImageConfig(row, imageIndex) {
+  const key = `imageOption${imageIndex}`
+  const config = row[key]
+  if (!config) return null
+  
+  try {
+    // 如果是字符串，尝试解析JSON
+    if (typeof config === 'string') {
+      return JSON.parse(config)
+    }
+    // 如果已经是对象，直接返回
+    if (typeof config === 'object') {
+      return config
+    }
+  } catch (e) {
+    console.warn(`解析图片${imageIndex}配置失败:`, e)
+  }
+  
+  return null
 }
 
 async function getList() {
@@ -686,40 +734,124 @@ function dialogClose() {
 </script>
 
 <style scoped>
-.images {
+.images-with-config {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
 }
-.images .img-wrap {
+
+.images-with-config.template-group {
+  border: 2px solid var(--el-color-primary);
+  border-radius: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.02) 0%, rgba(64, 158, 255, 0.05) 100%);
   position: relative;
 }
-.images .el-image, .images img {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  border-radius: 4px;
-}
-.images.larger img {
-  width: 96px;
-  height: 96px;
-}
-.images .img-caption {
+
+.images-with-config.template-group::before {
+  content: '模板组';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 2px 4px;
-  font-size: 12px;
-  line-height: 1.2;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.45);
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
-  display: flex;
-  justify-content: center;
-  gap: 4px;
+  top: -10px;
+  left: 16px;
+  background: var(--el-color-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  z-index: 1;
 }
-.images .img-caption .divider { opacity: .7 }
+
+.image-config-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-page);
+  transition: box-shadow 0.2s;
+}
+
+.image-config-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-light);
+  flex-shrink: 0;
+}
+
+.image-preview .el-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-label {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.config-info {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 0;
+}
+
+.config-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+}
+
+.config-line .label {
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  min-width: 50px;
+  font-size: 11px;
+}
+
+.config-line .value {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+  margin-left: 8px;
+  font-size: 11px;
+}
+
+.config-default {
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
+  font-size: 11px;
+  text-align: center;
+  padding: 8px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  border: 1px dashed var(--el-border-color-light);
+}
 .uploader {
   display: flex;
   gap: 12px;
@@ -790,10 +922,6 @@ function dialogClose() {
   background: rgba(64,158,255,0.15);
   pointer-events: none;
   border-radius: 4px;
-  /* 边框风格（用阴影画线，无模糊、无扩散） */
-  box-shadow:
-    0 -2px 0 0 rgba(255, 200, 0, 0.95),
-    -2px 0 0 0 rgba(255, 200, 0, 0.95);
 }
 .image-option-item .details { display: flex; flex-direction: column; gap: 8px; }
 .image-option-item .meta { font-size: 12px; color: var(--el-text-color-secondary); display: flex; gap: 12px; }
@@ -880,6 +1008,7 @@ function dialogClose() {
   background: rgba(0,0,0,0.4);
   justify-content: center;
 }
+
 </style>
 
 

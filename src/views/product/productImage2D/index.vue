@@ -69,12 +69,6 @@
           <h4>模板图片：</h4>
           <div class="template-images">
             <div v-for="(image, index) in getTemplateImages(templateDetail)" :key="index" class="template-image-item">
-              <div class="template-image-info">
-                <p><strong>图片{{ index + 1 }}：</strong></p>
-                <p v-if="getTemplateImageOption(templateDetail, index + 1)" class="text-sm text-gray-600">
-                  配置：{{ getTemplateImageOption(templateDetail, index + 1) }}
-                </p>
-              </div>
               <div class="template-image-preview">
                 <el-image
                   :src="image"
@@ -83,6 +77,30 @@
                   fit="cover"
                   class="preview-thumb"
                 />
+                <div class="image-overlay">
+                  <span class="image-label">图片{{ index + 1 }}</span>
+                </div>
+              </div>
+              <div class="template-image-config">
+                <div v-if="getTemplateImageConfig(templateDetail, index + 1)" class="config-details">
+                  <div class="config-line">
+                    <span class="label">位置:</span>
+                    <span class="value">{{ getTemplateImageConfig(templateDetail, index + 1).position?.xPercent || 0 }}%, {{ getTemplateImageConfig(templateDetail, index + 1).position?.yPercent || 0 }}%</span>
+                  </div>
+                  <div class="config-line">
+                    <span class="label">尺寸:</span>
+                    <span class="value">{{ getTemplateImageConfig(templateDetail, index + 1).size?.widthPercent || 30 }}%</span>
+                  </div>
+                  <div class="config-line">
+                    <span class="label">透明度:</span>
+                    <span class="value">{{ getTemplateImageConfig(templateDetail, index + 1).opacity || 100 }}%</span>
+                  </div>
+                  <div class="config-line" v-if="getTemplateImageConfig(templateDetail, index + 1).keepOriginal">
+                    <span class="label">保持原图:</span>
+                    <span class="value">是</span>
+                  </div>
+                </div>
+                <div v-else class="config-default">默认配置</div>
               </div>
             </div>
           </div>
@@ -102,8 +120,8 @@
         @checkbox-all="onCheckboxAll"
       >
         <template #imagesSlot="{ row }">
-          <div class="image-preview-container">
-            <div v-for="(image, index) in getImageList(row)" :key="index" class="image-item">
+          <div class="images">
+            <div v-for="(image, index) in getImageList(row)" :key="index" class="img-wrap">
               <el-image
                 :src="image"
                 :preview-src-list="getImageList(row)"
@@ -184,7 +202,7 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: '合成图片', field: 'images', width: 300, slots: { default: 'imagesSlot' } },
+    { title: '合成图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: 'ID', field: 'id', width: 200 },
     { title: '素材ID', field: 'materialId', width: 200, slots: { default: 'materialIdSlot' } },
     { title: '二维模板组ID', field: 'templateGroup2DId', width: 'auto', slots: { default: 'templateGroup2DIdSlot' } },
@@ -240,6 +258,28 @@ function getImageList(row: any): string[] {
   return images
 }
 
+// 获取图片配置（解析为对象）
+function getImageConfig(row: any, imageIndex: number): any {
+  const key = `imageOption${imageIndex}`
+  const config = row[key]
+  if (!config) return null
+  
+  try {
+    // 如果是字符串，尝试解析JSON
+    if (typeof config === 'string') {
+      return JSON.parse(config)
+    }
+    // 如果已经是对象，直接返回
+    if (typeof config === 'object') {
+      return config
+    }
+  } catch (e) {
+    console.warn(`解析图片${imageIndex}配置失败:`, e)
+  }
+  
+  return null
+}
+
 // 获取模板图片列表
 function getTemplateImages(template: any): string[] {
   const images: string[] = []
@@ -252,7 +292,28 @@ function getTemplateImages(template: any): string[] {
   return images
 }
 
-// 获取模板图片配置
+// 获取模板图片配置（解析为对象）
+function getTemplateImageConfig(template: any, index: number): any {
+  const option = template[`imageOption${index}`]
+  if (!option) return null
+  
+  try {
+    // 如果是字符串，尝试解析JSON
+    if (typeof option === 'string') {
+      return JSON.parse(option)
+    }
+    // 如果已经是对象，直接返回
+    if (typeof option === 'object') {
+      return option
+    }
+  } catch (e) {
+    console.warn(`解析图片${index}配置失败:`, e)
+  }
+  
+  return null
+}
+
+// 获取模板图片配置（原始字符串格式，用于兼容）
 function getTemplateImageOption(template: any, index: number): string {
   const option = template[`imageOption${index}`]
   if (option && option.trim()) {
@@ -416,25 +477,22 @@ function handleCloseTemplateDialog() {
 </script>
 
 <style scoped>
-.image-preview-container {
+.images {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
-  max-width: 280px;
+  flex-wrap: wrap;
 }
 
-.image-item {
-  width: 60px;
-  height: 60px;
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-light);
-} 
+.images .img-wrap {
+  position: relative;
+}
 
-.preview-image {
-  width: 100%;
-  height: 100%;
+.images .preview-image {
+  width: 64px;
+  height: 64px;
   object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-light);
 }
 
 .no-images {
@@ -471,42 +529,94 @@ function handleCloseTemplateDialog() {
 }
 
 .template-images {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
   margin-top: 8px;
 }
 
 .template-image-item {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
+  flex-direction: column;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 4px;
+  border-radius: 8px;
   background-color: var(--el-bg-color-page);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
 }
 
-.template-image-info {
-  flex: 1;
-}
-
-.template-image-info p {
-  margin: 4px 0;
-  font-size: 14px;
+.template-image-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .template-image-preview {
-  width: 80px;
-  height: 80px;
-  border-radius: 4px;
+  position: relative;
+  width: 100%;
+  height: 120px;
   overflow: hidden;
-  border: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .preview-thumb {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.template-image-config {
+  padding: 12px;
+  flex: 1;
+}
+
+/* 模板配置显示样式 */
+.config-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.config-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.config-line .label {
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  min-width: 50px;
+}
+
+.config-line .value {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  text-align: right;
+  flex: 1;
+  margin-left: 8px;
+}
+
+.config-default {
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
 }
 </style>
 

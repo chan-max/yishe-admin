@@ -353,32 +353,69 @@
         <div class="template-selector">
           <div class="section-title">选择二维模板组（可多选）</div>
           <div class="template-list">
-            <el-checkbox-group v-model="selectedTemplateGroup2DIds" class="template-list-rows">
-              <el-checkbox 
+            <div class="template-list-rows">
+              <div 
                 v-for="tpl in templateGroup2DOptions"
                 :key="tpl.id"
-                :label="String(tpl.id)"
                 class="template-row"
                 :class="{ 'is-checked': selectedTemplateGroup2DIds.includes(String(tpl.id)) }"
+                @click="toggleTemplateSelection(tpl.id)"
               >
-                <div class="row-thumbs">
-                  <div 
-                    v-for="(img, index) in getTemplateImages(tpl)" 
-                    :key="index"
-                    class="thumb-item"
-                  >
-                    <img 
-                      :src="img" 
-                      :alt="`模板图片 ${index + 1}`"
-                      class="thumb-image"
-                    />
+                <div class="template-checkbox">
+                  <input 
+                    type="checkbox" 
+                    :checked="selectedTemplateGroup2DIds.includes(String(tpl.id))"
+                    @change="toggleTemplateSelection(tpl.id)"
+                    class="checkbox-input"
+                  />
+                  <div class="checkbox-custom"></div>
+                </div>
+                <div class="template-preview">
+                  <div class="template-header">
+                    <div class="template-title" :title="tpl.name">{{ tpl.name || '未命名' }}</div>
+                  </div>
+                  <div class="template-content">
+                    <div class="template-images-row">
+                      <div 
+                        v-for="(img, index) in getTemplateImages(tpl)" 
+                        :key="index"
+                        class="template-image-card"
+                      >
+                        <div class="image-container">
+                          <img 
+                            :src="img" 
+                            :alt="`模板图片 ${index + 1}`"
+                            class="template-image"
+                          />
+                          <div class="image-badge">图片{{ index + 1 }}</div>
+                        </div>
+                        <div class="config-summary">
+                          <div v-if="getTemplateImageConfig(tpl, index + 1)" class="config-info">
+                            <div class="config-item">
+                              <span class="config-label">位置:</span>
+                              <span class="config-value">{{ getTemplateImageConfig(tpl, index + 1).position?.xPercent || 0 }}%, {{ getTemplateImageConfig(tpl, index + 1).position?.yPercent || 0 }}%</span>
+                            </div>
+                            <div class="config-item">
+                              <span class="config-label">尺寸:</span>
+                              <span class="config-value">{{ getTemplateImageConfig(tpl, index + 1).size?.widthPercent || 30 }}%</span>
+                            </div>
+                            <div class="config-item">
+                              <span class="config-label">透明度:</span>
+                              <span class="config-value">{{ getTemplateImageConfig(tpl, index + 1).opacity || 100 }}%</span>
+                            </div>
+                            <div class="config-item" v-if="getTemplateImageConfig(tpl, index + 1).keepOriginal">
+                              <span class="config-label">保持原图:</span>
+                              <span class="config-value">是</span>
+                            </div>
+                          </div>
+                          <div v-else class="config-default">默认配置</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div class="row-content">
-                  <div class="row-title" :title="tpl.name">{{ tpl.name || '未命名' }}</div>
-                </div>
-              </el-checkbox>
-            </el-checkbox-group>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1647,6 +1684,32 @@ function getTemplateImages(tpl) {
   return images
 }
 
+// 获取模板图片的配置信息
+function getTemplateImageConfig(tpl, imageIndex) {
+  try {
+    const imageOptionKey = `imageOption${imageIndex}`
+    const imageOption = tpl[imageOptionKey]
+    if (!imageOption) return null
+    
+    const config = typeof imageOption === 'string' ? JSON.parse(imageOption) : imageOption
+    return config
+  } catch (error) {
+    console.error('解析模板配置失败:', error)
+    return null
+  }
+}
+
+// 切换模板选择
+function toggleTemplateSelection(templateId) {
+  const idStr = String(templateId)
+  const index = selectedTemplateGroup2DIds.value.indexOf(idStr)
+  if (index > -1) {
+    selectedTemplateGroup2DIds.value.splice(index, 1)
+  } else {
+    selectedTemplateGroup2DIds.value.push(idStr)
+  }
+}
+
 async function confirmLinkTemplate2D() {
   if (!selectedTemplateGroup2DIds.value.length) {
     ElMessage.warning('请选择二维模板组')
@@ -1968,17 +2031,205 @@ async function handleUrlUpload() {
 .selected-materials .thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
 .selected-materials .thumb { width: 72px; height: 72px; border: 1px solid var(--el-border-color); border-radius: 4px; overflow: hidden; background: var(--el-fill-color-lighter); }
 .selected-materials .thumb img { width: 100%; height: 100%; object-fit: cover; }
-.template-selector .template-list { min-height: 320px; max-height: 560px; overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; }
+.template-selector .template-list { min-height: 320px; max-height: 560px; overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; width: 100%; }
 .template-selector .section-title { margin-top: 8px; }
 .template-selector .template-list-rows { display: flex; flex-direction: column; gap: 10px; }
-.template-selector .template-row { display: flex !important; align-items: center; gap: 12px; padding: 8px; border: 2px solid var(--el-border-color); border-radius: 10px; background: transparent; width: 100%; height: 100px; }
-.template-selector .template-row:hover { border-color: var(--el-color-primary); box-shadow: 0 4px 12px rgba(64,158,255,0.12); background: rgba(64,158,255,0.06); }
-.template-selector .template-row.is-checked { border-color: var(--el-color-primary); box-shadow: 0 0 0 2px var(--el-color-primary) inset; }
-.template-selector .row-thumbs { display: flex; gap: 4px; align-items: center; }
-.template-selector .thumb-item { width: 60px; height: 60px; background: #f9fafb; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
-.template-selector .thumb-image { width: 100%; height: 100%; object-fit: cover; display: block; }
-.template-selector .row-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.template-selector .row-title { font-size: 14px; font-weight: 500; color: var(--el-text-color-primary); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.template-selector .template-row { 
+  display: flex; 
+  align-items: flex-start; 
+  gap: 16px; 
+  padding: 16px; 
+  border: 2px solid var(--el-border-color); 
+  border-radius: 12px; 
+  background: transparent; 
+  width: 100%; 
+  min-height: auto; 
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.template-checkbox {
+  position: relative;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.checkbox-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkbox-custom {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--el-border-color);
+  border-radius: 4px;
+  background: white;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.checkbox-input:checked + .checkbox-custom {
+  background: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+.checkbox-input:checked + .checkbox-custom::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.template-selector .template-list-rows {
+  width: 100%;
+  overflow: visible;
+}
+
+.template-selector .template-list {
+  overflow-x: auto;
+  overflow-y: auto;
+}
+.template-selector .template-row:hover { 
+  border-color: var(--el-color-primary); 
+  box-shadow: 0 4px 12px rgba(64,158,255,0.12); 
+  background: rgba(64,158,255,0.06); 
+}
+.template-selector .template-row.is-checked { 
+  border-color: var(--el-color-primary); 
+  box-shadow: 0 0 0 2px var(--el-color-primary) inset; 
+  background: rgba(64,158,255,0.08);
+}
+
+.template-preview {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  overflow: visible;
+}
+
+.template-header {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.template-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin: 0;
+}
+
+.template-content {
+  width: 100%;
+}
+
+.template-images-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+  overflow: visible;
+  min-width: 0;
+}
+
+.template-image-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-page);
+  transition: all 0.2s ease;
+  min-width: 200px;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.template-image-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: var(--el-color-primary);
+}
+
+.image-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.template-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.config-summary {
+  width: 100%;
+  text-align: center;
+}
+
+.config-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.config-label {
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.config-value {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.config-default {
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
+  font-size: 11px;
+  padding: 8px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  border: 1px dashed var(--el-border-color-light);
+}
 .template-selector .row-actions { display: flex; align-items: center; gap: 8px; }
 .template-selector .check-indicator { width: 14px; height: 14px; border: 2px solid var(--el-border-color); border-radius: 50%; display: inline-block; }
 .template-selector .check-indicator.checked { border-color: var(--el-color-primary); background: var(--el-color-primary); }
