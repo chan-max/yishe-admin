@@ -361,8 +361,18 @@
                 class="template-row"
                 :class="{ 'is-checked': selectedTemplateGroup2DIds.includes(String(tpl.id)) }"
               >
-                <div class="row-thumb">
-                  <img :src="tpl.image1 || tpl.image2 || tpl.image3 || tpl.image4 || tpl.image5 || tpl.image6 || tpl.image7 || tpl.image8 || tpl.image9 || tpl.image10" alt="thumb" />
+                <div class="row-thumbs">
+                  <div 
+                    v-for="(img, index) in getTemplateImages(tpl)" 
+                    :key="index"
+                    class="thumb-item"
+                  >
+                    <img 
+                      :src="img" 
+                      :alt="`模板图片 ${index + 1}`"
+                      class="thumb-image"
+                    />
+                  </div>
                 </div>
                 <div class="row-content">
                   <div class="row-title" :title="tpl.name">{{ tpl.name || '未命名' }}</div>
@@ -1625,6 +1635,18 @@ async function openLinkTemplate2D(row: any) {
   }
 }
 
+// 获取模板的所有图片
+function getTemplateImages(tpl) {
+  const images = []
+  for (let i = 1; i <= 10; i++) {
+    const imageKey = `image${i}`
+    if (tpl[imageKey]) {
+      images.push(tpl[imageKey])
+    }
+  }
+  return images
+}
+
 async function confirmLinkTemplate2D() {
   if (!selectedTemplateGroup2DIds.value.length) {
     ElMessage.warning('请选择二维模板组')
@@ -1952,8 +1974,9 @@ async function handleUrlUpload() {
 .template-selector .template-row { display: flex !important; align-items: center; gap: 12px; padding: 8px; border: 2px solid var(--el-border-color); border-radius: 10px; background: transparent; width: 100%; height: 100px; }
 .template-selector .template-row:hover { border-color: var(--el-color-primary); box-shadow: 0 4px 12px rgba(64,158,255,0.12); background: rgba(64,158,255,0.06); }
 .template-selector .template-row.is-checked { border-color: var(--el-color-primary); box-shadow: 0 0 0 2px var(--el-color-primary) inset; }
-.template-selector .row-thumb { width: 120px; height: 80px; background: #f9fafb; border-radius: 6px; display:flex; align-items:center; justify-content:center; overflow: hidden; }
-.template-selector .row-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+.template-selector .row-thumbs { display: flex; gap: 4px; align-items: center; }
+.template-selector .thumb-item { width: 60px; height: 60px; background: #f9fafb; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+.template-selector .thumb-image { width: 100%; height: 100%; object-fit: cover; display: block; }
 .template-selector .row-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .template-selector .row-title { font-size: 14px; font-weight: 500; color: var(--el-text-color-primary); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .template-selector .row-actions { display: flex; align-items: center; gap: 8px; }

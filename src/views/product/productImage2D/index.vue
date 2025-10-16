@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4">
+  <div >
     <div class="py-4 flex justify-between items-center">
       <div></div>
       <div class="flex gap-2">
