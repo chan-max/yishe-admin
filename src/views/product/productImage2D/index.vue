@@ -15,6 +15,17 @@
       :before-close="handleCloseMaterialDialog"
     >
       <div v-if="materialDetail" class="material-detail">
+        <div v-if="materialDetail.url" class="mb-4">
+          <h4>素材图片：</h4>
+          <div class="material-images">
+            <el-image
+              :src="materialDetail.url"
+              :preview-src-list="[materialDetail.url]"
+              fit="contain"
+              class="material-image"
+            />
+          </div>
+        </div>
         <el-descriptions :column="2" border>
           <el-descriptions-item label="素材ID">{{ materialDetail.id }}</el-descriptions-item>
           <el-descriptions-item label="素材名称">{{ materialDetail.name || '-' }}</el-descriptions-item>
@@ -31,17 +42,6 @@
           <el-descriptions-item label="关键词" :span="2">{{ materialDetail.keywords || '-' }}</el-descriptions-item>
           <el-descriptions-item label="素材描述" :span="2">{{ materialDetail.description || '-' }}</el-descriptions-item>
         </el-descriptions>
-        <div v-if="materialDetail.url" class="mt-4">
-          <h4>素材图片：</h4>
-          <div class="material-images">
-            <el-image
-              :src="materialDetail.url"
-              :preview-src-list="[materialDetail.url]"
-              fit="cover"
-              class="material-image"
-            />
-          </div>
-        </div>
       </div>
       <div v-else class="text-center py-8">
         <el-icon class="text-4xl text-gray-400"><Loading /></el-icon>
@@ -136,8 +136,7 @@
           </div>
         </template>
         <template #materialIdSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <span>{{ row.materialId }}</span>
+          <div class="flex items-center justify-center">
             <el-button 
               link 
               type="primary" 
@@ -145,13 +144,12 @@
               @click="handleViewMaterial(row.materialId)"
               :disabled="!row.materialId"
             >
-              查看
+              查看素材
             </el-button>
           </div>
         </template>
         <template #templateGroup2DIdSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <span>{{ row.templateGroup2DId }}</span>
+          <div class="flex items-center justify-center">
             <el-button 
               link 
               type="primary" 
@@ -159,7 +157,7 @@
               @click="handleViewTemplate(row.templateGroup2DId)"
               :disabled="!row.templateGroup2DId"
             >
-              查看
+              查看模板
             </el-button>
           </div>
         </template>
@@ -202,10 +200,9 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: '合成图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
-    { title: 'ID', field: 'id', width: 200 },
-    { title: '素材ID', field: 'materialId', width: 200, slots: { default: 'materialIdSlot' } },
-    { title: '二维模板组ID', field: 'templateGroup2DId', width: 'auto', slots: { default: 'templateGroup2DIdSlot' } },
+    { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
+    { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
     { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
@@ -522,8 +519,10 @@ function handleCloseTemplateDialog() {
 }
 
 .material-image {
-  width: 120px;
-  height: 120px;
+  max-width: 300px;
+  max-height: 300px;
+  width: auto;
+  height: auto;
   border-radius: 4px;
   border: 1px solid var(--el-border-color-light);
 }
