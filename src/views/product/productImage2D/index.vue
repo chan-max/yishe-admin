@@ -720,7 +720,9 @@ function handleCloseEditInfoDialog() {
 .images {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  align-items: center;
 }
 
 .images .img-wrap {
@@ -733,6 +735,7 @@ function handleCloseEditInfoDialog() {
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--el-border-color-light);
+  flex-shrink: 0;
 }
 
 .no-images {
