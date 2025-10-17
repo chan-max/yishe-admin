@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/modules/user'
 import LockDialog from './components/LockDialog.vue'
 import LockPage from './components/LockPage.vue'
 import { useLockStore } from '@/store/modules/lock'
+import { getDeviceInfo } from '@/utils/device'
 
 defineOptions({ name: 'UserInfo' })
 
@@ -56,6 +57,31 @@ const loginOut = async () => {
     replace('/login?redirect=/index')
   } catch {}
 }
+
+const loginOutAll = async () => {
+  try {
+    await ElMessageBox.confirm('确定要登出所有设备吗？这将使其他设备上的登录状态失效。', '登出所有设备', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    await userStore.loginOutAll()
+    tagsViewStore.delAllViews()
+    replace('/login?redirect=/index')
+  } catch {}
+}
+
+// 获取当前设备信息
+const currentDeviceInfo = computed(() => {
+  const deviceInfo = getDeviceInfo()
+  return {
+    type: deviceInfo.userAgent.includes('Mobile') ? '移动设备' : 
+          deviceInfo.userAgent.includes('Tablet') ? '平板设备' : '桌面设备',
+    browser: deviceInfo.userAgent.includes('Chrome') ? 'Chrome' :
+             deviceInfo.userAgent.includes('Firefox') ? 'Firefox' :
+             deviceInfo.userAgent.includes('Safari') ? 'Safari' : '未知浏览器'
+  }
+})
 const toProfile = async () => {
   push('/user/profile')
 }
@@ -95,9 +121,17 @@ const toDocument = () => {
           <Icon icon="ep:lock" />
           <div @click="lockScreen">{{ t('lock.lockScreen') }}</div>
         </ElDropdownItem>
+        <ElDropdownItem>
+          <Icon icon="ep:monitor" />
+          <div>当前设备: {{ currentDeviceInfo.type }}</div>
+        </ElDropdownItem>
         <ElDropdownItem divided @click="loginOut">
           <Icon icon="ep:switch-button" />
           <div>{{ t('common.loginOut') }}</div>
+        </ElDropdownItem>
+        <ElDropdownItem @click="loginOutAll">
+          <Icon icon="ep:close" />
+          <div>登出所有设备</div>
         </ElDropdownItem>
       </ElDropdownMenu>
     </template>

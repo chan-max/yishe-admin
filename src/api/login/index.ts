@@ -34,7 +34,12 @@ export const getTenantByWebsite = (website: string) => {
 
 // 登出
 export const loginOut = () => {
-  return request.post({ url: '/api/auth/logout' })
+  return request.post({ url: '/auth/logout' })
+}
+
+// 登出所有设备
+export const loginOutAll = () => {
+  return request.post({ url: '/auth/logout-all' })
 }
 
 // 获取用户权限信息

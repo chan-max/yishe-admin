@@ -12,6 +12,15 @@ export type UserLoginVO = {
   socialType?: string
   socialCode?: string
   socialState?: string
+  deviceInfo?: {
+    id: string
+    userAgent: string
+    platform: string
+    language: string
+    screenResolution: string
+    timezone: string
+    timestamp: number
+  }
 }
 
 export type TokenType = {

@@ -16,7 +16,8 @@
         </el-form-item>
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item v-if="loginData.tenantEnable === 'true'" prop="tenantName">
+        <!-- 租户功能暂时注释掉 -->
+        <!-- <el-form-item v-if="loginData.tenantEnable === 'true'" prop="tenantName">
           <el-input
             v-model="loginData.loginForm.tenantName"
             :placeholder="t('login.tenantNamePlaceholder')"
@@ -24,7 +25,7 @@
             link
             type="primary"
           />
-        </el-form-item>
+        </el-form-item> -->
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <el-form-item prop="account">
@@ -185,6 +186,7 @@ import * as LoginApi from "@/api/login";
 import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin";
 import { useUserStoreWithOut } from "@/store/modules/user";
 import { setAccessToken } from "@/utils/auth";
+import { getDeviceInfo } from "@/utils/device";
 
 defineOptions({ name: "LoginForm" });
 
@@ -216,7 +218,7 @@ const loginData = reactive({
     // tenantName: import.meta.env.VITE_APP_DEFAULT_LOGIN_TENANT || "",
     account: import.meta.env.VITE_APP_DEFAULT_LOGIN_USERNAME || "",
     password: import.meta.env.VITE_APP_DEFAULT_LOGIN_PASSWORD || "",
-    // rememberMe: true, // 默认记录我。如果不需要，可手动修改
+    rememberMe: true, // 默认记录我。如果不需要，可手动修改
   },
 });
 
@@ -251,12 +253,9 @@ const getLoginFormCache = () => {
   if (loginForm) {
     loginData.loginForm = {
       ...loginData.loginForm,
-      account: loginForm.account ? loginForm.account : loginData.loginForm.account,
+      account: loginForm.username ? loginForm.username : loginData.loginForm.account,
       password: loginForm.password ? loginForm.password : loginData.loginForm.password,
       rememberMe: loginForm.rememberMe,
-      tenantName: loginForm.tenantName
-        ? loginForm.tenantName
-        : loginData.loginForm.tenantName,
     };
   }
 };
@@ -279,7 +278,11 @@ const handleLogin = async () => {
       return;
     }
 
-    const loginDataLoginForm = { ...loginData.loginForm };
+    const loginDataLoginForm = { 
+      username: loginData.loginForm.account, // 使用正确的字段名
+      password: loginData.loginForm.password,
+      deviceInfo: getDeviceInfo() // 添加设备信息
+    };
     const res = await LoginApi.login(loginDataLoginForm);
     if (!res) {
       return;
@@ -289,8 +292,13 @@ const handleLogin = async () => {
       text: "正在加载系统中...",
       background: "rgba(0, 0, 0, 0.7)",
     });
-    if (loginDataLoginForm.rememberMe) {
-      authUtil.setLoginForm(loginDataLoginForm);
+    if (loginData.loginForm.rememberMe) {
+      authUtil.setLoginForm({
+        tenantName: '',
+        username: loginData.loginForm.account,
+        password: loginData.loginForm.password,
+        rememberMe: true
+      });
     } else {
       authUtil.removeLoginForm();
     }
