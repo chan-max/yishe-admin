@@ -28,6 +28,7 @@
       title="素材详情"
       width="800px"
       :before-close="handleCloseMaterialDialog"
+      align-center
     >
       <div v-if="materialDetail" class="material-detail">
         <div v-if="materialDetail.url" class="mb-4">
@@ -70,6 +71,7 @@
       title="模板详情"
       width="800px"
       :before-close="handleCloseTemplateDialog"
+      align-center
     >
       <div v-if="templateDetail" class="template-detail">
         <el-descriptions :column="2" border>
@@ -126,6 +128,40 @@
         <p class="mt-2 text-gray-500">加载中...</p>
       </div>
     </el-dialog>
+
+    <!-- 编辑产品信息弹窗 -->
+    <el-dialog
+      v-model="editInfoDialogVisible"
+      title="编辑产品信息"
+      width="600px"
+      :before-close="handleCloseEditInfoDialog"
+      align-center
+    >
+      <el-form :model="editInfoForm" :rules="editInfoRules" ref="editInfoFormRef" label-width="100px">
+        <el-form-item label="产品名称" prop="name">
+          <el-input v-model="editInfoForm.name" placeholder="请输入产品名称" />
+        </el-form-item>
+        <el-form-item label="产品描述" prop="description">
+          <el-input 
+            v-model="editInfoForm.description" 
+            type="textarea" 
+            :rows="4" 
+            placeholder="请输入产品描述" 
+          />
+        </el-form-item>
+        <el-form-item label="关键词" prop="keywords">
+          <el-input 
+            v-model="editInfoForm.keywords" 
+            placeholder="请输入关键词，多个关键词用逗号分隔" 
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editInfoDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEditInfo" :loading="editInfoLoading">确定</el-button>
+      </template>
+    </el-dialog>
+
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -191,6 +227,9 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
+                <el-dropdown-item command="edit-info">
+                  编辑产品信息
+                </el-dropdown-item>
                 <el-dropdown-item command="mark-pending" v-if="row.publishStatus !== PUBLISH_STATUS.PENDING_SOCIAL_MEDIA">
                   标记为待发布
                 </el-dropdown-item>
@@ -266,6 +305,9 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '产品名称', field: 'name', width: 200, showOverflow: true },
+    { title: '产品描述', field: 'description', width: 200, showOverflow: true },
+    { title: '关键词', field: 'keywords', width: 150, showOverflow: true },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
     { 
@@ -298,6 +340,21 @@ const materialDialogVisible = ref(false)
 const templateDialogVisible = ref(false)
 const materialDetail = ref<any>(null)
 const templateDetail = ref<any>(null)
+
+// 编辑产品信息相关状态
+const editInfoDialogVisible = ref(false)
+const editInfoLoading = ref(false)
+const editInfoFormRef = ref()
+const currentEditRow = ref<any>(null)
+const editInfoForm = ref({
+  name: '',
+  description: '',
+  keywords: ''
+})
+
+const editInfoRules = {
+  name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }]
+}
 
 async function getList() {
   loading.value = true
@@ -465,6 +522,9 @@ async function updateStatus(row: any, newStatus: string) {
 
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
+    case 'edit-info':
+      handleEditInfo(row)
+      break
     case 'delete':
       handleDelete(row)
       break
@@ -607,6 +667,52 @@ function handleCloseMaterialDialog() {
 function handleCloseTemplateDialog() {
   templateDialogVisible.value = false
   templateDetail.value = null
+}
+
+// 编辑产品信息
+function handleEditInfo(row: any) {
+  currentEditRow.value = row
+  editInfoForm.value = {
+    name: row.name || '',
+    description: row.description || '',
+    keywords: row.keywords || ''
+  }
+  editInfoDialogVisible.value = true
+}
+
+// 提交编辑产品信息
+async function submitEditInfo() {
+  if (!currentEditRow.value?.id) return
+  
+  editInfoLoading.value = true
+  try {
+    await editInfoFormRef.value.validate()
+    
+    await request.put({ 
+      url: `/product-image-2d/${currentEditRow.value.id}/info`, 
+      data: editInfoForm.value 
+    })
+    
+    ElMessage.success('产品信息更新成功')
+    editInfoDialogVisible.value = false
+    getList() // 重新获取列表
+  } catch (e) {
+    console.error('更新产品信息失败:', e)
+    ElMessage.error('更新产品信息失败')
+  } finally {
+    editInfoLoading.value = false
+  }
+}
+
+// 关闭编辑产品信息弹窗
+function handleCloseEditInfoDialog() {
+  editInfoDialogVisible.value = false
+  currentEditRow.value = null
+  editInfoForm.value = {
+    name: '',
+    description: '',
+    keywords: ''
+  }
 }
 </script>
 
