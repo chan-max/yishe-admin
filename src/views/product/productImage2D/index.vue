@@ -1,7 +1,22 @@
 <template>
   <div >
     <div class="py-4 flex justify-between items-center">
-      <div></div>
+      <div class="flex gap-2 items-center">
+        <el-select 
+          v-model="queryParams.status" 
+          placeholder="选择状态" 
+          clearable 
+          style="width: 160px"
+          @change="handleStatusFilter"
+        >
+          <el-option
+            v-for="option in STATUS_OPTIONS"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </el-select>
+      </div>
       <div class="flex gap-2">
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
       </div>
@@ -161,6 +176,14 @@
             </el-button>
           </div>
         </template>
+        <template #statusSlot="{ row }">
+          <el-tag 
+            :type="getStatusTagType(row.publishStatus)"
+            size="small"
+          >
+            {{ STATUS_TEXT[row.publishStatus] || '未知' }}
+          </el-tag>
+        </template>
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button link type="primary" size="small">
@@ -168,7 +191,19 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
+                <el-dropdown-item command="mark-pending" v-if="row.publishStatus !== PUBLISH_STATUS.PENDING_SOCIAL_MEDIA">
+                  标记为待发布
+                </el-dropdown-item>
+                <el-dropdown-item command="mark-published" v-if="row.publishStatus !== PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA">
+                  标记为已发布
+                </el-dropdown-item>
+                <el-dropdown-item command="mark-draft" v-if="row.publishStatus !== PUBLISH_STATUS.DRAFT">
+                  标记为草稿
+                </el-dropdown-item>
+                <el-dropdown-item command="mark-archived" v-if="row.publishStatus !== PUBLISH_STATUS.ARCHIVED">
+                  标记为已归档
+                </el-dropdown-item>
+                <el-dropdown-item command="delete" divided class="text-red-500">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -195,7 +230,36 @@ import { ArrowDown, Loading } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
 
-const queryParams = reactive({ currentPage: 1, pageSize: 20 })
+// 状态常量定义
+const PUBLISH_STATUS = {
+  DRAFT: 'draft',                    // 草稿
+  PENDING_SOCIAL_MEDIA: 'pending_social_media',  // 待发布社交媒体
+  PUBLISHED_SOCIAL_MEDIA: 'published_social_media',  // 已发布社交媒体
+  ARCHIVED: 'archived'               // 已归档
+} as const
+
+// 状态显示文本
+const STATUS_TEXT = {
+  [PUBLISH_STATUS.DRAFT]: '草稿',
+  [PUBLISH_STATUS.PENDING_SOCIAL_MEDIA]: '待发布社交媒体',
+  [PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA]: '已发布社交媒体',
+  [PUBLISH_STATUS.ARCHIVED]: '已归档'
+} as const
+
+// 状态选项
+const STATUS_OPTIONS = [
+  { label: '全部', value: '' },
+  { label: '草稿', value: PUBLISH_STATUS.DRAFT },
+  { label: '待发布社交媒体', value: PUBLISH_STATUS.PENDING_SOCIAL_MEDIA },
+  { label: '已发布社交媒体', value: PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA },
+  { label: '已归档', value: PUBLISH_STATUS.ARCHIVED }
+]
+
+const queryParams = reactive({ 
+  currentPage: 1, 
+  pageSize: 20,
+  status: '' // 状态过滤
+})
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
@@ -204,6 +268,13 @@ const gridOptions = ref<any>({
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
+    { 
+      title: '发布状态', 
+      field: 'publishStatus', 
+      width: 140, 
+      slots: { default: 'statusSlot' },
+      formatter: ({ cellValue }) => STATUS_TEXT[cellValue] || '未知'
+    },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
     { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
@@ -232,7 +303,17 @@ async function getList() {
   loading.value = true
   try {
     console.log('获取二维设计商品图列表...')
-    const res = await request.post({ url: '/product-image-2d/page', data: { page: queryParams.currentPage, pageSize: queryParams.pageSize } })
+    const requestData: any = { 
+      page: queryParams.currentPage, 
+      pageSize: queryParams.pageSize 
+    }
+    
+    // 添加状态过滤条件
+    if (queryParams.status) {
+      requestData.publishStatus = queryParams.status
+    }
+    
+    const res = await request.post({ url: '/product-image-2d/page', data: requestData })
     console.log('获取到的数据:', res)
     dataSource.value = res.list || []
     total.value = res.total || 0
@@ -345,10 +426,59 @@ function onCheckboxAll(e: any) {
   selectedIds.value = [...records, ...reserves].map((r: any) => String(r.id))
 }
 
+// 状态过滤处理
+function handleStatusFilter() {
+  queryParams.currentPage = 1 // 重置到第一页
+  getList()
+}
+
+// 获取状态标签类型
+function getStatusTagType(status: string): 'info' | 'warning' | 'success' | 'danger' | 'primary' {
+  switch (status) {
+    case PUBLISH_STATUS.DRAFT:
+      return 'info'
+    case PUBLISH_STATUS.PENDING_SOCIAL_MEDIA:
+      return 'warning'
+    case PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA:
+      return 'success'
+    case PUBLISH_STATUS.ARCHIVED:
+      return 'danger'
+    default:
+      return 'primary'
+  }
+}
+
+// 更新状态
+async function updateStatus(row: any, newStatus: string) {
+  try {
+    await request.put({ 
+      url: `/product-image-2d/${row.id}/status`, 
+      data: { publishStatus: newStatus } 
+    })
+    ElMessage.success('状态更新成功')
+    getList() // 重新获取列表
+  } catch (e) {
+    console.error('更新状态失败:', e)
+    ElMessage.error('状态更新失败')
+  }
+}
+
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
     case 'delete':
       handleDelete(row)
+      break
+    case 'mark-pending':
+      updateStatus(row, PUBLISH_STATUS.PENDING_SOCIAL_MEDIA)
+      break
+    case 'mark-published':
+      updateStatus(row, PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA)
+      break
+    case 'mark-draft':
+      updateStatus(row, PUBLISH_STATUS.DRAFT)
+      break
+    case 'mark-archived':
+      updateStatus(row, PUBLISH_STATUS.ARCHIVED)
       break
     default:
       console.warn('未知的操作命令:', command)
