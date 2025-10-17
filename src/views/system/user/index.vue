@@ -106,7 +106,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="用户账号" prop="account">
-              <el-input v-model="formData.account" placeholder="请输入用户账号" :disabled="!!formData.id" />
+              <el-input v-model="formData.account" placeholder="请输入用户账号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">

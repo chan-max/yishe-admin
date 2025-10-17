@@ -30,7 +30,7 @@
         <el-form-item prop="account">
           <el-input
             v-model="loginData.loginForm.account"
-            :placeholder="t('login.accountPlaceholder')"
+            placeholder="请输入账号"
             :prefix-icon="iconAvatar"
           />
         </el-form-item>
