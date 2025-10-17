@@ -187,12 +187,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
 import { ArrowDown, Loading } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
+import { useWindowSize } from '@vueuse/core'
 
 const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 
@@ -208,6 +209,12 @@ const gridOptions = ref<any>({
     { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
   ],
   checkboxConfig: { reserve: true },
+})
+
+const { height } = useWindowSize()
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 250
 })
 
 const dataSource = ref<any[]>([])
