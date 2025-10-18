@@ -212,6 +212,11 @@
             {{ STATUS_TEXT[row.publishStatus] || '未知' }}
           </el-tag>
         </template>
+        <template #codeSlot="{ row }">
+          <div class="product-code">
+            <span v-if="row.code" class="code-text">{{ row.code }}</span>
+          </div>
+        </template>
         <template #nameSlot="{ row }">
           <div class="product-name">
             <span v-if="row.name" class="name-text">{{ row.name }}</span>
@@ -265,6 +270,13 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="edit-product" class="text-primary">编辑产品信息</el-dropdown-item>
+                <el-dropdown-item 
+                  command="generate-code" 
+                  class="text-purple-500"
+                  :disabled="generatingCodeId === row.id"
+                >
+                  {{ generatingCodeId === row.id ? '生成中...' : (row.code ? '重新生成代码' : '生成产品代码') }}
+                </el-dropdown-item>
                 <el-dropdown-item divided command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
                 <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
                 <el-dropdown-item command="mark-draft" class="text-blue-500">标记为草稿</el-dropdown-item>
@@ -334,6 +346,7 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } },
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
     { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
     { title: '关键词', field: 'keywords', width: 150, slots: { default: 'keywordsSlot' } },
@@ -393,6 +406,32 @@ const editProductRules = {
 // 图片预览相关状态
 const currentPreviewImages = ref<string[]>([])
 const currentPreviewIndex = ref(0)
+
+// 生成代码相关状态
+const generatingCodeId = ref<string>('')
+
+// 生成唯一码
+async function handleGenerateCode(row: any) {
+  if (!row?.id) return
+  
+  try {
+    generatingCodeId.value = row.id
+    
+    await request.post({
+      url: '/product-image-2d/generate-code',
+      data: { id: row.id }
+    })
+    
+    const message = row.code ? '产品代码重新生成成功' : '产品代码生成成功'
+    ElMessage.success(message)
+    getList()
+  } catch (e) {
+    console.error('生成产品代码失败:', e)
+    ElMessage.error('生成产品代码失败')
+  } finally {
+    generatingCodeId.value = ''
+  }
+}
 
 async function getList() {
   loading.value = true
@@ -522,6 +561,9 @@ function handleOperationCommand(command: string, row: any) {
   switch (command) {
     case 'edit-product':
       handleEditProduct(row)
+      break
+    case 'generate-code':
+      handleGenerateCode(row)
       break
     case 'delete':
       handleDelete(row)
@@ -1033,6 +1075,7 @@ function addDownloadButtonToPreview() {
 }
 
 /* 产品信息字段样式 */
+.product-code,
 .product-name,
 .product-description,
 .product-keywords {
@@ -1042,6 +1085,7 @@ function addDownloadButtonToPreview() {
   padding: 4px 0;
 }
 
+.code-text,
 .name-text,
 .description-text,
 .keywords-text {
@@ -1049,6 +1093,12 @@ function addDownloadButtonToPreview() {
   font-size: 14px;
   line-height: 1.4;
   word-break: break-all;
+}
+
+.code-text {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--el-color-primary);
 }
 
 .product-description {
