@@ -1,7 +1,19 @@
 <template>
   <div >
     <div class="py-4 flex justify-between items-center">
-      <div></div>
+      <div class="flex gap-4 items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-600">发布状态：</span>
+          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" size="small" style="width: 160px" @change="handleStatusFilter">
+            <el-option
+              v-for="option in STATUS_OPTIONS"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </div>
+      </div>
       <div class="flex gap-2">
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
       </div>
@@ -143,6 +155,11 @@
             </div>
           </div>
         </template>
+        <template #statusSlot="{ row }">
+          <el-tag :type="getStatusTagType(row.publishStatus)" size="small">
+            {{ STATUS_TEXT[row.publishStatus] || '未知' }}
+          </el-tag>
+        </template>
         <template #materialIdSlot="{ row }">
           <div class="flex items-center justify-center">
             <el-button 
@@ -176,7 +193,11 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
+                <el-dropdown-item command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
+                <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
+                <el-dropdown-item command="mark-draft" class="text-blue-500">标记为草稿</el-dropdown-item>
+                <el-dropdown-item command="mark-archived" class="text-gray-500">标记为已归档</el-dropdown-item>
+                <el-dropdown-item divided command="delete" class="text-red-500">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -203,7 +224,32 @@ import { ArrowDown, Loading, Download } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
 
-const queryParams = reactive({ currentPage: 1, pageSize: 20 })
+// 发布状态常量
+const PUBLISH_STATUS = {
+  DRAFT: 'draft',
+  PENDING_SOCIAL_MEDIA: 'pending_social_media',
+  PUBLISHED_SOCIAL_MEDIA: 'published_social_media',
+  ARCHIVED: 'archived'
+} as const
+
+// 状态显示文本
+const STATUS_TEXT = {
+  [PUBLISH_STATUS.DRAFT]: '草稿',
+  [PUBLISH_STATUS.PENDING_SOCIAL_MEDIA]: '待发布社交媒体',
+  [PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA]: '已发布社交媒体',
+  [PUBLISH_STATUS.ARCHIVED]: '已归档'
+} as const
+
+// 状态选项
+const STATUS_OPTIONS = [
+  { label: '全部', value: '' },
+  { label: '草稿', value: PUBLISH_STATUS.DRAFT },
+  { label: '待发布社交媒体', value: PUBLISH_STATUS.PENDING_SOCIAL_MEDIA },
+  { label: '已发布社交媒体', value: PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA },
+  { label: '已归档', value: PUBLISH_STATUS.ARCHIVED }
+]
+
+const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '' })
 
 // 获取窗口尺寸
 const { height } = useWindowSize()
@@ -213,6 +259,7 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '发布状态', field: 'publishStatus', width: 140, slots: { default: 'statusSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
@@ -247,7 +294,14 @@ async function getList() {
   loading.value = true
   try {
     console.log('获取二维设计商品图列表...')
-    const res = await request.post({ url: '/product-image-2d/page', data: { page: queryParams.currentPage, pageSize: queryParams.pageSize } })
+    const res = await request.post({ 
+      url: '/product-image-2d/page', 
+      data: { 
+        page: queryParams.currentPage, 
+        pageSize: queryParams.pageSize,
+        publishStatus: queryParams.publishStatus
+      } 
+    })
     console.log('获取到的数据:', res)
     dataSource.value = res.list || []
     total.value = res.total || 0
@@ -365,8 +419,57 @@ function handleOperationCommand(command: string, row: any) {
     case 'delete':
       handleDelete(row)
       break
+    case 'mark-pending':
+      updateStatus(row.id, PUBLISH_STATUS.PENDING_SOCIAL_MEDIA)
+      break
+    case 'mark-published':
+      updateStatus(row.id, PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA)
+      break
+    case 'mark-draft':
+      updateStatus(row.id, PUBLISH_STATUS.DRAFT)
+      break
+    case 'mark-archived':
+      updateStatus(row.id, PUBLISH_STATUS.ARCHIVED)
+      break
     default:
       console.warn('未知的操作命令:', command)
+  }
+}
+
+// 状态过滤处理
+function handleStatusFilter() {
+  queryParams.currentPage = 1
+  getList()
+}
+
+// 获取状态标签类型
+function getStatusTagType(status: string) {
+  switch (status) {
+    case PUBLISH_STATUS.DRAFT:
+      return 'info'
+    case PUBLISH_STATUS.PENDING_SOCIAL_MEDIA:
+      return 'warning'
+    case PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA:
+      return 'success'
+    case PUBLISH_STATUS.ARCHIVED:
+      return 'danger'
+    default:
+      return 'primary'
+  }
+}
+
+// 更新状态
+async function updateStatus(id: string, status: string) {
+  try {
+    await request.post({ 
+      url: '/product-image-2d/update-status', 
+      data: { id, publishStatus: status } 
+    })
+    ElMessage.success('状态更新成功')
+    getList()
+  } catch (e) {
+    console.error('更新状态失败:', e)
+    ElMessage.error('状态更新失败')
   }
 }
 
