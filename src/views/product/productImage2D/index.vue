@@ -1,22 +1,7 @@
 <template>
   <div >
     <div class="py-4 flex justify-between items-center">
-      <div class="flex gap-2 items-center">
-        <el-select 
-          v-model="queryParams.status" 
-          placeholder="选择状态" 
-          clearable 
-          style="width: 160px"
-          @change="handleStatusFilter"
-        >
-          <el-option
-            v-for="option in STATUS_OPTIONS"
-            :key="option.value"
-            :label="option.label"
-            :value="option.value"
-          />
-        </el-select>
-      </div>
+      <div></div>
       <div class="flex gap-2">
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
       </div>
@@ -28,7 +13,6 @@
       title="素材详情"
       width="800px"
       :before-close="handleCloseMaterialDialog"
-      align-center
     >
       <div v-if="materialDetail" class="material-detail">
         <div v-if="materialDetail.url" class="mb-4">
@@ -71,7 +55,6 @@
       title="模板详情"
       width="800px"
       :before-close="handleCloseTemplateDialog"
-      align-center
     >
       <div v-if="templateDetail" class="template-detail">
         <el-descriptions :column="2" border>
@@ -128,40 +111,6 @@
         <p class="mt-2 text-gray-500">加载中...</p>
       </div>
     </el-dialog>
-
-    <!-- 编辑产品信息弹窗 -->
-    <el-dialog
-      v-model="editInfoDialogVisible"
-      title="编辑产品信息"
-      width="600px"
-      :before-close="handleCloseEditInfoDialog"
-      align-center
-    >
-      <el-form :model="editInfoForm" :rules="editInfoRules" ref="editInfoFormRef" label-width="100px">
-        <el-form-item label="产品名称" prop="name">
-          <el-input v-model="editInfoForm.name" placeholder="请输入产品名称" />
-        </el-form-item>
-        <el-form-item label="产品描述" prop="description">
-          <el-input 
-            v-model="editInfoForm.description" 
-            type="textarea" 
-            :rows="4" 
-            placeholder="请输入产品描述" 
-          />
-        </el-form-item>
-        <el-form-item label="关键词" prop="keywords">
-          <el-input 
-            v-model="editInfoForm.keywords" 
-            placeholder="请输入关键词，多个关键词用逗号分隔" 
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="editInfoDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEditInfo" :loading="editInfoLoading">确定</el-button>
-      </template>
-    </el-dialog>
-
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -179,6 +128,14 @@
                 :initial-index="index"
                 fit="cover"
                 class="preview-image"
+                :preview-teleported="true"
+                :preview-mask="true"
+                :preview-close-on-press-escape="true"
+                :preview-close-on-click-modal="true"
+                :preview-append-to-body="true"
+                @preview-close="handlePreviewClose"
+                @preview-switch="handlePreviewSwitch"
+                @click="handleImageClick(getImageList(row), index)"
               />
             </div>
             <div v-if="!getImageList(row).length" class="no-images">
@@ -212,14 +169,6 @@
             </el-button>
           </div>
         </template>
-        <template #statusSlot="{ row }">
-          <el-tag 
-            :type="getStatusTagType(row.publishStatus)"
-            size="small"
-          >
-            {{ STATUS_TEXT[row.publishStatus] || '未知' }}
-          </el-tag>
-        </template>
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button link type="primary" size="small">
@@ -227,22 +176,7 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="edit-info">
-                  编辑产品信息
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-pending" v-if="row.publishStatus !== PUBLISH_STATUS.PENDING_SOCIAL_MEDIA">
-                  标记为待发布
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-published" v-if="row.publishStatus !== PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA">
-                  标记为已发布
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-draft" v-if="row.publishStatus !== PUBLISH_STATUS.DRAFT">
-                  标记为草稿
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-archived" v-if="row.publishStatus !== PUBLISH_STATUS.ARCHIVED">
-                  标记为已归档
-                </el-dropdown-item>
-                <el-dropdown-item command="delete" divided class="text-red-500">删除</el-dropdown-item>
+                <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -261,74 +195,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watchEffect } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
-import { ArrowDown, Loading } from '@element-plus/icons-vue'
+import { ArrowDown, Loading, Download } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
-import { useWindowSize } from '@vueuse/core'
 
-// 状态常量定义
-const PUBLISH_STATUS = {
-  DRAFT: 'draft',                    // 草稿
-  PENDING_SOCIAL_MEDIA: 'pending_social_media',  // 待发布社交媒体
-  PUBLISHED_SOCIAL_MEDIA: 'published_social_media',  // 已发布社交媒体
-  ARCHIVED: 'archived'               // 已归档
-} as const
-
-// 状态显示文本
-const STATUS_TEXT = {
-  [PUBLISH_STATUS.DRAFT]: '草稿',
-  [PUBLISH_STATUS.PENDING_SOCIAL_MEDIA]: '待发布社交媒体',
-  [PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA]: '已发布社交媒体',
-  [PUBLISH_STATUS.ARCHIVED]: '已归档'
-} as const
-
-// 状态选项
-const STATUS_OPTIONS = [
-  { label: '全部', value: '' },
-  { label: '草稿', value: PUBLISH_STATUS.DRAFT },
-  { label: '待发布社交媒体', value: PUBLISH_STATUS.PENDING_SOCIAL_MEDIA },
-  { label: '已发布社交媒体', value: PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA },
-  { label: '已归档', value: PUBLISH_STATUS.ARCHIVED }
-]
-
-const queryParams = reactive({ 
-  currentPage: 1, 
-  pageSize: 20,
-  status: '' // 状态过滤
-})
+const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
-    { title: '产品名称', field: 'name', width: 200, showOverflow: true },
-    { title: '产品描述', field: 'description', width: 200, showOverflow: true },
-    { title: '关键词', field: 'keywords', width: 150, showOverflow: true },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
-    { 
-      title: '发布状态', 
-      field: 'publishStatus', 
-      width: 140, 
-      slots: { default: 'statusSlot' },
-      formatter: ({ cellValue }) => STATUS_TEXT[cellValue] || '未知'
-    },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
     { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
   ],
   checkboxConfig: { reserve: true },
-})
-
-const { height } = useWindowSize()
-
-watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 250
-})
+}) 
 
 const dataSource = ref<any[]>([])
 const loading = ref(false)
@@ -341,36 +229,15 @@ const templateDialogVisible = ref(false)
 const materialDetail = ref<any>(null)
 const templateDetail = ref<any>(null)
 
-// 编辑产品信息相关状态
-const editInfoDialogVisible = ref(false)
-const editInfoLoading = ref(false)
-const editInfoFormRef = ref()
-const currentEditRow = ref<any>(null)
-const editInfoForm = ref({
-  name: '',
-  description: '',
-  keywords: ''
-})
-
-const editInfoRules = {
-  name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }]
-}
+// 图片预览相关状态
+const currentPreviewImages = ref<string[]>([])
+const currentPreviewIndex = ref(0)
 
 async function getList() {
   loading.value = true
   try {
     console.log('获取二维设计商品图列表...')
-    const requestData: any = { 
-      page: queryParams.currentPage, 
-      pageSize: queryParams.pageSize 
-    }
-    
-    // 添加状态过滤条件
-    if (queryParams.status) {
-      requestData.publishStatus = queryParams.status
-    }
-    
-    const res = await request.post({ url: '/product-image-2d/page', data: requestData })
+    const res = await request.post({ url: '/product-image-2d/page', data: { page: queryParams.currentPage, pageSize: queryParams.pageSize } })
     console.log('获取到的数据:', res)
     dataSource.value = res.list || []
     total.value = res.total || 0
@@ -483,62 +350,10 @@ function onCheckboxAll(e: any) {
   selectedIds.value = [...records, ...reserves].map((r: any) => String(r.id))
 }
 
-// 状态过滤处理
-function handleStatusFilter() {
-  queryParams.currentPage = 1 // 重置到第一页
-  getList()
-}
-
-// 获取状态标签类型
-function getStatusTagType(status: string): 'info' | 'warning' | 'success' | 'danger' | 'primary' {
-  switch (status) {
-    case PUBLISH_STATUS.DRAFT:
-      return 'info'
-    case PUBLISH_STATUS.PENDING_SOCIAL_MEDIA:
-      return 'warning'
-    case PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA:
-      return 'success'
-    case PUBLISH_STATUS.ARCHIVED:
-      return 'danger'
-    default:
-      return 'primary'
-  }
-}
-
-// 更新状态
-async function updateStatus(row: any, newStatus: string) {
-  try {
-    await request.put({ 
-      url: `/product-image-2d/${row.id}/status`, 
-      data: { publishStatus: newStatus } 
-    })
-    ElMessage.success('状态更新成功')
-    getList() // 重新获取列表
-  } catch (e) {
-    console.error('更新状态失败:', e)
-    ElMessage.error('状态更新失败')
-  }
-}
-
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
-    case 'edit-info':
-      handleEditInfo(row)
-      break
     case 'delete':
       handleDelete(row)
-      break
-    case 'mark-pending':
-      updateStatus(row, PUBLISH_STATUS.PENDING_SOCIAL_MEDIA)
-      break
-    case 'mark-published':
-      updateStatus(row, PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA)
-      break
-    case 'mark-draft':
-      updateStatus(row, PUBLISH_STATUS.DRAFT)
-      break
-    case 'mark-archived':
-      updateStatus(row, PUBLISH_STATUS.ARCHIVED)
       break
     default:
       console.warn('未知的操作命令:', command)
@@ -669,50 +484,112 @@ function handleCloseTemplateDialog() {
   templateDetail.value = null
 }
 
-// 编辑产品信息
-function handleEditInfo(row: any) {
-  currentEditRow.value = row
-  editInfoForm.value = {
-    name: row.name || '',
-    description: row.description || '',
-    keywords: row.keywords || ''
-  }
-  editInfoDialogVisible.value = true
+// 预览关闭事件
+function handlePreviewClose() {
+  currentPreviewImages.value = []
+  currentPreviewIndex.value = 0
 }
 
-// 提交编辑产品信息
-async function submitEditInfo() {
-  if (!currentEditRow.value?.id) return
+// 预览切换事件
+function handlePreviewSwitch(index: number) {
+  currentPreviewIndex.value = index
+}
+
+// 下载当前预览的图片
+async function handleDownloadCurrentImage() {
+  if (currentPreviewImages.value.length === 0) return
   
-  editInfoLoading.value = true
+  const currentImage = currentPreviewImages.value[currentPreviewIndex.value]
+  const filename = `合成图片${currentPreviewIndex.value + 1}`
+  
   try {
-    await editInfoFormRef.value.validate()
+    ElMessage.info('正在下载图片...')
     
-    await request.put({ 
-      url: `/product-image-2d/${currentEditRow.value.id}/info`, 
-      data: editInfoForm.value 
-    })
+    // 使用fetch获取图片数据
+    const response = await fetch(currentImage)
+    if (!response.ok) {
+      throw new Error('图片下载失败')
+    }
     
-    ElMessage.success('产品信息更新成功')
-    editInfoDialogVisible.value = false
-    getList() // 重新获取列表
-  } catch (e) {
-    console.error('更新产品信息失败:', e)
-    ElMessage.error('更新产品信息失败')
-  } finally {
-    editInfoLoading.value = false
+    // 获取图片的blob数据
+    const blob = await response.blob()
+    
+    // 创建blob URL
+    const blobUrl = window.URL.createObjectURL(blob)
+    
+    // 创建下载链接
+    const link = document.createElement('a')
+    link.href = blobUrl
+    link.download = `${filename}.jpg`
+    
+    // 添加到DOM中，触发点击，然后移除
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    // 清理blob URL
+    setTimeout(() => {
+      window.URL.revokeObjectURL(blobUrl)
+    }, 1000)
+    
+    ElMessage.success('下载完成')
+  } catch (error) {
+    console.error('下载图片失败:', error)
+    ElMessage.error('下载失败，请稍后重试')
   }
 }
 
-// 关闭编辑产品信息弹窗
-function handleCloseEditInfoDialog() {
-  editInfoDialogVisible.value = false
-  currentEditRow.value = null
-  editInfoForm.value = {
-    name: '',
-    description: '',
-    keywords: ''
-  }
+// 图片点击事件
+function handleImageClick(images: string[], index: number) {
+  currentPreviewImages.value = images
+  currentPreviewIndex.value = index
+  
+  // 延迟添加下载按钮，确保预览弹窗已经渲染
+  setTimeout(() => {
+    addDownloadButtonToPreview()
+  }, 100)
+}
+
+// 在预览弹窗中添加下载按钮
+function addDownloadButtonToPreview() {
+  const previewContainer = document.querySelector('.el-image-viewer__wrapper')
+  if (!previewContainer) return
+  
+  // 检查是否已经添加了下载按钮
+  if (previewContainer.querySelector('.preview-download-btn')) return
+  
+  const downloadBtn = document.createElement('div')
+  downloadBtn.className = 'preview-download-btn'
+  downloadBtn.innerHTML = `
+    <button 
+      style="
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      "
+      onmouseover="this.style.background='rgba(0, 0, 0, 0.9)'"
+      onmouseout="this.style.background='rgba(0, 0, 0, 0.7)'"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+      </svg>
+      下载
+    </button>
+  `
+  
+  downloadBtn.addEventListener('click', handleDownloadCurrentImage)
+  previewContainer.appendChild(downloadBtn)
 }
 </script>
 
@@ -720,9 +597,7 @@ function handleCloseEditInfoDialog() {
 .images {
   display: flex;
   gap: 8px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  align-items: center;
+  flex-wrap: wrap;
 }
 
 .images .img-wrap {
@@ -735,7 +610,6 @@ function handleCloseEditInfoDialog() {
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--el-border-color-light);
-  flex-shrink: 0;
 }
 
 .no-images {
