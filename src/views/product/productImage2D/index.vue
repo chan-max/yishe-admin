@@ -123,6 +123,58 @@
         <p class="mt-2 text-gray-500">加载中...</p>
       </div>
     </el-dialog>
+
+    <!-- 编辑产品信息弹窗 -->
+    <el-dialog
+      v-model="editProductDialogVisible"
+      title="编辑产品信息"
+      width="600px"
+      align-center
+      :before-close="handleCloseEditProductDialog"
+    >
+      <el-form
+        ref="editProductFormRef"
+        :model="editProductForm"
+        :rules="editProductRules"
+        label-width="80px"
+      >
+        <el-form-item label="产品名称" prop="name">
+          <el-input
+            v-model="editProductForm.name"
+            placeholder="请输入产品名称"
+            maxlength="100"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="产品描述" prop="description">
+          <el-input
+            v-model="editProductForm.description"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入产品描述"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="关键词" prop="keywords">
+          <el-input
+            v-model="editProductForm.keywords"
+            placeholder="请输入关键词，多个关键词用逗号分隔"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseEditProductDialog">取消</el-button>
+          <el-button type="primary" @click="handleSaveProductInfo" :loading="editProductLoading">
+            保存
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -159,6 +211,21 @@
           <el-tag :type="getStatusTagType(row.publishStatus)" size="small">
             {{ STATUS_TEXT[row.publishStatus] || '未知' }}
           </el-tag>
+        </template>
+        <template #nameSlot="{ row }">
+          <div class="product-name">
+            <span v-if="row.name" class="name-text">{{ row.name }}</span>
+          </div>
+        </template>
+        <template #descriptionSlot="{ row }">
+          <div class="product-description">
+            <span v-if="row.description" class="description-text">{{ row.description }}</span>
+          </div>
+        </template>
+        <template #keywordsSlot="{ row }">
+          <div class="product-keywords">
+            <span v-if="row.keywords" class="keywords-text">{{ row.keywords }}</span>
+          </div>
         </template>
         <template #isPublicSlot="{ row }">
           <span v-if="row.isPublic" class="is-public-tag">是</span>
@@ -197,7 +264,8 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
+                <el-dropdown-item command="edit-product" class="text-primary">编辑产品信息</el-dropdown-item>
+                <el-dropdown-item divided command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
                 <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
                 <el-dropdown-item command="mark-draft" class="text-blue-500">标记为草稿</el-dropdown-item>
                 <el-dropdown-item command="mark-archived" class="text-gray-500">标记为已归档</el-dropdown-item>
@@ -227,7 +295,7 @@ import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
-import { ArrowDown, Loading, Download } from '@element-plus/icons-vue'
+import { ArrowDown, Loading } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
 
@@ -266,6 +334,9 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
+    { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
+    { title: '关键词', field: 'keywords', width: 150, slots: { default: 'keywordsSlot' } },
     { title: '发布状态', field: 'publishStatus', width: 140, slots: { default: 'statusSlot' } },
     { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
@@ -293,6 +364,31 @@ const materialDialogVisible = ref(false)
 const templateDialogVisible = ref(false)
 const materialDetail = ref<any>(null)
 const templateDetail = ref<any>(null)
+
+// 编辑产品信息相关状态
+const editProductDialogVisible = ref(false)
+const editProductFormRef = ref()
+const editProductLoading = ref(false)
+const editProductForm = reactive({
+  id: '',
+  name: '',
+  description: '',
+  keywords: ''
+})
+
+// 编辑产品信息表单验证规则
+const editProductRules = {
+  name: [
+    { required: true, message: '请输入产品名称', trigger: 'blur' },
+    { min: 1, max: 100, message: '产品名称长度在 1 到 100 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { max: 500, message: '产品描述长度不能超过 500 个字符', trigger: 'blur' }
+  ],
+  keywords: [
+    { max: 200, message: '关键词长度不能超过 200 个字符', trigger: 'blur' }
+  ]
+}
 
 // 图片预览相关状态
 const currentPreviewImages = ref<string[]>([])
@@ -424,6 +520,9 @@ function onCheckboxAll(e: any) {
 
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
+    case 'edit-product':
+      handleEditProduct(row)
+      break
     case 'delete':
       handleDelete(row)
       break
@@ -623,6 +722,59 @@ function handleCloseTemplateDialog() {
   templateDetail.value = null
 }
 
+// 编辑产品信息
+function handleEditProduct(row: any) {
+  editProductForm.id = row.id
+  editProductForm.name = row.name || ''
+  editProductForm.description = row.description || ''
+  editProductForm.keywords = row.keywords || ''
+  editProductDialogVisible.value = true
+}
+
+// 关闭编辑产品信息弹窗
+function handleCloseEditProductDialog() {
+  editProductDialogVisible.value = false
+  editProductForm.id = ''
+  editProductForm.name = ''
+  editProductForm.description = ''
+  editProductForm.keywords = ''
+  // 清除表单验证
+  if (editProductFormRef.value) {
+    editProductFormRef.value.clearValidate()
+  }
+}
+
+// 保存产品信息
+async function handleSaveProductInfo() {
+  if (!editProductFormRef.value) return
+  
+  try {
+    // 验证表单
+    await editProductFormRef.value.validate()
+    
+    editProductLoading.value = true
+    
+    await request.post({
+      url: '/product-image-2d/update-product-info',
+      data: {
+        id: editProductForm.id,
+        name: editProductForm.name,
+        description: editProductForm.description,
+        keywords: editProductForm.keywords
+      }
+    })
+    
+    ElMessage.success('产品信息更新成功')
+    handleCloseEditProductDialog()
+    getList()
+  } catch (e) {
+    console.error('更新产品信息失败:', e)
+    ElMessage.error('更新产品信息失败')
+  } finally {
+    editProductLoading.value = false
+  }
+}
+
 // 预览关闭事件
 function handlePreviewClose() {
   currentPreviewImages.value = []
@@ -736,11 +888,14 @@ function addDownloadButtonToPreview() {
 .images {
   display: flex;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  align-items: center;
 }
 
 .images .img-wrap {
   position: relative;
+  flex-shrink: 0;
 }
 
 .images .preview-image {
@@ -875,6 +1030,38 @@ function addDownloadButtonToPreview() {
   padding: 8px;
   background: var(--el-fill-color-lighter);
   border-radius: 4px;
+}
+
+/* 产品信息字段样式 */
+.product-name,
+.product-description,
+.product-keywords {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 0;
+}
+
+.name-text,
+.description-text,
+.keywords-text {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.product-description {
+  max-width: 200px;
+}
+
+.product-description .description-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .is-template-tag, .not-template-tag, .is-public-tag, .not-public-tag {
