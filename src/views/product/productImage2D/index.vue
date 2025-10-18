@@ -160,6 +160,10 @@
             {{ STATUS_TEXT[row.publishStatus] || '未知' }}
           </el-tag>
         </template>
+        <template #isPublicSlot="{ row }">
+          <span v-if="row.isPublic" class="is-public-tag">是</span>
+          <span v-else class="not-public-tag">否</span>
+        </template>
         <template #materialIdSlot="{ row }">
           <div class="flex items-center justify-center">
             <el-button 
@@ -197,7 +201,10 @@
                 <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
                 <el-dropdown-item command="mark-draft" class="text-blue-500">标记为草稿</el-dropdown-item>
                 <el-dropdown-item command="mark-archived" class="text-gray-500">标记为已归档</el-dropdown-item>
-                <el-dropdown-item divided command="delete" class="text-red-500">删除</el-dropdown-item>
+                <el-dropdown-item divided command="toggle-public" class="text-blue-500">
+                  {{ row.isPublic ? '取消发布' : '发布' }}
+                </el-dropdown-item>
+                <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -260,6 +267,7 @@ const gridOptions = ref<any>({
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
     { title: '发布状态', field: 'publishStatus', width: 140, slots: { default: 'statusSlot' } },
+    { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
@@ -431,6 +439,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'mark-archived':
       updateStatus(row.id, PUBLISH_STATUS.ARCHIVED)
       break
+    case 'toggle-public':
+      togglePublic(row)
+      break
     default:
       console.warn('未知的操作命令:', command)
   }
@@ -470,6 +481,21 @@ async function updateStatus(id: string, status: string) {
   } catch (e) {
     console.error('更新状态失败:', e)
     ElMessage.error('状态更新失败')
+  }
+}
+
+// 切换发布状态
+async function togglePublic(row: any) {
+  try {
+    await request.post({ 
+      url: '/product-image-2d/update-status', 
+      data: { id: row.id, isPublic: !row.isPublic } 
+    })
+    ElMessage.success(row.isPublic ? '已取消发布' : '已发布')
+    getList()
+  } catch (e) {
+    console.error('更新发布状态失败:', e)
+    ElMessage.error('更新发布状态失败')
   }
 }
 
@@ -849,6 +875,45 @@ function addDownloadButtonToPreview() {
   padding: 8px;
   background: var(--el-fill-color-lighter);
   border-radius: 4px;
+}
+
+.is-template-tag, .not-template-tag, .is-public-tag, .not-public-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 16px;
+  font-size: 15px;
+}
+.is-template-tag {
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #FFD700 0%, #FFB300 100%);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.12);
+  border: 1.5px solid #FFD700;
+}
+.not-template-tag {
+  font-weight: 500;
+  color: rgba(120,120,120,0.25);
+  background: rgba(220,220,220,0.12);
+  border: 1px solid rgba(200,200,200,0.12);
+  transition: all 0.2s;
+}
+.is-public-tag {
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(90deg, #67C23A 0%, #85CE61 100%);
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.12);
+  border: 1.5px solid #67C23A;
+}
+.not-public-tag {
+  font-weight: 500;
+  color: rgba(120,120,120,0.25);
+  background: rgba(220,220,220,0.12);
+  border: 1px solid rgba(200,200,200,0.12);
+  transition: all 0.2s;
 }
 </style>
 
