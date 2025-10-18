@@ -195,14 +195,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
 import { ArrowDown, Loading, Download } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
+import { useWindowSize } from '@vueuse/core'
 
 const queryParams = reactive({ currentPage: 1, pageSize: 20 })
+
+// 获取窗口尺寸
+const { height } = useWindowSize()
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
@@ -216,6 +220,12 @@ const gridOptions = ref<any>({
     { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
   ],
   checkboxConfig: { reserve: true },
+})
+
+// 监听窗口尺寸变化，动态调整表格高度
+watchEffect(() => {
+  // 计算表格最大高度：窗口高度 - 头部区域 - 分页区域 - 其他边距
+  gridOptions.value.maxHeight = height.value - 250
 }) 
 
 const dataSource = ref<any[]>([])
