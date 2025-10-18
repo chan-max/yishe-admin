@@ -305,6 +305,7 @@
                           <div class="op-btn" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
                           <div class="op-btn" @click="() => handleOperationCommand('download', row)">下载</div>
                           <div v-if="(row.suffix || '').toLowerCase() === 'png'" class="op-btn" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
+                          <div v-if="(row.suffix || '').toLowerCase() === 'svg'" class="op-btn" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
                         </div>
                       </div>
                     </div>
@@ -832,6 +833,80 @@
       <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
     </el-dialog>
 
+    <!-- SVG转PNG尺寸设置弹窗 -->
+    <el-dialog
+      v-model="svgToPngDialogVisible"
+      title="SVG转PNG - 设置输出尺寸"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div class="svg-to-png-form">
+        <div class="form-section">
+          <h4 class="section-title">输出尺寸设置</h4>
+          <div class="original-info" v-if="svgToPngForm.originalWidth && svgToPngForm.originalHeight">
+            <el-tag type="info" size="small">
+              原始尺寸: {{ svgToPngForm.originalWidth }} × {{ svgToPngForm.originalHeight }} 
+              (宽高比: {{ svgToPngForm.aspectRatio.toFixed(2) }})
+            </el-tag>
+          </div>
+          <el-form :model="svgToPngForm" label-width="120px">
+            <el-form-item label="输出宽度 (px)">
+              <el-input-number
+                v-model="svgToPngForm.width"
+                :min="64"
+                :max="4096"
+                :step="64"
+                controls-position="right"
+                style="width: 200px"
+                @change="handleWidthChange"
+              />
+            </el-form-item>
+            <el-form-item label="自动计算高度">
+              <el-tag type="info" size="large">
+                {{ svgToPngForm.height }} px
+              </el-tag>
+              <span class="aspect-ratio-info">
+                (基于原始宽高比 {{ svgToPngForm.aspectRatio.toFixed(2) }} 自动计算)
+              </span>
+            </el-form-item>
+          </el-form>
+        </div>
+        
+        <div class="preset-section">
+          <h4 class="section-title">常用尺寸预设</h4>
+          <div class="preset-buttons">
+            <el-button 
+              v-for="preset in sizePresets" 
+              :key="preset.name"
+              size="small"
+              @click="applyPreset(preset)"
+            >
+              {{ preset.name }}<br>
+              <span class="preset-size">{{ preset.width }}px</span>
+            </el-button>
+          </div>
+        </div>
+        
+        <div class="preview-section">
+          <h4 class="section-title">预览信息</h4>
+          <div class="preview-info">
+            <el-tag type="info" size="large">
+              输出尺寸: {{ svgToPngForm.width }} × {{ svgToPngForm.height }} px
+            </el-tag>
+            <el-tag type="success" size="large" style="margin-left: 8px">
+              文件大小: 约 {{ Math.round(svgToPngForm.width * svgToPngForm.height * 4 / 1024) }} KB
+            </el-tag>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <el-button @click="svgToPngDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmSvgToPng">开始转换</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 图片预览弹窗 -->
     <ImagePreview
       :visible="imagePreviewVisible"
@@ -869,7 +944,7 @@ import {
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
-import { uploadMaterialFile, copyStickers, trimPng } from '@/api/material'
+import { uploadMaterialFile, copyStickers, trimPng, svgToPng } from '@/api/material'
 
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -958,7 +1033,7 @@ const gridOptions = ref({
     reserve: true
   },
   columns: [
-    { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
+    { type: 'checkbox' as const, field: 'checkbox', title: '', width: 50, ellipsis: true, reserve: true, minWidth: 50, fixed: 'left' as const, className: '' as any },
     // { title: 'ID', field: 'id', width: 80, ellipsis: true },
     {
       title: '图片预览',
@@ -1323,6 +1398,140 @@ async function handleTrimPng(row) {
   }
 }
 
+// SVG转PNG（仅对 svg 后缀显示）
+async function handleSvgToPng(row) {
+  if ((row.suffix || '').toLowerCase() !== 'svg') {
+    ElMessage.warning('仅支持 SVG 图片');
+    return;
+  }
+  
+  // 获取SVG原始尺寸
+  try {
+    const svgDimensions = await getSvgDimensions(row.url)
+    if (svgDimensions) {
+      svgToPngForm.value.originalWidth = (svgDimensions as any).width
+      svgToPngForm.value.originalHeight = (svgDimensions as any).height
+      svgToPngForm.value.aspectRatio = (svgDimensions as any).width / (svgDimensions as any).height
+      
+      // 根据原始比例设置默认尺寸
+      const baseSize = 512
+      if (svgToPngForm.value.aspectRatio > 1) {
+        // 宽度大于高度
+        svgToPngForm.value.width = baseSize
+        svgToPngForm.value.height = Math.round(baseSize / svgToPngForm.value.aspectRatio)
+      } else {
+        // 高度大于等于宽度
+        svgToPngForm.value.height = baseSize
+        svgToPngForm.value.width = Math.round(baseSize * svgToPngForm.value.aspectRatio)
+      }
+    }
+    } catch (error) {
+      console.warn('获取SVG尺寸失败:', error)
+      // 如果获取失败，使用默认值
+      svgToPngForm.value.originalWidth = 512
+      svgToPngForm.value.originalHeight = 512
+      svgToPngForm.value.aspectRatio = 1
+      svgToPngForm.value.width = 512
+      svgToPngForm.value.height = 512
+    }
+  
+  // 打开尺寸设置弹窗
+  currentSvgRow.value = row
+  svgToPngDialogVisible.value = true
+}
+
+// 获取SVG原始尺寸
+async function getSvgDimensions(svgUrl) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    
+    img.onload = function() {
+      const naturalWidth = (this as HTMLImageElement).naturalWidth
+      const naturalHeight = (this as HTMLImageElement).naturalHeight
+      
+      console.log('SVG自然尺寸:', { naturalWidth, naturalHeight })
+      
+      // 如果naturalWidth和naturalHeight都是0或undefined，尝试解析SVG内容
+      if (!naturalWidth || !naturalHeight || naturalWidth === 0 || naturalHeight === 0) {
+        console.log('naturalWidth/naturalHeight无效，尝试解析SVG内容')
+        parseSvgContent(svgUrl).then(resolve)
+      } else {
+        resolve({ width: naturalWidth, height: naturalHeight })
+      }
+    }
+    
+    img.onerror = function() {
+      console.log('图片加载失败，尝试解析SVG内容')
+      parseSvgContent(svgUrl).then(resolve)
+    }
+    
+    // 设置crossOrigin以支持跨域
+    img.crossOrigin = 'anonymous'
+    img.src = svgUrl
+  })
+}
+
+// 解析SVG内容的备用方法
+async function parseSvgContent(svgUrl) {
+  try {
+    const response = await fetch(svgUrl)
+    const svgText = await response.text()
+    
+    const parser = new DOMParser()
+    const svgDoc = parser.parseFromString(svgText, 'image/svg+xml')
+    const svgElement = svgDoc.querySelector('svg')
+    
+    if (!svgElement) return { width: 512, height: 512 }
+    
+    let width, height
+    
+    // 优先使用viewBox
+    const viewBox = svgElement.getAttribute('viewBox')
+    if (viewBox) {
+      const parts = viewBox.split(/\s+/)
+      if (parts.length >= 4) {
+        width = parseFloat(parts[2])
+        height = parseFloat(parts[3])
+      }
+    }
+    
+    // 如果没有viewBox，使用width和height属性
+    if (!width || !height) {
+      width = parseFloat(svgElement.getAttribute('width')) || 512
+      height = parseFloat(svgElement.getAttribute('height')) || 512
+    }
+    
+    console.log('SVG解析尺寸:', { width, height })
+    return { width, height }
+  } catch (error) {
+    console.error('解析SVG失败:', error)
+    return { width: 512, height: 512 }
+  }
+}
+
+// 确认SVG转PNG
+async function confirmSvgToPng() {
+  if (!currentSvgRow.value?.id) return
+  
+  try {
+    ElMessage.info('正在转换SVG为PNG，请稍候...');
+    const res = await svgToPng({ 
+      id: String(currentSvgRow.value.id),
+      width: svgToPngForm.value.width,
+      height: svgToPngForm.value.height
+    })
+    if (res && res.id) {
+      ElMessage.success('SVG转PNG成功');
+    } else {
+      ElMessage.success('SVG转PNG成功');
+    }
+    svgToPngDialogVisible.value = false
+    getList()
+  } catch (e) {
+    ElMessage.error('SVG转PNG失败')
+  }
+}
+
 async function handleDesignModel(row) {
   // 设置当前选中的素材为单个素材
   ids.value = [row.id]
@@ -1638,6 +1847,46 @@ function configChange(config) {
 const imagePreviewVisible = ref(false)
 const currentImageUrl = ref('')
 
+// SVG转PNG相关状态
+const svgToPngDialogVisible = ref(false)
+const currentSvgRow = ref<any>(null)
+const svgToPngForm = ref({
+  width: 512,
+  height: 512,
+  originalWidth: 512,
+  originalHeight: 512,
+  aspectRatio: 1
+})
+
+// 尺寸预设
+const sizePresets = ref([
+  { name: '小图标', width: 64 },
+  { name: '中图标', width: 128 },
+  { name: '大图标', width: 256 },
+  { name: '标准', width: 512 },
+  { name: '高清', width: 1024 },
+  { name: '超高清', width: 2048 },
+  { name: '常用', width: 800 },
+  { name: '中等', width: 1200 },
+  { name: '大图', width: 1600 },
+  { name: '超大', width: 2400 }
+])
+
+// 处理宽度变化
+function handleWidthChange(value) {
+  // 根据原始宽高比自动计算高度
+  if (svgToPngForm.value.aspectRatio) {
+    svgToPngForm.value.height = Math.round(value / svgToPngForm.value.aspectRatio)
+  }
+}
+
+// 应用预设尺寸
+function applyPreset(preset) {
+  // 设置宽度，高度会自动计算
+  svgToPngForm.value.width = preset.width
+  handleWidthChange(preset.width)
+}
+
 function handleEdit(row) {
   editForm.value = { 
     id: row.id, 
@@ -1833,6 +2082,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'trim-png':
       handleTrimPng(row);
+      break;
+    case 'svg-to-png':
+      handleSvgToPng(row);
       break;
     case 'copy':
       handleCopy(row);
@@ -2417,6 +2669,72 @@ h1 {
   font-size: 14px;
 }
 
+/* SVG转PNG弹窗样式 */
+.svg-to-png-form {
+  padding: 16px 0;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.form-section {
+  margin-bottom: 24px;
+}
+
+.original-info {
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 6px;
+}
+
+.aspect-ratio-info {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.preset-section {
+  margin-bottom: 24px;
+}
+
+.preset-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.preset-buttons .el-button {
+  height: auto;
+  padding: 8px 12px;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.preset-size {
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
+}
+
+.preview-section {
+  margin-bottom: 16px;
+}
+
+.preview-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 /* 响应式布局 */
 @media (max-width: 768px) {
   .url-upload-container {
@@ -2432,6 +2750,10 @@ h1 {
   .preview-placeholder,
   .preview-error {
     min-height: 150px;
+  }
+  
+  .preset-buttons {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

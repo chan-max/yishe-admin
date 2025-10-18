@@ -310,3 +310,13 @@ export function trimPng(data: { id: string, threshold?: number }) {
     data
   })
 }
+
+/**
+ * @api SVG转PNG
+ */
+export function svgToPng(data: { id: string, width?: number, height?: number }) {
+  return request.post({
+    url: '/sticker/svg-to-png',
+    data
+  })
+}
