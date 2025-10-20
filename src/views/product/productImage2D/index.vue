@@ -175,6 +175,65 @@
       </template>
     </el-dialog>
 
+    <!-- AI生成产品信息弹窗 -->
+    <el-dialog
+      v-model="aiGenerateDialogVisible"
+      title="AI生成产品信息"
+      width="600px"
+      align-center
+      :before-close="handleCloseAiGenerateDialog"
+    >
+      <div class="ai-generate-content">
+        <div class="ai-prompt-section">
+          <h4>自定义提示词（可选）</h4>
+          <p class="ai-prompt-tip">可以添加特定的风格要求、目标受众或其他条件，让AI生成更符合需求的内容</p>
+          <el-input
+            v-model="aiGenerateForm.customPrompt"
+            type="textarea"
+            :rows="4"
+            placeholder="例如：请生成适合年轻女性的时尚T恤设计，风格偏向简约现代，目标价格在100-200元之间"
+            maxlength="500"
+            show-word-limit
+          />
+        </div>
+        
+        <div class="ai-preview-section" v-if="aiGenerateResult">
+          <h4>AI生成结果预览</h4>
+          <div class="ai-result-preview">
+            <div class="result-item">
+              <label>产品名称：</label>
+              <span>{{ aiGenerateResult.name }}</span>
+            </div>
+            <div class="result-item">
+              <label>产品描述：</label>
+              <span>{{ aiGenerateResult.description }}</span>
+            </div>
+            <div class="result-item">
+              <label>关键词：</label>
+              <span>{{ aiGenerateResult.keywords }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseAiGenerateDialog">取消</el-button>
+          <el-button type="primary" @click="handleAiGenerate" :loading="aiGenerateLoading">
+            {{ aiGenerateResult ? '重新生成' : '开始生成' }}
+          </el-button>
+          <el-button 
+            v-if="aiGenerateResult" 
+            type="success" 
+            @click="handleApplyAiResult"
+            :loading="aiApplyLoading"
+          >
+            应用结果
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -270,6 +329,13 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="edit-product" class="text-primary">编辑产品信息</el-dropdown-item>
+                <el-dropdown-item 
+                  command="ai-generate-info" 
+                  class="text-blue-500"
+                  :disabled="aiGeneratingId === row.id"
+                >
+                  {{ aiGeneratingId === row.id ? 'AI生成中...' : 'AI生成产品信息' }}
+                </el-dropdown-item>
                 <el-dropdown-item 
                   command="generate-code" 
                   class="text-purple-500"
@@ -409,6 +475,17 @@ const currentPreviewIndex = ref(0)
 
 // 生成代码相关状态
 const generatingCodeId = ref<string>('')
+
+// AI生成相关状态
+const aiGeneratingId = ref<string>('')
+const aiGenerateDialogVisible = ref(false)
+const aiGenerateLoading = ref(false)
+const aiApplyLoading = ref(false)
+const aiGenerateForm = reactive({
+  productId: '',
+  customPrompt: ''
+})
+const aiGenerateResult = ref<any>(null)
 
 // 生成唯一码
 async function handleGenerateCode(row: any) {
@@ -561,6 +638,9 @@ function handleOperationCommand(command: string, row: any) {
   switch (command) {
     case 'edit-product':
       handleEditProduct(row)
+      break
+    case 'ai-generate-info':
+      handleAiGenerateInfo(row)
       break
     case 'generate-code':
       handleGenerateCode(row)
@@ -924,6 +1004,79 @@ function addDownloadButtonToPreview() {
   downloadBtn.addEventListener('click', handleDownloadCurrentImage)
   previewContainer.appendChild(downloadBtn)
 }
+
+// AI生成产品信息
+function handleAiGenerateInfo(row: any) {
+  if (!row?.id) return
+  
+  aiGenerateForm.productId = row.id
+  aiGenerateForm.customPrompt = ''
+  aiGenerateResult.value = null
+  aiGenerateDialogVisible.value = true
+}
+
+// 执行AI生成
+async function handleAiGenerate() {
+  if (!aiGenerateForm.productId) return
+  
+  try {
+    aiGenerateLoading.value = true
+    aiGeneratingId.value = aiGenerateForm.productId
+    
+    const res = await request.post({
+      url: '/product-image-2d/ai-generate-info',
+      data: {
+        id: aiGenerateForm.productId,
+        prompt: aiGenerateForm.customPrompt || undefined
+      }
+    })
+    
+    aiGenerateResult.value = res
+    ElMessage.success('AI生成完成')
+  } catch (e) {
+    console.error('AI生成失败:', e)
+    ElMessage.error('AI生成失败，请稍后重试')
+  } finally {
+    aiGenerateLoading.value = false
+    aiGeneratingId.value = ''
+  }
+}
+
+// 应用AI生成结果
+async function handleApplyAiResult() {
+  if (!aiGenerateResult.value || !aiGenerateForm.productId) return
+  
+  try {
+    aiApplyLoading.value = true
+    
+    await request.post({
+      url: '/product-image-2d/update-product-info',
+      data: {
+        id: aiGenerateForm.productId,
+        name: aiGenerateResult.value.name,
+        description: aiGenerateResult.value.description,
+        keywords: aiGenerateResult.value.keywords
+      }
+    })
+    
+    ElMessage.success('AI生成结果已应用')
+    handleCloseAiGenerateDialog()
+    getList()
+  } catch (e) {
+    console.error('应用AI结果失败:', e)
+    ElMessage.error('应用AI结果失败')
+  } finally {
+    aiApplyLoading.value = false
+  }
+}
+
+// 关闭AI生成弹窗
+function handleCloseAiGenerateDialog() {
+  aiGenerateDialogVisible.value = false
+  aiGenerateForm.productId = ''
+  aiGenerateForm.customPrompt = ''
+  aiGenerateResult.value = null
+}
 </script>
 
 <style scoped>
@@ -1151,6 +1304,71 @@ function addDownloadButtonToPreview() {
   background: rgba(220,220,220,0.12);
   border: 1px solid rgba(200,200,200,0.12);
   transition: all 0.2s;
+}
+
+/* AI生成弹窗样式 */
+.ai-generate-content {
+  padding: 0;
+}
+
+.ai-prompt-section {
+  margin-bottom: 24px;
+}
+
+.ai-prompt-section h4 {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ai-prompt-tip {
+  margin: 0 0 12px 0;
+  color: #909399;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ai-preview-section {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.ai-preview-section h4 {
+  margin: 0 0 16px 0;
+  color: #303133;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ai-result-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.result-item label {
+  min-width: 80px;
+  color: #606266;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.result-item span {
+  flex: 1;
+  color: #303133;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
 }
 </style>
 
