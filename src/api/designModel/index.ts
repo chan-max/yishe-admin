@@ -20,6 +20,7 @@ export interface DesignModelVO {
   keywords?: string
   isTemplate?: boolean
   isPublic?: boolean
+  publishStatus?: string
   // 可根据后端返回字段补充
 }
 
