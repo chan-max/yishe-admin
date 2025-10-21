@@ -179,7 +179,7 @@
     <el-dialog
       v-model="aiGenerateDialogVisible"
       title="AI生成产品信息"
-      width="600px"
+      width="500px"
       align-center
       :before-close="handleCloseAiGenerateDialog"
     >
@@ -196,39 +196,13 @@
             show-word-limit
           />
         </div>
-        
-        <div class="ai-preview-section" v-if="aiGenerateResult">
-          <h4>AI生成结果预览</h4>
-          <div class="ai-result-preview">
-            <div class="result-item">
-              <label>产品名称：</label>
-              <span>{{ aiGenerateResult.name }}</span>
-            </div>
-            <div class="result-item">
-              <label>产品描述：</label>
-              <span>{{ aiGenerateResult.description }}</span>
-            </div>
-            <div class="result-item">
-              <label>关键词：</label>
-              <span>{{ aiGenerateResult.keywords }}</span>
-            </div>
-          </div>
-        </div>
       </div>
       
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="handleCloseAiGenerateDialog">取消</el-button>
           <el-button type="primary" @click="handleAiGenerate" :loading="aiGenerateLoading">
-            {{ aiGenerateResult ? '重新生成' : '开始生成' }}
-          </el-button>
-          <el-button 
-            v-if="aiGenerateResult" 
-            type="success" 
-            @click="handleApplyAiResult"
-            :loading="aiApplyLoading"
-          >
-            应用结果
+            开始生成
           </el-button>
         </div>
       </template>
@@ -480,12 +454,10 @@ const generatingCodeId = ref<string>('')
 const aiGeneratingId = ref<string>('')
 const aiGenerateDialogVisible = ref(false)
 const aiGenerateLoading = ref(false)
-const aiApplyLoading = ref(false)
 const aiGenerateForm = reactive({
   productId: '',
   customPrompt: ''
 })
-const aiGenerateResult = ref<any>(null)
 
 // 生成唯一码
 async function handleGenerateCode(row: any) {
@@ -1011,7 +983,6 @@ function handleAiGenerateInfo(row: any) {
   
   aiGenerateForm.productId = row.id
   aiGenerateForm.customPrompt = ''
-  aiGenerateResult.value = null
   aiGenerateDialogVisible.value = true
 }
 
@@ -1031,8 +1002,10 @@ async function handleAiGenerate() {
       }
     })
     
-    aiGenerateResult.value = res
-    ElMessage.success('AI生成完成')
+    // AI生成成功后，结果已经自动保存到数据库，直接刷新列表
+    ElMessage.success('AI生成完成，产品信息已更新')
+    handleCloseAiGenerateDialog()
+    getList()
   } catch (e) {
     console.error('AI生成失败:', e)
     ElMessage.error('AI生成失败，请稍后重试')
@@ -1042,40 +1015,11 @@ async function handleAiGenerate() {
   }
 }
 
-// 应用AI生成结果
-async function handleApplyAiResult() {
-  if (!aiGenerateResult.value || !aiGenerateForm.productId) return
-  
-  try {
-    aiApplyLoading.value = true
-    
-    await request.post({
-      url: '/product-image-2d/update-product-info',
-      data: {
-        id: aiGenerateForm.productId,
-        name: aiGenerateResult.value.name,
-        description: aiGenerateResult.value.description,
-        keywords: aiGenerateResult.value.keywords
-      }
-    })
-    
-    ElMessage.success('AI生成结果已应用')
-    handleCloseAiGenerateDialog()
-    getList()
-  } catch (e) {
-    console.error('应用AI结果失败:', e)
-    ElMessage.error('应用AI结果失败')
-  } finally {
-    aiApplyLoading.value = false
-  }
-}
-
 // 关闭AI生成弹窗
 function handleCloseAiGenerateDialog() {
   aiGenerateDialogVisible.value = false
   aiGenerateForm.productId = ''
   aiGenerateForm.customPrompt = ''
-  aiGenerateResult.value = null
 }
 </script>
 
@@ -1312,7 +1256,7 @@ function handleCloseAiGenerateDialog() {
 }
 
 .ai-prompt-section {
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .ai-prompt-section h4 {
@@ -1327,48 +1271,6 @@ function handleCloseAiGenerateDialog() {
   color: #909399;
   font-size: 14px;
   line-height: 1.5;
-}
-
-.ai-preview-section {
-  margin-top: 24px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-}
-
-.ai-preview-section h4 {
-  margin: 0 0 16px 0;
-  color: #303133;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.ai-result-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.result-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.result-item label {
-  min-width: 80px;
-  color: #606266;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-.result-item span {
-  flex: 1;
-  color: #303133;
-  font-size: 14px;
-  line-height: 1.5;
-  word-break: break-word;
 }
 </style>
 
