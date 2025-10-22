@@ -13,7 +13,3 @@ const LOCAL_CLIENT_SERVER = 'http://localhost:1519'
 export async function publishToSocialMedia(data){
   return await request.post({ url: `${LOCAL_CLIENT_SERVER}/api/publishProductToSocialMedia`, data })
 }
-
-export async function checkSocialMediaLogin(){
-  return await request.post({ url: `${LOCAL_CLIENT_SERVER}/api/checkSocialMediaLogin` })
-}
