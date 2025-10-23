@@ -183,9 +183,8 @@ export default defineComponent({
     })
 
     return () => (
-      <div class="flex items-center">
-        {/* 客户端下载链接，未启动时显示 */}
-        {(
+      <div class="flex items-center ">
+        {/* (
           <a
             href="http://49.232.186.238:1525"
             target="_blank"
@@ -195,9 +194,11 @@ export default defineComponent({
           >
             客户端下载
           </a>
-        )}
+        ) */}
         {/* 本地客户端状态 */}
+        {/*
         <ElTooltip
+                 v-if="false"
           content={isLocalConnected.value ? '本地客户端已启动' : '点击启动客户端'}
           placement="bottom"
         >
@@ -226,9 +227,10 @@ export default defineComponent({
             </span>
           </div>
         </ElTooltip>
-
-                {/* 客户端授权状态 */}
+        */}
+                {/* 
                 <ElTooltip
+                         v-if="false"
           content={
             isClientAuthorized.value 
               ? '客户端已授权' 
@@ -287,7 +289,7 @@ export default defineComponent({
             </span>
           </div>
         </ElTooltip>
-
+*/}
         {/* 远程服务状态 */}
         <ElTooltip
           content={isRemoteConnected.value ? '远程服务已连接' : '远程服务未连接'}
