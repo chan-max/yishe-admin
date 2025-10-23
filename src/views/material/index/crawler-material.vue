@@ -64,14 +64,18 @@
             @checkbox-all="checkboxAllChange"
           >
             <template #previewDefaultSlot="{ row }">
-              <div class="flex items-center justify-center p-2">
+              <div class="flex flex-col items-center justify-center p-2">
                 <img
                   :src="row.url"
                   :alt="row.name || '素材图片'"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
                   @click="openImagePreview(row.url, row.name)"
                   @error="handleImageError"
+                  @load="(event) => handleImageLoad(event, row)"
                 />
+                <div v-if="row.imageDimensions" class="text-xs text-gray-500 mt-1 text-center">
+                  {{ row.imageDimensions.width }} × {{ row.imageDimensions.height }}
+                </div>
               </div>
             </template>
             <template #sizeSlot="{ row }">
@@ -402,6 +406,57 @@ function handleImageError(event: Event) {
   img.src = '/src/assets/images/image-error.png' // 错误图片占位符，可以根据实际情况调整
   console.warn('图片加载失败:', img.alt)
 }
+
+// 处理图片加载完成事件
+function handleImageLoad(event: Event, row: any) {
+  const img = event.target as HTMLImageElement
+  if (img.naturalWidth && img.naturalHeight) {
+    // 将图片尺寸信息存储到行数据中
+    row.imageDimensions = {
+      width: img.naturalWidth,
+      height: img.naturalHeight
+    }
+    console.log(`图片 ${row.name || row.id} 尺寸: ${img.naturalWidth} × ${img.naturalHeight}`)
+    
+    // 尝试获取文件大小
+    // getImageFileSize(row.url).then(size => {
+    //   if (size) {
+    //     row.fileSize = size
+    //     console.log(`图片 ${row.name || row.id} 文件大小: ${formatFileSize(size)}`)
+    //   }
+    // }).catch(error => {
+    //   console.warn(`获取图片 ${row.name || row.id} 文件大小失败:`, error)
+    // })
+  } else {
+    console.warn(`图片 ${row.name || row.id} 无法获取尺寸信息`)
+  }
+}
+
+// 获取图片文件大小
+// async function getImageFileSize(imageUrl: string): Promise<number | null> {
+//   try {
+//     const response = await fetch(imageUrl, { method: 'HEAD' })
+//     if (response.ok) {
+//       const contentLength = response.headers.get('Content-Length')
+//       if (contentLength) {
+//         return parseInt(contentLength, 10)
+//       }
+//     }
+//     return null
+//   } catch (error) {
+//     console.warn('获取文件大小失败:', error)
+//     return null
+//   }
+// }
+
+// 格式化文件大小
+// function formatFileSize(bytes: number): string {
+//   if (bytes === 0) return '0 B'
+//   const k = 1024
+//   const sizes = ['B', 'KB', 'MB', 'GB']
+//   const i = Math.floor(Math.log(bytes) / Math.log(k))
+//   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+// }
 
 function getSuffixTagType(suffix) {
   switch ((suffix || '').toLowerCase()) {
