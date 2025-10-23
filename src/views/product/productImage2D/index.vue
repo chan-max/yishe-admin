@@ -164,6 +164,14 @@
             show-word-limit
           />
         </el-form-item>
+        <el-form-item label="产品代码" prop="code">
+          <el-input
+            v-model="editProductForm.code"
+            placeholder="请输入产品代码"
+            maxlength="50"
+            show-word-limit
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -559,6 +567,7 @@ const editProductFormRef = ref()
 const editProductLoading = ref(false)
 const editProductForm = reactive({
   id: '',
+  code: '',
   name: '',
   description: '',
   keywords: ''
@@ -566,6 +575,10 @@ const editProductForm = reactive({
 
 // 编辑产品信息表单验证规则
 const editProductRules = {
+  code: [
+    { required: true, message: '请输入产品代码', trigger: 'blur' },
+    { min: 3, max: 50, message: '产品代码长度在 3 到 50 个字符', trigger: 'blur' }
+  ],
   name: [
     { required: true, message: '请输入产品名称', trigger: 'blur' },
     { min: 1, max: 100, message: '产品名称长度在 1 到 100 个字符', trigger: 'blur' }
@@ -973,6 +986,7 @@ function handleCloseTemplateDialog() {
 // 编辑产品信息
 function handleEditProduct(row: any) {
   editProductForm.id = row.id
+  editProductForm.code = row.code || ''
   editProductForm.name = row.name || ''
   editProductForm.description = row.description || ''
   editProductForm.keywords = row.keywords || ''
@@ -983,6 +997,7 @@ function handleEditProduct(row: any) {
 function handleCloseEditProductDialog() {
   editProductDialogVisible.value = false
   editProductForm.id = ''
+  editProductForm.code = ''
   editProductForm.name = ''
   editProductForm.description = ''
   editProductForm.keywords = ''
@@ -1002,10 +1017,10 @@ async function handleSaveProductInfo() {
     
     editProductLoading.value = true
     
-    await request.post({
-      url: '/product-image-2d/update-product-info',
+    await request.put({
+      url: `/product-image-2d/${editProductForm.id}/info`,
       data: {
-        id: editProductForm.id,
+        code: editProductForm.code,
         name: editProductForm.name,
         description: editProductForm.description,
         keywords: editProductForm.keywords
