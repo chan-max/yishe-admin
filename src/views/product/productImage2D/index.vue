@@ -208,6 +208,87 @@
       </template>
     </el-dialog>
 
+    <!-- 视频生成弹窗 -->
+    <el-dialog
+      v-model="videoGenerateDialogVisible"
+      title="生成视频"
+      width="500px"
+      align-center
+      :before-close="handleCloseVideoGenerateDialog"
+    >
+      <div class="video-generate-content">
+        <el-form label-width="100px">
+          <el-form-item label="每张图片时长">
+            <el-input-number
+              v-model="videoGenerateForm.duration"
+              :min="1"
+              :max="10"
+              :step="0.5"
+              controls-position="right"
+            />
+            <span class="ml-2 text-sm text-gray-500">秒</span>
+          </el-form-item>
+          <el-form-item label="过渡效果">
+            <el-select v-model="videoGenerateForm.transition" placeholder="选择过渡效果">
+              <el-option label="无过渡" value="false" />
+              <el-option label="淡入淡出" value="fade" />
+              <el-option label="滑动" value="slide" />
+              <el-option label="缩放" value="zoom" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="帧率">
+            <el-input-number
+              v-model="videoGenerateForm.fps"
+              :min="1"
+              :max="30"
+              controls-position="right"
+            />
+            <span class="ml-2 text-sm text-gray-500">fps</span>
+          </el-form-item>
+          <el-form-item label="循环次数">
+            <el-input-number
+              v-model="videoGenerateForm.loop"
+              :min="1"
+              :max="5"
+              controls-position="right"
+            />
+            <span class="ml-2 text-sm text-gray-500">次</span>
+          </el-form-item>
+        </el-form>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseVideoGenerateDialog">取消</el-button>
+          <el-button type="primary" @click="handleVideoGenerate" :loading="videoGenerateLoading">
+            开始生成
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 视频播放弹窗 -->
+    <el-dialog
+      v-model="videoDialogVisible"
+      title="视频播放"
+      width="90%"
+      :before-close="() => videoDialogVisible = false"
+      align-center
+      destroy-on-close
+    >
+      <div class="video-player-container">
+        <video
+          v-if="currentVideoUrl"
+          :src="currentVideoUrl"
+          controls
+          autoplay
+          class="video-player-full"
+        >
+          您的浏览器不支持视频播放
+        </video>
+      </div>
+    </el-dialog>
+
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -295,6 +376,36 @@
             </el-button>
           </div>
         </template>
+        <template #videoSlot="{ row }">
+          <div class="video-container">
+            <div v-if="row.videoUrl && row.videoStatus === VIDEO_STATUS.COMPLETED" class="video-preview">
+              <div class="video-wrapper" @click="handleVideoClick(row.videoUrl)">
+                <video 
+                  :src="row.videoUrl" 
+                  preload="metadata"
+                  class="video-player"
+                  muted
+                >
+                  您的浏览器不支持视频播放
+                </video>
+                <div class="video-play-overlay">
+                  <el-icon class="play-icon"><VideoPlay /></el-icon>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="row.videoStatus === VIDEO_STATUS.GENERATING" class="video-generating">
+              <el-icon class="text-blue-500"><Loading /></el-icon>
+              <span class="text-sm text-blue-500">生成中...</span>
+            </div>
+            <div v-else-if="row.videoStatus === VIDEO_STATUS.FAILED" class="video-failed">
+              <el-icon class="text-red-500"><Warning /></el-icon>
+              <span class="text-sm text-red-500">生成失败</span>
+            </div>
+            <div v-else class="video-none">
+              <span class="text-sm text-gray-400">未生成</span>
+            </div>
+          </div>
+        </template>
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button link type="primary" size="small">
@@ -316,6 +427,13 @@
                   :disabled="generatingCodeId === row.id"
                 >
                   {{ generatingCodeId === row.id ? '生成中...' : (row.code ? '重新生成代码' : '生成产品代码') }}
+                </el-dropdown-item>
+                <el-dropdown-item 
+                  command="generate-video" 
+                  class="text-green-500"
+                  :disabled="generatingVideoId === row.id || row.videoStatus === VIDEO_STATUS.GENERATING"
+                >
+                  {{ generatingVideoId === row.id ? '视频生成中...' : (row.videoUrl ? '重新生成视频' : '生成视频') }}
                 </el-dropdown-item>
                 <el-dropdown-item divided command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
                 <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
@@ -347,7 +465,7 @@ import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
-import { ArrowDown, Loading } from '@element-plus/icons-vue'
+import { ArrowDown, Loading, Warning, VideoPlay } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
 
@@ -376,6 +494,22 @@ const STATUS_OPTIONS = [
   { label: '已归档', value: PUBLISH_STATUS.ARCHIVED }
 ]
 
+// 视频状态常量
+const VIDEO_STATUS = {
+  NONE: 'none',
+  GENERATING: 'generating',
+  COMPLETED: 'completed',
+  FAILED: 'failed'
+} as const
+
+// 视频状态显示文本（暂时未使用，保留以备后用）
+// const VIDEO_STATUS_TEXT = {
+//   [VIDEO_STATUS.NONE]: '未生成',
+//   [VIDEO_STATUS.GENERATING]: '生成中',
+//   [VIDEO_STATUS.COMPLETED]: '已完成',
+//   [VIDEO_STATUS.FAILED]: '生成失败'
+// } as const
+
 const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '' })
 
 // 获取窗口尺寸
@@ -386,6 +520,7 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '视频', field: 'videoUrl', width: 120, slots: { default: 'videoSlot' } },
     { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } },
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
     { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
@@ -459,6 +594,22 @@ const aiGenerateForm = reactive({
   customPrompt: ''
 })
 
+// 视频生成相关状态
+const generatingVideoId = ref<string>('')
+const videoGenerateDialogVisible = ref(false)
+const videoGenerateLoading = ref(false)
+const videoGenerateForm = reactive({
+  productId: '',
+  duration: 2,
+  transition: 'fade',
+  fps: 1,
+  loop: 1
+})
+
+// 视频播放相关状态
+const videoDialogVisible = ref(false)
+const currentVideoUrl = ref('')
+
 // 生成唯一码
 async function handleGenerateCode(row: any) {
   if (!row?.id) return
@@ -523,27 +674,27 @@ function getImageList(row: any): string[] {
   return images
 }
 
-// 获取图片配置（解析为对象）
-function getImageConfig(row: any, imageIndex: number): any {
-  const key = `imageOption${imageIndex}`
-  const config = row[key]
-  if (!config) return null
-  
-  try {
-    // 如果是字符串，尝试解析JSON
-    if (typeof config === 'string') {
-      return JSON.parse(config)
-    }
-    // 如果已经是对象，直接返回
-    if (typeof config === 'object') {
-      return config
-    }
-  } catch (e) {
-    console.warn(`解析图片${imageIndex}配置失败:`, e)
-  }
-  
-  return null
-}
+// 获取图片配置（解析为对象）- 暂时未使用
+// function getImageConfig(row: any, imageIndex: number): any {
+//   const key = `imageOption${imageIndex}`
+//   const config = row[key]
+//   if (!config) return null
+//   
+//   try {
+//     // 如果是字符串，尝试解析JSON
+//     if (typeof config === 'string') {
+//       return JSON.parse(config)
+//     }
+//     // 如果已经是对象，直接返回
+//     if (typeof config === 'object') {
+//       return config
+//     }
+//   } catch (e) {
+//     console.warn(`解析图片${imageIndex}配置失败:`, e)
+//   }
+//   
+//   return null
+// }
 
 // 获取模板图片列表
 function getTemplateImages(template: any): string[] {
@@ -578,21 +729,21 @@ function getTemplateImageConfig(template: any, index: number): any {
   return null
 }
 
-// 获取模板图片配置（原始字符串格式，用于兼容）
-function getTemplateImageOption(template: any, index: number): string {
-  const option = template[`imageOption${index}`]
-  if (option && option.trim()) {
-    try {
-      // 尝试解析JSON配置
-      const parsed = JSON.parse(option)
-      return JSON.stringify(parsed, null, 2)
-    } catch {
-      // 如果不是JSON，直接返回字符串
-      return option
-    }
-  }
-  return ''
-}
+// 获取模板图片配置（原始字符串格式，用于兼容）- 暂时未使用
+// function getTemplateImageOption(template: any, index: number): string {
+//   const option = template[`imageOption${index}`]
+//   if (option && option.trim()) {
+//     try {
+//       // 尝试解析JSON配置
+//       const parsed = JSON.parse(option)
+//       return JSON.stringify(parsed, null, 2)
+//     } catch {
+//       // 如果不是JSON，直接返回字符串
+//       return option
+//     }
+//   }
+//   return ''
+// }
 
 function onCheckboxChange(e: any) {
   const records = Array.isArray(e.records) ? e.records : []
@@ -616,6 +767,9 @@ function handleOperationCommand(command: string, row: any) {
       break
     case 'generate-code':
       handleGenerateCode(row)
+      break
+    case 'generate-video':
+      handleVideoGenerateInfo(row)
       break
     case 'delete':
       handleDelete(row)
@@ -994,7 +1148,7 @@ async function handleAiGenerate() {
     aiGenerateLoading.value = true
     aiGeneratingId.value = aiGenerateForm.productId
     
-    const res = await request.post({
+    await request.post({
       url: '/product-image-2d/ai-generate-info',
       data: {
         id: aiGenerateForm.productId,
@@ -1020,6 +1174,67 @@ function handleCloseAiGenerateDialog() {
   aiGenerateDialogVisible.value = false
   aiGenerateForm.productId = ''
   aiGenerateForm.customPrompt = ''
+}
+
+// 视频生成产品信息
+function handleVideoGenerateInfo(row: any) {
+  if (!row?.id) return
+  
+  videoGenerateForm.productId = row.id
+  videoGenerateForm.duration = 2
+  videoGenerateForm.transition = 'fade'
+  videoGenerateForm.fps = 1
+  videoGenerateForm.loop = 1
+  videoGenerateDialogVisible.value = true
+}
+
+// 执行视频生成
+async function handleVideoGenerate() {
+  if (!videoGenerateForm.productId) return
+  
+  try {
+    videoGenerateLoading.value = true
+    generatingVideoId.value = videoGenerateForm.productId
+    
+    // 使用重新生成视频接口，会自动处理旧视频的删除
+    await request.post({
+      url: '/product-image-2d/regenerate-video',
+      data: {
+        id: videoGenerateForm.productId,
+        duration: videoGenerateForm.duration,
+        transition: videoGenerateForm.transition,
+        fps: videoGenerateForm.fps,
+        loop: videoGenerateForm.loop
+      }
+    })
+    
+    ElMessage.success('视频生成成功')
+    handleCloseVideoGenerateDialog()
+    getList()
+  } catch (e) {
+    console.error('视频生成失败:', e)
+    ElMessage.error('视频生成失败，请稍后重试')
+  } finally {
+    videoGenerateLoading.value = false
+    generatingVideoId.value = ''
+  }
+}
+
+// 关闭视频生成弹窗
+function handleCloseVideoGenerateDialog() {
+  videoGenerateDialogVisible.value = false
+  videoGenerateForm.productId = ''
+  videoGenerateForm.duration = 2
+  videoGenerateForm.transition = 'fade'
+  videoGenerateForm.fps = 1
+  videoGenerateForm.loop = 1
+}
+
+
+// 视频点击事件
+function handleVideoClick(videoUrl: string) {
+  currentVideoUrl.value = videoUrl
+  videoDialogVisible.value = true
 }
 </script>
 
@@ -1171,24 +1386,13 @@ function handleCloseAiGenerateDialog() {
   border-radius: 4px;
 }
 
-/* 产品信息字段样式 */
-.product-code,
-.product-name,
-.product-description,
-.product-keywords {
-  display: flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 4px 0;
-}
+
 
 .code-text,
 .name-text,
 .description-text,
 .keywords-text {
   color: var(--el-text-color-primary);
-  font-size: 14px;
-  line-height: 1.4;
   word-break: break-all;
 }
 
@@ -1271,6 +1475,109 @@ function handleCloseAiGenerateDialog() {
   color: #909399;
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* 视频相关样式 */
+.video-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  padding: 4px;
+}
+
+.video-preview {
+  width: 100%;
+  max-width: 80px;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 64px;
+}
+
+.video-player {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.video-player:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.video-play-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.video-wrapper:hover .video-play-overlay {
+  background: rgba(0, 0, 0, 0.8);
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+.play-icon {
+  color: white;
+  font-size: 16px;
+}
+
+.video-generating,
+.video-failed,
+.video-none {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+  min-height: 64px;
+  border: 1px dashed var(--el-border-color-light);
+  border-radius: 4px;
+  background-color: var(--el-fill-color-lighter);
+}
+
+.video-generate-content {
+  padding: 0;
+}
+
+.video-generate-content .el-form-item {
+  margin-bottom: 16px;
+}
+
+/* 视频播放弹窗样式 */
+.video-player-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.video-player-full {
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
 }
 </style>
 
