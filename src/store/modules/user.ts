@@ -75,21 +75,62 @@ export const useUserStore = defineStore('admin-user', {
       }
       let userInfo = wsCache.get(CACHE_KEY.USER)
 
+      // 延迟执行，避免频繁请求
       await new Promise((resolve) => {
         setTimeout(() => {
           resolve(null)
         }, 999);
       })
-      // if (!userInfo) {
-      //   userInfo = await getInfo()
-      // }
-      // 强制每次都调用获取用户信息
-      try {
-        userInfo = await getInfo()
-      } catch (e) {
-        // 获取用户信息失败，退出登录并跳转首页
-        await this.loginOut();
-        return;
+      
+      // 尝试获取用户信息，最多重试2次
+      let retryCount = 0
+      const maxRetries = 2
+      
+      console.log('🔄 开始获取用户信息...')
+      
+      while (retryCount < maxRetries) {
+        try {
+          console.log(`📡 尝试获取用户信息 (第 ${retryCount + 1} 次)`)
+          userInfo = await getInfo()
+          console.log('✅ 成功获取用户信息:', userInfo)
+          break // 成功获取，跳出循环
+        } catch (e) {
+          retryCount++
+          console.error(`❌ 获取用户信息失败 (尝试 ${retryCount}/${maxRetries}):`, e)
+          
+          // 详细记录错误信息
+          if (e?.response) {
+            console.error('响应状态:', e.response.status)
+            console.error('响应数据:', e.response.data)
+          }
+          
+          // 检查是否是token相关的问题
+          if (e?.response?.status === 401 || e?.code === 401) {
+            // 只有token无效时才退出登录
+            console.error('🚫 Token无效，退出登录')
+            await this.loginOut()
+            return
+          }
+          
+          // 如果是最后一次尝试失败，使用缓存数据
+          if (retryCount >= maxRetries) {
+            console.warn('⚠️ 多次尝试失败，尝试使用缓存的用户信息')
+            userInfo = wsCache.get(CACHE_KEY.USER)
+            if (!userInfo) {
+              // 如果缓存也没有，才退出登录
+              console.error('🚫 无缓存数据，退出登录')
+              await this.loginOut()
+              return
+            } else {
+              console.log('✅ 使用缓存的用户信息:', userInfo)
+            }
+            break
+          }
+          
+          // 等待一段时间后重试
+          console.log('⏳ 等待1秒后重试...')
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
       }
       // this.permissions = new Set(userInfo.permissions)
       // this.roles = userInfo.roles
