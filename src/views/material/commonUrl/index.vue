@@ -200,16 +200,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Plus } from '@element-plus/icons-vue'
 import { getCommonUrlList, createCommonUrl, updateCommonUrl, deleteCommonUrl } from '@/api/commonUrl'
 import { commonGridOptions } from '@/common/table'
+import { useWindowSize } from '@vueuse/core'
 
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20
 })
+
+// 获取窗口尺寸
+const { height } = useWindowSize()
 
 const gridOptions = ref({
   ...commonGridOptions,
@@ -228,6 +232,12 @@ const gridOptions = ref({
     { title: '更新时间', field: 'updateTime', width: 160, slots: { default: 'updateTimeSlot' } },
     { title: '操作', fixed: 'right', width: 120, slots: { default: 'operationDefaultSlot' } }
   ]
+})
+
+// 监听窗口尺寸变化，动态调整表格高度
+watchEffect(() => {
+  // 计算表格最大高度：窗口高度 - 头部区域 - 分页区域 - 其他边距
+  gridOptions.value.maxHeight = height.value - 250
 })
 
 const dataSource = ref([])
