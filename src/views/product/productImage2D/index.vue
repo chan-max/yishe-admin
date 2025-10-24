@@ -297,6 +297,7 @@
       </div>
     </el-dialog>
 
+
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -442,6 +443,13 @@
                   :disabled="generatingVideoId === row.id || row.videoStatus === VIDEO_STATUS.GENERATING"
                 >
                   {{ generatingVideoId === row.id ? '视频生成中...' : (row.videoUrl ? '重新生成视频' : '生成视频') }}
+                </el-dropdown-item>
+                <el-dropdown-item 
+                  command="regenerate-images" 
+                  class="text-orange-500"
+                  :disabled="regeneratingImagesId === row.id"
+                >
+                  {{ regeneratingImagesId === row.id ? '图片生成中...' : '重新生成合成图片' }}
                 </el-dropdown-item>
                 <el-dropdown-item divided command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
                 <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
@@ -597,6 +605,10 @@ const currentPreviewIndex = ref(0)
 
 // 生成代码相关状态
 const generatingCodeId = ref<string>('')
+
+// 重新生成图片相关状态
+const regeneratingImagesId = ref<string>('')
+const currentRegenerateProductId = ref<string>('')
 
 // AI生成相关状态
 const aiGeneratingId = ref<string>('')
@@ -783,6 +795,9 @@ function handleOperationCommand(command: string, row: any) {
       break
     case 'generate-video':
       handleVideoGenerateInfo(row)
+      break
+    case 'regenerate-images':
+      handleRegenerateImages(row)
       break
     case 'delete':
       handleDelete(row)
@@ -1251,6 +1266,32 @@ function handleVideoClick(videoUrl: string) {
   currentVideoUrl.value = videoUrl
   videoDialogVisible.value = true
 }
+
+// 重新生成合成图片
+async function handleRegenerateImages(row: any) {
+  if (!row?.id) return
+  
+  currentRegenerateProductId.value = row.id
+  
+  try {
+    regeneratingImagesId.value = row.id
+    
+    await request.post({
+      url: '/product-image-2d/regenerate-images',
+      data: { id: row.id }
+    })
+    
+    ElMessage.success('合成图片重新生成成功')
+    getList()
+  } catch (e) {
+    console.error('重新生成合成图片失败:', e)
+    ElMessage.error('重新生成合成图片失败')
+  } finally {
+    regeneratingImagesId.value = ''
+    currentRegenerateProductId.value = ''
+  }
+}
+
 </script>
 
 <style scoped>
