@@ -297,6 +297,76 @@
       </div>
     </el-dialog>
 
+    <!-- 水印配置对话框 -->
+    <el-dialog
+      v-model="watermarkDialogVisible"
+      title="水印配置"
+      width="600px"
+      :before-close="handleCloseWatermarkDialog"
+      align-center
+      destroy-on-close
+    >
+      <el-form
+        :model="watermarkForm"
+        label-width="120px"
+        label-position="left"
+      >
+        <el-form-item label="水印文字">
+          <el-input
+            v-model="watermarkForm.text"
+            placeholder="请输入水印文字，默认为产品代码"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="水印位置">
+          <el-select v-model="watermarkForm.position" placeholder="选择水印位置">
+            <el-option label="左上角" value="top-left" />
+            <el-option label="右上角" value="top-right" />
+            <el-option label="左下角" value="bottom-left" />
+            <el-option label="右下角" value="bottom-right" />
+            <el-option label="居中" value="center" />
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="字体大小">
+          <el-input-number
+            v-model="watermarkForm.fontSize"
+            :min="12"
+            :max="72"
+            :step="2"
+            controls-position="right"
+          />
+        </el-form-item>
+        
+        <el-form-item label="文字颜色">
+          <el-color-picker v-model="watermarkForm.fontColor" />
+        </el-form-item>
+        
+        <el-form-item label="透明度">
+          <el-slider
+            v-model="watermarkForm.opacity"
+            :min="0"
+            :max="1"
+            :step="0.1"
+            :format-tooltip="(val) => Math.round(val * 100) + '%'"
+          />
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseWatermarkDialog">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="regeneratingImagesId === currentRegenerateProductId"
+            @click="executeRegenerateImages"
+          >
+            {{ regeneratingImagesId === currentRegenerateProductId ? '生成中...' : '确定生成' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
 
     <div class="common-table">
       <vxe-grid
@@ -609,6 +679,16 @@ const generatingCodeId = ref<string>('')
 // 重新生成图片相关状态
 const regeneratingImagesId = ref<string>('')
 const currentRegenerateProductId = ref<string>('')
+
+// 水印配置相关状态
+const watermarkDialogVisible = ref(false)
+const watermarkForm = reactive({
+  text: '',
+  position: 'bottom-right',
+  fontSize: 24,
+  fontColor: '#FFFFFF',
+  opacity: 0.6
+})
 
 // AI生成相关状态
 const aiGeneratingId = ref<string>('')
@@ -1271,18 +1351,40 @@ function handleVideoClick(videoUrl: string) {
 async function handleRegenerateImages(row: any) {
   if (!row?.id) return
   
+  // 设置默认水印文字为产品代码
+  watermarkForm.text = row.code || ''
   currentRegenerateProductId.value = row.id
+  watermarkDialogVisible.value = true
+}
+
+// 执行重新生成合成图片
+async function executeRegenerateImages() {
+  if (!currentRegenerateProductId.value) return
   
   try {
-    regeneratingImagesId.value = row.id
+    regeneratingImagesId.value = currentRegenerateProductId.value
+    
+    const requestData: any = { id: currentRegenerateProductId.value }
+    
+    // 如果配置了水印，添加水印参数
+    if (watermarkForm.text.trim()) {
+      requestData.watermark = {
+        text: watermarkForm.text,
+        position: watermarkForm.position,
+        fontSize: watermarkForm.fontSize,
+        fontColor: watermarkForm.fontColor,
+        opacity: watermarkForm.opacity
+      }
+    }
     
     await request.post({
       url: '/product-image-2d/regenerate-images',
-      data: { id: row.id }
+      data: requestData
     })
     
     ElMessage.success('合成图片重新生成成功')
     getList()
+    watermarkDialogVisible.value = false
   } catch (e) {
     console.error('重新生成合成图片失败:', e)
     ElMessage.error('重新生成合成图片失败')
@@ -1290,6 +1392,18 @@ async function handleRegenerateImages(row: any) {
     regeneratingImagesId.value = ''
     currentRegenerateProductId.value = ''
   }
+}
+
+// 关闭水印配置对话框
+function handleCloseWatermarkDialog() {
+  watermarkDialogVisible.value = false
+  currentRegenerateProductId.value = ''
+  // 重置表单
+  watermarkForm.text = ''
+  watermarkForm.position = 'bottom-right'
+  watermarkForm.fontSize = 24
+  watermarkForm.fontColor = '#FFFFFF'
+  watermarkForm.opacity = 0.6
 }
 
 </script>
