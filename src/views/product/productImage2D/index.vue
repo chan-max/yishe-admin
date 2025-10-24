@@ -311,47 +311,57 @@
         label-width="120px"
         label-position="left"
       >
-        <el-form-item label="水印文字">
-          <el-input
-            v-model="watermarkForm.text"
-            placeholder="请输入水印文字，默认为产品代码"
-            clearable
+        <el-form-item label="启用水印">
+          <el-switch
+            v-model="watermarkForm.enableWatermark"
+            active-text="启用"
+            inactive-text="禁用"
           />
         </el-form-item>
         
-        <el-form-item label="水印位置">
-          <el-select v-model="watermarkForm.position" placeholder="选择水印位置">
-            <el-option label="左上角" value="top-left" />
-            <el-option label="右上角" value="top-right" />
-            <el-option label="左下角" value="bottom-left" />
-            <el-option label="右下角" value="bottom-right" />
-            <el-option label="居中" value="center" />
-          </el-select>
-        </el-form-item>
+        <template v-if="watermarkForm.enableWatermark">
+          <el-form-item label="水印文字">
+            <el-input
+              v-model="watermarkForm.text"
+              placeholder="请输入水印文字，默认为产品代码"
+              clearable
+            />
+          </el-form-item>
         
-        <el-form-item label="字体大小">
-          <el-input-number
-            v-model="watermarkForm.fontSize"
-            :min="12"
-            :max="72"
-            :step="2"
-            controls-position="right"
-          />
-        </el-form-item>
-        
-        <el-form-item label="文字颜色">
-          <el-color-picker v-model="watermarkForm.fontColor" />
-        </el-form-item>
-        
-        <el-form-item label="透明度">
-          <el-slider
-            v-model="watermarkForm.opacity"
-            :min="0"
-            :max="1"
-            :step="0.1"
-            :format-tooltip="(val) => Math.round(val * 100) + '%'"
-          />
-        </el-form-item>
+          <el-form-item label="水印位置">
+            <el-select v-model="watermarkForm.position" placeholder="选择水印位置">
+              <el-option label="左上角" value="top-left" />
+              <el-option label="右上角" value="top-right" />
+              <el-option label="左下角" value="bottom-left" />
+              <el-option label="右下角" value="bottom-right" />
+              <el-option label="居中" value="center" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="字体大小">
+            <el-input-number
+              v-model="watermarkForm.fontSize"
+              :min="12"
+              :max="72"
+              :step="2"
+              controls-position="right"
+            />
+          </el-form-item>
+          
+          <el-form-item label="文字颜色">
+            <el-color-picker v-model="watermarkForm.fontColor" />
+          </el-form-item>
+          
+          <el-form-item label="透明度">
+            <el-slider
+              v-model="watermarkForm.opacity"
+              :min="0"
+              :max="1"
+              :step="0.1"
+              :format-tooltip="(val) => Math.round(val * 100) + '%'"
+            />
+          </el-form-item>
+        </template>
       </el-form>
       
       <template #footer>
@@ -683,6 +693,7 @@ const currentRegenerateProductId = ref<string>('')
 // 水印配置相关状态
 const watermarkDialogVisible = ref(false)
 const watermarkForm = reactive({
+  enableWatermark: true,  // 是否启用水印
   text: '',
   position: 'bottom-right',
   fontSize: 24,
@@ -1366,8 +1377,8 @@ async function executeRegenerateImages() {
     
     const requestData: any = { id: currentRegenerateProductId.value }
     
-    // 如果配置了水印，添加水印参数
-    if (watermarkForm.text.trim()) {
+    // 如果启用了水印且配置了水印文字，添加水印参数
+    if (watermarkForm.enableWatermark && watermarkForm.text.trim()) {
       requestData.watermark = {
         text: watermarkForm.text,
         position: watermarkForm.position,
@@ -1399,6 +1410,7 @@ function handleCloseWatermarkDialog() {
   watermarkDialogVisible.value = false
   currentRegenerateProductId.value = ''
   // 重置表单
+  watermarkForm.enableWatermark = true
   watermarkForm.text = ''
   watermarkForm.position = 'bottom-right'
   watermarkForm.fontSize = 24
