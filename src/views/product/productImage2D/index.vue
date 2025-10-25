@@ -490,12 +490,12 @@
           </div>
         </template>
         <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
+          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" size="small">
             <el-button link type="primary" size="small">
               操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
-              <el-dropdown-menu>
+              <el-dropdown-menu size="small">
                 <el-dropdown-item command="edit-product" class="text-primary">编辑产品信息</el-dropdown-item>
                 <el-dropdown-item 
                   command="ai-generate-info" 
@@ -532,6 +532,7 @@
                 <el-dropdown-item divided command="toggle-public" class="text-blue-500">
                   {{ row.isPublic ? '取消发布' : '发布' }}
                 </el-dropdown-item>
+                <el-dropdown-item command="copy-link" class="text-purple-500">复制线上链接</el-dropdown-item>
                 <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -901,6 +902,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'toggle-public':
       togglePublic(row)
       break
+    case 'copy-link':
+      handleCopyLink(row)
+      break
     default:
       console.warn('未知的操作命令:', command)
   }
@@ -1214,6 +1218,27 @@ function handleCopyCode(code: string) {
   }).catch(err => {
     console.error('复制失败:', err)
     ElMessage.error('复制失败')
+  })
+}
+
+// 复制线上链接
+function handleCopyLink(row: any) {
+  if (!row) return
+  
+  // 优先使用产品代码，如果没有则使用ID
+  const identifier = row.code || row.id
+  if (!identifier) {
+    ElMessage.warning('无法生成链接：缺少产品代码或ID')
+    return
+  }
+  
+  const link = `https://1s.design/view-2d-product/${identifier}`
+  
+  navigator.clipboard.writeText(link).then(() => {
+    ElMessage.success('线上链接已复制到剪贴板')
+  }).catch(err => {
+    console.error('复制链接失败:', err)
+    ElMessage.error('复制链接失败')
   })
 }
 
@@ -1805,6 +1830,22 @@ function handleCloseWatermarkDialog() {
 .code-empty {
   color: var(--el-text-color-placeholder);
   font-style: italic;
+}
+
+/* 小尺寸下拉菜单样式 */
+.el-dropdown-menu--small .el-dropdown-menu__item {
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.el-dropdown-menu--small .el-dropdown-menu__item:hover {
+  background-color: var(--el-color-primary-light-9);
+}
+
+.el-dropdown-menu--small {
+  min-width: 120px;
+  max-width: 200px;
 }
 </style>
 
