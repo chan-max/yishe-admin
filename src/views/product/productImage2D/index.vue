@@ -488,6 +488,12 @@
             </div>
           </div>
         </template>
+        <template #idSlot="{ row }">
+          <div class="id-cell" @click="handleCopyId(row.id)">
+            <span class="id-text">{{ row.id }}</span>
+            <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+          </div>
+        </template>
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button link type="primary" size="small">
@@ -554,7 +560,7 @@ import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
-import { ArrowDown, Loading, Warning, VideoPlay } from '@element-plus/icons-vue'
+import { ArrowDown, Loading, Warning, VideoPlay, DocumentCopy } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
 
@@ -618,6 +624,7 @@ const gridOptions = ref<any>({
     { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
+    { title: 'ID', field: 'id', width: 100, slots: { default: 'idSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
     { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
@@ -1419,6 +1426,17 @@ function handleCloseWatermarkDialog() {
   watermarkForm.opacity = 0.6
 }
 
+// 复制ID到剪贴板
+async function handleCopyId(id: string) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success('ID已复制到剪贴板')
+  } catch (error) {
+    console.error('复制失败:', error)
+    ElMessage.error('复制失败')
+  }
+}
+
 </script>
 
 <style scoped>
@@ -1761,6 +1779,39 @@ function handleCloseWatermarkDialog() {
   height: auto;
   max-height: 70vh;
   object-fit: contain;
+}
+
+/* ID单元格样式 */
+.id-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.id-cell:hover {
+  background-color: var(--el-fill-color-lighter);
+}
+
+.id-text {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+
+.copy-icon {
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.id-cell:hover .copy-icon {
+  opacity: 1;
 }
 </style>
 
