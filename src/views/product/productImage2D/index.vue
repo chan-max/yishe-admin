@@ -410,7 +410,8 @@
         </template>
         <template #codeSlot="{ row }">
           <div class="product-code">
-            <span v-if="row.code" class="code-text">{{ row.code }}</span>
+            <span v-if="row.code" class="code-text" @click="handleCopyCode(row.code)">{{ row.code }}</span>
+            <span v-else class="code-empty">-</span>
           </div>
         </template>
         <template #nameSlot="{ row }">
@@ -1204,6 +1205,18 @@ async function handleDownloadCurrentImage() {
   }
 }
 
+// 复制产品代码
+function handleCopyCode(code: string) {
+  if (!code) return
+  
+  navigator.clipboard.writeText(code).then(() => {
+    ElMessage.success('产品代码已复制')
+  }).catch(err => {
+    console.error('复制失败:', err)
+    ElMessage.error('复制失败')
+  })
+}
+
 // 图片点击事件
 function handleImageClick(images: string[], index: number) {
   currentPreviewImages.value = images
@@ -1761,6 +1774,37 @@ function handleCloseWatermarkDialog() {
   height: auto;
   max-height: 70vh;
   object-fit: contain;
+}
+
+/* 产品代码样式 */
+.product-code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.code-text {
+  color: var(--el-color-primary);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: inline-block;
+}
+
+.code-text:hover {
+  background-color: var(--el-color-primary-light-9);
+  transform: scale(1.05);
+}
+
+.code-text:active {
+  transform: scale(0.98);
+}
+
+.code-empty {
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
 }
 </style>
 
