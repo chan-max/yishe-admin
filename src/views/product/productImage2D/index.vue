@@ -4,7 +4,7 @@
       <div class="flex gap-4 items-center">
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-600">发布状态：</span>
-          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" size="small" style="width: 160px" @change="handleStatusFilter">
+          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" style="width: 160px" @change="handleStatusFilter">
             <el-option
               v-for="option in STATUS_OPTIONS"
               :key="option.value"
@@ -12,6 +12,18 @@
               :value="option.value"
             />
           </el-select>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-600">产品代码：</span>
+          <el-input
+            v-model="queryParams.code"
+            placeholder="请输入产品代码"
+            style="width: 200px"
+            clearable
+            @keyup.enter="handleCodeSearch"
+            @clear="handleCodeClear"
+          />
+          <el-button type="primary" @click="handleCodeSearch">查询</el-button>
         </div>
       </div>
       <div class="flex gap-2">
@@ -587,7 +599,7 @@ const VIDEO_STATUS = {
 //   [VIDEO_STATUS.FAILED]: '生成失败'
 // } as const
 
-const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '' })
+const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '', code: '' })
 
 // 获取窗口尺寸
 const { height } = useWindowSize()
@@ -737,7 +749,8 @@ async function getList() {
       data: { 
         page: queryParams.currentPage, 
         pageSize: queryParams.pageSize,
-        publishStatus: queryParams.publishStatus
+        publishStatus: queryParams.publishStatus,
+        code: queryParams.code
       } 
     })
     console.log('获取到的数据:', res)
@@ -894,6 +907,19 @@ function handleOperationCommand(command: string, row: any) {
 
 // 状态过滤处理
 function handleStatusFilter() {
+  queryParams.currentPage = 1
+  getList()
+}
+
+// 产品代码查询处理
+function handleCodeSearch() {
+  queryParams.currentPage = 1
+  getList()
+}
+
+// 清除产品代码查询
+function handleCodeClear() {
+  queryParams.code = ''
   queryParams.currentPage = 1
   getList()
 }
