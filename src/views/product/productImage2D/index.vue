@@ -328,25 +328,6 @@
             />
           </el-form-item>
         
-          <el-form-item label="水印位置">
-            <el-select v-model="watermarkForm.position" placeholder="选择水印位置">
-              <el-option label="左上角" value="top-left" />
-              <el-option label="右上角" value="top-right" />
-              <el-option label="左下角" value="bottom-left" />
-              <el-option label="右下角" value="bottom-right" />
-              <el-option label="居中" value="center" />
-            </el-select>
-          </el-form-item>
-          
-          <el-form-item label="字体大小">
-            <el-input-number
-              v-model="watermarkForm.fontSize"
-              :min="12"
-              :max="72"
-              :step="2"
-              controls-position="right"
-            />
-          </el-form-item>
           
           <el-form-item label="文字颜色">
             <el-color-picker v-model="watermarkForm.fontColor" />
@@ -695,8 +676,6 @@ const watermarkDialogVisible = ref(false)
 const watermarkForm = reactive({
   enableWatermark: true,  // 是否启用水印
   text: '',
-  position: 'bottom-right',
-  fontSize: 24,
   fontColor: '#FFFFFF',
   opacity: 0.6
 })
@@ -1377,12 +1356,10 @@ async function executeRegenerateImages() {
     
     const requestData: any = { id: currentRegenerateProductId.value }
     
-    // 如果启用了水印且配置了水印文字，添加水印参数
+    // 如果启用了水印且配置了水印文字，添加水印参数（位置和字体大小由后端自适应）
     if (watermarkForm.enableWatermark && watermarkForm.text.trim()) {
       requestData.watermark = {
         text: watermarkForm.text,
-        position: watermarkForm.position,
-        fontSize: watermarkForm.fontSize,
         fontColor: watermarkForm.fontColor,
         opacity: watermarkForm.opacity
       }
@@ -1412,8 +1389,6 @@ function handleCloseWatermarkDialog() {
   // 重置表单
   watermarkForm.enableWatermark = true
   watermarkForm.text = ''
-  watermarkForm.position = 'bottom-right'
-  watermarkForm.fontSize = 24
   watermarkForm.fontColor = '#FFFFFF'
   watermarkForm.opacity = 0.6
 }
