@@ -642,6 +642,7 @@ import PsdPreview from '@/components/PsdPreview/index.vue'
 import { fontTemplateApi } from "@/api/fontTemplate";
 import { ImagePreview } from '@/components/ImagePreview';
 import { htmlToPngFile } from '@/utils/htmlToPng';
+import { copyLink } from '@/utils/clipboard';
 
 
 // 查询条件
@@ -1114,11 +1115,7 @@ async function submitFontParams() {
 }
 
 const copyUrl = (url: string) => {
-  navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('复制成功');
-  }).catch(() => {
-    ElMessage.error('复制失败');
-  });
+  copyLink(url);
 };
 
 // AI生成内容相关方法

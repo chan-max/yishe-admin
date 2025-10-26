@@ -559,6 +559,7 @@ import request from '@/config/axios'
 import { ArrowDown, Loading, Warning, VideoPlay } from '@element-plus/icons-vue'
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
+import { copyProductCode, copyLink } from '@/utils/clipboard'
 
 // 发布状态常量
 const PUBLISH_STATUS = {
@@ -1211,14 +1212,7 @@ async function handleDownloadCurrentImage() {
 
 // 复制产品代码
 function handleCopyCode(code: string) {
-  if (!code) return
-  
-  navigator.clipboard.writeText(code).then(() => {
-    ElMessage.success('产品代码已复制')
-  }).catch(err => {
-    console.error('复制失败:', err)
-    ElMessage.error('复制失败')
-  })
+  copyProductCode(code)
 }
 
 // 复制线上链接
@@ -1233,13 +1227,7 @@ function handleCopyLink(row: any) {
   }
   
   const link = `https://1s.design/view-2d-product/${identifier}`
-  
-  navigator.clipboard.writeText(link).then(() => {
-    ElMessage.success('线上链接已复制到剪贴板')
-  }).catch(err => {
-    console.error('复制链接失败:', err)
-    ElMessage.error('复制链接失败')
-  })
+  copyLink(link)
 }
 
 // 图片点击事件

@@ -725,6 +725,7 @@ import { getDesignModel } from '@/api/designModel'
 import { preview } from "@/components/PreviewImage/index";
 import { getDraftList } from '@/api/draft'
 import { aiGenerateProductInfo } from '@/api/product'
+import { copyLink } from '@/utils/clipboard'
 
 
 
@@ -1121,14 +1122,7 @@ function handlePreview(row) {
 }
 
 const copyUrl = (url: string) => {
-  navigator.clipboard
-    .writeText(url)
-    .then(() => {
-      ElMessage.success("复制成功");
-    })
-    .catch(() => {
-      ElMessage.error("复制失败");
-    });
+  copyLink(url);
 };
 
 getList()
