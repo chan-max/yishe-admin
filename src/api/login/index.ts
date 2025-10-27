@@ -37,11 +37,6 @@ export const loginOut = () => {
   return request.post({ url: '/auth/logout' })
 }
 
-// 登出所有设备
-export const loginOutAll = () => {
-  return request.post({ url: '/auth/logout-all' })
-}
-
 // 获取用户权限信息
 export const getInfo = () => {
   return request.post({ url: '/user/getUserInfo/' })

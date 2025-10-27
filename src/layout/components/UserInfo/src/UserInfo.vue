@@ -58,18 +58,6 @@ const loginOut = async () => {
   } catch {}
 }
 
-const loginOutAll = async () => {
-  try {
-    await ElMessageBox.confirm('确定要登出所有设备吗？这将使其他设备上的登录状态失效。', '登出所有设备', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await userStore.loginOutAll()
-    tagsViewStore.delAllViews()
-    replace('/login?redirect=/index')
-  } catch {}
-}
 
 // 获取当前设备信息
 const currentDeviceInfo = computed(() => {
@@ -158,10 +146,6 @@ const toDocument = () => {
         <ElDropdownItem divided @click="loginOut">
           <Icon icon="ep:switch-button" />
           <div>{{ t('common.loginOut') }}</div>
-        </ElDropdownItem>
-        <ElDropdownItem @click="loginOutAll">
-          <Icon icon="ep:close" />
-          <div>登出所有设备</div>
         </ElDropdownItem>
       </ElDropdownMenu>
     </template>

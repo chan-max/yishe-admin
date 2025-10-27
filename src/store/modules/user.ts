@@ -2,7 +2,7 @@ import { store } from '@/store'
 import { defineStore } from 'pinia'
 import { getAccessToken, getRefreshToken, removeToken } from '@/utils/auth'
 import { CACHE_KEY, useCache, deleteUserCache } from '@/hooks/web/useCache'
-import { getInfo, loginOut, loginOutAll } from '@/api/login'
+import { getInfo, loginOut } from '@/api/login'
 import { useGlobalWebsocket } from '@/common/websocket'
 import { useEventBus, useWebSocket } from '@vueuse/core'
 import { initOssClient } from '@/api/oss'
@@ -174,22 +174,6 @@ export const useUserStore = defineStore('admin-user', {
       }
     },
 
-    async loginOutAll() {
-      try {
-        // 调用后端登出所有设备接口
-        await loginOutAll()
-      } catch (error) {
-        console.error('登出所有设备接口调用失败:', error)
-      } finally {
-        // 无论接口是否成功，都清理本地登录信息
-        removeToken()
-        deleteUserCache() // 删除用户缓存
-        this.resetState()
-        
-        // 跳转到首页
-        window.location.href = '/'
-      }
-    },
     resetState() {
       this.permissions = new Set<string>()
       this.roles = []
