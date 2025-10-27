@@ -199,18 +199,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '剪辑素材'
         }
       },
-
-      {
-        path: 'draft',
-        component: () => import('@/views/draft/index/index.vue'),
-        name: 'Draft',
-        meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: '草稿图'
-        }
-      },
       {
         path: 'font',
         component: () => import('@/views/material/fontTemplate/index.vue'),
@@ -246,6 +234,21 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
 
+      // 仅管理员可见
+      {
+        path: 'draft',
+        component: () => import('@/views/draft/index/index.vue'),
+        name: 'Draft',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '草稿图',
+          requiresAdmin: true
+        }
+      },
+
+      // 仅管理员可见
       {
         path: 'productModel',
         component: () => import('@/views/material/productModel/index.vue'),
@@ -254,7 +257,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '商品模型'
+          title: '商品模型',
+          requiresAdmin: true
         }
       },
       {
@@ -265,7 +269,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '二维模板组'
+          title: '二维模板组',
+          requiresAdmin: true
         }
       },
     ]
@@ -278,7 +283,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
       title: '商品管理',
       icon: 'ep:goods',
       order: 2,
-      alwaysShow: true   
+      alwaysShow: true,
+      requiresAdmin: true
     },
     children: [
       {
@@ -323,7 +329,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
       title: '常用网址',
       icon: 'ep:link',
       order: 4,
-      alwaysShow: true   
+      alwaysShow: true,
+      requiresAdmin: true
     },
     children: [
       {
@@ -344,7 +351,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
       title: '系统管理',
       icon: 'ep:setting',
       order: 3,
-      alwaysShow: true   
+      alwaysShow: true,
+      requiresAdmin: true
     },
     children: [
       {

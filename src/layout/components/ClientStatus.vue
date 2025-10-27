@@ -7,7 +7,7 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
 <script lang="tsx">
-import { defineComponent, onMounted, onUnmounted, ref } from 'vue'
+import { defineComponent, onMounted, onUnmounted, ref, computed } from 'vue'
 import { ElTooltip } from 'element-plus'
 import { 
   isLocalConnected, 
@@ -23,13 +23,18 @@ import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { ElMessage } from 'element-plus'
 import { saveTokenToClient } from '@/api/user'
 import { getAccessToken } from '@/utils/auth'
+import { useUserStore } from '@/store/modules/user'
 
 export default defineComponent({
   name: 'ClientStatus',
   setup() {
+    const userStore = useUserStore()
     let timers: { localTimer: number, remoteTimer: number } | null = null
     const loading = ref(false)
     const clientLoading = ref(false)
+    
+    // 判断是否为管理员
+    const isAdmin = computed(() => userStore.user?.isAdmin || false)
     
     // 节流相关状态（仅用于本地客户端状态检测）
     const lastLocalCheck = ref(0)
@@ -290,60 +295,64 @@ export default defineComponent({
           </div>
         </ElTooltip>
 */}
-        {/* 远程服务状态 */}
-        <ElTooltip
-          content={isRemoteConnected.value ? '远程服务已连接' : '远程服务未连接'}
-          placement="bottom"
-        >
-          <div class="custom-hover flex items-center gap-1">
-            <div
-              class="w-2 h-2 rounded-full mr-1"
-              style={{
-                backgroundColor: isRemoteConnected.value ? '#67C23A' : '#F56C6C',
-                boxShadow: isRemoteConnected.value 
-                  ? '0 0 8px rgba(103, 194, 58, 0.5)' 
-                  : '0 0 8px rgba(245, 108, 108, 0.5)'
-              }}
-            />
-            <span 
-              class="text-[10px] font-bold" 
-              style={{ color: isRemoteConnected.value ? '#67C23A' : '#F56C6C' }}
-            >
-              {isRemoteConnected.value ? '远程已连接' : '远程未连接'}
-            </span>
-          </div>
-        </ElTooltip>
+        {/* 远程服务状态 - 仅管理员可见 */}
+        {isAdmin.value && (
+          <ElTooltip
+            content={isRemoteConnected.value ? '远程服务已连接' : '远程服务未连接'}
+            placement="bottom"
+          >
+            <div class="custom-hover flex items-center gap-1">
+              <div
+                class="w-2 h-2 rounded-full mr-1"
+                style={{
+                  backgroundColor: isRemoteConnected.value ? '#67C23A' : '#F56C6C',
+                  boxShadow: isRemoteConnected.value 
+                    ? '0 0 8px rgba(103, 194, 58, 0.5)' 
+                    : '0 0 8px rgba(245, 108, 108, 0.5)'
+                }}
+              />
+              <span 
+                class="text-[10px] font-bold" 
+                style={{ color: isRemoteConnected.value ? '#67C23A' : '#F56C6C' }}
+              >
+                {isRemoteConnected.value ? '远程已连接' : '远程未连接'}
+              </span>
+            </div>
+          </ElTooltip>
+        )}
 
-        {/* 设计工具连接状态 */}
-        <ElTooltip
-          content={isDesignToolConnected.value ? '设计工具已连接' : '点击连接设计工具'}
-          placement="bottom"
-        >
-          <div class="custom-hover flex items-center gap-1" style={{cursor: isDesignToolConnected.value ? 'default' : 'pointer'}} onClick={() => { if (!isDesignToolConnected.value && !loading.value) openDesignTool() }}>
-            <div
-              class="w-2 h-2 rounded-full mr-1"
-              style={{
-                backgroundColor: isDesignToolConnected.value ? '#67C23A' : '#F56C6C',
-                boxShadow: isDesignToolConnected.value 
-                  ? '0 0 8px rgba(103, 194, 58, 0.5)' 
-                  : '0 0 8px rgba(245, 108, 108, 0.5)'
-              }}
-            />
-            <span 
-              class="text-[10px] font-bold flex items-center" 
-              style={{ color: isDesignToolConnected.value ? '#67C23A' : '#F56C6C' }}
-            >
-              {isDesignToolConnected.value ? '设计工具已连接' : '设计工具未连接'}
-              {loading.value && (
-                <svg class="animate-spin ml-1" width="12" height="12" viewBox="0 0 50 50">
-                  <circle cx="25" cy="25" r="20" fill="none" stroke="#409EFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.415, 31.415" transform="rotate(0 25 25)">
-                    <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
-                  </circle>
-                </svg>
-              )}
-            </span>
-          </div>
-        </ElTooltip>
+        {/* 设计工具连接状态 - 仅管理员可见 */}
+        {isAdmin.value && (
+          <ElTooltip
+            content={isDesignToolConnected.value ? '设计工具已连接' : '点击连接设计工具'}
+            placement="bottom"
+          >
+            <div class="custom-hover flex items-center gap-1" style={{cursor: isDesignToolConnected.value ? 'default' : 'pointer'}} onClick={() => { if (!isDesignToolConnected.value && !loading.value) openDesignTool() }}>
+              <div
+                class="w-2 h-2 rounded-full mr-1"
+                style={{
+                  backgroundColor: isDesignToolConnected.value ? '#67C23A' : '#F56C6C',
+                  boxShadow: isDesignToolConnected.value 
+                    ? '0 0 8px rgba(103, 194, 58, 0.5)' 
+                    : '0 0 8px rgba(245, 108, 108, 0.5)'
+                }}
+              />
+              <span 
+                class="text-[10px] font-bold flex items-center" 
+                style={{ color: isDesignToolConnected.value ? '#67C23A' : '#F56C6C' }}
+              >
+                {isDesignToolConnected.value ? '设计工具已连接' : '设计工具未连接'}
+                {loading.value && (
+                  <svg class="animate-spin ml-1" width="12" height="12" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="#409EFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.415, 31.415" transform="rotate(0 25 25)">
+                      <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+                    </circle>
+                  </svg>
+                )}
+              </span>
+            </div>
+          </ElTooltip>
+        )}
       </div>
     )
   }
