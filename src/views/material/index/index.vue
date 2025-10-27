@@ -1,14 +1,30 @@
 <template>
   <div>
-    <!-- 折叠开关 -->
-    <div class="flex pb-2 justify-between items-center">
-      <div></div>
-      <el-button link size="small" @click="actionsCollapsed = !actionsCollapsed">
-        {{ actionsCollapsed ? '展开筛选与操作' : '收起筛选与操作' }}
+    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮（可折叠） -->
+    <!-- 折叠状态：显示常用搜索和操作 -->
+    <div v-show="actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
+      <div style="flex: 1"></div>
+      <form-item label="按名称搜索">
+        <el-input
+          v-model="queryParams.imageName"
+          placeholder="请输入图片名称"
+          style="width: 160px"
+          clearable
+          @change="(val) => { if (!val) getList() }"
+        />
+      </form-item>
+      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+      <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+        展开筛选
       </el-button>
+      <div class="flex shrink-0">
+        <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+      </div>
     </div>
 
-    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮（可折叠） -->
+    <!-- 展开状态：显示全部搜索功能 -->
     <div v-show="!actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex: 1"></div>
       <form-item label="按名称搜索">
@@ -21,6 +37,9 @@
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+      <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+        收起筛选
+      </el-button>
       <form-item label="排序">
         <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
           <el-option label="创建时间倒序" value="createTime DESC" />
