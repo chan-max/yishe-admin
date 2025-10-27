@@ -20,19 +20,19 @@
           <el-option label="未发布" :value="false" />
         </el-select>
       </form-item>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">
+      <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
         添加句子
       </el-button>
-      <el-button type="success" :icon="MagicStick" @click="aiDialogVisible = true">
+      <el-button v-if="isAdmin" type="success" :icon="MagicStick" @click="aiDialogVisible = true">
         AI生成新句子
       </el-button>
-      <el-button type="warning" @click="handleBatchPublish" :disabled="!ids.length">
+      <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish" :disabled="!ids.length">
         批量发布({{ ids.length }})
       </el-button>
-      <el-button type="info" @click="handleBatchUnpublish" :disabled="!ids.length">
+      <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish" :disabled="!ids.length">
         批量下架({{ ids.length }})
       </el-button>
-      <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
+      <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
         批量删除
       </el-button>
     </div>
@@ -81,23 +81,23 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="edit">
+                  <el-dropdown-item v-if="isAdmin" command="edit">
                     <el-icon><Edit /></el-icon>
                     编辑
                   </el-dropdown-item>
-                  <el-dropdown-item command="ai-analyze">
+                  <el-dropdown-item v-if="isAdmin" command="ai-analyze">
                     <el-icon><MagicStick /></el-icon>
                     AI分析
                   </el-dropdown-item>
-                  <el-dropdown-item command="publish" v-if="!row.isPublish">
+                  <el-dropdown-item v-if="isAdmin" command="publish" v-show="!row.isPublish">
                     <el-icon><Upload /></el-icon>
                     发布
                   </el-dropdown-item>
-                  <el-dropdown-item command="unpublish" v-if="row.isPublish">
+                  <el-dropdown-item v-if="isAdmin" command="unpublish" v-show="row.isPublish">
                     <el-icon><Download /></el-icon>
                     下架
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>
+                  <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
                     删除
                   </el-dropdown-item>
@@ -218,6 +218,13 @@ import { commonGridOptions } from '@/common/table'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
 import { useWindowSize } from '@vueuse/core'
+import { useUserStore } from '@/store/modules/user'
+import { computed } from 'vue'
+
+const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 const { height } = useWindowSize()
 

@@ -64,11 +64,11 @@
         />
       </form-item>
       <div class="flex shrink-0">
-        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button type="success" @click="handleBatchSetPublic" :disabled="!ids.length" :loading="batchSetPublicLoading">批量设为公开({{ ids.length }})</el-button>
-        <el-button type="warning" @click="handleBatchSetPrivate" :disabled="!ids.length" :loading="batchSetPrivateLoading">批量设为私有({{ ids.length }})</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="success" @click="handleBatchSetPublic" :disabled="!ids.length" :loading="batchSetPublicLoading">批量设为公开({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="warning" @click="handleBatchSetPrivate" :disabled="!ids.length" :loading="batchSetPrivateLoading">批量设为私有({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
     
@@ -181,28 +181,28 @@
                     操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="edit">
-                        <el-icon><Edit /></el-icon>
-                        编辑
-                      </el-dropdown-item>
-                      <el-dropdown-item command="download">
-                        <el-icon><Download /></el-icon>
-                        下载
-                      </el-dropdown-item>
-                      <el-dropdown-item command="preview" v-if="isVideoFile(row.suffix)">
-                        <el-icon><VideoPlay /></el-icon>
-                        预览
-                      </el-dropdown-item>
-                      <el-dropdown-item command="toggle-public" divided>
-                        <el-icon><View /></el-icon>
-                        {{ row.isPublic ? '设为私有' : '设为公开' }}
-                      </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided>
-                        <el-icon><Delete /></el-icon>
-                        删除
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-if="isAdmin" command="edit">
+                    <el-icon><Edit /></el-icon>
+                    编辑
+                  </el-dropdown-item>
+                  <el-dropdown-item command="download">
+                    <el-icon><Download /></el-icon>
+                    下载
+                  </el-dropdown-item>
+                  <el-dropdown-item command="preview" v-if="isVideoFile(row.suffix)">
+                    <el-icon><VideoPlay /></el-icon>
+                    预览
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" command="toggle-public" divided>
+                    <el-icon><View /></el-icon>
+                    {{ row.isPublic ? '设为私有' : '设为公开' }}
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="isAdmin" command="delete" divided>
+                    <el-icon><Delete /></el-icon>
+                    删除
+                  </el-dropdown-item>
+                </el-dropdown-menu>
                   </template>
                 </el-dropdown>
               </div>
@@ -323,6 +323,9 @@ import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '
 import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 const form = ref({})
 

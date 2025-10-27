@@ -37,10 +37,10 @@
           <el-option label="私有" :value="false" />
         </el-select>
       </form-item>
-      <el-button type="primary" @click="handleAdd" :icon="Plus">
+      <el-button v-if="isAdmin" type="primary" @click="handleAdd" :icon="Plus">
         新增字体
       </el-button>
-      <div class="flex shrink-0 gap-2">
+      <div v-if="isAdmin" class="flex shrink-0 gap-2">
         <el-button 
           type="success" 
           @click="handleBatchAiGenerate"
@@ -131,15 +131,15 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="edit">
+                  <el-dropdown-item v-if="isAdmin" command="edit">
                     <el-icon><Edit /></el-icon>
                     编辑
                   </el-dropdown-item>
-                  <el-dropdown-item command="generate-thumbnail">
+                  <el-dropdown-item v-if="isAdmin" command="generate-thumbnail">
                     <el-icon><Picture /></el-icon>
                     生成缩略图
                   </el-dropdown-item>
-                  <el-dropdown-item command="font-params">
+                  <el-dropdown-item v-if="isAdmin" command="font-params">
                     <el-icon><Picture /></el-icon>
                     制作文字图
                   </el-dropdown-item>
@@ -147,15 +147,15 @@
                     <el-icon><Download /></el-icon>
                     下载源文件
                   </el-dropdown-item>
-                  <el-dropdown-item command="ai-generate">
+                  <el-dropdown-item v-if="isAdmin" command="ai-generate">
                     <el-icon><MagicStick /></el-icon>
                     AI自动生成内容
                   </el-dropdown-item>
-                  <el-dropdown-item command="toggle-public" divided>
+                  <el-dropdown-item v-if="isAdmin" command="toggle-public" divided>
                     <el-icon><View /></el-icon>
                     {{ row.isPublic ? '设为私有' : '设为公开' }}
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>
+                  <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
                     删除
                   </el-dropdown-item>
@@ -644,6 +644,10 @@ import { ImagePreview } from '@/components/ImagePreview';
 import { htmlToPngFile } from '@/utils/htmlToPng';
 import { copyLink } from '@/utils/clipboard';
 
+const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 // 查询条件
 const queryParams = reactive({
