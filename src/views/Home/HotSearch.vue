@@ -20,7 +20,7 @@
 
           <div class="hotsearch-list">
               <div
-                v-for="(item, index) in getPlatformData(platform.index)"
+                v-for="(item, index) in getPlatformData(platform.key)"
                 :key="index"
                 class="hotsearch-item"
                 :class="{ 'is-hot': index < 5 }"
@@ -48,7 +48,6 @@ interface Platform {
   key: string
   label: string
   icon: string
-  index: string  // 对应的数字索引
 }
 
 const loading = ref(false)
@@ -56,29 +55,29 @@ const hotsearchData = ref<Record<string, any>>({})
 
 /**
  * 平台配置说明
- * index: 后端返回的数据中的 key（数字索引）
+ * key: 后端返回的数据中的 key（平台名称）
  * label: 前端显示的平台名称
  * icon: 平台图标
  * 
- * 序号对应关系：
- * 0 - 微博 (Weibo) - 有 title, hot(数值), rank, label, icon
- * 1 - 抖音 (Douyin) - 有 title, hot(数值), rank, video_count, label
- * 2 - 今日头条 (Toutiao) - 有 title, hot(字符串，如"1342.3万"), rank
- * 3 - 今日头条2 - 有 title, hot(数值), rank, tag, cover, icon, url
- * 4 - 哔哩哔哩 (Bilibili) - 有 title, hot(数值), rank, icon, keyword, url
- * 5 - 知乎 (Zhihu) - 有 title, hot, rank, icon, type, uuid
- * 6 - 豆瓣 (Douban) - 有 title, hot, rank, subtitle, type, url, id（hot为浏览数字符串）
- * 7 - 酷狗音乐 (Kugou Music) - 有 title, songName, artist, rank, duration, url, isNew, hot
+ * 平台对应关系：
+ * weibo - 微博 - 有 title, hot(数值), rank, label, icon
+ * douyin - 抖音 - 有 title, hot(数值), rank, video_count, label
+ * toutiao - 今日头条 - 有 title, hot(字符串，如"1342.3万"), rank
+ * toutiao2 - 今日头条2 - 有 title, hot(数值), rank, tag, cover, icon, url
+ * bilibili - 哔哩哔哩 - 有 title, hot(数值), rank, icon, keyword, url
+ * zhihu - 知乎 - 有 title, hot, rank, icon, type, uuid
+ * douban - 豆瓣 - 有 title, hot, rank, subtitle, type, url, id（hot为浏览数字符串）
+ * music - 酷狗音乐 - 有 title, songName, artist, rank, duration, url, isNew, hot
  */
 const platforms: Platform[] = [
-  { key: 'weibo', label: '微博', icon: 'ep:s-promotion', index: '0' },
-  { key: 'douyin', label: '抖音', icon: 'ep:video-camera', index: '1' },
-  { key: 'toutiao', label: '今日头条', icon: 'ep:document', index: '2' },
-  { key: 'toutiao2', label: '今日头条2', icon: 'ep:document', index: '3' },
-  { key: 'bilibili', label: '哔哩哔哩', icon: 'ep:video-play', index: '4' },
-  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled', index: '5' },
-  { key: 'douban', label: '豆瓣', icon: 'ep:star', index: '6' },
-  { key: 'music', label: '酷狗音乐', icon: 'ep:microphone', index: '7' }
+  { key: 'weibo', label: '微博', icon: 'ep:s-promotion' },
+  { key: 'douyin', label: '抖音', icon: 'ep:video-camera' },
+  { key: 'toutiao', label: '今日头条', icon: 'ep:document' },
+  { key: 'toutiao2', label: '今日头条2', icon: 'ep:document' },
+  { key: 'bilibili', label: '哔哩哔哩', icon: 'ep:video-play' },
+  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled' },
+  { key: 'douban', label: '豆瓣', icon: 'ep:star' },
+  { key: 'music', label: '酷狗音乐', icon: 'ep:microphone' }
 ]
 
 const hasAnyData = computed(() => {
@@ -87,17 +86,17 @@ const hasAnyData = computed(() => {
 
 const platformsWithData = computed(() => {
   return platforms.filter(platform => {
-    const data = hotsearchData.value[platform.index]
+    const data = hotsearchData.value[platform.key]
     return data && data.data && Array.isArray(data.data) && data.data.length > 0
   })
 })
 
-const getPlatformData = (platformIndex: string) => {
-  const data = hotsearchData.value[platformIndex]
+const getPlatformData = (platformKey: string) => {
+  const data = hotsearchData.value[platformKey]
   const items = data?.data || []
   
-  // 微博（index '0'）只显示前10条
-  if (platformIndex === '0') {
+  // 微博只显示前10条
+  if (platformKey === 'weibo') {
     return items.slice(0, 10)
   }
   
