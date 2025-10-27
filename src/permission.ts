@@ -62,7 +62,7 @@ router.beforeEach(async (to, from, next) => {
   loadStart()
   if (getAccessToken()) {
     if (to.path === '/login') {
-      next({ path: '/' })
+      next({ path: '/home/index' })
     } else {
       // 获取所有字典
       const dictStore = useDictStoreWithOut()

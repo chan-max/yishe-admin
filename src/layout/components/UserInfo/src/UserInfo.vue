@@ -54,7 +54,7 @@ const loginOut = async () => {
     })
     await userStore.loginOut()
     tagsViewStore.delAllViews()
-    replace('/login?redirect=/index')
+    replace('/login?redirect=/home/index')
   } catch {}
 }
 

@@ -34,6 +34,14 @@ const { t } = useI18n()
  **/
 const remainingRouter: AppRouteRecordRaw[] = [
   {
+    path: '/',
+    name: 'Root',
+    redirect: '/home/index',
+    meta: {
+      hidden: true
+    }
+  },
+  {
     path: '/redirect',
     component: Layout,
     name: 'Redirect',
@@ -51,22 +59,53 @@ const remainingRouter: AppRouteRecordRaw[] = [
     }
   },
   {
-    path: '/',
+    path: '/home',
     component: Layout,
-    redirect: '/index',
     name: 'Home',
-    meta: {},
+    redirect: '/home/index',
+    meta: {
+      title: '工作台',
+      icon: 'ep:home-filled',
+      order: 1,
+      alwaysShow: true
+    },
     children: [
       {
         path: 'index',
         component: () => import('@/views/Home/Index.vue'),
         name: 'Index',
         meta: {
-          title: t('router.home'),
-          icon: 'ep:home-filled',
+          title: '首页',
           noCache: false,
           affix: true
         }
+      },
+      {
+        path: 'hot-search',
+        component: () => import('@/views/Home/HotSearch.vue'),
+        name: 'HotSearch',
+        meta: {
+          title: '热搜'
+        }
+      },
+      {
+        path: 'tools',
+        component: Layout,
+        redirect: '/home/tools/index',
+        name: 'Tools',
+        meta: {
+          title: '工具集合'
+        },
+        children: [
+          {
+            path: 'index',
+            component: () => import('@/views/Home/Tools/Index.vue'),
+            name: 'ToolsIndex',
+            meta: {
+              title: '工具列表'
+            }
+          }
+        ]
       }
     ]
   },
