@@ -47,9 +47,9 @@
         />
       </form-item>
       <div class="flex shrink-0">
-        <el-button type="success" :icon="Upload" @click="handleBatchImport" :loading="importLoading">批量入库({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="success" :icon="Upload" @click="handleBatchImport" :loading="importLoading">批量入库({{ ids.length }})</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
     <div class="flex gap-4">
@@ -89,7 +89,7 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="edit">
+                      <el-dropdown-item v-if="isAdmin" command="edit">
                         <el-icon><Edit /></el-icon>
                         编辑
                       </el-dropdown-item>
@@ -97,11 +97,11 @@
                         <el-icon><Download /></el-icon>
                         下载
                       </el-dropdown-item>
-                      <el-dropdown-item command="import">
+                      <el-dropdown-item v-if="isAdmin" command="import">
                         <el-icon><Upload /></el-icon>
                         入库
                       </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided>
+                      <el-dropdown-item v-if="isAdmin" command="delete" divided>
                         <el-icon><Delete /></el-icon>
                         删除
                       </el-dropdown-item>
@@ -161,17 +161,20 @@
   </div>
 </template>
 <script setup lang="tsx">
-import { ref, reactive, watchEffect, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, watchEffect, computed } from 'vue'
 import { CrawlerMaterialApi } from '@/api/crawler-material'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Search, More, Upload, ArrowDown, Edit, Download } from '@element-plus/icons-vue'
+import { Delete, Search, Upload, ArrowDown, Edit, Download } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { downloadImage } from '@/common/download'
 import { useUserStore } from '@/store/modules/user'
 
 const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 const queryParams = reactive({
   currentPage: 1,

@@ -118,14 +118,14 @@
         />
       </form-item>
       <div class="flex shrink-0">
-        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-        <el-button type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
+        <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
-        <el-button type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请先勾选素材') } linkRow = null; openLinkTemplate2D(null) }">根据二维模板组制作商品图({{ ids.length }})</el-button>
-        <el-button type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
-        <el-button type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请先勾选素材') } linkRow = null; openLinkTemplate2D(null) }">根据二维模板组制作商品图({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
     <div v-if="isMobile && !actionsCollapsed" class="flex pb-4 justify-end">
@@ -252,14 +252,14 @@
 
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center gap-1">
-                <!-- 普通操作 -->
                 <el-dropdown trigger="click" class="operation-dropdown">
                   <el-button type="primary" link size="small">
                     操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
                     <div class="op-menu">
-                      <div class="op-item">
+                      <!-- 内容相关（仅管理员） -->
+                      <div v-if="isAdmin" class="op-item">
                         <span class="op-label">内容相关</span>
                         <div class="op-submenu">
                           <div class="op-btn" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
@@ -268,7 +268,8 @@
                         </div>
                       </div>
 
-                      <div class="op-item">
+                      <!-- 发布操作（仅管理员） -->
+                      <div v-if="isAdmin" class="op-item">
                         <span class="op-label">发布</span>
                         <div class="op-submenu">
                           <div v-if="!row.isPublish" class="op-btn" @click="() => handleOperationCommand('publish', row)">发布</div>
@@ -276,7 +277,8 @@
                         </div>
                       </div>
 
-                      <div class="op-item">
+                      <!-- 制作操作（仅管理员） -->
+                      <div v-if="isAdmin" class="op-item">
                         <span class="op-label">制作</span>
                         <div class="op-submenu">
                           <div class="op-btn" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
@@ -284,30 +286,21 @@
                         </div>
                       </div>
 
-                      <div class="op-divider"></div>
-                      <div class="op-btn" @click="() => handleOperationCommand('edit', row)">编辑</div>
-                      <div class="op-btn danger" @click="() => handleOperationCommand('delete', row)">删除</div>
-                    </div>
-                  </template>
-                </el-dropdown>
-
-                <!-- 图片操作 -->
-                <el-dropdown trigger="click" class="operation-dropdown">
-                  <el-button type="primary" link size="small">
-                    图片<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <div class="op-menu">
+                      <!-- 图片操作 -->
                       <div class="op-item">
                         <span class="op-label">图片操作</span>
                         <div class="op-submenu">
-                          <div class="op-btn" @click="() => handleOperationCommand('copy', row)">复制</div>
-                          <div class="op-btn" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
+                          <div v-if="isAdmin" class="op-btn" @click="() => handleOperationCommand('copy', row)">复制</div>
+                          <div v-if="isAdmin" class="op-btn" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
                           <div class="op-btn" @click="() => handleOperationCommand('download', row)">下载</div>
-                          <div v-if="(row.suffix || '').toLowerCase() === 'png'" class="op-btn" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
-                          <div v-if="(row.suffix || '').toLowerCase() === 'svg'" class="op-btn" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
+                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-btn" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
+                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-btn" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
                         </div>
                       </div>
+
+                      <div v-if="isAdmin" class="op-divider"></div>
+                      <div v-if="isAdmin" class="op-btn" @click="() => handleOperationCommand('edit', row)">编辑</div>
+                      <div v-if="isAdmin" class="op-btn danger" @click="() => handleOperationCommand('delete', row)">删除</div>
                     </div>
                   </template>
                 </el-dropdown>
@@ -980,6 +973,9 @@ import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { createProductImage2D, batchCreateProductImage2D } from '@/api/productImage2D'
 
 const userStore = useUserStore()
+
+// 判断是否为管理员
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 const form = ref({})
 
