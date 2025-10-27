@@ -1,0 +1,37 @@
+import request from '@/config/axios'
+
+export interface HotsearchItem {
+  title: string
+  hot?: string | number
+  note?: string
+  label?: string
+  icon?: string
+  icon_desc?: string
+  rank: number
+  topic_flag?: number
+  flag?: string
+  word_scheme?: string
+  [key: string]: any
+}
+
+export interface HotsearchData {
+  platform: string
+  name: string
+  data: HotsearchItem[]
+  timestamp: string
+}
+
+export interface HotsearchResponse {
+  success: boolean
+  data: Record<string, HotsearchData> | HotsearchData | string[]
+  timestamp?: string
+  message?: string
+  count?: number
+}
+
+/**
+ * 获取所有平台的热搜数据
+ */
+export const getAllHotsearch = () => {
+  return request.post<HotsearchResponse>({ url: '/data/category/hotsearch' })
+}
