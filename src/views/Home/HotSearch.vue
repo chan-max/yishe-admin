@@ -1,103 +1,136 @@
 <template>
   <div class="hot-search-container">
-    <el-card class="content-card">
-      <template #header>
-        <div class="card-header">
-          <div class="title-section">
-            <Icon icon="ep:fire" :size="24" />
-            <span class="title-text">热搜</span>
-          </div>
-          <div class="header-actions">
-            <el-button size="small" @click="refreshData" :loading="loading">
-              <Icon icon="ep:refresh" />
-              刷新
-            </el-button>
-          </div>
-        </div>
-      </template>
+    <div class="header">
+      <span class="title">热搜</span>
+      <el-button size="small" text @click="refreshData" :loading="loading">
+        刷新
+      </el-button>
+    </div>
 
-      <div class="content-section">
-        <!-- 平台选择 -->
-        <div class="platform-selector">
-          <el-tabs v-model="activePlatform" @tab-change="handlePlatformChange">
-            <el-tab-pane
-              v-for="platform in platforms"
-              :key="platform.key"
-              :label="platform.label"
-              :name="platform.key"
-            >
-              <template #label>
-                <span class="tab-label">
-                  <Icon :icon="platform.icon" />
-                  {{ platform.label }}
-                </span>
-              </template>
-            </el-tab-pane>
-          </el-tabs>
-        </div>
+    <div class="content-section" v-loading="loading">
+        <!-- 所有平台的热搜数据 -->
+        <div
+          v-for="platform in platformsWithData"
+          :key="platform.key"
+          class="platform-section"
+        >
+          <div class="platform-header">
+            <span class="platform-name">{{ platform.label }}</span>
+          </div>
 
-        <!-- 热搜列表 -->
-        <div class="hotsearch-list" v-loading="loading">
-          <div
-            v-if="currentData && currentData.length > 0"
-            class="hotsearch-items"
-          >
-            <div
-              v-for="(item, index) in currentData"
-              :key="index"
-              class="hotsearch-item"
-              :class="{ 'is-hot': index < 3 }"
-            >
+          <div class="hotsearch-list">
+              <div
+                v-for="(item, index) in getPlatformData(platform.index)"
+                :key="index"
+                class="hotsearch-item"
+                :class="{ 'is-hot': index < 5 }"
+              >
               <div class="item-rank">{{ index + 1 }}</div>
               <div class="item-content">
                 <div class="item-title">{{ getTitle(item) }}</div>
-                <div class="item-meta">
-                  <span v-if="getHot(item)" class="item-hot">
-                    <Icon icon="ep:fire" />
-                    {{ getHot(item) }}
-                  </span>
-                  <span v-if="item.label" class="item-label">{{ item.label }}</span>
-                </div>
               </div>
             </div>
           </div>
-          <el-empty v-else description="暂无热搜数据" />
         </div>
-      </div>
-    </el-card>
+
+        <div v-if="!hasAnyData" class="empty">暂无热搜数据</div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { Icon } from '@/components/Icon'
 import { ElMessage } from 'element-plus'
-import { getAllHotsearch, getHotsearchByPlatform } from '@/api/hotsearch'
-import type { HotsearchItem, HotsearchData } from '@/api/hotsearch'
+import { getAllHotsearch } from '@/api/hotsearch'
+import type { HotsearchItem } from '@/api/hotsearch'
 
-const loading = ref(false)
-const hotsearchData = ref<Record<string, HotsearchData>>({})
-const activePlatform = ref('weibo')
-const platforms = [
-  { key: 'weibo', label: '微博', icon: 'ep:s-promotion' },
-  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled' },
-  { key: 'douyin', label: '抖音', icon: 'ep:video-camera' },
-  { key: 'bilibili', label: 'B站', icon: 'ep:video-play' },
-  { key: 'toutiao', label: '头条', icon: 'ep:document' },
-  { key: 'douban', label: '豆瓣', icon: 'ep:star' }
-]
-
-const currentData = computed(() => {
-  const data = hotsearchData.value[activePlatform.value]
-  return data?.data || []
-})
-
-const getTitle = (item: HotsearchItem) => {
-  return item.title || item.word || item.name || '未知'
+interface Platform {
+  key: string
+  label: string
+  icon: string
+  index: string  // 对应的数字索引
 }
 
+const loading = ref(false)
+const hotsearchData = ref<Record<string, any>>({})
+
+/**
+ * 平台配置说明
+ * index: 后端返回的数据中的 key（数字索引）
+ * label: 前端显示的平台名称
+ * icon: 平台图标
+ * 
+ * 序号对应关系：
+ * 0 - 微博 (Weibo) - 有 title, hot(数值), rank, label, icon
+ * 1 - 抖音 (Douyin) - 有 title, hot(数值), rank, video_count, label
+ * 2 - 今日头条 (Toutiao) - 有 title, hot(字符串，如"1342.3万"), rank
+ * 3 - 今日头条2 - 有 title, hot(数值), rank, tag, cover, icon, url
+ * 4 - 哔哩哔哩 (Bilibili) - 有 title, hot(数值), rank, icon, keyword, url
+ * 5 - 知乎 (Zhihu) - 有 title, hot, rank, icon, type, uuid
+ * 6 - 豆瓣 (Douban) - 有 title, hot, rank, subtitle, type, url, id（hot为浏览数字符串）
+ * 7 - 酷狗音乐 (Kugou Music) - 有 title, songName, artist, rank, duration, url, isNew, hot
+ */
+const platforms: Platform[] = [
+  { key: 'weibo', label: '微博', icon: 'ep:s-promotion', index: '0' },
+  { key: 'douyin', label: '抖音', icon: 'ep:video-camera', index: '1' },
+  { key: 'toutiao', label: '今日头条', icon: 'ep:document', index: '2' },
+  { key: 'toutiao2', label: '今日头条2', icon: 'ep:document', index: '3' },
+  { key: 'bilibili', label: '哔哩哔哩', icon: 'ep:video-play', index: '4' },
+  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled', index: '5' },
+  { key: 'douban', label: '豆瓣', icon: 'ep:star', index: '6' },
+  { key: 'music', label: '酷狗音乐', icon: 'ep:microphone', index: '7' }
+]
+
+const hasAnyData = computed(() => {
+  return Object.keys(hotsearchData.value).length > 0
+})
+
+const platformsWithData = computed(() => {
+  return platforms.filter(platform => {
+    const data = hotsearchData.value[platform.index]
+    return data && data.data && Array.isArray(data.data) && data.data.length > 0
+  })
+})
+
+const getPlatformData = (platformIndex: string) => {
+  const data = hotsearchData.value[platformIndex]
+  const items = data?.data || []
+  
+  // 微博（index '0'）只显示前10条
+  if (platformIndex === '0') {
+    return items.slice(0, 10)
+  }
+  
+  return items
+}
+
+/**
+ * 获取热搜标题
+ * 不同平台使用不同的字段名表示标题
+ */
+const getTitle = (item: HotsearchItem) => {
+  return item.title || item.word || item.name || item.songName || '未知'
+}
+
+/**
+ * 获取热度值
+ * 不同平台的热度表示方式不同：
+ * - 微博/抖音：直接是数字或字符串
+ * - 豆瓣：使用 subtitle 显示"xxx篇内容 · xxx次浏览"
+ * - 酷狗音乐：使用 hot 字段显示"新入榜"等标签
+ */
 const getHot = (item: HotsearchItem) => {
-  return item.hot || item.hotValue || item.num || ''
+  // 不同平台的热度字段可能不同，兼容各种格式
+  const hot = item.hot || item.hotValue || item.num || ''
+  // 豆瓣的特殊处理：显示浏览数
+  if (item.subtitle) {
+    return item.subtitle
+  }
+  // 酷狗的特殊处理：显示热度标签
+  if (item.isNew && item.hot) {
+    return item.hot
+  }
+  return hot
 }
 
 const fetchData = async () => {
@@ -105,17 +138,15 @@ const fetchData = async () => {
   try {
     const res = await getAllHotsearch()
     if (res.success && res.data) {
-      hotsearchData.value = res.data as Record<string, HotsearchData>
+      hotsearchData.value = res.data as Record<string, any>
+      ElMessage.success('热搜数据已更新')
     }
   } catch (error) {
     ElMessage.error('获取热搜数据失败')
+    console.error('获取热搜数据失败:', error)
   } finally {
     loading.value = false
   }
-}
-
-const handlePlatformChange = (platform: string) => {
-  activePlatform.value = platform
 }
 
 const refreshData = () => {
@@ -129,133 +160,110 @@ onMounted(() => {
 
 <style scoped lang="less">
 .hot-search-container {
-  padding: 20px;
-  height: 100%;
+  padding: 12px 16px;
   
-  .content-card {
-    height: 100%;
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
     
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      
-      .title-section {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: bold;
-        font-size: 18px;
-        color: var(--el-text-color-primary);
-      }
-
-      .header-actions {
-        .el-button {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-      }
+    .title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #303133;
     }
   }
   
   .content-section {
-    .platform-selector {
-      margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
 
-      .tab-label {
-        display: flex;
-        align-items: center;
-        gap: 4px;
+    .platform-section {
+      border: 1px solid #e8e9ec;
+      border-radius: 6px;
+      padding: 10px;
+      background: #fafbfc;
+
+      .platform-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: #303133;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #f0f1f3;
       }
-    }
 
-    .hotsearch-list {
-      min-height: 400px;
-
-      .hotsearch-items {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-
+      .hotsearch-list {
         .hotsearch-item {
           display: flex;
           align-items: flex-start;
-          gap: 12px;
-          padding: 12px;
-          border: 1px solid var(--el-border-color-lighter);
-          border-radius: 8px;
-          transition: all 0.3s;
-          cursor: pointer;
-
-          &:hover {
-            border-color: var(--el-color-primary);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-          }
-
+          gap: 6px;
+          padding: 3px 0;
+          
           &.is-hot {
-            background: linear-gradient(135deg, #fff5f5 0%, #fff9f5 100%);
-            border-color: #ff6b6b;
-
             .item-rank {
-              background: linear-gradient(135deg, #ff6b6b 0%, #ff8c69 100%);
-              color: #fff;
-              font-weight: bold;
+              color: #f56c6c;
+              font-weight: 600;
+              font-size: 12px;
+            }
+            
+            .item-content {
+              .item-title {
+                color: #303133;
+                font-weight: 500;
+                font-size: 13px;
+              }
             }
           }
 
           .item-rank {
-            min-width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--el-bg-color-page);
-            border-radius: 50%;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--el-text-color-regular);
+            min-width: 18px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #9ea3b0;
+            flex-shrink: 0;
           }
 
           .item-content {
             flex: 1;
             min-width: 0;
-
+            
             .item-title {
-              font-size: 14px;
-              font-weight: 500;
-              color: var(--el-text-color-primary);
-              margin-bottom: 6px;
-              line-height: 1.5;
+              margin-bottom: 2px;
               word-break: break-word;
+              line-height: 1.4;
+              color: #606266;
+              font-size: 12px;
             }
 
             .item-meta {
-              display: flex;
-              align-items: center;
-              gap: 12px;
-              font-size: 12px;
-              color: var(--el-text-color-secondary);
-
+              font-size: 10px;
+              color: #909399;
+              
               .item-hot {
-                display: flex;
-                align-items: center;
-                gap: 4px;
-                color: var(--el-color-danger);
-                font-weight: 600;
+                color: #f56c6c;
+                font-weight: 500;
               }
 
               .item-label {
-                padding: 2px 8px;
-                background: var(--el-bg-color-page);
-                border-radius: 4px;
-                color: var(--el-text-color-regular);
-                font-size: 11px;
+                color: #909399;
+                padding: 1px 4px;
+                background: #f5f7fa;
+                border-radius: 2px;
               }
             }
           }
         }
       }
+    }
+
+    .empty {
+      text-align: center;
+      color: #9ea3b0;
+      padding: 20px;
+      grid-column: 1 / -1;
     }
   }
 }
@@ -263,43 +271,24 @@ onMounted(() => {
 // 移动端适配
 @media (max-width: 768px) {
   .hot-search-container {
-    padding: 10px;
+    padding: 8px;
     
-    .content-card {
-      .card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-
-        .title-section {
-          font-size: 16px;
-        }
-      }
-    }
-
     .content-section {
-      .hotsearch-list {
-        .hotsearch-items {
-          .hotsearch-item {
-            padding: 10px;
+      grid-template-columns: 1fr;
+      gap: 10px;
 
-            .item-rank {
-              min-width: 28px;
-              height: 28px;
-              font-size: 12px;
-            }
+      .platform-section {
+        .platform-header {
+          font-size: 13px;
+          margin-bottom: 6px;
+        }
 
-            .item-content {
-              .item-title {
-                font-size: 13px;
-              }
+        .hotsearch-item {
+          font-size: 12px;
 
-              .item-meta {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 6px;
-              }
-            }
+          .item-rank {
+            min-width: 18px;
+            font-size: 11px;
           }
         }
       }

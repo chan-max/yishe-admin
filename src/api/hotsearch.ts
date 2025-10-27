@@ -1,16 +1,22 @@
 import request from '@/config/axios'
 
 export interface HotsearchItem {
-  title: string
+  title?: string
   hot?: string | number
   note?: string
   label?: string
   icon?: string
   icon_desc?: string
-  rank: number
+  rank?: number
   topic_flag?: number
   flag?: string
   word_scheme?: string
+  // 其他可能的字段
+  word?: string
+  name?: string
+  songName?: string
+  artist?: string
+  subtitle?: string
   [key: string]: any
 }
 
