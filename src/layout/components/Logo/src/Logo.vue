@@ -62,14 +62,14 @@ watch(
       :class="[
         prefixCls,
         layout !== 'classic' ? `${prefixCls}__Top` : '',
-        'flex !h-[var(--logo-height)] items-center cursor-pointer pl-8px relative decoration-none overflow-hidden'
+        'flex !h-[var(--logo-height)] items-end cursor-pointer pl-8px relative decoration-none overflow-hidden'
       ]"
       to="/"
     >
       <img
         class="h-[calc(var(--logo-height)-10px)] w-[calc(var(--logo-height)-10px)]"
         style="object-fit:contain;"
-        src="@/assets/imgs/logo.png"
+        src="@/assets/imgs/logo.svg"
       />
       <div
         v-if="show"
