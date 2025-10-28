@@ -1,7 +1,12 @@
 <template>
   <div class="hot-search-container">
     <div class="header">
-      <span class="title">热搜</span>
+      <div class="title-section">
+        <span class="title">热搜</span>
+        <span v-if="lastUpdateTime" class="update-time">
+          更新时间：{{ formatUpdateTime(lastUpdateTime) }}
+        </span>
+      </div>
       <el-button size="small" text @click="refreshData" :loading="loading">
         刷新
       </el-button>
@@ -20,7 +25,7 @@
 
           <div class="hotsearch-list">
               <div
-                v-for="(item, index) in getPlatformData(platform.index)"
+                v-for="(item, index) in getPlatformData(platform.key)"
                 :key="index"
                 class="hotsearch-item"
                 :class="{ 'is-hot': index < 5 }"
@@ -48,37 +53,55 @@ interface Platform {
   key: string
   label: string
   icon: string
-  index: string  // 对应的数字索引
 }
 
 const loading = ref(false)
 const hotsearchData = ref<Record<string, any>>({})
+const lastUpdateTime = ref<string>('')
 
 /**
  * 平台配置说明
- * index: 后端返回的数据中的 key（数字索引）
+ * key: 后端返回的数据中的 key（平台名称）
  * label: 前端显示的平台名称
  * icon: 平台图标
  * 
- * 序号对应关系：
- * 0 - 微博 (Weibo) - 有 title, hot(数值), rank, label, icon
- * 1 - 抖音 (Douyin) - 有 title, hot(数值), rank, video_count, label
- * 2 - 今日头条 (Toutiao) - 有 title, hot(字符串，如"1342.3万"), rank
- * 3 - 今日头条2 - 有 title, hot(数值), rank, tag, cover, icon, url
- * 4 - 哔哩哔哩 (Bilibili) - 有 title, hot(数值), rank, icon, keyword, url
- * 5 - 知乎 (Zhihu) - 有 title, hot, rank, icon, type, uuid
- * 6 - 豆瓣 (Douban) - 有 title, hot, rank, subtitle, type, url, id（hot为浏览数字符串）
- * 7 - 酷狗音乐 (Kugou Music) - 有 title, songName, artist, rank, duration, url, isNew, hot
+ * 后端数据结构：
+ * {
+ *   success: true,
+ *   data: {
+ *     weibo: {
+ *       key: "0",
+ *       data: [...], // 热搜数据数组
+ *       timestamp: "2025-10-27T14:31:55.252Z",
+ *       expireAt: "2025-10-28T14:31:55.252Z",
+ *       category: "hotsearch",
+ *       platform: "weibo",
+ *       platformIndex: "0"
+ *     },
+ *     // 其他平台...
+ *   },
+ *   timestamp: "2025-10-27T14:31:55.252Z"
+ * }
+ * 
+ * 平台对应关系：
+ * weibo - 微博 - 有 title, hot(数值), rank, label, icon
+ * douyin - 抖音 - 有 title, hot(数值), rank, video_count, label
+ * ks - 快手 - 有 title, hot(字符串，如"1326.9万"), rank, tag, cover, icon
+ * toutiao - 今日头条 - 有 title, hot(字符串，如"35587688"), rank, tag, cover, icon, url
+ * bilibili - 哔哩哔哩 - 有 title, hot(数值), rank, icon, keyword, url
+ * zhihu - 知乎 - 有 title, hot, rank, icon, type, uuid
+ * douban - 豆瓣 - 有 title, hot, rank, subtitle, type, url, id（hot为浏览数字符串）
+ * music - 酷狗音乐 - 有 title, songName, artist, rank, duration, url, isNew, hot
  */
 const platforms: Platform[] = [
-  { key: 'weibo', label: '微博', icon: 'ep:s-promotion', index: '0' },
-  { key: 'douyin', label: '抖音', icon: 'ep:video-camera', index: '1' },
-  { key: 'toutiao', label: '今日头条', icon: 'ep:document', index: '2' },
-  { key: 'toutiao2', label: '今日头条2', icon: 'ep:document', index: '3' },
-  { key: 'bilibili', label: '哔哩哔哩', icon: 'ep:video-play', index: '4' },
-  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled', index: '5' },
-  { key: 'douban', label: '豆瓣', icon: 'ep:star', index: '6' },
-  { key: 'music', label: '酷狗音乐', icon: 'ep:microphone', index: '7' }
+  { key: 'weibo', label: '微博', icon: 'ep:s-promotion' },
+  { key: 'douyin', label: '抖音', icon: 'ep:video-camera' },
+  { key: 'ks', label: '快手', icon: 'ep:video-camera-filled' },
+  { key: 'toutiao', label: '今日头条', icon: 'ep:document' },
+  { key: 'bilibili', label: '哔哩哔哩', icon: 'ep:video-play' },
+  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled' },
+  { key: 'douban', label: '豆瓣', icon: 'ep:star' },
+  { key: 'music', label: '酷狗音乐', icon: 'ep:microphone' }
 ]
 
 const hasAnyData = computed(() => {
@@ -87,17 +110,19 @@ const hasAnyData = computed(() => {
 
 const platformsWithData = computed(() => {
   return platforms.filter(platform => {
-    const data = hotsearchData.value[platform.index]
-    return data && data.data && Array.isArray(data.data) && data.data.length > 0
+    const platformData = hotsearchData.value[platform.key]
+    // 后端数据结构：platformData.data 是热搜数据数组
+    return platformData && platformData.data && Array.isArray(platformData.data) && platformData.data.length > 0
   })
 })
 
-const getPlatformData = (platformIndex: string) => {
-  const data = hotsearchData.value[platformIndex]
-  const items = data?.data || []
+const getPlatformData = (platformKey: string) => {
+  const platformData = hotsearchData.value[platformKey]
+  // 后端数据结构：platformData.data 是热搜数据数组
+  const items = platformData?.data || []
   
-  // 微博（index '0'）只显示前10条
-  if (platformIndex === '0') {
+  // 微博只显示前10条
+  if (platformKey === 'weibo') {
     return items.slice(0, 10)
   }
   
@@ -139,6 +164,21 @@ const fetchData = async () => {
     const res = await getAllHotsearch()
     if (res.success && res.data) {
       hotsearchData.value = res.data as Record<string, any>
+      
+      // 计算最新的更新时间
+      const timestamps: string[] = []
+      Object.values(hotsearchData.value).forEach((platformData: any) => {
+        // 后端数据结构：platformData.timestamp 是每个平台的更新时间
+        if (platformData.timestamp) {
+          timestamps.push(platformData.timestamp)
+        }
+      })
+      
+      if (timestamps.length > 0) {
+        // 找到最新的时间戳
+        lastUpdateTime.value = timestamps.sort().pop() || ''
+      }
+      
       ElMessage.success('热搜数据已更新')
     }
   } catch (error) {
@@ -151,6 +191,43 @@ const fetchData = async () => {
 
 const refreshData = () => {
   fetchData()
+}
+
+/**
+ * 格式化更新时间显示
+ * @param timestamp ISO时间字符串
+ * @returns 格式化后的时间字符串
+ */
+const formatUpdateTime = (timestamp: string) => {
+  if (!timestamp) return ''
+  
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  
+  // 计算时间差
+  const minutes = Math.floor(diff / (1000 * 60))
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  
+  if (minutes < 1) {
+    return '刚刚'
+  } else if (minutes < 60) {
+    return `${minutes}分钟前`
+  } else if (hours < 24) {
+    return `${hours}小时前`
+  } else if (days < 7) {
+    return `${days}天前`
+  } else {
+    // 超过7天显示具体日期
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
 }
 
 onMounted(() => {
@@ -168,10 +245,22 @@ onMounted(() => {
     align-items: center;
     margin-bottom: 12px;
     
-    .title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #303133;
+    .title-section {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      
+      .title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+      }
+      
+      .update-time {
+        font-size: 12px;
+        color: #909399;
+        font-weight: 400;
+      }
     }
   }
   

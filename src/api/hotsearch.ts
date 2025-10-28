@@ -21,10 +21,13 @@ export interface HotsearchItem {
 }
 
 export interface HotsearchData {
-  platform: string
-  name: string
+  key: string
   data: HotsearchItem[]
   timestamp: string
+  expireAt: string
+  category?: string
+  platform: string
+  platformIndex: string
 }
 
 export interface HotsearchResponse {
