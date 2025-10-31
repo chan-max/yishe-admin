@@ -114,6 +114,28 @@
           </div>
         </template>
 
+        <template #languagesSlot="{ row }">
+          <div class="flex flex-wrap gap-1">
+            <el-tag
+              v-for="langCode in (row.languages || [])"
+              :key="langCode"
+              size="small"
+              type="info"
+              class="language-tag"
+            >
+              <span>{{ getLanguageByCode(langCode)?.label || langCode }}</span>
+              <el-tooltip
+                v-if="getLanguageByCode(langCode)"
+                :content="`${getLanguageByCode(langCode)?.example} - ${getLanguageByCode(langCode)?.chineseName}`"
+                placement="top"
+              >
+                <el-icon class="ml-1" style="font-size: 12px;"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </el-tag>
+            <span v-if="!row.languages || row.languages.length === 0" class="text-gray-400 text-xs">未设置</span>
+          </div>
+        </template>
+
         <template #isPublicSlot="{ row }">
           <el-tag 
             :type="row.isPublic ? 'success' : 'info'" 
@@ -219,6 +241,36 @@
                 v-model="form.keywords" 
                 placeholder="请输入关键字，多个关键字用逗号分隔" 
               />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="适用语言" prop="languages">
+              <el-select
+                v-model="form.languages"
+                multiple
+                filterable
+                placeholder="请选择适用语言（可多选）"
+                style="width: 100%"
+                clearable
+              >
+                <el-option
+                  v-for="lang in LANGUAGE_OPTIONS"
+                  :key="lang.code"
+                  :label="`${lang.label} (${lang.example}) - ${lang.chineseName}`"
+                  :value="lang.code"
+                >
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ lang.label }}</span>
+                    <span style="color: #909399; font-size: 12px; margin-left: 8px;">
+                      {{ lang.example }} - {{ lang.chineseName }}
+                    </span>
+                  </div>
+                </el-option>
+              </el-select>
+              <div style="margin-top: 8px; font-size: 12px; color: #909399;">
+                提示：一个字体可以标记多种语言，选择后会在表格中显示语言标签和示例
+              </div>
             </el-form-item>
           </el-col>
 
@@ -628,6 +680,7 @@ import {
   Picture,
   Download,
   MagicStick,
+  InfoFilled,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 
@@ -643,6 +696,83 @@ import { fontTemplateApi } from "@/api/fontTemplate";
 import { ImagePreview } from '@/components/ImagePreview';
 import { htmlToPngFile } from '@/utils/htmlToPng';
 import { copyLink } from '@/utils/clipboard';
+
+// 语言枚举定义
+const LANGUAGE_OPTIONS = [
+  { code: 'zh-CN', label: '简体中文', example: '你好世界', chineseName: '简体中文' },
+  { code: 'zh-TW', label: '繁體中文', example: '你好世界', chineseName: '繁体中文' },
+  { code: 'en', label: 'English', example: '你好世界', chineseName: '英语' },
+  { code: 'es', label: 'Español', example: '你好世界', chineseName: '西班牙语' },
+  { code: 'fr', label: 'Français', example: '你好世界', chineseName: '法语' },
+  { code: 'de', label: 'Deutsch', example: '你好世界', chineseName: '德语' },
+  { code: 'ja', label: '日本語', example: '你好世界', chineseName: '日语' },
+  { code: 'ko', label: '한국어', example: '你好世界', chineseName: '韩语' },
+  { code: 'ru', label: 'Русский', example: '你好世界', chineseName: '俄语' },
+  { code: 'pt', label: 'Português', example: '你好世界', chineseName: '葡萄牙语' },
+  { code: 'it', label: 'Italiano', example: '你好世界', chineseName: '意大利语' },
+  { code: 'ar', label: 'العربية', example: '你好世界', chineseName: '阿拉伯语' },
+  { code: 'hi', label: 'हिन्दी', example: '你好世界', chineseName: '印地语' },
+  { code: 'th', label: 'ไทย', example: '你好世界', chineseName: '泰语' },
+  { code: 'vi', label: 'Tiếng Việt', example: '你好世界', chineseName: '越南语' },
+  { code: 'id', label: 'Bahasa Indonesia', example: '你好世界', chineseName: '印尼语' },
+  { code: 'tr', label: 'Türkçe', example: '你好世界', chineseName: '土耳其语' },
+  { code: 'pl', label: 'Polski', example: '你好世界', chineseName: '波兰语' },
+  { code: 'nl', label: 'Nederlands', example: '你好世界', chineseName: '荷兰语' },
+  { code: 'sv', label: 'Svenska', example: '你好世界', chineseName: '瑞典语' },
+  { code: 'da', label: 'Dansk', example: '你好世界', chineseName: '丹麦语' },
+  { code: 'no', label: 'Norsk', example: '你好世界', chineseName: '挪威语' },
+  { code: 'fi', label: 'Suomi', example: '你好世界', chineseName: '芬兰语' },
+  { code: 'cs', label: 'Čeština', example: '你好世界', chineseName: '捷克语' },
+  { code: 'hu', label: 'Magyar', example: '你好世界', chineseName: '匈牙利语' },
+  { code: 'ro', label: 'Română', example: '你好世界', chineseName: '罗马尼亚语' },
+  { code: 'el', label: 'Ελληνικά', example: '你好世界', chineseName: '希腊语' },
+  { code: 'he', label: 'עברית', example: '你好世界', chineseName: '希伯来语' },
+  { code: 'uk', label: 'Українська', example: '你好世界', chineseName: '乌克兰语' },
+  { code: 'bg', label: 'Български', example: '你好世界', chineseName: '保加利亚语' },
+  { code: 'hr', label: 'Hrvatski', example: '你好世界', chineseName: '克罗地亚语' },
+  { code: 'sk', label: 'Slovenčina', example: '你好世界', chineseName: '斯洛伐克语' },
+  { code: 'sl', label: 'Slovenščina', example: '你好世界', chineseName: '斯洛文尼亚语' },
+  { code: 'sr', label: 'Српски', example: '你好世界', chineseName: '塞尔维亚语' },
+  { code: 'ms', label: 'Bahasa Melayu', example: '你好世界', chineseName: '马来语' },
+  { code: 'tl', label: 'Filipino', example: '你好世界', chineseName: '菲律宾语' },
+  { code: 'sw', label: 'Kiswahili', example: '你好世界', chineseName: '斯瓦希里语' },
+  { code: 'bn', label: 'বাংলা', example: '你好世界', chineseName: '孟加拉语' },
+  { code: 'ta', label: 'தமிழ்', example: '你好世界', chineseName: '泰米尔语' },
+  { code: 'te', label: 'తెలుగు', example: '你好世界', chineseName: '泰卢固语' },
+  { code: 'mr', label: 'मराठी', example: '你好世界', chineseName: '马拉地语' },
+  { code: 'gu', label: 'ગુજરાતી', example: '你好世界', chineseName: '古吉拉特语' },
+  { code: 'kn', label: 'ಕನ್ನಡ', example: '你好世界', chineseName: '卡纳达语' },
+  { code: 'ml', label: 'മലയാളം', example: '你好世界', chineseName: '马拉雅拉姆语' },
+  { code: 'pa', label: 'ਪੰਜਾਬੀ', example: '你好世界', chineseName: '旁遮普语' },
+  { code: 'fa', label: 'فارسی', example: '你好世界', chineseName: '波斯语' },
+  { code: 'ur', label: 'اردو', example: '你好世界', chineseName: '乌尔都语' },
+  { code: 'ka', label: 'ქართული', example: '你好世界', chineseName: '格鲁吉亚语' },
+  { code: 'am', label: 'አማርኛ', example: '你好世界', chineseName: '阿姆哈拉语' },
+  { code: 'ha', label: 'Hausa', example: '你好世界', chineseName: '豪萨语' },
+  { code: 'yo', label: 'Yorùbá', example: '你好世界', chineseName: '约鲁巴语' },
+  { code: 'zu', label: 'isiZulu', example: '你好世界', chineseName: '祖鲁语' },
+  { code: 'af', label: 'Afrikaans', example: '你好世界', chineseName: '南非荷兰语' },
+  { code: 'eu', label: 'Euskara', example: '你好世界', chineseName: '巴斯克语' },
+  { code: 'ca', label: 'Català', example: '你好世界', chineseName: '加泰罗尼亚语' },
+  { code: 'gl', label: 'Galego', example: '你好世界', chineseName: '加利西亚语' },
+];
+
+// 根据语言代码获取语言信息
+function getLanguageByCode(code: string) {
+  return LANGUAGE_OPTIONS.find(lang => lang.code === code);
+}
+
+// 获取语言显示文本（带例子和中文）
+function getLanguageDisplayText(codes: string[]): string {
+  if (!codes || codes.length === 0) return '未设置';
+  return codes.map(code => {
+    const lang = getLanguageByCode(code);
+    if (lang) {
+      return `${lang.label} (${lang.example}) - ${lang.chineseName}`;
+    }
+    return code;
+  }).join('; ');
+}
 
 const userStore = useUserStore()
 
@@ -685,6 +815,12 @@ const gridOptions = ref({
     { title: "描述", field: "description", minWidth: 200, showOverflow: true },
     { title: "关键字", field: "keywords", minWidth: 160, showOverflow: true },
     { title: "分类", field: "category", width: 120, showOverflow: true },
+    { 
+      title: "适用语言", 
+      field: "languages", 
+      minWidth: 200, 
+      slots: { default: "languagesSlot" } 
+    },
     { title: "是否公开", field: "isPublic", width: 100, slots: { default: "isPublicSlot" } },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
@@ -931,6 +1067,7 @@ function handleAdd() {
     name: "",
     description: "",
     keywords: "",
+    languages: [],
     isPublic: false,
   };
 }
@@ -943,6 +1080,7 @@ function handleEdit(row) {
 
   form.value = {
     ...row,
+    languages: row.languages || [],
     isPublic: row.isPublic || false,
   };
 }
@@ -957,12 +1095,14 @@ const form = ref<{
   id?: number;
   description?: string;
   keywords?: string;
+  languages?: string[];
   isPublic?: boolean;
 }>({
   file: null,
   name: "",
   description: "",
   keywords: "",
+  languages: [],
   isPublic: false,
 });
 
@@ -1020,6 +1160,7 @@ const submitForm = async () => {
         name: form.value.name,
         description: form.value.description,
         keywords: form.value.keywords,
+        languages: form.value.languages || [],
         isPublic: form.value.isPublic,
       });
       ElMessage.success("更新成功");
@@ -1034,6 +1175,7 @@ const submitForm = async () => {
         name: form.value.name,
         description: form.value.description,
         keywords: form.value.keywords,
+        languages: form.value.languages || [],
         isPublic: form.value.isPublic,
         url,
         size: form.value.file.size,
@@ -1823,6 +1965,16 @@ async function loadFontForPreview() {
 
 .operation-dropdown {
   margin-right: 8px;
+}
+
+.language-tag {
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+}
+
+.language-tag .el-icon {
+  cursor: help;
 }
 
 @media (max-width: 768px) {
