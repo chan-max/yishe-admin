@@ -252,48 +252,77 @@
                   <template #dropdown>
                     <div class="op-menu">
                       <!-- 内容相关（仅管理员） -->
-                      <div v-if="isAdmin" class="op-item">
-                        <span class="op-label">内容相关</span>
-                        <div class="op-submenu">
-                          <div class="op-btn" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
-                          <div class="op-btn" @click="() => handleOperationCommand('ai-judge-infringement', row)">AI判断侵权(知名IP)</div>
-                          <div class="op-btn" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
+                      <div 
+                        v-if="isAdmin" 
+                        class="op-menu-item has-submenu"
+                        @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave"
+                      >
+                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                        <span class="op-menu-label">内容相关</span>
+                        <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('ai-judge-infringement', row)">AI判断侵权(知名IP)</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
                         </div>
                       </div>
 
                       <!-- 发布操作（仅管理员） -->
-                      <div v-if="isAdmin" class="op-item">
-                        <span class="op-label">发布</span>
-                        <div class="op-submenu">
-                          <div v-if="!row.isPublish" class="op-btn" @click="() => handleOperationCommand('publish', row)">发布</div>
-                          <div v-else class="op-btn" @click="() => handleOperationCommand('unpublish', row)">下架</div>
+                      <div 
+                        v-if="isAdmin" 
+                        class="op-menu-item has-submenu"
+                        @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave"
+                      >
+                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                        <span class="op-menu-label">发布</span>
+                        <div class="op-submenu" data-submenu="publish" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                          <div v-if="!row.isPublish" class="op-submenu-item" @click="() => handleOperationCommand('publish', row)">发布</div>
+                          <div v-else class="op-submenu-item" @click="() => handleOperationCommand('unpublish', row)">下架</div>
                         </div>
                       </div>
 
                       <!-- 制作操作（仅管理员） -->
-                      <div v-if="isAdmin" class="op-item">
-                        <span class="op-label">制作</span>
-                        <div class="op-submenu">
-                          <div class="op-btn" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
-                          <div class="op-btn" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
+                      <div 
+                        v-if="isAdmin" 
+                        class="op-menu-item has-submenu"
+                        @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave"
+                      >
+                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                        <span class="op-menu-label">制作</span>
+                        <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
                         </div>
                       </div>
 
                       <!-- 图片操作 -->
-                      <div class="op-item">
-                        <span class="op-label">图片操作</span>
-                        <div class="op-submenu">
-                          <div v-if="isAdmin" class="op-btn" @click="() => handleOperationCommand('copy', row)">复制</div>
-                          <div v-if="isAdmin" class="op-btn" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
-                          <div class="op-btn" @click="() => handleOperationCommand('download', row)">下载</div>
-                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-btn" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
-                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-btn" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
+                      <div 
+                        class="op-menu-item has-submenu"
+                        @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave"
+                      >
+                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                        <span class="op-menu-label">图片操作</span>
+                        <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                          <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('copy', row)">复制</div>
+                          <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('download', row)">下载</div>
+                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
+                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
                         </div>
                       </div>
 
                       <div v-if="isAdmin" class="op-divider"></div>
-                      <div v-if="isAdmin" class="op-btn" @click="() => handleOperationCommand('edit', row)">编辑</div>
-                      <div v-if="isAdmin" class="op-btn danger" @click="() => handleOperationCommand('delete', row)">删除</div>
+                      <div v-if="isAdmin" class="op-menu-item" @click="() => handleOperationCommand('edit', row)">
+                        <span class="op-menu-arrow-placeholder"></span>
+                        <span class="op-menu-label">编辑</span>
+                      </div>
+                      <div v-if="isAdmin" class="op-menu-item danger" @click="() => handleOperationCommand('delete', row)">
+                        <span class="op-menu-arrow-placeholder"></span>
+                        <span class="op-menu-label">删除</span>
+                      </div>
                     </div>
                   </template>
                 </el-dropdown>
@@ -944,7 +973,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -2187,6 +2216,154 @@ async function fetchImageFromUrl(url) {
   }
 }
 
+// 处理子菜单显示和定位
+function handleSubmenuEnter(event: MouseEvent) {
+  const menuItem = event.currentTarget as HTMLElement
+  if (!menuItem) return
+  
+  const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
+  if (!submenu) return
+  
+  // 先隐藏所有其他子菜单
+  const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
+  allSubmenus.forEach((sm) => {
+    if (sm !== submenu) {
+      sm.style.opacity = '0'
+      sm.style.visibility = 'hidden'
+      sm.style.pointerEvents = 'none'
+    }
+  })
+  
+  // 清除之前的隐藏定时器
+  if (submenuHideTimer) {
+    clearTimeout(submenuHideTimer)
+    submenuHideTimer = null
+  }
+  
+  // 获取菜单项的位置（使用 getBoundingClientRect 获取相对于视口的位置）
+  const menuItemRect = menuItem.getBoundingClientRect()
+  
+  // 临时显示子菜单到屏幕外以获取其真实尺寸
+  submenu.style.position = 'fixed'
+  submenu.style.left = '-9999px'
+  submenu.style.top = '0'
+  submenu.style.opacity = '1'
+  submenu.style.visibility = 'visible'
+  submenu.style.transform = 'none'
+  submenu.style.pointerEvents = 'none'
+  
+  // 强制重排以获取真实尺寸
+  void submenu.offsetWidth
+  
+  // 获取子菜单的尺寸
+  const submenuWidth = submenu.offsetWidth || 160 // 如果没有获取到，使用默认值 160px
+  const submenuHeight = submenu.offsetHeight
+  
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  
+  // 计算子菜单的位置（优先右侧，空间不足则左侧）
+  let left = menuItemRect.right + 4
+  let top = menuItemRect.top
+  
+  // 检查右侧是否有足够空间
+  if (left + submenuWidth > viewportWidth - 10) {
+    // 如果右侧空间不足，显示在左侧
+    left = menuItemRect.left - submenuWidth - 4
+    // 确保不会超出屏幕左边界
+    if (left < 10) {
+      left = 10
+    }
+  }
+  
+  // 检查底部是否有足够空间，如果不够则向上调整
+  if (top + submenuHeight > viewportHeight - 10) {
+    top = Math.max(10, viewportHeight - submenuHeight - 10)
+  }
+  
+  // 确保顶部不会超出屏幕
+  if (top < 10) {
+    top = 10
+  }
+  
+  // 设置子菜单的最终位置和样式
+  submenu.style.left = `${left}px`
+  submenu.style.top = `${top}px`
+  submenu.style.opacity = '1'
+  submenu.style.visibility = 'visible'
+  submenu.style.transform = 'translateX(0)'
+  submenu.style.pointerEvents = 'auto'
+}
+
+let submenuHideTimer: ReturnType<typeof setTimeout> | null = null
+
+function handleSubmenuLeave(event: MouseEvent) {
+  const menuItem = event.currentTarget as HTMLElement
+  if (!menuItem) return
+  
+  const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
+  if (!submenu) return
+  
+  // 清除之前的定时器
+  if (submenuHideTimer) {
+    clearTimeout(submenuHideTimer)
+  }
+  
+  // 延迟隐藏，允许鼠标移动到子菜单
+  submenuHideTimer = setTimeout(() => {
+    // 检查鼠标是否仍在子菜单上
+    const elementUnderMouse = document.elementFromPoint(event.clientX, event.clientY)
+    const isHovering = elementUnderMouse?.closest('.op-submenu') === submenu ||
+                       elementUnderMouse?.closest('.has-submenu') === menuItem
+    
+    if (!isHovering) {
+      submenu.style.opacity = '0'
+      submenu.style.visibility = 'hidden'
+      submenu.style.pointerEvents = 'none'
+    }
+  }, 200)
+}
+
+// 保持子菜单可见
+function handleSubmenuKeepVisible(event: MouseEvent) {
+  const submenu = event.currentTarget as HTMLElement
+  if (!submenu) return
+  
+  // 先隐藏所有其他子菜单
+  const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
+  allSubmenus.forEach((sm) => {
+    if (sm !== submenu) {
+      sm.style.opacity = '0'
+      sm.style.visibility = 'hidden'
+      sm.style.pointerEvents = 'none'
+    }
+  })
+  
+  // 清除隐藏定时器
+  if (submenuHideTimer) {
+    clearTimeout(submenuHideTimer)
+    submenuHideTimer = null
+  }
+  
+  // 确保子菜单可见
+  submenu.style.opacity = '1'
+  submenu.style.visibility = 'visible'
+  submenu.style.pointerEvents = 'auto'
+}
+
+// 隐藏子菜单
+function handleSubmenuHide(event: MouseEvent) {
+  const submenu = event.currentTarget as HTMLElement
+  if (!submenu) return
+  
+  // 延迟隐藏
+  submenuHideTimer = setTimeout(() => {
+    submenu.style.opacity = '0'
+    submenu.style.visibility = 'hidden'
+    submenu.style.pointerEvents = 'none'
+  }, 200)
+}
+
 // 处理URL上传
 async function handleUrlUpload() {
   if (!urlUploadFormRef.value) return
@@ -2720,12 +2897,206 @@ h1 {
 }
 </style>
   <style scoped>
-  .op-menu { min-width: 180px; padding: 4px 0; }
-  .op-item { padding: 4px 8px; }
-  .op-label { display: block; font-size: 11px; color: var(--el-text-color-secondary); margin-bottom: 2px; }
-  .op-submenu { display: flex; flex-direction: column; gap: 2px; }
-  .op-btn { padding: 4px 6px; font-size: 12px; line-height: 1.2; color: var(--el-text-color-regular); cursor: pointer; }
-  .op-btn:hover { background: var(--el-fill-color-light); }
-  .op-btn.danger { color: var(--el-color-danger); }
-  .op-divider { height: 1px; background: var(--el-border-color-lighter); margin: 4px 0; }
+  .op-menu { 
+    min-width: 120px; 
+    padding: 1px 0; 
+    position: relative;
+    overflow: visible !important; /* 确保菜单本身允许溢出 */
+  }
+  
+  /* 一级菜单项 */
+  .op-menu-item {
+    position: relative;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: var(--el-text-color-regular);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: visible !important; /* 确保菜单项允许溢出 */
+  }
+  
+  .op-menu-item:hover {
+    background: var(--el-fill-color-light);
+  }
+  
+  .op-menu-item.danger {
+    color: var(--el-color-danger);
+  }
+  
+  .op-menu-item.danger:hover {
+    background: var(--el-color-danger-light-9);
+    color: var(--el-color-danger);
+  }
+  
+  /* 箭头图标 - 放在文字左边 */
+  .op-menu-arrow {
+    font-size: 10px;
+    color: var(--el-text-color-secondary);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    width: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* 没有子菜单的占位，保持对齐 */
+  .op-menu-arrow-placeholder {
+    width: 12px;
+    flex-shrink: 0;
+  }
+  
+  .op-menu-label {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  
+  
+  /* 子菜单 */
+  .op-submenu {
+    position: fixed; /* 使用 fixed 定位，避免被父容器裁剪 */
+    min-width: 120px;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 2px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 1px 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-5px);
+    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+    z-index: 9999; /* 提高 z-index 确保在最上层 */
+    white-space: nowrap;
+    pointer-events: none; /* 初始禁用交互，hover 时启用 */
+    margin: 0;
+    /* 初始位置，会被 JS 动态设置 */
+    left: 0;
+    top: 0;
+  }
+  
+  /* 子菜单显示时保持可见（即使鼠标移开一点） */
+  .op-submenu:hover {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  
+  .op-menu-item.has-submenu:hover .op-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+    pointer-events: auto; /* hover 时启用交互 */
+  }
+  
+  /* 子菜单项 */
+  .op-submenu-item {
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--el-text-color-regular);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+  }
+  
+  .op-submenu-item:hover {
+    background: var(--el-fill-color-light);
+  }
+  
+  /* 分隔线 */
+  .op-divider { 
+    height: 1px; 
+    background: var(--el-border-color-lighter); 
+    margin: 3px 8px;
+  }
+  
+  /* 针对操作按钮的优化 */
+  .operation-dropdown :deep(.el-dropdown__list) {
+    padding: 0;
+    overflow: visible !important;
+  }
+  
+  /* 确保下拉菜单容器允许溢出显示子菜单 */
+  .operation-dropdown {
+    position: relative;
+  }
+  
+  /* 修复 Element Plus Dropdown 的 overflow 限制 */
+  .operation-dropdown :deep(.el-popper) {
+    overflow: visible !important;
+  }
+  
+  .operation-dropdown :deep(.el-popper__arrow) {
+    display: none;
+  }
+  
+  /* 确保 popper 容器和内部都允许溢出 */
+  .operation-dropdown :deep(.el-popper),
+  .operation-dropdown :deep(.el-dropdown-menu),
+  .operation-dropdown :deep(.el-dropdown-menu__item) {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+  
+  /* 移动端优化 */
+  @media (max-width: 768px) {
+    .op-menu {
+      min-width: 140px;
+    }
+    
+    .op-menu-item {
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    
+    .op-submenu {
+      min-width: 140px;
+    }
+    
+    .op-submenu-item {
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+  }
+  
+  /* 处理右侧屏幕边界情况 */
+  @media (min-width: 769px) {
+    /* 通过JS动态调整，CSS无法完美处理，但可以设置备用方案 */
+    .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu,
+    .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu {
+      left: auto;
+      right: 100%;
+      margin-left: 0;
+      margin-right: 4px;
+    }
+  }
+  </style>
+  
+  <!-- 非 scoped 样式，用于覆盖 Element Plus 的默认样式 -->
+  <style>
+  /* 全局样式：确保 dropdown popper 允许溢出显示子菜单 */
+  .el-popper.is-pure {
+    overflow: visible !important;
+  }
+  
+  .el-popper[x-placement] {
+    overflow: visible !important;
+  }
+  
+  /* 确保所有 dropdown 相关的容器都允许溢出 */
+  .el-dropdown__popper {
+    overflow: visible !important;
+  }
+  
+  .el-dropdown__popper .el-dropdown-menu {
+    overflow: visible !important;
+  }
+  
+  .el-dropdown__popper .el-dropdown-menu__item {
+    overflow: visible !important;
+  }
   </style>
