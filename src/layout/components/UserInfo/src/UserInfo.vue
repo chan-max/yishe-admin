@@ -37,6 +37,41 @@ const isAdmin = computed(() => {
   return userStore.user.isAdmin || false
 })
 
+// 过期时间显示
+const expireTime = computed(() => {
+  return userStore.user.expireTime
+})
+
+// 是否永久有效
+const isForever = computed(() => {
+  return !expireTime.value
+})
+
+// 计算剩余时间
+const remainingTime = computed(() => {
+  if (!expireTime.value) return '永久有效'
+  
+  const now = new Date().getTime()
+  const expire = new Date(expireTime.value).getTime()
+  const diff = expire - now
+  
+  if (diff <= 0) return '已过期'
+  
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  
+  if (days > 0) {
+    return `还有 ${days} 天到期`
+  } else if (hours > 0) {
+    return `还有 ${hours} 小时到期`
+  } else if (minutes > 0) {
+    return `还有 ${minutes} 分钟到期`
+  } else {
+    return '即将到期'
+  }
+})
+
 // 锁定屏幕
 const lockStore = useLockStore()
 const getIsLock = computed(() => lockStore.getLockInfo?.isLock ?? false)
@@ -102,50 +137,46 @@ const toDocument = () => {
           <Icon icon="ep:user" />
         </div>
       </div>
-      <div class="pl-[5px] text-14px text-[var(--top-header-text-color)] <lg:hidden">
+      <div class="pl-[8px] <lg:hidden">
         <div class="flex items-center gap-2">
-          <span>{{ userName }}</span>
+          <span class="font-semibold text-[var(--top-header-text-color)]">{{ userName }}</span>
         </div>
-        <div v-if="companyName" class="text-xs text-blue-600 font-medium mt-1">{{ companyName }}</div>
       </div>
     </div>
     <template #dropdown>
-      <ElDropdownMenu>
-        <!-- 用户信息头部 -->
-        <ElDropdownItem class="user-info-header">
-          <div class="flex items-center gap-3 w-full">
-            <ElAvatar :src="avatar" :size="40" />
-            <div class="flex-1">
-              <div class="font-medium text-gray-900">{{ userName }}</div>
-              <div class="text-xs text-gray-500">{{ companyName || '个人用户' }}</div>
-              <div class="flex items-center gap-1 mt-1">
-                <Icon :icon="isAdmin ? 'ep:crown' : 'ep:user'" :class="isAdmin ? 'admin-icon-small' : 'user-icon-small'" />
-                <span :class="isAdmin ? 'admin-text-small' : 'user-text-small'">
-                  {{ isAdmin ? '系统管理员' : '普通用户' }}
-                </span>
-              </div>
+      <ElDropdownMenu class="user-dropdown-menu">
+        <!-- 用户信息卡片 -->
+        <div class="user-info-card">
+          <div class="user-avatar-section">
+            <ElAvatar :src="avatar" :size="56" class="user-main-avatar" />
+            <div v-if="isAdmin" class="user-badge admin-badge">
+              <Icon icon="ep:crown" />
             </div>
           </div>
+          <div class="user-details">
+            <div class="user-name">{{ userName }}</div>
+            <div v-if="companyName" class="user-company">{{ companyName }}</div>
+            <div class="user-expire" :class="{ 'forever-style': isForever }">
+              <Icon icon="ep:clock" />
+              <span>{{ remainingTime }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 菜单项 -->
+        <div class="menu-divider"></div>
+        <ElDropdownItem class="menu-item" @click="toProfile">
+          <Icon icon="ep:user" />
+          <span>{{ t('common.profile') }}</span>
         </ElDropdownItem>
-        <ElDropdownItem divided>
-          <Icon icon="ep:tools" />
-          <div @click="toProfile">{{ t('common.profile') }}</div>
-        </ElDropdownItem>
-        <!-- <ElDropdownItem>
-          <Icon icon="ep:menu" />
-          <div @click="toDocument">{{ t('common.document') }}</div>
-        </ElDropdownItem> -->
-        <ElDropdownItem divided>
+        <ElDropdownItem class="menu-item" @click="lockScreen">
           <Icon icon="ep:lock" />
-          <div @click="lockScreen">{{ t('lock.lockScreen') }}</div>
+          <span>{{ t('lock.lockScreen') }}</span>
         </ElDropdownItem>
-        <ElDropdownItem>
-          <Icon icon="ep:monitor" />
-          <div>当前设备: {{ currentDeviceInfo.type }}</div>
-        </ElDropdownItem>
-        <ElDropdownItem divided @click="loginOut">
+        <div class="menu-divider"></div>
+        <ElDropdownItem class="menu-item logout-item" @click="loginOut">
           <Icon icon="ep:switch-button" />
-          <div>{{ t('common.loginOut') }}</div>
+          <span>{{ t('common.loginOut') }}</span>
         </ElDropdownItem>
       </ElDropdownMenu>
     </template>
@@ -250,39 +281,151 @@ const toDocument = () => {
   }
 }
 
-/* 下拉菜单用户信息头部样式 */
-.user-info-header {
-  padding: 12px 16px !important;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+/* 下拉菜单样式 */
+.user-dropdown-menu {
+  padding: 8px !important;
+  min-width: 240px !important;
 }
 
-.user-info-header:hover {
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+/* Element Plus 下拉菜单样式覆盖 */
+:deep(.user-dropdown-menu .el-dropdown-menu__item) {
+  padding: 0 !important;
 }
 
-/* 小尺寸图标和文字样式 */
-.admin-icon-small {
-  color: #d97706;
-  font-size: 14px;
+:deep(.user-dropdown-menu .el-dropdown-menu__item:hover) {
+  background-color: transparent !important;
+}
+
+/* 用户信息卡片 */
+.user-info-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+.user-avatar-section {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-main-avatar {
+  border: 3px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid white;
+}
+
+.admin-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.admin-badge .icon {
+  color: white;
+  font-size: 12px;
   font-weight: bold;
 }
 
-.admin-text-small {
-  color: #92400e;
-  font-size: 12px;
-  font-weight: 600;
+.user-details {
+  flex: 1;
+  min-width: 0;
 }
 
-.user-icon-small {
-  color: #10b981;
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: inherit;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-company {
+  font-size: 13px;
+  color: rgba(99, 102, 241, 0.8);
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-expire {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.user-expire .icon {
+  font-size: 12px;
+}
+
+/* 永久有效样式 */
+.forever-style {
+  color: rgba(34, 197, 94, 0.9) !important;
+  opacity: 1 !important;
+  font-weight: 500;
+}
+
+/* 分隔线 */
+.menu-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 4px 0;
+}
+
+/* 菜单项 */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.menu-item .icon {
+  font-size: 16px;
+  color: inherit;
+  opacity: 0.7;
+}
+
+.menu-item span {
   font-size: 14px;
+  color: inherit;
 }
 
-.user-text-small {
-  color: #059669;
-  font-size: 12px;
-  font-weight: 600;
+/* 登出项 */
+.logout-item .icon,
+.logout-item span {
+  color: #ef4444;
+}
+
+.logout-item:hover {
+  background: rgba(239, 68, 68, 0.08);
 }
 
 /* 响应式调整 */
@@ -298,10 +441,6 @@ const toDocument = () => {
   .admin-label .icon,
   .user-label .icon {
     font-size: 7px;
-  }
-  
-  .user-info-header {
-    padding: 8px 12px !important;
   }
 }
 </style>

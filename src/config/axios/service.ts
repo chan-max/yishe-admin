@@ -103,8 +103,8 @@ service.interceptors.response.use(
       data = await new Response(response.data).json()
     }
     const code = data.code || result_code
-    // 获取错误信息
-    const msg = data.msg || errorCode[code] || errorCode['default']
+    // 获取错误信息，优先使用 message 字段（后端 NestJS 标准格式），其次使用 msg
+    const msg = data.message || data.msg || errorCode[code] || errorCode['default']
     if (ignoreMsgs.indexOf(msg) !== -1) {
       // 如果是忽略的错误码，直接返回 msg 异常
       return Promise.reject(msg)

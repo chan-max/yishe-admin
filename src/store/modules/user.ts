@@ -17,11 +17,13 @@ interface UserVO {
   deptId: number
   shortName: string
   isAdmin?: boolean
+  expireTime?: string
   company?: {
     id: string
     name: string
     inviteCode: string
     description: string
+    expireTime?: string
   }
 }
 
@@ -50,6 +52,7 @@ export const useUserStore = defineStore('admin-user', {
       deptId: 0,
       shortName: '',
       isAdmin: false,
+      expireTime: '',
       company: undefined
     }
   }),

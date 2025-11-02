@@ -60,7 +60,7 @@
     <el-dialog 
       v-model="dialogVisible" 
       :title="dialogTitle" 
-      width="500px" 
+      width="600px" 
       :center="false"
       align-center
       @close="resetForm"
@@ -71,24 +71,42 @@
         :rules="formRules" 
         label-width="100px"
       >
-        <el-form-item label="公司名称" prop="name">
-          <el-input v-model="formData.name" placeholder="请输入公司名称" />
-        </el-form-item>
-        <el-form-item label="邀请码" prop="inviteCode">
-          <el-input v-model="formData.inviteCode" placeholder="系统自动生成">
-            <template #append>
-              <el-button @click="formData.inviteCode = generateInviteCode()" type="primary" plain size="small">随机生成</el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="公司描述" prop="description">
-          <el-input 
-            v-model="formData.description" 
-            type="textarea" 
-            :rows="3"
-            placeholder="请输入公司描述" 
-          />
-        </el-form-item>
+        <!-- 基本信息 -->
+        <div class="form-section">
+          <div class="form-section-title">基本信息</div>
+          <el-form-item label="公司名称" prop="name">
+            <el-input v-model="formData.name" placeholder="请输入公司名称" />
+          </el-form-item>
+          <el-form-item label="邀请码" prop="inviteCode">
+            <el-input v-model="formData.inviteCode" placeholder="系统自动生成">
+              <template #append>
+                <el-button @click="formData.inviteCode = generateInviteCode()" type="primary" plain size="small">随机生成</el-button>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item label="公司描述" prop="description">
+            <el-input 
+              v-model="formData.description" 
+              type="textarea" 
+              :rows="3"
+              placeholder="请输入公司描述" 
+            />
+          </el-form-item>
+        </div>
+
+        <!-- 其他设置 -->
+        <div class="form-section">
+          <div class="form-section-title">其他设置</div>
+          <el-form-item label="过期时间" prop="expireTime">
+            <el-date-picker 
+              v-model="formData.expireTime" 
+              type="datetime" 
+              placeholder="请选择过期时间"
+              style="width: 100%"
+              :disabled-date="(date) => date.getTime() < Date.now() - 86400000"
+            />
+          </el-form-item>
+        </div>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -148,6 +166,15 @@ const gridOptions = ref({
     { title: '邀请码', field: 'inviteCode', width: 150 },
     { title: '公司描述', field: 'description', minWidth: 200, showOverflow: true },
     {
+      title: '过期时间',
+      field: 'expireTime',
+      width: 180,
+      showOverflow: true,
+      formatter: (e) => {
+        return e.cellValue ? formatTimestamp(e.cellValue) : '-'
+      },
+    },
+    {
       title: '创建时间',
       field: 'createTime',
       width: 150,
@@ -196,7 +223,8 @@ const formData = reactive({
   id: '',
   name: '',
   inviteCode: '',
-  description: ''
+  description: '',
+  expireTime: ''
 })
 
 const formRules = {
@@ -328,7 +356,8 @@ function resetForm() {
     id: '',
     name: '',
     inviteCode: generateInviteCode(), // 重置时也生成新邀请码
-    description: ''
+    description: '',
+    expireTime: ''
   })
   formRef.value?.clearValidate()
 }
@@ -340,5 +369,38 @@ getList()
 <style lang="less">
 .table-operation-column {
   gap: 8px;
+}
+
+.form-section {
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 2px;
+      height: 12px;
+      background: var(--el-color-primary);
+      margin-right: 6px;
+      vertical-align: middle;
+      border-radius: 1px;
+    }
+  }
+}
+
+// 减小表单项间距
+:deep(.el-form-item) {
+  margin-bottom: 16px;
 }
 </style> 

@@ -92,7 +92,7 @@
     <el-dialog 
       v-model="dialogVisible" 
       :title="dialogTitle" 
-      width="600px" 
+      width="700px" 
       :center="false"
       align-center
       @close="resetForm"
@@ -103,96 +103,130 @@
         :rules="formRules" 
         label-width="100px"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="用户账号" prop="account">
-              <el-input v-model="formData.account" placeholder="请输入用户账号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="用户姓名" prop="name">
-              <el-input v-model="formData.name" placeholder="请输入用户姓名" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="手机号码" prop="phone">
-              <el-input v-model="formData.phone" placeholder="请输入手机号码" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="邮箱地址" prop="email">
-              <el-input v-model="formData.email" placeholder="请输入邮箱地址" />
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <!-- 基础信息 -->
+        <div class="form-section">
+          <div class="form-section-title">基础信息</div>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="用户账号" prop="account">
+                <el-input v-model="formData.account" placeholder="请输入用户账号" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="用户姓名" prop="name">
+                <el-input v-model="formData.name" placeholder="请输入用户姓名" />
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="性别" prop="sex">
-              <el-select v-model="formData.sex" placeholder="请选择性别" style="width: 100%">
-                <el-option label="男" :value="1" />
-                <el-option label="女" :value="0" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="出生日期" prop="birthday">
-              <el-date-picker 
-                v-model="formData.birthday" 
-                type="date" 
-                placeholder="请选择出生日期"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="用户状态" prop="status">
-              <el-select v-model="formData.status" placeholder="请选择状态" style="width: 100%">
-                <el-option label="正常" value="active" />
-                <el-option label="禁用" value="inactive" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="用户类型" prop="isAdmin">
-              <el-select v-model="formData.isAdmin" placeholder="请选择用户类型" style="width: 100%">
-                <el-option label="普通用户" :value="false" />
-                <el-option label="管理员" :value="true" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="所属公司" prop="companyId">
-              <el-select v-model="formData.companyId" placeholder="请选择所属公司" style="width: 100%">
-                <el-option 
-                  v-for="company in companyList" 
-                  :key="company.id" 
-                  :label="company.name" 
-                  :value="company.id" 
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="性别" prop="sex">
+                <el-select v-model="formData.sex" placeholder="请选择性别" style="width: 100%">
+                  <el-option label="男" :value="1" />
+                  <el-option label="女" :value="0" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="出生日期" prop="birthday">
+                <el-date-picker 
+                  v-model="formData.birthday" 
+                  type="date" 
+                  placeholder="请选择出生日期"
+                  style="width: 100%"
                 />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+              </el-form-item>
+            </el-col>
+          </el-row>
 
-        <el-form-item label="头像地址" prop="avatar">
-          <el-input v-model="formData.avatar" placeholder="请输入头像地址" />
-        </el-form-item>
+          <el-form-item label="头像地址" prop="avatar">
+            <el-input v-model="formData.avatar" placeholder="请输入头像地址" />
+          </el-form-item>
+        </div>
 
-        <el-form-item v-if="!formData.id" label="登录密码" prop="password">
-          <el-input 
-            v-model="formData.password" 
-            type="password" 
-            placeholder="请输入登录密码" 
-            show-password
-          />
-        </el-form-item>
+        <!-- 联系方式 -->
+        <div class="form-section">
+          <div class="form-section-title">联系方式</div>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="手机号码" prop="phone">
+                <el-input v-model="formData.phone" placeholder="请输入手机号码" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="邮箱地址" prop="email">
+                <el-input v-model="formData.email" placeholder="请输入邮箱地址" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 权限配置 -->
+        <div class="form-section">
+          <div class="form-section-title">权限配置</div>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="用户类型" prop="isAdmin">
+                <el-select v-model="formData.isAdmin" placeholder="请选择用户类型" style="width: 100%">
+                  <el-option label="普通用户" :value="false" />
+                  <el-option label="管理员" :value="true" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="用户状态" prop="status">
+                <el-select v-model="formData.status" placeholder="请选择状态" style="width: 100%">
+                  <el-option label="正常" value="active" />
+                  <el-option label="禁用" value="inactive" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 组织信息 -->
+        <div class="form-section">
+          <div class="form-section-title">组织信息</div>
+          <el-row :gutter="12">
+            <el-col :span="12">
+              <el-form-item label="所属公司" prop="companyId">
+                <el-select v-model="formData.companyId" placeholder="请选择所属公司" style="width: 100%" @change="handleCompanyChange">
+                  <el-option 
+                    v-for="company in companyList" 
+                    :key="company.id" 
+                    :label="company.name" 
+                    :value="company.id" 
+                  />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="过期时间" prop="expireTime">
+                <el-date-picker 
+                  v-model="formData.expireTime" 
+                  type="datetime" 
+                  placeholder="请选择过期时间"
+                  style="width: 100%"
+                  :disabled-date="(date) => date.getTime() < Date.now() - 86400000"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 登录密码 (仅新增时显示) -->
+        <div v-if="!formData.id" class="form-section">
+          <div class="form-section-title">安全设置</div>
+          <el-form-item label="登录密码" prop="password">
+            <el-input 
+              v-model="formData.password" 
+              type="password" 
+              placeholder="请输入登录密码" 
+              show-password
+            />
+          </el-form-item>
+        </div>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -336,6 +370,15 @@ const gridOptions = ref({
       }
     },
     {
+      title: '过期时间',
+      field: 'expireTime',
+      width: 180,
+      showOverflow: true,
+      formatter: (e) => {
+        return e.cellValue ? formatTimestamp(e.cellValue) : '-'
+      },
+    },
+    {
       title: '用户状态',
       field: 'status',
       width: 100,
@@ -408,7 +451,8 @@ const formData = reactive({
   isAdmin: false,
   avatar: '',
   password: '',
-  companyId: '' // 新增公司ID字段
+  companyId: '', // 新增公司ID字段
+  expireTime: '' // 过期时间
 })
 
 const formRules = {
@@ -557,9 +601,8 @@ async function handleSubmit() {
     const submitData = { ...formData }
     
     if (formData.id) {
-      // 编辑 - 只传递需要更新的字段，不包含 id
+      // 编辑 - 传递 id 和需要更新的字段
       const updateData = { ...submitData }
-      delete updateData.id
       delete updateData.createTime
       delete updateData.updateTime
       await updateUser(updateData)
@@ -597,6 +640,16 @@ async function handleResetPasswordSubmit() {
   }
 }
 
+// 处理公司变化，继承公司过期时间
+function handleCompanyChange(companyId) {
+  if (companyId && !formData.id) { // 只有新增用户时才自动继承
+    const selectedCompany = companyList.value.find(c => c.id === companyId)
+    if (selectedCompany && selectedCompany.expireTime) {
+      formData.expireTime = selectedCompany.expireTime
+    }
+  }
+}
+
 // 重置表单
 function resetForm() {
   Object.assign(formData, {
@@ -611,7 +664,8 @@ function resetForm() {
     isAdmin: false,
     avatar: '',
     password: '',
-    companyId: '' // 重置公司ID
+    companyId: '', // 重置公司ID
+    expireTime: '' // 重置过期时间
   })
   formRef.value?.clearValidate()
 }
@@ -624,5 +678,38 @@ getCompanyListData()
 <style lang="less">
 .table-operation-column {
   gap: 8px;
+}
+
+.form-section {
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  &-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    
+    &::before {
+      content: '';
+      display: inline-block;
+      width: 2px;
+      height: 12px;
+      background: var(--el-color-primary);
+      margin-right: 6px;
+      vertical-align: middle;
+      border-radius: 1px;
+    }
+  }
+}
+
+// 减小表单项间距
+:deep(.el-form-item) {
+  margin-bottom: 16px;
 }
 </style>
