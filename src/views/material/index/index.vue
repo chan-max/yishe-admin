@@ -1770,12 +1770,15 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       id: row.id,
       prompt: prompt || ''
     })
-    // 更新行数据
-    if (res && res.data) {
-      row.name = res.data.name
-      row.description = res.data.description
-      row.keywords = res.data.keywords
-      // 你可以根据实际返回结构调整
+    // 更新行数据 - 兼容不同的返回结构
+    const resultData = res?.data || res
+    if (resultData) {
+      row.name = resultData.name || row.name
+      row.nameEn = resultData.nameEn || row.nameEn
+      row.description = resultData.description || row.description
+      row.descriptionEn = resultData.descriptionEn || row.descriptionEn
+      row.keywords = resultData.keywords || row.keywords
+      row.keywordsEn = resultData.keywordsEn || row.keywordsEn
     }
     ElNotification.success('AI自动生成内容成功')
     if (typeof cb === 'function') cb()
