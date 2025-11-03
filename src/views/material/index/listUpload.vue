@@ -29,6 +29,12 @@
                 class="mt-1 white-input"
               />
               <el-input
+                v-model="file.nameEn"
+                size="small"
+                placeholder="英文名称"
+                class="mt-1 white-input"
+              />
+              <el-input
                 v-model="file.description"
                 size="small"
                 type="textarea"
@@ -37,26 +43,41 @@
                 class="mt-1 white-input"
               />
               <el-input
+                v-model="file.descriptionEn"
+                size="small"
+                type="textarea"
+                :rows="2"
+                placeholder="英文描述"
+                class="mt-1 white-input"
+              />
+              <el-input
                 v-model="file.keywords"
                 size="small"
                 placeholder="关键词（用英文逗号分隔）"
                 class="mt-1 white-input"
               />
+              <el-input
+                v-model="file.keywordsEn"
+                size="small"
+                placeholder="英文关键词（用英文逗号分隔）"
+                class="mt-1 white-input"
+              />
             </div>
-            <div class="pt-2 flex gap-2 flex-wrap" style="overflow: hidden; justify-content: center; margin-top: 4px;">
-              <el-tag v-if="file.rename" round size="small" link type="primary">
+            <!-- 重命名标签 -->
+            <div v-if="file.rename" class="rename-tag">
+              <el-tag round size="small" link type="primary">
                 重命名: {{ file.rename }}
               </el-tag>
             </div>
-          </div>
-          <!-- 尺寸与信息标签，移到AI分析按钮上方，避免遮挡 -->
-          <div class="pt-2 flex gap-2 flex-wrap" style="overflow: hidden; justify-content: center; margin-top: 4px;">
-            <el-tag link round size="small" type="primary">
-              {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
-            </el-tag>
-            <el-tag round size="small" link type="primary">
-              尺寸: {{ file.width + ' x ' + file.height }}
-            </el-tag>
+            <!-- 尺寸与信息标签 -->
+            <div class="file-info-tags">
+              <el-tag link round size="small" type="primary">
+                {{ (file.size / 1024 / 1024).toFixed(2) + 'Mb' }}
+              </el-tag>
+              <el-tag v-if="file.width > 0 && file.height > 0" round size="small" link type="primary">
+                {{ file.width }} x {{ file.height }}
+              </el-tag>
+            </div>
           </div>
 
           <div class="actions">
@@ -196,18 +217,32 @@ const someLoading = computed(() => {
   return fileList.value.some((item) => item.status == 'uploading')
 })
 
+// 获取图片尺寸
+const getImageDimensions = (file): Promise<{ width: number; height: number }> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height
+      })
+    }
+    img.onerror = () => {
+      resolve({ width: 0, height: 0 })
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
 const handleFileChange = async (file) => {
-  const url = URL.createObjectURL(file.raw) // 生成 Blob URL
-
-  // const info = await getImageDimensionsViaImageBitmap(file.raw)
-  const info = {
-    width: 0,
-    height: 0
-  }
-
   if (file.size > 10 * 1024 * 1024) {
     return ElMessage.warning(`图片${file.name}大于10mb`)
   }
+
+  const url = URL.createObjectURL(file.raw) // 生成 Blob URL
+  
+  // 获取图片尺寸
+  const info = await getImageDimensions(file.raw)
 
   fileList.value.push({
     uid: file.uid,
@@ -219,8 +254,10 @@ const handleFileChange = async (file) => {
     height: info.height,
     rename: '', // 该图片的重命名
     status: 'waiting', // waiting, uploading, success, fail
-    description: '', // 新增字段
-    keywords: '' // 新增字段
+    description: '', // 描述
+    descriptionEn: '', // 英文描述
+    keywords: '', // 关键字
+    keywordsEn: '' // 英文关键字
   })
 }
 
@@ -278,9 +315,12 @@ const uploadFile = async (file) => {
     await uploadMaterialFile({
       url,
       name: file.name,
-      description: file.description, // 新增字段
-      keywords: file.keywords, // 新增字段
-      suffix // 新增字段，图片类型后缀
+      nameEn: file.nameEn || '',
+      description: file.description || '',
+      descriptionEn: file.descriptionEn || '',
+      keywords: file.keywords || '',
+      keywordsEn: file.keywordsEn || '',
+      suffix // 图片类型后缀
     })
     file.status = 'success'
     emits('single-file-uploaded')
@@ -322,7 +362,7 @@ const uploadFile = async (file) => {
 .image-preview-item {
   position: relative;
   width: 200px;
-  height: 400px;
+  height: 500px;
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: hidden;
@@ -430,13 +470,37 @@ const uploadFile = async (file) => {
   padding: 12px;
   font-size: 11px;
   width: 100%;
-  height: 180px;
+  height: 280px;
   overflow-y: auto;
   text-overflow: ellipsis;
-  display: block;
+  display: flex;
+  flex-direction: column;
   background: #000;
   border-radius: 0 0 4px 4px;
   flex: 1;
+}
+
+.preview-placeholder > div:first-child {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.rename-tag {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.file-info-tags {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 0;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .white-input .el-input__inner,

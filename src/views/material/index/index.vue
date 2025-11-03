@@ -755,42 +755,121 @@
       <!-- 移除el-dialog的footer插槽 -->
     </el-dialog>
 
-    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="800px" :destroy-on-close="true" align-center>
-      <el-form :model="editForm" label-width="100px">
-        <el-form-item label="名称">
-          <el-input v-model="editForm.name" placeholder="请输入名称" style="font-size:16px;height:48px;width:100%;" />
-        </el-form-item>
-        <el-form-item label="描述">
-          <el-input v-model="editForm.description" type="textarea" :rows="5" placeholder="请输入描述" style="font-size:16px;min-height:100px;width:100%;" />
-        </el-form-item>
-        <el-form-item label="关键字">
-          <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
-        </el-form-item>
-        <el-form-item label="自定义贴纸">
-          <el-tag 
-            :type="editForm.isCustom ? 'success' : 'info'" 
-            size="large"
-            style="font-size:16px;padding:8px 16px;"
-          >
-            {{ editForm.isCustom ? '是' : '否' }}
-          </el-tag>
-        </el-form-item>
-        <el-form-item label="侵权状态">
-          <el-select v-model="editForm.isInfringement" placeholder="请选择侵权状态" style="font-size:16px;height:48px;width:100%;">
-            <el-option label="非侵权" :value="false" />
-            <el-option label="侵权" :value="true" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="发布状态">
-          <el-select v-model="editForm.isPublish" placeholder="请选择发布状态" style="font-size:16px;height:48px;width:100%;">
-            <el-option label="未发布" :value="false" />
-            <el-option label="已发布" :value="true" />
-          </el-select>
-        </el-form-item>
+    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="900px" :destroy-on-close="true" align-center class="edit-material-dialog">
+      <el-form :model="editForm" label-width="100px" class="edit-form">
+        <el-row :gutter="20">
+          <!-- 左侧：基本信息 -->
+          <el-col :span="12">
+            <el-form-item label="名称">
+              <el-input 
+                v-model="editForm.name" 
+                placeholder="请输入名称" 
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <!-- 右侧：英文名称 -->
+          <el-col :span="12">
+            <el-form-item label="英文名称">
+              <el-input 
+                v-model="editForm.nameEn" 
+                placeholder="请输入英文名称" 
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <!-- 左侧：描述 -->
+          <el-col :span="12">
+            <el-form-item label="描述">
+              <el-input 
+                v-model="editForm.description" 
+                type="textarea" 
+                :rows="4" 
+                placeholder="请输入描述" 
+                maxlength="1000"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+          <!-- 右侧：英文描述 -->
+          <el-col :span="12">
+            <el-form-item label="英文描述">
+              <el-input 
+                v-model="editForm.descriptionEn" 
+                type="textarea" 
+                :rows="4" 
+                placeholder="请输入英文描述" 
+                maxlength="1000"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <!-- 左侧：关键字 -->
+          <el-col :span="12">
+            <el-form-item label="关键字">
+              <el-input 
+                v-model="editForm.keywords" 
+                placeholder="请输入关键字（逗号分隔）" 
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <!-- 右侧：英文关键字 -->
+          <el-col :span="12">
+            <el-form-item label="英文关键字">
+              <el-input 
+                v-model="editForm.keywordsEn" 
+                placeholder="请输入英文关键字（逗号分隔）" 
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider />
+
+        <el-row :gutter="20">
+          <!-- 自定义贴纸 -->
+          <el-col :span="8">
+            <el-form-item label="自定义贴纸">
+              <el-switch
+                v-model="editForm.isCustom"
+                active-text="是"
+                inactive-text="否"
+              />
+            </el-form-item>
+          </el-col>
+          <!-- 侵权状态 -->
+          <el-col :span="8">
+            <el-form-item label="侵权状态">
+              <el-select v-model="editForm.isInfringement" placeholder="请选择" style="width: 100%">
+                <el-option label="非侵权" :value="false" />
+                <el-option label="侵权" :value="true" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <!-- 发布状态 -->
+          <el-col :span="8">
+            <el-form-item label="发布状态">
+              <el-select v-model="editForm.isPublish" placeholder="请选择" style="width: 100%">
+                <el-option label="未发布" :value="false" />
+                <el-option label="已发布" :value="true" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+        <div class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -1055,8 +1134,11 @@ const gridOptions = ref({
       slots: { default: 'previewDefaultSlot' }
     },
     { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
+    { title: '英文名称', field: 'nameEn', minWidth: 180 },
     { title: '描述', field: 'description', minWidth: 200 },
+    { title: '英文描述', field: 'descriptionEn', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 160 },
+    { title: '英文关键词', field: 'keywordsEn', minWidth: 160 },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
     { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
     { 
@@ -1819,7 +1901,7 @@ async function handleBatchUnpublish() {
 }
 
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', description: '', keywords: '', isCustom: false, isInfringement: false, isPublish: false })
+const editForm = ref({ id: '', name: '', nameEn: '', description: '', descriptionEn: '', keywords: '', keywordsEn: '', isCustom: false, isInfringement: false, isPublish: false })
 const editLoading = ref(false)
 
 // 其他缺少的变量
@@ -1881,9 +1963,12 @@ function applyPreset(preset) {
 function handleEdit(row) {
   editForm.value = { 
     id: row.id, 
-    name: row.name, 
-    description: row.description, 
-    keywords: row.keywords,
+    name: row.name || '', 
+    nameEn: row.nameEn || '',
+    description: row.description || '', 
+    descriptionEn: row.descriptionEn || '',
+    keywords: row.keywords || '',
+    keywordsEn: row.keywordsEn || '',
     isCustom: row.isCustom || false,
     isInfringement: row.isInfringement || false,
     isPublish: row.isPublish || false
@@ -2098,8 +2183,11 @@ const imageInfo = ref(null)
 const urlUploadForm = reactive({
   url: '',
   name: '',
+  nameEn: '',
   description: '',
+  descriptionEn: '',
   keywords: '',
+  keywordsEn: '',
   isCustom: false,
   isInfringement: false,
   isPublish: false
@@ -2123,8 +2211,11 @@ const urlUploadFormRules = {
 function resetUrlUploadForm() {
   urlUploadForm.url = ''
   urlUploadForm.name = ''
+  urlUploadForm.nameEn = ''
   urlUploadForm.description = ''
+  urlUploadForm.descriptionEn = ''
   urlUploadForm.keywords = ''
+  urlUploadForm.keywordsEn = ''
   urlUploadForm.isCustom = false
   urlUploadForm.isInfringement = false
   urlUploadForm.isPublish = false
@@ -2385,8 +2476,11 @@ async function handleUrlUpload() {
     await uploadMaterialFile({
       url,
       name: urlUploadForm.name,
+      nameEn: urlUploadForm.nameEn,
       description: urlUploadForm.description,
+      descriptionEn: urlUploadForm.descriptionEn,
       keywords: urlUploadForm.keywords,
+      keywordsEn: urlUploadForm.keywordsEn,
       suffix: extension,
       isCustom: urlUploadForm.isCustom,
       isInfringement: urlUploadForm.isInfringement,
@@ -3098,5 +3192,50 @@ h1 {
   
   .el-dropdown__popper .el-dropdown-menu__item {
     overflow: visible !important;
+  }
+  </style>
+
+  <!-- 编辑素材表单样式 -->
+  <style scoped>
+  .edit-material-dialog :deep(.el-dialog__body) {
+    padding: 24px;
+  }
+
+  .edit-form {
+    padding: 0;
+  }
+
+  .edit-form :deep(.el-form-item) {
+    margin-bottom: 22px;
+  }
+
+  .edit-form :deep(.el-form-item__label) {
+    font-weight: 500;
+    color: var(--el-text-color-regular);
+  }
+
+  .edit-form :deep(.el-row) {
+    margin-bottom: 0;
+  }
+
+  .edit-form :deep(.el-divider) {
+    margin: 20px 0;
+  }
+
+  .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  /* 响应式布局 */
+  @media (max-width: 768px) {
+    .edit-material-dialog {
+      width: 95% !important;
+    }
+
+    .edit-form :deep(.el-col) {
+      margin-bottom: 0;
+    }
   }
   </style>
