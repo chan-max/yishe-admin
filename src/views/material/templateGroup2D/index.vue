@@ -975,8 +975,9 @@ function dialogClose() {
 }
 
 .control-item span {
-  min-width: 20px;
+  min-width: 36px;
   font-size: 12px;
+  text-wrap: nowrap;
   color: var(--el-text-color-secondary);
 }
 
