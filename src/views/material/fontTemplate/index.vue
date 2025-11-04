@@ -161,10 +161,6 @@
                     <el-icon><Picture /></el-icon>
                     生成缩略图
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="font-params">
-                    <el-icon><Picture /></el-icon>
-                    制作文字图
-                  </el-dropdown-item>
                   <el-dropdown-item command="download">
                     <el-icon><Download /></el-icon>
                     下载源文件
@@ -312,25 +308,6 @@
     </el-dialog>
 
 
-
-    <!-- 字体参数设置弹窗 -->
-    <el-dialog
-      title="制作文字图"
-      v-model="fontParamsVisible"
-      width="500px"
-      @close="handleFontParamsClose"
-      align-center
-    >
-      <el-form :model="fontParamsForm" :rules="fontParamsRules" ref="fontParamsFormRef" label-width="100px">
-        <el-form-item label="文字内容" prop="text">
-          <el-input v-model="fontParamsForm.text" placeholder="请输入文字内容" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="fontParamsVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitFontParams" :loading="fontParamsLoading">确定</el-button>
-      </template>
-    </el-dialog>
 
     <!-- AI生成内容弹窗 -->
     <el-dialog
@@ -879,18 +856,6 @@ const currentRow = ref<{
 }>({});
 const submitLoading = ref(false);
 
-// 字体参数相关
-const fontParamsVisible = ref(false);
-const fontParamsLoading = ref(false);
-const fontParamsFormRef = ref();
-const fontParamsForm = ref({
-  text: '',
-  fontId: null
-});
-
-const fontParamsRules = {
-  text: [{ required: true, message: '请输入文字内容', trigger: 'blur' }]
-};
 
 // AI生成内容相关
 const aiGenDialogVisible = ref(false);
@@ -1224,41 +1189,6 @@ const beforeUpload = (file) => {
 };
 
 
-
-function handleFontParams(row) {
-  fontParamsForm.value.fontId = row.id;
-  fontParamsVisible.value = true;
-}
-
-function handleFontParamsClose() {
-  fontParamsForm.value = {
-    text: '',
-    fontId: null
-  };
-  fontParamsVisible.value = false;
-}
-
-async function submitFontParams() {
-  if (!fontParamsFormRef.value) return;
-  
-  try {
-    await fontParamsFormRef.value.validate();
-    fontParamsLoading.value = true;
-    
-    // 这里调用后端API
-    await fontTemplateApi.genImage({
-      fontId: fontParamsForm.value.fontId,
-      text: fontParamsForm.value.text
-    });
-    
-    ElMessage.success('生成成功');
-    fontParamsVisible.value = false;
-  } catch (error) {
-    console.error('生成失败:', error);
-  } finally {
-    fontParamsLoading.value = false;
-  }
-}
 
 const copyUrl = (url: string) => {
   copyLink(url);
@@ -1608,9 +1538,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'generate-thumbnail':
       handleGenerateThumbnail(row);
-      break;
-    case 'font-params':
-      handleFontParams(row);
       break;
     case 'download':
       downloadFileByElement(row.url, row.name);

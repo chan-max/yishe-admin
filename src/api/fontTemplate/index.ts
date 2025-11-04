@@ -10,11 +10,6 @@ import request from '@/config/axios'
 
 export const fontTemplateApi = {
 
-
-  genImage: async (data: any) => {
-    return await request.post({ url: `/font-template/gen-image`, data })
-  },
-
   getFontTemplatePage: async (data: any) => {
     return await request.post({ url: `/font-template/page`, data })
   },
