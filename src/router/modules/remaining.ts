@@ -296,7 +296,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '商品模型',
+          title: '商品3d模型',
           requiresAdmin: true
         }
       },
@@ -343,19 +343,19 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
-        path: 'index',
-        component: () => import('@/views/product/index/index.vue'),
-        name: 'ProductIndex',
-        meta: {
-          title: '商品列表',
-        }
-      },
-      {
         path: 'product-image-2d',
         component: () => import('@/views/product/productImage2D/index.vue'),
         name: 'ProductImage2D',
         meta: {
           title: '二维设计商品图',
+        }
+      },
+      {
+        path: 'index',
+        component: () => import('@/views/product/index/index.vue'),
+        name: 'ProductIndex',
+        meta: {
+          title: '商品',
         }
       },
     ]

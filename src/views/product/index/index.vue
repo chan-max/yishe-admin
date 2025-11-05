@@ -123,6 +123,57 @@
           </div>
         </template>
 
+        <template #stickerDetailSlot="{ row }">
+          <div v-if="row.sticker" style="margin: 8px 0;">
+            <vxe-grid
+              :data="[row.sticker]"
+              :show-header="true"
+              border
+              size="mini"
+              style="margin: 0; padding: 0; background: none;"
+              :columns="[
+                { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
+                { field: 'name', title: '名称', minWidth: 80 },
+                { field: 'description', title: '描述', minWidth: 120 },
+                { field: 'keywords', title: '关键词', minWidth: 100 },
+                { field: 'suffix', title: '后缀', width: 80 },
+                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
+                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'stickerOperationSlot' } }
+              ]"
+            >
+              <template #stickerImageSlot="{ row }">
+                <div class="flex items-center justify-center p-2">
+                  <el-image
+                    v-if="row.url"
+                    :src="row.url"
+                    :preview-src-list="[row.url]"
+                    :initial-index="0"
+                    style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  />
+                  <span v-else class="text-gray-400">无</span>
+                </div>
+              </template>
+              <template #stickerUpdateTimeSlot="{ row }">
+                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+              </template>
+              <template #stickerOperationSlot="{ row }">
+                <div class="flex gap-2">
+                  <el-button 
+                    v-if="row.url"
+                    type="primary" 
+                    link 
+                    size="small" 
+                    @click="preview(0, [row.url])"
+                  >
+                    预览
+                  </el-button>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+          <span v-else class="text-gray-400">无关联贴纸</span>
+        </template>
+
         <template #customModelDetailSlot="{ row }">
           <div v-if="row.customModel" style="margin: 8px 0;">
             <vxe-grid
@@ -768,6 +819,12 @@ const gridOptions = ref({
       field: "customModelId", 
       width: 'auto', 
       slots: { default: 'customModelDetailSlot' }
+    },
+    { 
+      title: "关联贴纸", 
+      field: "stickerId", 
+      width: 'auto', 
+      slots: { default: 'stickerDetailSlot' }
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: false },

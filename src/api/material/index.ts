@@ -320,3 +320,13 @@ export function svgToPng(data: { id: string, width?: number, height?: number }) 
     data
   })
 }
+
+/**
+ * 根据贴纸生成关联商品
+ */
+export function generateRelatedProducts(data: { stickerIds: string[], productModelIds: string[] }) {
+  return request.post({
+    url: '/sticker/generate-related-products',
+    data
+  })
+}
