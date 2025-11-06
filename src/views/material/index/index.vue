@@ -391,6 +391,7 @@
                 <div class="template-preview">
                   <div class="template-header">
                     <div class="template-title" :title="tpl.name">{{ tpl.name || '未命名' }}</div>
+                    <div v-if="tpl.description" class="template-description">{{ tpl.description }}</div>
                   </div>
                   <div class="template-content">
                     <div class="template-images-row">
@@ -406,27 +407,6 @@
                             class="template-image"
                           />
                           <div class="image-badge">图片{{ index + 1 }}</div>
-                        </div>
-                        <div class="config-summary">
-                          <div v-if="getTemplateImageConfig(tpl, index + 1)" class="config-info">
-                            <div class="config-item">
-                              <span class="config-label">位置:</span>
-                              <span class="config-value">{{ getTemplateImageConfig(tpl, index + 1).position?.xPercent || 0 }}%, {{ getTemplateImageConfig(tpl, index + 1).position?.yPercent || 0 }}%</span>
-                            </div>
-                            <div class="config-item">
-                              <span class="config-label">尺寸:</span>
-                              <span class="config-value">{{ getTemplateImageConfig(tpl, index + 1).size?.widthPercent || 30 }}%</span>
-                            </div>
-                            <div class="config-item">
-                              <span class="config-label">透明度:</span>
-                              <span class="config-value">{{ getTemplateImageConfig(tpl, index + 1).opacity || 100 }}%</span>
-                            </div>
-                            <div class="config-item" v-if="getTemplateImageConfig(tpl, index + 1).keepOriginal">
-                              <span class="config-label">保持原图:</span>
-                              <span class="config-value">是</span>
-                            </div>
-                          </div>
-                          <div v-else class="config-default">默认配置</div>
                         </div>
                       </div>
                     </div>
@@ -2713,18 +2693,20 @@ async function handleUrlUpload() {
 </script>
 
 <style scoped>
-.link-2d-dialog :deep(.el-dialog__body) { height: calc(100vh - 140px); display: flex; flex-direction: column; overflow: hidden; }
+.link-2d-dialog :deep(.el-dialog__body) { height: calc(100vh - 120px); display: flex; flex-direction: column; overflow: hidden; }
 .design-model-dialog :deep(.el-dialog__body) { max-height: calc(100vh - 160px); overflow: hidden; }
 .design-model-flex { height: 100%; overflow: hidden; }
 .design-model-content { max-height: calc(100vh - 80px); overflow: auto; }
-.link-2d-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; overflow: auto; }
+.link-2d-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; overflow: hidden; min-height: 0; height: 100%; }
 .link-2d-footer { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
 .link-2d-footer .result-info { flex: 1; min-width: 0; }
 .link-2d-footer .footer-actions { display: flex; gap: 8px; }
+.selected-materials { display: flex; flex-direction: column; min-height: 0; overflow: hidden; height: 100%; }
 .selected-materials .thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
 .selected-materials .thumb { width: 72px; height: 72px; border: 1px solid var(--el-border-color); border-radius: 4px; overflow: hidden; background: var(--el-fill-color-lighter); }
 .selected-materials .thumb img { width: 100%; height: 100%; object-fit: cover; }
-.template-selector .template-list { min-height: 320px; max-height: 560px; overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; width: 100%; }
+.template-selector { display: flex; flex-direction: column; min-height: 0; overflow: hidden; height: 100%; }
+.template-selector .template-list { min-height: 320px; max-height: calc(100vh - 200px); overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; width: 100%; }
 .template-selector .section-title { margin-top: 8px; }
 .template-selector .template-list-rows { display: flex; flex-direction: column; gap: 10px; }
 .template-selector .template-row { 
@@ -2821,6 +2803,14 @@ async function handleUrlUpload() {
   font-weight: 600;
   color: var(--el-text-color-primary);
   margin: 0;
+  margin-bottom: 4px;
+}
+
+.template-description {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+  margin-top: 4px;
 }
 
 .template-content {
@@ -2840,13 +2830,13 @@ async function handleUrlUpload() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
+  gap: 0;
+  padding: 8px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color-page);
   transition: all 0.2s ease;
-  min-width: 200px;
+  min-width: 120px;
   flex: 0 0 auto;
   overflow: visible;
 }

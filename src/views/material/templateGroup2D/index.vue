@@ -28,12 +28,26 @@
               <div class="config-info">
                 <div v-if="getImageConfig(row, i + 1)" class="config-details">
                   <div class="config-line">
+                    <span class="label">模式:</span>
+                    <span class="value mode-tag" :class="getConfigMode(row, i) === 'topLeftFixedSize' ? 'mode-fixed' : 'mode-topleft'">
+                      {{ getConfigModeLabel(getConfigMode(row, i)) }}
+                    </span>
+                  </div>
+                  <div class="config-line">
                     <span class="label">位置:</span>
                     <span class="value">{{ getImageConfig(row, i + 1).position?.xPercent || 0 }}%, {{ getImageConfig(row, i + 1).position?.yPercent || 0 }}%</span>
                   </div>
                   <div class="config-line">
                     <span class="label">尺寸:</span>
-                    <span class="value">{{ getImageConfig(row, i + 1).size?.widthPercent || 30 }}%</span>
+                    <span class="value">
+                      {{ getImageConfig(row, i + 1).size?.widthPercent || 30 }}%
+                      <template v-if="getConfigMode(row, i) === 'topLeftFixedSize' && getImageConfig(row, i + 1).size?.heightPercent">
+                        × {{ getImageConfig(row, i + 1).size.heightPercent }}%
+                      </template>
+                      <template v-else>
+                        <span class="size-hint">(高度自适应)</span>
+                      </template>
+                    </span>
                   </div>
                   <div class="config-line">
                     <span class="label">透明度:</span>
@@ -148,7 +162,36 @@
           >
             <div class="preview" :ref="el => (previewRefs[index] = el)" :style="getPreviewBoxStyle(url)">
               <el-image :src="url" fit="contain" @load="() => handleImageLoaded(url)" />
-              <div class="overlay-block" :style="getOverlayStyle(url, index)"></div>
+              <!-- 固定尺寸模式：显示完整矩形框和左上角十字标识 -->
+              <template v-if="(manualConfigs[index]?.mode || 'topLeftAutoHeight') === 'topLeftFixedSize'">
+                <div 
+                  class="overlay-block" 
+                  :style="getOverlayStyle(url, index)"
+                ></div>
+                <div 
+                  class="overlay-cross-marker" 
+                  :style="getCrossMarkerStyle(url, index)"
+                ></div>
+              </template>
+              <!-- 左上角对齐模式：显示宽度线和左上角十字标识 -->
+              <template v-else>
+                <div 
+                  class="overlay-width-line" 
+                  :style="getWidthLineStyle(url, index)"
+                ></div>
+                <div 
+                  class="overlay-height-line" 
+                  :style="getHeightLineStyle(url, index)"
+                ></div>
+                <div 
+                  class="overlay-gradient-area" 
+                  :style="getGradientAreaStyle(url, index)"
+                ></div>
+                <div 
+                  class="overlay-cross-marker" 
+                  :style="getCrossMarkerStyle(url, index)"
+                ></div>
+              </template>
             </div>
             <div class="details">
               <div class="meta">
@@ -156,6 +199,181 @@
                 <div class="line">比例：<span>{{ imageMetaMap[url]?.ratio || '-' }}</span></div>
               </div>
               <div class="config-editor">
+                <!-- 配置模式显示 -->
+                <div class="mode-info">
+                  <div class="mode-header">
+                    <h4>配置模式</h4>
+                    <el-select
+                      v-model="manualConfigs[index].mode"
+                      size="small"
+                      style="width: 200px"
+                      @change="onManualConfigChange(index)"
+                    >
+                      <el-option label="左上角对齐-自动高度" value="topLeftAutoHeight" />
+                      <el-option label="左上角对齐-固定尺寸" value="topLeftFixedSize" />
+                    </el-select>
+                  </div>
+                  <div class="mode-description">
+                    <div class="mode-brief">
+                      <span class="mode-desc-text">{{ getModeDescription(manualConfigs[index]?.mode || 'topLeftAutoHeight').description }}</span>
+                      <!-- 固定尺寸模式提示 -->
+                      <el-alert
+                        v-if="manualConfigs[index]?.mode === 'topLeftFixedSize'"
+                        type="warning"
+                        :closable="false"
+                        show-icon
+                        style="margin-top: 8px;"
+                      >
+                        <template #title>
+                          <span style="font-size: 12px;">由于尺寸固定，素材图会自动裁剪为指定宽高，不保持原始宽高比</span>
+                        </template>
+                      </el-alert>
+                      <el-popover
+                        placement="right"
+                        :width="500"
+                        trigger="hover"
+                        popper-class="mode-detail-popover"
+                      >
+                        <template #reference>
+                          <el-button 
+                            text 
+                            type="primary" 
+                            size="small" 
+                            class="mode-detail-btn"
+                          >
+                            <el-icon><InfoFilled /></el-icon>
+                            查看详情
+                          </el-button>
+                        </template>
+                        <template #default>
+                          <div class="mode-details-popover" v-if="manualConfigs[index].mode === 'topLeftAutoHeight' || !manualConfigs[index]?.mode">
+                            <div class="detail-section">
+                              <div class="detail-title">
+                                <el-icon><InfoFilled /></el-icon>
+                                <span>工作原理</span>
+                              </div>
+                              <ul class="detail-list">
+                                <li>图片的<strong>左上角</strong>会与您指定的位置坐标对齐</li>
+                                <li>位置坐标使用百分比表示：(0, 0) 表示模板左上角，(100, 100) 表示模板右下角</li>
+                                <li>宽度由 <code>widthPercent</code> 参数控制，表示占模板宽度的百分比</li>
+                                <li>高度会根据图片的原始宽高比自动计算，保持图片不变形</li>
+                              </ul>
+                            </div>
+                            <div class="detail-section">
+                              <div class="detail-title">
+                                <el-icon><Setting /></el-icon>
+                                <span>参数说明</span>
+                              </div>
+                              <div class="param-table">
+                                <div class="param-row">
+                                  <div class="param-name">position.xPercent</div>
+                                  <div class="param-desc">素材左上角的X坐标（百分比，0-100）</div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">position.yPercent</div>
+                                  <div class="param-desc">素材左上角的Y坐标（百分比，0-100）</div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">size.widthPercent</div>
+                                  <div class="param-desc">素材宽度占模板宽度的百分比（1-100）</div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">opacity</div>
+                                  <div class="param-desc">素材透明度（0-100，100表示完全不透明）</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="detail-section">
+                              <div class="detail-title">
+                                <el-icon><Document /></el-icon>
+                                <span>使用示例</span>
+                              </div>
+                              <div class="example-box">
+                                <div class="example-item">
+                                  <strong>示例1：左上角放置</strong>
+                                  <code>{ position: { xPercent: 0, yPercent: 0 }, size: { widthPercent: 30 } }</code>
+                                  <div class="example-desc">图片左上角对齐模板左上角，宽度为模板的30%</div>
+                                </div>
+                                <div class="example-item">
+                                  <strong>示例2：居中偏上</strong>
+                                  <code>{ position: { xPercent: 35, yPercent: 10 }, size: { widthPercent: 50 } }</code>
+                                  <div class="example-desc">图片左上角位于模板中心偏上位置，宽度为模板的50%</div>
+                                </div>
+                                <div class="example-item">
+                                  <strong>示例3：右下角区域</strong>
+                                  <code>{ position: { xPercent: 70, yPercent: 70 }, size: { widthPercent: 25 } }</code>
+                                  <div class="example-desc">图片左上角位于右下角区域，宽度为模板的25%</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="mode-details-popover" v-else-if="manualConfigs[index].mode === 'topLeftFixedSize'">
+                            <div class="detail-section">
+                              <div class="detail-title">
+                                <el-icon><InfoFilled /></el-icon>
+                                <span>工作原理</span>
+                              </div>
+                              <ul class="detail-list">
+                                <li>图片的<strong>左上角</strong>会与您指定的位置坐标对齐（与topLeftAutoHeight模式相同）</li>
+                                <li>位置坐标使用百分比表示：(0, 0) 表示模板左上角，(100, 100) 表示模板右下角</li>
+                                <li>宽度由 <code>widthPercent</code> 参数控制，表示占模板宽度的百分比</li>
+                                <li>高度由 <code>heightPercent</code> 参数控制，表示占模板高度的百分比</li>
+                                <li><strong>重要：</strong>素材图会被裁剪为指定的宽高尺寸，不保持原始宽高比</li>
+                                <li>裁剪方式：从素材图的左上角开始，按照指定尺寸进行裁剪</li>
+                              </ul>
+                            </div>
+                            <div class="detail-section">
+                              <div class="detail-title">
+                                <el-icon><Setting /></el-icon>
+                                <span>参数说明</span>
+                              </div>
+                              <div class="param-table">
+                                <div class="param-row">
+                                  <div class="param-name">position.xPercent</div>
+                                  <div class="param-desc">素材左上角的X坐标（百分比，0-100）</div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">position.yPercent</div>
+                                  <div class="param-desc">素材左上角的Y坐标（百分比，0-100）</div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">size.widthPercent</div>
+                                  <div class="param-desc">素材宽度占模板宽度的百分比（1-100）</div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">size.heightPercent</div>
+                                  <div class="param-desc">素材高度占模板高度的百分比（1-100）<strong>（仅固定尺寸模式）</strong></div>
+                                </div>
+                                <div class="param-row">
+                                  <div class="param-name">opacity</div>
+                                  <div class="param-desc">素材透明度（0-100，100表示完全不透明）</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="detail-section">
+                              <div class="detail-title">
+                                <el-icon><Document /></el-icon>
+                                <span>使用示例</span>
+                              </div>
+                              <div class="example-box">
+                                <div class="example-item">
+                                  <strong>示例1：固定正方形区域</strong>
+                                  <code>{ mode: "topLeftFixedSize", position: { xPercent: 10, yPercent: 10 }, size: { widthPercent: 30, heightPercent: 30 } }</code>
+                                  <div class="example-desc">素材被裁剪为30%×30%的正方形，放置在左上角区域</div>
+                                </div>
+                                <div class="example-item">
+                                  <strong>示例2：固定矩形区域</strong>
+                                  <code>{ mode: "topLeftFixedSize", position: { xPercent: 50, yPercent: 20 }, size: { widthPercent: 40, heightPercent: 20 } }</code>
+                                  <div class="example-desc">素材被裁剪为40%×20%的矩形，放置在中心偏上位置</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </el-popover>
+                    </div>
+                  </div>
+                </div>
                 <!-- 手动配置 -->
                 <div class="manual-controls">
                   <h4>手动配置</h4>
@@ -190,7 +408,7 @@
 
                   <!-- 尺寸控制 -->
                   <div class="control-group">
-                    <label>尺寸 (宽度百分比%):</label>
+                    <label>尺寸 (百分比%):</label>
                     <div class="control-item">
                       <span>宽度%:</span>
                       <el-slider
@@ -201,6 +419,21 @@
                         show-input
                         @change="onManualConfigChange(index)"
                       />
+                    </div>
+                    <!-- 固定尺寸模式显示高度配置 -->
+                    <div v-if="manualConfigs[index].mode === 'topLeftFixedSize'" class="control-item" style="margin-top: 12px;">
+                      <span>高度%:</span>
+                      <el-slider
+                        v-model="manualConfigs[index].size.heightPercent"
+                        :min="1"
+                        :max="100"
+                        :step="1"
+                        show-input
+                        @change="onManualConfigChange(index)"
+                      />
+                      <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px;">
+                        固定尺寸模式：素材图将被裁剪为指定宽高，不保持原始宽高比
+                      </div>
                     </div>
                   </div>
 
@@ -264,24 +497,40 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { InfoFilled, Setting, Document } from '@element-plus/icons-vue'
 import { uploadToCOS } from '@/api/cos'
 import { pageTemplateGroup2D, createTemplateGroup2D, updateTemplateGroup2D, deleteTemplateGroup2D } from '@/api/templateGroup2D'
 import { commonGridOptions } from '@/common/table'
 
 const queryParams = reactive({ currentPage: 1, pageSize: 20 })
 const jsonPlaceholder = `请输入JSON配置，例如：
+
+模式1 - topLeftAutoHeight（左上角对齐-自动高度）：
 {
+  "mode": "topLeftAutoHeight",
   "position": { "xPercent": 0, "yPercent": 0 },
   "size": { "widthPercent": 30 },
   "opacity": 100,
   "keepOriginal": false
 }
 
+模式2 - topLeftFixedSize（左上角对齐-固定尺寸）：
+{
+  "mode": "topLeftFixedSize",
+  "position": { "xPercent": 0, "yPercent": 0 },
+  "size": { "widthPercent": 30, "heightPercent": 30 },
+  "opacity": 100,
+  "keepOriginal": false
+}
+
 参数说明：
+• mode: 配置模式，"topLeftAutoHeight"（左上角对齐-自动高度）或 "topLeftFixedSize"（左上角对齐-固定尺寸）
 • position: { xPercent, yPercent } - 素材左上角坐标(百分比)，0,0表示左上角，100,100表示右下角
-• size: { widthPercent: 1-100 } - 素材宽度占模板宽度的百分比
+• size: 
+  - topLeftAutoHeight模式: { widthPercent: 1-100 } - 宽度百分比，高度自动计算
+  - topLeftFixedSize模式: { widthPercent: 1-100, heightPercent: 1-100 } - 宽高百分比，素材会被裁剪
 • opacity: 0-100 - 素材透明度百分比，100表示完全不透明
-• keepOriginal: true/false - 是否保持原图，true时直接使用模板原图，不进行图片组合处理`
+• keepOriginal: true/false - 是否保持原图`
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
@@ -365,15 +614,35 @@ function openImageOption(row) {
     const key = `imageOption${idx + 1}`
     const val = row[key]
     try {
-      if (val === undefined || val === null) return getDefaultManualConfig()
-      if (typeof val === 'string') {
+      let config
+      if (val === undefined || val === null) {
+        config = getDefaultManualConfig()
+      } else if (typeof val === 'string') {
         try {
-          return JSON.parse(val)
+          config = JSON.parse(val)
         } catch {
-          return getDefaultManualConfig()
+          config = getDefaultManualConfig()
         }
+      } else {
+        config = val
       }
-      return val
+      // 确保有mode字段，兼容旧配置
+      if (!config.mode) {
+        config.mode = 'topLeftAutoHeight'
+      }
+      // 兼容旧模式名称
+      if (config.mode === 'topLeft') {
+        config.mode = 'topLeftAutoHeight'
+      }
+      if (config.mode === 'fixedSize') {
+        config.mode = 'topLeftFixedSize'
+      }
+      // 如果是topLeftFixedSize模式但没有heightPercent，设置默认值
+      if (config.mode === 'topLeftFixedSize' && !config.size?.heightPercent) {
+        config.size = config.size || {}
+        config.size.heightPercent = config.size.widthPercent || 30
+      }
+      return config
     } catch (e) {
       return getDefaultManualConfig()
     }
@@ -389,6 +658,7 @@ function openImageOption(row) {
 
 function getDefaultImageOption() {
   return JSON.stringify({
+    mode: 'topLeftAutoHeight',
     position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
     opacity: 100,
@@ -398,6 +668,7 @@ function getDefaultImageOption() {
 
 function getDefaultManualConfig() {
   return {
+    mode: 'topLeftAutoHeight',
     position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
     opacity: 100,
@@ -405,10 +676,42 @@ function getDefaultManualConfig() {
   }
 }
 
+// 根据模式获取默认配置
+function getDefaultConfigByMode(mode: string) {
+  if (mode === 'topLeftFixedSize') {
+    return {
+      mode: 'topLeftFixedSize',
+      position: { xPercent: 0, yPercent: 0 },
+      size: { widthPercent: 30, heightPercent: 30 },
+      opacity: 100,
+      keepOriginal: false
+    }
+  }
+  return getDefaultManualConfig()
+}
+
 // 手动配置变化时同步到JSON
 function onManualConfigChange(index: number) {
   const config = manualConfigs.value[index]
   if (config) {
+    // 兼容旧模式名称
+    if (config.mode === 'topLeft') {
+      config.mode = 'topLeftAutoHeight'
+    }
+    if (config.mode === 'fixedSize') {
+      config.mode = 'topLeftFixedSize'
+    }
+    // 切换模式时，如果切换到topLeftFixedSize但没有heightPercent，设置默认值
+    if (config.mode === 'topLeftFixedSize' && !config.size?.heightPercent) {
+      config.size = config.size || {}
+      config.size.heightPercent = config.size.widthPercent || 30
+    }
+    // 如果是topLeftAutoHeight模式，移除heightPercent（如果存在）
+    if (config.mode === 'topLeftAutoHeight' && config.size?.heightPercent !== undefined) {
+      const newSize = { ...config.size }
+      delete newSize.heightPercent
+      config.size = newSize
+    }
     imageOptionsDraft.value[index] = JSON.stringify(config, null, 2)
   }
 }
@@ -448,6 +751,7 @@ function getOverlayStyle(url: string, index: number) {
   // 将真实坐标/尺寸映射为显示坐标/尺寸
   const scaleX = imgWidth / (meta.w || 1)
   const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY) // 使用较小的缩放比例，保持一致性
 
   // 位置（百分比转换为像素，左上角为原点），映射到显示坐标
   const xPercent = config.position?.xPercent || 0
@@ -457,23 +761,244 @@ function getOverlayStyle(url: string, index: number) {
   let posX = imgLeft + pixelX * scaleX
   let posY = imgTop + pixelY * scaleY
 
-  // 尺寸：使用宽度百分比（相对于模板宽度）
-  let realSize = 0
   const sizeCfg = config.size || {}
-  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
-  realSize = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  let mode = config.mode || 'topLeftAutoHeight'
+  // 兼容旧模式名称
+  if (mode === 'topLeft') mode = 'topLeftAutoHeight'
+  if (mode === 'fixedSize') mode = 'topLeftFixedSize'
+  
+  let displayWidth: number
+  let displayHeight: number
 
-  const displaySize = realSize * Math.min(scaleX, scaleY)
+  if (mode === 'topLeftFixedSize') {
+    // 固定尺寸模式：使用指定的宽高百分比
+    const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+    const heightPercent = typeof sizeCfg.heightPercent === 'number' ? sizeCfg.heightPercent : 30
+    
+    const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+    const realHeight = Math.max(1, Math.min(100, heightPercent)) / 100 * meta.h
+    
+    displayWidth = realWidth * scale
+    displayHeight = realHeight * scale
+  } else {
+    // topLeft模式：只关注左上角坐标和宽度
+    // 高度会根据素材图片的原始宽高比自动计算，这里只显示宽度指示
+    const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+    const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+    
+    displayWidth = realWidth * scale
+    // 对于topLeft模式，高度使用一个固定的较小值，表示这只是宽度指示
+    // 实际高度会根据素材图片的原始宽高比自动计算
+    // 使用一个较小的固定高度（约50px在显示坐标系中），使预览看起来像一个宽度标记条
+    const minDisplayHeight = 40 // 最小显示高度（像素）
+    displayHeight = Math.max(minDisplayHeight, displayWidth * 0.2) // 使用宽度的20%或最小40px
+  }
 
   // 约束左上角不超出模板图边界
-  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displaySize, posX))
-  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displaySize, posY))
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
 
   return {
     left: `${left}px`,
     top: `${top}px`,
-    width: `${displaySize}px`,
-    height: `${displaySize}px`,
+    width: `${displayWidth}px`,
+    height: `${displayHeight}px`,
+    display: 'block'
+  }
+}
+
+// 计算宽度线样式（左上角对齐模式）
+function getWidthLineStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 宽度
+  const sizeCfg = config.size || {}
+  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  const displayWidth = realWidth * scale
+
+  // 约束位置
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - 2, posY))
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${displayWidth}px`,
+    height: '2px',
+    display: 'block'
+  }
+}
+
+// 计算高度线样式（左上角对齐模式，左侧垂直参考线）
+function getHeightLineStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 宽度（和宽度线一样，用于确定高度线的长度）
+  const sizeCfg = config.size || {}
+  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  const displayWidth = realWidth * scale
+  // 高度线的长度和宽度一样（正方形）
+  const displayHeight = displayWidth
+
+  // 约束位置（从左上角开始，垂直向下）
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - 2, posX))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: '2px',
+    height: `${displayHeight}px`,
+    display: 'block'
+  }
+}
+
+// 计算渐变区域样式（左上角对齐模式）
+function getGradientAreaStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 宽度（和宽度线一样）
+  const sizeCfg = config.size || {}
+  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  const displayWidth = realWidth * scale
+  
+  // 高度和宽度一样（正方形）
+  const displayHeight = displayWidth
+
+  // 约束位置（从宽度线下方开始）
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
+  const top = Math.max(imgTop + 2, Math.min(imgTop + imgHeight - displayHeight, posY + 2)) // 从宽度线下方2px开始
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${displayWidth}px`,
+    height: `${displayHeight}px`,
+    display: 'block'
+  }
+}
+
+// 计算左上角十字标识样式（左上角对齐模式）
+function getCrossMarkerStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 约束位置
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - 10, posX))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - 10, posY))
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
     display: 'block'
   }
 }
@@ -582,6 +1107,62 @@ function getImageConfig(row, imageIndex) {
   }
   
   return null
+}
+
+// 获取配置模式
+function getConfigMode(row: any, imageIndex: number): string {
+  const config = getImageConfig(row, imageIndex + 1)
+  if (!config) return 'topLeftAutoHeight' // 默认模式
+  let mode = config.mode || 'topLeftAutoHeight'
+  // 兼容旧模式名称
+  if (mode === 'topLeft') mode = 'topLeftAutoHeight'
+  if (mode === 'fixedSize') mode = 'topLeftFixedSize'
+  return mode
+}
+
+// 获取配置模式标签
+function getConfigModeLabel(mode: string): string {
+  // 兼容旧模式名称
+  if (mode === 'topLeft') mode = 'topLeftAutoHeight'
+  if (mode === 'fixedSize') mode = 'topLeftFixedSize'
+  
+  const modeLabels: Record<string, string> = {
+    'topLeftAutoHeight': '左上角对齐-自动高度',
+    'topLeftFixedSize': '左上角对齐-固定尺寸',
+    'center': '居中对齐模式',
+    'bottomRight': '右下角对齐模式'
+  }
+  return modeLabels[mode] || mode || '未知模式'
+}
+
+// 获取模式描述信息
+function getModeDescription(mode: string): { title: string; description: string } {
+  // 兼容旧模式名称
+  if (mode === 'topLeft') mode = 'topLeftAutoHeight'
+  if (mode === 'fixedSize') mode = 'topLeftFixedSize'
+  
+  const descriptions: Record<string, { title: string; description: string }> = {
+    'topLeftAutoHeight': {
+      title: '左上角对齐-自动高度（topLeftAutoHeight）',
+      description: '图片的左上角与您指定的位置坐标对齐，宽度由 widthPercent 控制，高度根据原始宽高比自动计算。这是最常用的定位方式，适合精确控制素材在模板中的位置。'
+    },
+    'topLeftFixedSize': {
+      title: '左上角对齐-固定尺寸（topLeftFixedSize）',
+      description: '图片的左上角与您指定的位置坐标对齐，宽度和高度分别由 widthPercent 和 heightPercent 控制。素材图会被裁剪为指定的宽高尺寸，不保持原始宽高比。适合需要精确尺寸控制的场景。'
+    },
+    'center': {
+      title: '居中对齐模式（center）',
+      description: '图片的中心点与您指定的位置坐标对齐。'
+    },
+    'bottomRight': {
+      title: '右下角对齐模式（bottomRight）',
+      description: '图片的右下角与您指定的位置坐标对齐。'
+    }
+  }
+  return descriptions[mode] || {
+    title: '未知模式',
+    description: '该模式暂未实现或未定义。'
+  }
 }
 
 async function getList() {
@@ -852,6 +1433,34 @@ function dialogClose() {
   border-radius: 4px;
   border: 1px dashed var(--el-border-color-light);
 }
+
+.mode-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mode-tag.mode-topleft {
+  background: rgba(64, 158, 255, 0.1);
+  color: #409eff;
+  border: 1px solid rgba(64, 158, 255, 0.3);
+}
+
+.mode-tag.mode-fixed {
+  background: rgba(103, 194, 58, 0.1);
+  color: #67c23a;
+  border: 1px solid rgba(103, 194, 58, 0.3);
+}
+
+.size-hint {
+  color: var(--el-text-color-placeholder);
+  font-size: 10px;
+  font-weight: normal;
+  margin-left: 4px;
+}
 .uploader {
   display: flex;
   gap: 12px;
@@ -923,6 +1532,67 @@ function dialogClose() {
   pointer-events: none;
   border-radius: 4px;
 }
+
+/* 左上角对齐模式：宽度线（蓝色，水平线） */
+.overlay-width-line {
+  position: absolute;
+  background: #409eff;
+  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 左上角对齐模式：高度线（蓝色，垂直线） */
+.overlay-height-line {
+  position: absolute;
+  background: #409eff;
+  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 左上角对齐模式：渐变区域（从左上到右下，从有颜色到透明） */
+.overlay-gradient-area {
+  position: absolute;
+  z-index: 9;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.3) 0%, rgba(64, 158, 255, 0.15) 30%, rgba(64, 158, 255, 0) 100%);
+  border-radius: 0 0 4px 4px;
+}
+
+/* 左上角对齐模式：左上角十字标识（红色） */
+.overlay-cross-marker {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  z-index: 11;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.overlay-cross-marker::before,
+.overlay-cross-marker::after {
+  content: '';
+  position: absolute;
+  background: #f56c6c;
+  box-shadow: 0 0 4px rgba(245, 108, 108, 0.6);
+}
+
+.overlay-cross-marker::before {
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.overlay-cross-marker::after {
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  transform: translateY(-50%);
+}
 .image-option-item .details { display: flex; flex-direction: column; gap: 8px; }
 .image-option-item .meta { font-size: 12px; color: var(--el-text-color-secondary); display: flex; gap: 12px; }
 .image-option-item .config-editor { margin-top: 4px; }
@@ -945,6 +1615,198 @@ function dialogClose() {
   color: var(--el-text-color-primary);
   border-bottom: 1px solid var(--el-border-color-light);
   padding-bottom: 8px;
+}
+
+.mode-info {
+  padding: 12px 16px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.mode-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.mode-description {
+  margin-top: 8px;
+}
+
+.mode-brief {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mode-desc-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  line-height: 1.6;
+}
+
+.mode-detail-btn {
+  padding: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.mode-detail-btn .el-icon {
+  margin-right: 4px;
+}
+
+.mode-details-popover {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Popover 样式 */
+:deep(.mode-detail-popover) {
+  max-width: 500px;
+  
+  .el-popover__title {
+    margin-bottom: 12px;
+  }
+}
+
+.detail-section {
+  margin-bottom: 16px;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.mode-details-popover .detail-section {
+  margin-bottom: 16px;
+}
+
+.mode-details-popover .detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.detail-title .el-icon {
+  font-size: 16px;
+  color: var(--el-color-primary);
+}
+
+.detail-list {
+  margin: 0;
+  padding-left: 24px;
+  line-height: 1.8;
+  color: var(--el-text-color-regular);
+}
+
+.detail-list li {
+  margin-bottom: 8px;
+}
+
+.detail-list li:last-child {
+  margin-bottom: 0;
+}
+
+.detail-list code {
+  background: var(--el-fill-color);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.param-table {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-bg-color);
+}
+
+.param-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 12px 16px;
+}
+
+.param-row:last-child {
+  border-bottom: none;
+}
+
+.param-name {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+}
+
+.param-desc {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.example-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.example-item {
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 6px;
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.example-item strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+}
+
+.example-item code {
+  display: block;
+  padding: 8px 12px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+  margin: 8px 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.example-desc {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
 }
 
 .manual-controls {
