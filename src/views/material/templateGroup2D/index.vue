@@ -380,7 +380,7 @@
                   <!-- 位置控制 -->
                   <div class="control-group">
                     <label>位置 (左上角为原点，单位: 百分比):</label>
-                        <div class="position-controls">
+                        <div class="position-controls vertical">
                           <div class="control-item">
                             <span>X%:</span>
                             <el-slider
@@ -431,9 +431,6 @@
                         show-input
                         @change="onManualConfigChange(index)"
                       />
-                      <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px;">
-                        固定尺寸模式：素材图将被裁剪为指定宽高，不保持原始宽高比
-                      </div>
                     </div>
                   </div>
 
@@ -846,13 +843,13 @@ function getWidthLineStyle(url: string, index: number) {
 
   // 约束位置
   const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
-  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - 2, posY))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - 1, posY))
 
   return {
     left: `${left}px`,
     top: `${top}px`,
     width: `${displayWidth}px`,
-    height: '2px',
+    height: '1px',
     display: 'block'
   }
 }
@@ -897,13 +894,13 @@ function getHeightLineStyle(url: string, index: number) {
   const displayHeight = displayWidth
 
   // 约束位置（从左上角开始，垂直向下）
-  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - 2, posX))
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - 1, posX))
   const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
 
   return {
     left: `${left}px`,
     top: `${top}px`,
-    width: '2px',
+    width: '1px',
     height: `${displayHeight}px`,
     display: 'block'
   }
@@ -951,7 +948,7 @@ function getGradientAreaStyle(url: string, index: number) {
 
   // 约束位置（从宽度线下方开始）
   const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
-  const top = Math.max(imgTop + 2, Math.min(imgTop + imgHeight - displayHeight, posY + 2)) // 从宽度线下方2px开始
+  const top = Math.max(imgTop + 1, Math.min(imgTop + imgHeight - displayHeight, posY + 1)) // 从宽度线下方1px开始
 
   return {
     left: `${left}px`,
@@ -1510,7 +1507,7 @@ function dialogClose() {
   border-radius: 6px; 
   padding: 20px; 
   display: grid; 
-  grid-template-columns: 350px 1fr; 
+  grid-template-columns: 500px 1fr; 
   gap: 24px; 
   align-items: start; 
   margin-bottom: 20px;
@@ -1527,17 +1524,18 @@ function dialogClose() {
 .image-option-item .preview { position: relative; }
 .overlay-block {
   position: absolute;
-  border: 2px dashed #409eff;
-  background: rgba(64,158,255,0.15);
+  border: 1px dashed #409eff;
+  background: rgba(64,158,255,0.1);
   pointer-events: none;
   border-radius: 4px;
+  box-shadow: 0 0 1px rgba(64, 158, 255, 0.3);
 }
 
 /* 左上角对齐模式：宽度线（蓝色，水平线） */
 .overlay-width-line {
   position: absolute;
   background: #409eff;
-  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
+  box-shadow: 0 0 2px rgba(64, 158, 255, 0.6);
   z-index: 10;
   pointer-events: none;
 }
@@ -1546,7 +1544,7 @@ function dialogClose() {
 .overlay-height-line {
   position: absolute;
   background: #409eff;
-  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
+  box-shadow: 0 0 2px rgba(64, 158, 255, 0.6);
   z-index: 10;
   pointer-events: none;
 }
@@ -1575,13 +1573,13 @@ function dialogClose() {
   content: '';
   position: absolute;
   background: #f56c6c;
-  box-shadow: 0 0 4px rgba(245, 108, 108, 0.6);
+  box-shadow: 0 0 2px rgba(245, 108, 108, 0.6);
 }
 
 .overlay-cross-marker::before {
   left: 50%;
   top: 0;
-  width: 2px;
+  width: 1px;
   height: 100%;
   transform: translateX(-50%);
 }
@@ -1590,7 +1588,7 @@ function dialogClose() {
   top: 50%;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 1px;
   transform: translateY(-50%);
 }
 .image-option-item .details { display: flex; flex-direction: column; gap: 8px; }
@@ -1827,6 +1825,16 @@ function dialogClose() {
 .position-controls {
   display: flex;
   gap: 16px;
+}
+
+.position-controls.vertical {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.position-controls.vertical .control-item {
+  flex: none;
+  width: 100%;
 }
 
 .control-item {
