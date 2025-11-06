@@ -114,6 +114,12 @@ export const useUserStore = defineStore('admin-user', {
             await this.loginOut()
             return
           }
+          // 兼容拦截器将 401 转换为超时文案字符串的场景（例如: '登录超时,请重新登录!'）
+          if (typeof e === 'string' && e.includes('登录超时')) {
+            console.error('🚫 登录状态失效(超时)，退出登录')
+            await this.loginOut()
+            return
+          }
           
           // 如果是最后一次尝试失败，使用缓存数据
           if (retryCount >= maxRetries) {
