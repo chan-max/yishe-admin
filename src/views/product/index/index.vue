@@ -11,6 +11,17 @@
           style="width: 160px"
         />
       </form-item>
+      <form-item label="发布状态">
+        <el-select
+          v-model="queryParams.isPublish"
+          clearable
+          placeholder="全部"
+          style="width: 120px"
+        >
+          <el-option label="已发布" :value="true" />
+          <el-option label="未发布" :value="false" />
+        </el-select>
+      </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
 
       <div class="shrink-0">
@@ -121,6 +132,12 @@
             </el-carousel>
             <span v-else class="text-gray-400">暂无视频</span>
           </div>
+        </template>
+
+        <template #publishStatusSlot="{ row }">
+          <el-tag :type="row.isPublish ? 'success' : 'warning'" size="small">
+            {{ row.isPublish ? '已发布' : '未发布' }}
+          </el-tag>
         </template>
 
         <template #stickerDetailSlot="{ row }">
@@ -786,6 +803,7 @@ const queryParams = reactive({
   pageSize: 20,
   name: '',
   search: '',
+  isPublish: undefined as boolean | undefined,
 });
 
 const gridOptions = ref({
@@ -846,9 +864,9 @@ const gridOptions = ref({
     { 
       title: "发布状态", 
       field: "isPublish", 
-      width: 100, 
+      width: 120, 
       showOverflow: true,
-      formatter: ({ cellValue }) => cellValue ? '已发布' : '未发布'
+      slots: { default: 'publishStatusSlot' }
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
@@ -1186,11 +1204,16 @@ getList()
 async function getList() {
   loading.value = true;
 
-  let params = {
+  let params: any = {
     currentPage: queryParams.currentPage,
     pageSize: queryParams.pageSize,
     search: queryParams.name,
   };
+  
+  // 如果选择了发布状态，添加到查询参数中
+  if (queryParams.isPublish !== undefined) {
+    params.isPublish = queryParams.isPublish;
+  }
 
   try {
     let res = await getProductList(params);
@@ -1212,6 +1235,7 @@ const resetQuery = () => {
   queryParams.pageSize = 20;
   queryParams.name = '';
   queryParams.search = '';
+  queryParams.isPublish = undefined;
 };
 
 // 搜索按钮点击事件
@@ -1763,19 +1787,12 @@ async function downloadThumbnail(url: string, filename: string) {
 
 // 未发布商品行的样式
 .unpublished-row {
-  // opacity: 0.4;
+  background-color: rgba(255, 193, 7, 0.08) !important; /* 浅浅的半透明警告色 */
+  border-left: 3px solid rgba(255, 193, 7, 0.3) !important; /* 左侧半透明橙色边框 */
   
-  // &:hover {
-  //   opacity: 0.8;
-  // }
-  
-  // .el-button {
-  //   opacity: 0.8;
-    
-  //   &:hover {
-  //     opacity: 1;
-  //   }
-  // }
+  &:hover {
+    background-color: rgba(255, 193, 7, 0.12) !important; /* 悬停时稍微明显一点 */
+  }
 }
 
 .dark-btn {
