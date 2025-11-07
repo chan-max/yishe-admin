@@ -365,7 +365,7 @@
                   <!-- 位置控制 -->
                   <div class="control-group">
                     <label>位置 (左上角为原点，单位: 百分比):</label>
-                        <div class="position-controls">
+                        <div class="position-controls vertical">
                           <div class="control-item">
                             <span>X%:</span>
                             <el-slider
@@ -416,9 +416,6 @@
                         show-input
                         @change="onManualConfigChange(index)"
                       />
-                      <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px;">
-                        固定尺寸模式：素材图将被裁剪为指定宽高，不保持原始宽高比
-                      </div>
                     </div>
                   </div>
 
@@ -812,32 +809,160 @@ function getOverlayStyle(url: string, index: number) {
   const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
   const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
 
-  // 计算圆角（如果有配置）
-  let borderRadius = '0px'
-  if (config.borderRadius && config.borderRadius > 0) {
-    // 圆角按素材图宽高的百分比计算
-    const baseSize = Math.min(meta.w, meta.h)
-    const borderRadiusPx = (config.borderRadius / 100) * baseSize
-    // 映射到预览显示尺寸
-    const displayBorderRadius = borderRadiusPx * scale
-    borderRadius = `${displayBorderRadius}px`
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${displayWidth}px`,
+    height: `${displayHeight}px`,
+    display: 'block'
   }
+}
 
-  // 计算背景色（根据透明度变化）
-  const opacity = config.opacity !== undefined ? config.opacity : 100
-  const opacityValue = Math.max(0, Math.min(100, opacity)) / 100
-  // 基础透明度，根据配置的透明度调整（增加基础透明度，让颜色更深）
-  const baseAlpha = 0.4 * opacityValue // 基础透明度乘以配置的透明度比例
-  
-  // 根据模式设置背景
-  let background: string
-  if (mode === 'topLeftAutoHeight') {
-    // 左上角对齐模式：从左上角渐变到右下角
-    background = `linear-gradient(135deg, rgba(64, 158, 255, ${baseAlpha}) 0%, rgba(64, 158, 255, ${baseAlpha * 0.5}) 50%, rgba(64, 158, 255, ${baseAlpha * 0.1}) 100%)`
-  } else {
-    // 固定尺寸模式：纯色背景（跟随透明度）
-    background = `rgba(64, 158, 255, ${baseAlpha})`
+// 计算宽度线样式（左上角对齐模式）
+function getWidthLineStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 宽度
+  const sizeCfg = config.size || {}
+  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  const displayWidth = realWidth * scale
+
+  // 约束位置
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - 2, posY))
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${displayWidth}px`,
+    height: '2px',
+    display: 'block'
   }
+}
+
+// 计算高度线样式（左上角对齐模式，左侧垂直参考线）
+function getHeightLineStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 宽度（和宽度线一样，用于确定高度线的长度）
+  const sizeCfg = config.size || {}
+  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  const displayWidth = realWidth * scale
+  // 高度线的长度和宽度一样（正方形）
+  const displayHeight = displayWidth
+
+  // 约束位置（从左上角开始，垂直向下）
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - 2, posX))
+  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
+
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: '2px',
+    height: `${displayHeight}px`,
+    display: 'block'
+  }
+}
+
+// 计算渐变区域样式（左上角对齐模式）
+function getGradientAreaStyle(url: string, index: number) {
+  void overlayTick.value
+  const meta = imageMetaMap[url]
+  const preview = previewRefs.value[index]
+  const config = manualConfigs.value[index]
+  if (!meta || !preview || !config) return { display: 'none' }
+
+  const imgEl: HTMLImageElement | null = preview.querySelector('img')
+  if (!imgEl) return { display: 'none' }
+
+  const containerRect = preview.getBoundingClientRect()
+  const imgRect = imgEl.getBoundingClientRect()
+
+  const imgLeft = imgRect.left - containerRect.left
+  const imgTop = imgRect.top - containerRect.top
+  const imgWidth = imgRect.width
+  const imgHeight = imgRect.height
+
+  const scaleX = imgWidth / (meta.w || 1)
+  const scaleY = imgHeight / (meta.h || 1)
+  const scale = Math.min(scaleX, scaleY)
+
+  // 位置（左上角坐标）
+  const xPercent = config.position?.xPercent || 0
+  const yPercent = config.position?.yPercent || 0
+  const pixelX = (xPercent / 100) * meta.w
+  const pixelY = (yPercent / 100) * meta.h
+  let posX = imgLeft + pixelX * scaleX
+  let posY = imgTop + pixelY * scaleY
+
+  // 宽度（和宽度线一样）
+  const sizeCfg = config.size || {}
+  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
+  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
+  const displayWidth = realWidth * scale
+  
+  // 高度和宽度一样（正方形）
+  const displayHeight = displayWidth
+
+  // 约束位置（从宽度线下方开始）
+  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
+  const top = Math.max(imgTop + 2, Math.min(imgTop + imgHeight - displayHeight, posY + 2)) // 从宽度线下方2px开始
 
   return {
     left: `${left}px`,
@@ -1405,7 +1530,7 @@ function dialogClose() {
   border-radius: 6px; 
   padding: 20px; 
   display: grid; 
-  grid-template-columns: 350px 1fr; 
+  grid-template-columns: 500px 1fr; 
   gap: 24px; 
   align-items: start; 
   margin-bottom: 20px;
@@ -1427,13 +1552,38 @@ function dialogClose() {
 .image-option-item .preview .el-image { width: 100%; height: 100%; object-fit: contain; display: block; }
 .overlay-block {
   position: absolute;
-  /* 移除边框线，背景色和渐变由 getOverlayStyle 动态设置 */
+  border: 2px dashed #409eff;
+  background: rgba(64,158,255,0.15);
   pointer-events: none;
-  /* border-radius 和 background 由 getOverlayStyle 动态设置 */
+  border-radius: 4px;
 }
 
-/* 已移除：overlay-width-line、overlay-height-line、overlay-gradient-area
-   现在统一使用 overlay-block 显示半透明背景区域，不再使用边框线 */
+/* 左上角对齐模式：宽度线（蓝色，水平线） */
+.overlay-width-line {
+  position: absolute;
+  background: #409eff;
+  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 左上角对齐模式：高度线（蓝色，垂直线） */
+.overlay-height-line {
+  position: absolute;
+  background: #409eff;
+  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* 左上角对齐模式：渐变区域（从左上到右下，从有颜色到透明） */
+.overlay-gradient-area {
+  position: absolute;
+  z-index: 9;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.3) 0%, rgba(64, 158, 255, 0.15) 30%, rgba(64, 158, 255, 0) 100%);
+  border-radius: 0 0 4px 4px;
+}
 
 /* 左上角对齐模式：左上角十字标识（红色） */
 .overlay-cross-marker {
@@ -1450,13 +1600,13 @@ function dialogClose() {
   content: '';
   position: absolute;
   background: #f56c6c;
-  box-shadow: 0 0 4px rgba(245, 108, 108, 0.6);
+  box-shadow: 0 0 2px rgba(245, 108, 108, 0.6);
 }
 
 .overlay-cross-marker::before {
   left: 50%;
   top: 0;
-  width: 2px;
+  width: 1px;
   height: 100%;
   transform: translateX(-50%);
 }
@@ -1465,7 +1615,7 @@ function dialogClose() {
   top: 50%;
   left: 0;
   width: 100%;
-  height: 2px;
+  height: 1px;
   transform: translateY(-50%);
 }
 .image-option-item .details { display: flex; flex-direction: column; gap: 8px; }
@@ -1702,6 +1852,16 @@ function dialogClose() {
 .position-controls {
   display: flex;
   gap: 16px;
+}
+
+.position-controls.vertical {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.position-controls.vertical .control-item {
+  flex: none;
+  width: 100%;
 }
 
 .control-item {

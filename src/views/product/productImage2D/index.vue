@@ -525,6 +525,14 @@
                 >
                   {{ regeneratingImagesId === row.id ? '图片生成中...' : '重新生成合成图片' }}
                 </el-dropdown-item>
+                <el-dropdown-item 
+                  divided
+                  command="to-product" 
+                  class="text-green-600"
+                  :disabled="generatingProductId === row.id"
+                >
+                  {{ generatingProductId === row.id ? '生成中...' : '生成产品' }}
+                </el-dropdown-item>
                 <el-dropdown-item divided command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
                 <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
                 <el-dropdown-item command="mark-draft" class="text-blue-500">标记为草稿</el-dropdown-item>
@@ -720,6 +728,9 @@ const videoGenerateForm = reactive({
 const videoDialogVisible = ref(false)
 const currentVideoUrl = ref('')
 
+// 生成产品相关状态
+const generatingProductId = ref<string>('')
+
 // 生成唯一码
 async function handleGenerateCode(row: any) {
   if (!row?.id) return
@@ -884,6 +895,9 @@ function handleOperationCommand(command: string, row: any) {
       break
     case 'regenerate-images':
       handleRegenerateImages(row)
+      break
+    case 'to-product':
+      handleToProduct(row)
       break
     case 'delete':
       handleDelete(row)
@@ -1431,6 +1445,30 @@ async function executeRegenerateImages() {
   } finally {
     regeneratingImagesId.value = ''
     currentRegenerateProductId.value = ''
+  }
+}
+
+// 从二维产品图生成产品
+async function handleToProduct(row: any) {
+  if (!row?.id) return
+  
+  try {
+    await ElMessageBox.confirm('确认根据该二维产品图生成一个产品吗？', '生成确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    generatingProductId.value = row.id
+    await request.post({ url: '/product-image-2d/to-product', data: { id: row.id } })
+    ElMessage.success('生成产品成功')
+  } catch (e) {
+    if (e !== 'cancel') {
+      console.error('生成产品失败:', e)
+      ElMessage.error('生成产品失败')
+    }
+  } finally {
+    generatingProductId.value = ''
   }
 }
 

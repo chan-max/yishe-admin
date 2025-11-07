@@ -191,6 +191,57 @@
           <span v-else class="text-gray-400">无关联贴纸</span>
         </template>
 
+        <template #productImage2DDetailSlot="{ row }">
+          <div v-if="row.productImage2D" style="margin: 8px 0;">
+            <vxe-grid
+              :data="[row.productImage2D]"
+              :show-header="true"
+              border
+              size="mini"
+              style="margin: 0; padding: 0; background: none;"
+              :columns="[
+                { field: 'image1', title: '图片', width: '120', slots: { default: 'productImage2DImageSlot' } },
+                { field: 'name', title: '名称', minWidth: 120 },
+                { field: 'code', title: '产品代码', width: 120 },
+                { field: 'description', title: '描述', minWidth: 150 },
+                { field: 'keywords', title: '关键词', minWidth: 120 },
+                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'productImage2DUpdateTimeSlot' } },
+                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'productImage2DOperationSlot' } }
+              ]"
+            >
+              <template #productImage2DImageSlot="{ row }">
+                <div class="flex items-center justify-center p-2">
+                  <el-image
+                    v-if="row.image1"
+                    :src="row.image1"
+                    :preview-src-list="getProductImage2DPreviewList(row)"
+                    :initial-index="0"
+                    style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  />
+                  <span v-else class="text-gray-400">无</span>
+                </div>
+              </template>
+              <template #productImage2DUpdateTimeSlot="{ row }">
+                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+              </template>
+              <template #productImage2DOperationSlot="{ row }">
+                <div class="flex gap-2">
+                  <el-button 
+                    v-if="getProductImage2DPreviewList(row).length > 0"
+                    type="primary" 
+                    link 
+                    size="small" 
+                    @click="preview(0, getProductImage2DPreviewList(row))"
+                  >
+                    预览
+                  </el-button>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+          <span v-else class="text-gray-400">无关联二维产品图</span>
+        </template>
+
         <template #customModelDetailSlot="{ row }">
           <div v-if="row.customModel" style="margin: 8px 0;">
             <vxe-grid
@@ -590,8 +641,25 @@
     </el-dialog>
 
     <!-- 图片预览 -->
-    <el-dialog v-model="previewVisible" title="预览">
-      <img :src="previewUrl" alt="Preview" style="width: 100%" />
+    <el-dialog v-model="previewVisible" title="预览" width="90%" :close-on-click-modal="true">
+      <div v-if="previewList.length > 0" class="flex flex-col items-center">
+        <el-image
+          :src="previewList[previewIndex]"
+          :preview-src-list="previewList"
+          :initial-index="previewIndex"
+          fit="contain"
+          style="max-width: 100%; max-height: 70vh;"
+          :preview-teleported="true"
+        />
+        <div v-if="previewList.length > 1" class="mt-4 flex items-center gap-4">
+          <el-button @click="previewIndex = Math.max(0, previewIndex - 1)" :disabled="previewIndex === 0">上一张</el-button>
+          <span>{{ previewIndex + 1 }} / {{ previewList.length }}</span>
+          <el-button @click="previewIndex = Math.min(previewList.length - 1, previewIndex + 1)" :disabled="previewIndex === previewList.length - 1">下一张</el-button>
+        </div>
+      </div>
+      <div v-else-if="previewUrl" class="flex justify-center">
+        <img :src="previewUrl" alt="Preview" style="max-width: 100%; max-height: 70vh;" />
+      </div>
     </el-dialog>
 
     <!-- 视频预览弹窗 -->
@@ -844,6 +912,12 @@ const gridOptions = ref({
       width: 'auto', 
       slots: { default: 'stickerDetailSlot' }
     },
+    { 
+      title: "关联二维产品图", 
+      field: "productImage2DId", 
+      width: 'auto', 
+      slots: { default: 'productImage2DDetailSlot' }
+    },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: false },
     { title: "关键词", field: "keywords", width: 200, showOverflow: false },
@@ -919,6 +993,8 @@ const currentRow = ref({});
 const submitLoading = ref(false);
 const previewVisible = ref(false);
 const previewUrl = ref('');
+const previewList = ref<string[]>([]);
+const previewIndex = ref(0);
 const fileList = ref([]);
 const pendingFiles = ref([]);
 const existingImages = ref([]);
@@ -1752,6 +1828,28 @@ async function downloadThumbnail(url: string, filename: string) {
     console.error('下载失败:', error);
     ElMessage.error('下载失败，请重试');
   }
+}
+
+// 预览图片
+function preview(index: number, urls: string[]) {
+  if (!urls || urls.length === 0) return
+  previewList.value = urls
+  previewIndex.value = Math.max(0, Math.min(index, urls.length - 1))
+  previewUrl.value = urls[previewIndex.value] || urls[0]
+  previewVisible.value = true
+}
+
+// 获取二维产品图的所有图片列表（用于预览）
+function getProductImage2DPreviewList(productImage2D: any): string[] {
+  if (!productImage2D) return []
+  const images: string[] = []
+  for (let i = 1; i <= 10; i++) {
+    const imageUrl = productImage2D[`image${i}`]
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim()) {
+      images.push(imageUrl)
+    }
+  }
+  return images
 }
 </script>
 
