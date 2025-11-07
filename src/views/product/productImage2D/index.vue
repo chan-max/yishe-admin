@@ -228,8 +228,8 @@
       </template>
     </el-dialog>
 
-    <!-- 视频生成弹窗 -->
-    <el-dialog
+    <!-- 视频生成弹窗已注释 -->
+    <!-- <el-dialog
       v-model="videoGenerateDialogVisible"
       title="生成视频"
       width="500px"
@@ -285,10 +285,10 @@
           </el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-dialog> -->
 
-    <!-- 视频播放弹窗 -->
-    <el-dialog
+    <!-- 视频播放弹窗已注释 -->
+    <!-- <el-dialog
       v-model="videoDialogVisible"
       title="视频播放"
       width="90%"
@@ -307,7 +307,7 @@
           您的浏览器不支持视频播放
         </video>
       </div>
-    </el-dialog>
+    </el-dialog> -->
 
     <!-- 水印配置对话框 -->
     <el-dialog
@@ -459,7 +459,8 @@
             </el-button>
           </div>
         </template>
-        <template #videoSlot="{ row }">
+        <!-- 视频列已注释 -->
+        <!-- <template #videoSlot="{ row }">
           <div class="video-container">
             <div v-if="row.videoUrl && row.videoStatus === VIDEO_STATUS.COMPLETED" class="video-preview">
               <div class="video-wrapper" @click="handleVideoClick(row.videoUrl)">
@@ -488,7 +489,7 @@
               <span class="text-sm text-gray-400">未生成</span>
             </div>
           </div>
-        </template>
+        </template> -->
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" size="small">
             <el-button link type="primary" size="small">
@@ -511,13 +512,14 @@
                 >
                   {{ generatingCodeId === row.id ? '生成中...' : (row.code ? '重新生成代码' : '生成产品代码') }}
                 </el-dropdown-item>
-                <el-dropdown-item 
+                <!-- 视频生成操作已注释 -->
+                <!-- <el-dropdown-item 
                   command="generate-video" 
                   class="text-green-500"
                   :disabled="generatingVideoId === row.id || row.videoStatus === VIDEO_STATUS.GENERATING"
                 >
                   {{ generatingVideoId === row.id ? '视频生成中...' : (row.videoUrl ? '重新生成视频' : '生成视频') }}
-                </el-dropdown-item>
+                </el-dropdown-item> -->
                 <el-dropdown-item 
                   command="regenerate-images" 
                   class="text-orange-500"
@@ -540,7 +542,8 @@
                 <el-dropdown-item divided command="toggle-public" class="text-blue-500">
                   {{ row.isPublic ? '取消发布' : '发布' }}
                 </el-dropdown-item>
-                <el-dropdown-item command="copy-link" class="text-purple-500">复制线上链接</el-dropdown-item>
+                <!-- 前台展示相关操作已注释 -->
+                <!-- <el-dropdown-item command="copy-link" class="text-purple-500">复制线上链接</el-dropdown-item> -->
                 <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -620,7 +623,7 @@ const gridOptions = ref<any>({
   columns: [
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
-    { title: '视频', field: 'videoUrl', width: 120, slots: { default: 'videoSlot' } },
+    // { title: '视频', field: 'videoUrl', width: 120, slots: { default: 'videoSlot' } },
     { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } },
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
     { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
@@ -890,9 +893,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'generate-code':
       handleGenerateCode(row)
       break
-    case 'generate-video':
-      handleVideoGenerateInfo(row)
-      break
+    // case 'generate-video':
+    //   handleVideoGenerateInfo(row)
+    //   break
     case 'regenerate-images':
       handleRegenerateImages(row)
       break
@@ -917,9 +920,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'toggle-public':
       togglePublic(row)
       break
-    case 'copy-link':
-      handleCopyLink(row)
-      break
+    // case 'copy-link':
+    //   handleCopyLink(row)
+    //   break
     default:
       console.warn('未知的操作命令:', command)
   }
