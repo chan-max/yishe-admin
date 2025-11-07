@@ -197,10 +197,10 @@
       </template>
     </el-dialog>
 
-    <!-- AI生成产品信息弹窗 -->
+    <!-- AI生成二维设计信息弹窗 -->
     <el-dialog
       v-model="aiGenerateDialogVisible"
-      title="AI生成产品信息"
+      title="AI生成二维设计信息"
       width="500px"
       align-center
       :before-close="handleCloseAiGenerateDialog"
@@ -506,7 +506,7 @@
                   class="text-blue-500"
                   :disabled="aiGeneratingId === row.id"
                 >
-                  {{ aiGeneratingId === row.id ? 'AI生成中...' : 'AI生成产品信息' }}
+                  {{ aiGeneratingId === row.id ? 'AI生成中...' : 'AI生成二维设计信息' }}
                 </el-dropdown-item>
                 <!-- 生成产品代码操作已注释 -->
                 <!-- <el-dropdown-item 
@@ -1305,7 +1305,7 @@ function addDownloadButtonToPreview() {
   previewContainer.appendChild(downloadBtn)
 }
 
-// AI生成产品信息
+// AI生成二维设计信息
 function handleAiGenerateInfo(row: any) {
   if (!row?.id) return
   
