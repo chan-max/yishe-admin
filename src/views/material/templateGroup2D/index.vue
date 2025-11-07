@@ -161,37 +161,22 @@
             :key="index"
           >
             <div class="preview" :ref="el => (previewRefs[index] = el)" :style="getPreviewBoxStyle(url)">
-              <el-image :src="url" fit="contain" @load="() => handleImageLoaded(url)" />
-              <!-- 固定尺寸模式：显示完整矩形框和左上角十字标识 -->
-              <template v-if="(manualConfigs[index]?.mode || 'topLeftAutoHeight') === 'topLeftFixedSize'">
-                <div 
-                  class="overlay-block" 
-                  :style="getOverlayStyle(url, index)"
-                ></div>
-                <div 
-                  class="overlay-cross-marker" 
-                  :style="getCrossMarkerStyle(url, index)"
-                ></div>
-              </template>
-              <!-- 左上角对齐模式：显示宽度线和左上角十字标识 -->
-              <template v-else>
-                <div 
-                  class="overlay-width-line" 
-                  :style="getWidthLineStyle(url, index)"
-                ></div>
-                <div 
-                  class="overlay-height-line" 
-                  :style="getHeightLineStyle(url, index)"
-                ></div>
-                <div 
-                  class="overlay-gradient-area" 
-                  :style="getGradientAreaStyle(url, index)"
-                ></div>
-                <div 
-                  class="overlay-cross-marker" 
-                  :style="getCrossMarkerStyle(url, index)"
-                ></div>
-              </template>
+              <div class="preview-image-wrapper">
+                <el-image 
+                  :src="url" 
+                  fit="contain" 
+                  @load="() => handleImageLoaded(url)" 
+                />
+              </div>
+              <!-- 两种模式统一：显示半透明背景区域和左上角十字标识 -->
+              <div 
+                class="overlay-block" 
+                :style="getOverlayStyle(url, index)"
+              ></div>
+              <div 
+                class="overlay-cross-marker" 
+                :style="getCrossMarkerStyle(url, index)"
+              ></div>
             </div>
             <div class="details">
               <div class="meta">
@@ -453,6 +438,25 @@
                     </div>
                   </div>
 
+                  <!-- 圆角控制 -->
+                  <div class="control-group">
+                    <label>圆角 (按素材图宽高百分比):</label>
+                    <div class="control-item">
+                      <span>圆角%:</span>
+                      <el-slider
+                        v-model="manualConfigs[index].borderRadius"
+                        :min="0"
+                        :max="50"
+                        :step="0.5"
+                        show-input
+                        @change="onManualConfigChange(index)"
+                      />
+                      <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 4px;">
+                        圆角按素材图宽高的百分比计算，圆角边缘透明，可看到后面的模板图
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- 保持原图开关 -->
                   <div class="control-group">
                     <label>保持原图:</label>
@@ -511,6 +515,7 @@ const jsonPlaceholder = `请输入JSON配置，例如：
   "position": { "xPercent": 0, "yPercent": 0 },
   "size": { "widthPercent": 30 },
   "opacity": 100,
+  "borderRadius": 0,
   "keepOriginal": false
 }
 
@@ -520,6 +525,7 @@ const jsonPlaceholder = `请输入JSON配置，例如：
   "position": { "xPercent": 0, "yPercent": 0 },
   "size": { "widthPercent": 30, "heightPercent": 30 },
   "opacity": 100,
+  "borderRadius": 5,
   "keepOriginal": false
 }
 
@@ -530,6 +536,7 @@ const jsonPlaceholder = `请输入JSON配置，例如：
   - topLeftAutoHeight模式: { widthPercent: 1-100 } - 宽度百分比，高度自动计算
   - topLeftFixedSize模式: { widthPercent: 1-100, heightPercent: 1-100 } - 宽高百分比，素材会被裁剪
 • opacity: 0-100 - 素材透明度百分比，100表示完全不透明
+• borderRadius: 0-50 - 圆角百分比（按素材图宽高计算），圆角边缘透明，可看到后面的模板图
 • keepOriginal: true/false - 是否保持原图`
 
 const gridOptions = ref<any>({
@@ -642,6 +649,10 @@ function openImageOption(row) {
         config.size = config.size || {}
         config.size.heightPercent = config.size.widthPercent || 30
       }
+      // 确保有borderRadius字段，默认0
+      if (config.borderRadius === undefined || config.borderRadius === null) {
+        config.borderRadius = 0
+      }
       return config
     } catch (e) {
       return getDefaultManualConfig()
@@ -662,6 +673,7 @@ function getDefaultImageOption() {
     position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
     opacity: 100,
+    borderRadius: 0,
     keepOriginal: false
   }, null, 2)
 }
@@ -672,11 +684,13 @@ function getDefaultManualConfig() {
     position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
     opacity: 100,
+    borderRadius: 0,
     keepOriginal: false
   }
 }
 
-// 根据模式获取默认配置
+// 根据模式获取默认配置（已废弃，保留用于兼容）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function getDefaultConfigByMode(mode: string) {
   if (mode === 'topLeftFixedSize') {
     return {
@@ -684,6 +698,7 @@ function getDefaultConfigByMode(mode: string) {
       position: { xPercent: 0, yPercent: 0 },
       size: { widthPercent: 30, heightPercent: 30 },
       opacity: 100,
+      borderRadius: 0,
       keepOriginal: false
     }
   }
@@ -781,186 +796,62 @@ function getOverlayStyle(url: string, index: number) {
     displayWidth = realWidth * scale
     displayHeight = realHeight * scale
   } else {
-    // topLeft模式：只关注左上角坐标和宽度
-    // 高度会根据素材图片的原始宽高比自动计算，这里只显示宽度指示
+    // topLeftAutoHeight模式：只关注左上角坐标和宽度
+    // 高度会根据素材图片的原始宽高比自动计算
+    // 预览中显示一个合理的预览区域（使用宽度作为基准，高度显示模板图的一部分）
     const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
     const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
     
     displayWidth = realWidth * scale
-    // 对于topLeft模式，高度使用一个固定的较小值，表示这只是宽度指示
-    // 实际高度会根据素材图片的原始宽高比自动计算
-    // 使用一个较小的固定高度（约50px在显示坐标系中），使预览看起来像一个宽度标记条
-    const minDisplayHeight = 40 // 最小显示高度（像素）
-    displayHeight = Math.max(minDisplayHeight, displayWidth * 0.2) // 使用宽度的20%或最小40px
+    // 高度显示一个合理的预览区域，使用宽度作为基准（假设素材图大致是正方形或横向）
+    // 这样预览效果更直观，实际高度会根据素材图的宽高比自动计算
+    displayHeight = displayWidth * 0.75 // 使用宽度的75%作为预览高度（可根据需要调整）
   }
 
   // 约束左上角不超出模板图边界
   const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
   const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
 
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${displayWidth}px`,
-    height: `${displayHeight}px`,
-    display: 'block'
+  // 计算圆角（如果有配置）
+  let borderRadius = '0px'
+  if (config.borderRadius && config.borderRadius > 0) {
+    // 圆角按素材图宽高的百分比计算
+    const baseSize = Math.min(meta.w, meta.h)
+    const borderRadiusPx = (config.borderRadius / 100) * baseSize
+    // 映射到预览显示尺寸
+    const displayBorderRadius = borderRadiusPx * scale
+    borderRadius = `${displayBorderRadius}px`
   }
-}
 
-// 计算宽度线样式（左上角对齐模式）
-function getWidthLineStyle(url: string, index: number) {
-  void overlayTick.value
-  const meta = imageMetaMap[url]
-  const preview = previewRefs.value[index]
-  const config = manualConfigs.value[index]
-  if (!meta || !preview || !config) return { display: 'none' }
-
-  const imgEl: HTMLImageElement | null = preview.querySelector('img')
-  if (!imgEl) return { display: 'none' }
-
-  const containerRect = preview.getBoundingClientRect()
-  const imgRect = imgEl.getBoundingClientRect()
-
-  const imgLeft = imgRect.left - containerRect.left
-  const imgTop = imgRect.top - containerRect.top
-  const imgWidth = imgRect.width
-  const imgHeight = imgRect.height
-
-  const scaleX = imgWidth / (meta.w || 1)
-  const scaleY = imgHeight / (meta.h || 1)
-  const scale = Math.min(scaleX, scaleY)
-
-  // 位置（左上角坐标）
-  const xPercent = config.position?.xPercent || 0
-  const yPercent = config.position?.yPercent || 0
-  const pixelX = (xPercent / 100) * meta.w
-  const pixelY = (yPercent / 100) * meta.h
-  let posX = imgLeft + pixelX * scaleX
-  let posY = imgTop + pixelY * scaleY
-
-  // 宽度
-  const sizeCfg = config.size || {}
-  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
-  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
-  const displayWidth = realWidth * scale
-
-  // 约束位置
-  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
-  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - 2, posY))
-
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: `${displayWidth}px`,
-    height: '2px',
-    display: 'block'
-  }
-}
-
-// 计算高度线样式（左上角对齐模式，左侧垂直参考线）
-function getHeightLineStyle(url: string, index: number) {
-  void overlayTick.value
-  const meta = imageMetaMap[url]
-  const preview = previewRefs.value[index]
-  const config = manualConfigs.value[index]
-  if (!meta || !preview || !config) return { display: 'none' }
-
-  const imgEl: HTMLImageElement | null = preview.querySelector('img')
-  if (!imgEl) return { display: 'none' }
-
-  const containerRect = preview.getBoundingClientRect()
-  const imgRect = imgEl.getBoundingClientRect()
-
-  const imgLeft = imgRect.left - containerRect.left
-  const imgTop = imgRect.top - containerRect.top
-  const imgWidth = imgRect.width
-  const imgHeight = imgRect.height
-
-  const scaleX = imgWidth / (meta.w || 1)
-  const scaleY = imgHeight / (meta.h || 1)
-  const scale = Math.min(scaleX, scaleY)
-
-  // 位置（左上角坐标）
-  const xPercent = config.position?.xPercent || 0
-  const yPercent = config.position?.yPercent || 0
-  const pixelX = (xPercent / 100) * meta.w
-  const pixelY = (yPercent / 100) * meta.h
-  let posX = imgLeft + pixelX * scaleX
-  let posY = imgTop + pixelY * scaleY
-
-  // 宽度（和宽度线一样，用于确定高度线的长度）
-  const sizeCfg = config.size || {}
-  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
-  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
-  const displayWidth = realWidth * scale
-  // 高度线的长度和宽度一样（正方形）
-  const displayHeight = displayWidth
-
-  // 约束位置（从左上角开始，垂直向下）
-  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - 2, posX))
-  const top = Math.max(imgTop, Math.min(imgTop + imgHeight - displayHeight, posY))
-
-  return {
-    left: `${left}px`,
-    top: `${top}px`,
-    width: '2px',
-    height: `${displayHeight}px`,
-    display: 'block'
-  }
-}
-
-// 计算渐变区域样式（左上角对齐模式）
-function getGradientAreaStyle(url: string, index: number) {
-  void overlayTick.value
-  const meta = imageMetaMap[url]
-  const preview = previewRefs.value[index]
-  const config = manualConfigs.value[index]
-  if (!meta || !preview || !config) return { display: 'none' }
-
-  const imgEl: HTMLImageElement | null = preview.querySelector('img')
-  if (!imgEl) return { display: 'none' }
-
-  const containerRect = preview.getBoundingClientRect()
-  const imgRect = imgEl.getBoundingClientRect()
-
-  const imgLeft = imgRect.left - containerRect.left
-  const imgTop = imgRect.top - containerRect.top
-  const imgWidth = imgRect.width
-  const imgHeight = imgRect.height
-
-  const scaleX = imgWidth / (meta.w || 1)
-  const scaleY = imgHeight / (meta.h || 1)
-  const scale = Math.min(scaleX, scaleY)
-
-  // 位置（左上角坐标）
-  const xPercent = config.position?.xPercent || 0
-  const yPercent = config.position?.yPercent || 0
-  const pixelX = (xPercent / 100) * meta.w
-  const pixelY = (yPercent / 100) * meta.h
-  let posX = imgLeft + pixelX * scaleX
-  let posY = imgTop + pixelY * scaleY
-
-  // 宽度（和宽度线一样）
-  const sizeCfg = config.size || {}
-  const widthPercent = typeof sizeCfg.widthPercent === 'number' ? sizeCfg.widthPercent : 30
-  const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
-  const displayWidth = realWidth * scale
+  // 计算背景色（根据透明度变化）
+  const opacity = config.opacity !== undefined ? config.opacity : 100
+  const opacityValue = Math.max(0, Math.min(100, opacity)) / 100
+  // 基础透明度，根据配置的透明度调整（增加基础透明度，让颜色更深）
+  const baseAlpha = 0.4 * opacityValue // 基础透明度乘以配置的透明度比例
   
-  // 高度和宽度一样（正方形）
-  const displayHeight = displayWidth
-
-  // 约束位置（从宽度线下方开始）
-  const left = Math.max(imgLeft, Math.min(imgLeft + imgWidth - displayWidth, posX))
-  const top = Math.max(imgTop + 2, Math.min(imgTop + imgHeight - displayHeight, posY + 2)) // 从宽度线下方2px开始
+  // 根据模式设置背景
+  let background: string
+  if (mode === 'topLeftAutoHeight') {
+    // 左上角对齐模式：从左上角渐变到右下角
+    background = `linear-gradient(135deg, rgba(64, 158, 255, ${baseAlpha}) 0%, rgba(64, 158, 255, ${baseAlpha * 0.5}) 50%, rgba(64, 158, 255, ${baseAlpha * 0.1}) 100%)`
+  } else {
+    // 固定尺寸模式：纯色背景（跟随透明度）
+    background = `rgba(64, 158, 255, ${baseAlpha})`
+  }
 
   return {
     left: `${left}px`,
     top: `${top}px`,
     width: `${displayWidth}px`,
     height: `${displayHeight}px`,
+    borderRadius,
+    background,
     display: 'block'
   }
 }
+
+// 已移除：getWidthLineStyle、getHeightLineStyle、getGradientAreaStyle
+// 现在统一使用 overlay-block 显示半透明背景区域，不再使用边框线
 
 // 计算左上角十字标识样式（左上角对齐模式）
 function getCrossMarkerStyle(url: string, index: number) {
@@ -1018,7 +909,11 @@ function handleImageLoaded(url: string) {
   overlayTick.value++
 }
 
+// 注意：圆角只应用到素材图（预览色块），不应用到模板图
+// 模板图保持原样，预览中显示的是模板图，预览色块显示素材图的位置和圆角效果
+
 // 已废弃：尺寸类型切换（改为使用 widthPercent），保留空函数防止引用
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function onSizeTypeChange(_index: number) {}
 
 
@@ -1518,47 +1413,27 @@ function dialogClose() {
 .image-option-item .preview { 
   width: 100%; 
   /* height 由 aspect-ratio 决定，避免空白 */
-  overflow: hidden; 
+  overflow: visible; 
   border-radius: 4px; 
   padding: 0; 
   background: var(--el-fill-color-lighter); 
+  position: relative; 
+}
+.image-option-item .preview-image-wrapper {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 .image-option-item .preview .el-image { width: 100%; height: 100%; object-fit: contain; display: block; }
-.image-option-item .preview { position: relative; }
 .overlay-block {
   position: absolute;
-  border: 2px dashed #409eff;
-  background: rgba(64,158,255,0.15);
+  /* 移除边框线，背景色和渐变由 getOverlayStyle 动态设置 */
   pointer-events: none;
-  border-radius: 4px;
+  /* border-radius 和 background 由 getOverlayStyle 动态设置 */
 }
 
-/* 左上角对齐模式：宽度线（蓝色，水平线） */
-.overlay-width-line {
-  position: absolute;
-  background: #409eff;
-  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
-  z-index: 10;
-  pointer-events: none;
-}
-
-/* 左上角对齐模式：高度线（蓝色，垂直线） */
-.overlay-height-line {
-  position: absolute;
-  background: #409eff;
-  box-shadow: 0 0 4px rgba(64, 158, 255, 0.6);
-  z-index: 10;
-  pointer-events: none;
-}
-
-/* 左上角对齐模式：渐变区域（从左上到右下，从有颜色到透明） */
-.overlay-gradient-area {
-  position: absolute;
-  z-index: 9;
-  pointer-events: none;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.3) 0%, rgba(64, 158, 255, 0.15) 30%, rgba(64, 158, 255, 0) 100%);
-  border-radius: 0 0 4px 4px;
-}
+/* 已移除：overlay-width-line、overlay-height-line、overlay-gradient-area
+   现在统一使用 overlay-block 显示半透明背景区域，不再使用边框线 */
 
 /* 左上角对齐模式：左上角十字标识（红色） */
 .overlay-cross-marker {
