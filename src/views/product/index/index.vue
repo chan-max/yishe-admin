@@ -143,15 +143,139 @@
         <!-- 关联信息列：显示关联了哪个内容 -->
         <template #relationsSlot="{ row }">
           <div class="relations-summary">
-            <el-button 
-              v-if="row.customModel || row.sticker || row.productImage2D"
-              type="primary" 
-              link 
-              size="small" 
-              @click="showRelationsDetail(row)"
-            >
-              {{ getRelationsText(row) }}
-            </el-button>
+            <div v-if="row.customModel || row.sticker || row.productImage2D" class="relations-info">
+              <!-- 设计模型 -->
+              <div v-if="row.customModel" class="relation-section-item">
+                <div class="relation-header">
+                  <span class="relation-label">设计模型：</span>
+                </div>
+                <vxe-grid
+                  :data="[row.customModel]"
+                  :show-header="true"
+                  border
+                  size="mini"
+                  class="relation-sub-grid"
+                  :columns="[
+                    { field: 'thumbnail', title: '缩略图', width: 80, slots: { default: 'customModelThumbnailSlot' } },
+                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                    { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'customModelUpdateTimeSlot' } }
+                  ]"
+                >
+                  <template #customModelThumbnailSlot="{ row: modelRow }">
+                    <div class="flex items-center justify-center p-1">
+                      <el-image
+                        v-if="modelRow.thumbnail"
+                        :src="modelRow.thumbnail"
+                        :preview-src-list="getCustomModelImages(modelRow)"
+                        :initial-index="0"
+                        :preview-teleported="true"
+                        :hide-on-click-modal="false"
+                        class="relation-thumb-image"
+                        fit="cover"
+                      />
+                      <span v-else class="text-gray-400 text-xs">无</span>
+                    </div>
+                  </template>
+                  <template #customModelUpdateTimeSlot="{ row: modelRow }">
+                    <span class="text-xs">{{ modelRow.updateTime ? (modelRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+                  </template>
+                </vxe-grid>
+              </div>
+              
+              <!-- 贴纸 -->
+              <div v-if="row.sticker" class="relation-section-item">
+                <div class="relation-header">
+                  <span class="relation-label">贴纸：</span>
+                </div>
+                <vxe-grid
+                  :data="[row.sticker]"
+                  :show-header="true"
+                  border
+                  size="mini"
+                  class="relation-sub-grid"
+                  :columns="[
+                    { field: 'url', title: '图片', width: 80, slots: { default: 'stickerImageSlot' } },
+                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                    { field: 'suffix', title: '后缀', width: 60 },
+                    { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
+                  ]"
+                >
+                  <template #stickerImageSlot="{ row: stickerRow }">
+                    <div class="flex items-center justify-center p-1">
+                      <el-image
+                        v-if="stickerRow.url"
+                        :src="stickerRow.url"
+                        :preview-src-list="[stickerRow.url]"
+                        :initial-index="0"
+                        :preview-teleported="true"
+                        :hide-on-click-modal="false"
+                        class="relation-thumb-image"
+                        fit="cover"
+                      />
+                      <span v-else class="text-gray-400 text-xs">无</span>
+                    </div>
+                  </template>
+                  <template #stickerUpdateTimeSlot="{ row: stickerRow }">
+                    <span class="text-xs">{{ stickerRow.updateTime ? (stickerRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+                  </template>
+                </vxe-grid>
+              </div>
+              
+              <!-- 二维产品图 -->
+              <div v-if="row.productImage2D" class="relation-section-item">
+                <div class="relation-header">
+                  <span class="relation-label">二维产品图：</span>
+                </div>
+                <vxe-grid
+                  :data="[row.productImage2D]"
+                  :show-header="true"
+                  border
+                  size="mini"
+                  class="relation-sub-grid"
+                  :columns="[
+                    { field: 'image1', title: '图片', width: 80, slots: { default: 'productImage2DImageSlot' } },
+                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                    { field: 'code', title: '产品代码', width: 100, showOverflow: true },
+                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                    { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'productImage2DUpdateTimeSlot' } }
+                  ]"
+                >
+                  <template #productImage2DImageSlot="{ row: productRow }">
+                    <div class="flex items-center justify-center p-1">
+                      <el-image
+                        v-if="productRow.image1"
+                        :src="productRow.image1"
+                        :preview-src-list="getProductImage2DPreviewList(productRow)"
+                        :initial-index="0"
+                        :preview-teleported="true"
+                        :hide-on-click-modal="false"
+                        class="relation-thumb-image"
+                        fit="cover"
+                      />
+                      <span v-else class="text-gray-400 text-xs">无</span>
+                    </div>
+                  </template>
+                  <template #productImage2DUpdateTimeSlot="{ row: productRow }">
+                    <span class="text-xs">{{ productRow.updateTime ? (productRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+                  </template>
+                </vxe-grid>
+              </div>
+              
+              <el-button 
+                type="primary" 
+                link 
+                size="small" 
+                @click="showRelationsDetail(row)"
+                class="relation-detail-btn"
+              >
+                查看详情
+              </el-button>
+            </div>
             <span v-else class="text-gray-400 text-sm">无关联</span>
           </div>
         </template>
@@ -933,7 +1057,7 @@ const gridOptions = ref({
     { 
       title: "关联信息", 
       field: "relations", 
-      width: 180, 
+      width: 'auto', 
       slots: { default: 'relationsSlot' }
     },
     { title: "搜索关键字", field: "searchKeywords", width: 200, showOverflow: false },
@@ -1871,6 +1995,28 @@ function getProductImage2DPreviewList(productImage2D: any): string[] {
   return images
 }
 
+// 获取设计模型的图片列表（用于展示）
+function getCustomModelImages(customModel: any): string[] {
+  if (!customModel) return []
+  const images: string[] = []
+  
+  // 添加缩略图
+  if (customModel.thumbnail && typeof customModel.thumbnail === 'string' && customModel.thumbnail.trim()) {
+    images.push(customModel.thumbnail)
+  }
+  
+  // 添加其他图片
+  if (customModel.images && Array.isArray(customModel.images)) {
+    customModel.images.forEach((url: string) => {
+      if (url && typeof url === 'string' && url.trim() && !images.includes(url)) {
+        images.push(url)
+      }
+    })
+  }
+  
+  return images
+}
+
 // 获取关联信息文本
 function getRelationsText(row: any): string {
   const relations: string[] = []
@@ -2322,8 +2468,107 @@ function showRelationsDetail(row: any) {
 // 关联信息列样式
 .relations-summary {
   display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.relations-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.relation-section-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.relation-header {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.05) 100%);
+  border-radius: 4px;
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.relation-label {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(64, 158, 255, 0.1);
+}
+
+.relation-value {
+  color: var(--el-text-color-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relation-sub-grid {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+  
+  :deep(.vxe-table) {
+    font-size: 12px;
+  }
+  
+  :deep(.vxe-table--header) {
+    background-color: var(--el-table-header-bg-color);
+  }
+  
+  :deep(.vxe-table--body) {
+    background-color: transparent;
+  }
+  
+  :deep(.vxe-cell) {
+    padding: 4px 8px;
+  }
+  
+  :deep(.vxe-table--header-wrapper) {
+    .vxe-cell {
+      font-weight: 500;
+      font-size: 12px;
+    }
+  }
+}
+
+.relation-thumb-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--el-border-color-lighter);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: var(--el-color-primary);
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.relation-detail-btn {
+  margin-top: 4px;
+  padding: 0;
+  height: auto;
+  font-size: 12px;
 }
 
 // 关联信息详情弹窗样式
