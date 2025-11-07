@@ -137,10 +137,10 @@
       </div>
     </el-dialog>
 
-    <!-- 编辑产品信息弹窗 -->
+    <!-- 编辑信息弹窗 -->
     <el-dialog
       v-model="editProductDialogVisible"
-      title="编辑产品信息"
+      title="编辑信息"
       width="600px"
       align-center
       :before-close="handleCloseEditProductDialog"
@@ -500,7 +500,7 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu size="small">
-                <el-dropdown-item command="edit-product" class="text-primary">编辑产品信息</el-dropdown-item>
+                <el-dropdown-item command="edit-product" class="text-primary">编辑信息</el-dropdown-item>
                 <el-dropdown-item 
                   command="ai-generate-info" 
                   class="text-blue-500"
@@ -660,7 +660,7 @@ const templateDialogVisible = ref(false)
 const materialDetail = ref<any>(null)
 const templateDetail = ref<any>(null)
 
-// 编辑产品信息相关状态
+// 编辑信息相关状态
 const editProductDialogVisible = ref(false)
 const editProductFormRef = ref()
 const editProductLoading = ref(false)
@@ -672,7 +672,7 @@ const editProductForm = reactive({
   keywords: ''
 })
 
-// 编辑产品信息表单验证规则
+// 编辑信息表单验证规则
 const editProductRules = {
   // code: [ // 已注释
   //   { required: true, message: '请输入产品代码', trigger: 'blur' },
@@ -1121,7 +1121,7 @@ function handleCloseTemplateDialog() {
   templateDetail.value = null
 }
 
-// 编辑产品信息
+// 编辑信息
 function handleEditProduct(row: any) {
   editProductForm.id = row.id
   // editProductForm.code = row.code || '' // 已注释
@@ -1131,7 +1131,7 @@ function handleEditProduct(row: any) {
   editProductDialogVisible.value = true
 }
 
-// 关闭编辑产品信息弹窗
+// 关闭编辑信息弹窗
 function handleCloseEditProductDialog() {
   editProductDialogVisible.value = false
   editProductForm.id = ''
