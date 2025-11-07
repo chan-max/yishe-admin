@@ -80,26 +80,26 @@
                 操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item v-if="isAdmin" command="edit">
                     <el-icon><Edit /></el-icon>
-                    编辑
+                    <span>编辑</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="ai-analyze">
                     <el-icon><MagicStick /></el-icon>
-                    AI分析
+                    <span>AI分析</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="publish" v-show="!row.isPublish">
                     <el-icon><Upload /></el-icon>
-                    发布
+                    <span>发布</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="unpublish" v-show="row.isPublish">
                     <el-icon><Download /></el-icon>
-                    下架
+                    <span>下架</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
-                    删除
+                    <span>删除</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -667,6 +667,58 @@ const submitForm = async () => {
 /* 操作列样式优化 */
 .operation-dropdown {
   margin-right: 8px;
+  
+  .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .el-icon {
+      margin-right: 4px;
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    
+    span {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.operation-menu-compact {
+  min-width: 140px !important;
+  padding: 4px 0 !important;
+  
+  .el-dropdown-menu__item {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+    min-height: 32px !important;
+    
+    .el-icon {
+      font-size: 14px !important;
+      width: 14px !important;
+      height: 14px !important;
+      margin-right: 6px !important;
+    }
+    
+    span {
+      font-size: 13px !important;
+    }
+    
+    &:hover {
+      background-color: var(--el-fill-color-light) !important;
+    }
+  }
+  
+  .el-dropdown-menu__item--divided {
+    margin-top: 4px !important;
+    border-top: 1px solid var(--el-border-color-lighter) !important;
+    padding-top: 8px !important;
+  }
 }
 
 .table-operation-column {

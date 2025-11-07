@@ -50,74 +50,74 @@
                 操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="generate-product" :disabled="generateProductLoading[row.id]">
                     <el-icon><Goods /></el-icon>
-                    {{ generateProductLoading[row.id] ? '生成中...' : '生成产品' }}
+                    <span>{{ generateProductLoading[row.id] ? '生成中...' : '生成产品' }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-drafts">
                     <el-icon><Picture /></el-icon>
-                    查看草稿截图
+                    <span>查看草稿截图</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="edit">
                     <el-icon><Edit /></el-icon>
-                    编辑
+                    <span>编辑</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="ai-generate" :disabled="aiGenerateLoading[row.id]">
                     <el-icon><MagicStick /></el-icon>
-                    {{ aiGenerateLoading[row.id] ? 'AI生成中...' : 'AI自动生成内容' }}
+                    <span>{{ aiGenerateLoading[row.id] ? 'AI生成中...' : 'AI生成内容' }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="enter-design-tool">
                     <el-icon><View /></el-icon>
-                    进入设计工具查看
+                    <span>进入设计工具查看</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="download-thumbnail" :disabled="!row.thumbnail">
                     <el-icon><Download /></el-icon>
-                    下载缩略图
+                    <span>下载缩略图</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="download-drafts">
                     <el-icon><Download /></el-icon>
-                    下载草稿
+                    <span>下载草稿</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="copy-info" divided>
                     <el-icon><CopyDocument /></el-icon>
-                    复制信息
+                    <span>复制信息</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-meta">
                     <el-icon><Document /></el-icon>
-                    查看元数据
+                    <span>查看元数据</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-stickers">
                     <el-icon><Picture /></el-icon>
-                    查看关联贴纸
+                    <span>查看关联贴纸</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-template" :disabled="templateLoading[row.id]">
                     <el-icon><Star /></el-icon>
-                    {{ templateLoading[row.id] ? '处理中...' : (row.isTemplate ? '取消母版' : '设为母版') }}
+                    <span>{{ templateLoading[row.id] ? '处理中...' : (row.isTemplate ? '取消母版' : '设为母版') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-public" :disabled="publicLoading[row.id]">
                     <el-icon><Share /></el-icon>
-                    {{ publicLoading[row.id] ? '处理中...' : (row.isPublic ? '取消发布' : '发布') }}
+                    <span>{{ publicLoading[row.id] ? '处理中...' : (row.isPublic ? '取消发布' : '发布') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-pending" divided>
                     <el-icon><Clock /></el-icon>
-                    标记为待发布
+                    <span>标记为待发布</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-published">
                     <el-icon><Check /></el-icon>
-                    标记为已发布
+                    <span>标记为已发布</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-draft">
                     <el-icon><Edit /></el-icon>
-                    标记为草稿
+                    <span>标记为草稿</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-archived">
                     <el-icon><Folder /></el-icon>
-                    标记为已归档
+                    <span>标记为已归档</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided :disabled="deleteLoading[row.id]">
                     <el-icon><Delete /></el-icon>
-                    {{ deleteLoading[row.id] ? '删除中...' : '删除' }}
+                    <span>{{ deleteLoading[row.id] ? '删除中...' : '删除' }}</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -1763,7 +1763,50 @@ async function downloadAllStickers() {
     
     .el-icon {
       margin-right: 4px;
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
     }
+    
+    span {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+}
+
+// 紧凑型操作菜单
+.operation-menu-compact {
+  min-width: 140px !important;
+  padding: 4px 0 !important;
+  
+  .el-dropdown-menu__item {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+    min-height: 32px !important;
+    
+    .el-icon {
+      font-size: 14px !important;
+      width: 14px !important;
+      height: 14px !important;
+      margin-right: 6px !important;
+    }
+    
+    span {
+      font-size: 13px !important;
+    }
+    
+    &:hover {
+      background-color: var(--el-fill-color-light) !important;
+    }
+  }
+  
+  .el-dropdown-menu__item--divided {
+    margin-top: 4px !important;
+    border-top: 1px solid var(--el-border-color-lighter) !important;
+    padding-top: 8px !important;
   }
 }
 

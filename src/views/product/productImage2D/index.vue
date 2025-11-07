@@ -311,67 +311,6 @@
       </div>
     </el-dialog> -->
 
-    <!-- 水印配置对话框 -->
-    <el-dialog
-      v-model="watermarkDialogVisible"
-      title="水印配置"
-      width="600px"
-      :before-close="handleCloseWatermarkDialog"
-      align-center
-      destroy-on-close
-    >
-      <el-form
-        :model="watermarkForm"
-        label-width="120px"
-        label-position="left"
-      >
-        <el-form-item label="启用水印">
-          <el-switch
-            v-model="watermarkForm.enableWatermark"
-            active-text="启用"
-            inactive-text="禁用"
-          />
-        </el-form-item>
-        
-        <template v-if="watermarkForm.enableWatermark">
-          <el-form-item label="水印文字">
-            <el-input
-              v-model="watermarkForm.text"
-              placeholder="请输入水印文字"
-              clearable
-            />
-          </el-form-item>
-        
-          
-          <el-form-item label="文字颜色">
-            <el-color-picker v-model="watermarkForm.fontColor" />
-          </el-form-item>
-          
-          <el-form-item label="透明度">
-            <el-slider
-              v-model="watermarkForm.opacity"
-              :min="0"
-              :max="1"
-              :step="0.1"
-              :format-tooltip="(val) => Math.round(val * 100) + '%'"
-            />
-          </el-form-item>
-        </template>
-      </el-form>
-      
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="handleCloseWatermarkDialog">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="regeneratingImagesId === currentRegenerateProductId"
-            @click="executeRegenerateImages"
-          >
-            {{ regeneratingImagesId === currentRegenerateProductId ? '生成中...' : '确定生成' }}
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
 
     <div class="common-table">
       <vxe-grid
@@ -699,16 +638,6 @@ const currentPreviewIndex = ref(0)
 
 // 重新生成图片相关状态
 const regeneratingImagesId = ref<string>('')
-const currentRegenerateProductId = ref<string>('')
-
-// 水印配置相关状态
-const watermarkDialogVisible = ref(false)
-const watermarkForm = reactive({
-  enableWatermark: true,  // 是否启用水印
-  text: '',
-  fontColor: '#FFFFFF',
-  opacity: 0.6
-})
 
 // AI生成相关状态
 const aiGeneratingId = ref<string>('')
@@ -1415,45 +1344,29 @@ function handleVideoClick(videoUrl: string) {
 async function handleRegenerateImages(row: any) {
   if (!row?.id) return
   
-  // 设置默认水印文字为产品代码
-  // watermarkForm.text = row.code || '' // 已注释
-  watermarkForm.text = ''
-  currentRegenerateProductId.value = row.id
-  watermarkDialogVisible.value = true
-}
-
-// 执行重新生成合成图片
-async function executeRegenerateImages() {
-  if (!currentRegenerateProductId.value) return
-  
   try {
-    regeneratingImagesId.value = currentRegenerateProductId.value
+    await ElMessageBox.confirm('确认重新生成合成图片吗？', '重新生成确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
     
-    const requestData: any = { id: currentRegenerateProductId.value }
-    
-    // 如果启用了水印且配置了水印文字，添加水印参数（位置和字体大小由后端自适应）
-    if (watermarkForm.enableWatermark && watermarkForm.text.trim()) {
-      requestData.watermark = {
-        text: watermarkForm.text,
-        fontColor: watermarkForm.fontColor,
-        opacity: watermarkForm.opacity
-      }
-    }
+    regeneratingImagesId.value = row.id
     
     await request.post({
       url: '/product-image-2d/regenerate-images',
-      data: requestData
+      data: { id: row.id }
     })
     
     ElMessage.success('合成图片重新生成成功')
     getList()
-    watermarkDialogVisible.value = false
   } catch (e) {
-    console.error('重新生成合成图片失败:', e)
-    ElMessage.error('重新生成合成图片失败')
+    if (e !== 'cancel') {
+      console.error('重新生成合成图片失败:', e)
+      ElMessage.error('重新生成合成图片失败')
+    }
   } finally {
     regeneratingImagesId.value = ''
-    currentRegenerateProductId.value = ''
   }
 }
 
@@ -1481,16 +1394,6 @@ async function handleToProduct(row: any) {
   }
 }
 
-// 关闭水印配置对话框
-function handleCloseWatermarkDialog() {
-  watermarkDialogVisible.value = false
-  currentRegenerateProductId.value = ''
-  // 重置表单
-  watermarkForm.enableWatermark = true
-  watermarkForm.text = ''
-  watermarkForm.fontColor = '#FFFFFF'
-  watermarkForm.opacity = 0.6
-}
 
 </script>
 

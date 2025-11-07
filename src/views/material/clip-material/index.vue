@@ -181,26 +181,26 @@
                     操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item v-if="isAdmin" command="edit">
                     <el-icon><Edit /></el-icon>
-                    编辑
+                    <span>编辑</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="download">
                     <el-icon><Download /></el-icon>
-                    下载
+                    <span>下载</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="preview" v-if="isVideoFile(row.suffix)">
                     <el-icon><VideoPlay /></el-icon>
-                    预览
+                    <span>预览</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="toggle-public" divided>
                     <el-icon><View /></el-icon>
-                    {{ row.isPublic ? '设为私有' : '设为公开' }}
+                    <span>{{ row.isPublic ? '设为私有' : '设为公开' }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
-                    删除
+                    <span>删除</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
                   </template>
@@ -863,7 +863,50 @@ h1 {
     
     .el-icon {
       margin-right: 4px;
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
     }
+    
+    span {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+}
+
+// 紧凑型操作菜单
+.operation-menu-compact {
+  min-width: 140px !important;
+  padding: 4px 0 !important;
+  
+  .el-dropdown-menu__item {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+    min-height: 32px !important;
+    
+    .el-icon {
+      font-size: 14px !important;
+      width: 14px !important;
+      height: 14px !important;
+      margin-right: 6px !important;
+    }
+    
+    span {
+      font-size: 13px !important;
+    }
+    
+    &:hover {
+      background-color: var(--el-fill-color-light) !important;
+    }
+  }
+  
+  .el-dropdown-menu__item--divided {
+    margin-top: 4px !important;
+    border-top: 1px solid var(--el-border-color-lighter) !important;
+    padding-top: 8px !important;
   }
 }
 </style>
