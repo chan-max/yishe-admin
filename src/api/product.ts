@@ -45,4 +45,12 @@ export function aiGenerateProductInfo(data: { id: string; prompt?: string }) {
     method: 'post',
     data,
   });
+}
+
+export function generateProductCode(data: { id: string }) {
+  return request.post({
+    url: '/product/generate-code',
+    method: 'post',
+    data,
+  });
 } 

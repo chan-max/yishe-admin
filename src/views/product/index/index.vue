@@ -76,6 +76,10 @@
                   <el-icon><MagicStick /></el-icon>
                   AI自动生成内容
                 </el-dropdown-item>
+                <el-dropdown-item command="generate-code" divided>
+                  <el-icon><Refresh /></el-icon>
+                  生成产品代码
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -140,6 +144,13 @@
           </el-tag>
         </template>
 
+        <template #codeSlot="{ row }">
+          <el-tag v-if="row.code" type="info" size="small">
+            {{ row.code }}
+          </el-tag>
+          <span v-else class="text-gray-400 text-xs">未生成</span>
+        </template>
+
         <!-- 关联信息列：显示关联了哪个内容 -->
         <template #relationsSlot="{ row }">
           <div class="relations-summary">
@@ -156,7 +167,7 @@
                   size="mini"
                   class="relation-sub-grid"
                   :columns="[
-                    { field: 'thumbnail', title: '缩略图', width: 80, slots: { default: 'customModelThumbnailSlot' } },
+                    { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'customModelThumbnailSlot' } },
                     { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
                     { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
                     { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
@@ -173,7 +184,7 @@
                         :preview-teleported="true"
                         :hide-on-click-modal="false"
                         class="relation-thumb-image"
-                        fit="cover"
+                        fit="contain"
                       />
                       <span v-else class="text-gray-400 text-xs">无</span>
                     </div>
@@ -196,7 +207,7 @@
                   size="mini"
                   class="relation-sub-grid"
                   :columns="[
-                    { field: 'url', title: '图片', width: 80, slots: { default: 'stickerImageSlot' } },
+                    { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
                     { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
                     { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
                     { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
@@ -214,7 +225,7 @@
                         :preview-teleported="true"
                         :hide-on-click-modal="false"
                         class="relation-thumb-image"
-                        fit="cover"
+                        fit="contain"
                       />
                       <span v-else class="text-gray-400 text-xs">无</span>
                     </div>
@@ -237,9 +248,8 @@
                   size="mini"
                   class="relation-sub-grid"
                   :columns="[
-                    { field: 'image1', title: '图片', width: 80, slots: { default: 'productImage2DImageSlot' } },
+                    { field: 'image1', title: '图片', width: 120, slots: { default: 'productImage2DImageSlot' } },
                     { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                    { field: 'code', title: '产品代码', width: 100, showOverflow: true },
                     { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
                     { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
                     { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'productImage2DUpdateTimeSlot' } }
@@ -255,7 +265,7 @@
                         :preview-teleported="true"
                         :hide-on-click-modal="false"
                         class="relation-thumb-image"
-                        fit="cover"
+                        fit="contain"
                       />
                       <span v-else class="text-gray-400 text-xs">无</span>
                     </div>
@@ -997,7 +1007,7 @@ import {
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct } from "@/api/product";
+import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode as generateProductCodeApi } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -1054,6 +1064,13 @@ const gridOptions = ref({
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: false },
     { title: "关键词", field: "keywords", width: 200, showOverflow: false },
+    { 
+      title: "产品代码", 
+      field: "code", 
+      width: 120, 
+      showOverflow: true,
+      slots: { default: 'codeSlot' }
+    },
     { 
       title: "关联信息", 
       field: "relations", 
@@ -1794,8 +1811,22 @@ function closePublishResultDialog() {
 }
 
 // 添加生成番号的处理函数
-const handleGenerateCode = () => {
-  form.value.code = generateProductCode();
+const handleGenerateCode = async () => {
+  // 如果是编辑模式且有ID，调用后端接口生成
+  if (isEdit.value && form.value.id) {
+    try {
+      const res = await generateProductCodeApi({ id: form.value.id });
+      if (res && res.code) {
+        form.value.code = res.code;
+        ElMessage.success('产品代码生成成功');
+      }
+    } catch (error) {
+      ElMessage.error('生成产品代码失败');
+    }
+  } else {
+    // 新建模式，使用前端生成（后端创建时会自动生成）
+    form.value.code = generateProductCode();
+  }
 };
 
 
@@ -1905,8 +1936,26 @@ function handleOperationCommand(command: string, row: any) {
     case 'ai-generate':
       onAiProductAutoGenerate(row);
       break;
+    case 'generate-code':
+      handleGenerateProductCode(row);
+      break;
     default:
       console.warn('未知的操作命令:', command);
+  }
+}
+
+// 处理生成产品代码
+async function handleGenerateProductCode(row: any) {
+  try {
+    const res = await generateProductCodeApi({ id: row.id });
+    if (res && res.code) {
+      row.code = res.code;
+      ElMessage.success('产品代码生成成功');
+      // 刷新列表
+      getList();
+    }
+  } catch (error) {
+    ElMessage.error('生成产品代码失败');
   }
 }
 
@@ -2549,13 +2598,14 @@ function showRelationsDetail(row: any) {
 }
 
 .relation-thumb-image {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
   border-radius: 4px;
   cursor: pointer;
   border: 1px solid var(--el-border-color-lighter);
   transition: all 0.2s ease;
+  background-color: var(--el-bg-color-page);
   
   &:hover {
     border-color: var(--el-color-primary);

@@ -13,7 +13,8 @@
             />
           </el-select>
         </div>
-        <div class="flex items-center gap-2">
+        <!-- 产品代码搜索已注释 -->
+        <!-- <div class="flex items-center gap-2">
           <span class="text-sm text-gray-600">产品代码：</span>
           <el-input
             v-model="queryParams.code"
@@ -24,7 +25,7 @@
             @clear="handleCodeClear"
           />
           <el-button type="primary" @click="handleCodeSearch">查询</el-button>
-        </div>
+        </div> -->
       </div>
       <div class="flex gap-2">
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
@@ -176,14 +177,15 @@
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="产品代码" prop="code">
+        <!-- 产品代码字段已注释 -->
+        <!-- <el-form-item label="产品代码" prop="code">
           <el-input
             v-model="editProductForm.code"
             placeholder="请输入产品代码"
             maxlength="50"
             show-word-limit
           />
-        </el-form-item>
+        </el-form-item> -->
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -335,7 +337,7 @@
           <el-form-item label="水印文字">
             <el-input
               v-model="watermarkForm.text"
-              placeholder="请输入水印文字，默认为产品代码"
+              placeholder="请输入水印文字"
               clearable
             />
           </el-form-item>
@@ -408,12 +410,13 @@
             {{ STATUS_TEXT[row.publishStatus] || '未知' }}
           </el-tag>
         </template>
-        <template #codeSlot="{ row }">
+        <!-- 产品代码列已注释 -->
+        <!-- <template #codeSlot="{ row }">
           <div class="product-code">
             <span v-if="row.code" class="code-text" @click="handleCopyCode(row.code)">{{ row.code }}</span>
             <span v-else class="code-empty">-</span>
           </div>
-        </template>
+        </template> -->
         <template #nameSlot="{ row }">
           <div class="product-name">
             <span v-if="row.name" class="name-text">{{ row.name }}</span>
@@ -505,13 +508,14 @@
                 >
                   {{ aiGeneratingId === row.id ? 'AI生成中...' : 'AI生成产品信息' }}
                 </el-dropdown-item>
-                <el-dropdown-item 
+                <!-- 生成产品代码操作已注释 -->
+                <!-- <el-dropdown-item 
                   command="generate-code" 
                   class="text-purple-500"
                   :disabled="generatingCodeId === row.id"
                 >
                   {{ generatingCodeId === row.id ? '生成中...' : (row.code ? '重新生成代码' : '生成产品代码') }}
-                </el-dropdown-item>
+                </el-dropdown-item> -->
                 <!-- 视频生成操作已注释 -->
                 <!-- <el-dropdown-item 
                   command="generate-video" 
@@ -613,7 +617,7 @@ const VIDEO_STATUS = {
 //   [VIDEO_STATUS.FAILED]: '生成失败'
 // } as const
 
-const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '', code: '' })
+const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '', code: '' }) // code 字段保留但不使用
 
 // 获取窗口尺寸
 const { height } = useWindowSize()
@@ -624,7 +628,7 @@ const gridOptions = ref<any>({
     { type: 'checkbox', width: 50 },
     { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
     // { title: '视频', field: 'videoUrl', width: 120, slots: { default: 'videoSlot' } },
-    { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } },
+    // { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } }, // 已注释
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
     { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
     { title: '关键词', field: 'keywords', width: 150, slots: { default: 'keywordsSlot' } },
@@ -662,7 +666,7 @@ const editProductFormRef = ref()
 const editProductLoading = ref(false)
 const editProductForm = reactive({
   id: '',
-  code: '',
+  // code: '', // 已注释
   name: '',
   description: '',
   keywords: ''
@@ -670,10 +674,10 @@ const editProductForm = reactive({
 
 // 编辑产品信息表单验证规则
 const editProductRules = {
-  code: [
-    { required: true, message: '请输入产品代码', trigger: 'blur' },
-    { min: 3, max: 50, message: '产品代码长度在 3 到 50 个字符', trigger: 'blur' }
-  ],
+  // code: [ // 已注释
+  //   { required: true, message: '请输入产品代码', trigger: 'blur' },
+  //   { min: 3, max: 50, message: '产品代码长度在 3 到 50 个字符', trigger: 'blur' }
+  // ],
   name: [
     { required: true, message: '请输入产品名称', trigger: 'blur' },
     { min: 1, max: 100, message: '产品名称长度在 1 到 100 个字符', trigger: 'blur' }
@@ -691,7 +695,7 @@ const currentPreviewImages = ref<string[]>([])
 const currentPreviewIndex = ref(0)
 
 // 生成代码相关状态
-const generatingCodeId = ref<string>('')
+// const generatingCodeId = ref<string>('') // 已注释
 
 // 重新生成图片相关状态
 const regeneratingImagesId = ref<string>('')
@@ -735,27 +739,27 @@ const currentVideoUrl = ref('')
 const generatingProductId = ref<string>('')
 
 // 生成唯一码
-async function handleGenerateCode(row: any) {
-  if (!row?.id) return
+// async function handleGenerateCode(row: any) { // 已注释
+//   if (!row?.id) return
   
-  try {
-    generatingCodeId.value = row.id
+//   try {
+//     generatingCodeId.value = row.id
     
-    await request.post({
-      url: '/product-image-2d/generate-code',
-      data: { id: row.id }
-    })
+//     await request.post({
+//       url: '/product-image-2d/generate-code',
+//       data: { id: row.id }
+//     })
     
-    const message = row.code ? '产品代码重新生成成功' : '产品代码生成成功'
-    ElMessage.success(message)
-    getList()
-  } catch (e) {
-    console.error('生成产品代码失败:', e)
-    ElMessage.error('生成产品代码失败')
-  } finally {
-    generatingCodeId.value = ''
-  }
-}
+//     const message = row.code ? '产品代码重新生成成功' : '产品代码生成成功'
+//     ElMessage.success(message)
+//     getList()
+//   } catch (e) {
+//     console.error('生成产品代码失败:', e)
+//     ElMessage.error('生成产品代码失败')
+//   } finally {
+//     generatingCodeId.value = ''
+//   }
+// }
 
 async function getList() {
   loading.value = true
@@ -767,7 +771,7 @@ async function getList() {
         page: queryParams.currentPage, 
         pageSize: queryParams.pageSize,
         publishStatus: queryParams.publishStatus,
-        code: queryParams.code
+        // code: queryParams.code // 已注释
       } 
     })
     console.log('获取到的数据:', res)
@@ -890,9 +894,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'ai-generate-info':
       handleAiGenerateInfo(row)
       break
-    case 'generate-code':
-      handleGenerateCode(row)
-      break
+    // case 'generate-code': // 已注释
+    //   handleGenerateCode(row)
+    //   break
     // case 'generate-video':
     //   handleVideoGenerateInfo(row)
     //   break
@@ -935,17 +939,17 @@ function handleStatusFilter() {
 }
 
 // 产品代码查询处理
-function handleCodeSearch() {
-  queryParams.currentPage = 1
-  getList()
-}
+// function handleCodeSearch() { // 已注释
+//   queryParams.currentPage = 1
+//   getList()
+// }
 
 // 清除产品代码查询
-function handleCodeClear() {
-  queryParams.code = ''
-  queryParams.currentPage = 1
-  getList()
-}
+// function handleCodeClear() { // 已注释
+//   queryParams.code = ''
+//   queryParams.currentPage = 1
+//   getList()
+// }
 
 // 获取状态标签类型
 function getStatusTagType(status: string) {
@@ -1120,7 +1124,7 @@ function handleCloseTemplateDialog() {
 // 编辑产品信息
 function handleEditProduct(row: any) {
   editProductForm.id = row.id
-  editProductForm.code = row.code || ''
+  // editProductForm.code = row.code || '' // 已注释
   editProductForm.name = row.name || ''
   editProductForm.description = row.description || ''
   editProductForm.keywords = row.keywords || ''
@@ -1131,7 +1135,7 @@ function handleEditProduct(row: any) {
 function handleCloseEditProductDialog() {
   editProductDialogVisible.value = false
   editProductForm.id = ''
-  editProductForm.code = ''
+  // editProductForm.code = '' // 已注释
   editProductForm.name = ''
   editProductForm.description = ''
   editProductForm.keywords = ''
@@ -1154,7 +1158,7 @@ async function handleSaveProductInfo() {
     await request.put({
       url: `/product-image-2d/${editProductForm.id}/info`,
       data: {
-        code: editProductForm.code,
+        // code: editProductForm.code, // 已注释
         name: editProductForm.name,
         description: editProductForm.description,
         keywords: editProductForm.keywords
@@ -1228,18 +1232,19 @@ async function handleDownloadCurrentImage() {
 }
 
 // 复制产品代码
-function handleCopyCode(code: string) {
-  copyProductCode(code)
-}
+// function handleCopyCode(code: string) { // 已注释
+//   copyProductCode(code)
+// }
 
 // 复制线上链接
 function handleCopyLink(row: any) {
   if (!row) return
   
   // 优先使用产品代码，如果没有则使用ID
-  const identifier = row.code || row.id
+  // const identifier = row.code || row.id // 已注释，直接使用ID
+  const identifier = row.id
   if (!identifier) {
-    ElMessage.warning('无法生成链接：缺少产品代码或ID')
+    ElMessage.warning('无法生成链接：缺少ID')
     return
   }
   
@@ -1411,7 +1416,8 @@ async function handleRegenerateImages(row: any) {
   if (!row?.id) return
   
   // 设置默认水印文字为产品代码
-  watermarkForm.text = row.code || ''
+  // watermarkForm.text = row.code || '' // 已注释
+  watermarkForm.text = ''
   currentRegenerateProductId.value = row.id
   watermarkDialogVisible.value = true
 }
