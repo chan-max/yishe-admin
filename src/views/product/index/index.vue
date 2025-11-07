@@ -394,10 +394,7 @@
 
           <el-col :span="12">
             <el-form-item label="商品番号" prop="code">
-              <div class="flex gap-2">
-                <el-input v-model="form.code" placeholder="请输入商品番号" />
-                <el-button type="primary" @click="handleGenerateCode">生成番号</el-button>
-              </div>
+              <el-input v-model="form.code" placeholder="留空则自动生成" />
             </el-form-item>
           </el-col>
 
@@ -995,7 +992,6 @@ import {
   Search,
   Plus,
   Delete,
-  Refresh,
   ArrowDown,
   Edit,
   Upload,
@@ -1003,11 +999,12 @@ import {
   MagicStick,
   VideoPlay,
   Check,
+  Refresh,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode as generateProductCodeApi } from "@/api/product";
+import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -1017,7 +1014,6 @@ import { fontTemplateApi } from "@/api/fontTemplate";
 import ProductImageUpload from '@/components/ProductImageUpload.vue'
 import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
 import { publishToSocialMedia } from "@/api/client";
-import { generateProductCode } from "@/common/code";
 import { getDesignModel } from '@/api/designModel'
 // import { preview as previewImage } from "@/components/PreviewImage/index"; // 已使用本地 preview 函数
 import { getDraftList } from '@/api/draft'
@@ -1045,14 +1041,14 @@ const gridOptions = ref({
   },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    // {
-    //   title: "商品图片",
-    //   field: "images",
-    //   width: 300,
-    //   slots: {
-    //     default: "urlDefaultSlot",
-    //   },
-    // },
+    {
+      title: "商品图片",
+      field: "images",
+      width: 300,
+      slots: {
+        default: "urlDefaultSlot",
+      },
+    },
     // {
     //   title: "商品视频",
     //   field: "videos",
@@ -1361,6 +1357,10 @@ const submitForm = async () => {
     delete formData.file;
     delete formData.createTime;
     delete formData.updateTime;
+    // 如果是新建且code为空，删除code字段，让后端自动生成
+    if (!isEdit.value && (!formData.code || formData.code.trim() === '')) {
+      delete formData.code;
+    }
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     if (pendingFiles.value.length > 0) {
@@ -1810,24 +1810,6 @@ function closePublishResultDialog() {
   publishDialogVisible.value = false;
 }
 
-// 添加生成番号的处理函数
-const handleGenerateCode = async () => {
-  // 如果是编辑模式且有ID，调用后端接口生成
-  if (isEdit.value && form.value.id) {
-    try {
-      const res = await generateProductCodeApi({ id: form.value.id });
-      if (res && res.code) {
-        form.value.code = res.code;
-        ElMessage.success('产品代码生成成功');
-      }
-    } catch (error) {
-      ElMessage.error('生成产品代码失败');
-    }
-  } else {
-    // 新建模式，使用前端生成（后端创建时会自动生成）
-    form.value.code = generateProductCode();
-  }
-};
 
 
 
@@ -1947,7 +1929,7 @@ function handleOperationCommand(command: string, row: any) {
 // 处理生成产品代码
 async function handleGenerateProductCode(row: any) {
   try {
-    const res = await generateProductCodeApi({ id: row.id });
+    const res = await generateProductCode({ id: row.id });
     if (res && res.code) {
       row.code = res.code;
       ElMessage.success('产品代码生成成功');
