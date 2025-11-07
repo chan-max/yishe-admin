@@ -140,165 +140,23 @@
           </el-tag>
         </template>
 
-        <template #stickerDetailSlot="{ row }">
-          <div v-if="row.sticker" style="margin: 8px 0;">
-            <vxe-grid
-              :data="[row.sticker]"
-              :show-header="true"
-              border
-              size="mini"
-              style="margin: 0; padding: 0; background: none;"
-              :columns="[
-                { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
-                { field: 'name', title: '名称', minWidth: 80 },
-                { field: 'description', title: '描述', minWidth: 120 },
-                { field: 'keywords', title: '关键词', minWidth: 100 },
-                { field: 'suffix', title: '后缀', width: 80 },
-                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'stickerOperationSlot' } }
-              ]"
+        <!-- 关联信息列：显示关联了哪个内容 -->
+        <template #relationsSlot="{ row }">
+          <div class="relations-summary">
+            <el-button 
+              v-if="row.customModel || row.sticker || row.productImage2D"
+              type="primary" 
+              link 
+              size="small" 
+              @click="showRelationsDetail(row)"
             >
-              <template #stickerImageSlot="{ row }">
-                <div class="flex items-center justify-center p-2">
-                  <el-image
-                    v-if="row.url"
-                    :src="row.url"
-                    :preview-src-list="[row.url]"
-                    :initial-index="0"
-                    style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                  />
-                  <span v-else class="text-gray-400">无</span>
-                </div>
-              </template>
-              <template #stickerUpdateTimeSlot="{ row }">
-                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-              </template>
-              <template #stickerOperationSlot="{ row }">
-                <div class="flex gap-2">
-                  <el-button 
-                    v-if="row.url"
-                    type="primary" 
-                    link 
-                    size="small" 
-                    @click="preview(0, [row.url])"
-                  >
-                    预览
-                  </el-button>
-                </div>
-              </template>
-            </vxe-grid>
+              {{ getRelationsText(row) }}
+            </el-button>
+            <span v-else class="text-gray-400 text-sm">无关联</span>
           </div>
-          <span v-else class="text-gray-400">无关联贴纸</span>
         </template>
 
-        <template #productImage2DDetailSlot="{ row }">
-          <div v-if="row.productImage2D" style="margin: 8px 0;">
-            <vxe-grid
-              :data="[row.productImage2D]"
-              :show-header="true"
-              border
-              size="mini"
-              style="margin: 0; padding: 0; background: none;"
-              :columns="[
-                { field: 'image1', title: '图片', width: '120', slots: { default: 'productImage2DImageSlot' } },
-                { field: 'name', title: '名称', minWidth: 120 },
-                { field: 'code', title: '产品代码', width: 120 },
-                { field: 'description', title: '描述', minWidth: 150 },
-                { field: 'keywords', title: '关键词', minWidth: 120 },
-                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'productImage2DUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'productImage2DOperationSlot' } }
-              ]"
-            >
-              <template #productImage2DImageSlot="{ row }">
-                <div class="flex items-center justify-center p-2">
-                  <el-image
-                    v-if="row.image1"
-                    :src="row.image1"
-                    :preview-src-list="getProductImage2DPreviewList(row)"
-                    :initial-index="0"
-                    style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                  />
-                  <span v-else class="text-gray-400">无</span>
-                </div>
-              </template>
-              <template #productImage2DUpdateTimeSlot="{ row }">
-                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-              </template>
-              <template #productImage2DOperationSlot="{ row }">
-                <div class="flex gap-2">
-                  <el-button 
-                    v-if="getProductImage2DPreviewList(row).length > 0"
-                    type="primary" 
-                    link 
-                    size="small" 
-                    @click="preview(0, getProductImage2DPreviewList(row))"
-                  >
-                    预览
-                  </el-button>
-                </div>
-              </template>
-            </vxe-grid>
-          </div>
-          <span v-else class="text-gray-400">无关联二维产品图</span>
-        </template>
-
-        <template #customModelDetailSlot="{ row }">
-          <div v-if="row.customModel" style="margin: 8px 0;">
-            <vxe-grid
-              :data="[row.customModel]"
-              :show-header="true"
-              border
-              size="mini"
-              style="margin: 0; padding: 0; background: none;"
-              :columns="[
-                { field: 'thumbnail', title: '缩略图', width: '120', slots: { default: 'customModelThumbnailSlot' } },
-                { field: 'name', title: '名称', minWidth: 80 },
-                { field: 'description', title: '描述', minWidth: 120 },
-                { field: 'keywords', title: '关键词', minWidth: 100 },
-                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'customModelOperationSlot' } }
-              ]"
-            >
-              <template #customModelThumbnailSlot="{ row }">
-
-                <div class="flex items-center justify-center p-2">
-                <el-image
-                  :src="row.thumbnail"
-                  :preview-src-list="[row.thumbnail]"
-                  :initial-index="0"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                />
-              </div>
-
-                <!-- <img
-                  v-if="row.thumbnail"
-                  :src="row.thumbnail"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                  @click="preview(0, [row.thumbnail])"
-                />
-                <span v-else class="text-gray-400">无</span> -->
-              </template>
-              <template #customModelUpdateTimeSlot="{ row }">
-                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-              </template>
-              <template #customModelOperationSlot="{ row }">
-                <div class="flex gap-2">
-                  <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
-                  <el-button 
-                    v-if="row.thumbnail" 
-                    type="success" 
-                    link 
-                    size="small" 
-                    @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')"
-                  >
-                    下载缩略图
-                  </el-button>
-                </div>
-              </template>
-            </vxe-grid>
-          </div>
-          <span v-else class="text-gray-400">无</span>
-        </template>
+        <!-- 旧的关联列模板已移除，统一使用 relationsSlot -->
       </vxe-grid>
     </div>
 
@@ -735,6 +593,175 @@
       </template>
     </el-dialog>
 
+    <!-- 关联信息详情弹窗 -->
+    <el-dialog 
+      v-model="relationsDetailVisible" 
+      title="关联信息详情" 
+      width="90%" 
+      :close-on-click-modal="false"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-if="currentRelationsRow" class="relations-detail-content">
+        <!-- 关联设计模型 -->
+        <div v-if="currentRelationsRow.customModel" class="relation-section">
+          <h3 class="relation-section-title">关联设计模型</h3>
+          <vxe-grid
+            :data="[currentRelationsRow.customModel]"
+            :show-header="true"
+            border
+            size="mini"
+            style="margin: 0; padding: 0; background: none;"
+            :columns="[
+              { field: 'thumbnail', title: '缩略图', width: '120', slots: { default: 'customModelThumbnailSlot' } },
+              { field: 'name', title: '名称', minWidth: 80 },
+              { field: 'description', title: '描述', minWidth: 120 },
+              { field: 'keywords', title: '关键词', minWidth: 100 },
+              { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
+              { title: '操作', field: 'operation', width: 'auto', slots: { default: 'customModelOperationSlot' } }
+            ]"
+          >
+            <template #customModelThumbnailSlot="{ row }">
+              <div class="flex items-center justify-center p-2">
+                <el-image
+                  v-if="row.thumbnail"
+                  :src="row.thumbnail"
+                  :preview-src-list="[row.thumbnail]"
+                  :initial-index="0"
+                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                />
+                <span v-else class="text-gray-400">无</span>
+              </div>
+            </template>
+            <template #customModelUpdateTimeSlot="{ row }">
+              <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+            </template>
+            <template #customModelOperationSlot="{ row }">
+              <div class="flex gap-2">
+                <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
+                <el-button 
+                  v-if="row.thumbnail" 
+                  type="success" 
+                  link 
+                  size="small" 
+                  @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')"
+                >
+                  下载缩略图
+                </el-button>
+              </div>
+            </template>
+          </vxe-grid>
+        </div>
+
+        <!-- 关联贴纸 -->
+        <div v-if="currentRelationsRow.sticker" class="relation-section">
+          <h3 class="relation-section-title">关联贴纸</h3>
+          <vxe-grid
+            :data="[currentRelationsRow.sticker]"
+            :show-header="true"
+            border
+            size="mini"
+            style="margin: 0; padding: 0; background: none;"
+            :columns="[
+              { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
+              { field: 'name', title: '名称', minWidth: 80 },
+              { field: 'description', title: '描述', minWidth: 120 },
+              { field: 'keywords', title: '关键词', minWidth: 100 },
+              { field: 'suffix', title: '后缀', width: 80 },
+              { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
+              { title: '操作', field: 'operation', width: 'auto', slots: { default: 'stickerOperationSlot' } }
+            ]"
+          >
+            <template #stickerImageSlot="{ row }">
+              <div class="flex items-center justify-center p-2">
+                <el-image
+                  v-if="row.url"
+                  :src="row.url"
+                  :preview-src-list="[row.url]"
+                  :initial-index="0"
+                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                />
+                <span v-else class="text-gray-400">无</span>
+              </div>
+            </template>
+            <template #stickerUpdateTimeSlot="{ row }">
+              <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+            </template>
+            <template #stickerOperationSlot="{ row }">
+              <div class="flex gap-2">
+                <el-button 
+                  v-if="row.url"
+                  type="primary" 
+                  link 
+                  size="small" 
+                  @click="preview(0, [row.url])"
+                >
+                  预览
+                </el-button>
+              </div>
+            </template>
+          </vxe-grid>
+        </div>
+
+        <!-- 关联二维产品图 -->
+        <div v-if="currentRelationsRow.productImage2D" class="relation-section">
+          <h3 class="relation-section-title">关联二维产品图</h3>
+          <vxe-grid
+            :data="[currentRelationsRow.productImage2D]"
+            :show-header="true"
+            border
+            size="mini"
+            style="margin: 0; padding: 0; background: none;"
+            :columns="[
+              { field: 'image1', title: '图片', width: '120', slots: { default: 'productImage2DImageSlot' } },
+              { field: 'name', title: '名称', minWidth: 120 },
+              { field: 'code', title: '产品代码', width: 120 },
+              { field: 'description', title: '描述', minWidth: 150 },
+              { field: 'keywords', title: '关键词', minWidth: 120 },
+              { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'productImage2DUpdateTimeSlot' } },
+              { title: '操作', field: 'operation', width: 'auto', slots: { default: 'productImage2DOperationSlot' } }
+            ]"
+          >
+            <template #productImage2DImageSlot="{ row }">
+              <div class="flex items-center justify-center p-2">
+                <el-image
+                  v-if="row.image1"
+                  :src="row.image1"
+                  :preview-src-list="getProductImage2DPreviewList(row)"
+                  :initial-index="0"
+                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                />
+                <span v-else class="text-gray-400">无</span>
+              </div>
+            </template>
+            <template #productImage2DUpdateTimeSlot="{ row }">
+              <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+            </template>
+            <template #productImage2DOperationSlot="{ row }">
+              <div class="flex gap-2">
+                <el-button 
+                  v-if="getProductImage2DPreviewList(row).length > 0"
+                  type="primary" 
+                  link 
+                  size="small" 
+                  @click="preview(0, getProductImage2DPreviewList(row))"
+                >
+                  预览
+                </el-button>
+              </div>
+            </template>
+          </vxe-grid>
+        </div>
+
+        <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.productImage2D" class="text-center py-8 text-gray-400">
+          无关联信息
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="relationsDetailVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog 
       v-model="customModelDraftDialogVisible" 
       title="关联草稿" 
@@ -858,7 +885,7 @@ import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
 import { publishToSocialMedia } from "@/api/client";
 import { generateProductCode } from "@/common/code";
 import { getDesignModel } from '@/api/designModel'
-import { preview } from "@/components/PreviewImage/index";
+// import { preview as previewImage } from "@/components/PreviewImage/index"; // 已使用本地 preview 函数
 import { getDraftList } from '@/api/draft'
 import { aiGenerateProductInfo } from '@/api/product'
 import { copyLink } from '@/utils/clipboard'
@@ -900,27 +927,15 @@ const gridOptions = ref({
     //     default: "videoDefaultSlot",
     //   },
     // },
-    { 
-      title: "关联设计模型", 
-      field: "customModelId", 
-      width: 'auto', 
-      slots: { default: 'customModelDetailSlot' }
-    },
-    { 
-      title: "关联贴纸", 
-      field: "stickerId", 
-      width: 'auto', 
-      slots: { default: 'stickerDetailSlot' }
-    },
-    { 
-      title: "关联二维产品图", 
-      field: "productImage2DId", 
-      width: 'auto', 
-      slots: { default: 'productImage2DDetailSlot' }
-    },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: false },
     { title: "关键词", field: "keywords", width: 200, showOverflow: false },
+    { 
+      title: "关联信息", 
+      field: "relations", 
+      width: 180, 
+      slots: { default: 'relationsSlot' }
+    },
     { title: "搜索关键字", field: "searchKeywords", width: 200, showOverflow: false },
 
     { title: "商品类型", field: "type", width: 120, showOverflow: true },
@@ -1675,6 +1690,10 @@ function handleVideoPreview(list: string[], index: number) {
 const customModelDetailVisible = ref(false)
 const customModelDetail = ref<any>(null)
 
+// 关联信息详情弹窗
+const relationsDetailVisible = ref(false)
+const currentRelationsRow = ref<any>(null)
+
 async function showCustomModelDetail(id: string) {
   try {
     const res = await getDesignModel({id})
@@ -1850,6 +1869,25 @@ function getProductImage2DPreviewList(productImage2D: any): string[] {
     }
   }
   return images
+}
+
+// 获取关联信息文本
+function getRelationsText(row: any): string {
+  const relations: string[] = []
+  if (row.customModel) relations.push('设计模型')
+  if (row.sticker) relations.push('贴纸')
+  if (row.productImage2D) relations.push('二维产品图')
+  
+  if (relations.length === 0) return '无关联'
+  if (relations.length === 1) return `关联${relations[0]}`
+  if (relations.length === 2) return `关联${relations[0]}、${relations[1]}`
+  return `关联${relations[0]}、${relations[1]}、${relations[2]}`
+}
+
+// 显示关联信息详情
+function showRelationsDetail(row: any) {
+  currentRelationsRow.value = row
+  relationsDetailVisible.value = true
 }
 </script>
 
@@ -2279,5 +2317,34 @@ function getProductImage2DPreviewList(productImage2D: any): string[] {
     stroke-width: 5;
     font-weight: bold;
   }
+}
+
+// 关联信息列样式
+.relations-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 关联信息详情弹窗样式
+.relations-detail-content {
+  padding: 16px 0;
+}
+
+.relation-section {
+  margin-bottom: 24px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.relation-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--el-border-color-light);
 }
 </style>
