@@ -83,6 +83,14 @@
                   <el-icon><Refresh /></el-icon>
                   <span>生成产品代码</span>
                 </el-dropdown-item>
+                <el-dropdown-item 
+                  command="copy-images-from-2d" 
+                  :disabled="!row.productImage2DId"
+                  divided
+                >
+                  <el-icon><Upload /></el-icon>
+                  <span>复制关联二维模型信息到商品</span>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -279,15 +287,26 @@
                 </vxe-grid>
               </div>
               
-              <el-button 
-                type="primary" 
-                link 
-                size="small" 
-                @click="showRelationsDetail(row)"
-                class="relation-detail-btn"
-              >
-                查看详情
-              </el-button>
+              <div class="relation-actions">
+                <el-button 
+                  type="primary" 
+                  link 
+                  size="small" 
+                  @click="showRelationsDetail(row)"
+                  class="relation-detail-btn"
+                >
+                  查看详情
+                </el-button>
+                <el-button 
+                  type="info" 
+                  link 
+                  size="small" 
+                  @click="showRelationsSourceInfo(row)"
+                  class="relation-source-btn"
+                >
+                  查看源信息
+                </el-button>
+              </div>
             </div>
             <span v-else class="text-gray-400 text-sm">无关联</span>
           </div>
@@ -632,6 +651,128 @@
       </template>
     </el-dialog>
 
+    <!-- 复制二维模型信息配置对话框 -->
+    <el-dialog
+      v-model="copy2DDialogVisible"
+      title="复制关联二维模型信息到商品"
+      width="700px"
+      :before-close="handleCloseCopy2DDialog"
+      align-center
+      destroy-on-close
+    >
+      <el-form
+        :model="copy2DForm"
+        label-width="140px"
+        label-position="left"
+      >
+        <!-- 基本信息复制 -->
+        <el-divider content-position="left">基本信息复制</el-divider>
+        <el-form-item label="复制基本信息">
+          <el-switch
+            v-model="copy2DForm.copyBasicInfo.enabled"
+            active-text="启用"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+        
+        <template v-if="copy2DForm.copyBasicInfo.enabled">
+          <el-form-item label="复制名称">
+            <el-switch v-model="copy2DForm.copyBasicInfo.copyName" />
+          </el-form-item>
+          <el-form-item label="复制描述">
+            <el-switch v-model="copy2DForm.copyBasicInfo.copyDescription" />
+          </el-form-item>
+          <el-form-item label="复制关键词">
+            <el-switch v-model="copy2DForm.copyBasicInfo.copyKeywords" />
+          </el-form-item>
+        </template>
+
+        <!-- 水印配置 -->
+        <el-divider content-position="left">水印配置</el-divider>
+        <el-form-item label="启用水印">
+          <el-switch
+            v-model="copy2DForm.watermark.enabled"
+            active-text="启用"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+        
+        <template v-if="copy2DForm.watermark.enabled">
+          <el-form-item label="水印文字">
+            <el-input
+              v-model="copy2DForm.watermark.text"
+              placeholder="留空则使用产品代码"
+              clearable
+            />
+            <div class="text-xs text-gray-400 mt-1">留空则自动使用产品代码</div>
+          </el-form-item>
+          
+          <el-form-item label="水印位置">
+            <el-select v-model="copy2DForm.watermark.position" style="width: 100%">
+              <el-option label="右下角" value="bottom-right" />
+              <el-option label="右上角" value="top-right" />
+              <el-option label="左下角" value="bottom-left" />
+              <el-option label="左上角" value="top-left" />
+              <el-option label="居中" value="center" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="字体颜色">
+            <el-color-picker v-model="copy2DForm.watermark.fontColor" />
+          </el-form-item>
+          
+          <el-form-item label="透明度">
+            <el-slider
+              v-model="copy2DForm.watermark.opacity"
+              :min="0"
+              :max="1"
+              :step="0.1"
+              :format-tooltip="(val) => Math.round(val * 100) + '%'"
+            />
+          </el-form-item>
+          
+          <el-form-item label="字体大小（单个文字）">
+            <el-input-number
+              v-model="copy2DForm.watermark.fontSizePercent"
+              :min="1"
+              :max="20"
+              :step="0.5"
+              :precision="1"
+              placeholder="默认5%"
+              style="width: 100%"
+            >
+              <template #suffix>%</template>
+            </el-input-number>
+            <div class="text-xs text-gray-400 mt-1">
+              单个文字的字体大小，相对于图片宽度的百分比（1-20%），留空则自动计算（默认5%）
+            </div>
+          </el-form-item>
+        </template>
+
+        <!-- 图片处理选项 -->
+        <el-divider content-position="left">图片处理选项</el-divider>
+        <el-form-item label="图片处理方式">
+          <el-radio-group v-model="copy2DForm.imageOptions.replace">
+            <el-radio :label="false">追加到现有图片</el-radio>
+            <el-radio :label="true">替换现有图片</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseCopy2DDialog">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="copying2D"
+            @click="executeCopy2D"
+          >
+            {{ copying2D ? '处理中...' : '确定复制' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 图片预览 -->
     <el-dialog v-model="previewVisible" title="预览" width="90%" :close-on-click-modal="true">
       <div v-if="previewList.length > 0" class="flex flex-col items-center">
@@ -896,6 +1037,43 @@
       </template>
     </el-dialog>
 
+    <!-- 查看源信息对话框 -->
+    <el-dialog
+      v-model="relationsSourceInfoVisible"
+      title="关联信息源数据"
+      width="80%"
+      :close-on-click-modal="false"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-if="currentSourceInfoRow" class="source-info-content">
+        <el-tabs v-model="activeSourceTab" type="border-card">
+          <el-tab-pane v-if="currentSourceInfoRow.customModel" label="设计模型" name="customModel">
+            <div class="source-info-section">
+              <h4 class="source-info-title">设计模型原始数据</h4>
+              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.customModel) }}</pre>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane v-if="currentSourceInfoRow.sticker" label="贴纸" name="sticker">
+            <div class="source-info-section">
+              <h4 class="source-info-title">贴纸原始数据</h4>
+              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.sticker) }}</pre>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane v-if="currentSourceInfoRow.productImage2D" label="二维产品图" name="productImage2D">
+            <div class="source-info-section">
+              <h4 class="source-info-title">二维产品图原始数据</h4>
+              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.productImage2D) }}</pre>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+      <template #footer>
+        <el-button @click="relationsSourceInfoVisible = false">关闭</el-button>
+        <el-button type="primary" @click="copySourceInfo">复制JSON</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog 
       v-model="customModelDraftDialogVisible" 
       title="关联草稿" 
@@ -1007,7 +1185,7 @@ import {
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode } from "@/api/product";
+import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -1157,6 +1335,30 @@ const videoFileList = ref([]);
 const pendingVideoFiles = ref([]);
 const existingVideos = ref([]);
 const publishDialogVisible = ref(false);
+
+// 复制二维模型信息相关状态
+const copy2DDialogVisible = ref(false);
+const copying2D = ref(false);
+const currentCopy2DProductId = ref<string>('');
+const copy2DForm = reactive({
+  watermark: {
+    enabled: true,
+    text: '',
+    position: 'bottom-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center',
+    fontSizePercent: 5 as number | undefined, // 相对于图片宽度的百分比，默认5%
+    fontColor: '#FFFFFF',
+    opacity: 0.6
+  },
+  copyBasicInfo: {
+    enabled: false,
+    copyName: true,
+    copyDescription: true,
+    copyKeywords: true
+  },
+  imageOptions: {
+    replace: false
+  }
+});
 const publishLoading = ref(false);
 const currentPublishRow = ref<{ 
   id?: string; 
@@ -1834,6 +2036,11 @@ const customModelDetail = ref<any>(null)
 const relationsDetailVisible = ref(false)
 const currentRelationsRow = ref<any>(null)
 
+// 查看源信息相关状态
+const relationsSourceInfoVisible = ref(false)
+const currentSourceInfoRow = ref<any>(null)
+const activeSourceTab = ref('customModel')
+
 async function showCustomModelDetail(id: string) {
   try {
     const res = await getDesignModel({id})
@@ -1924,6 +2131,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'generate-code':
       handleGenerateProductCode(row);
       break;
+    case 'copy-images-from-2d':
+      handleCopyImagesFrom2D(row);
+      break;
     default:
       console.warn('未知的操作命令:', command);
   }
@@ -1942,6 +2152,100 @@ async function handleGenerateProductCode(row: any) {
   } catch (error) {
     ElMessage.error('生成产品代码失败');
   }
+}
+
+// 处理从二维产品图复制图片并添加水印
+async function handleCopyImagesFrom2D(row: any) {
+  if (!row.productImage2DId) {
+    ElMessage.warning('该产品未关联二维产品图');
+    return;
+  }
+  
+  // 设置默认水印文字为产品代码
+  copy2DForm.watermark.text = row.code || '';
+  currentCopy2DProductId.value = row.id;
+  copy2DDialogVisible.value = true;
+}
+
+// 执行复制二维模型信息
+async function executeCopy2D() {
+  if (!currentCopy2DProductId.value) return;
+  
+  // 验证水印配置（留空时后端会使用产品代码，所以不需要验证）
+  
+  try {
+    copying2D.value = true;
+    
+    const requestData: any = {
+      id: currentCopy2DProductId.value
+    };
+    
+    // 水印配置
+    if (copy2DForm.watermark.enabled) {
+      requestData.watermark = {
+        enabled: true,
+        text: copy2DForm.watermark.text || undefined, // 如果为空，后端会使用产品代码
+        position: copy2DForm.watermark.position,
+        fontColor: copy2DForm.watermark.fontColor,
+        opacity: copy2DForm.watermark.opacity
+      };
+      
+      // 传递字体大小百分比（相对于图片宽度）
+      if (copy2DForm.watermark.fontSizePercent !== undefined && copy2DForm.watermark.fontSizePercent !== null) {
+        requestData.watermark.fontSizePercent = copy2DForm.watermark.fontSizePercent;
+      }
+    } else {
+      requestData.watermark = { enabled: false };
+    }
+    
+    // 基本信息复制配置
+    if (copy2DForm.copyBasicInfo.enabled) {
+      requestData.copyBasicInfo = {
+        enabled: true,
+        copyName: copy2DForm.copyBasicInfo.copyName,
+        copyDescription: copy2DForm.copyBasicInfo.copyDescription,
+        copyKeywords: copy2DForm.copyBasicInfo.copyKeywords
+      };
+    } else {
+      requestData.copyBasicInfo = { enabled: false };
+    }
+    
+    // 图片处理选项
+    requestData.imageOptions = {
+      replace: copy2DForm.imageOptions.replace
+    };
+    
+    const res = await copyImagesFromProductImage2D(requestData);
+    if (res && res.success) {
+      ElMessage.success(res.message || `成功复制 ${res.copiedImageCount} 张图片`);
+      // 刷新列表
+      getList();
+      copy2DDialogVisible.value = false;
+    }
+  } catch (error: any) {
+    console.error('复制信息失败:', error);
+    ElMessage.error(error?.message || '复制信息失败');
+  } finally {
+    copying2D.value = false;
+  }
+}
+
+// 关闭复制二维模型信息对话框
+function handleCloseCopy2DDialog() {
+  copy2DDialogVisible.value = false;
+  currentCopy2DProductId.value = '';
+  // 重置表单
+  copy2DForm.watermark.enabled = true;
+  copy2DForm.watermark.text = '';
+  copy2DForm.watermark.position = 'bottom-right';
+  copy2DForm.watermark.fontSizePercent = 5; // 重置为默认值5%
+  copy2DForm.watermark.fontColor = '#FFFFFF';
+  copy2DForm.watermark.opacity = 0.6;
+  copy2DForm.copyBasicInfo.enabled = false;
+  copy2DForm.copyBasicInfo.copyName = true;
+  copy2DForm.copyBasicInfo.copyDescription = true;
+  copy2DForm.copyBasicInfo.copyKeywords = true;
+  copy2DForm.imageOptions.replace = false;
 }
 
 // 处理草稿视频预览
@@ -2068,6 +2372,60 @@ function getRelationsText(row: any): string {
 function showRelationsDetail(row: any) {
   currentRelationsRow.value = row
   relationsDetailVisible.value = true
+}
+
+// 查看源信息
+function showRelationsSourceInfo(row: any) {
+  currentSourceInfoRow.value = row
+  // 设置默认激活的标签页
+  if (row.customModel) {
+    activeSourceTab.value = 'customModel'
+  } else if (row.sticker) {
+    activeSourceTab.value = 'sticker'
+  } else if (row.productImage2D) {
+    activeSourceTab.value = 'productImage2D'
+  }
+  relationsSourceInfoVisible.value = true
+}
+
+// 格式化JSON显示
+function formatJSON(obj: any): string {
+  if (!obj) return '无数据'
+  try {
+    return JSON.stringify(obj, null, 2)
+  } catch (e) {
+    return String(obj)
+  }
+}
+
+// 复制源信息
+async function copySourceInfo() {
+  if (!currentSourceInfoRow.value) return
+  
+  let jsonText = ''
+  if (activeSourceTab.value === 'customModel' && currentSourceInfoRow.value.customModel) {
+    jsonText = JSON.stringify(currentSourceInfoRow.value.customModel, null, 2)
+  } else if (activeSourceTab.value === 'sticker' && currentSourceInfoRow.value.sticker) {
+    jsonText = JSON.stringify(currentSourceInfoRow.value.sticker, null, 2)
+  } else if (activeSourceTab.value === 'productImage2D' && currentSourceInfoRow.value.productImage2D) {
+    jsonText = JSON.stringify(currentSourceInfoRow.value.productImage2D, null, 2)
+  }
+  
+  if (jsonText) {
+    try {
+      await navigator.clipboard.writeText(jsonText)
+      ElMessage.success('已复制到剪贴板')
+    } catch (e) {
+      // 降级方案
+      const textarea = document.createElement('textarea')
+      textarea.value = jsonText
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      ElMessage.success('已复制到剪贴板')
+    }
+  }
 }
 </script>
 
@@ -2642,11 +3000,52 @@ function showRelationsDetail(row: any) {
   }
 }
 
-.relation-detail-btn {
+.relation-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.relation-detail-btn,
+.relation-source-btn {
   margin-top: 4px;
   padding: 0;
   height: auto;
   font-size: 12px;
+}
+
+.source-info-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.source-info-section {
+  padding: 16px;
+}
+
+.source-info-title {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.source-info-json {
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  padding: 16px;
+  margin: 0;
+  overflow-x: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #303133;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 // 关联信息详情弹窗样式

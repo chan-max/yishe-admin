@@ -53,4 +53,12 @@ export function generateProductCode(data: { id: string }) {
     method: 'post',
     data,
   });
+}
+
+export function copyImagesFromProductImage2D(data: { id: string }) {
+  return request.post({
+    url: '/product/copy-images-from-2d',
+    method: 'post',
+    data,
+  });
 } 

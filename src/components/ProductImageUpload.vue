@@ -1,25 +1,42 @@
 <template>
   <div class="product-image-upload">
     <div class="image-list">
-      <div v-for="(file, index) in localFiles" :key="index" class="image-item">
-        <el-image 
-          :src="getPreviewUrl(file)" 
-          fit="cover" 
-          class="preview-image" 
-          :preview-src-list="previewList" 
-          :initial-index="index"
-        >
-          <template #error>
-            <div class="image-slot">
-              <el-icon><Picture /></el-icon>
+      <draggable
+        v-model="localFiles"
+        :animation="200"
+        handle=".drag-handle"
+        ghost-class="ghost-item"
+        chosen-class="chosen-item"
+        @start="onDragStart"
+        @end="onDragEnd"
+        item-key="id"
+        class="draggable-container"
+      >
+        <template #item="{ element: file, index }">
+          <div class="image-item" :class="{ 'dragging': isDragging }">
+            <div class="drag-handle">
+              <el-icon class="drag-icon"><Rank /></el-icon>
             </div>
-          </template>
-        </el-image>
-        <div class="image-actions">
-          <el-button type="danger" size="small" :icon="Delete" circle @click="removeFile(index)" />
-          <el-button v-if="index > 0" type="primary" size="small" :icon="Top" circle @click="moveUp(index)" />
-        </div>
-      </div>
+            <el-image 
+              :src="getPreviewUrl(file)" 
+              fit="cover" 
+              class="preview-image" 
+              :preview-src-list="previewList" 
+              :initial-index="index"
+            >
+              <template #error>
+                <div class="image-slot">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
+            <div class="image-actions">
+              <el-button type="danger" size="small" :icon="Delete" circle @click="removeFile(index)" />
+            </div>
+            <div class="image-index">{{ index + 1 }}</div>
+          </div>
+        </template>
+      </draggable>
 
       <el-upload
         v-if="localFiles.length < maxCount"
@@ -46,8 +63,9 @@
 
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
-import { Plus, Delete, Picture, Top } from '@element-plus/icons-vue'
+import { Plus, Delete, Picture, Rank } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import draggable from 'vuedraggable'
 
 const props = defineProps({
   modelValue: {
@@ -64,6 +82,7 @@ const emit = defineEmits(['update:modelValue', 'files-change'])
 
 // 本地文件列表，包含已上传的URL和新选择的文件
 const localFiles = ref([])
+const isDragging = ref(false)
 
 // 获取预览URL
 const getPreviewUrl = (file) => {
@@ -93,8 +112,9 @@ const handleChange = (file) => {
     return
   }
 
-  // 添加新文件到本地列表
+  // 添加新文件到本地列表，添加唯一ID
   localFiles.value.push({
+    id: `file-${Date.now()}-${Math.random()}`,
     raw: file.raw,
     url: null
   })
@@ -122,10 +142,14 @@ const removeFile = (index) => {
   emit('files-change', localFiles.value)
 }
 
-// 上移文件
-const moveUp = (index) => {
-  [localFiles.value[index], localFiles.value[index - 1]] = [localFiles.value[index - 1], localFiles.value[index]]
-  
+// 拖拽开始处理
+const onDragStart = () => {
+  isDragging.value = true
+}
+
+// 拖拽结束处理
+const onDragEnd = () => {
+  isDragging.value = false
   // 更新 modelValue，保持已上传图片的顺序
   const urls = localFiles.value
     .filter(file => file.url)
@@ -138,9 +162,19 @@ const moveUp = (index) => {
 
 // 监听 modelValue 变化，更新本地文件列表
 const updateLocalFiles = (newValue) => {
-  // 保持原有文件的顺序
+  // 保持原有文件的顺序和新上传的文件
   const existingFiles = localFiles.value.filter(file => file.raw)
-  const urlFiles = newValue.map(url => ({ url, raw: null }))
+  
+  // 为URL文件添加唯一ID，如果已有相同URL的文件，保留其ID
+  const urlFiles = newValue.map((url, idx) => {
+    // 查找是否已有相同URL的文件
+    const existingFile = localFiles.value.find(f => f.url === url)
+    return { 
+      id: existingFile?.id || `url-${url}-${idx}-${Date.now()}`,
+      url, 
+      raw: null
+    }
+  })
   localFiles.value = [...urlFiles, ...existingFiles]
 }
 
@@ -187,17 +221,118 @@ defineExpose({
 
 .image-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+  width: 100%;
+  /* 自定义滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.draggable-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  width: auto !important;
+  min-width: fit-content;
+}
+
+.image-list::-webkit-scrollbar {
+  height: 8px;
+}
+
+.image-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.image-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.image-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
 .image-item {
   position: relative;
   width: 120px;
   height: 120px;
+  min-width: 120px;
+  flex-shrink: 0;
   border: 1px dashed #dcdfe6;
   border-radius: 4px;
   overflow: hidden;
+  cursor: move;
+  transition: all 0.3s ease;
+}
+
+.image-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+}
+
+.image-item.dragging {
+  opacity: 0.5;
+}
+
+.drag-handle {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.drag-handle:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-icon {
+  color: #fff;
+  font-size: 14px;
+}
+
+.image-index {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 5;
+}
+
+.ghost-item {
+  opacity: 0.4;
+  background: #f0f0f0;
+}
+
+.chosen-item {
+  border-color: #409eff;
+  box-shadow: 0 2px 12px rgba(64, 158, 255, 0.3);
 }
 
 .preview-image {
@@ -218,6 +353,8 @@ defineExpose({
 .upload-btn {
   width: 120px;
   height: 120px;
+  min-width: 120px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
