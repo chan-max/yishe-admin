@@ -419,6 +419,28 @@
                     </div>
                   </div>
 
+                  <!-- 固定尺寸模式下的填充方式选择 -->
+                  <div v-if="manualConfigs[index].mode === 'topLeftFixedSize'" class="control-group" style="margin-top: 16px;">
+                    <label>填充方式:</label>
+                    <div class="control-item">
+                      <el-radio-group
+                        v-model="manualConfigs[index].fitMode"
+                        @change="onManualConfigChange(index)"
+                      >
+                        <el-radio label="crop">裁剪（填满区域，可能裁剪图片）</el-radio>
+                        <el-radio label="contain">空白填充（保持原图完整，居中显示）</el-radio>
+                      </el-radio-group>
+                      <div style="font-size: 12px; color: var(--el-text-color-secondary); margin-top: 8px;">
+                        <div v-if="manualConfigs[index].fitMode === 'crop'">
+                          图片会被缩放并裁剪为指定尺寸，保持填满整个区域，可能会裁剪掉部分内容
+                        </div>
+                        <div v-else>
+                          图片会保持原始宽高比完整显示，居中放置在指定区域内，空白部分用透明填充
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- 透明度控制 -->
                   <div class="control-group">
                     <label>透明度:</label>
@@ -650,6 +672,10 @@ function openImageOption(row) {
       if (config.borderRadius === undefined || config.borderRadius === null) {
         config.borderRadius = 0
       }
+      // 确保有fitMode字段，默认'crop'（仅固定尺寸模式需要）
+      if (config.mode === 'topLeftFixedSize' && (config.fitMode === undefined || config.fitMode === null)) {
+        config.fitMode = 'crop'
+      }
       return config
     } catch (e) {
       return getDefaultManualConfig()
@@ -682,7 +708,8 @@ function getDefaultManualConfig() {
     size: { widthPercent: 30 },
     opacity: 100,
     borderRadius: 0,
-    keepOriginal: false
+    keepOriginal: false,
+    fitMode: 'crop' // 默认裁剪模式
   }
 }
 
@@ -696,7 +723,8 @@ function getDefaultConfigByMode(mode: string) {
       size: { widthPercent: 30, heightPercent: 30 },
       opacity: 100,
       borderRadius: 0,
-      keepOriginal: false
+      keepOriginal: false,
+      fitMode: 'crop' // 默认裁剪模式
     }
   }
   return getDefaultManualConfig()
