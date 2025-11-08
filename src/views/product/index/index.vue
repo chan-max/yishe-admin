@@ -91,6 +91,20 @@
                   <el-icon><Upload /></el-icon>
                   <span>复制关联二维模型信息到商品</span>
                 </el-dropdown-item>
+                <el-dropdown-item 
+                  command="copy-images-from-sticker" 
+                  :disabled="!row.stickerId"
+                >
+                  <el-icon><Picture /></el-icon>
+                  <span>复制关联贴纸信息到商品</span>
+                </el-dropdown-item>
+                <el-dropdown-item 
+                  command="copy-images-from-custom-model" 
+                  :disabled="!row.customModelId"
+                >
+                  <el-icon><Box /></el-icon>
+                  <span>复制关联设计模型信息到商品</span>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -773,6 +787,250 @@
       </template>
     </el-dialog>
 
+    <!-- 复制贴纸信息配置对话框 -->
+    <el-dialog
+      v-model="copyStickerDialogVisible"
+      title="复制关联贴纸信息到商品"
+      width="700px"
+      :before-close="handleCloseCopyStickerDialog"
+      align-center
+      destroy-on-close
+    >
+      <el-form
+        :model="copyStickerForm"
+        label-width="140px"
+        label-position="left"
+      >
+        <!-- 基本信息复制 -->
+        <el-divider content-position="left">基本信息复制</el-divider>
+        <el-form-item label="复制基本信息">
+          <el-switch
+            v-model="copyStickerForm.copyBasicInfo.enabled"
+            active-text="启用"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+        
+        <template v-if="copyStickerForm.copyBasicInfo.enabled">
+          <el-form-item label="复制名称">
+            <el-switch v-model="copyStickerForm.copyBasicInfo.copyName" />
+          </el-form-item>
+          <el-form-item label="复制描述">
+            <el-switch v-model="copyStickerForm.copyBasicInfo.copyDescription" />
+          </el-form-item>
+          <el-form-item label="复制关键词">
+            <el-switch v-model="copyStickerForm.copyBasicInfo.copyKeywords" />
+          </el-form-item>
+        </template>
+
+        <!-- 水印配置 -->
+        <el-divider content-position="left">水印配置</el-divider>
+        <el-form-item label="启用水印">
+          <el-switch
+            v-model="copyStickerForm.watermark.enabled"
+            active-text="启用"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+        
+        <template v-if="copyStickerForm.watermark.enabled">
+          <el-form-item label="水印文字">
+            <el-input
+              v-model="copyStickerForm.watermark.text"
+              placeholder="留空则使用产品代码"
+              clearable
+            />
+            <div class="text-xs text-gray-400 mt-1">留空则自动使用产品代码</div>
+          </el-form-item>
+          
+          <el-form-item label="水印位置">
+            <el-select v-model="copyStickerForm.watermark.position" style="width: 100%">
+              <el-option label="右下角" value="bottom-right" />
+              <el-option label="右上角" value="top-right" />
+              <el-option label="左下角" value="bottom-left" />
+              <el-option label="左上角" value="top-left" />
+              <el-option label="居中" value="center" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="字体颜色">
+            <el-color-picker v-model="copyStickerForm.watermark.fontColor" />
+          </el-form-item>
+          
+          <el-form-item label="透明度">
+            <el-slider
+              v-model="copyStickerForm.watermark.opacity"
+              :min="0"
+              :max="1"
+              :step="0.1"
+              :format-tooltip="(val) => Math.round(val * 100) + '%'"
+            />
+          </el-form-item>
+          
+          <el-form-item label="字体大小（单个文字）">
+            <el-input-number
+              v-model="copyStickerForm.watermark.fontSizePercent"
+              :min="1"
+              :max="20"
+              :step="0.5"
+              :precision="1"
+              placeholder="默认5%"
+              style="width: 100%"
+            >
+              <template #suffix>%</template>
+            </el-input-number>
+            <div class="text-xs text-gray-400 mt-1">
+              单个文字的字体大小，相对于图片宽度的百分比（1-20%），留空则自动计算（默认5%）
+            </div>
+          </el-form-item>
+        </template>
+
+        <!-- 图片处理选项 -->
+        <el-divider content-position="left">图片处理选项</el-divider>
+        <el-form-item label="图片处理方式">
+          <el-radio-group v-model="copyStickerForm.imageOptions.replace">
+            <el-radio :label="false">追加到现有图片</el-radio>
+            <el-radio :label="true">替换现有图片</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseCopyStickerDialog">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="copyingSticker"
+            @click="executeCopySticker"
+          >
+            {{ copyingSticker ? '处理中...' : '确定复制' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 复制设计模型信息配置对话框 -->
+    <el-dialog
+      v-model="copyCustomModelDialogVisible"
+      title="复制关联设计模型信息到商品"
+      width="700px"
+      :before-close="handleCloseCopyCustomModelDialog"
+      align-center
+      destroy-on-close
+    >
+      <el-form
+        :model="copyCustomModelForm"
+        label-width="140px"
+        label-position="left"
+      >
+        <!-- 基本信息复制 -->
+        <el-divider content-position="left">基本信息复制</el-divider>
+        <el-form-item label="复制基本信息">
+          <el-switch
+            v-model="copyCustomModelForm.copyBasicInfo.enabled"
+            active-text="启用"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+        
+        <template v-if="copyCustomModelForm.copyBasicInfo.enabled">
+          <el-form-item label="复制名称">
+            <el-switch v-model="copyCustomModelForm.copyBasicInfo.copyName" />
+          </el-form-item>
+          <el-form-item label="复制描述">
+            <el-switch v-model="copyCustomModelForm.copyBasicInfo.copyDescription" />
+          </el-form-item>
+          <el-form-item label="复制关键词">
+            <el-switch v-model="copyCustomModelForm.copyBasicInfo.copyKeywords" />
+          </el-form-item>
+        </template>
+
+        <!-- 水印配置 -->
+        <el-divider content-position="left">水印配置</el-divider>
+        <el-form-item label="启用水印">
+          <el-switch
+            v-model="copyCustomModelForm.watermark.enabled"
+            active-text="启用"
+            inactive-text="禁用"
+          />
+        </el-form-item>
+        
+        <template v-if="copyCustomModelForm.watermark.enabled">
+          <el-form-item label="水印文字">
+            <el-input
+              v-model="copyCustomModelForm.watermark.text"
+              placeholder="留空则使用产品代码"
+              clearable
+            />
+            <div class="text-xs text-gray-400 mt-1">留空则自动使用产品代码</div>
+          </el-form-item>
+          
+          <el-form-item label="水印位置">
+            <el-select v-model="copyCustomModelForm.watermark.position" style="width: 100%">
+              <el-option label="右下角" value="bottom-right" />
+              <el-option label="右上角" value="top-right" />
+              <el-option label="左下角" value="bottom-left" />
+              <el-option label="左上角" value="top-left" />
+              <el-option label="居中" value="center" />
+            </el-select>
+          </el-form-item>
+          
+          <el-form-item label="字体颜色">
+            <el-color-picker v-model="copyCustomModelForm.watermark.fontColor" />
+          </el-form-item>
+          
+          <el-form-item label="透明度">
+            <el-slider
+              v-model="copyCustomModelForm.watermark.opacity"
+              :min="0"
+              :max="1"
+              :step="0.1"
+              :format-tooltip="(val) => Math.round(val * 100) + '%'"
+            />
+          </el-form-item>
+          
+          <el-form-item label="字体大小（单个文字）">
+            <el-input-number
+              v-model="copyCustomModelForm.watermark.fontSizePercent"
+              :min="1"
+              :max="20"
+              :step="0.5"
+              :precision="1"
+              placeholder="默认5%"
+              style="width: 100%"
+            >
+              <template #suffix>%</template>
+            </el-input-number>
+            <div class="text-xs text-gray-400 mt-1">
+              单个文字的字体大小，相对于图片宽度的百分比（1-20%），留空则自动计算（默认5%）
+            </div>
+          </el-form-item>
+        </template>
+
+        <!-- 图片处理选项 -->
+        <el-divider content-position="left">图片处理选项</el-divider>
+        <el-form-item label="图片处理方式">
+          <el-radio-group v-model="copyCustomModelForm.imageOptions.replace">
+            <el-radio :label="false">追加到现有图片</el-radio>
+            <el-radio :label="true">替换现有图片</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleCloseCopyCustomModelDialog">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="copyingCustomModel"
+            @click="executeCopyCustomModel"
+          >
+            {{ copyingCustomModel ? '处理中...' : '确定复制' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 图片预览 -->
     <el-dialog v-model="previewVisible" title="预览" width="90%" :close-on-click-modal="true">
       <div v-if="previewList.length > 0" class="flex flex-col items-center">
@@ -1173,6 +1431,8 @@ import {
   Search,
   Plus,
   Delete,
+  Picture,
+  Box,
   ArrowDown,
   Edit,
   Upload,
@@ -1185,7 +1445,7 @@ import {
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D } from "@/api/product";
+import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -1346,6 +1606,54 @@ const copy2DForm = reactive({
     text: '',
     position: 'bottom-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center',
     fontSizePercent: 5 as number | undefined, // 相对于图片宽度的百分比，默认5%
+    fontColor: '#FFFFFF',
+    opacity: 0.6
+  },
+  copyBasicInfo: {
+    enabled: false,
+    copyName: true,
+    copyDescription: true,
+    copyKeywords: true
+  },
+  imageOptions: {
+    replace: false
+  }
+});
+
+// 复制贴纸信息相关状态
+const copyStickerDialogVisible = ref(false);
+const copyingSticker = ref(false);
+const currentCopyStickerProductId = ref<string>('');
+const copyStickerForm = reactive({
+  watermark: {
+    enabled: true,
+    text: '',
+    position: 'bottom-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center',
+    fontSizePercent: 5 as number | undefined,
+    fontColor: '#FFFFFF',
+    opacity: 0.6
+  },
+  copyBasicInfo: {
+    enabled: false,
+    copyName: true,
+    copyDescription: true,
+    copyKeywords: true
+  },
+  imageOptions: {
+    replace: false
+  }
+});
+
+// 复制设计模型信息相关状态
+const copyCustomModelDialogVisible = ref(false);
+const copyingCustomModel = ref(false);
+const currentCopyCustomModelProductId = ref<string>('');
+const copyCustomModelForm = reactive({
+  watermark: {
+    enabled: true,
+    text: '',
+    position: 'bottom-right' as 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center',
+    fontSizePercent: 5 as number | undefined,
     fontColor: '#FFFFFF',
     opacity: 0.6
   },
@@ -2134,6 +2442,12 @@ function handleOperationCommand(command: string, row: any) {
     case 'copy-images-from-2d':
       handleCopyImagesFrom2D(row);
       break;
+    case 'copy-images-from-sticker':
+      handleCopyImagesFromSticker(row);
+      break;
+    case 'copy-images-from-custom-model':
+      handleCopyImagesFromCustomModel(row);
+      break;
     default:
       console.warn('未知的操作命令:', command);
   }
@@ -2246,6 +2560,186 @@ function handleCloseCopy2DDialog() {
   copy2DForm.copyBasicInfo.copyDescription = true;
   copy2DForm.copyBasicInfo.copyKeywords = true;
   copy2DForm.imageOptions.replace = false;
+}
+
+// 处理从贴纸复制图片并添加水印
+async function handleCopyImagesFromSticker(row: any) {
+  if (!row.stickerId) {
+    ElMessage.warning('该产品未关联贴纸');
+    return;
+  }
+  
+  // 设置默认水印文字为产品代码
+  copyStickerForm.watermark.text = row.code || '';
+  currentCopyStickerProductId.value = row.id;
+  copyStickerDialogVisible.value = true;
+}
+
+// 执行复制贴纸信息
+async function executeCopySticker() {
+  if (!currentCopyStickerProductId.value) return;
+  
+  try {
+    copyingSticker.value = true;
+    
+    const requestData: any = {
+      id: currentCopyStickerProductId.value
+    };
+    
+    // 水印配置
+    if (copyStickerForm.watermark.enabled) {
+      requestData.watermark = {
+        enabled: true,
+        text: copyStickerForm.watermark.text || undefined,
+        position: copyStickerForm.watermark.position,
+        fontColor: copyStickerForm.watermark.fontColor,
+        opacity: copyStickerForm.watermark.opacity
+      };
+      
+      if (copyStickerForm.watermark.fontSizePercent !== undefined && copyStickerForm.watermark.fontSizePercent !== null) {
+        requestData.watermark.fontSizePercent = copyStickerForm.watermark.fontSizePercent;
+      }
+    } else {
+      requestData.watermark = { enabled: false };
+    }
+    
+    // 基本信息复制配置
+    if (copyStickerForm.copyBasicInfo.enabled) {
+      requestData.copyBasicInfo = {
+        enabled: true,
+        copyName: copyStickerForm.copyBasicInfo.copyName,
+        copyDescription: copyStickerForm.copyBasicInfo.copyDescription,
+        copyKeywords: copyStickerForm.copyBasicInfo.copyKeywords
+      };
+    } else {
+      requestData.copyBasicInfo = { enabled: false };
+    }
+    
+    // 图片处理选项
+    requestData.imageOptions = {
+      replace: copyStickerForm.imageOptions.replace
+    };
+    
+    const res = await copyImagesFromSticker(requestData);
+    if (res && res.success) {
+      ElMessage.success(res.message || `成功复制 ${res.copiedImageCount} 张图片`);
+      getList();
+      copyStickerDialogVisible.value = false;
+    }
+  } catch (error: any) {
+    console.error('复制信息失败:', error);
+    ElMessage.error(error?.message || '复制信息失败');
+  } finally {
+    copyingSticker.value = false;
+  }
+}
+
+// 关闭复制贴纸信息对话框
+function handleCloseCopyStickerDialog() {
+  copyStickerDialogVisible.value = false;
+  currentCopyStickerProductId.value = '';
+  // 重置表单
+  copyStickerForm.watermark.enabled = true;
+  copyStickerForm.watermark.text = '';
+  copyStickerForm.watermark.position = 'bottom-right';
+  copyStickerForm.watermark.fontSizePercent = 5;
+  copyStickerForm.watermark.fontColor = '#FFFFFF';
+  copyStickerForm.watermark.opacity = 0.6;
+  copyStickerForm.copyBasicInfo.enabled = false;
+  copyStickerForm.copyBasicInfo.copyName = true;
+  copyStickerForm.copyBasicInfo.copyDescription = true;
+  copyStickerForm.copyBasicInfo.copyKeywords = true;
+  copyStickerForm.imageOptions.replace = false;
+}
+
+// 处理从设计模型复制图片并添加水印
+async function handleCopyImagesFromCustomModel(row: any) {
+  if (!row.customModelId) {
+    ElMessage.warning('该产品未关联设计模型');
+    return;
+  }
+  
+  // 设置默认水印文字为产品代码
+  copyCustomModelForm.watermark.text = row.code || '';
+  currentCopyCustomModelProductId.value = row.id;
+  copyCustomModelDialogVisible.value = true;
+}
+
+// 执行复制设计模型信息
+async function executeCopyCustomModel() {
+  if (!currentCopyCustomModelProductId.value) return;
+  
+  try {
+    copyingCustomModel.value = true;
+    
+    const requestData: any = {
+      id: currentCopyCustomModelProductId.value
+    };
+    
+    // 水印配置
+    if (copyCustomModelForm.watermark.enabled) {
+      requestData.watermark = {
+        enabled: true,
+        text: copyCustomModelForm.watermark.text || undefined,
+        position: copyCustomModelForm.watermark.position,
+        fontColor: copyCustomModelForm.watermark.fontColor,
+        opacity: copyCustomModelForm.watermark.opacity
+      };
+      
+      if (copyCustomModelForm.watermark.fontSizePercent !== undefined && copyCustomModelForm.watermark.fontSizePercent !== null) {
+        requestData.watermark.fontSizePercent = copyCustomModelForm.watermark.fontSizePercent;
+      }
+    } else {
+      requestData.watermark = { enabled: false };
+    }
+    
+    // 基本信息复制配置
+    if (copyCustomModelForm.copyBasicInfo.enabled) {
+      requestData.copyBasicInfo = {
+        enabled: true,
+        copyName: copyCustomModelForm.copyBasicInfo.copyName,
+        copyDescription: copyCustomModelForm.copyBasicInfo.copyDescription,
+        copyKeywords: copyCustomModelForm.copyBasicInfo.copyKeywords
+      };
+    } else {
+      requestData.copyBasicInfo = { enabled: false };
+    }
+    
+    // 图片处理选项
+    requestData.imageOptions = {
+      replace: copyCustomModelForm.imageOptions.replace
+    };
+    
+    const res = await copyImagesFromCustomModel(requestData);
+    if (res && res.success) {
+      ElMessage.success(res.message || `成功复制 ${res.copiedImageCount} 张图片`);
+      getList();
+      copyCustomModelDialogVisible.value = false;
+    }
+  } catch (error: any) {
+    console.error('复制信息失败:', error);
+    ElMessage.error(error?.message || '复制信息失败');
+  } finally {
+    copyingCustomModel.value = false;
+  }
+}
+
+// 关闭复制设计模型信息对话框
+function handleCloseCopyCustomModelDialog() {
+  copyCustomModelDialogVisible.value = false;
+  currentCopyCustomModelProductId.value = '';
+  // 重置表单
+  copyCustomModelForm.watermark.enabled = true;
+  copyCustomModelForm.watermark.text = '';
+  copyCustomModelForm.watermark.position = 'bottom-right';
+  copyCustomModelForm.watermark.fontSizePercent = 5;
+  copyCustomModelForm.watermark.fontColor = '#FFFFFF';
+  copyCustomModelForm.watermark.opacity = 0.6;
+  copyCustomModelForm.copyBasicInfo.enabled = false;
+  copyCustomModelForm.copyBasicInfo.copyName = true;
+  copyCustomModelForm.copyBasicInfo.copyDescription = true;
+  copyCustomModelForm.copyBasicInfo.copyKeywords = true;
+  copyCustomModelForm.imageOptions.replace = false;
 }
 
 // 处理草稿视频预览
