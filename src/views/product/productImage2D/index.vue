@@ -2,17 +2,9 @@
   <div >
     <div class="py-4 flex justify-between items-center">
       <div class="flex gap-4 items-center">
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-600">发布状态：</span>
-          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" style="width: 160px" @change="handleStatusFilter">
-            <el-option
-              v-for="option in STATUS_OPTIONS"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
-        </div>
+        
+        <!-- 发布状态筛选已移除 -->
+        
         <!-- 产品代码搜索已注释 -->
         <!-- <div class="flex items-center gap-2">
           <span class="text-sm text-gray-600">产品代码：</span>
@@ -344,18 +336,7 @@
             </div>
           </div>
         </template>
-        <template #statusSlot="{ row }">
-          <el-tag :type="getStatusTagType(row.publishStatus)" size="small">
-            {{ STATUS_TEXT[row.publishStatus] || '未知' }}
-          </el-tag>
-        </template>
-        <!-- 产品代码列已注释 -->
-        <!-- <template #codeSlot="{ row }">
-          <div class="product-code">
-            <span v-if="row.code" class="code-text" @click="handleCopyCode(row.code)">{{ row.code }}</span>
-            <span v-else class="code-empty">-</span>
-          </div>
-        </template> -->
+        <!-- 状态列已移除 -->
         <template #nameSlot="{ row }">
           <div class="product-name">
             <span v-if="row.name" class="name-text">{{ row.name }}</span>
@@ -515,31 +496,6 @@ import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { useWindowSize } from '@vueuse/core'
 import { copyProductCode, copyLink } from '@/utils/clipboard'
 
-// 发布状态常量
-const PUBLISH_STATUS = {
-  DRAFT: 'draft',
-  PENDING_SOCIAL_MEDIA: 'pending_social_media',
-  PUBLISHED_SOCIAL_MEDIA: 'published_social_media',
-  ARCHIVED: 'archived'
-} as const
-
-// 状态显示文本
-const STATUS_TEXT = {
-  [PUBLISH_STATUS.DRAFT]: '草稿',
-  [PUBLISH_STATUS.PENDING_SOCIAL_MEDIA]: '待发布社交媒体',
-  [PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA]: '已发布社交媒体',
-  [PUBLISH_STATUS.ARCHIVED]: '已归档'
-} as const
-
-// 状态选项
-const STATUS_OPTIONS = [
-  { label: '全部', value: '' },
-  { label: '草稿', value: PUBLISH_STATUS.DRAFT },
-  { label: '待发布社交媒体', value: PUBLISH_STATUS.PENDING_SOCIAL_MEDIA },
-  { label: '已发布社交媒体', value: PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA },
-  { label: '已归档', value: PUBLISH_STATUS.ARCHIVED }
-]
-
 // 视频状态常量
 const VIDEO_STATUS = {
   NONE: 'none',
@@ -556,7 +512,7 @@ const VIDEO_STATUS = {
 //   [VIDEO_STATUS.FAILED]: '生成失败'
 // } as const
 
-const queryParams = reactive({ currentPage: 1, pageSize: 20, publishStatus: '', code: '' }) // code 字段保留但不使用
+const queryParams = reactive({ currentPage: 1, pageSize: 20, code: '' }) // code 字段保留但不使用
 
 // 获取窗口尺寸
 const { height } = useWindowSize()
@@ -571,7 +527,7 @@ const gridOptions = ref<any>({
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
     { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
     { title: '关键词', field: 'keywords', width: 150, slots: { default: 'keywordsSlot' } },
-    { title: '发布状态', field: 'publishStatus', width: 140, slots: { default: 'statusSlot' } },
+    // 发布状态列已移除
     { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
@@ -699,8 +655,7 @@ async function getList() {
       data: { 
         page: queryParams.currentPage, 
         pageSize: queryParams.pageSize,
-        publishStatus: queryParams.publishStatus,
-        // code: queryParams.code // 已注释
+        code: queryParams.code // 已注释
       } 
     })
     console.log('获取到的数据:', res)
@@ -838,33 +793,10 @@ function handleOperationCommand(command: string, row: any) {
     case 'delete':
       handleDelete(row)
       break
-    case 'mark-pending':
-      updateStatus(row.id, PUBLISH_STATUS.PENDING_SOCIAL_MEDIA)
-      break
-    case 'mark-published':
-      updateStatus(row.id, PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA)
-      break
-    case 'mark-draft':
-      updateStatus(row.id, PUBLISH_STATUS.DRAFT)
-      break
-    case 'mark-archived':
-      updateStatus(row.id, PUBLISH_STATUS.ARCHIVED)
-      break
-    case 'toggle-public':
-      togglePublic(row)
-      break
-    // case 'copy-link':
-    //   handleCopyLink(row)
-    //   break
+    // 发布状态相关操作已移除
     default:
       console.warn('未知的操作命令:', command)
   }
-}
-
-// 状态过滤处理
-function handleStatusFilter() {
-  queryParams.currentPage = 1
-  getList()
 }
 
 // 产品代码查询处理
@@ -883,33 +815,33 @@ function handleStatusFilter() {
 // 获取状态标签类型
 function getStatusTagType(status: string) {
   switch (status) {
-    case PUBLISH_STATUS.DRAFT:
+    case 'draft':
       return 'info'
-    case PUBLISH_STATUS.PENDING_SOCIAL_MEDIA:
+    case 'pending_social_media':
       return 'warning'
-    case PUBLISH_STATUS.PUBLISHED_SOCIAL_MEDIA:
+    case 'published_social_media':
       return 'success'
-    case PUBLISH_STATUS.ARCHIVED:
+    case 'archived':
       return 'danger'
     default:
       return 'primary'
   }
 }
 
-// 更新状态
-async function updateStatus(id: string, status: string) {
-  try {
-    await request.post({ 
-      url: '/product-image-2d/update-status', 
-      data: { id, publishStatus: status } 
-    })
-    ElMessage.success('状态更新成功')
-    getList()
-  } catch (e) {
-    console.error('更新状态失败:', e)
-    ElMessage.error('状态更新失败')
-  }
-}
+// 更新状态（发布状态相关功能已移除）
+// async function updateStatus(id: string, status: string) {
+//   try {
+//     await request.post({ 
+//       url: '/product-image-2d/update-status', 
+//       data: { id, publishStatus: status } 
+//     })
+//     ElMessage.success('状态更新成功')
+//     getList()
+//   } catch (e) {
+//     console.error('更新状态失败:', e)
+//     ElMessage.error('状态更新失败')
+//   }
+// }
 
 // 切换发布状态
 async function togglePublic(row: any) {

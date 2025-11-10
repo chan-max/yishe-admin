@@ -13,13 +13,17 @@
       </form-item>
       <form-item label="发布状态">
         <el-select
-          v-model="queryParams.isPublish"
+          v-model="queryParams.publishStatus"
           clearable
           placeholder="全部"
-          style="width: 120px"
+          style="width: 160px"
+          @change="handleSearch"
         >
-          <el-option label="已发布" :value="true" />
-          <el-option label="未发布" :value="false" />
+          <el-option label="全部" value="" />
+          <el-option label="草稿" value="draft" />
+          <el-option label="待发布社交媒体" value="pending_social_media" />
+          <el-option label="已发布社交媒体" value="published_social_media" />
+          <el-option label="已归档" value="archived" />
         </el-select>
       </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
@@ -62,18 +66,25 @@
                   <el-icon><Delete /></el-icon>
                   <span>删除</span>
                 </el-dropdown-item>
-                <!-- 发布相关 -->
-                <el-dropdown-item 
-                  :command="row.isPublish ? 'unpublish' : 'publish'"
-                  :class="row.isPublish ? 'text-orange-500' : 'text-green-500'"
-                >
+                
+                <!-- 发布状态（商品） -->
+                <el-dropdown-item divided command="mark-draft">
+                  <el-icon><Refresh /></el-icon>
+                  <span>标记为草稿</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="mark-pending">
                   <el-icon><Upload /></el-icon>
-                  <span>{{ row.isPublish ? '下架' : '发布' }}</span>
+                  <span>标记为待发布社交媒体</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="social-publish">
+                <el-dropdown-item command="mark-published">
                   <el-icon><Share /></el-icon>
-                  <span>发布到社交媒体</span>
+                  <span>标记为已发布社交媒体</span>
                 </el-dropdown-item>
+                <el-dropdown-item command="mark-archived">
+                  <el-icon><Delete /></el-icon>
+                  <span>标记为已归档</span>
+                </el-dropdown-item>
+
                 <!-- 工具类 -->
                 <el-dropdown-item command="ai-generate" divided>
                   <el-icon><MagicStick /></el-icon>
@@ -164,8 +175,8 @@
         </template>
 
         <template #publishStatusSlot="{ row }">
-          <el-tag :type="row.isPublish ? 'success' : 'warning'" size="small">
-            {{ row.isPublish ? '已发布' : '未发布' }}
+          <el-tag :type="row.publishStatus === 'published_social_media' ? 'success' : (row.publishStatus === 'pending_social_media' ? 'warning' : (row.publishStatus === 'archived' ? 'danger' : 'info'))" size="small">
+            {{ row.publishStatus === 'published_social_media' ? '已发布社交媒体' : row.publishStatus === 'pending_social_media' ? '待发布社交媒体' : row.publishStatus === 'archived' ? '已归档' : '草稿' }}
           </el-tag>
         </template>
 
@@ -1470,6 +1481,7 @@ const queryParams = reactive({
   name: '',
   search: '',
   isPublish: undefined as boolean | undefined,
+  publishStatus: '' as string | ''
 });
 
 const gridOptions = ref({
@@ -1530,8 +1542,8 @@ const gridOptions = ref({
     },
     { 
       title: "发布状态", 
-      field: "isPublish", 
-      width: 120, 
+      field: "publishStatus", 
+      width: 140, 
       showOverflow: true,
       slots: { default: 'publishStatusSlot' }
     },
@@ -1959,6 +1971,9 @@ async function getList() {
   if (queryParams.isPublish !== undefined) {
     params.isPublish = queryParams.isPublish;
   }
+  if (queryParams.publishStatus) {
+    params.publishStatus = queryParams.publishStatus;
+  }
 
   try {
     let res = await getProductList(params);
@@ -1981,6 +1996,7 @@ const resetQuery = () => {
   queryParams.name = '';
   queryParams.search = '';
   queryParams.isPublish = undefined;
+  queryParams.publishStatus = '';
 };
 
 // 搜索按钮点击事件
@@ -2447,6 +2463,18 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'copy-images-from-custom-model':
       handleCopyImagesFromCustomModel(row);
+      break;
+    case 'mark-draft':
+      handleUpdatePublishStatus(row, 'draft');
+      break;
+    case 'mark-pending':
+      handleUpdatePublishStatus(row, 'pending_social_media');
+      break;
+    case 'mark-published':
+      handleUpdatePublishStatus(row, 'published_social_media');
+      break;
+    case 'mark-archived':
+      handleUpdatePublishStatus(row, 'archived');
       break;
     default:
       console.warn('未知的操作命令:', command);
@@ -2921,6 +2949,19 @@ async function copySourceInfo() {
     }
   }
 }
+
+async function handleUpdatePublishStatus(row: any, status: string) {
+  try {
+    await updateProduct({
+      ...row,
+      publishStatus: status
+    });
+    ElMessage.success('发布状态已更新');
+    getList();
+  } catch (e) {
+    ElMessage.error('更新发布状态失败');
+  }
+}
 </script>
 
 <style lang="less">
@@ -3102,24 +3143,24 @@ async function copySourceInfo() {
 // 紧凑型操作菜单
 .operation-menu-compact {
   min-width: 140px !important;
-  padding: 4px 0 !important;
+  padding: 2px 0 !important;
   
   .el-dropdown-menu__item {
-    padding: 8px 16px !important;
-    font-size: 13px !important;
-    line-height: 1.5 !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
     height: auto !important;
-    min-height: 32px !important;
+    min-height: 28px !important;
     
     .el-icon {
-      font-size: 14px !important;
-      width: 14px !important;
-      height: 14px !important;
+      font-size: 13px !important;
+      width: 13px !important;
+      height: 13px !important;
       margin-right: 6px !important;
     }
     
     span {
-      font-size: 13px !important;
+      font-size: 12px !important;
     }
     
     &:hover {
@@ -3128,9 +3169,9 @@ async function copySourceInfo() {
   }
   
   .el-dropdown-menu__item--divided {
-    margin-top: 4px !important;
+    margin-top: 2px !important;
     border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 8px !important;
+    padding-top: 6px !important;
   }
 }
 
