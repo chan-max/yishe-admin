@@ -1494,6 +1494,7 @@ const gridOptions = ref({
   },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
+    { title: "ID", field: "id", width: 120, showOverflow: false },
     {
       title: "商品图片",
       field: "images",
