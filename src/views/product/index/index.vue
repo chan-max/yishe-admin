@@ -85,6 +85,12 @@
                   <span>标记为已归档</span>
                 </el-dropdown-item>
 
+                <!-- 发布/下架操作 -->
+                <el-dropdown-item :command="row.isPublish ? 'unpublish' : 'publish'" divided>
+                  <el-icon><Share /></el-icon>
+                  <span>{{ row.isPublish ? '下架' : '发布' }}</span>
+                </el-dropdown-item>
+
                 <!-- 工具类 -->
                 <el-dropdown-item command="ai-generate" divided>
                   <el-icon><MagicStick /></el-icon>
@@ -177,6 +183,12 @@
         <template #publishStatusSlot="{ row }">
           <el-tag :type="row.publishStatus === 'published_social_media' ? 'success' : (row.publishStatus === 'pending_social_media' ? 'warning' : (row.publishStatus === 'archived' ? 'danger' : 'info'))" size="small">
             {{ row.publishStatus === 'published_social_media' ? '已发布社交媒体' : row.publishStatus === 'pending_social_media' ? '待发布社交媒体' : row.publishStatus === 'archived' ? '已归档' : '草稿' }}
+          </el-tag>
+        </template>
+
+        <template #isPublishSlot="{ row }">
+          <el-tag :type="row.isPublish ? 'success' : 'info'" size="small">
+            {{ row.isPublish ? '已发布' : '未发布' }}
           </el-tag>
         </template>
 
@@ -1547,6 +1559,13 @@ const gridOptions = ref({
       width: 140, 
       showOverflow: true,
       slots: { default: 'publishStatusSlot' }
+    },
+    { 
+      title: "是否发布", 
+      field: "isPublish", 
+      width: 100, 
+      showOverflow: true,
+      slots: { default: 'isPublishSlot' }
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
