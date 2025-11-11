@@ -156,6 +156,14 @@
           </el-dropdown>
         </template>
 
+        <!-- 重要状态列：目前仅显示是否发布 -->
+        <template #statusFlagSlot="{ row }">
+          <div class="flex items-center gap-1">
+            <el-tag v-if="row.isPublish" type="success" size="small">已发布</el-tag>
+            <span v-else class="text-gray-400 text-xs">未发布</span>
+          </div>
+        </template>
+
         <template #searchKeywordsHeader>
           <div class="flex items-center gap-1">
             <span>搜索关键字</span>
@@ -1544,13 +1552,20 @@ const queryParams = reactive({
 const gridOptions = ref({
   ...commonGridOptions,
   rowClassName: ({ row }) => {
-    return row.isPublish ? '' : 'unpublished-row';
+    return row.isPublish ? 'published-row' : 'unpublished-row';
   },
   rowConfig:{
     height:'auto'
   },
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
+    { 
+      title: "状态", 
+      field: "importantStatus", 
+      width: 90, 
+      showOverflow: false,
+      slots: { default: 'statusFlagSlot' }
+    },
     { title: "ID", field: "id", width: 120, showOverflow: false },
     {
       title: "商品图片",
@@ -3125,6 +3140,26 @@ async function handleUpdatePublishStatus(row: any, status: string) {
   &:hover {
     background-color: rgba(255, 193, 7, 0.12) !important; /* 悬停时稍微明显一点 */
   }
+}
+
+/* 已发布行左上角标识（作用于首列单元格，避免影响表头/列布局） */
+.published-row .vxe-body--column:first-child {
+  position: relative;
+  overflow: visible; /* 确保角标不被裁切 */
+}
+.published-row .vxe-body--column:first-child::before {
+  content: '已发布';
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #16a34a; /* green-600 */
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 6px;
+  border-bottom-right-radius: 6px;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .dark-btn {
