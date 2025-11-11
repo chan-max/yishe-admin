@@ -1,14 +1,34 @@
 <template>
   <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <!-- 导出按钮 -->
-      <div style="flex: 1"></div>
+    <div class="py-4 flex flex-wrap items-center gap-3 justify-end">
+      <!-- 搜索与筛选（可换行） -->
+      <form-item label="按ID搜索">
+        <el-input
+          v-model="queryParams.id"
+          clearable
+          placeholder="输入ID"
+          style="width: 160px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+      </form-item>
+      <form-item label="按产品代码">
+        <el-input
+          v-model="queryParams.code"
+          clearable
+          placeholder="输入产品代码"
+          style="width: 160px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+      </form-item>
       <form-item label="按名称搜索">
         <el-input
           v-model="queryParams.name"
           clearable
           placeholder="请输入名称"
           style="width: 160px"
+          @keyup.enter="handleSearch"
         />
       </form-item>
       <form-item label="发布状态">
@@ -28,7 +48,8 @@
       </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
 
-      <div class="shrink-0">
+      <!-- 操作按钮（自适应换行，尽量靠右） -->
+      <div class="shrink-0 ml-auto flex gap-2">
         <!-- 修改按钮 -->
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
           新增
@@ -36,6 +57,13 @@
         <!-- 删除按钮 -->
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
           批量删除
+        </el-button>
+        <!-- 批量发布/下架 -->
+        <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Share">
+          批量发布
+        </el-button>
+        <el-button type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">
+          批量下架
         </el-button>
       </div>
     </div>
@@ -125,6 +153,19 @@
               </el-dropdown-menu>
             </template>
           </el-dropdown>
+        </template>
+
+        <template #searchKeywordsHeader>
+          <div class="flex items-center gap-1">
+            <span>搜索关键字</span>
+            <el-tooltip
+              effect="dark"
+              content="搜索关键词 不会显示在商品信息中，只会在搜索时供搜索引擎使用"
+              placement="top"
+            >
+              <el-icon class="text-gray-400 cursor-help"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </div>
         </template>
 
         <template #urlDefaultSlot="{ row }">
@@ -1464,6 +1505,7 @@ import {
   VideoPlay,
   Check,
   Refresh,
+  QuestionFilled,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
@@ -1490,6 +1532,8 @@ import { copyLink } from '@/utils/clipboard'
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
+  id: '',
+  code: '',
   name: '',
   search: '',
   isPublish: undefined as boolean | undefined,
@@ -1539,7 +1583,13 @@ const gridOptions = ref({
       width: 'auto', 
       slots: { default: 'relationsSlot' }
     },
-    { title: "搜索关键字", field: "searchKeywords", width: 200, showOverflow: false },
+    { 
+      title: "搜索关键字", 
+      field: "searchKeywords", 
+      width: 200, 
+      showOverflow: false,
+      slots: { header: 'searchKeywordsHeader' }
+    },
 
     { title: "商品类型", field: "type", width: 120, showOverflow: true },
     { title: "价格", field: "price", width: 100, showOverflow: true },
@@ -1610,6 +1660,7 @@ const loading = ref(false);
 const ids = ref([]);
 const single = ref(false);
 const total = ref(0);
+const selectedRows = ref<any[]>([]);
 const formRef = ref();
 const dialogTitle = ref("");
 const dialogVisible = ref(false);
@@ -1875,10 +1926,14 @@ const dialogClose = () => {
 
 function checkboxChange(e) {
   ids.value = e.records.map((item) => item.id);
+  selectedRows.value = e.records || [];
+  single.value = ids.value.length !== 1;
 }
 
 function checkboxAllChange(e) {
   ids.value = e.records.map((item) => item.id);
+  selectedRows.value = e.records || [];
+  single.value = ids.value.length !== 1;
 }
 
 // 处理文件列表变化
@@ -1986,6 +2041,13 @@ async function getList() {
     pageSize: queryParams.pageSize,
     search: queryParams.name,
   };
+  // 精确搜索条件
+  if (queryParams.id && String(queryParams.id).trim()) {
+    params.id = String(queryParams.id).trim();
+  }
+  if (queryParams.code && String(queryParams.code).trim()) {
+    params.code = String(queryParams.code).trim();
+  }
   
   // 如果选择了发布状态，添加到查询参数中
   if (queryParams.isPublish !== undefined) {
@@ -2013,6 +2075,8 @@ async function getList() {
 const resetQuery = () => {
   queryParams.currentPage = 1;
   queryParams.pageSize = 20;
+  queryParams.id = '';
+  queryParams.code = '';
   queryParams.name = '';
   queryParams.search = '';
   queryParams.isPublish = undefined;
@@ -2463,6 +2527,12 @@ function handleOperationCommand(command: string, row: any) {
       handleDelete(row);
       break;
     case 'publish':
+      batchPublish([row]);
+      break;
+    case 'unpublish':
+      batchUnpublish([row]);
+      break;
+    case 'publish':
     case 'unpublish':
       handleTogglePublish(row);
       break;
@@ -2498,6 +2568,38 @@ function handleOperationCommand(command: string, row: any) {
       break;
     default:
       console.warn('未知的操作命令:', command);
+  }
+}
+
+// 批量发布
+async function batchPublish(rows?: any[]) {
+  const list = rows && rows.length ? rows : selectedRows.value;
+  if (!list || list.length === 0) {
+    return ElMessage.warning('请先选择要发布的记录');
+  }
+  try {
+    const tasks = list.map(item => updateProduct({ ...item, isPublish: true }));
+    await Promise.all(tasks);
+    ElMessage.success(`已发布 ${list.length} 条记录`);
+    getList();
+  } catch (e) {
+    ElMessage.error('批量发布失败，请重试');
+  }
+}
+
+// 批量下架
+async function batchUnpublish(rows?: any[]) {
+  const list = rows && rows.length ? rows : selectedRows.value;
+  if (!list || list.length === 0) {
+    return ElMessage.warning('请先选择要下架的记录');
+  }
+  try {
+    const tasks = list.map(item => updateProduct({ ...item, isPublish: false }));
+    await Promise.all(tasks);
+    ElMessage.success(`已下架 ${list.length} 条记录`);
+    getList();
+  } catch (e) {
+    ElMessage.error('批量下架失败，请重试');
   }
 }
 
