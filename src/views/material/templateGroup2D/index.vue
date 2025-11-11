@@ -419,6 +419,22 @@
                     </div>
                   </div>
 
+                  <!-- 旋转角度 -->
+                  <div class="control-group">
+                    <label>旋转角度 (度):</label>
+                    <div class="control-item">
+                      <span>角度:</span>
+                      <el-slider
+                        v-model="manualConfigs[index].rotationDegrees"
+                        :min="0"
+                        :max="360"
+                        :step="1"
+                        show-input
+                        @change="onManualConfigChange(index)"
+                      />
+                    </div>
+                  </div>
+
                   <!-- 固定尺寸模式下的填充方式选择 -->
                   <div v-if="manualConfigs[index].mode === 'topLeftFixedSize'" class="control-group" style="margin-top: 16px;">
                     <label>填充方式:</label>
@@ -533,6 +549,7 @@ const jsonPlaceholder = `请输入JSON配置，例如：
   "mode": "topLeftAutoHeight",
   "position": { "xPercent": 0, "yPercent": 0 },
   "size": { "widthPercent": 30 },
+  "rotationDegrees": 0,
   "opacity": 100,
   "borderRadius": 0,
   "keepOriginal": false
@@ -543,6 +560,7 @@ const jsonPlaceholder = `请输入JSON配置，例如：
   "mode": "topLeftFixedSize",
   "position": { "xPercent": 0, "yPercent": 0 },
   "size": { "widthPercent": 30, "heightPercent": 30 },
+  "rotationDegrees": 0,
   "opacity": 100,
   "borderRadius": 5,
   "keepOriginal": false
@@ -554,6 +572,7 @@ const jsonPlaceholder = `请输入JSON配置，例如：
 • size: 
   - topLeftAutoHeight模式: { widthPercent: 1-100 } - 宽度百分比，高度自动计算
   - topLeftFixedSize模式: { widthPercent: 1-100, heightPercent: 1-100 } - 宽高百分比，素材会被裁剪
+• rotationDegrees: 旋转角度（0-360，围绕素材中心旋转）
 • opacity: 0-100 - 素材透明度百分比，100表示完全不透明
 • borderRadius: 0-50 - 圆角百分比（按素材图宽高计算），圆角边缘透明，可看到后面的模板图
 • keepOriginal: true/false - 是否保持原图`
@@ -663,6 +682,10 @@ function openImageOption(row) {
       if (config.mode === 'fixedSize') {
         config.mode = 'topLeftFixedSize'
       }
+      // 确保有 rotationDegrees 字段
+      if (config.rotationDegrees === undefined || config.rotationDegrees === null) {
+        config.rotationDegrees = 0
+      }
       // 如果是topLeftFixedSize模式但没有heightPercent，设置默认值
       if (config.mode === 'topLeftFixedSize' && !config.size?.heightPercent) {
         config.size = config.size || {}
@@ -695,6 +718,7 @@ function getDefaultImageOption() {
     mode: 'topLeftAutoHeight',
     position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
+    rotationDegrees: 0,
     opacity: 100,
     borderRadius: 0,
     keepOriginal: false
@@ -706,6 +730,7 @@ function getDefaultManualConfig() {
     mode: 'topLeftAutoHeight',
     position: { xPercent: 0, yPercent: 0 },
     size: { widthPercent: 30 },
+    rotationDegrees: 0,
     opacity: 100,
     borderRadius: 0,
     keepOriginal: false,
@@ -828,9 +853,9 @@ function getOverlayStyle(url: string, index: number) {
     const realWidth = Math.max(1, Math.min(100, widthPercent)) / 100 * meta.w
     
     displayWidth = realWidth * scale
-    // 高度显示一个合理的预览区域，使用宽度作为基准（假设素材图大致是正方形或横向）
-    // 这样预览效果更直观，实际高度会根据素材图的宽高比自动计算
-    displayHeight = displayWidth * 0.75 // 使用宽度的75%作为预览高度（可根据需要调整）
+    // 使用素材真实宽高比计算高度，确保预览与后端一致
+    const ratio = meta.h && meta.w ? (meta.h / meta.w) : 1
+    displayHeight = displayWidth * ratio
   }
 
   // 约束左上角不超出模板图边界
@@ -871,7 +896,9 @@ function getOverlayStyle(url: string, index: number) {
     height: `${displayHeight}px`,
     borderRadius,
     background,
-    display: 'block'
+    display: 'block',
+    transformOrigin: 'center center',
+    transform: `rotate(${typeof config.rotationDegrees === 'number' ? config.rotationDegrees : 0}deg)`
   }
 }
 
