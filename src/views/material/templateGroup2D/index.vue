@@ -400,7 +400,7 @@
                         v-model="manualConfigs[index].size.widthPercent"
                         :min="1"
                         :max="100"
-                        :step="1"
+                        :step="0.1"
                         show-input
                         @change="onManualConfigChange(index)"
                       />
@@ -412,7 +412,7 @@
                         v-model="manualConfigs[index].size.heightPercent"
                         :min="1"
                         :max="100"
-                        :step="1"
+                        :step="0.1"
                         show-input
                         @change="onManualConfigChange(index)"
                       />
@@ -428,7 +428,7 @@
                         v-model="manualConfigs[index].rotationDegrees"
                         :min="0"
                         :max="360"
-                        :step="1"
+                        :step="0.1"
                         show-input
                         @change="onManualConfigChange(index)"
                       />
@@ -575,7 +575,8 @@ const jsonPlaceholder = `请输入JSON配置，例如：
 • rotationDegrees: 旋转角度（0-360，围绕素材中心旋转）
 • opacity: 0-100 - 素材透明度百分比，100表示完全不透明
 • borderRadius: 0-50 - 圆角百分比（按素材图宽高计算），圆角边缘透明，可看到后面的模板图
-• keepOriginal: true/false - 是否保持原图`
+• keepOriginal: true/false - 是否保持原图
+提示：position/size/rotation 支持小数（如 12.5% / 37.3°），用于更精确定位`
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
@@ -865,12 +866,9 @@ function getOverlayStyle(url: string, index: number) {
   // 计算圆角（如果有配置）
   let borderRadius = '0px'
   if (config.borderRadius && config.borderRadius > 0) {
-    // 圆角按素材图宽高的百分比计算
-    const baseSize = Math.min(meta.w, meta.h)
-    const borderRadiusPx = (config.borderRadius / 100) * baseSize
-    // 映射到预览显示尺寸
-    const displayBorderRadius = borderRadiusPx * scale
-    borderRadius = `${displayBorderRadius}px`
+    // 圆角按素材图“宽度”的百分比计算，前后端统一
+    const borderRadiusPx = (config.borderRadius / 100) * displayWidth
+    borderRadius = `${borderRadiusPx}px`
   }
 
   // 计算背景色（根据透明度变化）
