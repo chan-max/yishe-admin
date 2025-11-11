@@ -22,13 +22,14 @@
           @clear="handleSearch"
         />
       </form-item>
-      <form-item label="按名称搜索">
+      <form-item label="搜索">
         <el-input
-          v-model="queryParams.name"
+          v-model="queryParams.searchText"
           clearable
-          placeholder="请输入名称"
+          placeholder="请输入搜索内容"
           style="width: 160px"
           @keyup.enter="handleSearch"
+          @clear="handleSearch"
         />
       </form-item>
       <form-item label="发布状态">
@@ -1534,7 +1535,7 @@ const queryParams = reactive({
   pageSize: 20,
   id: '',
   code: '',
-  name: '',
+  searchText: '',
   search: '',
   isPublish: undefined as boolean | undefined,
   publishStatus: '' as string | ''
@@ -1586,7 +1587,7 @@ const gridOptions = ref({
     { 
       title: "搜索关键字", 
       field: "searchKeywords", 
-      width: 200, 
+      minWidth: 360, 
       showOverflow: false,
       slots: { header: 'searchKeywordsHeader' }
     },
@@ -2039,7 +2040,7 @@ async function getList() {
   let params: any = {
     currentPage: queryParams.currentPage,
     pageSize: queryParams.pageSize,
-    search: queryParams.name,
+    searchText: queryParams.searchText,
   };
   // 精确搜索条件
   if (queryParams.id && String(queryParams.id).trim()) {
@@ -2077,7 +2078,7 @@ const resetQuery = () => {
   queryParams.pageSize = 20;
   queryParams.id = '';
   queryParams.code = '';
-  queryParams.name = '';
+  queryParams.searchText = '';
   queryParams.search = '';
   queryParams.isPublish = undefined;
   queryParams.publishStatus = '';
