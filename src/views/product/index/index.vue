@@ -249,6 +249,19 @@
           <span v-else class="text-gray-400 text-xs">未生成</span>
         </template>
 
+        <template #typeSlot="{ row }">
+          <div v-if="row.type" style="display: flex; align-items: center; gap: 6px;">
+            <img
+              :src="getCategoryImage(getCategoryByValue(row.type) || PRODUCT_CATEGORIES[0])"
+              :alt="row.type"
+              style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px; flex-shrink: 0; vertical-align: middle;"
+              @error="handleImageError"
+            />
+            <span style="line-height: 24px;">{{ row.type }}</span>
+          </div>
+          <span v-else class="text-gray-400 text-xs">未设置</span>
+        </template>
+
         <!-- 关联信息列：显示关联了哪个内容 -->
         <template #relationsSlot="{ row }">
           <div class="relations-summary">
@@ -431,7 +444,30 @@
 
           <el-col :span="12">
             <el-form-item label="商品类型" prop="type">
-              <el-input v-model="form.type" placeholder="请输入商品类型" />
+              <el-select
+                v-model="form.type"
+                placeholder="请选择商品类型"
+                clearable
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="category in PRODUCT_CATEGORIES"
+                  :key="category.value"
+                  :label="category.label"
+                  :value="category.value"
+                >
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <img
+                      :src="getCategoryImage(category)"
+                      :alt="category.label"
+                      style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px; flex-shrink: 0;"
+                      @error="handleImageError"
+                    />
+                    <span>{{ category.label }}</span>
+                  </div>
+                </el-option>
+              </el-select>
             </el-form-item>
           </el-col>
 
@@ -1534,6 +1570,7 @@ import { getDesignModel } from '@/api/designModel'
 import { getDraftList } from '@/api/draft'
 import { aiGenerateProductInfo } from '@/api/product'
 import { copyLink } from '@/utils/clipboard'
+import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/config/product-categories'
 
 
 
@@ -1607,7 +1644,13 @@ const gridOptions = ref({
       slots: { header: 'searchKeywordsHeader' }
     },
 
-    { title: "商品类型", field: "type", width: 120, showOverflow: true },
+    { 
+      title: "商品类型", 
+      field: "type", 
+      width: 140, 
+      showOverflow: true,
+      slots: { default: 'typeSlot' }
+    },
     { title: "价格", field: "price", width: 100, showOverflow: true },
     { title: "促销价格", field: "salePrice", width: 100, showOverflow: true },
     { title: "库存", field: "stock", width: 100, showOverflow: true },
@@ -1960,6 +2003,16 @@ const handleFilesChange = (files) => {
 // 处理视频文件列表变化
 const handleVideoFilesChange = (files) => {
   pendingVideoFiles.value = files.filter(file => file.raw).map(file => file.raw)
+}
+
+// 处理图片加载错误
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement;
+  // 如果图片加载失败，使用占位图（可以使用一个默认的占位图）
+  // 或者隐藏图片：img.style.display = 'none';
+  // 这里暂时隐藏，等图片准备好后会自动显示
+  img.style.opacity = '0.3';
+  img.style.backgroundColor = '#f0f0f0';
 }
 
 const submitForm = async () => {
