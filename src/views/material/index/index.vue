@@ -906,7 +906,24 @@
     </el-dialog>
 
     <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
-      <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
+      <div v-if="metaDialogContent">
+        <vue-json-pretty v-if="parsedMetaData" :data="parsedMetaData" />
+        <div v-else class="meta-error">
+          <el-alert
+            type="warning"
+            :closable="false"
+            show-icon
+            title="元数据格式错误"
+            description="无法解析元数据，请检查数据格式。"
+          />
+          <div class="meta-raw-content">
+            <pre>{{ metaDialogContent }}</pre>
+          </div>
+        </div>
+      </div>
+      <div v-else class="meta-empty">
+        <el-empty description="该素材没有元数据信息" />
+      </div>
     </el-dialog>
 
     <!-- SVG转PNG尺寸设置弹窗 -->
@@ -1893,6 +1910,17 @@ const aiTableLoading = ref<Record<string, boolean>>({})
 // meta相关变量
 const metaDialogVisible = ref(false)
 const metaDialogContent = ref('')
+const parsedMetaData = computed(() => {
+  if (!metaDialogContent.value) return null
+  try {
+    // 尝试解析 JSON 字符串
+    const parsed = JSON.parse(metaDialogContent.value)
+    return parsed
+  } catch (error) {
+    // 如果解析失败，返回 null，显示原始内容
+    return null
+  }
+})
 
 function onAiTableAutoGenerate(row) {
   if (aiTableLoading.value[row.id]) return
@@ -2300,8 +2328,27 @@ function handleImageLoad(event: Event, row: any) {
 
 // 显示meta详情
 function showMetaDetail(meta: any) {
-  metaDialogContent.value = JSON.stringify(meta, null, 2)
-  metaDialogVisible.value = true
+  if (!meta) {
+    ElMessage.warning('该素材没有元数据信息')
+    return
+  }
+  
+  try {
+    // 如果 meta 是字符串，直接使用
+    if (typeof meta === 'string') {
+      metaDialogContent.value = meta
+    } else {
+      // 如果是对象，转换为格式化的 JSON 字符串
+      metaDialogContent.value = JSON.stringify(meta, null, 2)
+    }
+    metaDialogVisible.value = true
+  } catch (error) {
+    console.error('处理元数据失败:', error)
+    ElMessage.error('处理元数据失败，请检查数据格式')
+    // 即使出错也显示原始数据
+    metaDialogContent.value = String(meta)
+    metaDialogVisible.value = true
+  }
 }
 
 defineExpose({ handleGeneratePhash });
@@ -3435,5 +3482,38 @@ h1 {
     .edit-form :deep(.el-col) {
       margin-bottom: 0;
     }
+  }
+
+  /* 元数据弹窗样式 */
+  .meta-error {
+    padding: 20px;
+  }
+
+  .meta-raw-content {
+    margin-top: 20px;
+    padding: 16px;
+    background: #f5f7fa;
+    border-radius: 4px;
+    border: 1px solid #e4e7ed;
+  }
+
+  .meta-raw-content pre {
+    margin: 0;
+    padding: 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #606266;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 600px;
+    overflow: auto;
+  }
+
+  .meta-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
   }
   </style>
