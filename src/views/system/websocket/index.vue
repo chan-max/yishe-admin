@@ -85,14 +85,14 @@
           <template #duration_default="{ row }">
             {{ formatPast(row.connectedAt) }}
           </template>
-          <template #query_default="{ row }">
-            {{ formatQuery(row.query) }}
-          </template>
-          <template #ip_default="{ row }">
-            {{ row.ip || '-' }}
-          </template>
           <template #ua_default="{ row }">
             {{ row.userAgent || '-' }}
+          </template>
+          <template #clientInfo_default="{ row }">
+            {{ formatClientInfo(row.clientInfo) }}
+          </template>
+          <template #query_default="{ row }">
+            {{ formatQuery(row.query) }}
           </template>
         </vxe-grid>
       </div>
@@ -107,7 +107,7 @@ import { io, Socket } from 'socket.io-client'
 import { useMessage } from '@/hooks/web/useMessage'
 import { formatDate, formatPast } from '@/utils/formatTime'
 import * as WebsocketApi from '@/api/system/websocket'
-import type { WebsocketConnectionVO } from '@/api/system/websocket'
+import type { WebsocketConnectionVO, WebsocketClientInfo } from '@/api/system/websocket'
 
 defineOptions({ name: 'SystemWebsocketConnections' })
 
@@ -168,6 +168,13 @@ const gridOptions = reactive<VxeGridProps<WebsocketConnectionVO>>({
       slots: { default: 'ua_default' }
     },
     {
+      field: 'clientInfo',
+      title: '客户端信息',
+      minWidth: 320,
+      showOverflow: 'tooltip',
+      slots: { default: 'clientInfo_default' }
+    },
+    {
       field: 'query',
       title: 'Query 参数',
       minWidth: 260,
@@ -178,11 +185,17 @@ const gridOptions = reactive<VxeGridProps<WebsocketConnectionVO>>({
 })
 
 const formatQuery = (query?: Record<string, string | string[]>) => {
-  if (!query || Object.keys(query).length === 0) {
+  if (!query) {
     return '-'
   }
 
-  return Object.entries(query)
+  const entries = Object.entries(query).filter(([key]) => key !== 'clientInfo')
+
+  if (entries.length === 0) {
+    return '-'
+  }
+
+  return entries
     .map(([key, value]) => {
       if (Array.isArray(value)) {
         return `${key}=${value.join(',')}`
@@ -190,6 +203,53 @@ const formatQuery = (query?: Record<string, string | string[]>) => {
       return `${key}=${value}`
     })
     .join('；')
+}
+
+const formatClientInfo = (info?: WebsocketClientInfo) => {
+  if (!info) {
+    return '-'
+  }
+
+  const segments: string[] = []
+
+  if (info.clientId) {
+    segments.push(`ID: ${info.clientId}`)
+  }
+
+  if (info.browser?.name) {
+    segments.push(`浏览器: ${info.browser.name}${info.browser.version ? ` ${info.browser.version}` : ''}`)
+  }
+
+  if (info.os?.name) {
+    segments.push(`系统: ${info.os.name}${info.os.version ? ` ${info.os.version}` : ''}`)
+  }
+
+  if (info.platform?.arch) {
+    segments.push(`架构: ${info.platform.arch}${info.platform.nacl_arch ? ` / ${info.platform.nacl_arch}` : ''}`)
+  }
+
+  if (info.language) {
+    segments.push(`语言: ${info.language}`)
+  }
+
+  if (info.timeZone) {
+    segments.push(`时区: ${info.timeZone}`)
+  }
+
+  const locationFields = [info.location?.city, info.location?.region, info.location?.country].filter(Boolean)
+  if (locationFields.length > 0) {
+    segments.push(`位置: ${locationFields.join(' · ')}`)
+  }
+
+  if (info.location?.ip) {
+    segments.push(`IP: ${info.location.ip}`)
+  }
+
+  if (segments.length === 0) {
+    return '-'
+  }
+
+  return segments.join(' | ')
 }
 
 const getDefaultWsUrl = () => {
