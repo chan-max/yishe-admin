@@ -410,6 +410,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '用户管理',
         }
       },
+      {
+        path: 'websocket',
+        component: () => import('@/views/system/websocket/index.vue'),
+        name: 'SystemWebsocketConnections',
+        meta: {
+          title: 'WebSocket连接',
+          requiresAdmin: true
+        }
+      },
     ]
   }
 

@@ -94,7 +94,8 @@
     "vxe-pc-ui": "4.4.9",
     "vxe-table": "4.11.19",
     "web-storage-cache": "^1.1.1",
-    "xml-js": "^1.6.11"
+    "xml-js": "^1.6.11",
+    "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.1",
