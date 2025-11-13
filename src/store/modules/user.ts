@@ -82,7 +82,7 @@ export const useUserStore = defineStore('admin-user', {
       await new Promise((resolve) => {
         setTimeout(() => {
           resolve(null)
-        }, 999);
+        }, 1999);
       })
       
       // 尝试获取用户信息，最多重试2次

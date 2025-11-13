@@ -304,6 +304,7 @@ const handleLogin = async () => {
     }
     // 存储token
     setAccessToken(res.token);
+    console.log('🔑 token:', res.token);
 
     // 获取用户信息和权限
     const userStore = useUserStoreWithOut();
