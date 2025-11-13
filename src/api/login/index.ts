@@ -39,7 +39,7 @@ export const loginOut = () => {
 
 // 获取用户权限信息
 export const getInfo = () => {
-  return request.post({ url: '/user/getUserInfo/' })
+  return request.post({ url: '/user/getUserInfo', data: {} })
 }
 
 //获取登录验证码

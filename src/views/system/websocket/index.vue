@@ -126,6 +126,10 @@
                     <Icon icon="ep:message" class="mr-5px" />
                     发送消息
                   </el-dropdown-item>
+                  <el-dropdown-item command="control" divided>
+                    <Icon icon="ep:setting" class="mr-5px" />
+                    操控
+                  </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -133,6 +137,63 @@
         </vxe-grid>
       </div>
     </ContentWrap>
+
+    <!-- 操控全屏弹窗 -->
+    <el-dialog
+      v-model="controlDialogVisible"
+      title="连接操控"
+      fullscreen
+      :close-on-click-modal="false"
+      class="control-dialog"
+    >
+      <div class="control-dialog-content">
+        <div class="control-dialog-header">
+          <div class="control-connection-info">
+            <el-descriptions :column="3" border>
+              <el-descriptions-item label="连接 ID">
+                {{ currentConnection?.id }}
+              </el-descriptions-item>
+              <el-descriptions-item label="连接类型">
+                <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
+                  浏览器插件
+                </el-tag>
+                <span v-else>{{ currentConnection?.clientSource || '未知' }}</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="IP 地址">
+                {{ currentConnection?.ip || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="连接时间">
+                {{ currentConnection?.connectedAt ? formatDate(new Date(currentConnection.connectedAt)) : '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="持续时长">
+                {{ currentConnection?.connectedAt ? formatPast(currentConnection.connectedAt) : '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="命名空间">
+                {{ currentConnection?.namespace || '-' }}
+              </el-descriptions-item>
+            </el-descriptions>
+          </div>
+        </div>
+
+        <div class="control-dialog-body">
+          <el-card class="control-card">
+            <template #header>
+              <div class="card-header">
+                <span>操控功能</span>
+                <el-tag type="info" size="small">功能开发中</el-tag>
+              </div>
+            </template>
+            <div class="control-functions">
+              <el-empty description="暂无可用功能，功能开发中..." :image-size="100" />
+              <!-- 后续可以在这里添加各种操控功能 -->
+            </div>
+          </el-card>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="controlDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 发送消息对话框 -->
     <el-dialog
@@ -202,6 +263,9 @@ const sendMessageDialogLoading = ref(false)
 const currentConnection = ref<WebsocketConnectionVO | null>(null)
 const messageContent = ref('')
 const messageEvent = ref('admin-message')
+
+// 操控对话框
+const controlDialogVisible = ref(false)
 
 const gridRef = ref<VxeGridInstance>()
 const { height } = useWindowSize()
@@ -558,7 +622,14 @@ const fetchConnections = async () => {
 const handleOperationCommand = (command: string, row: WebsocketConnectionVO) => {
   if (command === 'send-message') {
     handleSendMessage(row)
+  } else if (command === 'control') {
+    handleControl(row)
   }
+}
+
+const handleControl = (row: WebsocketConnectionVO) => {
+  currentConnection.value = row
+  controlDialogVisible.value = true
 }
 
 const handleSendMessage = (row: WebsocketConnectionVO) => {
@@ -765,6 +836,74 @@ const stringifyData = (value: unknown) => {
   .ws-test-card__log-list {
     height: 180px;
   }
+}
+
+/* 操控弹窗样式 */
+.control-dialog {
+  .el-dialog__body {
+    padding: 0;
+    height: calc(100vh - 120px);
+    overflow: hidden;
+  }
+}
+
+.control-dialog-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.control-dialog-header {
+  padding: 20px;
+  background: var(--el-bg-color-page);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.control-connection-info {
+  .el-descriptions {
+    margin: 0;
+  }
+}
+
+.control-dialog-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--el-bg-color);
+}
+
+.control-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .el-card__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  span {
+    font-weight: 600;
+    font-size: 16px;
+  }
+}
+
+.control-functions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
 }
 </style>
 

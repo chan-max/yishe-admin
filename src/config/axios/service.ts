@@ -109,7 +109,13 @@ service.interceptors.response.use(
       // 如果是忽略的错误码，直接返回 msg 异常
       return Promise.reject(msg)
     } else if (code === 401) {
-      // 直接未授权，强制登出并跳转首页
+      // 检查是否是 getUserInfo 接口，如果是，不立即登出，让调用方处理
+      const url = config.url || ''
+      if (url.includes('/user/getUserInfo')) {
+        // getUserInfo 接口的 401 错误，返回错误信息，让调用方决定是否登出
+        return Promise.reject({ code: 401, message: msg, response: response })
+      }
+      // 其他接口的 401 错误，直接未授权，强制登出并跳转首页
       return handleAuthorized()
     } else if (code === 500) {
       ElMessage.error(t('sys.api.errMsg500'))

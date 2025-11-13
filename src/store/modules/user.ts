@@ -96,8 +96,14 @@ export const useUserStore = defineStore('admin-user', {
           console.log(`📡 尝试获取用户信息 (第 ${retryCount + 1} 次)`)
           userInfo = await getInfo()
           console.log('✅ 成功获取用户信息:', userInfo)
+          
+          // 检查返回的数据是否有效
+          if (!userInfo || !userInfo.id) {
+            throw new Error('获取到的用户信息无效')
+          }
+          
           break // 成功获取，跳出循环
-        } catch (e) {
+        } catch (e: any) {
           retryCount++
           console.error(`❌ 获取用户信息失败 (尝试 ${retryCount}/${maxRetries}):`, e)
           
@@ -107,16 +113,17 @@ export const useUserStore = defineStore('admin-user', {
             console.error('响应数据:', e.response.data)
           }
           
-          // 检查是否是token相关的问题
-          if (e?.response?.status === 401 || e?.code === 401) {
-            // 只有token无效时才退出登录
-            console.error('🚫 Token无效，退出登录')
-            await this.loginOut()
-            return
-          }
-          // 兼容拦截器将 401 转换为超时文案字符串的场景（例如: '登录超时,请重新登录!'）
-          if (typeof e === 'string' && e.includes('登录超时')) {
-            console.error('🚫 登录状态失效(超时)，退出登录')
+          // 检查是否是token相关的问题（只有明确的认证失败才退出）
+          const isAuthError = 
+            e?.response?.status === 401 || 
+            e?.code === 401 ||
+            (typeof e === 'string' && e.includes('登录超时')) ||
+            (e?.response?.data?.code === 401) ||
+            (e?.message?.includes('401') || e?.message?.includes('Unauthorized'))
+          
+          if (isAuthError) {
+            // 只有明确的认证错误时才退出登录
+            console.error('🚫 认证失败，退出登录')
             await this.loginOut()
             return
           }
@@ -126,10 +133,9 @@ export const useUserStore = defineStore('admin-user', {
             console.warn('⚠️ 多次尝试失败，尝试使用缓存的用户信息')
             userInfo = wsCache.get(CACHE_KEY.USER)
             if (!userInfo) {
-              // 如果缓存也没有，才退出登录
-              console.error('🚫 无缓存数据，退出登录')
-              await this.loginOut()
-              return
+              // 如果缓存也没有，且不是认证错误，抛出错误而不是退出登录
+              console.error('🚫 无缓存数据且获取失败')
+              throw new Error('获取用户信息失败，请刷新页面重试')
             } else {
               console.log('✅ 使用缓存的用户信息:', userInfo)
             }
@@ -140,6 +146,12 @@ export const useUserStore = defineStore('admin-user', {
           console.log('⏳ 等待1秒后重试...')
           await new Promise(resolve => setTimeout(resolve, 1000))
         }
+      }
+      
+      // 如果最终还是没有获取到用户信息，抛出错误
+      if (!userInfo || !userInfo.id) {
+        console.error('🚫 无法获取用户信息')
+        throw new Error('获取用户信息失败，请刷新页面重试')
       }
       // this.permissions = new Set(userInfo.permissions)
       // this.roles = userInfo.roles
