@@ -415,7 +415,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/system/websocket/index.vue'),
         name: 'SystemWebsocketConnections',
         meta: {
-          title: 'WebSocket连接',
+          title: '远程连接',
           requiresAdmin: true
         }
       },

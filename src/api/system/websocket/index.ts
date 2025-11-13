@@ -51,9 +51,14 @@ export interface WebsocketConnectionVO {
   userAgent?: string
   query?: Record<string, string | string[]>
   clientInfo?: WebsocketClientInfo
+  clientSource?: string
 }
 
 export const getWebsocketConnections = () => {
   return request.post<WebsocketConnectionVO[]>({ url: '/websocket/connections' })
+}
+
+export const sendMessageToConnection = (connectionId: string, data: any, event?: string) => {
+  return request.post({ url: '/websocket/send-message', data: { id: connectionId, event, data } })
 }
 

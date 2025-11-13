@@ -93,6 +93,18 @@
           <template #duration_default="{ row }">
             {{ formatPast(row.connectedAt) }}
           </template>
+          <template #clientSource_default="{ row }">
+            <el-tag v-if="row.clientSource === 'yishe-extension'" type="success" size="small">
+              浏览器插件
+            </el-tag>
+            <el-tag v-else-if="row.clientSource" type="info" size="small">
+              {{ row.clientSource }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+          <template #ip_default="{ row }">
+            {{ row.ip || '-' }}
+          </template>
           <template #ua_default="{ row }">
             {{ row.userAgent || '-' }}
           </template>
@@ -102,9 +114,63 @@
           <template #query_default="{ row }">
             {{ formatQuery(row.query) }}
           </template>
+          <template #operation_default="{ row }">
+            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
+              <el-button type="primary" link size="small">
+                操作
+                <Icon icon="ep:arrow-down" class="ml-5px" />
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="send-message">
+                    <Icon icon="ep:message" class="mr-5px" />
+                    发送消息
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
         </vxe-grid>
       </div>
     </ContentWrap>
+
+    <!-- 发送消息对话框 -->
+    <el-dialog
+      v-model="sendMessageDialogVisible"
+      title="发送消息"
+      width="500px"
+      align-center
+      :close-on-click-modal="false"
+    >
+      <el-form label-width="100px">
+        <el-form-item label="连接 ID">
+          <el-input :value="currentConnection?.id" disabled />
+        </el-form-item>
+        <el-form-item label="连接类型">
+          <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
+            浏览器插件
+          </el-tag>
+          <span v-else>{{ currentConnection?.clientSource || '未知' }}</span>
+        </el-form-item>
+        <el-form-item label="事件名称">
+          <el-input v-model="messageEvent" placeholder="默认为 admin-message" />
+        </el-form-item>
+        <el-form-item label="消息内容">
+          <el-input
+            v-model="messageContent"
+            type="textarea"
+            :rows="6"
+            placeholder='请输入消息内容，支持 JSON 格式，如 {"type":"test","message":"Hello"}'
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="sendMessageDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="sendMessageDialogLoading" @click="handleConfirmSendMessage">
+          发送
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -130,6 +196,13 @@ const refreshTimer = ref<number | null>(null)
 const refreshInterval = 10_000
 const testCardCollapsed = ref(false)
 
+// 发送消息对话框
+const sendMessageDialogVisible = ref(false)
+const sendMessageDialogLoading = ref(false)
+const currentConnection = ref<WebsocketConnectionVO | null>(null)
+const messageContent = ref('')
+const messageEvent = ref('admin-message')
+
 const gridRef = ref<VxeGridInstance>()
 const { height } = useWindowSize()
 
@@ -152,6 +225,13 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionVO>>({
       title: '命名空间',
       minWidth: 120,
       showOverflow: 'tooltip'
+    },
+    {
+      field: 'clientSource',
+      title: '连接类型',
+      width: 120,
+      align: 'center',
+      slots: { default: 'clientSource_default' }
     },
     {
       field: 'connectedAt',
@@ -193,6 +273,13 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionVO>>({
       minWidth: 260,
       showOverflow: 'tooltip',
       slots: { default: 'query_default' }
+    },
+    {
+      title: '操作',
+      fixed: 'right' as const,
+      width: 120,
+      align: 'center',
+      slots: { default: 'operation_default' }
     }
   ]
 })
@@ -465,6 +552,64 @@ const fetchConnections = async () => {
     message.error(error?.message ?? '获取 WebSocket 连接失败')
   } finally {
     loading.value = false
+  }
+}
+
+const handleOperationCommand = (command: string, row: WebsocketConnectionVO) => {
+  if (command === 'send-message') {
+    handleSendMessage(row)
+  }
+}
+
+const handleSendMessage = (row: WebsocketConnectionVO) => {
+  currentConnection.value = row
+  messageContent.value = ''
+  messageEvent.value = 'admin-message'
+  sendMessageDialogVisible.value = true
+}
+
+const handleConfirmSendMessage = async () => {
+  if (!currentConnection.value) {
+    return
+  }
+
+  if (!messageContent.value.trim()) {
+    message.warning('请输入消息内容')
+    return
+  }
+
+  sendMessageDialogLoading.value = true
+  try {
+    let data: any = messageContent.value
+    try {
+      data = JSON.parse(messageContent.value)
+    } catch {
+      // 如果不是 JSON，就作为普通字符串发送
+    }
+
+    const response = await WebsocketApi.sendMessageToConnection(
+      currentConnection.value.id,
+      data,
+      messageEvent.value || undefined
+    )
+    
+    // 检查返回的 success 字段
+    const result = response as any
+    if (result?.success === false || result?.data?.success === false) {
+      const errorMsg = result?.message || result?.data?.message || '消息发送失败'
+      message.error(errorMsg)
+      return
+    }
+    
+    message.success('消息发送成功')
+    sendMessageDialogVisible.value = false
+    messageContent.value = ''
+  } catch (error: any) {
+    // 处理网络错误或其他异常
+    const errorMsg = error?.response?.data?.message || error?.message || '消息发送失败'
+    message.error(errorMsg)
+  } finally {
+    sendMessageDialogLoading.value = false
   }
 }
 
