@@ -13,10 +13,16 @@
             <el-button text type="primary" @click="clearLogs" :disabled="logList.length === 0">
               清空日志
             </el-button>
+            <el-button text type="primary" @click="testCardCollapsed = !testCardCollapsed">
+              <Icon :icon="testCardCollapsed ? 'ep:arrow-down' : 'ep:arrow-up'" class="mr-5px" />
+              {{ testCardCollapsed ? '展开' : '折叠' }}
+            </el-button>
           </div>
         </div>
 
-        <el-form class="ws-test-form" label-position="top">
+        <el-collapse-transition>
+          <div v-show="!testCardCollapsed" class="ws-test-card__content">
+            <el-form class="ws-test-form" label-position="top">
           <el-form-item label="测试地址">
             <el-input v-model="wsUrl" placeholder="例如：wss://your-host/ws" :disabled="isConnected" />
           </el-form-item>
@@ -61,6 +67,8 @@
             </div>
           </el-scrollbar>
         </div>
+          </div>
+        </el-collapse-transition>
       </div>
     </ContentWrap>
 
@@ -75,7 +83,7 @@
 
       <el-empty v-if="!loading && connections.length === 0" description="暂无连接" />
 
-      <div v-else class="websocket-grid">
+      <div v-else class="common-table">
         <vxe-grid
           v-bind="gridOptions"
           :data="connections"
@@ -101,11 +109,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
 import { io, Socket } from 'socket.io-client'
 import { useMessage } from '@/hooks/web/useMessage'
 import { formatDate, formatPast } from '@/utils/formatTime'
+import { useWindowSize } from '@vueuse/core'
+import { commonGridOptions } from '@/common/table'
 import * as WebsocketApi from '@/api/system/websocket'
 import type { WebsocketConnectionVO, WebsocketClientInfo } from '@/api/system/websocket'
 
@@ -118,14 +128,16 @@ const loading = ref(false)
 const autoRefresh = ref(false)
 const refreshTimer = ref<number | null>(null)
 const refreshInterval = 10_000
+const testCardCollapsed = ref(false)
 
 const gridRef = ref<VxeGridInstance>()
-const gridOptions = reactive<VxeGridProps<WebsocketConnectionVO>>({
-  border: true,
-  stripe: true,
-  autoResize: true,
-  columnConfig: {
-    resizable: true
+const { height } = useWindowSize()
+
+const gridOptions = ref<VxeGridProps<WebsocketConnectionVO>>({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: {
+    keyField: 'id'
   },
   columns: [
     { type: 'seq', width: 60, title: '序号', align: 'center' },
@@ -145,6 +157,7 @@ const gridOptions = reactive<VxeGridProps<WebsocketConnectionVO>>({
       field: 'connectedAt',
       title: '连接时间',
       minWidth: 200,
+      ellipsis: true,
       formatter: ({ cellValue }) => (cellValue ? formatDate(new Date(cellValue)) : '')
     },
     {
@@ -182,6 +195,10 @@ const gridOptions = reactive<VxeGridProps<WebsocketConnectionVO>>({
       slots: { default: 'query_default' }
     }
   ]
+})
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 200
 })
 
 const formatQuery = (query?: Record<string, string | string[]>) => {
@@ -495,8 +512,8 @@ const stringifyData = (value: unknown) => {
 
 .ws-test-card {
   display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0;
 }
 
 .ws-test-card__header {
@@ -504,7 +521,14 @@ const stringifyData = (value: unknown) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 0;
+}
+
+.ws-test-card__content {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 12px;
 }
 
 .ws-test-card__status span:first-child {
@@ -583,7 +607,7 @@ const stringifyData = (value: unknown) => {
   font-size: 13px;
 }
 
-.websocket-grid {
+.common-table {
   border-radius: 8px;
   overflow: hidden;
 }
