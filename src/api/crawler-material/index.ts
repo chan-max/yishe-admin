@@ -12,6 +12,7 @@ import request from '@/config/axios'
 export interface CrawlerMaterialVO {
   id: string
   url: string
+  originUrl?: string
   key: string
   keywords: string
   name: string
@@ -21,6 +22,7 @@ export interface CrawlerMaterialVO {
   meta: any
   createTime: Date
   updateTime: Date
+  isOwnResource?: boolean
 }
 
 // 爬图素材 API
