@@ -119,6 +119,12 @@
             <template #suffixSlot="{ row }">
               <el-tag :type="getSuffixTagType(row.suffix)" size="small">{{ row.suffix || '-' }}</el-tag>
             </template>
+            <template #originUrlSlot="{ row }">
+              <el-link v-if="row.originUrl" :href="row.originUrl" target="_blank" type="primary" :underline="false" style="font-size: 12px;">
+                {{ row.originUrl.length > 50 ? row.originUrl.substring(0, 50) + '...' : row.originUrl }}
+              </el-link>
+              <span v-else style="color: #999; font-size: 12px;">-</span>
+            </template>
           </vxe-grid>
         </div>
         <div class="flex justify-end">
@@ -144,6 +150,9 @@
         </el-form-item>
         <el-form-item label="来源">
           <el-input v-model="editForm.source"  placeholder="请输入来源" style="font-size:16px;height:48px;width:100%;" />
+        </el-form-item>
+        <el-form-item label="原始地址">
+          <el-input v-model="editForm.originUrl" placeholder="请输入原始地址" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -202,6 +211,7 @@ const gridOptions = ref({
     { title: '感知哈希', field: 'phash', width: 80,  },
     { title: 'ID', field: 'id', width: 80, },
     { title: '来源', field: 'source', minWidth: 160 }, // 新增来源列
+    { title: '原始地址', field: 'originUrl', minWidth: 200, ellipsis: true, slots: { default: 'originUrlSlot' } }, // 原始地址列
     { title: '创建时间', field: 'createTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '修改时间', field: 'updateTime', width: 150, ellipsis: true, formatter: (e) => formatTimestamp(e.cellValue) },
     { title: '操作', fixed: 'right', width: 'auto', field: 'operation', slots: { default: 'operationDefaultSlot' } }
@@ -215,7 +225,7 @@ const importLoading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', description: '', keywords: '', source: '' })
+const editForm = ref({ id: '', name: '', description: '', keywords: '', source: '', originUrl: '' })
 const editLoading = ref(false)
 
 // 图片预览相关状态
@@ -310,7 +320,7 @@ function handleDelete(row?) {
 }
 
 function handleEdit(row) {
-  editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords, source: row.source }
+  editForm.value = { id: row.id, name: row.name, description: row.description, keywords: row.keywords, source: row.source, originUrl: row.originUrl || '' }
   editDialogVisible.value = true
 }
 

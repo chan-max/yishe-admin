@@ -244,6 +244,13 @@
               <span v-else>-</span>
             </template>
 
+            <template #originUrlSlot="{ row }">
+              <el-link v-if="row.originUrl" :href="row.originUrl" target="_blank" type="primary" :underline="false" style="font-size: 12px;">
+                {{ row.originUrl.length > 50 ? row.originUrl.substring(0, 50) + '...' : row.originUrl }}
+              </el-link>
+              <span v-else style="color: #999; font-size: 12px;">-</span>
+            </template>
+
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center gap-1">
                 <el-dropdown trigger="click" class="operation-dropdown">
@@ -846,6 +853,16 @@
             </el-form-item>
           </el-col>
         </el-row>
+
+        <el-divider />
+
+        <el-form-item label="原始地址">
+          <el-input 
+            v-model="editForm.originUrl" 
+            placeholder="请输入原始地址" 
+            clearable
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -1271,6 +1288,7 @@ const gridOptions = ref({
       slots: { default: 'similaritySlot' }
     }, // 新增相似度列
     { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
+    { title: '原始地址', field: 'originUrl', minWidth: 200, ellipsis: true, slots: { default: 'originUrlSlot' } }, // 原始地址列
     { 
       title: '自定义贴纸', 
       field: 'isCustom', 
@@ -2114,7 +2132,7 @@ async function handleBatchUnpublish() {
 }
 
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', nameEn: '', description: '', descriptionEn: '', keywords: '', keywordsEn: '', isCustom: false, isInfringement: false, isPublish: false })
+const editForm = ref({ id: '', name: '', nameEn: '', description: '', descriptionEn: '', keywords: '', keywordsEn: '', isCustom: false, isInfringement: false, isPublish: false, originUrl: '' })
 const editLoading = ref(false)
 
 // 其他缺少的变量
@@ -2184,7 +2202,8 @@ function handleEdit(row) {
     keywordsEn: row.keywordsEn || '',
     isCustom: row.isCustom || false,
     isInfringement: row.isInfringement || false,
-    isPublish: row.isPublish || false
+    isPublish: row.isPublish || false,
+    originUrl: row.originUrl || ''
   }
   editDialogVisible.value = true
 }
