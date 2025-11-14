@@ -149,49 +149,131 @@
       <div class="control-dialog-content">
         <div class="control-dialog-header">
           <div class="control-connection-info">
-            <el-descriptions :column="3" border>
-              <el-descriptions-item label="连接 ID">
-                {{ currentConnection?.id }}
-              </el-descriptions-item>
-              <el-descriptions-item label="连接类型">
-                <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
-                  浏览器插件
-                </el-tag>
-                <span v-else>{{ currentConnection?.clientSource || '未知' }}</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="IP 地址">
-                {{ currentConnection?.ip || '-' }}
-              </el-descriptions-item>
-              <el-descriptions-item label="连接时间">
-                {{ currentConnection?.connectedAt ? formatDate(new Date(currentConnection.connectedAt)) : '-' }}
-              </el-descriptions-item>
-              <el-descriptions-item label="持续时长">
-                {{ currentConnection?.connectedAt ? formatPast(currentConnection.connectedAt) : '-' }}
-              </el-descriptions-item>
-              <el-descriptions-item label="命名空间">
-                {{ currentConnection?.namespace || '-' }}
-              </el-descriptions-item>
-            </el-descriptions>
+            <div class="connection-info-left">
+              <div class="connection-id">
+                <span class="label">连接 ID：</span>
+                <span class="value">{{ currentConnection?.id || '-' }}</span>
+              </div>
+              <div class="connection-meta">
+                <span class="meta-item">
+                  <Icon icon="ep:location" class="mr-4px" />
+                  {{ currentConnection?.ip || '-' }}
+                </span>
+                <span class="meta-item">
+                  <Icon icon="ep:clock" class="mr-4px" />
+                  {{ currentConnection?.connectedAt ? formatPast(currentConnection.connectedAt) : '-' }}
+                </span>
+                <span class="meta-item" v-if="currentConnection?.namespace">
+                  <Icon icon="ep:folder" class="mr-4px" />
+                  {{ currentConnection.namespace }}
+                </span>
+              </div>
+            </div>
+            <div class="connection-info-right">
+              <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
+                <Icon icon="ep:chrome-filled" class="mr-4px" />
+                浏览器插件
+              </el-tag>
+              <el-tag v-else-if="currentConnection?.clientSource" type="info" size="small">
+                {{ currentConnection.clientSource }}
+              </el-tag>
+              <div class="connection-time" v-if="currentConnection?.connectedAt">
+                {{ formatDate(new Date(currentConnection.connectedAt)) }}
+              </div>
+            </div>
           </div>
         </div>
 
         <div class="control-dialog-body">
-          <el-card class="control-card">
-            <template #header>
-              <div class="card-header">
-                <span>操控功能</span>
-                <el-tag type="info" size="small">功能开发中</el-tag>
+          <vxe-grid
+            v-if="currentConnection?.clientSource === 'yishe-extension'"
+            v-bind="functionGridOptions"
+            :data="functionList"
+            class="function-grid"
+          >
+            <template #icon_default="{ row }">
+              <div class="function-icon-cell">
+                <Icon :icon="row.icon" />
               </div>
             </template>
-            <div class="control-functions">
-              <el-empty description="暂无可用功能，功能开发中..." :image-size="100" />
-              <!-- 后续可以在这里添加各种操控功能 -->
-            </div>
-          </el-card>
+            <template #operation_default="{ row }">
+              <el-dropdown trigger="click" @command="(command) => handleFunctionOperation(command, row)">
+                <el-button type="primary" link size="small">
+                  操作
+                  <Icon icon="ep:arrow-down" class="ml-5px" />
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="open">
+                      <Icon icon="ep:setting" class="mr-5px" />
+                      打开配置
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
+          </vxe-grid>
+
+          <el-empty
+            v-else
+            description="当前连接类型不支持操控功能"
+            :image-size="100"
+          />
         </div>
       </div>
       <template #footer>
         <el-button @click="controlDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Pinterest 爬取配置弹窗 -->
+    <el-dialog
+      v-model="pinterestDialogVisible"
+      title="Pinterest 图片爬取"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="pinterestForm" label-width="120px" :loading="pinterestLoading">
+        <el-form-item label="目标页面 URL">
+          <el-input
+            v-model="pinterestForm.targetUrl"
+            placeholder="https://www.pinterest.com/today/"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item label="采集数量上限">
+          <el-input-number
+            v-model="pinterestForm.count"
+            :min="1"
+            :max="500"
+            :step="1"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="上传到服务器">
+          <el-switch v-model="pinterestForm.uploadToServer" />
+        </el-form-item>
+        <el-form-item label="发送飞书通知">
+          <el-switch v-model="pinterestForm.notifyFeishu" />
+        </el-form-item>
+        <el-form-item label="素材来源标记">
+          <el-input v-model="pinterestForm.sourceTag" placeholder="pinterest" clearable />
+        </el-form-item>
+        <el-form-item label="素材备注">
+          <el-input
+            v-model="pinterestForm.description"
+            type="textarea"
+            :rows="2"
+            placeholder="Pinterest 图片素材"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pinterestDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="pinterestLoading" @click="handlePinterestScrape">
+          <Icon icon="ep:video-play" class="mr-5px" />
+          开始爬取
+        </el-button>
       </template>
     </el-dialog>
 
@@ -264,8 +346,74 @@ const currentConnection = ref<WebsocketConnectionVO | null>(null)
 const messageContent = ref('')
 const messageEvent = ref('admin-message')
 
+// Pinterest 爬取表单
+const pinterestForm = reactive({
+  targetUrl: 'https://www.pinterest.com/today/',
+  count: 10,
+  uploadToServer: true,
+  notifyFeishu: true,
+  sourceTag: 'pinterest',
+  description: 'Pinterest 图片素材'
+})
+const pinterestLoading = ref(false)
+
 // 操控对话框
 const controlDialogVisible = ref(false)
+const pinterestDialogVisible = ref(false)
+
+const openPinterestDialog = () => {
+  pinterestDialogVisible.value = true
+}
+
+// 功能列表数据
+const functionList = ref([
+  {
+    id: 'pinterest',
+    name: 'Pinterest 图片爬取',
+    description: '从 Pinterest 页面采集图片并上传到服务器',
+    icon: 'ep:picture',
+    handler: openPinterestDialog
+  }
+])
+
+// 功能列表表格配置
+const functionGridOptions = ref<VxeGridProps<any>>({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: {
+    keyField: 'id',
+    isHover: true
+  },
+  columns: [
+    { type: 'seq', width: 60, title: '序号', align: 'center' },
+    {
+      field: 'icon',
+      title: '',
+      width: 80,
+      align: 'center',
+      slots: { default: 'icon_default' }
+    },
+    {
+      field: 'name',
+      title: '功能名称',
+      minWidth: 200,
+      showOverflow: 'tooltip'
+    },
+    {
+      field: 'description',
+      title: '功能描述',
+      minWidth: 300,
+      showOverflow: 'tooltip'
+    },
+    {
+      title: '操作',
+      fixed: 'right' as const,
+      width: 120,
+      align: 'center',
+      slots: { default: 'operation_default' }
+    }
+  ]
+})
 
 const gridRef = ref<VxeGridInstance>()
 const { height } = useWindowSize()
@@ -639,6 +787,62 @@ const handleSendMessage = (row: WebsocketConnectionVO) => {
   sendMessageDialogVisible.value = true
 }
 
+const handleFunctionOperation = (command: string, row: any) => {
+  if (command === 'open' && row.handler && typeof row.handler === 'function') {
+    row.handler()
+  }
+}
+
+const handlePinterestScrape = async () => {
+  if (!currentConnection.value) {
+    message.warning('请先选择连接')
+    return
+  }
+
+  if (!pinterestForm.targetUrl?.trim()) {
+    message.warning('请输入目标页面 URL')
+    return
+  }
+
+  pinterestLoading.value = true
+  try {
+    const command = {
+      command: 'pinterest/scrape',
+      params: {
+        targetUrl: pinterestForm.targetUrl.trim(),
+        count: pinterestForm.count || 10,
+        uploadToServer: pinterestForm.uploadToServer ?? true,
+        notifyFeishu: pinterestForm.notifyFeishu ?? true,
+        sourceTag: pinterestForm.sourceTag?.trim() || 'pinterest',
+        description: pinterestForm.description?.trim() || 'Pinterest 图片素材',
+      },
+    }
+
+    const response = await WebsocketApi.sendMessageToConnection(
+      currentConnection.value.id,
+      command,
+      'admin-message'
+    )
+
+    // 检查返回的 success 字段
+    const result = response as any
+    if (result?.success === false || result?.data?.success === false) {
+      const errorMsg = result?.message || result?.data?.message || '爬取任务启动失败'
+      message.error(errorMsg)
+      return
+    }
+
+    message.success('爬取任务已启动，请查看插件端日志或等待完成通知')
+    pinterestDialogVisible.value = false
+  } catch (error: any) {
+    // 处理网络错误或其他异常
+    const errorMsg = error?.response?.data?.message || error?.message || '启动爬取任务失败'
+    message.error(errorMsg)
+  } finally {
+    pinterestLoading.value = false
+  }
+}
+
 const handleConfirmSendMessage = async () => {
   if (!currentConnection.value) {
     return
@@ -855,55 +1059,106 @@ const stringifyData = (value: unknown) => {
 }
 
 .control-dialog-header {
-  padding: 20px;
+  padding: 12px 20px;
   background: var(--el-bg-color-page);
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .control-connection-info {
-  .el-descriptions {
-    margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.connection-info-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.connection-id {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  
+  .label {
+    color: var(--el-text-color-secondary);
+    font-weight: 500;
   }
+  
+  .value {
+    color: var(--el-text-color-primary);
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 11px;
+  }
+}
+
+.connection-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--el-text-color-regular);
+  
+  .meta-item {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.connection-info-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.connection-time {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
 }
 
 .control-dialog-body {
   flex: 1;
-  padding: 20px;
+  padding: 24px;
   overflow-y: auto;
   background: var(--el-bg-color);
 }
 
-.control-card {
+.function-grid {
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  
-  .el-card__body {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
 }
 
-.card-header {
+.function-icon-cell {
+  width: 36px;
+  height: 36px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  span {
-    font-weight: 600;
-    font-size: 16px;
-  }
-}
-
-.control-functions {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 400px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
+  margin: 0 auto;
+  
+  .iconify {
+    font-size: 20px;
+    color: var(--el-color-primary);
+  }
+}
+
+.function-name-cell {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.function-desc-cell {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  line-height: 1.5;
 }
 </style>
 
