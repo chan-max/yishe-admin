@@ -196,6 +196,22 @@
                 <Icon :icon="row.icon" />
               </div>
             </template>
+            <template #schedule_default="{ row }">
+              <div v-if="row.id === 'pinterest' && row.schedule" class="schedule-status-cell">
+                <div class="schedule-status-row">
+                  <el-tag :type="row.schedule.enabled ? 'success' : 'info'" size="small">
+                    {{ row.schedule.enabled ? '已启用' : '已禁用' }}
+                  </el-tag>
+                  <span class="schedule-info-text">{{ formatSchedule(row.schedule) }}</span>
+                </div>
+                <div v-if="row.schedule.type" class="schedule-type-text">
+                  <el-tag :type="row.schedule.type === 'cron' ? 'primary' : 'success'" size="small" plain>
+                    {{ row.schedule.type === 'cron' ? '固定时间点' : '间隔时间' }}
+                  </el-tag>
+                </div>
+              </div>
+              <span v-else class="text-gray-400">未设置</span>
+            </template>
             <template #operation_default="{ row }">
               <el-dropdown trigger="click" @command="(command) => handleFunctionOperation(command, row)">
                 <el-button type="primary" link size="small">
@@ -230,52 +246,151 @@
     <el-dialog
       v-model="pinterestDialogVisible"
       title="Pinterest 图片爬取"
-      width="600px"
+      width="700px"
       :close-on-click-modal="false"
     >
-      <el-form :model="pinterestForm" label-width="120px" :loading="pinterestLoading">
-        <el-form-item label="目标页面 URL">
-          <el-input
-            v-model="pinterestForm.targetUrl"
-            placeholder="https://www.pinterest.com/today/"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="采集数量上限">
-          <el-input-number
-            v-model="pinterestForm.count"
-            :min="1"
-            :max="500"
-            :step="1"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="上传到服务器">
-          <el-switch v-model="pinterestForm.uploadToServer" />
-        </el-form-item>
-        <el-form-item label="发送飞书通知">
-          <el-switch v-model="pinterestForm.notifyFeishu" />
-        </el-form-item>
-        <el-form-item label="素材来源标记">
-          <el-input v-model="pinterestForm.sourceTag" placeholder="pinterest" clearable />
-        </el-form-item>
-        <el-form-item label="素材备注">
-          <el-input
-            v-model="pinterestForm.description"
-            type="textarea"
-            :rows="2"
-            placeholder="Pinterest 图片素材"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="pinterestDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="pinterestLoading" @click="handlePinterestScrape">
-          <Icon icon="ep:video-play" class="mr-5px" />
-          开始爬取
-        </el-button>
-      </template>
+      <el-tabs v-model="pinterestTab" type="border-card">
+        <el-tab-pane label="立即执行" name="execute">
+          <el-form :model="pinterestForm" label-width="120px" :loading="pinterestLoading">
+            <el-form-item label="目标页面 URL">
+              <el-input
+                v-model="pinterestForm.targetUrl"
+                placeholder="https://www.pinterest.com/today/"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="采集数量上限">
+              <el-input-number
+                v-model="pinterestForm.count"
+                :min="1"
+                :max="500"
+                :step="1"
+                style="width: 100%"
+              />
+            </el-form-item>
+            <el-form-item label="上传到服务器">
+              <el-switch v-model="pinterestForm.uploadToServer" />
+            </el-form-item>
+            <el-form-item label="发送飞书通知">
+              <el-switch v-model="pinterestForm.notifyFeishu" />
+            </el-form-item>
+            <el-form-item label="素材来源标记">
+              <el-input v-model="pinterestForm.sourceTag" placeholder="pinterest" clearable />
+            </el-form-item>
+            <el-form-item label="素材备注">
+              <el-input
+                v-model="pinterestForm.description"
+                type="textarea"
+                :rows="2"
+                placeholder="Pinterest 图片素材"
+              />
+            </el-form-item>
+          </el-form>
+          <div style="text-align: right; margin-top: 20px">
+            <el-button @click="pinterestDialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="pinterestLoading" @click="handlePinterestScrape">
+              <Icon icon="ep:video-play" class="mr-5px" />
+              开始爬取
+            </el-button>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="定时任务" name="schedule">
+          <!-- 已有任务：只显示信息和基本操作 -->
+          <div v-if="pinterestScheduleTask" class="schedule-info-section">
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="任务状态">
+                <el-tag :type="pinterestScheduleTask.enabled ? 'success' : 'info'">
+                  {{ pinterestScheduleTask.enabled ? '已启用' : '已禁用' }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="执行计划">
+                {{ formatSchedule(pinterestScheduleTask) }}
+              </el-descriptions-item>
+              <el-descriptions-item label="任务类型">
+                <el-tag :type="pinterestScheduleTask.type === 'cron' ? 'primary' : 'success'" size="small">
+                  {{ pinterestScheduleTask.type === 'cron' ? '固定时间点' : '间隔时间' }}
+                </el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+            <div class="schedule-actions" style="margin-top: 20px; text-align: center">
+              <el-button
+                :type="pinterestScheduleTask.enabled ? 'warning' : 'success'"
+                @click="handleTogglePinterestSchedule"
+                :loading="pinterestScheduleLoading"
+              >
+                {{ pinterestScheduleTask.enabled ? '禁用任务' : '启用任务' }}
+              </el-button>
+              <el-button type="danger" @click="handleDeletePinterestSchedule" :loading="pinterestScheduleLoading">
+                删除任务
+              </el-button>
+            </div>
+            <div style="margin-top: 20px; padding: 12px; background: var(--el-color-info-light-9); border-radius: 4px; font-size: 12px; color: var(--el-color-info); text-align: center">
+              <Icon icon="ep:info-filled" class="mr-4px" />
+              如需修改任务配置，请先删除当前任务，然后重新创建
+            </div>
+          </div>
+          
+          <!-- 没有任务：显示创建表单 -->
+          <div v-else>
+            <el-form :model="pinterestScheduleForm" label-width="120px" :loading="pinterestScheduleLoading">
+              <el-form-item label="任务类型">
+                <el-radio-group v-model="pinterestScheduleForm.type">
+                  <el-radio label="cron">固定时间点（Cron）</el-radio>
+                  <el-radio label="interval">间隔时间</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="pinterestScheduleForm.type === 'cron'" label="Cron 表达式">
+                <el-input
+                  v-model="pinterestScheduleForm.cronExpression"
+                  placeholder="例如：0 0 10 * * *（每天 10:00）"
+                  clearable
+                >
+                  <template #append>
+                    <el-button size="small" @click="showCronExamples = !showCronExamples">
+                      {{ showCronExamples ? '隐藏' : '示例' }}
+                    </el-button>
+                  </template>
+                </el-input>
+                <div v-if="showCronExamples" class="cron-examples" style="margin-top: 10px; font-size: 12px; color: #909399">
+                  <div>示例：</div>
+                  <div>• <code>0 0 10 * * *</code> - 每天 10:00</div>
+                  <div>• <code>0 0 */3 * * *</code> - 每 3 小时</div>
+                  <div>• <code>0 0 9,18 * * *</code> - 每天 9:00 和 18:00</div>
+                  <div>• <code>0 30 8 * * 1-5</code> - 工作日 8:30</div>
+                </div>
+              </el-form-item>
+              <el-form-item v-else label="间隔时间（小时）">
+                <el-input-number
+                  v-model="pinterestScheduleForm.intervalHours"
+                  :min="0.1"
+                  :max="168"
+                  :step="0.1"
+                  :precision="1"
+                  style="width: 100%"
+                  placeholder="例如：3 表示每 3 小时执行一次"
+                />
+                <div style="margin-top: 5px; font-size: 12px; color: #909399">
+                  请输入间隔时间（小时），如：1（每小时）、3（每 3 小时）、24（每天）
+                </div>
+              </el-form-item>
+              <el-divider />
+              <div style="font-size: 12px; color: #909399; margin-bottom: 15px; padding: 10px; background: var(--el-color-info-light-9); border-radius: 4px">
+                <Icon icon="ep:info-filled" class="mr-4px" />
+                定时任务将使用"立即执行"标签页中的爬取参数
+              </div>
+            </el-form>
+            <div style="text-align: right; margin-top: 20px">
+              <el-button @click="pinterestDialogVisible = false">取消</el-button>
+              <el-button type="primary" :loading="pinterestScheduleLoading" @click="handleSavePinterestSchedule">
+                <Icon icon="ep:check" class="mr-5px" />
+                创建任务
+              </el-button>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </el-dialog>
+
 
     <!-- 发送消息对话框 -->
     <el-dialog
@@ -326,7 +441,12 @@ import { formatDate, formatPast } from '@/utils/formatTime'
 import { useWindowSize } from '@vueuse/core'
 import { commonGridOptions } from '@/common/table'
 import * as WebsocketApi from '@/api/system/websocket'
-import type { WebsocketConnectionVO, WebsocketClientInfo } from '@/api/system/websocket'
+import type {
+  WebsocketConnectionVO,
+  WebsocketClientInfo,
+  ScheduledTask,
+  SetTaskDTO
+} from '@/api/system/websocket'
 
 defineOptions({ name: 'SystemWebsocketConnections' })
 
@@ -356,13 +476,178 @@ const pinterestForm = reactive({
   description: 'Pinterest 图片素材'
 })
 const pinterestLoading = ref(false)
+const pinterestTab = ref('execute') // 标签页：execute 或 schedule
+
+// Pinterest 定时任务相关
+const pinterestScheduleTask = ref<ScheduledTask | null>(null)
+const pinterestScheduleLoading = ref(false)
+const showCronExamples = ref(false)
+const pinterestScheduleForm = reactive({
+  type: 'interval' as 'cron' | 'interval',
+  cronExpression: '0 0 10 * * *',
+  intervalHours: 3
+})
+
+const formatSchedule = (task: ScheduledTask) => {
+  if (task.type === 'cron') {
+    return task.schedule
+  } else {
+    const hours = parseFloat(task.schedule)
+    if (hours >= 24) {
+      return `每 ${Math.floor(hours / 24)} 天`
+    } else if (hours >= 1) {
+      return `每 ${hours} 小时`
+    } else {
+      return `每 ${Math.floor(hours * 60)} 分钟`
+    }
+  }
+}
+
+const loadPinterestSchedule = async () => {
+  if (!currentConnection.value) return
+
+  pinterestScheduleLoading.value = true
+  try {
+    const response = await WebsocketApi.getScheduleTask(currentConnection.value.id)
+    if (response.data) {
+      // 只加载 Pinterest 相关的定时任务（通过 params 判断）
+      if (response.data.params?.sourceTag === 'pinterest' || !response.data.params?.sourceTag) {
+        pinterestScheduleTask.value = response.data
+        // 填充表单
+        pinterestScheduleForm.type = response.data.type
+        if (response.data.type === 'cron') {
+          pinterestScheduleForm.cronExpression = response.data.schedule
+        } else {
+          pinterestScheduleForm.intervalHours = parseFloat(response.data.schedule)
+        }
+        // 同步参数到 pinterestForm
+        if (response.data.params) {
+          Object.assign(pinterestForm, response.data.params)
+        }
+      } else {
+        pinterestScheduleTask.value = null
+      }
+    } else {
+      pinterestScheduleTask.value = null
+    }
+  } catch (error: any) {
+    message.error(error?.message || '获取定时任务失败')
+  } finally {
+    pinterestScheduleLoading.value = false
+  }
+}
+
+const handleSavePinterestSchedule = async () => {
+  if (!currentConnection.value) {
+    message.warning('请先选择连接')
+    return
+  }
+
+  if (pinterestScheduleForm.type === 'cron' && !pinterestScheduleForm.cronExpression?.trim()) {
+    message.warning('请输入 Cron 表达式')
+    return
+  }
+
+  if (pinterestScheduleForm.type === 'interval' && (!pinterestScheduleForm.intervalHours || pinterestScheduleForm.intervalHours <= 0)) {
+    message.warning('请输入有效的间隔时间（大于 0）')
+    return
+  }
+
+  if (!pinterestForm.targetUrl?.trim()) {
+    message.warning('请输入目标页面 URL（在"立即执行"标签页）')
+    return
+  }
+
+  pinterestScheduleLoading.value = true
+  try {
+    const data: SetTaskDTO = {
+      clientId: currentConnection.value.id,
+      type: pinterestScheduleForm.type,
+      schedule: pinterestScheduleForm.type === 'cron' ? pinterestScheduleForm.cronExpression : String(pinterestScheduleForm.intervalHours),
+      params: {
+        targetUrl: pinterestForm.targetUrl.trim(),
+        count: pinterestForm.count || 10,
+        uploadToServer: pinterestForm.uploadToServer ?? true,
+        notifyFeishu: pinterestForm.notifyFeishu ?? true,
+        sourceTag: pinterestForm.sourceTag?.trim() || 'pinterest',
+        description: pinterestForm.description?.trim() || 'Pinterest 图片素材（定时任务）'
+      }
+    }
+
+    const response = await WebsocketApi.setScheduleTask(data)
+    if (response.success) {
+      message.success(response.message || '定时任务设置成功')
+      await loadPinterestSchedule()
+      await loadFunctionSchedule() // 同时更新功能列表中的显示
+    } else {
+      message.error(response.message || '定时任务设置失败')
+    }
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '设置定时任务失败'
+    message.error(errorMsg)
+  } finally {
+    pinterestScheduleLoading.value = false
+  }
+}
+
+const handleTogglePinterestSchedule = async () => {
+  if (!currentConnection.value || !pinterestScheduleTask.value) return
+
+  pinterestScheduleLoading.value = true
+  try {
+    const response = await WebsocketApi.toggleScheduleTask({
+      clientId: currentConnection.value.id,
+      enabled: !pinterestScheduleTask.value.enabled
+    })
+    if (response.success) {
+      message.success(response.message || '操作成功')
+      await loadPinterestSchedule()
+      await loadFunctionSchedule() // 同时更新功能列表中的显示
+    } else {
+      message.error(response.message || '操作失败')
+    }
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '操作失败'
+    message.error(errorMsg)
+  } finally {
+    pinterestScheduleLoading.value = false
+  }
+}
+
+const handleDeletePinterestSchedule = async () => {
+  if (!currentConnection.value || !pinterestScheduleTask.value) return
+
+  try {
+    await message.confirm('确定要删除此定时任务吗？', '确认删除')
+  } catch {
+    return
+  }
+
+  pinterestScheduleLoading.value = true
+  try {
+    const response = await WebsocketApi.removeScheduleTask(currentConnection.value.id)
+    if (response.success) {
+      message.success(response.message || '定时任务已删除')
+      pinterestScheduleTask.value = null
+      await loadFunctionSchedule() // 同时更新功能列表中的显示
+    } else {
+      message.error(response.message || '删除失败')
+    }
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '删除失败'
+    message.error(errorMsg)
+  } finally {
+    pinterestScheduleLoading.value = false
+  }
+}
 
 // 操控对话框
 const controlDialogVisible = ref(false)
 const pinterestDialogVisible = ref(false)
 
-const openPinterestDialog = () => {
+const openPinterestDialog = async () => {
   pinterestDialogVisible.value = true
+  await loadPinterestSchedule()
 }
 
 // 功能列表数据
@@ -372,9 +657,47 @@ const functionList = ref([
     name: 'Pinterest 图片爬取',
     description: '从 Pinterest 页面采集图片并上传到服务器',
     icon: 'ep:picture',
-    handler: openPinterestDialog
+    handler: openPinterestDialog,
+    schedule: null as ScheduledTask | null
   }
 ])
+
+// 加载功能列表中的定时任务信息
+const loadFunctionSchedule = async () => {
+  if (!currentConnection.value) return
+
+  try {
+    const response = await WebsocketApi.getScheduleTask(currentConnection.value.id)
+    if (response.data) {
+      // 判断是否是 Pinterest 相关的定时任务
+      if (response.data.params?.sourceTag === 'pinterest' || !response.data.params?.sourceTag) {
+        const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
+        if (pinterestFunction) {
+          pinterestFunction.schedule = response.data
+        }
+      } else {
+        // 清除不相关的定时任务
+        const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
+        if (pinterestFunction) {
+          pinterestFunction.schedule = null
+        }
+      }
+    } else {
+      // 没有定时任务，清除显示
+      const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
+      if (pinterestFunction) {
+        pinterestFunction.schedule = null
+      }
+    }
+  } catch (error: any) {
+    console.error('加载定时任务信息失败:', error)
+    // 出错时清除显示
+    const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
+    if (pinterestFunction) {
+      pinterestFunction.schedule = null
+    }
+  }
+}
 
 // 功能列表表格配置
 const functionGridOptions = ref<VxeGridProps<any>>({
@@ -402,8 +725,15 @@ const functionGridOptions = ref<VxeGridProps<any>>({
     {
       field: 'description',
       title: '功能描述',
-      minWidth: 300,
+      minWidth: 250,
       showOverflow: 'tooltip'
+    },
+    {
+      field: 'schedule',
+      title: '定时任务',
+      minWidth: 200,
+      align: 'center',
+      slots: { default: 'schedule_default' }
     },
     {
       title: '操作',
@@ -775,9 +1105,11 @@ const handleOperationCommand = (command: string, row: WebsocketConnectionVO) => 
   }
 }
 
-const handleControl = (row: WebsocketConnectionVO) => {
+const handleControl = async (row: WebsocketConnectionVO) => {
   currentConnection.value = row
   controlDialogVisible.value = true
+  // 加载定时任务信息
+  await loadFunctionSchedule()
 }
 
 const handleSendMessage = (row: WebsocketConnectionVO) => {
@@ -1159,6 +1491,29 @@ const stringifyData = (value: unknown) => {
   font-size: 12px;
   color: var(--el-text-color-regular);
   line-height: 1.5;
+}
+
+.schedule-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  
+  .schedule-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .schedule-info-text {
+      font-size: 12px;
+      color: var(--el-text-color-primary);
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+  }
+  
+  .schedule-type-text {
+    font-size: 11px;
+  }
 }
 </style>
 
