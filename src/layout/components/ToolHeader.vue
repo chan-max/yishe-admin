@@ -138,7 +138,7 @@ export default defineComponent({
         ) : undefined}
         <div class="h-full flex items-center">
           {/* 打开设计工具 */}
-          { /*  <div class="client-status-wrapper"><ClientStatus /></div> */}
+          <div class="client-status-wrapper"><ClientStatus /></div>
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
           ) : undefined}
