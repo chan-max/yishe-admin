@@ -170,10 +170,10 @@
               </div>
             </div>
             <div class="connection-info-right">
-              <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
+                <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
                 <Icon icon="ep:chrome-filled" class="mr-4px" />
-                浏览器插件
-              </el-tag>
+                  浏览器插件
+                </el-tag>
               <el-tag v-else-if="currentConnection?.clientSource" type="info" size="small">
                 {{ currentConnection.clientSource }}
               </el-tag>
@@ -203,7 +203,7 @@
                     {{ row.schedule.enabled ? '已启用' : '已禁用' }}
                   </el-tag>
                   <span class="schedule-info-text">{{ formatSchedule(row.schedule) }}</span>
-                </div>
+                  </div>
                 <div v-if="row.schedule.type" class="schedule-type-text">
                   <el-tag :type="row.schedule.type === 'cron' ? 'primary' : 'success'" size="small" plain>
                     {{ row.schedule.type === 'cron' ? '固定时间点' : '间隔时间' }}
@@ -211,7 +211,7 @@
                 </div>
               </div>
               <span v-else class="text-gray-400">未设置</span>
-            </template>
+                </template>
             <template #operation_default="{ row }">
               <el-dropdown trigger="click" @command="(command) => handleFunctionOperation(command, row)">
                 <el-button type="primary" link size="small">
@@ -251,47 +251,47 @@
     >
       <el-tabs v-model="pinterestTab" type="border-card">
         <el-tab-pane label="立即执行" name="execute">
-          <el-form :model="pinterestForm" label-width="120px" :loading="pinterestLoading">
-            <el-form-item label="目标页面 URL">
-              <el-input
-                v-model="pinterestForm.targetUrl"
-                placeholder="https://www.pinterest.com/today/"
-                clearable
-              />
-            </el-form-item>
-            <el-form-item label="采集数量上限">
-              <el-input-number
-                v-model="pinterestForm.count"
-                :min="1"
-                :max="500"
-                :step="1"
-                style="width: 100%"
-              />
-            </el-form-item>
-            <el-form-item label="上传到服务器">
-              <el-switch v-model="pinterestForm.uploadToServer" />
-            </el-form-item>
-            <el-form-item label="发送飞书通知">
-              <el-switch v-model="pinterestForm.notifyFeishu" />
-            </el-form-item>
-            <el-form-item label="素材来源标记">
-              <el-input v-model="pinterestForm.sourceTag" placeholder="pinterest" clearable />
-            </el-form-item>
-            <el-form-item label="素材备注">
-              <el-input
-                v-model="pinterestForm.description"
-                type="textarea"
-                :rows="2"
-                placeholder="Pinterest 图片素材"
-              />
-            </el-form-item>
+                <el-form :model="pinterestForm" label-width="120px" :loading="pinterestLoading">
+                  <el-form-item label="目标页面 URL">
+                    <el-input
+                      v-model="pinterestForm.targetUrl"
+                      placeholder="https://www.pinterest.com/today/"
+                      clearable
+                    />
+                  </el-form-item>
+                  <el-form-item label="采集数量上限">
+                    <el-input-number
+                      v-model="pinterestForm.count"
+                      :min="1"
+                      :max="500"
+                      :step="1"
+                      style="width: 100%"
+                    />
+                  </el-form-item>
+                  <el-form-item label="上传到服务器">
+                    <el-switch v-model="pinterestForm.uploadToServer" />
+                  </el-form-item>
+                  <el-form-item label="发送飞书通知">
+                    <el-switch v-model="pinterestForm.notifyFeishu" />
+                  </el-form-item>
+                  <el-form-item label="素材来源标记">
+                    <el-input v-model="pinterestForm.sourceTag" placeholder="pinterest" clearable />
+                  </el-form-item>
+                  <el-form-item label="素材备注">
+                    <el-input
+                      v-model="pinterestForm.description"
+                      type="textarea"
+                      :rows="2"
+                      placeholder="Pinterest 图片素材"
+                    />
+                  </el-form-item>
           </el-form>
           <div style="text-align: right; margin-top: 20px">
             <el-button @click="pinterestDialogVisible = false">取消</el-button>
-            <el-button type="primary" :loading="pinterestLoading" @click="handlePinterestScrape">
-              <Icon icon="ep:video-play" class="mr-5px" />
-              开始爬取
-            </el-button>
+                    <el-button type="primary" :loading="pinterestLoading" @click="handlePinterestScrape">
+                      <Icon icon="ep:video-play" class="mr-5px" />
+                      开始爬取
+                    </el-button>
           </div>
         </el-tab-pane>
         <el-tab-pane label="定时任务" name="schedule">
@@ -371,13 +371,13 @@
                 />
                 <div style="margin-top: 5px; font-size: 12px; color: #909399">
                   请输入间隔时间（小时），如：1（每小时）、3（每 3 小时）、24（每天）
-                </div>
+            </div>
               </el-form-item>
               <el-divider />
               <div style="font-size: 12px; color: #909399; margin-bottom: 15px; padding: 10px; background: var(--el-color-info-light-9); border-radius: 4px">
                 <Icon icon="ep:info-filled" class="mr-4px" />
                 定时任务将使用"立即执行"标签页中的爬取参数
-              </div>
+        </div>
             </el-form>
             <div style="text-align: right; margin-top: 20px">
               <el-button @click="pinterestDialogVisible = false">取消</el-button>
@@ -385,7 +385,7 @@
                 <Icon icon="ep:check" class="mr-5px" />
                 创建任务
               </el-button>
-            </div>
+      </div>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -1442,8 +1442,8 @@ const stringifyData = (value: unknown) => {
 }
 
 .connection-info-right {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
   align-items: flex-end;
   gap: 8px;
   flex-shrink: 0;
@@ -1459,7 +1459,7 @@ const stringifyData = (value: unknown) => {
   padding: 24px;
   overflow-y: auto;
   background: var(--el-bg-color);
-}
+  }
 
 .function-grid {
   height: 100%;
@@ -1483,9 +1483,9 @@ const stringifyData = (value: unknown) => {
 
 .function-name-cell {
   font-size: 14px;
-  font-weight: 600;
+    font-weight: 600;
   color: var(--el-text-color-primary);
-}
+  }
 
 .function-desc-cell {
   font-size: 12px;

@@ -106,39 +106,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
             }
           }
         ]
-      }
-    ]
-  },
-  {
-    path: '/user',
-    component: Layout,
-    name: 'UserInfo',
-    meta: {
-      hidden: true
-    },
-    children: [
-      {
-        path: 'profile',
-        component: () => import('@/views/Profile/Index.vue'),
-        name: 'Profile',
-        meta: {
-          canTo: true,
-          hidden: true,
-          noTagsView: false,
-          icon: 'ep:user',
-          title: t('common.profile')
-        }
       },
       {
-        path: 'notify-message',
-        component: () => import('@/views/system/notify/my/index.vue'),
-        name: 'MyNotifyMessage',
+        path: 'statistics',
+        component: () => import('@/views/Home/Statistics/index.vue'),
+        name: 'Statistics',
         meta: {
-          canTo: true,
-          hidden: true,
-          noTagsView: false,
-          icon: 'ep:message',
-          title: '我的站内信'
+          title: '数据统计',
+          requiresAdmin: true
         }
       }
     ]
