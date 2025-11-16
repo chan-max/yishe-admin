@@ -7,7 +7,7 @@
       </div>
 
       <!-- 爬图模块 -->
-      <div class="module-section mb-24px">
+      <div class="module-section module-section--external mb-24px">
         <h3 class="module-title">爬图模块</h3>
         <el-row :gutter="20">
           <!-- 左侧：统计卡片 -->
@@ -633,6 +633,15 @@ onMounted(async () => {
       color: var(--el-text-color-primary, #303133);
       padding-bottom: 12px;
       border-bottom: 1px solid var(--el-border-color-lighter, #EBEEF5);
+    }
+
+    // 外部资源模块：半透明黄色背景（参考 crawler-material.vue 中外部资源 el-tag warning 类型的样式）
+    &--external {
+      padding: 20px !important;
+      border-radius: 8px !important;
+      // 使用 Element Plus warning 颜色（#E6A23C）的半透明版本，与外部资源标签一致
+      background-color: rgba(230, 162, 60, 0.08) !important; 
+      border-left: 3px solid rgba(230, 162, 60, 0.3) !important;
     }
 
     // 统计卡片区域，确保在左侧显示时卡片排列正确
