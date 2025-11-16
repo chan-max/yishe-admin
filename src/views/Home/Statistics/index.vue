@@ -639,8 +639,9 @@ onMounted(async () => {
     &--external {
       padding: 20px !important;
       border-radius: 8px !important;
-      // 使用 Element Plus warning 颜色（#E6A23C）的半透明版本，与外部资源标签一致
-      background-color: rgba(230, 162, 60, 0.08) !important; 
+      // 使用 Element Plus warning 颜色（与 crawler-material.vue 中外部资源 el-tag warning 类型一致）
+      // Element Plus warning 颜色为 #E6A23C (rgb(230, 162, 60))
+      background-color: rgba(230, 162, 60, 0.08) !important;
       border-left: 3px solid rgba(230, 162, 60, 0.3) !important;
     }
 
