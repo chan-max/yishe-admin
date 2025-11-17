@@ -703,7 +703,7 @@ const gridOptions = ref<any>({
     {
       title: "图片与配置",
       field: "images",
-      minWidth: 200,
+      width: 'auto',
       slots: { default: "imagesSlot" },
     },
     { title: "名称", field: "name", minWidth: 240 },
