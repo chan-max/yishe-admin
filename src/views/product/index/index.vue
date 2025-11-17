@@ -250,15 +250,7 @@
         </template>
 
         <template #typeSlot="{ row }">
-          <div v-if="row.type" style="display: flex; align-items: center; gap: 6px;">
-            <img
-              :src="getCategoryImage(getCategoryByValue(row.type) || PRODUCT_CATEGORIES[0])"
-              :alt="row.type"
-              style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px; flex-shrink: 0; vertical-align: middle;"
-              @error="handleImageError"
-            />
-            <span style="line-height: 24px;">{{ row.type }}</span>
-          </div>
+          <span v-if="row.type">{{ row.type }}</span>
           <span v-else class="text-gray-400 text-xs">未设置</span>
         </template>
 
@@ -3311,6 +3303,7 @@ async function handleUpdatePublishStatus(row: any, status: string) {
 .draft-desc {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
