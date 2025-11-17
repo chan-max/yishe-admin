@@ -175,7 +175,12 @@
                         <el-icon><Upload /></el-icon>
                         <span>入库</span>
                       </el-dropdown-item>
-                      <el-dropdown-item v-if="isAdmin" command="delete" divided>
+                      <el-dropdown-item
+                        v-if="isAdmin"
+                        command="delete"
+                        divided
+                        class="text-red-500"
+                      >
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -357,9 +362,6 @@ const gridOptions = ref<any>({
   maxHeight: null,
   rowConfig: { keyField: "id" },
   checkboxConfig: { reserve: true },
-  rowClassName: ({ row }) => {
-    return !row.isOwnResource ? 'external-resource-row' : '';
-  },
   columns: [
     {
       type: "checkbox" as const,
@@ -815,16 +817,6 @@ function handleOperationCommand(command: string, row: any) {
 getList();
 </script>
 <style scoped>
-/* 外部资源行样式：与外部资源 el-tag warning 类型一致 */
-:deep(.external-resource-row) {
-  background-color: rgba(230, 162, 60, 0.08) !important;
-  border-left: 3px solid rgba(230, 162, 60, 0.3) !important;
-  
-  &:hover {
-    background-color: rgba(230, 162, 60, 0.12) !important;
-  }
-}
-
 /* PC端优化 */
 .pb-4.flex,
 .search-bar {
@@ -931,6 +923,31 @@ getList();
     margin-top: 4px !important;
     border-top: 1px solid var(--el-border-color-lighter) !important;
     padding-top: 8px !important;
+  }
+
+  .el-dropdown-menu__item.text-red-500 {
+    color: var(--el-color-danger) !important;
+
+    .el-icon {
+      color: var(--el-color-danger) !important;
+    }
+
+    span {
+      color: var(--el-color-danger) !important;
+    }
+
+    &:hover {
+      color: var(--el-color-danger) !important;
+      background-color: var(--el-color-danger-light-9) !important;
+
+      .el-icon {
+        color: var(--el-color-danger) !important;
+      }
+
+      span {
+        color: var(--el-color-danger) !important;
+      }
+    }
   }
 }
 </style>
