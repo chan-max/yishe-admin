@@ -1,49 +1,83 @@
 <template>
-  <div>
-    <div class="pb-2 flex flex-wrap justify-end gap-2 items-center search-bar">
-      <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
+  <div class="p-4">
+    <div class="py-4 flex justify-between gap-4 items-center">
       <div style="flex: 1"></div>
-      <form-item label="按内容搜索">
-        <el-input
-          v-model="queryParams.search"
-          placeholder="请输入句子内容关键词"
-          style="width: 200px"
-          clearable
-          @change="(val) => { if (!val) getList() }"
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-      <form-item label="发布状态">
-        <el-select v-model="queryParams.isPublish" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" :value="null" />
-          <el-option label="已发布" :value="true" />
-          <el-option label="未发布" :value="false" />
-        </el-select>
-      </form-item>
-      <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
-        添加句子
-      </el-button>
-      <el-button v-if="isAdmin" type="success" :icon="MagicStick" @click="aiDialogVisible = true">
-        AI生成新句子
-      </el-button>
-      <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish" :disabled="!ids.length">
-        批量发布({{ ids.length }})
-      </el-button>
-      <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish" :disabled="!ids.length">
-        批量下架({{ ids.length }})
-      </el-button>
-      <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
-        批量删除
-      </el-button>
+      <div class="shrink-0 flex flex-wrap gap-2 items-center">
+        <form-item label="按内容搜索">
+          <el-input
+            v-model="queryParams.search"
+            placeholder="请输入句子内容关键词"
+            style="width: 200px"
+            clearable
+            @change="
+              (val) => {
+                if (!val) getList();
+              }
+            "
+          />
+        </form-item>
+        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+        <form-item label="发布状态">
+          <el-select
+            v-model="queryParams.isPublish"
+            placeholder="请选择状态"
+            style="width: 120px"
+            clearable
+            @change="getList"
+          >
+            <el-option label="全部" :value="null" />
+            <el-option label="已发布" :value="true" />
+            <el-option label="未发布" :value="false" />
+          </el-select>
+        </form-item>
+        <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
+          添加句子
+        </el-button>
+        <el-button
+          v-if="isAdmin"
+          type="success"
+          :icon="MagicStick"
+          @click="aiDialogVisible = true"
+        >
+          AI生成新句子
+        </el-button>
+        <el-button
+          v-if="isAdmin"
+          type="warning"
+          @click="handleBatchPublish"
+          :disabled="!ids.length"
+        >
+          批量发布({{ ids.length }})
+        </el-button>
+        <el-button
+          v-if="isAdmin"
+          type="info"
+          @click="handleBatchUnpublish"
+          :disabled="!ids.length"
+        >
+          批量下架({{ ids.length }})
+        </el-button>
+        <el-button
+          v-if="isAdmin"
+          type="danger"
+          :icon="Delete"
+          @click="handleDelete(null)"
+          :disabled="!ids.length"
+        >
+          批量删除
+        </el-button>
+      </div>
     </div>
     <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
       <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
       <template #footer>
         <el-button @click="aiDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd">生成并添加</el-button>
+        <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd"
+          >生成并添加</el-button
+        >
       </template>
     </el-dialog>
-    
+
     <!-- AI分析句子弹窗 -->
     <el-dialog
       v-model="aiAnalyzeDialogVisible"
@@ -52,17 +86,24 @@
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的角度或要求（可选，留空则使用默认分析标准）</div>
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+        请输入你希望AI分析的角度或要求（可选，留空则使用默认分析标准）
+      </div>
       <el-input
         v-model="aiAnalyzePrompt"
         type="textarea"
         :rows="4"
         placeholder="如：请重点关注句子的情感色彩和主题..."
-        style="font-size:16px;min-height:100px;width:100%;resize:vertical;"
+        style="font-size: 16px; min-height: 100px; width: 100%; resize: vertical"
       />
       <template #footer>
         <el-button @click="aiAnalyzeDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiAnalyzeLoading" @click="submitAiAnalyzeDialog">确定</el-button>
+        <el-button
+          type="primary"
+          :loading="aiAnalyzeLoading"
+          @click="submitAiAnalyzeDialog"
+          >确定</el-button
+        >
       </template>
     </el-dialog>
     <div class="common-table">
@@ -75,7 +116,11 @@
       >
         <template #operationDefaultSlot="{ row }">
           <div class="flex items-center">
-            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+            <el-dropdown
+              trigger="click"
+              @command="(command) => handleOperationCommand(command, row)"
+              class="operation-dropdown"
+            >
               <el-button type="primary" link size="small">
                 操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
@@ -89,11 +134,19 @@
                     <el-icon><MagicStick /></el-icon>
                     <span>AI分析</span>
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="publish" v-show="!row.isPublish">
+                  <el-dropdown-item
+                    v-if="isAdmin"
+                    command="publish"
+                    v-show="!row.isPublish"
+                  >
                     <el-icon><Upload /></el-icon>
                     <span>发布</span>
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="unpublish" v-show="row.isPublish">
+                  <el-dropdown-item
+                    v-if="isAdmin"
+                    command="unpublish"
+                    v-show="row.isPublish"
+                  >
                     <el-icon><Download /></el-icon>
                     <span>下架</span>
                   </el-dropdown-item>
@@ -104,7 +157,11 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#409EFF;font-size:18px;" />
+            <el-icon
+              v-if="aiTableLoading?.[row?.id]"
+              class="is-loading ml-2"
+              style="color: #409eff; font-size: 18px"
+            />
           </div>
         </template>
         <template #contentSlot="{ row }">
@@ -113,21 +170,18 @@
           </div>
         </template>
         <template #descriptionSlot="{ row }">
-          <div class="text-wrap" style="max-width: 200px; word-break: break-all;">
-            {{ row.description || '-' }}
+          <div class="text-wrap" style="max-width: 200px; word-break: break-all">
+            {{ row.description || "-" }}
           </div>
         </template>
         <template #keywordsSlot="{ row }">
-          <div class="text-wrap" style="max-width: 200px; word-break: break-all;">
-            {{ row.keywords || '-' }}
+          <div class="text-wrap" style="max-width: 200px; word-break: break-all">
+            {{ row.keywords || "-" }}
           </div>
         </template>
         <template #isPublishSlot="{ row }">
-          <el-tag 
-            :type="row.isPublish ? 'success' : 'info'" 
-            size="small"
-          >
-            {{ row.isPublish ? '已发布' : '未发布' }}
+          <el-tag :type="row.isPublish ? 'success' : 'info'" size="small">
+            {{ row.isPublish ? "已发布" : "未发布" }}
           </el-tag>
         </template>
         <template #createdAtSlot="{ row }">
@@ -157,11 +211,11 @@
         <el-row>
           <el-col :span="24">
             <el-form-item label="句子内容" prop="content">
-              <el-input 
-                v-model="form.content" 
-                type="textarea" 
+              <el-input
+                v-model="form.content"
+                type="textarea"
                 :rows="4"
-                placeholder="请输入句子内容" 
+                placeholder="请输入句子内容"
                 maxlength="1000"
                 show-word-limit
               />
@@ -169,11 +223,11 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="描述" prop="description">
-              <el-input 
-                v-model="form.description" 
-                type="textarea" 
+              <el-input
+                v-model="form.description"
+                type="textarea"
                 :rows="3"
-                placeholder="请输入描述（可选）" 
+                placeholder="请输入描述（可选）"
                 maxlength="500"
                 show-word-limit
               />
@@ -181,11 +235,11 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="关键词" prop="keywords">
-              <el-input 
-                v-model="form.keywords" 
-                type="textarea" 
+              <el-input
+                v-model="form.keywords"
+                type="textarea"
                 :rows="2"
-                placeholder="请输入关键词，多个关键词用逗号分隔（可选）" 
+                placeholder="请输入关键词，多个关键词用逗号分隔（可选）"
                 maxlength="200"
                 show-word-limit
               />
@@ -193,7 +247,11 @@
           </el-col>
           <el-col :span="24">
             <el-form-item label="发布状态">
-              <el-select v-model="form.isPublish" placeholder="请选择发布状态" style="width: 100%">
+              <el-select
+                v-model="form.isPublish"
+                placeholder="请选择发布状态"
+                style="width: 100%"
+              >
                 <el-option label="未发布" :value="false" />
                 <el-option label="已发布" :value="true" />
               </el-select>
@@ -203,264 +261,312 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading"
+          >确定</el-button
+        >
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watchEffect } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Delete, Plus, Refresh, MagicStick, ArrowDown, Edit, Upload, Download } from '@element-plus/icons-vue'
-import { getSentenceList, createSentence, updateSentence, deleteSentence, aiGenerateSentence, aiAnalyzeSentence } from '@/api/sentence'
-import { commonGridOptions } from '@/common/table'
-import FormItem from '@/components/Erp/formItem.vue'
-import Pagination from '@/components/Pagination/index.vue'
-import { useWindowSize } from '@vueuse/core'
-import { useUserStore } from '@/store/modules/user'
-import { computed } from 'vue'
+import { ref, reactive, onMounted, watchEffect } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import {
+  Search,
+  Delete,
+  Plus,
+  MagicStick,
+  ArrowDown,
+  Edit,
+  Upload,
+  Download,
+} from "@element-plus/icons-vue";
+import {
+  getSentenceList,
+  createSentence,
+  updateSentence,
+  deleteSentence,
+  aiGenerateSentence,
+  aiAnalyzeSentence,
+} from "@/api/sentence";
+import { commonGridOptions } from "@/common/table";
+import FormItem from "@/components/Erp/formItem.vue";
+import Pagination from "@/components/Pagination/index.vue";
+import { useWindowSize } from "@vueuse/core";
+import { useUserStore } from "@/store/modules/user";
+import { computed } from "vue";
 
-const userStore = useUserStore()
+const userStore = useUserStore();
 
 // 判断是否为管理员
-const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
 
-const { height } = useWindowSize()
+const { height } = useWindowSize();
 
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  search: '',
-  isPublish: null
-})
+  search: "",
+  isPublish: null,
+});
 
 const gridOptions = ref({
   ...commonGridOptions,
   maxHeight: null,
-  rowConfig: { keyField: 'id' },
+  rowConfig: { keyField: "id" },
   checkboxConfig: { reserve: true },
   columns: [
-    { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
-    { title: 'ID', field: 'id', width: 80 },
-    { title: '句子内容', field: 'content', minWidth: 300, slots: { default: 'contentSlot' } },
-    { title: '描述', field: 'description', minWidth: 200, slots: { default: 'descriptionSlot' } },
-    { title: '关键词', field: 'keywords', minWidth: 150, slots: { default: 'keywordsSlot' } },
-    { title: '发布状态', field: 'isPublish', width: 100, slots: { default: 'isPublishSlot' } },
-    { title: '创建时间', field: 'createdAt', width: 160, slots: { default: 'createdAtSlot' } },
-    { title: '更新时间', field: 'updatedAt', width: 160, slots: { default: 'updatedAtSlot' } },
-    { title: '操作', fixed: 'right' as const, width: 100, slots: { default: 'operationDefaultSlot' } }
-  ]
-} as any)
+    { type: "checkbox", width: 50, ellipsis: true, reserve: true },
+    { title: "ID", field: "id", width: 80 },
+    {
+      title: "句子内容",
+      field: "content",
+      minWidth: 300,
+      slots: { default: "contentSlot" },
+    },
+    {
+      title: "描述",
+      field: "description",
+      minWidth: 200,
+      slots: { default: "descriptionSlot" },
+    },
+    {
+      title: "关键词",
+      field: "keywords",
+      minWidth: 150,
+      slots: { default: "keywordsSlot" },
+    },
+    {
+      title: "发布状态",
+      field: "isPublish",
+      width: 100,
+      slots: { default: "isPublishSlot" },
+    },
+    {
+      title: "创建时间",
+      field: "createdAt",
+      width: 160,
+      slots: { default: "createdAtSlot" },
+    },
+    {
+      title: "更新时间",
+      field: "updatedAt",
+      width: 160,
+      slots: { default: "updatedAtSlot" },
+    },
+    {
+      title: "操作",
+      fixed: "right" as const,
+      width: 100,
+      slots: { default: "operationDefaultSlot" },
+    },
+  ],
+} as any);
 
 // 监听窗口大小变化，动态调整表格高度
-watchEffect(() => { 
-  gridOptions.value.maxHeight = height.value - 240 
-})
+watchEffect(() => {
+  // 计算表格最大高度：窗口高度 - 头部区域(p-4上下32px + py-4上下32px + 内容高度约80px) - 分页区域(约80px) - 其他边距(约40px)
+  gridOptions.value.maxHeight = height.value - 280;
+});
 
-const dataSource = ref([])
-const loading = ref(false)
-const ids = ref([])
-const total = ref(0)
-const formRef = ref()
-const dialogTitle = ref('')
-const dialogVisible = ref(false)
-const isEdit = ref(false)
+const dataSource = ref([]);
+const loading = ref(false);
+const ids = ref([]);
+const total = ref(0);
+const formRef = ref();
+const dialogTitle = ref("");
+const dialogVisible = ref(false);
+const isEdit = ref(false);
 const form = ref({
-  content: '',
-  description: '',
-  keywords: '',
-  isPublish: false
-})
-const submitLoading = ref(false)
-const aiPromptTop = ref('')
-const aiLoadingTop = ref(false)
-const aiDialogVisible = ref(false)
-const editId = ref<string | null>(null)
+  content: "",
+  description: "",
+  keywords: "",
+  isPublish: false,
+});
+const submitLoading = ref(false);
+const aiPromptTop = ref("");
+const aiLoadingTop = ref(false);
+const aiDialogVisible = ref(false);
+const editId = ref<string | null>(null);
 
 // AI分析相关
-const aiAnalyzeDialogVisible = ref(false)
-const aiAnalyzePrompt = ref('')
-const aiAnalyzeLoading = ref(false)
-const aiTableLoading = ref<Record<string, boolean>>({})
-let aiAnalyzeRow = null
+const aiAnalyzeDialogVisible = ref(false);
+const aiAnalyzePrompt = ref("");
+const aiAnalyzeLoading = ref(false);
+const aiTableLoading = ref<Record<string, boolean>>({});
+let aiAnalyzeRow = null;
 
 // 格式化日期时间
 function formatDateTime(dateStr: string) {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  })
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 async function getList() {
-  loading.value = true
+  loading.value = true;
   try {
-    const params = { ...queryParams }
-    const res = await getSentenceList(params)
-    dataSource.value = res.list || []
-    total.value = res.total || 0
-    ids.value = []
+    const params = { ...queryParams };
+    const res = await getSentenceList(params);
+    dataSource.value = res.list || [];
+    total.value = res.total || 0;
+    ids.value = [];
   } catch (error) {
-    console.error('获取列表失败:', error)
-    ElMessage.error('获取列表失败')
+    console.error("获取列表失败:", error);
+    ElMessage.error("获取列表失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
-
-function resetQuery() {
-  queryParams.search = ''
-  queryParams.currentPage = 1
-  getList()
 }
 
 function handleAdd() {
-  isEdit.value = false
-  dialogVisible.value = true
-  dialogTitle.value = '新增句子'
+  isEdit.value = false;
+  dialogVisible.value = true;
+  dialogTitle.value = "新增句子";
   form.value = {
-    content: '',
-    description: '',
-    keywords: '',
-    isPublish: false
-  }
+    content: "",
+    description: "",
+    keywords: "",
+    isPublish: false,
+  };
 }
 
-onMounted(getList)
+onMounted(getList);
 
 function checkboxChange(e) {
-  const records = Array.isArray(e.records) ? e.records : []
-  const reserves = Array.isArray(e.reserves) ? e.reserves : []
-  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
-  console.log('checkboxChange - ids:', ids.value) // 添加调试信息
+  const records = Array.isArray(e.records) ? e.records : [];
+  const reserves = Array.isArray(e.reserves) ? e.reserves : [];
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
+  console.log("checkboxChange - ids:", ids.value); // 添加调试信息
 }
 
 function checkboxAllChange(e) {
-  const records = Array.isArray(e.records) ? e.records : []
-  const reserves = Array.isArray(e.reserves) ? e.reserves : []
-  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
-  console.log('checkboxAllChange - ids:', ids.value) // 添加调试信息
+  const records = Array.isArray(e.records) ? e.records : [];
+  const reserves = Array.isArray(e.reserves) ? e.reserves : [];
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
+  console.log("checkboxAllChange - ids:", ids.value); // 添加调试信息
 }
 
 function handleEdit(row) {
-  isEdit.value = true
-  dialogVisible.value = true
-  dialogTitle.value = '编辑句子'
-  editId.value = row.id
+  isEdit.value = true;
+  dialogVisible.value = true;
+  dialogTitle.value = "编辑句子";
+  editId.value = row.id;
   form.value = {
     content: row.content,
-    description: row.description || '',
-    keywords: row.keywords || '',
-    isPublish: row.isPublish || false
-  }
+    description: row.description || "",
+    keywords: row.keywords || "",
+    isPublish: row.isPublish || false,
+  };
 }
 
 function handleDelete(row?) {
-  let delIds = null
+  let delIds = null;
   if (row) {
-    delIds = [row.id]
+    delIds = [row.id];
   } else if (!ids.value.length) {
-    return ElMessage.warning('请选择要删除的数据')
+    return ElMessage.warning("请选择要删除的数据");
   } else {
-    delIds = [...ids.value]
+    delIds = [...ids.value];
   }
-  
-  ElMessageBox.confirm(
-    `确认删除选中的 ${delIds.length} 条数据吗？`, 
-    '删除提示', 
-    {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
+
+  ElMessageBox.confirm(`确认删除选中的 ${delIds.length} 条数据吗？`, "删除提示", {
+    confirmButtonText: "确认",
+    cancelButtonText: "取消",
+    type: "warning",
+  })
     .then(async () => {
       try {
         for (const id of delIds) {
-          await deleteSentence(id)
+          await deleteSentence(id);
         }
-        ElMessage.success('删除成功')
-        getList()
+        ElMessage.success("删除成功");
+        getList();
       } catch (error) {
-        console.error('删除失败:', error)
-        ElMessage.error('删除失败')
+        console.error("删除失败:", error);
+        ElMessage.error("删除失败");
       }
     })
-    .catch(() => {})
+    .catch(() => {});
 }
 
 async function handleAIGenerateAndAdd() {
-  aiLoadingTop.value = true
+  aiLoadingTop.value = true;
   try {
-    const res = await aiGenerateSentence({ prompt: aiPromptTop.value })
+    const res = await aiGenerateSentence({ prompt: aiPromptTop.value });
     if (res.content) {
-      await createSentence({ 
-        content: res.content, 
-        description: res.description || '',
-        keywords: res.keywords || ''
-      })
-      ElMessage.success('AI生成并添加成功')
-      aiDialogVisible.value = false
-      aiPromptTop.value = ''
-      getList()
+      await createSentence({
+        content: res.content,
+        description: res.description || "",
+        keywords: res.keywords || "",
+      });
+      ElMessage.success("AI生成并添加成功");
+      aiDialogVisible.value = false;
+      aiPromptTop.value = "";
+      getList();
     } else {
-      ElMessage.error('AI未返回内容')
+      ElMessage.error("AI未返回内容");
     }
   } catch (e) {
-    ElMessage.error('AI生成失败')
+    ElMessage.error("AI生成失败");
   } finally {
-    aiLoadingTop.value = false
+    aiLoadingTop.value = false;
   }
 }
 
 // AI分析句子
 function handleAiAnalyze(row) {
-  if (aiTableLoading.value[row.id]) return
-  aiAnalyzeRow = row
-  aiAnalyzePrompt.value = ''
-  aiAnalyzeDialogVisible.value = true
+  if (aiTableLoading.value[row.id]) return;
+  aiAnalyzeRow = row;
+  aiAnalyzePrompt.value = "";
+  aiAnalyzeDialogVisible.value = true;
 }
 
 async function submitAiAnalyzeDialog() {
-  if (!aiAnalyzeRow) return
-  aiAnalyzeLoading.value = true
-  aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: true }
+  if (!aiAnalyzeRow) return;
+  aiAnalyzeLoading.value = true;
+  aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: true };
   try {
-    await handleAiAnalyzeSentence(aiAnalyzeRow, () => {
-      aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: false }
-      aiAnalyzeLoading.value = false
-      aiAnalyzeDialogVisible.value = false
-      aiAnalyzeRow = null
-    }, aiAnalyzePrompt.value)
+    await handleAiAnalyzeSentence(
+      aiAnalyzeRow,
+      () => {
+        aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: false };
+        aiAnalyzeLoading.value = false;
+        aiAnalyzeDialogVisible.value = false;
+        aiAnalyzeRow = null;
+      },
+      aiAnalyzePrompt.value
+    );
   } catch (e) {
-    aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: false }
-    aiAnalyzeLoading.value = false
-    aiAnalyzeDialogVisible.value = false
-    aiAnalyzeRow = null
+    aiTableLoading.value = { ...aiTableLoading.value, [aiAnalyzeRow.id]: false };
+    aiAnalyzeLoading.value = false;
+    aiAnalyzeDialogVisible.value = false;
+    aiAnalyzeRow = null;
   }
 }
 
 async function handleAiAnalyzeSentence(row, cb, prompt) {
   try {
-    const res = await aiAnalyzeSentence(row.id, prompt || '')
+    const res = await aiAnalyzeSentence(row.id, prompt || "");
     // 更新行数据
     if (res) {
-      row.description = res.description
-      row.keywords = res.keywords
+      row.description = res.description;
+      row.keywords = res.keywords;
     }
-    ElMessage.success('AI分析完成')
-    if (typeof cb === 'function') cb()
-    getList()
+    ElMessage.success("AI分析完成");
+    if (typeof cb === "function") cb();
+    getList();
   } catch (e) {
-    ElMessage.error(`AI分析失败：${e.message || '未知错误'}`)
-    if (typeof cb === 'function') cb()
+    ElMessage.error(`AI分析失败：${e.message || "未知错误"}`);
+    if (typeof cb === "function") cb();
   }
 }
 
@@ -468,13 +574,13 @@ async function handleAiAnalyzeSentence(row, cb, prompt) {
 async function handlePublish(row) {
   try {
     await updateSentence(row.id, {
-      isPublish: true
-    })
-    row.isPublish = true
-    ElMessage.success('发布成功')
-    getList()
+      isPublish: true,
+    });
+    row.isPublish = true;
+    ElMessage.success("发布成功");
+    getList();
   } catch (e) {
-    ElMessage.error('发布失败')
+    ElMessage.error("发布失败");
   }
 }
 
@@ -482,142 +588,125 @@ async function handlePublish(row) {
 async function handleUnpublish(row) {
   try {
     await updateSentence(row.id, {
-      isPublish: false
-    })
-    row.isPublish = false
-    ElMessage.success('下架成功')
-    getList()
+      isPublish: false,
+    });
+    row.isPublish = false;
+    ElMessage.success("下架成功");
+    getList();
   } catch (e) {
-    ElMessage.error('下架失败')
+    ElMessage.error("下架失败");
   }
 }
 
 // 批量发布
 async function handleBatchPublish() {
   if (!ids.value.length) {
-    return ElMessage.warning('请选择要发布的句子')
+    return ElMessage.warning("请选择要发布的句子");
   }
-  
+
   try {
-    const promises = ids.value.map(id => 
-      updateSentence(id, { isPublish: true })
-    )
-    await Promise.all(promises)
-    ElMessage.success(`成功发布 ${ids.value.length} 个句子`)
-    ids.value = []
-    getList()
+    const promises = ids.value.map((id) => updateSentence(id, { isPublish: true }));
+    await Promise.all(promises);
+    ElMessage.success(`成功发布 ${ids.value.length} 个句子`);
+    ids.value = [];
+    getList();
   } catch (e) {
-    ElMessage.error('批量发布失败')
+    ElMessage.error("批量发布失败");
   }
 }
 
 // 批量下架
 async function handleBatchUnpublish() {
   if (!ids.value.length) {
-    return ElMessage.warning('请选择要下架的句子')
+    return ElMessage.warning("请选择要下架的句子");
   }
-  
+
   try {
-    const promises = ids.value.map(id => 
-      updateSentence(id, { isPublish: false })
-    )
-    await Promise.all(promises)
-    ElMessage.success(`成功下架 ${ids.value.length} 个句子`)
-    ids.value = []
-    getList()
+    const promises = ids.value.map((id) => updateSentence(id, { isPublish: false }));
+    await Promise.all(promises);
+    ElMessage.success(`成功下架 ${ids.value.length} 个句子`);
+    ids.value = [];
+    getList();
   } catch (e) {
-    ElMessage.error('批量下架失败')
+    ElMessage.error("批量下架失败");
   }
 }
 
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
-    case 'edit':
+    case "edit":
       handleEdit(row);
       break;
-    case 'ai-analyze':
+    case "ai-analyze":
       handleAiAnalyze(row);
       break;
-    case 'publish':
+    case "publish":
       handlePublish(row);
       break;
-    case 'unpublish':
+    case "unpublish":
       handleUnpublish(row);
       break;
-    case 'delete':
+    case "delete":
       handleDelete(row);
       break;
     default:
-      console.warn('未知的操作命令:', command);
+      console.warn("未知的操作命令:", command);
   }
 }
 
 const rules = {
   content: [
-    { required: true, message: '请输入句子内容', trigger: 'blur' },
-    { min: 1, max: 1000, message: '句子内容长度在 1 到 1000 个字符', trigger: 'blur' }
+    { required: true, message: "请输入句子内容", trigger: "blur" },
+    { min: 1, max: 1000, message: "句子内容长度在 1 到 1000 个字符", trigger: "blur" },
   ],
-  description: [
-    { max: 500, message: '描述长度不能超过 500 个字符', trigger: 'blur' }
-  ],
-  keywords: [
-    { max: 200, message: '关键词长度不能超过 200 个字符', trigger: 'blur' }
-  ]
-}
+  description: [{ max: 500, message: "描述长度不能超过 500 个字符", trigger: "blur" }],
+  keywords: [{ max: 200, message: "关键词长度不能超过 200 个字符", trigger: "blur" }],
+};
 
 const dialogClose = () => {
-  dialogVisible.value = false
-  submitLoading.value = false
-  formRef.value?.resetFields()
-}
+  dialogVisible.value = false;
+  submitLoading.value = false;
+  formRef.value?.resetFields();
+};
 
 const submitForm = async () => {
-  if (!formRef.value) return
-  
+  if (!formRef.value) return;
+
   try {
-    await formRef.value.validate()
-    submitLoading.value = true
-    
+    await formRef.value.validate();
+    submitLoading.value = true;
+
     if (isEdit.value) {
       await updateSentence(editId.value, {
         content: form.value.content,
         description: form.value.description,
         keywords: form.value.keywords,
-        isPublish: form.value.isPublish
-      })
-      ElMessage.success('更新成功')
+        isPublish: form.value.isPublish,
+      });
+      ElMessage.success("更新成功");
     } else {
       await createSentence({
         content: form.value.content,
         description: form.value.description,
         keywords: form.value.keywords,
-        isPublish: form.value.isPublish
-      })
-      ElMessage.success('新增成功')
+        isPublish: form.value.isPublish,
+      });
+      ElMessage.success("新增成功");
     }
-    
-    getList()
-    dialogVisible.value = false
+
+    getList();
+    dialogVisible.value = false;
   } catch (error) {
-    console.error('提交失败:', error)
-    ElMessage.error('操作失败')
+    console.error("提交失败:", error);
+    ElMessage.error("操作失败");
   } finally {
-    submitLoading.value = false
+    submitLoading.value = false;
   }
-}
+};
 </script>
 
 <style scoped>
-.pb-2.flex, .search-bar {
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.pb-2.flex > *, .search-bar > * {
-  margin-bottom: 0;
-}
-
 /* 句子内容样式优化 */
 .sentence-content {
   max-width: 300px;
@@ -627,22 +716,17 @@ const submitForm = async () => {
   font-weight: 500;
 }
 
-
-
-
 @media (max-width: 600px) {
-  .pb-2.flex, .search-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 6px !important;
-    padding-bottom: 6px !important;
+  .shrink-0 {
+    width: 100%;
   }
-  .pb-2.flex > *, .search-bar > * {
+
+  .shrink-0 > * {
     width: 100% !important;
     min-width: 0 !important;
-    margin-right: 0 !important;
     margin-bottom: 6px !important;
   }
+
   .el-input,
   .el-select,
   .el-button,
@@ -651,13 +735,11 @@ const submitForm = async () => {
     min-width: 0 !important;
     box-sizing: border-box;
   }
-  .content-container {
-    padding: 0 4px !important;
-  }
+
   .common-table {
     overflow-x: auto;
   }
-  
+
   .sentence-content {
     max-width: 100%;
     margin: 0 4px;
@@ -667,19 +749,19 @@ const submitForm = async () => {
 /* 操作列样式优化 */
 .operation-dropdown {
   margin-right: 8px;
-  
+
   .el-dropdown-menu__item {
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     .el-icon {
       margin-right: 4px;
       font-size: 14px;
       width: 14px;
       height: 14px;
     }
-    
+
     span {
       font-size: 13px;
       line-height: 1.5;
@@ -690,30 +772,30 @@ const submitForm = async () => {
 .operation-menu-compact {
   min-width: 140px !important;
   padding: 4px 0 !important;
-  
+
   .el-dropdown-menu__item {
     padding: 8px 16px !important;
     font-size: 13px !important;
     line-height: 1.5 !important;
     height: auto !important;
     min-height: 32px !important;
-    
+
     .el-icon {
       font-size: 14px !important;
       width: 14px !important;
       height: 14px !important;
       margin-right: 6px !important;
     }
-    
+
     span {
       font-size: 13px !important;
     }
-    
+
     &:hover {
       background-color: var(--el-fill-color-light) !important;
     }
   }
-  
+
   .el-dropdown-menu__item--divided {
     margin-top: 4px !important;
     border-top: 1px solid var(--el-border-color-lighter) !important;
@@ -726,4 +808,4 @@ const submitForm = async () => {
   align-items: center;
   gap: 4px;
 }
-</style> 
+</style>
