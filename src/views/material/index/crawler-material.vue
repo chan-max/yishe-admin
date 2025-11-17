@@ -361,6 +361,9 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   maxHeight: null,
   rowConfig: { keyField: "id" },
+  rowClassName: ({ row }) => {
+    return row && row.isOwnResource === false ? "external-resource-row" : "";
+  },
   checkboxConfig: { reserve: true },
   columns: [
     {
@@ -948,6 +951,15 @@ getList();
         color: var(--el-color-danger) !important;
       }
     }
+  }
+}
+
+:deep(.external-resource-row) {
+  background-color: rgba(230, 162, 60, 0.08) !important;
+  border-left: 3px solid rgba(230, 162, 60, 0.3) !important;
+
+  &:hover {
+    background-color: rgba(230, 162, 60, 0.12) !important;
   }
 }
 </style>
