@@ -47,6 +47,14 @@
           <el-option label="已归档" value="archived" />
         </el-select>
       </form-item>
+      <form-item label="随机顺序">
+        <el-switch
+          v-model="queryParams.random"
+          active-text="随机"
+          inactive-text="默认"
+          @change="handleSearch"
+        />
+      </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
 
       <!-- 操作按钮（自适应换行，尽量靠右） -->
@@ -1575,7 +1583,8 @@ const queryParams = reactive({
   searchText: '',
   search: '',
   isPublish: undefined as boolean | undefined,
-  publishStatus: '' as string | ''
+  publishStatus: '' as string | '',
+  random: false
 });
 
 const gridOptions = ref({
@@ -2117,6 +2126,7 @@ async function getList() {
   if (queryParams.publishStatus) {
     params.publishStatus = queryParams.publishStatus;
   }
+  params.random = queryParams.random;
 
   try {
     let res = await getProductList(params);
@@ -2142,6 +2152,7 @@ const resetQuery = () => {
   queryParams.search = '';
   queryParams.isPublish = undefined;
   queryParams.publishStatus = '';
+  queryParams.random = false;
 };
 
 // 搜索按钮点击事件

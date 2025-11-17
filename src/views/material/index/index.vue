@@ -14,6 +14,14 @@
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+      <form-item label="随机顺序">
+        <el-switch
+          v-model="queryParams.random"
+          active-text="随机"
+          inactive-text="默认"
+          @change="getList"
+        />
+      </form-item>
       <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
         展开筛选
       </el-button>
@@ -105,6 +113,14 @@
           <el-option label="未发布" :value="false" />
         </el-select>
       </form-item>
+      <form-item label="随机顺序">
+        <el-switch
+            v-model="queryParams.random"
+            active-text="随机"
+            inactive-text="默认"
+            @change="getList"
+        />
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -156,6 +172,13 @@
             <el-option label="已发布" :value="true" />
             <el-option label="未发布" :value="false" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="随机顺序">
+          <el-switch
+            v-model="queryParams.random"
+            active-text="随机"
+            inactive-text="默认"
+          />
         </el-form-item>
         <el-form-item label="按时间查询">
           <DateRangePicker
@@ -1234,6 +1257,7 @@ const queryParams = reactive({
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
   isPublish: null, // 新增发布状态过滤参数
+  random: false, // 是否随机
 })
 
 // 展示模式
