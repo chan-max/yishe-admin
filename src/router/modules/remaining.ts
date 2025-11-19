@@ -394,6 +394,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           requiresAdmin: true
         }
       },
+      {
+        path: 'operatelog',
+        component: () => import('@/views/system/operatelog/index.vue'),
+        name: 'SystemOperateLog',
+        meta: {
+          title: '操作日志',
+        }
+      },
     ]
   }
 
