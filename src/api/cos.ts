@@ -2,7 +2,7 @@
  * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-05-24 15:47:05
  * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-06-18 07:22:31
+ * @LastEditTime: 2025-11-20 07:30:07
  * @FilePath: /yishe-admin/src/api/cos.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
@@ -11,35 +11,40 @@ import { generateUUID } from '@/utils'
 import COS from 'cos-js-sdk-v5'
 import { saveAs } from 'file-saver'
 import request from '@/config/axios'
+import * as CryptoJS from 'crypto-js'
 
 let _cos = null
 let _cosConfig = null
 
-// 解码函数（使用Base64）
-const decryptConfig = (encodedConfig: any) => {
-  const decrypted = {}
+// 解密函数（使用 AES-256-CBC）
+const decryptConfig = (encryptedString: string) => {
+  const SECRET_KEY = '1s';
   
-  console.log('开始解码配置:', encodedConfig)
-  
-  for (const [key, value] of Object.entries(encodedConfig)) {
-    if (typeof value === 'string') {
-      try {
-        // 使用Base64解码
-        const decoded = atob(value)
-        decrypted[key] = decoded
-        console.log(`解码成功 ${key}:`, decoded)
-      } catch (error) {
-        console.error(`解码失败 ${key}:`, error)
-        // 如果解码失败，可能是未编码的值
-        decrypted[key] = value
-      }
-    } else {
-      decrypted[key] = value
+  try {
+    console.log('开始解密配置...')
+    
+    // 使用 AES-256-CBC 解密
+    const decrypted = CryptoJS.AES.decrypt(encryptedString, SECRET_KEY, {
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+    
+    // 转换为字符串
+    const decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+    
+    if (!decryptedString) {
+      throw new Error('解密失败：返回结果为空');
     }
+    
+    // 解析 JSON 对象
+    const config = JSON.parse(decryptedString);
+    
+    console.log('解密后的COS配置:', config)
+    return config;
+      } catch (error) {
+    console.error('解密配置失败:', error)
+    throw new Error(`解密配置失败: ${error.message}`)
   }
-  
-  console.log('解码后的配置:', decrypted)
-  return decrypted
 }
 
 // 初始化COS配置，只在项目启动时调用一次
@@ -54,12 +59,12 @@ export const initCOS = async () => {
       url: '/getBasicConfig'
     })
     
-    console.log('获取到的原始配置:', res.cos)
+    console.log('获取到的加密配置:', res)
+
+    // 解密配置（后端直接返回加密字符串，经过拦截器后 res.data 就是字符串）
+    _cosConfig = decryptConfig(res)
     
-    // 解码配置
-    _cosConfig = decryptConfig(res.cos)
-    
-    console.log('解码后的COS配置:', _cosConfig)
+    console.log('解密后的COS配置:', _cosConfig)
     
     _cos = new COS({
       SecretId: _cosConfig.SecretId,
