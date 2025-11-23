@@ -72,14 +72,6 @@
               type="primary"
               link
               size="small"
-              @click="handlePreview(row)"
-            >
-              预览
-            </el-button>
-            <el-button
-              type="primary"
-              link
-              size="small"
               @click="
                 () => {
                   downloadFileByElement(row.url, row.name);
@@ -153,10 +145,6 @@
       </template>
     </el-dialog>
 
-    <PsdPreview
-      v-model="previewVisible"
-      :psd-url="currentRow.url"
-    />
   </div>
 </template>
 
@@ -186,7 +174,6 @@ import { downloadFileByElement } from "@/common/download";
 import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
-import { PsdPreview } from '@/components/PsdPreview'
 
 // 查询条件
 const queryParams = reactive({
@@ -251,10 +238,7 @@ const formRef = ref();
 const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
-const currentRow = ref({});
 const submitLoading = ref(false);
-const previewVisible = ref(false)
-const currentPreviewUrl = ref('')
 
 async function getList() {
   loading.value = true;
@@ -319,7 +303,6 @@ function handleAdd() {
 }
 
 function handleEdit(row) {
-  currentRow.value = row;
   isEdit.value = true;
   dialogVisible.value = true;
   dialogTitle.value = "编辑";
@@ -415,11 +398,6 @@ const handleFileRemove = () => {
 
 // 文件上传前的校验
 const beforeUpload = (file) => {};
-
-function handlePreview(row) {
-  previewVisible.value = true
-  currentRow.value = row
-}
 </script>
 
 <style lang="less"></style>

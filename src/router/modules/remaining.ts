@@ -224,17 +224,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '字体'
         }
       },
-      // {
-      //   path: 'psd',
-      //   component: () => import('@/views/material/psdTemplate/index.vue'),
-      //   name: 'Psd',
-      //   meta: {
-      //     canTo: true,
-      //     hidden: false,
-      //     noTagsView: false,
-      //     title: 'psd套图'
-      //   }
-      // },
+      {
+        path: 'psd',
+        component: () => import('@/views/material/psdTemplate/index.vue'),
+        name: 'Psd',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: 'psd套图'
+        }
+      },
 
       {
         path: 'sentence',
