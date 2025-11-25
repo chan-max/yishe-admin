@@ -68,7 +68,7 @@
       </vxe-grid>
     </div>
 
-    <div class="flex justify-between items-center py-4">
+    <div class="pagination-container">
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -117,8 +117,6 @@ const gridOptions = ref({
   columns: [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
     { title: '套图名称', field: 'name', minWidth: 180 },
-    { title: '素材名称', field: 'stickerName', minWidth: 160 },
-    { title: 'PSD模板名称', field: 'psdTemplateName', minWidth: 160 },
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 180 },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
@@ -244,6 +242,14 @@ getList()
   font-size: 12px;
   color: #999;
   margin-top: 4px;
+}
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 0;
+}
+.pagination-container :deep(.el-pagination) {
+  font-size: 14px;
 }
 </style>
 

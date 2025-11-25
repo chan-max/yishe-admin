@@ -78,7 +78,7 @@ const loadPsd = async () => {
     }, 500)
     return
   }
-
+  
   loading.value = true
   try {
     // 获取 PSD 文件的 ArrayBuffer

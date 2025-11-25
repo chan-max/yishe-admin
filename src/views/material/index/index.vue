@@ -241,27 +241,6 @@
           </div>
         </div>
       </div>
-      <div class="psd-set-form">
-        <el-form :model="psdSetForm" label-width="80px">
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <el-form-item label="名称">
-                <el-input v-model="psdSetForm.name" placeholder="可选，默认为 素材 × 模板" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="描述">
-                <el-input v-model="psdSetForm.description" placeholder="可选，默认采用素材/模板描述" />
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="关键词">
-                <el-input v-model="psdSetForm.keywords" placeholder="可选，默认采用素材关键词" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </el-form>
-      </div>
       <template #footer>
         <div class="psd-set-footer">
           <el-alert
@@ -1622,11 +1601,6 @@ const psdSetDialogVisible = ref(false)
 const psdSetTemplates = ref<any[]>([])
 const psdSetTemplatesLoading = ref(false)
 const selectedPsdTemplateIds = ref<string[]>([])
-const psdSetForm = reactive({
-  name: '',
-  description: '',
-  keywords: ''
-})
 const psdSetSubmitting = ref(false)
 
 // 设计模型相关
@@ -2133,9 +2107,6 @@ function togglePsdTemplate(templateId: string | number) {
 
 function resetPsdSetState() {
   selectedPsdTemplateIds.value = []
-  psdSetForm.name = ''
-  psdSetForm.description = ''
-  psdSetForm.keywords = ''
 }
 
 async function handleCreatePsdSets() {
@@ -2149,10 +2120,7 @@ async function handleCreatePsdSets() {
   try {
     const res = await stickerPsdSetApi.batchCreate({
       stickerIds: ids.value.map((id) => String(id)),
-      psdTemplateIds: [...selectedPsdTemplateIds.value],
-      name: psdSetForm.name?.trim() || undefined,
-      description: psdSetForm.description?.trim() || undefined,
-      keywords: psdSetForm.keywords?.trim() || undefined
+      psdTemplateIds: [...selectedPsdTemplateIds.value]
     })
     const total = res?.total ?? ids.value.length * selectedPsdTemplateIds.value.length
     ElMessage.success(`成功创建 ${total} 条套图任务`)
@@ -3928,17 +3896,28 @@ h1 {
     justify-content: center;
     min-height: 400px;
   }
-<<<<<<< HEAD
+:global(.text-cell-tooltip) {
+  max-width: 520px;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.5;
+}
+
 .psd-set-dialog :deep(.el-dialog__body) {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-height: 520px;
 }
 .psd-set-body {
+  flex: 1;
+  min-height: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(240px, 0.8fr) minmax(360px, 1.6fr);
   gap: 16px;
   width: 100%;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 .psd-set-materials,
 .psd-set-templates {
@@ -4014,12 +3993,4 @@ h1 {
   display: flex;
   gap: 12px;
 }
-=======
-:global(.text-cell-tooltip) {
-  max-width: 520px;
-  word-break: break-word;
-  white-space: normal;
-  line-height: 1.5;
-  }
->>>>>>> e5ef2d4b51473b72e898a99c2dbff6102c39231f
   </style>
