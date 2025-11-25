@@ -116,6 +116,9 @@
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请先勾选素材') } linkRow = null; openLinkTemplate2D(null) }">根据二维模板组制作商品图({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">
+          制作PS套图({{ ids.length }})
+        </el-button>
         <el-button v-if="isAdmin" type="warning" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要生成商品的素材') } resetGenerateProductSteps(); generateProductModalVisible = true }">生成商品({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
@@ -166,6 +169,91 @@
       <template #footer>
         <el-button @click="filterDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="psdSetDialogVisible"
+      title="制作PS套图"
+      width="100%"
+      style="height: 100%"
+      align-center
+      :destroy-on-close="true"
+      class="psd-set-dialog"
+      @close="resetPsdSetState"
+    >
+      <div class="psd-set-body">
+        <div class="psd-set-materials">
+          <div class="section-title">已选择素材 ({{ ids.length }})</div>
+          <div class="thumbs">
+            <div
+              v-for="id in ids"
+              :key="id"
+              class="thumb"
+            >
+              <img :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url" />
+            </div>
+          </div>
+        </div>
+        <div class="psd-set-templates">
+          <div class="section-title">选择PSD模板 (可多选)</div>
+          <div class="template-list" v-loading="psdSetTemplatesLoading">
+            <div
+              v-for="tpl in psdSetTemplates"
+              :key="tpl.id"
+              class="template-item"
+              :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
+              @click="togglePsdTemplate(tpl.id)"
+            >
+              <div class="template-header">
+                <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
+                <div class="template-description">{{ tpl.description || '暂无描述' }}</div>
+              </div>
+              <div class="template-meta">
+                <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
+                <span class="uploader" v-if="tpl.uploader?.name">上传者：{{ tpl.uploader.name }}</span>
+              </div>
+            </div>
+            <el-empty v-if="!psdSetTemplates.length && !psdSetTemplatesLoading" description="暂无PSD模板" />
+          </div>
+        </div>
+      </div>
+      <div class="psd-set-form">
+        <el-form :model="psdSetForm" label-width="80px">
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <el-form-item label="名称">
+                <el-input v-model="psdSetForm.name" placeholder="可选，默认为 素材 × 模板" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="描述">
+                <el-input v-model="psdSetForm.description" placeholder="可选，默认采用素材/模板描述" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="关键词">
+                <el-input v-model="psdSetForm.keywords" placeholder="可选，默认采用素材关键词" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </div>
+      <template #footer>
+        <div class="psd-set-footer">
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            :title="`将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${ids.length * selectedPsdTemplateIds.length} 条套图任务`"
+          />
+          <div class="footer-actions">
+            <el-button @click="psdSetDialogVisible = false">取消</el-button>
+            <el-button type="primary" :disabled="!ids.length || !selectedPsdTemplateIds.length" :loading="psdSetSubmitting" @click="handleCreatePsdSets">
+              开始制作
+            </el-button>
+          </div>
+        </div>
       </template>
     </el-dialog>
 
@@ -303,6 +391,7 @@
                           <div class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('generate-product', row)">生成商品</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">制作PS套图</div>
                         </div>
                       </div>
 
@@ -1179,6 +1268,7 @@ import {
 
 import { uploadToCOS } from '@/api/cos'
 import { uploadMaterialFile, copyStickers, trimPng, svgToPng, generateRelatedProducts } from '@/api/material'
+import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -1364,6 +1454,18 @@ const designModelModalVisible = ref(false)
 const filterDialogVisible = ref(false)
 const isMobile = ref(false)
 const actionsCollapsed = ref(true)
+
+// PS 套图制作
+const psdSetDialogVisible = ref(false)
+const psdSetTemplates = ref<any[]>([])
+const psdSetTemplatesLoading = ref(false)
+const selectedPsdTemplateIds = ref<string[]>([])
+const psdSetForm = reactive({
+  name: '',
+  description: '',
+  keywords: ''
+})
+const psdSetSubmitting = ref(false)
 
 // 设计模型相关
 const designModelList = ref([])
@@ -1828,6 +1930,78 @@ async function handleDesignModel(row) {
   resetDesignModelSteps()
   designModelModalVisible.value = true
   await loadDesignModels()
+}
+
+async function openPsdSetDialog(row?: any) {
+  if (row) {
+    ids.value = [row.id]
+  } else if (!ids.value.length) {
+    ElMessage.warning('请选择要制作的素材')
+    return
+  }
+  psdSetDialogVisible.value = true
+  await loadPsdTemplatesForPsdSet()
+}
+
+async function loadPsdTemplatesForPsdSet() {
+  psdSetTemplatesLoading.value = true
+  try {
+    const res = await psdTemplateApi.getPsdTemplatePage({
+      currentPage: 1,
+      pageSize: 200
+    })
+    psdSetTemplates.value = res.list || []
+  } catch (error) {
+    console.error('加载PSD模板失败:', error)
+    ElMessage.error('加载PSD模板失败')
+  } finally {
+    psdSetTemplatesLoading.value = false
+  }
+}
+
+function togglePsdTemplate(templateId: string | number) {
+  const id = String(templateId)
+  const index = selectedPsdTemplateIds.value.indexOf(id)
+  if (index > -1) {
+    selectedPsdTemplateIds.value.splice(index, 1)
+  } else {
+    selectedPsdTemplateIds.value.push(id)
+  }
+}
+
+function resetPsdSetState() {
+  selectedPsdTemplateIds.value = []
+  psdSetForm.name = ''
+  psdSetForm.description = ''
+  psdSetForm.keywords = ''
+}
+
+async function handleCreatePsdSets() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请先勾选素材')
+  }
+  if (!selectedPsdTemplateIds.value.length) {
+    return ElMessage.warning('请选择PSD模板')
+  }
+  psdSetSubmitting.value = true
+  try {
+    const res = await stickerPsdSetApi.batchCreate({
+      stickerIds: ids.value.map((id) => String(id)),
+      psdTemplateIds: [...selectedPsdTemplateIds.value],
+      name: psdSetForm.name?.trim() || undefined,
+      description: psdSetForm.description?.trim() || undefined,
+      keywords: psdSetForm.keywords?.trim() || undefined
+    })
+    const total = res?.total ?? ids.value.length * selectedPsdTemplateIds.value.length
+    ElMessage.success(`成功创建 ${total} 条套图任务`)
+    psdSetDialogVisible.value = false
+    resetPsdSetState()
+  } catch (error: any) {
+    console.error('创建套图失败:', error)
+    ElMessage.error(error?.message || '创建套图失败')
+  } finally {
+    psdSetSubmitting.value = false
+  }
 }
 
 // 处理单个素材的二维模板制作
@@ -2418,6 +2592,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'generate-product':
       handleGenerateProduct(row);
+      break;
+    case 'create-ps-set':
+      openPsdSetDialog(row);
       break;
     case 'delete':
       handleDelete(row);
@@ -3535,4 +3712,89 @@ h1 {
     justify-content: center;
     min-height: 400px;
   }
+.psd-set-dialog :deep(.el-dialog__body) {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.psd-set-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+.psd-set-materials,
+.psd-set-templates {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.psd-set-materials .thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.psd-set-materials .thumb {
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-lighter);
+}
+.psd-set-materials .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.psd-set-templates .template-list {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+}
+.psd-set-templates .template-item {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--el-bg-color);
+}
+.psd-set-templates .template-item.is-checked {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  background: rgba(64, 158, 255, 0.06);
+}
+.psd-set-templates .template-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.psd-set-templates .template-description {
+  font-size: 13px;
+  color: #666;
+}
+.psd-set-templates .template-meta {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #909399;
+}
+.psd-set-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.psd-set-footer .footer-actions {
+  display: flex;
+  gap: 12px;
+}
   </style>
