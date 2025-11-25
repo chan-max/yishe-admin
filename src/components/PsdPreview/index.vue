@@ -3,36 +3,27 @@
     <el-dialog
       v-model="visible"
       title="PSD 预览"
-      width="80%"
+      width="90%"
       :close-on-click-modal="false"
       :close-on-press-escape="true"
       destroy-on-close
+      @closed="handleDialogClosed"
     >
       <div class="psd-preview-content" v-loading="loading">
-        <div v-if="!loading && psdData" class="psd-layers">
-          <div class="psd-layers-tree">
-            <div class="layer-item" v-for="(layer, index) in psdData.layers" :key="index">
-              <div class="layer-info">
-                <span class="layer-name">{{ layer.name }}</span>
-                <span class="layer-size">{{ layer.width }}x{{ layer.height }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="psd-preview-image">
-            <img :src="previewImage" alt="PSD Preview" />
-          </div>
-        </div>
-        <div v-else-if="!loading && !psdData" class="no-data">
-          无法加载 PSD 文件
-        </div>
+        <iframe
+          ref="photopeaIframe"
+          src="https://www.photopea.com"
+          class="photopea-iframe"
+          frameborder="0"
+          @load="handleIframeLoad"
+        ></iframe>
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
-import * as agPsd from 'ag-psd'
+import { ref, watch, nextTick, onUnmounted } from 'vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -43,132 +34,116 @@ const emit = defineEmits(['update:modelValue'])
 
 const visible = ref(props.modelValue)
 const loading = ref(false)
-const psdData = ref(null)
-const previewImage = ref('')
+const photopeaIframe = ref<HTMLIFrameElement | null>(null)
+const iframeLoaded = ref(false)
 
 watch(() => props.modelValue, (val) => {
   visible.value = val
+  if (val) {
+    nextTick(() => {
+      loadPsd()
+    })
+  }
 })
 
 watch(() => visible.value, (val) => {
   emit('update:modelValue', val)
 })
 
+// 监听 iframe 加载完成
+const handleIframeLoad = () => {
+  // 等待一小段时间，确保 Photopea 完全初始化
+  setTimeout(() => {
+    iframeLoaded.value = true
+    // iframe 加载完成后，如果有 PSD URL，则加载
+    if (visible.value && props.psdUrl) {
+      loadPsd()
+    }
+  }, 1000) // 等待 1 秒确保 Photopea 完全加载
+}
+
+// 加载 PSD 文件到 Photopea
 const loadPsd = async () => {
-  await nextTick()
+  if (!props.psdUrl || !photopeaIframe.value) {
+    return
+  }
 
+  // 如果 iframe 还没加载完成，等待
+  if (!iframeLoaded.value) {
+    // 延迟重试
+    setTimeout(() => {
+      if (visible.value && props.psdUrl) {
+        loadPsd()
+      }
+    }, 500)
+    return
+  }
 
-  if (!props.psdUrl) return
-  
   loading.value = true
   try {
+    // 获取 PSD 文件的 ArrayBuffer
     const response = await fetch(props.psdUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch PSD file: ${response.statusText}`)
+    }
+    
     const arrayBuffer = await response.arrayBuffer()
-    const psd = await agPsd.readPsd(arrayBuffer)
-    psdData.value = psd
     
-    // 创建预览图
-    const canvas = document.createElement('canvas')
-    canvas.width = psd.width
-    canvas.height = psd.height
-    const ctx = canvas.getContext('2d')
-    
-    // 绘制所有可见图层
-    psd.layers.forEach(layer => {
-      if (layer.visible) {
-        const imageData = new ImageData(
-          new Uint8ClampedArray(layer.imageData),
-          layer.width,
-          layer.height
-        )
-        ctx.putImageData(imageData, layer.left, layer.top)
-      }
-    })
-    
-    previewImage.value = canvas.toDataURL('image/png')
+    // 通过 postMessage 发送 PSD 文件到 Photopea
+    // Photopea 支持通过 postMessage 接收文件数据
+    if (photopeaIframe.value?.contentWindow) {
+      // 等待一小段时间确保 Photopea 准备好接收消息
+      setTimeout(() => {
+        if (photopeaIframe.value?.contentWindow) {
+          // 使用 Transferable 对象提高大文件传输性能
+          photopeaIframe.value.contentWindow.postMessage(
+            {
+              file: arrayBuffer
+            },
+            '*',
+            [arrayBuffer] // Transferable 对象，提高性能
+          )
+          loading.value = false
+        }
+      }, 500)
+    }
   } catch (error) {
     console.error('Failed to load PSD:', error)
-    psdData.value = null
-  } finally {
     loading.value = false
   }
 }
 
-watch(() => props.psdUrl, () => {
+// 对话框关闭时的处理
+const handleDialogClosed = () => {
+  iframeLoaded.value = false
+}
 
-  if (visible.value) {
+// 监听 psdUrl 变化
+watch(() => props.psdUrl, () => {
+  if (visible.value && iframeLoaded.value) {
     loadPsd()
   }
 })
 
-onMounted(() => {
-  if (visible.value) {
-    loadPsd()
-  }
+onUnmounted(() => {
+  // 清理
+  iframeLoaded.value = false
 })
 </script>
 
 <style lang="less" scoped>
 .psd-preview {
   &-content {
-    min-height: 400px;
-    display: flex;
-    gap: 20px;
-  }
-  
-  .psd-layers {
-    display: flex;
-    gap: 20px;
+    min-height: 600px;
     width: 100%;
-    
-    &-tree {
-      width: 300px;
-      border-right: 1px solid #eee;
-      padding-right: 20px;
-      overflow-y: auto;
-      max-height: 600px;
-    }
-    
-    .layer-item {
-      padding: 8px;
-      border-bottom: 1px solid #eee;
-      
-      .layer-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        
-        .layer-name {
-          font-size: 14px;
-        }
-        
-        .layer-size {
-          font-size: 12px;
-          color: #999;
-        }
-      }
-    }
+    position: relative;
   }
   
-  .psd-preview-image {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    
-    img {
-      max-width: 100%;
-      max-height: 600px;
-      object-fit: contain;
-    }
-  }
-  
-  .no-data {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 400px;
-    color: #999;
+  .photopea-iframe {
+    width: 100%;
+    height: 80vh;
+    min-height: 600px;
+    border: none;
   }
 }
 </style> 

@@ -14,6 +14,14 @@
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+      <form-item label="随机顺序">
+        <el-switch
+          v-model="queryParams.random"
+          active-text="随机"
+          inactive-text="默认"
+          @change="getList"
+        />
+      </form-item>
       <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
         展开筛选
       </el-button>
@@ -105,6 +113,14 @@
           <el-option label="未发布" :value="false" />
         </el-select>
       </form-item>
+      <form-item label="随机顺序">
+        <el-switch
+            v-model="queryParams.random"
+            active-text="随机"
+            inactive-text="默认"
+            @change="getList"
+        />
+      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
@@ -159,6 +175,13 @@
             <el-option label="已发布" :value="true" />
             <el-option label="未发布" :value="false" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="随机顺序">
+          <el-switch
+            v-model="queryParams.random"
+            active-text="随机"
+            inactive-text="默认"
+          />
         </el-form-item>
         <el-form-item label="按时间查询">
           <DateRangePicker
@@ -281,6 +304,144 @@
                 <div v-if="row.imageDimensions" class="text-xs text-gray-500 mt-1 text-center">
                   {{ row.imageDimensions.width }} × {{ row.imageDimensions.height }}
                 </div>
+              </div>
+            </template>
+
+            <template #nameTextSlot="{ row }">
+              <div
+                class="text-cell"
+                :class="{ 'text-cell--empty': !row.name }"
+                @click.stop="handleCopyText(row.name, '中文标题')"
+                role="button"
+              >
+                <el-tooltip
+                  :content="row.name || '-'"
+                  placement="top"
+                  :disabled="!(row.name && row.name.length > 0)"
+                  popper-class="text-cell-tooltip"
+                >
+                  <div class="text-cell__content">
+                    {{ row.name || '-' }}
+                  </div>
+                </el-tooltip>
+                <el-icon v-if="row.name" class="text-cell__icon">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+            </template>
+
+            <template #nameEnTextSlot="{ row }">
+              <div
+                class="text-cell"
+                :class="{ 'text-cell--empty': !row.nameEn }"
+                @click.stop="handleCopyText(row.nameEn, '英文标题')"
+                role="button"
+              >
+                <el-tooltip
+                  :content="row.nameEn || '-'"
+                  placement="top"
+                  :disabled="!(row.nameEn && row.nameEn.length > 0)"
+                  popper-class="text-cell-tooltip"
+                >
+                  <div class="text-cell__content">
+                    {{ row.nameEn || '-' }}
+                  </div>
+                </el-tooltip>
+                <el-icon v-if="row.nameEn" class="text-cell__icon">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+            </template>
+
+            <template #descriptionTextSlot="{ row }">
+              <div
+                class="text-cell text-cell--long"
+                :class="{ 'text-cell--empty': !row.description }"
+                @click.stop="handleCopyText(row.description, '中文描述')"
+                role="button"
+              >
+                <el-tooltip
+                  :content="row.description || '-'"
+                  placement="top"
+                  :disabled="!(row.description && row.description.length > 0)"
+                  popper-class="text-cell-tooltip"
+                >
+                  <div class="text-cell__content">
+                    {{ row.description || '-' }}
+                  </div>
+                </el-tooltip>
+                <el-icon v-if="row.description" class="text-cell__icon">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+            </template>
+
+            <template #descriptionEnTextSlot="{ row }">
+              <div
+                class="text-cell text-cell--long"
+                :class="{ 'text-cell--empty': !row.descriptionEn }"
+                @click.stop="handleCopyText(row.descriptionEn, '英文描述')"
+                role="button"
+              >
+                <el-tooltip
+                  :content="row.descriptionEn || '-'"
+                  placement="top"
+                  :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
+                  popper-class="text-cell-tooltip"
+                >
+                  <div class="text-cell__content">
+                    {{ row.descriptionEn || '-' }}
+                  </div>
+                </el-tooltip>
+                <el-icon v-if="row.descriptionEn" class="text-cell__icon">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+            </template>
+
+            <template #keywordsTextSlot="{ row }">
+              <div
+                class="text-cell text-cell--long"
+                :class="{ 'text-cell--empty': !row.keywords }"
+                @click.stop="handleCopyText(row.keywords, '中文关键字')"
+                role="button"
+              >
+                <el-tooltip
+                  :content="row.keywords || '-'"
+                  placement="top"
+                  :disabled="!(row.keywords && row.keywords.length > 0)"
+                  popper-class="text-cell-tooltip"
+                >
+                  <div class="text-cell__content">
+                    {{ row.keywords || '-' }}
+                  </div>
+                </el-tooltip>
+                <el-icon v-if="row.keywords" class="text-cell__icon">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+            </template>
+
+            <template #keywordsEnTextSlot="{ row }">
+              <div
+                class="text-cell text-cell--long"
+                :class="{ 'text-cell--empty': !row.keywordsEn }"
+                @click.stop="handleCopyText(row.keywordsEn, '英文关键字')"
+                role="button"
+              >
+                <el-tooltip
+                  :content="row.keywordsEn || '-'"
+                  placement="top"
+                  :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)"
+                  popper-class="text-cell-tooltip"
+                >
+                  <div class="text-cell__content">
+                    {{ row.keywordsEn || '-' }}
+                  </div>
+                </el-tooltip>
+                <el-icon v-if="row.keywordsEn" class="text-cell__icon">
+                  <DocumentCopy />
+                </el-icon>
               </div>
             </template>
 
@@ -1282,7 +1443,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1324,6 +1485,7 @@ const queryParams = reactive({
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
   isPublish: null, // 新增发布状态过滤参数
+  random: false, // 是否随机
 })
 
 // 展示模式
@@ -1363,12 +1525,12 @@ const gridOptions = ref({
       width: 120,
       slots: { default: 'previewDefaultSlot' }
     },
-    { title: '图片名称', field: 'name', minWidth: 180, className: 'font-bold' },
-    { title: '英文名称', field: 'nameEn', minWidth: 180 },
-    { title: '描述', field: 'description', minWidth: 200 },
-    { title: '英文描述', field: 'descriptionEn', minWidth: 200 },
-    { title: '关键词', field: 'keywords', minWidth: 160 },
-    { title: '英文关键词', field: 'keywordsEn', minWidth: 160 },
+    { title: '图片名称', field: 'name', minWidth: 220, className: 'font-bold', slots: { default: 'nameTextSlot' } },
+    { title: '英文名称', field: 'nameEn', minWidth: 220, slots: { default: 'nameEnTextSlot' } },
+    { title: '描述', field: 'description', minWidth: 260, slots: { default: 'descriptionTextSlot' } },
+    { title: '英文描述', field: 'descriptionEn', minWidth: 260, slots: { default: 'descriptionEnTextSlot' } },
+    { title: '关键词', field: 'keywords', minWidth: 240, slots: { default: 'keywordsTextSlot' } },
+    { title: '英文关键词', field: 'keywordsEn', minWidth: 240, slots: { default: 'keywordsEnTextSlot' } },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
     { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
     { 
@@ -3162,6 +3324,60 @@ async function handleUrlUpload() {
 .section-title { font-size: 14px; color: var(--el-text-color-regular); margin-bottom: 8px; }
 .result-info { grid-column: 1 / -1; }
 /* PC端优化 */
+.text-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(64, 158, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  min-height: 28px;
+  position: relative;
+}
+.text-cell:hover {
+  background: rgba(64, 158, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.25);
+}
+.text-cell--empty {
+  background: transparent;
+  cursor: default;
+  color: var(--el-text-color-placeholder);
+  box-shadow: none;
+}
+.text-cell__content {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
+  font-size: 13px;
+  line-height: 1.3;
+  color: inherit;
+}
+.text-cell--long .text-cell__content {
+  -webkit-line-clamp: 3;
+}
+.text-cell__icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--el-color-primary);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.text-cell:not(.text-cell--empty):hover .text-cell__icon {
+  opacity: 1;
+}
+.text-cell--empty .text-cell__icon {
+  display: none;
+}
+.text-cell--empty .text-cell__content {
+  -webkit-line-clamp: 1;
+  color: var(--el-text-color-placeholder);
+}
 .flex.pb-4, .search-bar {
   gap: 16px;
   flex-wrap: wrap;
@@ -3712,6 +3928,7 @@ h1 {
     justify-content: center;
     min-height: 400px;
   }
+<<<<<<< HEAD
 .psd-set-dialog :deep(.el-dialog__body) {
   display: flex;
   flex-direction: column;
@@ -3797,4 +4014,12 @@ h1 {
   display: flex;
   gap: 12px;
 }
+=======
+:global(.text-cell-tooltip) {
+  max-width: 520px;
+  word-break: break-word;
+  white-space: normal;
+  line-height: 1.5;
+  }
+>>>>>>> e5ef2d4b51473b72e898a99c2dbff6102c39231f
   </style>

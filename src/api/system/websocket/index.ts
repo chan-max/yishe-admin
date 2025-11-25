@@ -78,11 +78,13 @@ export interface SetTaskDTO {
   type: 'cron' | 'interval'
   schedule: string
   params: any
+  command?: string
 }
 
 export interface ToggleTaskDTO {
   clientId: string
   enabled: boolean
+  command?: string
 }
 
 // 设置定时任务
@@ -91,8 +93,14 @@ export const setScheduleTask = (data: SetTaskDTO) => {
 }
 
 // 获取指定客户端的定时任务
-export const getScheduleTask = (clientId: string) => {
-  return request.post<{ success: boolean; data: ScheduledTask | null }>({ url: '/websocket/schedule/get', data: { clientId } })
+export const getScheduleTask = (clientId: string, command?: string) => {
+  return request.post<{ success: boolean; data: ScheduledTask | null }>({
+    url: '/websocket/schedule/get',
+    data: {
+      clientId,
+      ...(command ? { command } : {})
+    }
+  })
 }
 
 // 获取所有定时任务
@@ -101,8 +109,14 @@ export const getAllScheduleTasks = () => {
 }
 
 // 删除定时任务
-export const removeScheduleTask = (clientId: string) => {
-  return request.post<{ success: boolean; message: string }>({ url: '/websocket/schedule/remove', data: { clientId } })
+export const removeScheduleTask = (clientId: string, command?: string) => {
+  return request.post<{ success: boolean; message: string }>({
+    url: '/websocket/schedule/remove',
+    data: {
+      clientId,
+      ...(command ? { command } : {})
+    }
+  })
 }
 
 // 启用/禁用定时任务

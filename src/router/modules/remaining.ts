@@ -106,8 +106,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
             }
           }
         ]
-      },
-      {
+  },
+  {
         path: 'statistics',
         component: () => import('@/views/Home/Statistics/index.vue'),
         name: 'Statistics',
@@ -224,17 +224,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '字体'
         }
       },
-      // {
-      //   path: 'psd',
-      //   component: () => import('@/views/material/psdTemplate/index.vue'),
-      //   name: 'Psd',
-      //   meta: {
-      //     canTo: true,
-      //     hidden: false,
-      //     noTagsView: false,
-      //     title: 'psd套图'
-      //   }
-      // },
+      {
+        path: 'psd',
+        component: () => import('@/views/material/psdTemplate/index.vue'),
+        name: 'Psd',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: 'psd套图'
+        }
+      },
 
       {
         path: 'sentence',
@@ -404,6 +404,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: '远程连接',
           requiresAdmin: true
+        }
+      },
+      {
+        path: 'operatelog',
+        component: () => import('@/views/system/operatelog/index.vue'),
+        name: 'SystemOperateLog',
+        meta: {
+          title: '操作日志',
         }
       },
     ]

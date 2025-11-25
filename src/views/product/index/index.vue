@@ -47,6 +47,14 @@
           <el-option label="已归档" value="archived" />
         </el-select>
       </form-item>
+      <form-item label="随机顺序">
+        <el-switch
+          v-model="queryParams.random"
+          active-text="随机"
+          inactive-text="默认"
+          @change="handleSearch"
+        />
+      </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
 
       <!-- 操作按钮（自适应换行，尽量靠右） -->
@@ -250,15 +258,7 @@
         </template>
 
         <template #typeSlot="{ row }">
-          <div v-if="row.type" style="display: flex; align-items: center; gap: 6px;">
-            <img
-              :src="getCategoryImage(getCategoryByValue(row.type) || PRODUCT_CATEGORIES[0])"
-              :alt="row.type"
-              style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px; flex-shrink: 0; vertical-align: middle;"
-              @error="handleImageError"
-            />
-            <span style="line-height: 24px;">{{ row.type }}</span>
-          </div>
+          <span v-if="row.type">{{ row.type }}</span>
           <span v-else class="text-gray-400 text-xs">未设置</span>
         </template>
 
@@ -1583,7 +1583,8 @@ const queryParams = reactive({
   searchText: '',
   search: '',
   isPublish: undefined as boolean | undefined,
-  publishStatus: '' as string | ''
+  publishStatus: '' as string | '',
+  random: false
 });
 
 const gridOptions = ref({
@@ -2125,6 +2126,7 @@ async function getList() {
   if (queryParams.publishStatus) {
     params.publishStatus = queryParams.publishStatus;
   }
+  params.random = queryParams.random;
 
   try {
     let res = await getProductList(params);
@@ -2150,6 +2152,7 @@ const resetQuery = () => {
   queryParams.search = '';
   queryParams.isPublish = undefined;
   queryParams.publishStatus = '';
+  queryParams.random = false;
 };
 
 // 搜索按钮点击事件
@@ -3311,6 +3314,7 @@ async function handleUpdatePublishStatus(row: any, status: string) {
 .draft-desc {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

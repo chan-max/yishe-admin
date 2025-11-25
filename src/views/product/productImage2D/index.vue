@@ -20,6 +20,14 @@
         </div> -->
       </div>
       <div class="flex gap-2">
+        <el-button
+          type="success"
+          :disabled="!selectedIds.length"
+          :loading="batchGeneratingProducts"
+          @click="handleBatchGenerateProduct"
+        >
+          批量生成产品 ({{ selectedIds.length }})
+        </el-button>
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
       </div>
     </div>
@@ -521,7 +529,7 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: '合成图片', field: 'images', minWidth: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '合成图片', field: 'images', width: 'auto', slots: { default: 'imagesSlot' } },
     // { title: '视频', field: 'videoUrl', width: 120, slots: { default: 'videoSlot' } },
     // { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } }, // 已注释
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
@@ -622,6 +630,7 @@ const currentVideoUrl = ref('')
 
 // 生成产品相关状态
 const generatingProductId = ref<string>('')
+const batchGeneratingProducts = ref(false)
 
 // 生成唯一码
 // async function handleGenerateCode(row: any) { // 已注释
@@ -1326,6 +1335,53 @@ async function handleToProduct(row: any) {
   }
 }
 
+async function handleBatchGenerateProduct() {
+  if (!selectedIds.value.length) {
+    ElMessage.warning('请选择需要生成产品的记录')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认根据选中的 ${selectedIds.value.length} 条记录生成产品吗？`,
+      '批量生成确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch (error) {
+    return
+  }
+
+  batchGeneratingProducts.value = true
+  let successCount = 0
+  let failCount = 0
+
+  try {
+    for (const id of selectedIds.value) {
+      try {
+        await request.post({ url: '/product-image-2d/to-product', data: { id } })
+        successCount += 1
+      } catch (error) {
+        failCount += 1
+        console.error(`生成产品失败（ID: ${id}）`, error)
+      }
+    }
+
+    if (successCount) {
+      ElMessage.success(`成功生成 ${successCount} 个产品`)
+    }
+    if (failCount) {
+      ElMessage.warning(`有 ${failCount} 个产品生成失败，请稍后重试`)
+    }
+  } finally {
+    batchGeneratingProducts.value = false
+    getList()
+  }
+}
+
 
 </script>
 
@@ -1344,8 +1400,8 @@ async function handleToProduct(row: any) {
 }
 
 .images .preview-image {
-  width: 64px;
-  height: 64px;
+  width: 96px;
+  height: 96px;
   object-fit: cover;
   border-radius: 4px;
   border: 1px solid var(--el-border-color-light);

@@ -197,7 +197,7 @@
               </div>
             </template>
             <template #schedule_default="{ row }">
-              <div v-if="row.id === 'pinterest' && row.schedule" class="schedule-status-cell">
+              <div v-if="row.schedule" class="schedule-status-cell">
                 <div class="schedule-status-row">
                   <el-tag :type="row.schedule.enabled ? 'success' : 'info'" size="small">
                     {{ row.schedule.enabled ? '已启用' : '已禁用' }}
@@ -240,6 +240,151 @@
       <template #footer>
         <el-button @click="controlDialogVisible = false">关闭</el-button>
       </template>
+    </el-dialog>
+
+    <!-- Sora 爬取配置弹窗 -->
+    <el-dialog
+      v-model="soraDialogVisible"
+      title="Sora 图片爬取"
+      width="700px"
+      :close-on-click-modal="false"
+    >
+      <el-tabs v-model="soraTab" type="border-card">
+        <el-tab-pane label="立即执行" name="execute">
+          <el-form :model="soraForm" label-width="120px" :loading="soraLoading">
+            <el-form-item label="目标页面 URL">
+              <el-input
+                v-model="soraForm.targetUrl"
+                placeholder="https://sora.chatgpt.com/explore?type=images"
+                clearable
+              />
+            </el-form-item>
+            <el-form-item label="采集数量上限">
+              <el-input-number
+                v-model="soraForm.count"
+                :min="1"
+                :max="200"
+                :step="1"
+                style="width: 100%"
+              />
+            </el-form-item>
+            <el-form-item label="上传到服务器">
+              <el-switch v-model="soraForm.uploadToServer" />
+            </el-form-item>
+            <el-form-item label="发送飞书通知">
+              <el-switch v-model="soraForm.notifyFeishu" />
+            </el-form-item>
+            <el-form-item label="素材来源标记">
+              <el-input v-model="soraForm.sourceTag" placeholder="sora" clearable />
+            </el-form-item>
+            <el-form-item label="素材备注">
+              <el-input
+                v-model="soraForm.description"
+                type="textarea"
+                :rows="2"
+                placeholder="Sora 图片素材"
+              />
+            </el-form-item>
+          </el-form>
+          <div style="text-align: right; margin-top: 20px">
+            <el-button @click="soraDialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="soraLoading" @click="handleSoraScrape">
+              <Icon icon="ep:video-play" class="mr-5px" />
+              开始爬取
+            </el-button>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane label="定时任务" name="schedule">
+          <div v-if="soraScheduleTask" class="schedule-info-section">
+            <el-descriptions :column="1" border size="small">
+              <el-descriptions-item label="任务状态">
+                <el-tag :type="soraScheduleTask.enabled ? 'success' : 'info'">
+                  {{ soraScheduleTask.enabled ? '已启用' : '已禁用' }}
+                </el-tag>
+              </el-descriptions-item>
+              <el-descriptions-item label="执行计划">
+                {{ formatSchedule(soraScheduleTask) }}
+              </el-descriptions-item>
+              <el-descriptions-item label="任务类型">
+                <el-tag :type="soraScheduleTask.type === 'cron' ? 'primary' : 'success'" size="small">
+                  {{ soraScheduleTask.type === 'cron' ? '固定时间点' : '间隔时间' }}
+                </el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+            <div class="schedule-actions" style="margin-top: 20px; text-align: center">
+              <el-button
+                :type="soraScheduleTask.enabled ? 'warning' : 'success'"
+                @click="handleToggleSoraSchedule"
+                :loading="soraScheduleLoading"
+              >
+                {{ soraScheduleTask.enabled ? '禁用任务' : '启用任务' }}
+              </el-button>
+              <el-button type="danger" @click="handleDeleteSoraSchedule" :loading="soraScheduleLoading">
+                删除任务
+              </el-button>
+            </div>
+            <div style="margin-top: 20px; padding: 12px; background: var(--el-color-info-light-9); border-radius: 4px; font-size: 12px; color: var(--el-color-info); text-align: center">
+              <Icon icon="ep:info-filled" class="mr-4px" />
+              如需修改任务配置，请先删除当前任务，然后重新创建
+            </div>
+          </div>
+          <div v-else>
+            <el-form :model="soraScheduleForm" label-width="120px" :loading="soraScheduleLoading">
+              <el-form-item label="任务类型">
+                <el-radio-group v-model="soraScheduleForm.type">
+                  <el-radio label="cron">固定时间点（Cron）</el-radio>
+                  <el-radio label="interval">间隔时间</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item v-if="soraScheduleForm.type === 'cron'" label="Cron 表达式">
+                <el-input
+                  v-model="soraScheduleForm.cronExpression"
+                  placeholder="例如：0 0 11 * * *（每天 11:00）"
+                  clearable
+                >
+                  <template #append>
+                    <el-button size="small" @click="showSoraCronExamples = !showSoraCronExamples">
+                      {{ showSoraCronExamples ? '隐藏' : '示例' }}
+                    </el-button>
+                  </template>
+                </el-input>
+                <div v-if="showSoraCronExamples" class="cron-examples" style="margin-top: 10px; font-size: 12px; color: #909399">
+                  <div>示例：</div>
+                  <div>• <code>0 0 11 * * *</code> - 每天 11:00</div>
+                  <div>• <code>0 0 */4 * * *</code> - 每 4 小时</div>
+                  <div>• <code>0 30 9 * * 1-5</code> - 工作日 9:30</div>
+                </div>
+              </el-form-item>
+              <el-form-item v-else label="间隔时间（小时）">
+                <el-input-number
+                  v-model="soraScheduleForm.intervalHours"
+                  :min="0.5"
+                  :max="168"
+                  :step="0.5"
+                  :precision="1"
+                  style="width: 100%"
+                  placeholder="例如：6 表示每 6 小时执行一次"
+                />
+                <div style="margin-top: 5px; font-size: 12px; color: #909399">
+                  请输入间隔时间（小时），如：2（每 2 小时）、6（每 6 小时）、24（每天）
+                </div>
+              </el-form-item>
+              <el-divider />
+              <div style="font-size: 12px; color: #909399; margin-bottom: 15px; padding: 10px; background: var(--el-color-info-light-9); border-radius: 4px">
+                <Icon icon="ep:info-filled" class="mr-4px" />
+                定时任务将使用"立即执行"标签页中的爬取参数
+              </div>
+            </el-form>
+            <div style="text-align: right; margin-top: 20px">
+              <el-button @click="soraDialogVisible = false">取消</el-button>
+              <el-button type="primary" :loading="soraScheduleLoading" @click="handleSaveSoraSchedule">
+                <Icon icon="ep:check" class="mr-5px" />
+                创建任务
+              </el-button>
+            </div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </el-dialog>
 
     <!-- Pinterest 爬取配置弹窗 -->
@@ -452,6 +597,11 @@ defineOptions({ name: 'SystemWebsocketConnections' })
 
 const message = useMessage()
 
+const SCRAPER_COMMANDS = {
+  pinterest: 'pinterest/scrape',
+  sora: 'sora/scrape'
+} as const
+
 const connections = ref<WebsocketConnectionVO[]>([])
 const loading = ref(false)
 const autoRefresh = ref(false)
@@ -488,6 +638,27 @@ const pinterestScheduleForm = reactive({
   intervalHours: 3
 })
 
+const SORA_DEFAULT_URL = 'https://sora.chatgpt.com/explore?type=images'
+const soraForm = reactive({
+  targetUrl: SORA_DEFAULT_URL,
+  count: 24,
+  uploadToServer: true,
+  notifyFeishu: true,
+  sourceTag: 'sora',
+  description: 'Sora 图片素材'
+})
+const soraLoading = ref(false)
+const soraTab = ref('execute')
+
+const soraScheduleTask = ref<ScheduledTask | null>(null)
+const soraScheduleLoading = ref(false)
+const showSoraCronExamples = ref(false)
+const soraScheduleForm = reactive({
+  type: 'interval' as 'cron' | 'interval',
+  cronExpression: '0 0 11 * * *',
+  intervalHours: 6
+})
+
 const formatSchedule = (task: ScheduledTask) => {
   if (task.type === 'cron') {
     return task.schedule
@@ -508,24 +679,17 @@ const loadPinterestSchedule = async () => {
 
   pinterestScheduleLoading.value = true
   try {
-    const response = await WebsocketApi.getScheduleTask(currentConnection.value.id)
+    const response = await WebsocketApi.getScheduleTask(currentConnection.value.id, SCRAPER_COMMANDS.pinterest)
     if (response.data) {
-      // 只加载 Pinterest 相关的定时任务（通过 params 判断）
-      if (response.data.params?.sourceTag === 'pinterest' || !response.data.params?.sourceTag) {
-        pinterestScheduleTask.value = response.data
-        // 填充表单
-        pinterestScheduleForm.type = response.data.type
-        if (response.data.type === 'cron') {
-          pinterestScheduleForm.cronExpression = response.data.schedule
-        } else {
-          pinterestScheduleForm.intervalHours = parseFloat(response.data.schedule)
-        }
-        // 同步参数到 pinterestForm
-        if (response.data.params) {
-          Object.assign(pinterestForm, response.data.params)
-        }
+      pinterestScheduleTask.value = response.data
+      pinterestScheduleForm.type = response.data.type
+      if (response.data.type === 'cron') {
+        pinterestScheduleForm.cronExpression = response.data.schedule
       } else {
-        pinterestScheduleTask.value = null
+        pinterestScheduleForm.intervalHours = parseFloat(response.data.schedule)
+      }
+      if (response.data.params) {
+        Object.assign(pinterestForm, response.data.params)
       }
     } else {
       pinterestScheduleTask.value = null
@@ -564,6 +728,7 @@ const handleSavePinterestSchedule = async () => {
       clientId: currentConnection.value.id,
       type: pinterestScheduleForm.type,
       schedule: pinterestScheduleForm.type === 'cron' ? pinterestScheduleForm.cronExpression : String(pinterestScheduleForm.intervalHours),
+      command: SCRAPER_COMMANDS.pinterest,
       params: {
         targetUrl: pinterestForm.targetUrl.trim(),
         count: pinterestForm.count || 10,
@@ -597,7 +762,8 @@ const handleTogglePinterestSchedule = async () => {
   try {
     const response = await WebsocketApi.toggleScheduleTask({
       clientId: currentConnection.value.id,
-      enabled: !pinterestScheduleTask.value.enabled
+      enabled: !pinterestScheduleTask.value.enabled,
+      command: SCRAPER_COMMANDS.pinterest
     })
     if (response.success) {
       message.success(response.message || '操作成功')
@@ -625,7 +791,7 @@ const handleDeletePinterestSchedule = async () => {
 
   pinterestScheduleLoading.value = true
   try {
-    const response = await WebsocketApi.removeScheduleTask(currentConnection.value.id)
+    const response = await WebsocketApi.removeScheduleTask(currentConnection.value.id, SCRAPER_COMMANDS.pinterest)
     if (response.success) {
       message.success(response.message || '定时任务已删除')
       pinterestScheduleTask.value = null
@@ -641,24 +807,183 @@ const handleDeletePinterestSchedule = async () => {
   }
 }
 
+const loadSoraSchedule = async () => {
+  if (!currentConnection.value) return
+
+  soraScheduleLoading.value = true
+  try {
+    const response = await WebsocketApi.getScheduleTask(currentConnection.value.id, SCRAPER_COMMANDS.sora)
+    if (response.data) {
+      soraScheduleTask.value = response.data
+      soraScheduleForm.type = response.data.type
+      if (response.data.type === 'cron') {
+        soraScheduleForm.cronExpression = response.data.schedule
+      } else {
+        soraScheduleForm.intervalHours = parseFloat(response.data.schedule)
+      }
+      if (response.data.params) {
+        Object.assign(soraForm, response.data.params)
+      }
+    } else {
+      soraScheduleTask.value = null
+    }
+  } catch (error: any) {
+    message.error(error?.message || '获取 Sora 定时任务失败')
+  } finally {
+    soraScheduleLoading.value = false
+  }
+}
+
+const handleSaveSoraSchedule = async () => {
+  if (!currentConnection.value) {
+    message.warning('请先选择连接')
+    return
+  }
+
+  if (soraScheduleForm.type === 'cron' && !soraScheduleForm.cronExpression?.trim()) {
+    message.warning('请输入 Cron 表达式')
+    return
+  }
+
+  if (soraScheduleForm.type === 'interval' && (!soraScheduleForm.intervalHours || soraScheduleForm.intervalHours <= 0)) {
+    message.warning('请输入有效的间隔时间（大于 0）')
+    return
+  }
+
+  if (!soraForm.targetUrl?.trim()) {
+    message.warning('请输入目标页面 URL（在"立即执行"标签页）')
+    return
+  }
+
+  soraScheduleLoading.value = true
+  try {
+    const data: SetTaskDTO = {
+      clientId: currentConnection.value.id,
+      type: soraScheduleForm.type,
+      schedule: soraScheduleForm.type === 'cron' ? soraScheduleForm.cronExpression : String(soraScheduleForm.intervalHours),
+      command: SCRAPER_COMMANDS.sora,
+      params: {
+        targetUrl: soraForm.targetUrl.trim(),
+        count: soraForm.count || 20,
+        uploadToServer: soraForm.uploadToServer ?? true,
+        notifyFeishu: soraForm.notifyFeishu ?? false,
+        sourceTag: soraForm.sourceTag?.trim() || 'sora',
+        description: soraForm.description?.trim() || 'Sora 图片素材（定时任务）'
+      }
+    }
+
+    const response = await WebsocketApi.setScheduleTask(data)
+    if (response.success) {
+      message.success(response.message || '定时任务设置成功')
+      await loadSoraSchedule()
+      await loadFunctionSchedule()
+    } else {
+      message.error(response.message || '定时任务设置失败')
+    }
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '设置定时任务失败'
+    message.error(errorMsg)
+  } finally {
+    soraScheduleLoading.value = false
+  }
+}
+
+const handleToggleSoraSchedule = async () => {
+  if (!currentConnection.value || !soraScheduleTask.value) return
+
+  soraScheduleLoading.value = true
+  try {
+    const response = await WebsocketApi.toggleScheduleTask({
+      clientId: currentConnection.value.id,
+      enabled: !soraScheduleTask.value.enabled,
+      command: SCRAPER_COMMANDS.sora
+    })
+    if (response.success) {
+      message.success(response.message || '操作成功')
+      await loadSoraSchedule()
+      await loadFunctionSchedule()
+    } else {
+      message.error(response.message || '操作失败')
+    }
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '操作失败'
+    message.error(errorMsg)
+  } finally {
+    soraScheduleLoading.value = false
+  }
+}
+
+const handleDeleteSoraSchedule = async () => {
+  if (!currentConnection.value || !soraScheduleTask.value) return
+
+  try {
+    await message.confirm('确定要删除此定时任务吗？', '确认删除')
+  } catch {
+    return
+  }
+
+  soraScheduleLoading.value = true
+  try {
+    const response = await WebsocketApi.removeScheduleTask(currentConnection.value.id, SCRAPER_COMMANDS.sora)
+    if (response.success) {
+      message.success(response.message || '定时任务已删除')
+      soraScheduleTask.value = null
+      await loadFunctionSchedule()
+    } else {
+      message.error(response.message || '删除失败')
+    }
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '删除失败'
+    message.error(errorMsg)
+  } finally {
+    soraScheduleLoading.value = false
+  }
+}
+
 // 操控对话框
 const controlDialogVisible = ref(false)
 const pinterestDialogVisible = ref(false)
+const soraDialogVisible = ref(false)
 
 const openPinterestDialog = async () => {
   pinterestDialogVisible.value = true
   await loadPinterestSchedule()
 }
 
+const openSoraDialog = async () => {
+  soraDialogVisible.value = true
+  await loadSoraSchedule()
+}
+
 // 功能列表数据
-const functionList = ref([
+interface ExtensionFunctionItem {
+  id: string
+  name: string
+  description: string
+  icon: string
+  handler: () => void | Promise<void>
+  scheduleCommand?: string
+  schedule: ScheduledTask | null
+}
+
+const functionList = ref<ExtensionFunctionItem[]>([
   {
     id: 'pinterest',
     name: 'Pinterest 图片爬取',
     description: '从 Pinterest 页面采集图片并上传到服务器',
     icon: 'ep:picture',
     handler: openPinterestDialog,
-    schedule: null as ScheduledTask | null
+    scheduleCommand: SCRAPER_COMMANDS.pinterest,
+    schedule: null
+  },
+  {
+    id: 'sora',
+    name: 'Sora 图片爬取',
+    description: '从 Sora Explore 页面采集图片并上传到服务器',
+    icon: 'ep:camera',
+    handler: openSoraDialog,
+    scheduleCommand: SCRAPER_COMMANDS.sora,
+    schedule: null
   }
 ])
 
@@ -666,37 +991,21 @@ const functionList = ref([
 const loadFunctionSchedule = async () => {
   if (!currentConnection.value) return
 
-  try {
-    const response = await WebsocketApi.getScheduleTask(currentConnection.value.id)
-    if (response.data) {
-      // 判断是否是 Pinterest 相关的定时任务
-      if (response.data.params?.sourceTag === 'pinterest' || !response.data.params?.sourceTag) {
-        const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
-        if (pinterestFunction) {
-          pinterestFunction.schedule = response.data
-        }
-      } else {
-        // 清除不相关的定时任务
-        const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
-        if (pinterestFunction) {
-          pinterestFunction.schedule = null
-        }
+  await Promise.all(
+    functionList.value.map(async (func) => {
+      if (!func.scheduleCommand) {
+        func.schedule = null
+        return
       }
-    } else {
-      // 没有定时任务，清除显示
-      const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
-      if (pinterestFunction) {
-        pinterestFunction.schedule = null
+      try {
+        const response = await WebsocketApi.getScheduleTask(currentConnection.value!.id, func.scheduleCommand)
+        func.schedule = response.data
+      } catch (error) {
+        console.error(`加载定时任务信息失败: ${func.id}`, error)
+        func.schedule = null
       }
-    }
-  } catch (error: any) {
-    console.error('加载定时任务信息失败:', error)
-    // 出错时清除显示
-    const pinterestFunction = functionList.value.find((f) => f.id === 'pinterest')
-    if (pinterestFunction) {
-      pinterestFunction.schedule = null
-    }
-  }
+    })
+  )
 }
 
 // 功能列表表格配置
@@ -1172,6 +1481,54 @@ const handlePinterestScrape = async () => {
     message.error(errorMsg)
   } finally {
     pinterestLoading.value = false
+  }
+}
+
+const handleSoraScrape = async () => {
+  if (!currentConnection.value) {
+    message.warning('请先选择连接')
+    return
+  }
+
+  if (!soraForm.targetUrl?.trim()) {
+    message.warning('请输入目标页面 URL')
+    return
+  }
+
+  soraLoading.value = true
+  try {
+    const command = {
+      command: SCRAPER_COMMANDS.sora,
+      params: {
+        targetUrl: soraForm.targetUrl.trim() || SORA_DEFAULT_URL,
+        count: soraForm.count || 20,
+        uploadToServer: soraForm.uploadToServer ?? true,
+        notifyFeishu: soraForm.notifyFeishu ?? false,
+        sourceTag: soraForm.sourceTag?.trim() || 'sora',
+        description: soraForm.description?.trim() || 'Sora 图片素材'
+      }
+    }
+
+    const response = await WebsocketApi.sendMessageToConnection(
+      currentConnection.value.id,
+      command,
+      'admin-message'
+    )
+
+    const result = response as any
+    if (result?.success === false || result?.data?.success === false) {
+      const errorMsg = result?.message || result?.data?.message || '爬取任务启动失败'
+      message.error(errorMsg)
+      return
+    }
+
+    message.success('Sora 爬取任务已启动，请查看插件端日志或等待完成通知')
+    soraDialogVisible.value = false
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.message || error?.message || '启动爬取任务失败'
+    message.error(errorMsg)
+  } finally {
+    soraLoading.value = false
   }
 }
 
