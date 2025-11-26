@@ -52,10 +52,14 @@
       >
         <template #thumbnailSlot="{ row }">
           <div class="thumbnail-cell">
-            <img 
-              v-if="row.thumbnail" 
-              :src="row.thumbnail" 
-              alt="缩略图"
+            <el-image
+              v-if="row.thumbnail"
+              :src="row.thumbnail"
+              :preview-src-list="[row.thumbnail]"
+              :initial-index="0"
+              preview-teleported
+              hide-on-click-modal
+              fit="contain"
               class="thumbnail-image"
             />
             <span v-else class="thumbnail-placeholder">暂无缩略图</span>
@@ -166,27 +170,26 @@
                   <div class="upload-text">点击上传缩略图</div>
                   <div class="upload-tip">支持 jpg、png 等图片格式，最大 5MB</div>
                 </div>
-                <div
-                  v-else
-                  class="thumbnail-preview-wrapper"
-                  @click="triggerThumbnailSelect"
-                >
-                  <el-image
-                    :src="thumbnailPreviewUrl || form.thumbnail"
-                    fit="cover"
-                    class="thumbnail-preview-image"
-                  />
-                  <div class="thumbnail-overlay">
-                    <div class="thumbnail-actions">
-                      <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
-                        <el-icon><Edit /></el-icon>
-                        替换
-                      </el-button>
-                      <el-button type="danger" size="small" @click.stop="clearThumbnail">
-                        <el-icon><Delete /></el-icon>
-                        删除
-                      </el-button>
-                    </div>
+                <div v-else class="thumbnail-preview-container">
+                  <div
+                    class="thumbnail-preview-wrapper"
+                    @click="triggerThumbnailSelect"
+                  >
+                    <el-image
+                      :src="thumbnailPreviewUrl || form.thumbnail"
+                      fit="contain"
+                      class="thumbnail-preview-image"
+                    />
+                  </div>
+                  <div class="thumbnail-action-buttons">
+                    <el-button type="primary" size="small" @click="triggerThumbnailSelect">
+                      <el-icon><Edit /></el-icon>
+                      替换
+                    </el-button>
+                    <el-button type="danger" size="small" @click="clearThumbnail">
+                      <el-icon><Delete /></el-icon>
+                      删除
+                    </el-button>
                   </div>
                 </div>
               </div>
@@ -588,20 +591,13 @@ const clearThumbnail = () => {
   padding: 4px;
   
   .thumbnail-image {
-    max-width: 160px;
-    max-height: 120px;
+    height: 120px;
     width: auto;
-    height: auto;
+    max-width: 160px;
     object-fit: contain;
     border: 1px solid var(--el-border-color-light);
     border-radius: 4px;
     cursor: pointer;
-    
-    &:hover {
-      border-color: var(--el-color-primary);
-      transform: scale(1.05);
-      transition: transform 0.2s;
-    }
   }
   
   .thumbnail-placeholder {
@@ -658,49 +654,36 @@ const clearThumbnail = () => {
     }
   }
   
+  .thumbnail-preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
   .thumbnail-preview-wrapper {
-    position: relative;
     width: 148px;
     height: 148px;
     border: 1px solid var(--el-border-color);
     border-radius: 6px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s;
-    
-    &:hover {
-      border-color: var(--el-color-primary);
-      box-shadow: 0 2px 12px rgba(64, 158, 255, 0.2);
-      
-      .thumbnail-overlay {
-        opacity: 1;
-      }
-    }
+    background: var(--el-fill-color-lighter);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     .thumbnail-preview-image {
-      width: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
       height: 100%;
-      object-fit: cover;
+      object-fit: contain;
     }
-    
-    .thumbnail-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s;
-      
-      .thumbnail-actions {
-        display: flex;
-        gap: 8px;
-      }
-    }
+  }
+  
+  .thumbnail-action-buttons {
+    display: flex;
+    gap: 8px;
   }
 }
 </style>
