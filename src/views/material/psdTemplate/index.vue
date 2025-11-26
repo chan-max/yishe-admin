@@ -53,8 +53,8 @@
         <template #thumbnailSlot="{ row }">
           <div class="thumbnail-cell">
             <img 
-              v-if="row.thumbnail?.url" 
-              :src="row.thumbnail.url" 
+              v-if="row.thumbnail" 
+              :src="row.thumbnail" 
               alt="缩略图"
               class="thumbnail-image"
             />
@@ -84,13 +84,6 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                <el-dropdown-item 
-                  @click="handleGenerateThumbnail(row)"
-                  :disabled="row.generatingThumbnail"
-                >
-                  <span v-if="row.generatingThumbnail">生成缩略图中...</span>
-                  <span v-else>生成缩略图</span>
-                </el-dropdown-item>
                 <el-dropdown-item @click="() => downloadFileByElement(row.url, row.name)">
                   下载源文件
                 </el-dropdown-item>
@@ -153,6 +146,43 @@
               </el-upload>
             </el-form-item>
           </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="缩略图">
+              <el-upload
+                style="width: 100%"
+                action="#"
+                :limit="1"
+                :file-list="thumbnailFileList"
+                :on-change="handleThumbnailChange"
+                :before-upload="beforeThumbnailUpload"
+                :auto-upload="false"
+                :on-remove="handleThumbnailRemove"
+                accept="image/*"
+                list-type="picture-card"
+              >
+                <template v-if="thumbnailFileList.length === 0">
+                  <el-icon v-if="!form.thumbnail"><Plus /></el-icon>
+                  <div v-else class="current-thumbnail-preview">
+                    <el-image
+                      :src="form.thumbnail"
+                      fit="cover"
+                      class="preview-image"
+                    />
+                    <div class="preview-mask">
+                      <el-button type="danger" link size="small" @click.stop="clearThumbnail">
+                        <el-icon><Delete /></el-icon>
+                        删除
+                      </el-button>
+                    </div>
+                  </div>
+                </template>
+                <template #tip>
+                  <div class="el-upload__tip">支持 jpg、png 等图片格式，点击可替换当前缩略图</div>
+                </template>
+              </el-upload>
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
 
@@ -168,7 +198,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -200,17 +230,19 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
   sortingFields: defaultSortingValue(),
+  name: "",
 });
 
 const gridOptions = ref({
   ...commonGridOptions,
+  maxHeight: null,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
     { title: "ID", field: "id", width: 140, showOverflow: true },
     { 
       title: "缩略图", 
       field: "thumbnail", 
-      width: 120, 
+      width: 180, 
       showOverflow: false,
       slots: {
         default: "thumbnailSlot",
@@ -328,7 +360,14 @@ function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
   dialogTitle.value = "新建模板";
-  form.value = {};
+  form.value = {
+    id: "",
+    file: null,
+    name: "",
+    thumbnail: "",
+    thumbnailFile: null,
+  };
+  thumbnailFileList.value = [];
 }
 
 function handleEdit(row) {
@@ -339,15 +378,25 @@ function handleEdit(row) {
   form.value = {
     ...row,
   };
+  
+  // 如果有缩略图，显示在预览中
+  if (row.thumbnail?.url) {
+    thumbnailFileList.value = [];
+  } else {
+    thumbnailFileList.value = [];
+  }
 }
 
 function cancel() {
   open.value = false;
 }
 
-const form = ref({
+const form = ref<any>({
+  id: "",
   file: null,
   name: "",
+  thumbnail: "",
+  thumbnailFile: null,
 });
 
 const rules = {
@@ -359,6 +408,7 @@ const rules = {
 const dialogClose = () => {
   dialogVisible.value = false;
   fileList.value = [];
+  thumbnailFileList.value = [];
   submitLoading.value = false;
 };
 
@@ -379,19 +429,40 @@ const submitForm = async () => {
   try {
     if (isEdit.value) {
       submitLoading.value = true;
+      
+      // 如果有新的缩略图文件，先上传
+      let thumbnail = form.value.thumbnail;
+      if (form.value.thumbnailFile) {
+        const thumbnailCos = await uploadToCOS({ file: form.value.thumbnailFile });
+        thumbnail = thumbnailCos.url; // 直接存储URL字符串
+      }
+      
       await psdTemplateApi.updatePsdTemplate({
         id: form.value.id,
         name: form.value.name,
+        thumbnail: thumbnail || "", // 确保是字符串
       });
       ElMessage.success("更新成功");
       getList();
     } else {
       submitLoading.value = true;
+      
+      // 上传PSD文件
       const cos = await uploadToCOS({ file: form.value.file });
       const { key, url } = cos;
+      
+      // 上传缩略图（如果有）
+      let thumbnail = "";
+      if (form.value.thumbnailFile) {
+        const thumbnailCos = await uploadToCOS({ file: form.value.thumbnailFile });
+        thumbnail = thumbnailCos.url; // 直接存储URL字符串
+      }
+      
       await psdTemplateApi.createPsdTemplate({
         name: form.value.name,
         url,
+        key,
+        thumbnail: thumbnail,
         file: null,
       });
       ElMessage.success("添加成功");
@@ -400,6 +471,8 @@ const submitForm = async () => {
 
     dialogVisible.value = false;
   } catch (e) {
+    console.error('提交失败:', e);
+    ElMessage.error('操作失败，请重试');
   } finally {
     submitLoading.value = false;
     dialogVisible.value = false;
@@ -411,6 +484,7 @@ const submitForm = async () => {
  */
 
 const fileList = ref([]);
+const thumbnailFileList = ref([]);
 
 // 文件选择改变时的回调
 const handleFileChange = (file, files) => {
@@ -428,37 +502,56 @@ const handleFileRemove = () => {
 // 文件上传前的校验
 const beforeUpload = (file) => {};
 
-// 生成缩略图
-async function handleGenerateThumbnail(row) {
-  if (!row.id) {
-    return ElMessage.warning('模板ID不存在');
+// 缩略图文件选择改变时的回调
+const handleThumbnailChange = (file, files) => {
+  thumbnailFileList.value = files;
+  form.value.thumbnailFile = file.raw;
+  // 选择新文件后，清空旧的缩略图URL（新文件会覆盖）
+  // 注意：这里不清空 form.thumbnail，因为提交时需要知道是否有旧文件要删除
+};
+
+// 缩略图文件移除时的回调
+const handleThumbnailRemove = () => {
+  thumbnailFileList.value = [];
+  form.value.thumbnailFile = null;
+};
+
+// 缩略图上传前的校验
+const beforeThumbnailUpload = (file) => {
+  const isImage = file.type.startsWith('image/');
+  const isLt5M = file.size / 1024 / 1024 < 5;
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!');
+    return false;
   }
-  
-  row.generatingThumbnail = true;
-  try {
-    await psdTemplateApi.generateThumbnail({ id: row.id });
-    ElMessage.success('缩略图生成成功');
-    // 重新获取列表数据
-    await getList();
-  } catch (error: any) {
-    console.error('生成缩略图失败:', error);
-    ElMessage.error(error?.message || '生成缩略图失败');
-  } finally {
-    row.generatingThumbnail = false;
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!');
+    return false;
   }
-}
+  return true;
+};
+
+// 清除缩略图
+const clearThumbnail = () => {
+  form.value.thumbnail = "";
+  thumbnailFileList.value = [];
+  form.value.thumbnailFile = null;
+};
 </script>
 
 <style lang="less" scoped>
 .thumbnail-cell {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 60px;
+  height: 120px;
+  padding: 4px;
   
   .thumbnail-image {
-    max-width: 100px;
-    max-height: 60px;
+    max-width: 160px;
+    max-height: 120px;
+    width: auto;
+    height: auto;
     object-fit: contain;
     border: 1px solid var(--el-border-color-light);
     border-radius: 4px;
@@ -466,6 +559,8 @@ async function handleGenerateThumbnail(row) {
     
     &:hover {
       border-color: var(--el-color-primary);
+      transform: scale(1.05);
+      transition: transform 0.2s;
     }
   }
   
@@ -481,6 +576,53 @@ async function handleGenerateThumbnail(row) {
   &:hover {
     color: var(--el-color-danger) !important;
     background-color: var(--el-color-danger-light-9) !important;
+  }
+}
+
+.current-thumbnail-preview {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .preview-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+  
+  .preview-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 6px;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+:deep(.el-upload--picture-card) {
+  .current-thumbnail-preview {
+    .preview-mask {
+      opacity: 0;
+    }
+    
+    &:hover .preview-mask {
+      opacity: 1;
+    }
   }
 }
 </style>
