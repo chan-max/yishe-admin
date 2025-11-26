@@ -149,38 +149,47 @@
 
           <el-col :span="24">
             <el-form-item label="缩略图">
-              <el-upload
-                style="width: 100%"
-                action="#"
-                :limit="1"
-                :file-list="thumbnailFileList"
-                :on-change="handleThumbnailChange"
-                :before-upload="beforeThumbnailUpload"
-                :auto-upload="false"
-                :on-remove="handleThumbnailRemove"
-                accept="image/*"
-                list-type="picture-card"
-              >
-                <template v-if="thumbnailFileList.length === 0">
-                  <el-icon v-if="!form.thumbnail"><Plus /></el-icon>
-                  <div v-else class="current-thumbnail-preview">
-                    <el-image
-                      :src="form.thumbnail"
-                      fit="cover"
-                      class="preview-image"
-                    />
-                    <div class="preview-mask">
-                      <el-button type="danger" link size="small" @click.stop="clearThumbnail">
+              <div class="thumbnail-upload-container">
+                <input
+                  ref="thumbnailInputRef"
+                  type="file"
+                  accept="image/*"
+                  style="display: none"
+                  @change="handleThumbnailFileSelect"
+                />
+                <div
+                  v-if="!thumbnailPreviewUrl && !form.thumbnail"
+                  class="thumbnail-upload-placeholder"
+                  @click="triggerThumbnailSelect"
+                >
+                  <el-icon class="upload-icon"><Plus /></el-icon>
+                  <div class="upload-text">点击上传缩略图</div>
+                  <div class="upload-tip">支持 jpg、png 等图片格式，最大 5MB</div>
+                </div>
+                <div
+                  v-else
+                  class="thumbnail-preview-wrapper"
+                  @click="triggerThumbnailSelect"
+                >
+                  <el-image
+                    :src="thumbnailPreviewUrl || form.thumbnail"
+                    fit="cover"
+                    class="thumbnail-preview-image"
+                  />
+                  <div class="thumbnail-overlay">
+                    <div class="thumbnail-actions">
+                      <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
+                        <el-icon><Edit /></el-icon>
+                        替换
+                      </el-button>
+                      <el-button type="danger" size="small" @click.stop="clearThumbnail">
                         <el-icon><Delete /></el-icon>
                         删除
                       </el-button>
                     </div>
                   </div>
-                </template>
-                <template #tip>
-                  <div class="el-upload__tip">支持 jpg、png 等图片格式，点击可替换当前缩略图</div>
-                </template>
-              </el-upload>
+                </div>
+              </div>
             </el-form-item>
           </el-col>
         </el-row>
@@ -367,7 +376,11 @@ function handleAdd() {
     thumbnail: "",
     thumbnailFile: null,
   };
-  thumbnailFileList.value = [];
+  // 清空预览
+  if (thumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(thumbnailPreviewUrl.value);
+    thumbnailPreviewUrl.value = '';
+  }
 }
 
 function handleEdit(row) {
@@ -379,11 +392,10 @@ function handleEdit(row) {
     ...row,
   };
   
-  // 如果有缩略图，显示在预览中
-  if (row.thumbnail?.url) {
-    thumbnailFileList.value = [];
-  } else {
-    thumbnailFileList.value = [];
+  // 清空预览（编辑时显示已有的缩略图）
+  if (thumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(thumbnailPreviewUrl.value);
+    thumbnailPreviewUrl.value = '';
   }
 }
 
@@ -408,7 +420,11 @@ const rules = {
 const dialogClose = () => {
   dialogVisible.value = false;
   fileList.value = [];
-  thumbnailFileList.value = [];
+  // 释放预览URL
+  if (thumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(thumbnailPreviewUrl.value);
+    thumbnailPreviewUrl.value = '';
+  }
   submitLoading.value = false;
 };
 
@@ -443,6 +459,11 @@ const submitForm = async () => {
         thumbnail: thumbnail || "", // 确保是字符串
       });
       ElMessage.success("更新成功");
+      // 释放预览URL
+      if (thumbnailPreviewUrl.value) {
+        URL.revokeObjectURL(thumbnailPreviewUrl.value);
+        thumbnailPreviewUrl.value = '';
+      }
       getList();
     } else {
       submitLoading.value = true;
@@ -466,6 +487,11 @@ const submitForm = async () => {
         file: null,
       });
       ElMessage.success("添加成功");
+      // 释放预览URL
+      if (thumbnailPreviewUrl.value) {
+        URL.revokeObjectURL(thumbnailPreviewUrl.value);
+        thumbnailPreviewUrl.value = '';
+      }
       getList();
     }
 
@@ -484,7 +510,8 @@ const submitForm = async () => {
  */
 
 const fileList = ref([]);
-const thumbnailFileList = ref([]);
+const thumbnailInputRef = ref();
+const thumbnailPreviewUrl = ref(''); // 新选择的文件预览URL
 
 // 文件选择改变时的回调
 const handleFileChange = (file, files) => {
@@ -502,41 +529,54 @@ const handleFileRemove = () => {
 // 文件上传前的校验
 const beforeUpload = (file) => {};
 
-// 缩略图文件选择改变时的回调
-const handleThumbnailChange = (file, files) => {
-  thumbnailFileList.value = files;
-  form.value.thumbnailFile = file.raw;
-  // 选择新文件后，清空旧的缩略图URL（新文件会覆盖）
-  // 注意：这里不清空 form.thumbnail，因为提交时需要知道是否有旧文件要删除
+// 触发缩略图文件选择
+const triggerThumbnailSelect = () => {
+  thumbnailInputRef.value?.click();
 };
 
-// 缩略图文件移除时的回调
-const handleThumbnailRemove = () => {
-  thumbnailFileList.value = [];
-  form.value.thumbnailFile = null;
-};
+// 缩略图文件选择处理
+const handleThumbnailFileSelect = (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-// 缩略图上传前的校验
-const beforeThumbnailUpload = (file) => {
-  const isImage = file.type.startsWith('image/');
-  const isLt5M = file.size / 1024 / 1024 < 5;
-
-  if (!isImage) {
+  // 校验文件类型
+  if (!file.type.startsWith('image/')) {
     ElMessage.error('只能上传图片文件!');
-    return false;
+    event.target.value = ''; // 清空选择
+    return;
   }
+
+  // 校验文件大小
+  const isLt5M = file.size / 1024 / 1024 < 5;
   if (!isLt5M) {
     ElMessage.error('图片大小不能超过 5MB!');
-    return false;
+    event.target.value = ''; // 清空选择
+    return;
   }
-  return true;
+
+  // 创建预览URL
+  if (thumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(thumbnailPreviewUrl.value);
+  }
+  thumbnailPreviewUrl.value = URL.createObjectURL(file);
+  form.value.thumbnailFile = file;
+
+  // 清空input，允许重复选择同一文件
+  event.target.value = '';
 };
 
 // 清除缩略图
 const clearThumbnail = () => {
+  // 释放预览URL
+  if (thumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(thumbnailPreviewUrl.value);
+    thumbnailPreviewUrl.value = '';
+  }
   form.value.thumbnail = "";
-  thumbnailFileList.value = [];
   form.value.thumbnailFile = null;
+  if (thumbnailInputRef.value) {
+    thumbnailInputRef.value.value = '';
+  }
 };
 </script>
 
@@ -579,49 +619,87 @@ const clearThumbnail = () => {
   }
 }
 
-.current-thumbnail-preview {
-  position: relative;
+.thumbnail-upload-container {
   width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   
-  .preview-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .thumbnail-upload-placeholder {
+    width: 148px;
+    height: 148px;
+    border: 1px dashed var(--el-border-color);
     border-radius: 6px;
-  }
-  
-  .preview-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s;
-    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: var(--el-fill-color-lighter);
     
     &:hover {
-      opacity: 1;
-    }
-  }
-}
-
-:deep(.el-upload--picture-card) {
-  .current-thumbnail-preview {
-    .preview-mask {
-      opacity: 0;
+      border-color: var(--el-color-primary);
+      background: var(--el-color-primary-light-9);
     }
     
-    &:hover .preview-mask {
-      opacity: 1;
+    .upload-icon {
+      font-size: 28px;
+      color: var(--el-text-color-placeholder);
+      margin-bottom: 8px;
+    }
+    
+    .upload-text {
+      font-size: 14px;
+      color: var(--el-text-color-regular);
+      margin-bottom: 4px;
+    }
+    
+    .upload-tip {
+      font-size: 12px;
+      color: var(--el-text-color-placeholder);
+    }
+  }
+  
+  .thumbnail-preview-wrapper {
+    position: relative;
+    width: 148px;
+    height: 148px;
+    border: 1px solid var(--el-border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+    
+    &:hover {
+      border-color: var(--el-color-primary);
+      box-shadow: 0 2px 12px rgba(64, 158, 255, 0.2);
+      
+      .thumbnail-overlay {
+        opacity: 1;
+      }
+    }
+    
+    .thumbnail-preview-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .thumbnail-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+      
+      .thumbnail-actions {
+        display: flex;
+        gap: 8px;
+      }
     }
   }
 }
