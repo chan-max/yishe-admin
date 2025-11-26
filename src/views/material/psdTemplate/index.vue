@@ -50,6 +50,18 @@
         @checkbox-change="checkboxChange"
         @checkbox-all="checkboxAllChange"
       >
+        <template #thumbnailSlot="{ row }">
+          <div class="thumbnail-cell">
+            <img 
+              v-if="row.thumbnail?.url" 
+              :src="row.thumbnail.url" 
+              alt="缩略图"
+              class="thumbnail-image"
+            />
+            <span v-else class="thumbnail-placeholder">暂无缩略图</span>
+          </div>
+        </template>
+
         <template #titleNameDefaultSlot="{ row }">
           <div v-if="row.titleTemplateId" class="flex items-center gap-2">
             <span>
@@ -64,27 +76,34 @@
         </template>
 
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              编辑
+          <el-dropdown trigger="click">
+            <el-button type="primary" link size="small">
+              操作
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
-            <el-button
-              type="primary"
-              link
-              size="small"
-              @click="
-                () => {
-                  downloadFileByElement(row.url, row.name);
-                }
-              "
-            >
-              下载源文件
-            </el-button>
-
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                <el-dropdown-item 
+                  @click="handleGenerateThumbnail(row)"
+                  :disabled="row.generatingThumbnail"
+                >
+                  <span v-if="row.generatingThumbnail">生成缩略图中...</span>
+                  <span v-else>生成缩略图</span>
+                </el-dropdown-item>
+                <el-dropdown-item @click="() => downloadFileByElement(row.url, row.name)">
+                  下载源文件
+                </el-dropdown-item>
+                <el-dropdown-item 
+                  divided 
+                  class="dropdown-item-danger" 
+                  @click="handleDelete(row)"
+                >
+                  删除
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
       </vxe-grid>
     </div>
@@ -164,6 +183,7 @@ import {
   Edit,
   CirclePlusFilled,
   CirclePlus,
+  ArrowDown,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { psdTemplateApi } from "@/api/psdTemplate";
@@ -187,6 +207,15 @@ const gridOptions = ref({
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
     { title: "ID", field: "id", width: 140, showOverflow: true },
+    { 
+      title: "缩略图", 
+      field: "thumbnail", 
+      width: 120, 
+      showOverflow: false,
+      slots: {
+        default: "thumbnailSlot",
+      },
+    },
     { title: "套图模板名称", field: "name", width: 240, showOverflow: true },
 
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true }, // 该类目下已经发布的商品数量
@@ -398,7 +427,61 @@ const handleFileRemove = () => {
 
 // 文件上传前的校验
 const beforeUpload = (file) => {};
+
+// 生成缩略图
+async function handleGenerateThumbnail(row) {
+  if (!row.id) {
+    return ElMessage.warning('模板ID不存在');
+  }
+  
+  row.generatingThumbnail = true;
+  try {
+    await psdTemplateApi.generateThumbnail({ id: row.id });
+    ElMessage.success('缩略图生成成功');
+    // 重新获取列表数据
+    await getList();
+  } catch (error: any) {
+    console.error('生成缩略图失败:', error);
+    ElMessage.error(error?.message || '生成缩略图失败');
+  } finally {
+    row.generatingThumbnail = false;
+  }
+}
 </script>
 
-<style lang="less"></style>
+<style lang="less" scoped>
+.thumbnail-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  
+  .thumbnail-image {
+    max-width: 100px;
+    max-height: 60px;
+    object-fit: contain;
+    border: 1px solid var(--el-border-color-light);
+    border-radius: 4px;
+    cursor: pointer;
+    
+    &:hover {
+      border-color: var(--el-color-primary);
+    }
+  }
+  
+  .thumbnail-placeholder {
+    color: var(--el-text-color-placeholder);
+    font-size: 12px;
+  }
+}
+
+:deep(.dropdown-item-danger) {
+  color: var(--el-color-danger) !important;
+  
+  &:hover {
+    color: var(--el-color-danger) !important;
+    background-color: var(--el-color-danger-light-9) !important;
+  }
+}
+</style>
 @/api/psdTemplate

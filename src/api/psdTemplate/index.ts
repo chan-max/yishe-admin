@@ -35,4 +35,9 @@ export const psdTemplateApi = {
   deleteShopTemplate: async (data) => {
     return await request.delete({ url: `/psd-template/delete`,data })
   },
+
+  // 生成缩略图
+  generateThumbnail: async (data: { id: string }) => {
+    return await request.post({ url: `/psd-template/generate-thumbnail`, data })
+  },
 }
