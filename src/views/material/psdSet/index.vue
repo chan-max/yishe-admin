@@ -21,8 +21,15 @@
           />
         </el-select>
       </form-item>
+      <form-item label="显示详情">
+        <el-switch
+          v-model="showDetails"
+          active-text="显示"
+          inactive-text="隐藏"
+          @change="handleShowDetailsChange"
+        />
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-      <el-button type="default" :icon="Refresh" @click="resetFilters">重置</el-button>
       <div class="flex items-center" style="margin-left: auto">
         <el-button
           type="danger"
@@ -44,10 +51,105 @@
         @checkbox-all="onSelectionChange"
       >
         <template #statusSlot="{ row }">
-          <el-tag :type="statusTagType(row.status)" size="small">
+          <el-tag 
+            :color="statusTagColor(row.status)" 
+            effect="dark"
+            size="small"
+          >
             {{ statusLabel(row.status) }}
           </el-tag>
           <div v-if="row.statusMessage" class="status-message">{{ row.statusMessage }}</div>
+        </template>
+        <template #stickerDetailSlot="{ row }">
+          <div v-if="showDetails && row.sticker" class="detail-section-item">
+            <vxe-grid
+              :data="[row.sticker]"
+              :show-header="true"
+              border
+              size="mini"
+              class="detail-sub-grid"
+              :columns="[
+                { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
+                { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
+              ]"
+            >
+              <template #stickerImageSlot="{ row: stickerRow }">
+                <div class="flex items-center justify-center p-1">
+                  <el-image
+                    v-if="stickerRow.url"
+                    :src="stickerRow.url"
+                    :preview-src-list="[stickerRow.url]"
+                    :initial-index="0"
+                    :preview-teleported="true"
+                    :hide-on-click-modal="false"
+                    class="detail-thumb-image"
+                    fit="contain"
+                  />
+                  <span v-else class="text-gray-400 text-xs">无</span>
+                </div>
+              </template>
+              <template #stickerUpdateTimeSlot="{ row: stickerRow }">
+                <span class="text-xs">{{ stickerRow.updateTime ? formatTimestamp(stickerRow.updateTime) : '无' }}</span>
+              </template>
+            </vxe-grid>
+          </div>
+          <span v-else-if="showDetails" class="text-gray-400 text-sm">无贴纸</span>
+        </template>
+        <template #templateDetailSlot="{ row }">
+          <div v-if="showDetails && row.psdTemplate" class="detail-section-item">
+            <vxe-grid
+              :data="[row.psdTemplate]"
+              :show-header="true"
+              border
+              size="mini"
+              class="detail-sub-grid"
+              :columns="[
+                { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'templateThumbnailSlot' } },
+                { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                { field: 'url', title: '文件', width: 120, slots: { default: 'templateFileSlot' } },
+                { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'templateUpdateTimeSlot' } }
+              ]"
+            >
+              <template #templateThumbnailSlot="{ row: templateRow }">
+                <div class="flex items-center justify-center p-1">
+                  <el-image
+                    v-if="templateRow.thumbnail"
+                    :src="templateRow.thumbnail"
+                    :preview-src-list="[templateRow.thumbnail]"
+                    :initial-index="0"
+                    :preview-teleported="true"
+                    :hide-on-click-modal="false"
+                    class="detail-thumb-image"
+                    fit="contain"
+                  />
+                  <span v-else class="text-gray-400 text-xs">无</span>
+                </div>
+              </template>
+              <template #templateFileSlot="{ row: templateRow }">
+                <div class="flex items-center justify-center p-1">
+                  <el-link
+                    v-if="templateRow.url"
+                    :href="templateRow.url"
+                    target="_blank"
+                    type="primary"
+                    class="text-xs"
+                  >
+                    查看文件
+                  </el-link>
+                  <span v-else class="text-gray-400 text-xs">无</span>
+                </div>
+              </template>
+              <template #templateUpdateTimeSlot="{ row: templateRow }">
+                <span class="text-xs">{{ templateRow.updateTime ? formatTimestamp(templateRow.updateTime) : '无' }}</span>
+              </template>
+            </vxe-grid>
+          </div>
+          <span v-else-if="showDetails" class="text-gray-400 text-sm">无模板</span>
         </template>
         <template #operationSlot="{ row }">
           <el-dropdown trigger="click">
@@ -106,15 +208,10 @@ const queryParams = reactive({
   status: ''
 })
 
-const gridOptions = ref({
-  ...commonGridOptions,
-  rowConfig: {
-    keyField: 'id'
-  },
-  checkboxConfig: {
-    reserve: true
-  },
-  columns: [
+const showDetails = ref(false)
+
+function getColumns() {
+  const baseColumns = [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
     { title: '套图名称', field: 'name', minWidth: 180 },
     { title: '描述', field: 'description', minWidth: 200 },
@@ -131,9 +228,40 @@ const gridOptions = ref({
       field: 'updateTime',
       width: 160,
       formatter: ({ cellValue }) => formatTimestamp(cellValue)
+    }
+  ]
+  
+  const detailColumns = showDetails.value ? [
+    { 
+      title: '贴纸详情', 
+      field: 'stickerDetail', 
+      width: 'auto', 
+      slots: { default: 'stickerDetailSlot' } 
     },
+    { 
+      title: 'PSD模板详情', 
+      field: 'templateDetail', 
+      width: 'auto', 
+      slots: { default: 'templateDetailSlot' } 
+    }
+  ] : []
+  
+  const operationColumn = [
     { title: '操作', width: 140, fixed: 'right' as const, slots: { default: 'operationSlot' } }
   ]
+  
+  return [...baseColumns, ...detailColumns, ...operationColumn]
+}
+
+const gridOptions = ref({
+  ...commonGridOptions,
+  rowConfig: {
+    keyField: 'id'
+  },
+  checkboxConfig: {
+    reserve: true
+  },
+  columns: getColumns()
 })
 
 async function getList() {
@@ -142,7 +270,8 @@ async function getList() {
     const res = await stickerPsdSetApi.page({
       ...queryParams,
       status: queryParams.status || undefined,
-      keyword: queryParams.keyword?.trim() || undefined
+      keyword: queryParams.keyword?.trim() || undefined,
+      includeDetails: showDetails.value
     })
     dataSource.value = res.list || []
     total.value = res.total || 0
@@ -151,34 +280,41 @@ async function getList() {
   }
 }
 
+function handleShowDetailsChange() {
+  // 更新列配置
+  updateColumns()
+  // 重新获取数据
+  getList()
+}
+
+function updateColumns() {
+  gridOptions.value.columns = getColumns()
+}
+
 function handleKeywordChange(val: string) {
   if (!val) {
     getList()
   }
 }
 
-function resetFilters() {
-  queryParams.keyword = ''
-  queryParams.status = ''
-  queryParams.currentPage = 1
-  getList()
-}
 
 function statusLabel(status: string) {
   const item = statusOptions.find((s) => s.value === status)
   return item ? item.label : status || '-'
 }
 
-function statusTagType(status: string) {
+function statusTagColor(status: string) {
   switch (status) {
     case 'completed':
-      return 'success'
+      return '#67C23A' // 绿色 - 已完成
     case 'processing':
-      return 'warning'
+      return '#E6A23C' // 橙色 - 制作中
     case 'failed':
-      return 'danger'
+      return '#F56C6C' // 红色 - 失败
+    case 'pending':
+      return '#909399' // 灰色 - 待制作
     default:
-      return 'info'
+      return '#909399'
   }
 }
 
@@ -231,6 +367,7 @@ function handleBatchDelete() {
     .catch(() => {})
 }
 
+
 getList()
 </script>
 
@@ -250,6 +387,87 @@ getList()
 }
 .pagination-container :deep(.el-pagination) {
   font-size: 14px;
+}
+/* 详情列样式 */
+.details-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.detail-section-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.05) 100%);
+  border-radius: 4px;
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.detail-label {
+  color: var(--el-color-primary);
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.detail-sub-grid {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: none;
+}
+
+.detail-sub-grid :deep(.vxe-table) {
+  font-size: 12px;
+}
+
+.detail-sub-grid :deep(.vxe-table--header) {
+  background-color: var(--el-table-header-bg-color);
+}
+
+.detail-sub-grid :deep(.vxe-table--body) {
+  background-color: transparent;
+}
+
+.detail-sub-grid :deep(.vxe-cell) {
+  padding: 4px 8px;
+}
+
+.detail-sub-grid :deep(.vxe-table--header-wrapper) {
+  .vxe-cell {
+    font-weight: 500;
+    font-size: 12px;
+  }
+}
+
+.detail-thumb-image {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid var(--el-border-color-lighter);
+  transition: all 0.2s ease;
+  background-color: var(--el-bg-color-page);
+}
+
+.detail-thumb-image:hover {
+  border-color: var(--el-color-primary);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 </style>
 
