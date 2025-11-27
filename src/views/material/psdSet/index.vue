@@ -44,7 +44,11 @@
         @checkbox-all="onSelectionChange"
       >
         <template #statusSlot="{ row }">
-          <el-tag :type="statusTagType(row.status)" size="small">
+          <el-tag 
+            :color="statusTagColor(row.status)" 
+            effect="dark"
+            size="small"
+          >
             {{ statusLabel(row.status) }}
           </el-tag>
           <div v-if="row.statusMessage" class="status-message">{{ row.statusMessage }}</div>
@@ -169,16 +173,18 @@ function statusLabel(status: string) {
   return item ? item.label : status || '-'
 }
 
-function statusTagType(status: string) {
+function statusTagColor(status: string) {
   switch (status) {
     case 'completed':
-      return 'success'
+      return '#67C23A' // 绿色 - 已完成
     case 'processing':
-      return 'warning'
+      return '#E6A23C' // 橙色 - 制作中
     case 'failed':
-      return 'danger'
+      return '#F56C6C' // 红色 - 失败
+    case 'pending':
+      return '#909399' // 灰色 - 待制作
     default:
-      return 'info'
+      return '#909399'
   }
 }
 
