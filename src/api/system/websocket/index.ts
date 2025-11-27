@@ -2,6 +2,11 @@ import request from '@/config/axios'
 
 export interface WebsocketClientInfo {
   clientId?: string
+  machine?: {
+    code?: string
+    platform?: string
+    createdAt?: string
+  }
   timestamp?: string
   extension?: {
     name?: string
@@ -28,6 +33,7 @@ export interface WebsocketClientInfo {
   device?: {
     memory?: number
     hardwareConcurrency?: number
+    model?: string
   }
   location?: {
     ip?: string

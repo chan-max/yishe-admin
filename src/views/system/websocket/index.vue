@@ -553,7 +553,7 @@
           <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
             浏览器插件
           </el-tag>
-          <span v-else>{{ currentConnection?.clientSource || '未知' }}</span>
+          <el-tag v-else  size="small" type="success">{{ currentConnection?.clientSource || '未知' }}</el-tag>
         </el-form-item>
         <el-form-item label="事件名称">
           <el-input v-model="messageEvent" placeholder="默认为 admin-message" />
@@ -1171,6 +1171,10 @@ const formatClientInfo = (info?: WebsocketClientInfo) => {
     segments.push(`ID: ${info.clientId}`)
   }
 
+  if (info.machine?.code) {
+    segments.push(`机器码: ${info.machine.code}`)
+  }
+
   if (info.browser?.name) {
     segments.push(`浏览器: ${info.browser.name}${info.browser.version ? ` ${info.browser.version}` : ''}`)
   }
@@ -1191,6 +1195,17 @@ const formatClientInfo = (info?: WebsocketClientInfo) => {
     segments.push(`时区: ${info.timeZone}`)
   }
 
+  if (info.device?.hardwareConcurrency || info.device?.memory) {
+    const parts: string[] = []
+    if (info.device?.hardwareConcurrency) {
+      parts.push(`${info.device.hardwareConcurrency} 核`)
+    }
+    if (info.device?.memory) {
+      parts.push(`${info.device.memory} GB`)
+    }
+    segments.push(`硬件: ${parts.join(' / ')}`)
+  }
+
   const locationFields = [info.location?.city, info.location?.region, info.location?.country].filter(Boolean)
   if (locationFields.length > 0) {
     segments.push(`位置: ${locationFields.join(' · ')}`)
@@ -1198,6 +1213,10 @@ const formatClientInfo = (info?: WebsocketClientInfo) => {
 
   if (info.location?.ip) {
     segments.push(`IP: ${info.location.ip}`)
+  }
+
+  if (info.location?.org) {
+    segments.push(`网络: ${info.location.org}`)
   }
 
   if (segments.length === 0) {
