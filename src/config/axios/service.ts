@@ -43,13 +43,22 @@ service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 是否需要设置 token
     let isToken = (config!.headers || {}).isToken === false
-    whiteList.some((v) => {
-      if (config.url && config.url.indexOf(v) > -1) {
-        return (isToken = false)
+    const isLoginEndpoint = config.url && config.url.indexOf('/auth/login') > -1
+    
+    // 登录接口特殊处理：如果有 token，也带上 token（后端会检查是否有效）
+    if (isLoginEndpoint && getAccessToken()) {
+      config.headers.Authorization = 'Bearer ' + getAccessToken()
+      console.log('登录接口：检测到已有 token，已添加到请求头（后端会检查是否有效）')
+    } else {
+      // 其他接口按原逻辑处理
+      whiteList.some((v) => {
+        if (config.url && config.url.indexOf(v) > -1) {
+          return (isToken = false)
+        }
+      })
+      if (getAccessToken() && !isToken) {
+        config.headers.Authorization = 'Bearer ' + getAccessToken() // 让每个请求携带自定义token
       }
-    })
-    if (getAccessToken() && !isToken) {
-      config.headers.Authorization = 'Bearer ' + getAccessToken() // 让每个请求携带自定义token
     }
     // 设置租户
     if (tenantEnable && tenantEnable === 'true') {
