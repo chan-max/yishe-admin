@@ -97,7 +97,7 @@
             <el-tag v-if="row.clientSource === 'yishe-extension'" type="success" size="small">
               浏览器插件
             </el-tag>
-            <el-tag v-else-if="row.clientSource" type="info" size="small">
+            <el-tag v-else-if="row.clientSource" type="success" size="small">
               {{ row.clientSource }}
             </el-tag>
             <span v-else>-</span>
