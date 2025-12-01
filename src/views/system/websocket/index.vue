@@ -81,10 +81,9 @@
         <span class="websocket-toolbar__hint">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
         <div class="websocket-toolbar__admin-status">
           <el-tag :type="adminWsStatusTag.type" size="small">
-            <Icon :icon="adminWsStatusTag.icon" class="mr-4px" />
             管理后台: {{ adminWsStatusTag.text }}
           </el-tag>
-          <span v-if="adminConnectionId" class="admin-connection-id">ID: {{ adminConnectionId.slice(0, 8) }}...</span>
+          <span v-if="adminConnectionId" class="admin-connection-id">ID: {{ adminConnectionId }}</span>
         </div>
       </div>
 
