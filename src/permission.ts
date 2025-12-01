@@ -87,6 +87,10 @@ router.beforeEach(async (to, from, next) => {
         const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect, query }
         next(nextData)
       } else {
+        // 用户已经登录，检查并启动 WebSocket 连接（如果还未连接）
+        // 只有在用户已登录且用户信息已设置的情况下才连接
+        const { startWebSocketConnection } = await import('@/stores/connectionStatus')
+        startWebSocketConnection()
         next()
       }
     }

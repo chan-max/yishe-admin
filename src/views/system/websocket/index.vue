@@ -79,6 +79,13 @@
         </el-button>
         <el-switch v-model="autoRefresh" active-text="自动刷新" />
         <span class="websocket-toolbar__hint">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
+        <div class="websocket-toolbar__admin-status">
+          <el-tag :type="adminWsStatusTag.type" size="small">
+            <Icon :icon="adminWsStatusTag.icon" class="mr-4px" />
+            管理后台: {{ adminWsStatusTag.text }}
+          </el-tag>
+          <span v-if="adminConnectionId" class="admin-connection-id">ID: {{ adminConnectionId.slice(0, 8) }}...</span>
+        </div>
       </div>
 
       <el-empty v-if="!loading && connections.length === 0" description="暂无连接" />
@@ -592,10 +599,32 @@ import type {
   ScheduledTask,
   SetTaskDTO
 } from '@/api/system/websocket'
+import { websocketClient } from '@/services/websocketClient'
 
 defineOptions({ name: 'SystemWebsocketConnections' })
 
 const message = useMessage()
+
+// 管理后台 WebSocket 连接状态
+const adminWsStatus = computed(() => websocketClient.state.status)
+const adminConnectionId = computed(() => websocketClient.state.connectionId)
+
+const adminWsStatusTag = computed(() => {
+  switch (adminWsStatus.value) {
+    case 'connected':
+      return { text: '已连接', type: 'success' as const, icon: 'ep:success-filled' }
+    case 'connecting':
+      return { text: '连接中', type: 'warning' as const, icon: 'ep:loading' }
+    case 'reconnecting':
+      return { text: '重连中', type: 'warning' as const, icon: 'ep:refresh' }
+    case 'error':
+      return { text: '连接异常', type: 'danger' as const, icon: 'ep:warning-filled' }
+    case 'disconnected':
+      return { text: '已断开', type: 'info' as const, icon: 'ep:close' }
+    default:
+      return { text: '未连接', type: 'info' as const, icon: 'ep:circle-close' }
+  }
+})
 
 const SCRAPER_COMMANDS = {
   pinterest: 'pinterest/scrape',
@@ -1733,6 +1762,19 @@ const stringifyData = (value: unknown) => {
 .websocket-toolbar__hint {
   color: var(--el-text-color-secondary);
   font-size: 13px;
+}
+
+.websocket-toolbar__admin-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.admin-connection-id {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  font-family: 'Monaco', 'Menlo', monospace;
 }
 
 .common-table {

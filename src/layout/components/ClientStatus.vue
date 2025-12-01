@@ -104,9 +104,12 @@ export default defineComponent({
       // 初始化时立即检查一次
       checkLocalStatus();
       
+      // 启动连接检查（包括 WebSocket 连接）
+      startConnectionChecks();
+      
       timers = {
         localTimer: window.setInterval(checkLocalStatus, 5000),
-        remoteTimer: window.setInterval(startConnectionChecks, 10000) // 远程服务使用 store 中的节流逻辑
+        remoteTimer: 0 // 远程连接状态通过 WebSocket 状态判断，不再需要定时器
       };
 
       // 先设置监听器，确保状态变化能被捕获

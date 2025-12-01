@@ -7,6 +7,7 @@ import { useGlobalWebsocket } from '@/common/websocket'
 import { useEventBus, useWebSocket } from '@vueuse/core'
 import { initOssClient } from '@/api/oss'
 import { ElNotification } from 'element-plus'
+import { websocketClient } from '@/services/websocketClient'
 
 const { wsCache } = useCache()
 
@@ -160,6 +161,16 @@ export const useUserStore = defineStore('admin-user', {
       wsCache.set(CACHE_KEY.USER, userInfo)
       wsCache.set(CACHE_KEY.ROLE_ROUTERS, userInfo.menus)
 
+      // 用户信息获取成功后，启动 WebSocket 连接
+      // 只有在成功获取用户信息后才建立连接
+      try {
+        const { startWebSocketConnection } = await import('@/stores/connectionStatus')
+        startWebSocketConnection()
+        console.log('✅ 用户信息获取成功，已启动 WebSocket 连接')
+      } catch (error) {
+        console.error('❌ 启动 WebSocket 连接失败:', error)
+      }
+
       // this.initWebsocket();
       // this.initOSS()
       console.log('setUserInfoAction', '初始化项目位置')
@@ -180,6 +191,9 @@ export const useUserStore = defineStore('admin-user', {
     },
     async loginOut() {
       try {
+        // 断开 WebSocket 连接
+        websocketClient.disconnect()
+        
         // 调用后端登出接口，清理当前设备的token
         await loginOut()
       } catch (error) {

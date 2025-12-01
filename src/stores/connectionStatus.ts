@@ -6,13 +6,17 @@
  * @FilePath: /design-server/Users/jackie/workspace/yishe-admin/src/stores/connectionStatus.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { websocketClient } from '@/services/websocketClient'
+import { getAccessToken } from '@/utils/auth'
 
 // 本地客户端连接状态
 export const isLocalConnected = ref(false)
 
-// 远程服务连接状态
-export const isRemoteConnected = ref(false)
+// 远程服务连接状态（通过 WebSocket 连接状态判断）
+export const isRemoteConnected = computed(() => {
+  return websocketClient.state.status === 'connected'
+})
 
 // 设计工具连接状态
 export const isDesignToolConnected = ref(false)
@@ -39,7 +43,6 @@ export const checkClientAuthorized = async () => {
 
 // 节流相关状态
 let lastLocalCheck = 0
-let lastRemoteCheck = 0
 const THROTTLE_DELAY = 5000 // 5秒节流
 
 // 节流函数
@@ -58,42 +61,39 @@ export const checkLocalConnection = async () => {
   lastLocalCheck = Date.now()
   
   try {
-    const response = await fetch('http://localhost:1519')
+    const response = await fetch('http://localhost:1519/api/health')
     isLocalConnected.value = response.ok
   } catch (error) {
     isLocalConnected.value = false
   }
 }
 
-// 检查远程服务连接（带节流）
-export const checkRemoteConnection = async () => {
-  // 检查是否需要节流
-  if (!throttle(lastRemoteCheck, THROTTLE_DELAY)) {
+// 启动 WebSocket 连接（仅在用户登录后调用）
+export const startWebSocketConnection = () => {
+  // 检查是否有 token
+  const token = getAccessToken()
+  if (!token) {
+    console.warn('[ws] 无 token，跳过 WebSocket 连接')
     return
   }
   
-  lastRemoteCheck = Date.now()
-  
-  try {
-    const response = await fetch('https://1s.design:1520/api/test')
-    isRemoteConnected.value = response.ok
-  } catch (error) {
-    isRemoteConnected.value = false
+  // 启动 WebSocket 连接（如果还未连接）
+  if (websocketClient.state.status === 'idle' || websocketClient.state.status === 'disconnected') {
+    console.log('[ws] 启动 WebSocket 连接...')
+    websocketClient.connect()
   }
 }
 
-// 启动所有连接检查
+// 启动所有连接检查（不包含 WebSocket，WebSocket 需要在用户登录后单独启动）
 export const startConnectionChecks = () => {
   // 初始化时立即检查一次
   checkLocalConnection()
-  checkRemoteConnection()
   
   const localTimer = window.setInterval(checkLocalConnection, 5000)
-  const remoteTimer = window.setInterval(checkRemoteConnection, 10000)
 
   return {
     localTimer,
-    remoteTimer
+    remoteTimer: 0 // 不再需要远程定时器，使用 WebSocket 状态
   }
 }
 
@@ -102,7 +102,5 @@ export const clearConnectionChecks = (timers: { localTimer: number, remoteTimer:
   if (timers.localTimer) {
     window.clearInterval(timers.localTimer)
   }
-  if (timers.remoteTimer) {
-    window.clearInterval(timers.remoteTimer)
-  }
+  // remoteTimer 不再需要清理
 } 
