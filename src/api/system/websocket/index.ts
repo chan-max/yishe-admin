@@ -1,5 +1,19 @@
 import request from '@/config/axios'
 
+export interface TokenUserInfo {
+  id?: number | string
+  account?: string
+  name?: string
+  nickname?: string
+  email?: string
+  phone?: string
+  companyId?: string | number | null
+  company?: {
+    id?: string | number
+    name?: string
+  } | null
+}
+
 export interface WebsocketClientInfo {
   clientId?: string
   machine?: {
@@ -47,6 +61,7 @@ export interface WebsocketClientInfo {
     fetchedAt?: string
     source?: string
   }
+  user?: TokenUserInfo | null
 }
 
 export interface WebsocketConnectionVO {
@@ -58,6 +73,11 @@ export interface WebsocketConnectionVO {
   query?: Record<string, string | string[]>
   clientInfo?: WebsocketClientInfo
   clientSource?: string
+  // 可选的用户信息，由服务端在解析 token 后附加
+  userId?: string | number
+  username?: string
+  nickname?: string
+  email?: string
 }
 
 export const getWebsocketConnections = () => {
@@ -128,5 +148,12 @@ export const removeScheduleTask = (clientId: string, command?: string) => {
 // 启用/禁用定时任务
 export const toggleScheduleTask = (data: ToggleTaskDTO) => {
   return request.post<{ success: boolean; message: string }>({ url: '/websocket/schedule/toggle', data })
+}
+
+export const getUserInfoByToken = (token: string) => {
+  return request.post<{ success: boolean; data: TokenUserInfo | null; message?: string }>({
+    url: '/websocket/token-user',
+    data: { token }
+  })
 }
 

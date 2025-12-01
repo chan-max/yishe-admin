@@ -596,11 +596,22 @@ import type {
   WebsocketConnectionVO,
   WebsocketClientInfo,
   ScheduledTask,
-  SetTaskDTO
+  SetTaskDTO,
+  TokenUserInfo
 } from '@/api/system/websocket'
 import { websocketClient } from '@/services/websocketClient'
 
 defineOptions({ name: 'SystemWebsocketConnections' })
+
+type WebsocketConnectionRow = WebsocketConnectionVO & {
+  __userLookupStatus?: 'idle' | 'loading' | 'success' | 'error'
+  __userLookupError?: string
+}
+
+interface TokenUserCacheEntry {
+  user: TokenUserInfo | null
+  error?: string
+}
 
 const message = useMessage()
 
@@ -630,17 +641,20 @@ const SCRAPER_COMMANDS = {
   sora: 'sora/scrape'
 } as const
 
-const connections = ref<WebsocketConnectionVO[]>([])
+const tokenUserCache = reactive<Record<string, TokenUserCacheEntry>>({})
+const tokenLookupInFlight = new Map<string, Promise<void>>()
+
+const connections = ref<WebsocketConnectionRow[]>([])
 const loading = ref(false)
 const autoRefresh = ref(false)
 const refreshTimer = ref<number | null>(null)
 const refreshInterval = 10_000
-const testCardCollapsed = ref(false)
+const testCardCollapsed = ref(true)
 
 // 发送消息对话框
 const sendMessageDialogVisible = ref(false)
 const sendMessageDialogLoading = ref(false)
-const currentConnection = ref<WebsocketConnectionVO | null>(null)
+const currentConnection = ref<WebsocketConnectionRow | null>(null)
 const messageContent = ref('')
 const messageEvent = ref('admin-message')
 
@@ -1085,7 +1099,7 @@ const functionGridOptions = ref<VxeGridProps<any>>({
 const gridRef = ref<VxeGridInstance>()
 const { height } = useWindowSize()
 
-const gridOptions = ref<VxeGridProps<WebsocketConnectionVO>>({
+const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
   ...commonGridOptions,
   maxHeight: null,
   rowConfig: {
@@ -1111,6 +1125,20 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionVO>>({
       width: 120,
       align: 'center',
       slots: { default: 'clientSource_default' }
+    },
+    {
+      field: 'user',
+      title: '用户信息',
+      minWidth: 220,
+      showOverflow: 'tooltip',
+      formatter: ({ row }) => formatUserFromConnection(row as WebsocketConnectionRow)
+    },
+    {
+      field: 'token',
+      title: 'Token',
+      minWidth: 260,
+      showOverflow: 'tooltip',
+      formatter: ({ row }) => extractTokenFromRow(row as WebsocketConnectionRow)
     },
     {
       field: 'connectedAt',
@@ -1252,6 +1280,202 @@ const formatClientInfo = (info?: WebsocketClientInfo) => {
   }
 
   return segments.join(' | ')
+}
+
+const pickTokenString = (value: unknown): string | null => {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const picked = pickTokenString(item)
+      if (picked) {
+        return picked
+      }
+    }
+    return null
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : null
+  }
+  return null
+}
+
+const getTokenFromRow = (row: WebsocketConnectionRow): string | null => {
+  if (!row) {
+    return null
+  }
+  const queryToken = pickTokenString(row.query?.token)
+  if (queryToken) {
+    return queryToken
+  }
+  const infoToken = pickTokenString((row.clientInfo as any)?.auth?.token)
+  if (infoToken) {
+    return infoToken
+  }
+  return null
+}
+
+const formatUserSummary = (user?: Partial<TokenUserInfo> & { username?: string }) => {
+  if (!user) {
+    return '-'
+  }
+
+  const parts: string[] = []
+  const displayName = user.name || user.nickname || user.account || user.username
+  if (displayName) {
+    parts.push(displayName)
+  }
+
+  if (user.id) {
+    parts.push(`ID: ${user.id}`)
+  }
+
+  if (user.email) {
+    parts.push(user.email)
+  }
+
+  if (user.company?.name) {
+    parts.push(`公司: ${user.company.name}`)
+  }
+
+  return parts.length ? parts.join(' | ') : '-'
+}
+
+const refreshConnectionsView = () => {
+  connections.value = connections.value.map((item) => item)
+}
+
+const formatUserFromConnection = (row: WebsocketConnectionRow) => {
+  if (row.__userLookupStatus === 'loading') {
+    return '查询中...'
+  }
+
+  if (row.__userLookupStatus === 'error') {
+    return row.__userLookupError || '查询失败'
+  }
+
+  const info: any = row.clientInfo || {}
+  const user = info.user || {
+    id: row.userId,
+    account: row.username,
+    nickname: row.nickname,
+    email: row.email
+  }
+
+  return formatUserSummary(user)
+}
+
+const extractTokenFromRow = (row: WebsocketConnectionRow) => {
+  return getTokenFromRow(row) ?? '-'
+}
+
+const applyCachedUserInfo = (rows: WebsocketConnectionRow[]) => {
+  rows.forEach((row) => {
+    const token = getTokenFromRow(row)
+    if (!token) {
+      row.__userLookupStatus = undefined
+      row.__userLookupError = undefined
+      return
+    }
+
+    const cacheEntry = tokenUserCache[token]
+    if (cacheEntry) {
+      if (cacheEntry.user) {
+        row.clientInfo = {
+          ...(row.clientInfo || {}),
+          user: cacheEntry.user
+        } as WebsocketClientInfo
+        row.__userLookupStatus = 'success'
+        row.__userLookupError = undefined
+      } else {
+        row.__userLookupStatus = 'error'
+        row.__userLookupError = cacheEntry.error || '未找到对应的用户'
+      }
+    } else if ((row.clientInfo as any)?.user) {
+      row.__userLookupStatus = 'success'
+      row.__userLookupError = undefined
+    } else {
+      row.__userLookupStatus = undefined
+      row.__userLookupError = undefined
+    }
+  })
+  refreshConnectionsView()
+}
+
+const markRowsLoadingByToken = (token: string) => {
+  connections.value.forEach((row) => {
+    if (getTokenFromRow(row) === token) {
+      row.__userLookupStatus = 'loading'
+      row.__userLookupError = undefined
+    }
+  })
+  refreshConnectionsView()
+}
+
+const applyLookupResultToRows = (token: string, user: TokenUserInfo | null, errorMessage?: string) => {
+  connections.value.forEach((row) => {
+    if (getTokenFromRow(row) !== token) {
+      return
+    }
+    if (user) {
+      row.clientInfo = {
+        ...(row.clientInfo || {}),
+        user
+      } as WebsocketClientInfo
+      row.__userLookupStatus = 'success'
+      row.__userLookupError = undefined
+    } else {
+      row.__userLookupStatus = 'error'
+      row.__userLookupError = errorMessage || '未找到对应的用户'
+    }
+  })
+  refreshConnectionsView()
+}
+
+const fetchUserInfoForToken = async (token: string) => {
+  markRowsLoadingByToken(token)
+  try {
+    const response = await WebsocketApi.getUserInfoByToken(token)
+    if (response.success && response.data) {
+      tokenUserCache[token] = { user: response.data }
+      applyLookupResultToRows(token, response.data)
+    } else {
+      const errorMessage = response.message || '未找到对应的用户'
+      tokenUserCache[token] = { user: null, error: errorMessage }
+      applyLookupResultToRows(token, null, errorMessage)
+    }
+  } catch (error: any) {
+    const errorMessage = error?.response?.data?.message || error?.message || '查询用户信息失败'
+    tokenUserCache[token] = { user: null, error: errorMessage }
+    applyLookupResultToRows(token, null, errorMessage)
+  }
+}
+
+const ensureUserInfoForTokens = (rows: WebsocketConnectionRow[]) => {
+  const tokens = Array.from(
+    new Set(
+      rows
+        .map((row) => getTokenFromRow(row))
+        .filter((token): token is string => Boolean(token))
+    )
+  )
+
+  tokens.forEach((token) => {
+    const hasUserInfo = rows.some((row) => getTokenFromRow(row) === token && (row.clientInfo as any)?.user)
+    if (hasUserInfo) {
+      return
+    }
+    if (tokenUserCache[token]) {
+      applyCachedUserInfo(rows)
+      return
+    }
+    if (tokenLookupInFlight.has(token)) {
+      return
+    }
+    const task = fetchUserInfoForToken(token).finally(() => {
+      tokenLookupInFlight.delete(token)
+    })
+    tokenLookupInFlight.set(token, task)
+  })
 }
 
 const getDefaultWsUrl = () => {
@@ -1445,7 +1669,14 @@ const clearTimer = () => {
 const fetchConnections = async () => {
   loading.value = true
   try {
-    connections.value = await WebsocketApi.getWebsocketConnections()
+    const list = await WebsocketApi.getWebsocketConnections()
+    connections.value = list.map((item) => ({
+      ...item,
+      __userLookupStatus: undefined,
+      __userLookupError: undefined
+    }))
+    applyCachedUserInfo(connections.value)
+    ensureUserInfoForTokens(connections.value)
   } catch (error: any) {
     message.error(error?.message ?? '获取 WebSocket 连接失败')
   } finally {
@@ -1453,7 +1684,7 @@ const fetchConnections = async () => {
   }
 }
 
-const handleOperationCommand = (command: string, row: WebsocketConnectionVO) => {
+const handleOperationCommand = (command: string, row: WebsocketConnectionRow) => {
   if (command === 'send-message') {
     handleSendMessage(row)
   } else if (command === 'control') {
@@ -1461,14 +1692,14 @@ const handleOperationCommand = (command: string, row: WebsocketConnectionVO) => 
   }
 }
 
-const handleControl = async (row: WebsocketConnectionVO) => {
+const handleControl = async (row: WebsocketConnectionRow) => {
   currentConnection.value = row
   controlDialogVisible.value = true
   // 加载定时任务信息
   await loadFunctionSchedule()
 }
 
-const handleSendMessage = (row: WebsocketConnectionVO) => {
+const handleSendMessage = (row: WebsocketConnectionRow) => {
   currentConnection.value = row
   messageContent.value = ''
   messageEvent.value = 'admin-message'
