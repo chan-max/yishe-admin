@@ -15,14 +15,10 @@ import {
   isDesignToolConnected,
   startConnectionChecks,
   clearConnectionChecks,
-  setDesignToolConnected,
-  isClientAuthorized,
-  checkClientAuthorized
+  setDesignToolConnected
 } from '@/stores/connectionStatus'
 import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { ElMessage } from 'element-plus'
-import { saveTokenToClient } from '@/api/user'
-import { getAccessToken } from '@/utils/auth'
 import { useUserStore } from '@/store/modules/user'
 
 export default defineComponent({
@@ -87,24 +83,8 @@ export default defineComponent({
       }, 2000)
     }
 
-    // 客户端授权逻辑
-    const handleClientAuth = async () => {
-      const token = getAccessToken();
-      if (!token) {
-        ElMessage.error('未获取到 token');
-        return;
-      }
-      try {
-        await saveTokenToClient(token);
-        ElMessage.success('客户端授权成功');
-        checkClientAuthorized();
-      } catch (e) {
-        ElMessage.error('客户端授权失败');
-      }
-    }
-
-    // 新的本地客户端连接和授权检测（带节流）
-    const checkLocalAndAuthStatus = async () => {
+    // 本地客户端连接检测（带节流）
+    const checkLocalStatus = async () => {
       // 检查是否需要节流
       if (!throttle(lastLocalCheck.value, THROTTLE_DELAY)) {
         return
@@ -114,54 +94,18 @@ export default defineComponent({
       
       try {
         const res = await fetch('http://localhost:1519/api/health');
-        const wasConnected = isLocalConnected.value;
         isLocalConnected.value = res.ok;
-        
-        if (res.ok) {
-          const data = await res.json();
-          const wasAuthorized = isClientAuthorized.value;
-          isClientAuthorized.value = !!data.isAuthorized;
-          
-          // 如果客户端刚启动且未授权，自动进行授权
-          if (wasConnected === false && isLocalConnected.value === true && !isClientAuthorized.value) {
-            console.log('检测到客户端启动，自动进行授权');
-            await handleAutoAuth();
-          }
-        } else {
-          isClientAuthorized.value = false;
-        }
       } catch {
         isLocalConnected.value = false;
-        isClientAuthorized.value = false;
-      }
-    }
-
-    // 自动授权逻辑
-    const handleAutoAuth = async () => {
-      const token = getAccessToken();
-      if (!token) {
-        console.warn('未获取到 token，无法自动授权');
-        return;
-      }
-      
-      try {
-        console.log('开始自动授权...');
-        await saveTokenToClient(token);
-        console.log('自动授权成功');
-        isClientAuthorized.value = true;
-        ElMessage.success('客户端自动授权成功');
-      } catch (error) {
-        console.error('自动授权失败:', error);
-        ElMessage.error('客户端自动授权失败');
       }
     }
 
     onMounted(() => {
       // 初始化时立即检查一次
-      checkLocalAndAuthStatus();
+      checkLocalStatus();
       
       timers = {
-        localTimer: window.setInterval(checkLocalAndAuthStatus, 5000),
+        localTimer: window.setInterval(checkLocalStatus, 5000),
         remoteTimer: window.setInterval(startConnectionChecks, 10000) // 远程服务使用 store 中的节流逻辑
       };
 
@@ -201,9 +145,7 @@ export default defineComponent({
           </a>
         ) */}
         {/* 本地客户端状态 */}
-        {/*
         <ElTooltip
-                 v-if="false"
           content={isLocalConnected.value ? '本地客户端已启动' : '点击启动客户端'}
           placement="bottom"
         >
@@ -232,69 +174,6 @@ export default defineComponent({
             </span>
           </div>
         </ElTooltip>
-        */}
-                {/* 
-                <ElTooltip
-                         v-if="false"
-          content={
-            isClientAuthorized.value 
-              ? '客户端已授权' 
-              : isLocalConnected.value 
-                ? '点击进行手动授权' 
-                : '客户端未启动，无法授权'
-          }
-          placement="bottom"
-        >
-          <div 
-            class="custom-hover flex items-center gap-1" 
-            style={{
-              cursor: isClientAuthorized.value 
-                ? 'default' 
-                : isLocalConnected.value 
-                  ? 'pointer' 
-                  : 'not-allowed'
-            }} 
-            onClick={() => { 
-              if (!isClientAuthorized.value && isLocalConnected.value) {
-                handleClientAuth();
-              }
-            }}
-          >
-            <div
-              class="w-2 h-2 rounded-full mr-1"
-              style={{
-                backgroundColor: isClientAuthorized.value 
-                  ? '#67C23A' 
-                  : isLocalConnected.value 
-                    ? '#E6A23C' 
-                    : '#F56C6C',
-                boxShadow: isClientAuthorized.value 
-                  ? '0 0 8px rgba(103, 194, 58, 0.5)' 
-                  : isLocalConnected.value 
-                    ? '0 0 8px rgba(230, 162, 60, 0.5)' 
-                    : '0 0 8px rgba(245, 108, 108, 0.5)'
-              }}
-            />
-            <span 
-              class="text-[10px] font-bold" 
-              style={{ 
-                color: isClientAuthorized.value 
-                  ? '#67C23A' 
-                  : isLocalConnected.value 
-                    ? '#E6A23C' 
-                    : '#F56C6C' 
-              }}
-            >
-              {isClientAuthorized.value 
-                ? '客户端已授权' 
-                : isLocalConnected.value 
-                  ? '客户端未授权' 
-                  : '客户端未启动'
-              }
-            </span>
-          </div>
-        </ElTooltip>
-*/}
         {/* 远程服务状态 - 仅管理员可见 */}
         {isAdmin.value && (
           <ElTooltip
