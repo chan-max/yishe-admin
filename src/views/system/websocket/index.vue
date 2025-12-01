@@ -607,7 +607,7 @@ const loading = ref(false)
 const autoRefresh = ref(false)
 const refreshTimer = ref<number | null>(null)
 const refreshInterval = 10_000
-const testCardCollapsed = ref(true)
+const testCardCollapsed = ref(false)
 
 // 发送消息对话框
 const sendMessageDialogVisible = ref(false)
