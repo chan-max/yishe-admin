@@ -326,14 +326,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
-        path: 'index',
-        component: () => import('@/views/product/index/index.vue'),
-        name: 'ProductIndex',
-        meta: {
-          title: '商品',
-        }
-      },
-      {
         path: 'psd-set',
         component: () => import('@/views/material/psdSet/index.vue'),
         name: 'PsdSet',
@@ -343,6 +335,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noTagsView: false,
           title: '套图',
           requiresAdmin: true
+        }
+      },
+      {
+        path: 'index',
+        component: () => import('@/views/product/index/index.vue'),
+        name: 'ProductIndex',
+        meta: {
+          title: '商品',
         }
       },
     ]

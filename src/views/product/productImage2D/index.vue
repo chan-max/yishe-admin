@@ -360,10 +360,6 @@
             <span v-if="row.keywords" class="keywords-text">{{ row.keywords }}</span>
           </div>
         </template>
-        <template #isPublicSlot="{ row }">
-          <span v-if="row.isPublic" class="is-public-tag">是</span>
-          <span v-else class="not-public-tag">否</span>
-        </template>
         <template #materialIdSlot="{ row }">
           <div class="flex items-center justify-center">
             <el-button 
@@ -467,13 +463,6 @@
                 >
                   {{ generatingProductId === row.id ? '生成中...' : '生成产品' }}
                 </el-dropdown-item>
-                <el-dropdown-item divided command="mark-pending" class="text-orange-500">标记为待发布</el-dropdown-item>
-                <el-dropdown-item command="mark-published" class="text-green-500">标记为已发布</el-dropdown-item>
-                <el-dropdown-item command="mark-draft" class="text-blue-500">标记为草稿</el-dropdown-item>
-                <el-dropdown-item command="mark-archived" class="text-gray-500">标记为已归档</el-dropdown-item>
-                <el-dropdown-item divided command="toggle-public" class="text-blue-500">
-                  {{ row.isPublic ? '取消发布' : '发布' }}
-                </el-dropdown-item>
                 <!-- 前台展示相关操作已注释 -->
                 <!-- <el-dropdown-item command="copy-link" class="text-purple-500">复制线上链接</el-dropdown-item> -->
                 <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
@@ -535,8 +524,6 @@ const gridOptions = ref<any>({
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
     { title: '产品描述', field: 'description', width: 200, slots: { default: 'descriptionSlot' } },
     { title: '关键词', field: 'keywords', width: 150, slots: { default: 'keywordsSlot' } },
-    // 发布状态列已移除
-    { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
     { title: '素材详情', field: 'materialId', width: 120, slots: { default: 'materialIdSlot' } },
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
@@ -802,7 +789,6 @@ function handleOperationCommand(command: string, row: any) {
     case 'delete':
       handleDelete(row)
       break
-    // 发布状态相关操作已移除
     default:
       console.warn('未知的操作命令:', command)
   }
@@ -820,52 +806,6 @@ function handleOperationCommand(command: string, row: any) {
 //   queryParams.currentPage = 1
 //   getList()
 // }
-
-// 获取状态标签类型
-function getStatusTagType(status: string) {
-  switch (status) {
-    case 'draft':
-      return 'info'
-    case 'pending_social_media':
-      return 'warning'
-    case 'published_social_media':
-      return 'success'
-    case 'archived':
-      return 'danger'
-    default:
-      return 'primary'
-  }
-}
-
-// 更新状态（发布状态相关功能已移除）
-// async function updateStatus(id: string, status: string) {
-//   try {
-//     await request.post({ 
-//       url: '/product-image-2d/update-status', 
-//       data: { id, publishStatus: status } 
-//     })
-//     ElMessage.success('状态更新成功')
-//     getList()
-//   } catch (e) {
-//     console.error('更新状态失败:', e)
-//     ElMessage.error('状态更新失败')
-//   }
-// }
-
-// 切换发布状态
-async function togglePublic(row: any) {
-  try {
-    await request.post({ 
-      url: '/product-image-2d/update-status', 
-      data: { id: row.id, isPublic: !row.isPublic } 
-    })
-    ElMessage.success(row.isPublic ? '已取消发布' : '已发布')
-    getList()
-  } catch (e) {
-    console.error('更新发布状态失败:', e)
-    ElMessage.error('更新发布状态失败')
-  }
-}
 
 async function handleDelete(row: any) {
   if (!row?.id) return
