@@ -457,15 +457,7 @@
                   :label="category.label"
                   :value="category.value"
                 >
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <img
-                      :src="getCategoryImage(category)"
-                      :alt="category.label"
-                      style="width: 28px; height: 28px; object-fit: cover; border-radius: 4px; flex-shrink: 0;"
-                      @error="handleImageError"
-                    />
-                    <span>{{ category.label }}</span>
-                  </div>
+                  <span>{{ category.label }}</span>
                 </el-option>
               </el-select>
             </el-form-item>
