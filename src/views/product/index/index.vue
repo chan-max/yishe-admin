@@ -3350,14 +3350,15 @@ async function handleUpdatePublishStatus(row: any, status: string) {
 // 紧凑型操作菜单
 .operation-menu-compact {
   min-width: 140px !important;
-  padding: 2px 0 !important;
+  padding: 4px 0 !important;
   
   .el-dropdown-menu__item {
-    padding: 6px 12px !important;
+    padding: 4px 10px !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.3 !important;
     height: auto !important;
-    min-height: 28px !important;
+    min-height: 24px !important;
+    margin: 0 !important;
     
     .el-icon {
       font-size: 13px !important;
@@ -3378,7 +3379,7 @@ async function handleUpdatePublishStatus(row: any, status: string) {
   .el-dropdown-menu__item--divided {
     margin-top: 2px !important;
     border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 6px !important;
+    padding-top: 4px !important;
   }
 }
 
