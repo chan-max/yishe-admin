@@ -32,16 +32,6 @@ export default defineComponent({
     // 判断是否为管理员
     const isAdmin = computed(() => userStore.user?.isAdmin || false)
     
-    // 节流相关状态（仅用于本地客户端状态检测）
-    const lastLocalCheck = ref(0)
-    const THROTTLE_DELAY = 5000 // 5秒节流
-    
-    // 节流函数
-    const throttle = (lastCheck: number, delay: number) => {
-      const now = Date.now()
-      return now - lastCheck >= delay
-    }
-    
     // 获取设计工具通信实例
     const designToolMessenger = getDesignToolMessenger()
     
@@ -83,32 +73,12 @@ export default defineComponent({
       }, 2000)
     }
 
-    // 本地客户端连接检测（带节流）
-    const checkLocalStatus = async () => {
-      // 检查是否需要节流
-      if (!throttle(lastLocalCheck.value, THROTTLE_DELAY)) {
-        return
-      }
-      
-      lastLocalCheck.value = Date.now()
-      
-      try {
-        const res = await fetch('http://localhost:1519/api/health');
-        isLocalConnected.value = res.ok;
-      } catch {
-        isLocalConnected.value = false;
-      }
-    }
-
     onMounted(() => {
-      // 初始化时立即检查一次
-      checkLocalStatus();
-      
-      // 启动连接检查（包括 WebSocket 连接）
+      // 启动连接检查（本地客户端连接状态通过 WebSocket 更新，不再需要 HTTP health check）
       startConnectionChecks();
       
       timers = {
-        localTimer: window.setInterval(checkLocalStatus, 5000),
+        localTimer: 0, // 本地连接状态通过 WebSocket 更新，不再需要定时器
         remoteTimer: 0 // 远程连接状态通过 WebSocket 状态判断，不再需要定时器
       };
 

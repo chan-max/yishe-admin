@@ -41,32 +41,7 @@ export const checkClientAuthorized = async () => {
   }
 }
 
-// 节流相关状态
-let lastLocalCheck = 0
-const THROTTLE_DELAY = 5000 // 5秒节流
-
-// 节流函数
-const throttle = (lastCheck: number, delay: number) => {
-  const now = Date.now()
-  return now - lastCheck >= delay
-}
-
-// 检查本地客户端连接（带节流）
-export const checkLocalConnection = async () => {
-  // 检查是否需要节流
-  if (!throttle(lastLocalCheck, THROTTLE_DELAY)) {
-    return
-  }
-  
-  lastLocalCheck = Date.now()
-  
-  try {
-    const response = await fetch('http://localhost:1519/api/health')
-    isLocalConnected.value = response.ok
-  } catch (error) {
-    isLocalConnected.value = false
-  }
-}
+// 本地客户端连接状态通过 WebSocket 更新，不再使用 HTTP health check
 
 // 启动 WebSocket 连接（仅在用户登录后调用）
 export const startWebSocketConnection = () => {
@@ -85,22 +60,16 @@ export const startWebSocketConnection = () => {
 }
 
 // 启动所有连接检查（不包含 WebSocket，WebSocket 需要在用户登录后单独启动）
+// 本地客户端连接状态通过 WebSocket 更新，不再需要定时器
 export const startConnectionChecks = () => {
-  // 初始化时立即检查一次
-  checkLocalConnection()
-  
-  const localTimer = window.setInterval(checkLocalConnection, 5000)
-
+  // 本地连接状态通过 WebSocket 更新，不再需要 HTTP health check
   return {
-    localTimer,
+    localTimer: 0, // 不再需要本地定时器
     remoteTimer: 0 // 不再需要远程定时器，使用 WebSocket 状态
   }
 }
 
 // 清理所有定时器
 export const clearConnectionChecks = (timers: { localTimer: number, remoteTimer: number }) => {
-  if (timers.localTimer) {
-    window.clearInterval(timers.localTimer)
-  }
-  // remoteTimer 不再需要清理
+  // 不再需要清理定时器，所有状态通过 WebSocket 更新
 } 

@@ -54,51 +54,51 @@ export const getTaskList = (params: {
   limit?: number
   offset?: number
 }) => {
-  return request.get({ url: `/queue/messages/${params.queue}`, params })
+  return request.get({ url: `/queue/messages`, params })
 }
 
 // 获取任务详情
 export const getTaskDetail = (queue: string, messageId: string) => {
-  return request.get({ url: `/queue/message/${queue}/${messageId}` })
+  return request.get({ url: `/queue/message`, params: { queue, messageId } })
 }
 
 // 删除任务
 export const deleteTask = (queue: string, messageId: string) => {
-  return request.delete({ url: `/queue/message/${queue}/${messageId}` })
+  return request.delete({ url: `/queue/message`, params: { queue, messageId } })
 }
 
 // 获取队列统计信息
 export const getQueueStats = (queue: string) => {
-  return request.get({ url: `/queue/stats/${queue}` })
+  return request.get({ url: `/queue/stats`, params: { queue } })
 }
 
 // 确认任务成功（ACK）
 export const ackTask = (queue: string, messageId: string) => {
-  return request.post({ url: `/queue/ack/${queue}`, data: { messageId } })
+  return request.post({ url: `/queue/ack`, data: { queue, messageId } })
 }
 
 // 确认任务失败（NACK）
 export const nackTask = (queue: string, messageId: string, error?: string, requeue?: boolean) => {
-  return request.post({ url: `/queue/nack/${queue}`, data: { messageId, error, requeue } })
+  return request.post({ url: `/queue/nack`, data: { queue, messageId, error, requeue } })
 }
 
 // 重新入队失败的任务
 export const requeueTask = (queue: string, messageId: string) => {
-  return request.post({ url: `/queue/requeue/${queue}/${messageId}` })
+  return request.post({ url: `/queue/requeue`, data: { queue, messageId } })
 }
 
 // 更新任务元数据
 export const updateTaskMetadata = (queue: string, messageId: string, metadata: Record<string, any>) => {
-  return request.post({ url: `/queue/message/${queue}/${messageId}/metadata`, data: { metadata } })
+  return request.post({ url: `/queue/message/metadata`, data: { queue, messageId, metadata } })
 }
 
 // 清空队列
 export const clearQueue = (queue: string) => {
-  return request.delete({ url: `/queue/clear/${queue}` })
+  return request.delete({ url: `/queue/clear`, params: { queue } })
 }
 
 // 获取失败任务列表
 export const getFailedTasks = (queue: string, limit?: number) => {
-  return request.get({ url: `/queue/failed/${queue}`, params: { limit } })
+  return request.get({ url: `/queue/failed`, params: { queue, limit } })
 }
 

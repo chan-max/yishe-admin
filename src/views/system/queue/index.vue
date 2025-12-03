@@ -27,12 +27,35 @@
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
       <el-button
+        v-if="hasProcessingTasks"
+        type="success"
+        @click="handleBatchAck"
+        :disabled="!selectedProcessingIds.length"
+      >
+        批量确认完成
+      </el-button>
+      <el-button
+        v-if="hasProcessingTasks"
+        type="warning"
+        @click="handleBatchNack"
+        :disabled="!selectedProcessingIds.length"
+      >
+        批量标记失败
+      </el-button>
+      <el-button
         type="danger"
         :icon="Delete"
         @click="handleDelete(null)"
         :disabled="!ids.length"
       >
         批量删除
+      </el-button>
+      <el-button
+        type="danger"
+        @click="handleClearQueue"
+        :disabled="!queryParams.queue"
+      >
+        清空队列
       </el-button>
       <el-button type="warning" :icon="Refresh" @click="refreshStats"> 刷新统计 </el-button>
     </div>
@@ -126,6 +149,14 @@
               @click="handleNack(row)"
             >
               标记失败
+            </el-button>
+            <el-button 
+              type="info" 
+              link 
+              size="small" 
+              @click="handleUpdateMetadata(row)"
+            >
+              更新元数据
             </el-button>
             <el-button 
               type="primary" 
@@ -286,7 +317,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, watchEffect, onMounted } from 'vue'
+import { ref, reactive, watchEffect, onMounted, computed } from 'vue'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { useWindowSize } from '@vueuse/core'
@@ -305,6 +336,8 @@ import {
   ackTask,
   nackTask,
   requeueTask,
+  clearQueue,
+  updateTaskMetadata,
   type QueueMessage,
   type QueueStats,
 } from '@/api/system/queue'
@@ -427,6 +460,19 @@ const dataSource = ref<QueueMessage[]>([])
 const loading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
+
+// 计算属性：选中的处理中任务
+const selectedProcessingIds = computed(() => {
+  return ids.value.filter(id => {
+    const task = dataSource.value.find(t => t.id === id)
+    return task && task.status === 'processing'
+  })
+})
+
+// 计算属性：是否有处理中的任务
+const hasProcessingTasks = computed(() => {
+  return dataSource.value.some(task => task.status === 'processing')
+})
 
 // 对话框相关
 const dialogVisible = ref(false)
@@ -602,14 +648,17 @@ async function handleAck(row: QueueMessage) {
       type: 'info',
     })
     
+    loading.value = true
     await ackTask(row.queue, row.id)
     ElMessage.success('任务已确认完成')
-    getList()
-    refreshStats()
-  } catch (error) {
+    await getList()
+    await refreshStats()
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error(error?.message || '操作失败')
     }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -623,14 +672,124 @@ async function handleNack(row: QueueMessage) {
       inputPlaceholder: '请输入失败原因',
     })
     
+    loading.value = true
     await nackTask(row.queue, row.id, error || undefined, false)
     ElMessage.success('任务已标记为失败')
-    getList()
-    refreshStats()
-  } catch (error) {
+    await getList()
+    await refreshStats()
+  } catch (error: any) {
     if (error !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error(error?.message || '操作失败')
     }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 批量确认完成
+async function handleBatchAck() {
+  if (selectedProcessingIds.value.length === 0) {
+    ElMessage.warning('请先选择要确认完成的任务')
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确认批量完成 ${selectedProcessingIds.value.length} 个任务？`,
+      '批量确认完成',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'info',
+      }
+    )
+    
+    loading.value = true
+    let successCount = 0
+    let failCount = 0
+    
+    for (const id of selectedProcessingIds.value) {
+      const task = dataSource.value.find(t => t.id === id)
+      if (task && task.status === 'processing') {
+        try {
+          await ackTask(task.queue, task.id)
+          successCount++
+        } catch (error) {
+          failCount++
+          console.error(`任务 ${task.id} 确认失败:`, error)
+        }
+      }
+    }
+    
+    if (successCount > 0) {
+      ElMessage.success(`成功确认完成 ${successCount} 个任务${failCount > 0 ? `，${failCount} 个失败` : ''}`)
+    } else {
+      ElMessage.error('批量确认失败')
+    }
+    
+    await getList()
+    await refreshStats()
+    ids.value = []
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '操作失败')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 批量标记失败
+async function handleBatchNack() {
+  if (selectedProcessingIds.value.length === 0) {
+    ElMessage.warning('请先选择要标记失败的任务')
+    return
+  }
+  
+  try {
+    const { value: error } = await ElMessageBox.prompt(
+      `确认批量标记 ${selectedProcessingIds.value.length} 个任务为失败？`,
+      '批量标记失败',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        inputType: 'textarea',
+        inputPlaceholder: '请输入失败原因（可选，将应用于所有任务）',
+      }
+    )
+    
+    loading.value = true
+    let successCount = 0
+    let failCount = 0
+    
+    for (const id of selectedProcessingIds.value) {
+      const task = dataSource.value.find(t => t.id === id)
+      if (task && task.status === 'processing') {
+        try {
+          await nackTask(task.queue, task.id, error || undefined, false)
+          successCount++
+        } catch (error) {
+          failCount++
+          console.error(`任务 ${task.id} 标记失败:`, error)
+        }
+      }
+    }
+    
+    if (successCount > 0) {
+      ElMessage.success(`成功标记 ${successCount} 个任务为失败${failCount > 0 ? `，${failCount} 个失败` : ''}`)
+    } else {
+      ElMessage.error('批量标记失败')
+    }
+    
+    await getList()
+    await refreshStats()
+    ids.value = []
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '操作失败')
+    }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -756,6 +915,75 @@ function resetForm() {
     maxAttempts: 3,
   })
   formRef.value?.clearValidate()
+}
+
+// 清空队列
+async function handleClearQueue() {
+  if (!queryParams.queue) {
+    ElMessage.warning('请先输入队列名称')
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确认清空队列 "${queryParams.queue}" 的所有任务？此操作不可恢复！`,
+      '清空队列',
+      {
+        confirmButtonText: '确认清空',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: false,
+      }
+    )
+    
+    loading.value = true
+    await clearQueue(queryParams.queue)
+    ElMessage.success('队列已清空')
+    await getList()
+    await refreshStats()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '清空队列失败')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 更新元数据
+async function handleUpdateMetadata(row: QueueMessage) {
+  try {
+    const { value: metadataStr } = await ElMessageBox.prompt(
+      '请输入要更新的元数据（JSON格式）',
+      '更新元数据',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        inputType: 'textarea',
+        inputPlaceholder: '{"key": "value"}',
+        inputValue: JSON.stringify(row.metadata || {}, null, 2),
+      }
+    )
+    
+    let metadata: Record<string, any>
+    try {
+      metadata = JSON.parse(metadataStr)
+    } catch (e) {
+      ElMessage.error('请输入有效的JSON格式')
+      return
+    }
+    
+    loading.value = true
+    await updateTaskMetadata(row.queue, row.id, metadata)
+    ElMessage.success('元数据已更新')
+    await getList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '更新元数据失败')
+    }
+  } finally {
+    loading.value = false
+  }
 }
 
 // 初始化
