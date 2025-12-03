@@ -414,6 +414,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '操作日志',
         }
       },
+      {
+        path: 'queue',
+        component: () => import('@/views/system/queue/index.vue'),
+        name: 'SystemQueue',
+        meta: {
+          title: '任务队列',
+        }
+      },
     ]
   }
 
