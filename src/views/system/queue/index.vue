@@ -1138,35 +1138,8 @@ watch(() => queryParams.queue, (newQueue) => {
 
 // 初始化
 onMounted(() => {
-  console.log('页面初始化，开始检查队列名称...')
-  
-  // 1. 优先从路由 query 参数获取队列名称
-  const routeQueue = route.query.queue as string
-  console.log('路由参数 queue:', routeQueue)
-  
-  // 2. 如果没有，从 URL search 参数获取
-  const urlParams = new URLSearchParams(window.location.search)
-  const urlQueue = urlParams.get('queue')
-  console.log('URL 参数 queue:', urlQueue)
-  
-  // 3. 如果没有，从 localStorage 获取（保存用户上次查询的队列）
-  const savedQueue = localStorage.getItem('queue_last_query') || ''
-  console.log('localStorage 保存的 queue:', savedQueue)
-  
-  const queueName = (routeQueue || urlQueue || savedQueue)?.trim()
-  
-  if (queueName) {
-    console.log('找到队列名称，设置为:', queueName)
-    queryParams.queue = queueName
-    // 延迟执行，确保 DOM 已渲染和响应式更新完成
-    setTimeout(() => {
-      console.log('开始调用接口，队列名称:', queryParams.queue)
-      getList()
-      refreshStats()
-    }, 200)
-  } else {
-    console.log('未找到队列名称，等待用户输入')
-  }
+  getList()
+  refreshStats()
 })
 </script>
 
