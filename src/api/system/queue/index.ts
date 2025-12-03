@@ -49,12 +49,17 @@ export const createTaskBatch = (data: { queue: string; tasks: Array<{ type: stri
 
 // 获取任务列表（根据状态分页查询）
 export const getTaskList = (params: {
-  queue: string
+  queue?: string  // 队列名称（可选，不传则查询所有队列）
   status?: 'pending' | 'processing' | 'completed' | 'failed'
   limit?: number
   offset?: number
 }) => {
-  return request.get({ url: `/queue/messages`, params })
+  // 如果 queue 为空字符串，不传该参数
+  const queryParams: any = { ...params }
+  if (!queryParams.queue || !queryParams.queue.trim()) {
+    delete queryParams.queue
+  }
+  return request.get({ url: `/queue/messages`, params: queryParams })
 }
 
 // 获取任务详情
@@ -68,8 +73,13 @@ export const deleteTask = (queue: string, messageId: string) => {
 }
 
 // 获取队列统计信息
-export const getQueueStats = (queue: string) => {
-  return request.get({ url: `/queue/stats`, params: { queue } })
+export const getQueueStats = (queue?: string) => {
+  // 如果 queue 为空字符串，不传该参数（查询所有队列的统计）
+  const params: any = {}
+  if (queue && queue.trim()) {
+    params.queue = queue.trim()
+  }
+  return request.get({ url: `/queue/stats`, params })
 }
 
 // 确认任务成功（ACK）

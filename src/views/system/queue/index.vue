@@ -5,9 +5,11 @@
       <form-item label="队列名称">
         <el-input 
           v-model="queryParams.queue" 
-          placeholder="请输入队列名称" 
+          placeholder="留空则查询所有队列" 
           style="width: 160px" 
           clearable 
+          @keyup.enter="getList"
+          @clear="handleQueueClear"
         />
       </form-item>
       <form-item label="任务状态">
@@ -317,9 +319,9 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, watchEffect, onMounted, computed } from 'vue'
+import { ref, reactive, watchEffect, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { commonGridOptions } from '@/common/table'
-import { formatTimestamp } from '@/common/date'
 import { useWindowSize } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -344,17 +346,20 @@ import {
 import Pagination from '@/components/Pagination/index.vue'
 import FormItem from '@/components/Erp/formItem.vue'
 
+// 获取路由信息
+const route = useRoute()
+
 // 查询条件
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  queue: 'default',
+  queue: '', // 默认为空，需要用户输入
   status: undefined as 'pending' | 'processing' | 'completed' | 'failed' | undefined,
 })
 
 const gridRef = ref()
 const stats = ref<QueueStats>({
-  queue: 'default',
+  queue: '',
   pending: 0,
   processing: 0,
   delayed: 0,
@@ -479,7 +484,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增任务')
 const formRef = ref()
 const formData = reactive({
-  queue: 'default',
+  queue: '', // 默认为空，使用当前查询的队列名称
   type: '',
   dataStr: '{}',
   priority: 0,
@@ -554,30 +559,73 @@ function getStatusText(status: QueueMessage['status']) {
 
 // 获取列表
 async function getList() {
-  if (!queryParams.queue) {
-    ElMessage.warning('请先输入队列名称')
-    return
-  }
-  
+  // 允许队列名称为空，查询所有队列的任务
   loading.value = true
   try {
+    const queueName = queryParams.queue?.trim() || ''
+    console.log('🔍 开始查询任务列表，队列名称:', queueName || '(所有队列)', '状态:', queryParams.status || '(所有状态)')
+    
     const res = await getTaskList({
-      queue: queryParams.queue,
-      status: queryParams.status,
+      queue: queueName, // API 层会处理空字符串，不传该参数
+      status: queryParams.status, // 不传 status 则查询所有状态
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     })
     
-    if (res.success) {
-      dataSource.value = res.data || []
-      total.value = res.count || 0
+    console.log('📦 获取列表完整响应:', JSON.stringify(res, null, 2))
+    
+    // 后端返回格式可能是：
+    // 1. { data: { success: true, data: [...], count: 6 }, code: 0, status: true } (TransformInterceptor 包装)
+    // 2. { success: true, data: [...], count: 6 } (直接返回)
+    // axios 拦截器处理后，如果 code === 200 会返回 data，否则可能返回整个对象或 reject
+    
+    let responseData = res
+    
+    // 如果 res 有 data 字段且 data 是对象，说明是包装后的响应
+    if (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+      // 检查 data 中是否有 success 或 data 字段（说明是队列接口的响应）
+      if (res.data.success !== undefined || res.data.data !== undefined || res.data.count !== undefined) {
+        responseData = res.data
+      }
+    }
+    
+    // 处理响应数据
+    console.log('📊 解析响应数据，responseData:', responseData)
+    
+    if (responseData) {
+      // 检查是否是成功响应
+      const isSuccess = responseData.success !== false && responseData.success !== undefined ? responseData.success : true
+      console.log('✅ 响应成功状态:', isSuccess)
+      
+      if (isSuccess) {
+        const messages = responseData.data || responseData.messages || []
+        const count = responseData.count !== undefined ? responseData.count : (Array.isArray(messages) ? messages.length : 0)
+        
+        console.log('📋 解析后的数据:', {
+          messagesCount: Array.isArray(messages) ? messages.length : 0,
+          messagesType: Array.isArray(messages) ? 'array' : typeof messages,
+          count: count,
+          messages: messages
+        })
+        
+        dataSource.value = Array.isArray(messages) ? messages : []
+        total.value = count
+        
+        console.log(`✅ 最终显示 ${dataSource.value.length} 条任务，总数: ${total.value}`)
+      } else {
+        console.warn('❌ 响应显示失败:', responseData)
+        dataSource.value = []
+        total.value = 0
+      }
     } else {
+      console.warn('⚠️ 响应数据为空:', res)
       dataSource.value = []
       total.value = 0
     }
     ids.value = []
-  } catch (error) {
-    ElMessage.error('获取列表失败')
+  } catch (error: any) {
+    console.error('获取列表失败:', error)
+    ElMessage.error(error?.message || '获取列表失败')
     dataSource.value = []
     total.value = 0
   } finally {
@@ -587,16 +635,48 @@ async function getList() {
 
 // 刷新统计信息
 async function refreshStats() {
-  if (!queryParams.queue) {
-    return
-  }
+  // 允许队列名称为空，查询所有队列的统计
   try {
-    const res = await getQueueStats(queryParams.queue)
-    if (res.success && res.data) {
-      stats.value = res.data
+    const queueName = queryParams.queue?.trim() || ''
+    const res = await getQueueStats(queueName)
+    console.log('获取统计信息完整响应:', JSON.stringify(res, null, 2))
+    
+    // 后端返回格式可能是：
+    // 1. { data: { queue: 'xxx', pending: 0, ... }, code: 0, status: true } (TransformInterceptor 包装)
+    // 2. { queue: 'xxx', pending: 0, ... } (直接返回)
+    // axios 拦截器处理后，如果 code === 200 会返回 data，否则可能返回整个对象
+    
+    let statsData = res
+    
+    // 如果 res 有 data 字段且 data 是对象，说明是包装后的响应
+    if (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
+      // 检查 data 中是否有 queue 或 pending 字段（说明是统计数据的响应）
+      if (res.data.queue !== undefined || res.data.pending !== undefined || res.data.processing !== undefined) {
+        statsData = res.data
+      } else if (res.data.data && typeof res.data.data === 'object') {
+        // 可能是双重嵌套
+        statsData = res.data.data
+      }
     }
-  } catch (error) {
-    ElMessage.error('获取统计信息失败')
+    
+    // 处理统计数据
+    if (statsData && typeof statsData === 'object' && !Array.isArray(statsData)) {
+      stats.value = {
+        queue: statsData.queue || queryParams.queue?.trim() || '*',
+        pending: Number(statsData.pending) || 0,
+        processing: Number(statsData.processing) || 0,
+        delayed: Number(statsData.delayed) || 0,
+        completed: Number(statsData.completed) || 0,
+        failed: Number(statsData.failed) || 0,
+        total: Number(statsData.total) || 0,
+      }
+      console.log('✅ 统计数据已更新:', stats.value)
+    } else {
+      console.warn('⚠️ 统计数据格式异常:', statsData, '原始响应:', res)
+    }
+  } catch (error: any) {
+    console.error('获取统计信息失败:', error)
+    // 不显示错误提示，静默失败
   }
 }
 
@@ -609,19 +689,39 @@ function checkboxAllChange(e) {
   ids.value = e.records.map((item) => item.id)
 }
 
+// 队列名称清空处理
+function handleQueueClear() {
+  dataSource.value = []
+  total.value = 0
+  stats.value = {
+    queue: '',
+    pending: 0,
+    processing: 0,
+    delayed: 0,
+    completed: 0,
+    failed: 0,
+    total: 0,
+  }
+  localStorage.removeItem('queue_last_query')
+}
+
 // 重置查询
 const resetQuery = () => {
   queryParams.currentPage = 1
   queryParams.pageSize = 20
+  queryParams.queue = ''
   queryParams.status = undefined
-  getList()
+  handleQueueClear()
 }
 
 // 新增
 function handleAdd() {
   dialogTitle.value = '新增任务'
   dialogVisible.value = true
-  resetForm()
+  // 延迟重置表单，确保 dialogVisible 已更新
+  setTimeout(() => {
+    resetForm()
+  }, 50)
 }
 
 // 编辑
@@ -852,6 +952,12 @@ async function handleSubmit() {
   try {
     await formRef.value.validate()
     
+    // 检查队列名称
+    if (!formData.queue || !formData.queue.trim()) {
+      ElMessage.warning('请输入队列名称')
+      return
+    }
+    
     let taskData
     try {
       taskData = JSON.parse(formData.dataStr)
@@ -860,8 +966,11 @@ async function handleSubmit() {
       return
     }
     
-    await createTask({
-      queue: formData.queue,
+    loading.value = true
+    const createdQueue = formData.queue.trim()
+    
+    const createRes = await createTask({
+      queue: createdQueue,
       type: formData.type,
       data: taskData,
       priority: formData.priority,
@@ -869,12 +978,36 @@ async function handleSubmit() {
       maxAttempts: formData.maxAttempts,
     })
     
+    console.log('创建任务响应:', createRes)
+    
     ElMessage.success('任务创建成功')
     dialogVisible.value = false
-    getList()
-    refreshStats()
-  } catch (error) {
-    ElMessage.error('操作失败')
+    
+    // 创建成功后，自动设置查询条件并刷新列表和统计
+    const currentQueue = queryParams.queue?.trim() || ''
+    
+    // 如果当前没有查询条件，或者查询的就是创建的队列，则刷新
+    if (!currentQueue || currentQueue === createdQueue) {
+      queryParams.queue = createdQueue
+      queryParams.currentPage = 1 // 重置到第一页
+      console.log('准备刷新列表和统计，队列名称:', createdQueue)
+      
+      // 等待一小段时间，确保后端数据已写入
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
+      await getList()
+      await refreshStats()
+    } else {
+      // 如果查询的是其他队列，只刷新统计（如果统计的是创建的队列）
+      if (stats.value.queue === createdQueue) {
+        await refreshStats()
+      }
+    }
+  } catch (error: any) {
+    console.error('创建任务失败:', error)
+    ElMessage.error(error?.message || '创建任务失败')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -906,15 +1039,20 @@ async function handleStatusSubmit() {
 
 // 重置表单
 function resetForm() {
+  // 使用当前查询的队列名称，确保使用最新的值
+  const currentQueue = queryParams.queue?.trim() || ''
   Object.assign(formData, {
-    queue: queryParams.queue || 'default',
+    queue: currentQueue, // 使用当前查询的队列名称，如果没有则为空
     type: '',
     dataStr: '{}',
     priority: 0,
     delay: 0,
     maxAttempts: 3,
   })
-  formRef.value?.clearValidate()
+  // 延迟清除验证，确保表单已更新
+  setTimeout(() => {
+    formRef.value?.clearValidate()
+  }, 50)
 }
 
 // 清空队列
@@ -986,11 +1124,45 @@ async function handleUpdateMetadata(row: QueueMessage) {
   }
 }
 
+// 监听队列名称变化，保存到 localStorage
+watch(() => queryParams.queue, (newQueue) => {
+  if (newQueue && newQueue.trim()) {
+    localStorage.setItem('queue_last_query', newQueue.trim())
+  } else {
+    localStorage.removeItem('queue_last_query')
+  }
+})
+
 // 初始化
 onMounted(() => {
-  if (queryParams.queue) {
-    getList()
-    refreshStats()
+  console.log('页面初始化，开始检查队列名称...')
+  
+  // 1. 优先从路由 query 参数获取队列名称
+  const routeQueue = route.query.queue as string
+  console.log('路由参数 queue:', routeQueue)
+  
+  // 2. 如果没有，从 URL search 参数获取
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlQueue = urlParams.get('queue')
+  console.log('URL 参数 queue:', urlQueue)
+  
+  // 3. 如果没有，从 localStorage 获取（保存用户上次查询的队列）
+  const savedQueue = localStorage.getItem('queue_last_query') || ''
+  console.log('localStorage 保存的 queue:', savedQueue)
+  
+  const queueName = (routeQueue || urlQueue || savedQueue)?.trim()
+  
+  if (queueName) {
+    console.log('找到队列名称，设置为:', queueName)
+    queryParams.queue = queueName
+    // 延迟执行，确保 DOM 已渲染和响应式更新完成
+    setTimeout(() => {
+      console.log('开始调用接口，队列名称:', queryParams.queue)
+      getList()
+      refreshStats()
+    }, 200)
+  } else {
+    console.log('未找到队列名称，等待用户输入')
   }
 })
 </script>
