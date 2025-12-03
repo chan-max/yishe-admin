@@ -599,17 +599,20 @@ async function getList() {
       
       if (isSuccess) {
         const messages = responseData.data || responseData.messages || []
-        const count = responseData.count !== undefined ? responseData.count : (Array.isArray(messages) ? messages.length : 0)
+        // 后端已去掉 count 字段，仅返回 total；前端如需当前页数量，使用 messages.length
+        const totalCount = responseData.total !== undefined
+          ? Number(responseData.total) || 0
+          : (Array.isArray(messages) ? messages.length : 0)
         
         console.log('📋 解析后的数据:', {
           messagesCount: Array.isArray(messages) ? messages.length : 0,
           messagesType: Array.isArray(messages) ? 'array' : typeof messages,
-          count: count,
+          total: totalCount,
           messages: messages
         })
         
         dataSource.value = Array.isArray(messages) ? messages : []
-        total.value = count
+        total.value = totalCount
         
         console.log(`✅ 最终显示 ${dataSource.value.length} 条任务，总数: ${total.value}`)
       } else {
