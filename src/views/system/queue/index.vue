@@ -25,6 +25,15 @@
           <el-option label="失败" value="failed" />
         </el-select>
       </form-item>
+      <form-item label="任务类型">
+        <el-input 
+          v-model="queryParams.type" 
+          placeholder="留空则查询所有类型" 
+          style="width: 160px" 
+          clearable 
+          @keyup.enter="getList"
+        />
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
@@ -212,6 +221,14 @@
         <el-form-item label="任务类型" prop="type">
           <el-input v-model="formData.type" placeholder="请输入任务类型" />
         </el-form-item>
+        <el-form-item label="任务描述" prop="description">
+          <el-input 
+            v-model="formData.description" 
+            type="textarea" 
+            :rows="2"
+            placeholder="请输入任务描述（可选）" 
+          />
+        </el-form-item>
         <el-form-item label="任务数据" prop="data">
           <el-input 
             v-model="formData.dataStr" 
@@ -355,6 +372,7 @@ const queryParams = reactive({
   pageSize: 20,
   queue: '', // 默认为空，需要用户输入
   status: undefined as 'pending' | 'processing' | 'completed' | 'failed' | undefined,
+  type: '', // 任务类型，默认为空
 })
 
 const gridRef = ref()
@@ -382,6 +400,15 @@ const gridOptions = ref({
     { title: '任务ID', field: 'id', minWidth: 200, showOverflow: true },
     { title: '队列名称', field: 'queue', width: 120 },
     { title: '任务类型', field: 'type', width: 150 },
+    { 
+      title: '任务描述', 
+      field: 'description', 
+      minWidth: 200,
+      showOverflow: true,
+      formatter: (e) => {
+        return e.cellValue || '-'
+      }
+    },
     {
       title: '状态',
       field: 'status',
@@ -486,6 +513,7 @@ const formRef = ref()
 const formData = reactive({
   queue: '', // 默认为空，使用当前查询的队列名称
   type: '',
+  description: '',
   dataStr: '{}',
   priority: 0,
   delay: 0,
@@ -568,6 +596,7 @@ async function getList() {
     const res = await getTaskList({
       queue: queueName, // API 层会处理空字符串，不传该参数
       status: queryParams.status, // 不传 status 则查询所有状态
+      type: queryParams.type?.trim() || undefined, // 不传 type 则查询所有类型
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     })
@@ -714,6 +743,7 @@ const resetQuery = () => {
   queryParams.pageSize = 20
   queryParams.queue = ''
   queryParams.status = undefined
+  queryParams.type = ''
   handleQueueClear()
 }
 
@@ -975,6 +1005,7 @@ async function handleSubmit() {
     const createRes = await createTask({
       queue: createdQueue,
       type: formData.type,
+      description: formData.description?.trim() || undefined,
       data: taskData,
       priority: formData.priority,
       delay: formData.delay,
@@ -1047,6 +1078,7 @@ function resetForm() {
   Object.assign(formData, {
     queue: currentQueue, // 使用当前查询的队列名称，如果没有则为空
     type: '',
+    description: '',
     dataStr: '{}',
     priority: 0,
     delay: 0,

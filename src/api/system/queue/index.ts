@@ -5,6 +5,7 @@ export interface QueueMessage {
   queue: string
   type: string
   data: any
+  description?: string
   priority?: number
   delay?: number
   maxAttempts?: number
@@ -31,6 +32,7 @@ export interface CreateTaskDto {
   queue: string
   type: string
   data: any
+  description?: string
   priority?: number
   delay?: number
   maxAttempts?: number
@@ -51,6 +53,7 @@ export const createTaskBatch = (data: { queue: string; tasks: Array<{ type: stri
 export const getTaskList = (params: {
   queue?: string  // 队列名称（可选，不传则查询所有队列）
   status?: 'pending' | 'processing' | 'completed' | 'failed'
+  type?: string    // 任务类型（可选，不传则查询所有类型）
   limit?: number
   offset?: number
 }) => {
@@ -58,6 +61,10 @@ export const getTaskList = (params: {
   const queryParams: any = { ...params }
   if (!queryParams.queue || !queryParams.queue.trim()) {
     delete queryParams.queue
+  }
+  // 如果 type 为空字符串，不传该参数
+  if (!queryParams.type || !queryParams.type.trim()) {
+    delete queryParams.type
   }
   return request.get({ url: `/queue/messages`, params: queryParams })
 }

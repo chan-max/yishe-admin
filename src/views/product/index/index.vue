@@ -137,6 +137,10 @@
                   <el-icon><Refresh /></el-icon>
                   <span>生成产品代码</span>
                 </el-dropdown-item>
+                <el-dropdown-item command="publish-to-queue">
+                  <el-icon><Share /></el-icon>
+                  <span>发布到社交媒体（队列）</span>
+                </el-dropdown-item>
                 <el-dropdown-item 
                   command="copy-images-from-2d" 
                   :disabled="!row.productImage2DId"
@@ -1563,6 +1567,7 @@ import { getDraftList } from '@/api/draft'
 import { aiGenerateProductInfo } from '@/api/product'
 import { copyLink } from '@/utils/clipboard'
 import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/config/product-categories'
+import { createTask } from '@/api/system/queue'
 
 
 
@@ -2630,6 +2635,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'mark-archived':
       handleUpdatePublishStatus(row, 'archived');
       break;
+    case 'publish-to-queue':
+      handlePublishToQueue(row);
+      break;
     default:
       console.warn('未知的操作命令:', command);
   }
@@ -3146,6 +3154,47 @@ async function handleUpdatePublishStatus(row: any, status: string) {
     getList();
   } catch (e) {
     ElMessage.error('更新发布状态失败');
+  }
+}
+
+// 发布到社交媒体队列
+async function handlePublishToQueue(row: any) {
+  try {
+    await ElMessageBox.confirm(
+      `确认将商品"${row.name || row.id}"添加到社交媒体发布队列？`,
+      '发布到社交媒体队列',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'info',
+      }
+    );
+    
+    // 创建队列任务
+    const taskData = {
+      queue: 'social-media-publish', // 社交媒体发布队列
+      type: 'publish-product', // 任务类型：发布商品
+      description: `发布商品到社交媒体：${row.name || row.id}`, // 任务描述
+      data: {
+        productId: row.id, // 先只存储商品ID，后续再扩展
+      },
+      priority: 0, // 默认优先级
+      delay: 0, // 立即执行
+      maxAttempts: 3, // 最大重试3次
+    };
+    
+    const res = await createTask(taskData);
+    
+    if (res && res.messageId) {
+      ElMessage.success('任务已创建成功，已添加到发布队列');
+    } else {
+      ElMessage.success('任务已创建成功');
+    }
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('创建发布任务失败:', error);
+      ElMessage.error(error?.message || '创建发布任务失败');
+    }
   }
 }
 </script>
