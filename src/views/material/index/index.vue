@@ -228,13 +228,24 @@
               :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
               @click="togglePsdTemplate(tpl.id)"
             >
-              <div class="template-header">
-                <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
-                <div class="template-description">{{ tpl.description || '暂无描述' }}</div>
-              </div>
-              <div class="template-meta">
-                <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
-                <span class="uploader" v-if="tpl.uploader?.name">上传者：{{ tpl.uploader.name }}</span>
+              <div class="template-content-wrapper">
+                <img
+                  v-if="tpl.thumbnail || tpl.preview || tpl.image"
+                  :src="tpl.thumbnail || tpl.preview || tpl.image"
+                  :alt="tpl.name || '模板缩略图'"
+                  class="template-thumbnail"
+                  @error="handleTemplateImageError"
+                />
+                <div class="template-info">
+                  <div class="template-header">
+                    <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
+                    <div class="template-description">{{ tpl.description || '暂无描述' }}</div>
+                  </div>
+                  <div class="template-meta">
+                    <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
+                    <span class="uploader" v-if="tpl.uploader?.name">上传者：{{ tpl.uploader.name }}</span>
+                  </div>
+                </div>
               </div>
             </div>
             <el-empty v-if="!psdSetTemplates.length && !psdSetTemplatesLoading" description="暂无PSD模板" />
@@ -2109,6 +2120,12 @@ function resetPsdSetState() {
   selectedPsdTemplateIds.value = []
 }
 
+// 处理PSD模板缩略图加载错误
+function handleTemplateImageError(event: Event) {
+  const img = event.target as HTMLImageElement
+  img.style.display = 'none'
+}
+
 async function handleCreatePsdSets() {
   if (!ids.value.length) {
     return ElMessage.warning('请先勾选素材')
@@ -3968,21 +3985,47 @@ h1 {
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
   background: rgba(64, 158, 255, 0.06);
 }
+.psd-set-templates .template-content-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.psd-set-templates .template-thumbnail {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-lighter);
+  flex-shrink: 0;
+}
+.psd-set-templates .template-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .psd-set-templates .template-title {
   font-weight: 600;
   margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
 }
 .psd-set-templates .template-description {
   font-size: 13px;
   color: #666;
+  line-height: 1.4;
 }
 .psd-set-templates .template-meta {
-  margin-top: 8px;
+  margin-top: 4px;
   display: flex;
   align-items: center;
   gap: 12px;
   font-size: 12px;
   color: #909399;
+  flex-wrap: wrap;
 }
 .psd-set-footer {
   display: flex;
