@@ -32,6 +32,15 @@
       <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
       <div class="flex items-center" style="margin-left: auto">
         <el-button
+          type="success"
+          plain
+          :disabled="!selectedIds.length"
+          :loading="batchGeneratingProducts"
+          @click="handleBatchGenerateProduct"
+        >
+          生成产品 ({{ selectedIds.length }})
+        </el-button>
+        <el-button
           type="danger"
           plain
           @click="handleBatchDelete"
@@ -59,6 +68,29 @@
             {{ statusLabel(row.status) }}
           </el-tag>
           <div v-if="row.statusMessage" class="status-message">{{ row.statusMessage }}</div>
+        </template>
+        <template #imagesSlot="{ row }">
+          <div class="flex gap-1 flex-wrap">
+            <div
+              v-for="(img, idx) in (row.images || []).slice(0, 3)"
+              :key="idx"
+              class="detail-thumb-wrapper"
+            >
+              <el-image
+                v-if="img"
+                :src="img"
+                :preview-src-list="row.images"
+                :initial-index="idx"
+                :preview-teleported="true"
+                :hide-on-click-modal="false"
+                class="detail-thumb-image"
+                fit="contain"
+              />
+              <span v-else class="text-gray-400 text-xs">无</span>
+            </div>
+            <span v-if="(row.images || []).length > 3" class="text-xs text-gray-500">+{{ (row.images.length - 3) }}</span>
+            <span v-if="!row.images || !row.images.length" class="text-gray-400 text-xs">无</span>
+          </div>
         </template>
         <template #stickerDetailSlot="{ row }">
           <div v-if="showDetails && row.sticker" class="detail-section-item">
@@ -151,6 +183,30 @@
           </div>
           <span v-else-if="showDetails" class="text-gray-400 text-sm">无模板</span>
         </template>
+        <template #psdImagesSlot="{ row }">
+          <div v-if="showDetails" class="detail-section-item">
+            <div class="flex flex-wrap gap-2">
+              <div
+                v-for="(img, idx) in (row.images || [])"
+                :key="idx"
+                class="detail-thumb-wrapper"
+              >
+                <el-image
+                  v-if="img"
+                  :src="img"
+                  :preview-src-list="row.images"
+                  :initial-index="idx"
+                  :preview-teleported="true"
+                  :hide-on-click-modal="false"
+                  class="detail-thumb-image"
+                  fit="contain"
+                />
+                <span v-else class="text-gray-400 text-xs">无</span>
+              </div>
+            </div>
+            <span v-if="!row.images || !row.images.length" class="text-gray-400 text-sm">无套图图片</span>
+          </div>
+        </template>
         <template #operationSlot="{ row }">
           <el-dropdown trigger="click">
             <el-button type="primary" link size="small">
@@ -162,6 +218,7 @@
                 <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">标记制作中</el-dropdown-item>
                 <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">标记完成</el-dropdown-item>
                 <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">标记失败</el-dropdown-item>
+              <el-dropdown-item @click="() => handleToProduct(row)" :disabled="generatingProductId === row.id">生成产品</el-dropdown-item>
                 <el-dropdown-item divided class="text-red-500" @click="() => handleDelete(row)">删除</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -183,16 +240,19 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { Search, Refresh, ArrowDown } from '@element-plus/icons-vue'
+import { Search, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
+import request from '@/config/axios'
 
 const loading = ref(false)
 const dataSource = ref<any[]>([])
 const total = ref(0)
 const selectedIds = ref<string[]>([])
+const generatingProductId = ref<string>('')
+const batchGeneratingProducts = ref(false)
 
 const statusOptions = [
   { label: '待制作', value: 'pending' },
@@ -216,6 +276,7 @@ function getColumns() {
     { title: '套图名称', field: 'name', minWidth: 180 },
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 180 },
+    { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
     {
       title: '创建时间',
@@ -239,6 +300,12 @@ function getColumns() {
       slots: { default: 'stickerDetailSlot' } 
     },
     { 
+      title: '套图图片', 
+      field: 'psdImages', 
+      width: 'auto', 
+      slots: { default: 'psdImagesSlot' } 
+    },
+    { 
       title: 'PSD模板详情', 
       field: 'templateDetail', 
       width: 'auto', 
@@ -247,13 +314,13 @@ function getColumns() {
   ] : []
   
   const operationColumn = [
-    { title: '操作', width: 140, fixed: 'right' as const, slots: { default: 'operationSlot' } }
+    { title: '操作', width: 80, fixed: 'right' as const, slots: { default: 'operationSlot' } }
   ]
   
   return [...baseColumns, ...detailColumns, ...operationColumn]
 }
 
-const gridOptions = ref({
+const gridOptions = ref<any>({
   ...commonGridOptions,
   rowConfig: {
     keyField: 'id'
@@ -335,6 +402,40 @@ async function updateRowStatus(row, status: string) {
   }
 }
 
+async function handleToProduct(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('缺少ID，无法生成产品')
+  }
+  try {
+    await ElMessageBox.confirm(
+      `确认根据该套图生成一个产品吗？`,
+      '生成确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch (e) {
+    return
+  }
+
+  try {
+    generatingProductId.value = row.id
+    await request.post({
+      url: '/sticker-psd-set/to-product',
+      data: { id: row.id }
+    })
+    ElMessage.success('生成产品成功')
+    getList()
+  } catch (error: any) {
+    console.error('生成产品失败:', error)
+    ElMessage.error(error?.message || '生成产品失败')
+  } finally {
+    generatingProductId.value = ''
+  }
+}
+
 function handleDelete(row) {
   ElMessageBox.confirm('确定删除该套图记录吗？', '删除确认', {
     confirmButtonText: '删除',
@@ -365,6 +466,52 @@ function handleBatchDelete() {
       getList()
     })
     .catch(() => {})
+}
+
+async function handleBatchGenerateProduct() {
+  if (!selectedIds.value.length) {
+    return ElMessage.warning('请选择需要生成产品的记录')
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认根据选中的 ${selectedIds.value.length} 条记录生成产品吗？`,
+      '批量生成确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch (error) {
+    return
+  }
+
+  batchGeneratingProducts.value = true
+  let successCount = 0
+  let failCount = 0
+
+  try {
+    for (const id of selectedIds.value) {
+      try {
+        await request.post({ url: '/sticker-psd-set/to-product', data: { id } })
+        successCount += 1
+      } catch (error) {
+        failCount += 1
+        console.error(`生成产品失败（ID: ${id}）`, error)
+      }
+    }
+
+    if (successCount) {
+      ElMessage.success(`成功生成 ${successCount} 个产品`)
+    }
+    if (failCount) {
+      ElMessage.warning(`有 ${failCount} 个产品生成失败，请稍后重试`)
+    }
+    getList()
+  } finally {
+    batchGeneratingProducts.value = false
+  }
 }
 
 

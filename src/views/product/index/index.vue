@@ -163,6 +163,13 @@
                   <el-icon><Box /></el-icon>
                   <span>复制关联设计模型信息到商品</span>
                 </el-dropdown-item>
+                <el-dropdown-item 
+                  command="copy-images-from-psdset" 
+                  :disabled="!row.psdSetId"
+                >
+                  <el-icon><Picture /></el-icon>
+                  <span>复制关联PSD套图信息到商品</span>
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -269,7 +276,7 @@
         <!-- 关联信息列：显示关联了哪个内容 -->
         <template #relationsSlot="{ row }">
           <div class="relations-summary">
-            <div v-if="row.customModel || row.sticker || row.productImage2D" class="relations-info">
+            <div v-if="row.customModel || row.sticker || row.productImage2D || row.psdSet" class="relations-info">
               <!-- 设计模型 -->
               <div v-if="row.customModel" class="relation-section-item">
                 <div class="relation-header">
@@ -410,6 +417,28 @@
                 >
                   查看源信息
                 </el-button>
+              </div>
+
+              <!-- PSD 套图 -->
+              <div v-if="row.psdSet" class="relation-section-item">
+                <div class="relation-header">
+                  <span class="relation-label">PSD套图：</span>
+                </div>
+                <vxe-grid
+                  :data="[row.psdSet]"
+                  :show-header="true"
+                  border
+                  size="mini"
+                  class="relation-sub-grid"
+                  :columns="[
+                       { field: 'images', title: '套图图片', width: 200, slots: { default: 'psdSetImagesSlot' } },
+                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+               
+                    { field: 'updateTime', title: '更新时间', width: 140, formatter: ({ cellValue }) => formatTimestamp(cellValue) }
+                  ]"
+                />
               </div>
             </div>
             <span v-else class="text-gray-400 text-sm">无关联</span>
@@ -1391,7 +1420,51 @@
           </vxe-grid>
         </div>
 
-        <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.productImage2D" class="text-center py-8 text-gray-400">
+        <!-- 关联 PSD 套图 -->
+        <div v-if="currentRelationsRow.psdSet" class="relation-section">
+          <h3 class="relation-section-title">关联PSD套图</h3>
+          <vxe-grid
+            :data="[currentRelationsRow.psdSet]"
+            :show-header="true"
+            border
+            size="mini"
+            style="margin: 0; padding: 0; background: none;"
+            :columns="[
+              { field: 'images', title: '套图图片', width: 200, slots: { default: 'psdSetImagesSlot' } },
+              { field: 'name', title: '名称', minWidth: 120 },
+              { field: 'description', title: '描述', minWidth: 150 },
+              { field: 'keywords', title: '关键词', minWidth: 120 },
+              { field: 'updateTime', title: '更新时间', minWidth: 140, formatter: ({ cellValue }) => formatTimestamp(cellValue) },
+              { field: 'id', title: '关联ID', minWidth: 120 }
+            ]"
+          >
+            <template #psdSetImagesSlot="{ row }">
+              <div class="flex gap-1 flex-wrap">
+                <div
+                  v-for="(img, idx) in (row.images || []).slice(0, 3)"
+                  :key="idx"
+                  class="relation-thumb-wrapper"
+                >
+                  <el-image
+                    v-if="img"
+                    :src="img"
+                    :preview-src-list="row.images"
+                    :initial-index="idx"
+                    :preview-teleported="true"
+                    :hide-on-click-modal="false"
+                    class="relation-thumb-image"
+                    fit="contain"
+                  />
+                  <span v-else class="text-gray-400 text-xs">无</span>
+                </div>
+                <span v-if="(row.images || []).length > 3" class="text-xs text-gray-500">+{{ (row.images.length - 3) }}</span>
+                <span v-if="!row.images || !row.images.length" class="text-gray-400 text-xs">无</span>
+              </div>
+            </template>
+          </vxe-grid>
+        </div>
+
+        <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.productImage2D && !currentRelationsRow.psdSet" class="text-center py-8 text-gray-400">
           无关联信息
         </div>
       </div>
@@ -1427,6 +1500,12 @@
             <div class="source-info-section">
               <h4 class="source-info-title">二维产品图原始数据</h4>
               <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.productImage2D) }}</pre>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane v-if="currentSourceInfoRow.psdSet" label="PSD套图" name="psdSet">
+            <div class="source-info-section">
+              <h4 class="source-info-title">PSD套图原始数据</h4>
+              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.psdSet) }}</pre>
             </div>
           </el-tab-pane>
         </el-tabs>
@@ -1553,6 +1632,7 @@ import { downloadFileByElement, downloadImageEnhanced } from "@/common/download"
 import { uploadToCOS } from "@/api/cos";
 import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
+import request from "@/config/axios";
 import { uploadOSSFile } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
@@ -2623,6 +2703,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'copy-images-from-custom-model':
       handleCopyImagesFromCustomModel(row);
       break;
+    case 'copy-images-from-psdset':
+      handleCopyImagesFromPsdSet(row);
+      break;
     case 'mark-draft':
       handleUpdatePublishStatus(row, 'draft');
       break;
@@ -2946,6 +3029,35 @@ async function executeCopyCustomModel() {
   }
 }
 
+// 复制关联 PSD 套图信息到商品
+async function handleCopyImagesFromPsdSet(row: any) {
+  if (!row?.id) return
+  if (!row?.psdSetId) {
+    return ElMessage.warning('该商品未关联PSD套图')
+  }
+  try {
+    await request.post({
+      url: '/product/copy-images-from-psdset',
+      data: {
+        id: row.id,
+        copyBasicInfo: {
+          enabled: true,
+          copyName: true,
+          copyDescription: true,
+          copyKeywords: true,
+        },
+        imageOptions: {
+          replace: false,
+        },
+      },
+    })
+    ElMessage.success('复制成功')
+    getList()
+  } catch (e) {
+    ElMessage.error(e?.message || '复制失败')
+  }
+}
+
 // 关闭复制设计模型信息对话框
 function handleCloseCopyCustomModelDialog() {
   copyCustomModelDialogVisible.value = false;
@@ -3077,6 +3189,7 @@ function getRelationsText(row: any): string {
   if (row.customModel) relations.push('设计模型')
   if (row.sticker) relations.push('贴纸')
   if (row.productImage2D) relations.push('二维产品图')
+  if (row.psdSet) relations.push('PSD套图')
   
   if (relations.length === 0) return '无关联'
   if (relations.length === 1) return `关联${relations[0]}`
@@ -3100,6 +3213,8 @@ function showRelationsSourceInfo(row: any) {
     activeSourceTab.value = 'sticker'
   } else if (row.productImage2D) {
     activeSourceTab.value = 'productImage2D'
+  } else if (row.psdSet) {
+    activeSourceTab.value = 'psdSet'
   }
   relationsSourceInfoVisible.value = true
 }
@@ -3125,6 +3240,8 @@ async function copySourceInfo() {
     jsonText = JSON.stringify(currentSourceInfoRow.value.sticker, null, 2)
   } else if (activeSourceTab.value === 'productImage2D' && currentSourceInfoRow.value.productImage2D) {
     jsonText = JSON.stringify(currentSourceInfoRow.value.productImage2D, null, 2)
+  } else if (activeSourceTab.value === 'psdSet' && currentSourceInfoRow.value.psdSet) {
+    jsonText = JSON.stringify(currentSourceInfoRow.value.psdSet, null, 2)
   }
   
   if (jsonText) {
