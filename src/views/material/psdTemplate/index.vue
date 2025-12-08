@@ -122,11 +122,40 @@
       @close="dialogClose"
       align-center
     >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="160px">
         <el-row>
           <el-col :span="24">
             <el-form-item label="模板名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入模板名称" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="描述" prop="description">
+              <el-input
+                v-model="form.description"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入模板描述"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="关键词" prop="keywords">
+              <el-input
+                v-model="form.keywords"
+                placeholder="请输入关键词，多个关键词用逗号分隔"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="Windows 本地路径" prop="windowsLocalPath">
+              <el-input
+                v-model="form.windowsLocalPath"
+                placeholder="请输入 Windows 本地路径，如：C:\path\to\file 或 \\server\share\path"
+              />
             </el-form-item>
           </el-col>
 
@@ -145,7 +174,7 @@
               >
                 <el-button type="primary">选择 PSD 文件</el-button>
                 <template #tip>
-                  <div class="el-upload__tip">只能上传 PSD 文件</div>
+                  <div class="el-upload__tip">只能上传 PSD 文件（可选）</div>
                 </template>
               </el-upload>
             </el-form-item>
@@ -376,6 +405,9 @@ function handleAdd() {
     id: "",
     file: null,
     name: "",
+    description: "",
+    keywords: "",
+    windowsLocalPath: "",
     thumbnail: "",
     thumbnailFile: null,
   };
@@ -410,14 +442,67 @@ const form = ref<any>({
   id: "",
   file: null,
   name: "",
+  description: "",
+  keywords: "",
+  windowsLocalPath: "",
   thumbnail: "",
   thumbnailFile: null,
 });
 
+// Windows 路径校验函数
+const validateWindowsPath = (rule, value, callback) => {
+  if (!value || value.trim() === '') {
+    callback(); // 允许为空
+    return;
+  }
+  
+  const trimmedValue = value.trim();
+  
+  // 检查是否包含非法字符（除了驱动器字母后的冒号）
+  const invalidChars = /[<>"|?*]/;
+  
+  // 检查冒号：只允许在驱动器字母后（如 C:）
+  if (trimmedValue.includes(':')) {
+    if (!/^[a-zA-Z]:/.test(trimmedValue)) {
+      callback(new Error('路径格式不正确，冒号只能出现在驱动器字母后（如 C:\\）'));
+      return;
+    }
+  }
+  
+  // 检查其他非法字符
+  // 对于绝对路径，移除驱动器部分后再检查
+  const pathToCheck = trimmedValue.replace(/^[a-zA-Z]:/, '');
+  if (invalidChars.test(pathToCheck)) {
+    callback(new Error('路径不能包含以下字符：< > " | ? *'));
+    return;
+  }
+  
+  // 检查基本格式
+  // 1. 绝对路径：C:\path\to\file
+  // 2. UNC 路径：\\server\share\path
+  // 3. 相对路径：path\to\file 或 .\path\to\file 或 ..\path\to\file
+  const absolutePathRegex = /^[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*$/;
+  const uncPathRegex = /^\\\\[^\\/:*?"<>|\r\n]+(?:\\[^\\/:*?"<>|\r\n]+)*$/;
+  const relativePathRegex = /^(?:\.\.?\\)?[^\\/:*?"<>|\r\n]+(?:\\[^\\/:*?"<>|\r\n]+)*$/;
+  
+  if (absolutePathRegex.test(trimmedValue) || 
+      uncPathRegex.test(trimmedValue) || 
+      relativePathRegex.test(trimmedValue)) {
+    callback();
+  } else {
+    callback(new Error('请输入合法的 Windows 路径，如：C:\\path\\to\\file 或 \\\\server\\share\\path'));
+  }
+};
+
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
+  description: [{ required: true, message: "请输入描述", trigger: "blur" }],
+  keywords: [{ required: true, message: "请输入关键词", trigger: "blur" }],
+  windowsLocalPath: [
+    { validator: validateWindowsPath, trigger: "blur" }
+  ],
   // titleTemplateId: [{ required: true, message: "请选择标题模板", trigger: "blur" }],
-  file: [{ required: true, message: "请选择 PSD 文件", trigger: "blur" }],
+  // file: [{ required: true, message: "请选择 PSD 文件", trigger: "blur" }], // PSD 文件改为非必填
 };
 
 const dialogClose = () => {
@@ -459,6 +544,9 @@ const submitForm = async () => {
       await psdTemplateApi.updatePsdTemplate({
         id: form.value.id,
         name: form.value.name,
+        description: form.value.description || "",
+        keywords: form.value.keywords || "",
+        windowsLocalPath: form.value.windowsLocalPath || "",
         thumbnail: thumbnail || "", // 确保是字符串
       });
       ElMessage.success("更新成功");
@@ -471,9 +559,14 @@ const submitForm = async () => {
     } else {
       submitLoading.value = true;
       
-      // 上传PSD文件
-      const cos = await uploadToCOS({ file: form.value.file });
-      const { key, url } = cos;
+      // 上传PSD文件（如果存在）
+      let url = "";
+      let key = "";
+      if (form.value.file) {
+        const cos = await uploadToCOS({ file: form.value.file });
+        key = cos.key;
+        url = cos.url;
+      }
       
       // 上传缩略图（如果有）
       let thumbnail = "";
@@ -484,8 +577,11 @@ const submitForm = async () => {
       
       await psdTemplateApi.createPsdTemplate({
         name: form.value.name,
-        url,
-        key,
+        description: form.value.description || "",
+        keywords: form.value.keywords || "",
+        windowsLocalPath: form.value.windowsLocalPath || "",
+        url: url || undefined,
+        key: key || undefined,
         thumbnail: thumbnail,
         file: null,
       });

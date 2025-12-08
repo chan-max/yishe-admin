@@ -664,7 +664,6 @@
           </div>
         </div>
 
-        
       </div>
       <template #footer>
         <div class="link-2d-footer">
