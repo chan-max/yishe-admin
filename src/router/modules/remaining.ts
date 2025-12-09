@@ -232,7 +232,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: 'psd套图'
+          title: 'psd模板'
         }
       },
 
