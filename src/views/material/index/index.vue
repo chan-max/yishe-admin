@@ -288,7 +288,7 @@
                   :alt="row.name || '素材图片'"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
                   @click="openImagePreview(row.url, row.name)"
-                  @error="handleImageError"
+            
                   @load="(event) => handleImageLoad(event, row)"
                 />
                 <div v-if="row.imageDimensions" class="text-xs text-gray-500 mt-1 text-center">
@@ -2644,11 +2644,6 @@ function closeImagePreview() {
   currentImageUrl.value = ''
 }
 
-function handleImageError(event: Event) {
-  const img = event.target as HTMLImageElement
-  img.src = '/src/assets/images/image-error.png' // 错误图片占位符，可以根据实际情况调整
-  console.warn('图片加载失败:', img.alt)
-}
 
 // 处理图片加载完成事件
 function handleImageLoad(event: Event, row: any) {

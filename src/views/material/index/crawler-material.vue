@@ -690,9 +690,7 @@ function closeImagePreview() {
 }
 
 function handleImageError(event: Event) {
-  const img = event.target as HTMLImageElement;
-  img.src = "/src/assets/images/image-error.png"; // 错误图片占位符，可以根据实际情况调整
-  console.warn("图片加载失败:", img.alt);
+  console.warn("图片加载失败:",);
 }
 
 function handleOriginImageError(event: Event) {
