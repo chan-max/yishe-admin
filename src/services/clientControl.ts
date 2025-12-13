@@ -14,41 +14,8 @@ export class ClientControlService {
    */
   static async getMyClients(): Promise<WebsocketConnectionVO[]> {
     try {
-      // 获取所有连接
-      const allConnections = await WebsocketApi.getWebsocketConnections()
-      
-      // 获取当前用户信息
-      const userStore = useUserStore()
-      const currentUser = userStore.getUser
-      
-      if (!currentUser || !currentUser.id) {
-        ElMessage.warning('请先登录')
-        return []
-      }
-      
-      // 过滤出当前用户的客户端连接
-      // 通过 clientInfo.user.id 匹配（服务端会将 tokenUser 写入 clientInfo.user）
-      const myClients = allConnections.filter((conn) => {
-        // 只显示客户端连接，不显示管理后台连接
-        const clientSource = conn.clientSource || conn.query?.clientSource
-        if (clientSource !== '客户端') {
-          return false
-        }
-        
-        // 检查连接中的用户信息是否匹配当前用户
-        const connUserId = 
-          conn.userId || 
-          conn.clientInfo?.user?.id ||
-          (conn as any).tokenUser?.id
-        
-        if (!connUserId) {
-          return false
-        }
-        
-        // 转换为字符串比较，避免类型不一致
-        return String(connUserId) === String(currentUser.id)
-      })
-      
+      // 直接调用服务端提供的个人连接接口，更安全
+      const myClients = await WebsocketApi.getMyWebsocketConnections()
       return myClients
     } catch (error: any) {
       console.error('[ClientControlService] 获取客户端列表失败:', error)

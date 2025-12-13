@@ -84,6 +84,10 @@ export const getWebsocketConnections = () => {
   return request.post<WebsocketConnectionVO[]>({ url: '/websocket/connections' })
 }
 
+export const getMyWebsocketConnections = () => {
+  return request.post<WebsocketConnectionVO[]>({ url: '/websocket/my-connections' })
+}
+
 export const sendMessageToConnection = (connectionId: string, data: any, event?: string) => {
   return request.post({ url: '/websocket/send-message', data: { id: connectionId, event, data } })
 }
