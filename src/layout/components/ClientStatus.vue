@@ -20,6 +20,7 @@ import {
 import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
+import ClientControlDialog from '@/components/ClientControlDialog/index.vue'
 
 export default defineComponent({
   name: 'ClientStatus',
@@ -28,6 +29,7 @@ export default defineComponent({
     let timers: { localTimer: number, remoteTimer: number } | null = null
     const loading = ref(false)
     const clientLoading = ref(false)
+    const clientDialogVisible = ref(false)
     
     // 判断是否为管理员
     const isAdmin = computed(() => userStore.user?.isAdmin || false)
@@ -119,10 +121,16 @@ export default defineComponent({
         ) */}
         {/* 本地客户端状态 */}
         <ElTooltip
-          content={isLocalConnected.value ? '本地客户端已启动' : '点击启动客户端'}
+          content={isLocalConnected.value ? '点击查看客户端操作' : '点击启动客户端'}
           placement="bottom"
         >
-          <div class="custom-hover flex items-center" style={{cursor: isLocalConnected.value ? 'default' : 'pointer'}} onClick={() => { if (!isLocalConnected.value && !clientLoading.value) openClient() }}>
+          <div class="custom-hover flex items-center" style={{cursor: 'pointer'}} onClick={() => { 
+            if (!isLocalConnected.value && !clientLoading.value) {
+              openClient()
+            } else if (isLocalConnected.value) {
+              clientDialogVisible.value = true
+            }
+          }}>
             <div
               class="w-2 h-2 rounded-full mr-1"
               style={{
@@ -136,7 +144,7 @@ export default defineComponent({
               class="text-[10px] font-bold flex items-center" 
               style={{ color: isLocalConnected.value ? '#67C23A' : '#F56C6C' }}
             >
-              {isLocalConnected.value ? '本地客户端已连接' : '客户端未启动'}
+              {isLocalConnected.value ? '客户端已链接' : '客户端未启动'}
               {clientLoading.value && (
                 <svg class="animate-spin ml-1" width="12" height="12" viewBox="0 0 50 50">
                   <circle cx="25" cy="25" r="20" fill="none" stroke="#409EFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.415, 31.415" transform="rotate(0 25 25)">
@@ -147,6 +155,12 @@ export default defineComponent({
             </span>
           </div>
         </ElTooltip>
+        
+        {/* 客户端操作弹窗 */}
+        <ClientControlDialog 
+          modelValue={clientDialogVisible.value}
+          onUpdate:modelValue={(val: boolean) => { clientDialogVisible.value = val }}
+        />
         {/* 远程服务状态 - 仅管理员可见 */}
         {isAdmin.value && (
           <ElTooltip

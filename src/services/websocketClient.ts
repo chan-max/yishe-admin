@@ -114,6 +114,7 @@ export type WebsocketEvents = {
   log: { level: 'info' | 'warn' | 'error'; message: string }
   toast: { color: string; icon: string; message: string }
   adminMessage: { data: any; timestamp: string }
+  myClientStatus: { hasClient: boolean }
 }
 
 const emitter = mitt<WebsocketEvents>()
@@ -285,6 +286,20 @@ function bindSocketEvents(currentSocket: Socket) {
       lastError: serializeError(error)
     })
   })
+
+  // 监听客户端连接状态响应
+  currentSocket.on('my-client-status', (data: { hasClient: boolean }) => {
+    emitter.emit('myClientStatus', { hasClient: data.hasClient })
+  })
+}
+
+// 检查当前用户的客户端连接状态（通过 WebSocket）
+export function checkMyClientStatus() {
+  if (!socket || !socket.connected) {
+    return false
+  }
+  socket.emit('check-my-client')
+  return true
 }
 
 function serializeError(error: unknown) {
@@ -372,6 +387,7 @@ export const websocketClient = {
   reconnect,
   setEndpoint,
   updateClientInfo,
+  checkMyClientStatus,
   events: emitter
 }
 

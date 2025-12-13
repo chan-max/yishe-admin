@@ -107,7 +107,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           }
         ]
   },
-  {
+      {
         path: 'statistics',
         component: () => import('@/views/Home/Statistics/index.vue'),
         name: 'Statistics',

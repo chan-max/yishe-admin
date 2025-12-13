@@ -1,5 +1,13 @@
 /*
  * @Author: chan-max jackieontheway666@gmail.com
+ * @Date: 2025-12-03 19:27:39
+ * @LastEditors: chan-max jackieontheway666@gmail.com
+ * @LastEditTime: 2025-12-13 22:24:45
+ * @FilePath: /design-server/Users/jackie/workspace/yishe-admin/src/stores/connectionStatus.ts
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ */
+/*
+ * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-07-09 19:04:50
  * @LastEditors: chan-max jackieontheway666@gmail.com
  * @LastEditTime: 2025-07-16 20:30:58
@@ -49,68 +57,18 @@ export const checkClientAuthorized = async () => {
 // 检查客户端连接状态
 let checkClientConnectionTimer: ReturnType<typeof setInterval> | null = null
 
-// 判断 IP 是否为本地 IP
-const isLocalIP = (ip: string | undefined): boolean => {
-  if (!ip) return false
-  
-  // IPv4 localhost
-  if (ip === '127.0.0.1' || ip === 'localhost') return true
-  
-  // IPv6 localhost
-  if (ip === '::1' || ip === '::ffff:127.0.0.1') return true
-  
-  // 局域网 IP 段
-  // 192.168.x.x
-  if (/^192\.168\./.test(ip)) return true
-  // 10.x.x.x
-  if (/^10\./.test(ip)) return true
-  // 172.16.x.x - 172.31.x.x
-  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return true
-  
-  // 检查是否与当前页面同源（通过比较 hostname）
-  if (typeof window !== 'undefined') {
-    try {
-      const currentHost = window.location.hostname
-      // 如果 IP 对应的 hostname 与当前 hostname 相同，也认为是本地
-      // 这里简化处理，如果 IP 是当前页面的 hostname，也认为是本地
-      // 实际场景中，本地客户端通常通过 localhost 或 127.0.0.1 连接
-    } catch (e) {
-      // ignore
-    }
-  }
-  
-  return false
-}
+// 已移除本地 IP 检测逻辑，完全通过 WebSocket 连接列表判断
 
-export const checkClientConnection = async () => {
-  try {
-    // 只有在 WebSocket 已连接时才检查
-    if (websocketClient.state.status !== 'connected') {
-      setLocalConnected(false)
-      return
-    }
-
-    const { getWebsocketConnections } = await import('@/api/system/websocket')
-    const connections = await getWebsocketConnections()
-    
-    // 检查是否有 clientSource 为 '客户端' 且 IP 为本地 IP 的连接
-    const hasLocalClient = connections.some(conn => {
-      const clientSource = conn.clientSource || conn.query?.clientSource
-      if (clientSource !== '客户端') return false
-      
-      // 检查 IP 是否为本地 IP
-      const ip = conn.ip || conn.clientInfo?.location?.ip
-      return isLocalIP(ip)
-    })
-    
-    setLocalConnected(hasLocalClient)
-  } catch (error) {
-    console.error('[connectionStatus] 检查客户端连接失败:', error)
-    // 检查失败时，如果 WebSocket 未连接，则设置为 false
-    if (websocketClient.state.status !== 'connected') {
-      setLocalConnected(false)
-    }
+// 通过 WebSocket 检查客户端连接状态（不调用连接列表 API）
+export const checkClientConnection = () => {
+  // 只有在 WebSocket 已连接时才检查
+  if (websocketClient.state.status !== 'connected') {
+    setLocalConnected(false)
+    return
   }
+
+  // 通过 WebSocket 发送检查请求
+  websocketClient.checkMyClientStatus()
 }
 
 // 启动客户端连接状态检查
@@ -182,6 +140,11 @@ export const startWebSocketConnection = () => {
     console.log('[ws] 启动 WebSocket 连接...')
     websocketClient.connect()
   }
+  
+  // 监听客户端连接状态响应
+  websocketClient.events.on('myClientStatus', ({ hasClient }) => {
+    setLocalConnected(hasClient)
+  })
   
   // 启动状态监听
   watchWebSocketStatus()
