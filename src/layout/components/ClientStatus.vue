@@ -136,7 +136,7 @@ export default defineComponent({
               class="text-[10px] font-bold flex items-center" 
               style={{ color: isLocalConnected.value ? '#67C23A' : '#F56C6C' }}
             >
-              {isLocalConnected.value ? '客户端已启动' : '客户端未启动'}
+              {isLocalConnected.value ? '本地客户端已连接' : '客户端未启动'}
               {clientLoading.value && (
                 <svg class="animate-spin ml-1" width="12" height="12" viewBox="0 0 50 50">
                   <circle cx="25" cy="25" r="20" fill="none" stroke="#409EFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.415, 31.415" transform="rotate(0 25 25)">
