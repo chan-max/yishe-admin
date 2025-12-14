@@ -260,6 +260,7 @@ import { downloadFileByElement } from "@/common/download";
 import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
+import { generateUUID } from "@/utils";
 
 const userStore = useUserStore()
 
@@ -560,7 +561,9 @@ const submitForm = async () => {
       let url = "";
       let key = "";
       if (form.value.file) {
-        const cos = await uploadToCOS({ file: form.value.file });
+        // 生成带.psd后缀的key
+        const keyWithExtension = `${new Date().getTime()}_1s_${generateUUID()}.psd`;
+        const cos = await uploadToCOS({ file: form.value.file, key: keyWithExtension });
         key = cos.key;
         url = cos.url;
       }
