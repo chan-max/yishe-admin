@@ -266,6 +266,8 @@ import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
 
+const userStore = useUserStore()
+
 // 查询条件
 const queryParams = reactive({
   currentPage: 1,
@@ -584,6 +586,7 @@ const submitForm = async () => {
         key: key || undefined,
         thumbnail: thumbnail,
         file: null,
+        uploaderId: userStore.user?.id
       });
       ElMessage.success("添加成功");
       // 释放预览URL

@@ -1146,6 +1146,7 @@ const submitForm = async () => {
         size: form.value.file.size,
         type: form.value.file.name.split(".").pop(),
         file: null,
+        uploaderId: userStore.user?.id
       });
       ElMessage.success("添加成功");
       getList();

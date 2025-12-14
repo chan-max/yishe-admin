@@ -186,6 +186,9 @@ import {
 } from '@element-plus/icons-vue'
 import { uploadMaterialFile } from '@/api/material'
 import { uploadToCOS } from '@/api/cos'
+import { useUserStore } from '@/store/modules/user'
+
+const userStore = useUserStore()
 
 defineProps({
   currentUploadInfo: {
@@ -320,7 +323,8 @@ const uploadFile = async (file) => {
       descriptionEn: file.descriptionEn || '',
       keywords: file.keywords || '',
       keywordsEn: file.keywordsEn || '',
-      suffix // 图片类型后缀
+      suffix, // 图片类型后缀
+      uploaderId: userStore.user?.id
     })
     file.status = 'success'
     emits('single-file-uploaded')

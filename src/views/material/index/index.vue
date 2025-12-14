@@ -26,7 +26,7 @@
         展开筛选
       </el-button>
       <div class="flex shrink-0">
-        <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
@@ -127,7 +127,7 @@
         />
       </form-item>
       <div class="flex shrink-0">
-        <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
@@ -3056,7 +3056,8 @@ async function handleUrlUpload() {
       suffix: extension,
       isCustom: urlUploadForm.isCustom,
       isInfringement: urlUploadForm.isInfringement,
-      isPublish: urlUploadForm.isPublish
+      isPublish: urlUploadForm.isPublish,
+      uploaderId: userStore.user?.id
     })
     
     ElNotification.success('图片上传成功')
