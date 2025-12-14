@@ -115,6 +115,7 @@ export type WebsocketEvents = {
   toast: { color: string; icon: string; message: string }
   adminMessage: { data: any; timestamp: string }
   myClientStatus: { hasClient: boolean }
+  'start-psd-set-production-response': { success: boolean; message?: string; sentTo?: number; totalClients?: number }
 }
 
 const emitter = mitt<WebsocketEvents>()
@@ -291,6 +292,11 @@ function bindSocketEvents(currentSocket: Socket) {
   currentSocket.on('my-client-status', (data: { hasClient: boolean }) => {
     emitter.emit('myClientStatus', { hasClient: data.hasClient })
   })
+
+  // 监听开始制作套图的响应
+  currentSocket.on('start-psd-set-production-response', (data: any) => {
+    emitter.emit('start-psd-set-production-response', data)
+  })
 }
 
 // 检查当前用户的客户端连接状态（通过 WebSocket）
@@ -379,6 +385,14 @@ function updateClientInfo(payload: Partial<ClientInfoPayload>) {
   emitClientInfo()
 }
 
+// 发送消息到服务器
+export function sendMessage(event: string, data: any) {
+  if (!socket || !socket.connected) {
+    throw new Error('WebSocket未连接')
+  }
+  socket.emit(event, data)
+}
+
 export const websocketClient = {
   state: wsState,
   profile: clientInfo,
@@ -388,6 +402,7 @@ export const websocketClient = {
   setEndpoint,
   updateClientInfo,
   checkMyClientStatus,
+  sendMessage,
   events: emitter
 }
 

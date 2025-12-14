@@ -253,6 +253,7 @@ import { formatTimestamp } from '@/common/date'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 import request from '@/config/axios'
 import { isLocalConnected } from '@/stores/connectionStatus'
+import { websocketClient } from '@/services/websocketClient'
 
 const loading = ref(false)
 const dataSource = ref<any[]>([])
@@ -534,6 +535,10 @@ async function handleStartProduction(row: any) {
     return ElMessage.warning('客户端未连接，请先启动客户端')
   }
 
+  if (websocketClient.state.status !== 'connected') {
+    return ElMessage.warning('WebSocket未连接，请稍后重试')
+  }
+
   try {
     await ElMessageBox.confirm(
       `确认开始制作该套图吗？制作请求将发送到您的客户端。`,
@@ -550,16 +555,40 @@ async function handleStartProduction(row: any) {
 
   try {
     startingProductionId.value = row.id
-    const res = await stickerPsdSetApi.startProduction(row.id)
-    ElMessage.success(res.message || '制作请求已发送到客户端')
-    // 可选：更新状态为制作中
-    if (row.status === 'pending') {
-      await updateRowStatus(row, 'processing')
+    
+    // 通过WebSocket发送制作请求
+    websocketClient.sendMessage('start-psd-set-production', { psdSetId: row.id })
+    
+    // 监听响应
+    const responseHandler = (data: { success: boolean; message?: string }) => {
+      websocketClient.events.off('start-psd-set-production-response', responseHandler)
+      startingProductionId.value = ''
+      
+      if (data.success) {
+        ElMessage.success(data.message || '制作请求已发送到客户端')
+        // 可选：更新状态为制作中
+        if (row.status === 'pending') {
+          updateRowStatus(row, 'processing')
+        }
+      } else {
+        ElMessage.error(data.message || '开始制作失败')
+      }
     }
+    
+    websocketClient.events.on('start-psd-set-production-response', responseHandler)
+    
+    // 设置超时，如果5秒内没有响应，显示错误
+    setTimeout(() => {
+      if (startingProductionId.value === row.id) {
+        websocketClient.events.off('start-psd-set-production-response', responseHandler)
+        startingProductionId.value = ''
+        ElMessage.warning('请求超时，请检查网络连接')
+      }
+    }, 5000)
+    
   } catch (error: any) {
     console.error('开始制作失败:', error)
     ElMessage.error(error?.message || '开始制作失败，请检查客户端连接状态')
-  } finally {
     startingProductionId.value = ''
   }
 }
