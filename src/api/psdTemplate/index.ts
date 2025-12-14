@@ -33,6 +33,6 @@ export const psdTemplateApi = {
 
   // 删除YiShe 模板
   deleteShopTemplate: async (data) => {
-    return await request.delete({ url: `/psd-template/delete`,data })
+    return await request.post({ url: `/psd-template/delete`, data })
   },
 }

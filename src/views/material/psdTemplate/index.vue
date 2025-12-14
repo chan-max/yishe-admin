@@ -199,23 +199,18 @@
                   <div class="upload-text">点击上传缩略图</div>
                   <div class="upload-tip">支持 jpg、png 等图片格式，最大 5MB</div>
                 </div>
-                <div v-else class="thumbnail-preview-container">
-                  <div
-                    class="thumbnail-preview-wrapper"
-                    @click="triggerThumbnailSelect"
-                  >
-                    <el-image
-                      :src="thumbnailPreviewUrl || form.thumbnail"
-                      fit="contain"
-                      class="thumbnail-preview-image"
-                    />
-                  </div>
+                <div v-else class="thumbnail-preview-wrapper">
+                  <el-image
+                    :src="thumbnailPreviewUrl || form.thumbnail"
+                    fit="contain"
+                    class="thumbnail-preview-image"
+                  />
                   <div class="thumbnail-action-buttons">
-                    <el-button type="primary" size="small" @click="triggerThumbnailSelect">
+                    <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
                       <el-icon><Edit /></el-icon>
                       替换
                     </el-button>
-                    <el-button type="danger" size="small" @click="clearThumbnail">
+                    <el-button type="danger" size="small" @click.stop="clearThumbnail">
                       <el-icon><Delete /></el-icon>
                       删除
                     </el-button>
@@ -763,13 +758,6 @@ const clearThumbnail = () => {
     }
   }
   
-  .thumbnail-preview-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-  
   .thumbnail-preview-wrapper {
     width: 148px;
     height: 148px;
@@ -781,6 +769,7 @@ const clearThumbnail = () => {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
     
     .thumbnail-preview-image {
       max-width: 100%;
@@ -789,12 +778,28 @@ const clearThumbnail = () => {
       height: 100%;
       object-fit: contain;
     }
-  }
-  
-  .thumbnail-action-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+    
+    .thumbnail-action-buttons {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+      
+      .el-button {
+        padding: 4px 8px;
+        font-size: 12px;
+        
+        .el-icon {
+          font-size: 12px;
+        }
+      }
+    }
   }
 }
 </style>
