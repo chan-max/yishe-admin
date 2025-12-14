@@ -208,25 +208,47 @@
           </div>
         </template>
         <template #operationSlot="{ row }">
-          <el-dropdown trigger="click">
+          <el-dropdown trigger="click" class="operation-dropdown">
             <el-button type="primary" link size="small">
-              操作
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item 
-                  @click="() => handleStartProduction(row)" 
-                  :disabled="!isClientConnected || startingProductionId === row.id"
-                >
-                  开始制作{{ !isClientConnected ? '（需要客户端连接）' : '' }}
-                </el-dropdown-item>
-                <el-dropdown-item divided @click="() => updateRowStatus(row, 'processing')">标记制作中</el-dropdown-item>
-                <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">标记完成</el-dropdown-item>
-                <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">标记失败</el-dropdown-item>
-              <el-dropdown-item @click="() => handleToProduct(row)" :disabled="generatingProductId === row.id">生成产品</el-dropdown-item>
-                <el-dropdown-item divided class="text-red-500" @click="() => handleDelete(row)">删除</el-dropdown-item>
-              </el-dropdown-menu>
+              <div class="op-menu">
+                <div class="op-menu-item" @click="() => handleStartProduction(row)" :class="{ 'is-disabled': !isClientConnected || startingProductionId === row.id }">
+                  <span class="op-menu-label">开始制作</span>
+                  <span v-if="!isClientConnected" class="op-menu-tip">（需要客户端连接）</span>
+                </div>
+                
+                <div class="op-divider"></div>
+                
+                <div class="op-menu-section">
+                  <div class="op-menu-section-title">状态标记</div>
+                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'pending')">
+                    <span class="op-menu-label">待制作</span>
+                  </div>
+                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'processing')">
+                    <span class="op-menu-label">制作中</span>
+                  </div>
+                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'completed')">
+                    <span class="op-menu-label">已完成</span>
+                  </div>
+                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'failed')">
+                    <span class="op-menu-label">失败</span>
+                  </div>
+                </div>
+                
+                <div class="op-divider"></div>
+                
+                <div class="op-menu-item" @click="() => handleToProduct(row)" :class="{ 'is-disabled': generatingProductId === row.id }">
+                  <span class="op-menu-label">生成产品</span>
+                </div>
+                
+                <div class="op-divider"></div>
+                
+                <div class="op-menu-item danger" @click="() => handleDelete(row)">
+                  <span class="op-menu-label">删除</span>
+                </div>
+              </div>
             </template>
           </el-dropdown>
         </template>
@@ -694,6 +716,92 @@ getList()
   border-color: var(--el-color-primary);
   transform: scale(1.05);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* 操作下拉菜单样式 */
+.operation-dropdown {
+  position: relative;
+}
+
+.op-menu {
+  min-width: 120px;
+  padding: 2px 0;
+  background: var(--el-bg-color);
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.op-menu-item {
+  position: relative;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.op-menu-item:hover:not(.is-disabled) {
+  background: var(--el-fill-color-light);
+}
+
+.op-menu-item.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.op-menu-item.danger {
+  color: var(--el-color-danger);
+}
+
+.op-menu-item.danger:hover:not(.is-disabled) {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+}
+
+.op-menu-label {
+  flex: 1;
+}
+
+.op-menu-tip {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+  margin-left: 6px;
+}
+
+.op-menu-section {
+  padding: 2px 0;
+}
+
+.op-menu-section-title {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+}
+
+.op-divider {
+  height: 1px;
+  background: var(--el-border-color-lighter);
+  margin: 2px 0;
+}
+
+/* 修复 Element Plus Dropdown 的样式 */
+.operation-dropdown :deep(.el-popper) {
+  padding: 0;
+}
+
+.operation-dropdown :deep(.el-dropdown-menu) {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.operation-dropdown :deep(.el-dropdown-menu__item) {
+  padding: 0;
+  height: auto;
 }
 </style>
 
