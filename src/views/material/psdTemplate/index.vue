@@ -686,7 +686,6 @@ const clearThumbnail = () => {
 .thumbnail-cell {
   display: flex;
   align-items: center;
-  height: 120px;
   padding: 4px;
   
   .thumbnail-image {
@@ -729,6 +728,8 @@ const clearThumbnail = () => {
     cursor: pointer;
     transition: all 0.3s;
     background: var(--el-fill-color-lighter);
+    padding: 8px;
+    box-sizing: border-box;
     
     &:hover {
       border-color: var(--el-color-primary);
@@ -739,23 +740,33 @@ const clearThumbnail = () => {
       font-size: 28px;
       color: var(--el-text-color-placeholder);
       margin-bottom: 8px;
+      flex-shrink: 0;
     }
     
     .upload-text {
       font-size: 14px;
       color: var(--el-text-color-regular);
       margin-bottom: 4px;
+      text-align: center;
+      line-height: 1.4;
+      word-break: break-word;
+      width: 100%;
     }
     
     .upload-tip {
       font-size: 12px;
       color: var(--el-text-color-placeholder);
+      text-align: center;
+      line-height: 1.4;
+      word-break: break-word;
+      width: 100%;
     }
   }
   
   .thumbnail-preview-container {
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 8px;
   }
   
@@ -782,6 +793,7 @@ const clearThumbnail = () => {
   
   .thumbnail-action-buttons {
     display: flex;
+    justify-content: center;
     gap: 8px;
   }
 }
