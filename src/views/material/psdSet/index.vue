@@ -215,7 +215,13 @@
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item @click="() => updateRowStatus(row, 'processing')">标记制作中</el-dropdown-item>
+                <el-dropdown-item 
+                  @click="() => handleStartProduction(row)" 
+                  :disabled="!isClientConnected || startingProductionId === row.id"
+                >
+                  开始制作{{ !isClientConnected ? '（需要客户端连接）' : '' }}
+                </el-dropdown-item>
+                <el-dropdown-item divided @click="() => updateRowStatus(row, 'processing')">标记制作中</el-dropdown-item>
                 <el-dropdown-item @click="() => updateRowStatus(row, 'completed')">标记完成</el-dropdown-item>
                 <el-dropdown-item @click="() => updateRowStatus(row, 'failed')">标记失败</el-dropdown-item>
               <el-dropdown-item @click="() => handleToProduct(row)" :disabled="generatingProductId === row.id">生成产品</el-dropdown-item>
@@ -239,13 +245,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { Search, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 import request from '@/config/axios'
+import { isLocalConnected } from '@/stores/connectionStatus'
 
 const loading = ref(false)
 const dataSource = ref<any[]>([])
@@ -253,6 +260,10 @@ const total = ref(0)
 const selectedIds = ref<string[]>([])
 const generatingProductId = ref<string>('')
 const batchGeneratingProducts = ref(false)
+const startingProductionId = ref<string>('')
+
+// 客户端连接状态（参考 header 中的状态检测方式）
+const isClientConnected = computed(() => isLocalConnected.value)
 
 const statusOptions = [
   { label: '待制作', value: 'pending' },
@@ -511,6 +522,45 @@ async function handleBatchGenerateProduct() {
     getList()
   } finally {
     batchGeneratingProducts.value = false
+  }
+}
+
+async function handleStartProduction(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('缺少ID，无法开始制作')
+  }
+
+  if (!isClientConnected.value) {
+    return ElMessage.warning('客户端未连接，请先启动客户端')
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认开始制作该套图吗？制作请求将发送到您的客户端。`,
+      '开始制作确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+  } catch (e) {
+    return
+  }
+
+  try {
+    startingProductionId.value = row.id
+    const res = await stickerPsdSetApi.startProduction(row.id)
+    ElMessage.success(res.message || '制作请求已发送到客户端')
+    // 可选：更新状态为制作中
+    if (row.status === 'pending') {
+      await updateRowStatus(row, 'processing')
+    }
+  } catch (error: any) {
+    console.error('开始制作失败:', error)
+    ElMessage.error(error?.message || '开始制作失败，请检查客户端连接状态')
+  } finally {
+    startingProductionId.value = ''
   }
 }
 
