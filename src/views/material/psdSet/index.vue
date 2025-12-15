@@ -61,8 +61,8 @@
       >
         <template #statusSlot="{ row }">
           <el-tag 
-            :color="statusTagColor(row.status)" 
-            effect="dark"
+            :type="statusTagType(row.status)" 
+            effect="plain"
             size="small"
           >
             {{ statusLabel(row.status) }}
@@ -405,18 +405,18 @@ function statusLabel(status: string) {
   return item ? item.label : status || '-'
 }
 
-function statusTagColor(status: string) {
+function statusTagType(status: string) {
   switch (status) {
     case 'completed':
-      return '#67C23A' // 绿色 - 已完成
+      return 'success'
     case 'processing':
-      return '#E6A23C' // 橙色 - 制作中
+      return 'warning'
     case 'failed':
-      return '#F56C6C' // 红色 - 失败
+      return 'danger'
     case 'pending':
-      return '#909399' // 灰色 - 待制作
+      return 'info'
     default:
-      return '#909399'
+      return 'info'
   }
 }
 
