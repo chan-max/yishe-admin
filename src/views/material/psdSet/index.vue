@@ -214,10 +214,11 @@
             </el-button>
             <template #dropdown>
               <div class="op-menu">
-                <div class="op-menu-item" @click="() => handleStartProduction(row)" :class="{ 'is-disabled': !isClientConnected || startingProductionId === row.id }">
-                  <span class="op-menu-label">开始制作</span>
-                  <span v-if="!isClientConnected" class="op-menu-tip">（需要客户端连接）</span>
-                </div>
+                <el-tooltip content="需要客户端连接" placement="right" :disabled="isClientConnected || startingProductionId === row.id">
+                  <div class="op-menu-item" @click="() => handleStartProduction(row)" :class="{ 'is-disabled': !isClientConnected || startingProductionId === row.id }">
+                    <span class="op-menu-label">开始制作</span>
+                  </div>
+                </el-tooltip>
                 
                 <div class="op-divider"></div>
                 
@@ -267,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { Search, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
@@ -583,6 +584,7 @@ async function handleStartProduction(row: any) {
     
     // 监听响应
     const responseHandler = (data: { success: boolean; message?: string }) => {
+      console.log('[psd-set] 收到制作响应:', data)
       websocketClient.events.off('start-psd-set-production-response', responseHandler)
       startingProductionId.value = ''
       
@@ -593,10 +595,14 @@ async function handleStartProduction(row: any) {
           updateRowStatus(row, 'processing')
         }
       } else {
-        ElMessage.error(data.message || '开始制作失败')
+        // 如果失败，显示警告消息（比如正在制作中）
+        const message = data.message || '开始制作失败'
+        console.log('[psd-set] 显示警告消息:', message)
+        ElMessage.warning(message)
       }
     }
     
+    // 先监听事件，再发送请求
     websocketClient.events.on('start-psd-set-production-response', responseHandler)
     
     // 设置超时，如果5秒内没有响应，显示错误
@@ -615,6 +621,37 @@ async function handleStartProduction(row: any) {
   }
 }
 
+// 全局监听制作响应消息（用于处理客户端主动发送的响应，比如正在制作中）
+const globalResponseHandler = (data: { success: boolean; message?: string; psdSetId?: string }) => {
+  console.log('[psd-set] 全局收到制作响应:', data)
+  
+  // 如果 success 为 false，说明可能是正在制作中或其他错误
+  if (!data.success) {
+    const message = data.message || '开始制作失败'
+    console.log('[psd-set] 全局显示警告消息:', message)
+    ElMessage.warning(message)
+    
+    // 如果指定了 psdSetId，清除对应的 startingProductionId
+    if (data.psdSetId && startingProductionId.value === data.psdSetId) {
+      startingProductionId.value = ''
+    }
+  } else {
+    // 如果成功，也清除对应的 startingProductionId
+    if (data.psdSetId && startingProductionId.value === data.psdSetId) {
+      startingProductionId.value = ''
+    }
+  }
+}
+
+onMounted(() => {
+  // 添加全局监听器
+  websocketClient.events.on('start-psd-set-production-response', globalResponseHandler)
+})
+
+onUnmounted(() => {
+  // 清理全局监听器
+  websocketClient.events.off('start-psd-set-production-response', globalResponseHandler)
+})
 
 getList()
 </script>

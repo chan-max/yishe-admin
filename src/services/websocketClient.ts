@@ -116,6 +116,7 @@ export type WebsocketEvents = {
   adminMessage: { data: any; timestamp: string }
   myClientStatus: { hasClient: boolean }
   'start-psd-set-production-response': { success: boolean; message?: string; sentTo?: number; totalClients?: number }
+  'production-status': { status: string; message: string; psdSetId?: string }
 }
 
 const emitter = mitt<WebsocketEvents>()
@@ -295,7 +296,13 @@ function bindSocketEvents(currentSocket: Socket) {
 
   // 监听开始制作套图的响应
   currentSocket.on('start-psd-set-production-response', (data: any) => {
+    console.log('[ws] 收到 start-psd-set-production-response:', data)
     emitter.emit('start-psd-set-production-response', data)
+  })
+
+  // 监听制作状态消息（客户端正在制作中时返回的消息）
+  currentSocket.on('production-status', (data: { status: string; message: string; psdSetId?: string }) => {
+    emitter.emit('production-status', data)
   })
 }
 
