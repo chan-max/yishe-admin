@@ -122,11 +122,20 @@
       @close="dialogClose"
       align-center
     >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="160px">
-        <el-row>
-          <el-col :span="24">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
+        <el-row :gutter="16">
+          <el-col :span="12">
             <el-form-item label="模板名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入模板名称" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="12">
+            <el-form-item label="关键词" prop="keywords">
+              <el-input
+                v-model="form.keywords"
+                placeholder="请输入关键词，多个关键词用逗号分隔"
+              />
             </el-form-item>
           </el-col>
 
@@ -142,19 +151,11 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="关键词" prop="keywords">
-              <el-input
-                v-model="form.keywords"
-                placeholder="请输入关键词，多个关键词用逗号分隔"
-              />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="24">
             <el-form-item label="Windows 本地路径" prop="windowsLocalPath">
               <el-input
                 v-model="form.windowsLocalPath"
-                placeholder="请输入 Windows 本地路径，如：C:\path\to\file 或 \\server\share\path"
+                placeholder="请输入 Windows 本地路径，如：C:\\path\\to\\file 或 \\\\server\\share\\path"
+                @blur="normalizeWindowsPath"
               />
             </el-form-item>
           </el-col>
@@ -503,13 +504,35 @@ const validateWindowsPath = (rule, value, callback) => {
   }
 };
 
+// 规范化 Windows 路径：去除首尾空格和双引号，将 / 替换为 \\
+const normalizeWindowsPath = () => {
+  if (typeof form.value.windowsLocalPath !== 'string') return;
+  let v = form.value.windowsLocalPath.trim();
+  if (!v) {
+    form.value.windowsLocalPath = '';
+    return;
+  }
+  // 去掉首尾双引号
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    v = v.slice(1, -1);
+  }
+  // 将 / 替换为 \
+  v = v.replace(/\//g, '\\');
+  // 合并重复的反斜杠（保留 UNC 开头的 \\）
+  if (v.startsWith('\\\\')) {
+    v = '\\\\' + v.slice(2).replace(/\\{2,}/g, '\\');
+  } else {
+    v = v.replace(/\\{2,}/g, '\\');
+  }
+  form.value.windowsLocalPath = v;
+};
+
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
-  description: [{ required: true, message: "请输入描述", trigger: "blur" }],
-  keywords: [{ required: true, message: "请输入关键词", trigger: "blur" }],
   windowsLocalPath: [
     { validator: validateWindowsPath, trigger: "blur" }
   ],
+  // 描述和关键词改为非必填
   // titleTemplateId: [{ required: true, message: "请选择标题模板", trigger: "blur" }],
   // file: [{ required: true, message: "请选择 PSD 文件", trigger: "blur" }], // PSD 文件改为非必填
 };
