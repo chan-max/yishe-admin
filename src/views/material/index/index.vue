@@ -563,6 +563,20 @@
                         </div>
                       </div>
 
+                      <!-- 图片裂变和视频制作 -->
+                      <div 
+                        class="op-menu-item has-submenu"
+                        @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave"
+                      >
+                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                        <span class="op-menu-label">制作工具</span>
+                        <div class="op-submenu" data-submenu="production" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('image-split', row)">图片裂变</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('video-production', row)">视频制作</div>
+                        </div>
+                      </div>
+
                       <div v-if="isAdmin" class="op-divider"></div>
                       <div v-if="isAdmin" class="op-menu-item" @click="() => handleOperationCommand('edit', row)">
                         <span class="op-menu-arrow-placeholder"></span>
@@ -2750,6 +2764,12 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'create-ps-set':
       openPsdSetDialog(row);
+      break;
+    case 'image-split':
+      ElMessage.info('图片裂变功能开发中...');
+      break;
+    case 'video-production':
+      ElMessage.info('视频制作功能开发中...');
       break;
     case 'delete':
       handleDelete(row);
