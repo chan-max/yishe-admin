@@ -73,12 +73,12 @@
           @change="(val) => { if (!val) getList() }"
         />
       </form-item>
-      <form-item label="phash相似图片搜索">
+      <form-item label="相似图片搜索">
         <div class="flex gap-4 items-center flex-wrap">
           <el-input
             v-model="queryParams.phash"
-            placeholder="请输入phash值"
-            style="width: 200px"
+            placeholder="输入 phash 或图片地址"
+            style="width: 260px"
             clearable
             @blur="onPhashInputBlur"
           />
@@ -1484,7 +1484,7 @@ const queryParams = reactive({
   endTime: '',
   suffix: '', // 新增后缀参数
   id: '', // 新增ID精确查询参数
-  phash: '', // phash值
+  phash: '', // phash值或直接输入图片地址
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
   isPublish: null, // 新增发布状态过滤参数
@@ -1632,7 +1632,8 @@ const rules = {
 const designModelModalVisible = ref(false)
 const filterDialogVisible = ref(false)
 const isMobile = ref(false)
-const actionsCollapsed = ref(true)
+// 使用 localStorage 记住折叠状态，刷新后仍保持
+const actionsCollapsed = useLocalStorage('material_filter_collapsed', true)
 
 // PS 套图制作
 const psdSetDialogVisible = ref(false)
@@ -1791,14 +1792,13 @@ async function getList() {
   dataSource.value = res.list
   total.value = res.total
 }
-
 // phash相似图片搜索
 async function handlePhashSearch() {
   // 去除phash值的前后空格
   queryParams.phash = queryParams.phash.trim()
-  
+
   if (!queryParams.phash) {
-    ElMessage.warning('请输入phash值')
+    ElMessage.warning('请输入phash值或图片地址')
     return
   }
   
