@@ -357,15 +357,8 @@ const queryParams = reactive({
   resourceType: "", // 资源类型过滤（own/external）
 });
 const gridRef = ref();
-const gridOptions = ref<any>({
-  ...commonGridOptions,
-  maxHeight: null,
-  rowConfig: { keyField: "id" },
-  rowClassName: ({ row }) => {
-    return row && row.isOwnResource === false ? "external-resource-row" : "";
-  },
-  checkboxConfig: { reserve: true },
-  columns: [
+const gridOptions = computed(() => {
+  const baseColumns = [
     {
       type: "checkbox" as const,
       field: "_selection",
@@ -384,6 +377,10 @@ const gridOptions = ref<any>({
     { title: "描述", field: "description", minWidth: 200 },
     { title: "关键词", field: "keywords", minWidth: 160 },
     { title: "后缀", field: "suffix", width: 80 },
+  ]
+
+  // 只有管理员显示的字段
+  const adminOnlyColumns = [
     { title: "感知哈希", field: "phash", width: 80 },
     { title: "ID", field: "id", width: 80 },
     { title: "来源", field: "source", minWidth: 160 }, // 新增来源列
@@ -413,18 +410,36 @@ const gridOptions = ref<any>({
       ellipsis: true,
       formatter: (e) => formatTimestamp(e.cellValue),
     },
-    {
-      title: "操作",
-      fixed: "right",
-      width: "auto",
-      field: "operation",
-      slots: { default: "operationDefaultSlot" },
+  ]
+
+  const operationColumn = {
+    title: "操作",
+    fixed: "right",
+    width: "auto",
+    field: "operation",
+    slots: { default: "operationDefaultSlot" },
+  }
+
+  return {
+    ...commonGridOptions,
+    maxHeight: maxHeight.value,
+    rowConfig: { keyField: "id" },
+    rowClassName: ({ row }) => {
+      return row && row.isOwnResource === false ? "external-resource-row" : "";
     },
-  ] as any,
+    checkboxConfig: { reserve: true },
+    columns: [
+      ...baseColumns,
+      ...(isAdmin.value ? adminOnlyColumns : []),
+      operationColumn
+    ] as any,
+  }
 });
 const { height } = useWindowSize();
+const maxHeight = ref(null);
+
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 260;
+  maxHeight.value = height.value - 260;
 });
 const dataSource = ref([]);
 const loading = ref(false);

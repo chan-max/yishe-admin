@@ -22,13 +22,13 @@
           @change="getList"
         />
       </form-item>
-      <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-        展开筛选
-      </el-button>
       <div class="flex shrink-0">
         <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+          展开筛选
+        </el-button>
       </div>
     </div>
 
@@ -45,9 +45,6 @@
         />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-        收起筛选
-      </el-button>
       <form-item label="排序">
         <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
           <el-option label="创建时间倒序" value="createTime DESC" />
@@ -139,6 +136,9 @@
         <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+          收起筛选
+        </el-button>
       </div>
     </div>
     <div v-if="isMobile && !actionsCollapsed" class="flex pb-4 justify-end">
@@ -1496,16 +1496,8 @@ function resetCheckStatus() {
   ids.value = []
 }
 
-const gridOptions = ref({
-  ...commonGridOptions,
-  maxHeight: null,
-  rowConfig: {
-    keyField: 'id'
-  },
-  checkboxConfig: {
-    reserve: true
-  },
-  columns: [
+const gridOptions = computed(() => {
+  const baseColumns = [
     { type: 'checkbox' as const, field: 'checkbox', title: '', width: 50, ellipsis: true, reserve: true, minWidth: 50, fixed: 'left' as const, className: '' as any },
     // { title: 'ID', field: 'id', width: 80, ellipsis: true },
     {
@@ -1521,15 +1513,24 @@ const gridOptions = ref({
     { title: '关键词', field: 'keywords', minWidth: 240, slots: { default: 'keywordsTextSlot' } },
     { title: '英文关键词', field: 'keywordsEn', minWidth: 240, slots: { default: 'keywordsEnTextSlot' } },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
-    { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
     { 
       title: '相似度', 
       field: 'similarity', 
       width: 80,
       slots: { default: 'similaritySlot' }
     }, // 新增相似度列
+    { 
+      title: '侵权状态', 
+      field: 'isInfringement', 
+      width: 100,
+      slots: { default: 'isInfringementSlot' }
+    },
+  ]
+
+  // 只有管理员显示的字段
+  const adminOnlyColumns = [
+    { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
     { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
-    { title: '原始地址', field: 'originUrl', minWidth: 200, ellipsis: true, slots: { default: 'originUrlSlot' } }, // 原始地址列
     { 
       title: '自定义贴纸', 
       field: 'isCustom', 
@@ -1537,17 +1538,12 @@ const gridOptions = ref({
       slots: { default: 'isCustomSlot' }
     },
     { 
-      title: '侵权状态', 
-      field: 'isInfringement', 
-      width: 100,
-      slots: { default: 'isInfringementSlot' }
-    },
-    { 
       title: '发布状态', 
       field: 'isPublish', 
       width: 100,
       slots: { default: 'isPublishSlot' }
     },
+    { title: '原始地址', field: 'originUrl', minWidth: 200, ellipsis: true, slots: { default: 'originUrlSlot' } }, // 原始地址列
     {
       title: '创建时间',
       field: 'createTime',
@@ -1566,20 +1562,38 @@ const gridOptions = ref({
         return formatTimestamp(e.cellValue)
       }
     },
-    {
-      title: '操作',
-      fixed: 'right',
-      width: 'auto',
-      field: 'operation',
-      slots: { default: 'operationDefaultSlot' }
-    }
   ]
+
+  const operationColumn = {
+    title: '操作',
+    fixed: 'right',
+    width: 'auto',
+    field: 'operation',
+    slots: { default: 'operationDefaultSlot' }
+  }
+
+  return {
+    ...commonGridOptions,
+    maxHeight: maxHeight.value,
+    rowConfig: {
+      keyField: 'id'
+    },
+    checkboxConfig: {
+      reserve: true
+    },
+    columns: [
+      ...baseColumns,
+      ...(isAdmin.value ? adminOnlyColumns : []),
+      operationColumn
+    ]
+  }
 })
 
 const { height } = useWindowSize()
+const maxHeight = ref(null)
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 200
+  maxHeight.value = height.value - 200
 })
 
 const dataSource = ref([])
