@@ -555,9 +555,9 @@
                         <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
                         <span class="op-menu-label">图片操作</span>
                         <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('download', row)">下载</div>
                           <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('copy', row)">复制</div>
                           <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('download', row)">下载</div>
                           <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
                           <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
                         </div>
@@ -2924,6 +2924,7 @@ function handleSubmenuEnter(event: MouseEvent) {
   submenu.style.position = 'fixed'
   submenu.style.left = '-9999px'
   submenu.style.top = '0'
+  submenu.style.right = 'auto' // 清除可能存在的 right 属性
   submenu.style.opacity = '1'
   submenu.style.visibility = 'visible'
   submenu.style.transform = 'none'
@@ -2964,12 +2965,17 @@ function handleSubmenuEnter(event: MouseEvent) {
   }
   
   // 设置子菜单的最终位置和样式
-  submenu.style.left = `${left}px`
-  submenu.style.top = `${top}px`
+  // 使用 setProperty 并设置 important 标志，确保位置不被 CSS 覆盖
+  submenu.style.setProperty('right', 'auto', 'important')
+  submenu.style.setProperty('left', `${left}px`, 'important')
+  submenu.style.setProperty('top', `${top}px`, 'important')
   submenu.style.opacity = '1'
   submenu.style.visibility = 'visible'
   submenu.style.transform = 'translateX(0)'
   submenu.style.pointerEvents = 'auto'
+  
+  // 确保位置设置生效，强制重排
+  void submenu.offsetWidth
 }
 
 let submenuHideTimer: ReturnType<typeof setTimeout> | null = null
