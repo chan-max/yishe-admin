@@ -83,6 +83,24 @@
             @blur="onPhashInputBlur"
           />
           
+          <div class="flex items-center gap-2">
+            <el-check-tag
+              :checked="queryParams.phashMode === 'range'"
+              @change="() => queryParams.phashMode = 'range'"
+            >
+              相似匹配
+            </el-check-tag>
+            <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+              <el-check-tag
+                :checked="queryParams.phashMode === 'exact'"
+                type="primary"
+                @change="() => queryParams.phashMode = 'exact'"
+              >
+                精确匹配
+              </el-check-tag>
+            </el-tooltip>
+          </div>
+          
           <div class="flex gap-2">
             <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
             <el-button @click="clearPhashSearch">清空</el-button>
@@ -558,6 +576,7 @@
                           <div class="op-submenu-item" @click="() => handleOperationCommand('download', row)">下载</div>
                           <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('copy', row)">复制</div>
                           <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('find-similar', row)">找相似图</div>
                           <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
                           <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
                         </div>
@@ -1485,6 +1504,7 @@ const queryParams = reactive({
   suffix: '', // 新增后缀参数
   id: '', // 新增ID精确查询参数
   phash: '', // phash值或直接输入图片地址
+  phashMode: 'range', // range | exact
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
   isPublish: null, // 新增发布状态过滤参数
@@ -1796,7 +1816,7 @@ async function getList() {
 async function handlePhashSearch() {
   // 去除phash值的前后空格
   queryParams.phash = queryParams.phash.trim()
-
+  
   if (!queryParams.phash) {
     ElMessage.warning('请输入phash值或图片地址')
     return
@@ -1816,6 +1836,8 @@ function onPhashInputBlur() {
 // 清空phash搜索
 function clearPhashSearch() {
   queryParams.phash = ''
+  queryParams.currentPage = 1
+  getList()
 }
 
 getList()
@@ -2417,6 +2439,21 @@ async function handleGeneratePhash(row) {
   }
 }
 
+// 查找相似图：将当前行的 phash 带入搜索
+async function handleFindSimilar(row) {
+  if (!row?.phash) {
+    ElMessage.warning('该图片暂无 phash，请先生成后再搜索相似图');
+    return;
+  }
+  queryParams.phash = (row.phash || '').trim();
+  queryParams.currentPage = 1;
+  // 精确匹配更快，行内查找优先用精确模式；可根据需要再切换
+  queryParams.phashMode = 'exact';
+  await getList();
+  // 如果处于折叠状态，自动展开便于查看结果和输入框
+  actionsCollapsed.value = false;
+}
+
 // 发布贴纸
 async function handlePublish(row) {
   try {
@@ -2740,6 +2777,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'generate-phash':
       handleGeneratePhash(row);
+      break;
+    case 'find-similar':
+      handleFindSimilar(row);
       break;
     case 'publish':
       handlePublish(row);
