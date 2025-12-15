@@ -334,12 +334,7 @@ function getColumns() {
       width: 'auto', 
       slots: { default: 'stickerDetailSlot' } 
     },
-    { 
-      title: '套图图片', 
-      field: 'psdImages', 
-      width: 'auto', 
-      slots: { default: 'psdImagesSlot' } 
-    },
+
     { 
       title: 'PSD模板详情', 
       field: 'templateDetail', 

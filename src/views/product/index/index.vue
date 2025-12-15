@@ -430,15 +430,32 @@
                   border
                   size="mini"
                   class="relation-sub-grid"
-                  :columns="[
-                       { field: 'images', title: '套图图片', width: 200, slots: { default: 'psdSetImagesSlot' } },
-                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-               
-                    { field: 'updateTime', title: '更新时间', width: 140, formatter: ({ cellValue }) => formatTimestamp(cellValue) }
-                  ]"
-                />
+                  :columns="psdSetColumns"
+                >
+                  <template #psdSetImagesSlot="{ row: psdRow }">
+                    <div class="flex gap-1 flex-wrap">
+                      <div
+                        v-for="(img, idx) in getPsdSetImages(psdRow).slice(0, 3)"
+                        :key="idx"
+                        class="relation-thumb-wrapper"
+                      >
+                        <el-image
+                          v-if="img"
+                          :src="img"
+                          :preview-src-list="getPsdSetImages(psdRow)"
+                          :initial-index="idx"
+                          :preview-teleported="true"
+                          :hide-on-click-modal="false"
+                          class="relation-thumb-image"
+                          fit="contain"
+                        />
+                        <span v-else class="text-gray-400 text-xs">无</span>
+                      </div>
+                      <span v-if="getPsdSetImages(psdRow).length > 3" class="text-xs text-gray-500">+{{ (getPsdSetImages(psdRow).length - 3) }}</span>
+                      <span v-if="!getPsdSetImages(psdRow).length" class="text-gray-400 text-xs">无</span>
+                    </div>
+                  </template>
+                </vxe-grid>
               </div>
             </div>
             <span v-else class="text-gray-400 text-sm">无关联</span>
@@ -1429,26 +1446,19 @@
             border
             size="mini"
             style="margin: 0; padding: 0; background: none;"
-            :columns="[
-              { field: 'images', title: '套图图片', width: 200, slots: { default: 'psdSetImagesSlot' } },
-              { field: 'name', title: '名称', minWidth: 120 },
-              { field: 'description', title: '描述', minWidth: 150 },
-              { field: 'keywords', title: '关键词', minWidth: 120 },
-              { field: 'updateTime', title: '更新时间', minWidth: 140, formatter: ({ cellValue }) => formatTimestamp(cellValue) },
-              { field: 'id', title: '关联ID', minWidth: 120 }
-            ]"
+            :columns="psdSetDetailColumns"
           >
             <template #psdSetImagesSlot="{ row }">
               <div class="flex gap-1 flex-wrap">
                 <div
-                  v-for="(img, idx) in (row.images || []).slice(0, 3)"
+                  v-for="(img, idx) in getPsdSetImages(row).slice(0, 3)"
                   :key="idx"
                   class="relation-thumb-wrapper"
                 >
                   <el-image
                     v-if="img"
                     :src="img"
-                    :preview-src-list="row.images"
+                    :preview-src-list="getPsdSetImages(row)"
                     :initial-index="idx"
                     :preview-teleported="true"
                     :hide-on-click-modal="false"
@@ -1457,8 +1467,8 @@
                   />
                   <span v-else class="text-gray-400 text-xs">无</span>
                 </div>
-                <span v-if="(row.images || []).length > 3" class="text-xs text-gray-500">+{{ (row.images.length - 3) }}</span>
-                <span v-if="!row.images || !row.images.length" class="text-gray-400 text-xs">无</span>
+                <span v-if="getPsdSetImages(row).length > 3" class="text-xs text-gray-500">+{{ (getPsdSetImages(row).length - 3) }}</span>
+                <span v-if="!getPsdSetImages(row).length" class="text-gray-400 text-xs">无</span>
               </div>
             </template>
           </vxe-grid>
@@ -1784,6 +1794,17 @@ const gridOptions = ref({
     },
   ],
 });
+
+// PSD 套图列配置（关联列表 & 详情弹窗共用）
+const psdSetBaseColumns = [
+  { field: 'images', title: '套图图片', width: 240, slots: { default: 'psdSetImagesSlot' } },
+  { field: 'name', title: '名称', minWidth: 120, showOverflow: true },
+  { field: 'description', title: '描述', minWidth: 150, showOverflow: true },
+  { field: 'keywords', title: '关键词', minWidth: 120, showOverflow: true },
+  { field: 'updateTime', title: '更新时间', minWidth: 140, formatter: ({ cellValue }) => formatTimestamp(cellValue) }
+];
+const psdSetColumns = psdSetBaseColumns;
+const psdSetDetailColumns = [...psdSetBaseColumns, { field: 'id', title: '关联ID', minWidth: 120 }];
 
 
 const { height } = useWindowSize()
@@ -3183,19 +3204,62 @@ function getCustomModelImages(customModel: any): string[] {
   return images
 }
 
-// 获取关联信息文本
-function getRelationsText(row: any): string {
-  const relations: string[] = []
-  if (row.customModel) relations.push('设计模型')
-  if (row.sticker) relations.push('贴纸')
-  if (row.productImage2D) relations.push('二维产品图')
-  if (row.psdSet) relations.push('PSD套图')
-  
-  if (relations.length === 0) return '无关联'
-  if (relations.length === 1) return `关联${relations[0]}`
-  if (relations.length === 2) return `关联${relations[0]}、${relations[1]}`
-  return `关联${relations[0]}、${relations[1]}、${relations[2]}`
+// 获取 PSD 套图的图片列表，兼容数组、逗号分隔字符串、meta.images
+function getPsdSetImages(psdSet: any): string[] {
+  if (!psdSet) return []
+  // 提取 images 字段（优先），兼容数组/对象数组/字符串
+  const normalizeArray = (arr: any[]) =>
+    arr
+      .map((u) => {
+        if (typeof u === 'string') return u.trim()
+        if (u && typeof u === 'object' && typeof u.url === 'string') return u.url.trim()
+        return ''
+      })
+      .filter((u) => !!u)
+
+  if (Array.isArray(psdSet.images)) {
+    const urls = normalizeArray(psdSet.images)
+    if (urls.length) return urls
+  }
+
+  if (typeof psdSet.images === 'string') {
+    const raw = psdSet.images.trim()
+    if ((raw.startsWith('[') && raw.endsWith(']')) || (raw.startsWith('{') && raw.endsWith('}'))) {
+      try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          const urls = normalizeArray(parsed)
+          if (urls.length) return urls
+        }
+      } catch {
+        // ignore and fallback
+      }
+    }
+    const urls = raw
+      .split(',')
+      .map((u: string) => u.trim())
+      .filter((u: string) => u)
+    if (urls.length) return urls
+  }
+
+  // 最后一层兜底：meta.images 仅在 images 为空时尝试
+  const meta = psdSet.meta || {}
+  if (Array.isArray(meta.images)) {
+    const urls = normalizeArray(meta.images)
+    if (urls.length) return urls
+  }
+  if (typeof meta.images === 'string') {
+    const urls = meta.images
+      .split(',')
+      .map((u: string) => u.trim())
+      .filter((u: string) => u)
+    if (urls.length) return urls
+  }
+
+  return []
 }
+
+
 
 // 显示关联信息详情
 function showRelationsDetail(row: any) {
