@@ -159,7 +159,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="24" v-if="!isEdit">
+          <el-col :span="24">
             <el-form-item label="模板文件" prop="file">
               <el-upload
                 style="width: 100%"
@@ -174,7 +174,9 @@
               >
                 <el-button type="primary">选择 PSD 文件</el-button>
                 <template #tip>
-                  <div class="el-upload__tip">只能上传 PSD 文件（可选）</div>
+                  <div class="el-upload__tip">
+                    {{ isEdit ? '如需替换 PSD 文件，请重新上传；不上传则保留原文件' : '只能上传 PSD 文件（可选）' }}
+                  </div>
                 </template>
               </el-upload>
             </el-form-item>
@@ -288,6 +290,12 @@ const gridOptions = ref({
       },
     },
     { title: "套图模板名称", field: "name", width: 240, showOverflow: true },
+    {
+      title: "本地路径",
+      field: "windowsLocalPath",
+      minWidth: 200,
+      showOverflow: true,
+    },
 
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true }, // 该类目下已经发布的商品数量
     {
@@ -424,6 +432,9 @@ function handleEdit(row) {
   form.value = {
     ...row,
   };
+  // 清空已选文件列表，只在需要时重新选择文件
+  fileList.value = [];
+  form.value.file = null;
   
   // 清空预览（编辑时显示已有的缩略图）
   if (thumbnailPreviewUrl.value) {
@@ -531,7 +542,17 @@ const submitForm = async () => {
   try {
     if (isEdit.value) {
       submitLoading.value = true;
-      
+
+      // 如果有新的 PSD 文件，先上传并替换
+      let url = form.value.url;
+      let key = form.value.key;
+      if (form.value.file) {
+        const keyWithExtension = `${new Date().getTime()}_1s_${generateUUID()}.psd`;
+        const cos = await uploadToCOS({ file: form.value.file, key: keyWithExtension });
+        key = cos.key;
+        url = cos.url;
+      }
+
       // 如果有新的缩略图文件，先上传
       let thumbnail = form.value.thumbnail;
       if (form.value.thumbnailFile) {
@@ -545,6 +566,8 @@ const submitForm = async () => {
         description: form.value.description || "",
         keywords: form.value.keywords || "",
         windowsLocalPath: form.value.windowsLocalPath || "",
+        url: url || undefined,
+        key: key || undefined,
         thumbnail: thumbnail || "", // 确保是字符串
       });
       ElMessage.success("更新成功");
