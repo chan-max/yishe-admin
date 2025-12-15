@@ -127,7 +127,7 @@
         <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+        <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请先勾选素材') } linkRow = null; openLinkTemplate2D(null) }">根据二维模板组制作商品图({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">
           制作PS套图({{ ids.length }})
@@ -539,7 +539,7 @@
                         <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
                         <span class="op-menu-label">制作</span>
                         <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
+                          <div v-if="false" class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('generate-product', row)">生成商品</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">制作PS套图</div>
