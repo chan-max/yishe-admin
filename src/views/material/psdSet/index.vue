@@ -270,7 +270,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from 'vue'
+import { useWindowSize } from '@vueuse/core'
 import { Search, ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
@@ -358,6 +359,7 @@ function getColumns() {
 
 const gridOptions = ref<any>({
   ...commonGridOptions,
+  maxHeight: null,
   rowConfig: {
     keyField: 'id'
   },
@@ -365,6 +367,12 @@ const gridOptions = ref<any>({
     reserve: true
   },
   columns: getColumns()
+})
+
+const { height } = useWindowSize()
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 260
 })
 
 async function getList() {
