@@ -29,6 +29,20 @@
           @change="handleShowDetailsChange"
         />
       </form-item>
+      <form-item label="排序方式">
+        <el-select
+          v-model="queryParams.sortingFields"
+          style="width: 160px"
+          @change="getList"
+        >
+          <el-option
+            v-for="item in sortTypeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
       <div class="flex items-center" style="margin-left: auto">
         <el-dropdown trigger="click" :disabled="!selectedIds.length" style="margin-right: 8px">
@@ -312,6 +326,7 @@ import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 import request from '@/config/axios'
 import { isLocalConnected } from '@/stores/connectionStatus'
 import { websocketClient } from '@/services/websocketClient'
+import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
 
 const loading = ref(false)
 const dataSource = ref<any[]>([])
@@ -336,7 +351,8 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
   keyword: '',
-  status: ''
+  status: '',
+  sortingFields: defaultSortingValue()
 })
 
 const showDetails = ref(false)
@@ -415,7 +431,8 @@ async function getList() {
       ...queryParams,
       status: queryParams.status || undefined,
       keyword: queryParams.keyword?.trim() || undefined,
-      includeDetails: showDetails.value
+      includeDetails: showDetails.value,
+      sortingFields: queryParams.sortingFields
     })
     dataSource.value = res.list || []
     total.value = res.total || 0
