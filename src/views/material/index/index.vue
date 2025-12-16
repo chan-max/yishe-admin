@@ -232,7 +232,11 @@
               :key="id"
               class="thumb"
             >
-              <img :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url" />
+              <img
+                :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url"
+                class="thumb-img"
+                alt="素材预览"
+              />
             </div>
           </div>
         </div>
@@ -250,7 +254,7 @@
                 <img
                   v-if="tpl.thumbnail || tpl.preview || tpl.image"
                   :src="tpl.thumbnail || tpl.preview || tpl.image"
-                  :alt="tpl.name || '模板缩略图'"
+                    :alt="tpl.name || '模板缩略图'"
                   class="template-thumbnail"
                   @error="handleTemplateImageError"
                 />
@@ -263,6 +267,33 @@
                     <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
                     <span class="uploader" v-if="tpl.uploader?.name">上传者：{{ tpl.uploader.name }}</span>
                   </div>
+                    <div class="template-paths">
+                      <div class="path-row">
+                        <span class="path-label">远程链接：</span>
+                        <el-link
+                          v-if="tpl.url"
+                          :href="tpl.url"
+                          target="_blank"
+                          type="primary"
+                          :underline="false"
+                          class="path-link"
+                        >
+                          {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
+                        </el-link>
+                        <span v-else class="path-empty">暂无</span>
+                      </div>
+                      <div class="path-row">
+                        <span class="path-label">本地路径：</span>
+                        <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
+                        <span v-else class="path-empty">暂无</span>
+                      </div>
+                      <div class="path-tags">
+                        <el-tag v-if="tpl.url && tpl.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
+                        <el-tag v-else-if="tpl.url" type="primary" size="small">远程路径</el-tag>
+                        <el-tag v-else-if="tpl.windowsLocalPath" type="warning" size="small">本地路径</el-tag>
+                        <el-tag v-else type="info" size="small">未提供路径</el-tag>
+                      </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -3381,7 +3412,7 @@ async function handleUrlUpload() {
 .template-selector .row-actions { display: flex; align-items: center; gap: 8px; }
 .template-selector .check-indicator { width: 14px; height: 14px; border: 2px solid var(--el-border-color); border-radius: 50%; display: inline-block; }
 .template-selector .check-indicator.checked { border-color: var(--el-color-primary); background: var(--el-color-primary); }
-.section-title { font-size: 14px; color: var(--el-text-color-regular); margin-bottom: 8px; }
+.section-title { font-size: 14px;  margin-bottom: 8px; }
 .result-info { grid-column: 1 / -1; }
 /* PC端优化 */
 .text-cell {
@@ -3627,7 +3658,6 @@ h1 {
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
   margin: 0 0 16px 0;
   padding-bottom: 8px;
   border-bottom: 1px solid #e4e7ed;
@@ -4027,8 +4057,8 @@ h1 {
   gap: 8px;
 }
 .psd-set-materials .thumb {
-  width: 64px;
-  height: 64px;
+  width: 92px;
+  height: 92px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   overflow: hidden;
@@ -4037,7 +4067,8 @@ h1 {
 .psd-set-materials .thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f5f7fa;
 }
 .psd-set-templates .template-list {
   flex: 1;
@@ -4100,6 +4131,39 @@ h1 {
   gap: 12px;
   font-size: 12px;
   color: #909399;
+  flex-wrap: wrap;
+}
+.psd-set-templates .template-paths {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #666;
+}
+.psd-set-templates .path-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+.psd-set-templates .path-label {
+  color: #909399;
+  flex-shrink: 0;
+}
+.psd-set-templates .path-empty {
+  color: #c0c4cc;
+}
+.psd-set-templates .path-text {
+  color: #606266;
+}
+.psd-set-templates .path-link {
+  max-width: 100%;
+}
+.psd-set-templates .path-tags {
+  display: flex;
+  gap: 6px;
   flex-wrap: wrap;
 }
 .psd-set-footer {

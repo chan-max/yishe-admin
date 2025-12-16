@@ -79,6 +79,22 @@
           </div>
         </template>
 
+        <template #urlSlot="{ row }">
+          <div class="flex items-center gap-1">
+            <a v-if="row.url" :href="row.url" target="_blank" rel="noopener" class="text-primary">
+              {{ row.url }}
+            </a>
+            <span v-else class="text-gray-400">暂无远程链接</span>
+          </div>
+        </template>
+
+        <template #pathStatusSlot="{ row }">
+          <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
+          <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
+          <el-tag v-else-if="row.windowsLocalPath" type="warning" size="small">本地路径</el-tag>
+          <el-tag v-else type="info" size="small">未提供路径</el-tag>
+        </template>
+
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click">
             <el-button type="primary" link size="small">
@@ -255,6 +271,7 @@ import {
   ArrowDown,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
+import type { VxeGridProps } from "vxe-table";
 import { psdTemplateApi } from "@/api/psdTemplate";
 import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -275,8 +292,8 @@ const queryParams = reactive({
   name: "",
 });
 
-const gridOptions = ref({
-  ...commonGridOptions,
+const gridOptions = ref<VxeGridProps<any>>({
+  ...(commonGridOptions as VxeGridProps<any>),
   maxHeight: null,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
@@ -296,6 +313,24 @@ const gridOptions = ref({
       field: "windowsLocalPath",
       minWidth: 200,
       showOverflow: true,
+    },
+    {
+      title: "URL",
+      field: "url",
+      minWidth: 220,
+      showOverflow: true,
+      slots: {
+        default: "urlSlot",
+      },
+    },
+    {
+      title: "路径状态",
+      field: "pathStatus",
+      width: 140,
+      showOverflow: true,
+      slots: {
+        default: "pathStatusSlot",
+      },
     },
 
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true }, // 该类目下已经发布的商品数量
@@ -321,13 +356,13 @@ const gridOptions = ref({
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: "auto",
+      width: 140,
       slots: {
         default: "operationDefaultSlot",
       },
     },
   ],
-});
+} as VxeGridProps<any>);
 
 const { height } = useWindowSize();
 
