@@ -170,8 +170,7 @@
             <el-form-item label="Windows 本地路径" prop="windowsLocalPath">
               <el-input
                 v-model="form.windowsLocalPath"
-                placeholder="请输入 Windows 本地路径，如：C:\\path\\to\\file 或 \\\\server\\share\\path"
-                @blur="normalizeWindowsPath"
+                placeholder="请输入 Windows 本地路径（将按原样保存）"
               />
             </el-form-item>
           </el-col>
@@ -216,7 +215,7 @@
                 >
                   <el-icon class="upload-icon"><Plus /></el-icon>
                   <div class="upload-text">点击上传缩略图</div>
-                  <div class="upload-tip">支持 jpg、png 等图片格式，最大 5MB</div>
+                  <div class="upload-tip">支持 jpg、png 等图片格式</div>
                 </div>
                 <div v-else class="thumbnail-preview-wrapper">
                   <el-image
@@ -494,73 +493,8 @@ const form = ref<any>({
   thumbnailFile: null,
 });
 
-// Windows 路径校验函数
-const validateWindowsPath = (rule, value, callback) => {
-  if (!value || value.trim() === '') {
-    callback(); // 允许为空
-    return;
-  }
-  
-  const trimmedValue = value.trim();
-  
-  // 检查是否包含非法字符（除了驱动器字母后的冒号）
-  const invalidChars = /[<>"|?*]/;
-  
-  // 检查冒号：只允许在驱动器字母后（如 C:）
-  if (trimmedValue.includes(':')) {
-    if (!/^[a-zA-Z]:/.test(trimmedValue)) {
-      callback(new Error('路径格式不正确，冒号只能出现在驱动器字母后（如 C:\\）'));
-      return;
-    }
-  }
-  
-  // 检查其他非法字符
-  // 对于绝对路径，移除驱动器部分后再检查
-  const pathToCheck = trimmedValue.replace(/^[a-zA-Z]:/, '');
-  if (invalidChars.test(pathToCheck)) {
-    callback(new Error('路径不能包含以下字符：< > " | ? *'));
-    return;
-  }
-  
-  // 检查基本格式
-  // 1. 绝对路径：C:\path\to\file
-  // 2. UNC 路径：\\server\share\path
-  // 3. 相对路径：path\to\file 或 .\path\to\file 或 ..\path\to\file
-  const absolutePathRegex = /^[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*[^\\/:*?"<>|\r\n]*$/;
-  const uncPathRegex = /^\\\\[^\\/:*?"<>|\r\n]+(?:\\[^\\/:*?"<>|\r\n]+)*$/;
-  const relativePathRegex = /^(?:\.\.?\\)?[^\\/:*?"<>|\r\n]+(?:\\[^\\/:*?"<>|\r\n]+)*$/;
-  
-  if (absolutePathRegex.test(trimmedValue) || 
-      uncPathRegex.test(trimmedValue) || 
-      relativePathRegex.test(trimmedValue)) {
-    callback();
-  } else {
-    callback(new Error('请输入合法的 Windows 路径，如：C:\\path\\to\\file 或 \\\\server\\share\\path'));
-  }
-};
-
-// 规范化 Windows 路径：去除首尾空格和双引号，将 / 替换为 \\
-const normalizeWindowsPath = () => {
-  if (typeof form.value.windowsLocalPath !== 'string') return;
-  let v = form.value.windowsLocalPath.trim();
-  if (!v) {
-    form.value.windowsLocalPath = '';
-    return;
-  }
-  // 去掉首尾双引号
-  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-    v = v.slice(1, -1);
-  }
-  // 将 / 替换为 \（保留用户输入的连续反斜杠，例如 UNC 路径 \\server\share）
-  v = v.replace(/\//g, '\\');
-  form.value.windowsLocalPath = v;
-};
-
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
-  windowsLocalPath: [
-    { validator: validateWindowsPath, trigger: "blur" }
-  ],
   // 描述和关键词改为非必填
   // titleTemplateId: [{ required: true, message: "请选择标题模板", trigger: "blur" }],
   // file: [{ required: true, message: "请选择 PSD 文件", trigger: "blur" }], // PSD 文件改为非必填
@@ -717,14 +651,6 @@ const handleThumbnailFileSelect = (event) => {
   // 校验文件类型
   if (!file.type.startsWith('image/')) {
     ElMessage.error('只能上传图片文件!');
-    event.target.value = ''; // 清空选择
-    return;
-  }
-
-  // 校验文件大小
-  const isLt5M = file.size / 1024 / 1024 < 5;
-  if (!isLt5M) {
-    ElMessage.error('图片大小不能超过 5MB!');
     event.target.value = ''; // 清空选择
     return;
   }
