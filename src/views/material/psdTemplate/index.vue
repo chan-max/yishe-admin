@@ -551,14 +551,8 @@ const normalizeWindowsPath = () => {
   if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
     v = v.slice(1, -1);
   }
-  // 将 / 替换为 \
+  // 将 / 替换为 \（保留用户输入的连续反斜杠，例如 UNC 路径 \\server\share）
   v = v.replace(/\//g, '\\');
-  // 合并重复的反斜杠（保留 UNC 开头的 \\）
-  if (v.startsWith('\\\\')) {
-    v = '\\\\' + v.slice(2).replace(/\\{2,}/g, '\\');
-  } else {
-    v = v.replace(/\\{2,}/g, '\\');
-  }
   form.value.windowsLocalPath = v;
 };
 

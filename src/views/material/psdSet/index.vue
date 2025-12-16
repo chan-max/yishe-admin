@@ -31,6 +31,32 @@
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
       <div class="flex items-center" style="margin-left: auto">
+        <el-dropdown trigger="click" :disabled="!selectedIds.length" style="margin-right: 8px">
+          <el-button
+            plain
+            :disabled="!selectedIds.length"
+            :loading="batchUpdatingStatus"
+          >
+            批量改状态 ({{ selectedIds.length }})
+            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">
+                待制作
+              </el-dropdown-item>
+              <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">
+                制作中
+              </el-dropdown-item>
+              <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">
+                已完成
+              </el-dropdown-item>
+              <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">
+                失败
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
         <el-button
           type="success"
           plain
@@ -144,6 +170,7 @@
                 { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
                 { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
                 { field: 'url', title: '文件', width: 120, slots: { default: 'templateFileSlot' } },
+                { field: 'windowsLocalPath', title: '本地路径', minWidth: 200, showOverflow: true, slots: { default: 'templateLocalPathSlot' } },
                 { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'templateUpdateTimeSlot' } }
               ]"
             >
@@ -163,17 +190,22 @@
                 </div>
               </template>
               <template #templateFileSlot="{ row: templateRow }">
-                <div class="flex items-center justify-center p-1">
-                  <el-link
-                    v-if="templateRow.url"
-                    :href="templateRow.url"
-                    target="_blank"
-                    type="primary"
-                    class="text-xs"
-                  >
-                    查看文件
-                  </el-link>
-                  <span v-else class="text-gray-400 text-xs">无</span>
+                <div class="template-file-tags">
+                  <template v-if="templateRow.url || templateRow.windowsLocalPath">
+                    <el-tag v-if="templateRow.windowsLocalPath" size="small" type="info">本地路径</el-tag>
+                    <el-tag v-if="templateRow.url" size="small" type="info">云资源</el-tag>
+                  </template>
+                  <template v-else>
+                    <span class="text-xs text-gray-400">无</span>
+                  </template>
+                </div>
+              </template>
+              <template #templateLocalPathSlot="{ row: templateRow }">
+                <div class="flex items-center p-1">
+                  <span v-if="templateRow.windowsLocalPath" class="text-xs" :title="templateRow.windowsLocalPath">
+                    {{ templateRow.windowsLocalPath }}
+                  </span>
+                  <span v-else class="text-xs text-gray-400">无</span>
                 </div>
               </template>
               <template #templateUpdateTimeSlot="{ row: templateRow }">
@@ -287,6 +319,7 @@ const total = ref(0)
 const selectedIds = ref<string[]>([])
 const generatingProductId = ref<string>('')
 const batchGeneratingProducts = ref(false)
+const batchUpdatingStatus = ref(false)
 const startingProductionId = ref<string>('')
 
 // 客户端连接状态（参考 header 中的状态检测方式）
@@ -510,6 +543,57 @@ function handleBatchDelete() {
       getList()
     })
     .catch(() => {})
+}
+
+async function handleBatchUpdateStatus(status: string) {
+  if (!selectedIds.value.length) {
+    return ElMessage.warning('请至少选择一条记录')
+  }
+
+  const statusLabel = statusOptions.find(s => s.value === status)?.label || status
+  try {
+    await ElMessageBox.confirm(
+      `确定将选中的 ${selectedIds.value.length} 条记录的状态改为"${statusLabel}"吗？`,
+      '批量修改状态',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+  } catch (e) {
+    return
+  }
+
+  batchUpdatingStatus.value = true
+  let successCount = 0
+  let failCount = 0
+
+  try {
+    for (const id of selectedIds.value) {
+      try {
+        await stickerPsdSetApi.updateStatus(id, { status })
+        successCount += 1
+      } catch (error) {
+        failCount += 1
+        console.error(`批量更新状态失败（ID: ${id}）`, error)
+      }
+    }
+
+    if (successCount) {
+      ElMessage.success(`成功更新 ${successCount} 条记录的状态`)
+    }
+    if (failCount) {
+      ElMessage.warning(`有 ${failCount} 条记录更新失败，请稍后重试`)
+    }
+    
+    if (successCount > 0) {
+      selectedIds.value = []
+      getList()
+    }
+  } finally {
+    batchUpdatingStatus.value = false
+  }
 }
 
 async function handleBatchGenerateProduct() {
@@ -783,6 +867,16 @@ getList()
   border-color: var(--el-color-primary);
   transform: scale(1.05);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.template-file-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0;
+  min-width: 120px;
 }
 
 /* 操作下拉菜单样式 */
