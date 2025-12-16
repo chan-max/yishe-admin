@@ -683,10 +683,7 @@ async function handleStartProduction(row: any) {
       
       if (data.success) {
         ElMessage.success(data.message || '制作请求已发送到客户端')
-        // 可选：更新状态为制作中
-        if (row.status === 'pending') {
-          updateRowStatus(row, 'processing')
-        }
+        // 不在这里乐观更新为「制作中」，改由客户端上报 production-status 时再更新
       } else {
         // 如果失败，显示警告消息（比如正在制作中）
         const message = data.message || '开始制作失败'
@@ -724,9 +721,15 @@ const globalResponseHandler = (data: { success: boolean; message?: string; psdSe
     console.log('[psd-set] 全局显示警告消息:', message)
     ElMessage.warning(message)
     
-    // 如果指定了 psdSetId，清除对应的 startingProductionId
-    if (data.psdSetId && startingProductionId.value === data.psdSetId) {
-      startingProductionId.value = ''
+    // 如果指定了 psdSetId，清除对应的 startingProductionId，并确保行状态不误标为 processing
+    if (data.psdSetId) {
+      if (startingProductionId.value === data.psdSetId) {
+        startingProductionId.value = ''
+      }
+      const row = dataSource.value.find((r) => r.id === data.psdSetId)
+      if (row && row.status === 'processing') {
+        row.status = 'pending'
+      }
     }
   } else {
     // 如果成功，也清除对应的 startingProductionId
