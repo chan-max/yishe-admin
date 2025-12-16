@@ -372,7 +372,7 @@ const gridOptions = ref<any>({
 const { height } = useWindowSize()
 
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 260
+  gridOptions.value.maxHeight = height.value - 240
 })
 
 async function getList() {
