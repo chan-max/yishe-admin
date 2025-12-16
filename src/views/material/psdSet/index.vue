@@ -67,7 +67,6 @@
           >
             {{ statusLabel(row.status) }}
           </el-tag>
-          <div v-if="row.statusMessage" class="status-message">{{ row.statusMessage }}</div>
         </template>
         <template #imagesSlot="{ row }">
           <div class="flex gap-1 flex-wrap">
@@ -92,6 +91,7 @@
             <span v-if="!row.images || !row.images.length" class="text-gray-400 text-xs">无</span>
           </div>
         </template>
+        <!-- 使用默认字段渲染，不使用自定义插槽 -->
         <template #stickerDetailSlot="{ row }">
           <div v-if="showDetails && row.sticker" class="detail-section-item">
             <vxe-grid
@@ -264,6 +264,8 @@
         @pagination="getList"
       />
     </div>
+    
+    <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
   </div>
 </template>
 
@@ -305,6 +307,9 @@ const queryParams = reactive({
 
 const showDetails = ref(false)
 
+// 状态详情弹窗
+// 不使用自定义 dialog，状态说明使用默认表格文本显示
+
 function getColumns() {
   const baseColumns = [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
@@ -313,6 +318,7 @@ function getColumns() {
     { title: '关键词', field: 'keywords', minWidth: 180 },
     { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
+    { title: '状态说明', field: 'statusMessage', width: 320, showOverflow: true },
     {
       title: '创建时间',
       field: 'createTime',
@@ -638,14 +644,35 @@ const globalResponseHandler = (data: { success: boolean; message?: string; psdSe
   }
 }
 
+// 监听客户端推送的制作状态（实时更新表格行）
+const productionStatusHandler = (data: { psdSetId?: string; status: string; message?: string; progress?: number; total?: number }) => {
+  try {
+    if (!data || !data.psdSetId) return
+    const row = dataSource.value.find((r) => r.id === data.psdSetId)
+    if (row) {
+      // 优先使用客户端上报的状态
+      row.status = data.status || row.status
+      if (data.message) row.statusMessage = data.message
+      // 当任务完成或失败时，重新刷新列表以保证数据一致
+      if (data.status === 'completed' || data.status === 'failed') {
+        getList()
+      }
+    }
+  } catch (e) {
+    console.error('处理 production-status 事件失败', e)
+  }
+}
+
 onMounted(() => {
   // 添加全局监听器
   websocketClient.events.on('start-psd-set-production-response', globalResponseHandler)
+  websocketClient.events.on('production-status', productionStatusHandler)
 })
 
 onUnmounted(() => {
   // 清理全局监听器
   websocketClient.events.off('start-psd-set-production-response', globalResponseHandler)
+  websocketClient.events.off('production-status', productionStatusHandler)
 })
 
 getList()
