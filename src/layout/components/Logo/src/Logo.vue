@@ -62,7 +62,7 @@ watch(
       :class="[
         prefixCls,
         layout !== 'classic' ? `${prefixCls}__Top` : '',
-        'flex !h-[var(--logo-height)] items-end cursor-pointer pl-8px relative decoration-none overflow-hidden '
+        'flex !h-[var(--logo-height)] items-end cursor-pointer pl-14px relative decoration-none overflow-hidden '
       ]"
       to="/"
     >
