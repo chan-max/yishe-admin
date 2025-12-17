@@ -142,30 +142,30 @@
                   <span>发布到社交媒体（队列）</span>
                 </el-dropdown-item>
                 <el-dropdown-item 
+                  v-if="row.productImage2DId"
                   command="copy-images-from-2d" 
-                  :disabled="!row.productImage2DId"
                   divided
                 >
                   <el-icon><Upload /></el-icon>
                   <span>复制关联二维模型信息到商品</span>
                 </el-dropdown-item>
                 <el-dropdown-item 
+                  v-if="row.stickerId"
                   command="copy-images-from-sticker" 
-                  :disabled="!row.stickerId"
                 >
                   <el-icon><Picture /></el-icon>
                   <span>复制关联贴纸信息到商品</span>
                 </el-dropdown-item>
                 <el-dropdown-item 
+                  v-if="row.customModelId"
                   command="copy-images-from-custom-model" 
-                  :disabled="!row.customModelId"
                 >
                   <el-icon><Box /></el-icon>
                   <span>复制关联设计模型信息到商品</span>
                 </el-dropdown-item>
                 <el-dropdown-item 
+                  v-if="row.psdSetId"
                   command="copy-images-from-psdset" 
-                  :disabled="!row.psdSetId"
                 >
                   <el-icon><Picture /></el-icon>
                   <span>复制关联PSD套图信息到商品</span>
