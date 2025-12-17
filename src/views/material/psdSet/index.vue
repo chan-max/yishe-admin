@@ -132,103 +132,112 @@
             <span v-if="!row.images || !row.images.length" class="text-gray-400 text-xs">无</span>
           </div>
         </template>
-        <!-- 使用默认字段渲染，不使用自定义插槽 -->
-        <template #stickerDetailSlot="{ row }">
-          <div v-if="showDetails && row.sticker" class="detail-section-item">
-            <vxe-grid
-              :data="[row.sticker]"
-              :show-header="true"
-              border
-              size="mini"
-              class="detail-sub-grid"
-              :columns="[
-                { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
-                { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
-              ]"
-            >
-              <template #stickerImageSlot="{ row: stickerRow }">
-                <div class="flex items-center justify-center p-1">
-                  <el-image
-                    v-if="stickerRow.url"
-                    :src="stickerRow.url"
-                    :preview-src-list="[stickerRow.url]"
-                    :initial-index="0"
-                    :preview-teleported="true"
-                    :hide-on-click-modal="false"
-                    class="detail-thumb-image"
-                    fit="contain"
-                  />
-                  <span v-else class="text-gray-400 text-xs">无</span>
-                </div>
-              </template>
-              <template #stickerUpdateTimeSlot="{ row: stickerRow }">
-                <span class="text-xs">{{ stickerRow.updateTime ? formatTimestamp(stickerRow.updateTime) : '无' }}</span>
-              </template>
-            </vxe-grid>
+        <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
+        <template #relatedInfoSlot="{ row }">
+          <div v-if="showDetails" class="related-info-container">
+            <!-- 贴纸详情 -->
+            <div v-if="row.sticker" class="detail-section-item">
+              <div class="detail-header">
+                <span class="detail-label">贴纸信息</span>
+              </div>
+              <vxe-grid
+                :data="[row.sticker]"
+                :show-header="true"
+                border
+                size="mini"
+                class="detail-sub-grid"
+                :columns="[
+                  { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
+                  { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                  { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                  { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                  { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
+                ]"
+              >
+                <template #stickerImageSlot="{ row: stickerRow }">
+                  <div class="flex items-center justify-center p-1">
+                    <el-image
+                      v-if="stickerRow.url"
+                      :src="stickerRow.url"
+                      :preview-src-list="[stickerRow.url]"
+                      :initial-index="0"
+                      :preview-teleported="true"
+                      :hide-on-click-modal="false"
+                      class="detail-thumb-image"
+                      fit="contain"
+                    />
+                    <span v-else class="text-gray-400 text-xs">无</span>
+                  </div>
+                </template>
+                <template #stickerUpdateTimeSlot="{ row: stickerRow }">
+                  <span class="text-xs">{{ stickerRow.updateTime ? formatTimestamp(stickerRow.updateTime) : '无' }}</span>
+                </template>
+              </vxe-grid>
+            </div>
+            <span v-else-if="showDetails" class="text-gray-400 text-sm">无贴纸</span>
+            
+            <!-- PSD模板详情 -->
+            <div v-if="row.psdTemplate" class="detail-section-item" style="margin-top: 12px;">
+              <div class="detail-header">
+                <span class="detail-label">PSD模板信息</span>
+              </div>
+              <vxe-grid
+                :data="[row.psdTemplate]"
+                :show-header="true"
+                border
+                size="mini"
+                class="detail-sub-grid"
+                :columns="[
+                  { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'templateThumbnailSlot' } },
+                  { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                  { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                  { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                  { field: 'url', title: '文件', width: 120, slots: { default: 'templateFileSlot' } },
+                  { field: 'windowsLocalPath', title: '本地路径', minWidth: 200, showOverflow: true, slots: { default: 'templateLocalPathSlot' } },
+                  { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'templateUpdateTimeSlot' } }
+                ]"
+              >
+                <template #templateThumbnailSlot="{ row: templateRow }">
+                  <div class="flex items-center justify-center p-1">
+                    <el-image
+                      v-if="templateRow.thumbnail"
+                      :src="templateRow.thumbnail"
+                      :preview-src-list="[templateRow.thumbnail]"
+                      :initial-index="0"
+                      :preview-teleported="true"
+                      :hide-on-click-modal="false"
+                      class="detail-thumb-image"
+                      fit="contain"
+                    />
+                    <span v-else class="text-gray-400 text-xs">无</span>
+                  </div>
+                </template>
+                <template #templateFileSlot="{ row: templateRow }">
+                  <div class="template-file-tags">
+                    <template v-if="templateRow.url || templateRow.windowsLocalPath">
+                      <el-tag v-if="templateRow.windowsLocalPath" size="small" type="info">本地路径</el-tag>
+                      <el-tag v-if="templateRow.url" size="small" type="info">云资源</el-tag>
+                    </template>
+                    <template v-else>
+                      <span class="text-xs text-gray-400">无</span>
+                    </template>
+                  </div>
+                </template>
+                <template #templateLocalPathSlot="{ row: templateRow }">
+                  <div class="flex items-center p-1">
+                    <span v-if="templateRow.windowsLocalPath" class="text-xs" :title="templateRow.windowsLocalPath">
+                      {{ templateRow.windowsLocalPath }}
+                    </span>
+                    <span v-else class="text-xs text-gray-400">无</span>
+                  </div>
+                </template>
+                <template #templateUpdateTimeSlot="{ row: templateRow }">
+                  <span class="text-xs">{{ templateRow.updateTime ? formatTimestamp(templateRow.updateTime) : '无' }}</span>
+                </template>
+              </vxe-grid>
+            </div>
+            <span v-else-if="showDetails" class="text-gray-400 text-sm" style="margin-top: 12px; display: block;">无模板</span>
           </div>
-          <span v-else-if="showDetails" class="text-gray-400 text-sm">无贴纸</span>
-        </template>
-        <template #templateDetailSlot="{ row }">
-          <div v-if="showDetails && row.psdTemplate" class="detail-section-item">
-            <vxe-grid
-              :data="[row.psdTemplate]"
-              :show-header="true"
-              border
-              size="mini"
-              class="detail-sub-grid"
-              :columns="[
-                { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'templateThumbnailSlot' } },
-                { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                { field: 'url', title: '文件', width: 120, slots: { default: 'templateFileSlot' } },
-                { field: 'windowsLocalPath', title: '本地路径', minWidth: 200, showOverflow: true, slots: { default: 'templateLocalPathSlot' } },
-                { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'templateUpdateTimeSlot' } }
-              ]"
-            >
-              <template #templateThumbnailSlot="{ row: templateRow }">
-                <div class="flex items-center justify-center p-1">
-                  <el-image
-                    v-if="templateRow.thumbnail"
-                    :src="templateRow.thumbnail"
-                    :preview-src-list="[templateRow.thumbnail]"
-                    :initial-index="0"
-                    :preview-teleported="true"
-                    :hide-on-click-modal="false"
-                    class="detail-thumb-image"
-                    fit="contain"
-                  />
-                  <span v-else class="text-gray-400 text-xs">无</span>
-                </div>
-              </template>
-              <template #templateFileSlot="{ row: templateRow }">
-                <div class="template-file-tags">
-                  <template v-if="templateRow.url || templateRow.windowsLocalPath">
-                    <el-tag v-if="templateRow.windowsLocalPath" size="small" type="info">本地路径</el-tag>
-                    <el-tag v-if="templateRow.url" size="small" type="info">云资源</el-tag>
-                  </template>
-                  <template v-else>
-                    <span class="text-xs text-gray-400">无</span>
-                  </template>
-                </div>
-              </template>
-              <template #templateLocalPathSlot="{ row: templateRow }">
-                <div class="flex items-center p-1">
-                  <span v-if="templateRow.windowsLocalPath" class="text-xs" :title="templateRow.windowsLocalPath">
-                    {{ templateRow.windowsLocalPath }}
-                  </span>
-                  <span v-else class="text-xs text-gray-400">无</span>
-                </div>
-              </template>
-              <template #templateUpdateTimeSlot="{ row: templateRow }">
-                <span class="text-xs">{{ templateRow.updateTime ? formatTimestamp(templateRow.updateTime) : '无' }}</span>
-              </template>
-            </vxe-grid>
-          </div>
-          <span v-else-if="showDetails" class="text-gray-400 text-sm">无模板</span>
         </template>
         <template #psdImagesSlot="{ row }">
           <div v-if="showDetails" class="detail-section-item">
@@ -365,9 +374,9 @@ function getColumns() {
   const baseColumns = [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
     { title: '套图名称', field: 'name', minWidth: 180 },
+    { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: '描述', field: 'description', minWidth: 200 },
     { title: '关键词', field: 'keywords', minWidth: 180 },
-    { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
     { title: '状态说明', field: 'statusMessage', width: 320, showOverflow: true },
     {
@@ -386,17 +395,10 @@ function getColumns() {
   
   const detailColumns = showDetails.value ? [
     { 
-      title: '贴纸详情', 
-      field: 'stickerDetail', 
+      title: '关联信息', 
+      field: 'relatedInfo', 
       width: 'auto', 
-      slots: { default: 'stickerDetailSlot' } 
-    },
-
-    { 
-      title: 'PSD模板详情', 
-      field: 'templateDetail', 
-      width: 'auto', 
-      slots: { default: 'templateDetailSlot' } 
+      slots: { default: 'relatedInfoSlot' } 
     }
   ] : []
   
@@ -810,6 +812,13 @@ getList()
 }
 /* 详情列样式 */
 .details-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.related-info-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
