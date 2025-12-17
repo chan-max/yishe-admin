@@ -201,10 +201,10 @@
             <el-carousel 
               v-if="row.images && row.images.length > 0"
               :interval="3000"
-              height="120px"
+              height="160px"
               indicator-position="none"
               :arrow="row.images.length > 1 ? 'always' : 'never'"
-              class="w-48 custom-carousel"
+              class="w-64 custom-carousel"
             >
               <el-carousel-item v-for="(url, index) in row.images" :key="index">
                 <el-image 
@@ -214,8 +214,8 @@
                   :preview-teleported="true"
                   :hide-on-click-modal="false"
                   :preview-class="'custom-image-preview'"
-                  class="w-full h-full object-cover rounded cursor-pointer"
-                  fit="cover"
+                  class="w-full h-full object-contain rounded cursor-pointer"
+                  fit="contain"
                 />
                 <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
                   {{ index + 1 }}/{{ row.images.length }}
