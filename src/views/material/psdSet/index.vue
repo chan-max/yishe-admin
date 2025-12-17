@@ -24,8 +24,9 @@
       <form-item label="显示详情">
         <el-switch
           v-model="showDetails"
-          active-text="显示"
-          inactive-text="隐藏"
+          size="small"
+          active-text=""
+          inactive-text=""
           @change="handleShowDetailsChange"
         />
       </form-item>
