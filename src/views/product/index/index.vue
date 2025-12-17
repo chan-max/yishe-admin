@@ -1271,6 +1271,65 @@
       <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
     </el-dialog>
 
+    <!-- 生成视频配置弹窗（ffmpeg） -->
+    <el-dialog
+      v-model="videoGenDialogVisible"
+      title="生成视频（配置）"
+      width="100%"
+      :fullscreen="true"
+      :close-on-click-modal="false"
+      :destroy-on-close="false"
+    >
+      <div class="p-4 max-w-4xl mx-auto">
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="后端将直接调用本机 ffmpeg/ffprobe 生成视频，并自动上传 COS；替换/删除会自动清理 COS 旧文件。"
+          class="mb-4"
+        />
+
+        <el-form label-width="120px">
+          <el-form-item label="分辨率">
+            <div class="flex items-center gap-2 w-full">
+              <el-input-number v-model="videoGenForm.width" :min="240" :max="3840" :step="10" />
+              <span class="text-gray-400">x</span>
+              <el-input-number v-model="videoGenForm.height" :min="240" :max="3840" :step="10" />
+            </div>
+          </el-form-item>
+
+          <el-form-item label="FPS">
+            <el-input-number v-model="videoGenForm.fps" :min="1" :max="60" />
+          </el-form-item>
+
+          <el-form-item label="每张时长(秒)">
+            <el-input-number v-model="videoGenForm.clipDuration" :min="1" :max="15" />
+          </el-form-item>
+
+          <!-- 单图生成：不做转场、不叠加文字 -->
+
+          <el-form-item label="背景音乐URL">
+            <el-input v-model="videoGenForm.audioUrl" placeholder="可选：mp3/wav 等可访问 URL" clearable />
+          </el-form-item>
+
+          <el-form-item label="循环音乐">
+            <el-switch v-model="videoGenForm.loopAudio" active-text="循环" inactive-text="不循环" />
+          </el-form-item>
+
+          <el-form-item label="替换旧视频">
+            <el-switch v-model="videoGenForm.replace" active-text="替换" inactive-text="追加" />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
+        <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
+          {{ generatingVideoId ? '生成中...' : '开始生成' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true" :close-on-click-modal="false">
       <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
         <el-row :gutter="32">
@@ -1884,6 +1943,19 @@ const existingVideos = ref([]);
 const generatingVideoId = ref<string>('');
 const deletingVideoKey = ref<string>('');
 const publishDialogVisible = ref(false);
+
+// 生成视频（ffmpeg）配置弹窗
+const videoGenDialogVisible = ref(false);
+const videoGenRow = ref<any>(null);
+const videoGenForm = reactive({
+  width: 720,
+  height: 720,
+  fps: 30,
+  clipDuration: 2,
+  audioUrl: '',
+  loopAudio: true,
+  replace: true,
+});
 
 // 复制二维模型信息相关状态
 const copy2DDialogVisible = ref(false);
@@ -2869,21 +2941,32 @@ async function handleGenerateVideo(row: any) {
     return ElMessage.warning('该商品没有可用图片，无法生成视频');
   }
 
-  try {
-    await ElMessageBox.confirm('确认根据当前商品图片生成视频吗？', '生成视频', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    });
+  videoGenRow.value = row;
+  videoGenDialogVisible.value = true;
+}
 
-    generatingVideoId.value = row.id;
-    await generateProductVideo({ id: row.id });
+async function submitGenerateVideo() {
+  if (!videoGenRow.value?.id) return;
+
+  try {
+    generatingVideoId.value = videoGenRow.value.id;
+    await generateProductVideo({
+      id: videoGenRow.value.id,
+      replace: !!videoGenForm.replace,
+      ffmpeg: {
+        width: Number(videoGenForm.width) || 720,
+        height: Number(videoGenForm.height) || 720,
+        fps: Number(videoGenForm.fps) || 30,
+        clipDuration: Number(videoGenForm.clipDuration) || 2,
+        audioUrl: (videoGenForm.audioUrl || '').trim() || undefined,
+        loopAudio: !!videoGenForm.loopAudio,
+      },
+    });
     ElMessage.success('视频生成成功');
+    videoGenDialogVisible.value = false;
     getList();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '视频生成失败');
-    }
+    ElMessage.error(error?.message || '视频生成失败');
   } finally {
     generatingVideoId.value = '';
   }

@@ -141,12 +141,25 @@ export function copyImagesFromCustomModel(data: {
 
 export function generateProductVideo(data: {
   id: string;
-  duration?: number;
-  transition?: 'fade' | 'slide' | 'zoom' | 'none';
   fps?: number;
-  loop?: number;
   images?: string[];
   replace?: boolean;
+  // ffmpeg 配置（后端会基于商品图片生成视频）
+  ffmpeg?: {
+    width?: number;
+    height?: number;
+    fps?: number;
+    clipDuration?: number;
+    transition?: 'none' | 'fade' | 'directional-left' | 'directional-right' | string;
+    audioUrl?: string;
+    loopAudio?: boolean;
+    titleText?: string;
+  };
+  // 兼容字段（旧前端可能仍传 editly）
+  editly?: any;
+  // 兼容旧参数：duration 作为每张图片展示时长（秒）
+  duration?: number;
+  transition?: 'fade' | 'slide' | 'zoom' | 'none';
 }) {
   return request.post({
     url: '/product/generate-video',
