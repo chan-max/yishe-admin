@@ -84,7 +84,7 @@
             <a v-if="row.url" :href="row.url" target="_blank" rel="noopener" class="text-primary">
               {{ row.url }}
             </a>
-            <span v-else class="text-gray-400">暂无远程链接</span>
+            <span v-else class="text-gray-400">无</span>
           </div>
         </template>
 
@@ -355,7 +355,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: 140,
+      width: 80,
       slots: {
         default: "operationDefaultSlot",
       },
