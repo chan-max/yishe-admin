@@ -167,3 +167,11 @@ export function generateProductVideo(data: {
     data,
   });
 }
+
+// 导出社交媒体发布数据结构（GET）
+export function getProductSocialMediaExport(id: string) {
+  return request.get({
+    url: `/product/social-media-export/${id}`,
+    method: 'get',
+  });
+}

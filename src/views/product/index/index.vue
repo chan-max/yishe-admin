@@ -144,6 +144,10 @@
                   <el-icon><VideoPlay /></el-icon>
                   <span>{{ generatingVideoId === row.id ? '视频生成中...' : '生成视频' }}</span>
                 </el-dropdown-item>
+                <el-dropdown-item command="export-social-media">
+                  <el-icon><Upload /></el-icon>
+                  <span>导出社交媒体数据</span>
+                </el-dropdown-item>
                 <el-dropdown-item command="publish-to-queue">
                   <el-icon><Share /></el-icon>
                   <span>发布到社交媒体（队列）</span>
@@ -1330,6 +1334,24 @@
       </template>
     </el-dialog>
 
+    <!-- 导出社交媒体数据弹窗 -->
+    <el-dialog
+      v-model="socialExportVisible"
+      title="社交媒体发布数据（导出）"
+      width="60%"
+      :fullscreen="false"
+      :close-on-click-modal="true"
+      align-center
+    >
+      <div class="p-4 max-w-5xl mx-auto">
+        <el-input v-model="socialExportText" type="textarea" :rows="18" readonly />
+      </div>
+      <template #footer>
+        <el-button @click="socialExportVisible = false">取消</el-button>
+        <el-button type="primary" @click="copySocialExport" :disabled="!socialExportText">复制JSON</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true" :close-on-click-modal="false">
       <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
         <el-row :gutter="32">
@@ -1745,7 +1767,7 @@ import {
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel, generateProductVideo } from "@/api/product";
+import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel, generateProductVideo, getProductSocialMediaExport } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import request from "@/config/axios";
 import { uploadOSSFile } from "@/api/shop/platform";
@@ -1956,6 +1978,10 @@ const videoGenForm = reactive({
   loopAudio: true,
   replace: true,
 });
+
+// 社交媒体导出
+const socialExportVisible = ref(false);
+const socialExportText = ref('');
 
 // 复制二维模型信息相关状态
 const copy2DDialogVisible = ref(false);
@@ -2866,6 +2892,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'generate-video':
       handleGenerateVideo(row);
       break;
+    case 'export-social-media':
+      handleSocialMediaExport(row);
+      break;
     case 'mark-draft':
       handleUpdatePublishStatus(row, 'draft');
       break;
@@ -2883,6 +2912,33 @@ function handleOperationCommand(command: string, row: any) {
       break;
     default:
       console.warn('未知的操作命令:', command);
+  }
+}
+
+async function handleSocialMediaExport(row: any) {
+  if (!row?.id) return;
+  try {
+    const res = await getProductSocialMediaExport(row.id);
+    socialExportText.value = JSON.stringify(res, null, 2);
+    socialExportVisible.value = true;
+  } catch (e: any) {
+    ElMessage.error(e?.message || '导出失败');
+  }
+}
+
+async function copySocialExport() {
+  if (!socialExportText.value) return;
+  try {
+    await navigator.clipboard.writeText(socialExportText.value);
+    ElMessage.success('已复制');
+  } catch {
+    const textarea = document.createElement('textarea');
+    textarea.value = socialExportText.value;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    ElMessage.success('已复制');
   }
 }
 
