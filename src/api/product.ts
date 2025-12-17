@@ -138,3 +138,19 @@ export function copyImagesFromCustomModel(data: {
     data,
   });
 } 
+
+export function generateProductVideo(data: {
+  id: string;
+  duration?: number;
+  transition?: 'fade' | 'slide' | 'zoom' | 'none';
+  fps?: number;
+  loop?: number;
+  images?: string[];
+  replace?: boolean;
+}) {
+  return request.post({
+    url: '/product/generate-video',
+    method: 'post',
+    data,
+  });
+}

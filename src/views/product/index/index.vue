@@ -137,6 +137,13 @@
                   <el-icon><Refresh /></el-icon>
                   <span>生成产品代码</span>
                 </el-dropdown-item>
+                <el-dropdown-item 
+                  command="generate-video"
+                  :disabled="generatingVideoId === row.id || !row.images || row.images.length === 0"
+                >
+                  <el-icon><VideoPlay /></el-icon>
+                  <span>{{ generatingVideoId === row.id ? '视频生成中...' : '生成视频' }}</span>
+                </el-dropdown-item>
                 <el-dropdown-item command="publish-to-queue">
                   <el-icon><Share /></el-icon>
                   <span>发布到社交媒体（队列）</span>
@@ -237,12 +244,12 @@
               class="w-48 custom-carousel"
             >
               <el-carousel-item v-for="(url, index) in row.videos" :key="index">
-                <div class="relative cursor-pointer w-full h-full" @click="handleVideoPreview(row.videos, index)">
-                  <video :src="url" class="w-full h-full object-cover rounded" muted preload="metadata" />
-                  <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                    {{ index + 1 }}/{{ row.videos.length }}
-                  </div>
-                </div>
+            <div class="relative cursor-pointer w-full h-full" @click="handleVideoPreview(row.videos, index, row)">
+              <video :src="url" class="w-full h-full object-cover rounded" muted preload="metadata" />
+              <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                {{ index + 1 }}/{{ row.videos.length }}
+              </div>
+            </div>
               </el-carousel-item>
             </el-carousel>
             <span v-else class="text-gray-400">暂无视频</span>
@@ -1205,26 +1212,63 @@
     </el-dialog>
 
     <!-- 视频预览弹窗 -->
-    <el-dialog v-model="videoPreviewVisible" title="视频预览" width="600px" :close-on-click-modal="true">
-      <div v-if="videoPreviewList.length > 0" class="flex flex-col items-center">
-        <video
-          :src="videoPreviewList[videoPreviewIndex]"
-          controls
-          autoplay
-          style="width: 100%; max-height: 400px; border-radius: 8px; background: #000;"
-        />
-        <div class="flex gap-2 mt-2">
+    <el-dialog
+      v-model="videoPreviewVisible"
+      title="视频预览"
+      width="100%"
+      :fullscreen="true"
+      :close-on-click-modal="true"
+    >
+      <div v-if="videoPreviewList.length > 0" class="video-preview-container">
+        <div class="video-preview-header">
+          <div class="actions" v-if="videoPreviewAllowDelete && videoPreviewRowId">
+            <el-button
+              type="danger"
+              size="small"
+              :icon="Delete"
+              :loading="deletingVideoKey === `${videoPreviewRowId}-${videoPreviewList[videoPreviewIndex]}`"
+              @click="handleDeleteVideo({ id: videoPreviewRowId, videos: videoPreviewList }, videoPreviewList[videoPreviewIndex])"
+            >
+              删除
+            </el-button>
+          </div>
+        </div>
+        <div class="video-preview-content">
           <el-button
-            v-for="(url, idx) in videoPreviewList"
-            :key="idx"
-            size="small"
-            :type="idx === videoPreviewIndex ? 'primary' : 'default'"
-            @click="videoPreviewIndex = idx"
-          >
-            {{ idx + 1 }}
-          </el-button>
+            v-if="videoPreviewList.length > 1"
+            class="video-nav-btn video-nav-prev"
+            :icon="ArrowLeft"
+            circle
+            @click="prevVideo"
+            :disabled="videoPreviewIndex === 0"
+          />
+          <div class="video-wrapper">
+            <transition name="fade" mode="out-in">
+              <video
+                :key="videoPreviewIndex"
+                :src="videoPreviewList[videoPreviewIndex]"
+                controls
+                preload="auto"
+                class="video-preview-player"
+              />
+            </transition>
+          </div>
+          <el-button
+            v-if="videoPreviewList.length > 1"
+            class="video-nav-btn video-nav-next"
+            :icon="ArrowRight"
+            circle
+            @click="nextVideo"
+            :disabled="videoPreviewIndex === videoPreviewList.length - 1"
+          />
+        </div>
+        <div v-if="videoPreviewList.length > 1" class="video-pagination">
+          <span class="video-page-info">
+            {{ videoPreviewIndex + 1 }} / {{ videoPreviewList.length }}
+          </span>
         </div>
       </div>
+      <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
     </el-dialog>
 
     <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true" :close-on-click-modal="false">
@@ -1628,6 +1672,8 @@ import {
   Picture,
   Box,
   ArrowDown,
+  ArrowLeft,
+  ArrowRight,
   Edit,
   Upload,
   Share,
@@ -1640,7 +1686,7 @@ import {
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel } from "@/api/product";
+import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel, generateProductVideo } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import request from "@/config/axios";
 import { uploadOSSFile } from "@/api/shop/platform";
@@ -1700,14 +1746,14 @@ const gridOptions = ref({
         default: "urlDefaultSlot",
       },
     },
-    // {
-    //   title: "商品视频",
-    //   field: "videos",
-    //   width: 'auto',
-    //   slots: {
-    //     default: "videoDefaultSlot",
-    //   },
-    // },
+    {
+      title: "商品视频",
+      field: "videos",
+      width: 'auto',
+      slots: {
+        default: "videoDefaultSlot",
+      },
+    },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: false },
     { title: "关键词", field: "keywords", width: 200, showOverflow: false },
@@ -1835,6 +1881,8 @@ const existingImages = ref([]);
 const videoFileList = ref([]);
 const pendingVideoFiles = ref([]);
 const existingVideos = ref([]);
+const generatingVideoId = ref<string>('');
+const deletingVideoKey = ref<string>('');
 const publishDialogVisible = ref(false);
 
 // 复制二维模型信息相关状态
@@ -2600,11 +2648,27 @@ function closePublishResultDialog() {
 const videoPreviewVisible = ref(false);
 const videoPreviewList = ref<string[]>([]);
 const videoPreviewIndex = ref(0);
+const videoPreviewRowId = ref<string>('');
+const videoPreviewAllowDelete = ref(false);
 
-function handleVideoPreview(list: string[], index: number) {
+function handleVideoPreview(list: string[], index: number, row?: any) {
   videoPreviewList.value = list;
   videoPreviewIndex.value = index;
+  videoPreviewRowId.value = row?.id || '';
+  videoPreviewAllowDelete.value = Boolean(row?.id && row?.videos);
   videoPreviewVisible.value = true;
+}
+
+function prevVideo() {
+  if (videoPreviewIndex.value > 0) {
+    videoPreviewIndex.value--;
+  }
+}
+
+function nextVideo() {
+  if (videoPreviewIndex.value < videoPreviewList.value.length - 1) {
+    videoPreviewIndex.value++;
+  }
 }
 
 const customModelDetailVisible = ref(false)
@@ -2727,6 +2791,9 @@ function handleOperationCommand(command: string, row: any) {
     case 'copy-images-from-psdset':
       handleCopyImagesFromPsdSet(row);
       break;
+    case 'generate-video':
+      handleGenerateVideo(row);
+      break;
     case 'mark-draft':
       handleUpdatePublishStatus(row, 'draft');
       break;
@@ -2791,6 +2858,76 @@ async function handleGenerateProductCode(row: any) {
     }
   } catch (error) {
     ElMessage.error('生成产品代码失败');
+  }
+}
+
+// 根据商品图片生成视频
+async function handleGenerateVideo(row: any) {
+  if (!row?.id) return;
+  const hasImages = Array.isArray(row.images) && row.images.length > 0;
+  if (!hasImages) {
+    return ElMessage.warning('该商品没有可用图片，无法生成视频');
+  }
+
+  try {
+    await ElMessageBox.confirm('确认根据当前商品图片生成视频吗？', '生成视频', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
+
+    generatingVideoId.value = row.id;
+    await generateProductVideo({ id: row.id });
+    ElMessage.success('视频生成成功');
+    getList();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '视频生成失败');
+    }
+  } finally {
+    generatingVideoId.value = '';
+  }
+}
+
+// 删除单个视频（会触发后端删除 COS 对应文件）
+async function handleDeleteVideo(row: any, url: string) {
+  if (!row?.id || !url) return;
+  try {
+    await ElMessageBox.confirm('确认删除该视频吗？', '删除确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
+    deletingVideoKey.value = `${row.id}-${url}`;
+    const newVideos = (row.videos || []).filter((v: string) => v !== url);
+    await updateProduct({ id: row.id, videos: newVideos });
+    
+    // 更新预览列表和索引
+    const deletedIndex = videoPreviewList.value.findIndex(v => v === url);
+    videoPreviewList.value = newVideos;
+    
+    if (videoPreviewList.value.length === 0) {
+      // 如果没有视频了，关闭弹窗
+      videoPreviewVisible.value = false;
+    } else {
+      // 调整索引：如果删除的是当前或之前的视频，索引需要调整
+      if (deletedIndex <= videoPreviewIndex.value) {
+        videoPreviewIndex.value = Math.max(0, videoPreviewIndex.value - 1);
+      }
+      // 确保索引不越界
+      if (videoPreviewIndex.value >= videoPreviewList.value.length) {
+        videoPreviewIndex.value = videoPreviewList.value.length - 1;
+      }
+    }
+    
+    ElMessage.success('视频已删除');
+    getList();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '删除视频失败');
+    }
+  } finally {
+    deletingVideoKey.value = '';
   }
 }
 
@@ -3579,21 +3716,21 @@ async function handlePublishToQueue(row: any) {
 
 // 紧凑型操作菜单
 .operation-menu-compact {
-  min-width: 140px !important;
-  padding: 4px 0 !important;
+  min-width: 120px !important;
+  padding: 2px 0 !important;
   
   .el-dropdown-menu__item {
-    padding: 4px 10px !important;
+    padding: 2px 8px !important;
     font-size: 12px !important;
-    line-height: 1.3 !important;
+    line-height: 1.2 !important;
     height: auto !important;
-    min-height: 24px !important;
+    min-height: 22px !important;
     margin: 0 !important;
     
     .el-icon {
-      font-size: 13px !important;
-      width: 13px !important;
-      height: 13px !important;
+      font-size: 12px !important;
+      width: 12px !important;
+      height: 12px !important;
       margin-right: 6px !important;
     }
     
@@ -3611,6 +3748,124 @@ async function handlePublishToQueue(row: any) {
     border-top: 1px solid var(--el-border-color-lighter) !important;
     padding-top: 4px !important;
   }
+}
+
+.video-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 120px);
+  padding: 20px;
+  overflow: hidden;
+}
+
+.video-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  max-width: 98vw;
+  margin-bottom: 20px;
+  z-index: 10;
+}
+
+.video-preview-content {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  max-width: 98vw;
+  max-height: calc(100vh - 200px);
+}
+
+.video-nav-btn {
+  position: absolute;
+  z-index: 10;
+  min-width: 48px !important;
+  width: 48px !important;
+  min-height: 48px !important;
+  height: 48px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--el-border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+  }
+  
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  
+  &.video-nav-prev {
+    left: 30px;
+  }
+  
+  &.video-nav-next {
+    right: 30px;
+  }
+  
+  .el-icon {
+    font-size: 20px;
+    color: #333;
+  }
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.video-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.video-page-info {
+  font-size: 14px;
+  color: var(--el-text-color-regular);
+  text-align: center;
+  font-weight: 500;
+}
+
+.video-preview-player {
+  max-width: 98vw;
+  max-height: calc(100vh - 240px);
+  width: auto !important;
+  height: auto !important;
+  border-radius: 8px;
+  display: block;
+  object-fit: contain;
+  position: relative;
+  margin: 0 auto;
 }
 
 // 视频对话框样式
