@@ -60,6 +60,7 @@
               preview-teleported
               hide-on-click-modal
               fit="contain"
+              :lazy="true"
               class="thumbnail-image"
             />
             <span v-else class="thumbnail-placeholder">暂无缩略图</span>
@@ -221,6 +222,7 @@
                   <el-image
                     :src="thumbnailPreviewUrl || form.thumbnail"
                     fit="contain"
+                    :lazy="true"
                     class="thumbnail-preview-image"
                   />
                   <div class="thumbnail-action-buttons">

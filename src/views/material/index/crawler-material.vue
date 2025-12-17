@@ -132,6 +132,7 @@
                     background: #f5f5f5;
                     cursor: pointer;
                   "
+                  loading="lazy"
                   @click="openImagePreview(row.url, row.name)"
                   @error="handleImageError"
                   @load="(event) => handleImageLoad(event, row)"
@@ -223,6 +224,7 @@
                   :src="row.originUrl"
                   :alt="row.name || '原始图片'"
                   style="height: 80px; object-fit: contain; cursor: pointer"
+                  loading="lazy"
                   @click="openImagePreview(row.originUrl, row.name)"
                   @error="handleOriginImageError"
                   @load="(event) => handleOriginImageLoad(event, row)"

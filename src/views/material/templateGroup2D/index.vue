@@ -17,7 +17,7 @@
               :style="getImageItemStyle(url)"
               @click="() => openImageViewer(getImages(row), i)"
             >
-              <el-image :src="url" fit="contain" @load="() => ensureImageMeta(url)" />
+              <el-image :src="url" fit="contain" :lazy="true" @load="() => ensureImageMeta(url)" />
               <div class="image-label">图片{{ i + 1 }}</div>
             </div>
           </div>
@@ -104,6 +104,7 @@
                   <div class="thumb" v-for="(item, idx) in imageItems" :key="idx">
                     <el-image
                       :src="item.preview || item.url"
+                      :lazy="true"
                       :preview-src-list="
                         imageItems.map((i) => i.preview || i.url).filter(Boolean)
                       "
@@ -148,7 +149,7 @@
               :style="getPreviewBoxStyle(url)"
             >
               <div class="preview-image-wrapper">
-                <el-image :src="url" fit="contain" @load="() => handleImageLoaded(url)" />
+                <el-image :src="url" fit="contain" :lazy="true" @load="() => handleImageLoaded(url)" />
               </div>
               <!-- 两种模式统一：显示半透明背景区域和左上角十字标识 -->
               <div class="overlay-block" :style="getOverlayStyle(url, index)"></div>

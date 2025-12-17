@@ -91,6 +91,7 @@
               v-if="row.thumbnail"
               :src="row.thumbnail"
               :alt="row.name || '字体缩略图'"
+              loading="lazy"
               style="width:160px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);"
               @click="openThumbnailPreview(row.thumbnail, row.name)"
               @error="handleThumbnailError"

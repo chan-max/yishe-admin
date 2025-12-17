@@ -236,6 +236,7 @@
                 :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url"
                 class="thumb-img"
                 alt="素材预览"
+                loading="lazy"
               />
             </div>
           </div>
@@ -256,6 +257,7 @@
                   :src="tpl.thumbnail || tpl.preview || tpl.image"
                     :alt="tpl.name || '模板缩略图'"
                   class="template-thumbnail"
+                  loading="lazy"
                   @error="handleTemplateImageError"
                 />
                 <div class="template-info">
@@ -336,6 +338,7 @@
                   :src="row.url"
                   :alt="row.name || '素材图片'"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  loading="lazy"
                   @click="openImagePreview(row.url, row.name)"
             
                   @load="(event) => handleImageLoad(event, row)"
@@ -674,7 +677,7 @@
               :key="id"
               class="thumb"
             >
-              <img :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url" />
+              <img :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url" loading="lazy" />
             </div>
           </div>
         </div>
@@ -716,6 +719,7 @@
                             :src="img" 
                             :alt="`模板图片 ${index + 1}`"
                             class="template-image"
+                            loading="lazy"
                           />
                           <div class="image-badge">图片{{ index + 1 }}</div>
                         </div>
@@ -807,6 +811,7 @@
             :src="urlUploadForm.url"
             alt="预览图片"
             class="preview-image"
+            loading="lazy"
             @error="handlePreviewError"
             @load="handlePreviewLoad"
           />
@@ -871,6 +876,7 @@
                       :src="dataSource.find(item => String(item.id) === String(id)).url" 
                       :alt="dataSource.find(item => String(item.id) === String(id)).name"
                       class="w-20 h-20 object-cover rounded border"
+                      loading="lazy"
                     />
                     <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
                   </div>
@@ -921,6 +927,7 @@
                         :src="model.thumbnail"
                         :alt="model.name"
                         class="w-16 h-16 object-cover rounded"
+                        loading="lazy"
                       />
                       <div class="flex-1 min-w-0">
                         <h4 class="font-medium truncate">{{ model.name }}</h4>
@@ -974,6 +981,7 @@
                             :src="dataSource.find(item => String(item.id) === String(id)).url" 
                             :alt="dataSource.find(item => String(item.id) === String(id)).name"
                             class="w-8 h-8 object-cover rounded"
+                            loading="lazy"
                           />
                           <span class="text-sm text-gray-600">{{ dataSource.find(item => String(item.id) === String(id)).name }}</span>
                         </div>
@@ -992,6 +1000,7 @@
                             :src="designModelList.find(model => model.id === modelId).thumbnail" 
                             :alt="designModelList.find(model => model.id === modelId).name"
                             class="w-8 h-8 object-cover rounded"
+                            loading="lazy"
                           />
                           <span class="text-sm text-gray-600">{{ designModelList.find(model => model.id === modelId).name }}</span>
                         </div>
@@ -1361,6 +1370,7 @@
                       :src="dataSource.find(item => String(item.id) === String(id)).url" 
                       :alt="dataSource.find(item => String(item.id) === String(id)).name"
                       class="w-20 h-20 object-cover rounded border"
+                      loading="lazy"
                     />
                     <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
                   </div>
@@ -1398,6 +1408,7 @@
                           :src="dataSource.find(item => String(item.id) === String(id)).url" 
                           :alt="dataSource.find(item => String(item.id) === String(id)).name"
                           class="w-8 h-8 object-cover rounded"
+                          loading="lazy"
                         />
                         <span class="text-sm text-gray-600">{{ dataSource.find(item => String(item.id) === String(id)).name }}</span>
                       </div>

@@ -122,7 +122,9 @@
                 :preview-src-list="row.images"
                 :initial-index="idx"
                 :preview-teleported="true"
+                :lazy="true"
                 :hide-on-click-modal="false"
+                loading="lazy"
                 class="detail-thumb-image"
                 fit="contain"
               />
@@ -159,6 +161,7 @@
                     <el-image
                       v-if="stickerRow.url"
                       :src="stickerRow.url"
+                      :lazy="true"
                       :preview-src-list="[stickerRow.url]"
                       :initial-index="0"
                       :preview-teleported="true"
@@ -202,6 +205,7 @@
                     <el-image
                       v-if="templateRow.thumbnail"
                       :src="templateRow.thumbnail"
+                      :lazy="true"
                       :preview-src-list="[templateRow.thumbnail]"
                       :initial-index="0"
                       :preview-teleported="true"
@@ -253,9 +257,11 @@
                   :preview-src-list="row.images"
                   :initial-index="idx"
                   :preview-teleported="true"
+                  :lazy="true"
                   :hide-on-click-modal="false"
                   class="detail-thumb-image"
                   fit="contain"
+                  loading="lazy"
                 />
                 <span v-else class="text-gray-400 text-xs">无</span>
               </div>

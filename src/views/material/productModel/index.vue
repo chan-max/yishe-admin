@@ -72,7 +72,8 @@
         <template #thumbnailSlot="{ row }">
           <el-image 
             v-if="row.thumbnail" 
-            :src="row.thumbnail" 
+            :src="row.thumbnail"
+            :lazy="true" 
             style="width: 120px; height: 120px; object-fit: cover;"
             :preview-src-list="[row.thumbnail]"
           />

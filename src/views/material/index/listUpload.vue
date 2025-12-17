@@ -7,6 +7,7 @@
           <el-image
             :src="usePreview ? file.url : 'empty'"
             alt="preview"
+            :lazy="true"
             class="preview-image"
             loading="lazy"
             fit="contain"

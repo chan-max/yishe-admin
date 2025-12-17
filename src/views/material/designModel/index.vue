@@ -128,6 +128,7 @@
           <el-image
             v-if="row.thumbnail"
             :src="row.thumbnail"
+            :lazy="true"
             :preview-src-list="[row.thumbnail]"
             style="width: 64px; height: 64px; object-fit: cover; cursor: pointer;"
             fit="cover"
@@ -459,7 +460,8 @@
             <div class="sticker-preview">
               <el-image 
                 :src="sticker.url" 
-                fit="cover" 
+                fit="cover"
+                :lazy="true" 
                 class="w-full h-32 rounded cursor-pointer"
                 :preview-src-list="[sticker.url]"
                 :preview-teleported="true"
