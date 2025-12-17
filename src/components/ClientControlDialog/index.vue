@@ -1,57 +1,64 @@
 <template>
   <el-dialog
     v-model="visible"
-    title="客户端操作"
-    width="600px"
+    width="800px"
     align-center
     :close-on-click-modal="false"
   >
+    <template #header>
+      <span>客户端操作 ({{ clients.length }})</span>
+    </template>
     <div v-loading="loading">
       <el-empty v-if="!loading && clients.length === 0" description="暂无客户端连接" />
 
-      <el-form v-else label-width="100px">
+      <div v-else class="client-list">
         <div
           v-for="(client, index) in clients"
           :key="client.id"
-          class="mb-6 last:mb-0"
+          class="client-card"
         >
-          <div class="rounded-lg border p-4" :class="isClientAvailable(client) ? 'border-green-400' : 'border-gray-300'">
-            <div class="mb-4 flex items-center gap-2 border-b pb-3">
+          <div class="client-header">
+            <div class="flex items-center gap-2">
               <div
-                class="h-2.5 w-2.5 rounded-full"
+                class="status-dot"
                 :class="isClientAvailable(client) ? 'bg-green-500' : 'bg-gray-400'"
               ></div>
-              <span class="text-base font-semibold">客户端 {{ index + 1 }}</span>
+              <span class="client-title">客户端 {{ index + 1 }}</span>
               <el-tag v-if="client.clientSource" size="small" type="info" class="ml-2">
                 {{ client.clientSource }}
               </el-tag>
             </div>
+          </div>
 
-            <el-form label-width="100px">
-              <el-form-item label="连接 ID">
-                <span class="font-mono text-sm text-gray-700">{{ client.id }}</span>
-              </el-form-item>
-              <el-form-item v-if="client.ip" label="IP 地址">
-                <span class="text-sm text-gray-700">{{ client.ip }}</span>
-              </el-form-item>
-              <el-form-item v-if="client.connectedAt" label="连接时间">
-                <span class="text-sm text-gray-700">{{ formatPast(new Date(client.connectedAt)) }}</span>
-              </el-form-item>
-              <el-form-item label="操作">
-                <el-button
-                  type="primary"
-                  size="default"
-                  @click="handleSendMessage(client)"
-                  :disabled="!isClientAvailable(client)"
-                >
-                  <Icon icon="ep:message" class="mr-1" />
-                  发送消息
-                </el-button>
-              </el-form-item>
-            </el-form>
+          <div class="client-content">
+            <div class="client-info">
+              <div class="client-field">
+                <span class="field-label">连接 ID</span>
+                <span class="field-value font-mono">{{ client.id }}</span>
+              </div>
+              <div v-if="client.ip" class="client-field">
+                <span class="field-label">IP 地址</span>
+                <span class="field-value">{{ client.ip }}</span>
+              </div>
+              <div v-if="client.connectedAt" class="client-field">
+                <span class="field-label">连接时间</span>
+                <span class="field-value">{{ formatPast(new Date(client.connectedAt)) }}</span>
+              </div>
+            </div>
+            <div class="client-actions">
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleSendMessage(client)"
+                :disabled="!isClientAvailable(client)"
+              >
+                <Icon icon="ep:message" class="mr-1" />
+                发送消息
+              </el-button>
+            </div>
           </div>
         </div>
-      </el-form>
+      </div>
     </div>
 
     <!-- 发送消息对话框 -->
@@ -115,7 +122,7 @@ const messageContent = ref('')
 const sending = ref(false)
 
 // 判断客户端是否可用（参考 header 中的状态检测方式）
-const isClientAvailable = (client: WebsocketConnectionVO): boolean => {
+const isClientAvailable = (_client: WebsocketConnectionVO): boolean => {
   // 直接使用 header 中的连接状态
   return isLocalConnected.value
 }
@@ -171,3 +178,104 @@ const handleConfirmSendMessage = async () => {
 }
 </script>
 
+<style scoped lang="scss">
+.client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 4px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
+}
+
+.client-card {
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.client-header {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.client-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.client-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.client-info {
+  flex: 1;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.client-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.field-value {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.client-actions {
+  flex-shrink: 0;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+</style>

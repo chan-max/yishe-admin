@@ -21,6 +21,7 @@ import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/modules/user'
 import ClientControlDialog from '@/components/ClientControlDialog/index.vue'
+import { ClientControlService } from '@/services/clientControl'
 
 export default defineComponent({
   name: 'ClientStatus',
@@ -30,9 +31,26 @@ export default defineComponent({
     const loading = ref(false)
     const clientLoading = ref(false)
     const clientDialogVisible = ref(false)
+    const clientCount = ref(0)
+    let clientCountTimer: number | null = null
     
     // 判断是否为管理员
     const isAdmin = computed(() => userStore.user?.isAdmin || false)
+    
+    // 获取客户端连接数
+    const refreshClientCount = async () => {
+      if (!isLocalConnected.value) {
+        clientCount.value = 0
+        return
+      }
+      try {
+        const clients = await ClientControlService.getMyClients()
+        clientCount.value = clients.length
+      } catch (error) {
+        console.error('获取客户端连接数失败:', error)
+        clientCount.value = 0
+      }
+    }
     
     // 获取设计工具通信实例
     const designToolMessenger = getDesignToolMessenger()
@@ -96,6 +114,11 @@ export default defineComponent({
         }
       }
       setDesignToolConnected(designToolMessenger.isDesignToolConnected())
+      
+      // 初始化客户端连接数
+      refreshClientCount()
+      // 定期刷新客户端连接数
+      clientCountTimer = window.setInterval(refreshClientCount, 3000)
     })
 
     onUnmounted(() => {
@@ -104,6 +127,11 @@ export default defineComponent({
       }
       // 清理连接状态监听
       designToolMessenger.onConnectionChange = undefined
+      // 清理客户端连接数定时器
+      if (clientCountTimer) {
+        clearInterval(clientCountTimer)
+        clientCountTimer = null
+      }
     })
 
     return () => (
@@ -144,7 +172,9 @@ export default defineComponent({
               class="text-[10px] font-bold flex items-center" 
               style={{ color: isLocalConnected.value ? '#67C23A' : '#F56C6C' }}
             >
-              {isLocalConnected.value ? '客户端已链接' : '客户端未启动'}
+              {isLocalConnected.value 
+                ? `客户端已链接${clientCount.value > 0 ? ` (${clientCount.value})` : ''}` 
+                : '客户端未启动'}
               {clientLoading.value && (
                 <svg class="animate-spin ml-1" width="12" height="12" viewBox="0 0 50 50">
                   <circle cx="25" cy="25" r="20" fill="none" stroke="#409EFF" stroke-width="4" stroke-linecap="round" stroke-dasharray="31.415, 31.415" transform="rotate(0 25 25)">
@@ -159,7 +189,13 @@ export default defineComponent({
         {/* 客户端操作弹窗 */}
         <ClientControlDialog 
           modelValue={clientDialogVisible.value}
-          onUpdate:modelValue={(val: boolean) => { clientDialogVisible.value = val }}
+          onUpdate:modelValue={(val: boolean) => { 
+            clientDialogVisible.value = val
+            // 弹窗关闭时刷新连接数
+            if (!val) {
+              refreshClientCount()
+            }
+          }}
         />
         {/* 远程服务状态 */}
         <ElTooltip
