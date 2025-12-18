@@ -32,19 +32,19 @@
           @clear="handleSearch"
         />
       </form-item>
-      <form-item label="发布状态">
+      <form-item label="社交媒体发布状态">
         <el-select
-          v-model="queryParams.publishStatus"
+          v-model="queryParams.mediaPublishStatus"
           clearable
           placeholder="全部"
           style="width: 160px"
           @change="handleSearch"
         >
           <el-option label="全部" value="" />
-          <el-option label="草稿" value="draft" />
-          <el-option label="待发布社交媒体" value="pending_social_media" />
-          <el-option label="已发布社交媒体" value="published_social_media" />
-          <el-option label="已归档" value="archived" />
+          <el-option label="待发布" value="pending" />
+          <el-option label="发布中" value="publishing" />
+          <el-option label="成功" value="success" />
+          <el-option label="失败" value="failed" />
         </el-select>
       </form-item>
       <form-item label="随机顺序">
@@ -104,28 +104,32 @@
                   <span>删除</span>
                 </el-dropdown-item>
                 
-                <!-- 发布状态（商品） -->
-                <el-dropdown-item divided command="mark-draft">
-                  <el-icon><Refresh /></el-icon>
-                  <span>标记为草稿</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-pending">
+                <!-- 社交媒体发布状态 -->
+                <el-dropdown-item divided command="mark-pending">
                   <el-icon><Upload /></el-icon>
-                  <span>标记为待发布社交媒体</span>
+                  <span>社交媒体发布状态：待发布</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="mark-published">
+                <el-dropdown-item command="mark-publishing">
+                  <el-icon><Refresh /></el-icon>
+                  <span>社交媒体发布状态：发布中</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="mark-success">
                   <el-icon><Share /></el-icon>
-                  <span>标记为已发布社交媒体</span>
+                  <span>社交媒体发布状态：成功</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="mark-archived">
+                <el-dropdown-item command="mark-failed">
                   <el-icon><Delete /></el-icon>
-                  <span>标记为已归档</span>
+                  <span>社交媒体发布状态：失败</span>
                 </el-dropdown-item>
 
-                <!-- 发布/下架操作 -->
-                <el-dropdown-item :command="row.isPublish ? 'unpublish' : 'publish'" divided>
+                <!-- 发布状态标记 -->
+                <el-dropdown-item divided command="mark-published">
                   <el-icon><Share /></el-icon>
-                  <span>{{ row.isPublish ? '下架' : '发布' }}</span>
+                  <span>发布状态：标记为已发布</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="mark-unpublished">
+                  <el-icon><Refresh /></el-icon>
+                  <span>发布状态：标记为未发布</span>
                 </el-dropdown-item>
 
                 <!-- 工具类 -->
@@ -260,9 +264,9 @@
           </div>
         </template>
 
-        <template #publishStatusSlot="{ row }">
-          <el-tag :type="row.publishStatus === 'published_social_media' ? 'success' : (row.publishStatus === 'pending_social_media' ? 'warning' : (row.publishStatus === 'archived' ? 'danger' : 'info'))" size="small">
-            {{ row.publishStatus === 'published_social_media' ? '已发布社交媒体' : row.publishStatus === 'pending_social_media' ? '待发布社交媒体' : row.publishStatus === 'archived' ? '已归档' : '草稿' }}
+        <template #mediaPublishStatusSlot="{ row }">
+          <el-tag :type="row.mediaPublishStatus === 'success' ? 'success' : (row.mediaPublishStatus === 'publishing' ? 'warning' : (row.mediaPublishStatus === 'failed' ? 'danger' : 'info'))" size="small">
+            {{ row.mediaPublishStatus === 'success' ? '成功' : row.mediaPublishStatus === 'publishing' ? '发布中' : row.mediaPublishStatus === 'failed' ? '失败' : '待发布' }}
           </el-tag>
         </template>
 
@@ -2211,7 +2215,7 @@ const queryParams = reactive({
   searchText: '',
   search: '',
   isPublish: undefined as boolean | undefined,
-  publishStatus: '' as string | '',
+  mediaPublishStatus: '' as string | '',
   random: false
 });
 
@@ -2292,11 +2296,11 @@ const gridOptions = ref({
       formatter: ({ cellValue }) => cellValue === 1 ? '是' : '否'
     },
     { 
-      title: "发布状态", 
-      field: "publishStatus", 
+      title: "社交媒体发布状态", 
+      field: "mediaPublishStatus", 
       width: 140, 
       showOverflow: true,
-      slots: { default: 'publishStatusSlot' }
+      slots: { default: 'mediaPublishStatusSlot' }
     },
     { 
       title: "是否发布", 
@@ -2858,8 +2862,8 @@ async function getList() {
   if (queryParams.isPublish !== undefined) {
     params.isPublish = queryParams.isPublish;
   }
-  if (queryParams.publishStatus) {
-    params.publishStatus = queryParams.publishStatus;
+  if (queryParams.mediaPublishStatus) {
+    params.mediaPublishStatus = queryParams.mediaPublishStatus;
   }
   params.random = queryParams.random;
 
@@ -2886,7 +2890,7 @@ const resetQuery = () => {
   queryParams.searchText = '';
   queryParams.search = '';
   queryParams.isPublish = undefined;
-  queryParams.publishStatus = '';
+  queryParams.mediaPublishStatus = '';
   queryParams.random = false;
 };
 
@@ -3349,15 +3353,11 @@ function handleOperationCommand(command: string, row: any) {
     case 'delete':
       handleDelete(row);
       break;
-    case 'publish':
-      batchPublish([row]);
+    case 'mark-published':
+      handleUpdatePublishStatus(row, true);
       break;
-    case 'unpublish':
-      batchUnpublish([row]);
-      break;
-    case 'publish':
-    case 'unpublish':
-      handleTogglePublish(row);
+    case 'mark-unpublished':
+      handleUpdatePublishStatus(row, false);
       break;
     case 'social-publish':
       handlePublish(row);
@@ -3386,17 +3386,17 @@ function handleOperationCommand(command: string, row: any) {
     case 'export-social-media':
       handleSocialMediaExport(row);
       break;
-    case 'mark-draft':
-      handleUpdatePublishStatus(row, 'draft');
-      break;
     case 'mark-pending':
-      handleUpdatePublishStatus(row, 'pending_social_media');
+      handleUpdateMediaPublishStatus(row, 'pending');
       break;
-    case 'mark-published':
-      handleUpdatePublishStatus(row, 'published_social_media');
+    case 'mark-publishing':
+      handleUpdateMediaPublishStatus(row, 'publishing');
       break;
-    case 'mark-archived':
-      handleUpdatePublishStatus(row, 'archived');
+    case 'mark-success':
+      handleUpdateMediaPublishStatus(row, 'success');
+      break;
+    case 'mark-failed':
+      handleUpdateMediaPublishStatus(row, 'failed');
       break;
     case 'publish-to-queue':
       handlePublishToQueue(row);
@@ -4109,13 +4109,26 @@ async function copySourceInfo() {
   }
 }
 
-async function handleUpdatePublishStatus(row: any, status: string) {
+async function handleUpdateMediaPublishStatus(row: any, status: string) {
   try {
     await updateProduct({
       ...row,
-      publishStatus: status
+      mediaPublishStatus: status
     });
-    ElMessage.success('发布状态已更新');
+    ElMessage.success('社交媒体发布状态已更新');
+    getList();
+  } catch (e) {
+    ElMessage.error('更新社交媒体发布状态失败');
+  }
+}
+
+async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
+  try {
+    await updateProduct({
+      ...row,
+      isPublish: isPublish
+    });
+    ElMessage.success(`发布状态已更新为：${isPublish ? '已发布' : '未发布'}`);
     getList();
   } catch (e) {
     ElMessage.error('更新发布状态失败');
