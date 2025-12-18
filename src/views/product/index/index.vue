@@ -1278,59 +1278,467 @@
     <!-- 生成视频配置弹窗（ffmpeg） -->
     <el-dialog
       v-model="videoGenDialogVisible"
-      title="生成视频（配置）"
+      title="视频生成配置"
       width="100%"
       :fullscreen="true"
       :close-on-click-modal="false"
       :destroy-on-close="false"
+      align-center
     >
-      <div class="p-4 max-w-4xl mx-auto">
+      <div class="video-gen-container">
         <el-alert
           type="info"
           :closable="false"
           show-icon
-          title="后端将直接调用本机 ffmpeg/ffprobe 生成视频，并自动上传 COS；替换/删除会自动清理 COS 旧文件。"
           class="mb-4"
-        />
-
-        <el-form label-width="120px">
-          <el-form-item label="分辨率">
-            <div class="flex items-center gap-2 w-full">
-              <el-input-number v-model="videoGenForm.width" :min="240" :max="3840" :step="10" />
-              <span class="text-gray-400">x</span>
-              <el-input-number v-model="videoGenForm.height" :min="240" :max="3840" :step="10" />
+        >
+          <template #title>
+            <div class="flex items-center gap-2">
+              <span>使用 FFmpeg 生成视频，将自动上传到 COS 存储</span>
+              <el-tag size="small" type="success">自动清理旧文件</el-tag>
             </div>
-          </el-form-item>
+          </template>
+        </el-alert>
 
-          <el-form-item label="FPS">
-            <el-input-number v-model="videoGenForm.fps" :min="1" :max="60" />
-          </el-form-item>
+        <el-form :model="videoGenForm" label-width="160px" size="default" class="video-gen-form">
+          <!-- 基础设置 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><Setting /></el-icon>
+                <span>基础设置</span>
+              </div>
+            </template>
+            <el-row :gutter="24">
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="分辨率">
+                      <div class="flex items-center gap-2">
+                        <el-input-number 
+                          v-model="videoGenForm.width" 
+                          :min="240" 
+                          :max="3840" 
+                          :step="10"
+                          controls-position="right"
+                          style="width: 80px"
+                        />
+                        <span class="text-gray-400 text-sm">×</span>
+                        <el-input-number 
+                          v-model="videoGenForm.height" 
+                          :min="240" 
+                          :max="3840" 
+                          :step="10"
+                          controls-position="right"
+                          style="width: 80px"
+                        />
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="分辨率预设">
+                      <el-button-group>
+                        <el-button size="small" @click="setResolution(720, 720)">1:1</el-button>
+                        <el-button size="small" @click="setResolution(1080, 1080)">1:1 HD</el-button>
+                        <el-button size="small" @click="setResolution(1080, 1920)">9:16</el-button>
+                        <el-button size="small" @click="setResolution(1920, 1080)">16:9</el-button>
+                      </el-button-group>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="帧率 (FPS)">
+                      <div class="flex items-center gap-2">
+                        <el-input-number 
+                          v-model="videoGenForm.fps" 
+                          :min="1" 
+                          :max="60"
+                          controls-position="right"
+                          style="width: 100px"
+                        />
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="FPS 预设">
+                      <el-button-group>
+                        <el-button size="small" @click="videoGenForm.fps = 24">24</el-button>
+                        <el-button size="small" @click="videoGenForm.fps = 30">30</el-button>
+                        <el-button size="small" @click="videoGenForm.fps = 60">60</el-button>
+                      </el-button-group>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+            <el-row :gutter="24">
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="每张图片时长">
+                  <div class="flex items-center gap-2">
+                    <el-input-number 
+                      v-model="videoGenForm.clipDuration" 
+                      :min="0.5" 
+                      :max="30" 
+                      :step="0.5"
+                      :precision="1"
+                      controls-position="right"
+                      style="width: 100px"
+                    />
+                    <span class="text-sm">秒</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="图片缩放模式">
+                  <el-select v-model="videoGenForm.scaleMode" style="width: 100%">
+                    <el-option label="适应" value="fit" />
+                    <el-option label="填充" value="crop" />
+                    <el-option label="拉伸" value="stretch" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="转场效果">
+                  <el-select v-model="videoGenForm.transition" style="width: 100%">
+                    <el-option label="无转场" value="none" />
+                    <el-option label="淡入淡出" value="fade" />
+                    <el-option label="左滑" value="directional-left" />
+                    <el-option label="右滑" value="directional-right" />
+                    <el-option label="上滑" value="directional-up" />
+                    <el-option label="下滑" value="directional-down" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="转场时长">
+                  <div class="flex items-center gap-2">
+                    <el-slider
+                      v-model="videoGenForm.transitionDuration"
+                      :min="0.1"
+                      :max="2"
+                      :step="0.1"
+                      :format-tooltip="(val) => val.toFixed(1) + 's'"
+                      style="flex: 1"
+                    />
+                    <span class="text-sm w-12 text-right">{{ videoGenForm.transitionDuration.toFixed(1) }}s</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            </el-card>
 
-          <el-form-item label="每张时长(秒)">
-            <el-input-number v-model="videoGenForm.clipDuration" :min="1" :max="15" />
-          </el-form-item>
+          <!-- 音频设置 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><Headset /></el-icon>
+                <span>音频设置</span>
+              </div>
+            </template>
+            <el-row :gutter="24">
+                  <el-col :xs="24" :sm="24" :md="12">
+                    <el-form-item label="背景音乐 URL">
+                      <div class="flex items-center gap-2">
+                        <el-input 
+                          v-model="videoGenForm.audioUrl" 
+                          placeholder="输入音乐文件的 URL（支持 mp3、wav、aac 等格式）" 
+                          clearable
+                          style="flex: 1"
+                        />
+                        <el-button @click="videoGenForm.audioUrl = ''" :disabled="!videoGenForm.audioUrl">清除</el-button>
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="循环音乐">
+                      <el-switch 
+                        v-model="videoGenForm.loopAudio" 
+                        active-text="循环" 
+                        inactive-text="不循环"
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="音频音量">
+                      <div class="flex items-center gap-2">
+                        <el-slider
+                          v-model="videoGenForm.audioVolume"
+                          :min="0"
+                          :max="200"
+                          :step="10"
+                          :format-tooltip="(val) => val + '%'"
+                          style="flex: 1"
+                        />
+                        <span class="text-sm w-12 text-right">{{ videoGenForm.audioVolume }}%</span>
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+            <el-row :gutter="24">
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="音频淡入">
+                  <div class="flex items-center gap-2">
+                    <el-input-number 
+                      v-model="videoGenForm.audioFadeIn" 
+                      :min="0" 
+                      :max="5" 
+                      :step="0.1"
+                      :precision="1"
+                      controls-position="right"
+                      style="width: 100px"
+                    />
+                    <span class="text-sm">秒</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="音频淡出">
+                  <div class="flex items-center gap-2">
+                    <el-input-number 
+                      v-model="videoGenForm.audioFadeOut" 
+                      :min="0" 
+                      :max="5" 
+                      :step="0.1"
+                      :precision="1"
+                      controls-position="right"
+                      style="width: 100px"
+                    />
+                    <span class="text-sm">秒</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            </el-card>
 
-          <!-- 单图生成：不做转场、不叠加文字 -->
+          <!-- 视频编码设置 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><VideoCamera /></el-icon>
+                <span>编码设置</span>
+              </div>
+            </template>
+            <el-row :gutter="24">
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="视频编码">
+                      <el-select v-model="videoGenForm.videoCodec" style="width: 100%">
+                        <el-option label="H.264" value="libx264" />
+                        <el-option label="H.265" value="libx265" />
+                        <el-option label="VP9" value="libvpx-vp9" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="质量预设">
+                      <el-select v-model="videoGenForm.qualityPreset" style="width: 100%">
+                        <el-option label="最快" value="ultrafast" />
+                        <el-option label="很快" value="veryfast" />
+                        <el-option label="快速" value="faster" />
+                        <el-option label="中等" value="medium" />
+                        <el-option label="慢速" value="slow" />
+                        <el-option label="最慢" value="veryslow" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="输出格式">
+                      <el-select v-model="videoGenForm.outputFormat" style="width: 100%">
+                        <el-option label="MP4" value="mp4" />
+                        <el-option label="WebM" value="webm" />
+                        <el-option label="MKV" value="mkv" />
+                      </el-select>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+                    <el-form-item label="CRF 质量">
+                      <div class="flex items-center gap-2">
+                        <el-slider
+                          v-model="videoGenForm.crf"
+                          :min="18"
+                          :max="28"
+                          :step="1"
+                          style="flex: 1"
+                        />
+                        <span class="text-sm w-8 text-right">{{ videoGenForm.crf }}</span>
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+            <el-row :gutter="24">
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="视频码率">
+                  <div class="flex items-center gap-2">
+                    <el-input-number 
+                      v-model="videoGenForm.videoBitrate" 
+                      :min="500" 
+                      :max="50000" 
+                      :step="500"
+                      controls-position="right"
+                      style="width: 120px"
+                    />
+                    <span class="text-sm">kbps</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="视频码率预设">
+                  <el-button-group>
+                    <el-button size="small" @click="videoGenForm.videoBitrate = 2000">2M</el-button>
+                    <el-button size="small" @click="videoGenForm.videoBitrate = 5000">5M</el-button>
+                    <el-button size="small" @click="videoGenForm.videoBitrate = 10000">10M</el-button>
+                  </el-button-group>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="音频码率">
+                  <div class="flex items-center gap-2">
+                    <el-input-number 
+                      v-model="videoGenForm.audioBitrate" 
+                      :min="64" 
+                      :max="320" 
+                      :step="32"
+                      controls-position="right"
+                      style="width: 120px"
+                    />
+                    <span class="text-sm">kbps</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="音频码率预设">
+                  <el-button-group>
+                    <el-button size="small" @click="videoGenForm.audioBitrate = 128">128</el-button>
+                    <el-button size="small" @click="videoGenForm.audioBitrate = 192">192</el-button>
+                    <el-button size="small" @click="videoGenForm.audioBitrate = 256">256</el-button>
+                  </el-button-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            </el-card>
 
-          <el-form-item label="背景音乐URL">
-            <el-input v-model="videoGenForm.audioUrl" placeholder="可选：mp3/wav 等可访问 URL" clearable />
-          </el-form-item>
+          <!-- 文字与标题 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><Document /></el-icon>
+                <span>文字与标题</span>
+              </div>
+            </template>
+            <el-row :gutter="24">
+                  <el-col :xs="24" :sm="24" :md="12">
+                    <el-form-item label="片头标题">
+                      <el-input 
+                        v-model="videoGenForm.titleText" 
+                        placeholder="可选：在视频开头显示的文字标题"
+                        clearable
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6" v-if="videoGenForm.titleText">
+                    <el-form-item label="标题字体大小">
+                      <el-input-number 
+                        v-model="videoGenForm.titleFontSize" 
+                        :min="12" 
+                        :max="200" 
+                        :step="4"
+                        controls-position="right"
+                        style="width: 100%"
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6" v-if="videoGenForm.titleText">
+                    <el-form-item label="标题颜色">
+                      <el-color-picker v-model="videoGenForm.titleColor" />
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+            <el-row :gutter="24" v-if="videoGenForm.titleText">
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="标题位置">
+                  <el-select v-model="videoGenForm.titlePosition" style="width: 100%">
+                    <el-option label="居中" value="center" />
+                    <el-option label="顶部居中" value="top" />
+                    <el-option label="底部居中" value="bottom" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="标题显示时长">
+                  <div class="flex items-center gap-2">
+                    <el-input-number 
+                      v-model="videoGenForm.titleDuration" 
+                      :min="1" 
+                      :max="10" 
+                      :step="0.5"
+                      :precision="1"
+                      controls-position="right"
+                      style="width: 100px"
+                    />
+                    <span class="text-sm">秒</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            </el-card>
 
-          <el-form-item label="循环音乐">
-            <el-switch v-model="videoGenForm.loopAudio" active-text="循环" inactive-text="不循环" />
-          </el-form-item>
-
-          <el-form-item label="替换旧视频">
-            <el-switch v-model="videoGenForm.replace" active-text="替换" inactive-text="追加" />
-          </el-form-item>
+          <!-- 预览信息与操作 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><View /></el-icon>
+                <span>预览信息与操作</span>
+              </div>
+            </template>
+            <el-row :gutter="24">
+              <el-col :xs="12" :sm="8" :md="6">
+                <div class="preview-info-item">
+                  <div class="preview-label">视频尺寸</div>
+                  <div class="preview-value">{{ videoGenForm.width }} × {{ videoGenForm.height }}</div>
+                </div>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <div class="preview-info-item">
+                  <div class="preview-label">视频时长</div>
+                  <div class="preview-value">约 {{ estimatedDuration }} 秒</div>
+                </div>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <div class="preview-info-item">
+                  <div class="preview-label">帧率</div>
+                  <div class="preview-value">{{ videoGenForm.fps }} FPS</div>
+                </div>
+              </el-col>
+              <el-col :xs="12" :sm="8" :md="6">
+                <div class="preview-info-item">
+                  <div class="preview-label">预计文件大小</div>
+                  <div class="preview-value">{{ estimatedFileSize }}</div>
+                </div>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24" class="mt-4">
+              <el-col :xs="12" :sm="8" :md="6">
+                <el-form-item label="替换旧视频">
+                  <el-switch 
+                    v-model="videoGenForm.replace" 
+                    active-text="替换" 
+                    inactive-text="追加"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="16" :md="18" class="flex items-center justify-end gap-2">
+                <el-button @click="resetVideoGenForm">
+                  <el-icon class="mr-1"><Refresh /></el-icon>
+                  重置为默认值
+                </el-button>
+              </el-col>
+            </el-row>
+          </el-card>
         </el-form>
       </div>
 
       <template #footer>
-        <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
-        <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
-          {{ generatingVideoId ? '生成中...' : '开始生成' }}
-        </el-button>
+        <div class="flex justify-end gap-2">
+          <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
+          <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
+            <el-icon class="mr-1"><VideoPlay /></el-icon>
+            {{ generatingVideoId ? '生成中...' : '开始生成视频' }}
+          </el-button>
+        </div>
       </template>
     </el-dialog>
 
@@ -1763,6 +2171,12 @@ import {
   Check,
   Refresh,
   QuestionFilled,
+  Setting,
+  Headset,
+  VideoCamera,
+  Document,
+  View,
+  Operation,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
@@ -1970,14 +2384,91 @@ const publishDialogVisible = ref(false);
 const videoGenDialogVisible = ref(false);
 const videoGenRow = ref<any>(null);
 const videoGenForm = reactive({
+  // 基础设置
   width: 720,
   height: 720,
   fps: 30,
   clipDuration: 2,
+  scaleMode: 'fit' as 'fit' | 'crop' | 'stretch',
+  transition: 'fade' as 'none' | 'fade' | 'directional-left' | 'directional-right' | 'directional-up' | 'directional-down',
+  transitionDuration: 0.5,
+  // 音频设置
   audioUrl: '',
   loopAudio: true,
+  audioVolume: 100,
+  audioFadeIn: 0,
+  audioFadeOut: 0,
+  // 编码设置
+  videoCodec: 'libx264' as 'libx264' | 'libx265' | 'libvpx-vp9',
+  qualityPreset: 'medium' as 'ultrafast' | 'veryfast' | 'faster' | 'fast' | 'medium' | 'slow' | 'slower' | 'veryslow',
+  videoBitrate: 5000,
+  audioBitrate: 192,
+  outputFormat: 'mp4' as 'mp4' | 'webm' | 'mkv',
+  crf: 23,
+  // 文字与标题
+  titleText: '',
+  titleFontSize: 48,
+  titleColor: '#FFFFFF',
+  titlePosition: 'center' as 'center' | 'top' | 'bottom',
+  titleDuration: 3,
+  // 操作选项
   replace: true,
 });
+
+// 估算视频时长（基于图片数量和每张时长）
+const estimatedDuration = computed(() => {
+  if (!videoGenRow.value || !videoGenRow.value.images || !Array.isArray(videoGenRow.value.images)) {
+    return (videoGenForm.clipDuration || 2).toFixed(1);
+  }
+  const imageCount = videoGenRow.value.images.length;
+  const duration = imageCount * videoGenForm.clipDuration;
+  return duration.toFixed(1);
+});
+
+// 估算文件大小（基于码率和时长）
+const estimatedFileSize = computed(() => {
+  const duration = parseFloat(estimatedDuration.value);
+  const totalBitrate = videoGenForm.videoBitrate + videoGenForm.audioBitrate; // kbps
+  const sizeMB = (totalBitrate * duration / 8 / 1024).toFixed(2); // MB
+  if (parseFloat(sizeMB) < 1) {
+    return (parseFloat(sizeMB) * 1024).toFixed(0) + ' KB';
+  }
+  return sizeMB + ' MB';
+});
+
+// 设置分辨率快捷按钮
+function setResolution(width: number, height: number) {
+  videoGenForm.width = width;
+  videoGenForm.height = height;
+}
+
+// 重置表单为默认值
+function resetVideoGenForm() {
+  videoGenForm.width = 720;
+  videoGenForm.height = 720;
+  videoGenForm.fps = 30;
+  videoGenForm.clipDuration = 2;
+  videoGenForm.scaleMode = 'fit';
+  videoGenForm.transition = 'fade';
+  videoGenForm.transitionDuration = 0.5;
+  videoGenForm.audioUrl = '';
+  videoGenForm.loopAudio = true;
+  videoGenForm.audioVolume = 100;
+  videoGenForm.audioFadeIn = 0;
+  videoGenForm.audioFadeOut = 0;
+  videoGenForm.videoCodec = 'libx264';
+  videoGenForm.qualityPreset = 'medium';
+  videoGenForm.videoBitrate = 5000;
+  videoGenForm.audioBitrate = 192;
+  videoGenForm.outputFormat = 'mp4';
+  videoGenForm.crf = 23;
+  videoGenForm.titleText = '';
+  videoGenForm.titleFontSize = 48;
+  videoGenForm.titleColor = '#FFFFFF';
+  videoGenForm.titlePosition = 'center';
+  videoGenForm.titleDuration = 3;
+  videoGenForm.replace = true;
+}
 
 // 社交媒体导出
 const socialExportVisible = ref(false);
@@ -3014,8 +3505,25 @@ async function submitGenerateVideo() {
         height: Number(videoGenForm.height) || 720,
         fps: Number(videoGenForm.fps) || 30,
         clipDuration: Number(videoGenForm.clipDuration) || 2,
+        transition: videoGenForm.transition || 'fade',
+        transitionDuration: videoGenForm.transitionDuration || 0.5,
+        scaleMode: videoGenForm.scaleMode || 'fit',
         audioUrl: (videoGenForm.audioUrl || '').trim() || undefined,
         loopAudio: !!videoGenForm.loopAudio,
+        audioVolume: videoGenForm.audioVolume || 100,
+        audioFadeIn: videoGenForm.audioFadeIn || 0,
+        audioFadeOut: videoGenForm.audioFadeOut || 0,
+        videoCodec: videoGenForm.videoCodec || 'libx264',
+        qualityPreset: videoGenForm.qualityPreset || 'medium',
+        videoBitrate: videoGenForm.videoBitrate || 5000,
+        audioBitrate: videoGenForm.audioBitrate || 192,
+        outputFormat: videoGenForm.outputFormat || 'mp4',
+        crf: videoGenForm.crf || 23,
+        titleText: (videoGenForm.titleText || '').trim() || undefined,
+        titleFontSize: videoGenForm.titleFontSize || 48,
+        titleColor: videoGenForm.titleColor || '#FFFFFF',
+        titlePosition: videoGenForm.titlePosition || 'center',
+        titleDuration: videoGenForm.titleDuration || 3,
       },
     });
     ElMessage.success('视频生成成功');
@@ -4435,5 +4943,65 @@ async function handlePublishToQueue(row: any) {
   margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--el-border-color-light);
+}
+
+// 视频生成配置弹窗样式
+:deep(.el-dialog__body) {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 110px);
+  padding: 20px;
+  overflow: hidden;
+}
+
+.video-gen-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.video-gen-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  
+  .el-card {
+    .el-card__header {
+      padding: 16px 20px;
+    }
+    
+    .el-card__body {
+      padding: 20px;
+    }
+  }
+  
+  .el-form-item {
+    margin-bottom: 20px;
+  }
+  
+  .el-row {
+    margin-bottom: 0;
+  }
+}
+
+.preview-info-item {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  text-align: center;
+  
+  .preview-label {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  
+  .preview-value {
+    font-size: 16px;
+    font-weight: 600;
+  }
 }
 </style>
