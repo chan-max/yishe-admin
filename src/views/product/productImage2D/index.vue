@@ -518,7 +518,7 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
     { type: 'checkbox', width: 50 },
-    { title: '合成图片', field: 'images', width: 'auto', slots: { default: 'imagesSlot' } },
+    { title: '合成图片', field: 'images', minWidth: '200', slots: { default: 'imagesSlot' } },
     // { title: '视频', field: 'videoUrl', width: 120, slots: { default: 'videoSlot' } },
     // { title: '产品代码', field: 'code', width: 120, slots: { default: 'codeSlot' } }, // 已注释
     { title: '产品名称', field: 'name', width: 150, slots: { default: 'nameSlot' } },
@@ -528,7 +528,7 @@ const gridOptions = ref<any>({
     { title: '模板详情', field: 'templateGroup2DId', width: 120, slots: { default: 'templateGroup2DIdSlot' } },
     { title: '创建时间', field: 'createTime', width: 180 },
     { title: '更新时间', field: 'updateTime', width: 180 },
-    { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
+    { title: '操作', field: 'operation', width: 80, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
   ],
   checkboxConfig: { reserve: true },
 })
