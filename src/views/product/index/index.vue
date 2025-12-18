@@ -88,7 +88,7 @@
       >
 
         <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown" size="small">
             <el-button type="primary" link size="small">
               操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
@@ -2195,7 +2195,6 @@ import { PsdPreview } from "@/components/PsdPreview";
 import { fontTemplateApi } from "@/api/fontTemplate";
 import ProductImageUpload from '@/components/ProductImageUpload.vue'
 import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
-import { publishToSocialMedia } from "@/api/client";
 import { getDesignModel } from '@/api/designModel'
 // import { preview as previewImage } from "@/components/PreviewImage/index"; // 已使用本地 preview 函数
 import { getDraftList } from '@/api/draft'
@@ -3196,29 +3195,9 @@ async function handlePublishSubmit() {
       })
     };
 
-    const response = await publishToSocialMedia(publishData);
-    
-    let results = [];
-    if (response && response.results) {
-      results = response.results;
-    }
-
-    if (results.length > 0) {
-      publishResults.value = results.map(result => ({
-        platform: result.platform,
-        success: result.success,
-        message: formatPublishMessage(result),
-        data: result.data
-      }));
-      publishResultVisible.value = true;
-    } else {
-      publishResults.value = [{
-        platform: 'unknown',
-        success: false,
-        message: '发布请求已提交，但未收到详细结果'
-      }];
-      publishResultVisible.value = true;
-    }
+    // puppeteer 社交媒体发布功能已移除
+    ElMessage.warning('社交媒体发布功能已移除，请使用队列发布');
+    publishDialogVisible.value = false;
   } catch (error) {
     console.error('发布失败:', error);
     ElMessage.error('发布失败，请重试');
@@ -4383,7 +4362,7 @@ async function handlePublishToQueue(row: any) {
     font-size: 12px !important;
     line-height: 1.2 !important;
     height: auto !important;
-    min-height: 22px !important;
+    min-height: 28px !important;
     margin: 0 !important;
     
     .el-icon {

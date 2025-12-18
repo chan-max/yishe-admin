@@ -10,6 +10,4 @@ import request from '@/config/axios'
 
 const LOCAL_CLIENT_SERVER = 'http://localhost:1519'
 
-export async function publishToSocialMedia(data){
-  return await request.post({ url: `${LOCAL_CLIENT_SERVER}/api/publishProductToSocialMedia`, data })
-}
+// puppeteer 社交媒体发布功能已移除
