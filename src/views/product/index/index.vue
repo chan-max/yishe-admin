@@ -276,6 +276,15 @@
           </el-tag>
         </template>
 
+        <template #idSlot="{ row }">
+          <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
+            <span class="text-sm">{{ row.id }}</span>
+            <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <DocumentCopy />
+            </el-icon>
+          </div>
+        </template>
+
         <template #codeSlot="{ row }">
           <el-tag v-if="row.code" type="info" size="small">
             {{ row.code }}
@@ -2181,6 +2190,7 @@ import {
   Document,
   View,
   Operation,
+  DocumentCopy,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
@@ -2235,7 +2245,13 @@ const gridOptions = ref({
       showOverflow: false,
       slots: { default: 'statusFlagSlot' }
     },
-    { title: "ID", field: "id", width: 120, showOverflow: false },
+    { 
+      title: "ID", 
+      field: "id", 
+      width: 120, 
+      showOverflow: false,
+      slots: { default: 'idSlot' }
+    },
     {
       title: "商品图片",
       field: "images",
@@ -2839,6 +2855,24 @@ function handlePreview(row) {
 const copyUrl = (url: string) => {
   copyLink(url);
 };
+
+// 复制 ID
+async function copyId(id: string) {
+  if (!id) return;
+  try {
+    await navigator.clipboard.writeText(id);
+    ElMessage.success('ID 已复制到剪贴板');
+  } catch (e) {
+    // 降级方案
+    const textarea = document.createElement('textarea');
+    textarea.value = id;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    ElMessage.success('ID 已复制到剪贴板');
+  }
+}
 
 getList()
 async function getList() {
