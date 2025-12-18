@@ -497,13 +497,13 @@
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row :gutter="20">
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
             <el-form-item label="商品名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入商品名称" />
             </el-form-item>
           </el-col>
 
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
             <el-form-item label="商品类型" prop="type">
               <el-select
                 v-model="form.type"
@@ -524,19 +524,65 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="商品价格" prop="price">
+              <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="促销价格" prop="salePrice">
+              <el-input-number v-model="form.salePrice" :min="0" :precision="2" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="库存" prop="stock">
+              <el-input-number v-model="form.stock" :min="0" :precision="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="商品规格" prop="specifications">
+              <el-input v-model="form.specifications" placeholder="请输入商品规格" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="商品标签" prop="tags">
+              <el-input v-model="form.tags" placeholder="请输入商品标签，多个标签用逗号分隔" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="是否绝版" prop="isLimitedEdition">
+              <el-switch
+                v-model="form.isLimitedEdition"
+                :active-value="1"
+                :inactive-value="0"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="商品番号" prop="code">
+              <el-input v-model="form.code" placeholder="留空则自动生成" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="商品描述" prop="description">
               <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入商品描述" />
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="关键词" prop="keywords">
               <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="搜索关键字" prop="searchKeywords">
               <el-input 
                 v-model="form.searchKeywords" 
@@ -550,53 +596,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="12">
-            <el-form-item label="商品价格" prop="price">
-              <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="促销价格" prop="salePrice">
-              <el-input-number v-model="form.salePrice" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="库存" prop="stock">
-              <el-input-number v-model="form.stock" :min="0" :precision="0" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="商品规格" prop="specifications">
-              <el-input v-model="form.specifications" placeholder="请输入商品规格" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="商品标签" prop="tags">
-              <el-input v-model="form.tags" placeholder="请输入商品标签，多个标签用逗号分隔" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="是否绝版" prop="isLimitedEdition">
-              <el-switch
-                v-model="form.isLimitedEdition"
-                :active-value="1"
-                :inactive-value="0"
-              />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="12">
-            <el-form-item label="商品番号" prop="code">
-              <el-input v-model="form.code" placeholder="留空则自动生成" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="24">
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="商品图片" prop="images">
               <ProductImageUpload 
                 ref="productImageUploadRef"
@@ -607,7 +607,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="商品视频" prop="videos">
               <ProductVideoUpload
                 ref="productVideoUploadRef"
@@ -4303,7 +4303,6 @@ async function handlePublishToQueue(row: any) {
   transition: all 0.3s ease;
   &:hover {
     box-shadow: var(--el-box-shadow-light);
-    transform: translateY(-2px);
   }
 }
 .draft-preview {
@@ -4448,7 +4447,7 @@ async function handlePublishToQueue(row: any) {
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 1);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
-    transform: scale(1.1);
+
   }
   
   &:disabled {
@@ -4557,7 +4556,6 @@ async function handlePublishToQueue(row: any) {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, 0.6);
     border-radius: 50%;
     width: 60px;
@@ -4582,11 +4580,6 @@ async function handlePublishToQueue(row: any) {
   
   video {
     border-radius: 8px;
-    transition: transform 0.2s ease;
-    
-    &:hover {
-      transform: scale(1.02);
-    }
   }
   
   .el-checkbox-group {
@@ -4623,11 +4616,6 @@ async function handlePublishToQueue(row: any) {
   
   video {
     border-radius: 6px;
-    transition: transform 0.2s ease;
-    
-    &:hover {
-      transform: scale(1.02);
-    }
   }
   
   .el-checkbox-group {
@@ -4721,10 +4709,7 @@ async function handlePublishToQueue(row: any) {
 .select-item {
   position: relative;
   transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-2px);
-  }
+
   
   &.selected {
     .w-32 {
@@ -4741,10 +4726,7 @@ async function handlePublishToQueue(row: any) {
 .select-item-compact {
   position: relative;
   transition: all 0.2s ease;
-  
-  &:hover {
-    transform: translateY(-1px);
-  }
+
   
   &.selected {
     .w-20 {
@@ -4870,7 +4852,6 @@ async function handlePublishToQueue(row: any) {
   
   &:hover {
     border-color: var(--el-color-primary);
-    transform: scale(1.05);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
 }
