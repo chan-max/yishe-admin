@@ -270,12 +270,6 @@
           </el-tag>
         </template>
 
-        <template #isPublishSlot="{ row }">
-          <el-tag :type="row.isPublish ? 'success' : 'info'" size="small">
-            {{ row.isPublish ? '已发布' : '未发布' }}
-          </el-tag>
-        </template>
-
         <template #idSlot="{ row }">
           <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
             <span class="text-sm">{{ row.id }}</span>
@@ -2316,13 +2310,6 @@ const gridOptions = ref({
       width: 140, 
       showOverflow: true,
       slots: { default: 'mediaPublishStatusSlot' }
-    },
-    { 
-      title: "是否发布", 
-      field: "isPublish", 
-      width: 100, 
-      showOverflow: true,
-      slots: { default: 'isPublishSlot' }
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
