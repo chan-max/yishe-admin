@@ -277,7 +277,6 @@
         </div>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="tsx">
@@ -680,8 +679,6 @@ getCompanyListData()
 </script>
 
 <style scoped>
-/* 使用公共样式，减少自定义样式 */
-// 减小表单项间距
 :deep(.el-form-item) {
   margin-bottom: 16px;
 }

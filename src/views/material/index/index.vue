@@ -131,11 +131,9 @@
       </form-item>
       <form-item label="随机顺序">
         <el-switch
-            v-model="queryParams.random"
-            active-text=""
-          inactive-text=""
+          v-model="queryParams.random"
           size="small"
-            @change="getList"
+          @change="getList"
         />
       </form-item>
       <form-item class="date-range-picker">
