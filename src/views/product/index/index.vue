@@ -509,6 +509,11 @@
               <el-input v-model="form.name" placeholder="请输入商品名称" />
             </el-form-item>
           </el-col>
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="英文名称" prop="enName">
+              <el-input v-model="form.enName" placeholder="请输入英文名称" />
+            </el-form-item>
+          </el-col>
 
           <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
             <el-form-item label="商品类型" prop="type">
@@ -582,10 +587,20 @@
               <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入商品描述" />
             </el-form-item>
           </el-col>
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="英文描述" prop="enDescription">
+              <el-input v-model="form.enDescription" type="textarea" :rows="4" placeholder="请输入英文描述" />
+            </el-form-item>
+          </el-col>
 
           <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="关键词" prop="keywords">
               <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="英文关键词" prop="enKeywords">
+              <el-input v-model="form.enKeywords" placeholder="请输入英文关键词，多个关键词用逗号分隔" />
             </el-form-item>
           </el-col>
 
@@ -2263,8 +2278,11 @@ const gridOptions = ref({
       },
     },
     { title: "商品名称", field: "name", width: 240, showOverflow: true },
+    { title: "英文名称", field: "enName", width: 240, showOverflow: true },
     { title: "商品描述", field: "description", width: 240, showOverflow: false },
+    { title: "英文描述", field: "enDescription", width: 240, showOverflow: false },
     { title: "关键词", field: "keywords", width: 200, showOverflow: false },
+    { title: "英文关键词", field: "enKeywords", width: 200, showOverflow: false },
     { 
       title: "产品代码", 
       field: "code", 
@@ -2669,8 +2687,11 @@ interface ProductForm {
   id?: string;
   code: string;
   name: string;
+  enName: string;
   description: string;
+  enDescription: string;
   keywords: string;
+  enKeywords: string;
   searchKeywords: string;
   type: string;
   images: string[];
@@ -2691,8 +2712,11 @@ interface ProductForm {
 const form = ref<ProductForm>({
   code: '',
   name: '',
+  enName: '',
   description: '',
+  enDescription: '',
   keywords: '',
+  enKeywords: '',
   searchKeywords: '',
   type: '',
   images: [] as string[],
@@ -2955,8 +2979,11 @@ function handleAdd() {
   form.value = {
     code: '',
     name: '',
+    enName: '',
     description: '',
+    enDescription: '',
     keywords: '',
+    enKeywords: '',
     searchKeywords: '',
     type: '',
     images: [] as string[],
