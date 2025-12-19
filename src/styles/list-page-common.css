@@ -1,0 +1,81 @@
+/* 列表页面公共样式 */
+
+/* 搜索栏样式 */
+.search-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1rem;
+  align-items: center;
+  margin: 0;
+  /* padding-bottom 由 ListPageLayout 的 filter-section 统一管理 */
+}
+
+/* 左右分布的搜索栏（左边搜索条件，右边操作按钮） */
+.search-bar-between {
+  justify-content: space-between;
+}
+
+/* 表格容器样式 */
+.common-table {
+  width: 100%;
+}
+
+/* 表格操作列样式 */
+.table-operation-column {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 表单区域样式 */
+.form-section {
+  margin-bottom: 1rem;
+}
+
+.form-section:last-child {
+  margin-bottom: 0;
+}
+
+.form-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.form-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 12px;
+  background: var(--el-color-primary);
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 1px;
+}
+
+/* 对话框底部样式 */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* 响应式样式 */
+@media (max-width: 768px) {
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-bar > * {
+    width: 100%;
+  }
+
+  .common-table {
+    overflow-x: auto;
+  }
+}

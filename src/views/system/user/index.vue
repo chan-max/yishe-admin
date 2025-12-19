@@ -1,92 +1,95 @@
 <template>
-  <div>
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <form-item label="按账号搜索">
-        <el-input 
-          v-model="queryParams.account" 
-          placeholder="请输入用户账号" 
-          style="width: 160px" 
-          clearable 
-          @change="(val) => { if (!val) getList() }" 
-        />
-      </form-item>
-      <form-item label="按姓名搜索">
-        <el-input 
-          v-model="queryParams.name" 
-          placeholder="请输入用户姓名" 
-          style="width: 160px" 
-          clearable 
-          @change="(val) => { if (!val) getList() }" 
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
-      <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
-      <el-button
-        type="danger"
-        :icon="Delete"
-        @click="handleDelete(null)"
-        :disabled="!ids.length"
-      >
-        批量删除
-      </el-button>
-    </div>
-
-    <!-- 表格展示 -->
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-        ref="gridRef"
-      >
-        <template #avatarDefaultSlot="{ row }">
-          <el-avatar 
-            :src="row.avatar" 
-            :size="40"
-            :icon="User"
+  <ListPageLayout>
+    <template #filter>
+      <div class="search-bar">
+        <form-item label="按账号搜索">
+          <el-input 
+            v-model="queryParams.account" 
+            placeholder="请输入用户账号" 
+            class="w-40" 
+            clearable 
+            @change="(val) => { if (!val) getList() }" 
           />
-        </template>
+        </form-item>
+        <form-item label="按姓名搜索">
+          <el-input 
+            v-model="queryParams.name" 
+            placeholder="请输入用户姓名" 
+            class="w-40" 
+            clearable 
+            @change="(val) => { if (!val) getList() }" 
+          />
+        </form-item>
+        <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+        <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
+        <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
+        <el-button
+          type="danger"
+          :icon="Delete"
+          @click="handleDelete(null)"
+          :disabled="!ids.length"
+        >
+          批量删除
+        </el-button>
+      </div>
+    </template>
 
-        <template #statusDefaultSlot="{ row }">
-          <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-            {{ row.status === 'active' ? '正常' : '禁用' }}
-          </el-tag>
-        </template>
+    <template #table>
+      <div class="common-table">
+        <vxe-grid
+          v-bind="gridOptions"
+          :data="dataSource"
+          :loading="loading"
+          @checkbox-change="checkboxChange"
+          @checkbox-all="checkboxAllChange"
+          ref="gridRef"
+        >
+          <template #avatarDefaultSlot="{ row }">
+            <el-avatar 
+              :src="row.avatar" 
+              :size="40"
+              :icon="User"
+            />
+          </template>
 
-        <template #isAdminDefaultSlot="{ row }">
-          <el-tag :type="row.isAdmin ? 'warning' : 'info'">
-            {{ row.isAdmin ? '管理员' : '普通用户' }}
-          </el-tag>
-        </template>
+          <template #statusDefaultSlot="{ row }">
+            <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
+              {{ row.status === 'active' ? '正常' : '禁用' }}
+            </el-tag>
+          </template>
 
-        <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button type="warning" link size="small" @click="handleResetPassword(row)">
-              重置密码
-            </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </div>
-        </template>
-      </vxe-grid>
-    </div>
+          <template #isAdminDefaultSlot="{ row }">
+            <el-tag :type="row.isAdmin ? 'warning' : 'info'">
+              {{ row.isAdmin ? '管理员' : '普通用户' }}
+            </el-tag>
+          </template>
 
-    <!-- 分页 -->
-    <div class="py-4 flex justify-end">
+          <template #operationDefaultSlot="{ row }">
+            <div class="table-operation-column">
+              <el-button type="primary" link size="small" @click="handleEdit(row)">
+                编辑
+              </el-button>
+              <el-button type="warning" link size="small" @click="handleResetPassword(row)">
+                重置密码
+              </el-button>
+              <el-button type="danger" link size="small" @click="handleDelete(row)">
+                删除
+              </el-button>
+            </div>
+          </template>
+        </vxe-grid>
+      </div>
+    </template>
+
+    <template #pagination>
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
         v-model:limit="queryParams.pageSize"
         @pagination="getList"
       />
-    </div>
+    </template>
+  </ListPageLayout>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog 
@@ -301,6 +304,7 @@ import {
 } from '@/api/user'
 import { getCompanyList } from '@/api/company'
 import Pagination from '@/components/Pagination/index.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 
 // 查询条件
 const queryParams = reactive({
@@ -675,39 +679,8 @@ getList()
 getCompanyListData()
 </script>
 
-<style lang="less">
-.table-operation-column {
-  gap: 8px;
-}
-
-.form-section {
-  margin-bottom: 12px;
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-  
-  &-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    margin-bottom: 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-    
-    &::before {
-      content: '';
-      display: inline-block;
-      width: 2px;
-      height: 12px;
-      background: var(--el-color-primary);
-      margin-right: 6px;
-      vertical-align: middle;
-      border-radius: 1px;
-    }
-  }
-}
-
+<style scoped>
+/* 使用公共样式，减少自定义样式 */
 // 减小表单项间距
 :deep(.el-form-item) {
   margin-bottom: 16px;

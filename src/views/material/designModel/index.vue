@@ -1,10 +1,11 @@
 <template>
   <div>
     <div class="py-4 flex justify-between gap-4 items-center">
+      <div style="flex:1;"></div>
       <div class="flex gap-4 items-center">
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-600">发布状态：</span>
-          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" size="small" style="width: 160px" @change="handleStatusFilter">
+
+        <form-item label="发布状态">
+          <el-select v-model="queryParams.publishStatus" placeholder="选择状态"  style="width: 160px" @change="handleStatusFilter">
             <el-option
               v-for="option in STATUS_OPTIONS"
               :key="option.value"
@@ -12,7 +13,7 @@
               :value="option.value"
             />
           </el-select>
-        </div>
+          </form-item>
         <form-item label="按名称搜索">
           <el-input
             v-model="queryParams.name"

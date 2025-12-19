@@ -1,112 +1,142 @@
 <template>
-  <div class="p-4">
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <div style="flex: 1"></div>
-      <div class="shrink-0 flex flex-wrap gap-2 items-center">
-        <form-item label="按内容搜索">
-          <el-input
-            v-model="queryParams.search"
-            placeholder="请输入句子内容关键词"
-            style="width: 200px"
-            clearable
-            @change="
-              (val) => {
-                if (!val) getList();
-              }
-            "
-          />
-        </form-item>
-        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        <form-item label="发布状态">
-          <el-select
-            v-model="queryParams.isPublish"
-            placeholder="请选择状态"
-            style="width: 120px"
-            clearable
-            @change="getList"
-          >
-            <el-option label="全部" :value="null" />
-            <el-option label="已发布" :value="true" />
-            <el-option label="未发布" :value="false" />
-          </el-select>
-        </form-item>
-        <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
-          添加句子
-        </el-button>
-        <el-button
-          v-if="isAdmin"
-          type="success"
-          :icon="MagicStick"
-          @click="aiDialogVisible = true"
-        >
-          AI生成新句子
-        </el-button>
-        <el-button
-          v-if="isAdmin"
-          type="warning"
-          @click="handleBatchPublish"
-          :disabled="!ids.length"
-        >
-          批量发布({{ ids.length }})
-        </el-button>
-        <el-button
-          v-if="isAdmin"
-          type="info"
-          @click="handleBatchUnpublish"
-          :disabled="!ids.length"
-        >
-          批量下架({{ ids.length }})
-        </el-button>
-        <el-button
-          v-if="isAdmin"
-          type="danger"
-          :icon="Delete"
-          @click="handleDelete(null)"
-          :disabled="!ids.length"
-        >
-          批量删除
-        </el-button>
-      </div>
-    </div>
-    <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
-      <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
-      <template #footer>
-        <el-button @click="aiDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd"
-          >生成并添加</el-button
-        >
+  <ListPageLayout>
+      <template #filter>
+        <CollapsibleFilterForm>
+          <template #collapsed>
+            <form-item label="按内容搜索">
+              <el-input
+                v-model="queryParams.search"
+                placeholder="请输入句子内容关键词"
+                class="w-50"
+                clearable
+                @change="
+                  (val) => {
+                    if (!val) getList();
+                  }
+                "
+              />
+            </form-item>
+            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+            <form-item label="发布状态">
+              <el-select
+                v-model="queryParams.isPublish"
+                placeholder="请选择状态"
+                class="w-30"
+                clearable
+                @change="getList"
+              >
+                <el-option label="全部" :value="null" />
+                <el-option label="已发布" :value="true" />
+                <el-option label="未发布" :value="false" />
+              </el-select>
+            </form-item>
+            <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
+              添加句子
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="success"
+              :icon="MagicStick"
+              @click="aiDialogVisible = true"
+            >
+              AI生成新句子
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="warning"
+              @click="handleBatchPublish"
+              :disabled="!ids.length"
+            >
+              批量发布({{ ids.length }})
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="info"
+              @click="handleBatchUnpublish"
+              :disabled="!ids.length"
+            >
+              批量下架({{ ids.length }})
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="danger"
+              :icon="Delete"
+              @click="handleDelete(null)"
+              :disabled="!ids.length"
+            >
+              批量删除
+            </el-button>
+          </template>
+          <template #expanded>
+            <form-item label="按内容搜索">
+              <el-input
+                v-model="queryParams.search"
+                placeholder="请输入句子内容关键词"
+                class="w-50"
+                clearable
+                @change="
+                  (val) => {
+                    if (!val) getList();
+                  }
+                "
+              />
+            </form-item>
+            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+            <form-item label="发布状态">
+              <el-select
+                v-model="queryParams.isPublish"
+                placeholder="请选择状态"
+                class="w-30"
+                clearable
+                @change="getList"
+              >
+                <el-option label="全部" :value="null" />
+                <el-option label="已发布" :value="true" />
+                <el-option label="未发布" :value="false" />
+              </el-select>
+            </form-item>
+            <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
+              添加句子
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="success"
+              :icon="MagicStick"
+              @click="aiDialogVisible = true"
+            >
+              AI生成新句子
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="warning"
+              @click="handleBatchPublish"
+              :disabled="!ids.length"
+            >
+              批量发布({{ ids.length }})
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="info"
+              @click="handleBatchUnpublish"
+              :disabled="!ids.length"
+            >
+              批量下架({{ ids.length }})
+            </el-button>
+            <el-button
+              v-if="isAdmin"
+              type="danger"
+              :icon="Delete"
+              @click="handleDelete(null)"
+              :disabled="!ids.length"
+            >
+              批量删除
+            </el-button>
+          </template>
+        </CollapsibleFilterForm>
       </template>
-    </el-dialog>
 
-    <!-- AI分析句子弹窗 -->
-    <el-dialog
-      v-model="aiAnalyzeDialogVisible"
-      title="AI分析句子"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
-        请输入你希望AI分析的角度或要求（可选，留空则使用默认分析标准）
-      </div>
-      <el-input
-        v-model="aiAnalyzePrompt"
-        type="textarea"
-        :rows="4"
-        placeholder="如：请重点关注句子的情感色彩和主题..."
-        style="font-size: 16px; min-height: 100px; width: 100%; resize: vertical"
-      />
-      <template #footer>
-        <el-button @click="aiAnalyzeDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="aiAnalyzeLoading"
-          @click="submitAiAnalyzeDialog"
-          >确定</el-button
-        >
-      </template>
-    </el-dialog>
-    <div class="common-table">
+      <template #table>
+        <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
         :data="dataSource"
@@ -191,15 +221,59 @@
           <span>{{ formatDateTime(row.updatedAt) }}</span>
         </template>
       </vxe-grid>
-    </div>
-    <div class="py-4 flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
+        </div>
+      </template>
+
+      <template #pagination>
+        <pagination
+          :total="total"
+          v-model:page="queryParams.currentPage"
+          v-model:limit="queryParams.pageSize"
+          @pagination="getList"
+        />
+      </template>
+    </ListPageLayout>
+
+    <!-- AI生成新句子弹窗 -->
+    <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
+      <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
+      <template #footer>
+        <el-button @click="aiDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd"
+          >生成并添加</el-button
+        >
+      </template>
+    </el-dialog>
+
+    <!-- AI分析句子弹窗 -->
+    <el-dialog
+      v-model="aiAnalyzeDialogVisible"
+      title="AI分析句子"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+        请输入你希望AI分析的角度或要求（可选，留空则使用默认分析标准）
+      </div>
+      <el-input
+        v-model="aiAnalyzePrompt"
+        type="textarea"
+        :rows="4"
+        placeholder="如：请重点关注句子的情感色彩和主题..."
+        style="font-size: 16px; min-height: 100px; width: 100%; resize: vertical"
       />
-    </div>
+      <template #footer>
+        <el-button @click="aiAnalyzeDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="aiAnalyzeLoading"
+          @click="submitAiAnalyzeDialog"
+          >确定</el-button
+        >
+      </template>
+    </el-dialog>
+
     <el-dialog
       :title="dialogTitle"
       v-model="dialogVisible"
@@ -266,7 +340,6 @@
         >
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
@@ -293,6 +366,8 @@ import {
 import { commonGridOptions } from "@/common/table";
 import FormItem from "@/components/Erp/formItem.vue";
 import Pagination from "@/components/Pagination/index.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import CollapsibleFilterForm from "@/components/CollapsibleFilterForm/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import { useUserStore } from "@/store/modules/user";
 import { computed } from "vue";
