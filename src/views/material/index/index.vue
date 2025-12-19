@@ -340,11 +340,19 @@
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
                   loading="lazy"
                   @click="openImagePreview(row.url, row.name)"
-            
-                  @load="(event) => handleImageLoad(event, row)"
                 />
-                <div v-if="row.imageDimensions" class="text-xs text-gray-500 mt-1 text-center">
-                  {{ row.imageDimensions.width }} × {{ row.imageDimensions.height }}
+                <div class="text-xs text-gray-500 mt-1 text-center">
+                  <template v-if="row.resolutionWidth && row.resolutionHeight">
+                    <div>
+                      {{ row.resolutionWidth }} × {{ row.resolutionHeight }}
+                    </div>
+                    <div v-if="row.aspectRatio" style="color:#999; margin-top:2px; font-size: 11px;">
+                      宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
+                    </div>
+                  </template>
+                  <template v-else>
+                    -
+                  </template>
                 </div>
               </div>
             </template>
@@ -488,7 +496,15 @@
             </template>
 
             <template #resolutionSlot="{ row }">
-              <span>{{ row.resolutionWidth && row.resolutionHeight ? row.resolutionWidth + '×' + row.resolutionHeight : '-' }}</span>
+              <div v-if="row.resolutionWidth && row.resolutionHeight" class="text-xs">
+                <div>
+                  {{ row.resolutionWidth }} × {{ row.resolutionHeight }}
+                </div>
+                <div v-if="row.aspectRatio" style="color:#999; margin-top:2px; font-size: 11px;">
+                  宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
+                </div>
+              </div>
+              <span v-else>-</span>
             </template>
             <template #originWebSlot="{ row }">
               <span>{{ row.originWeb || '-' }}</span>
@@ -1851,7 +1867,19 @@ async function getList() {
   }).finally(() => {
     loading.value = false
   })
-  dataSource.value = res.list
+  // 将后端返回的宽高/比例信息映射到列表行数据，便于展示
+  dataSource.value = (res.list || []).map((item) => {
+    const width = item.width
+    const height = item.height
+    const aspectRatio = item.aspectRatio || (width && height ? width / height : undefined)
+
+    return {
+      ...item,
+      resolutionWidth: width ?? item.resolutionWidth,
+      resolutionHeight: height ?? item.resolutionHeight,
+      aspectRatio
+    }
+  })
   total.value = res.total
 }
 // phash相似图片搜索
@@ -2752,21 +2780,6 @@ function closeImagePreview() {
 }
 
 
-// 处理图片加载完成事件
-function handleImageLoad(event: Event, row: any) {
-  const img = event.target as HTMLImageElement
-  if (img.naturalWidth && img.naturalHeight) {
-    // 将图片尺寸信息存储到行数据中
-    row.imageDimensions = {
-      width: img.naturalWidth,
-      height: img.naturalHeight
-    }
-    console.log(`图片 ${row.name || row.id} 尺寸: ${img.naturalWidth} × ${img.naturalHeight}`)
-  } else {
-    console.warn(`图片 ${row.name || row.id} 无法获取尺寸信息`)
-  }
-}
-
 // 显示meta详情
 function showMetaDetail(meta: any) {
   if (!meta) {
@@ -3166,6 +3179,11 @@ async function handleUrlUpload() {
     const cos = await uploadToCOS({ file })
     const { key, url } = cos
     
+    // 计算图片宽高及宽高比（如果预览阶段已经获取到了尺寸，则优先使用）
+    const width = imageInfo.value?.width || 0
+    const height = imageInfo.value?.height || 0
+    const aspectRatio = width && height ? width / height : undefined
+
     // 上传到服务器
     await uploadMaterialFile({
       url,
@@ -3179,6 +3197,9 @@ async function handleUrlUpload() {
       isCustom: urlUploadForm.isCustom,
       isInfringement: urlUploadForm.isInfringement,
       isPublish: urlUploadForm.isPublish,
+      width,
+      height,
+      aspectRatio,
       uploaderId: userStore.user?.id
     })
     

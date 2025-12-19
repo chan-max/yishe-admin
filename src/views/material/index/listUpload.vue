@@ -248,7 +248,7 @@ const handleFileChange = async (file) => {
   // 获取图片尺寸
   const info = await getImageDimensions(file.raw)
 
-  fileList.value.push({
+    fileList.value.push({
     uid: file.uid,
     name: file.name,
     url, // 使用 Blob URL
@@ -316,6 +316,10 @@ const uploadFile = async (file) => {
         suffix = match[1].toLowerCase()
       }
     }
+    const width = file.width || 0
+    const height = file.height || 0
+    const aspectRatio = width && height ? width / height : undefined
+
     await uploadMaterialFile({
       url,
       name: file.name,
@@ -325,6 +329,9 @@ const uploadFile = async (file) => {
       keywords: file.keywords || '',
       keywordsEn: file.keywordsEn || '',
       suffix, // 图片类型后缀
+      width,
+      height,
+      aspectRatio,
       uploaderId: userStore.user?.id
     })
     file.status = 'success'
