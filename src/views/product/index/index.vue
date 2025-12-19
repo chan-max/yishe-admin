@@ -4345,68 +4345,15 @@ async function handlePublishToQueue(row: any) {
   color: var(--el-text-color-placeholder);
 }
 
-// 操作dropdown样式
+/* 操作dropdown样式已移至公共样式文件 list-page-common.css */
+/* 保留特定颜色样式 */
 .operation-dropdown {
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    .el-icon {
-      margin-right: 4px;
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-    
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-  
   .text-orange-500 {
     color: #f97316;
   }
   
   .text-green-500 {
     color: #22c55e;
-  }
-}
-
-// 紧凑型操作菜单
-.operation-menu-compact {
-  min-width: 120px !important;
-  padding: 2px 0 !important;
-  
-  .el-dropdown-menu__item {
-    padding: 2px 8px !important;
-    font-size: 12px !important;
-    line-height: 1.2 !important;
-    height: auto !important;
-    min-height: 28px !important;
-    margin: 0 !important;
-    
-    .el-icon {
-      font-size: 12px !important;
-      width: 12px !important;
-      height: 12px !important;
-      margin-right: 6px !important;
-    }
-    
-    span {
-      font-size: 12px !important;
-    }
-    
-    &:hover {
-      background-color: var(--el-fill-color-light) !important;
-    }
-  }
-  
-  .el-dropdown-menu__item--divided {
-    margin-top: 2px !important;
-    border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 4px !important;
   }
 }
 

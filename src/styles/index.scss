@@ -124,3 +124,25 @@
     touch-action: pan-x pan-y;
   }
 }
+
+/* 全局样式：确保 dropdown popper 允许溢出显示子菜单 */
+.el-popper.is-pure {
+  overflow: visible !important;
+}
+
+.el-popper[x-placement] {
+  overflow: visible !important;
+}
+
+/* 确保所有 dropdown 相关的容器都允许溢出 */
+.el-dropdown__popper {
+  overflow: visible !important;
+}
+
+.el-dropdown__popper .el-dropdown-menu {
+  overflow: visible !important;
+}
+
+.el-dropdown__popper .el-dropdown-menu__item {
+  overflow: visible !important;
+}

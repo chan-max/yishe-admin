@@ -1735,39 +1735,7 @@ async function loadFontForPreview() {
   }
 }
 
-.operation-menu-compact {
-  min-width: 140px !important;
-  padding: 4px 0 !important;
-  
-  .el-dropdown-menu__item {
-    padding: 8px 16px !important;
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    height: auto !important;
-    min-height: 32px !important;
-    
-    .el-icon {
-      font-size: 14px !important;
-      width: 14px !important;
-      height: 14px !important;
-      margin-right: 6px !important;
-    }
-    
-    span {
-      font-size: 13px !important;
-    }
-    
-    &:hover {
-      background-color: var(--el-fill-color-light) !important;
-    }
-  }
-  
-  .el-dropdown-menu__item--divided {
-    margin-top: 4px !important;
-    border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 8px !important;
-  }
-}
+/* 操作dropdown样式已移至公共样式文件 list-page-common.css */
 
 /* 自定义表单项样式 */
 .form-item-wrapper {
