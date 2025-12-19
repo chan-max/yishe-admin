@@ -17,8 +17,9 @@
       <form-item label="随机顺序">
         <el-switch
           v-model="queryParams.random"
-          active-text="随机"
-          inactive-text="默认"
+          active-text=""
+          inactive-text=""
+          size="small"
           @change="getList"
         />
       </form-item>
@@ -131,8 +132,9 @@
       <form-item label="随机顺序">
         <el-switch
             v-model="queryParams.random"
-            active-text="随机"
-            inactive-text="默认"
+            active-text=""
+          inactive-text=""
+          size="small"
             @change="getList"
         />
       </form-item>
