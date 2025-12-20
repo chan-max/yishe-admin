@@ -15,8 +15,11 @@
             <el-icon size="48" color="var(--el-text-color-secondary)">
               <component :is="getFileIcon(file.suffix)" />
             </el-icon>
-            <div class="text-secondary mt-2">{{ file.name }}</div>
-            <div class="text-secondary text-xs">{{ formatFileSize(file.size) }}</div>
+            <div class="text-secondary mt-2 font-medium">{{ file.name }}</div>
+            <div class="text-secondary text-xs mt-1">{{ formatFileSize(file.size) }}</div>
+            <div class="text-secondary text-xs mt-1" style="padding: 2px 8px; background: rgba(0,0,0,0.05); border-radius: 4px;">
+              {{ file.suffix.toUpperCase() }}
+            </div>
           </div>
 
           <div class="preview-info">
@@ -384,41 +387,80 @@ watch(fileList, (newList) => {
 
 .video-preview-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
 }
 
 .video-preview-item {
   background: var(--el-bg-color);
-  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
   padding: 16px;
-  box-shadow: var(--el-box-shadow-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
   min-height: 200px;
+  transition: all 0.3s ease;
+}
+
+.video-preview-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--el-color-primary-light-7);
 }
 
 .preview-video {
   width: 100%;
-  height: 150px;
+  height: 180px;
   object-fit: cover;
-  border-radius: 4px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  background: var(--el-fill-color-darker);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.preview-video:hover {
+  transform: scale(1.02);
 }
 
 .preview-placeholder {
   width: 100%;
-  height: 150px;
-  background: var(--el-fill-color-light);
-  border-radius: 4px;
+  height: 180px;
+  background: linear-gradient(135deg, var(--el-fill-color-light) 0%, var(--el-fill-color-lighter) 100%);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.preview-placeholder:hover {
+  border-color: var(--el-color-primary);
+  background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-light) 100%);
 }
 
 .preview-info {
   margin-bottom: 12px;
+}
+
+.preview-info :deep(.el-input),
+.preview-info :deep(.el-textarea),
+.preview-info :deep(.el-select) {
+  margin-bottom: 8px;
+}
+
+.preview-info :deep(.el-input__inner),
+.preview-info :deep(.el-textarea__inner) {
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.preview-info :deep(.el-input__inner):focus,
+.preview-info :deep(.el-textarea__inner):focus {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px var(--el-color-primary-light-8);
 }
 
 .text-secondary {
@@ -447,41 +489,63 @@ watch(fileList, (newList) => {
 
 .actions {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   cursor: pointer;
   color: var(--el-text-color-secondary);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+  backdrop-filter: blur(4px);
 }
 
 .actions:hover {
   color: var(--el-color-danger);
+  background: rgba(245, 101, 101, 0.1);
+  transform: scale(1.1);
 }
 
 .status {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
   text-align: center;
   cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .status.uploading {
-  background: var(--el-color-primary-light-9);
+  background: linear-gradient(135deg, var(--el-color-primary-light-8) 0%, var(--el-color-primary-light-9) 100%);
   color: var(--el-color-primary);
+  border: 1px solid var(--el-color-primary-light-7);
 }
 
 .status.success {
-  background: var(--el-color-success-light-9);
+  background: linear-gradient(135deg, var(--el-color-success-light-8) 0%, var(--el-color-success-light-9) 100%);
   color: var(--el-color-success);
+  border: 1px solid var(--el-color-success-light-7);
 }
 
 .status.fail {
-  background: var(--el-color-danger-light-9);
+  background: linear-gradient(135deg, var(--el-color-danger-light-8) 0%, var(--el-color-danger-light-9) 100%);
   color: var(--el-color-danger);
+  border: 1px solid var(--el-color-danger-light-7);
+}
+
+.status.fail:hover {
+  background: linear-gradient(135deg, var(--el-color-danger-light-7) 0%, var(--el-color-danger-light-8) 100%);
 }
 
 .loading-icon {

@@ -135,12 +135,29 @@
                   v-if="row.url && isVideoFile(row.suffix)"
                   :src="row.url"
                   :alt="row.name || '文件素材'"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  style="width:100%; max-width:380px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
                   @click="openVideoPreview(row.url, row.name)"
                   @error="handleVideoError"
                   controls
                   preload="metadata"
                 />
+                <div
+                  v-else-if="row.url && isAudioFile(row.suffix)"
+                  class="audio-preview-container"
+                >
+                  <div class="audio-preview-icon">
+                    <el-icon size="32" color="var(--el-color-primary)">
+                      <Headset />
+                    </el-icon>
+                  </div>
+                  <audio
+                    :src="row.url"
+                    controls
+                    preload="metadata"
+                    style="width: 100%; margin-top: 8px;"
+                    @error="handleAudioError"
+                  />
+                </div>
                 <div v-else class="w-30 h-20 bg-gray-200 flex items-center justify-center text-gray-500">
                   <el-icon size="24">
                     <component :is="getFileIcon(row.suffix)" />
@@ -190,8 +207,8 @@
                     <el-icon><Download /></el-icon>
                     <span>下载</span>
                   </el-dropdown-item>
-                  <el-dropdown-item command="preview" v-if="isVideoFile(row.suffix)">
-                    <el-icon><VideoPlay /></el-icon>
+                  <el-dropdown-item command="preview" v-if="isVideoFile(row.suffix) || isAudioFile(row.suffix)">
+                    <el-icon><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset v-else /></el-icon>
                     <span>预览</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="toggle-public" divided>
@@ -318,7 +335,7 @@ import DateRangePicker from '@/components/DateRangePicker.vue'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, VideoPlay, Document, Picture, Folder } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, VideoPlay, Document, Picture, Folder, Headset } from '@element-plus/icons-vue'
 import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '@/common/download'
 import { useRouter } from 'vue-router'
 
@@ -377,7 +394,7 @@ const gridOptions = ref({
     {
       title: '文件预览',
       field: 'url',
-      width: 120,
+      width: 400,
       slots: { default: 'previewDefaultSlot' }
     },
     { title: '素材名称', field: 'name', minWidth: 180, className: 'font-bold' },
@@ -660,20 +677,34 @@ function handleVideoError(event: Event) {
   console.warn('视频加载失败:', video.src)
 }
 
+function handleAudioError(event: Event) {
+  const audio = event.target as HTMLAudioElement
+  console.warn('音频加载失败:', audio.src)
+}
+
 // 判断是否为视频文件
 function isVideoFile(suffix: string): boolean {
   const videoSuffixes = ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv']
   return videoSuffixes.includes(suffix.toLowerCase())
 }
 
+// 判断是否为音频文件
+function isAudioFile(suffix: string): boolean {
+  const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr']
+  return audioSuffixes.includes(suffix.toLowerCase())
+}
+
 // 获取文件图标
 function getFileIcon(suffix: string) {
   const videoSuffixes = ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv']
+  const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr']
   const imageSuffixes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif']
   const documentSuffixes = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf']
   
   if (videoSuffixes.includes(suffix.toLowerCase())) {
     return VideoPlay
+  } else if (audioSuffixes.includes(suffix.toLowerCase())) {
+    return Headset
   } else if (imageSuffixes.includes(suffix.toLowerCase())) {
     return Picture
   } else if (documentSuffixes.includes(suffix.toLowerCase())) {
@@ -772,7 +803,10 @@ function handleOperationCommand(command: string, row: any) {
       handleDownload(row);
       break;
     case 'preview':
+      if (isVideoFile(row.suffix)) {
       openVideoPreview(row.url, row.name);
+      }
+      // 音频文件在列表中已直接显示播放控件，无需额外预览弹窗
       break;
     case 'toggle-public':
       handleTogglePublic(row);
@@ -844,6 +878,31 @@ function handleOperationCommand(command: string, row: any) {
 
 h1 {
   font-size: 1rem;
+}
+
+/* 音频预览样式 */
+.audio-preview-container {
+  width: 100%;
+  padding: 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.audio-preview-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.audio-preview-container audio {
+  width: 100%;
+  height: 32px;
 }
 </style>
 
