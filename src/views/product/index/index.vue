@@ -286,6 +286,78 @@
           <span v-else class="text-gray-400 text-xs">未生成</span>
         </template>
 
+        <template #nameSlot="{ row }">
+          <div class="flex flex-col gap-1">
+            <div v-if="row.name" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.name, '商品名称')">
+              <span class="text-sm">{{ row.name }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="row.enName" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.enName, '英文名称')">
+              <span class="text-sm">{{ row.enName }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="!row.name && !row.enName" class="text-sm text-gray-400">未设置</div>
+          </div>
+        </template>
+
+        <template #descriptionSlot="{ row }">
+          <div class="flex flex-col gap-1">
+            <div v-if="row.description" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.description, '商品描述')">
+              <span class="text-sm">{{ row.description }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="row.enDescription" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.enDescription, '英文描述')">
+              <span class="text-sm">{{ row.enDescription }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="!row.description && !row.enDescription" class="text-sm text-gray-400">未设置</div>
+          </div>
+        </template>
+
+        <template #keywordsSlot="{ row }">
+          <div class="flex flex-col gap-1">
+            <div v-if="row.keywords" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.keywords, '关键词')">
+              <span class="text-sm">{{ row.keywords }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="row.enKeywords" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.enKeywords, '英文关键词')">
+              <span class="text-sm">{{ row.enKeywords }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="!row.keywords && !row.enKeywords" class="text-sm text-gray-400">未设置</div>
+          </div>
+        </template>
+
+        <template #searchKeywordsSlot="{ row }">
+          <div class="flex flex-col gap-1">
+            <div v-if="row.searchKeywords" class="flex items-start gap-2 group cursor-pointer" @click.stop="copyText(row.searchKeywords, '搜索关键字')">
+              <span class="text-sm line-clamp-2 flex-1">{{ row.searchKeywords }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="row.enSearchKeywords" class="flex items-start gap-2 group cursor-pointer" @click.stop="copyText(row.enSearchKeywords, '英文搜索关键字')">
+              <span class="text-sm line-clamp-2 flex-1">{{ row.enSearchKeywords }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+            <div v-if="!row.searchKeywords && !row.enSearchKeywords" class="text-sm text-gray-400">未设置</div>
+          </div>
+        </template>
+
         <template #typeSlot="{ row }">
           <span v-if="row.type">{{ row.type }}</span>
           <span v-else class="text-gray-400 text-xs">未设置</span>
@@ -614,6 +686,19 @@
               />
               <div class="text-xs text-gray-500 mt-1">
                 提示：建议包含商品名称、颜色、材质、风格、适用人群、使用场合等相关词汇，提高搜索命中率
+              </div>
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="英文搜索关键字" prop="enSearchKeywords">
+              <el-input 
+                v-model="form.enSearchKeywords" 
+                type="textarea" 
+                :rows="3" 
+                placeholder="请输入英文搜索关键字，逗号分隔，用于优化搜索功能。例如：yellow,T-shirt,short sleeve,cartoon,animal,men,kids,cotton,casual,daily,party,cute,children,top" 
+              />
+              <div class="text-xs text-gray-500 mt-1">
+                提示：建议包含商品名称、颜色、材质、风格、适用人群、使用场合等相关词汇的英文表达，提高搜索命中率
               </div>
             </el-form-item>
           </el-col>
@@ -1333,7 +1418,15 @@
             </template>
             <el-row :gutter="24">
                   <el-col :xs="12" :sm="8" :md="6">
-                    <el-form-item label="分辨率">
+                    <el-form-item label="保持图片比例">
+                      <el-switch 
+                        v-model="videoGenForm.keepImageAspectRatio"
+                        @change="handleKeepAspectRatioChange"
+                      />
+                    </el-form-item>
+                  </el-col>
+                  <el-col :xs="12" :sm="8" :md="6">
+          <el-form-item label="分辨率">
                       <div class="flex items-center gap-2">
                         <el-input-number 
                           v-model="videoGenForm.width" 
@@ -1342,6 +1435,7 @@
                           :step="10"
                           controls-position="right"
                           style="width: 80px"
+                          @change="handleWidthChange"
                         />
                         <span class="text-gray-400 text-sm">×</span>
                         <el-input-number 
@@ -1349,21 +1443,25 @@
                           :min="240" 
                           :max="3840" 
                           :step="10"
+                          :disabled="videoGenForm.keepImageAspectRatio"
                           controls-position="right"
                           style="width: 80px"
                         />
                       </div>
-                    </el-form-item>
+                      <div v-if="videoGenForm.keepImageAspectRatio && imageSize" class="text-xs text-gray-500 mt-1">
+                        图片尺寸: {{ imageSize.width }} × {{ imageSize.height }} (高度将根据比例自动计算)
+            </div>
+          </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8" :md="6">
-                    <el-form-item label="分辨率预设">
+                    <el-form-item label="分辨率预设" v-if="!videoGenForm.keepImageAspectRatio">
                       <el-button-group>
                         <el-button size="small" @click="setResolution(720, 720)">1:1</el-button>
                         <el-button size="small" @click="setResolution(1080, 1080)">1:1 HD</el-button>
                         <el-button size="small" @click="setResolution(1080, 1920)">9:16</el-button>
                         <el-button size="small" @click="setResolution(1920, 1080)">16:9</el-button>
                       </el-button-group>
-                    </el-form-item>
+          </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8" :md="6">
                     <el-form-item label="帧率 (FPS)">
@@ -1464,7 +1562,7 @@
                         />
                         <el-button @click="videoGenForm.audioUrl = ''" :disabled="!videoGenForm.audioUrl">清除</el-button>
                       </div>
-                    </el-form-item>
+          </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8" :md="6">
                     <el-form-item label="循环音乐">
@@ -1543,7 +1641,7 @@
                         <el-option label="H.265" value="libx265" />
                         <el-option label="VP9" value="libvpx-vp9" />
                       </el-select>
-                    </el-form-item>
+          </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8" :md="6">
                     <el-form-item label="质量预设">
@@ -1649,7 +1747,7 @@
                         placeholder="可选：在视频开头显示的文字标题"
                         clearable
                       />
-                    </el-form-item>
+          </el-form-item>
                   </el-col>
                   <el-col :xs="12" :sm="8" :md="6" v-if="videoGenForm.titleText">
                     <el-form-item label="标题字体大小">
@@ -1734,13 +1832,13 @@
             </el-row>
             <el-row :gutter="24" class="mt-4">
               <el-col :xs="12" :sm="8" :md="6">
-                <el-form-item label="替换旧视频">
+          <el-form-item label="替换旧视频">
                   <el-switch 
                     v-model="videoGenForm.replace" 
                     active-text="替换" 
                     inactive-text="追加"
                   />
-                </el-form-item>
+          </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="16" :md="18" class="flex items-center justify-end gap-2">
                 <el-button @click="resetVideoGenForm">
@@ -1755,11 +1853,11 @@
 
       <template #footer>
         <div class="flex justify-end gap-2">
-          <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
-          <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
+        <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
+        <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
             <el-icon class="mr-1"><VideoPlay /></el-icon>
             {{ generatingVideoId ? '生成中...' : '开始生成视频' }}
-          </el-button>
+        </el-button>
         </div>
       </template>
     </el-dialog>
@@ -2277,12 +2375,27 @@ const gridOptions = ref({
         default: "videoDefaultSlot",
       },
     },
-    { title: "商品名称", field: "name", width: 240, showOverflow: true },
-    { title: "英文名称", field: "enName", width: 240, showOverflow: true },
-    { title: "商品描述", field: "description", width: 240, showOverflow: false },
-    { title: "英文描述", field: "enDescription", width: 240, showOverflow: false },
-    { title: "关键词", field: "keywords", width: 200, showOverflow: false },
-    { title: "英文关键词", field: "enKeywords", width: 200, showOverflow: false },
+    { 
+      title: "商品名称", 
+      field: "name", 
+      width: 280, 
+      showOverflow: false,
+      slots: { default: 'nameSlot' }
+    },
+    { 
+      title: "商品描述", 
+      field: "description", 
+      width: 300, 
+      showOverflow: false,
+      slots: { default: 'descriptionSlot' }
+    },
+    { 
+      title: "关键词", 
+      field: "keywords", 
+      width: 280, 
+      showOverflow: false,
+      slots: { default: 'keywordsSlot' }
+    },
     { 
       title: "产品代码", 
       field: "code", 
@@ -2299,10 +2412,10 @@ const gridOptions = ref({
     { 
       title: "搜索关键字", 
       field: "searchKeywords", 
-      minWidth: 200, 
-      width: 200,
-      showOverflow: true,
-      slots: { header: 'searchKeywordsHeader' }
+      minWidth: 300, 
+      width: 300,
+      showOverflow: false,
+      slots: { header: 'searchKeywordsHeader', default: 'searchKeywordsSlot' }
     },
 
     { 
@@ -2412,6 +2525,7 @@ const videoGenForm = reactive({
   // 基础设置
   width: 720,
   height: 720,
+  keepImageAspectRatio: false,
   fps: 30,
   clipDuration: 2,
   scaleMode: 'fit' as 'fit' | 'crop' | 'stretch',
@@ -2440,6 +2554,9 @@ const videoGenForm = reactive({
   replace: true,
 });
 
+// 图片尺寸信息
+const imageSize = ref<{ width: number; height: number } | null>(null);
+
 // 估算视频时长（基于图片数量和每张时长）
 const estimatedDuration = computed(() => {
   if (!videoGenRow.value || !videoGenRow.value.images || !Array.isArray(videoGenRow.value.images)) {
@@ -2467,10 +2584,51 @@ function setResolution(width: number, height: number) {
   videoGenForm.height = height;
 }
 
+// 获取图片尺寸
+async function getImageSize(imageUrl: string): Promise<{ width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      resolve(null);
+    };
+    img.src = imageUrl;
+  });
+}
+
+// 根据图片比例计算高度
+function calculateHeightFromWidth(width: number): number {
+  if (!videoGenForm.keepImageAspectRatio || !imageSize.value) {
+    return videoGenForm.height;
+  }
+  const imageAspectRatio = imageSize.value.width / imageSize.value.height;
+  const height = Math.round(width / imageAspectRatio);
+  // 确保为偶数
+  return height % 2 === 0 ? height : height - 1;
+}
+
+// 处理宽度变化
+function handleWidthChange() {
+  if (videoGenForm.keepImageAspectRatio && imageSize.value) {
+    videoGenForm.height = calculateHeightFromWidth(videoGenForm.width);
+  }
+}
+
+// 处理保持比例切换
+function handleKeepAspectRatioChange(value: boolean) {
+  if (value && imageSize.value) {
+    // 启用时，根据当前宽度和图片比例计算高度
+    videoGenForm.height = calculateHeightFromWidth(videoGenForm.width);
+  }
+}
+
 // 重置表单为默认值
 function resetVideoGenForm() {
   videoGenForm.width = 720;
   videoGenForm.height = 720;
+  videoGenForm.keepImageAspectRatio = false;
   videoGenForm.fps = 30;
   videoGenForm.clipDuration = 2;
   videoGenForm.scaleMode = 'fit';
@@ -2493,6 +2651,7 @@ function resetVideoGenForm() {
   videoGenForm.titlePosition = 'center';
   videoGenForm.titleDuration = 3;
   videoGenForm.replace = true;
+  imageSize.value = null;
 }
 
 // 社交媒体导出
@@ -2693,6 +2852,7 @@ interface ProductForm {
   keywords: string;
   enKeywords: string;
   searchKeywords: string;
+  enSearchKeywords: string;
   type: string;
   images: string[];
   videos: string[];
@@ -2886,6 +3046,24 @@ async function copyId(id: string) {
   }
 }
 
+// 复制文本（通用）
+async function copyText(text: string, label?: string) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success(`${label || '内容'}已复制到剪贴板`);
+  } catch (e) {
+    // 降级方案
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    ElMessage.success(`${label || '内容'}已复制到剪贴板`);
+  }
+}
+
 getList()
 async function getList() {
   loading.value = true;
@@ -2985,6 +3163,7 @@ function handleAdd() {
     keywords: '',
     enKeywords: '',
     searchKeywords: '',
+    enSearchKeywords: '',
     type: '',
     images: [] as string[],
     videos: [] as string[],
@@ -3356,8 +3535,13 @@ async function submitAiGenDialog() {
     })
     if (res && res.name) {
       aiGenRow.value.name = res.name
+      aiGenRow.value.enName = res.enName
       aiGenRow.value.description = res.description
+      aiGenRow.value.enDescription = res.enDescription
       aiGenRow.value.keywords = res.keywords
+      aiGenRow.value.enKeywords = res.enKeywords
+      aiGenRow.value.searchKeywords = res.searchKeywords
+      aiGenRow.value.enSearchKeywords = res.enSearchKeywords
       ElMessage.success('AI自动生成内容成功')
       getList()
     } else {
@@ -3517,6 +3701,21 @@ async function handleGenerateVideo(row: any) {
   }
 
   videoGenRow.value = row;
+  resetVideoGenForm();
+  
+  // 获取第一张图片的尺寸
+  if (row.images && row.images.length > 0) {
+    const firstImageUrl = row.images[0];
+    const size = await getImageSize(firstImageUrl);
+    if (size) {
+      imageSize.value = size;
+      // 如果启用保持比例，根据比例设置合理的基准尺寸
+      if (videoGenForm.keepImageAspectRatio) {
+        handleKeepAspectRatioChange(true);
+      }
+    }
+  }
+  
   videoGenDialogVisible.value = true;
 }
 
@@ -3531,6 +3730,7 @@ async function submitGenerateVideo() {
       ffmpeg: {
         width: Number(videoGenForm.width) || 720,
         height: Number(videoGenForm.height) || 720,
+        keepImageAspectRatio: !!videoGenForm.keepImageAspectRatio,
         fps: Number(videoGenForm.fps) || 30,
         clipDuration: Number(videoGenForm.clipDuration) || 2,
         transition: videoGenForm.transition || 'fade',
@@ -4697,7 +4897,7 @@ async function handlePublishToQueue(row: any) {
 .select-item {
   position: relative;
   transition: all 0.2s ease;
-
+  
   
   &.selected {
     .w-32 {
@@ -4714,7 +4914,7 @@ async function handlePublishToQueue(row: any) {
 .select-item-compact {
   position: relative;
   transition: all 0.2s ease;
-
+  
   
   &.selected {
     .w-20 {
