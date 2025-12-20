@@ -398,6 +398,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'public-user',
+        component: () => import('@/views/system/public-user/index.vue'),
+        name: 'PublicUser',
+        meta: {
+          title: '开放用户管理',
+        }
+      },
+      {
         path: 'websocket',
         component: () => import('@/views/system/websocket/index.vue'),
         name: 'SystemWebsocketConnections',
