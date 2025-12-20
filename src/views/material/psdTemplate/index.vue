@@ -141,13 +141,13 @@
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
         <el-row :gutter="16">
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="模板名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入模板名称" />
             </el-form-item>
           </el-col>
 
-          <el-col :span="12">
+          <el-col :span="24">
             <el-form-item label="关键词" prop="keywords">
               <el-input
                 v-model="form.keywords"

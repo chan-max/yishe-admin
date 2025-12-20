@@ -334,13 +334,29 @@
           >
             <template #previewDefaultSlot="{ row }">
               <div class="flex flex-col items-center justify-center p-2">
-                <img
-                  :src="row.url"
-                  :alt="row.name || '素材图片'"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                  loading="lazy"
-                  @click="openImagePreview(row.url, row.name)"
-                />
+                <div class="preview-image-wrapper">
+                  <img
+                    v-if="row._imageLoaded"
+                    :key="`preview-${row.id}-${row.url}`"
+                    :src="row.url"
+                    :alt="row.name || '素材图片'"
+                    class="preview-image"
+                    loading="lazy"
+                    @click="openImagePreview(row.url, row.name)"
+                  />
+                  <img
+                    v-else
+                    :key="`preview-loading-${row.id}-${row.url}`"
+                    :src="row.url"
+                    :alt="row.name || '素材图片'"
+                    class="preview-image preview-image-loading"
+                    loading="lazy"
+                    @load="(e) => handleImageLoad(row, e)"
+                    @error="() => handleImageError(row)"
+                    @click="openImagePreview(row.url, row.name)"
+                  />
+                  <div v-if="!row._imageLoaded" class="preview-loading">加载中...</div>
+                </div>
                 <div class="text-xs text-gray-500 mt-1 text-center">
                   <template v-if="row.resolutionWidth && row.resolutionHeight">
                     <div>
@@ -1862,6 +1878,14 @@ function uploadModalClose() {}
 
 async function getList() {
   loading.value = true
+  // 清理旧的超时定时器
+  imageLoadTimeouts.forEach((timeout) => {
+    clearTimeout(timeout)
+  })
+  imageLoadTimeouts.clear()
+  // 立即清空旧数据，确保旧图片被销毁
+  dataSource.value = []
+  
   let res = await getMaterialList({
     ...queryParams
   }).finally(() => {
@@ -1877,11 +1901,85 @@ async function getList() {
       ...item,
       resolutionWidth: width ?? item.resolutionWidth,
       resolutionHeight: height ?? item.resolutionHeight,
-      aspectRatio
+      aspectRatio,
+      _imageLoaded: false // 重置图片加载状态，确保分页切换时显示加载提示
     }
   })
   total.value = res.total
+  
+  // 为每个图片设置加载超时，防止一直显示加载中
+  dataSource.value.forEach((item) => {
+    setupImageLoadTimeout(item)
+  })
 }
+
+// 图片加载超时处理映射
+const imageLoadTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
+// 设置图片加载超时
+function setupImageLoadTimeout(row: any) {
+  const timeoutKey = `image-${row.id}-${row.url}`
+  
+  // 清除之前的超时（如果存在）
+  if (imageLoadTimeouts.has(timeoutKey)) {
+    clearTimeout(imageLoadTimeouts.get(timeoutKey))
+  }
+  
+  // 设置5秒超时，如果图片还没加载完成，强制标记为已加载
+  const timeout = setTimeout(() => {
+    if (!row._imageLoaded) {
+      row._imageLoaded = true
+      imageLoadTimeouts.delete(timeoutKey)
+    }
+  }, 5000)
+  
+  imageLoadTimeouts.set(timeoutKey, timeout)
+}
+
+// 处理图片加载成功
+function handleImageLoad(row: any, event: Event) {
+  const timeoutKey = `image-${row.id}-${row.url}`
+  
+  // 清除超时定时器
+  if (imageLoadTimeouts.has(timeoutKey)) {
+    clearTimeout(imageLoadTimeouts.get(timeoutKey))
+    imageLoadTimeouts.delete(timeoutKey)
+  }
+  
+  // 检查图片是否真的加载完成（可能因为缓存等原因已经加载）
+  const img = event.target as HTMLImageElement
+  if (img.complete && img.naturalHeight !== 0) {
+    row._imageLoaded = true
+  } else {
+    // 如果图片还没完全加载，等待一下
+    setTimeout(() => {
+      row._imageLoaded = true
+    }, 100)
+  }
+}
+
+// 处理图片加载失败
+function handleImageError(row: any) {
+  const timeoutKey = `image-${row.id}-${row.url}`
+  
+  // 清除超时定时器
+  if (imageLoadTimeouts.has(timeoutKey)) {
+    clearTimeout(imageLoadTimeouts.get(timeoutKey))
+    imageLoadTimeouts.delete(timeoutKey)
+  }
+  
+  // 即使加载失败，也标记为已加载，避免一直显示加载中
+  row._imageLoaded = true
+}
+
+// 组件卸载时清理所有超时定时器
+onUnmounted(() => {
+  imageLoadTimeouts.forEach((timeout) => {
+    clearTimeout(timeout)
+  })
+  imageLoadTimeouts.clear()
+})
+
 // phash相似图片搜索
 async function handlePhashSearch() {
   // 去除phash值的前后空格
@@ -3221,6 +3319,47 @@ async function handleUrlUpload() {
 </script>
 
 <style scoped>
+/* 预览图片容器样式 */
+.preview-image-wrapper {
+  position: relative;
+  width: 120px;
+  min-height: 80px;
+  background: rgba(255, 255, 255, .3);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.preview-image {
+  width: 120px;
+  height: auto;
+  max-height: 120px;
+  object-fit: contain;
+  background: #f5f5f5;
+  cursor: pointer;
+  display: block;
+}
+
+.preview-image-loading {
+  display: none !important;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.preview-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #999;
+  font-size: 12px;
+  pointer-events: none;
+  background: transparent;
+  z-index: 1;
+}
+
 .link-2d-dialog :deep(.el-dialog__body) { height: calc(100vh - 120px); display: flex; flex-direction: column; overflow: hidden; }
 .design-model-dialog :deep(.el-dialog__body) { max-height: calc(100vh - 160px); overflow: hidden; }
 .design-model-flex { height: 100%; overflow: hidden; }
