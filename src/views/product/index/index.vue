@@ -1517,6 +1517,68 @@
               </el-col>
             </el-row>
           </el-card>
+
+          <!-- 背景音乐设置 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><Headset /></el-icon>
+                <span>背景音乐设置</span>
+              </div>
+            </template>
+            <el-row :gutter="8">
+              <el-col :xs="24" :sm="12" :md="12">
+                <el-form-item label="背景音乐">
+                  <el-select
+                    v-model="videoGenForm.audioId"
+                    filterable
+                    remote
+                    reserve-keyword
+                    placeholder="请搜索并选择背景音乐"
+                    :remote-method="remoteSearchAudio"
+                    :loading="audioLoading"
+                    clearable
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="audio in audioList"
+                      :key="audio.id"
+                      :label="audio.name || '未命名音频'"
+                      :value="audio.id"
+                    >
+                      <div class="flex items-center justify-between">
+                        <span>{{ audio.name || '未命名音频' }}</span>
+                        <span class="text-xs text-gray-400 ml-2">{{ audio.suffix?.toUpperCase() }}</span>
+                      </div>
+                    </el-option>
+                  </el-select>
+                  <div class="text-xs text-gray-500 mt-1">
+                    从剪辑素材库中选择音频文件作为背景音乐（可选）
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-card>
+
+          <!-- 操作选项 -->
+          <el-card class="mb-4" shadow="never">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><Operation /></el-icon>
+                <span>操作选项</span>
+              </div>
+            </template>
+            <el-row :gutter="8">
+              <el-col :xs="24" :sm="12" :md="12">
+                <el-form-item label="视频处理方式">
+                  <el-radio-group v-model="videoGenForm.replace">
+                    <el-radio :label="false">追加到现有视频</el-radio>
+                    <el-radio :label="true">替换现有视频</el-radio>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-card>
         </el-form>
       </div>
 
@@ -1988,6 +2050,7 @@ import { aiGenerateProductInfo } from '@/api/product'
 import { copyLink } from '@/utils/clipboard'
 import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/config/product-categories'
 import { createTask } from '@/api/system/queue'
+import { getClipMaterialList } from '@/api/clip-material'
 
 
 
@@ -2202,11 +2265,67 @@ const videoGenForm = reactive({
   clipDuration: 2, // 视频时长（秒）
   outputFormat: 'mp4' as 'mp4' | 'webm' | 'mkv', // 视频格式
   // 操作选项
-  replace: true,
+  replace: false, // 默认追加
+  // 背景音乐
+  audioId: null as string | null, // 背景音乐ID
 });
 
 // 图片尺寸信息
 const imageSize = ref<{ width: number; height: number } | null>(null);
+
+// 背景音乐相关
+const audioList = ref<any[]>([]);
+const audioLoading = ref(false);
+const audioSearchKeyword = ref('');
+
+// 判断是否为音频文件
+function isAudioFile(suffix: string): boolean {
+  const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr']
+  return audioSuffixes.includes(suffix.toLowerCase())
+}
+
+// 搜索音频文件
+async function searchAudioFiles(keyword: string = '') {
+  audioLoading.value = true;
+  try {
+    const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr'];
+    const params: any = {
+      currentPage: 1,
+      pageSize: 50,
+    };
+    
+    // 如果有搜索关键词，添加到查询参数
+    if (keyword && keyword.trim()) {
+      params.keyword = keyword.trim();
+    }
+    
+    // 使用 suffix 过滤音频文件，由于后端是精确匹配，我们需要多次查询
+    // 或者使用一个包含所有音频后缀的查询（如果有多个，需要分别查询）
+    // 这里先查询所有，然后在前端过滤音频文件
+    const res = await getClipMaterialList(params);
+    const allItems = res.list || [];
+    
+    // 过滤出音频文件
+    audioList.value = allItems.filter((item: any) => 
+      item.suffix && isAudioFile(item.suffix)
+    );
+  } catch (error) {
+    console.error('搜索音频文件失败:', error);
+    ElMessage.error('搜索音频文件失败');
+    audioList.value = [];
+  } finally {
+    audioLoading.value = false;
+  }
+}
+
+// 远程搜索音频（用于 el-select 的 remote-method）
+async function remoteSearchAudio(query: string) {
+  if (query) {
+    await searchAudioFiles(query);
+  } else {
+    await searchAudioFiles('');
+  }
+}
 
 // 获取图片尺寸
 async function getImageSize(imageUrl: string): Promise<{ width: number; height: number } | null> {
@@ -2309,7 +2428,41 @@ function resetVideoGenForm() {
   videoGenForm.backgroundColor = '#000000';
   videoGenForm.clipDuration = 2;
   videoGenForm.outputFormat = 'mp4';
-  videoGenForm.replace = true;
+  videoGenForm.replace = false; // 默认追加
+  videoGenForm.audioId = null;
+}
+
+// 打开视频生成对话框时，加载音频列表
+async function handleGenerateVideo(row: any) {
+  if (!row?.id) return;
+  const hasImages = Array.isArray(row.images) && row.images.length > 0;
+  if (!hasImages) {
+    return ElMessage.warning('该商品没有可用图片，无法生成视频');
+  }
+
+  videoGenRow.value = row;
+  
+  // 先重置表单为默认值
+  resetVideoGenForm();
+  
+  // 获取第一张图片的尺寸
+  if (row.images && row.images.length > 0) {
+    const firstImageUrl = row.images[0];
+    const size = await getImageSize(firstImageUrl);
+    if (size) {
+      imageSize.value = size;
+      // 如果使用保持原图尺寸模式，设置为原图尺寸
+      if (videoGenForm.sizeMode === 'keep-original') {
+        videoGenForm.width = size.width;
+        videoGenForm.height = size.height;
+      }
+    }
+  }
+  
+  // 加载音频列表
+  await searchAudioFiles('');
+  
+  videoGenDialogVisible.value = true;
 }
 
 // 社交媒体导出
@@ -3351,35 +3504,6 @@ async function handleGenerateProductCode(row: any) {
 }
 
 // 根据商品图片生成视频
-async function handleGenerateVideo(row: any) {
-  if (!row?.id) return;
-  const hasImages = Array.isArray(row.images) && row.images.length > 0;
-  if (!hasImages) {
-    return ElMessage.warning('该商品没有可用图片，无法生成视频');
-  }
-
-  videoGenRow.value = row;
-  
-  // 先重置表单为默认值
-  resetVideoGenForm();
-  
-  // 获取第一张图片的尺寸
-  if (row.images && row.images.length > 0) {
-    const firstImageUrl = row.images[0];
-    const size = await getImageSize(firstImageUrl);
-    if (size) {
-      imageSize.value = size;
-      // 如果使用保持原图尺寸模式，设置为原图尺寸
-      if (videoGenForm.sizeMode === 'keep-original') {
-        videoGenForm.width = size.width;
-        videoGenForm.height = size.height;
-      }
-    }
-  }
-  
-  videoGenDialogVisible.value = true;
-}
-
 async function submitGenerateVideo() {
   if (!videoGenRow.value?.id) return;
 
@@ -3404,11 +3528,18 @@ async function submitGenerateVideo() {
       }
     }
     
-    await generateProductVideo({
+    const requestData: any = {
       id: videoGenRow.value.id,
       replace: !!videoGenForm.replace,
       ffmpeg: ffmpegOptions,
-    });
+    };
+    
+    // 如果选择了背景音乐，添加 audioId
+    if (videoGenForm.audioId) {
+      requestData.audioId = videoGenForm.audioId;
+    }
+    
+    await generateProductVideo(requestData);
     ElMessage.success('视频生成成功');
     videoGenDialogVisible.value = false;
     getList();
