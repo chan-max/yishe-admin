@@ -3324,7 +3324,6 @@ async function handleUrlUpload() {
   position: relative;
   width: 120px;
   min-height: 80px;
-  background: rgba(255, 255, 255, .3);
   
   display: flex;
   align-items: center;

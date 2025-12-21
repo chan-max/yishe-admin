@@ -1,7 +1,56 @@
 <template>
   <div>
-    <div class="py-4 flex flex-wrap items-center gap-3 justify-end">
-      <!-- 搜索与筛选（可换行） -->
+    <!-- 折叠状态：显示常用搜索和操作 -->
+    <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
+      <div style="flex: 1"></div>
+      <form-item label="按ID搜索">
+        <el-input
+          v-model="queryParams.id"
+          clearable
+          placeholder="输入ID"
+          style="width: 160px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+      </form-item>
+      <form-item label="按产品代码">
+        <el-input
+          v-model="queryParams.code"
+          clearable
+          placeholder="输入产品代码"
+          style="width: 160px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+      </form-item>
+      <form-item label="搜索">
+        <el-input
+          v-model="queryParams.searchText"
+          clearable
+          placeholder="请输入搜索内容"
+          style="width: 160px"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+      </form-item>
+      <form-item label="随机顺序">
+        <el-switch
+          v-model="queryParams.random"
+          active-text=""
+          inactive-text=""
+          size="small"
+          @change="handleSearch"
+        />
+      </form-item>
+      <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
+      <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+        展开筛选
+      </el-button>
+    </div>
+
+    <!-- 展开状态：显示全部搜索功能 -->
+    <div v-show="!actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
+      <div style="flex: 1"></div>
       <form-item label="按ID搜索">
         <el-input
           v-model="queryParams.id"
@@ -50,8 +99,9 @@
       <form-item label="随机顺序">
         <el-switch
           v-model="queryParams.random"
-          active-text="随机"
-          inactive-text="默认"
+          active-text=""
+          inactive-text=""
+          size="small"
           @change="handleSearch"
         />
       </form-item>
@@ -73,6 +123,9 @@
         </el-button>
         <el-button type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">
           批量下架
+        </el-button>
+        <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+          收起筛选
         </el-button>
       </div>
     </div>
@@ -2029,8 +2082,9 @@ import {
   View,
   Operation,
   DocumentCopy,
+  Grid,
 } from "@element-plus/icons-vue";
-import { useWindowSize } from "@vueuse/core";
+import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
 import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, copyImagesFromProductImage2D, copyImagesFromSticker, copyImagesFromCustomModel, generateProductVideo, getProductSocialMediaExport } from "@/api/product";
@@ -2066,6 +2120,9 @@ const queryParams = reactive({
   mediaPublishStatus: '' as string | '',
   random: false
 });
+
+// 搜索筛选折叠状态
+const actionsCollapsed = useLocalStorage('product_filter_collapsed', true);
 
 const gridOptions = ref({
   ...commonGridOptions,
