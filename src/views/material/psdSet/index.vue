@@ -525,11 +525,12 @@ async function handleToProduct(row: any) {
 
   try {
     generatingProductId.value = row.id
-    await request.post({
+    const result = await request.post({
       url: '/sticker-psd-set/to-product',
       data: { id: row.id }
     })
-    ElMessage.success('生成产品成功')
+    const message = result?.data?.message || '生成产品成功'
+    ElMessage.success(message)
     getList()
   } catch (error: any) {
     console.error('生成产品失败:', error)
