@@ -690,9 +690,8 @@ const clearThumbnail = () => {
   padding: 4px;
   
   .thumbnail-image {
-    height: 120px;
-    width: auto;
-    max-width: 160px;
+    width: 120px;
+    height: auto;
     object-fit: contain;
     border: 1px solid var(--el-border-color-light);
     border-radius: 4px;
@@ -718,8 +717,8 @@ const clearThumbnail = () => {
   width: 100%;
   
   .thumbnail-upload-placeholder {
-    width: 148px;
-    height: 148px;
+    width: 120px;
+    height: 120px;
     border: 1px dashed var(--el-border-color);
     border-radius: 6px;
     display: flex;
@@ -765,8 +764,8 @@ const clearThumbnail = () => {
   }
   
   .thumbnail-preview-wrapper {
-    width: 148px;
-    height: 148px;
+    width: 120px;
+    min-height: 120px;
     border: 1px solid var(--el-border-color);
     border-radius: 6px;
     overflow: hidden;
@@ -778,10 +777,8 @@ const clearThumbnail = () => {
     position: relative;
     
     .thumbnail-preview-image {
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: 100%;
+      width: 120px;
+      height: auto;
       object-fit: contain;
     }
     
