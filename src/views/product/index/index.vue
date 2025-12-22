@@ -4915,7 +4915,6 @@ async function handlePublishToQueue(row: any) {
   margin: 0 0 12px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
 }
 
 .source-info-json {
