@@ -443,7 +443,7 @@
                     <div class="flex items-center justify-center p-1">
                       <el-image
                         v-if="modelRow.thumbnail"
-                        :src="modelRow.thumbnail"
+                        :src="getPreviewImageUrl(modelRow.thumbnail, { width: 200, quality: 80, format: 'webp' })"
                         :preview-src-list="getCustomModelImages(modelRow)"
                         :initial-index="0"
                         :preview-teleported="true"
@@ -1669,7 +1669,7 @@
         <el-row :gutter="32">
           <!-- 左侧图片区 -->
           <el-col :span="8" class="flex flex-col items-center justify-center">
-            <img v-if="customModelDetail.thumbnail" :src="customModelDetail.thumbnail" style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin-bottom: 16px; cursor:pointer;" @click="preview(0, [customModelDetail.thumbnail])" />
+            <img v-if="customModelDetail.thumbnail" :src="getPreviewImageUrl(customModelDetail.thumbnail, { width: 300, quality: 80, format: 'webp' })" style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin-bottom: 16px; cursor:pointer;" @click="preview(0, [customModelDetail.thumbnail])" />
             <div v-else class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded mb-4">无缩略图</div>
             <!-- 预留更多图片展示（如有） -->
             <template v-if="customModelDetail.images && customModelDetail.images.length">
@@ -1746,7 +1746,7 @@
               <div class="flex items-center justify-center p-2">
                 <el-image
                   v-if="row.thumbnail"
-                  :src="row.thumbnail"
+                  :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
                   :preview-src-list="[row.thumbnail]"
                   :initial-index="0"
                   style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
@@ -2105,6 +2105,7 @@ import { copyLink } from '@/utils/clipboard'
 import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/config/product-categories'
 import { createTask } from '@/api/system/queue'
 import { getClipMaterialList } from '@/api/clip-material'
+import { getPreviewImageUrl } from '@/utils/image'
 
 
 

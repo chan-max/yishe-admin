@@ -54,7 +54,7 @@
           <div class="thumbnail-cell">
             <el-image
               v-if="row.thumbnail"
-              :src="row.thumbnail"
+              :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
               :preview-src-list="[row.thumbnail]"
               :initial-index="0"
               preview-teleported
@@ -282,6 +282,7 @@ import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
 import { generateUUID } from "@/utils";
+import { getPreviewImageUrl } from "@/utils/image";
 
 const userStore = useUserStore()
 

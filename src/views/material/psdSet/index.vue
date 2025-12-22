@@ -204,7 +204,7 @@
                   <div class="flex items-center justify-center p-1">
                     <el-image
                       v-if="templateRow.thumbnail"
-                      :src="templateRow.thumbnail"
+                      :src="getPreviewImageUrl(templateRow.thumbnail, { width: 200, quality: 80, format: 'webp' })"
                       :lazy="true"
                       :preview-src-list="[templateRow.thumbnail]"
                       :initial-index="0"
@@ -343,6 +343,7 @@ import request from '@/config/axios'
 import { isLocalConnected } from '@/stores/connectionStatus'
 import { websocketClient } from '@/services/websocketClient'
 import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
+import { getPreviewImageUrl } from '@/utils/image'
 
 const loading = ref(false)
 const dataSource = ref<any[]>([])

@@ -233,7 +233,7 @@
               class="thumb"
             >
               <img
-                :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url"
+                :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })"
                 class="thumb-img"
                 alt="素材预览"
                 loading="lazy"
@@ -254,7 +254,7 @@
               <div class="template-content-wrapper">
                 <img
                   v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                  :src="tpl.thumbnail || tpl.preview || tpl.image"
+                  :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
                     :alt="tpl.name || '模板缩略图'"
                   class="template-thumbnail"
                   loading="lazy"
@@ -338,7 +338,7 @@
                   <img
                     v-if="row._imageLoaded"
                     :key="`preview-${row.id}-${row.url}`"
-                    :src="row.url"
+                    :src="getPreviewImageUrl(row.url, { width: 200, quality: 80, format: 'webp' })"
                     :alt="row.name || '素材图片'"
                     class="preview-image"
                     loading="lazy"
@@ -347,7 +347,7 @@
                   <img
                     v-else
                     :key="`preview-loading-${row.id}-${row.url}`"
-                    :src="row.url"
+                    :src="getPreviewImageUrl(row.url, { width: 200, quality: 80, format: 'webp' })"
                     :alt="row.name || '素材图片'"
                     class="preview-image preview-image-loading"
                     loading="lazy"
@@ -709,7 +709,7 @@
               :key="id"
               class="thumb"
             >
-              <img :src="(dataSource.find(i => String(i.id) === String(id)) || {}).url" loading="lazy" />
+              <img :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })" loading="lazy" />
             </div>
           </div>
         </div>
@@ -748,7 +748,7 @@
                       >
                         <div class="image-container">
                           <img 
-                            :src="img" 
+                            :src="getPreviewImageUrl(img, { width: 200, quality: 80, format: 'webp' })" 
                             :alt="`模板图片 ${index + 1}`"
                             class="template-image"
                             loading="lazy"
@@ -905,7 +905,7 @@
                 <template v-for="id in ids" :key="id">
                   <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
                     <img 
-                      :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                      :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 150, quality: 80, format: 'webp' })" 
                       :alt="dataSource.find(item => String(item.id) === String(id)).name"
                       class="w-20 h-20 object-cover rounded border"
                       loading="lazy"
@@ -956,7 +956,7 @@
                     <div class="flex items-center space-x-3">
                       <img
                         v-if="model.thumbnail"
-                        :src="model.thumbnail"
+                        :src="getPreviewImageUrl(model.thumbnail, { width: 150, quality: 80, format: 'webp' })"
                         :alt="model.name"
                         class="w-16 h-16 object-cover rounded"
                         loading="lazy"
@@ -1010,7 +1010,7 @@
                       <template v-for="id in ids" :key="id">
                         <div v-if="dataSource.find(item => String(item.id) === String(id))" class="flex items-center space-x-2">
                           <img 
-                            :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                            :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 100, quality: 80, format: 'webp' })" 
                             :alt="dataSource.find(item => String(item.id) === String(id)).name"
                             class="w-8 h-8 object-cover rounded"
                             loading="lazy"
@@ -1029,7 +1029,7 @@
                         <div v-if="designModelList.find(model => model.id === modelId)" class="flex items-center space-x-2">
                           <img 
                             v-if="designModelList.find(model => model.id === modelId).thumbnail"
-                            :src="designModelList.find(model => model.id === modelId).thumbnail" 
+                            :src="getPreviewImageUrl(designModelList.find(model => model.id === modelId).thumbnail, { width: 100, quality: 80, format: 'webp' })" 
                             :alt="designModelList.find(model => model.id === modelId).name"
                             class="w-8 h-8 object-cover rounded"
                             loading="lazy"
@@ -1399,7 +1399,7 @@
                 <template v-for="id in ids" :key="id">
                   <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
                     <img 
-                      :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                      :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 150, quality: 80, format: 'webp' })" 
                       :alt="dataSource.find(item => String(item.id) === String(id)).name"
                       class="w-20 h-20 object-cover rounded border"
                       loading="lazy"
@@ -1437,7 +1437,7 @@
                     <template v-for="id in ids" :key="id">
                       <div v-if="dataSource.find(item => String(item.id) === String(id))" class="flex items-center space-x-2">
                         <img 
-                          :src="dataSource.find(item => String(item.id) === String(id)).url" 
+                          :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 100, quality: 80, format: 'webp' })" 
                           :alt="dataSource.find(item => String(item.id) === String(id)).name"
                           class="w-8 h-8 object-cover rounded"
                           loading="lazy"
@@ -1559,6 +1559,7 @@ import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { pageTemplateGroup2D } from '@/api/templateGroup2D'
 import { createProductImage2D, batchCreateProductImage2D } from '@/api/productImage2D'
+import { getPreviewImageUrl } from '@/utils/image'
 
 const userStore = useUserStore()
 
