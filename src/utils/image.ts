@@ -20,13 +20,19 @@ export interface ImageUrlOptions {
  * 获取预览/缩略图优化后的图片URL
  * 使用腾讯云COS的imageMogr2接口进行图片处理
  * 
+ * 注意：SVG格式的图片不会被处理，直接返回原URL（因为SVG无法转换为webp等格式）
+ * 
  * @param url 原始图片URL
  * @param options 图片处理选项
- * @returns 处理后的图片URL
+ * @returns 处理后的图片URL，SVG格式直接返回原URL
  * 
  * @example
  * getPreviewImageUrl('https://example.com/image.jpg', { width: 500, quality: 80, format: 'webp' })
  * // 返回: 'https://example.com/image.jpg?imageMogr2/thumbnail/x500/quality/80/format/webp'
+ * 
+ * @example
+ * getPreviewImageUrl('https://example.com/image.svg', { width: 500, format: 'webp' })
+ * // 返回: 'https://example.com/image.svg' (SVG格式不处理)
  */
 export function getPreviewImageUrl(url: string | null | undefined, options: ImageUrlOptions = {}): string | null {
   // 如果URL为空，直接返回null
@@ -37,6 +43,24 @@ export function getPreviewImageUrl(url: string | null | undefined, options: Imag
   // 如果URL不是有效的HTTP(S)链接，直接返回原URL
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     return url
+  }
+
+  // 检测是否为SVG格式，SVG无法进行格式转换，直接返回原URL
+  try {
+    const urlObj = new URL(url)
+    const pathname = urlObj.pathname.toLowerCase()
+    // 检查路径是否以.svg结尾（不区分大小写）
+    if (pathname.endsWith('.svg')) {
+      return url
+    }
+  } catch (e) {
+    // 如果URL解析失败，尝试简单的字符串匹配
+    const urlLower = url.toLowerCase()
+    // 检查URL中是否包含.svg（在查询参数之前）
+    const pathPart = urlLower.split('?')[0].split('#')[0]
+    if (pathPart.endsWith('.svg')) {
+      return url
+    }
   }
 
   // 解构选项，不设置默认值，让用户明确控制
