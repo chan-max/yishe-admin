@@ -1453,7 +1453,7 @@
           class="mb-4"
         >
           <template #title>
-
+            支持多图合成视频，可选择多张图片并设置过渡效果。每张图片的显示时长可自定义。
           </template>
         </el-alert>
 
@@ -1537,6 +1537,52 @@
             </el-row>
           </el-card>
 
+          <!-- 图片选择 -->
+          <el-card class="mb-4" shadow="never" v-if="videoGenRow?.images && videoGenRow.images.length > 0">
+            <template #header>
+              <div class="flex items-center gap-2">
+                <el-icon><Picture /></el-icon>
+                <span>图片选择</span>
+              </div>
+            </template>
+            <el-row :gutter="8">
+              <el-col :xs="24" :sm="24" :md="24">
+                <el-form-item label="选择图片">
+                  <div class="flex flex-wrap gap-2 mb-2">
+                    <div 
+                      v-for="(url, index) in videoGenRow.images" 
+                      :key="index"
+                      class="relative cursor-pointer select-item-compact"
+                      :class="{ 'selected': videoGenForm.selectedImages.includes(url) }"
+                      @click="toggleVideoGenImageSelection(url)"
+                    >
+                      <el-image
+                        :src="url"
+                        class="w-20 h-20 object-cover rounded transition-all duration-200"
+                        fit="cover"
+                        :preview-src-list="videoGenRow.images"
+                        :initial-index="index"
+                        :preview-teleported="true"
+                        :hide-on-click-modal="false"
+                      />
+                      <div class="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-md">
+                        <el-icon v-if="videoGenForm.selectedImages.includes(url)" class="text-blue-600 text-xs check-icon">
+                          <Check />
+                        </el-icon>
+                      </div>
+                      <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 text-center rounded-b">
+                        {{ index + 1 }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    已选择 {{ videoGenForm.selectedImages.length }} 张图片，点击图片可切换选择状态
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-card>
+
           <!-- 视频设置 -->
           <el-card class="mb-4" shadow="never">
             <template #header>
@@ -1557,6 +1603,9 @@
                     controls-position="right"
                     style="width: 100%"
                   />
+                  <div class="text-xs text-gray-500 mt-1">
+                    视频总时长（多图时会自动均分到每张图片并叠加过渡时间）
+                  </div>
                 </el-form-item>
               </el-col>
               <el-col :xs="12" :sm="6" :md="6">
@@ -1566,6 +1615,19 @@
                     <el-option label="WebM" value="webm" />
                     <el-option label="MKV" value="mkv" />
                   </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.selectedImages.length > 1">
+                <el-form-item label="过渡效果">
+                  <el-select v-model="videoGenForm.transition" style="width: 100%">
+                    <el-option label="淡入淡出" value="fade" />
+                    <el-option label="向左滑动" value="directional-left" />
+                    <el-option label="向右滑动" value="directional-right" />
+                    <el-option label="无过渡" value="none" />
+                  </el-select>
+                  <div class="text-xs text-gray-500 mt-1">
+                    多张图片之间的过渡效果
+                  </div>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -2320,8 +2382,11 @@ const videoGenForm = reactive({
   scaleMode: 'contain' as 'cover' | 'contain', // 自定义尺寸时的缩放模式
   backgroundColor: '#000000', // contain 模式时的背景颜色
   // 视频设置
-  clipDuration: 2, // 视频时长（秒）
+  clipDuration: 2, // 每张图片显示时长（秒）
   outputFormat: 'mp4' as 'mp4' | 'webm' | 'mkv', // 视频格式
+  transition: 'fade' as 'fade' | 'slide' | 'directional-left' | 'directional-right' | 'none', // 过渡效果
+  // 图片选择
+  selectedImages: [] as string[], // 选中的图片URL数组
   // 操作选项
   replace: false, // 默认追加
   // 背景音乐
@@ -2486,6 +2551,8 @@ function resetVideoGenForm() {
   videoGenForm.backgroundColor = '#000000';
   videoGenForm.clipDuration = 2;
   videoGenForm.outputFormat = 'mp4';
+  videoGenForm.transition = 'fade';
+  videoGenForm.selectedImages = [];
   videoGenForm.replace = false; // 默认追加
   videoGenForm.audioId = null;
 }
@@ -2502,6 +2569,9 @@ async function handleGenerateVideo(row: any) {
   
   // 先重置表单为默认值
   resetVideoGenForm();
+  
+  // 默认选中所有图片
+  videoGenForm.selectedImages = [...(row.images || [])];
   
   // 获取第一张图片的尺寸
   if (row.images && row.images.length > 0) {
@@ -3561,9 +3631,24 @@ async function handleGenerateProductCode(row: any) {
   }
 }
 
+// 切换图片选择状态（视频生成）
+function toggleVideoGenImageSelection(url: string) {
+  const index = videoGenForm.selectedImages.indexOf(url);
+  if (index > -1) {
+    videoGenForm.selectedImages.splice(index, 1);
+  } else {
+    videoGenForm.selectedImages.push(url);
+  }
+}
+
 // 根据商品图片生成视频
 async function submitGenerateVideo() {
   if (!videoGenRow.value?.id) return;
+
+  // 验证是否选择了图片
+  if (!videoGenForm.selectedImages || videoGenForm.selectedImages.length === 0) {
+    return ElMessage.warning('请至少选择一张图片');
+  }
 
   try {
     generatingVideoId.value = videoGenRow.value.id;
@@ -3586,9 +3671,15 @@ async function submitGenerateVideo() {
       }
     }
     
+    // 添加过渡效果（多张图片时）
+    if (videoGenForm.selectedImages.length > 1 && videoGenForm.transition !== 'none') {
+      ffmpegOptions.transition = videoGenForm.transition;
+    }
+    
     const requestData: any = {
       id: videoGenRow.value.id,
       replace: !!videoGenForm.replace,
+      images: videoGenForm.selectedImages, // 传递选中的图片数组
       ffmpeg: ffmpegOptions,
     };
     
