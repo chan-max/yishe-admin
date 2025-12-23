@@ -100,6 +100,14 @@
         @checkbox-change="onSelectionChange"
         @checkbox-all="onSelectionChange"
       >
+        <template #idSlot="{ row }">
+          <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
+            <span class="text-sm">{{ row.id }}</span>
+            <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <DocumentCopy />
+            </el-icon>
+          </div>
+        </template>
         <template #statusSlot="{ row }">
           <el-tag 
             :type="statusTagType(row.status)" 
@@ -110,28 +118,33 @@
           </el-tag>
         </template>
         <template #imagesSlot="{ row }">
-          <div class="flex gap-1 flex-wrap">
-            <div
-              v-for="(img, idx) in (row.images || []).slice(0, 3)"
-              :key="idx"
-              class="detail-thumb-wrapper"
+          <div class="flex items-center gap-2">
+            <el-carousel 
+              v-if="row.images && row.images.length > 0"
+              :interval="3000"
+              height="100px"
+              indicator-position="none"
+              :arrow="row.images.length > 1 ? 'always' : 'never'"
+              class="w-40 custom-carousel"
             >
-              <el-image
-                v-if="img"
-                :src="img"
-                :preview-src-list="row.images"
-                :initial-index="idx"
-                :preview-teleported="true"
-                :lazy="true"
-                :hide-on-click-modal="false"
-                loading="lazy"
-                class="detail-thumb-image"
-                fit="contain"
-              />
-              <span v-else class="text-gray-400 text-xs">无</span>
-            </div>
-            <span v-if="(row.images || []).length > 3" class="text-xs text-gray-500">+{{ (row.images.length - 3) }}</span>
-            <span v-if="!row.images || !row.images.length" class="text-gray-400 text-xs">无</span>
+              <el-carousel-item v-for="(url, index) in row.images" :key="index">
+                <el-image 
+                  :src="url"
+                  :preview-src-list="row.images"
+                  :initial-index="index"
+                  :preview-teleported="true"
+                  :hide-on-click-modal="false"
+                  :lazy="true"
+                  loading="lazy"
+                  class="w-full h-full object-contain rounded cursor-pointer"
+                  fit="contain"
+                />
+                <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                  {{ Number(index) + 1 }}/{{ row.images.length }}
+                </div>
+              </el-carousel-item>
+            </el-carousel>
+            <span v-else class="text-gray-400 text-xs">无</span>
           </div>
         </template>
         <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
@@ -334,7 +347,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from 'vue'
 import { useWindowSize } from '@vueuse/core'
-import { Search, ArrowDown } from '@element-plus/icons-vue'
+import { Search, ArrowDown, DocumentCopy } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -380,10 +393,17 @@ const showDetails = ref(false)
 function getColumns() {
   const baseColumns = [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
-    { title: '套图名称', field: 'name', minWidth: 180 },
+    { 
+      title: 'ID', 
+      field: 'id', 
+      width: 120, 
+      showOverflow: false,
+      slots: { default: 'idSlot' }
+    },
     { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
-    { title: '描述', field: 'description', minWidth: 200 },
-    { title: '关键词', field: 'keywords', minWidth: 180 },
+    { title: '套图名称', field: 'name', minWidth: 180 },
+    { title: '描述', field: 'description', minWidth: 200, showOverflow: true },
+    { title: '关键词', field: 'keywords', minWidth: 180, showOverflow: true },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
     { title: '状态说明', field: 'statusMessage', width: 320, showOverflow: true },
     {
@@ -486,6 +506,24 @@ function statusTagType(status: string) {
       return 'info'
     default:
       return 'info'
+  }
+}
+
+// 复制 ID
+async function copyId(id: string) {
+  if (!id) return
+  try {
+    await navigator.clipboard.writeText(id)
+    ElMessage.success('ID 已复制到剪贴板')
+  } catch (e) {
+    // 降级方案
+    const textarea = document.createElement('textarea')
+    textarea.value = id
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ElMessage.success('ID 已复制到剪贴板')
   }
 }
 
@@ -1001,6 +1039,39 @@ getList()
 .operation-dropdown :deep(.el-dropdown-menu__item) {
   padding: 0;
   height: auto;
+}
+
+/* 轮播样式 */
+.custom-carousel {
+  position: relative;
+  padding: 0 20px;
+}
+
+.custom-carousel :deep(.el-carousel__container) {
+  margin: 0 -20px;
+}
+
+.custom-carousel :deep(.el-carousel__arrow) {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+}
+
+.custom-carousel :deep(.el-carousel__arrow):hover {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.custom-carousel :deep(.el-carousel__arrow) i {
+  font-size: 14px;
+}
+
+.custom-carousel :deep(.el-carousel__arrow--left) {
+  left: 0;
+}
+
+.custom-carousel :deep(.el-carousel__arrow--right) {
+  right: 0;
 }
 </style>
 
