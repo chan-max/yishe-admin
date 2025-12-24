@@ -108,6 +108,18 @@
             </el-icon>
           </div>
         </template>
+        <template #stickersCountSlot="{ row }">
+          <div class="flex items-center gap-2">
+            <el-tag 
+              :type="getStickersCount(row) > 1 ? 'success' : 'info'" 
+              size="small" 
+              effect="plain"
+              class="material-association-tag"
+            >
+              <span class="tag-text">{{ getStickersCount(row) === 1 ? '单素材' : `多素材(${getStickersCount(row)})` }}</span>
+            </el-tag>
+          </div>
+        </template>
         <template #statusSlot="{ row }">
           <el-tag 
             :type="statusTagType(row.status)" 
@@ -150,13 +162,13 @@
         <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
         <template #relatedInfoSlot="{ row }">
           <div v-if="showDetails" class="related-info-container">
-            <!-- 贴纸详情 -->
-            <div v-if="row.sticker" class="detail-section-item">
+            <!-- 贴纸详情：支持显示多个贴纸 -->
+            <div v-if="getStickers(row).length > 0" class="detail-section-item">
               <div class="detail-header">
-                <span class="detail-label">贴纸信息</span>
+                <span class="detail-label">贴纸信息 ({{ getStickers(row).length }})</span>
               </div>
               <vxe-grid
-                :data="[row.sticker]"
+                :data="getStickers(row)"
                 :show-header="true"
                 border
                 size="mini"
@@ -175,8 +187,8 @@
                       v-if="stickerRow.url"
                       :src="stickerRow.url"
                       :lazy="true"
-                      :preview-src-list="[stickerRow.url]"
-                      :initial-index="0"
+                      :preview-src-list="getStickers(row).map(s => s.url).filter(Boolean)"
+                      :initial-index="getStickers(row).findIndex(s => s.id === stickerRow.id)"
                       :preview-teleported="true"
                       :hide-on-click-modal="false"
                       class="detail-thumb-image"
@@ -402,6 +414,7 @@ function getColumns() {
     },
     { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: '套图名称', field: 'name', minWidth: 180 },
+    { title: '多素材关联', field: 'stickers', width: 120, slots: { default: 'stickersCountSlot' } },
     { title: '描述', field: 'description', minWidth: 200, showOverflow: true },
     { title: '关键词', field: 'keywords', minWidth: 180, showOverflow: true },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
@@ -507,6 +520,34 @@ function statusTagType(status: string) {
     default:
       return 'info'
   }
+}
+
+// 获取贴纸数组（兼容旧数据：优先使用 stickers，没有则使用 sticker）
+function getStickers(row: any) {
+  if (Array.isArray(row.stickers) && row.stickers.length > 0) {
+    return row.stickers
+  }
+  if (row.sticker) {
+    return [row.sticker]
+  }
+  return []
+}
+
+// 获取贴纸数量
+function getStickersCount(row: any) {
+  const stickers = getStickers(row)
+  if (stickers.length > 0) {
+    return stickers.length
+  }
+  // 如果没有 stickers 数据，尝试从 stickerIds 获取数量
+  if (Array.isArray(row.stickerIds) && row.stickerIds.length > 0) {
+    return row.stickerIds.length
+  }
+  // 如果有 stickerId，说明至少有一个
+  if (row.stickerId) {
+    return 1
+  }
+  return 0
 }
 
 // 复制 ID
@@ -1072,6 +1113,17 @@ getList()
 
 .custom-carousel :deep(.el-carousel__arrow--right) {
   right: 0;
+}
+
+/* 素材关联标签样式 */
+.material-association-tag {
+  font-weight: 500;
+  min-width: 70px;
+  text-align: center;
+}
+
+.material-association-tag .tag-text {
+  display: inline-block;
 }
 </style>
 

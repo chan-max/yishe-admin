@@ -305,17 +305,33 @@
       </div>
       <template #footer>
         <div class="psd-set-footer">
-          <el-alert
-            type="info"
-            :closable="false"
-            show-icon
-            :title="`将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${ids.length * selectedPsdTemplateIds.length} 条套图任务`"
-          />
-          <div class="footer-actions">
-            <el-button @click="psdSetDialogVisible = false">取消</el-button>
-            <el-button type="primary" :disabled="!ids.length || !selectedPsdTemplateIds.length" :loading="psdSetSubmitting" @click="handleCreatePsdSets">
-              开始制作
-            </el-button>
+          <div class="psd-set-footer-main">
+
+            <div style="flex: 1"></div>
+
+            <div class="psd-set-info">
+              <el-icon><InfoFilled /></el-icon>
+              <span>
+                {{ psdSetMergeSticker
+                  ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
+                  : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务` }}
+              </span>
+            </div>
+
+            <div class="psd-set-mode-inline">
+              <span class="psd-set-mode-label">生成方式：</span>
+              <el-radio-group v-model="psdSetMergeSticker" size="small" class="psd-set-mode-group">
+                <el-radio-button :label="false">单素材 × 模板（原逻辑）</el-radio-button>
+                <el-radio-button :label="true">合并素材 × 模板</el-radio-button>
+              </el-radio-group>
+            </div>
+
+            <div>
+              <el-button @click="psdSetDialogVisible = false">取消</el-button>
+              <el-button type="primary" :disabled="!ids.length || !selectedPsdTemplateIds.length" :loading="psdSetSubmitting" @click="handleCreatePsdSets">
+                开始制作
+              </el-button>
+            </div>
           </div>
         </div>
       </template>
@@ -1736,6 +1752,7 @@ const psdSetTemplates = ref<any[]>([])
 const psdSetTemplatesLoading = ref(false)
 const selectedPsdTemplateIds = ref<string[]>([])
 const psdSetSubmitting = ref(false)
+const psdSetMergeSticker = ref(false)
 
 // 设计模型相关
 const designModelList = ref([])
@@ -1775,6 +1792,12 @@ const canProceedToNextStep = computed(() => {
       return false
   }
 })
+
+const psdSetTaskCount = computed(() =>
+  psdSetMergeSticker.value
+    ? selectedPsdTemplateIds.value.length
+    : ids.value.length * selectedPsdTemplateIds.value.length,
+)
 
 // 步骤导航方法
 function nextStep() {
@@ -2336,6 +2359,7 @@ function togglePsdTemplate(templateId: string | number) {
 
 function resetPsdSetState() {
   selectedPsdTemplateIds.value = []
+  psdSetMergeSticker.value = false
 }
 
 // 处理PSD模板缩略图加载错误
@@ -2355,9 +2379,10 @@ async function handleCreatePsdSets() {
   try {
     const res = await stickerPsdSetApi.batchCreate({
       stickerIds: ids.value.map((id) => String(id)),
-      psdTemplateIds: [...selectedPsdTemplateIds.value]
+      psdTemplateIds: [...selectedPsdTemplateIds.value],
+      mergeSticker: psdSetMergeSticker.value
     })
-    const total = res?.total ?? ids.value.length * selectedPsdTemplateIds.value.length
+    const total = res?.total ?? psdSetTaskCount.value
     ElMessage.success(`成功创建 ${total} 条套图任务`)
     psdSetDialogVisible.value = false
     resetPsdSetState()
@@ -3585,6 +3610,71 @@ async function handleUrlUpload() {
 .template-selector .check-indicator.checked { border-color: var(--el-color-primary); background: var(--el-color-primary); }
 .section-title { font-size: 14px;  margin-bottom: 8px; }
 .result-info { grid-column: 1 / -1; }
+.psd-set-mode-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.psd-set-mode-label {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  font-weight: 500;
+}
+.psd-set-mode-group {
+  margin: 0;
+}
+.psd-set-mode-tip {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.psd-set-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.psd-set-footer-main {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  width:100%;
+  flex-wrap: wrap;
+}
+.psd-set-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--el-color-info);
+  font-size: 13px;
+  min-width: 260px;
+}
+.psd-set-info :deep(.el-icon) {
+  font-size: 16px;
+}
+.footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+@media (max-width: 960px) {
+  .psd-set-body {
+    grid-template-columns: 1fr;
+  }
+  .psd-set-footer {
+    align-items: stretch;
+  }
+  .psd-set-dialog :deep(.el-dialog__body) {
+    max-height: calc(100vh - 120px);
+  }
+  .footer-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
 /* PC端优化 */
 .text-cell {
   display: flex;
@@ -4201,6 +4291,8 @@ h1 {
   flex-direction: column;
   gap: 16px;
   min-height: 520px;
+  max-height: calc(100vh - 160px);
+  overflow: hidden;
 }
 .psd-set-body {
   flex: 1;
@@ -4346,8 +4438,5 @@ h1 {
   align-items: center;
   gap: 16px;
 }
-.psd-set-footer .footer-actions {
-  display: flex;
-  gap: 12px;
-}
+
   </style>
