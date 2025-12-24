@@ -21,15 +21,6 @@
           />
         </el-select>
       </form-item>
-      <form-item label="显示详情">
-        <el-switch
-          v-model="showDetails"
-          size="small"
-          active-text=""
-          inactive-text=""
-          @change="handleShowDetailsChange"
-        />
-      </form-item>
       <form-item label="排序方式">
         <el-select
           v-model="queryParams.sortingFields"
@@ -160,140 +151,6 @@
           </div>
         </template>
         <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
-        <template #relatedInfoSlot="{ row }">
-          <div v-if="showDetails" class="related-info-container">
-            <!-- 贴纸详情：支持显示多个贴纸 -->
-            <div v-if="getStickers(row).length > 0" class="detail-section-item">
-              <div class="detail-header">
-                <span class="detail-label">贴纸信息 ({{ getStickers(row).length }})</span>
-              </div>
-              <vxe-grid
-                :data="getStickers(row)"
-                :show-header="true"
-                border
-                size="mini"
-                class="detail-sub-grid"
-                :columns="[
-                  { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
-                  { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                  { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                  { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                  { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
-                ]"
-              >
-                <template #stickerImageSlot="{ row: stickerRow }">
-                  <div class="flex items-center justify-center p-1">
-                    <el-image
-                      v-if="stickerRow.url"
-                      :src="stickerRow.url"
-                      :lazy="true"
-                      :preview-src-list="getStickers(row).map(s => s.url).filter(Boolean)"
-                      :initial-index="getStickers(row).findIndex(s => s.id === stickerRow.id)"
-                      :preview-teleported="true"
-                      :hide-on-click-modal="false"
-                      class="detail-thumb-image"
-                      fit="contain"
-                    />
-                    <span v-else class="text-gray-400 text-xs">无</span>
-                  </div>
-                </template>
-                <template #stickerUpdateTimeSlot="{ row: stickerRow }">
-                  <span class="text-xs">{{ stickerRow.updateTime ? formatTimestamp(stickerRow.updateTime) : '无' }}</span>
-                </template>
-              </vxe-grid>
-            </div>
-            <span v-else-if="showDetails" class="text-gray-400 text-sm">无贴纸</span>
-            
-            <!-- PSD模板详情 -->
-            <div v-if="row.psdTemplate" class="detail-section-item" style="margin-top: 12px;">
-              <div class="detail-header">
-                <span class="detail-label">PSD模板信息</span>
-              </div>
-              <vxe-grid
-                :data="[row.psdTemplate]"
-                :show-header="true"
-                border
-                size="mini"
-                class="detail-sub-grid"
-                :columns="[
-                  { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'templateThumbnailSlot' } },
-                  { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                  { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                  { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                  { field: 'url', title: '文件', width: 120, slots: { default: 'templateFileSlot' } },
-                  { field: 'windowsLocalPath', title: '本地路径', minWidth: 200, showOverflow: true, slots: { default: 'templateLocalPathSlot' } },
-                  { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'templateUpdateTimeSlot' } }
-                ]"
-              >
-                <template #templateThumbnailSlot="{ row: templateRow }">
-                  <div class="flex items-center justify-center p-1">
-                    <el-image
-                      v-if="templateRow.thumbnail"
-                      :src="getPreviewImageUrl(templateRow.thumbnail, { width: 200, quality: 80, format: 'webp' })"
-                      :lazy="true"
-                      :preview-src-list="[templateRow.thumbnail]"
-                      :initial-index="0"
-                      :preview-teleported="true"
-                      :hide-on-click-modal="false"
-                      class="detail-thumb-image"
-                      fit="contain"
-                    />
-                    <span v-else class="text-gray-400 text-xs">无</span>
-                  </div>
-                </template>
-                <template #templateFileSlot="{ row: templateRow }">
-                  <div class="template-file-tags">
-                    <template v-if="templateRow.url || templateRow.windowsLocalPath">
-                      <el-tag v-if="templateRow.windowsLocalPath" size="small" type="info">本地路径</el-tag>
-                      <el-tag v-if="templateRow.url" size="small" type="info">云资源</el-tag>
-                    </template>
-                    <template v-else>
-                      <span class="text-xs text-gray-400">无</span>
-                    </template>
-                  </div>
-                </template>
-                <template #templateLocalPathSlot="{ row: templateRow }">
-                  <div class="flex items-center p-1">
-                    <span v-if="templateRow.windowsLocalPath" class="text-xs" :title="templateRow.windowsLocalPath">
-                      {{ templateRow.windowsLocalPath }}
-                    </span>
-                    <span v-else class="text-xs text-gray-400">无</span>
-                  </div>
-                </template>
-                <template #templateUpdateTimeSlot="{ row: templateRow }">
-                  <span class="text-xs">{{ templateRow.updateTime ? formatTimestamp(templateRow.updateTime) : '无' }}</span>
-                </template>
-              </vxe-grid>
-            </div>
-            <span v-else-if="showDetails" class="text-gray-400 text-sm" style="margin-top: 12px; display: block;">无模板</span>
-          </div>
-        </template>
-        <template #psdImagesSlot="{ row }">
-          <div v-if="showDetails" class="detail-section-item">
-            <div class="flex flex-wrap gap-2">
-              <div
-                v-for="(img, idx) in (row.images || [])"
-                :key="idx"
-                class="detail-thumb-wrapper"
-              >
-                <el-image
-                  v-if="img"
-                  :src="img"
-                  :preview-src-list="row.images"
-                  :initial-index="idx"
-                  :preview-teleported="true"
-                  :lazy="true"
-                  :hide-on-click-modal="false"
-                  class="detail-thumb-image"
-                  fit="contain"
-                  loading="lazy"
-                />
-                <span v-else class="text-gray-400 text-xs">无</span>
-              </div>
-            </div>
-            <span v-if="!row.images || !row.images.length" class="text-gray-400 text-sm">无套图图片</span>
-          </div>
-        </template>
         <template #operationSlot="{ row }">
           <el-dropdown trigger="click" class="operation-dropdown">
             <el-button type="primary" link size="small">
@@ -301,6 +158,12 @@
             </el-button>
             <template #dropdown>
               <div class="op-menu">
+                <div class="op-menu-item" @click="() => handleViewDetail(row)">
+                  <span class="op-menu-label">查看详情</span>
+                </div>
+                
+                <div class="op-divider"></div>
+                
                 <el-tooltip content="需要客户端连接" placement="right" :disabled="isClientConnected || startingProductionId === row.id">
                   <div class="op-menu-item" @click="() => handleStartProduction(row)" :class="{ 'is-disabled': !isClientConnected || startingProductionId === row.id }">
                     <span class="op-menu-label">开始制作</span>
@@ -342,6 +205,96 @@
         </template>
       </vxe-grid>
     </div>
+
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="套图详情"
+      width="75%"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-loading="detailLoading" class="detail-dialog-content" v-if="detailData">
+        <div class="detail-section-item">
+          <div class="detail-header">
+            <span class="detail-label">贴纸信息 ({{ detailStickers.length }})</span>
+          </div>
+          <div v-if="detailStickers.length" class="detail-sticker-list">
+            <div v-for="sticker in detailStickers" :key="sticker.id" class="detail-sticker-card">
+              <el-image
+                v-if="sticker.url"
+                :src="sticker.url"
+                :preview-src-list="detailStickers.map(s => s.url).filter(Boolean)"
+                :initial-index="detailStickers.findIndex(s => s.id === sticker.id)"
+                :preview-teleported="true"
+                :hide-on-click-modal="false"
+                fit="contain"
+                class="detail-thumb-image"
+              />
+              <span v-else class="text-gray-400 text-xs">无图</span>
+              <div class="detail-sticker-meta">
+                <div class="detail-sticker-name">{{ sticker.name || '未命名贴纸' }}</div>
+                <div class="detail-sticker-desc">{{ sticker.description || '-' }}</div>
+                <div class="detail-sticker-keywords">{{ sticker.keywords || '-' }}</div>
+              </div>
+            </div>
+          </div>
+          <span v-else class="text-gray-400 text-sm">无贴纸</span>
+        </div>
+
+        <div class="detail-section-item">
+          <div class="detail-header">
+            <span class="detail-label">PSD模板信息</span>
+          </div>
+          <div v-if="detailData.psdTemplate" class="detail-template-card">
+            <el-image
+              v-if="detailData.psdTemplate.thumbnail"
+              :src="getPreviewImageUrl(detailData.psdTemplate.thumbnail, { width: 260, quality: 80, format: 'webp' })"
+              :preview-src-list="[detailData.psdTemplate.thumbnail]"
+              :preview-teleported="true"
+              :hide-on-click-modal="false"
+              fit="contain"
+              class="detail-thumb-image"
+            />
+            <div class="detail-template-meta">
+              <div class="detail-sticker-name">{{ detailData.psdTemplate.name || '未命名模板' }}</div>
+              <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || '-' }}</div>
+              <div class="detail-template-paths">
+                <div>云资源：{{ detailData.psdTemplate.url || '无' }}</div>
+                <div>本地路径：{{ detailData.psdTemplate.windowsLocalPath || '无' }}</div>
+              </div>
+              <div class="detail-sticker-keywords">关键词：{{ detailData.psdTemplate.keywords || '-' }}</div>
+            </div>
+          </div>
+          <span v-else class="text-gray-400 text-sm">无模板</span>
+        </div>
+
+        <div class="detail-section-item">
+          <div class="detail-header">
+            <span class="detail-label">套图图片 ({{ detailImages.length }})</span>
+          </div>
+          <div class="detail-image-list">
+            <div v-for="(img, idx) in detailImages" :key="idx" class="detail-thumb-wrapper">
+              <el-image
+                v-if="img"
+                :src="img"
+                :preview-src-list="detailImages"
+                :initial-index="idx"
+                :preview-teleported="true"
+                :hide-on-click-modal="false"
+                class="detail-thumb-image"
+                fit="contain"
+                loading="lazy"
+              />
+              <span v-else class="text-gray-400 text-xs">无</span>
+            </div>
+            <span v-if="!detailImages.length" class="text-gray-400 text-sm">无套图图片</span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <div class="pagination-container">
       <pagination
@@ -397,10 +350,11 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue()
 })
 
-const showDetails = ref(false)
-
-// 状态详情弹窗
-// 不使用自定义 dialog，状态说明使用默认表格文本显示
+const detailDialogVisible = ref(false)
+const detailLoading = ref(false)
+const detailData = ref<any>(null)
+const detailStickers = computed(() => getStickers(detailData.value || {}))
+const detailImages = computed(() => Array.isArray(detailData.value?.images) ? detailData.value.images : [])
 
 function getColumns() {
   const baseColumns = [
@@ -433,20 +387,11 @@ function getColumns() {
     }
   ]
   
-  const detailColumns = showDetails.value ? [
-    { 
-      title: '关联信息', 
-      field: 'relatedInfo', 
-      width: 'auto', 
-      slots: { default: 'relatedInfoSlot' } 
-    }
-  ] : []
-  
   const operationColumn = [
     { title: '操作', width: 80, fixed: 'right' as const, slots: { default: 'operationSlot' } }
   ]
   
-  return [...baseColumns, ...detailColumns, ...operationColumn]
+  return [...baseColumns, ...operationColumn]
 }
 
 const gridOptions = ref<any>({
@@ -474,7 +419,7 @@ async function getList() {
       ...queryParams,
       status: queryParams.status || undefined,
       keyword: queryParams.keyword?.trim() || undefined,
-      includeDetails: showDetails.value,
+      includeDetails: false,
       sortingFields: queryParams.sortingFields
     })
     dataSource.value = res.list || []
@@ -482,17 +427,6 @@ async function getList() {
   } finally {
     loading.value = false
   }
-}
-
-function handleShowDetailsChange() {
-  // 更新列配置
-  updateColumns()
-  // 重新获取数据
-  getList()
-}
-
-function updateColumns() {
-  gridOptions.value.columns = getColumns()
 }
 
 function handleKeywordChange(val: string) {
@@ -617,6 +551,26 @@ async function handleToProduct(row: any) {
     ElMessage.error(error?.message || '生成产品失败')
   } finally {
     generatingProductId.value = ''
+  }
+}
+
+async function handleViewDetail(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('缺少ID，无法查看详情')
+  }
+  detailDialogVisible.value = true
+  detailLoading.value = true
+  try {
+    const res = await request.get({
+      url: `/sticker-psd-set/${row.id}`
+    })
+    detailData.value = res?.data || res || {}
+  } catch (error: any) {
+    console.error('获取套图详情失败:', error)
+    ElMessage.error(error?.message || '获取详情失败')
+    detailDialogVisible.value = false
+  } finally {
+    detailLoading.value = false
   }
 }
 
@@ -918,6 +872,31 @@ getList()
   gap: 4px;
   width: 100%;
 }
+.detail-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.detail-sticker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.detail-sticker-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
+}
+.detail-sticker-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
 
 .detail-header {
   display: flex;
@@ -984,6 +963,26 @@ getList()
   border-color: var(--el-color-primary);
   transform: scale(1.05);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.detail-template-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
+}
+.detail-template-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.detail-template-paths {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  line-height: 1.5;
 }
 
 .template-file-tags {
