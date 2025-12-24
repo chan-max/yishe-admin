@@ -321,7 +321,7 @@
             <div class="psd-set-mode-inline">
               <span class="psd-set-mode-label">生成方式：</span>
               <el-radio-group v-model="psdSetMergeSticker" size="small" class="psd-set-mode-group">
-                <el-radio-button :label="false">单素材 × 模板（原逻辑）</el-radio-button>
+                <el-radio-button :label="false">单素材 × 模板</el-radio-button>
                 <el-radio-button :label="true">合并素材 × 模板</el-radio-button>
               </el-radio-group>
             </div>
