@@ -231,6 +231,7 @@
               v-for="id in ids"
               :key="id"
               class="thumb"
+              :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }"
             >
               <img
                 :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })"
@@ -238,6 +239,13 @@
                 alt="素材预览"
                 loading="lazy"
               />
+              <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
+                <el-icon><Warning /></el-icon>
+                <span>{{ getMaterialSuffix(id) || '未知' }}</span>
+              </div>
+              <div v-else-if="getMaterialSuffix(id)" class="thumb-format-badge valid">
+                <span>{{ getMaterialSuffix(id) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -311,11 +319,16 @@
 
             <div class="psd-set-info">
               <el-icon><InfoFilled /></el-icon>
-              <span>
-                {{ psdSetMergeSticker
-                  ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
-                  : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务` }}
-              </span>
+              <div class="psd-set-info-content">
+                <div>
+                  {{ psdSetMergeSticker
+                    ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
+                    : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务` }}
+                </div>
+                <div class="psd-set-formats-tip">
+                  允许的图片格式：{{ allowedFormatsForSelectedTemplates.join('、') }}
+                </div>
+              </div>
             </div>
 
             <div class="psd-set-mode-inline">
@@ -328,7 +341,27 @@
 
             <div>
               <el-button @click="psdSetDialogVisible = false">取消</el-button>
-              <el-button type="primary" :disabled="!ids.length || !selectedPsdTemplateIds.length" :loading="psdSetSubmitting" @click="handleCreatePsdSets">
+              <el-tooltip
+                v-if="hasInvalidFormatMaterials"
+                :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map(m => m.name).join('、')}），请移除后重试`"
+                placement="top"
+              >
+                <el-button 
+                  type="primary" 
+                  :disabled="!ids.length || !selectedPsdTemplateIds.length || hasInvalidFormatMaterials" 
+                  :loading="psdSetSubmitting" 
+                  @click="handleCreatePsdSets"
+                >
+                  开始制作
+                </el-button>
+              </el-tooltip>
+              <el-button 
+                v-else
+                type="primary" 
+                :disabled="!ids.length || !selectedPsdTemplateIds.length" 
+                :loading="psdSetSubmitting" 
+                @click="handleCreatePsdSets"
+              >
                 开始制作
               </el-button>
             </div>
@@ -385,6 +418,9 @@
                   <template v-else>
                     -
                   </template>
+                  <div v-if="row.suffix" style="color:#409EFF; margin-top:2px; font-size: 11px; font-weight: 600;">
+                    格式：{{ row.suffix.toUpperCase() }}
+                  </div>
                 </div>
               </div>
             </template>
@@ -1799,6 +1835,53 @@ const psdSetTaskCount = computed(() =>
     : ids.value.length * selectedPsdTemplateIds.value.length,
 )
 
+// PSD制作套图允许的图片格式（固定为这三个）
+const psdSetAllowedFormats = ['jpg', 'png', 'jpeg']
+
+// 获取当前选中PSD模板的允许格式
+const allowedFormatsForSelectedTemplates = computed(() => {
+  // 固定返回允许的格式列表
+  return psdSetAllowedFormats
+})
+
+// 检查是否有不符合格式的素材
+const hasInvalidFormatMaterials = computed(() => {
+  if (!ids.value.length) return false
+  
+  const allowedFormatsSet = new Set(psdSetAllowedFormats)
+  
+  return ids.value.some(id => {
+    const material = dataSource.value.find(item => String(item.id) === String(id))
+    if (!material) return false
+    
+    const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
+    if (!materialSuffix) return true // 没有后缀视为无效
+    
+    return !allowedFormatsSet.has(materialSuffix)
+  })
+})
+
+// 获取不符合格式的素材列表（用于提示）
+const invalidFormatMaterialsList = computed(() => {
+  const allowedFormatsSet = new Set(psdSetAllowedFormats)
+  const invalidList: Array<{ name: string, suffix: string }> = []
+  
+  ids.value.forEach(id => {
+    const material = dataSource.value.find(item => String(item.id) === String(id))
+    if (!material) return
+    
+    const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
+    if (!materialSuffix || !allowedFormatsSet.has(materialSuffix)) {
+      invalidList.push({
+        name: material.name || `ID: ${material.id}`,
+        suffix: materialSuffix || '未知格式'
+      })
+    }
+  })
+  
+  return invalidList
+})
+
 // 步骤导航方法
 function nextStep() {
   if (currentStep.value < designModelSteps.value.length - 1 && canProceedToNextStep.value) {
@@ -2375,6 +2458,14 @@ async function handleCreatePsdSets() {
   if (!selectedPsdTemplateIds.value.length) {
     return ElMessage.warning('请选择PSD模板')
   }
+  
+  // 检查图片格式是否符合要求
+  const formatCheckResult = checkMaterialFormats()
+  if (!formatCheckResult.valid) {
+    ElMessage.warning(formatCheckResult.message)
+    return
+  }
+  
   psdSetSubmitting.value = true
   try {
     const res = await stickerPsdSetApi.batchCreate({
@@ -2392,6 +2483,74 @@ async function handleCreatePsdSets() {
   } finally {
     psdSetSubmitting.value = false
   }
+}
+
+// 判断素材格式是否无效
+function isMaterialFormatInvalid(materialId: string | number): boolean {
+  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  if (!material) return false
+  
+  const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
+  if (!materialSuffix) return true // 没有后缀视为无效
+  
+  // 检查格式是否在允许列表中（jpg、png、jpeg）
+  return !psdSetAllowedFormats.includes(materialSuffix)
+}
+
+// 获取素材的后缀
+function getMaterialSuffix(materialId: string | number): string {
+  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  if (!material || !material.suffix) return ''
+  return (material.suffix || '').toLowerCase().replace(/^\./, '')
+}
+
+// 检查素材格式是否符合PSD模板要求
+function checkMaterialFormats() {
+  // 使用固定的允许格式列表
+  const allowedFormatsSet = new Set(psdSetAllowedFormats)
+  
+  // 检查所有选中素材的格式
+  const invalidMaterials: Array<{ id: string | number, name: string, suffix: string }> = []
+  
+  ids.value.forEach(id => {
+    const material = dataSource.value.find(item => String(item.id) === String(id))
+    if (!material) return
+    
+    const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
+    
+    // 如果素材没有后缀，也视为无效
+    if (!materialSuffix) {
+      invalidMaterials.push({
+        id: material.id,
+        name: material.name || `ID: ${material.id}`,
+        suffix: '未知格式'
+      })
+      return
+    }
+    
+    // 检查格式是否在允许列表中
+    if (!allowedFormatsSet.has(materialSuffix)) {
+      invalidMaterials.push({
+        id: material.id,
+        name: material.name || `ID: ${material.id}`,
+        suffix: materialSuffix
+      })
+    }
+  })
+  
+  // 如果有不符合格式的素材，返回错误信息
+  if (invalidMaterials.length > 0) {
+    const allowedFormatsList = psdSetAllowedFormats.join('、')
+    const invalidNames = invalidMaterials.slice(0, 5).map(m => `${m.name}(${m.suffix})`).join('、')
+    const moreCount = invalidMaterials.length > 5 ? `等${invalidMaterials.length}个` : ''
+    
+    return {
+      valid: false,
+      message: `所选素材中包含不符合格式要求的图片。\n允许的格式：${allowedFormatsList}\n不符合的素材：${invalidNames}${moreCount}\n请移除不符合格式的素材后重试。`
+    }
+  }
+  
+  return { valid: true, message: '' }
 }
 
 // 处理单个素材的二维模板制作
@@ -3643,7 +3802,7 @@ async function handleUrlUpload() {
 }
 .psd-set-info {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   color: var(--el-color-info);
   font-size: 13px;
@@ -3651,6 +3810,23 @@ async function handleUrlUpload() {
 }
 .psd-set-info :deep(.el-icon) {
   font-size: 16px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.psd-set-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.psd-set-formats-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 2px;
+  padding: 4px 8px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  border-left: 2px solid var(--el-color-warning);
 }
 .footer-actions {
   display: flex;
@@ -4314,12 +4490,32 @@ h1 {
   flex-direction: column;
   gap: 12px;
 }
+.psd-set-materials .format-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  border-left: 2px solid var(--el-color-primary);
+}
+.psd-set-materials .format-tip .el-icon {
+  color: var(--el-color-primary);
+  font-size: 14px;
+}
 .psd-set-materials .thumbs {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  max-height: calc(100vh - 240px);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .psd-set-materials .thumb {
+  position: relative;
   height: 92px;
   width: auto;
   border: 1px solid var(--el-border-color-light);
@@ -4329,6 +4525,11 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s;
+}
+.psd-set-materials .thumb.thumb-invalid-format {
+  border-color: var(--el-color-danger);
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
 }
 .psd-set-materials .thumb img {
   width: auto;
@@ -4336,6 +4537,29 @@ h1 {
   max-width: 100%;
   object-fit: contain;
   background: #f5f7fa;
+}
+.psd-set-materials .thumb-format-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: rgba(245, 108, 108, 0.9);
+  color: white;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+.psd-set-materials .thumb-format-badge.valid {
+  background: rgba(103, 194, 58, 0.9);
+}
+.psd-set-materials .thumb-format-badge .el-icon {
+  font-size: 12px;
 }
 .psd-set-templates .template-list {
   flex: 1;
