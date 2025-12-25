@@ -1,7 +1,8 @@
 <template>
-  <ListPageLayout>
-      <template #filter>
-        <CollapsibleFilterForm>
+  <div class="list-page-layout">
+    <!-- 过滤表单区域 -->
+    <div class="filter-section">
+      <CollapsibleFilterForm>
           <template #collapsed>
             <form-item label="按内容搜索">
               <el-input
@@ -133,9 +134,10 @@
             </el-button>
           </template>
         </CollapsibleFilterForm>
-      </template>
+    </div>
 
-      <template #table>
+    <!-- 表格区域 -->
+    <div class="table-section">
         <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -222,17 +224,18 @@
         </template>
       </vxe-grid>
         </div>
-      </template>
+    </div>
 
-      <template #pagination>
-        <pagination
-          :total="total"
-          v-model:page="queryParams.currentPage"
-          v-model:limit="queryParams.pageSize"
-          @pagination="getList"
-        />
-      </template>
-    </ListPageLayout>
+    <!-- 分页区域 -->
+    <div class="pagination-section">
+      <pagination
+        :total="total"
+        v-model:page="queryParams.currentPage"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
+      />
+    </div>
+  </div>
 
     <!-- AI生成新句子弹窗 -->
     <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
@@ -366,7 +369,6 @@ import {
 import { commonGridOptions } from "@/common/table";
 import FormItem from "@/components/Erp/formItem.vue";
 import Pagination from "@/components/Pagination/index.vue";
-import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import CollapsibleFilterForm from "@/components/CollapsibleFilterForm/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import { useUserStore } from "@/store/modules/user";
@@ -782,6 +784,36 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+/* 列表页面布局样式 */
+.list-page-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+}
+
+.filter-section {
+  margin: 0;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.filter-section > *:first-child {
+  margin-top: 0;
+}
+
+.table-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.pagination-section {
+  padding: 1rem 0;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
 /* 句子内容样式优化 */
 .sentence-content {
   max-width: 300px;

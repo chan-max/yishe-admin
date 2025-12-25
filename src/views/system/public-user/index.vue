@@ -1,6 +1,7 @@
 <template>
-  <ListPageLayout>
-    <template #filter>
+  <div class="list-page-layout">
+    <!-- 过滤表单区域 -->
+    <div class="filter-section">
       <div class="search-bar">
         <form-item label="按账号搜索">
           <el-input 
@@ -32,9 +33,10 @@
           批量删除
         </el-button>
       </div>
-    </template>
+    </div>
 
-    <template #table>
+    <!-- 表格区域 -->
+    <div class="table-section">
       <div class="common-table">
         <vxe-grid
           v-bind="gridOptions"
@@ -70,17 +72,18 @@
           </template>
         </vxe-grid>
       </div>
-    </template>
+    </div>
 
-    <template #pagination>
+    <!-- 分页区域 -->
+    <div class="pagination-section">
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
         v-model:limit="queryParams.pageSize"
         @pagination="getList"
       />
-    </template>
-  </ListPageLayout>
+    </div>
+  </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog 
@@ -214,7 +217,6 @@ import {
   deletePublicUser
 } from '@/api/public-user'
 import Pagination from '@/components/Pagination/index.vue'
-import ListPageLayout from '@/components/ListPageLayout/index.vue'
 
 // 查询条件
 const queryParams = reactive({
@@ -471,6 +473,36 @@ getList()
 </script>
 
 <style scoped>
+/* 列表页面布局样式 */
+.list-page-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+}
+
+.filter-section {
+  margin: 0;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.filter-section > *:first-child {
+  margin-top: 0;
+}
+
+.table-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.pagination-section {
+  padding: 1rem 0;
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
 :deep(.el-form-item) {
   margin-bottom: 16px;
 }
