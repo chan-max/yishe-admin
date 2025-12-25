@@ -4,10 +4,10 @@
     <!-- 折叠状态：显示常用搜索和操作 -->
     <div v-show="actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex: 1"></div>
-      <form-item label="按名称搜索">
+      <form-item label="搜索">
         <el-input
-          v-model="queryParams.imageName"
-          placeholder="请输入图片名称"
+          v-model="queryParams.searchText"
+          placeholder="请输入名称、描述或关键词"
           style="width: 160px"
           clearable
           @change="(val) => { if (!val) getList() }"
@@ -36,10 +36,10 @@
     <!-- 展开状态：显示全部搜索功能 -->
     <div v-show="!actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex: 1"></div>
-      <form-item label="按名称搜索">
+      <form-item label="搜索">
         <el-input
-          v-model="queryParams.imageName"
-          placeholder="请输入图片名称"
+          v-model="queryParams.searchText"
+          placeholder="请输入"
           style="width: 160px"
           clearable
           @change="(val) => { if (!val) getList() }"
@@ -53,8 +53,7 @@
         </el-select>
       </form-item>
       <form-item label="后缀">
-        <el-select v-model="queryParams.suffix" placeholder="请选择后缀" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" value="" />
+        <el-select v-model="queryParams.suffix" placeholder="请选择后缀" style="min-width: 180px" multiple clearable  @change="getList">
           <el-option label="jpg" value="jpg" />
           <el-option label="jpeg" value="jpeg" />
           <el-option label="png" value="png" />
@@ -164,8 +163,8 @@
     </div>
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
       <el-form :model="queryParams" label-width="80px">
-        <el-form-item label="按名称搜索">
-          <el-input v-model="queryParams.keyword" placeholder="请输入名称、描述或关键词" clearable />
+        <el-form-item label="搜索">
+          <el-input v-model="queryParams.searchText" placeholder="请输入名称、描述或关键词" clearable />
         </el-form-item>
         <el-form-item label="排序">
           <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
@@ -192,6 +191,18 @@
             <el-option label="全部" :value="null" />
             <el-option label="已发布" :value="true" />
             <el-option label="未发布" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="后缀">
+          <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable >
+            <el-option label="jpg" value="jpg" />
+            <el-option label="jpeg" value="jpeg" />
+            <el-option label="png" value="png" />
+            <el-option label="gif" value="gif" />
+            <el-option label="webp" value="webp" />
+            <el-option label="svg" value="svg" />
+            <el-option label="bmp" value="bmp" />
+            <el-option label="tiff" value="tiff" />
           </el-select>
         </el-form-item>
         <el-form-item label="随机顺序">
@@ -1624,11 +1635,11 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: 10,
   keyword: '',
-  imageName: '', // 按名称搜索
+  searchText: '', // 多字段搜索（名称、描述、关键词等）
   sortingFields: 'createTime DESC', // 排序字段
   startTime: '',
   endTime: '',
-  suffix: '', // 新增后缀参数
+  suffix: [], // 新增后缀参数（支持多选）
   id: '', // 新增ID精确查询参数
   phash: '', // phash值或直接输入图片地址
   phashMode: 'range', // range | exact
@@ -1993,9 +2004,14 @@ async function getList() {
   // 立即清空旧数据，确保旧图片被销毁
   dataSource.value = []
   
-  let res = await getMaterialList({
-    ...queryParams
-  }).finally(() => {
+  // 构建查询参数，确保 suffix 数组格式正确传递
+  const params = {
+    ...queryParams,
+    // 如果 suffix 是空数组，传递空数组；如果是旧格式字符串，转换为数组
+    suffix: Array.isArray(queryParams.suffix) ? queryParams.suffix : (queryParams.suffix ? [queryParams.suffix] : [])
+  }
+  
+  let res = await getMaterialList(params).finally(() => {
     loading.value = false
   })
   // 将后端返回的宽高/比例信息映射到列表行数据，便于展示
