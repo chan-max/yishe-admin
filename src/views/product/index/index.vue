@@ -662,42 +662,8 @@
           </el-col>
 
           <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="商品价格" prop="price">
-              <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="促销价格" prop="salePrice">
-              <el-input-number v-model="form.salePrice" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="库存" prop="stock">
-              <el-input-number v-model="form.stock" :min="0" :precision="0" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="商品规格" prop="specifications">
-              <el-input v-model="form.specifications" placeholder="请输入商品规格" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
             <el-form-item label="商品标签" prop="tags">
               <el-input v-model="form.tags" placeholder="请输入商品标签，多个标签用逗号分隔" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="是否绝版" prop="isLimitedEdition">
-              <el-switch
-                v-model="form.isLimitedEdition"
-                :active-value="1"
-                :inactive-value="0"
-              />
             </el-form-item>
           </el-col>
 
@@ -2277,17 +2243,6 @@ const gridOptions = ref({
       showOverflow: true,
       slots: { default: 'typeSlot' }
     },
-    { title: "价格", field: "price", width: 100, showOverflow: true },
-    { title: "促销价格", field: "salePrice", width: 100, showOverflow: true },
-    { title: "库存", field: "stock", width: 100, showOverflow: true },
-
-    { 
-      title: "是否绝版", 
-      field: "isLimitedEdition", 
-      width: 100, 
-      showOverflow: true,
-      formatter: ({ cellValue }) => cellValue === 1 ? '是' : '否'
-    },
     { 
       title: "社交媒体发布状态", 
       field: "mediaPublishStatus", 
@@ -2795,13 +2750,8 @@ interface ProductForm {
   type: string;
   images: string[];
   videos: string[];
-  price: number;
-  salePrice: number;
-  stock: number;
-  specifications: string;
   tags: string;
   isActive: boolean;
-  isLimitedEdition: number;
   isPublish?: boolean;
   createTime?: Date;
   updateTime?: Date;
@@ -2817,16 +2767,12 @@ const form = ref<ProductForm>({
   keywords: '',
   enKeywords: '',
   searchKeywords: '',
+  enSearchKeywords: '',
   type: '',
   images: [] as string[],
   videos: [] as string[],
-  price: 0,
-  salePrice: 0,
-  stock: 0,
-  specifications: '',
   tags: '',
   isActive: true,
-  isLimitedEdition: 0,
   isPublish: false,
   file: null,
 });
@@ -2835,7 +2781,6 @@ const rules = {
   name: [{ required: true, message: "请输入商品名称", trigger: "blur" }],
   description: [{ required: false, message: "请输入商品描述", trigger: "blur" }],
   type: [{ required: false, message: "请选择商品类型", trigger: "blur" }],
-  price: [{ required: true, message: "请输入商品价格", trigger: "blur" }],
 };
 
 const dialogClose = () => {
@@ -2886,9 +2831,6 @@ const submitForm = async () => {
   try {
     await formRef.value.validate();
     const formData = { ...form.value };
-    formData.isLimitedEdition = Number(formData.isLimitedEdition);
-    formData.price = Number(formData.price);
-    formData.salePrice = Number(formData.salePrice);
     delete formData.file;
     delete formData.createTime;
     delete formData.updateTime;
@@ -3106,13 +3048,8 @@ function handleAdd() {
     type: '',
     images: [] as string[],
     videos: [] as string[],
-    price: 0,
-    salePrice: 0,
-    stock: 0,
-    specifications: '',
     tags: '',
     isActive: true,
-    isLimitedEdition: 0,
     isPublish: false,
     file: null,
   };
