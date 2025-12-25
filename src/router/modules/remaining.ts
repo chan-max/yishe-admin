@@ -247,6 +247,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '句子管理'
         }
       },
+      {
+        path: 'prompt',
+        component: () => import('@/views/material/prompt/index.vue'),
+        name: 'Prompt',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: 'AI提示词管理',
+          requiresAdmin: true
+        }
+      },
 
       // 仅管理员可见
       {
