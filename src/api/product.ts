@@ -31,6 +31,14 @@ export function updateProduct(data) {
   });
 }
 
+export function updatePublishStatus(data: { id: string; isPublish: boolean }) {
+  return request.post({
+    url: '/product/updatePublish',
+    method: 'post',
+    data,
+  });
+}
+
 export function deleteProduct(ids: string[]) {
   return request.post({
     url: '/product/delete',

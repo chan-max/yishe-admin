@@ -1939,7 +1939,7 @@ import {
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport } from "@/api/product";
+import { createProduct, getProductList, updateProduct, updatePublishStatus, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import request from "@/config/axios";
 import { uploadOSSFile } from "@/api/shop/platform";
@@ -2918,9 +2918,9 @@ async function handleTogglePublish(row) {
       }
     );
     
-    // 调用更新接口，传递isPublish参数
-    await updateProduct({
-      ...row,
+    // 调用更新发布状态接口，只传递id和isPublish
+    await updatePublishStatus({
+      id: row.id,
       isPublish: !row.isPublish
     });
     
@@ -3333,7 +3333,7 @@ async function batchPublish(rows?: any[]) {
     return ElMessage.warning('请先选择要发布的记录');
   }
   try {
-    const tasks = list.map(item => updateProduct({ ...item, isPublish: true }));
+    const tasks = list.map(item => updatePublishStatus({ id: item.id, isPublish: true }));
     await Promise.all(tasks);
     ElMessage.success(`已发布 ${list.length} 条记录`);
     getList();
@@ -3349,7 +3349,7 @@ async function batchUnpublish(rows?: any[]) {
     return ElMessage.warning('请先选择要下架的记录');
   }
   try {
-    const tasks = list.map(item => updateProduct({ ...item, isPublish: false }));
+    const tasks = list.map(item => updatePublishStatus({ id: item.id, isPublish: false }));
     await Promise.all(tasks);
     ElMessage.success(`已下架 ${list.length} 条记录`);
     getList();
@@ -3755,8 +3755,8 @@ async function handleUpdateMediaPublishStatus(row: any, status: string) {
 
 async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
   try {
-    await updateProduct({
-      ...row,
+    await updatePublishStatus({
+      id: row.id,
       isPublish: isPublish
     });
     ElMessage.success(`发布状态已更新为：${isPublish ? '已发布' : '未发布'}`);
