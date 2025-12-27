@@ -20,14 +20,6 @@
         </div> -->
       </div>
       <div class="flex gap-2">
-        <el-button
-          type="success"
-          :disabled="!selectedIds.length"
-          :loading="batchGeneratingProducts"
-          @click="handleBatchGenerateProduct"
-        >
-          批量生成产品 ({{ selectedIds.length }})
-        </el-button>
         <el-button type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">批量删除 ({{ selectedIds.length }})</el-button>
       </div>
     </div>
@@ -455,14 +447,6 @@
                 >
                   {{ regeneratingImagesId === row.id ? '图片生成中...' : '重新生成合成图片' }}
                 </el-dropdown-item>
-                <el-dropdown-item 
-                  divided
-                  command="to-product" 
-                  class="text-green-600"
-                  :disabled="generatingProductId === row.id"
-                >
-                  {{ generatingProductId === row.id ? '生成中...' : '生成产品' }}
-                </el-dropdown-item>
                 <!-- 前台展示相关操作已注释 -->
                 <!-- <el-dropdown-item command="copy-link" class="text-purple-500">复制线上链接</el-dropdown-item> -->
                 <el-dropdown-item command="delete" class="text-red-500">删除</el-dropdown-item>
@@ -615,9 +599,6 @@ const videoGenerateForm = reactive({
 const videoDialogVisible = ref(false)
 const currentVideoUrl = ref('')
 
-// 生成产品相关状态
-const generatingProductId = ref<string>('')
-const batchGeneratingProducts = ref(false)
 
 // 生成唯一码
 // async function handleGenerateCode(row: any) { // 已注释
@@ -782,9 +763,6 @@ function handleOperationCommand(command: string, row: any) {
     //   break
     case 'regenerate-images':
       handleRegenerateImages(row)
-      break
-    case 'to-product':
-      handleToProduct(row)
       break
     case 'delete':
       handleDelete(row)
@@ -1250,78 +1228,6 @@ async function handleRegenerateImages(row: any) {
     regeneratingImagesId.value = ''
   }
 }
-
-// 从二维产品图生成产品
-async function handleToProduct(row: any) {
-  if (!row?.id) return
-  
-  try {
-    await ElMessageBox.confirm('确认根据该二维产品图生成一个产品吗？', '生成确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    
-    generatingProductId.value = row.id
-    await request.post({ url: '/product-image-2d/to-product', data: { id: row.id } })
-    ElMessage.success('生成产品成功')
-  } catch (e) {
-    if (e !== 'cancel') {
-      console.error('生成产品失败:', e)
-      ElMessage.error('生成产品失败')
-    }
-  } finally {
-    generatingProductId.value = ''
-  }
-}
-
-async function handleBatchGenerateProduct() {
-  if (!selectedIds.value.length) {
-    ElMessage.warning('请选择需要生成产品的记录')
-    return
-  }
-
-  try {
-    await ElMessageBox.confirm(
-      `确认根据选中的 ${selectedIds.value.length} 条记录生成产品吗？`,
-      '批量生成确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-  } catch (error) {
-    return
-  }
-
-  batchGeneratingProducts.value = true
-  let successCount = 0
-  let failCount = 0
-
-  try {
-    for (const id of selectedIds.value) {
-      try {
-        await request.post({ url: '/product-image-2d/to-product', data: { id } })
-        successCount += 1
-      } catch (error) {
-        failCount += 1
-        console.error(`生成产品失败（ID: ${id}）`, error)
-      }
-    }
-
-    if (successCount) {
-      ElMessage.success(`成功生成 ${successCount} 个产品`)
-    }
-    if (failCount) {
-      ElMessage.warning(`有 ${failCount} 个产品生成失败，请稍后重试`)
-    }
-  } finally {
-    batchGeneratingProducts.value = false
-    getList()
-  }
-}
-
 
 </script>
 
