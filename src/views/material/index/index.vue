@@ -149,7 +149,6 @@
         <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">
           制作PS套图({{ ids.length }})
         </el-button>
-        <el-button v-if="isAdmin" type="warning" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要生成商品的素材') } resetGenerateProductSteps(); generateProductModalVisible = true }">生成商品({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
@@ -688,7 +687,6 @@
                         <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
                           <div v-if="false" class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('generate-product', row)">生成商品</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">制作PS套图</div>
                         </div>
                       </div>
@@ -1431,131 +1429,6 @@
       @close="closeImagePreview"
     />
 
-    <!-- 生成关联商品弹窗 -->
-    <el-dialog
-      v-model="generateProductModalVisible"
-      title="生成关联商品"
-      width="100%"
-      style="height: 100%"
-      align-center
-      :destroy-on-close="true"
-      class="generate-product-dialog"
-      :footer="null"
-      @close="resetGenerateProductSteps"
-    >
-      <!-- 新增flex容器，左右布局 -->
-      <div class="design-model-flex">
-        <!-- 步骤指示器，纵向 -->
-        <el-steps direction="vertical" :active="generateProductCurrentStep" finish-status="success" align-center class="steps-vertical">
-          <el-step v-for="step in generateProductSteps" :key="step.key" :title="step.title" :description="step.description" />
-        </el-steps>
-        <!-- 步骤内容区域 -->
-        <div class="design-model-content">
-          <div class="steps-all">
-            <!-- 步骤1：选择素材 -->
-            <div
-              class="step-content"
-              :class="{ 'step-active': generateProductCurrentStep === 0, 'step-inactive': generateProductCurrentStep !== 0 }"
-            >
-              <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
-              <div class="flex flex-wrap gap-4 mb-6">
-                <template v-for="id in ids" :key="id">
-                  <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
-                    <img 
-                      :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 150, quality: 80, format: 'webp' })" 
-                      :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                      class="w-20 h-20 object-cover rounded border"
-                      loading="lazy"
-                    />
-                    <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
-                  </div>
-                </template>
-              </div>
-              
-              <div class="border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start">
-                  <el-icon class="text-blue-500 mt-0.5 mr-2">
-                    <InfoFilled />
-                  </el-icon>
-                  <div class="text-sm text-blue-700">
-                    <p class="font-medium mb-1">已选择 {{ ids.length }} 个素材</p>
-                    <p>这些素材将用于生成关联商品，请确认选择无误后点击下一步。</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 步骤2：确认生成 -->
-            <div
-              class="step-content"
-              :class="{ 'step-active': generateProductCurrentStep === 1, 'step-inactive': generateProductCurrentStep !== 1 }"
-            >
-              <h3 class="text-lg font-bold mb-4">确认生成信息：</h3>
-              
-              <div class="bg-gray-50 rounded-lg p-6">
-                <!-- 素材信息 -->
-                <div>
-                  <h4 class="font-medium text-gray-700 mb-3">选择的素材 ({{ ids.length }}个)</h4>
-                  <div class="space-y-2">
-                    <template v-for="id in ids" :key="id">
-                      <div v-if="dataSource.find(item => String(item.id) === String(id))" class="flex items-center space-x-2">
-                        <img 
-                          :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 100, quality: 80, format: 'webp' })" 
-                          :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                          class="w-8 h-8 object-cover rounded"
-                          loading="lazy"
-                        />
-                        <span class="text-sm text-gray-600">{{ dataSource.find(item => String(item.id) === String(id)).name }}</span>
-                      </div>
-                    </template>
-                  </div>
-                </div>
-
-                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div class="text-center">
-                    <div class="text-2xl font-bold text-blue-600 mb-2">
-                      {{ ids.length }}
-                    </div>
-                    <div class="text-sm text-blue-700">将为每个素材生成 1 个新商品，共 {{ ids.length }} 个商品</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 步骤导航按钮，移到内容底部 -->
-          <div class="dialog-footer" style="margin-top: 16px;">
-            <div class="flex-1 text-sm text-gray-600">
-              <span>步骤 {{ generateProductCurrentStep + 1 }} / {{ generateProductSteps.length }}</span>
-            </div>
-            <div class="flex gap-2">
-              <el-button 
-                v-if="generateProductCurrentStep > 0"
-                @click="prevGenerateProductStep"
-              >
-                上一步
-              </el-button>
-              <el-button 
-                v-if="generateProductCurrentStep < generateProductSteps.length - 1"
-                type="primary" 
-                @click="nextGenerateProductStep"
-                :disabled="!canProceedToNextGenerateProductStep"
-              >
-                下一步
-              </el-button>
-              <el-button 
-                v-if="generateProductCurrentStep === generateProductSteps.length - 1"
-                type="success" 
-                @click="handleGenerateProductConfirm"
-                :loading="generateProductLoading"
-              >
-                开始生成
-              </el-button>
-              <el-button @click="generateProductModalVisible = false">取消</el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </el-dialog>
 
   </div>
 </template>
@@ -1587,7 +1460,7 @@ import {
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
-import { uploadMaterialFile, copyStickers, trimPng, svgToPng, generateRelatedProducts } from '@/api/material'
+import { uploadMaterialFile, copyStickers, trimPng, svgToPng } from '@/api/material'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 
 import { commonGridOptions } from '@/common/table'
@@ -1912,81 +1785,6 @@ function resetDesignModelSteps() {
   selectedDesignModelIds.value = []
 }
 
-// 生成商品相关
-const generateProductModalVisible = ref(false)
-const generateProductCurrentStep = ref(0)
-const generateProductLoading = ref(false)
-
-const generateProductSteps = ref([
-  {
-    key: 'select-materials',
-    title: '选择素材',
-    description: '确认要使用的素材'
-  },
-  {
-    key: 'confirm',
-    title: '确认生成',
-    description: '确认生成信息并开始生成'
-  }
-])
-
-// 计算是否可以进入下一步（生成商品）
-const canProceedToNextGenerateProductStep = computed(() => {
-  switch (generateProductCurrentStep.value) {
-    case 0: // 选择素材步骤
-      return ids.value.length > 0
-    case 1: // 确认生成步骤
-      return true
-    default:
-      return false
-  }
-})
-
-// 步骤导航方法（生成商品）
-function nextGenerateProductStep() {
-  if (generateProductCurrentStep.value < generateProductSteps.value.length - 1 && canProceedToNextGenerateProductStep.value) {
-    generateProductCurrentStep.value++
-  }
-}
-
-function prevGenerateProductStep() {
-  if (generateProductCurrentStep.value > 0) {
-    generateProductCurrentStep.value--
-  }
-}
-
-// 重置步骤状态（生成商品）
-function resetGenerateProductSteps() {
-  generateProductCurrentStep.value = 0
-}
-
-// 确认生成关联商品
-async function handleGenerateProductConfirm() {
-  generateProductLoading.value = true
-  try {
-    // 直接根据贴纸生成商品，不传商品模型ID
-    const res = await generateRelatedProducts({
-      stickerIds: ids.value.map(String)
-    })
-    
-    ElMessage.success(`成功生成 ${res.total} 个商品`)
-    generateProductModalVisible.value = false
-    resetGenerateProductSteps()
-    getList() // 刷新列表
-  } catch (error) {
-    console.error('生成商品失败:', error)
-    ElMessage.error(`生成商品失败: ${error.message || '未知错误'}`)
-  } finally {
-    generateProductLoading.value = false
-  }
-}
-
-// 处理单个素材的生成关联商品
-async function handleGenerateProduct(row) {
-  ids.value = [row.id]
-  resetGenerateProductSteps()
-  generateProductModalVisible.value = true
-}
 
 // 处理上传
 
@@ -3152,9 +2950,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'copy':
       handleCopy(row);
-      break;
-    case 'generate-product':
-      handleGenerateProduct(row);
       break;
     case 'create-ps-set':
       openPsdSetDialog(row);
