@@ -3332,7 +3332,6 @@ async function handleUrlUpload() {
   height: auto;
   max-height: 120px;
   object-fit: contain;
-  background: #f5f5f5;
   cursor: pointer;
   display: block;
 }
