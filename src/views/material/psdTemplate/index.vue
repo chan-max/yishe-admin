@@ -4,12 +4,13 @@
       <!-- 导出按钮 -->
       <div style="flex: 1"></div>
 
-      <form-item label="按名称搜索">
+      <form-item label="搜索">
         <el-input
-          v-model="queryParams.name"
+          v-model="queryParams.searchKeyword"
           clearable
-          placeholder="请输入名称"
-          style="width: 160px"
+          placeholder="请输入名称、关键词或描述"
+          style="width: 200px"
+          @keyup.enter="getList"
         ></el-input>
       </form-item>
       <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
@@ -105,6 +106,13 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                <el-dropdown-item 
+                  @click="handleAiGenerate(row)"
+                  :disabled="!row.thumbnail || aiTableLoading[row.id]"
+                >
+                  <span v-if="aiTableLoading[row.id]">AI生成中...</span>
+                  <span v-else>AI生成内容</span>
+                </el-dropdown-item>
                 <el-dropdown-item @click="() => downloadFileByElement(row.url, row.name)">
                   下载源文件
                 </el-dropdown-item>
@@ -250,6 +258,34 @@
       </template>
     </el-dialog>
 
+    <!-- AI生成内容弹窗 -->
+    <el-dialog
+      v-model="aiGenDialogVisible"
+      title="AI自动生成内容"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
+        请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）
+        <br />
+        <span style="color: #f56c6c; font-size: 13px;">
+          注意：需要模板有缩略图才能进行AI分析
+        </span>
+      </div>
+      <el-input
+        v-model="aiGenPrompt"
+        type="textarea"
+        :rows="6"
+        placeholder="如：请用艺术化语言描述模板内容，突出设计风格和适用场景..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
+      />
+      <template #footer>
+        <el-button @click="aiGenDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -292,6 +328,7 @@ const queryParams = reactive({
   pageSize: 20,
   sortingFields: defaultSortingValue(),
   name: "",
+  searchKeyword: "", // 搜索关键字（支持名称、关键词、描述）
 });
 
 const gridOptions = ref<VxeGridProps<any>>({
@@ -310,6 +347,18 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     { title: "套图模板名称", field: "name", width: 240, showOverflow: true },
+    {
+      title: "描述",
+      field: "description",
+      minWidth: 200,
+      showOverflow: true,
+    },
+    {
+      title: "关键词",
+      field: "keywords",
+      minWidth: 150,
+      showOverflow: true,
+    },
     {
       title: "本地路径",
       field: "windowsLocalPath",
@@ -495,6 +544,13 @@ const form = ref<any>({
   thumbnail: "",
   thumbnailFile: null,
 });
+
+// AI生成内容相关
+const aiGenDialogVisible = ref(false);
+const aiGenPrompt = ref('');
+const aiGenDialogLoading = ref(false);
+const aiGenRow = ref<any>(null);
+const aiTableLoading = ref<Record<string, boolean>>({});
 
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
@@ -682,6 +738,58 @@ const clearThumbnail = () => {
     thumbnailInputRef.value.value = '';
   }
 };
+
+// AI生成内容相关方法
+function handleAiGenerate(row) {
+  if (aiTableLoading.value[row.id]) return;
+  if (!row.thumbnail) {
+    ElMessage.warning('该模板没有缩略图，无法进行AI分析');
+    return;
+  }
+  aiGenRow.value = row;
+  aiGenPrompt.value = '';
+  aiGenDialogVisible.value = true;
+}
+
+async function submitAiGenDialog() {
+  if (!aiGenRow.value) return;
+  aiGenDialogLoading.value = true;
+  aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: true };
+  try {
+    await handleAiAutoGenerate(aiGenRow.value, () => {
+      aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: false };
+      aiGenDialogLoading.value = false;
+      aiGenDialogVisible.value = false;
+      aiGenRow.value = null;
+    }, aiGenPrompt.value);
+  } catch (e) {
+    aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: false };
+    aiGenDialogLoading.value = false;
+    aiGenDialogVisible.value = false;
+    aiGenRow.value = null;
+  }
+}
+
+async function handleAiAutoGenerate(row, cb, prompt) {
+  try {
+    // 调用PSD模板的AI补全接口
+    const res = await psdTemplateApi.aiCompleteContent(row.id, prompt || '');
+    
+    // 更新行数据
+    if (res) {
+      row.name = res.name || row.name;
+      row.description = res.description || row.description;
+      row.keywords = res.keywords || row.keywords;
+    }
+    
+    ElMessage.success('AI自动生成内容成功');
+    if (typeof cb === 'function') cb();
+    getList();
+  } catch (e) {
+    ElMessage.error('AI自动生成内容失败');
+    if (typeof cb === 'function') cb();
+  }
+}
 </script>
 
 <style lang="less" scoped>

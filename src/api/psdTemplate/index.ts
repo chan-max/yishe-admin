@@ -35,4 +35,12 @@ export const psdTemplateApi = {
   deleteShopTemplate: async (data) => {
     return await request.post({ url: `/psd-template/delete`, data })
   },
+
+  // AI补全PSD模板内容（根据缩略图分析）
+  aiCompleteContent: async (id: string, prompt?: string) => {
+    return await request.post({ 
+      url: `/psd-template/ai-complete/${id}`, 
+      data: { prompt } 
+    })
+  },
 }
