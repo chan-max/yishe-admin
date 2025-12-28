@@ -1669,7 +1669,17 @@ const clearTimer = () => {
 const fetchConnections = async () => {
   loading.value = true
   try {
-    const list = await WebsocketApi.getWebsocketConnections()
+    const response = await WebsocketApi.getWebsocketConnections()
+    // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
+    let list: WebsocketConnectionVO[] = []
+    if (Array.isArray(response)) {
+      list = response
+    } else if (response && typeof response === 'object' && Array.isArray(response.data)) {
+      list = response.data
+    } else {
+      console.warn('[fetchConnections] 意外的响应格式:', response)
+      list = []
+    }
     connections.value = list.map((item) => ({
       ...item,
       __userLookupStatus: undefined,

@@ -15,8 +15,16 @@ export class ClientControlService {
   static async getMyClients(): Promise<WebsocketConnectionVO[]> {
     try {
       // 直接调用服务端提供的个人连接接口，更安全
-      const myClients = await WebsocketApi.getMyWebsocketConnections()
-      return myClients
+      const response = await WebsocketApi.getMyWebsocketConnections()
+      // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
+      if (Array.isArray(response)) {
+        return response
+      } else if (response && typeof response === 'object' && Array.isArray(response.data)) {
+        return response.data
+      } else {
+        console.warn('[ClientControlService] 意外的响应格式:', response)
+        return []
+      }
     } catch (error: any) {
       console.error('[ClientControlService] 获取客户端列表失败:', error)
       ElMessage.error(error?.message || '获取客户端列表失败')
