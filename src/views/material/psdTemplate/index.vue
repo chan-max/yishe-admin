@@ -90,6 +90,28 @@
           </div>
         </template>
 
+        <template #psdInfoSlot="{ row }">
+          <div class="psd-info-cell">
+            <el-popover
+              v-if="row.psdInfo"
+              placement="top-start"
+              :width="500"
+              trigger="hover"
+            >
+              <template #reference>
+                <div class="psd-info-preview">
+                  <el-icon class="info-icon"><InfoFilled /></el-icon>
+                  <span class="info-text">查看套图信息</span>
+                </div>
+              </template>
+              <div class="psd-info-content">
+                <pre class="psd-info-json">{{ formatPsdInfo(row.psdInfo) }}</pre>
+              </div>
+            </el-popover>
+            <span v-else class="text-gray-400">无</span>
+          </div>
+        </template>
+
         <template #pathStatusSlot="{ row }">
           <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
           <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
@@ -208,6 +230,20 @@
           </el-col>
 
           <el-col :span="24">
+            <el-form-item label="套图信息" prop="psdInfo">
+              <el-input
+                v-model="form.psdInfoText"
+                type="textarea"
+                :rows="4"
+                placeholder='请输入套图信息（JSON格式），例如：{"images": [], "description": ""}'
+              />
+              <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
+                提示：请输入有效的JSON格式数据，用于存储套图相关信息
+              </div>
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
             <el-form-item label="缩略图">
               <div class="thumbnail-upload-container">
                 <input
@@ -306,6 +342,7 @@ import {
   CirclePlusFilled,
   CirclePlus,
   ArrowDown,
+  InfoFilled,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
@@ -358,6 +395,15 @@ const gridOptions = ref<VxeGridProps<any>>({
       field: "keywords",
       minWidth: 150,
       showOverflow: true,
+    },
+    {
+      title: "套图信息",
+      field: "psdInfo",
+      minWidth: 200,
+      showOverflow: true,
+      slots: {
+        default: "psdInfoSlot",
+      },
     },
     {
       title: "本地路径",
@@ -503,6 +549,8 @@ function handleAdd() {
     windowsLocalPath: "",
     thumbnail: "",
     thumbnailFile: null,
+    psdInfo: null,
+    psdInfoText: "",
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -522,6 +570,19 @@ function handleEdit(row) {
   // 清空已选文件列表，只在需要时重新选择文件
   fileList.value = [];
   form.value.file = null;
+  
+  // 处理psdInfo：如果是对象，转换为JSON字符串显示
+  if (form.value.psdInfo) {
+    try {
+      form.value.psdInfoText = typeof form.value.psdInfo === 'string' 
+        ? form.value.psdInfo 
+        : JSON.stringify(form.value.psdInfo, null, 2);
+    } catch (e) {
+      form.value.psdInfoText = '';
+    }
+  } else {
+    form.value.psdInfoText = '';
+  }
   
   // 清空预览（编辑时显示已有的缩略图）
   if (thumbnailPreviewUrl.value) {
@@ -543,6 +604,8 @@ const form = ref<any>({
   windowsLocalPath: "",
   thumbnail: "",
   thumbnailFile: null,
+  psdInfo: null,
+  psdInfoText: "", // 用于表单编辑的文本字段
 });
 
 // AI生成内容相关
@@ -605,6 +668,18 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
+      // 处理psdInfo：将文本转换为JSON对象
+      let psdInfo = null;
+      if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
+        try {
+          psdInfo = JSON.parse(form.value.psdInfoText.trim());
+        } catch (e) {
+          ElMessage.error('套图信息格式错误，请输入有效的JSON格式');
+          submitLoading.value = false;
+          return;
+        }
+      }
+
       await psdTemplateApi.updatePsdTemplate({
         id: form.value.id,
         name: form.value.name,
@@ -614,6 +689,7 @@ const submitForm = async () => {
         url: url || undefined,
         key: key || undefined,
         thumbnail: thumbnail || "", // 确保是字符串
+        psdInfo: psdInfo,
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -643,6 +719,18 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
+      // 处理psdInfo：将文本转换为JSON对象
+      let psdInfo = null;
+      if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
+        try {
+          psdInfo = JSON.parse(form.value.psdInfoText.trim());
+        } catch (e) {
+          ElMessage.error('套图信息格式错误，请输入有效的JSON格式');
+          submitLoading.value = false;
+          return;
+        }
+      }
+
       await psdTemplateApi.createPsdTemplate({
         name: form.value.name,
         description: form.value.description || "",
@@ -652,7 +740,8 @@ const submitForm = async () => {
         key: key || undefined,
         thumbnail: thumbnail,
         file: null,
-        uploaderId: userStore.user?.id
+        uploaderId: userStore.user?.id,
+        psdInfo: psdInfo,
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -790,6 +879,21 @@ async function handleAiAutoGenerate(row, cb, prompt) {
     if (typeof cb === 'function') cb();
   }
 }
+
+// 格式化套图信息显示
+function formatPsdInfo(psdInfo: any): string {
+  if (!psdInfo) return '无';
+  
+  try {
+    // 如果是字符串，尝试解析
+    const info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
+    // 格式化为可读的JSON字符串
+    return JSON.stringify(info, null, 2);
+  } catch (e) {
+    // 如果解析失败，直接返回字符串
+    return String(psdInfo);
+  }
+}
 </script>
 
 <style lang="less" scoped>
@@ -819,6 +923,50 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   &:hover {
     color: var(--el-color-danger) !important;
     background-color: var(--el-color-danger-light-9) !important;
+  }
+}
+
+.psd-info-cell {
+  display: flex;
+  align-items: center;
+  
+  .psd-info-preview {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--el-color-primary);
+    font-size: 13px;
+    
+    &:hover {
+      color: var(--el-color-primary-light-3);
+    }
+    
+    .info-icon {
+      font-size: 14px;
+    }
+    
+    .info-text {
+      line-height: 1;
+    }
+  }
+}
+
+.psd-info-content {
+  max-height: 400px;
+  overflow: auto;
+  
+  .psd-info-json {
+    margin: 0;
+    padding: 8px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-primary);
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Courier New', monospace;
   }
 }
 
