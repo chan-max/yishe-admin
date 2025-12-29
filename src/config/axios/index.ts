@@ -24,7 +24,7 @@ export default {
     if (option.data) {
       if (option.data.sortingFields) {
         try {
-          if(typeof option.data.sortingFields){
+          if(typeof option.data.sortingFields === 'string'){
             option.data.sortingFields = JSON.parse(option.data.sortingFields)
           }
         } catch (e) {
