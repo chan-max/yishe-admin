@@ -35,6 +35,20 @@
           />
         </el-select>
       </form-item>
+      <form-item label="创建时间">
+        <el-date-picker
+          v-model="dateRange"
+          type="datetimerange"
+          range-separator="至"
+          start-placeholder="开始时间"
+          end-placeholder="结束时间"
+          format="YYYY-MM-DD HH:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          style="width: 360px"
+          :shortcuts="dateShortcuts"
+          @change="handleDateRangeChange"
+        />
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
       <div class="flex items-center" style="margin-left: auto">
         <el-dropdown trigger="click" :disabled="!selectedIds.length" style="margin-right: 8px">
@@ -347,8 +361,90 @@ const queryParams = reactive({
   pageSize: 20,
   keyword: '',
   status: '',
-  sortingFields: defaultSortingValue()
+  sortingFields: defaultSortingValue(),
+  startTime: '',
+  endTime: ''
 })
+
+const dateRange = ref<[string, string] | null>(null)
+
+// 日期快捷选项
+const dateShortcuts = [
+  {
+    text: '一个小时内',
+    value: () => {
+      const end = new Date()
+      const start = new Date(end.getTime() - 60 * 60 * 1000)
+      return [start, end]
+    }
+  },
+  {
+    text: '今天',
+    value: () => {
+      const end = new Date()
+      const start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0)
+      return [start, end]
+    }
+  },
+  {
+    text: '昨天',
+    value: () => {
+      const end = new Date()
+      end.setDate(end.getDate() - 1)
+      end.setHours(23, 59, 59, 999)
+      const start = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 0, 0, 0, 0)
+      return [start, end]
+    }
+  },
+  {
+    text: '最近三天',
+    value: () => {
+      const end = new Date()
+      const start = new Date(end.getTime() - 3 * 24 * 60 * 60 * 1000)
+      start.setHours(0, 0, 0, 0)
+      return [start, end]
+    }
+  },
+  {
+    text: '最近一周',
+    value: () => {
+      const end = new Date()
+      const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000)
+      start.setHours(0, 0, 0, 0)
+      return [start, end]
+    }
+  },
+  {
+    text: '最近一个月',
+    value: () => {
+      const end = new Date()
+      const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000)
+      start.setHours(0, 0, 0, 0)
+      return [start, end]
+    }
+  },
+  {
+    text: '最近三个月',
+    value: () => {
+      const end = new Date()
+      const start = new Date(end.getTime() - 90 * 24 * 60 * 60 * 1000)
+      start.setHours(0, 0, 0, 0)
+      return [start, end]
+    }
+  }
+]
+
+// 处理日期范围选择器变化
+function handleDateRangeChange(value: [string, string] | null) {
+  if (value && value.length === 2) {
+    queryParams.startTime = value[0]
+    queryParams.endTime = value[1]
+  } else {
+    queryParams.startTime = ''
+    queryParams.endTime = ''
+  }
+  getList()
+}
 
 const showDetails = ref(false)
 const detailDialogVisible = ref(false)
@@ -421,7 +517,9 @@ async function getList() {
       status: queryParams.status || undefined,
       keyword: queryParams.keyword?.trim() || undefined,
       includeDetails: showDetails.value,
-      sortingFields: queryParams.sortingFields
+      sortingFields: queryParams.sortingFields,
+      startTime: queryParams.startTime || undefined,
+      endTime: queryParams.endTime || undefined
     })
     dataSource.value = res.list || []
     total.value = res.total || 0

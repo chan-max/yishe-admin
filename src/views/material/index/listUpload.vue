@@ -188,6 +188,7 @@ import {
 import { uploadMaterialFile } from '@/api/material'
 import { uploadToCOS } from '@/api/cos'
 import { useUserStore } from '@/store/modules/user'
+import { generateUUID } from '@/utils'
 
 const userStore = useUserStore()
 
@@ -304,10 +305,6 @@ const handleClear = () => {
 // 上传单个文件
 const uploadFile = async (file) => {
   try {
-    const cos = await uploadToCOS({
-      file: file.raw
-    })
-    const { url } = cos
     // 自动识别文件后缀
     let suffix = ''
     if (file.raw && file.raw.name) {
@@ -316,6 +313,17 @@ const uploadFile = async (file) => {
         suffix = match[1].toLowerCase()
       }
     }
+    
+    // 构建带后缀的 key，确保 COS 地址最后有后缀名
+    const keyWithExtension = suffix 
+      ? `${new Date().getTime()}_1s_${generateUUID()}.${suffix}`
+      : `${new Date().getTime()}_1s_${generateUUID()}`
+    
+    const cos = await uploadToCOS({
+      file: file.raw,
+      key: keyWithExtension
+    })
+    const { url } = cos
     const width = file.width || 0
     const height = file.height || 0
     const aspectRatio = width && height ? width / height : undefined

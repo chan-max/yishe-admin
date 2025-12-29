@@ -261,9 +261,29 @@
         </div>
         <div class="psd-set-templates">
           <div class="section-title">选择PSD模板 (可多选)</div>
+          <div class="psd-set-template-toolbar">
+            <el-input
+              v-model="psdSetTemplateSearchText"
+              placeholder="搜索模板名称、描述等"
+              clearable
+              style="flex: 1; max-width: 300px;"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button
+              type="primary"
+              link
+              size="small"
+              @click="handlePsdTemplateSelectAll"
+            >
+              {{ isAllPsdTemplatesSelected ? '取消全选' : '全选' }}
+            </el-button>
+          </div>
           <div class="template-list" v-loading="psdSetTemplatesLoading">
             <div
-              v-for="tpl in psdSetTemplates"
+              v-for="tpl in filteredPsdSetTemplates"
               :key="tpl.id"
               class="template-item"
               :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
@@ -317,7 +337,10 @@
                 </div>
               </div>
             </div>
-            <el-empty v-if="!psdSetTemplates.length && !psdSetTemplatesLoading" description="暂无PSD模板" />
+            <el-empty 
+              v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading" 
+              :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" 
+            />
           </div>
         </div>
       </div>
@@ -1673,6 +1696,35 @@ const psdSetTemplatesLoading = ref(false)
 const selectedPsdTemplateIds = ref<string[]>([])
 const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
+const psdSetTemplateSearchText = ref('')
+
+// 过滤后的PSD模板列表
+const filteredPsdSetTemplates = computed(() => {
+  if (!psdSetTemplateSearchText.value.trim()) {
+    return psdSetTemplates.value
+  }
+  
+  const searchText = psdSetTemplateSearchText.value.toLowerCase().trim()
+  return psdSetTemplates.value.filter(tpl => {
+    const name = (tpl.name || '').toLowerCase()
+    const description = (tpl.description || '').toLowerCase()
+    const category = (tpl.category || '').toLowerCase()
+    const uploaderName = (tpl.uploader?.name || '').toLowerCase()
+    
+    return name.includes(searchText) ||
+           description.includes(searchText) ||
+           category.includes(searchText) ||
+           uploaderName.includes(searchText)
+  })
+})
+
+// 判断是否所有可见模板都已选中
+const isAllPsdTemplatesSelected = computed(() => {
+  if (!filteredPsdSetTemplates.value.length) return false
+  return filteredPsdSetTemplates.value.every(tpl => 
+    selectedPsdTemplateIds.value.includes(String(tpl.id))
+  )
+})
 
 // 设计模型相关
 const designModelList = ref([])
@@ -2257,6 +2309,29 @@ function togglePsdTemplate(templateId: string | number) {
 function resetPsdSetState() {
   selectedPsdTemplateIds.value = []
   psdSetMergeSticker.value = false
+  psdSetTemplateSearchText.value = ''
+}
+
+// 全选/取消全选PSD模板
+function handlePsdTemplateSelectAll() {
+  if (isAllPsdTemplatesSelected.value) {
+    // 取消全选：只取消当前可见的模板
+    filteredPsdSetTemplates.value.forEach(tpl => {
+      const id = String(tpl.id)
+      const index = selectedPsdTemplateIds.value.indexOf(id)
+      if (index > -1) {
+        selectedPsdTemplateIds.value.splice(index, 1)
+      }
+    })
+  } else {
+    // 全选：将当前可见的模板全部选中
+    filteredPsdSetTemplates.value.forEach(tpl => {
+      const id = String(tpl.id)
+      if (!selectedPsdTemplateIds.value.includes(id)) {
+        selectedPsdTemplateIds.value.push(id)
+      }
+    })
+  }
 }
 
 // 处理PSD模板缩略图加载错误
@@ -4371,13 +4446,21 @@ h1 {
 .psd-set-materials .thumb-format-badge .el-icon {
   font-size: 12px;
 }
+.psd-set-template-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
 .psd-set-templates .template-list {
   flex: 1;
   overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 240px);
+  max-height: calc(100vh - 300px);
 }
 .psd-set-templates .template-item {
   border: 1px solid var(--el-border-color);
