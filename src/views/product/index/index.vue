@@ -51,6 +51,11 @@
           @change="handleShowRelationsChange"
         />
       </form-item>
+      <form-item class="date-range-picker">
+        <DateRangePicker
+          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }"
+        />
+      </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
       <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
         展开筛选
@@ -121,6 +126,11 @@
           inactive-text=""
           size="small"
           @change="handleShowRelationsChange"
+        />
+      </form-item>
+      <form-item class="date-range-picker">
+        <DateRangePicker
+          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }"
         />
       </form-item>
       <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
@@ -1971,7 +1981,9 @@ const queryParams = reactive({
   search: '',
   isPublish: undefined as boolean | undefined,
   mediaPublishStatus: '' as string | '',
-  random: false
+  random: false,
+  startTime: '',
+  endTime: ''
 });
 
 // 搜索筛选折叠状态
@@ -2724,8 +2736,13 @@ async function getList() {
   let params: any = {
     currentPage: queryParams.currentPage,
     pageSize: queryParams.pageSize,
-    searchText: queryParams.searchText,
   };
+  
+  // 通用搜索文本：只在有值时才传递
+  if (queryParams.searchText && String(queryParams.searchText).trim()) {
+    params.searchText = String(queryParams.searchText).trim();
+  }
+  
   // 精确搜索条件
   if (queryParams.id && String(queryParams.id).trim()) {
     params.id = String(queryParams.id).trim();
@@ -2740,6 +2757,13 @@ async function getList() {
   }
   if (queryParams.mediaPublishStatus) {
     params.mediaPublishStatus = queryParams.mediaPublishStatus;
+  }
+  // 时间范围筛选
+  if (queryParams.startTime) {
+    params.startTime = queryParams.startTime;
+  }
+  if (queryParams.endTime) {
+    params.endTime = queryParams.endTime;
   }
   params.random = queryParams.random;
 
@@ -2768,6 +2792,8 @@ const resetQuery = () => {
   queryParams.isPublish = undefined;
   queryParams.mediaPublishStatus = '';
   queryParams.random = false;
+   queryParams.startTime = '';
+   queryParams.endTime = '';
 };
 
 // 搜索按钮点击事件

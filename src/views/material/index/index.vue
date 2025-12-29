@@ -2367,8 +2367,17 @@ async function handleCreatePsdSets() {
       psdTemplateIds: [...selectedPsdTemplateIds.value],
       mergeSticker: psdSetMergeSticker.value
     })
-    const total = res?.total ?? psdSetTaskCount.value
-    ElMessage.success(`成功创建 ${total} 条套图任务`)
+    const createdList = (res as any)?.list
+    const createdCount = Array.isArray(createdList)
+      ? createdList.length
+      : (res as any)?.total ?? psdSetTaskCount.value
+
+    // 如果后端返回“所有组合都已存在”，列表通常为空，此时提示为“无需重复创建”
+    if (Array.isArray(createdList) && createdList.length === 0) {
+      ElMessage.info((res as any)?.message || '所有组合都已存在，无需重复创建')
+    } else {
+      ElMessage.success(`成功创建 ${createdCount} 条套图任务`)
+    }
     psdSetDialogVisible.value = false
     resetPsdSetState()
   } catch (error: any) {
