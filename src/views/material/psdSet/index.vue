@@ -21,12 +21,6 @@
           />
         </el-select>
       </form-item>
-      <form-item label="显示详情">
-        <el-radio-group v-model="showDetails" size="small" @change="getList">
-          <el-radio-button :label="false">关闭</el-radio-button>
-          <el-radio-button :label="true">显示</el-radio-button>
-        </el-radio-group>
-      </form-item>
       <form-item label="排序方式">
         <el-select
           v-model="queryParams.sortingFields"
