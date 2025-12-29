@@ -260,7 +260,9 @@
           </div>
         </div>
         <div class="psd-set-templates">
-          <div class="section-title">选择PSD模板 (可多选)</div>
+          <div class="section-title">
+            选择PSD模板 (可多选)
+          </div>
           <div class="psd-set-template-toolbar">
             <el-input
               v-model="psdSetTemplateSearchText"
@@ -274,12 +276,14 @@
             </el-input>
             <el-button
               type="primary"
-              link
               size="small"
               @click="handlePsdTemplateSelectAll"
             >
               {{ isAllPsdTemplatesSelected ? '取消全选' : '全选' }}
             </el-button>
+            <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
+              已选中 {{ selectedPsdTemplateIds.length }} 个
+            </span>
           </div>
           <div class="template-list" v-loading="psdSetTemplatesLoading">
             <div
@@ -305,7 +309,8 @@
                   </div>
                   <div class="template-meta">
                     <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
-                    <span class="uploader" v-if="tpl.uploader?.name">上传者：{{ tpl.uploader.name }}</span>
+                    <span class="keywords" v-if="tpl.keywords">关键字：{{ tpl.keywords }}</span>
+                    <span class="keywords-empty" v-else>关键字：暂无</span>
                   </div>
                     <div class="template-paths">
                       <div class="path-row">
@@ -1698,24 +1703,9 @@ const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
 const psdSetTemplateSearchText = ref('')
 
-// 过滤后的PSD模板列表
+// 直接使用后端返回的模板列表（后端已过滤）
 const filteredPsdSetTemplates = computed(() => {
-  if (!psdSetTemplateSearchText.value.trim()) {
-    return psdSetTemplates.value
-  }
-  
-  const searchText = psdSetTemplateSearchText.value.toLowerCase().trim()
-  return psdSetTemplates.value.filter(tpl => {
-    const name = (tpl.name || '').toLowerCase()
-    const description = (tpl.description || '').toLowerCase()
-    const category = (tpl.category || '').toLowerCase()
-    const uploaderName = (tpl.uploader?.name || '').toLowerCase()
-    
-    return name.includes(searchText) ||
-           description.includes(searchText) ||
-           category.includes(searchText) ||
-           uploaderName.includes(searchText)
-  })
+  return psdSetTemplates.value
 })
 
 // 判断是否所有可见模板都已选中
@@ -2285,7 +2275,8 @@ async function loadPsdTemplatesForPsdSet() {
   try {
     const res = await psdTemplateApi.getPsdTemplatePage({
       currentPage: 1,
-      pageSize: 200
+      pageSize: 200,
+      searchKeyword: psdSetTemplateSearchText.value.trim() || undefined
     })
     psdSetTemplates.value = res.list || []
   } catch (error) {
@@ -2295,6 +2286,20 @@ async function loadPsdTemplatesForPsdSet() {
     psdSetTemplatesLoading.value = false
   }
 }
+
+// 防抖搜索函数
+const debouncedSearchPsdTemplates = useDebounceFn(() => {
+  if (psdSetDialogVisible.value) {
+    loadPsdTemplatesForPsdSet()
+  }
+}, 500)
+
+// 监听搜索文本变化
+watch(psdSetTemplateSearchText, () => {
+  if (psdSetDialogVisible.value) {
+    debouncedSearchPsdTemplates()
+  }
+})
 
 function togglePsdTemplate(templateId: string | number) {
   const id = String(templateId)
@@ -3652,7 +3657,16 @@ async function handleUrlUpload() {
 .template-selector .row-actions { display: flex; align-items: center; gap: 8px; }
 .template-selector .check-indicator { width: 14px; height: 14px; border: 2px solid var(--el-border-color); border-radius: 50%; display: inline-block; }
 .template-selector .check-indicator.checked { border-color: var(--el-color-primary); background: var(--el-color-primary); }
-.section-title { font-size: 14px;  margin-bottom: 8px; }
+.section-title { font-size: 14px;  margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+.section-title .selected-count {
+  font-size: 13px;
+  color: var(--el-color-primary);
+  font-weight: 500;
+  padding: 2px 8px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(64, 158, 255, 0.3);
+}
 .result-info { grid-column: 1 / -1; }
 .psd-set-mode-inline {
   display: flex;
@@ -4454,6 +4468,16 @@ h1 {
   padding-bottom: 12px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
+.psd-set-template-toolbar .selected-count {
+  font-size: 13px;
+  color: var(--el-color-primary);
+  font-weight: 500;
+  padding: 4px 10px;
+  background: rgba(64, 158, 255, 0.1);
+  border-radius: 4px;
+  border: 1px solid rgba(64, 158, 255, 0.3);
+  white-space: nowrap;
+}
 .psd-set-templates .template-list {
   flex: 1;
   overflow: auto;
@@ -4472,7 +4496,7 @@ h1 {
 }
 .psd-set-templates .template-item.is-checked {
   border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.3);
   background: rgba(64, 158, 255, 0.06);
 }
 .psd-set-templates .template-content-wrapper {
