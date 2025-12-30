@@ -286,62 +286,76 @@
             </span>
           </div>
           <div class="template-list" v-loading="psdSetTemplatesLoading">
-            <div
+            <el-tooltip
               v-for="tpl in filteredPsdSetTemplates"
               :key="tpl.id"
-              class="template-item"
-              :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
-              @click="togglePsdTemplate(tpl.id)"
+              :disabled="!tpl.description && !tpl.keywords"
+              placement="right"
+              popper-class="template-detail-tooltip"
+              :show-after="0"
+              :transition="''"
             >
-              <div class="template-content-wrapper">
-                <img
-                  v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                  :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
-                    :alt="tpl.name || '模板缩略图'"
-                  class="template-thumbnail"
-                  loading="lazy"
-                  @error="handleTemplateImageError"
-                />
-                <div class="template-info">
-                  <div class="template-header">
-                    <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
-                    <div class="template-description">{{ tpl.description || '暂无描述' }}</div>
+              <template #content>
+                <div class="template-tooltip-content">
+                  <div v-if="tpl.description" class="tooltip-item">
+                    <strong>描述：</strong>{{ tpl.description }}
                   </div>
-                  <div class="template-meta">
-                    <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
-                    <span class="keywords" v-if="tpl.keywords">关键字：{{ tpl.keywords }}</span>
-                    <span class="keywords-empty" v-else>关键字：暂无</span>
+                  <div v-if="tpl.keywords" class="tooltip-item">
+                    <strong>关键字：</strong>{{ tpl.keywords }}
                   </div>
-                    <div class="template-paths">
-                      <div class="path-row">
-                        <span class="path-label">远程链接：</span>
-                        <el-link
-                          v-if="tpl.url"
-                          :href="tpl.url"
-                          target="_blank"
-                          type="primary"
-                          :underline="false"
-                          class="path-link"
-                        >
-                          {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
-                        </el-link>
-                        <span v-else class="path-empty">暂无</span>
+                </div>
+              </template>
+              <div
+                class="template-item"
+                :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
+                @click="togglePsdTemplate(tpl.id)"
+              >
+                <div class="template-content-wrapper">
+                  <img
+                    v-if="tpl.thumbnail || tpl.preview || tpl.image"
+                    :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
+                      :alt="tpl.name || '模板缩略图'"
+                    class="template-thumbnail"
+                    loading="lazy"
+                    @error="handleTemplateImageError"
+                  />
+                  <div class="template-info">
+                    <div class="template-header">
+                      <div class="template-title-row">
+                        <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
                       </div>
-                      <div class="path-row">
-                        <span class="path-label">本地路径：</span>
-                        <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
-                        <span v-else class="path-empty">暂无</span>
-                      </div>
-                      <div class="path-tags">
-                        <el-tag v-if="tpl.url && tpl.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
-                        <el-tag v-else-if="tpl.url" type="primary" size="small">远程路径</el-tag>
-                        <el-tag v-else-if="tpl.windowsLocalPath" type="warning" size="small">本地路径</el-tag>
-                        <el-tag v-else type="info" size="small">未提供路径</el-tag>
+                      <div v-if="tpl.psdInfo" class="template-psd-info">
+                        {{ tpl.psdInfo }}
                       </div>
                     </div>
+                    <div class="template-meta">
+                      <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
+                    </div>
+                      <div class="template-paths">
+                        <div class="path-row">
+                          <span class="path-label">远程链接：</span>
+                          <el-link
+                            v-if="tpl.url"
+                            :href="tpl.url"
+                            target="_blank"
+                            type="primary"
+                            :underline="false"
+                            class="path-link"
+                          >
+                            {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
+                          </el-link>
+                          <span v-else class="path-empty">暂无</span>
+                        </div>
+                        <div class="path-row">
+                          <span class="path-label">本地路径：</span>
+                          <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
+                          <span v-else class="path-empty">暂无</span>
+                        </div>
+                      </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </el-tooltip>
             <el-empty 
               v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading" 
               :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" 
@@ -4538,16 +4552,27 @@ h1 {
   flex-direction: column;
   gap: 8px;
 }
+.psd-set-templates .template-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
 .psd-set-templates .template-title {
   font-weight: 600;
-  margin-bottom: 4px;
   font-size: 14px;
   color: var(--el-text-color-primary);
+  flex: 1;
 }
-.psd-set-templates .template-description {
+.psd-set-templates .template-psd-info {
   font-size: 13px;
-  color: #666;
-  line-height: 1.4;
+  color: var(--el-text-color-regular);
+  line-height: 1.5;
+  margin-bottom: 4px;
+  padding: 6px 8px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  border-left: 3px solid var(--el-color-primary);
 }
 .psd-set-templates .template-meta {
   margin-top: 4px;
@@ -4597,4 +4622,32 @@ h1 {
   gap: 16px;
 }
 
+  </style>
+  
+  <!-- 模板详情提示框样式 -->
+  <style>
+  .template-detail-tooltip {
+    max-width: 400px;
+    padding: 12px;
+  }
+  .template-detail-tooltip,
+  .template-detail-tooltip.el-popper {
+    transition: none !important;
+  }
+  .template-tooltip-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .template-tooltip-content .tooltip-item {
+    padding: 4px 0;
+  }
+  .template-tooltip-content .tooltip-item strong {
+    font-weight: 600;
+    margin-right: 6px;
+    display: inline-block;
+    min-width: 60px;
+  }
   </style>
