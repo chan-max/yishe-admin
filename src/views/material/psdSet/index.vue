@@ -164,6 +164,21 @@
             <span v-else class="text-gray-400 text-xs">无</span>
           </div>
         </template>
+        <template #configSlot="{ row }">
+          <div class="flex items-center gap-2">
+            <el-tag 
+              v-if="row.config" 
+              type="info" 
+              size="small" 
+              effect="plain"
+              class="cursor-pointer"
+              @click="() => handleViewConfig(row)"
+            >
+              已配置
+            </el-tag>
+            <span v-else class="text-gray-400 text-xs">未配置</span>
+          </div>
+        </template>
         <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
         <template #operationSlot="{ row }">
           <el-dropdown trigger="click" class="operation-dropdown">
@@ -174,6 +189,10 @@
               <div class="op-menu">
                 <div class="op-menu-item" @click="() => handleViewDetail(row)">
                   <span class="op-menu-label">查看详情</span>
+                </div>
+                
+                <div class="op-menu-item" @click="() => handleEditConfigDirectly(row)">
+                  <span class="op-menu-label">编辑配置</span>
                 </div>
                 
                 <div class="op-divider"></div>
@@ -304,9 +323,157 @@
             <span v-if="!detailImages.length" class="text-gray-400 text-sm">无套图图片</span>
           </div>
         </div>
+
+        <div class="detail-section-item">
+          <div class="detail-header">
+            <span class="detail-label">配置信息</span>
+            <div class="flex gap-2 ml-auto">
+              <el-button 
+                v-if="!configEditing" 
+                type="primary" 
+                size="small" 
+                @click="handleEditConfig"
+              >
+                编辑
+              </el-button>
+              <el-button 
+                v-if="configEditing" 
+                type="success" 
+                size="small" 
+                :loading="configSaving"
+                @click="handleSaveConfig"
+              >
+                保存
+              </el-button>
+              <el-button 
+                v-if="configEditing" 
+                size="small" 
+                @click="handleCancelEditConfig"
+              >
+                取消
+              </el-button>
+              <el-button 
+                v-if="!configEditing && detailData?.config" 
+                type="info" 
+                size="small" 
+                @click="configPreviewMode = !configPreviewMode"
+              >
+                {{ configPreviewMode ? '收起' : '预览' }}
+              </el-button>
+            </div>
+          </div>
+          <div v-if="configEditing" class="config-editor-container">
+            <el-input
+              v-model="configEditValue"
+              type="textarea"
+              :rows="12"
+              placeholder="请输入JSON格式的配置信息，例如：&#10;{&#10;  &quot;key1&quot;: &quot;value1&quot;,&#10;  &quot;key2&quot;: &quot;value2&quot;&#10;}"
+              class="config-textarea"
+            />
+            <div v-if="configJsonError" class="config-error">
+              <el-icon><WarningFilled /></el-icon>
+              <span>{{ configJsonError }}</span>
+            </div>
+          </div>
+          <div v-else-if="configPreviewMode && detailData?.config" class="config-preview-container">
+            <pre class="config-preview">{{ formattedConfig }}</pre>
+          </div>
+          <div v-else-if="detailData?.config" class="config-display">
+            <el-tag type="info" size="small">已配置 (点击编辑查看详情)</el-tag>
+          </div>
+          <span v-else class="text-gray-400 text-sm">未配置</span>
+        </div>
       </div>
       <template #footer>
         <el-button @click="detailDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 编辑配置对话框 -->
+    <el-dialog
+      v-model="configEditDialogVisible"
+      title="编辑配置信息"
+      width="60%"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-loading="configEditDialogLoading" class="config-edit-dialog-content">
+        <div v-if="configEditDialogData" class="config-edit-info">
+          <div class="config-edit-info-item">
+            <span class="config-edit-info-label">套图名称：</span>
+            <span class="config-edit-info-value">{{ configEditDialogData.name || '-' }}</span>
+          </div>
+          <div class="config-edit-info-item">
+            <span class="config-edit-info-label">套图ID：</span>
+            <span class="config-edit-info-value">{{ configEditDialogData.id || '-' }}</span>
+          </div>
+        </div>
+        <div class="config-editor-container">
+          <el-input
+            v-model="configEditDialogValue"
+            type="textarea"
+            :rows="16"
+            placeholder="请输入JSON格式的配置信息，例如：&#10;{&#10;  &quot;key1&quot;: &quot;value1&quot;,&#10;  &quot;key2&quot;: &quot;value2&quot;&#10;}"
+            class="config-textarea"
+            @input="handleConfigInputChange"
+          />
+          <div v-if="configEditDialogError" class="config-error">
+            <el-icon><WarningFilled /></el-icon>
+            <span>{{ configEditDialogError }}</span>
+          </div>
+          <div v-else-if="configEditDialogValue.trim()" class="config-success">
+            <el-icon><CircleCheck /></el-icon>
+            <span>JSON格式正确</span>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="handleCancelConfigEditDialog">取消</el-button>
+        <el-button 
+          type="primary" 
+          :loading="configEditDialogSaving"
+          @click="handleSaveConfigDialog"
+        >
+          保存
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 查看配置对话框 -->
+    <el-dialog
+      v-model="configViewDialogVisible"
+      title="查看配置信息"
+      width="60%"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-loading="configViewDialogLoading" class="config-view-dialog-content">
+        <div v-if="configViewDialogData" class="config-view-info">
+          <div class="config-view-info-item">
+            <span class="config-view-info-label">套图名称：</span>
+            <span class="config-view-info-value">{{ configViewDialogData.name || '-' }}</span>
+          </div>
+          <div class="config-view-info-item">
+            <span class="config-view-info-label">套图ID：</span>
+            <span class="config-view-info-value">{{ configViewDialogData.id || '-' }}</span>
+          </div>
+        </div>
+        <div v-if="configViewFormatted" class="config-view-container">
+          <pre class="config-view-content">{{ configViewFormatted }}</pre>
+        </div>
+        <div v-else class="config-view-empty">
+          <span class="text-gray-400">未配置</span>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="configViewDialogVisible = false">关闭</el-button>
+        <el-button 
+          v-if="configViewDialogData?.config"
+          type="primary" 
+          @click="handleEditFromView"
+        >
+          编辑配置
+        </el-button>
       </template>
     </el-dialog>
 
@@ -326,7 +493,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from 'vue'
 import { useWindowSize } from '@vueuse/core'
-import { Search, ArrowDown, DocumentCopy } from '@element-plus/icons-vue'
+import { Search, ArrowDown, DocumentCopy, WarningFilled, CircleCheck } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
@@ -453,6 +620,51 @@ const detailData = ref<any>(null)
 const detailStickers = computed(() => getStickers(detailData.value || {}))
 const detailImages = computed(() => Array.isArray(detailData.value?.images) ? detailData.value.images : [])
 
+// 配置信息相关状态
+const configEditing = ref(false)
+const configPreviewMode = ref(false)
+const configEditValue = ref('')
+const configJsonError = ref('')
+const configSaving = ref(false)
+
+// 编辑配置对话框相关状态
+const configEditDialogVisible = ref(false)
+const configEditDialogLoading = ref(false)
+const configEditDialogData = ref<any>(null)
+const configEditDialogValue = ref('')
+const configEditDialogError = ref('')
+const configEditDialogSaving = ref(false)
+let configValidateTimer: ReturnType<typeof setTimeout> | null = null
+
+// 查看配置对话框相关状态
+const configViewDialogVisible = ref(false)
+const configViewDialogLoading = ref(false)
+const configViewDialogData = ref<any>(null)
+const configViewFormatted = computed(() => {
+  if (!configViewDialogData.value?.config) return ''
+  try {
+    const parsed = typeof configViewDialogData.value.config === 'string' 
+      ? JSON.parse(configViewDialogData.value.config) 
+      : configViewDialogData.value.config
+    return JSON.stringify(parsed, null, 2)
+  } catch (e) {
+    return String(configViewDialogData.value.config)
+  }
+})
+
+// 格式化配置信息用于预览
+const formattedConfig = computed(() => {
+  if (!detailData.value?.config) return ''
+  try {
+    const parsed = typeof detailData.value.config === 'string' 
+      ? JSON.parse(detailData.value.config) 
+      : detailData.value.config
+    return JSON.stringify(parsed, null, 2)
+  } catch (e) {
+    return String(detailData.value.config)
+  }
+})
+
 function getColumns() {
   const baseColumns = [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
@@ -470,6 +682,7 @@ function getColumns() {
     { title: '关键词', field: 'keywords', minWidth: 180, showOverflow: true },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
     { title: '状态说明', field: 'statusMessage', width: 320, showOverflow: true },
+    { title: '配置信息', field: 'config', width: 150, slots: { default: 'configSlot' } },
     {
       title: '创建时间',
       field: 'createTime',
@@ -653,23 +866,347 @@ async function handleToProduct(row: any) {
   }
 }
 
+// 查看配置信息（独立的弹窗）
+async function handleViewConfig(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('缺少ID，无法查看配置')
+  }
+  configViewDialogVisible.value = true
+  configViewDialogLoading.value = true
+  try {
+    const res = await request.get({
+      url: `/sticker-psd-set/${row.id}`
+    })
+    configViewDialogData.value = res?.data || res || {}
+  } catch (error: any) {
+    console.error('获取套图详情失败:', error)
+    ElMessage.error(error?.message || '获取配置失败')
+    configViewDialogVisible.value = false
+  } finally {
+    configViewDialogLoading.value = false
+  }
+}
+
+// 从查看配置弹窗跳转到编辑配置
+function handleEditFromView() {
+  if (!configViewDialogData.value?.id) {
+    return ElMessage.warning('缺少ID，无法编辑配置')
+  }
+  // 关闭查看配置弹窗
+  configViewDialogVisible.value = false
+  // 打开编辑配置弹窗
+  handleEditConfigDirectly(configViewDialogData.value)
+}
+
 async function handleViewDetail(row: any) {
   if (!row?.id) {
     return ElMessage.warning('缺少ID，无法查看详情')
   }
   detailDialogVisible.value = true
   detailLoading.value = true
+  configEditing.value = false
+  configPreviewMode.value = false
+  configEditValue.value = ''
+  configJsonError.value = ''
   try {
     const res = await request.get({
       url: `/sticker-psd-set/${row.id}`
     })
     detailData.value = res?.data || res || {}
+    // 初始化配置编辑值
+    if (detailData.value?.config) {
+      try {
+        const parsed = typeof detailData.value.config === 'string' 
+          ? JSON.parse(detailData.value.config) 
+          : detailData.value.config
+        configEditValue.value = JSON.stringify(parsed, null, 2)
+      } catch (e) {
+        configEditValue.value = String(detailData.value.config)
+      }
+    } else {
+      configEditValue.value = ''
+    }
   } catch (error: any) {
     console.error('获取套图详情失败:', error)
     ElMessage.error(error?.message || '获取详情失败')
     detailDialogVisible.value = false
   } finally {
     detailLoading.value = false
+  }
+}
+
+// 直接编辑配置信息（打开独立的编辑配置对话框）
+async function handleEditConfigDirectly(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('缺少ID，无法编辑配置')
+  }
+  configEditDialogVisible.value = true
+  configEditDialogLoading.value = true
+  configEditDialogError.value = ''
+  configEditDialogValue.value = ''
+  try {
+    const res = await request.get({
+      url: `/sticker-psd-set/${row.id}`
+    })
+    configEditDialogData.value = res?.data || res || {}
+    // 初始化配置编辑值
+    if (configEditDialogData.value?.config) {
+      try {
+        const parsed = typeof configEditDialogData.value.config === 'string' 
+          ? JSON.parse(configEditDialogData.value.config) 
+          : configEditDialogData.value.config
+        configEditDialogValue.value = JSON.stringify(parsed, null, 2)
+      } catch (e) {
+        // 如果解析失败，显示原始值并提示错误
+        configEditDialogValue.value = String(configEditDialogData.value.config)
+        configEditDialogError.value = '当前配置格式不正确，请修正后保存'
+      }
+    } else {
+      configEditDialogValue.value = '{}'
+    }
+  } catch (error: any) {
+    console.error('获取套图详情失败:', error)
+    ElMessage.error(error?.message || '获取详情失败')
+    configEditDialogVisible.value = false
+  } finally {
+    configEditDialogLoading.value = false
+  }
+}
+
+// 编辑配置信息
+function handleEditConfig() {
+  configEditing.value = true
+  configPreviewMode.value = false
+  if (detailData.value?.config) {
+    try {
+      const parsed = typeof detailData.value.config === 'string' 
+        ? JSON.parse(detailData.value.config) 
+        : detailData.value.config
+      configEditValue.value = JSON.stringify(parsed, null, 2)
+    } catch (e) {
+      configEditValue.value = String(detailData.value.config)
+    }
+  } else {
+    configEditValue.value = '{}'
+  }
+  configJsonError.value = ''
+}
+
+// 取消编辑配置
+function handleCancelEditConfig() {
+  configEditing.value = false
+  configJsonError.value = ''
+  // 恢复原始值
+  if (detailData.value?.config) {
+    try {
+      const parsed = typeof detailData.value.config === 'string' 
+        ? JSON.parse(detailData.value.config) 
+        : detailData.value.config
+      configEditValue.value = JSON.stringify(parsed, null, 2)
+    } catch (e) {
+      configEditValue.value = String(detailData.value.config)
+    }
+  } else {
+    configEditValue.value = ''
+  }
+}
+
+// 验证JSON格式（用于详情对话框）
+function validateJson(jsonString: string): boolean {
+  if (!jsonString || !jsonString.trim()) {
+    return true // 空值视为有效（将保存为空）
+  }
+  try {
+    JSON.parse(jsonString)
+    return true
+  } catch (e: any) {
+    configJsonError.value = `JSON格式错误: ${e.message}`
+    return false
+  }
+}
+
+// 增强的JSON校验函数（用于编辑配置对话框）
+function validateJsonEnhanced(jsonString: string): { valid: boolean; error?: string } {
+  const trimmed = jsonString?.trim() || ''
+  
+  // 空值视为有效
+  if (!trimmed) {
+    return { valid: true }
+  }
+  
+  // 检查是否以 { 或 [ 开头（基本结构检查）
+  const firstChar = trimmed.charAt(0)
+  const lastChar = trimmed.charAt(trimmed.length - 1)
+  
+  if (firstChar === '{' && lastChar !== '}') {
+    return { valid: false, error: 'JSON对象缺少闭合括号 }' }
+  }
+  
+  if (firstChar === '[' && lastChar !== ']') {
+    return { valid: false, error: 'JSON数组缺少闭合括号 ]' }
+  }
+  
+  // 尝试解析JSON
+  try {
+    const parsed = JSON.parse(trimmed)
+    
+    // 额外检查：确保解析后是对象或数组（不允许原始值）
+    if (parsed !== null && typeof parsed !== 'object' && !Array.isArray(parsed)) {
+      return { valid: false, error: '配置必须是JSON对象或数组，不能是原始值' }
+    }
+    
+    return { valid: true }
+  } catch (e: any) {
+    // 提供更友好的错误信息
+    let errorMsg = 'JSON格式错误'
+    if (e.message) {
+      if (e.message.includes('Unexpected token')) {
+        errorMsg = `JSON语法错误：${e.message}`
+      } else if (e.message.includes('Unexpected end')) {
+        errorMsg = 'JSON不完整，请检查是否缺少引号、括号或逗号'
+      } else if (e.message.includes('Unexpected string')) {
+        errorMsg = '字符串格式错误，请检查引号是否匹配'
+      } else {
+        errorMsg = `JSON解析错误：${e.message}`
+      }
+    }
+    return { valid: false, error: errorMsg }
+  }
+}
+
+// 实时校验JSON（用于编辑配置对话框）
+function validateJsonRealtime(jsonString: string) {
+  const result = validateJsonEnhanced(jsonString)
+  configEditDialogError.value = result.error || ''
+  return result.valid
+}
+
+// 处理配置输入变化（带防抖）
+function handleConfigInputChange() {
+  // 清除之前的定时器
+  if (configValidateTimer) {
+    clearTimeout(configValidateTimer)
+  }
+  
+  // 如果输入为空，清除错误信息
+  if (!configEditDialogValue.value.trim()) {
+    configEditDialogError.value = ''
+    return
+  }
+  
+  // 防抖：500ms后执行校验
+  configValidateTimer = setTimeout(() => {
+    validateJsonRealtime(configEditDialogValue.value)
+  }, 500)
+}
+
+// 取消编辑配置对话框
+function handleCancelConfigEditDialog() {
+  // 清理定时器
+  if (configValidateTimer) {
+    clearTimeout(configValidateTimer)
+    configValidateTimer = null
+  }
+  configEditDialogVisible.value = false
+  configEditDialogError.value = ''
+  // 延迟清空数据，避免关闭动画时闪烁
+  setTimeout(() => {
+    configEditDialogData.value = null
+    configEditDialogValue.value = ''
+  }, 300)
+}
+
+// 保存编辑配置对话框的配置信息
+async function handleSaveConfigDialog() {
+  const trimmedValue = configEditDialogValue.value?.trim() || ''
+  
+  // 验证JSON格式
+  const validation = validateJsonEnhanced(trimmedValue)
+  if (!validation.valid) {
+    configEditDialogError.value = validation.error || 'JSON格式错误'
+    return
+  }
+
+  if (!configEditDialogData.value?.id) {
+    return ElMessage.warning('缺少ID，无法保存配置')
+  }
+
+  configEditDialogSaving.value = true
+  try {
+    // 解析并格式化JSON
+    let configValue: any = null
+    if (trimmedValue) {
+      configValue = JSON.parse(trimmedValue)
+    }
+
+    // 调用更新API
+    await stickerPsdSetApi.update(configEditDialogData.value.id, { config: configValue })
+    
+    ElMessage.success('配置信息已保存')
+    
+    // 清理定时器
+    if (configValidateTimer) {
+      clearTimeout(configValidateTimer)
+      configValidateTimer = null
+    }
+    
+    configEditDialogVisible.value = false
+    configEditDialogError.value = ''
+    
+    // 刷新列表以同步数据
+    getList()
+    
+    // 延迟清空数据
+    setTimeout(() => {
+      configEditDialogData.value = null
+      configEditDialogValue.value = ''
+    }, 300)
+  } catch (error: any) {
+    console.error('保存配置信息失败:', error)
+    ElMessage.error(error?.message || '保存配置信息失败')
+  } finally {
+    configEditDialogSaving.value = false
+  }
+}
+
+// 保存配置信息（用于详情对话框）
+async function handleSaveConfig() {
+  const trimmedValue = configEditValue.value?.trim() || ''
+  
+  // 验证JSON格式
+  if (trimmedValue && !validateJson(trimmedValue)) {
+    return
+  }
+
+  if (!detailData.value?.id) {
+    return ElMessage.warning('缺少ID，无法保存配置')
+  }
+
+  configSaving.value = true
+  try {
+    // 解析并格式化JSON
+    let configValue: any = null
+    if (trimmedValue) {
+      configValue = JSON.parse(trimmedValue)
+    }
+
+    // 调用更新API
+    await stickerPsdSetApi.update(detailData.value.id, { config: configValue })
+    
+    // 更新本地数据
+    detailData.value.config = configValue
+    
+    ElMessage.success('配置信息已保存')
+    configEditing.value = false
+    configJsonError.value = ''
+    
+    // 刷新列表以同步数据
+    getList()
+  } catch (error: any) {
+    console.error('保存配置信息失败:', error)
+    ElMessage.error(error?.message || '保存配置信息失败')
+  } finally {
+    configSaving.value = false
   }
 }
 
@@ -1000,7 +1537,8 @@ getList()
 .detail-header {
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 13px;
   line-height: 1.4;
   margin-bottom: 6px;
@@ -1222,6 +1760,161 @@ getList()
 
 .material-association-tag .tag-text {
   display: inline-block;
+}
+
+/* 配置信息相关样式 */
+.config-editor-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-textarea :deep(.el-textarea__inner) {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.config-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--el-color-danger-light-9);
+  border: 1px solid var(--el-color-danger-light-7);
+  border-radius: 4px;
+  color: var(--el-color-danger);
+  font-size: 12px;
+}
+
+.config-success {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--el-color-success-light-9);
+  border: 1px solid var(--el-color-success-light-7);
+  border-radius: 4px;
+  color: var(--el-color-success);
+  font-size: 12px;
+}
+
+.config-preview-container {
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.config-preview {
+  margin: 0;
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--el-text-color-regular);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.config-display {
+  padding: 8px 0;
+}
+
+/* 编辑配置对话框相关样式 */
+.config-edit-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-edit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+}
+
+.config-edit-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.config-edit-info-label {
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.config-edit-info-value {
+  color: var(--el-text-color-regular);
+  flex: 1;
+}
+
+/* 查看配置对话框相关样式 */
+.config-view-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-view-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+}
+
+.config-view-info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.config-view-info-label {
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.config-view-info-value {
+  color: var(--el-text-color-regular);
+  flex: 1;
+}
+
+.config-view-container {
+  padding: 16px;
+  background: var(--el-fill-color-lighter);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  max-height: 500px;
+  overflow: auto;
+}
+
+.config-view-content {
+  margin: 0;
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.config-view-empty {
+  padding: 40px;
+  text-align: center;
+  font-size: 14px;
 }
 </style>
 
