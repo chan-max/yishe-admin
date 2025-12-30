@@ -941,8 +941,7 @@
                 <el-form-item label="宽度">
                   <el-input-number 
                     v-model="videoGenForm.width" 
-                    :min="240" 
-                    :max="3840" 
+        
                     :step="10"
                     controls-position="right"
                     style="width: 100%"
@@ -953,8 +952,7 @@
                 <el-form-item label="高度">
                   <el-input-number 
                     v-model="videoGenForm.height" 
-                    :min="240" 
-                    :max="3840" 
+        
                     :step="10"
                     controls-position="right"
                     style="width: 100%"
@@ -998,7 +996,7 @@
           </el-card>
 
           <!-- 图片选择 -->
-          <el-card class="mb-4" shadow="never" v-if="videoGenRow?.images && videoGenRow.images.length > 0">
+          <el-card class="mb-4" shadow="never">
             <template #header>
               <div class="flex items-center gap-2">
                 <el-icon><Picture /></el-icon>
@@ -1006,8 +1004,9 @@
               </div>
             </template>
             <el-row :gutter="8">
-              <el-col :xs="24" :sm="24" :md="24">
-                <el-form-item label="选择图片">
+              <!-- 商品图片选择 -->
+              <el-col :xs="24" :sm="24" :md="24" v-if="videoGenRow?.images && videoGenRow.images.length > 0">
+                <el-form-item label="选择商品图片">
                   <div class="flex flex-wrap gap-2 mb-2">
                     <div 
                       v-for="(url, index) in videoGenRow.images" 
@@ -1038,6 +1037,20 @@
                   <div class="text-xs text-gray-500 mt-1">
                     已选择 {{ videoGenForm.selectedImages.length }} 张图片，点击图片可切换选择状态
                   </div>
+                </el-form-item>
+              </el-col>
+              <!-- 无产品图片提示 -->
+              <el-col :xs="24" :sm="24" :md="24" v-else>
+                <el-form-item label="选择商品图片">
+                  <el-alert
+                    type="warning"
+                    :closable="false"
+                    show-icon
+                  >
+                    <template #title>
+                      该商品没有图片，无法生成视频。请先为商品添加图片。
+                    </template>
+                  </el-alert>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -1105,7 +1118,7 @@
               <el-col :xs="24" :sm="12" :md="12">
                 <el-form-item label="背景音乐">
                   <el-select
-                    v-model="videoGenForm.audioId"
+                    v-model="videoGenForm.audioUrl"
                     filterable
                     remote
                     reserve-keyword
@@ -1119,7 +1132,7 @@
                       v-for="audio in audioList"
                       :key="audio.id"
                       :label="audio.name || '未命名音频'"
-                      :value="audio.id"
+                      :value="audio.url"
                     >
                       <div class="flex items-center justify-between">
                         <span>{{ audio.name || '未命名音频' }}</span>
@@ -1128,7 +1141,7 @@
                     </el-option>
                   </el-select>
                   <div class="text-xs text-gray-500 mt-1">
-                    从剪辑素材库中选择音频文件作为背景音乐（可选）
+                    从剪辑素材库中选择音频文件作为背景音乐（可选，yishe-videos 会自动处理音频链接）
                   </div>
                 </el-form-item>
               </el-col>
@@ -2189,13 +2202,14 @@ const videoGenForm = reactive({
   // 视频设置
   clipDuration: 2, // 每张图片显示时长（秒）
   outputFormat: 'mp4' as 'mp4' | 'webm' | 'mkv', // 视频格式
+  fps: 25, // 帧率
   transition: 'fade' as 'fade' | 'slide' | 'directional-left' | 'directional-right' | 'none', // 过渡效果
   // 图片选择
-  selectedImages: [] as string[], // 选中的图片URL数组
+  selectedImages: [] as string[], // 选中的图片URL数组（仅限产品图片）
   // 操作选项
   replace: false, // 默认追加
   // 背景音乐
-  audioId: null as string | null, // 背景音乐ID
+  audioUrl: null as string | null, // 背景音乐URL（直接传递给 yishe-videos）
 });
 
 // 图片尺寸信息
@@ -2293,10 +2307,16 @@ function calculateWidthFromHeight(height: number): number {
 
 // 处理尺寸模式变化
 function handleSizeModeChange() {
-  if (videoGenForm.sizeMode === 'keep-original' && imageSize.value && videoGenForm.autoHeight) {
-    // 切换到保持原图尺寸时，如果启用了自动计算高度，使用原图尺寸
-    videoGenForm.width = imageSize.value.width;
-    videoGenForm.height = imageSize.value.height;
+  if (videoGenForm.sizeMode === 'keep-original' && imageSize.value) {
+    if (videoGenForm.autoHeight) {
+      // 切换到保持原图尺寸时，如果启用了自动计算高度，根据比例计算高度
+      videoGenForm.width = imageSize.value.width;
+      videoGenForm.height = calculateHeightFromWidth(imageSize.value.width);
+    } else {
+      // 未启用自动计算高度时，直接使用原图尺寸
+      videoGenForm.width = imageSize.value.width;
+      videoGenForm.height = imageSize.value.height;
+    }
   }
 }
 
@@ -2323,9 +2343,12 @@ function handleHeightChange() {
 
 // 处理自动计算高度切换
 function handleAutoHeightChange(value: boolean) {
-  if (value && imageSize.value) {
+  if (value && imageSize.value && videoGenForm.sizeMode === 'keep-original') {
     // 启用时，根据当前宽度和图片比例计算高度
     videoGenForm.height = calculateHeightFromWidth(videoGenForm.width);
+  } else if (!value && imageSize.value && videoGenForm.sizeMode === 'keep-original') {
+    // 禁用时，如果当前尺寸不是原图尺寸，恢复为原图尺寸
+    // 或者保持当前尺寸（由用户决定）
   }
 }
 
@@ -2359,37 +2382,47 @@ function resetVideoGenForm() {
   videoGenForm.transition = 'fade';
   videoGenForm.selectedImages = [];
   videoGenForm.replace = false; // 默认追加
-  videoGenForm.audioId = null;
+  videoGenForm.audioUrl = null;
 }
+
+// 手动输入图片功能已移除，只能选择产品已有的图片
 
 // 打开视频生成对话框时，加载音频列表
 async function handleGenerateVideo(row: any) {
   if (!row?.id) return;
-  const hasImages = Array.isArray(row.images) && row.images.length > 0;
-  if (!hasImages) {
-    return ElMessage.warning('该商品没有可用图片，无法生成视频');
-  }
 
   videoGenRow.value = row;
   
   // 先重置表单为默认值
   resetVideoGenForm();
   
-  // 默认选中所有图片
+  // 如果有商品图片，默认选中所有图片
+  const hasImages = Array.isArray(row.images) && row.images.length > 0;
+  if (hasImages) {
   videoGenForm.selectedImages = [...(row.images || [])];
   
   // 获取第一张图片的尺寸
-  if (row.images && row.images.length > 0) {
     const firstImageUrl = row.images[0];
     const size = await getImageSize(firstImageUrl);
     if (size) {
       imageSize.value = size;
-      // 如果使用保持原图尺寸模式，设置为原图尺寸
+      // 如果使用保持原图尺寸模式，根据 autoHeight 设置尺寸
       if (videoGenForm.sizeMode === 'keep-original') {
-        videoGenForm.width = size.width;
-        videoGenForm.height = size.height;
+        if (videoGenForm.autoHeight) {
+          // 启用自动计算高度时，先设置宽度，然后根据比例计算高度
+          videoGenForm.width = size.width;
+          // 直接计算高度，确保按比例同步
+          videoGenForm.height = calculateHeightFromWidth(size.width);
+        } else {
+          // 未启用自动计算高度时，直接使用原图尺寸
+          videoGenForm.width = size.width;
+          videoGenForm.height = size.height;
+        }
       }
     }
+  } else {
+    // 没有商品图片时，提示用户
+    ElMessage.warning('该商品没有图片，无法生成视频');
   }
   
   // 加载音频列表
@@ -3418,43 +3451,80 @@ async function submitGenerateVideo() {
     return ElMessage.warning('请至少选择一张图片');
   }
 
+  // 验证：确保选中的图片都是产品图片（安全验证）
+  const productImages = videoGenRow.value?.images || [];
+  const invalidImages = videoGenForm.selectedImages.filter(
+    url => !productImages.includes(url)
+  );
+  if (invalidImages.length > 0) {
+    return ElMessage.error('只能选择产品已有的图片');
+  }
+
   try {
     generatingVideoId.value = videoGenRow.value.id;
     
-    const ffmpegOptions: any = {
-      width: Number(videoGenForm.width) || 720,
-      height: Number(videoGenForm.height) || 720,
-      clipDuration: Number(videoGenForm.clipDuration) || 2,
-      outputFormat: videoGenForm.outputFormat || 'mp4',
+    // 计算每张图片的展示时长
+    const clipDuration = Number(videoGenForm.clipDuration) || 2;
+    const imageDuration = videoGenForm.selectedImages.length > 0 
+      ? clipDuration / videoGenForm.selectedImages.length 
+      : clipDuration;
+    
+    // 构建 resources 数组（yishe-videos 格式）
+    const resources: any[] = videoGenForm.selectedImages.map((imageUrl, index) => {
+      const resource: any = {
+        type: 'image',
+        url: imageUrl,
+        duration: imageDuration,
+        transition: index === 0 ? 'none' : (videoGenForm.transition || 'fade'),
+        transitionDuration: 0.5,
+        position: 'center',
     };
     
-    // 如果是保持原图尺寸模式
+      // 设置缩放模式
     if (videoGenForm.sizeMode === 'keep-original') {
-      ffmpegOptions.keepImageAspectRatio = true;
+        resource.scaleMode = 'fit'; // 保持原图比例
     } else {
       // 自定义尺寸模式
-      ffmpegOptions.scaleMode = videoGenForm.scaleMode || 'contain';
       if (videoGenForm.scaleMode === 'contain') {
-        ffmpegOptions.backgroundColor = videoGenForm.backgroundColor || '#000000';
+          resource.scaleMode = 'fit';
+        } else if (videoGenForm.scaleMode === 'cover') {
+          resource.scaleMode = 'fill';
+        } else {
+          resource.scaleMode = 'fit';
       }
     }
     
-    // 添加过渡效果（多张图片时）
-    if (videoGenForm.selectedImages.length > 1 && videoGenForm.transition !== 'none') {
-      ffmpegOptions.transition = videoGenForm.transition;
+      return resource;
+    });
+    
+    // 如果选择了背景音乐，直接添加到 resources 中（yishe-videos 会自动处理）
+    if (videoGenForm.audioUrl && videoGenForm.audioUrl.trim()) {
+      resources.push({
+        type: 'audio',
+        url: videoGenForm.audioUrl.trim(),
+        volume: 100,
+      });
     }
     
+    // 构建 options 对象（yishe-videos 格式）
+    const options: any = {
+      width: Number(videoGenForm.width) || 720,
+      height: Number(videoGenForm.height) || 720,
+      fps: Number(videoGenForm.fps) || 25,
+      videoCodec: 'libx264',
+      audioCodec: 'aac',
+      backgroundColor: videoGenForm.backgroundColor || '#000000',
+      videoPreset: 'medium',
+      videoCrf: 23,
+    };
+    
+    // 构建请求数据（直接兼容 yishe-videos 格式）
     const requestData: any = {
       id: videoGenRow.value.id,
       replace: !!videoGenForm.replace,
-      images: videoGenForm.selectedImages, // 传递选中的图片数组
-      ffmpeg: ffmpegOptions,
+      resources: resources,
+      options: options,
     };
-    
-    // 如果选择了背景音乐，添加 audioId
-    if (videoGenForm.audioId) {
-      requestData.audioId = videoGenForm.audioId;
-    }
     
     await generateProductVideo(requestData);
     ElMessage.success('视频生成成功');

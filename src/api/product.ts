@@ -65,25 +65,33 @@ export function generateProductCode(data: { id: string }) {
 
 export function generateProductVideo(data: {
   id: string;
-  fps?: number;
-  images?: string[];
   replace?: boolean;
-  // ffmpeg 配置（后端会基于商品图片生成视频）
-  ffmpeg?: {
+  // 直接传递 yishe-videos 格式的参数（音频已包含在 resources 中）
+  resources: Array<{
+    type: 'image' | 'video' | 'audio';
+    url: string;
+    duration?: number;
+    transition?: 'none' | 'fade' | 'directional-left' | 'directional-right' | string;
+    transitionDuration?: number;
+    position?: string;
+    scaleMode?: 'fit' | 'fill' | 'crop';
+    startTime?: number;
+    volume?: number;
+  }>;
+  options: {
     width?: number;
     height?: number;
     fps?: number;
-    clipDuration?: number;
-    transition?: 'none' | 'fade' | 'directional-left' | 'directional-right' | string;
-    audioUrl?: string;
-    loopAudio?: boolean;
-    titleText?: string;
+    videoCodec?: string;
+    audioCodec?: string;
+    backgroundColor?: string;
+    videoPreset?: string;
+    videoCrf?: number;
+    videoBitrate?: string;
+    audioBitrate?: string;
+    audioSampleRate?: number;
+    audioChannels?: number;
   };
-  // 兼容字段（旧前端可能仍传 editly）
-  editly?: any;
-  // 兼容旧参数：duration 作为每张图片展示时长（秒）
-  duration?: number;
-  transition?: 'fade' | 'slide' | 'zoom' | 'none';
 }) {
   return request.post({
     url: '/product/generate-video',
