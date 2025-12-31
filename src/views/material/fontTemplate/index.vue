@@ -403,7 +403,6 @@
                 <el-icon class="is-loading" style="margin-right: 4px; color: #409EFF;"><Loading /></el-icon>
                 <span style="color: #409EFF; font-size: 12px;">字体加载中...</span>
               </div>
-              <!-- 字体预览会自动加载，无需手动点击 -->
             </div>
             <div class="preview-content compact">
               <!-- 预览区域 - 自适应高度 -->
@@ -507,19 +506,6 @@
           </div>
         </el-form-item>
 
-        <el-form-item label="生成方式说明">
-          <div style="padding: 12px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
-            <div style="margin-bottom: 8px; font-size: 13px; color: #1e40af; font-weight: 500;">生成方式对比：</div>
-            <div style="font-size: 12px; color: #3b82f6; line-height: 1.5;">
-              <div><strong>前端生成：</strong>直接使用页面中的实时预览效果生成PNG，速度快，支持自定义字体，所见即所得</div>
-              <div><strong>后端生成：</strong>使用服务器AI服务生成，质量更高，但速度较慢，适合最终成品</div>
-              <div style="margin-top: 4px; color: #e6a23c;"><strong>建议：</strong>先使用前端生成快速预览效果，确认满意后再使用后端生成高质量版本</div>
-            </div>
-          </div>
-        </el-form-item>
-
-
-
         <el-form-item label="字体状态检查">
           <div style="padding: 12px; background: #fef3c7; border-radius: 4px; border-left: 3px solid #f59e0b;">
             <div style="margin-bottom: 8px; font-size: 13px; color: #92400e; font-weight: 500;">字体加载状态：</div>
@@ -557,19 +543,15 @@
                 <div>字体名称: {{ loadedFontFamily || '系统默认' }}</div>
               </div>
             </div>
-
           </div>
         </el-form-item>
       </el-form>
 
       <template #footer>
         <el-button @click="generateThumbnailDialogVisible = false">取消</el-button>
-        <el-button type="success" :loading="frontendGenerateLoading" @click="submitFrontendGenerateThumbnail">前端生成缩略图</el-button>
-        <el-button type="primary" :loading="generateThumbnailLoading" @click="submitGenerateThumbnail">后端生成缩略图</el-button>
+        <el-button type="primary" :loading="frontendGenerateLoading" @click="submitFrontendGenerateThumbnail">生成缩略图</el-button>
       </template>
     </el-dialog>
-
-
 
     <!-- 图片预览弹窗 -->
     <ImagePreview
@@ -823,7 +805,6 @@ const batchDeleteLoading = ref(false);
 
 // 生成缩略图相关
 const generateThumbnailDialogVisible = ref(false);
-const generateThumbnailLoading = ref(false);
 const frontendGenerateLoading = ref(false);
 const thumbnailFormRef = ref();
 const thumbnailForm = ref({
@@ -836,8 +817,6 @@ const thumbnailForm = ref({
 const thumbnailRules = {
   templateText: [{ required: true, message: '请输入模板文字', trigger: 'blur' }]
 };
-
-
 
 // 图片预览相关状态
 const imagePreviewVisible = ref(false);
@@ -1277,30 +1256,6 @@ function handleGenerateThumbnail(row) {
   }, 300);
 }
 
-async function submitGenerateThumbnail() {
-  if (!thumbnailFormRef.value) return;
-   
-  try {
-    await thumbnailFormRef.value.validate();
-    generateThumbnailLoading.value = true;
-    
-    // 调用后端API生成缩略图
-    await fontTemplateApi.generateThumbnail(currentRow.value.id?.toString() || '', {
-      templateText: thumbnailForm.value.templateText,
-      options: thumbnailForm.value.options
-    });
-    
-    ElMessage.success('缩略图生成成功');
-    generateThumbnailDialogVisible.value = false;
-    getList(); // 刷新列表
-  } catch (error) {
-    console.error('缩略图生成失败:', error);
-    ElMessage.error('缩略图生成失败，请稍后重试');
-  } finally {
-    generateThumbnailLoading.value = false;
-  }
-}
-
 // 前端生成缩略图
 async function submitFrontendGenerateThumbnail() {
   if (!thumbnailFormRef.value) return;
@@ -1392,61 +1347,6 @@ async function submitFrontendGenerateThumbnail() {
   }
 }
 
-// 处理dropdown操作命令
-function handleOperationCommand(command: string, row: any) {
-  switch (command) {
-    case 'edit':
-      handleEdit(row);
-      break;
-    case 'preview':
-      // handlePreview(row);
-      break;
-    case 'generate-thumbnail':
-      handleGenerateThumbnail(row);
-      break;
-    case 'download':
-      downloadFileByElement(row.url, row.name);
-      break;
-    case 'ai-generate':
-      handleAiGenerate(row);
-      break;
-    case 'delete':
-      handleDelete(row);
-      break;
-    default:
-      console.warn('未知的操作命令:', command);
-  }
-}
-
-// 缩略图预览相关方法
-function openThumbnailPreview(thumbnailUrl: string, fontName?: string) {
-  currentImageUrl.value = thumbnailUrl;
-  imagePreviewVisible.value = true;
-}
-
-function handleThumbnailError(event: Event) {
-  const img = event.target as HTMLImageElement;
-  img.style.display = 'none';
-  const parent = img.parentElement;
-  if (parent) {
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'w-20 h-20 bg-red-100 rounded flex items-center justify-center text-red-400 text-xs';
-    errorDiv.textContent = '加载失败';
-    parent.appendChild(errorDiv);
-  }
-}
-
-function closeImagePreview() {
-  imagePreviewVisible.value = false;
-  currentImageUrl.value = '';
-}
-
-
-
-
-
-
-
 // 字体加载预览相关方法
 async function loadFontForPreview() {
   if (!currentRow.value?.url) {
@@ -1528,6 +1428,62 @@ async function loadFontForPreview() {
     fontLoading.value = false;
   }
 }
+
+// 处理dropdown操作命令
+function handleOperationCommand(command: string, row: any) {
+  switch (command) {
+    case 'edit':
+      handleEdit(row);
+      break;
+    case 'preview':
+      // handlePreview(row);
+      break;
+    case 'generate-thumbnail':
+      handleGenerateThumbnail(row);
+      break;
+    case 'download':
+      downloadFileByElement(row.url, row.name);
+      break;
+    case 'ai-generate':
+      handleAiGenerate(row);
+      break;
+    case 'delete':
+      handleDelete(row);
+      break;
+    default:
+      console.warn('未知的操作命令:', command);
+  }
+}
+
+// 缩略图预览相关方法
+function openThumbnailPreview(thumbnailUrl: string, fontName?: string) {
+  currentImageUrl.value = thumbnailUrl;
+  imagePreviewVisible.value = true;
+}
+
+function handleThumbnailError(event: Event) {
+  const img = event.target as HTMLImageElement;
+  img.style.display = 'none';
+  const parent = img.parentElement;
+  if (parent) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'w-20 h-20 bg-red-100 rounded flex items-center justify-center text-red-400 text-xs';
+    errorDiv.textContent = '加载失败';
+    parent.appendChild(errorDiv);
+  }
+}
+
+function closeImagePreview() {
+  imagePreviewVisible.value = false;
+  currentImageUrl.value = '';
+}
+
+
+
+
+
+
+
 
 
 

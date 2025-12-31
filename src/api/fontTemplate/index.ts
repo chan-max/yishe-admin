@@ -56,19 +56,4 @@ export const fontTemplateApi = {
     })
   },
 
-  // 生成字体模板缩略图
-  generateThumbnail: async (id: string, data: {
-    templateText?: string,
-    options?: {
-      fontSize?: number;
-      textColor?: string;
-    }
-  }) => {
-    return await request.post({ 
-      url: `/font-template/generate-thumbnail/${id}`, 
-      data 
-    })
-  },
-
-
 }
