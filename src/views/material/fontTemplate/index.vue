@@ -120,6 +120,10 @@
                     <el-icon><Download /></el-icon>
                     <span>下载源文件</span>
                   </el-dropdown-item>
+                  <el-dropdown-item command="copy-url">
+                    <el-icon><DocumentCopy /></el-icon>
+                    <span>复制源文件地址</span>
+                  </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="ai-generate">
                     <el-icon><MagicStick /></el-icon>
                     <span>AI生成内容</span>
@@ -585,6 +589,7 @@ import {
   Download,
   MagicStick,
   InfoFilled,
+  DocumentCopy,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 
@@ -1443,6 +1448,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'download':
       downloadFileByElement(row.url, row.name);
+      break;
+    case 'copy-url':
+      copyUrl(row.url);
       break;
     case 'ai-generate':
       handleAiGenerate(row);
