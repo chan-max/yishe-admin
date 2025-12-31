@@ -121,13 +121,6 @@
           <el-option label="非侵权" :value="false" />
         </el-select>
       </form-item>
-      <form-item label="发布状态">
-        <el-select v-model="queryParams.isPublish" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" :value="null" />
-          <el-option label="已发布" :value="true" />
-          <el-option label="未发布" :value="false" />
-        </el-select>
-      </form-item>
       <form-item label="随机顺序">
         <el-switch
           v-model="queryParams.random"
@@ -149,8 +142,6 @@
         <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">
           制作PS套图({{ ids.length }})
         </el-button>
-        <el-button v-if="isAdmin" type="warning" @click="handleBatchPublish">批量发布({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="info" @click="handleBatchUnpublish">批量下架({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
         <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
           收起筛选
@@ -183,13 +174,6 @@
             <el-option label="全部" :value="null" />
             <el-option label="侵权" :value="true" />
             <el-option label="非侵权" :value="false" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="发布状态">
-          <el-select v-model="queryParams.isPublish" placeholder="请选择状态">
-            <el-option label="全部" :value="null" />
-            <el-option label="已发布" :value="true" />
-            <el-option label="未发布" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="后缀">
@@ -327,9 +311,6 @@
                       <div v-if="tpl.psdInfo" class="template-psd-info">
                         {{ tpl.psdInfo }}
                       </div>
-                    </div>
-                    <div class="template-meta">
-                      <el-tag v-if="tpl.category" size="small">{{ tpl.category }}</el-tag>
                     </div>
                       <div class="template-paths">
                         <div class="path-row">
@@ -651,15 +632,6 @@
               </el-tag>
             </template>
 
-            <template #isPublishSlot="{ row }">
-              <el-tag 
-                :type="row.isPublish ? 'success' : 'info'" 
-                size="small"
-              >
-                {{ row.isPublish ? '已发布' : '未发布' }}
-              </el-tag>
-            </template>
-
             <template #similaritySlot="{ row }">
               <el-tag 
                 v-if="row.similarity !== undefined"
@@ -699,21 +671,6 @@
                           <div class="op-submenu-item" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('ai-judge-infringement', row)">AI判断侵权(知名IP)</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
-                        </div>
-                      </div>
-
-                      <!-- 发布操作（仅管理员） -->
-                      <div 
-                        v-if="isAdmin" 
-                        class="op-menu-item has-submenu"
-                        @mouseenter="handleSubmenuEnter"
-                        @mouseleave="handleSubmenuLeave"
-                      >
-                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
-                        <span class="op-menu-label">发布</span>
-                        <div class="op-submenu" data-submenu="publish" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
-                          <div v-if="!row.isPublish" class="op-submenu-item" @click="() => handleOperationCommand('publish', row)">发布</div>
-                          <div v-else class="op-submenu-item" @click="() => handleOperationCommand('unpublish', row)">下架</div>
                         </div>
                       </div>
 
@@ -1290,15 +1247,6 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <!-- 发布状态 -->
-          <el-col :span="8">
-            <el-form-item label="发布状态">
-              <el-select v-model="editForm.isPublish" placeholder="请选择" style="width: 100%">
-                <el-option label="未发布" :value="false" />
-                <el-option label="已发布" :value="true" />
-              </el-select>
-            </el-form-item>
-          </el-col>
         </el-row>
 
         <el-divider />
@@ -1560,7 +1508,6 @@ const queryParams = reactive({
   phashMode: 'range', // range | exact
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
-  isPublish: null, // 新增发布状态过滤参数
   random: false, // 是否随机
 })
 
@@ -1623,12 +1570,6 @@ const gridOptions = computed(() => {
       field: 'isCustom', 
       width: 100,
       slots: { default: 'isCustomSlot' }
-    },
-    { 
-      title: '发布状态', 
-      field: 'isPublish', 
-      width: 100,
-      slots: { default: 'isPublishSlot' }
     },
     { title: '原始地址', field: 'originUrl', minWidth: 200, ellipsis: true, slots: { default: 'originUrlSlot' } }, // 原始地址列
     {
@@ -2724,70 +2665,9 @@ async function handleFindSimilar(row) {
   actionsCollapsed.value = false;
 }
 
-// 发布贴纸
-async function handlePublish(row) {
-  try {
-    await updateAssetLibrary({ id: row.id, isPublish: true });
-    row.isPublish = true;
-    ElMessage.success('发布成功');
-    getList();
-  } catch (e) {
-    ElMessage.error('发布失败');
-  }
-}
-
-// 下架贴纸
-async function handleUnpublish(row) {
-  try {
-    await updateAssetLibrary({ id: row.id, isPublish: false });
-    row.isPublish = false;
-    ElMessage.success('下架成功');
-    getList();
-  } catch (e) {
-    ElMessage.error('下架失败');
-  }
-}
-
-// 批量发布
-async function handleBatchPublish() {
-  if (!ids.value.length) {
-    return ElMessage.warning('请选择要发布的素材');
-  }
-  
-  try {
-    const promises = ids.value.map(id => 
-      updateAssetLibrary({ id, isPublish: true })
-    );
-    await Promise.all(promises);
-    ElMessage.success(`成功发布 ${ids.value.length} 个素材`);
-    resetCheckStatus();
-    getList();
-  } catch (e) {
-    ElMessage.error('批量发布失败');
-  }
-}
-
-// 批量下架
-async function handleBatchUnpublish() {
-  if (!ids.value.length) {
-    return ElMessage.warning('请选择要下架的素材');
-  }
-  
-  try {
-    const promises = ids.value.map(id => 
-      updateAssetLibrary({ id, isPublish: false })
-    );
-    await Promise.all(promises);
-    ElMessage.success(`成功下架 ${ids.value.length} 个素材`);
-    resetCheckStatus();
-    getList();
-  } catch (e) {
-    ElMessage.error('批量下架失败');
-  }
-}
 
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', nameEn: '', description: '', descriptionEn: '', keywords: '', keywordsEn: '', isCustom: false, isInfringement: false, isPublish: false, originUrl: '' })
+const editForm = ref({ id: '', name: '', nameEn: '', description: '', descriptionEn: '', keywords: '', keywordsEn: '', isCustom: false, isInfringement: false, originUrl: '' })
 const editLoading = ref(false)
 
 // 其他缺少的变量
@@ -2857,7 +2737,6 @@ function handleEdit(row) {
     keywordsEn: row.keywordsEn || '',
     isCustom: row.isCustom || false,
     isInfringement: row.isInfringement || false,
-    isPublish: row.isPublish || false,
     originUrl: row.originUrl || ''
   }
   editDialogVisible.value = true
@@ -3036,12 +2915,6 @@ function handleOperationCommand(command: string, row: any) {
     case 'find-similar':
       handleFindSimilar(row);
       break;
-    case 'publish':
-      handlePublish(row);
-      break;
-    case 'unpublish':
-      handleUnpublish(row);
-      break;
     case 'view-meta':
       showMetaDetail(row.meta);
       break;
@@ -3087,8 +2960,7 @@ const urlUploadForm = reactive({
   keywords: '',
   keywordsEn: '',
   isCustom: false,
-  isInfringement: false,
-  isPublish: false
+  isInfringement: false
 })
 
 const urlUploadFormRules = {
@@ -3116,7 +2988,6 @@ function resetUrlUploadForm() {
   urlUploadForm.keywordsEn = ''
   urlUploadForm.isCustom = false
   urlUploadForm.isInfringement = false
-  urlUploadForm.isPublish = false
   urlPreviewVisible.value = false
   imageInfo.value = null
 }
@@ -3393,7 +3264,6 @@ async function handleUrlUpload() {
       suffix: extension,
       isCustom: urlUploadForm.isCustom,
       isInfringement: urlUploadForm.isInfringement,
-      isPublish: urlUploadForm.isPublish,
       width,
       height,
       aspectRatio,
@@ -3557,7 +3427,6 @@ async function handleUrlUpload() {
 }
 
 .template-header {
-  margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
