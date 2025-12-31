@@ -29,14 +29,6 @@
           @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
         />
       </form-item>
-      <!-- 公开状态筛选 -->
-      <form-item label="公开状态">
-        <el-select v-model="queryParams.isPublic" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" value="" />
-          <el-option label="公开" :value="true" />
-          <el-option label="私有" :value="false" />
-        </el-select>
-      </form-item>
       <el-button v-if="isAdmin" type="primary" @click="handleAdd" :icon="Plus">
         新增字体
       </el-button>
@@ -48,22 +40,6 @@
           :loading="batchAiLoading"
         >
           批量AI补全 ({{ ids.length }})
-        </el-button>
-        <el-button 
-          type="primary" 
-          @click="handleBatchSetPublic"
-          :disabled="!ids.length"
-          :loading="batchSetPublicLoading"
-        >
-          批量设为公开 ({{ ids.length }})
-        </el-button>
-        <el-button 
-          type="warning" 
-          @click="handleBatchSetPrivate"
-          :disabled="!ids.length"
-          :loading="batchSetPrivateLoading"
-        >
-          批量设为私有 ({{ ids.length }})
         </el-button>
         <el-button 
           type="danger" 
@@ -102,19 +78,6 @@
           </div>
         </template>
 
-        <template #titleNameDefaultSlot="{ row }">
-          <div v-if="row.titleTemplateId" class="flex items-center gap-2">
-            <span>
-              {{ row.titleName }}
-            </span>
-          </div>
-          <div v-else>
-            <el-button type="danger" @click="handleEdit(row)" link size="small">
-              未选择标题,点击选择
-            </el-button>
-          </div>
-        </template>
-
         <template #languagesSlot="{ row }">
           <div class="flex flex-wrap gap-1">
             <el-tag
@@ -135,15 +98,6 @@
             </el-tag>
             <span v-if="!row.languages || row.languages.length === 0" class="text-gray-400 text-xs">未设置</span>
           </div>
-        </template>
-
-        <template #isPublicSlot="{ row }">
-          <el-tag 
-            :type="row.isPublic ? 'success' : 'info'" 
-            size="small"
-          >
-            {{ row.isPublic ? '公开' : '私有' }}
-          </el-tag>
         </template>
 
         <template #operationDefaultSlot="{ row }">
@@ -169,10 +123,6 @@
                   <el-dropdown-item v-if="isAdmin" command="ai-generate">
                     <el-icon><MagicStick /></el-icon>
                     <span>AI生成内容</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="toggle-public" divided>
-                    <el-icon><View /></el-icon>
-                    <span>{{ row.isPublic ? '设为私有' : '设为公开' }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
@@ -268,12 +218,6 @@
               <div style="margin-top: 8px; font-size: 12px; color: #909399;">
                 提示：一个字体可以标记多种语言，选择后会在表格中显示语言标签和示例
               </div>
-            </el-form-item>
-          </el-col>
-
-          <el-col :span="24">
-            <el-form-item label="是否公开">
-              <el-switch v-model="form.isPublic" />
             </el-form-item>
           </el-col>
 
@@ -666,7 +610,6 @@ import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
 import { downloadFileByElement } from "@/common/download";
-import { getTitleTemplateList } from "@/api/publish";
 import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
 import PsdPreview from '@/components/PsdPreview/index.vue'
@@ -764,8 +707,7 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue(),
   startTime: '',
   endTime: '',
-  searchKeyword: '', // 搜索关键字
-  isPublic: '' // 公开状态
+  searchKeyword: '' // 搜索关键字
 });
 
 const gridOptions = ref({
@@ -799,7 +741,6 @@ const gridOptions = ref({
       minWidth: 200, 
       slots: { default: "languagesSlot" } 
     },
-    { title: "是否公开", field: "isPublic", width: 100, slots: { default: "isPublicSlot" } },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
       title: "创建时间",
@@ -880,10 +821,6 @@ const batchProgress = ref({
 // 批量删除相关
 const batchDeleteLoading = ref(false);
 
-// 批量操作loading状态
-const batchSetPublicLoading = ref(false);
-const batchSetPrivateLoading = ref(false);
-
 // 生成缩略图相关
 const generateThumbnailDialogVisible = ref(false);
 const generateThumbnailLoading = ref(false);
@@ -950,7 +887,6 @@ function handleReset() {
   queryParams.searchKeyword = '';
   queryParams.startTime = '';
   queryParams.endTime = '';
-  queryParams.isPublic = '';
   queryParams.currentPage = 1;
   getList();
 }
@@ -1034,7 +970,6 @@ function handleAdd() {
     description: "",
     keywords: "",
     languages: [],
-    isPublic: false,
   };
 }
 
@@ -1047,7 +982,6 @@ function handleEdit(row) {
   form.value = {
     ...row,
     languages: row.languages || [],
-    isPublic: row.isPublic || false,
   };
 }
 
@@ -1062,21 +996,18 @@ const form = ref<{
   description?: string;
   keywords?: string;
   languages?: string[];
-  isPublic?: boolean;
 }>({
   file: null,
   name: "",
   description: "",
   keywords: "",
   languages: [],
-  isPublic: false,
 });
 
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
   description: [{ required: false, message: "请输入描述", trigger: "blur" }],
   keywords: [{ required: false, message: "请输入关键字", trigger: "blur" }],
-  // titleTemplateId: [{ required: true, message: "请选择标题模板", trigger: "blur" }],
   file: [{ required: true, message: "请选择字体文件", trigger: "blur" }],
 };
 
@@ -1127,7 +1058,6 @@ const submitForm = async () => {
         description: form.value.description,
         keywords: form.value.keywords,
         languages: form.value.languages || [],
-        isPublic: form.value.isPublic,
       });
       ElMessage.success("更新成功");
       getList();
@@ -1142,7 +1072,6 @@ const submitForm = async () => {
         description: form.value.description,
         keywords: form.value.keywords,
         languages: form.value.languages || [],
-        isPublic: form.value.isPublic,
         url,
         size: form.value.file.size,
         type: form.value.file.name.split(".").pop(),
@@ -1463,72 +1392,6 @@ async function submitFrontendGenerateThumbnail() {
   }
 }
 
-// 切换公开状态
-async function handleTogglePublic(row: any) {
-  const newStatus = !row.isPublic
-  const statusText = newStatus ? '公开' : '私有'
-  
-  try {
-    // 直接调用更新接口
-    await fontTemplateApi.updateFontTemplate({
-      id: row.id,
-      isPublic: newStatus
-    })
-    
-    ElMessage.success(`已设为${statusText}`)
-    getList() // 刷新列表
-  } catch (error) {
-    console.error('切换公开状态失败:', error)
-    ElMessage.error('切换公开状态失败，请稍后重试')
-  }
-}
-
-// 批量设为公开
-async function handleBatchSetPublic() {
-  if (!ids.value.length) {
-    return ElMessage.warning('请选择要设为公开的字体模板')
-  }
-  
-  batchSetPublicLoading.value = true
-  try {
-    const promises = ids.value.map(id => 
-      fontTemplateApi.updateFontTemplate({ id, isPublic: true })
-    )
-    await Promise.all(promises)
-    ElMessage.success(`成功设为公开 ${ids.value.length} 个字体模板`)
-    ids.value = []
-    getList()
-  } catch (error) {
-    console.error('批量设为公开失败:', error)
-    ElMessage.error('批量设为公开失败，请稍后重试')
-  } finally {
-    batchSetPublicLoading.value = false
-  }
-}
-
-// 批量设为私有
-async function handleBatchSetPrivate() {
-  if (!ids.value.length) {
-    return ElMessage.warning('请选择要设为私有的字体模板')
-  }
-  
-  batchSetPrivateLoading.value = true
-  try {
-    const promises = ids.value.map(id => 
-      fontTemplateApi.updateFontTemplate({ id, isPublic: false })
-    )
-    await Promise.all(promises)
-    ElMessage.success(`成功设为私有 ${ids.value.length} 个字体模板`)
-    ids.value = []
-    getList()
-  } catch (error) {
-    console.error('批量设为私有失败:', error)
-    ElMessage.error('批量设为私有失败，请稍后重试')
-  } finally {
-    batchSetPrivateLoading.value = false
-  }
-}
-
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
@@ -1546,9 +1409,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'ai-generate':
       handleAiGenerate(row);
-      break;
-    case 'toggle-public':
-      handleTogglePublic(row);
       break;
     case 'delete':
       handleDelete(row);
