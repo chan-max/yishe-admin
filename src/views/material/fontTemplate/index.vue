@@ -340,31 +340,47 @@
       :destroy-on-close="true"
       @close="resetFontPreview"
     >
-      <el-form :model="thumbnailForm" :rules="thumbnailRules" ref="thumbnailFormRef" label-width="100px" size="small">
+      <el-form :model="thumbnailForm" :rules="thumbnailRules" ref="thumbnailFormRef" label-width="100px">
         <!-- 基本信息行 -->
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="模板名称">
-              <el-input v-model="currentRow.name" disabled size="small" />
+              <el-input v-model="currentRow.name" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="字体文件">
-              <el-input v-model="currentRow.url" disabled size="small" />
+              <el-input v-model="currentRow.url" disabled />
             </el-form-item>
           </el-col>
         </el-row>
         
         <el-form-item label="模板文字" prop="templateText">
+          <div style="margin-bottom: 12px;">
+            <el-select
+              v-model="selectedTemplateIndex"
+              placeholder="请选择默认模板"
+              style="min-width: 300px;"
+              @change="applyDefaultTemplate"
+              clearable
+            >
+              <el-option
+                v-for="(template, index) in defaultTemplates"
+                :key="index"
+                :label="template.name"
+                :value="index"
+              />
+            </el-select>
+          </div>
           <el-input
             v-model="thumbnailForm.templateText"
             type="textarea"
-            :rows="3"
-            placeholder="请输入用于生成缩略图的模板文字，如：ABCDEFGHIJKLMNOPQRSTUVWXYZ&#10;abcdefghijklmnopqrstuvwxyz&#10;0123456789&#10;!@#$%^&*()&#10;你好世界字体设计创意无限中文排版艺术字体设计美学&#10;字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体"
-            style="font-family: monospace;"
+            :rows="10"
+            placeholder="请输入用于生成缩略图的模板文字，或从上方选择默认模板"
+            style="font-family: monospace; font-size: 13px;"
           />
-          <div style="margin-top: 4px; font-size: 11px; color: #909399;">
-            支持换行，每行将显示为不同的文字行。默认包含：大写字母、小写字母、数字、常用符号、中文字符。
+          <div style="margin-top: 8px; font-size: 12px; color: #909399;">
+            支持换行，每行将显示为不同的文字行。可从上方选择默认模板快速应用，或手动输入自定义文字。
           </div>
         </el-form-item>
 
@@ -378,7 +394,6 @@
                   :min="20" 
                   :max="200" 
                   :step="10"
-                  size="small"
                   style="width: 100%"
                 />
               </div>
@@ -386,7 +401,7 @@
             <el-col :span="12">
               <div class="form-item-wrapper">
                 <label class="form-label">文字颜色</label>
-                <el-color-picker v-model="thumbnailForm.options.textColor" size="small" />
+                <el-color-picker v-model="thumbnailForm.options.textColor" />
               </div>
             </el-col>
           </el-row>
@@ -455,7 +470,7 @@
                     wordWrap: 'break-word'
                   }"
                 >
-                  {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+                  {{ thumbnailForm.templateText || defaultTemplates[0].content }}
                 </div>
               </div>
               
@@ -500,7 +515,7 @@
                     wordWrap: 'break-word'
                   }"
                 >
-                  {{ thumbnailForm.templateText || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体' }}
+                  {{ thumbnailForm.templateText || defaultTemplates[0].content }}
                 </div>
               </div>
             </div>
@@ -808,12 +823,57 @@ const batchProgress = ref({
 // 批量删除相关
 const batchDeleteLoading = ref(false);
 
+// 默认模板列表
+const defaultTemplates = [
+  {
+    name: '完整字符集（英文+数字+符号+中文）',
+    content: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()_+-=[]{}|;:,.<>?/\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体'
+  },
+  {
+    name: '基础英文+数字',
+    content: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789'
+  },
+  {
+    name: '中文展示模板',
+    content: '你好世界\n字体设计创意无限\n中文排版艺术字体\n设计美学字体之美\n排版艺术设计灵感\n创意设计字体艺术'
+  },
+  {
+    name: '中英文混合',
+    content: 'Hello World\n你好世界\nFont Design\n字体设计\nCreative Typography\n创意排版'
+  },
+  {
+    name: '符号展示',
+    content: '!@#$%^&*()_+-=\n[]{}|;:,.<>?/\n~`\'"\\'
+  },
+  {
+    name: '数字展示',
+    content: '0123456789\n一二三四五六七八九十\n①②③④⑤⑥⑦⑧⑨⑩'
+  },
+  {
+    name: '字母展示（大写）',
+    content: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  },
+  {
+    name: '字母展示（小写）',
+    content: 'abcdefghijklmnopqrstuvwxyz'
+  },
+  {
+    name: '常用短语（英文）',
+    content: 'The Quick Brown Fox\nJumps Over\nThe Lazy Dog\nFont Preview\nTypography Design'
+  },
+  {
+    name: '常用短语（中文）',
+    content: '字体预览\n设计美学\n创意无限\n排版艺术\n字体之美'
+  }
+];
+
 // 生成缩略图相关
 const generateThumbnailDialogVisible = ref(false);
 const frontendGenerateLoading = ref(false);
 const thumbnailFormRef = ref();
+const selectedTemplateIndex = ref<number | null>(null);
 const thumbnailForm = ref({
-  templateText: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体',
+  templateText: defaultTemplates[0].content,
   options: {
     fontSize: 100,
     textColor: '#000000'
@@ -1240,6 +1300,14 @@ async function submitBatchAiDialog() {
   }
 }
 
+// 应用默认模板
+function applyDefaultTemplate(index: number | null) {
+  if (index !== null && index >= 0 && index < defaultTemplates.length) {
+    thumbnailForm.value.templateText = defaultTemplates[index].content;
+    ElMessage.success(`已应用模板：${defaultTemplates[index].name}`);
+  }
+}
+
 // 生成缩略图相关方法
 function handleGenerateThumbnail(row) {
   currentRow.value = row;
@@ -1249,8 +1317,9 @@ function handleGenerateThumbnail(row) {
   }
   // 重置字体预览状态
   resetFontPreview();
-  // 重置为默认值并打开弹窗
-  thumbnailForm.value.templateText = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ\nabcdefghijklmnopqrstuvwxyz\n0123456789\n!@#$%^&*()\n你好世界字体设计创意无限中文排版艺术字体设计美学\n字体之美排版艺术设计灵感创意设计字体艺术排版之美设计创意字体排版艺术设计创意字体';
+  // 重置为默认模板并打开弹窗
+  selectedTemplateIndex.value = 0;
+  thumbnailForm.value.templateText = defaultTemplates[0].content;
   generateThumbnailDialogVisible.value = true;
   
   // 弹窗打开后自动加载字体预览
