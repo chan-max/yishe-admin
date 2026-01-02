@@ -959,6 +959,7 @@ function formatPsdInfo(psdInfo: any): string {
   .thumbnail-image {
     width: 120px;
     height: auto;
+    min-height: 120px;
     object-fit: contain;
     border: 1px solid var(--el-border-color-light);
     border-radius: 4px;
