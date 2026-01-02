@@ -316,8 +316,8 @@
                       <div class="template-title-row">
                         <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
                       </div>
-                      <div v-if="tpl.psdInfo" class="template-psd-info">
-                        {{ tpl.psdInfo }}
+                      <div v-if="tpl.psdTemplateConfig" class="template-psd-info">
+                        {{ tpl.psdTemplateConfig }}
                       </div>
                     </div>
                       <div class="template-paths">
@@ -434,10 +434,10 @@
               <div class="template-config-header-row">
                 <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
                 <el-tag
-                  :type="(template.psdInfo || template.psdTemplateConfig) ? 'success' : 'info'"
+                  :type="template.psdTemplateConfig ? 'success' : 'info'"
                   size="small"
                 >
-                  {{ (template.psdInfo || template.psdTemplateConfig) ? '已配置' : '未配置' }}
+                  {{ template.psdTemplateConfig ? '已配置' : '未配置' }}
                 </el-tag>
               </div>
               <div class="template-config-images">
@@ -2431,8 +2431,8 @@ function handlePsdTemplateDetailConfig() {
   if (psdSetMergeSticker.value) {
     // 合并模式：有 N 个模板，就生成 N 个配置项（每个模板一个）
     templateConfigList.value = selectedTemplates.map(template => {
-      // 优先使用 psdTemplateConfig，兼容旧的 psdInfo
-      const templateConfig = template.psdTemplateConfig || template.psdInfo
+      // 使用 psdTemplateConfig
+      const templateConfig = template.psdTemplateConfig
       let psdInfoObj = null
       let configText = ''
       if (templateConfig) {
@@ -2461,8 +2461,8 @@ function handlePsdTemplateDetailConfig() {
     // 单素材模式：生成 素材数 × 模板数 个配置项
     ids.value.forEach(materialId => {
       selectedTemplates.forEach(template => {
-        // 优先使用 psdTemplateConfig，兼容旧的 psdInfo
-        const templateConfig = template.psdTemplateConfig || template.psdInfo
+        // 使用 psdTemplateConfig
+        const templateConfig = template.psdTemplateConfig
         let psdInfoObj = null
         let configText = ''
         if (templateConfig) {

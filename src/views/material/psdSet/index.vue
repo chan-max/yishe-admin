@@ -167,7 +167,7 @@
         <template #configSlot="{ row }">
           <div class="flex items-center gap-2">
             <el-tag 
-              v-if="row.stickerPsdSetConfig || row.config" 
+              v-if="row.stickerPsdSetConfig" 
               type="info" 
               size="small" 
               effect="plain"
@@ -353,7 +353,7 @@
                 取消
               </el-button>
               <el-button 
-                v-if="!configEditing && (detailData?.stickerPsdSetConfig || detailData?.config)" 
+                v-if="!configEditing && detailData?.stickerPsdSetConfig" 
                 type="info" 
                 size="small" 
                 @click="configPreviewMode = !configPreviewMode"
@@ -375,10 +375,10 @@
               <span>{{ configJsonError }}</span>
             </div>
           </div>
-          <div v-else-if="configPreviewMode && detailData?.config" class="config-preview-container">
+          <div v-else-if="configPreviewMode && detailData?.stickerPsdSetConfig" class="config-preview-container">
             <pre class="config-preview">{{ formattedConfig }}</pre>
           </div>
-          <div v-else-if="detailData?.stickerPsdSetConfig || detailData?.config" class="config-display">
+          <div v-else-if="detailData?.stickerPsdSetConfig" class="config-display">
             <el-tag type="info" size="small">已配置 (点击编辑查看详情)</el-tag>
           </div>
           <span v-else class="text-gray-400 text-sm">未配置</span>
@@ -468,7 +468,7 @@
       <template #footer>
         <el-button @click="configViewDialogVisible = false">关闭</el-button>
         <el-button 
-          v-if="configViewDialogData?.stickerPsdSetConfig || configViewDialogData?.config"
+          v-if="configViewDialogData?.stickerPsdSetConfig"
           type="primary" 
           @click="handleEditFromView"
         >
@@ -641,7 +641,7 @@ const configViewDialogVisible = ref(false)
 const configViewDialogLoading = ref(false)
 const configViewDialogData = ref<any>(null)
 const configViewFormatted = computed(() => {
-  const config = configViewDialogData.value?.stickerPsdSetConfig || configViewDialogData.value?.config
+  const config = configViewDialogData.value?.stickerPsdSetConfig
   if (!config) return ''
   try {
     const parsed = typeof config === 'string' 
@@ -655,7 +655,7 @@ const configViewFormatted = computed(() => {
 
 // 格式化配置信息用于预览
 const formattedConfig = computed(() => {
-  const config = detailData.value?.stickerPsdSetConfig || detailData.value?.config
+  const config = detailData.value?.stickerPsdSetConfig
   if (!config) return ''
   try {
     const parsed = typeof config === 'string' 
@@ -915,8 +915,8 @@ async function handleViewDetail(row: any) {
       url: `/sticker-psd-set/${row.id}`
     })
     detailData.value = res?.data || res || {}
-    // 初始化配置编辑值（优先使用 stickerPsdSetConfig，兼容 config）
-    const config = detailData.value?.stickerPsdSetConfig || detailData.value?.config
+    // 初始化配置编辑值
+    const config = detailData.value?.stickerPsdSetConfig
     if (config) {
       try {
         const parsed = typeof config === 'string' 
@@ -952,8 +952,8 @@ async function handleEditConfigDirectly(row: any) {
       url: `/sticker-psd-set/${row.id}`
     })
     configEditDialogData.value = res?.data || res || {}
-    // 初始化配置编辑值（优先使用 stickerPsdSetConfig，兼容 config）
-    const config = configEditDialogData.value?.stickerPsdSetConfig || configEditDialogData.value?.config
+    // 初始化配置编辑值
+    const config = configEditDialogData.value?.stickerPsdSetConfig
     if (config) {
       try {
         const parsed = typeof config === 'string' 
@@ -981,7 +981,7 @@ async function handleEditConfigDirectly(row: any) {
 function handleEditConfig() {
   configEditing.value = true
   configPreviewMode.value = false
-  const config = detailData.value?.stickerPsdSetConfig || detailData.value?.config
+  const config = detailData.value?.stickerPsdSetConfig
   if (config) {
     try {
       const parsed = typeof config === 'string' 
@@ -1001,8 +1001,8 @@ function handleEditConfig() {
 function handleCancelEditConfig() {
   configEditing.value = false
   configJsonError.value = ''
-  // 恢复原始值（优先使用 stickerPsdSetConfig，兼容 config）
-  const config = detailData.value?.stickerPsdSetConfig || detailData.value?.config
+  // 恢复原始值
+  const config = detailData.value?.stickerPsdSetConfig
   if (config) {
     try {
       const parsed = typeof config === 'string' 
