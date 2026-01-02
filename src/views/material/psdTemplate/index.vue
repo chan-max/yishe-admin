@@ -92,22 +92,16 @@
 
         <template #psdInfoSlot="{ row }">
           <div class="psd-info-cell">
-            <el-popover
+            <el-button
               v-if="row.psdInfo"
-              placement="top-start"
-              :width="500"
-              trigger="hover"
+              type="primary"
+              link
+              size="small"
+              @click="handleViewPsdInfo(row)"
             >
-              <template #reference>
-                <div class="psd-info-preview">
-                  <el-icon class="info-icon"><InfoFilled /></el-icon>
-                  <span class="info-text">查看套图信息</span>
-                </div>
-              </template>
-              <div class="psd-info-content">
-                <pre class="psd-info-json">{{ formatPsdInfo(row.psdInfo) }}</pre>
-              </div>
-            </el-popover>
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+              <span class="info-text">查看套图信息</span>
+            </el-button>
             <span v-else class="text-gray-400">无</span>
           </div>
         </template>
@@ -235,10 +229,10 @@
                 v-model="form.psdInfoText"
                 type="textarea"
                 :rows="4"
-                placeholder='请输入套图信息（JSON格式），例如：{"images": [], "description": ""}'
+                placeholder='请输入套图信息（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
               />
               <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
-                提示：请输入有效的JSON格式数据，用于存储套图相关信息
+                提示：支持JSON格式（键需引号）或JavaScript对象格式（键无需引号），例如：{"images": []} 或 {images: []}
               </div>
             </el-form-item>
           </el-col>
@@ -319,6 +313,29 @@
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 套图信息全屏弹窗 -->
+    <el-dialog
+      v-model="psdInfoDialogVisible"
+      title="套图信息"
+      fullscreen
+      :destroy-on-close="true"
+    >
+      <div class="psd-info-fullscreen-content">
+        <div class="psd-info-header">
+          <div class="psd-info-title">
+            <span>模板名称：</span>
+            <strong>{{ currentPsdInfoRow?.name || '未知' }}</strong>
+          </div>
+        </div>
+        <div class="psd-info-body">
+          <pre class="psd-info-json-fullscreen">{{ formatPsdInfo(currentPsdInfoRow?.psdInfo) }}</pre>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="psdInfoDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 
@@ -615,6 +632,10 @@ const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
 const aiTableLoading = ref<Record<string, boolean>>({});
 
+// 套图信息全屏弹窗相关
+const psdInfoDialogVisible = ref(false);
+const currentPsdInfoRow = ref<any>(null);
+
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
   // 描述和关键词改为非必填
@@ -668,13 +689,13 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
-      // 处理psdInfo：将文本转换为JSON对象
+      // 处理psdInfo：将文本转换为JSON对象（支持JSON和JS对象格式）
       let psdInfo = null;
       if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
         try {
-          psdInfo = JSON.parse(form.value.psdInfoText.trim());
-        } catch (e) {
-          ElMessage.error('套图信息格式错误，请输入有效的JSON格式');
+          psdInfo = parsePsdInfoText(form.value.psdInfoText);
+        } catch (e: any) {
+          ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
           return;
         }
@@ -719,13 +740,13 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
-      // 处理psdInfo：将文本转换为JSON对象
+      // 处理psdInfo：将文本转换为JSON对象（支持JSON和JS对象格式）
       let psdInfo = null;
       if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
         try {
-          psdInfo = JSON.parse(form.value.psdInfoText.trim());
-        } catch (e) {
-          ElMessage.error('套图信息格式错误，请输入有效的JSON格式');
+          psdInfo = parsePsdInfoText(form.value.psdInfoText);
+        } catch (e: any) {
+          ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
           return;
         }
@@ -880,6 +901,39 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   }
 }
 
+// 解析套图信息文本（支持JSON和JS对象格式）
+function parsePsdInfoText(text: string): any {
+  if (!text || !text.trim()) return null;
+  
+  const trimmedText = text.trim();
+  
+  // 先尝试 JSON.parse（标准JSON格式）
+  try {
+    return JSON.parse(trimmedText);
+  } catch (e) {
+    // 如果 JSON.parse 失败，尝试解析 JavaScript 对象格式
+    try {
+      // 使用 new Function 安全地解析 JavaScript 对象格式
+      // 例如：{images: [], description: ""} 或 {images:[],description:""}
+      const func = new Function('return ' + trimmedText);
+      const result = func();
+      // 验证返回的是对象
+      if (typeof result === 'object' && result !== null) {
+        return result;
+      }
+      throw new Error('解析结果不是对象');
+    } catch (e2) {
+      throw new Error('格式错误：请输入有效的JSON格式（如：{"images": []}）或JavaScript对象格式（如：{images: []}）');
+    }
+  }
+}
+
+// 查看套图信息
+function handleViewPsdInfo(row: any) {
+  currentPsdInfoRow.value = row;
+  psdInfoDialogVisible.value = true;
+}
+
 // 格式化套图信息显示
 function formatPsdInfo(psdInfo: any): string {
   if (!psdInfo) return '无';
@@ -930,43 +984,59 @@ function formatPsdInfo(psdInfo: any): string {
   display: flex;
   align-items: center;
   
-  .psd-info-preview {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    color: var(--el-color-primary);
-    font-size: 13px;
-    
-    &:hover {
-      color: var(--el-color-primary-light-3);
-    }
-    
-    .info-icon {
-      font-size: 14px;
-    }
-    
-    .info-text {
-      line-height: 1;
-    }
+  .info-icon {
+    font-size: 14px;
+    margin-right: 4px;
+  }
+  
+  .info-text {
+    line-height: 1;
   }
 }
 
-.psd-info-content {
-  max-height: 400px;
-  overflow: auto;
+.psd-info-fullscreen-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
   
-  .psd-info-json {
-    margin: 0;
-    padding: 8px;
+  .psd-info-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--el-border-color);
     background: var(--el-fill-color-lighter);
-    border-radius: 4px;
-    font-size: 12px;
-    line-height: 1.5;
+    
+    .psd-info-title {
+      font-size: 16px;
+      color: var(--el-text-color-primary);
+      
+      strong {
+        color: var(--el-color-primary);
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .psd-info-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    background: var(--el-bg-color);
+  }
+  
+  .psd-info-json-fullscreen {
+    margin: 0;
+    padding: 20px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.8;
     color: var(--el-text-color-primary);
     white-space: pre-wrap;
     word-break: break-all;
-    font-family: 'Courier New', monospace;
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    border: 1px solid var(--el-border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    overflow-x: auto;
   }
 }
 
