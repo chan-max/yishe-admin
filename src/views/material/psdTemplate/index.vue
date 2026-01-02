@@ -100,27 +100,17 @@
 
         <template #psdInfoSlot="{ row }">
           <div class="psd-info-cell">
-            <div class="flex items-center gap-2">
-              <el-button
-                v-if="row.psdInfo"
-                type="primary"
-                link
-                size="small"
-                @click="handleViewPsdInfo(row)"
-              >
-                <el-icon class="info-icon"><InfoFilled /></el-icon>
-                <span class="info-text">查看</span>
-              </el-button>
-              <el-button
-                type="primary"
-                link
-                size="small"
-                @click="handleDetailConfig(row)"
-              >
-                <el-icon class="info-icon"><Edit /></el-icon>
-                <span class="info-text">详细配置</span>
-              </el-button>
-            </div>
+            <el-button
+              v-if="row.psdTemplateConfig"
+              type="primary"
+              link
+              size="small"
+              @click="handleViewPsdInfo(row)"
+            >
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+              <span class="info-text">配置</span>
+            </el-button>
+            <span v-else class="text-gray-400 text-xs">无</span>
           </div>
         </template>
 
@@ -242,9 +232,9 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="套图信息" prop="psdInfo">
+            <el-form-item label="套图信息" prop="psdTemplateConfig">
               <el-input
-                v-model="form.psdInfoText"
+                v-model="form.psdTemplateConfigText"
                 type="textarea"
                 :rows="4"
                 placeholder='请输入套图信息（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
@@ -349,7 +339,7 @@
           </div>
         </div>
         <div class="psd-info-body">
-          <pre class="psd-info-json-fullscreen">{{ formatPsdInfo(currentPsdInfoRow?.psdInfo) }}</pre>
+          <pre class="psd-info-json-fullscreen">{{ formatPsdInfo(currentPsdInfoRow?.psdTemplateConfig) }}</pre>
         </div>
       </div>
       <template #footer>
@@ -467,11 +457,11 @@
                 <div class="template-config-title">
                   <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
                   <el-tag
-                    :type="template.psdInfo ? 'success' : 'info'"
+                    :type="template.psdTemplateConfig ? 'success' : 'info'"
                     size="small"
                     style="margin-left: 12px"
                   >
-                    {{ template.psdInfo ? '已配置' : '未配置' }}
+                    {{ template.psdTemplateConfig ? '已配置' : '未配置' }}
                   </el-tag>
                 </div>
               </template>
@@ -629,7 +619,7 @@ const gridOptions = ref<VxeGridProps<any>>({
     },
     {
       title: "套图信息",
-      field: "psdInfo",
+      field: "psdTemplateConfig",
       minWidth: 200,
       showOverflow: true,
       slots: {
@@ -780,8 +770,8 @@ function handleAdd() {
     windowsLocalPath: "",
     thumbnail: "",
     thumbnailFile: null,
-    psdInfo: null,
-    psdInfoText: "",
+    psdTemplateConfig: null,
+    psdTemplateConfigText: "",
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -802,17 +792,17 @@ function handleEdit(row) {
   fileList.value = [];
   form.value.file = null;
   
-  // 处理psdInfo：如果是对象，转换为JSON字符串显示
-  if (form.value.psdInfo) {
+  // 处理psdTemplateConfig：如果是对象，转换为JSON字符串显示
+  if (form.value.psdTemplateConfig) {
     try {
-      form.value.psdInfoText = typeof form.value.psdInfo === 'string' 
-        ? form.value.psdInfo 
-        : JSON.stringify(form.value.psdInfo, null, 2);
+      form.value.psdTemplateConfigText = typeof form.value.psdTemplateConfig === 'string' 
+        ? form.value.psdTemplateConfig 
+        : JSON.stringify(form.value.psdTemplateConfig, null, 2);
     } catch (e) {
-      form.value.psdInfoText = '';
+      form.value.psdTemplateConfigText = '';
     }
   } else {
-    form.value.psdInfoText = '';
+    form.value.psdTemplateConfigText = '';
   }
   
   // 清空预览（编辑时显示已有的缩略图）
@@ -835,8 +825,8 @@ const form = ref<any>({
   windowsLocalPath: "",
   thumbnail: "",
   thumbnailFile: null,
-  psdInfo: null,
-  psdInfoText: "", // 用于表单编辑的文本字段
+  psdTemplateConfig: null,
+  psdTemplateConfigText: "", // 用于表单编辑的文本字段
 });
 
 // AI生成内容相关
@@ -862,7 +852,7 @@ const batchDetailConfigDialogVisible = ref(false);
 const templateConfigList = ref<Array<{
   id: string;
   name: string;
-  psdInfo: any;
+  psdTemplateConfig: any;
   originalPsdInfo: any;
   configItems: Array<{ key: string; value: any; valueText: string; valueType: string; valueError?: string }>;
 }>>([]);
@@ -922,11 +912,11 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
-      // 处理psdInfo：将文本转换为JSON对象（支持JSON和JS对象格式）
-      let psdInfo = null;
-      if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
+      // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
+      let psdTemplateConfig = null;
+      if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
         try {
-          psdInfo = parsePsdInfoText(form.value.psdInfoText);
+          psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
         } catch (e: any) {
           ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
@@ -943,7 +933,7 @@ const submitForm = async () => {
         url: url || undefined,
         key: key || undefined,
         thumbnail: thumbnail || "", // 确保是字符串
-        psdInfo: psdInfo,
+        psdTemplateConfig: psdTemplateConfig,
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -973,11 +963,11 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
-      // 处理psdInfo：将文本转换为JSON对象（支持JSON和JS对象格式）
-      let psdInfo = null;
-      if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
+      // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
+      let psdTemplateConfig = null;
+      if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
         try {
-          psdInfo = parsePsdInfoText(form.value.psdInfoText);
+          psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
         } catch (e: any) {
           ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
@@ -995,7 +985,7 @@ const submitForm = async () => {
         thumbnail: thumbnail,
         file: null,
         uploaderId: userStore.user?.id,
-        psdInfo: psdInfo,
+        psdTemplateConfig: psdTemplateConfig,
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -1167,15 +1157,23 @@ function handleViewPsdInfo(row: any) {
   psdInfoDialogVisible.value = true;
 }
 
-// 格式化套图信息显示
+// 格式化套图信息显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
   if (!psdInfo) return '无';
   
   try {
     // 如果是字符串，尝试解析
-    const info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
-    // 格式化为可读的JSON字符串
-    return JSON.stringify(info, null, 2);
+    let info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
+    
+    // 确保处理后端返回的新数据结构（包含 artboards, smart_objects 等）
+    // 如果已经是对象，直接使用；如果是字符串，解析后使用
+    if (typeof info === 'object' && info !== null) {
+      // 格式化为可读的JSON字符串
+      return JSON.stringify(info, null, 2);
+    }
+    
+    // 如果解析失败，直接返回字符串
+    return String(psdInfo);
   } catch (e) {
     // 如果解析失败，直接返回字符串
     return String(psdInfo);
@@ -1186,20 +1184,20 @@ function formatPsdInfo(psdInfo: any): string {
 function handleDetailConfig(row: any) {
   currentDetailConfigRow.value = row;
   
-  // 解析psdInfo为配置项列表
+  // 解析psdTemplateConfig为配置项列表
   try {
-    let psdInfoObj = null;
-    if (row.psdInfo) {
-      psdInfoObj = typeof row.psdInfo === 'string' ? JSON.parse(row.psdInfo) : row.psdInfo;
+    let psdTemplateConfigObj = null;
+    if (row.psdTemplateConfig) {
+      psdTemplateConfigObj = typeof row.psdTemplateConfig === 'string' ? JSON.parse(row.psdTemplateConfig) : row.psdTemplateConfig;
     }
     
-    // 保存原始psdInfo用于重置
-    originalPsdInfo.value = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null;
+    // 保存原始psdTemplateConfig用于重置
+    originalPsdInfo.value = psdTemplateConfigObj ? JSON.parse(JSON.stringify(psdTemplateConfigObj)) : null;
     
     // 将对象转换为配置项列表
-    if (psdInfoObj && typeof psdInfoObj === 'object' && !Array.isArray(psdInfoObj)) {
-      configItems.value = Object.keys(psdInfoObj).map(key => {
-        const value = psdInfoObj[key];
+    if (psdTemplateConfigObj && typeof psdTemplateConfigObj === 'object' && !Array.isArray(psdTemplateConfigObj)) {
+      configItems.value = Object.keys(psdTemplateConfigObj).map(key => {
+        const value = psdTemplateConfigObj[key];
         return {
           key,
           value,
@@ -1212,7 +1210,7 @@ function handleDetailConfig(row: any) {
       configItems.value = [];
     }
   } catch (e) {
-    console.error('解析psdInfo失败:', e);
+    console.error('解析psdTemplateConfig失败:', e);
     ElMessage.error('解析配置信息失败');
     configItems.value = [];
     originalPsdInfo.value = null;
@@ -1382,14 +1380,14 @@ async function handleSaveDetailConfig() {
   });
   
   // 如果没有配置项，设置为null
-  const psdInfo = Object.keys(configObj).length > 0 ? configObj : null;
+  const psdTemplateConfig = Object.keys(configObj).length > 0 ? configObj : null;
   
   try {
     detailConfigSaving.value = true;
     
     await psdTemplateApi.updatePsdTemplate({
       id: currentDetailConfigRow.value.id,
-      psdInfo: psdInfo,
+      psdTemplateConfig: psdTemplateConfig,
     });
     
     ElMessage.success('保存成功');
@@ -1409,23 +1407,23 @@ async function handleSaveDetailConfig() {
 function handleBatchDetailConfig() {
   // 初始化所有模板的配置列表
   templateConfigList.value = dataSource.value.map(template => {
-    let psdInfoObj = null;
-    if (template.psdInfo) {
+    let psdTemplateConfigObj = null;
+    if (template.psdTemplateConfig) {
       try {
-        psdInfoObj = typeof template.psdInfo === 'string' ? JSON.parse(template.psdInfo) : template.psdInfo;
+        psdTemplateConfigObj = typeof template.psdTemplateConfig === 'string' ? JSON.parse(template.psdTemplateConfig) : template.psdTemplateConfig;
       } catch (e) {
-        console.error('解析psdInfo失败:', e);
+        console.error('解析psdTemplateConfig失败:', e);
       }
     }
     
-    // 保存原始psdInfo用于重置
-    const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null;
+    // 保存原始psdTemplateConfig用于重置
+    const originalPsdTemplateConfig = psdTemplateConfigObj ? JSON.parse(JSON.stringify(psdTemplateConfigObj)) : null;
     
     // 将对象转换为配置项列表
     let configItems: Array<{ key: string; value: any; valueText: string; valueType: string; valueError?: string }> = [];
-    if (psdInfoObj && typeof psdInfoObj === 'object' && !Array.isArray(psdInfoObj)) {
-      configItems = Object.keys(psdInfoObj).map(key => {
-        const value = psdInfoObj[key];
+    if (psdTemplateConfigObj && typeof psdTemplateConfigObj === 'object' && !Array.isArray(psdTemplateConfigObj)) {
+      configItems = Object.keys(psdTemplateConfigObj).map(key => {
+        const value = psdTemplateConfigObj[key];
         return {
           key,
           value,
@@ -1439,8 +1437,8 @@ function handleBatchDetailConfig() {
     return {
       id: String(template.id),
       name: template.name || '未命名模板',
-      psdInfo: psdInfoObj,
-      originalPsdInfo,
+      psdTemplateConfig: psdTemplateConfigObj,
+      originalPsdInfo: originalPsdTemplateConfig,
       configItems,
     };
   });
@@ -1533,10 +1531,10 @@ function handleResetConfigForTemplate(templateIndex: number) {
             valueError: undefined,
           };
         });
-        template.psdInfo = JSON.parse(JSON.stringify(template.originalPsdInfo));
+        template.psdTemplateConfig = JSON.parse(JSON.stringify(template.originalPsdInfo));
       } else {
         template.configItems = [];
-        template.psdInfo = null;
+        template.psdTemplateConfig = null;
       }
       ElMessage.success('已重置为默认配置');
     })
@@ -1590,11 +1588,11 @@ async function handleSaveBatchDetailConfig() {
         }
       });
       
-      const psdInfo = Object.keys(configObj).length > 0 ? configObj : null;
+      const psdTemplateConfig = Object.keys(configObj).length > 0 ? configObj : null;
       
       return psdTemplateApi.updatePsdTemplate({
         id: template.id,
-        psdInfo: psdInfo,
+        psdTemplateConfig: psdTemplateConfig,
       });
     });
     
