@@ -549,16 +549,16 @@ async function getList() {
     console.log('📦 获取列表完整响应:', JSON.stringify(res, null, 2))
     
     // 后端返回格式可能是：
-    // 1. { data: { success: true, data: [...], count: 6 }, code: 0, status: true } (TransformInterceptor 包装)
-    // 2. { success: true, data: [...], count: 6 } (直接返回)
+    // 1. { data: { success: true, list: [...], total: 6 }, code: 0, status: true } (TransformInterceptor 包装)
+    // 2. { success: true, list: [...], total: 6 } (直接返回)
     // axios 拦截器处理后，如果 code === 200 会返回 data，否则可能返回整个对象或 reject
     
     let responseData = res
     
     // 如果 res 有 data 字段且 data 是对象，说明是包装后的响应
     if (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
-      // 检查 data 中是否有 success 或 data 字段（说明是队列接口的响应）
-      if (res.data.success !== undefined || res.data.data !== undefined || res.data.count !== undefined) {
+      // 检查 data 中是否有 success 或 list 字段（说明是队列接口的响应）
+      if (res.data.success !== undefined || res.data.list !== undefined || res.data.total !== undefined) {
         responseData = res.data
       }
     }
@@ -572,7 +572,7 @@ async function getList() {
       console.log('✅ 响应成功状态:', isSuccess)
       
       if (isSuccess) {
-        const messages = responseData.data || responseData.messages || []
+        const messages = responseData.list || responseData.messages || []
         // 后端已去掉 count 字段，仅返回 total；前端如需当前页数量，使用 messages.length
         const totalCount = responseData.total !== undefined
           ? Number(responseData.total) || 0
