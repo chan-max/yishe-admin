@@ -114,6 +114,11 @@ export const updateTaskData = (queue: string, messageId: string, data: any) => {
   return request.post({ url: `/queue/message/data`, data: { queue, messageId, data } })
 }
 
+// 更新任务状态（使用 type 字段而不是 queue）
+export const updateTaskStatus = (type: string, messageId: string, status: 'pending' | 'processing' | 'completed' | 'failed') => {
+  return request.post({ url: '/queue/message/status', data: { type, messageId, status } })
+}
+
 // 清空队列
 export const clearQueue = (queue: string) => {
   return request.delete({ url: `/queue/clear`, params: { queue } })

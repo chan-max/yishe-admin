@@ -28,22 +28,6 @@
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
       <el-button
-        v-if="hasProcessingTasks"
-        type="success"
-        @click="handleBatchAck"
-        :disabled="!selectedProcessingIds.length"
-      >
-        批量确认完成
-      </el-button>
-      <el-button
-        v-if="hasProcessingTasks"
-        type="warning"
-        @click="handleBatchNack"
-        :disabled="!selectedProcessingIds.length"
-      >
-        批量标记失败
-      </el-button>
-      <el-button
         type="danger"
         :icon="Delete"
         @click="handleDelete(null)"
@@ -103,7 +87,6 @@
         :loading="loading"
         @checkbox-change="checkboxChange"
         @checkbox-all="checkboxAllChange"
-        ref="gridRef"
       >
         <template #statusDefaultSlot="{ row }">
           <el-tag :type="getStatusType(row.status)">
@@ -125,33 +108,6 @@
         <template #operationDefaultSlot="{ row }">
           <div class="flex table-operation-column">
             <el-button 
-              v-if="row.status === 'failed'" 
-              type="success" 
-              link 
-              size="small" 
-              @click="handleRequeue(row)"
-            >
-              重新入队
-            </el-button>
-            <el-button 
-              v-if="row.status === 'processing'" 
-              type="success" 
-              link 
-              size="small" 
-              @click="handleAck(row)"
-            >
-              确认完成
-            </el-button>
-            <el-button 
-              v-if="row.status === 'processing'" 
-              type="warning" 
-              link 
-              size="small" 
-              @click="handleNack(row)"
-            >
-              标记失败
-            </el-button>
-            <el-button 
               type="info" 
               link 
               size="small" 
@@ -165,7 +121,7 @@
               size="small" 
               @click="handleEdit(row)"
             >
-              编辑状态
+              标记状态
             </el-button>
             <el-button 
               type="danger" 
@@ -354,8 +310,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, watchEffect, onMounted, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, reactive, watchEffect, onMounted, watch } from 'vue'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -370,19 +325,14 @@ import {
   createTask,
   deleteTask,
   getQueueStats,
-  ackTask,
-  nackTask,
-  requeueTask,
   clearQueue,
   updateTaskData,
+  updateTaskStatus,
   type QueueMessage,
   type QueueStats,
 } from '@/api/system/queue'
 import Pagination from '@/components/Pagination/index.vue'
 import FormItem from '@/components/Erp/formItem.vue'
-
-// 获取路由信息
-const route = useRoute()
 
 // 查询条件
 const queryParams = reactive({
@@ -392,7 +342,6 @@ const queryParams = reactive({
   type: '', // 任务类型，默认为空（留空则查询所有类型）
 })
 
-const gridRef = ref()
 const stats = ref<QueueStats>({
   queue: '',
   pending: 0,
@@ -415,7 +364,7 @@ const gridOptions = ref({
   columns: [
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     { title: '任务ID', field: 'id', minWidth: 200, showOverflow: true },
-    { title: '任务类型', field: 'type', width: 150 },
+    { title: '任务类型', field: 'type', width: 240 },
     { 
       title: '任务描述', 
       field: 'description', 
@@ -509,18 +458,6 @@ const loading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
 
-// 计算属性：选中的处理中任务
-const selectedProcessingIds = computed(() => {
-  return ids.value.filter(id => {
-    const task = dataSource.value.find(t => t.id === id)
-    return task && task.status === 'processing'
-  })
-})
-
-// 计算属性：是否有处理中的任务
-const hasProcessingTasks = computed(() => {
-  return dataSource.value.some(task => task.status === 'processing')
-})
 
 // 对话框相关
 const dialogVisible = ref(false)
@@ -560,7 +497,7 @@ const statusDialogVisible = ref(false)
 const statusFormRef = ref()
 const statusFormData = reactive({
   id: '',
-  queue: '',
+  type: '',
   status: '' as QueueMessage['status'],
   newStatus: '' as QueueMessage['status'],
 })
@@ -778,7 +715,7 @@ function handleAdd() {
 // 编辑
 function handleEdit(row: QueueMessage) {
   statusFormData.id = row.id
-  statusFormData.queue = row.queue
+  statusFormData.type = row.type
   statusFormData.status = row.status
   statusFormData.newStatus = row.status
   statusDialogVisible.value = true
@@ -790,179 +727,6 @@ function handleViewData(row: QueueMessage) {
   dataDialogVisible.value = true
 }
 
-// 确认完成
-async function handleAck(row: QueueMessage) {
-  try {
-    await ElMessageBox.confirm('确认该任务已完成？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'info',
-    })
-    
-    loading.value = true
-    await ackTask(row.queue, row.id)
-    ElMessage.success('任务已确认完成')
-    await getList()
-    await refreshStats()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '操作失败')
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 标记失败
-async function handleNack(row: QueueMessage) {
-  try {
-    const { value: error } = await ElMessageBox.prompt('请输入失败原因（可选）', '标记失败', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      inputType: 'textarea',
-      inputPlaceholder: '请输入失败原因',
-    })
-    
-    loading.value = true
-    await nackTask(row.queue, row.id, error || undefined, false)
-    ElMessage.success('任务已标记为失败')
-    await getList()
-    await refreshStats()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '操作失败')
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 批量确认完成
-async function handleBatchAck() {
-  if (selectedProcessingIds.value.length === 0) {
-    ElMessage.warning('请先选择要确认完成的任务')
-    return
-  }
-  
-  try {
-    await ElMessageBox.confirm(
-      `确认批量完成 ${selectedProcessingIds.value.length} 个任务？`,
-      '批量确认完成',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'info',
-      }
-    )
-    
-    loading.value = true
-    let successCount = 0
-    let failCount = 0
-    
-    for (const id of selectedProcessingIds.value) {
-      const task = dataSource.value.find(t => t.id === id)
-      if (task && task.status === 'processing') {
-        try {
-          await ackTask(task.queue, task.id)
-          successCount++
-        } catch (error) {
-          failCount++
-          console.error(`任务 ${task.id} 确认失败:`, error)
-        }
-      }
-    }
-    
-    if (successCount > 0) {
-      ElMessage.success(`成功确认完成 ${successCount} 个任务${failCount > 0 ? `，${failCount} 个失败` : ''}`)
-    } else {
-      ElMessage.error('批量确认失败')
-    }
-    
-    await getList()
-    await refreshStats()
-    ids.value = []
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '操作失败')
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 批量标记失败
-async function handleBatchNack() {
-  if (selectedProcessingIds.value.length === 0) {
-    ElMessage.warning('请先选择要标记失败的任务')
-    return
-  }
-  
-  try {
-    const { value: error } = await ElMessageBox.prompt(
-      `确认批量标记 ${selectedProcessingIds.value.length} 个任务为失败？`,
-      '批量标记失败',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        inputType: 'textarea',
-        inputPlaceholder: '请输入失败原因（可选，将应用于所有任务）',
-      }
-    )
-    
-    loading.value = true
-    let successCount = 0
-    let failCount = 0
-    
-    for (const id of selectedProcessingIds.value) {
-      const task = dataSource.value.find(t => t.id === id)
-      if (task && task.status === 'processing') {
-        try {
-          await nackTask(task.queue, task.id, error || undefined, false)
-          successCount++
-        } catch (error) {
-          failCount++
-          console.error(`任务 ${task.id} 标记失败:`, error)
-        }
-      }
-    }
-    
-    if (successCount > 0) {
-      ElMessage.success(`成功标记 ${successCount} 个任务为失败${failCount > 0 ? `，${failCount} 个失败` : ''}`)
-    } else {
-      ElMessage.error('批量标记失败')
-    }
-    
-    await getList()
-    await refreshStats()
-    ids.value = []
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '操作失败')
-    }
-  } finally {
-    loading.value = false
-  }
-}
-
-// 重新入队
-async function handleRequeue(row: QueueMessage) {
-  try {
-    await ElMessageBox.confirm('确认重新入队该任务？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'info',
-    })
-    
-    await requeueTask(row.queue, row.id)
-    ElMessage.success('任务已重新入队')
-    getList()
-    refreshStats()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('操作失败')
-    }
-  }
-}
 
 // 删除任务
 function handleDelete(row?: QueueMessage) {
@@ -1068,24 +832,22 @@ async function handleStatusSubmit() {
   try {
     await statusFormRef.value.validate()
     
-    // 根据新状态执行相应操作
-    if (statusFormData.newStatus === 'completed') {
-      await ackTask(statusFormData.queue, statusFormData.id)
-    } else if (statusFormData.newStatus === 'failed') {
-      await nackTask(statusFormData.queue, statusFormData.id, '手动标记为失败', false)
-    } else if (statusFormData.newStatus === 'pending' && statusFormData.status === 'failed') {
-      await requeueTask(statusFormData.queue, statusFormData.id)
-    } else {
-      ElMessage.warning('不支持的状态转换')
+    // 如果新状态和当前状态相同，直接返回
+    if (statusFormData.newStatus === statusFormData.status) {
+      ElMessage.info('状态未发生变化')
+      statusDialogVisible.value = false
       return
     }
+    
+    // 直接更新状态
+    await updateTaskStatus(statusFormData.type, statusFormData.id, statusFormData.newStatus)
     
     ElMessage.success('状态修改成功')
     statusDialogVisible.value = false
     getList()
     refreshStats()
-  } catch (error) {
-    ElMessage.error('操作失败')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '操作失败')
   }
 }
 
