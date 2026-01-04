@@ -25,7 +25,6 @@
         </el-select>
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
       <el-button
         type="danger"
@@ -35,14 +34,6 @@
       >
         批量删除
       </el-button>
-      <el-button
-        type="danger"
-        @click="handleClearQueue"
-        :disabled="!queryParams.type"
-      >
-        清空队列
-      </el-button>
-      <el-button type="warning" :icon="Refresh" @click="refreshStats"> 刷新统计 </el-button>
     </div>
 
     <!-- 统计信息卡片 -->
@@ -317,7 +308,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search,
   Delete,
-  Refresh,
   Plus,
 } from '@element-plus/icons-vue'
 import { 
@@ -325,7 +315,6 @@ import {
   createTask,
   deleteTask,
   getQueueStats,
-  clearQueue,
   updateTaskData,
   updateTaskStatus,
   type QueueMessage,
@@ -693,15 +682,6 @@ function handleTypeClear() {
   localStorage.removeItem('queue_last_type')
 }
 
-// 重置查询
-const resetQuery = () => {
-  queryParams.currentPage = 1
-  queryParams.pageSize = 20
-  queryParams.status = undefined
-  queryParams.type = ''
-  handleTypeClear()
-}
-
 // 新增
 function handleAdd() {
   dialogTitle.value = '新增任务'
@@ -867,39 +847,6 @@ function resetForm() {
   setTimeout(() => {
     formRef.value?.clearValidate()
   }, 50)
-}
-
-// 清空队列
-async function handleClearQueue() {
-  if (!queryParams.type) {
-    ElMessage.warning('请先输入任务类型')
-    return
-  }
-  
-  try {
-    await ElMessageBox.confirm(
-      `确认清空任务类型 "${queryParams.type}" 的所有任务？此操作不可恢复！`,
-      '清空队列',
-      {
-        confirmButtonText: '确认清空',
-        cancelButtonText: '取消',
-        type: 'warning',
-        dangerouslyUseHTMLString: false,
-      }
-    )
-    
-    loading.value = true
-    await clearQueue(queryParams.type)
-    ElMessage.success('队列已清空')
-    await getList()
-    await refreshStats()
-  } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '清空队列失败')
-    }
-  } finally {
-    loading.value = false
-  }
 }
 
 // 更新数据
