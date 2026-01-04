@@ -54,6 +54,7 @@ export const getTaskList = (params: {
   queue?: string  // 队列名称（可选，不传则查询所有队列）
   status?: 'pending' | 'processing' | 'completed' | 'failed'
   type?: string    // 任务类型（可选，不传则查询所有类型）
+  id?: string      // 任务ID（可选，不传则查询所有ID）
   limit?: number
   offset?: number
 }) => {
@@ -65,6 +66,10 @@ export const getTaskList = (params: {
   // 如果 type 为空字符串，不传该参数
   if (!queryParams.type || !queryParams.type.trim()) {
     delete queryParams.type
+  }
+  // 如果 id 为空字符串，不传该参数
+  if (!queryParams.id || !queryParams.id.trim()) {
+    delete queryParams.id
   }
   return request.get({ url: `/queue/messages`, params: queryParams })
 }

@@ -2,6 +2,15 @@
   <div>
     <!-- 搜索栏 -->
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+      <form-item label="任务ID">
+        <el-input 
+          v-model="queryParams.id" 
+          placeholder="留空则查询所有ID" 
+          style="width: 200px" 
+          clearable 
+          @keyup.enter="getList"
+        />
+      </form-item>
       <form-item label="任务类型">
         <el-input 
           v-model="queryParams.type" 
@@ -329,6 +338,7 @@ const queryParams = reactive({
   pageSize: 20,
   status: undefined as 'pending' | 'processing' | 'completed' | 'failed' | undefined,
   type: '', // 任务类型，默认为空（留空则查询所有类型）
+  id: '', // 任务ID，默认为空（留空则查询所有ID）
 })
 
 const stats = ref<QueueStats>({
@@ -537,11 +547,12 @@ function getStatusText(status: QueueMessage['status']) {
 async function getList() {
   loading.value = true
   try {
-    console.log('🔍 开始查询任务列表，任务类型:', queryParams.type?.trim() || '(所有类型)', '状态:', queryParams.status || '(所有状态)')
+    console.log('🔍 开始查询任务列表，任务ID:', queryParams.id?.trim() || '(所有ID)', '任务类型:', queryParams.type?.trim() || '(所有类型)', '状态:', queryParams.status || '(所有状态)')
     
     const res = await getTaskList({
       status: queryParams.status, // 不传 status 则查询所有状态
       type: queryParams.type?.trim() || undefined, // 不传 type 则查询所有类型
+      id: queryParams.id?.trim() || undefined, // 不传 id 则查询所有ID
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     })
