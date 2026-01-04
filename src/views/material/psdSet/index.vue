@@ -167,7 +167,7 @@
         <template #configSlot="{ row }">
           <div class="flex items-center gap-2">
             <el-tag 
-              v-if="row.config" 
+              v-if="row.stickerPsdSetConfig" 
               type="info" 
               size="small" 
               effect="plain"
@@ -353,7 +353,7 @@
                 取消
               </el-button>
               <el-button 
-                v-if="!configEditing && detailData?.config" 
+                v-if="!configEditing && detailData?.stickerPsdSetConfig" 
                 type="info" 
                 size="small" 
                 @click="configPreviewMode = !configPreviewMode"
@@ -375,10 +375,10 @@
               <span>{{ configJsonError }}</span>
             </div>
           </div>
-          <div v-else-if="configPreviewMode && detailData?.config" class="config-preview-container">
+          <div v-else-if="configPreviewMode && detailData?.stickerPsdSetConfig" class="config-preview-container">
             <pre class="config-preview">{{ formattedConfig }}</pre>
           </div>
-          <div v-else-if="detailData?.config" class="config-display">
+          <div v-else-if="detailData?.stickerPsdSetConfig" class="config-display">
             <el-tag type="info" size="small">已配置 (点击编辑查看详情)</el-tag>
           </div>
           <span v-else class="text-gray-400 text-sm">未配置</span>
@@ -468,7 +468,7 @@
       <template #footer>
         <el-button @click="configViewDialogVisible = false">关闭</el-button>
         <el-button 
-          v-if="configViewDialogData?.config"
+          v-if="configViewDialogData?.stickerPsdSetConfig"
           type="primary" 
           @click="handleEditFromView"
         >
@@ -641,27 +641,29 @@ const configViewDialogVisible = ref(false)
 const configViewDialogLoading = ref(false)
 const configViewDialogData = ref<any>(null)
 const configViewFormatted = computed(() => {
-  if (!configViewDialogData.value?.config) return ''
+  const config = configViewDialogData.value?.stickerPsdSetConfig
+  if (!config) return ''
   try {
-    const parsed = typeof configViewDialogData.value.config === 'string' 
-      ? JSON.parse(configViewDialogData.value.config) 
-      : configViewDialogData.value.config
+    const parsed = typeof config === 'string' 
+      ? JSON.parse(config) 
+      : config
     return JSON.stringify(parsed, null, 2)
   } catch (e) {
-    return String(configViewDialogData.value.config)
+    return String(config)
   }
 })
 
 // 格式化配置信息用于预览
 const formattedConfig = computed(() => {
-  if (!detailData.value?.config) return ''
+  const config = detailData.value?.stickerPsdSetConfig
+  if (!config) return ''
   try {
-    const parsed = typeof detailData.value.config === 'string' 
-      ? JSON.parse(detailData.value.config) 
-      : detailData.value.config
+    const parsed = typeof config === 'string' 
+      ? JSON.parse(config) 
+      : config
     return JSON.stringify(parsed, null, 2)
   } catch (e) {
-    return String(detailData.value.config)
+    return String(config)
   }
 })
 
@@ -914,14 +916,15 @@ async function handleViewDetail(row: any) {
     })
     detailData.value = res?.data || res || {}
     // 初始化配置编辑值
-    if (detailData.value?.config) {
+    const config = detailData.value?.stickerPsdSetConfig
+    if (config) {
       try {
-        const parsed = typeof detailData.value.config === 'string' 
-          ? JSON.parse(detailData.value.config) 
-          : detailData.value.config
+        const parsed = typeof config === 'string' 
+          ? JSON.parse(config) 
+          : config
         configEditValue.value = JSON.stringify(parsed, null, 2)
       } catch (e) {
-        configEditValue.value = String(detailData.value.config)
+        configEditValue.value = String(config)
       }
     } else {
       configEditValue.value = ''
@@ -950,15 +953,16 @@ async function handleEditConfigDirectly(row: any) {
     })
     configEditDialogData.value = res?.data || res || {}
     // 初始化配置编辑值
-    if (configEditDialogData.value?.config) {
+    const config = configEditDialogData.value?.stickerPsdSetConfig
+    if (config) {
       try {
-        const parsed = typeof configEditDialogData.value.config === 'string' 
-          ? JSON.parse(configEditDialogData.value.config) 
-          : configEditDialogData.value.config
+        const parsed = typeof config === 'string' 
+          ? JSON.parse(config) 
+          : config
         configEditDialogValue.value = JSON.stringify(parsed, null, 2)
       } catch (e) {
         // 如果解析失败，显示原始值并提示错误
-        configEditDialogValue.value = String(configEditDialogData.value.config)
+        configEditDialogValue.value = String(config)
         configEditDialogError.value = '当前配置格式不正确，请修正后保存'
       }
     } else {
@@ -977,14 +981,15 @@ async function handleEditConfigDirectly(row: any) {
 function handleEditConfig() {
   configEditing.value = true
   configPreviewMode.value = false
-  if (detailData.value?.config) {
+  const config = detailData.value?.stickerPsdSetConfig
+  if (config) {
     try {
-      const parsed = typeof detailData.value.config === 'string' 
-        ? JSON.parse(detailData.value.config) 
-        : detailData.value.config
+      const parsed = typeof config === 'string' 
+        ? JSON.parse(config) 
+        : config
       configEditValue.value = JSON.stringify(parsed, null, 2)
     } catch (e) {
-      configEditValue.value = String(detailData.value.config)
+      configEditValue.value = String(config)
     }
   } else {
     configEditValue.value = '{}'
@@ -997,14 +1002,15 @@ function handleCancelEditConfig() {
   configEditing.value = false
   configJsonError.value = ''
   // 恢复原始值
-  if (detailData.value?.config) {
+  const config = detailData.value?.stickerPsdSetConfig
+  if (config) {
     try {
-      const parsed = typeof detailData.value.config === 'string' 
-        ? JSON.parse(detailData.value.config) 
-        : detailData.value.config
+      const parsed = typeof config === 'string' 
+        ? JSON.parse(config) 
+        : config
       configEditValue.value = JSON.stringify(parsed, null, 2)
     } catch (e) {
-      configEditValue.value = String(detailData.value.config)
+      configEditValue.value = String(config)
     }
   } else {
     configEditValue.value = ''
@@ -1139,8 +1145,8 @@ async function handleSaveConfigDialog() {
       configValue = JSON.parse(trimmedValue)
     }
 
-    // 调用更新API
-    await stickerPsdSetApi.update(configEditDialogData.value.id, { config: configValue })
+    // 调用更新API（使用新字段名 stickerPsdSetConfig）
+    await stickerPsdSetApi.update(configEditDialogData.value.id, { stickerPsdSetConfig: configValue })
     
     ElMessage.success('配置信息已保存')
     
@@ -1190,11 +1196,11 @@ async function handleSaveConfig() {
       configValue = JSON.parse(trimmedValue)
     }
 
-    // 调用更新API
-    await stickerPsdSetApi.update(detailData.value.id, { config: configValue })
+    // 调用更新API（使用新字段名 stickerPsdSetConfig）
+    await stickerPsdSetApi.update(detailData.value.id, { stickerPsdSetConfig: configValue })
     
     // 更新本地数据
-    detailData.value.config = configValue
+    detailData.value.stickerPsdSetConfig = configValue
     
     ElMessage.success('配置信息已保存')
     configEditing.value = false

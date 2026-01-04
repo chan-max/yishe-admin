@@ -44,6 +44,14 @@
 
     <!-- 表格展示 -->
     <div class="common-table">
+      <!-- 表格工具栏 -->
+      <div class="table-toolbar">
+        <div class="table-toolbar-left">
+          <el-button type="primary" @click="handleBatchDetailConfig" :icon="Edit">
+            详细配置
+          </el-button>
+        </div>
+      </div>
       <vxe-grid
         v-bind="gridOptions"
         :data="dataSource"
@@ -92,23 +100,17 @@
 
         <template #psdInfoSlot="{ row }">
           <div class="psd-info-cell">
-            <el-popover
-              v-if="row.psdInfo"
-              placement="top-start"
-              :width="500"
-              trigger="hover"
+            <el-button
+              v-if="row.psdTemplateConfig"
+              type="primary"
+              link
+              size="small"
+              @click="handleViewPsdInfo(row)"
             >
-              <template #reference>
-                <div class="psd-info-preview">
-                  <el-icon class="info-icon"><InfoFilled /></el-icon>
-                  <span class="info-text">查看套图信息</span>
-                </div>
-              </template>
-              <div class="psd-info-content">
-                <pre class="psd-info-json">{{ formatPsdInfo(row.psdInfo) }}</pre>
-              </div>
-            </el-popover>
-            <span v-else class="text-gray-400">无</span>
+              <el-icon class="info-icon"><InfoFilled /></el-icon>
+              <span class="info-text">配置</span>
+            </el-button>
+            <span v-else class="text-gray-400 text-xs">无</span>
           </div>
         </template>
 
@@ -230,15 +232,15 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="套图信息" prop="psdInfo">
+            <el-form-item label="套图信息" prop="psdTemplateConfig">
               <el-input
-                v-model="form.psdInfoText"
+                v-model="form.psdTemplateConfigText"
                 type="textarea"
                 :rows="4"
-                placeholder='请输入套图信息（JSON格式），例如：{"images": [], "description": ""}'
+                placeholder='请输入套图信息（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
               />
               <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
-                提示：请输入有效的JSON格式数据，用于存储套图相关信息
+                提示：支持JSON格式（键需引号）或JavaScript对象格式（键无需引号），例如：{"images": []} 或 {images: []}
               </div>
             </el-form-item>
           </el-col>
@@ -322,6 +324,224 @@
       </template>
     </el-dialog>
 
+    <!-- 套图信息全屏弹窗 -->
+    <el-dialog
+      v-model="psdInfoDialogVisible"
+      title="套图信息"
+      fullscreen
+      :destroy-on-close="true"
+    >
+      <div class="psd-info-fullscreen-content">
+        <div class="psd-info-header">
+          <div class="psd-info-title">
+            <span>模板名称：</span>
+            <strong>{{ currentPsdInfoRow?.name || '未知' }}</strong>
+          </div>
+        </div>
+        <div class="psd-info-body">
+          <pre class="psd-info-json-fullscreen">{{ formatPsdInfo(currentPsdInfoRow?.psdTemplateConfig) }}</pre>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="psdInfoDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 详细配置全屏弹窗（单个模板） -->
+    <el-dialog
+      v-model="detailConfigDialogVisible"
+      title="详细配置"
+      fullscreen
+      :destroy-on-close="true"
+    >
+      <div class="detail-config-fullscreen-content">
+        <div class="detail-config-header">
+          <div class="detail-config-title">
+            <span>模板名称：</span>
+            <strong>{{ currentDetailConfigRow?.name || '未知' }}</strong>
+          </div>
+        </div>
+        <div class="detail-config-body">
+          <div class="detail-config-toolbar">
+            <el-button type="primary" @click="handleAddConfigItem" :icon="Plus">
+              添加配置项
+            </el-button>
+            <el-button @click="handleResetConfig" type="warning" :icon="RefreshLeft">
+              重置为默认
+            </el-button>
+          </div>
+          <el-table
+            :data="configItems"
+            border
+            style="width: 100%"
+            class="detail-config-table"
+          >
+            <el-table-column prop="key" label="配置键" width="200">
+              <template #default="{ row, $index }">
+                <el-input
+                  v-model="row.key"
+                  placeholder="请输入配置键"
+                  @blur="validateConfigKey($index)"
+                />
+              </template>
+            </el-table-column>
+            <el-table-column prop="value" label="配置值" min-width="300">
+              <template #default="{ row, $index }">
+                <el-input
+                  v-model="row.valueText"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="请输入配置值（支持JSON格式）"
+                  @blur="validateConfigValue($index)"
+                />
+                <div v-if="row.valueError" class="config-error-tip">
+                  {{ row.valueError }}
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="type" label="类型" width="100">
+              <template #default="{ row }">
+                <el-tag :type="getConfigTypeTagType(row.valueType)" size="small">
+                  {{ row.valueType }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100" fixed="right">
+              <template #default="{ $index }">
+                <el-button
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDeleteConfigItem($index)"
+                  :icon="Delete"
+                >
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div v-if="configItems.length === 0" class="config-empty-tip">
+            <el-empty description="暂无配置项，点击上方按钮添加" :image-size="100" />
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="detailConfigDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveDetailConfig" :loading="detailConfigSaving">
+          保存
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量详细配置全屏弹窗（所有模板组合） -->
+    <el-dialog
+      v-model="batchDetailConfigDialogVisible"
+      title="详细配置 - 所有模板"
+      fullscreen
+      :destroy-on-close="true"
+    >
+      <div class="batch-detail-config-content">
+        <div class="batch-detail-config-header">
+          <div class="batch-detail-config-title">
+            <span>共 {{ templateConfigList.length }} 个模板</span>
+          </div>
+        </div>
+        <div class="batch-detail-config-body">
+          <el-collapse v-model="activeCollapseNames">
+            <el-collapse-item
+              v-for="(template, index) in templateConfigList"
+              :key="template.id"
+              :name="String(template.id)"
+            >
+              <template #title>
+                <div class="template-config-title">
+                  <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
+                  <el-tag
+                    :type="template.psdTemplateConfig ? 'success' : 'info'"
+                    size="small"
+                    style="margin-left: 12px"
+                  >
+                    {{ template.psdTemplateConfig ? '已配置' : '未配置' }}
+                  </el-tag>
+                </div>
+              </template>
+              <div class="template-config-content">
+                <div class="template-config-toolbar">
+                  <el-button type="primary" @click="handleAddConfigItemForTemplate(index)" :icon="Plus" size="small">
+                    添加配置项
+                  </el-button>
+                  <el-button @click="handleResetConfigForTemplate(index)" type="warning" :icon="RefreshLeft" size="small">
+                    重置为默认
+                  </el-button>
+                </div>
+                <el-table
+                  :data="template.configItems"
+                  border
+                  style="width: 100%"
+                  size="small"
+                >
+                  <el-table-column prop="key" label="配置键" width="200">
+                    <template #default="{ row, $index }">
+                      <el-input
+                        v-model="row.key"
+                        placeholder="请输入配置键"
+                        size="small"
+                        @blur="validateConfigKeyForTemplate(index, $index)"
+                      />
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="value" label="配置值" min-width="300">
+                    <template #default="{ row, $index }">
+                      <el-input
+                        v-model="row.valueText"
+                        type="textarea"
+                        :rows="2"
+                        placeholder="请输入配置值（支持JSON格式）"
+                        size="small"
+                        @blur="validateConfigValueForTemplate(index, $index)"
+                      />
+                      <div v-if="row.valueError" class="config-error-tip">
+                        {{ row.valueError }}
+                      </div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="type" label="类型" width="100">
+                    <template #default="{ row }">
+                      <el-tag :type="getConfigTypeTagType(row.valueType)" size="small">
+                        {{ row.valueType }}
+                      </el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="100" fixed="right">
+                    <template #default="{ $index }">
+                      <el-button
+                        type="danger"
+                        link
+                        size="small"
+                        @click="handleDeleteConfigItemForTemplate(index, $index)"
+                        :icon="Delete"
+                      >
+                        删除
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <div v-if="template.configItems.length === 0" class="config-empty-tip-small">
+                  <el-empty description="暂无配置项" :image-size="80" />
+                </div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="batchDetailConfigDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveBatchDetailConfig" :loading="batchDetailConfigSaving">
+          保存全部
+        </el-button>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -343,6 +563,7 @@ import {
   CirclePlus,
   ArrowDown,
   InfoFilled,
+  RefreshLeft,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
@@ -398,7 +619,7 @@ const gridOptions = ref<VxeGridProps<any>>({
     },
     {
       title: "套图信息",
-      field: "psdInfo",
+      field: "psdTemplateConfig",
       minWidth: 200,
       showOverflow: true,
       slots: {
@@ -549,8 +770,8 @@ function handleAdd() {
     windowsLocalPath: "",
     thumbnail: "",
     thumbnailFile: null,
-    psdInfo: null,
-    psdInfoText: "",
+    psdTemplateConfig: null,
+    psdTemplateConfigText: "",
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -571,17 +792,17 @@ function handleEdit(row) {
   fileList.value = [];
   form.value.file = null;
   
-  // 处理psdInfo：如果是对象，转换为JSON字符串显示
-  if (form.value.psdInfo) {
+  // 处理psdTemplateConfig：如果是对象，转换为JSON字符串显示
+  if (form.value.psdTemplateConfig) {
     try {
-      form.value.psdInfoText = typeof form.value.psdInfo === 'string' 
-        ? form.value.psdInfo 
-        : JSON.stringify(form.value.psdInfo, null, 2);
+      form.value.psdTemplateConfigText = typeof form.value.psdTemplateConfig === 'string' 
+        ? form.value.psdTemplateConfig 
+        : JSON.stringify(form.value.psdTemplateConfig, null, 2);
     } catch (e) {
-      form.value.psdInfoText = '';
+      form.value.psdTemplateConfigText = '';
     }
   } else {
-    form.value.psdInfoText = '';
+    form.value.psdTemplateConfigText = '';
   }
   
   // 清空预览（编辑时显示已有的缩略图）
@@ -604,8 +825,8 @@ const form = ref<any>({
   windowsLocalPath: "",
   thumbnail: "",
   thumbnailFile: null,
-  psdInfo: null,
-  psdInfoText: "", // 用于表单编辑的文本字段
+  psdTemplateConfig: null,
+  psdTemplateConfigText: "", // 用于表单编辑的文本字段
 });
 
 // AI生成内容相关
@@ -614,6 +835,29 @@ const aiGenPrompt = ref('');
 const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
 const aiTableLoading = ref<Record<string, boolean>>({});
+
+// 套图信息全屏弹窗相关
+const psdInfoDialogVisible = ref(false);
+const currentPsdInfoRow = ref<any>(null);
+
+// 详细配置全屏弹窗相关
+const detailConfigDialogVisible = ref(false);
+const currentDetailConfigRow = ref<any>(null);
+const configItems = ref<Array<{ key: string; value: any; valueText: string; valueType: string; valueError?: string }>>([]);
+const detailConfigSaving = ref(false);
+const originalPsdInfo = ref<any>(null); // 保存原始psdInfo用于重置
+
+// 批量详细配置全屏弹窗相关
+const batchDetailConfigDialogVisible = ref(false);
+const templateConfigList = ref<Array<{
+  id: string;
+  name: string;
+  psdTemplateConfig: any;
+  originalPsdInfo: any;
+  configItems: Array<{ key: string; value: any; valueText: string; valueType: string; valueError?: string }>;
+}>>([]);
+const batchDetailConfigSaving = ref(false);
+const activeCollapseNames = ref<string[]>([]);
 
 const rules = {
   name: [{ required: true, message: "请输入模板名称", trigger: "blur" }],
@@ -668,13 +912,13 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
-      // 处理psdInfo：将文本转换为JSON对象
-      let psdInfo = null;
-      if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
+      // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
+      let psdTemplateConfig = null;
+      if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
         try {
-          psdInfo = JSON.parse(form.value.psdInfoText.trim());
-        } catch (e) {
-          ElMessage.error('套图信息格式错误，请输入有效的JSON格式');
+          psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
+        } catch (e: any) {
+          ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
           return;
         }
@@ -689,7 +933,7 @@ const submitForm = async () => {
         url: url || undefined,
         key: key || undefined,
         thumbnail: thumbnail || "", // 确保是字符串
-        psdInfo: psdInfo,
+        psdTemplateConfig: psdTemplateConfig,
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -719,13 +963,13 @@ const submitForm = async () => {
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
-      // 处理psdInfo：将文本转换为JSON对象
-      let psdInfo = null;
-      if (form.value.psdInfoText && form.value.psdInfoText.trim()) {
+      // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
+      let psdTemplateConfig = null;
+      if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
         try {
-          psdInfo = JSON.parse(form.value.psdInfoText.trim());
-        } catch (e) {
-          ElMessage.error('套图信息格式错误，请输入有效的JSON格式');
+          psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
+        } catch (e: any) {
+          ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
           return;
         }
@@ -741,7 +985,7 @@ const submitForm = async () => {
         thumbnail: thumbnail,
         file: null,
         uploaderId: userStore.user?.id,
-        psdInfo: psdInfo,
+        psdTemplateConfig: psdTemplateConfig,
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -880,18 +1124,490 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   }
 }
 
-// 格式化套图信息显示
+// 解析套图信息文本（支持JSON和JS对象格式）
+function parsePsdInfoText(text: string): any {
+  if (!text || !text.trim()) return null;
+  
+  const trimmedText = text.trim();
+  
+  // 先尝试 JSON.parse（标准JSON格式）
+  try {
+    return JSON.parse(trimmedText);
+  } catch (e) {
+    // 如果 JSON.parse 失败，尝试解析 JavaScript 对象格式
+    try {
+      // 使用 new Function 安全地解析 JavaScript 对象格式
+      // 例如：{images: [], description: ""} 或 {images:[],description:""}
+      const func = new Function('return ' + trimmedText);
+      const result = func();
+      // 验证返回的是对象
+      if (typeof result === 'object' && result !== null) {
+        return result;
+      }
+      throw new Error('解析结果不是对象');
+    } catch (e2) {
+      throw new Error('格式错误：请输入有效的JSON格式（如：{"images": []}）或JavaScript对象格式（如：{images: []}）');
+    }
+  }
+}
+
+// 查看套图信息
+function handleViewPsdInfo(row: any) {
+  currentPsdInfoRow.value = row;
+  psdInfoDialogVisible.value = true;
+}
+
+// 格式化套图信息显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
   if (!psdInfo) return '无';
   
   try {
     // 如果是字符串，尝试解析
-    const info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
-    // 格式化为可读的JSON字符串
-    return JSON.stringify(info, null, 2);
+    let info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
+    
+    // 确保处理后端返回的新数据结构（包含 artboards, smart_objects 等）
+    // 如果已经是对象，直接使用；如果是字符串，解析后使用
+    if (typeof info === 'object' && info !== null) {
+      // 格式化为可读的JSON字符串
+      return JSON.stringify(info, null, 2);
+    }
+    
+    // 如果解析失败，直接返回字符串
+    return String(psdInfo);
   } catch (e) {
     // 如果解析失败，直接返回字符串
     return String(psdInfo);
+  }
+}
+
+// 详细配置相关方法
+function handleDetailConfig(row: any) {
+  currentDetailConfigRow.value = row;
+  
+  // 解析psdTemplateConfig为配置项列表
+  try {
+    let psdTemplateConfigObj = null;
+    if (row.psdTemplateConfig) {
+      psdTemplateConfigObj = typeof row.psdTemplateConfig === 'string' ? JSON.parse(row.psdTemplateConfig) : row.psdTemplateConfig;
+    }
+    
+    // 保存原始psdTemplateConfig用于重置
+    originalPsdInfo.value = psdTemplateConfigObj ? JSON.parse(JSON.stringify(psdTemplateConfigObj)) : null;
+    
+    // 将对象转换为配置项列表
+    if (psdTemplateConfigObj && typeof psdTemplateConfigObj === 'object' && !Array.isArray(psdTemplateConfigObj)) {
+      configItems.value = Object.keys(psdTemplateConfigObj).map(key => {
+        const value = psdTemplateConfigObj[key];
+        return {
+          key,
+          value,
+          valueText: formatConfigValue(value),
+          valueType: getValueType(value),
+          valueError: undefined,
+        };
+      });
+    } else {
+      configItems.value = [];
+    }
+  } catch (e) {
+    console.error('解析psdTemplateConfig失败:', e);
+    ElMessage.error('解析配置信息失败');
+    configItems.value = [];
+    originalPsdInfo.value = null;
+  }
+  
+  detailConfigDialogVisible.value = true;
+}
+
+// 格式化配置值为文本（用于编辑）
+function formatConfigValue(value: any): string {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (e) {
+    return String(value);
+  }
+}
+
+// 获取值的类型
+function getValueType(value: any): string {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
+  return typeof value;
+}
+
+// 获取配置类型标签类型
+function getConfigTypeTagType(type: string): 'success' | 'warning' | 'info' | 'primary' | 'danger' {
+  switch (type) {
+    case 'string': return 'primary';
+    case 'number': return 'success';
+    case 'boolean': return 'warning';
+    case 'object': return 'info';
+    case 'array': return 'info';
+    default: return 'info';
+  }
+}
+
+// 添加配置项
+function handleAddConfigItem() {
+  configItems.value.push({
+    key: '',
+    value: null,
+    valueText: '',
+    valueType: 'string',
+    valueError: undefined,
+  });
+}
+
+// 删除配置项
+function handleDeleteConfigItem(index: number) {
+  configItems.value.splice(index, 1);
+}
+
+// 验证配置键
+function validateConfigKey(index: number) {
+  const item = configItems.value[index];
+  if (!item.key || !item.key.trim()) {
+    return;
+  }
+  
+  // 检查是否有重复的key
+  const duplicateIndex = configItems.value.findIndex((it, idx) => 
+    idx !== index && it.key === item.key
+  );
+  if (duplicateIndex !== -1) {
+    ElMessage.warning(`配置键"${item.key}"已存在`);
+    item.key = '';
+  }
+}
+
+// 验证配置值
+function validateConfigValue(index: number) {
+  const item = configItems.value[index];
+  item.valueError = undefined;
+  
+  if (!item.valueText || !item.valueText.trim()) {
+    item.value = null;
+    item.valueType = 'null';
+    return;
+  }
+  
+  try {
+    // 尝试解析为JSON
+    const parsed = JSON.parse(item.valueText);
+    item.value = parsed;
+    item.valueType = getValueType(parsed);
+  } catch (e) {
+    // 如果JSON解析失败，尝试作为字符串处理
+    // 如果看起来像JSON但解析失败，则报错
+    const trimmed = item.valueText.trim();
+    if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && !trimmed.startsWith('"')) {
+      item.valueError = 'JSON格式错误，请输入有效的JSON格式';
+      return;
+    }
+    // 否则作为字符串处理
+    item.value = item.valueText;
+    item.valueType = 'string';
+  }
+}
+
+// 重置为默认配置
+function handleResetConfig() {
+  ElMessageBox.confirm('确定要重置为默认配置吗？当前修改将丢失。', '重置确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      if (originalPsdInfo.value && typeof originalPsdInfo.value === 'object' && !Array.isArray(originalPsdInfo.value)) {
+        configItems.value = Object.keys(originalPsdInfo.value).map(key => {
+          const value = originalPsdInfo.value[key];
+          return {
+            key,
+            value,
+            valueText: formatConfigValue(value),
+            valueType: getValueType(value),
+            valueError: undefined,
+          };
+        });
+      } else {
+        configItems.value = [];
+      }
+      ElMessage.success('已重置为默认配置');
+    })
+    .catch(() => {});
+}
+
+// 保存详细配置
+async function handleSaveDetailConfig() {
+  // 验证所有配置项
+  let hasError = false;
+  configItems.value.forEach((item, index) => {
+    if (!item.key || !item.key.trim()) {
+      ElMessage.warning(`第${index + 1}行的配置键不能为空`);
+      hasError = true;
+      return;
+    }
+    
+    // 检查重复key
+    const duplicateIndex = configItems.value.findIndex((it, idx) => 
+      idx !== index && it.key === item.key
+    );
+    if (duplicateIndex !== -1) {
+      ElMessage.warning(`配置键"${item.key}"重复`);
+      hasError = true;
+      return;
+    }
+    
+    // 验证值格式
+    validateConfigValue(index);
+    if (item.valueError) {
+      hasError = true;
+    }
+  });
+  
+  if (hasError) {
+    return;
+  }
+  
+  // 构建配置对象
+  const configObj: any = {};
+  configItems.value.forEach(item => {
+    if (item.key && item.key.trim()) {
+      configObj[item.key] = item.value;
+    }
+  });
+  
+  // 如果没有配置项，设置为null
+  const psdTemplateConfig = Object.keys(configObj).length > 0 ? configObj : null;
+  
+  try {
+    detailConfigSaving.value = true;
+    
+    await psdTemplateApi.updatePsdTemplate({
+      id: currentDetailConfigRow.value.id,
+      psdTemplateConfig: psdTemplateConfig,
+    });
+    
+    ElMessage.success('保存成功');
+    detailConfigDialogVisible.value = false;
+    
+    // 刷新列表
+    getList();
+  } catch (e) {
+    console.error('保存失败:', e);
+    ElMessage.error('保存失败，请重试');
+  } finally {
+    detailConfigSaving.value = false;
+  }
+}
+
+// 批量详细配置相关方法
+function handleBatchDetailConfig() {
+  // 初始化所有模板的配置列表
+  templateConfigList.value = dataSource.value.map(template => {
+    let psdTemplateConfigObj = null;
+    if (template.psdTemplateConfig) {
+      try {
+        psdTemplateConfigObj = typeof template.psdTemplateConfig === 'string' ? JSON.parse(template.psdTemplateConfig) : template.psdTemplateConfig;
+      } catch (e) {
+        console.error('解析psdTemplateConfig失败:', e);
+      }
+    }
+    
+    // 保存原始psdTemplateConfig用于重置
+    const originalPsdTemplateConfig = psdTemplateConfigObj ? JSON.parse(JSON.stringify(psdTemplateConfigObj)) : null;
+    
+    // 将对象转换为配置项列表
+    let configItems: Array<{ key: string; value: any; valueText: string; valueType: string; valueError?: string }> = [];
+    if (psdTemplateConfigObj && typeof psdTemplateConfigObj === 'object' && !Array.isArray(psdTemplateConfigObj)) {
+      configItems = Object.keys(psdTemplateConfigObj).map(key => {
+        const value = psdTemplateConfigObj[key];
+        return {
+          key,
+          value,
+          valueText: formatConfigValue(value),
+          valueType: getValueType(value),
+          valueError: undefined,
+        };
+      });
+    }
+    
+    return {
+      id: String(template.id),
+      name: template.name || '未命名模板',
+      psdTemplateConfig: psdTemplateConfigObj,
+      originalPsdInfo: originalPsdTemplateConfig,
+      configItems,
+    };
+  });
+  
+  // 默认展开第一个
+  if (templateConfigList.value.length > 0) {
+    activeCollapseNames.value = [templateConfigList.value[0].id];
+  }
+  
+  batchDetailConfigDialogVisible.value = true;
+}
+
+// 为模板添加配置项
+function handleAddConfigItemForTemplate(templateIndex: number) {
+  templateConfigList.value[templateIndex].configItems.push({
+    key: '',
+    value: null,
+    valueText: '',
+    valueType: 'string',
+    valueError: undefined,
+  });
+}
+
+// 删除模板的配置项
+function handleDeleteConfigItemForTemplate(templateIndex: number, itemIndex: number) {
+  templateConfigList.value[templateIndex].configItems.splice(itemIndex, 1);
+}
+
+// 验证模板配置键
+function validateConfigKeyForTemplate(templateIndex: number, itemIndex: number) {
+  const template = templateConfigList.value[templateIndex];
+  const item = template.configItems[itemIndex];
+  if (!item.key || !item.key.trim()) {
+    return;
+  }
+  
+  const duplicateIndex = template.configItems.findIndex((it, idx) => 
+    idx !== itemIndex && it.key === item.key
+  );
+  if (duplicateIndex !== -1) {
+    ElMessage.warning(`配置键"${item.key}"已存在`);
+    item.key = '';
+  }
+}
+
+// 验证模板配置值
+function validateConfigValueForTemplate(templateIndex: number, itemIndex: number) {
+  const template = templateConfigList.value[templateIndex];
+  const item = template.configItems[itemIndex];
+  item.valueError = undefined;
+  
+  if (!item.valueText || !item.valueText.trim()) {
+    item.value = null;
+    item.valueType = 'null';
+    return;
+  }
+  
+  try {
+    const parsed = JSON.parse(item.valueText);
+    item.value = parsed;
+    item.valueType = getValueType(parsed);
+  } catch (e) {
+    const trimmed = item.valueText.trim();
+    if ((trimmed.startsWith('{') || trimmed.startsWith('[')) && !trimmed.startsWith('"')) {
+      item.valueError = 'JSON格式错误，请输入有效的JSON格式';
+      return;
+    }
+    item.value = item.valueText;
+    item.valueType = 'string';
+  }
+}
+
+// 重置模板配置为默认
+function handleResetConfigForTemplate(templateIndex: number) {
+  const template = templateConfigList.value[templateIndex];
+  ElMessageBox.confirm('确定要重置为默认配置吗？当前修改将丢失。', '重置确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      if (template.originalPsdInfo && typeof template.originalPsdInfo === 'object' && !Array.isArray(template.originalPsdInfo)) {
+        template.configItems = Object.keys(template.originalPsdInfo).map(key => {
+          const value = template.originalPsdInfo[key];
+          return {
+            key,
+            value,
+            valueText: formatConfigValue(value),
+            valueType: getValueType(value),
+            valueError: undefined,
+          };
+        });
+        template.psdTemplateConfig = JSON.parse(JSON.stringify(template.originalPsdInfo));
+      } else {
+        template.configItems = [];
+        template.psdTemplateConfig = null;
+      }
+      ElMessage.success('已重置为默认配置');
+    })
+    .catch(() => {});
+}
+
+// 保存批量详细配置
+async function handleSaveBatchDetailConfig() {
+  // 验证所有模板的配置项
+  let hasError = false;
+  templateConfigList.value.forEach((template, templateIndex) => {
+    template.configItems.forEach((item, itemIndex) => {
+      if (!item.key || !item.key.trim()) {
+        ElMessage.warning(`模板"${template.name}"第${itemIndex + 1}行的配置键不能为空`);
+        hasError = true;
+        return;
+      }
+      
+      // 检查重复key
+      const duplicateIndex = template.configItems.findIndex((it, idx) => 
+        idx !== itemIndex && it.key === item.key
+      );
+      if (duplicateIndex !== -1) {
+        ElMessage.warning(`模板"${template.name}"配置键"${item.key}"重复`);
+        hasError = true;
+        return;
+      }
+      
+      // 验证值格式
+      validateConfigValueForTemplate(templateIndex, itemIndex);
+      if (item.valueError) {
+        hasError = true;
+      }
+    });
+  });
+  
+  if (hasError) {
+    return;
+  }
+  
+  try {
+    batchDetailConfigSaving.value = true;
+    
+    // 批量更新所有模板
+    const updatePromises = templateConfigList.value.map(template => {
+      // 构建配置对象
+      const configObj: any = {};
+      template.configItems.forEach(item => {
+        if (item.key && item.key.trim()) {
+          configObj[item.key] = item.value;
+        }
+      });
+      
+      const psdTemplateConfig = Object.keys(configObj).length > 0 ? configObj : null;
+      
+      return psdTemplateApi.updatePsdTemplate({
+        id: template.id,
+        psdTemplateConfig: psdTemplateConfig,
+      });
+    });
+    
+    await Promise.all(updatePromises);
+    
+    ElMessage.success(`成功保存 ${templateConfigList.value.length} 个模板的配置`);
+    batchDetailConfigDialogVisible.value = false;
+    
+    // 刷新列表
+    getList();
+  } catch (e) {
+    console.error('保存失败:', e);
+    ElMessage.error('保存失败，请重试');
+  } finally {
+    batchDetailConfigSaving.value = false;
   }
 }
 </script>
@@ -905,6 +1621,7 @@ function formatPsdInfo(psdInfo: any): string {
   .thumbnail-image {
     width: 120px;
     height: auto;
+    min-height: 120px;
     object-fit: contain;
     border: 1px solid var(--el-border-color-light);
     border-radius: 4px;
@@ -930,43 +1647,175 @@ function formatPsdInfo(psdInfo: any): string {
   display: flex;
   align-items: center;
   
-  .psd-info-preview {
+  .info-icon {
+    font-size: 14px;
+    margin-right: 4px;
+  }
+  
+  .info-text {
+    line-height: 1;
+  }
+}
+
+.psd-info-fullscreen-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  
+  .psd-info-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--el-border-color);
+    background: var(--el-fill-color-lighter);
+    
+    .psd-info-title {
+      font-size: 16px;
+      color: var(--el-text-color-primary);
+      
+      strong {
+        color: var(--el-color-primary);
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .psd-info-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    background: var(--el-bg-color);
+  }
+  
+  .psd-info-json-fullscreen {
+    margin: 0;
+    padding: 20px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--el-text-color-primary);
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    border: 1px solid var(--el-border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
+.table-toolbar {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--el-border-color);
+  background: var(--el-bg-color);
+  
+  .table-toolbar-left {
     display: flex;
     align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    color: var(--el-color-primary);
-    font-size: 13px;
+    gap: 12px;
+  }
+}
+
+.detail-config-fullscreen-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  
+  .detail-config-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--el-border-color);
+    background: var(--el-fill-color-lighter);
     
-    &:hover {
-      color: var(--el-color-primary-light-3);
+    .detail-config-title {
+      font-size: 16px;
+      color: var(--el-text-color-primary);
+      
+      strong {
+        color: var(--el-color-primary);
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .detail-config-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    background: var(--el-bg-color);
+    
+    .detail-config-toolbar {
+      margin-bottom: 16px;
+      display: flex;
+      gap: 12px;
     }
     
-    .info-icon {
-      font-size: 14px;
+    .detail-config-table {
+      :deep(.config-error-tip) {
+        color: var(--el-color-danger);
+        font-size: 12px;
+        margin-top: 4px;
+      }
     }
     
-    .info-text {
-      line-height: 1;
+    .config-empty-tip {
+      margin-top: 40px;
+      text-align: center;
     }
   }
 }
 
-.psd-info-content {
-  max-height: 400px;
-  overflow: auto;
+.batch-detail-config-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
   
-  .psd-info-json {
-    margin: 0;
-    padding: 8px;
+  .batch-detail-config-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--el-border-color);
     background: var(--el-fill-color-lighter);
-    border-radius: 4px;
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--el-text-color-primary);
-    white-space: pre-wrap;
-    word-break: break-all;
-    font-family: 'Courier New', monospace;
+    
+    .batch-detail-config-title {
+      font-size: 16px;
+      color: var(--el-text-color-primary);
+      font-weight: 600;
+    }
+  }
+  
+  .batch-detail-config-body {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    background: var(--el-bg-color);
+    
+    .template-config-title {
+      display: flex;
+      align-items: center;
+      
+      .template-name {
+        font-weight: 500;
+        color: var(--el-text-color-primary);
+      }
+    }
+    
+    .template-config-content {
+      padding: 16px;
+      
+      .template-config-toolbar {
+        margin-bottom: 12px;
+        display: flex;
+        gap: 8px;
+      }
+      
+      :deep(.config-error-tip) {
+        color: var(--el-color-danger);
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      
+      .config-empty-tip-small {
+        margin-top: 20px;
+        text-align: center;
+      }
+    }
   }
 }
 

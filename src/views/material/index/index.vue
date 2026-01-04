@@ -265,6 +265,14 @@
             >
               {{ isAllPsdTemplatesSelected ? '取消全选' : '全选' }}
             </el-button>
+            <el-button
+              type="primary"
+              size="small"
+              :icon="Edit"
+              @click="handlePsdTemplateDetailConfig"
+            >
+              详细配置
+            </el-button>
             <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
               已选中 {{ selectedPsdTemplateIds.length }} 个
             </span>
@@ -308,8 +316,8 @@
                       <div class="template-title-row">
                         <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
                       </div>
-                      <div v-if="tpl.psdInfo" class="template-psd-info">
-                        {{ tpl.psdInfo }}
+                      <div v-if="tpl.psdTemplateConfig" class="template-psd-info">
+                        {{ tpl.psdTemplateConfig }}
                       </div>
                     </div>
                       <div class="template-paths">
@@ -400,6 +408,101 @@
             </div>
           </div>
         </div>
+      </template>
+    </el-dialog>
+
+    <!-- 批量详细配置全屏弹窗（选中的PSD模板） -->
+    <el-dialog
+      v-model="batchDetailConfigDialogVisible"
+      title="详细配置 - 选中的模板"
+      fullscreen
+      :destroy-on-close="true"
+    >
+      <div class="batch-detail-config-content">
+        <div class="batch-detail-config-header">
+          <div class="batch-detail-config-title">
+            <span>共 {{ templateConfigList.length }} 个模板</span>
+          </div>
+        </div>
+        <div class="batch-detail-config-body">
+          <div
+            v-for="(template, index) in templateConfigList"
+            :key="template.id"
+            class="template-config-row"
+          >
+            <div class="template-config-left">
+              <div class="template-config-header-row">
+                <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
+                <el-tag
+                  :type="template.psdTemplateConfig ? 'success' : 'info'"
+                  size="small"
+                >
+                  {{ template.psdTemplateConfig ? '已配置' : '未配置' }}
+                </el-tag>
+              </div>
+              <div class="template-config-images">
+                <div class="config-image-item">
+                  <div class="config-image-label">素材图</div>
+                  <div class="config-image-wrapper">
+                    <template v-if="template.materialId !== undefined">
+                      <!-- 单素材模式：显示单个匹配的素材图 -->
+                      <img
+                        v-if="getMatchedMaterialId(index)"
+                        :src="getMaterialImageUrl(getMatchedMaterialId(index))"
+                        :alt="'素材'"
+                        class="config-image"
+                      />
+                      <span v-else class="config-image-placeholder">无匹配素材</span>
+                    </template>
+                    <template v-else>
+                      <!-- 合并模式：显示所有素材图 -->
+                      <img
+                        v-for="materialId in ids"
+                        :key="materialId"
+                        :src="getMaterialImageUrl(materialId)"
+                        :alt="'素材'"
+                        class="config-image"
+                      />
+                      <span v-if="!ids.length" class="config-image-placeholder">无素材</span>
+                    </template>
+                  </div>
+                </div>
+                <div class="config-image-item">
+                  <div class="config-image-label">模板配置图</div>
+                  <div class="config-image-wrapper">
+                      <img
+                        v-if="template.thumbnail"
+                        :src="getPreviewImageUrl(template.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                        :alt="template.name"
+                        class="config-image"
+                      />
+                      <span v-else class="config-image-placeholder">无缩略图</span>
+                    </div>
+                  </div>
+              </div>
+            </div>
+            <div class="template-config-right">
+              <div class="config-editor-toolbar">
+                <el-button @click="handleResetConfigForTemplate(index)" type="warning" :icon="RefreshLeft" size="small">
+                  重置为默认
+                </el-button>
+              </div>
+              <el-input
+                v-model="template.configText"
+                type="textarea"
+                :rows="18"
+                placeholder="请输入JSON配置（例如：{&quot;key1&quot;: &quot;value1&quot;, &quot;key2&quot;: &quot;value2&quot;}）"
+                class="config-textarea"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="batchDetailConfigDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveConfigToMemory">
+          保存（暂存）
+        </el-button>
       </template>
     </el-dialog>
 
@@ -1465,14 +1568,13 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
 import { formatDate } from '@/utils/formatTime'
 import { getTitleTemplateList } from '@/api/publish'
 import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '@/common/download'
-import { useRouter } from 'vue-router'
 import { getConfigTemplateList } from '@/api/publish/config'
 import genPicture from './genPicture.vue'
 import { getAccessToken } from '@/utils/auth'
@@ -1654,6 +1756,18 @@ const psdSetDialogVisible = ref(false)
 const psdSetTemplates = ref<any[]>([])
 const psdSetTemplatesLoading = ref(false)
 const selectedPsdTemplateIds = ref<string[]>([])
+
+// 批量详细配置相关状态
+const batchDetailConfigDialogVisible = ref(false)
+const templateConfigList = ref<Array<{
+  id: string
+  name: string
+  thumbnail?: string
+  psdInfo: any
+  originalPsdInfo: any
+  configText: string
+  materialId?: string | number // 关联的素材ID
+}>>([])
 const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
 const psdSetTemplateSearchText = ref('')
@@ -2294,10 +2408,191 @@ function handlePsdTemplateSelectAll() {
   }
 }
 
+// 处理PSD模板详细配置
+function handlePsdTemplateDetailConfig() {
+  if (!selectedPsdTemplateIds.value.length) {
+    ElMessage.warning('请先选择PSD模板')
+    return
+  }
+  
+  // 根据选中的模板ID，从psdSetTemplates中获取对应的模板数据
+  const selectedTemplates = psdSetTemplates.value.filter(tpl => 
+    selectedPsdTemplateIds.value.includes(String(tpl.id))
+  )
+  
+  if (selectedTemplates.length === 0) {
+    ElMessage.warning('未找到选中的模板数据')
+    return
+  }
+  
+  // 根据合并模式决定配置列表的生成方式
+  templateConfigList.value = []
+  
+  if (psdSetMergeSticker.value) {
+    // 合并模式：有 N 个模板，就生成 N 个配置项（每个模板一个）
+    templateConfigList.value = selectedTemplates.map(template => {
+      // 使用 psdTemplateConfig
+      const templateConfig = template.psdTemplateConfig
+      let psdInfoObj = null
+      let configText = ''
+      if (templateConfig) {
+        try {
+          psdInfoObj = typeof templateConfig === 'string' ? JSON.parse(templateConfig) : templateConfig
+          configText = JSON.stringify(psdInfoObj, null, 2)
+        } catch (e) {
+          console.error('解析模板配置失败:', e)
+          configText = typeof templateConfig === 'string' ? templateConfig : ''
+        }
+      }
+      
+      const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null
+      
+      return {
+        id: String(template.id),
+        name: template.name || '未命名模板',
+        thumbnail: template.thumbnail || template.preview || template.image,
+        psdInfo: psdInfoObj,
+        originalPsdInfo,
+        configText,
+        materialId: undefined, // 合并模式不关联单个素材
+      }
+    })
+  } else {
+    // 单素材模式：生成 素材数 × 模板数 个配置项
+    ids.value.forEach(materialId => {
+      selectedTemplates.forEach(template => {
+        // 使用 psdTemplateConfig
+        const templateConfig = template.psdTemplateConfig
+        let psdInfoObj = null
+        let configText = ''
+        if (templateConfig) {
+          try {
+            psdInfoObj = typeof templateConfig === 'string' ? JSON.parse(templateConfig) : templateConfig
+            configText = JSON.stringify(psdInfoObj, null, 2)
+          } catch (e) {
+            console.error('解析模板配置失败:', e)
+            configText = typeof templateConfig === 'string' ? templateConfig : ''
+          }
+        }
+        
+        const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null
+        
+        const material = dataSource.value.find(item => String(item.id) === String(materialId))
+        const materialName = material?.name || `素材${materialId}`
+        
+        templateConfigList.value.push({
+          id: `${template.id}_${materialId}`, // 使用模板ID和素材ID组合作为唯一标识
+          name: `${materialName} × ${template.name || '未命名模板'}`,
+          thumbnail: template.thumbnail || template.preview || template.image,
+          psdInfo: psdInfoObj,
+          originalPsdInfo,
+          configText,
+          materialId: materialId, // 关联的素材ID
+        })
+      })
+    })
+  }
+  
+  batchDetailConfigDialogVisible.value = true
+}
+
 // 处理PSD模板缩略图加载错误
 function handleTemplateImageError(event: Event) {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
+}
+
+// 获取素材图片URL
+function getMaterialImageUrl(materialId: string | number): string {
+  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  if (!material || !material.url) return ''
+  return getPreviewImageUrl(material.url, { width: 200, quality: 80, format: 'webp' })
+}
+
+// 获取与配置项匹配的素材ID
+function getMatchedMaterialId(configIndex: number): string | number | null {
+  const config = templateConfigList.value[configIndex]
+  if (!config) return null
+  
+  // 如果配置项有关联的素材ID（单素材模式），直接返回
+  if (config.materialId !== undefined) {
+    return config.materialId
+  }
+  
+  // 合并模式：显示第一个素材作为参考（实际上所有素材都会合并）
+  if (ids.value.length > 0) {
+    return ids.value[0]
+  }
+  
+  return null
+}
+
+// 重置模板配置为默认
+function handleResetConfigForTemplate(templateIndex: number) {
+  const template = templateConfigList.value[templateIndex]
+  ElMessageBox.confirm('确定要重置为默认配置吗？当前修改将丢失。', '重置确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      if (template.originalPsdInfo) {
+        template.configText = JSON.stringify(template.originalPsdInfo, null, 2)
+        template.psdInfo = JSON.parse(JSON.stringify(template.originalPsdInfo))
+      } else {
+        template.configText = ''
+        template.psdInfo = null
+      }
+      ElMessage.success('已重置为默认配置')
+    })
+    .catch(() => {})
+}
+
+// 验证配置文本格式（在生成套图前调用）
+function validateConfigTexts(): boolean {
+  for (const template of templateConfigList.value) {
+    if (!template.configText || !template.configText.trim()) {
+      // 空配置也是允许的
+      continue
+    }
+    
+    try {
+      JSON.parse(template.configText.trim())
+    } catch (e) {
+      ElMessage.warning(`模板"${template.name}"的配置JSON格式错误`)
+      return false
+    }
+  }
+  return true
+}
+
+// 保存配置到内存（暂存，不调用接口）
+function handleSaveConfigToMemory() {
+  // 验证所有配置文本的JSON格式
+  let hasError = false
+  for (const template of templateConfigList.value) {
+    if (!template.configText || !template.configText.trim()) {
+      // 空配置也是允许的
+      continue
+    }
+    
+    try {
+      JSON.parse(template.configText.trim())
+    } catch (e) {
+      ElMessage.warning(`模板"${template.name}"的配置JSON格式错误，请修正后再保存`)
+      hasError = true
+      break
+    }
+  }
+  
+  if (hasError) {
+    return
+  }
+  
+  // 配置已暂存到内存中（templateConfigList），无需额外操作
+  ElMessage.success('配置已保存（暂存），点击"开始制作"时将使用此配置')
+  // 可以选择关闭弹窗，或者保持打开让用户继续编辑
+  // batchDetailConfigDialogVisible.value = false
 }
 
 async function handleCreatePsdSets() {
@@ -2315,12 +2610,36 @@ async function handleCreatePsdSets() {
     return
   }
   
+  // 验证配置文本格式（如果有配置）
+  if (templateConfigList.value.length > 0 && !validateConfigTexts()) {
+    return
+  }
+  
+  // 构建配置映射：将详细配置弹窗中的配置信息传递到后台
+  const configMap: Record<string, any> = {}
+  if (templateConfigList.value.length > 0) {
+    templateConfigList.value.forEach(config => {
+      let psdInfo = null
+      if (config.configText && config.configText.trim()) {
+        try {
+          psdInfo = JSON.parse(config.configText.trim())
+        } catch (e) {
+          console.error('解析配置失败:', e)
+        }
+      }
+      
+      // 使用配置项的ID作为key（在单素材模式下是 templateId_materialId，在合并模式下是 templateId）
+      configMap[config.id] = psdInfo
+    })
+  }
+  
   psdSetSubmitting.value = true
   try {
     const res = await stickerPsdSetApi.batchCreate({
       stickerIds: ids.value.map((id) => String(id)),
       psdTemplateIds: [...selectedPsdTemplateIds.value],
-      mergeSticker: psdSetMergeSticker.value
+      mergeSticker: psdSetMergeSticker.value,
+      configMap: Object.keys(configMap).length > 0 ? configMap : undefined
     })
     const createdList = (res as any)?.list
     const createdCount = Array.isArray(createdList)
@@ -4518,5 +4837,127 @@ h1 {
     margin-right: 6px;
     display: inline-block;
     min-width: 60px;
+  }
+  </style>
+
+  <!-- 批量详细配置弹窗样式 -->
+  <style lang="less" scoped>
+  .batch-detail-config-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    
+    .batch-detail-config-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--el-border-color);
+      background: var(--el-fill-color-lighter);
+      
+      .batch-detail-config-title {
+        font-size: 16px;
+        color: var(--el-text-color-primary);
+        font-weight: 600;
+      }
+    }
+    
+    .batch-detail-config-body {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+      background: var(--el-bg-color);
+      
+      .template-config-row {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: var(--el-bg-color-page);
+        border: 1px solid var(--el-border-color-light);
+        border-radius: 8px;
+        
+        .template-config-left {
+          width: 320px;
+          flex-shrink: 0;
+          
+          .template-config-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--el-border-color-lighter);
+            
+            .template-name {
+              font-size: 15px;
+              font-weight: 600;
+              color: var(--el-text-color-primary);
+            }
+          }
+          
+          .template-config-images {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            
+            .config-image-item {
+              .config-image-label {
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--el-text-color-regular);
+                margin-bottom: 8px;
+              }
+              
+              .config-image-wrapper {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                
+                .config-image {
+                  width: 120px;
+                  height: 120px;
+                  border: 1px solid var(--el-border-color);
+                  border-radius: 4px;
+                  object-fit: contain;
+                  background: var(--el-fill-color-lighter);
+                }
+                
+                .config-image-placeholder {
+                  display: block;
+                  color: var(--el-text-color-placeholder);
+                  font-size: 12px;
+                  padding: 40px 20px;
+                  text-align: center;
+                  border: 1px dashed var(--el-border-color);
+                  border-radius: 4px;
+                  background: var(--el-fill-color-lighter);
+                  width: 120px;
+                  height: 120px;
+                  box-sizing: border-box;
+                }
+              }
+            }
+          }
+        }
+        
+        .template-config-right {
+          flex: 1;
+          min-width: 0;
+          
+          .config-editor-toolbar {
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+          }
+          
+          .config-textarea {
+            :deep(.el-textarea__inner) {
+              font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+              font-size: 13px;
+              line-height: 1.6;
+            }
+          }
+        }
+      }
+    }
   }
   </style>
