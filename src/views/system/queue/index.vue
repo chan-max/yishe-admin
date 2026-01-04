@@ -2,14 +2,13 @@
   <div>
     <!-- 搜索栏 -->
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <form-item label="队列名称">
+      <form-item label="任务类型">
         <el-input 
-          v-model="queryParams.queue" 
-          placeholder="留空则查询所有队列" 
+          v-model="queryParams.type" 
+          placeholder="留空则查询所有类型" 
           style="width: 160px" 
           clearable 
           @keyup.enter="getList"
-          @clear="handleQueueClear"
         />
       </form-item>
       <form-item label="任务状态">
@@ -24,15 +23,6 @@
           <el-option label="已完成" value="completed" />
           <el-option label="失败" value="failed" />
         </el-select>
-      </form-item>
-      <form-item label="任务类型">
-        <el-input 
-          v-model="queryParams.type" 
-          placeholder="留空则查询所有类型" 
-          style="width: 160px" 
-          clearable 
-          @keyup.enter="getList"
-        />
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
@@ -64,7 +54,7 @@
       <el-button
         type="danger"
         @click="handleClearQueue"
-        :disabled="!queryParams.queue"
+        :disabled="!queryParams.type"
       >
         清空队列
       </el-button>
@@ -165,9 +155,9 @@
               type="info" 
               link 
               size="small" 
-              @click="handleUpdateMetadata(row)"
+              @click="handleUpdateData(row)"
             >
-              更新元数据
+              更新数据
             </el-button>
             <el-button 
               type="primary" 
@@ -215,11 +205,8 @@
         :rules="formRules" 
         label-width="100px"
       >
-        <el-form-item label="队列名称" prop="queue">
-          <el-input v-model="formData.queue" placeholder="请输入队列名称" />
-        </el-form-item>
         <el-form-item label="任务类型" prop="type">
-          <el-input v-model="formData.type" placeholder="请输入任务类型" />
+          <el-input v-model="formData.type" placeholder="请输入任务类型（将作为队列名称）" />
         </el-form-item>
         <el-form-item label="任务描述" prop="description">
           <el-input 
@@ -332,6 +319,37 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 更新数据对话框 -->
+    <el-dialog 
+      v-model="dataUpdateDialogVisible" 
+      title="更新数据" 
+      width="600px" 
+      :center="false"
+      align-center
+      @close="resetDataUpdateForm"
+    >
+      <el-form 
+        ref="dataUpdateFormRef" 
+        :model="dataUpdateFormData" 
+        label-width="100px"
+      >
+        <el-form-item label="数据" prop="dataStr">
+          <el-input 
+            v-model="dataUpdateFormData.dataStr" 
+            type="textarea" 
+            :rows="10"
+            placeholder='请输入JSON格式的数据，例如：{"key": "value"}'
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="dataUpdateDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleDataUpdateSubmit">确认</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -356,7 +374,7 @@ import {
   nackTask,
   requeueTask,
   clearQueue,
-  updateTaskMetadata,
+  updateTaskData,
   type QueueMessage,
   type QueueStats,
 } from '@/api/system/queue'
@@ -370,9 +388,8 @@ const route = useRoute()
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  queue: '', // 默认为空，需要用户输入
   status: undefined as 'pending' | 'processing' | 'completed' | 'failed' | undefined,
-  type: '', // 任务类型，默认为空
+  type: '', // 任务类型，默认为空（留空则查询所有类型）
 })
 
 const gridRef = ref()
@@ -398,7 +415,6 @@ const gridOptions = ref({
   columns: [
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     { title: '任务ID', field: 'id', minWidth: 200, showOverflow: true },
-    { title: '队列名称', field: 'queue', width: 120 },
     { title: '任务类型', field: 'type', width: 150 },
     { 
       title: '任务描述', 
@@ -511,7 +527,6 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('新增任务')
 const formRef = ref()
 const formData = reactive({
-  queue: '', // 默认为空，使用当前查询的队列名称
   type: '',
   description: '',
   dataStr: '{}',
@@ -521,9 +536,6 @@ const formData = reactive({
 })
 
 const formRules = {
-  queue: [
-    { required: true, message: '请输入队列名称', trigger: 'blur' }
-  ],
   type: [
     { required: true, message: '请输入任务类型', trigger: 'blur' }
   ],
@@ -563,6 +575,16 @@ const statusFormRules = {
 const dataDialogVisible = ref(false)
 const currentTaskData = ref<any>({})
 
+// 更新数据对话框
+const dataUpdateDialogVisible = ref(false)
+const dataUpdateFormRef = ref()
+const dataUpdateFormData = reactive({
+  queue: '',
+  messageId: '',
+  dataStr: '',
+})
+const currentDataUpdateRow = ref<QueueMessage | null>(null)
+
 // 获取状态类型
 function getStatusType(status: QueueMessage['status']) {
   const map = {
@@ -587,14 +609,11 @@ function getStatusText(status: QueueMessage['status']) {
 
 // 获取列表
 async function getList() {
-  // 允许队列名称为空，查询所有队列的任务
   loading.value = true
   try {
-    const queueName = queryParams.queue?.trim() || ''
-    console.log('🔍 开始查询任务列表，队列名称:', queueName || '(所有队列)', '状态:', queryParams.status || '(所有状态)')
+    console.log('🔍 开始查询任务列表，任务类型:', queryParams.type?.trim() || '(所有类型)', '状态:', queryParams.status || '(所有状态)')
     
     const res = await getTaskList({
-      queue: queueName, // API 层会处理空字符串，不传该参数
       status: queryParams.status, // 不传 status 则查询所有状态
       type: queryParams.type?.trim() || undefined, // 不传 type 则查询所有类型
       limit: queryParams.pageSize,
@@ -667,9 +686,9 @@ async function getList() {
 
 // 刷新统计信息
 async function refreshStats() {
-  // 允许队列名称为空，查询所有队列的统计
+  // 如果指定了任务类型，使用任务类型作为队列名称查询统计
   try {
-    const queueName = queryParams.queue?.trim() || ''
+    const queueName = queryParams.type?.trim() || ''
     const res = await getQueueStats(queueName)
     console.log('获取统计信息完整响应:', JSON.stringify(res, null, 2))
     
@@ -694,7 +713,7 @@ async function refreshStats() {
     // 处理统计数据
     if (statsData && typeof statsData === 'object' && !Array.isArray(statsData)) {
       stats.value = {
-        queue: statsData.queue || queryParams.queue?.trim() || '*',
+        queue: statsData.queue || queryParams.type?.trim() || '*',
         pending: Number(statsData.pending) || 0,
         processing: Number(statsData.processing) || 0,
         delayed: Number(statsData.delayed) || 0,
@@ -721,8 +740,8 @@ function checkboxAllChange(e) {
   ids.value = e.records.map((item) => item.id)
 }
 
-// 队列名称清空处理
-function handleQueueClear() {
+// 任务类型清空处理
+function handleTypeClear() {
   dataSource.value = []
   total.value = 0
   stats.value = {
@@ -734,17 +753,16 @@ function handleQueueClear() {
     failed: 0,
     total: 0,
   }
-  localStorage.removeItem('queue_last_query')
+  localStorage.removeItem('queue_last_type')
 }
 
 // 重置查询
 const resetQuery = () => {
   queryParams.currentPage = 1
   queryParams.pageSize = 20
-  queryParams.queue = ''
   queryParams.status = undefined
   queryParams.type = ''
-  handleQueueClear()
+  handleTypeClear()
 }
 
 // 新增
@@ -985,9 +1003,9 @@ async function handleSubmit() {
   try {
     await formRef.value.validate()
     
-    // 检查队列名称
-    if (!formData.queue || !formData.queue.trim()) {
-      ElMessage.warning('请输入队列名称')
+    // 检查任务类型
+    if (!formData.type || !formData.type.trim()) {
+      ElMessage.warning('请输入任务类型')
       return
     }
     
@@ -1000,11 +1018,10 @@ async function handleSubmit() {
     }
     
     loading.value = true
-    const createdQueue = formData.queue.trim()
     
+    // 只传递任务类型，后端会自动使用 type 作为 queue
     const createRes = await createTask({
-      queue: createdQueue,
-      type: formData.type,
+      type: formData.type.trim(),
       description: formData.description?.trim() || undefined,
       data: taskData,
       priority: formData.priority,
@@ -1018,13 +1035,14 @@ async function handleSubmit() {
     dialogVisible.value = false
     
     // 创建成功后，自动设置查询条件并刷新列表和统计
-    const currentQueue = queryParams.queue?.trim() || ''
+    const createdType = formData.type.trim()
+    const currentType = queryParams.type?.trim() || ''
     
-    // 如果当前没有查询条件，或者查询的就是创建的队列，则刷新
-    if (!currentQueue || currentQueue === createdQueue) {
-      queryParams.queue = createdQueue
+    // 如果当前没有查询条件，或者查询的就是创建的任务类型，则刷新
+    if (!currentType || currentType === createdType) {
+      queryParams.type = createdType
       queryParams.currentPage = 1 // 重置到第一页
-      console.log('准备刷新列表和统计，队列名称:', createdQueue)
+      console.log('准备刷新列表和统计，任务类型:', createdType)
       
       // 等待一小段时间，确保后端数据已写入
       await new Promise(resolve => setTimeout(resolve, 300))
@@ -1032,8 +1050,8 @@ async function handleSubmit() {
       await getList()
       await refreshStats()
     } else {
-      // 如果查询的是其他队列，只刷新统计（如果统计的是创建的队列）
-      if (stats.value.queue === createdQueue) {
+      // 如果查询的是其他任务类型，只刷新统计（如果统计的是创建的任务类型）
+      if (stats.value.queue === createdType) {
         await refreshStats()
       }
     }
@@ -1073,11 +1091,10 @@ async function handleStatusSubmit() {
 
 // 重置表单
 function resetForm() {
-  // 使用当前查询的队列名称，确保使用最新的值
-  const currentQueue = queryParams.queue?.trim() || ''
+  // 使用当前查询的任务类型，确保使用最新的值
+  const currentType = queryParams.type?.trim() || ''
   Object.assign(formData, {
-    queue: currentQueue, // 使用当前查询的队列名称，如果没有则为空
-    type: '',
+    type: currentType, // 使用当前查询的任务类型，如果没有则为空
     description: '',
     dataStr: '{}',
     priority: 0,
@@ -1092,14 +1109,14 @@ function resetForm() {
 
 // 清空队列
 async function handleClearQueue() {
-  if (!queryParams.queue) {
-    ElMessage.warning('请先输入队列名称')
+  if (!queryParams.type) {
+    ElMessage.warning('请先输入任务类型')
     return
   }
   
   try {
     await ElMessageBox.confirm(
-      `确认清空队列 "${queryParams.queue}" 的所有任务？此操作不可恢复！`,
+      `确认清空任务类型 "${queryParams.type}" 的所有任务？此操作不可恢复！`,
       '清空队列',
       {
         confirmButtonText: '确认清空',
@@ -1110,7 +1127,7 @@ async function handleClearQueue() {
     )
     
     loading.value = true
-    await clearQueue(queryParams.queue)
+    await clearQueue(queryParams.type)
     ElMessage.success('队列已清空')
     await getList()
     await refreshStats()
@@ -1123,48 +1140,67 @@ async function handleClearQueue() {
   }
 }
 
-// 更新元数据
-async function handleUpdateMetadata(row: QueueMessage) {
+// 更新数据
+function handleUpdateData(row: QueueMessage) {
+  currentDataUpdateRow.value = row
+  // 确保 data 存在，如果不存在则使用空对象
+  const currentData = row.data || {}
+  const dataStrValue = typeof currentData === 'object' && currentData !== null
+    ? JSON.stringify(currentData, null, 2)
+    : String(currentData || '{}')
+  
+  dataUpdateFormData.queue = row.queue
+  dataUpdateFormData.messageId = row.id
+  dataUpdateFormData.dataStr = dataStrValue
+  
+  dataUpdateDialogVisible.value = true
+}
+
+// 提交数据更新
+async function handleDataUpdateSubmit() {
+  if (!dataUpdateFormData.dataStr || !dataUpdateFormData.dataStr.trim()) {
+    ElMessage.warning('请输入数据')
+    return
+  }
+  
+  let data: any
   try {
-    const { value: metadataStr } = await ElMessageBox.prompt(
-      '请输入要更新的元数据（JSON格式）',
-      '更新元数据',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        inputType: 'textarea',
-        inputPlaceholder: '{"key": "value"}',
-        inputValue: JSON.stringify(row.metadata || {}, null, 2),
-      }
-    )
-    
-    let metadata: Record<string, any>
-    try {
-      metadata = JSON.parse(metadataStr)
-    } catch (e) {
-      ElMessage.error('请输入有效的JSON格式')
-      return
-    }
-    
+    data = JSON.parse(dataUpdateFormData.dataStr)
+  } catch (e) {
+    ElMessage.error('请输入有效的JSON格式')
+    return
+  }
+  
+  try {
     loading.value = true
-    await updateTaskMetadata(row.queue, row.id, metadata)
-    ElMessage.success('元数据已更新')
+    await updateTaskData(dataUpdateFormData.queue, dataUpdateFormData.messageId, data)
+    ElMessage.success('数据已更新')
+    dataUpdateDialogVisible.value = false
     await getList()
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '更新元数据失败')
-    }
+    ElMessage.error(error?.message || '更新数据失败')
   } finally {
     loading.value = false
   }
 }
 
-// 监听队列名称变化，保存到 localStorage
-watch(() => queryParams.queue, (newQueue) => {
-  if (newQueue && newQueue.trim()) {
-    localStorage.setItem('queue_last_query', newQueue.trim())
+// 重置数据更新表单
+function resetDataUpdateForm() {
+  dataUpdateFormData.queue = ''
+  dataUpdateFormData.messageId = ''
+  dataUpdateFormData.dataStr = ''
+  currentDataUpdateRow.value = null
+  setTimeout(() => {
+    dataUpdateFormRef.value?.clearValidate()
+  }, 50)
+}
+
+// 监听任务类型变化，保存到 localStorage
+watch(() => queryParams.type, (newType) => {
+  if (newType && newType.trim()) {
+    localStorage.setItem('queue_last_type', newType.trim())
   } else {
-    localStorage.removeItem('queue_last_query')
+    localStorage.removeItem('queue_last_type')
   }
 })
 
@@ -1181,7 +1217,6 @@ onMounted(() => {
 }
 
 .data-preview {
-  background: #f5f5f5;
   padding: 16px;
   border-radius: 4px;
   max-height: 400px;

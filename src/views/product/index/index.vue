@@ -1978,7 +1978,7 @@ import { getDraftList } from '@/api/draft'
 import { aiGenerateProductInfo } from '@/api/product'
 import { copyLink } from '@/utils/clipboard'
 import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/config/product-categories'
-import { createTask } from '@/api/system/queue'
+import { createTask, type CreateTaskDto } from '@/api/system/queue'
 import { getClipMaterialList } from '@/api/clip-material'
 import { getPreviewImageUrl } from '@/utils/image'
 
@@ -3864,6 +3864,10 @@ async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
 
 // 发布到社交媒体队列
 async function handlePublishToQueue(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('商品ID不存在');
+  }
+  
   try {
     await ElMessageBox.confirm(
       `确认将商品"${row.name || row.id}"添加到社交媒体发布队列？`,
@@ -3875,17 +3879,13 @@ async function handlePublishToQueue(row: any) {
       }
     );
     
-    // 创建队列任务
-    const taskData = {
-      queue: 'social-media-publish', // 社交媒体发布队列
-      type: 'publish-product', // 任务类型：发布商品
-      description: `发布商品到社交媒体：${row.name || row.id}`, // 任务描述
+    // 创建队列任务 - 只传递任务类型，后端会自动使用 type 作为 queue
+    // 这样查询时只需要根据 type 查询即可
+    const taskData: CreateTaskDto = {
+      type: 'publish-product-to-socical-media',  // 任务类型（作为唯一标识，后端会自动使用它作为 queue）
       data: {
-        productId: row.id, // 先只存储商品ID，后续再扩展
+        productId: row.id,
       },
-      priority: 0, // 默认优先级
-      delay: 0, // 立即执行
-      maxAttempts: 3, // 最大重试3次
     };
     
     const res = await createTask(taskData);

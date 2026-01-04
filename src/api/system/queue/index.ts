@@ -29,8 +29,8 @@ export interface QueueStats {
 }
 
 export interface CreateTaskDto {
-  queue: string
-  type: string
+  queue?: string  // 队列名称（可选，如果未提供则使用 type 作为 queue）
+  type: string    // 任务类型（必需，如果未提供 queue 则同时作为队列名称）
   data: any
   description?: string
   priority?: number
@@ -107,6 +107,11 @@ export const requeueTask = (queue: string, messageId: string) => {
 // 更新任务元数据
 export const updateTaskMetadata = (queue: string, messageId: string, metadata: Record<string, any>) => {
   return request.post({ url: `/queue/message/metadata`, data: { queue, messageId, metadata } })
+}
+
+// 更新任务数据
+export const updateTaskData = (queue: string, messageId: string, data: any) => {
+  return request.post({ url: `/queue/message/data`, data: { queue, messageId, data } })
 }
 
 // 清空队列
