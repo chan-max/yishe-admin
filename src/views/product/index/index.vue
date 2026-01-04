@@ -3882,7 +3882,7 @@ async function handlePublishToQueue(row: any) {
     // 创建队列任务 - 只传递任务类型，后端会自动使用 type 作为 queue
     // 这样查询时只需要根据 type 查询即可
     const taskData: CreateTaskDto = {
-      type: 'publish-product-to-socical-media',  // 任务类型（作为唯一标识，后端会自动使用它作为 queue）
+      type: 'publish-product-to-social-media',  // 任务类型（作为唯一标识，后端会自动使用它作为 queue）
       data: {
         productId: row.id,
       },
