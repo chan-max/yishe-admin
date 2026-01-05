@@ -36,13 +36,6 @@ export function deleteSentence(id: string) {
   });
 }
 
-export function aiGenerateSentence(data) {
-  return request.post({
-    url: '/sentences/ai-generate',
-    data,
-  });
-}
-
 export function aiAnalyzeSentence(id: number, prompt?: string) {
   return request.post({
     url: '/sentences/ai-analyze',
