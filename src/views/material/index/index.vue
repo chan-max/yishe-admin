@@ -278,73 +278,60 @@
             </span>
           </div>
           <div class="template-list" v-loading="psdSetTemplatesLoading">
-            <el-tooltip
+            <div
               v-for="tpl in filteredPsdSetTemplates"
               :key="tpl.id"
-              :disabled="!tpl.description && !tpl.keywords"
-              placement="right"
-              popper-class="template-detail-tooltip"
-              :show-after="0"
-              :transition="''"
+              class="template-item"
+              :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
             >
-              <template #content>
-                <div class="template-tooltip-content">
-                  <div v-if="tpl.description" class="tooltip-item">
-                    <strong>描述：</strong>{{ tpl.description }}
-                  </div>
-                  <div v-if="tpl.keywords" class="tooltip-item">
-                    <strong>关键字：</strong>{{ tpl.keywords }}
-                  </div>
-                </div>
-              </template>
-              <div
-                class="template-item"
-                :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
-                @click="togglePsdTemplate(tpl.id)"
-              >
-                <div class="template-content-wrapper">
-                  <img
-                    v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                    :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
-                      :alt="tpl.name || '模板缩略图'"
-                    class="template-thumbnail"
-                    loading="lazy"
-                    @error="handleTemplateImageError"
-                  />
-                  <div class="template-info">
-                    <div class="template-header">
-                      <div class="template-title-row">
-                        <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
-                      </div>
-                      <div v-if="tpl.psdTemplateConfig" class="template-psd-info">
-                        {{ tpl.psdTemplateConfig }}
-                      </div>
+              <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
+                <img
+                  v-if="tpl.thumbnail || tpl.preview || tpl.image"
+                  :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
+                  :alt="tpl.name || '模板缩略图'"
+                  class="template-thumbnail"
+                  loading="lazy"
+                  @error="handleTemplateImageError"
+                />
+                <div class="template-info">
+                  <div class="template-header">
+                    <div class="template-title-row">
+                      <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
+                      <el-link
+                        type="primary"
+                        :underline="false"
+                        class="template-detail-link"
+                        @click.stop="openTemplateDetail(tpl)"
+                      >
+                        查看详情
+                      </el-link>
                     </div>
-                      <div class="template-paths">
-                        <div class="path-row">
-                          <span class="path-label">远程链接：</span>
-                          <el-link
-                            v-if="tpl.url"
-                            :href="tpl.url"
-                            target="_blank"
-                            type="primary"
-                            :underline="false"
-                            class="path-link"
-                          >
-                            {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
-                          </el-link>
-                          <span v-else class="path-empty">暂无</span>
-                        </div>
-                        <div class="path-row">
-                          <span class="path-label">本地路径：</span>
-                          <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
-                          <span v-else class="path-empty">暂无</span>
-                        </div>
-                      </div>
+                  </div>
+                  <div class="template-paths">
+                    <div class="path-row">
+                      <span class="path-label">远程链接：</span>
+                      <el-link
+                        v-if="tpl.url"
+                        :href="tpl.url"
+                        target="_blank"
+                        type="primary"
+                        :underline="false"
+                        class="path-link"
+                        @click.stop
+                      >
+                        {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
+                      </el-link>
+                      <span v-else class="path-empty">暂无</span>
+                    </div>
+                    <div class="path-row">
+                      <span class="path-label">本地路径：</span>
+                      <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
+                      <span v-else class="path-empty">暂无</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </el-tooltip>
+            </div>
             <el-empty 
               v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading" 
               :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" 
@@ -503,6 +490,78 @@
         <el-button type="primary" @click="handleSaveConfigToMemory">
           保存（暂存）
         </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- PSD模板详情弹窗 -->
+    <el-dialog
+      v-model="psdTemplateDetailDialogVisible"
+      title="PSD模板详情"
+      fullscreen
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-if="currentPsdTemplate" class="psd-template-detail">
+        <div class="detail-layout">
+          <div class="detail-left">
+            <div class="detail-thumbnail">
+              <img
+                v-if="currentPsdTemplate.thumbnail || currentPsdTemplate.preview || currentPsdTemplate.image"
+                :src="getPreviewImageUrl(currentPsdTemplate.thumbnail || currentPsdTemplate.preview || currentPsdTemplate.image, { width: 600, quality: 90, format: 'webp' })"
+                :alt="currentPsdTemplate.name || '模板缩略图'"
+                class="detail-thumbnail-img"
+                loading="lazy"
+              />
+              <div v-else class="detail-thumbnail-placeholder">暂无缩略图</div>
+            </div>
+          </div>
+          
+          <div class="detail-right">
+            <div class="detail-item">
+              <span class="detail-label">模板名称：</span>
+              <span class="detail-value">{{ currentPsdTemplate.name || '未命名模板' }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">描述：</span>
+              <span class="detail-value">{{ currentPsdTemplate.description || '暂无' }}</span>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">关键字：</span>
+              <span class="detail-value">{{ currentPsdTemplate.keywords || '暂无' }}</span>
+            </div>
+            
+            <div v-if="currentPsdTemplate.psdTemplateConfig" class="detail-item">
+              <span class="detail-label">PSD配置：</span>
+              <div class="detail-value psd-config-value">{{ currentPsdTemplate.psdTemplateConfig }}</div>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">远程链接：</span>
+              <div class="detail-value">
+                <el-link
+                  v-if="currentPsdTemplate.url"
+                  :href="currentPsdTemplate.url"
+                  target="_blank"
+                  type="primary"
+                  :underline="false"
+                >
+                  {{ currentPsdTemplate.url }}
+                </el-link>
+                <span v-else class="detail-empty">暂无</span>
+              </div>
+            </div>
+            
+            <div class="detail-item">
+              <span class="detail-label">本地路径：</span>
+              <span class="detail-value">{{ currentPsdTemplate.windowsLocalPath || '暂无' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="psdTemplateDetailDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 
@@ -1772,6 +1831,10 @@ const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
 const psdSetTemplateSearchText = ref('')
 
+// PSD模板详情弹窗
+const psdTemplateDetailDialogVisible = ref(false)
+const currentPsdTemplate = ref<any>(null)
+
 // 直接使用后端返回的模板列表（后端已过滤）
 const filteredPsdSetTemplates = computed(() => {
   return psdSetTemplates.value
@@ -2500,6 +2563,12 @@ function handlePsdTemplateDetailConfig() {
 function handleTemplateImageError(event: Event) {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
+}
+
+// 打开PSD模板详情
+function openTemplateDetail(template: any) {
+  currentPsdTemplate.value = template
+  psdTemplateDetailDialogVisible.value = true
 }
 
 // 获取素材图片URL
@@ -4743,6 +4812,7 @@ h1 {
 .psd-set-templates .template-title-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
 }
@@ -4751,6 +4821,10 @@ h1 {
   font-size: 14px;
   color: var(--el-text-color-primary);
   flex: 1;
+}
+.psd-set-templates .template-detail-link {
+  font-size: 12px;
+  flex-shrink: 0;
 }
 .psd-set-templates .template-psd-info {
   font-size: 13px;
@@ -4808,6 +4882,118 @@ h1 {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+/* PSD模板详情弹窗样式 */
+.psd-template-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.psd-template-detail .detail-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.psd-template-detail .detail-left {
+  flex-shrink: 0;
+  width: 600px;
+}
+
+.psd-template-detail .detail-right {
+  flex: 1;
+  min-width: 0;
+}
+
+.psd-template-detail .detail-thumbnail {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-light);
+  position: sticky;
+  top: 20px;
+}
+
+.psd-template-detail .detail-thumbnail-img {
+  max-width: 100%;
+  max-height: calc(100vh - 200px);
+  border-radius: 4px;
+  object-fit: contain;
+}
+
+.psd-template-detail .detail-thumbnail-placeholder {
+  padding: 100px 20px;
+  text-align: center;
+  color: var(--el-text-color-placeholder);
+  font-size: 14px;
+  width: 100%;
+}
+
+.psd-template-detail .detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.psd-template-detail .detail-item:last-child {
+  border-bottom: none;
+}
+
+.psd-template-detail .detail-label {
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+  font-size: 15px;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.psd-template-detail .detail-value {
+  flex: 1;
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  line-height: 1.8;
+  word-break: break-word;
+}
+
+.psd-template-detail .psd-config-value {
+  padding: 16px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  border-left: 3px solid var(--el-color-primary);
+  font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.psd-template-detail .detail-empty {
+  color: var(--el-text-color-placeholder);
+  font-style: italic;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+  .psd-template-detail .detail-layout {
+    flex-direction: column;
+  }
+  
+  .psd-template-detail .detail-left {
+    width: 100%;
+  }
+  
+  .psd-template-detail .detail-thumbnail {
+    position: static;
+  }
 }
 
   </style>

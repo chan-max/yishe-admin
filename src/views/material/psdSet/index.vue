@@ -265,6 +265,16 @@
               />
               <span v-else class="text-gray-400 text-xs">无图</span>
               <div class="detail-sticker-meta">
+                <div 
+                  v-if="sticker.id" 
+                  class="detail-sticker-id cursor-pointer" 
+                  @click="copyId(sticker.id)" 
+                  title="点击复制ID"
+                >
+                  ID: {{ sticker.id }}
+                  <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                </div>
+                <div v-else class="detail-sticker-id">ID: -</div>
                 <div class="detail-sticker-name">{{ sticker.name || '未命名贴纸' }}</div>
                 <div class="detail-sticker-desc">{{ sticker.description || '-' }}</div>
                 <div class="detail-sticker-keywords">{{ sticker.keywords || '-' }}</div>
@@ -289,6 +299,16 @@
               class="detail-thumb-image"
             />
             <div class="detail-template-meta">
+              <div 
+                v-if="detailData.psdTemplate.id" 
+                class="detail-sticker-id cursor-pointer" 
+                @click="copyId(detailData.psdTemplate.id)" 
+                title="点击复制ID"
+              >
+                ID: {{ detailData.psdTemplate.id }}
+                <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+              </div>
+              <div v-else class="detail-sticker-id">ID: -</div>
               <div class="detail-sticker-name">{{ detailData.psdTemplate.name || '未命名模板' }}</div>
               <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || '-' }}</div>
               <div class="detail-template-paths">
@@ -1538,6 +1558,37 @@ getList()
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+.detail-sticker-id {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+  font-family: 'Courier New', Consolas, monospace;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.2s;
+}
+
+.detail-sticker-id.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+.detail-sticker-id.cursor-pointer:hover {
+  color: var(--el-color-primary);
+}
+
+.detail-sticker-id .copy-icon {
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.detail-sticker-id.cursor-pointer:hover .copy-icon {
+  opacity: 1;
 }
 
 .detail-header {
