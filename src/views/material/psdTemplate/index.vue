@@ -4,6 +4,15 @@
       <!-- 导出按钮 -->
       <div style="flex: 1"></div>
 
+      <form-item label="ID搜索">
+        <el-input
+          v-model="queryParams.id"
+          clearable
+          placeholder="请输入模板ID"
+          style="width: 200px"
+          @keyup.enter="getList"
+        ></el-input>
+      </form-item>
       <form-item label="搜索">
         <el-input
           v-model="queryParams.searchKeyword"
@@ -224,12 +233,12 @@
           </el-col>
 
           <el-col :span="24">
-            <el-form-item label="套图信息" prop="psdTemplateConfig">
+            <el-form-item label="psd模板配置" prop="psdTemplateConfig">
               <el-input
                 v-model="form.psdTemplateConfigText"
                 type="textarea"
                 :rows="4"
-                placeholder='请输入套图信息（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
+                placeholder='请输入psd模板配置（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
               />
               <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
                 提示：支持JSON格式（键需引号）或JavaScript对象格式（键无需引号），例如：{"images": []} 或 {images: []}
@@ -316,10 +325,10 @@
       </template>
     </el-dialog>
 
-    <!-- 套图信息全屏弹窗 -->
+    <!-- psd模板配置全屏弹窗 -->
     <el-dialog
       v-model="psdInfoDialogVisible"
-      title="套图信息"
+      title="psd模板配置"
       fullscreen
       :destroy-on-close="true"
     >
@@ -383,6 +392,7 @@ const queryParams = reactive({
   pageSize: 20,
   sortingFields: defaultSortingValue(),
   name: "",
+  id: "", // ID搜索
   searchKeyword: "", // 搜索关键字（支持名称、关键词、描述）
 });
 
@@ -415,7 +425,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       showOverflow: true,
     },
     {
-      title: "套图信息",
+      title: "psd模板配置",
       field: "psdTemplateConfig",
       minWidth: 200,
       showOverflow: true,
@@ -633,7 +643,7 @@ const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
 const aiTableLoading = ref<Record<string, boolean>>({});
 
-// 套图信息全屏弹窗相关
+// psd模板配置全屏弹窗相关
 const psdInfoDialogVisible = ref(false);
 const currentPsdInfoRow = ref<any>(null);
 
@@ -696,7 +706,7 @@ const submitForm = async () => {
         try {
           psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
         } catch (e: any) {
-          ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
+          ElMessage.error(e.message || 'psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
           return;
         }
@@ -747,7 +757,7 @@ const submitForm = async () => {
         try {
           psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
         } catch (e: any) {
-          ElMessage.error(e.message || '套图信息格式错误，请输入有效的JSON或JavaScript对象格式');
+          ElMessage.error(e.message || 'psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式');
           submitLoading.value = false;
           return;
         }
@@ -902,7 +912,7 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   }
 }
 
-// 解析套图信息文本（支持JSON和JS对象格式）
+// 解析psd模板配置文本（支持JSON和JS对象格式）
 function parsePsdInfoText(text: string): any {
   if (!text || !text.trim()) return null;
   
@@ -929,13 +939,13 @@ function parsePsdInfoText(text: string): any {
   }
 }
 
-// 查看套图信息
+// 查看psd模板配置
 function handleViewPsdInfo(row: any) {
   currentPsdInfoRow.value = row;
   psdInfoDialogVisible.value = true;
 }
 
-// 格式化套图信息显示（支持后端返回的新数据结构）
+// 格式化psd模板配置显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
   if (!psdInfo) return '无';
   
