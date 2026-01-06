@@ -267,15 +267,16 @@ export function calculatePhash(data) {
   })
 }
 
-/**
- * AI判断贴纸是否侵权
- */
-export function aiJudgeInfringement(data) {
-  return request.post({
-    url: '/sticker/ai-judge-infringement',
-    data
-  })
-}
+// 已移除：AI判断侵权功能已整合到 ai-generate-info 接口中
+// /**
+//  * AI判断贴纸是否侵权
+//  */
+// export function aiJudgeInfringement(data) {
+//   return request.post({
+//     url: '/sticker/ai-judge-infringement',
+//     data
+//   })
+// }
 
 /**
  * 根据ID查询单个贴纸详情

@@ -794,6 +794,28 @@
               </el-tag>
             </template>
 
+            <template #fileSizeSlot="{ row }">
+              <span v-if="row.fileSize">
+                {{ formatFileSize(row.fileSize) }}
+              </span>
+              <span v-else style="color: #999;">-</span>
+            </template>
+
+            <template #suitableForSlot="{ row }">
+              <div v-if="row.suitableFor" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                <el-tag 
+                  v-for="(item, index) in (row.suitableFor || '').split(',')" 
+                  :key="index"
+                  size="small"
+                  type="info"
+                  style="margin: 0;"
+                >
+                  {{ item.trim() }}
+                </el-tag>
+              </div>
+              <span v-else style="color: #999;">-</span>
+            </template>
+
             <template #similaritySlot="{ row }">
               <el-tag 
                 v-if="row.similarity !== undefined"
@@ -831,7 +853,6 @@
                         <span class="op-menu-label">内容相关</span>
                         <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
                           <div class="op-submenu-item" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('ai-judge-infringement', row)">AI判断侵权(知名IP)</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
                         </div>
                       </div>
@@ -1450,34 +1471,6 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="aiJudgeInfringementDialogVisible"
-      title="AI判断侵权"
-      width="600px"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div style="margin-bottom: 16px; color: #666; font-size: 14px; line-height: 1.5;">
-        <div style="margin-bottom: 8px; font-weight: 500; color: #333;">AI判断标准说明：</div>
-        <div style="margin-bottom: 12px;">• 知名IP角色：迪士尼、漫威、DC、任天堂等公司的角色形象</div>
-        <div style="margin-bottom: 12px;">• 知名品牌：Nike、Adidas、Apple、Coca-Cola等品牌标识</div>
-        <div style="margin-bottom: 12px;">• 知名商标：麦当劳、星巴克、肯德基等商标</div>
-        <div style="margin-bottom: 12px;">• 可能追究版权的：知名电影、游戏、动漫中的角色或场景</div>
-        <div style="color: #409EFF; font-size: 13px;">注意：未知的原创设计、普通插画、风景照片等会被标记为非侵权</div>
-      </div>
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI判断侵权的特定角度或要求（可选，留空则使用默认判断标准）</div>
-      <el-input
-        v-model="aiJudgeInfringementPrompt"
-        type="textarea"
-        :rows="4"
-        placeholder="如：请重点关注某个特定品牌或IP..."
-        style="font-size:16px;min-height:100px;width:100%;resize:vertical;"
-      />
-      <template #footer>
-        <el-button @click="aiJudgeInfringementDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiJudgeInfringementLoading" @click="submitAiJudgeInfringementDialog">确定</el-button>
-      </template>
-    </el-dialog>
 
     <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
       <div v-if="metaDialogContent">
@@ -1607,8 +1600,7 @@ import {
   handleDropMaterial,
   aiAutoGenerateMaterialInfo,
   updateAssetLibrary,
-  calculatePhash, // 新增
-  aiJudgeInfringement // 新增AI判断侵权接口
+  calculatePhash // 新增
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
@@ -1691,6 +1683,15 @@ function resetCheckStatus() {
   ids.value = []
 }
 
+// 格式化文件大小
+function formatFileSize(bytes: number): string {
+  if (!bytes || bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
 const gridOptions = computed(() => {
   const baseColumns = [
     { type: 'checkbox' as const, field: 'checkbox', title: '', width: 50, ellipsis: true, reserve: true, minWidth: 50, fixed: 'left' as const, className: '' as any },
@@ -1708,6 +1709,18 @@ const gridOptions = computed(() => {
     { title: '关键词', field: 'keywords', minWidth: 240, slots: { default: 'keywordsTextSlot' } },
     { title: '英文关键词', field: 'keywordsEn', minWidth: 240, slots: { default: 'keywordsEnTextSlot' } },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
+    { 
+      title: '文件尺寸', 
+      field: 'fileSize', 
+      width: 120,
+      slots: { default: 'fileSizeSlot' }
+    }, // 新增文件尺寸列
+    { 
+      title: '适用商品', 
+      field: 'suitableFor', 
+      minWidth: 150,
+      slots: { default: 'suitableForSlot' }
+    }, // 新增适用商品列
     { 
       title: '相似度', 
       field: 'similarity', 
@@ -2887,10 +2900,6 @@ const aiGenPrompt = ref('')
 const aiGenDialogLoading = ref(false)
 let aiGenRow = null
 
-const aiJudgeInfringementDialogVisible = ref(false)
-const aiJudgeInfringementPrompt = ref('')
-const aiJudgeInfringementLoading = ref(false)
-let aiJudgeInfringementRow = null
 
 const aiTableLoading = ref<Record<string, boolean>>({})
 
@@ -2916,13 +2925,6 @@ function onAiTableAutoGenerate(row) {
   aiGenDialogVisible.value = true
 }
 
-function onAiJudgeInfringement(row) {
-  if (aiTableLoading.value[row.id]) return
-  aiJudgeInfringementRow = row
-  aiJudgeInfringementPrompt.value = ''
-  aiJudgeInfringementDialogVisible.value = true
-}
-
 async function submitAiGenDialog() {
   if (!aiGenRow) return
   aiGenDialogLoading.value = true
@@ -2942,25 +2944,6 @@ async function submitAiGenDialog() {
   }
 }
 
-async function submitAiJudgeInfringementDialog() {
-  if (!aiJudgeInfringementRow) return
-  aiJudgeInfringementLoading.value = true
-  aiTableLoading.value = { ...aiTableLoading.value, [aiJudgeInfringementRow.id]: true }
-  try {
-    await handleAiJudgeInfringement(aiJudgeInfringementRow, () => {
-      aiTableLoading.value = { ...aiTableLoading.value, [aiJudgeInfringementRow.id]: false }
-      aiJudgeInfringementLoading.value = false
-      aiJudgeInfringementDialogVisible.value = false
-      aiJudgeInfringementRow = null
-    }, aiJudgeInfringementPrompt.value)
-  } catch (e) {
-    aiTableLoading.value = { ...aiTableLoading.value, [aiJudgeInfringementRow.id]: false }
-    aiJudgeInfringementLoading.value = false
-    aiJudgeInfringementDialogVisible.value = false
-    aiJudgeInfringementRow = null
-  }
-}
-
 async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     const res = await aiAutoGenerateMaterialInfo({
@@ -2976,43 +2959,22 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       row.descriptionEn = resultData.descriptionEn || row.descriptionEn
       row.keywords = resultData.keywords || row.keywords
       row.keywordsEn = resultData.keywordsEn || row.keywordsEn
+      // 更新侵权信息
+      if (typeof resultData.isInfringement === 'boolean') {
+        row.isInfringement = resultData.isInfringement
+      }
+      // 更新适用商品
+      if (resultData.suitableFor) {
+        row.suitableFor = resultData.suitableFor
+      }
     }
-    ElNotification.success('AI自动生成内容成功')
+    const infringementText = resultData?.isInfringement ? '（已标记为侵权）' : '（已标记为非侵权）'
+    const suitableText = resultData?.suitableFor ? `，适用商品：${resultData.suitableFor}` : ''
+    ElNotification.success(`AI自动生成内容成功${infringementText}${suitableText}`)
     if (typeof cb === 'function') cb()
     getList()
   } catch (e) {
     ElNotification.error('AI自动生成内容失败')
-    if (typeof cb === 'function') cb()
-  }
-}
-
-async function handleAiJudgeInfringement(row, cb, prompt) {
-  try {
-    const res = await aiJudgeInfringement({
-      id: row.id,
-      prompt: prompt || ''
-    })
-    
-    // 更新行数据
-    if (res) {
-      row.isInfringement = res.isInfringement
-      
-      // 显示AI判断结果
-      const resultText = res.isInfringement ? '侵权' : '非侵权'
-      const resultType = res.isInfringement ? 'warning' : 'success'
-      
-      ElNotification({
-        title: 'AI判断侵权完成',
-        message: `判断结果：${resultText}，置信度：${(res.confidence * 100).toFixed(1)}%，理由：${res.reason}`,
-        duration: 5000,
-        type: resultType
-      })
-    }
-    
-    if (typeof cb === 'function') cb()
-    getList()
-  } catch (e) {
-    ElNotification.error(`AI判断侵权失败：${e.message || '未知错误'}`)
     if (typeof cb === 'function') cb()
   }
 }
@@ -3293,9 +3255,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
-      break;
-    case 'ai-judge-infringement':
-      onAiJudgeInfringement(row);
       break;
     case 'generate-phash':
       handleGeneratePhash(row);
