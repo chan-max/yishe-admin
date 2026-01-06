@@ -36,14 +36,6 @@
             </el-button>
             <el-button
               v-if="isAdmin"
-              type="success"
-              :icon="MagicStick"
-              @click="aiDialogVisible = true"
-            >
-              AI生成新句子
-            </el-button>
-            <el-button
-              v-if="isAdmin"
               type="warning"
               @click="handleBatchPublish"
               :disabled="!ids.length"
@@ -101,14 +93,6 @@
             </el-button>
             <el-button
               v-if="isAdmin"
-              type="success"
-              :icon="MagicStick"
-              @click="aiDialogVisible = true"
-            >
-              AI生成新句子
-            </el-button>
-            <el-button
-              v-if="isAdmin"
               type="warning"
               @click="handleBatchPublish"
               :disabled="!ids.length"
@@ -162,9 +146,10 @@
                     <el-icon><Edit /></el-icon>
                     <span>编辑</span>
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="ai-analyze">
+                  <el-dropdown-item v-if="isAdmin" command="ai-analyze" :disabled="aiTableLoading?.[row?.id]">
                     <el-icon><MagicStick /></el-icon>
                     <span>AI分析</span>
+                    <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-1"><Loading /></el-icon>
                   </el-dropdown-item>
                   <el-dropdown-item
                     v-if="isAdmin"
@@ -236,17 +221,6 @@
       />
     </div>
   </div>
-
-    <!-- AI生成新句子弹窗 -->
-    <el-dialog v-model="aiDialogVisible" title="AI生成新句子" width="400px" align-center>
-      <el-input v-model="aiPromptTop" placeholder="可选，留空将使用默认提示词" />
-      <template #footer>
-        <el-button @click="aiDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiLoadingTop" @click="handleAIGenerateAndAdd"
-          >生成并添加</el-button
-        >
-      </template>
-    </el-dialog>
 
     <!-- AI分析句子弹窗 -->
     <el-dialog
@@ -357,13 +331,13 @@ import {
   Edit,
   Upload,
   Download,
+  Loading,
 } from "@element-plus/icons-vue";
 import {
   getSentenceList,
   createSentence,
   updateSentence,
   deleteSentence,
-  aiGenerateSentence,
   aiAnalyzeSentence,
 } from "@/api/sentence";
 import { commonGridOptions } from "@/common/table";
@@ -462,9 +436,6 @@ const form = ref({
   isPublish: false,
 });
 const submitLoading = ref(false);
-const aiPromptTop = ref("");
-const aiLoadingTop = ref(false);
-const aiDialogVisible = ref(false);
 const editId = ref<string | null>(null);
 
 // AI分析相关
@@ -573,30 +544,6 @@ function handleDelete(row?) {
       }
     })
     .catch(() => {});
-}
-
-async function handleAIGenerateAndAdd() {
-  aiLoadingTop.value = true;
-  try {
-    const res = await aiGenerateSentence({ prompt: aiPromptTop.value });
-    if (res.content) {
-      await createSentence({
-        content: res.content,
-        description: res.description || "",
-        keywords: res.keywords || "",
-      });
-      ElMessage.success("AI生成并添加成功");
-      aiDialogVisible.value = false;
-      aiPromptTop.value = "";
-      getList();
-    } else {
-      ElMessage.error("AI未返回内容");
-    }
-  } catch (e) {
-    ElMessage.error("AI生成失败");
-  } finally {
-    aiLoadingTop.value = false;
-  }
 }
 
 // AI分析句子
