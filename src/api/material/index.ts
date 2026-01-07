@@ -212,6 +212,16 @@ export function aiAutoGenerateMaterialInfo(data) {
 }
 
 /**
+ * 生成图片信息（宽高、文件大小、色系）
+ */
+export function generateImageInfo(data) {
+  return request.post({
+    url: '/sticker/generate-image-info',
+    data
+  })
+}
+
+/**
  * 编辑素材信息
  */
 export function updateAssetLibrary(data) {

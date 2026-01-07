@@ -802,16 +802,31 @@
             </template>
 
             <template #suitableForSlot="{ row }">
-              <div v-if="row.suitableFor" style="display: flex; flex-wrap: wrap; gap: 4px;">
+              <div v-if="row.suitableFor" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; line-height: 1.5;">
                 <el-tag 
-                  v-for="(item, index) in (row.suitableFor || '').split(',')" 
+                  v-for="(item, index) in (row.suitableFor || '').split(',').slice(0, 2)" 
                   :key="index"
                   size="small"
                   type="info"
-                  style="margin: 0;"
+                  style="margin: 0; flex-shrink: 0;"
                 >
                   {{ item.trim() }}
                 </el-tag>
+                <el-tooltip
+                  v-if="(row.suitableFor || '').split(',').length > 2"
+                  :content="(row.suitableFor || '').split(',').map(item => item.trim()).join('、')"
+                  placement="top"
+                  effect="dark"
+                  :show-after="200"
+                >
+                  <el-tag 
+                    size="small"
+                    type="info"
+                    style="margin: 0; cursor: pointer; flex-shrink: 0;"
+                  >
+                    +{{ (row.suitableFor || '').split(',').length - 2 }}
+                  </el-tag>
+                </el-tooltip>
               </div>
               <span v-else style="color: #999;">-</span>
             </template>
@@ -825,6 +840,26 @@
                 {{ row.similarity.toFixed(1) }}%
               </el-tag>
               <span v-else>-</span>
+            </template>
+
+            <template #colorPaletteSlot="{ row }">
+              <div v-if="row.colorPalette" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; max-height: 60px; overflow: hidden;">
+                <div
+                  v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)"
+                  :key="index"
+                  :style="{ 
+                    width: '18px', 
+                    height: '18px', 
+                    backgroundColor: color.trim(), 
+                    border: '1px solid #ddd',
+                    borderRadius: '3px',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }"
+                  :title="color.trim()"
+                />
+              </div>
+              <span v-else style="color: #999;">-</span>
             </template>
 
             <template #originUrlSlot="{ row }">
@@ -853,6 +888,7 @@
                         <span class="op-menu-label">内容相关</span>
                         <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
                           <div class="op-submenu-item" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('generate-image-info', row)">生成图片信息</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
                         </div>
                       </div>
@@ -1600,7 +1636,8 @@ import {
   handleDropMaterial,
   aiAutoGenerateMaterialInfo,
   updateAssetLibrary,
-  calculatePhash // 新增
+  calculatePhash, // 新增
+  generateImageInfo // 新增
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
@@ -1727,6 +1764,12 @@ const gridOptions = computed(() => {
       width: 80,
       slots: { default: 'similaritySlot' }
     }, // 新增相似度列
+    { 
+      title: '色系', 
+      field: 'colorPalette', 
+      width: 200,
+      slots: { default: 'colorPaletteSlot' }
+    }, // 新增色系列
     { 
       title: '侵权状态', 
       field: 'isInfringement', 
@@ -3238,6 +3281,71 @@ defineExpose({ handleGeneratePhash });
 
 
 
+// 生成图片信息
+async function handleGenerateImageInfo(row) {
+  if (!row.url) {
+    ElMessage.error('图片无有效链接，无法生成图片信息');
+    return;
+  }
+  try {
+    aiTableLoading.value = { ...aiTableLoading.value, [row.id]: true };
+    const res = await generateImageInfo({ id: row.id });
+    if (res) {
+      // 更新行数据 - 直接更新 dataSource 中对应的行
+      const index = dataSource.value.findIndex(item => String(item.id) === String(row.id));
+      if (index !== -1) {
+        const targetRow = dataSource.value[index];
+        if (res.width !== undefined) {
+          targetRow.width = res.width;
+          targetRow.resolutionWidth = res.width;
+        }
+        if (res.height !== undefined) {
+          targetRow.height = res.height;
+          targetRow.resolutionHeight = res.height;
+        }
+        if (res.aspectRatio !== undefined) targetRow.aspectRatio = res.aspectRatio;
+        if (res.fileSize !== undefined) targetRow.fileSize = res.fileSize;
+        if (res.colorPalette !== undefined) targetRow.colorPalette = res.colorPalette;
+        if (res.suffix !== undefined) targetRow.suffix = res.suffix;
+      }
+      
+      // 同时更新当前 row 对象（用于显示）
+      if (res.width !== undefined) {
+        row.width = res.width;
+        row.resolutionWidth = res.width;
+      }
+      if (res.height !== undefined) {
+        row.height = res.height;
+        row.resolutionHeight = res.height;
+      }
+      if (res.aspectRatio !== undefined) row.aspectRatio = res.aspectRatio;
+      if (res.fileSize !== undefined) row.fileSize = res.fileSize;
+      if (res.colorPalette !== undefined) row.colorPalette = res.colorPalette;
+      if (res.suffix !== undefined) row.suffix = res.suffix;
+      
+      const infoParts = [];
+      if (res.width && res.height) {
+        infoParts.push(`尺寸: ${res.width} × ${res.height}`);
+      }
+      if (res.fileSize) {
+        infoParts.push(`大小: ${formatFileSize(res.fileSize)}`);
+      }
+      if (res.colorPalette) {
+        const colors = res.colorPalette.split(',').slice(0, 3).join(', ');
+        infoParts.push(`色系: ${colors}${res.colorPalette.split(',').length > 3 ? '...' : ''}`);
+      }
+      
+      ElNotification.success(`生成图片信息成功${infoParts.length ? `：${infoParts.join('，')}` : ''}`);
+      // 不刷新列表，直接更新当前行数据
+    }
+  } catch (e) {
+    console.error('生成图片信息失败:', e);
+    ElMessage.error(`生成图片信息失败: ${e?.message || '未知错误'}`);
+  } finally {
+    aiTableLoading.value = { ...aiTableLoading.value, [row.id]: false };
+  }
+}
+
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
@@ -3255,6 +3363,9 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
+      break;
+    case 'generate-image-info':
+      handleGenerateImageInfo(row);
       break;
     case 'generate-phash':
       handleGeneratePhash(row);
