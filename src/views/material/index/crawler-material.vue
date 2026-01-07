@@ -193,17 +193,6 @@
             <template #idSlot="{ row }">
               <span style="color: #999; font-size: 12px">{{ row.id }}</span>
             </template>
-            <template #phashSlot="{ row }">
-              <code
-                style="
-                  font-size: 12px;
-                  background: #f4f4f4;
-                  padding: 2px 6px;
-                  border-radius: 4px;
-                "
-                >{{ row.phash || "-" }}</code
-              >
-            </template>
             <template #suffixSlot="{ row }">
               <el-tag :type="getSuffixTagType(row.suffix)" size="small">{{
                 row.suffix || "-"
@@ -383,7 +372,6 @@ const gridOptions = computed(() => {
 
   // 只有管理员显示的字段
   const adminOnlyColumns = [
-    { title: "感知哈希", field: "phash", width: 80 },
     { title: "ID", field: "id", width: 80 },
     { title: "来源", field: "source", minWidth: 160 }, // 新增来源列
     {
