@@ -920,7 +920,6 @@
                         <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
                           <div class="op-submenu-item" @click="() => handleOperationCommand('download', row)">下载</div>
                           <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('copy', row)">复制</div>
-                          <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('generate-phash', row)">生成哈希</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('find-similar', row)">找相似图</div>
                           <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
                           <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
@@ -1367,10 +1366,10 @@
       <!-- 移除el-dialog的footer插槽 -->
     </el-dialog>
 
-    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="900px" :destroy-on-close="true" align-center class="edit-material-dialog">
-      <el-form :model="editForm" label-width="100px" class="edit-form">
-        <el-row :gutter="20">
-          <!-- 左侧：基本信息 -->
+    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="1200px" :destroy-on-close="true" align-center class="edit-material-dialog">
+      <el-form :model="editForm" label-width="120px" class="edit-form">
+        <!-- 基本信息 -->
+        <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="名称">
               <el-input 
@@ -1380,7 +1379,6 @@
               />
             </el-form-item>
           </el-col>
-          <!-- 右侧：英文名称 -->
           <el-col :span="12">
             <el-form-item label="英文名称">
               <el-input 
@@ -1392,8 +1390,28 @@
           </el-col>
         </el-row>
 
-        <el-row :gutter="20">
-          <!-- 左侧：描述 -->
+        <el-row :gutter="24">
+          <el-col :span="12">
+            <el-form-item label="分组">
+              <el-input 
+                v-model="editForm.group" 
+                placeholder="请输入分组名称" 
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="适用场景">
+              <el-input 
+                v-model="editForm.suitableFor" 
+                placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" 
+                clearable
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="描述">
               <el-input 
@@ -1406,7 +1424,6 @@
               />
             </el-form-item>
           </el-col>
-          <!-- 右侧：英文描述 -->
           <el-col :span="12">
             <el-form-item label="英文描述">
               <el-input 
@@ -1421,8 +1438,7 @@
           </el-col>
         </el-row>
 
-        <el-row :gutter="20">
-          <!-- 左侧：关键字 -->
+        <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="关键字">
               <el-input 
@@ -1432,7 +1448,6 @@
               />
             </el-form-item>
           </el-col>
-          <!-- 右侧：英文关键字 -->
           <el-col :span="12">
             <el-form-item label="英文关键字">
               <el-input 
@@ -1446,8 +1461,8 @@
 
         <el-divider />
 
-        <el-row :gutter="20">
-          <!-- 自定义贴纸 -->
+        <!-- 状态和属性 -->
+        <el-row :gutter="24">
           <el-col :span="8">
             <el-form-item label="自定义贴纸">
               <el-switch
@@ -1457,8 +1472,28 @@
               />
             </el-form-item>
           </el-col>
-          <!-- 侵权状态 -->
           <el-col :span="8">
+            <el-form-item label="是否公开">
+              <el-switch
+                v-model="editForm.isPublic"
+                active-text="是"
+                inactive-text="否"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="是否为材质">
+              <el-switch
+                v-model="editForm.isTexture"
+                active-text="是"
+                inactive-text="否"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24">
+          <el-col :span="12">
             <el-form-item label="侵权状态">
               <el-select v-model="editForm.isInfringement" placeholder="请选择" style="width: 100%">
                 <el-option label="非侵权" :value="false" />
@@ -1466,10 +1501,72 @@
               </el-select>
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="文件后缀">
+              <el-input 
+                v-model="editForm.suffix" 
+                placeholder="如：png, jpg, svg" 
+                clearable
+                maxlength="20"
+              />
+            </el-form-item>
+          </el-col>
         </el-row>
 
         <el-divider />
 
+        <!-- 只读信息 -->
+        <el-row :gutter="24">
+          <el-col :span="8">
+            <el-form-item label="图片尺寸">
+              <el-input 
+                :value="editForm.width && editForm.height ? `${editForm.width} × ${editForm.height}` : '-'"
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="宽高比">
+              <el-input 
+                :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'"
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="文件大小">
+              <el-input 
+                :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'"
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24">
+          <el-col :span="12">
+            <el-form-item label="色系">
+              <el-input 
+                :value="editForm.colorPalette || '-'"
+                disabled
+                placeholder="自动生成"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="感知哈希">
+              <el-input 
+                :value="editForm.phash || '-'"
+                disabled
+                placeholder="自动生成"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-divider />
+
+        <!-- URL 信息 -->
         <el-form-item label="原始地址">
           <el-input 
             v-model="editForm.originUrl" 
@@ -1636,7 +1733,6 @@ import {
   handleDropMaterial,
   aiAutoGenerateMaterialInfo,
   updateAssetLibrary,
-  calculatePhash, // 新增
   generateImageInfo // 新增
 } from '@/api/material' // 实际接口导入
 
@@ -3022,27 +3118,6 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   }
 }
 
-async function handleGeneratePhash(row) {
-  if (!row.url) {
-    ElMessage.error('图片无有效链接，无法生成哈希');
-    return;
-  }
-  try {
-    const { phash } = await calculatePhash({ url: row.url, ext: row.suffix || 'jpg' });
-    if (phash) {
-      row.phash = phash;
-      ElMessage.success('哈希生成成功: ' + phash);
-      // 可选：自动保存到后端
-      await updateAssetLibrary({ id: row.id, phash });
-      getList();
-    } else {
-      ElMessage.warning('哈希生成失败');
-    }
-  } catch (e) {
-    ElMessage.error('哈希生成失败');
-  }
-}
-
 // 查找相似图：将当前行的 phash 带入搜索
 async function handleFindSimilar(row) {
   if (!row?.phash) {
@@ -3060,7 +3135,30 @@ async function handleFindSimilar(row) {
 
 
 const editDialogVisible = ref(false)
-const editForm = ref({ id: '', name: '', nameEn: '', description: '', descriptionEn: '', keywords: '', keywordsEn: '', isCustom: false, isInfringement: false, originUrl: '' })
+const editForm = ref({ 
+  id: '', 
+  name: '', 
+  nameEn: '', 
+  description: '', 
+  descriptionEn: '', 
+  keywords: '', 
+  keywordsEn: '', 
+  group: '',
+  suitableFor: '',
+  suffix: '',
+  isCustom: false, 
+  isPublic: false,
+  isTexture: false,
+  isInfringement: false, 
+  originUrl: '',
+  // 只读字段（用于显示）
+  width: null,
+  height: null,
+  aspectRatio: null,
+  fileSize: null,
+  colorPalette: '',
+  phash: ''
+})
 const editLoading = ref(false)
 
 // 其他缺少的变量
@@ -3125,12 +3223,24 @@ function handleEdit(row) {
     name: row.name || '', 
     nameEn: row.nameEn || '',
     description: row.description || '', 
-    descriptionEn: row.descriptionEn || '',
+    descriptionEn: row.descriptionEn || '', 
     keywords: row.keywords || '',
     keywordsEn: row.keywordsEn || '',
+    group: row.group || '',
+    suitableFor: row.suitableFor || '',
+    suffix: row.suffix || '',
     isCustom: row.isCustom || false,
+    isPublic: row.isPublic || false,
+    isTexture: row.isTexture || false,
     isInfringement: row.isInfringement || false,
-    originUrl: row.originUrl || ''
+    originUrl: row.originUrl || '',
+    // 只读字段（用于显示）
+    width: row.width || null,
+    height: row.height || null,
+    aspectRatio: row.aspectRatio || null,
+    fileSize: row.fileSize || null,
+    colorPalette: row.colorPalette || '',
+    phash: row.phash || ''
   }
   editDialogVisible.value = true
 }
@@ -3229,7 +3339,25 @@ async function confirmLinkTemplate2D() {
 async function submitEdit() {
   editLoading.value = true
   try {
-    await updateAssetLibrary(editForm.value)
+    // 只提交可编辑的字段，排除只读字段
+    const submitData = {
+      id: editForm.value.id,
+      name: editForm.value.name,
+      nameEn: editForm.value.nameEn,
+      description: editForm.value.description,
+      descriptionEn: editForm.value.descriptionEn,
+      keywords: editForm.value.keywords,
+      keywordsEn: editForm.value.keywordsEn,
+      group: editForm.value.group,
+      suitableFor: editForm.value.suitableFor,
+      suffix: editForm.value.suffix,
+      isCustom: editForm.value.isCustom,
+      isPublic: editForm.value.isPublic,
+      isTexture: editForm.value.isTexture,
+      isInfringement: editForm.value.isInfringement,
+      originUrl: editForm.value.originUrl
+    }
+    await updateAssetLibrary(submitData)
     ElNotification.success('保存成功')
     editDialogVisible.value = false
     getList()
@@ -3277,7 +3405,6 @@ function showMetaDetail(meta: any) {
   }
 }
 
-defineExpose({ handleGeneratePhash });
 
 
 
@@ -3307,6 +3434,7 @@ async function handleGenerateImageInfo(row) {
         if (res.fileSize !== undefined) targetRow.fileSize = res.fileSize;
         if (res.colorPalette !== undefined) targetRow.colorPalette = res.colorPalette;
         if (res.suffix !== undefined) targetRow.suffix = res.suffix;
+        if (res.phash !== undefined) targetRow.phash = res.phash;
       }
       
       // 同时更新当前 row 对象（用于显示）
@@ -3322,6 +3450,7 @@ async function handleGenerateImageInfo(row) {
       if (res.fileSize !== undefined) row.fileSize = res.fileSize;
       if (res.colorPalette !== undefined) row.colorPalette = res.colorPalette;
       if (res.suffix !== undefined) row.suffix = res.suffix;
+      if (res.phash !== undefined) row.phash = res.phash;
       
       const infoParts = [];
       if (res.width && res.height) {
@@ -3366,9 +3495,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'generate-image-info':
       handleGenerateImageInfo(row);
-      break;
-    case 'generate-phash':
-      handleGeneratePhash(row);
       break;
     case 'find-similar':
       handleFindSimilar(row);
@@ -4639,7 +4765,13 @@ h1 {
   <!-- 编辑素材表单样式 -->
   <style scoped>
   .edit-material-dialog :deep(.el-dialog__body) {
-    padding: 24px;
+    padding: 30px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .edit-material-dialog :deep(.el-dialog) {
+    border-radius: 8px;
   }
 
   .edit-form {
@@ -4647,12 +4779,13 @@ h1 {
   }
 
   .edit-form :deep(.el-form-item) {
-    margin-bottom: 22px;
+    margin-bottom: 24px;
   }
 
   .edit-form :deep(.el-form-item__label) {
     font-weight: 500;
     color: var(--el-text-color-regular);
+    font-size: 14px;
   }
 
   .edit-form :deep(.el-row) {
@@ -4660,16 +4793,33 @@ h1 {
   }
 
   .edit-form :deep(.el-divider) {
-    margin: 20px 0;
+    margin: 24px 0;
+  }
+
+  .edit-form :deep(.el-input),
+  .edit-form :deep(.el-textarea),
+  .edit-form :deep(.el-select) {
+    font-size: 14px;
+  }
+
+  .edit-form :deep(.el-textarea__inner) {
+    min-height: 100px;
   }
 
   .dialog-footer {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+    padding-top: 16px;
   }
 
   /* 响应式布局 */
+  @media (max-width: 1200px) {
+    .edit-material-dialog {
+      width: 95% !important;
+    }
+  }
+
   @media (max-width: 768px) {
     .edit-material-dialog {
       width: 95% !important;
@@ -4677,6 +4827,10 @@ h1 {
 
     .edit-form :deep(.el-col) {
       margin-bottom: 0;
+    }
+
+    .edit-form :deep(.el-col) {
+      margin-bottom: 16px;
     }
   }
 
