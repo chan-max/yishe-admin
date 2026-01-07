@@ -306,7 +306,8 @@
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
-        请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）
+        请告诉 AI 这张 PSD 模板对应的“商品是什么”以及你希望突出/补充的卖点，便于生成可以直接被搜索到的文案。
+        示例：鞋垫/地毯/抱枕等商品名称 + 场景、材质、适用人群、尺寸亮点等。
         <br />
         <span style="color: #f56c6c; font-size: 13px;">
           注意：需要模板有缩略图才能进行AI分析
@@ -316,7 +317,8 @@
         v-model="aiGenPrompt"
         type="textarea"
         :rows="6"
-        placeholder="如：请用艺术化语言描述模板内容，突出设计风格和适用场景..."
+        placeholder="示例：这是一款【儿童卡通地毯】模板，突出柔软材质、防滑底、适合儿童房/游戏区；增加尺寸/清洗提示，语言简洁易搜。"
+        :autosize="{ minRows: 6, maxRows: 10 }"
         style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
       />
       <template #footer>
@@ -639,6 +641,7 @@ const form = ref<any>({
 // AI生成内容相关
 const aiGenDialogVisible = ref(false);
 const aiGenPrompt = ref('');
+const aiDefaultPrompt = '示例：这是一款【儿童卡通地毯】模板，突出柔软材质、防滑底、适合儿童房/游戏区；增加尺寸/清洗提示，语言简洁易搜。';
 const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
 const aiTableLoading = ref<Record<string, boolean>>({});
@@ -868,7 +871,7 @@ function handleAiGenerate(row) {
     return;
   }
   aiGenRow.value = row;
-  aiGenPrompt.value = '';
+  aiGenPrompt.value = aiDefaultPrompt;
   aiGenDialogVisible.value = true;
 }
 
