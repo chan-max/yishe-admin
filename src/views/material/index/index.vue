@@ -121,6 +121,77 @@
           <el-option label="非侵权" :value="false" />
         </el-select>
       </form-item>
+      <form-item label="尺寸形状">
+        <el-select 
+          v-model="queryParams.sizeShape" 
+          placeholder="请选择尺寸形状" 
+          style="width: 180px" 
+          clearable 
+          @change="getList"
+          :teleported="false"
+        >
+          <el-option-group label="常用">
+            <el-option value="landscape">
+              <div class="size-option">
+                <div class="size-thumb landscape-thumb"></div>
+                <span class="size-label">横图</span>
+              </div>
+            </el-option>
+            <el-option value="portrait">
+              <div class="size-option">
+                <div class="size-thumb portrait-thumb"></div>
+                <span class="size-label">竖图</span>
+              </div>
+            </el-option>
+            <el-option value="square">
+              <div class="size-option">
+                <div class="size-thumb square-thumb"></div>
+                <span class="size-label">正方图</span>
+              </div>
+            </el-option>
+          </el-option-group>
+          <el-option-group label="横图细分">
+            <el-option value="ultra-wide">
+              <div class="size-option">
+                <div class="size-thumb ultra-wide-thumb"></div>
+                <span class="size-label">超宽图 (≥2:1)</span>
+              </div>
+            </el-option>
+            <el-option value="wide">
+              <div class="size-option">
+                <div class="size-thumb wide-thumb"></div>
+                <span class="size-label">宽图 (1.5:1 - 2:1)</span>
+              </div>
+            </el-option>
+            <el-option value="slightly-wide">
+              <div class="size-option">
+                <div class="size-thumb slightly-wide-thumb"></div>
+                <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
+              </div>
+            </el-option>
+          </el-option-group>
+          <el-option-group label="竖图细分">
+            <el-option value="slightly-long">
+              <div class="size-option">
+                <div class="size-thumb slightly-long-thumb"></div>
+                <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
+              </div>
+            </el-option>
+            <el-option value="long">
+              <div class="size-option">
+                <div class="size-thumb long-thumb"></div>
+                <span class="size-label">长图 (1:1.5 - 1:2)</span>
+              </div>
+            </el-option>
+            <el-option value="ultra-long">
+              <div class="size-option">
+                <div class="size-thumb ultra-long-thumb"></div>
+                <span class="size-label">超长图 (≤1:2)</span>
+              </div>
+            </el-option>
+          </el-option-group>
+        </el-select>
+      </form-item>
       <form-item label="随机顺序">
         <el-switch
           v-model="queryParams.random"
@@ -174,6 +245,70 @@
             <el-option label="全部" :value="null" />
             <el-option label="侵权" :value="true" />
             <el-option label="非侵权" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="尺寸形状">
+          <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable>
+            <el-option-group label="常用">
+              <el-option value="landscape">
+                <div class="size-option">
+                  <div class="size-thumb landscape-thumb"></div>
+                  <span class="size-label">横图</span>
+                </div>
+              </el-option>
+              <el-option value="portrait">
+                <div class="size-option">
+                  <div class="size-thumb portrait-thumb"></div>
+                  <span class="size-label">竖图</span>
+                </div>
+              </el-option>
+              <el-option value="square">
+                <div class="size-option">
+                  <div class="size-thumb square-thumb"></div>
+                  <span class="size-label">正方图</span>
+                </div>
+              </el-option>
+            </el-option-group>
+            <el-option-group label="横图细分">
+              <el-option value="ultra-wide">
+                <div class="size-option">
+                  <div class="size-thumb ultra-wide-thumb"></div>
+                  <span class="size-label">超宽图 (≥2:1)</span>
+                </div>
+              </el-option>
+              <el-option value="wide">
+                <div class="size-option">
+                  <div class="size-thumb wide-thumb"></div>
+                  <span class="size-label">宽图 (1.5:1 - 2:1)</span>
+                </div>
+              </el-option>
+              <el-option value="slightly-wide">
+                <div class="size-option">
+                  <div class="size-thumb slightly-wide-thumb"></div>
+                  <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
+                </div>
+              </el-option>
+            </el-option-group>
+            <el-option-group label="竖图细分">
+              <el-option value="slightly-long">
+                <div class="size-option">
+                  <div class="size-thumb slightly-long-thumb"></div>
+                  <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
+                </div>
+              </el-option>
+              <el-option value="long">
+                <div class="size-option">
+                  <div class="size-thumb long-thumb"></div>
+                  <span class="size-label">长图 (1:1.5 - 1:2)</span>
+                </div>
+              </el-option>
+              <el-option value="ultra-long">
+                <div class="size-option">
+                  <div class="size-thumb ultra-long-thumb"></div>
+                  <span class="size-label">超长图 (≤1:2)</span>
+                </div>
+              </el-option>
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item label="后缀">
@@ -1794,8 +1929,22 @@ const queryParams = reactive({
   phashMode: 'range', // range | exact
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
+  sizeShape: '', // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long
   random: false, // 是否随机
 })
+
+// 尺寸形状选项配置
+const sizeShapeOptions = {
+  'landscape': { label: '横图', thumbClass: 'landscape-thumb' },
+  'portrait': { label: '竖图', thumbClass: 'portrait-thumb' },
+  'square': { label: '正方图', thumbClass: 'square-thumb' },
+  'ultra-wide': { label: '超宽图 (≥2:1)', thumbClass: 'ultra-wide-thumb' },
+  'wide': { label: '宽图 (1.5:1 - 2:1)', thumbClass: 'wide-thumb' },
+  'slightly-wide': { label: '微宽图 (1.1:1 - 1.5:1)', thumbClass: 'slightly-wide-thumb' },
+  'slightly-long': { label: '微长图 (1:1.1 - 1:1.5)', thumbClass: 'slightly-long-thumb' },
+  'long': { label: '长图 (1:1.5 - 1:2)', thumbClass: 'long-thumb' },
+  'ultra-long': { label: '超长图 (≤1:2)', thumbClass: 'ultra-long-thumb' }
+}
 
 // 展示模式
 const picMode = useLocalStorage('material_view_mode', false)
@@ -5220,6 +5369,218 @@ h1 {
   }
 }
 
+  </style>
+  
+  <!-- 尺寸形状选择器样式 -->
+  <style scoped>
+  .size-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+  
+  .size-thumb {
+    width: 48px;
+    height: 24px;
+    border: 1.5px solid var(--el-border-color);
+    border-radius: 3px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.2) 100%);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .size-thumb::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border: 1px solid rgba(64, 158, 255, 0.3);
+    border-radius: 2px;
+  }
+  
+  .size-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--el-text-color-primary);
+  }
+  
+  /* 横图系列 */
+  .landscape-thumb {
+    width: 48px;
+    height: 24px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+  }
+  
+  .ultra-wide-thumb {
+    width: 56px;
+    height: 20px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+  }
+  
+  .wide-thumb {
+    width: 52px;
+    height: 22px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+  }
+  
+  .slightly-wide-thumb {
+    width: 50px;
+    height: 23px;
+    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+  }
+  
+  /* 正方形 */
+  .square-thumb {
+    width: 24px;
+    height: 24px;
+    background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.25) 100%);
+  }
+  
+  .square-thumb::after {
+    border-color: rgba(103, 194, 58, 0.3);
+  }
+  
+  /* 竖图系列 - 调整尺寸以适应选项高度 */
+  .portrait-thumb {
+    width: 20px;
+    height: 36px;
+    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+  }
+  
+  .portrait-thumb::after {
+    border-color: rgba(245, 108, 108, 0.3);
+  }
+  
+  .slightly-long-thumb {
+    width: 20px;
+    height: 38px;
+    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+  }
+  
+  .slightly-long-thumb::after {
+    border-color: rgba(245, 108, 108, 0.3);
+  }
+  
+  .long-thumb {
+    width: 18px;
+    height: 40px;
+    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+  }
+  
+  .long-thumb::after {
+    border-color: rgba(245, 108, 108, 0.3);
+  }
+  
+  .ultra-long-thumb {
+    width: 18px;
+    height: 42px;
+    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+  }
+  
+  .ultra-long-thumb::after {
+    border-color: rgba(245, 108, 108, 0.3);
+  }
+  
+  /* 选中状态 */
+  :deep(.el-select-dropdown__item.is-selected) .size-thumb {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+  }
+  
+  :deep(.el-select-dropdown__item:hover) .size-thumb {
+    border-color: var(--el-color-primary);
+    transform: scale(1.05);
+    transition: transform 0.2s;
+  }
+  
+  /* 确保选项内容不被截断 - 增加高度和内边距 */
+  :deep(.el-select-dropdown__item) {
+    padding: 10px 14px;
+    min-height: 50px;
+    height: auto;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* 选项组标题样式 */
+  :deep(.el-select-group__title) {
+    padding: 8px 14px;
+    font-weight: 600;
+    color: var(--el-text-color-regular);
+  }
+  
+  /* 确保选项容器有足够空间 */
+  :deep(.el-select-dropdown__list) {
+    padding: 4px 0;
+  }
+  
+  /* 选中值的显示优化 */
+  :deep(.el-select__input-wrapper) {
+    display: flex;
+    align-items: center;
+  }
+  
+  /* 选中值中显示缩略图（如果支持） */
+  .size-select-value {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .size-select-value .size-thumb {
+    width: 36px;
+    height: 18px;
+  }
+  
+  .size-select-value .square-thumb {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .size-select-value .portrait-thumb,
+  .size-select-value .slightly-long-thumb,
+  .size-select-value .long-thumb,
+  .size-select-value .ultra-long-thumb {
+    width: 18px;
+    height: 36px;
+  }
+  
+  .size-select-value .ultra-wide-thumb {
+    width: 42px;
+    height: 15px;
+  }
+  
+  .size-select-value .wide-thumb {
+    width: 39px;
+    height: 16px;
+  }
+  
+  .size-select-value .slightly-wide-thumb {
+    width: 37px;
+    height: 17px;
+  }
+  
+  .size-select-value .slightly-long-thumb {
+    width: 17px;
+    height: 37px;
+  }
+  
+  .size-select-value .long-thumb {
+    width: 16px;
+    height: 39px;
+  }
+  
+  .size-select-value .ultra-long-thumb {
+    width: 15px;
+    height: 42px;
+  }
   </style>
   
   <!-- 模板详情提示框样式 -->
