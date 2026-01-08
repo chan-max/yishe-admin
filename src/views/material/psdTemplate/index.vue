@@ -273,7 +273,8 @@
               <el-input
                 v-model="form.psdTemplateConfigText"
                 type="textarea"
-                :rows="4"
+                :rows="8"
+                :autosize="{ minRows: 8, maxRows: 15 }"
                 placeholder='请输入psd模板配置（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
               />
               <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
