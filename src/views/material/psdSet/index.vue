@@ -349,31 +349,7 @@
             <span class="detail-label">配置信息</span>
             <div class="flex gap-2 ml-auto">
               <el-button 
-                v-if="!configEditing" 
-                type="primary" 
-                size="small" 
-                @click="handleEditConfig"
-              >
-                编辑
-              </el-button>
-              <el-button 
-                v-if="configEditing" 
-                type="success" 
-                size="small" 
-                :loading="configSaving"
-                @click="handleSaveConfig"
-              >
-                保存
-              </el-button>
-              <el-button 
-                v-if="configEditing" 
-                size="small" 
-                @click="handleCancelEditConfig"
-              >
-                取消
-              </el-button>
-              <el-button 
-                v-if="!configEditing && detailData?.stickerPsdSetConfig" 
+                v-if="detailData?.stickerPsdSetConfig" 
                 type="info" 
                 size="small" 
                 @click="configPreviewMode = !configPreviewMode"
@@ -382,24 +358,11 @@
               </el-button>
             </div>
           </div>
-          <div v-if="configEditing" class="config-editor-container">
-            <el-input
-              v-model="configEditValue"
-              type="textarea"
-              :rows="12"
-              placeholder="请输入JSON格式的配置信息，例如：&#10;{&#10;  &quot;key1&quot;: &quot;value1&quot;,&#10;  &quot;key2&quot;: &quot;value2&quot;&#10;}"
-              class="config-textarea"
-            />
-            <div v-if="configJsonError" class="config-error">
-              <el-icon><WarningFilled /></el-icon>
-              <span>{{ configJsonError }}</span>
-            </div>
-          </div>
-          <div v-else-if="configPreviewMode && detailData?.stickerPsdSetConfig" class="config-preview-container">
+          <div v-if="configPreviewMode && detailData?.stickerPsdSetConfig" class="config-preview-container">
             <pre class="config-preview">{{ formattedConfig }}</pre>
           </div>
           <div v-else-if="detailData?.stickerPsdSetConfig" class="config-display">
-            <el-tag type="info" size="small">已配置 (点击编辑查看详情)</el-tag>
+            <el-tag type="info" size="small">已配置</el-tag>
           </div>
           <span v-else class="text-gray-400 text-sm">未配置</span>
         </div>
@@ -641,11 +604,7 @@ const detailStickers = computed(() => getStickers(detailData.value || {}))
 const detailImages = computed(() => Array.isArray(detailData.value?.images) ? detailData.value.images : [])
 
 // 配置信息相关状态
-const configEditing = ref(false)
 const configPreviewMode = ref(false)
-const configEditValue = ref('')
-const configJsonError = ref('')
-const configSaving = ref(false)
 
 // 编辑配置对话框相关状态
 const configEditDialogVisible = ref(false)
@@ -926,29 +885,12 @@ async function handleViewDetail(row: any) {
   }
   detailDialogVisible.value = true
   detailLoading.value = true
-  configEditing.value = false
   configPreviewMode.value = false
-  configEditValue.value = ''
-  configJsonError.value = ''
   try {
     const res = await request.get({
       url: `/sticker-psd-set/${row.id}`
     })
     detailData.value = res?.data || res || {}
-    // 初始化配置编辑值
-    const config = detailData.value?.stickerPsdSetConfig
-    if (config) {
-      try {
-        const parsed = typeof config === 'string' 
-          ? JSON.parse(config) 
-          : config
-        configEditValue.value = JSON.stringify(parsed, null, 2)
-      } catch (e) {
-        configEditValue.value = String(config)
-      }
-    } else {
-      configEditValue.value = ''
-    }
   } catch (error: any) {
     console.error('获取套图详情失败:', error)
     ElMessage.error(error?.message || '获取详情失败')
@@ -997,59 +939,6 @@ async function handleEditConfigDirectly(row: any) {
   }
 }
 
-// 编辑配置信息
-function handleEditConfig() {
-  configEditing.value = true
-  configPreviewMode.value = false
-  const config = detailData.value?.stickerPsdSetConfig
-  if (config) {
-    try {
-      const parsed = typeof config === 'string' 
-        ? JSON.parse(config) 
-        : config
-      configEditValue.value = JSON.stringify(parsed, null, 2)
-    } catch (e) {
-      configEditValue.value = String(config)
-    }
-  } else {
-    configEditValue.value = '{}'
-  }
-  configJsonError.value = ''
-}
-
-// 取消编辑配置
-function handleCancelEditConfig() {
-  configEditing.value = false
-  configJsonError.value = ''
-  // 恢复原始值
-  const config = detailData.value?.stickerPsdSetConfig
-  if (config) {
-    try {
-      const parsed = typeof config === 'string' 
-        ? JSON.parse(config) 
-        : config
-      configEditValue.value = JSON.stringify(parsed, null, 2)
-    } catch (e) {
-      configEditValue.value = String(config)
-    }
-  } else {
-    configEditValue.value = ''
-  }
-}
-
-// 验证JSON格式（用于详情对话框）
-function validateJson(jsonString: string): boolean {
-  if (!jsonString || !jsonString.trim()) {
-    return true // 空值视为有效（将保存为空）
-  }
-  try {
-    JSON.parse(jsonString)
-    return true
-  } catch (e: any) {
-    configJsonError.value = `JSON格式错误: ${e.message}`
-    return false
-  }
-}
 
 // 增强的JSON校验函数（用于编辑配置对话框）
 function validateJsonEnhanced(jsonString: string): { valid: boolean; error?: string } {
@@ -1192,47 +1081,6 @@ async function handleSaveConfigDialog() {
     ElMessage.error(error?.message || '保存配置信息失败')
   } finally {
     configEditDialogSaving.value = false
-  }
-}
-
-// 保存配置信息（用于详情对话框）
-async function handleSaveConfig() {
-  const trimmedValue = configEditValue.value?.trim() || ''
-  
-  // 验证JSON格式
-  if (trimmedValue && !validateJson(trimmedValue)) {
-    return
-  }
-
-  if (!detailData.value?.id) {
-    return ElMessage.warning('缺少ID，无法保存配置')
-  }
-
-  configSaving.value = true
-  try {
-    // 解析并格式化JSON
-    let configValue: any = null
-    if (trimmedValue) {
-      configValue = JSON.parse(trimmedValue)
-    }
-
-    // 调用更新API（使用新字段名 stickerPsdSetConfig）
-    await stickerPsdSetApi.update(detailData.value.id, { stickerPsdSetConfig: configValue })
-    
-    // 更新本地数据
-    detailData.value.stickerPsdSetConfig = configValue
-    
-    ElMessage.success('配置信息已保存')
-    configEditing.value = false
-    configJsonError.value = ''
-    
-    // 刷新列表以同步数据
-    getList()
-  } catch (error: any) {
-    console.error('保存配置信息失败:', error)
-    ElMessage.error(error?.message || '保存配置信息失败')
-  } finally {
-    configSaving.value = false
   }
 }
 
