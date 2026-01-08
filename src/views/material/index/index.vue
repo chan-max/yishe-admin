@@ -2709,7 +2709,8 @@ async function loadPsdTemplatesForPsdSet() {
     const res = await psdTemplateApi.getPsdTemplatePage({
       currentPage: 1,
       pageSize: 200,
-      searchKeyword: psdSetTemplateSearchText.value.trim() || undefined
+      searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
+      enable: true
     })
     psdSetTemplates.value = res.list || []
   } catch (error) {
