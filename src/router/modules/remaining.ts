@@ -287,18 +287,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           requiresAdmin: true
         }
       },
-      {
-        path: 'template-group-2d',
-        component: () => import('@/views/material/templateGroup2D/index.vue'),
-        name: 'TemplateGroup2D',
-        meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: '二维模板组',
-          requiresAdmin: true
-        }
-      },
     ]
   },
   {
@@ -327,14 +315,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'DesignModel',
         meta: {
           title: '设计模型',
-        }
-      },
-      {
-        path: 'product-image-2d',
-        component: () => import('@/views/product/productImage2D/index.vue'),
-        name: 'ProductImage2D',
-        meta: {
-          title: '二维设计商品图',
         }
       },
       {

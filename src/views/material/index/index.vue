@@ -209,7 +209,6 @@
         <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
         <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="primary" @click="() => { if (!ids.length) { return ElMessage.warning('请先勾选素材') } linkRow = null; openLinkTemplate2D(null) }">根据二维模板组制作商品图({{ ids.length }})</el-button>
         <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">
           制作PS套图({{ ids.length }})
         </el-button>
@@ -1039,7 +1038,6 @@
                         <span class="op-menu-label">制作</span>
                         <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
                           <div v-if="false" class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('link-template-2d', row)">二维模板制作商品图</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">制作PS套图</div>
                         </div>
                       </div>
@@ -1105,96 +1103,6 @@
         </div>
       </div>
     </div>
-
-    <el-dialog
-      v-model="linkTemplate2DDialogVisible"
-      title="根据二维模板组制作商品图"
-      fullscreen
-      align-center
-      class="link-2d-dialog"
-    >
-      <div class="link-2d-body">
-        <div class="selected-materials">
-          <div class="section-title">已选择素材 ({{ ids.length }})</div>
-          <div class="thumbs">
-            <div
-              v-for="id in ids"
-              :key="id"
-              class="thumb"
-            >
-              <img :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })" loading="lazy" />
-            </div>
-          </div>
-        </div>
-
-        <div class="template-selector">
-          <div class="section-title">选择二维模板组（可多选）</div>
-          <div class="template-list">
-            <div class="template-list-rows">
-              <div 
-                v-for="tpl in templateGroup2DOptions"
-                :key="tpl.id"
-                class="template-row"
-                :class="{ 'is-checked': selectedTemplateGroup2DIds.includes(String(tpl.id)) }"
-                @click="toggleTemplateSelection(tpl.id)"
-              >
-                <div class="template-checkbox">
-                  <input 
-                    type="checkbox" 
-                    :checked="selectedTemplateGroup2DIds.includes(String(tpl.id))"
-                    @change="toggleTemplateSelection(tpl.id)"
-                    class="checkbox-input"
-                  />
-                  <div class="checkbox-custom"></div>
-                </div>
-                <div class="template-preview">
-                  <div class="template-header">
-                    <div class="template-title" :title="tpl.name">{{ tpl.name || '未命名' }}</div>
-                    <div v-if="tpl.description" class="template-description">{{ tpl.description }}</div>
-                  </div>
-                  <div class="template-content">
-                    <div class="template-images-row">
-                      <div 
-                        v-for="(img, index) in getTemplateImages(tpl)" 
-                        :key="index"
-                        class="template-image-card"
-                      >
-                        <div class="image-container">
-                          <img 
-                            :src="getPreviewImageUrl(img, { width: 200, quality: 80, format: 'webp' })" 
-                            :alt="`模板图片 ${index + 1}`"
-                            class="template-image"
-                            loading="lazy"
-                          />
-                          <div class="image-badge">图片{{ index + 1 }}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <template #footer>
-        <div class="link-2d-footer">
-          <div class="result-info">
-            <el-alert
-              type="info"
-              :closable="false"
-              show-icon
-              :title="`将生成 ${ids.length} × ${selectedTemplateGroup2DIds.length} = ${ids.length * selectedTemplateGroup2DIds.length} 条商品图记录`"
-            />
-          </div>
-          <div class="footer-actions">
-            <el-button @click="linkTemplate2DDialogVisible = false">取消</el-button>
-            <el-button type="primary" :loading="linkingTemplate2D" @click="confirmLinkTemplate2D">确定</el-button>
-          </div>
-        </div>
-      </template>
-    </el-dialog>
 
     <el-dialog
       v-model="uploadModalVisible"
@@ -1904,8 +1812,6 @@ import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import { pageTemplateGroup2D } from '@/api/templateGroup2D'
-import { createProductImage2D, batchCreateProductImage2D } from '@/api/productImage2D'
 import { getPreviewImageUrl } from '@/utils/image'
 
 const userStore = useUserStore()
@@ -3101,13 +3007,6 @@ function checkMaterialFormats() {
   return { valid: true, message: '' }
 }
 
-// 处理单个素材的二维模板制作
-async function handleLinkTemplate2D(row) {
-  // 设置当前选中的素材为单个素材
-  ids.value = [row.id]
-  await openLinkTemplate2D(row)
-}
-
 async function loadDesignModels() {
   designModelLoading.value = true
   try {
@@ -3395,97 +3294,6 @@ function handleEdit(row) {
   editDialogVisible.value = true
 }
 
-// 关联二维模板组
-const linkTemplate2DDialogVisible = ref(false)
-const selectedTemplateGroup2DId = ref('') // 保留以兼容旧逻辑（未使用）
-const selectedTemplateGroup2DIds = ref<string[]>([])
-const linkingTemplate2D = ref(false)
-const templateGroup2DOptions = ref<any[]>([])
-let linkRow: any = null
-
-async function openLinkTemplate2D(row: any) {
-  linkRow = row
-  selectedTemplateGroup2DId.value = ''
-  selectedTemplateGroup2DIds.value = []
-  linkTemplate2DDialogVisible.value = true
-  try {
-    const res = await pageTemplateGroup2D({ page: 1, pageSize: 200 })
-    templateGroup2DOptions.value = res.list || []
-  } catch (e) {
-    ElMessage.error('加载二维模板组失败')
-  }
-}
-
-// 获取模板的所有图片
-function getTemplateImages(tpl) {
-  const images = []
-  for (let i = 1; i <= 10; i++) {
-    const imageKey = `image${i}`
-    if (tpl[imageKey]) {
-      images.push(tpl[imageKey])
-    }
-  }
-  return images
-}
-
-// 获取模板图片的配置信息
-function getTemplateImageConfig(tpl, imageIndex) {
-  try {
-    const imageOptionKey = `imageOption${imageIndex}`
-    const imageOption = tpl[imageOptionKey]
-    if (!imageOption) return null
-    
-    const config = typeof imageOption === 'string' ? JSON.parse(imageOption) : imageOption
-    return config
-  } catch (error) {
-    console.error('解析模板配置失败:', error)
-    return null
-  }
-}
-
-// 切换模板选择
-function toggleTemplateSelection(templateId) {
-  const idStr = String(templateId)
-  const index = selectedTemplateGroup2DIds.value.indexOf(idStr)
-  if (index > -1) {
-    selectedTemplateGroup2DIds.value.splice(index, 1)
-  } else {
-    selectedTemplateGroup2DIds.value.push(idStr)
-  }
-}
-
-async function confirmLinkTemplate2D() {
-  if (!selectedTemplateGroup2DIds.value.length) {
-    ElMessage.warning('请选择二维模板组')
-    return
-  }
-
-  function toggleTemplate2D(id: string) {
-    const key = String(id)
-    const idx = selectedTemplateGroup2DIds.value.indexOf(key)
-    if (idx >= 0) {
-      selectedTemplateGroup2DIds.value.splice(idx, 1)
-    } else {
-      selectedTemplateGroup2DIds.value.push(key)
-    }
-  }
-  try {
-    linkingTemplate2D.value = true
-    const materialIds = linkRow ? [String(linkRow.id)] : (Array.isArray(ids.value) ? [...ids.value] : [])
-    if (!materialIds.length) {
-      ElMessage.warning('请先勾选素材或从行操作进入')
-      return
-    }
-    await batchCreateProductImage2D({ materialIds: materialIds.map(String), templateGroup2DIds: [...selectedTemplateGroup2DIds.value] })
-    ElMessage.success(`制作成功，共 ${materialIds.length * selectedTemplateGroup2DIds.value.length} 条`) 
-    linkTemplate2DDialogVisible.value = false
-  } catch (e: any) {
-    ElMessage.error(`关联失败：${e?.message || ''}`)
-  } finally {
-    linkingTemplate2D.value = false
-  }
-}
-
 async function submitEdit() {
   editLoading.value = true
   try {
@@ -3636,9 +3444,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'design-model':
       handleDesignModel(row);
-      break;
-    case 'link-template-2d':
-      handleLinkTemplate2D(row);
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
@@ -4061,105 +3866,13 @@ async function handleUrlUpload() {
   z-index: 1;
 }
 
-.link-2d-dialog :deep(.el-dialog__body) { height: calc(100vh - 120px); display: flex; flex-direction: column; overflow: hidden; }
 .design-model-dialog :deep(.el-dialog__body) { max-height: calc(100vh - 160px); overflow: hidden; }
 .design-model-flex { height: 100%; overflow: hidden; }
 .design-model-content { max-height: calc(100vh - 80px); overflow: auto; }
-.link-2d-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; overflow: hidden; min-height: 0; height: 100%; }
-.link-2d-footer { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
-.link-2d-footer .result-info { flex: 1; min-width: 0; }
-.link-2d-footer .footer-actions { display: flex; gap: 8px; }
 .selected-materials { display: flex; flex-direction: column; min-height: 0; overflow: hidden; height: 100%; }
 .selected-materials .thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
 .selected-materials .thumb { width: 72px; height: 72px; border: 1px solid var(--el-border-color); border-radius: 4px; overflow: hidden; background: var(--el-fill-color-lighter); }
 .selected-materials .thumb img { width: 100%; height: 100%; object-fit: cover; }
-.template-selector { display: flex; flex-direction: column; min-height: 0; overflow: hidden; height: 100%; }
-.template-selector .template-list { min-height: 320px; max-height: calc(100vh - 200px); overflow: auto; border: 1px solid var(--el-border-color); border-radius: 4px; padding: 8px; width: 100%; }
-.template-selector .section-title { margin-top: 8px; }
-.template-selector .template-list-rows { display: flex; flex-direction: column; gap: 10px; }
-.template-selector .template-row { 
-  display: flex; 
-  align-items: flex-start; 
-  gap: 16px; 
-  padding: 16px; 
-  border: 2px solid var(--el-border-color); 
-  border-radius: 12px; 
-  background: transparent; 
-  width: 100%; 
-  min-height: auto; 
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.template-checkbox {
-  position: relative;
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-
-.checkbox-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.checkbox-custom {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--el-border-color);
-  border-radius: 4px;
-  background: white;
-  position: relative;
-  transition: all 0.2s ease;
-}
-
-.checkbox-input:checked + .checkbox-custom {
-  background: var(--el-color-primary);
-  border-color: var(--el-color-primary);
-}
-
-.checkbox-input:checked + .checkbox-custom::after {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: 2px;
-  width: 4px;
-  height: 8px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.template-selector .template-list-rows {
-  width: 100%;
-  overflow: visible;
-}
-
-.template-selector .template-list {
-  overflow-x: auto;
-  overflow-y: auto;
-}
-.template-selector .template-row:hover { 
-  border-color: var(--el-color-primary); 
-  box-shadow: 0 4px 12px rgba(64,158,255,0.12); 
-  background: rgba(64,158,255,0.06); 
-}
-.template-selector .template-row.is-checked { 
-  border-color: var(--el-color-primary); 
-  box-shadow: 0 0 0 2px var(--el-color-primary) inset; 
-  background: rgba(64,158,255,0.08);
-}
-
-.template-preview {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  flex: 1;
-  overflow: visible;
-}
-
 .template-header {
   padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
@@ -4182,62 +3895,6 @@ async function handleUrlUpload() {
 
 .template-content {
   width: 100%;
-}
-
-.template-images-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  width: 100%;
-  overflow: visible;
-  min-width: 0;
-}
-
-.template-image-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: 8px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-bg-color-page);
-  transition: all 0.2s ease;
-  min-width: 120px;
-  flex: 0 0 auto;
-  overflow: visible;
-}
-
-.template-image-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-color: var(--el-color-primary);
-}
-
-.image-container {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-light);
-}
-
-.template-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-badge {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .config-summary {
@@ -4280,9 +3937,6 @@ async function handleUrlUpload() {
   border-radius: 4px;
   border: 1px dashed var(--el-border-color-light);
 }
-.template-selector .row-actions { display: flex; align-items: center; gap: 8px; }
-.template-selector .check-indicator { width: 14px; height: 14px; border: 2px solid var(--el-border-color); border-radius: 50%; display: inline-block; }
-.template-selector .check-indicator.checked { border-color: var(--el-color-primary); background: var(--el-color-primary); }
 .section-title { font-size: 14px;  margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
 .section-title .selected-count {
   font-size: 13px;

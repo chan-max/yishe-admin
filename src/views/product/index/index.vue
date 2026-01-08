@@ -1359,56 +1359,6 @@
           </vxe-grid>
         </div>
 
-        <!-- 关联二维产品图 -->
-        <div v-if="currentRelationsRow.productImage2D" class="relation-section">
-          <h3 class="relation-section-title">关联二维产品图</h3>
-          <vxe-grid
-            :data="[currentRelationsRow.productImage2D]"
-            :show-header="true"
-            border
-            size="mini"
-            style="margin: 0; padding: 0; background: none;"
-            :columns="[
-              { field: 'image1', title: '图片', width: '120', slots: { default: 'productImage2DImageSlot' } },
-              { field: 'name', title: '名称', minWidth: 120 },
-              { field: 'code', title: '产品代码', width: 120 },
-              { field: 'description', title: '描述', minWidth: 150 },
-              { field: 'keywords', title: '关键词', minWidth: 120 },
-              { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'productImage2DUpdateTimeSlot' } },
-              { title: '操作', field: 'operation', width: 'auto', slots: { default: 'productImage2DOperationSlot' } }
-            ]"
-          >
-            <template #productImage2DImageSlot="{ row }">
-              <div class="flex items-center justify-center p-2">
-                <el-image
-                  v-if="row.image1"
-                  :src="row.image1"
-                  :preview-src-list="getProductImage2DPreviewList(row)"
-                  :initial-index="0"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                />
-                <span v-else class="text-gray-400">无</span>
-              </div>
-            </template>
-            <template #productImage2DUpdateTimeSlot="{ row }">
-              <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-            </template>
-            <template #productImage2DOperationSlot="{ row }">
-              <div class="flex gap-2">
-                <el-button 
-                  v-if="getProductImage2DPreviewList(row).length > 0"
-                  type="primary" 
-                  link 
-                  size="small" 
-                  @click="preview(0, getProductImage2DPreviewList(row))"
-                >
-                  预览
-                </el-button>
-              </div>
-            </template>
-          </vxe-grid>
-        </div>
-
         <!-- 关联 PSD 套图 -->
         <div v-if="currentRelationsRow.psdSet" class="relation-section">
           <h3 class="relation-section-title">关联PSD套图</h3>
@@ -1446,7 +1396,7 @@
           </vxe-grid>
         </div>
 
-        <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.productImage2D && !currentRelationsRow.psdSet" class="text-center py-8 text-gray-400">
+        <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.psdSet" class="text-center py-8 text-gray-400">
           无关联信息
         </div>
       </div>
@@ -1476,12 +1426,6 @@
             <div class="source-info-section">
               <h4 class="source-info-title">贴纸原始数据</h4>
               <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.sticker) }}</pre>
-            </div>
-          </el-tab-pane>
-          <el-tab-pane v-if="currentSourceInfoRow.productImage2D" label="二维产品图" name="productImage2D">
-            <div class="source-info-section">
-              <h4 class="source-info-title">二维产品图原始数据</h4>
-              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.productImage2D) }}</pre>
             </div>
           </el-tab-pane>
           <el-tab-pane v-if="currentSourceInfoRow.psdSet" label="PSD套图" name="psdSet">
@@ -1743,14 +1687,14 @@
         </div>
 
         <!-- 关联信息 -->
-        <div class="product-detail-section mb-4" v-if="productDetail.customModel || productDetail.sticker || productDetail.productImage2D || productDetail.psdSet">
+        <div class="product-detail-section mb-4" v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet">
           <div class="product-detail-section-title">
             <el-icon><Box /></el-icon>
             <span>关联信息</span>
           </div>
           <div class="relations-detail-content">
             <!-- 使用已有的关联信息展示逻辑 -->
-            <div v-if="productDetail.customModel || productDetail.sticker || productDetail.productImage2D || productDetail.psdSet" class="relations-info">
+            <div v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet" class="relations-info">
               <!-- 设计模型 -->
               <div v-if="productDetail.customModel" class="relation-section-item">
                 <div class="relation-header">
@@ -1828,46 +1772,6 @@
                   </template>
                   <template #stickerUpdateTimeSlot="{ row: stickerRow }">
                     <span class="text-xs">{{ stickerRow.updateTime ? (stickerRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-                  </template>
-                </vxe-grid>
-              </div>
-              
-              <!-- 二维产品图 -->
-              <div v-if="productDetail.productImage2D" class="relation-section-item">
-                <div class="relation-header">
-                  <span class="relation-label">二维产品图：</span>
-                </div>
-                <vxe-grid
-                  :data="[productDetail.productImage2D]"
-                  :show-header="true"
-                  border
-                  size="mini"
-                  class="relation-sub-grid"
-                  :columns="[
-                    { field: 'image1', title: '图片', width: 120, slots: { default: 'productImage2DImageSlot' } },
-                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                    { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'productImage2DUpdateTimeSlot' } }
-                  ]"
-                >
-                  <template #productImage2DImageSlot="{ row: productRow }">
-                    <div class="flex items-center justify-center p-1">
-                      <el-image
-                        v-if="productRow.image1"
-                        :src="productRow.image1"
-                        :preview-src-list="getProductImage2DPreviewList(productRow)"
-                        :initial-index="0"
-                        :preview-teleported="true"
-                        :hide-on-click-modal="false"
-                        class="relation-thumb-image"
-                        fit="contain"
-                      />
-                      <span v-else class="text-gray-400 text-xs">无</span>
-                    </div>
-                  </template>
-                  <template #productImage2DUpdateTimeSlot="{ row: productRow }">
-                    <span class="text-xs">{{ productRow.updateTime ? (productRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
                   </template>
                 </vxe-grid>
               </div>
@@ -3680,19 +3584,6 @@ function preview(index: number, urls: string[]) {
   previewVisible.value = true
 }
 
-// 获取二维产品图的所有图片列表（用于预览）
-function getProductImage2DPreviewList(productImage2D: any): string[] {
-  if (!productImage2D) return []
-  const images: string[] = []
-  for (let i = 1; i <= 10; i++) {
-    const imageUrl = productImage2D[`image${i}`]
-    if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim()) {
-      images.push(imageUrl)
-    }
-  }
-  return images
-}
-
 // 获取设计模型的图片列表（用于展示）
 function getCustomModelImages(customModel: any): string[] {
   if (!customModel) return []
@@ -3786,8 +3677,6 @@ function showRelationsSourceInfo(row: any) {
     activeSourceTab.value = 'customModel'
   } else if (row.sticker) {
     activeSourceTab.value = 'sticker'
-  } else if (row.productImage2D) {
-    activeSourceTab.value = 'productImage2D'
   } else if (row.psdSet) {
     activeSourceTab.value = 'psdSet'
   }
@@ -3813,8 +3702,6 @@ async function copySourceInfo() {
     jsonText = JSON.stringify(currentSourceInfoRow.value.customModel, null, 2)
   } else if (activeSourceTab.value === 'sticker' && currentSourceInfoRow.value.sticker) {
     jsonText = JSON.stringify(currentSourceInfoRow.value.sticker, null, 2)
-  } else if (activeSourceTab.value === 'productImage2D' && currentSourceInfoRow.value.productImage2D) {
-    jsonText = JSON.stringify(currentSourceInfoRow.value.productImage2D, null, 2)
   } else if (activeSourceTab.value === 'psdSet' && currentSourceInfoRow.value.psdSet) {
     jsonText = JSON.stringify(currentSourceInfoRow.value.psdSet, null, 2)
   }
