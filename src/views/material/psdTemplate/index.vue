@@ -39,6 +39,19 @@
         </el-select>
       </form-item>
 
+      <form-item label="是否可用">
+        <el-select
+          v-model="queryParams.enabled"
+          style="width: 140px"
+          clearable
+          placeholder="全部"
+          @change="getList"
+        >
+          <el-option label="可用" :value="true" />
+          <el-option label="不可用" :value="false" />
+        </el-select>
+      </form-item>
+
       <div class="shrink-0">
         <!-- 修改按钮 -->
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
@@ -57,6 +70,7 @@
         v-bind="gridOptions"
         :data="dataSource"
         :loading="loading"
+        :row-class-name="getRowClassName"
         @checkbox-change="checkboxChange"
         @checkbox-all="checkboxAllChange"
       >
@@ -122,6 +136,25 @@
           <el-tag v-else type="info" size="small">未提供路径</el-tag>
         </template>
 
+        <template #enabledSlot="{ row }">
+          <el-tag
+            v-if="row.enabled"
+            type="success"
+            size="small"
+            effect="dark"
+          >
+            可用
+          </el-tag>
+          <el-tag
+            v-else
+            type="info"
+            size="small"
+            effect="plain"
+          >
+            不可用
+          </el-tag>
+        </template>
+
         <template #operationDefaultSlot="{ row }">
           <el-dropdown trigger="click">
             <el-button type="primary" link size="small">
@@ -131,6 +164,9 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                <el-dropdown-item @click="handleToggleEnabled(row)">
+                  {{ row.enabled ? '设为不可用' : '设为可用' }}
+                </el-dropdown-item>
                 <el-dropdown-item 
                   @click="handleAiGenerate(row)"
                   :disabled="!row.thumbnail || aiTableLoading[row.id]"
@@ -286,6 +322,16 @@
               </div>
             </el-form-item>
           </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="是否可用">
+              <el-switch
+                v-model="form.enabled"
+                :active-value="true"
+                :inactive-value="false"
+              />
+            </el-form-item>
+          </el-col>
         </el-row>
       </el-form>
 
@@ -395,6 +441,7 @@ const queryParams = reactive({
   name: "",
   id: "", // ID搜索
   searchKeyword: "", // 搜索关键字（支持名称、关键词、描述）
+  enabled: undefined as boolean | undefined, // 是否可用筛选
 });
 
 const gridOptions = ref<VxeGridProps<any>>({
@@ -456,6 +503,15 @@ const gridOptions = ref<VxeGridProps<any>>({
       showOverflow: true,
       slots: {
         default: "pathStatusSlot",
+      },
+    },
+    {
+      title: "是否可用",
+      field: "enabled",
+      width: 100,
+      showOverflow: true,
+      slots: {
+        default: "enabledSlot",
       },
     },
 
@@ -580,6 +636,7 @@ function handleAdd() {
     thumbnailFile: null,
     psdTemplateConfig: null,
     psdTemplateConfigText: "",
+    enabled: false, // 默认不可用
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -595,6 +652,7 @@ function handleEdit(row) {
 
   form.value = {
     ...row,
+    enabled: row.enabled !== undefined ? row.enabled : false, // 确保enabled有默认值
   };
   // 清空已选文件列表，只在需要时重新选择文件
   fileList.value = [];
@@ -635,6 +693,7 @@ const form = ref<any>({
   thumbnailFile: null,
   psdTemplateConfig: null,
   psdTemplateConfigText: "", // 用于表单编辑的文本字段
+  enabled: false, // 是否可用，默认不可用
 });
 
 // AI生成内容相关
@@ -724,6 +783,7 @@ const submitForm = async () => {
         key: key || undefined,
         thumbnail: thumbnail || "", // 确保是字符串
         psdTemplateConfig: psdTemplateConfig,
+        enabled: form.value.enabled !== undefined ? form.value.enabled : false,
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -776,6 +836,7 @@ const submitForm = async () => {
         file: null,
         uploaderId: userStore.user?.id,
         psdTemplateConfig: psdTemplateConfig,
+        enabled: form.value.enabled !== undefined ? form.value.enabled : false,
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -970,6 +1031,34 @@ function formatPsdInfo(psdInfo: any): string {
   }
 }
 
+// 获取行样式类名
+function getRowClassName({ row }) {
+  return row.enabled ? 'row-enabled' : 'row-disabled';
+}
+
+// 处理切换是否可用状态
+async function handleToggleEnabled(row: any) {
+  const newEnabled = !row.enabled;
+  try {
+    await psdTemplateApi.updatePsdTemplate({
+      id: row.id,
+      name: row.name,
+      description: row.description || "",
+      keywords: row.keywords || "",
+      windowsLocalPath: row.windowsLocalPath || "",
+      url: row.url || undefined,
+      key: row.key || undefined,
+      thumbnail: row.thumbnail || "",
+      psdTemplateConfig: row.psdTemplateConfig,
+      enabled: newEnabled,
+    });
+    row.enabled = newEnabled;
+    ElMessage.success(newEnabled ? '已设为可用' : '已设为不可用');
+  } catch (e) {
+    ElMessage.error('更新状态失败，请重试');
+  }
+}
+
 </script>
 
 <style lang="less" scoped>
@@ -1000,6 +1089,21 @@ function formatPsdInfo(psdInfo: any): string {
   &:hover {
     color: var(--el-color-danger) !important;
     background-color: var(--el-color-danger-light-9) !important;
+  }
+}
+
+// 行样式区分是否可用
+:deep(.row-enabled) {
+  // 可用行使用默认样式
+}
+
+:deep(.row-disabled) {
+  background-color: var(--el-fill-color-lighter) !important;
+  opacity: 0.4;
+  
+  &:hover {
+    background-color: var(--el-fill-color-light) !important;
+    opacity: 0.55;
   }
 }
 
