@@ -2616,7 +2616,7 @@ async function loadPsdTemplatesForPsdSet() {
       currentPage: 1,
       pageSize: 200,
       searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
-      enable: true
+      enabled: true
     })
     psdSetTemplates.value = res.list || []
   } catch (error) {
