@@ -1,58 +1,57 @@
 <template>
   <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <!-- 导出按钮 -->
-      <div style="flex: 1"></div>
+    <div class="search-form-container">
+      <div class="search-form-left">
+        <form-item label="ID搜索">
+          <el-input
+            v-model="queryParams.id"
+            clearable
+            placeholder="请输入模板ID"
+            style="width: 200px"
+            @keyup.enter="getList"
+          ></el-input>
+        </form-item>
+        <form-item label="搜索">
+          <el-input
+            v-model="queryParams.searchKeyword"
+            clearable
+            placeholder="请输入名称、关键词或描述"
+            style="width: 200px"
+            @keyup.enter="getList"
+          ></el-input>
+        </form-item>
+        <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
 
-      <form-item label="ID搜索">
-        <el-input
-          v-model="queryParams.id"
-          clearable
-          placeholder="请输入模板ID"
-          style="width: 200px"
-          @keyup.enter="getList"
-        ></el-input>
-      </form-item>
-      <form-item label="搜索">
-        <el-input
-          v-model="queryParams.searchKeyword"
-          clearable
-          placeholder="请输入名称、关键词或描述"
-          style="width: 200px"
-          @keyup.enter="getList"
-        ></el-input>
-      </form-item>
-      <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
+        <form-item label="排序方式">
+          <el-select
+            v-model="queryParams.sortingFields"
+            style="width: 160px"
+            @change="getList"
+          >
+            <el-option
+              v-for="item in sortTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </form-item>
 
-      <form-item label="排序方式">
-        <el-select
-          v-model="queryParams.sortingFields"
-          style="width: 160px"
-          @change="getList"
-        >
-          <el-option
-            v-for="item in sortTypeOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </form-item>
+        <form-item label="是否可用">
+          <el-select
+            v-model="queryParams.enabled"
+            style="width: 140px"
+            clearable
+            placeholder="全部"
+            @change="getList"
+          >
+            <el-option label="可用" :value="true" />
+            <el-option label="不可用" :value="false" />
+          </el-select>
+        </form-item>
+      </div>
 
-      <form-item label="是否可用">
-        <el-select
-          v-model="queryParams.enabled"
-          style="width: 140px"
-          clearable
-          placeholder="全部"
-          @change="getList"
-        >
-          <el-option label="可用" :value="true" />
-          <el-option label="不可用" :value="false" />
-        </el-select>
-      </form-item>
-
-      <div class="shrink-0">
+      <div class="search-form-right">
         <!-- 修改按钮 -->
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
           新增
@@ -1063,6 +1062,75 @@ async function handleToggleEnabled(row: any) {
 </script>
 
 <style lang="less" scoped>
+.search-form-container {
+  padding: 16px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  box-sizing: border-box;
+
+  .search-form-left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    
+    :deep(.form-item) {
+      margin-bottom: 0;
+      flex-shrink: 0;
+    }
+    
+    .el-button {
+      flex-shrink: 0;
+    }
+  }
+
+  .search-form-right {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  // 小屏幕时，按钮组换行并左对齐
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+
+    .search-form-left {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .search-form-right {
+      width: 100%;
+      justify-content: flex-start;
+    }
+  }
+
+  // 超小屏幕时，输入框宽度自适应
+  @media (max-width: 480px) {
+    .search-form-left {
+      :deep(.el-input) {
+        width: 100% !important;
+        max-width: 100%;
+      }
+
+      :deep(.el-select) {
+        width: 100% !important;
+        max-width: 100%;
+      }
+    }
+  }
+}
+
 .thumbnail-cell {
   display: flex;
   align-items: center;
