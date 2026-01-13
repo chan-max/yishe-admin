@@ -60,19 +60,6 @@
           <el-option label="tiff" value="tiff" />
         </el-select>
       </form-item>
-      <form-item label="资源类型">
-        <el-select
-          v-model="queryParams.resourceType"
-          placeholder="全部"
-          style="width: 140px"
-          clearable
-          @change="getList"
-        >
-          <el-option label="全部" value="" />
-          <el-option label="仅自有资源" value="own" />
-          <el-option label="仅外部资源" value="external" />
-        </el-select>
-      </form-item>
       <form-item class="date-range-picker">
         <DateRangePicker
           @change="
@@ -92,13 +79,7 @@
           @click="handleBatchImport"
           :loading="importLoading"
           :disabled="!canBatchImport"
-          :title="
-            hasExternalSelected
-              ? '包含外部资源，无法入库'
-              : !ids.length
-              ? '请选择要入库的数据'
-              : ''
-          "
+          :title="!ids.length ? '请选择要入库的数据' : ''"
           >批量入库({{ ids.length }})</el-button
         >
         <el-button type="default" @click="handleMultiDownload"
@@ -171,7 +152,6 @@
                       <el-dropdown-item
                         v-if="isAdmin"
                         command="import"
-                        :disabled="!row.isOwnResource"
                       >
                         <el-icon><Upload /></el-icon>
                         <span>入库</span>
@@ -197,11 +177,6 @@
               <el-tag :type="getSuffixTagType(row.suffix)" size="small">{{
                 row.suffix || "-"
               }}</el-tag>
-            </template>
-            <template #resourceTypeSlot="{ row }">
-              <el-tag :type="row.isOwnResource ? 'success' : 'warning'" size="small">
-                {{ row.isOwnResource ? "自有资源" : "外部资源" }}
-              </el-tag>
             </template>
             <template #originUrlSlot="{ row }">
               <div
@@ -345,7 +320,6 @@ const queryParams = reactive({
   sortingFields: "createTime DESC", // 默认倒序
   suffix: "", // 新增后缀参数
   id: "", // 新增ID精确查询参数
-  resourceType: "", // 资源类型过滤（own/external）
 });
 const gridRef = ref();
 const gridOptions = computed(() => {
@@ -374,12 +348,6 @@ const gridOptions = computed(() => {
   const adminOnlyColumns = [
     { title: "ID", field: "id", width: 80 },
     { title: "来源", field: "source", minWidth: 160 }, // 新增来源列
-    {
-      title: "资源类型",
-      field: "isOwnResource",
-      width: 110,
-      slots: { default: "resourceTypeSlot" },
-    },
     {
       title: "原始地址",
       field: "originUrl",
@@ -414,9 +382,6 @@ const gridOptions = computed(() => {
     ...commonGridOptions,
     maxHeight: maxHeight.value,
     rowConfig: { keyField: "id" },
-    rowClassName: ({ row }) => {
-      return row && row.isOwnResource === false ? "external-resource-row" : "";
-    },
     checkboxConfig: { reserve: true },
     columns: [
       ...baseColumns,
@@ -448,19 +413,15 @@ const editForm = ref({
 });
 const editLoading = ref(false);
 const hasSelection = computed(() => ids.value.length > 0);
-const hasExternalSelected = computed(() => {
-  for (const row of selectedRowMap.value.values()) {
-    if (!row.isOwnResource) {
-      return true;
-    }
-  }
-  return false;
-});
-const canBatchImport = computed(() => hasSelection.value && !hasExternalSelected.value);
+const canBatchImport = computed(() => hasSelection.value);
 
 // 图片预览相关状态
 const imagePreviewVisible = ref(false);
 const currentImageUrl = ref("");
+
+// 入库确认对话框相关
+const importConfirmDialogVisible = ref(false);
+const selectedRowsForPreview = ref<any[]>([]);
 
 // 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
 
@@ -608,79 +569,45 @@ async function handleBatchImport() {
   if (!selectedRows.length) {
     return ElMessage.warning("选中的数据暂不可用，请重新选择");
   }
-  const externalRows = selectedRows.filter((item) => !item.isOwnResource);
-  if (externalRows.length) {
-    return ElMessage.warning("包含外部资源，无法入库，请重新选择自有资源");
-  }
 
-  ElMessageBox.confirm(
-    `确认将选中的 ${ids.value.length} 个素材入库到贴纸吗？\n注意：入库成功后，这些素材将从爬虫素材列表中删除。`,
-    "入库确认",
-    {
-      confirmButtonText: "确认",
-      cancelButtonText: "取消",
-      type: "info",
+  // 显示带预览的确认对话框
+  selectedRowsForPreview.value = selectedRows.slice(0, 10); // 最多显示10个预览
+  importConfirmDialogVisible.value = true;
+}
+
+// 确认批量入库
+async function confirmBatchImport() {
+  importLoading.value = true;
+  try {
+    const result = await CrawlerMaterialApi.batchImportToSticker({
+      ids: ids.value,
+      uploaderId: String(userStore.user.id),
+    });
+
+    if (result.success.length > 0) {
+      ElNotification.success(`成功入库 ${result.success.length} 个素材`);
     }
-  )
-    .then(async () => {
-      importLoading.value = true;
-      try {
-        const result = await CrawlerMaterialApi.batchImportToSticker({
-          ids: ids.value,
-          uploaderId: String(userStore.user.id),
-        });
-
-        if (result.success.length > 0) {
-          ElNotification.success(`成功入库 ${result.success.length} 个素材`);
-        }
-        if (result.failed.length > 0) {
-          ElNotification.warning(`入库失败 ${result.failed.length} 个素材`);
-        }
-        // 清空选择
-        clearSelection();
-        // 刷新列表（入库成功后立即刷新）
-        getList();
-      } catch (error) {
-        ElNotification.error("入库失败：" + error.message);
-      } finally {
-        importLoading.value = false;
-      }
-    })
-    .catch(() => {});
+    if (result.failed.length > 0) {
+      ElNotification.warning(`入库失败 ${result.failed.length} 个素材`);
+    }
+    // 关闭对话框
+    importConfirmDialogVisible.value = false;
+    // 清空选择
+    clearSelection();
+    // 刷新列表（入库成功后立即刷新）
+    getList();
+  } catch (error) {
+    ElNotification.error("入库失败：" + error.message);
+  } finally {
+    importLoading.value = false;
+  }
 }
 
 // 单个入库到贴纸
 async function handleSingleImport(row) {
-  if (!row.isOwnResource) {
-    return ElMessage.warning("该素材为外部资源，无法入库");
-  }
-  ElMessageBox.confirm(
-    `确认将素材"${row.name}"入库到贴纸吗？\n注意：入库成功后，该素材将从爬虫素材列表中删除。`,
-    "入库确认",
-    {
-      confirmButtonText: "确认",
-      cancelButtonText: "取消",
-      type: "info",
-    }
-  )
-    .then(async () => {
-      try {
-        const result = await CrawlerMaterialApi.batchImportToSticker({
-          ids: [row.id],
-          uploaderId: String(userStore.user.id),
-        });
-
-        if (result.success.length > 0) {
-          ElNotification.success("入库成功");
-          getList(); // 单个入库成功后立即刷新
-        } else if (result.failed.length > 0) {
-          ElNotification.error("入库失败：" + result.failed[0].error);
-        }
-      } catch (error) {
-        ElNotification.error("入库失败：" + error.message);
-      }
-    })
-    .catch(() => {});
+  // 显示带预览的确认对话框
+  selectedRowsForPreview.value = [row];
+  importConfirmDialogVisible.value = true;
 }
 
 // 图片预览相关方法
@@ -806,10 +733,6 @@ function handleOperationCommand(command: string, row: any) {
       handleDownload(row);
       break;
     case "import":
-      if (!row.isOwnResource) {
-        ElMessage.warning("该素材为外部资源，无法入库");
-        return;
-      }
       handleSingleImport(row);
       break;
     case "delete":
@@ -954,15 +877,6 @@ getList();
         color: var(--el-color-danger) !important;
       }
     }
-  }
-}
-
-:deep(.external-resource-row) {
-  background-color: rgba(230, 162, 60, 0.08) !important;
-  border-left: 3px solid rgba(230, 162, 60, 0.3) !important;
-
-  &:hover {
-    background-color: rgba(230, 162, 60, 0.12) !important;
   }
 }
 </style>
