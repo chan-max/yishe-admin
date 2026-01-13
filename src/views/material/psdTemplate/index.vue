@@ -748,8 +748,14 @@ const submitForm = async () => {
       let url = form.value.url;
       let key = form.value.key;
       if (form.value.file) {
-        const keyWithExtension = `${new Date().getTime()}_1s_${generateUUID()}.psd`;
-        const cos = await uploadToCOS({ file: form.value.file, key: keyWithExtension });
+        const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+        const cos = await uploadToCOS({ 
+          file: form.value.file,
+          category: 'psd-template',
+          account: userAccount,
+          entityId: form.value.id, // 编辑时使用现有 ID
+          isThumbnail: false
+        });
         key = cos.key;
         url = cos.url;
       }
@@ -757,7 +763,14 @@ const submitForm = async () => {
       // 如果有新的缩略图文件，先上传
       let thumbnail = form.value.thumbnail;
       if (form.value.thumbnailFile) {
-        const thumbnailCos = await uploadToCOS({ file: form.value.thumbnailFile });
+        const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+        const thumbnailCos = await uploadToCOS({ 
+          file: form.value.thumbnailFile,
+          category: 'psd-template',
+          account: userAccount,
+          entityId: form.value.id, // 编辑时使用现有 ID
+          isThumbnail: true
+        });
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       
@@ -798,10 +811,15 @@ const submitForm = async () => {
       // 上传PSD文件（如果存在）
       let url = "";
       let key = "";
+      const userAccount = userStore.user?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
       if (form.value.file) {
-        // 生成带.psd后缀的key
-        const keyWithExtension = `${new Date().getTime()}_1s_${generateUUID()}.psd`;
-        const cos = await uploadToCOS({ file: form.value.file, key: keyWithExtension });
+        const cos = await uploadToCOS({ 
+          file: form.value.file,
+          category: 'psd-template',
+          account: userAccount,
+          // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
+          isThumbnail: false
+        });
         key = cos.key;
         url = cos.url;
       }
@@ -809,7 +827,13 @@ const submitForm = async () => {
       // 上传缩略图（如果有）
       let thumbnail = "";
       if (form.value.thumbnailFile) {
-        const thumbnailCos = await uploadToCOS({ file: form.value.thumbnailFile });
+        const thumbnailCos = await uploadToCOS({ 
+          file: form.value.thumbnailFile,
+          category: 'psd-template',
+          account: userAccount,
+          // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
+          isThumbnail: true
+        });
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
       

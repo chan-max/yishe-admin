@@ -3802,7 +3802,12 @@ async function handleUrlUpload() {
     const { file, extension } = await fetchImageFromUrl(urlUploadForm.url)
     
     // 上传到COS
-    const cos = await uploadToCOS({ file })
+    const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+    const cos = await uploadToCOS({ 
+      file,
+      category: 'sticker', // 素材上传到 sticker 分类
+      account: userAccount
+    })
     const { key, url } = cos
     
     // 计算图片宽高及宽高比（如果预览阶段已经获取到了尺寸，则优先使用）

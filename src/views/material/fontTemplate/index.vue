@@ -1108,7 +1108,14 @@ const submitForm = async () => {
     } else {
       submitLoading.value = true;
       
-      const cos = await uploadToCOS({ file: form.value.file });
+      const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+      const cos = await uploadToCOS({ 
+        file: form.value.file,
+        category: 'font-template',
+        account: userAccount,
+        // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
+        isThumbnail: false
+      });
       const { key, url } = cos;
       
       await fontTemplateApi.createFontTemplate({
@@ -1400,7 +1407,14 @@ async function submitFrontendGenerateThumbnail() {
     console.log('PNG文件生成完成，准备上传到COS');
     
     // 上传到COS
-    const cos = await uploadToCOS({ file });
+    const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+    const cos = await uploadToCOS({ 
+      file,
+      category: 'font-template',
+      account: userAccount,
+      entityId: currentRow.value.id, // 使用当前行的 ID
+      isThumbnail: true
+    });
     const { url } = cos;
     
     // 调用后端API更新缩略图路径

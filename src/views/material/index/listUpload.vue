@@ -240,10 +240,6 @@ const getImageDimensions = (file): Promise<{ width: number; height: number }> =>
 }
 
 const handleFileChange = async (file) => {
-  if (file.size > 10 * 1024 * 1024) {
-    return ElMessage.warning(`图片${file.name}大于10mb`)
-  }
-
   const url = URL.createObjectURL(file.raw) // 生成 Blob URL
   
   // 获取图片尺寸
@@ -314,14 +310,13 @@ const uploadFile = async (file) => {
       }
     }
     
-    // 构建带后缀的 key，确保 COS 地址最后有后缀名
-    const keyWithExtension = suffix 
-      ? `${new Date().getTime()}_1s_${generateUUID()}.${suffix}`
-      : `${new Date().getTime()}_1s_${generateUUID()}`
+    // 获取用户账号（使用已定义的 userStore）
+    const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
     
     const cos = await uploadToCOS({
       file: file.raw,
-      key: keyWithExtension
+      category: 'sticker', // 素材上传到 sticker 分类
+      account: userAccount
     })
     const { url } = cos
     const width = file.width || 0
@@ -346,7 +341,9 @@ const uploadFile = async (file) => {
     emits('single-file-uploaded')
   } catch (error) {
     file.status = 'fail'
-    ElMessage.error(`文件 ${file.name} 上传失败`)
+    console.error('上传文件失败:', error)
+    const errorMessage = error?.message || error?.toString() || '未知错误'
+    ElMessage.error(`文件 ${file.name} 上传失败: ${errorMessage}`)
   }
 }
 </script>

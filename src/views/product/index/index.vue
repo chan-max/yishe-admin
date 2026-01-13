@@ -1834,6 +1834,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, watchEffect } f
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
+const userStore = useUserStore()
 import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -2561,10 +2562,17 @@ const submitForm = async () => {
     }
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
+    const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+    const productId = isEdit.value ? form.value.id : undefined // 编辑时使用产品 ID
     if (pendingFiles.value.length > 0) {
       const uploadPromises = pendingFiles.value.map(async (file) => {
         try {
-          const result = await uploadToCOS({ file });
+          const result = await uploadToCOS({ 
+            file,
+            category: 'product',
+            account: userAccount,
+            entityId: productId // 编辑时使用产品 ID
+          });
           return result.url;
         } catch (error) {
           ElMessage.error(`图片 ${file.name} 上传失败`);
@@ -2584,7 +2592,12 @@ const submitForm = async () => {
     if (pendingVideoFiles.value.length > 0) {
       const uploadPromises = pendingVideoFiles.value.map(async (file) => {
         try {
-          const result = await uploadToCOS({ file });
+          const result = await uploadToCOS({ 
+            file,
+            category: 'product',
+            account: userAccount,
+            entityId: productId // 编辑时使用产品 ID
+          });
           return result.url;
         } catch (error) {
           ElMessage.error(`视频 ${file.name} 上传失败`);

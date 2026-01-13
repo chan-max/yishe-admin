@@ -88,20 +88,128 @@ export const getCOS = () => {
   return _cos
 }
 
+/**
+ * 上传文件到 COS
+ * @param file 文件对象
+ * @param key 文件在 COS 中的存储路径（可选，如果提供则直接使用）
+ * @param category 文件分类（如 sticker, product, psd-template 等，应与实体名称一致）
+ * @param account 用户账号（可选，默认从 userStore 获取）
+ * @param entityId 实体ID（可选，如 PSD 模板 ID、字体模板 ID 等）
+ * @param isThumbnail 是否为缩略图（可选）
+ */
 export async function uploadToCOS({
   file,
-  key = new Date().getTime() + '_1s_' + generateUUID()
+  key,
+  category,
+  account,
+  entityId,
+  isThumbnail
+}: {
+  file: File
+  key?: string
+  category?: string
+  account?: string
+  entityId?: string | number
+  isThumbnail?: boolean
 }) {
+  // 确保 COS 已初始化
+  if (!_cos) {
+    try {
+      await initCOS()
+    } catch (error) {
+      console.error('初始化COS失败:', error)
+      throw new Error('COS未初始化，无法上传文件')
+    }
+  }
+  
   const cos = getCOS()
+  
+  // 验证文件对象
+  if (!file) {
+    throw new Error('文件对象不能为空')
+  }
+  
+  if (!(file instanceof File) && !(file instanceof Blob)) {
+    throw new Error('文件对象类型不正确')
+  }
+  
+  // 如果没有提供 key，且提供了 category，则生成新格式的 key
+  let finalKey = key
+  if (!finalKey && category) {
+    // 获取用户账号
+    let userAccount = account
+    if (!userAccount) {
+      try {
+        // 尝试从 localStorage 获取用户信息
+        const userInfoStr = localStorage.getItem('USER')
+        if (userInfoStr) {
+          const userInfo = JSON.parse(userInfoStr)
+          userAccount = userInfo?.user?.account || userInfo?.user?.shortName || userInfo?.user?.name || 'anonymous'
+        }
+      } catch (e) {
+        console.warn('无法从 localStorage 获取用户信息:', e)
+      }
+      if (!userAccount) {
+        userAccount = 'anonymous'
+      }
+    }
+    
+    // 清理账号名称
+    userAccount = userAccount.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().substring(0, 50)
+    // 确保 userAccount 不为空
+    if (!userAccount || userAccount.trim() === '') {
+      userAccount = 'anonymous'
+    }
+    
+    // 生成日期字符串
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const dateStr = `${year}${month}${day}`
+    
+    // 生成时间戳
+    const timestamp = now.getTime()
+    
+    // 清理文件名
+    const sanitizeFilename = (filename: string) => {
+      if (!filename) return 'file'
+      return filename.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 200)
+    }
+    
+    const sanitizedFilename = sanitizeFilename(file.name || 'file')
+    
+    // 处理 entityId
+    const sanitizedEntityId = entityId 
+      ? String(entityId).replace(/[^a-zA-Z0-9_-]/g, '_')
+      : ''
+    
+    // 处理缩略图文件名
+    const finalFilename = isThumbnail && sanitizedEntityId
+      ? `thumbnail_${timestamp}_${sanitizedFilename}`
+      : `${timestamp}_${sanitizedFilename}`
+    
+    // 生成路径
+    if (sanitizedEntityId) {
+      finalKey = `${category}/${dateStr}/${userAccount}/${sanitizedEntityId}/${finalFilename}`
+    } else {
+      finalKey = `${category}/${dateStr}/${userAccount}/${finalFilename}`
+    }
+  } else if (!finalKey) {
+    // 旧格式（向后兼容）
+    finalKey = new Date().getTime() + '_1s_' + generateUUID()
+  }
+  
   try {
     console.log('开始上传文件到COS...')
     console.log('文件对象:', file)
     console.log('文件类型:', typeof file)
     console.log('文件大小:', file?.size)
     console.log('文件名称:', file?.name)
+    console.log('生成的 Key:', finalKey)
     
     const res = await cos.uploadFile({
-      Key: String(key),
+      Key: String(finalKey),
       Body: file,
       Bucket: cos.options.Bucket,
       Region: cos.options.Region
@@ -109,11 +217,19 @@ export async function uploadToCOS({
     console.log('文件上传成功:', res)
     return {
       url: `https://${res.Location}`,
-      key
+      key: finalKey
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('文件上传失败:', e)
-    throw e
+    const errorMessage = e?.message || e?.toString() || '未知错误'
+    console.error('错误详情:', {
+      message: errorMessage,
+      stack: e?.stack,
+      code: e?.code,
+      statusCode: e?.statusCode,
+      requestId: e?.requestId
+    })
+    throw new Error(`COS上传失败: ${errorMessage}`)
   }
 }
 
