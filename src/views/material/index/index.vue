@@ -1003,6 +1003,14 @@
               <span v-else style="color: #999; font-size: 12px;">-</span>
             </template>
 
+            <template #sourceSlot="{ row }">
+              <el-link v-if="row.source && /^https?:\/\//i.test(row.source)" :href="row.source" target="_blank" type="primary" :underline="false" style="font-size: 12px;">
+                {{ row.source.length > 50 ? row.source.substring(0, 50) + '...' : row.source }}
+              </el-link>
+              <span v-else-if="row.source" style="font-size: 12px;">{{ row.source.length > 50 ? row.source.substring(0, 50) + '...' : row.source }}</span>
+              <span v-else style="color: #999; font-size: 12px;">-</span>
+            </template>
+
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center gap-1">
                 <el-dropdown trigger="click" class="operation-dropdown">
@@ -1617,6 +1625,13 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="来源">
+          <el-input 
+            v-model="editForm.source" 
+            placeholder="请输入来源（文字介绍或链接）" 
+            clearable
+          />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -1940,6 +1955,7 @@ const gridOptions = computed(() => {
       slots: { default: 'isCustomSlot' }
     },
     { title: '原始地址', field: 'originUrl', minWidth: 200, ellipsis: true, slots: { default: 'originUrlSlot' } }, // 原始地址列
+    { title: '来源', field: 'source', minWidth: 160, ellipsis: true, slots: { default: 'sourceSlot' } }, // 来源列
     {
       title: '创建时间',
       field: 'createTime',
@@ -3200,6 +3216,7 @@ const editForm = ref({
   isTexture: false,
   isInfringement: false, 
   originUrl: '',
+  source: '',
   // 只读字段（用于显示）
   width: null,
   height: null,
@@ -3283,6 +3300,7 @@ function handleEdit(row) {
     isTexture: row.isTexture || false,
     isInfringement: row.isInfringement || false,
     originUrl: row.originUrl || '',
+    source: row.source || '',
     // 只读字段（用于显示）
     width: row.width || null,
     height: row.height || null,
@@ -3313,7 +3331,8 @@ async function submitEdit() {
       isPublic: editForm.value.isPublic,
       isTexture: editForm.value.isTexture,
       isInfringement: editForm.value.isInfringement,
-      originUrl: editForm.value.originUrl
+      originUrl: editForm.value.originUrl,
+      source: editForm.value.source
     }
     await updateAssetLibrary(submitData)
     ElNotification.success('保存成功')
