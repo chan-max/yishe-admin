@@ -2,6 +2,15 @@
   <div class="psd-set-page">
     <div class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex:1;"></div>
+      <form-item label="ID">
+        <el-input
+          v-model="queryParams.id"
+          placeholder="套图ID"
+          style="width: 200px"
+          clearable
+          @change="handleIdChange"
+        />
+      </form-item>
       <form-item label="关键词">
         <el-input
           v-model="queryParams.keyword"
@@ -509,6 +518,7 @@ const statusOptions = [
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
+  id: '',
   keyword: '',
   status: '',
   sortingFields: defaultSortingValue(),
@@ -708,6 +718,7 @@ async function getList() {
   try {
     const res = await stickerPsdSetApi.page({
       ...queryParams,
+      id: queryParams.id?.trim() || undefined,
       status: queryParams.status || undefined,
       keyword: queryParams.keyword?.trim() || undefined,
       includeDetails: showDetails.value,
@@ -719,6 +730,12 @@ async function getList() {
     total.value = res.total || 0
   } finally {
     loading.value = false
+  }
+}
+
+function handleIdChange(val: string) {
+  if (!val) {
+    getList()
   }
 }
 
