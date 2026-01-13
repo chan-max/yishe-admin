@@ -65,6 +65,7 @@ service.interceptors.request.use(
       const tenantId = getTenantId()
       if (tenantId) config.headers['tenant-id'] = tenantId
     }
+    
     const method = config.method?.toUpperCase()
     // 防止 GET 请求缓存
     if (method === 'GET') {

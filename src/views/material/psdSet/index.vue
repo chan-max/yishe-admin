@@ -671,6 +671,12 @@ function getColumns() {
     { title: '多素材关联', field: 'stickers', width: 120, slots: { default: 'stickersCountSlot' } },
     { title: '描述', field: 'description', minWidth: 200, showOverflow: true },
     { title: '关键词', field: 'keywords', minWidth: 180, showOverflow: true },
+    { 
+      title: '上传者', 
+      field: 'uploader', 
+      width: 140, 
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.uploaderId || '-' 
+    },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
     { title: '状态说明', field: 'statusMessage', width: 320, showOverflow: true },
     { title: '配置信息', field: 'config', width: 150, slots: { default: 'configSlot' } },

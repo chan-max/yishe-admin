@@ -1931,6 +1931,12 @@ const gridOptions = computed(() => {
       slots: { default: 'similaritySlot' }
     }, // 新增相似度列
     { 
+      title: '上传者', 
+      field: 'uploader', 
+      width: 140, 
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.uploaderId || '-' 
+    },
+    { 
       title: '色系', 
       field: 'colorPalette', 
       width: 200,
