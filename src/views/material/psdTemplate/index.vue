@@ -352,8 +352,7 @@
       :destroy-on-close="true"
     >
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
-        请描述这张 PSD 模板对应的“商品是什么、物品是什么”，这是最重要的。同时提供相关的类别关键词和兼容性关键词（如：T恤/男装/短袖、地毯/地垫/房间装饰），以便用户通过搜索商品类别能找到这个模板。
-        <br />
+
         <span style="color: #f56c6c; font-size: 13px;">
           注意：需要模板有缩略图才能进行AI分析
         </span>
@@ -699,7 +698,7 @@ const form = ref<any>({
 // AI生成内容相关
 const aiGenDialogVisible = ref(false);
 const aiGenPrompt = ref('');
-const aiDefaultPrompt = '请描述这是什么商品/物品，以及相关的类别关键词。例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点是商品名称和兼容性关键词，方便用户搜索找到。';
+const aiDefaultPrompt =   `请描述这是什么商品/物品，以及相关的类别关键词。例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点是商品名称和兼容性关键词和相似商品的关联词，并且尽可能详细一些，方便用户搜索找到。`;
 const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
 const aiTableLoading = ref<Record<string, boolean>>({});
