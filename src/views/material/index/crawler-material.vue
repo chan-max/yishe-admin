@@ -286,6 +286,54 @@
       :image-url="currentImageUrl"
       @close="closeImagePreview"
     />
+
+    <!-- 入库确认对话框 -->
+    <el-dialog
+      v-model="importConfirmDialogVisible"
+      title="确认入库"
+      width="600px"
+      :destroy-on-close="true"
+      align-center
+    >
+      <div class="import-confirm-content">
+        <p style="margin-bottom: 16px">
+          即将入库 {{ selectedRowsForPreview.length }} 个素材，请确认：
+        </p>
+        <div class="preview-list" style="max-height: 400px; overflow-y: auto">
+          <div
+            v-for="(row, index) in selectedRowsForPreview"
+            :key="row.id"
+            class="preview-item"
+            style="
+              display: flex;
+              align-items: center;
+              padding: 12px;
+              border-bottom: 1px solid #eee;
+              gap: 12px;
+            "
+          >
+            <img
+              :src="row.url"
+              :alt="row.name"
+              style="width: 80px; height: 80px; object-fit: contain; background: #f5f5f5"
+            />
+            <div style="flex: 1; min-width: 0">
+              <div style="font-weight: 500; margin-bottom: 4px">{{ row.name || "未命名" }}</div>
+              <div style="font-size: 12px; color: #999">ID: {{ row.id }}</div>
+              <div v-if="row.description" style="font-size: 12px; color: #666; margin-top: 4px">
+                {{ row.description }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="importConfirmDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="importLoading" @click="confirmBatchImport"
+          >确认入库</el-button
+        >
+      </template>
+    </el-dialog>
   </div>
 </template>
 <script setup lang="tsx">
@@ -422,6 +470,7 @@ const currentImageUrl = ref("");
 // 入库确认对话框相关
 const importConfirmDialogVisible = ref(false);
 const selectedRowsForPreview = ref<any[]>([]);
+const importIds = ref<string[]>([]); // 用于存储要入库的ID列表
 
 // 删除isMobile、filterDialogVisible、onMobileFilterSubmit相关逻辑
 
@@ -572,15 +621,19 @@ async function handleBatchImport() {
 
   // 显示带预览的确认对话框
   selectedRowsForPreview.value = selectedRows.slice(0, 10); // 最多显示10个预览
+  importIds.value = [...ids.value]; // 保存要入库的ID列表
   importConfirmDialogVisible.value = true;
 }
 
 // 确认批量入库
 async function confirmBatchImport() {
+  if (!importIds.value.length) {
+    return ElMessage.warning("没有要入库的数据");
+  }
   importLoading.value = true;
   try {
     const result = await CrawlerMaterialApi.batchImportToSticker({
-      ids: ids.value,
+      ids: importIds.value,
       uploaderId: String(userStore.user.id),
     });
 
@@ -594,6 +647,7 @@ async function confirmBatchImport() {
     importConfirmDialogVisible.value = false;
     // 清空选择
     clearSelection();
+    importIds.value = [];
     // 刷新列表（入库成功后立即刷新）
     getList();
   } catch (error) {
@@ -607,6 +661,7 @@ async function confirmBatchImport() {
 async function handleSingleImport(row) {
   // 显示带预览的确认对话框
   selectedRowsForPreview.value = [row];
+  importIds.value = [String(row.id)]; // 保存单个入库的ID
   importConfirmDialogVisible.value = true;
 }
 
