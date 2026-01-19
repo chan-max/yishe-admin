@@ -1162,6 +1162,12 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="AI生成">
+          <el-switch
+            v-model="urlUploadForm.useAiGenerate"
+            active-text="使用AI自动生成补全内容"
+          />
+        </el-form-item>
       </el-form>
       
       <!-- 预览区域 -->
@@ -3524,7 +3530,8 @@ const urlUploadForm = reactive({
   keywords: '',
   keywordsEn: '',
   isCustom: false,
-  isInfringement: false
+  isInfringement: false,
+  useAiGenerate: false // 是否使用AI生成补全内容
 })
 
 const urlUploadFormRules = {
@@ -3552,6 +3559,7 @@ function resetUrlUploadForm() {
   urlUploadForm.keywordsEn = ''
   urlUploadForm.isCustom = false
   urlUploadForm.isInfringement = false
+  urlUploadForm.useAiGenerate = false
   urlPreviewVisible.value = false
   imageInfo.value = null
 }
@@ -3836,7 +3844,8 @@ async function handleUrlUpload() {
       width,
       height,
       aspectRatio,
-      uploaderId: userStore.user?.id
+      uploaderId: userStore.user?.id,
+      useAiGenerate: urlUploadForm.useAiGenerate // 是否使用AI生成补全内容
     })
     
     ElNotification.success('图片上传成功')

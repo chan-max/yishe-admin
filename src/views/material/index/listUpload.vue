@@ -172,6 +172,13 @@
         ></el-switch>
         <!-- <el-alert  size="small" type="warning"  description=" " /> -->
       </div>
+      <div class="flex items-center gap-2">
+        <el-switch
+          v-model="useAiGenerate"
+          size="small"
+          active-text="使用AI自动生成补全内容"
+        ></el-switch>
+      </div>
     </div>
   </div>
 </template>
@@ -205,6 +212,7 @@ const fileList = ref([])
 const emits = defineEmits(['single-file-uploaded'])
 
 const usePreview = ref(true)
+const useAiGenerate = ref(false) // 是否使用AI生成补全内容
 
 // 统计信息
 const totalCount = computed(() => fileList.value.length)
@@ -335,7 +343,8 @@ const uploadFile = async (file) => {
       width,
       height,
       aspectRatio,
-      uploaderId: userStore.user?.id
+      uploaderId: userStore.user?.id,
+      useAiGenerate: useAiGenerate.value // 是否使用AI生成补全内容
     })
     file.status = 'success'
     emits('single-file-uploaded')
