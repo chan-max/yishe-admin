@@ -379,7 +379,10 @@
         </div>
         <div class="psd-set-templates">
           <div class="section-title">
-            选择PSD模板 (可多选)
+            选择PSD模板 (可多选，支持跨页勾选)
+            <span v-if="psdSetTemplatePageParams.total > 0" class="template-count-info">
+              (共 {{ psdSetTemplatePageParams.total }} 个)
+            </span>
           </div>
           <div class="psd-set-template-toolbar">
             <el-input
@@ -411,65 +414,76 @@
               已选中 {{ selectedPsdTemplateIds.length }} 个
             </span>
           </div>
-          <div class="template-list" v-loading="psdSetTemplatesLoading">
-            <div
-              v-for="tpl in filteredPsdSetTemplates"
-              :key="tpl.id"
-              class="template-item"
-              :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
-            >
-              <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
-                <img
-                  v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                  :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
-                  :alt="tpl.name || '模板缩略图'"
-                  class="template-thumbnail"
-                  loading="lazy"
-                  @error="handleTemplateImageError"
-                />
-                <div class="template-info">
-                  <div class="template-header">
-                    <div class="template-title-row">
-                      <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
-                      <el-link
-                        type="primary"
-                        :underline="false"
-                        class="template-detail-link"
-                        @click.stop="openTemplateDetail(tpl)"
-                      >
-                        查看详情
-                      </el-link>
+          <div class="template-list-wrapper">
+            <div class="template-list" v-loading="psdSetTemplatesLoading">
+              <div
+                v-for="tpl in filteredPsdSetTemplates"
+                :key="tpl.id"
+                class="template-item"
+                :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
+              >
+                <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
+                  <img
+                    v-if="tpl.thumbnail || tpl.preview || tpl.image"
+                    :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
+                    :alt="tpl.name || '模板缩略图'"
+                    class="template-thumbnail"
+                    loading="lazy"
+                    @error="handleTemplateImageError"
+                  />
+                  <div class="template-info">
+                    <div class="template-header">
+                      <div class="template-title-row">
+                        <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
+                        <el-link
+                          type="primary"
+                          :underline="false"
+                          class="template-detail-link"
+                          @click.stop="openTemplateDetail(tpl)"
+                        >
+                          查看详情
+                        </el-link>
+                      </div>
                     </div>
-                  </div>
-                  <div class="template-paths">
-                    <div class="path-row">
-                      <span class="path-label">远程链接：</span>
-                      <el-link
-                        v-if="tpl.url"
-                        :href="tpl.url"
-                        target="_blank"
-                        type="primary"
-                        :underline="false"
-                        class="path-link"
-                        @click.stop
-                      >
-                        {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
-                      </el-link>
-                      <span v-else class="path-empty">暂无</span>
-                    </div>
-                    <div class="path-row">
-                      <span class="path-label">本地路径：</span>
-                      <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
-                      <span v-else class="path-empty">暂无</span>
+                    <div class="template-paths">
+                      <div class="path-row">
+                        <span class="path-label">远程链接：</span>
+                        <el-link
+                          v-if="tpl.url"
+                          :href="tpl.url"
+                          target="_blank"
+                          type="primary"
+                          :underline="false"
+                          class="path-link"
+                          @click.stop
+                        >
+                          {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
+                        </el-link>
+                        <span v-else class="path-empty">暂无</span>
+                      </div>
+                      <div class="path-row">
+                        <span class="path-label">本地路径：</span>
+                        <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
+                        <span v-else class="path-empty">暂无</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+              <el-empty 
+                v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading" 
+                :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" 
+              />
             </div>
-            <el-empty 
-              v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading" 
-              :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" 
-            />
+            <!-- PSD模板分页 -->
+            <div class="template-pagination" v-if="psdSetTemplatePageParams.total > 0">
+              <pagination
+                v-model:page="psdSetTemplatePageParams.currentPage"
+                v-model:limit="psdSetTemplatePageParams.pageSize"
+                :total="psdSetTemplatePageParams.total"
+                @pagination="loadPsdTemplatesForPsdSet"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -2050,6 +2064,12 @@ const psdSetDialogVisible = ref(false)
 const psdSetTemplates = ref<any[]>([])
 const psdSetTemplatesLoading = ref(false)
 const selectedPsdTemplateIds = ref<string[]>([])
+// PSD模板分页相关
+const psdSetTemplatePageParams = reactive({
+  currentPage: 1,
+  pageSize: 12,
+  total: 0
+})
 
 // 批量详细配置相关状态
 const batchDetailConfigDialogVisible = ref(false)
@@ -2633,6 +2653,8 @@ async function openPsdSetDialog(row?: any) {
     ElMessage.warning('请选择要制作的素材')
     return
   }
+  // 打开弹窗时重置分页
+  psdSetTemplatePageParams.currentPage = 1
   psdSetDialogVisible.value = true
   await loadPsdTemplatesForPsdSet()
 }
@@ -2641,12 +2663,13 @@ async function loadPsdTemplatesForPsdSet() {
   psdSetTemplatesLoading.value = true
   try {
     const res = await psdTemplateApi.getPsdTemplatePage({
-      currentPage: 1,
-      pageSize: 200,
+      currentPage: psdSetTemplatePageParams.currentPage,
+      pageSize: psdSetTemplatePageParams.pageSize,
       searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
       enabled: true
     })
     psdSetTemplates.value = res.list || []
+    psdSetTemplatePageParams.total = res.total || 0
   } catch (error) {
     console.error('加载PSD模板失败:', error)
     ElMessage.error('加载PSD模板失败')
@@ -2658,6 +2681,8 @@ async function loadPsdTemplatesForPsdSet() {
 // 防抖搜索函数
 const debouncedSearchPsdTemplates = useDebounceFn(() => {
   if (psdSetDialogVisible.value) {
+    // 搜索时重置到第一页
+    psdSetTemplatePageParams.currentPage = 1
     loadPsdTemplatesForPsdSet()
   }
 }, 500)
@@ -2683,6 +2708,8 @@ function resetPsdSetState() {
   selectedPsdTemplateIds.value = []
   psdSetMergeSticker.value = false
   psdSetTemplateSearchText.value = ''
+  psdSetTemplatePageParams.currentPage = 1
+  psdSetTemplatePageParams.total = 0
 }
 
 // 全选/取消全选PSD模板
@@ -3986,6 +4013,12 @@ async function handleUrlUpload() {
   border-radius: 4px;
   border: 1px solid rgba(64, 158, 255, 0.3);
 }
+.section-title .template-count-info {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  font-weight: normal;
+  margin-left: 4px;
+}
 .result-info { grid-column: 1 / -1; }
 .psd-set-mode-inline {
   display: flex;
@@ -4731,7 +4764,7 @@ h1 {
   grid-template-columns: minmax(280px, 1.2fr) minmax(360px, 1.6fr);
   gap: 16px;
   width: 100%;
-  overflow-y: auto;
+  overflow: hidden;
   padding-right: 4px;
 }
 .psd-set-materials,
@@ -4740,9 +4773,11 @@ h1 {
   border-radius: 8px;
   padding: 16px;
   min-height: 220px;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
 }
 .psd-set-materials .format-tip {
   display: flex;
@@ -4761,10 +4796,11 @@ h1 {
   font-size: 14px;
 }
 .psd-set-materials .thumbs {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  max-height: calc(100vh - 240px);
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -4833,13 +4869,32 @@ h1 {
   border: 1px solid rgba(64, 158, 255, 0.3);
   white-space: nowrap;
 }
-.psd-set-templates .template-list {
+.psd-set-templates .template-list-wrapper {
   flex: 1;
-  overflow: auto;
+  min-height: 0;
+  max-height: calc(100vh - 320px);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 300px);
+  overflow: hidden;
+}
+
+.psd-set-templates .template-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.psd-set-templates .template-pagination {
+  flex-shrink: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  justify-content: flex-end;
 }
 .psd-set-templates .template-item {
   border: 1px solid var(--el-border-color);
