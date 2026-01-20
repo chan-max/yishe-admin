@@ -331,3 +331,62 @@ export function svgToPng(data: { id: string, width?: number, height?: number }) 
     data
   })
 }
+
+/**
+ * 文件夹相关 API
+ */
+
+// 获取文件夹树
+export function getStickerFolderTree(params?: { parentId?: string }) {
+  return request.get({
+    url: '/sticker/sticker-folder/tree',
+    params
+  })
+}
+
+// 获取文件夹列表（扁平结构）
+export function getStickerFolderList() {
+  return request.get({
+    url: '/sticker/sticker-folder/list'
+  })
+}
+
+// 创建文件夹
+export function createStickerFolder(data: { name: string; parentId?: string | null }) {
+  return request.post({
+    url: '/sticker/sticker-folder/create',
+    data
+  })
+}
+
+// 重命名文件夹
+export function renameStickerFolder(data: { id: string; name: string }) {
+  return request.post({
+    url: '/sticker/sticker-folder/rename',
+    data
+  })
+}
+
+// 删除文件夹
+export function deleteStickerFolder(id: string, moveStickersToRoot: boolean = true) {
+  return request.delete({
+    url: `/sticker/sticker-folder/${id}`,
+    params: { moveStickersToRoot }
+  })
+}
+
+// 移动文件夹
+export function moveStickerFolder(data: { id: string; parentId: string | null }) {
+  return request.post({
+    url: '/sticker/sticker-folder/move',
+    data
+  })
+}
+
+// 批量移动素材到文件夹
+export function batchMoveStickers(data: { ids: string[]; folderId: string | null }) {
+  return request.post({
+    url: '/sticker/batch-move',
+    data
+  })
+}

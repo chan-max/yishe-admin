@@ -2,222 +2,249 @@
   <div>
     <!-- PC端显示原有搜索栏，移动端只显示筛选按钮（可折叠） -->
     <!-- 折叠状态：显示常用搜索和操作 -->
-    <div v-show="actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
-      <div style="flex: 1"></div>
-      <form-item label="搜索">
-        <el-input
-          v-model="queryParams.searchText"
-          placeholder="请输入名称、描述或关键词"
-          style="width: 160px"
-          clearable
-          @change="(val) => { if (!val) getList() }"
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <form-item label="随机顺序">
-        <el-switch
-          v-model="queryParams.random"
-          active-text=""
-          inactive-text=""
-          size="small"
-          @change="getList"
-        />
-      </form-item>
-      <div class="flex shrink-0">
-        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-        <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
-        <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-          展开筛选
-        </el-button>
-      </div>
-    </div>
+    <el-form
+      v-show="actionsCollapsed && !isMobile"
+      :model="queryParams"
+      label-width="84px"
+      label-position="right"
+      class="search-bar search-bar-form"
+      @submit.prevent
+    >
+      <el-row :gutter="8" align="middle">
+        <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+          <el-form-item label="搜索">
+            <el-input
+              v-model="queryParams.searchText"
+              placeholder="请输入名称、描述或关键词"
+              clearable
+              @change="(val) => { if (!val) getList() }"
+            />
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="4" :xl="4">
+          <el-form-item label="随机">
+            <el-switch
+              v-model="queryParams.random"
+              active-text=""
+              inactive-text=""
+              size="small"
+              @change="getList"
+            />
+          </el-form-item>
+        </el-col>
+
+      </el-row>
+
+      <el-row :gutter="12" align="middle">
+        <el-col :span="24" class="search-actions-col">
+          <div class="search-actions">
+            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+            <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+            <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+            <el-button type="default" @click="handleBatchMoveToFolder" :disabled="!ids.length">
+              移动到当前文件夹 ({{ ids.length }})
+            </el-button>
+            <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">
+              批量删除({{ ids.length }})
+            </el-button>
+            <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+              展开筛选
+            </el-button>
+          </div>
+        </el-col>
+      </el-row>
+    </el-form>
 
     <!-- 展开状态：显示全部搜索功能 -->
-    <div v-show="!actionsCollapsed && !isMobile" class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
-      <div style="flex: 1"></div>
-      <form-item label="搜索">
-        <el-input
-          v-model="queryParams.searchText"
-          placeholder="请输入"
-          style="width: 160px"
-          clearable
-          @change="(val) => { if (!val) getList() }"
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <form-item label="排序">
-        <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
-          <el-option label="创建时间倒序" value="createTime DESC" />
-          <el-option label="创建时间正序" value="createTime ASC" />
-        </el-select>
-      </form-item>
-      <form-item label="后缀">
-        <el-select v-model="queryParams.suffix" placeholder="请选择后缀" style="min-width: 180px" multiple clearable  @change="getList">
-          <el-option label="jpg" value="jpg" />
-          <el-option label="jpeg" value="jpeg" />
-          <el-option label="png" value="png" />
-          <el-option label="gif" value="gif" />
-          <el-option label="webp" value="webp" />
-          <el-option label="svg" value="svg" />
-          <el-option label="bmp" value="bmp" />
-          <el-option label="tiff" value="tiff" />
-        </el-select>
-      </form-item>
-      <form-item label="ID精确查询">
-        <el-input
-          v-model="queryParams.id"
-          placeholder="请输入ID"
-          style="width: 120px"
-          clearable
-          @change="(val) => { if (!val) getList() }"
-        />
-      </form-item>
-      <form-item label="相似图片搜索">
-        <div class="flex gap-4 items-center flex-wrap">
-          <el-input
-            v-model="queryParams.phash"
-            placeholder="输入 phash 或图片地址"
-            style="width: 260px"
-            clearable
-            @blur="onPhashInputBlur"
-          />
-          
-          <div class="flex items-center gap-2">
-            <el-check-tag
-              :checked="queryParams.phashMode === 'range'"
-              @change="() => queryParams.phashMode = 'range'"
-            >
-              相似匹配
-            </el-check-tag>
-            <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
-              <el-check-tag
-                :checked="queryParams.phashMode === 'exact'"
-                type="primary"
-                @change="() => queryParams.phashMode = 'exact'"
-              >
-                精确匹配
-              </el-check-tag>
-            </el-tooltip>
+    <el-form
+      v-show="!actionsCollapsed && !isMobile"
+      :model="queryParams"
+      label-width="84px"
+      label-position="right"
+      class="search-bar search-bar-form"
+      @submit.prevent
+    >
+      <!-- 第1行：长项优先占宽，保持比例协调 -->
+      <el-row :gutter="12" align="middle">
+        <el-col :xs="24" :sm="12" :md="12" :lg="10" :xl="10">
+          <el-form-item label="搜索">
+            <el-input v-model="queryParams.searchText" placeholder="请输入" clearable @change="(val) => { if (!val) getList() }" />
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="4" :xl="4">
+          <el-form-item label="排序">
+            <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" @change="getList">
+              <el-option label="创建时间倒序" value="createTime DESC" />
+              <el-option label="创建时间正序" value="createTime ASC" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="24" :md="6" :lg="8" :xl="8">
+          <el-form-item label="后缀">
+            <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable @change="getList">
+              <el-option label="jpg" value="jpg" />
+              <el-option label="jpeg" value="jpeg" />
+              <el-option label="png" value="png" />
+              <el-option label="gif" value="gif" />
+              <el-option label="webp" value="webp" />
+              <el-option label="svg" value="svg" />
+              <el-option label="bmp" value="bmp" />
+              <el-option label="tiff" value="tiff" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- 第2行：四等分，保证对齐（短项） -->
+      <el-row :gutter="12" align="middle">
+        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+          <el-form-item label="ID">
+            <el-input v-model="queryParams.id" placeholder="请输入ID" clearable @change="(val) => { if (!val) getList() }" />
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+          <el-form-item label="自定义">
+            <el-select v-model="queryParams.isCustom" placeholder="请选择类型" clearable @change="getList">
+              <el-option label="全部" :value="null" />
+              <el-option label="是" :value="true" />
+              <el-option label="否" :value="false" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+          <el-form-item label="侵权">
+            <el-select v-model="queryParams.isInfringement" placeholder="请选择状态" clearable @change="getList">
+              <el-option label="全部" :value="null" />
+              <el-option label="侵权" :value="true" />
+              <el-option label="非侵权" :value="false" />
+            </el-select>
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+          <el-form-item label="尺寸">
+            <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable @change="getList" :teleported="false">
+              <el-option-group label="常用">
+                <el-option value="landscape">
+                  <div class="size-option">
+                    <div class="size-thumb landscape-thumb"></div>
+                    <span class="size-label">横图</span>
+                  </div>
+                </el-option>
+                <el-option value="portrait">
+                  <div class="size-option">
+                    <div class="size-thumb portrait-thumb"></div>
+                    <span class="size-label">竖图</span>
+                  </div>
+                </el-option>
+                <el-option value="square">
+                  <div class="size-option">
+                    <div class="size-thumb square-thumb"></div>
+                    <span class="size-label">正方图</span>
+                  </div>
+                </el-option>
+              </el-option-group>
+              <el-option-group label="横图细分">
+                <el-option value="ultra-wide">
+                  <div class="size-option">
+                    <div class="size-thumb ultra-wide-thumb"></div>
+                    <span class="size-label">超宽图 (≥2:1)</span>
+                  </div>
+                </el-option>
+                <el-option value="wide">
+                  <div class="size-option">
+                    <div class="size-thumb wide-thumb"></div>
+                    <span class="size-label">宽图 (1.5:1 - 2:1)</span>
+                  </div>
+                </el-option>
+                <el-option value="slightly-wide">
+                  <div class="size-option">
+                    <div class="size-thumb slightly-wide-thumb"></div>
+                    <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
+                  </div>
+                </el-option>
+              </el-option-group>
+              <el-option-group label="竖图细分">
+                <el-option value="slightly-long">
+                  <div class="size-option">
+                    <div class="size-thumb slightly-long-thumb"></div>
+                    <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
+                  </div>
+                </el-option>
+                <el-option value="long">
+                  <div class="size-option">
+                    <div class="size-thumb long-thumb"></div>
+                    <span class="size-label">长图 (1:1.5 - 1:2)</span>
+                  </div>
+                </el-option>
+                <el-option value="ultra-long">
+                  <div class="size-option">
+                    <div class="size-thumb ultra-long-thumb"></div>
+                    <span class="size-label">超长图 (≤1:2)</span>
+                  </div>
+                </el-option>
+              </el-option-group>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- 第3行：随机 + 时间（时间较长占更宽） -->
+      <el-row :gutter="12" align="middle">
+        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
+          <el-form-item label="随机">
+            <el-switch v-model="queryParams.random" size="small" @change="getList" />
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="24" :md="18" :lg="18" :xl="18">
+          <el-form-item label="时间">
+            <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- 相似搜索：单独一行，避免挤压导致不齐 -->
+      <el-row :gutter="12" align="middle">
+        <el-col :span="24">
+          <el-form-item label="相似">
+            <div class="phash-form-row">
+              <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
+              <div class="phash-mode">
+                <el-check-tag :checked="queryParams.phashMode === 'range'" @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
+                <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+                  <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary" @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
+                </el-tooltip>
+              </div>
+              <div class="phash-actions">
+                <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
+                <el-button @click="clearPhashSearch">清空</el-button>
+              </div>
+            </div>
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <!-- 操作按钮：单独一行，统一对齐 -->
+      <el-row :gutter="12" align="middle">
+        <el-col :span="24" class="search-actions-col">
+          <div class="search-actions">
+            <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+            <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
+            <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+            <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+            <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
+            <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+            <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">收起筛选</el-button>
           </div>
-          
-          <div class="flex gap-2">
-            <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
-            <el-button @click="clearPhashSearch">清空</el-button>
-          </div>
-        </div>
-      </form-item>
-      <form-item label="自定义贴纸">
-        <el-select v-model="queryParams.isCustom" placeholder="请选择类型" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" :value="null" />
-          <el-option label="是" :value="true" />
-          <el-option label="否" :value="false" />
-        </el-select>
-      </form-item>
-      <form-item label="侵权状态">
-        <el-select v-model="queryParams.isInfringement" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" :value="null" />
-          <el-option label="侵权" :value="true" />
-          <el-option label="非侵权" :value="false" />
-        </el-select>
-      </form-item>
-      <form-item label="尺寸形状">
-        <el-select 
-          v-model="queryParams.sizeShape" 
-          placeholder="请选择尺寸形状" 
-          style="width: 180px" 
-          clearable 
-          @change="getList"
-          :teleported="false"
-        >
-          <el-option-group label="常用">
-            <el-option value="landscape">
-              <div class="size-option">
-                <div class="size-thumb landscape-thumb"></div>
-                <span class="size-label">横图</span>
-              </div>
-            </el-option>
-            <el-option value="portrait">
-              <div class="size-option">
-                <div class="size-thumb portrait-thumb"></div>
-                <span class="size-label">竖图</span>
-              </div>
-            </el-option>
-            <el-option value="square">
-              <div class="size-option">
-                <div class="size-thumb square-thumb"></div>
-                <span class="size-label">正方图</span>
-              </div>
-            </el-option>
-          </el-option-group>
-          <el-option-group label="横图细分">
-            <el-option value="ultra-wide">
-              <div class="size-option">
-                <div class="size-thumb ultra-wide-thumb"></div>
-                <span class="size-label">超宽图 (≥2:1)</span>
-              </div>
-            </el-option>
-            <el-option value="wide">
-              <div class="size-option">
-                <div class="size-thumb wide-thumb"></div>
-                <span class="size-label">宽图 (1.5:1 - 2:1)</span>
-              </div>
-            </el-option>
-            <el-option value="slightly-wide">
-              <div class="size-option">
-                <div class="size-thumb slightly-wide-thumb"></div>
-                <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
-              </div>
-            </el-option>
-          </el-option-group>
-          <el-option-group label="竖图细分">
-            <el-option value="slightly-long">
-              <div class="size-option">
-                <div class="size-thumb slightly-long-thumb"></div>
-                <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
-              </div>
-            </el-option>
-            <el-option value="long">
-              <div class="size-option">
-                <div class="size-thumb long-thumb"></div>
-                <span class="size-label">长图 (1:1.5 - 1:2)</span>
-              </div>
-            </el-option>
-            <el-option value="ultra-long">
-              <div class="size-option">
-                <div class="size-thumb ultra-long-thumb"></div>
-                <span class="size-label">超长图 (≤1:2)</span>
-              </div>
-            </el-option>
-          </el-option-group>
-        </el-select>
-      </form-item>
-      <form-item label="随机顺序">
-        <el-switch
-          v-model="queryParams.random"
-          size="small"
-          @change="getList"
-        />
-      </form-item>
-      <form-item class="date-range-picker">
-        <DateRangePicker
-          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
-        />
-      </form-item>
-      <div class="flex shrink-0">
-        <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-        <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
-        <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">
-          制作PS套图({{ ids.length }})
-        </el-button>
-        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
-        <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-          收起筛选
-        </el-button>
-      </div>
-    </div>
+        </el-col>
+      </el-row>
+    </el-form>
     <div v-if="isMobile && !actionsCollapsed" class="flex pb-4 justify-end">
       <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
     </div>
@@ -340,6 +367,9 @@
         <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- PC 顶部筛选栅格布局样式 -->
+    <!--（放在这里是为了避免全局影响，保持只作用于本页） -->
 
     <el-dialog
       v-model="psdSetDialogVisible"
@@ -713,14 +743,92 @@
       </template>
     </el-dialog>
 
-    <div class="flex gap-4">
-      <div class="content-container" :style="{ width: '100%' }">
+    <div class="flex" style="overflow: hidden;">
+      <!-- 文件夹树 -->
+      <div class="sticker-folder-tree-container" style="width: 280px; min-width: 280px; max-width: 280px; flex-shrink: 0; border-right: 1px solid var(--el-border-color); padding-right: 16px;">
+        <div class="sticker-folder-tree-header" style="margin-bottom: 12px;">
+          <el-button type="primary" size="small" plain style="width: 100%;" @click="handleCreateRootStickerFolder">
+            <el-icon><FolderAdd /></el-icon>
+            新建文件夹
+          </el-button>
+        </div>
+        <el-tree
+          ref="stickerFolderTreeRef"
+          :data="stickerFolderTreeData"
+          :props="{ children: 'children', label: 'name' }"
+          node-key="id"
+          :expand-on-click-node="false"
+          :default-expand-all="false"
+          :default-expanded-keys="['__root__']"
+          :highlight-current="true"
+          :current-node-key="selectedStickerFolderId"
+          style="max-height: calc(100vh - 300px); overflow-y: auto;"
+          class="sticker-folder-tree"
+        >
+          <template #default="{ node, data }">
+            <div
+              class="sticker-folder-node"
+              :class="{ 'is-drop-hover': dragState.overFolderId === data.id && dragState.dragging }"
+              @dragover.prevent="handleFolderDragOver(data, $event)"
+              @dragleave="handleFolderDragLeave(data)"
+              @drop.prevent="handleFolderDrop(data)"
+            >
+              <div class="sticker-folder-node-content">
+                <img 
+                  v-if="node.expanded && (data.children && data.children.length > 0)" 
+                  src="/img/folder-open.svg" 
+                  class="folder-icon" 
+                  alt="folder"
+                />
+                <img 
+                  v-else 
+                  src="/img/folder-close.svg" 
+                  class="folder-icon" 
+                  alt="folder"
+                />
+                <span 
+                  class="sticker-folder-node-text" 
+                  @click.stop="handleStickerFolderNodeClick(data)"
+                >{{ data.name }}</span>
+                <span v-if="data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount || 0 }})</span>
+              </div>
+              <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
+                <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop size="small">
+                  <el-icon class="sticker-folder-action-icon">
+                    <MoreFilled />
+                  </el-icon>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="create">
+                        <el-icon><FolderAdd /></el-icon>
+                        新建子文件夹
+                      </el-dropdown-item>
+                      <el-dropdown-item command="rename">
+                        <el-icon><Edit /></el-icon>
+                        重命名
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" divided>
+                        <el-icon><Delete /></el-icon>
+                        删除
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </div>
+          </template>
+        </el-tree>
+      </div>
+      
+      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <div class="common-table">
           <vxe-grid
+            class="material-dnd-grid"
             ref="gridRef"
             v-bind="gridOptions"
             :data="dataSource"
             :loading="loading"
+            :row-class-name="materialRowClassName"
             @checkbox-change="checkboxChange"
             @checkbox-all="checkboxAllChange"
           >
@@ -1025,6 +1133,14 @@
               <span v-else style="color: #999; font-size: 12px;">-</span>
             </template>
 
+            <template #folderSlot="{ row }">
+              <el-tag v-if="row.folder" type="info" size="small" style="font-size: 12px;">
+                <el-icon style="margin-right: 4px;"><Folder /></el-icon>
+                {{ row.folder }}
+              </el-tag>
+              <span v-else style="color: #999; font-size: 12px;">根目录</span>
+            </template>
+
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center gap-1">
                 <el-dropdown trigger="click" class="operation-dropdown">
@@ -1115,7 +1231,7 @@
         </div>
 
         <!-- 分页 -->
-        <div class="flex justify-end">
+        <div class="flex justify-end" style="margin-bottom: 24px; margin-top: 16px;">
           <pagination
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
@@ -1181,6 +1297,23 @@
             v-model="urlUploadForm.useAiGenerate"
             active-text="使用AI自动生成补全内容"
           />
+        </el-form-item>
+        <el-form-item label="文件夹">
+          <el-select 
+            v-model="urlUploadForm.folderId" 
+            placeholder="请选择文件夹（留空为根目录）" 
+            clearable
+            filterable
+            style="width: 100%"
+          >
+            <el-option label="根目录" :value="null" />
+            <el-option 
+              v-for="folder in stickerFolderSelectOptions" 
+              :key="folder.value || 'root'" 
+              :label="folder.label" 
+              :value="folder.value" 
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       
@@ -1652,6 +1785,23 @@
             clearable
           />
         </el-form-item>
+        <el-form-item label="文件夹">
+          <el-select 
+            v-model="editForm.folderId" 
+            placeholder="请选择文件夹（留空为根目录）" 
+            clearable
+            filterable
+            style="width: 100%"
+          >
+            <el-option label="根目录" :value="null" />
+            <el-option 
+              v-for="folder in stickerFolderSelectOptions" 
+              :key="folder.value || 'root'" 
+              :label="folder.label" 
+              :value="folder.value" 
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -1785,6 +1935,18 @@
       @close="closeImagePreview"
     />
 
+    <!-- 拖拽提示气泡（跟随鼠标） -->
+    <teleport to="body">
+      <div
+        v-show="dragHint.visible"
+        class="drag-hint-bubble"
+        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }"
+      >
+        <el-icon class="drag-hint-icon"><InfoFilled /></el-icon>
+        <span>{{ dragHint.text }}</span>
+      </div>
+    </teleport>
+
 
   </div>
 </template>
@@ -1798,7 +1960,8 @@ import {
   onUnmounted,
   watch,
   handleError,
-  watchEffect
+  watchEffect,
+  nextTick
 } from 'vue'
 
 import {
@@ -1811,7 +1974,12 @@ import {
   handleDropMaterial,
   aiAutoGenerateMaterialInfo,
   updateAssetLibrary,
-  generateImageInfo // 新增
+  generateImageInfo, // 新增
+  batchMoveStickers,
+  getStickerFolderTree,
+  createStickerFolder,
+  renameStickerFolder,
+  deleteStickerFolder
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
@@ -1821,8 +1989,9 @@ import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import CryptoJS from 'crypto-js'
+import Sortable from 'sortablejs'
 
-import { useDebounceFn, useLocalStorage, useSessionStorage, useWindowSize } from '@vueuse/core'
+import { useDebounceFn, useLocalStorage, useSessionStorage, useWindowSize, useMouse } from '@vueuse/core'
 import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
 import { saveAs } from 'file-saver'
 
@@ -1830,7 +1999,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1872,6 +2041,7 @@ const queryParams = reactive({
   isInfringement: null, // 新增侵权状态过滤参数
   sizeShape: '', // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long
   random: false, // 是否随机
+  folderId: null as string | null, // 文件夹ID
 })
 
 // 尺寸形状选项配置
@@ -1888,12 +2058,6 @@ const sizeShapeOptions = {
 }
 
 // 展示模式
-const picMode = useLocalStorage('material_view_mode', false)
-
-watch(picMode, () => {
-  ids.value = []
-})
-
 const gridRef = ref()
 
 function resetCheckStatus() {
@@ -1968,6 +2132,12 @@ const gridOptions = computed(() => {
       width: 100,
       slots: { default: 'isInfringementSlot' }
     },
+    { 
+      title: '文件夹', 
+      field: 'folder', 
+      width: 180,
+      slots: { default: 'folderSlot' }
+    },
   ]
 
   // 只有管理员显示的字段
@@ -2029,6 +2199,8 @@ const gridOptions = computed(() => {
 
 const { height } = useWindowSize()
 const maxHeight = ref(null)
+// 跟踪鼠标位置用于拖拽气泡
+const { x: mouseX, y: mouseY } = useMouse({ touch: false })
 
 watchEffect(() => {
   maxHeight.value = height.value - 200
@@ -2039,6 +2211,68 @@ const loading = ref(false)
 const open = ref(false)
 const title = ref('')
 const ids = ref<string[]>([])
+// 拖拽状态（拖素材 -> 文件夹）
+const dragState = reactive({
+  dragging: false,
+  draggingIds: [] as string[],
+  overFolderId: null as string | null,
+  overFolderPath: ''
+})
+const materialDragSortable = ref<Sortable | null>(null)
+const dragHint = reactive({
+  visible: false,
+  text: '',
+  x: -9999,
+  y: -9999
+})
+const dragHintListenerBound = ref(false)
+
+function bindGlobalDragHint() {
+  if (dragHintListenerBound.value) return
+  window.addEventListener('dragover', handleGlobalDragOver)
+  dragHintListenerBound.value = true
+}
+
+function unbindGlobalDragHint() {
+  if (!dragHintListenerBound.value) return
+  window.removeEventListener('dragover', handleGlobalDragOver)
+  dragHintListenerBound.value = false
+}
+
+function handleGlobalDragOver(e: DragEvent) {
+  if (!dragState.dragging) return
+  // 仅在悬停文件夹时显示气泡
+  if (!dragState.overFolderId) return
+  dragHint.visible = true
+  dragHint.text = `将 ${dragState.draggingIds.length} 个素材移动到 ${dragState.overFolderPath || '该文件夹'}`
+  updateDragHintPosition(e)
+}
+
+function updateDragHintPosition(e?: DragEvent) {
+  const x = e && 'clientX' in e ? e.clientX : mouseX.value
+  const y = e && 'clientY' in e ? e.clientY : mouseY.value
+  dragHint.x = (x || 0) + 14
+  dragHint.y = (y || 0) + 16
+}
+
+function getDefaultDragHint() {
+  return `拖到左侧文件夹以移动（当前 ${dragState.draggingIds.length} 个）`
+}
+
+function hideDragHint() {
+  dragHint.visible = false
+  dragHint.text = ''
+  dragHint.x = -9999
+  dragHint.y = -9999
+  unbindGlobalDragHint()
+}
+
+function materialRowClassName({ row }: any) {
+  if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
+    return 'is-dragging-row'
+  }
+  return ''
+}
 const single = ref(false)
 const multiple = ref(true)
 const total = ref(0)
@@ -2219,7 +2453,27 @@ function resetDesignModelSteps() {
 
 const uploadModalVisible = ref(false)
 
-function uploadModalClose() {}
+function uploadModalClose() {
+  // 关闭时更新 currentUploadInfo，确保下次打开时使用当前选中的文件夹
+  currentUploadInfo.value = {
+    path: '',
+    folderId: selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value,
+    folderPath: selectedStickerFolderPath.value || '',
+    folder: selectedStickerFolderPath.value || ''
+  }
+}
+
+// 打开上传对话框时，更新当前上传信息
+watch(uploadModalVisible, (visible) => {
+  if (visible) {
+    currentUploadInfo.value = {
+      path: '',
+      folderId: selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value,
+      folderPath: selectedStickerFolderPath.value || '',
+      folder: selectedStickerFolderPath.value || ''
+    }
+  }
+})
 
 async function getList() {
   loading.value = true
@@ -2260,6 +2514,50 @@ async function getList() {
   // 为每个图片设置加载超时，防止一直显示加载中
   dataSource.value.forEach((item) => {
     setupImageLoadTimeout(item)
+  })
+
+  // 列表渲染完成后挂载拖拽（使用 SortableJS）
+  nextTick(setupMaterialDrag)
+}
+
+// 初始化/刷新素材行的拖拽能力
+function setupMaterialDrag() {
+  nextTick(() => {
+    const tbody = document.querySelector('.material-dnd-grid .vxe-table--body tbody') as HTMLElement | null
+    if (!tbody) return
+
+    // 销毁旧实例，避免重复绑定
+    materialDragSortable.value?.destroy()
+    materialDragSortable.value = Sortable.create(tbody, {
+      animation: 120,
+      sort: false, // 不改变表格排序，只做拖拽数据
+      ghostClass: 'material-drag-ghost',
+      onStart: (evt) => {
+        const row = dataSource.value[evt.oldIndex]
+        const draggingIds = ids.value.length ? [...ids.value] : row ? [String(row.id)] : []
+        dragState.draggingIds = draggingIds
+        dragState.dragging = draggingIds.length > 0
+        // 仅当悬停在文件夹上时才显示气泡
+        dragHint.visible = false
+        dragHint.text = ''
+        dragHint.x = -9999
+        dragHint.y = -9999
+        dragState.overFolderId = null
+        dragState.overFolderPath = ''
+        bindGlobalDragHint()
+        // 记录初始指针位置
+        if (evt.originalEvent && 'clientX' in evt.originalEvent) {
+          updateDragHintPosition(evt.originalEvent as DragEvent)
+        }
+      },
+      onEnd: () => {
+        dragState.dragging = false
+        dragState.draggingIds = []
+        dragState.overFolderId = null
+        dragState.overFolderPath = ''
+        hideDragHint()
+      }
+    })
   })
 }
 
@@ -2328,6 +2626,8 @@ onUnmounted(() => {
     clearTimeout(timeout)
   })
   imageLoadTimeouts.clear()
+  materialDragSortable.value?.destroy()
+  unbindGlobalDragHint()
 })
 
 // phash相似图片搜索
@@ -2356,6 +2656,330 @@ function clearPhashSearch() {
   queryParams.phash = ''
   queryParams.currentPage = 1
   getList()
+}
+
+// 文件夹相关状态
+const stickerFolderTreeRef = ref()
+const selectedStickerFolderId = ref<string | null>('__root__') // 默认选中根目录
+const selectedStickerFolderPath = ref('')
+const stickerFolderTreeData = ref<any[]>([])
+
+// 文件夹选择选项（用于下拉框）
+const stickerFolderSelectOptions = computed(() => {
+  const options: Array<{ label: string; value: string | null; path: string }> = [
+    { label: '根目录', value: null, path: '' }
+  ]
+  
+  // 递归构建文件夹选项
+  const buildOptions = (folders: any[], prefix = '') => {
+    folders.forEach(folder => {
+      const label = prefix ? `${prefix} / ${folder.name}` : folder.name
+      options.push({
+        label,
+        value: folder.id,
+        path: folder.path || ''
+      })
+      if (folder.children && folder.children.length > 0) {
+        buildOptions(folder.children, label)
+      }
+    })
+  }
+  
+  // 从根目录节点的 children 中构建选项
+  if (stickerFolderTreeData.value.length > 0 && stickerFolderTreeData.value[0].children) {
+    buildOptions(stickerFolderTreeData.value[0].children)
+  }
+  
+  return options
+})
+
+// 加载文件夹树
+async function loadStickerFolderTree() {
+  try {
+    // 不传 parentId，确保只获取根文件夹
+    const res = await getStickerFolderTree()
+    // 确保只显示根文件夹（parentId 为 null 的文件夹）
+    const rootFolders = (res || []).filter((folder: any) => folder.parentId === null || folder.parentId === undefined)
+    
+    // 创建根目录节点，放在最上方
+    const rootNode = {
+      id: '__root__',
+      name: '根目录',
+      path: '',
+      parentId: null,
+      stickerCount: 0,
+      children: rootFolders, // 将根文件夹作为根目录的子节点
+      isRoot: true
+    }
+    
+    stickerFolderTreeData.value = [rootNode]
+    
+    // 确保根目录节点被选中
+    nextTick(() => {
+      if (stickerFolderTreeRef.value && !selectedStickerFolderId.value) {
+        selectedStickerFolderId.value = '__root__'
+        stickerFolderTreeRef.value.setCurrentKey('__root__')
+      }
+    })
+  } catch (error) {
+    console.error('加载文件夹失败:', error)
+    ElMessage.error('加载文件夹失败')
+  }
+}
+
+// 文件夹节点点击
+function handleStickerFolderNodeClick(data: any) {
+  // 如果是根目录节点
+  if (data.id === '__root__') {
+    selectedStickerFolderId.value = '__root__'
+    selectedStickerFolderPath.value = ''
+    queryParams.folderId = null
+  } else {
+    selectedStickerFolderId.value = data.id
+    selectedStickerFolderPath.value = data.path || ''
+    queryParams.folderId = data.id || null
+  }
+  queryParams.currentPage = 1
+  getList()
+}
+
+// 选择根目录（保留此函数以防其他地方调用）
+function handleSelectRootStickerFolder() {
+  selectedStickerFolderId.value = '__root__'
+  selectedStickerFolderPath.value = ''
+  queryParams.folderId = null
+  queryParams.currentPage = 1
+  getList()
+  // 设置树节点选中状态
+  if (stickerFolderTreeRef.value) {
+    stickerFolderTreeRef.value.setCurrentKey('__root__')
+  }
+}
+
+// 拖拽到文件夹时的交互
+function handleFolderDragOver(data: any, evt?: DragEvent) {
+  if (!dragState.dragging) return
+  dragState.overFolderId = data.id
+  dragState.overFolderPath = data.path || ''
+  dragHint.visible = true
+  dragHint.text = `将 ${dragState.draggingIds.length} 个素材移动到 ${dragState.overFolderPath || '该文件夹'}`
+  // 同步指针位置（node 层级的 dragover 事件）
+  updateDragHintPosition(evt)
+}
+
+function handleFolderDragLeave(data: any) {
+  if (dragState.overFolderId === data.id) {
+    dragState.overFolderId = null
+    dragState.overFolderPath = ''
+    dragHint.text = getDefaultDragHint()
+    dragHint.visible = false
+    dragHint.x = -9999
+    dragHint.y = -9999
+  }
+}
+
+async function handleFolderDrop(data: any) {
+  if (!dragState.draggingIds.length) return
+
+  const targetFolderId = data.id === '__root__' ? null : data.id
+  const targetPath = data.path || ''
+  const movingIds = [...dragState.draggingIds]
+
+  try {
+    await batchMoveStickers({ ids: movingIds, folderId: targetFolderId })
+    ElMessage.success(`已移动 ${movingIds.length} 个素材到 ${targetPath || '根目录'}`)
+
+    // 同步当前选中目录与查询条件
+    selectedStickerFolderId.value = data.id === '__root__' ? '__root__' : data.id
+    selectedStickerFolderPath.value = targetPath
+    queryParams.folderId = targetFolderId
+    queryParams.currentPage = 1
+
+    await loadStickerFolderTree() // 确保右侧数量与树同步刷新
+    await getList()
+    resetCheckStatus()
+  } catch (error) {
+    ElMessage.error((error as Error).message || '移动失败')
+  } finally {
+    hideDragHint()
+    dragState.dragging = false
+    dragState.draggingIds = []
+    dragState.overFolderId = null
+    dragState.overFolderPath = ''
+  }
+}
+
+// 创建根文件夹
+async function handleCreateRootStickerFolder() {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入文件夹名称', '新建文件夹', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPattern: /^[^/\\?*<>|"]+$/,
+      inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
+    })
+    
+    await createStickerFolder({ name: value, parentId: null })
+    ElMessage.success('创建成功')
+    await loadStickerFolderTree()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error((error as Error).message || '创建失败')
+    }
+  }
+}
+
+// 文件夹操作命令
+async function handleStickerFolderCommand(command: string, data: any) {
+  switch (command) {
+    case 'create':
+      await handleCreateChildStickerFolder(data)
+      break
+    case 'rename':
+      await handleRenameStickerFolder(data)
+      break
+    case 'delete':
+      await handleDeleteStickerFolder(data)
+      break
+  }
+}
+
+// 创建子文件夹
+async function handleCreateChildStickerFolder(parent: any) {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入文件夹名称', '新建子文件夹', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPattern: /^[^/\\?*<>|"]+$/,
+      inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
+    })
+    
+    await createStickerFolder({ name: value, parentId: parent.id })
+    ElMessage.success('创建成功')
+    await loadStickerFolderTree()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error((error as Error).message || '创建失败')
+    }
+  }
+}
+
+// 重命名文件夹
+async function handleRenameStickerFolder(data: any) {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新名称', '重命名文件夹', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputValue: data.name,
+      inputPattern: /^[^/\\?*<>|"]+$/,
+      inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
+    })
+    
+    await renameStickerFolder({ id: data.id, name: value })
+    ElMessage.success('重命名成功')
+    await loadStickerFolderTree()
+    
+    // 如果当前选中的文件夹被重命名，需要更新查询参数
+    if (selectedStickerFolderId.value === data.id) {
+      // 重新加载文件夹树后，找到新的文件夹信息
+      const findFolder = (folders: any[], targetId: string): any => {
+        for (const folder of folders) {
+          if (folder.id === targetId) {
+            return folder
+          }
+          if (folder.children && folder.children.length > 0) {
+            const found = findFolder(folder.children, targetId)
+            if (found) return found
+          }
+        }
+        return null
+      }
+      
+      // 从根目录节点的 children 中查找
+      const rootNode = stickerFolderTreeData.value[0]
+      const updatedFolder = findFolder(rootNode.children || [], data.id)
+      if (updatedFolder && updatedFolder.path) {
+        selectedStickerFolderPath.value = updatedFolder.path
+        queryParams.folder = updatedFolder.path
+        getList()
+      }
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error((error as Error).message || '重命名失败')
+    }
+  }
+}
+
+// 删除文件夹
+async function handleDeleteStickerFolder(data: any) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除文件夹"${data.name}"吗？${data.stickerCount > 0 ? `文件夹下有 ${data.stickerCount} 个素材，删除后素材将移动到根目录。` : ''}`,
+      '删除文件夹',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+    
+    await deleteStickerFolder(data.id, true)
+    ElMessage.success('删除成功')
+    
+    // 如果删除的是当前选中的文件夹，切换到根目录
+    if (selectedStickerFolderId.value === data.id) {
+      selectedStickerFolderId.value = '__root__'
+      selectedStickerFolderPath.value = ''
+      queryParams.folder = ''
+      queryParams.currentPage = 1
+      getList()
+      if (stickerFolderTreeRef.value) {
+        stickerFolderTreeRef.value.setCurrentKey('__root__')
+      }
+    }
+    
+    await loadStickerFolderTree()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error((error as Error).message || '删除失败')
+    }
+  }
+}
+
+// 文件夹变更时，同步更新上传信息
+watch(selectedStickerFolderPath, (newPath) => {
+  currentUploadInfo.value = {
+    ...currentUploadInfo.value,
+    folderPath: newPath || '',
+    folder: newPath || '',
+    folderId: selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value
+  }
+})
+
+// 初始化时加载文件夹树
+loadStickerFolderTree()
+
+getList()
+
+// 批量移动素材到文件夹
+async function handleBatchMoveToFolder() {
+  if (!ids.value.length) {
+    return ElMessage.warning('请选择要移动的素材')
+  }
+  
+  try {
+    const targetFolderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value
+    const targetFolderPath = selectedStickerFolderPath.value || ''
+    
+    await batchMoveStickers({ ids: ids.value, folderId: targetFolderId })
+    ElMessage.success(`成功移动 ${ids.value.length} 个素材${targetFolderPath ? `到 ${targetFolderPath}` : '到根目录'}`)
+    getList()
+    ids.value = []
+    resetCheckStatus()
+  } catch (error) {
+    ElMessage.error((error as Error).message || '移动失败')
+  }
 }
 
 getList()
@@ -3256,6 +3880,8 @@ const editForm = ref({
   isInfringement: false, 
   originUrl: '',
   source: '',
+  folderId: null, // 文件夹ID
+  folderPath: '', // 展示用路径
   // 只读字段（用于显示）
   width: null,
   height: null,
@@ -3267,7 +3893,7 @@ const editForm = ref({
 const editLoading = ref(false)
 
 // 其他缺少的变量
-const currentUploadInfo = ref({ path: '' })
+const currentUploadInfo = ref({ path: '', folderId: null as string | null, folderPath: '', folder: '' })
 const currentGenPictureConfig = ref([])
 const genPicturesForm = ref({})
 const genPicturesFormRules = ref({})
@@ -3340,6 +3966,8 @@ function handleEdit(row) {
     isInfringement: row.isInfringement || false,
     originUrl: row.originUrl || '',
     source: row.source || '',
+    folderId: row.folderId ?? row.folder?.id ?? null,
+    folderPath: row.folder || row.folderEntity?.path || '',
     // 只读字段（用于显示）
     width: row.width || null,
     height: row.height || null,
@@ -3371,7 +3999,8 @@ async function submitEdit() {
       isTexture: editForm.value.isTexture,
       isInfringement: editForm.value.isInfringement,
       originUrl: editForm.value.originUrl,
-      source: editForm.value.source
+      source: editForm.value.source,
+    folderId: editForm.value.folderId ?? null
     }
     await updateAssetLibrary(submitData)
     ElNotification.success('保存成功')
@@ -3558,7 +4187,9 @@ const urlUploadForm = reactive({
   keywordsEn: '',
   isCustom: false,
   isInfringement: false,
-  useAiGenerate: false // 是否使用AI生成补全内容
+  useAiGenerate: false, // 是否使用AI生成补全内容
+  folderId: null as string | null, // 文件夹ID
+  folderPath: '' // 展示路径
 })
 
 const urlUploadFormRules = {
@@ -3587,6 +4218,8 @@ function resetUrlUploadForm() {
   urlUploadForm.isCustom = false
   urlUploadForm.isInfringement = false
   urlUploadForm.useAiGenerate = false
+  urlUploadForm.folderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value // 重置为当前选中的文件夹
+  urlUploadForm.folderPath = selectedStickerFolderPath.value || ''
   urlPreviewVisible.value = false
   imageInfo.value = null
 }
@@ -3829,6 +4462,34 @@ function handleSubmenuHide(event: MouseEvent) {
   }, 200)
 }
 
+// 复制文本到剪贴板
+async function handleCopyText(text: string, label: string) {
+  if (!text) {
+    ElMessage.warning(`${label}为空，无法复制`)
+    return
+  }
+  
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success(`${label}已复制到剪贴板`)
+  } catch (error) {
+    // 降级方案：使用传统方法
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success(`${label}已复制到剪贴板`)
+    } catch (e) {
+      ElMessage.error('复制失败')
+    }
+    document.body.removeChild(textarea)
+  }
+}
+
 // 处理URL上传
 async function handleUrlUpload() {
   if (!urlUploadFormRef.value) return
@@ -3872,7 +4533,8 @@ async function handleUrlUpload() {
       height,
       aspectRatio,
       uploaderId: userStore.user?.id,
-      useAiGenerate: urlUploadForm.useAiGenerate // 是否使用AI生成补全内容
+      useAiGenerate: urlUploadForm.useAiGenerate, // 是否使用AI生成补全内容
+    folderId: urlUploadForm.folderId ?? null
     })
     
     ElNotification.success('图片上传成功')
@@ -4157,13 +4819,154 @@ async function handleUrlUpload() {
   -webkit-line-clamp: 1;
   color: var(--el-text-color-placeholder);
 }
+.material-dnd-grid :deep(.vxe-table--body tbody tr) {
+  cursor: grab;
+  user-select: none;
+}
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-dragging-row) {
+  opacity: 0.75;
+  background: var(--el-color-primary-light-9);
+}
+.material-dnd-grid :deep(.vxe-table--body tbody td) {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.material-drag-ghost {
+  opacity: 0.6 !important;
+  background: var(--el-color-primary-light-8) !important;
+}
+.drag-hint-bubble {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--el-color-primary-light-7);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  pointer-events: none;
+  transform: translate(6px, 6px);
+  transition: opacity 0.12s ease;
+}
+.drag-hint-icon {
+  display: flex;
+  align-items: center;
+}
 .flex.pb-4, .search-bar {
-  gap: 16px;
+  gap: 12px; /* 收紧整体水平/垂直间距 */
   flex-wrap: wrap;
   align-items: center;
 }
 .flex.pb-4 > *, .search-bar > * {
   margin-bottom: 0;
+}
+
+/* 顶部筛选：el-form 栅格布局（PC） */
+.search-bar-form {
+  width: 100%;
+  margin-bottom: 8px; /* 收紧表单与列表间距 */
+}
+.search-bar-form :deep(.el-form-item) {
+  margin-bottom: 6px; /* 控件间垂直间距收紧 */
+}
+.search-bar-form :deep(.el-form-item__label) {
+  padding-right: 6px; /* 收紧 label 与控件的左右间距 */
+  text-align: right; /* label 右对齐，保持整齐 */
+}
+.search-bar-form :deep(.el-form-item__label),
+.search-bar-form :deep(.el-form-item__content) {
+  line-height: 32px;
+}
+.search-bar-form :deep(.el-form-item__content) {
+  min-height: 32px;
+  display: flex;
+  align-items: center; /* 解决 switch / date 等控件高度导致的错位 */
+}
+.search-bar-form :deep(.el-form-item__content) > * {
+  width: 100%;
+}
+.search-bar-form :deep(.el-switch) {
+  width: auto; /* switch 不要被拉伸占满，避免看起来不齐 */
+}
+.search-bar-form :deep(.el-row) {
+  flex-wrap: wrap; /* 允许控件换行，避免挤压重叠 */
+  row-gap: 6px;
+  column-gap: 6px; /* 进一步收紧间距 */
+}
+.search-bar-form :deep(.el-col) {
+  flex: 1 1 220px; /* 起始宽度收窄，减少左侧空白并多排布一项 */
+  max-width: 100%;
+  min-width: 200px;
+  padding-left: 0;
+  padding-right: 0;
+}
+.search-bar-form :deep(.el-input),
+.search-bar-form :deep(.el-select),
+.search-bar-form :deep(.el-date-editor) {
+  width: 100%;
+  min-width: 0; /* 让控件随栅格收缩，不会撑破布局 */
+  max-width: 100%;
+}
+.search-bar-form :deep(.el-input__wrapper),
+.search-bar-form :deep(.el-select__wrapper),
+.search-bar-form :deep(.el-date-editor .el-input__wrapper) {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 1366px) {
+  /* 在较小分辨率下进一步缩小避免溢出 */
+  .search-bar-form :deep(.el-col) {
+    flex-basis: 200px;
+    min-width: 180px;
+  }
+}
+.search-actions-col {
+  display: flex;
+  justify-content: flex-start; /* 让筛选表单操作按钮靠左对齐 */
+  margin-top: 4px;
+}
+.search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start; /* 左对齐避免两侧空白 */
+  column-gap: 6px;
+  row-gap: 6px;
+  align-items: center;
+}
+.phash-form-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.phash-mode {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.phash-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (max-width: 992px) {
+  .phash-form-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .search-actions-col {
+    justify-content: flex-start;
+  }
+  .search-actions {
+    justify-content: flex-start;
+  }
 }
 @media (max-width: 600px) {
   .flex.pb-4, .search-bar {
@@ -4430,6 +5233,142 @@ h1 {
   
   .preset-buttons {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 文件夹树样式 */
+.sticker-folder-tree-container {
+  .sticker-folder-tree-header {
+    margin-bottom: 12px;
+  }
+  
+  .sticker-folder-tree {
+    --el-tree-node-content-height: 36px;
+    
+    :deep(.el-tree-node__content) {
+      height: 36px;
+      padding-left: 8px !important;
+      
+      &:hover {
+        background-color: var(--el-fill-color-light);
+      }
+    }
+    
+    :deep(.el-tree-node.is-current > .el-tree-node__content) {
+      background-color: var(--el-color-primary-light-9);
+      color: var(--el-color-primary);
+      font-weight: 500;
+    }
+    
+    :deep(.el-tree-node__expand-icon) {
+      color: var(--el-text-color-regular);
+    }
+  }
+  
+  .sticker-folder-node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-right: 8px;
+    border-radius: 6px;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    
+    &.is-drop-hover {
+      background: var(--el-color-primary-light-9);
+      box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
+      
+      .sticker-folder-node-text {
+        color: var(--el-color-primary);
+        font-weight: 600;
+      }
+    }
+    
+    .sticker-folder-node-content {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      
+      .folder-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 6px;
+        flex-shrink: 0;
+      }
+      
+      .sticker-folder-node-text {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        cursor: pointer;
+        transform-origin: left center;
+        
+        &:hover {
+          transform: scale(1.05);
+        }
+      }
+      
+      .sticker-folder-node-count {
+        font-size: 11px;
+        color: var(--el-color-primary);
+        font-weight: 300;
+        margin-left: 6px;
+      }
+    }
+    
+    .sticker-folder-node-actions {
+      display: flex;
+      align-items: center;
+      padding-right: 4px;
+      margin-left: 12px;
+      
+      .sticker-folder-action-icon {
+        font-size: 14px;
+        cursor: pointer;
+        opacity: 0.4;
+        transition: opacity 0.2s, color 0.2s;
+        color: var(--el-text-color-regular);
+        padding: 2px;
+        
+        &:hover {
+          opacity: 1;
+          color: var(--el-color-primary);
+        }
+      }
+      
+      :deep(.el-dropdown) {
+        .el-dropdown__caret-button {
+          display: none;
+        }
+      }
+    }
+    
+    &:hover {
+      .sticker-folder-node-actions {
+        .sticker-folder-action-icon {
+          opacity: 0.7;
+        }
+      }
+    }
+  }
+  
+  /* 下拉菜单样式优化 */
+  :deep(.el-dropdown-menu) {
+    min-width: 140px;
+    padding: 4px 0;
+    
+    .el-dropdown-menu__item {
+      padding: 6px 16px;
+      font-size: 13px;
+      
+      .el-icon {
+        margin-right: 6px;
+        font-size: 14px;
+      }
+    }
   }
 }
 </style>
