@@ -2,18 +2,12 @@
   <div>
     <!-- PC端显示原有搜索栏，移动端只显示筛选按钮（可折叠） -->
     <!-- 折叠状态：显示常用搜索和操作 -->
-    <el-form
-      v-show="actionsCollapsed && !isMobile"
-      :model="queryParams"
-      label-width="84px"
-      label-position="right"
-      class="search-bar search-bar-form"
-      @submit.prevent
-    >
+    <div v-show="actionsCollapsed && !isMobile" class="search-bar">
       <!-- 折叠态：搜索 + 按钮 + 随机，左对齐布局 -->
       <el-row :gutter="8" align="middle">
-        <el-col :xs="24" :sm="21" :md="21" :lg="21" :xl="21">
-          <el-form-item label="搜索">
+        <el-col :xs="24" :sm="19" :md="19" :lg="20" :xl="20">
+          <div class="search-field">
+            <label class="search-label">搜索</label>
             <el-input
               v-model="queryParams.searchText"
               placeholder="请输入名称、描述或关键词"
@@ -21,19 +15,18 @@
               @change="(val) => { if (!val) getList() }"
               @keyup.enter="getList"
             />
-          </el-form-item>
+          </div>
+        </el-col>
+
+        <el-col :xs="24" :sm="3" :md="3" :lg="2" :xl="2">
+          <div class="search-field">
+            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+          </div>
         </el-col>
 
         <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
-          <el-form-item label-width="0">
-            <div class="search-btn-offset">
-              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-            </div>
-          </el-form-item>
-        </el-col>
-
-        <el-col :xs="24" :sm="1" :md="1" :lg="1" :xl="1">
-          <el-form-item label="随机">
+          <div class="search-field">
+            <label class="search-label">随机</label>
             <el-switch
               v-model="queryParams.random"
               active-text=""
@@ -41,9 +34,8 @@
               size="small"
               @change="getList"
             />
-          </el-form-item>
+          </div>
         </el-col>
-
       </el-row>
 
       <el-row :gutter="8" align="middle">
@@ -60,22 +52,16 @@
           </div>
         </el-col>
       </el-row>
-    </el-form>
+    </div>
 
     <!-- 展开状态：显示全部搜索功能 -->
-    <el-form
-      v-show="!actionsCollapsed && !isMobile"
-      :model="queryParams"
-      label-width="84px"
-      label-position="right"
-      class="search-bar search-bar-form"
-      @submit.prevent
-    >
-      <!-- 第1行：长项优先占宽，保持比例协调 -->
-      <!-- 第1行：搜索 + 按钮 + 排序 + 后缀 -->
+    <div v-show="!actionsCollapsed && !isMobile" class="search-bar">
+      <!-- 所有搜索字段在一行，自动换行 -->
       <el-row :gutter="8" align="middle">
-        <el-col :xs="24" :sm="19" :md="19" :lg="19" :xl="19">
-          <el-form-item label="搜索">
+        <!-- 搜索 - 内容较多，需要较宽 -->
+        <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+          <div class="search-field">
+            <label class="search-label">搜索</label>
             <el-input 
               v-model="queryParams.searchText" 
               placeholder="请输入名称、描述或关键词" 
@@ -83,28 +69,31 @@
               @change="(val) => { if (!val) getList() }"
               @keyup.enter="getList"
             />
-          </el-form-item>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
-          <el-form-item label-width="0">
-            <div class="search-btn-offset">
-              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-            </div>
-          </el-form-item>
+        <!-- 搜索按钮 - 内容少，窄一些 -->
+        <el-col :xs="24" :sm="3" :md="2" :lg="2" :xl="2">
+          <div class="search-field">
+            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
-          <el-form-item label="排序">
+        <!-- 排序 - 内容中等 -->
+        <el-col :xs="24" :sm="9" :md="5" :lg="5" :xl="5">
+          <div class="search-field">
+            <label class="search-label">排序</label>
             <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" @change="getList">
               <el-option label="创建时间倒序" value="createTime DESC" />
               <el-option label="创建时间正序" value="createTime ASC" />
             </el-select>
-          </el-form-item>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="1" :md="1" :lg="1" :xl="1">
-          <el-form-item label="后缀">
+        <!-- 后缀 - 内容中等，可能需要显示多个值 -->
+        <el-col :xs="24" :sm="12" :md="5" :lg="5" :xl="5">
+          <div class="search-field">
+            <label class="search-label">后缀</label>
             <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable @change="getList">
               <el-option label="jpg" value="jpg" />
               <el-option label="jpeg" value="jpeg" />
@@ -115,40 +104,45 @@
               <el-option label="bmp" value="bmp" />
               <el-option label="tiff" value="tiff" />
             </el-select>
-          </el-form-item>
+          </div>
         </el-col>
-      </el-row>
 
-      <!-- 第2行：四等分，保证对齐（短项） -->
-      <el-row :gutter="8" align="middle">
-        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
-          <el-form-item label="ID">
+        <!-- ID - 内容少，窄一些 -->
+        <el-col :xs="24" :sm="8" :md="4" :lg="4" :xl="4">
+          <div class="search-field">
+            <label class="search-label">ID</label>
             <el-input v-model="queryParams.id" placeholder="请输入ID" clearable @change="(val) => { if (!val) getList() }" />
-          </el-form-item>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
-          <el-form-item label="自定义">
+        <!-- 自定义 - 内容少（是/否），窄一些 -->
+        <el-col :xs="24" :sm="8" :md="4" :lg="4" :xl="4">
+          <div class="search-field">
+            <label class="search-label">自定义</label>
             <el-select v-model="queryParams.isCustom" placeholder="请选择类型" clearable @change="getList">
               <el-option label="全部" :value="null" />
               <el-option label="是" :value="true" />
               <el-option label="否" :value="false" />
             </el-select>
-          </el-form-item>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
-          <el-form-item label="侵权">
+        <!-- 侵权 - 内容少（侵权/非侵权），窄一些 -->
+        <el-col :xs="24" :sm="8" :md="4" :lg="4" :xl="4">
+          <div class="search-field">
+            <label class="search-label">侵权</label>
             <el-select v-model="queryParams.isInfringement" placeholder="请选择状态" clearable @change="getList">
               <el-option label="全部" :value="null" />
               <el-option label="侵权" :value="true" />
               <el-option label="非侵权" :value="false" />
             </el-select>
-          </el-form-item>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
-          <el-form-item label="尺寸">
+        <!-- 尺寸 - 内容较多（很多选项），需要较宽 -->
+        <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
+          <div class="search-field">
+            <label class="search-label">尺寸</label>
             <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable @change="getList" :teleported="false">
               <el-option-group label="常用">
                 <el-option value="landscape">
@@ -211,29 +205,31 @@
                 </el-option>
               </el-option-group>
             </el-select>
-          </el-form-item>
+          </div>
         </el-col>
-      </el-row>
 
-      <!-- 第3行：随机 + 时间（时间较长占更宽） -->
-      <el-row :gutter="8" align="middle">
-        <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
-          <el-form-item label="随机">
+        <!-- 随机 - 内容很少（只是一个开关），很窄 -->
+        <el-col :xs="24" :sm="6" :md="4" :lg="4" :xl="4">
+          <div class="search-field">
+            <label class="search-label">随机</label>
             <el-switch v-model="queryParams.random" size="small" @change="getList" />
-          </el-form-item>
+          </div>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="18" :lg="18" :xl="18">
-          <el-form-item label="时间">
+        <!-- 时间 - 内容很多（日期范围选择器），需要很宽 -->
+        <el-col :xs="24" :sm="18" :md="20" :lg="20" :xl="20">
+          <div class="search-field">
+            <label class="search-label">时间</label>
             <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
-          </el-form-item>
+          </div>
         </el-col>
       </el-row>
 
       <!-- 相似搜索：单独一行，避免挤压导致不齐 -->
       <el-row :gutter="8" align="middle">
         <el-col :span="24">
-          <el-form-item label="相似">
+          <div class="search-field">
+            <label class="search-label">相似</label>
             <div class="phash-form-row">
               <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
               <div class="phash-mode">
@@ -247,7 +243,7 @@
                 <el-button @click="clearPhashSearch">清空</el-button>
               </div>
             </div>
-          </el-form-item>
+          </div>
         </el-col>
       </el-row>
 
@@ -265,7 +261,7 @@
           </div>
         </el-col>
       </el-row>
-    </el-form>
+    </div>
     <div v-if="isMobile && !actionsCollapsed" class="flex pb-4 justify-end">
       <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
     </div>
@@ -4912,11 +4908,55 @@ async function handleUrlUpload() {
   display: flex;
   align-items: center;
 }
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.search-label {
+  width: 84px;
+  text-align: right;
+  padding-right: 8px;
+  line-height: 32px;
+  flex-shrink: 0;
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+}
+.search-field > :not(.search-label) {
+  flex: 1;
+  min-width: 180px; /* 确保有最小宽度，能显示完整的 placeholder */
+  max-width: 100%;
+}
+.search-field .el-input,
+.search-field .el-select {
+  width: 100%;
+  min-width: 180px; /* 确保输入框和选择器有足够宽度显示 placeholder */
+}
+.search-field .el-button {
+  min-width: 80px; /* 按钮保持最小宽度 */
+}
+.search-field .el-button {
+  min-width: 80px; /* 按钮保持最小宽度 */
+  white-space: nowrap;
+}
+
+/* 顶部搜索区域与下方内容留出间距 */
+.search-bar {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+}
 .search-bar-form :deep(.el-form-item__content) > * {
   width: 100%;
 }
 .search-bar-form :deep(.el-switch) {
   width: auto; /* switch 不要被拉伸占满，避免看起来不齐 */
+}
+/* 搜索区域允许换行 */
+.search-bar .el-row {
+  flex-wrap: wrap !important; /* 强制允许换行，避免挤压 */
+  row-gap: 12px;
+  column-gap: 8px;
 }
 .search-bar-form :deep(.el-row) {
   flex-wrap: wrap; /* 允许控件换行，避免挤压重叠 */
@@ -4924,9 +4964,8 @@ async function handleUrlUpload() {
   column-gap: 6px; /* 进一步收紧间距 */
 }
 .search-bar-form :deep(.el-col) {
-  flex: 1 1 220px; /* 起始宽度收窄，减少左侧空白并多排布一项 */
+  /* 不要覆盖 Element Plus 栅格（span/lg/xl），否则大屏下会错位且宽度调整不生效 */
   max-width: 100%;
-  min-width: 200px;
   padding-left: 0;
   padding-right: 0;
 }
@@ -4946,8 +4985,7 @@ async function handleUrlUpload() {
 @media (max-width: 1366px) {
   /* 在较小分辨率下进一步缩小避免溢出 */
   .search-bar-form :deep(.el-col) {
-    flex-basis: 200px;
-    min-width: 180px;
+    /* 保持栅格布局，不再通过 flex-basis/min-width 干预 */
   }
 }
 .search-actions-col {
