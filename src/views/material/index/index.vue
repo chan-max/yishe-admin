@@ -4,17 +4,42 @@
     <div v-show="!isMobile" class="search-bar">
       <!-- 所有搜索字段在一行，自动换行 -->
       <el-row :gutter="8" align="middle">
-        <!-- 搜索 - 内容较多，需要较宽 -->
+        <!-- AI 提示词搜索 - 优先级最高 -->
         <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+          <div class="search-field">
+            <label class="search-label">提示词</label>
+            <el-input
+              v-model="queryParams.searchPrompt"
+              placeholder="输入AI提示词，自动解析搜索条件"
+              clearable
+              @change="(val) => { if (!val) getList() }"
+              @keyup.enter="getList"
+            />
+          </div>
+        </el-col>
+
+        <!-- 搜索 - 内容较多，需要较宽 -->
+        <el-col :xs="24" :sm="12" :md="10" :lg="10" :xl="10">
           <div class="search-field">
             <label class="search-label">搜索</label>
             <el-input 
               v-model="queryParams.searchText" 
-              placeholder="请输入名称、描述或关键词" 
+              placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）" 
               clearable 
               @change="(val) => { if (!val) getList() }"
               @keyup.enter="getList"
             />
+          </div>
+        </el-col>
+
+        <!-- 搜索模式 - 新增 -->
+        <el-col :xs="24" :sm="6" :md="4" :lg="4" :xl="4">
+          <div class="search-field">
+            <label class="search-label">搜索模式</label>
+            <el-select v-model="queryParams.searchMode" placeholder="请选择模式" @change="getList">
+              <el-option label="AND（全部包含）" value="AND" />
+              <el-option label="OR（任意包含）" value="OR" />
+            </el-select>
           </div>
         </el-col>
 
@@ -212,8 +237,17 @@
     </div>
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
       <el-form :model="queryParams" label-width="80px">
+        <el-form-item label="提示词">
+          <el-input v-model="queryParams.searchPrompt" placeholder="输入AI提示词，自动解析搜索条件" clearable />
+        </el-form-item>
         <el-form-item label="搜索">
-          <el-input v-model="queryParams.searchText" placeholder="请输入名称、描述或关键词" clearable />
+          <el-input v-model="queryParams.searchText" placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）" clearable />
+        </el-form-item>
+        <el-form-item label="搜索模式">
+          <el-select v-model="queryParams.searchMode" placeholder="请选择模式">
+            <el-option label="AND（全部包含）" value="AND" />
+            <el-option label="OR（任意包含）" value="OR" />
+          </el-select>
         </el-form-item>
         <el-form-item label="排序">
           <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
@@ -1991,7 +2025,9 @@ const queryParams = reactive({
   currentPage: 1,
   pageSize: 10,
   keyword: '',
+  searchPrompt: '', // AI 提示词（最高优先级，解析为结构化搜索）
   searchText: '', // 多字段搜索（名称、描述、关键词等）
+  searchMode: 'AND', // 搜索模式：AND（所有关键词必须都出现，默认）| OR（任意关键词出现即可）
   sortingFields: 'createTime DESC', // 排序字段
   startTime: '',
   endTime: '',
