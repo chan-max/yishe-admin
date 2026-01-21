@@ -762,7 +762,7 @@
           :default-expanded-keys="['__root__']"
           :highlight-current="true"
           :current-node-key="selectedStickerFolderId"
-          style="max-height: calc(100vh - 300px); overflow-y: auto;"
+          style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden;"
           class="sticker-folder-tree"
         >
           <template #default="{ node, data }">

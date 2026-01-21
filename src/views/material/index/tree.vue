@@ -189,6 +189,9 @@ const buildTreeData = (list: any[]) => {
   padding: 16px;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .tree-node {
@@ -196,24 +199,101 @@ const buildTreeData = (list: any[]) => {
   align-items: center;
   gap: 8px;
   padding: 4px 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .node-label {
-  font-size: 14px;
+  font-size: 14px !important;
   color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  flex: 1;
+  min-width: 0;
+  display: block;
+  width: 0;
+  flex-grow: 1;
+}
+
+.tree-node:hover .node-label {
+  font-size: 14px !important;
+}
+
+:deep(.el-tree) {
+  overflow-x: hidden !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+:deep(.el-tree-node) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 :deep(.el-tree-node__content) {
   height: 32px;
   line-height: 32px;
+  overflow: hidden !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-right: 8px;
 }
 
 :deep(.el-tree-node__content:hover) {
   background-color: #f5f7fa;
+  overflow: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+:deep(.el-tree-node__content:hover .tree-node) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+:deep(.el-tree-node__content:hover .node-label) {
+  font-size: 14px !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: #e6f7ff;
   color: #1890ff;
+  overflow: hidden !important;
+}
+
+:deep(.el-tree-node__expand-icon) {
+  flex-shrink: 0;
+}
+
+:deep(.el-tree-node__label) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+:deep(.el-tree-node__content:hover .el-tree-node__label) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden !important;
+}
+
+:deep(.el-tree-node:hover) {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden !important;
 }
 </style>
