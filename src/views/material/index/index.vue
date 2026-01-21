@@ -10,19 +10,29 @@
       class="search-bar search-bar-form"
       @submit.prevent
     >
+      <!-- 折叠态：搜索 + 按钮 + 随机，左对齐布局 -->
       <el-row :gutter="8" align="middle">
-        <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+        <el-col :xs="24" :sm="21" :md="21" :lg="21" :xl="21">
           <el-form-item label="搜索">
             <el-input
               v-model="queryParams.searchText"
               placeholder="请输入名称、描述或关键词"
               clearable
               @change="(val) => { if (!val) getList() }"
+              @keyup.enter="getList"
             />
           </el-form-item>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6" :lg="4" :xl="4">
+        <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
+          <el-form-item label-width="0">
+            <div class="search-btn-offset">
+              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+            </div>
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="1" :md="1" :lg="1" :xl="1">
           <el-form-item label="随机">
             <el-switch
               v-model="queryParams.random"
@@ -36,15 +46,11 @@
 
       </el-row>
 
-      <el-row :gutter="12" align="middle">
+      <el-row :gutter="8" align="middle">
         <el-col :span="24" class="search-actions-col">
           <div class="search-actions">
-            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
             <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
             <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-            <el-button type="default" @click="handleBatchMoveToFolder" :disabled="!ids.length">
-              移动到当前文件夹 ({{ ids.length }})
-            </el-button>
             <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">
               批量删除({{ ids.length }})
             </el-button>
@@ -66,14 +72,29 @@
       @submit.prevent
     >
       <!-- 第1行：长项优先占宽，保持比例协调 -->
-      <el-row :gutter="12" align="middle">
-        <el-col :xs="24" :sm="12" :md="12" :lg="10" :xl="10">
+      <!-- 第1行：搜索 + 按钮 + 排序 + 后缀 -->
+      <el-row :gutter="8" align="middle">
+        <el-col :xs="24" :sm="19" :md="19" :lg="19" :xl="19">
           <el-form-item label="搜索">
-            <el-input v-model="queryParams.searchText" placeholder="请输入" clearable @change="(val) => { if (!val) getList() }" />
+            <el-input 
+              v-model="queryParams.searchText" 
+              placeholder="请输入名称、描述或关键词" 
+              clearable 
+              @change="(val) => { if (!val) getList() }"
+              @keyup.enter="getList"
+            />
           </el-form-item>
         </el-col>
 
-        <el-col :xs="24" :sm="12" :md="6" :lg="4" :xl="4">
+        <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
+          <el-form-item label-width="0">
+            <div class="search-btn-offset">
+              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+            </div>
+          </el-form-item>
+        </el-col>
+
+        <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
           <el-form-item label="排序">
             <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" @change="getList">
               <el-option label="创建时间倒序" value="createTime DESC" />
@@ -82,7 +103,7 @@
           </el-form-item>
         </el-col>
 
-        <el-col :xs="24" :sm="24" :md="6" :lg="8" :xl="8">
+        <el-col :xs="24" :sm="1" :md="1" :lg="1" :xl="1">
           <el-form-item label="后缀">
             <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable @change="getList">
               <el-option label="jpg" value="jpg" />
@@ -99,7 +120,7 @@
       </el-row>
 
       <!-- 第2行：四等分，保证对齐（短项） -->
-      <el-row :gutter="12" align="middle">
+      <el-row :gutter="8" align="middle">
         <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
           <el-form-item label="ID">
             <el-input v-model="queryParams.id" placeholder="请输入ID" clearable @change="(val) => { if (!val) getList() }" />
@@ -195,14 +216,14 @@
       </el-row>
 
       <!-- 第3行：随机 + 时间（时间较长占更宽） -->
-      <el-row :gutter="12" align="middle">
+      <el-row :gutter="8" align="middle">
         <el-col :xs="24" :sm="12" :md="6" :lg="6" :xl="6">
           <el-form-item label="随机">
             <el-switch v-model="queryParams.random" size="small" @change="getList" />
           </el-form-item>
         </el-col>
 
-        <el-col :xs="24" :sm="24" :md="18" :lg="18" :xl="18">
+        <el-col :xs="24" :sm="12" :md="18" :lg="18" :xl="18">
           <el-form-item label="时间">
             <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
           </el-form-item>
@@ -210,7 +231,7 @@
       </el-row>
 
       <!-- 相似搜索：单独一行，避免挤压导致不齐 -->
-      <el-row :gutter="12" align="middle">
+      <el-row :gutter="8" align="middle">
         <el-col :span="24">
           <el-form-item label="相似">
             <div class="phash-form-row">
@@ -231,7 +252,7 @@
       </el-row>
 
       <!-- 操作按钮：单独一行，统一对齐 -->
-      <el-row :gutter="12" align="middle">
+      <el-row :gutter="8" align="middle">
         <el-col :span="24" class="search-actions-col">
           <div class="search-actions">
             <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
@@ -4885,6 +4906,11 @@ async function handleUrlUpload() {
   min-height: 32px;
   display: flex;
   align-items: center; /* 解决 switch / date 等控件高度导致的错位 */
+}
+.search-btn-offset {
+  padding-left: 84px; /* 与表单 label-width 对齐，避免按钮列挤压导致大屏错位 */
+  display: flex;
+  align-items: center;
 }
 .search-bar-form :deep(.el-form-item__content) > * {
   width: 100%;
