@@ -2,235 +2,203 @@
   <div>
     <!-- PC端显示搜索栏，移动端使用筛选对话框 -->
     <div v-show="!isMobile" class="search-bar">
-      <!-- 所有搜索字段在一行，自动换行 -->
-      <el-row :gutter="8" align="middle">
-        <!-- AI 提示词搜索 - 优先级最高 -->
-        <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
-          <div class="search-field">
-            <label class="search-label">提示词</label>
-            <el-input
-              v-model="queryParams.searchPrompt"
-              placeholder="输入AI提示词，自动解析搜索条件"
-              clearable
-              @change="(val) => { if (!val) getList() }"
-              @keyup.enter="getList"
-            />
-          </div>
-        </el-col>
+      <!-- 搜索表单容器 -->
+      <div class="search-form-container">
+        <!-- AI 提示词搜索 -->
+        <div class="search-field">
+          <label class="search-label">提示词</label>
+          <el-input
+            v-model="queryParams.searchPrompt"
+            placeholder="AI提示词"
+            clearable
+            @change="(val) => { if (!val) getList() }"
+            @keyup.enter="getList"
+          />
+        </div>
 
-        <!-- 搜索 - 内容较多，需要较宽 -->
-        <el-col :xs="24" :sm="12" :md="10" :lg="10" :xl="10">
-          <div class="search-field">
-            <label class="search-label">搜索</label>
-            <el-input 
-              v-model="queryParams.searchText" 
-              placeholder="请输入名称、描述或关键词（空格分隔，支持引号精确匹配）" 
-              clearable 
-              @change="(val) => { if (!val) getList() }"
-              @keyup.enter="getList"
-            />
-          </div>
-        </el-col>
+        <!-- 搜索 -->
+        <div class="search-field">
+          <label class="search-label">搜索</label>
+          <el-input
+            v-model="queryParams.searchText"
+            placeholder="名称、描述、关键词"
+            clearable
+            @change="(val) => { if (!val) getList() }"
+            @keyup.enter="getList"
+          />
+        </div>
 
-        <!-- 搜索模式 - 新增 -->
-        <el-col :xs="24" :sm="6" :md="4" :lg="4" :xl="4">
-          <div class="search-field">
-            <label class="search-label">搜索模式</label>
-            <el-select v-model="queryParams.searchMode" placeholder="请选择模式" @change="getList">
-              <el-option label="AND（全部包含）" value="AND" />
-              <el-option label="OR（任意包含）" value="OR" />
-            </el-select>
-          </div>
-        </el-col>
+        <!-- 搜索模式 -->
+        <div class="search-field">
+          <label class="search-label">模式</label>
+          <el-select v-model="queryParams.searchMode" placeholder="模式" @change="getList">
+            <el-option label="AND" value="AND" />
+            <el-option label="OR" value="OR" />
+          </el-select>
+        </div>
 
-        <!-- 搜索按钮 - 内容少，窄一些 -->
-        <el-col :xs="24" :sm="3" :md="2" :lg="2" :xl="2">
-          <div class="search-field">
-            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-          </div>
-        </el-col>
+        <!-- 排序 -->
+        <div class="search-field">
+          <label class="search-label">排序</label>
+          <el-select v-model="queryParams.sortingFields" placeholder="排序" @change="getList">
+            <el-option label="创建时间倒序" value="createTime DESC" />
+            <el-option label="创建时间正序" value="createTime ASC" />
+          </el-select>
+        </div>
 
-        <!-- 排序 - 内容中等 -->
-        <el-col :xs="24" :sm="9" :md="5" :lg="5" :xl="5">
-          <div class="search-field">
-            <label class="search-label">排序</label>
-            <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" @change="getList">
-              <el-option label="创建时间倒序" value="createTime DESC" />
-              <el-option label="创建时间正序" value="createTime ASC" />
-            </el-select>
-          </div>
-        </el-col>
+        <!-- 后缀 -->
+        <div class="search-field">
+          <label class="search-label">后缀</label>
+          <el-select v-model="queryParams.suffix" placeholder="后缀" multiple clearable @change="getList">
+            <el-option label="jpg" value="jpg" />
+            <el-option label="jpeg" value="jpeg" />
+            <el-option label="png" value="png" />
+            <el-option label="gif" value="gif" />
+            <el-option label="webp" value="webp" />
+            <el-option label="svg" value="svg" />
+            <el-option label="bmp" value="bmp" />
+            <el-option label="tiff" value="tiff" />
+          </el-select>
+        </div>
 
-        <!-- 后缀 - 内容中等，可能需要显示多个值 -->
-        <el-col :xs="24" :sm="12" :md="5" :lg="5" :xl="5">
-          <div class="search-field">
-            <label class="search-label">后缀</label>
-            <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable @change="getList">
-              <el-option label="jpg" value="jpg" />
-              <el-option label="jpeg" value="jpeg" />
-              <el-option label="png" value="png" />
-              <el-option label="gif" value="gif" />
-              <el-option label="webp" value="webp" />
-              <el-option label="svg" value="svg" />
-              <el-option label="bmp" value="bmp" />
-              <el-option label="tiff" value="tiff" />
-            </el-select>
-          </div>
-        </el-col>
+        <!-- ID -->
+        <div class="search-field">
+          <label class="search-label">ID</label>
+          <el-input v-model="queryParams.id" placeholder="ID" clearable @change="(val) => { if (!val) getList() }" />
+        </div>
 
-        <!-- ID - 内容少，窄一些 -->
-        <el-col :xs="24" :sm="8" :md="4" :lg="4" :xl="4">
-          <div class="search-field">
-            <label class="search-label">ID</label>
-            <el-input v-model="queryParams.id" placeholder="请输入ID" clearable @change="(val) => { if (!val) getList() }" />
-          </div>
-        </el-col>
+        <!-- 自定义 -->
+        <div class="search-field">
+          <label class="search-label">自定义</label>
+          <el-select v-model="queryParams.isCustom" placeholder="自定义" clearable @change="getList">
+            <el-option label="全部" :value="null" />
+            <el-option label="是" :value="true" />
+            <el-option label="否" :value="false" />
+          </el-select>
+        </div>
 
-        <!-- 自定义 - 内容少（是/否），窄一些 -->
-        <el-col :xs="24" :sm="8" :md="4" :lg="4" :xl="4">
-          <div class="search-field">
-            <label class="search-label">自定义</label>
-            <el-select v-model="queryParams.isCustom" placeholder="请选择类型" clearable @change="getList">
-              <el-option label="全部" :value="null" />
-              <el-option label="是" :value="true" />
-              <el-option label="否" :value="false" />
-            </el-select>
-          </div>
-        </el-col>
+        <!-- 侵权 -->
+        <div class="search-field">
+          <label class="search-label">侵权</label>
+          <el-select v-model="queryParams.isInfringement" placeholder="侵权" clearable @change="getList">
+            <el-option label="全部" :value="null" />
+            <el-option label="侵权" :value="true" />
+            <el-option label="非侵权" :value="false" />
+          </el-select>
+        </div>
 
-        <!-- 侵权 - 内容少（侵权/非侵权），窄一些 -->
-        <el-col :xs="24" :sm="8" :md="4" :lg="4" :xl="4">
-          <div class="search-field">
-            <label class="search-label">侵权</label>
-            <el-select v-model="queryParams.isInfringement" placeholder="请选择状态" clearable @change="getList">
-              <el-option label="全部" :value="null" />
-              <el-option label="侵权" :value="true" />
-              <el-option label="非侵权" :value="false" />
-            </el-select>
-          </div>
-        </el-col>
+        <!-- 尺寸 -->
+        <div class="search-field">
+          <label class="search-label">尺寸</label>
+          <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable @change="getList" :teleported="false">
+            <el-option-group label="常用">
+              <el-option value="landscape">
+                <div class="size-option">
+                  <div class="size-thumb landscape-thumb"></div>
+                  <span class="size-label">横图</span>
+                </div>
+              </el-option>
+              <el-option value="portrait">
+                <div class="size-option">
+                  <div class="size-thumb portrait-thumb"></div>
+                  <span class="size-label">竖图</span>
+                </div>
+              </el-option>
+              <el-option value="square">
+                <div class="size-option">
+                  <div class="size-thumb square-thumb"></div>
+                  <span class="size-label">正方图</span>
+                </div>
+              </el-option>
+            </el-option-group>
+            <el-option-group label="横图细分">
+              <el-option value="ultra-wide">
+                <div class="size-option">
+                  <div class="size-thumb ultra-wide-thumb"></div>
+                  <span class="size-label">超宽图 (≥2:1)</span>
+                </div>
+              </el-option>
+              <el-option value="wide">
+                <div class="size-option">
+                  <div class="size-thumb wide-thumb"></div>
+                  <span class="size-label">宽图 (1.5:1 - 2:1)</span>
+                </div>
+              </el-option>
+              <el-option value="slightly-wide">
+                <div class="size-option">
+                  <div class="size-thumb slightly-wide-thumb"></div>
+                  <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
+                </div>
+              </el-option>
+            </el-option-group>
+            <el-option-group label="竖图细分">
+              <el-option value="slightly-long">
+                <div class="size-option">
+                  <div class="size-thumb slightly-long-thumb"></div>
+                  <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
+                </div>
+              </el-option>
+              <el-option value="long">
+                <div class="size-option">
+                  <div class="size-thumb long-thumb"></div>
+                  <span class="size-label">长图 (1:1.5 - 1:2)</span>
+                </div>
+              </el-option>
+              <el-option value="ultra-long">
+                <div class="size-option">
+                  <div class="size-thumb ultra-long-thumb"></div>
+                  <span class="size-label">超长图 (≤1:2)</span>
+                </div>
+              </el-option>
+            </el-option-group>
+          </el-select>
+        </div>
 
-        <!-- 尺寸 - 内容较多（很多选项），需要较宽 -->
-        <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
-          <div class="search-field">
-            <label class="search-label">尺寸</label>
-            <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable @change="getList" :teleported="false">
-              <el-option-group label="常用">
-                <el-option value="landscape">
-                  <div class="size-option">
-                    <div class="size-thumb landscape-thumb"></div>
-                    <span class="size-label">横图</span>
-                  </div>
-                </el-option>
-                <el-option value="portrait">
-                  <div class="size-option">
-                    <div class="size-thumb portrait-thumb"></div>
-                    <span class="size-label">竖图</span>
-                  </div>
-                </el-option>
-                <el-option value="square">
-                  <div class="size-option">
-                    <div class="size-thumb square-thumb"></div>
-                    <span class="size-label">正方图</span>
-                  </div>
-                </el-option>
-              </el-option-group>
-              <el-option-group label="横图细分">
-                <el-option value="ultra-wide">
-                  <div class="size-option">
-                    <div class="size-thumb ultra-wide-thumb"></div>
-                    <span class="size-label">超宽图 (≥2:1)</span>
-                  </div>
-                </el-option>
-                <el-option value="wide">
-                  <div class="size-option">
-                    <div class="size-thumb wide-thumb"></div>
-                    <span class="size-label">宽图 (1.5:1 - 2:1)</span>
-                  </div>
-                </el-option>
-                <el-option value="slightly-wide">
-                  <div class="size-option">
-                    <div class="size-thumb slightly-wide-thumb"></div>
-                    <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
-                  </div>
-                </el-option>
-              </el-option-group>
-              <el-option-group label="竖图细分">
-                <el-option value="slightly-long">
-                  <div class="size-option">
-                    <div class="size-thumb slightly-long-thumb"></div>
-                    <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
-                  </div>
-                </el-option>
-                <el-option value="long">
-                  <div class="size-option">
-                    <div class="size-thumb long-thumb"></div>
-                    <span class="size-label">长图 (1:1.5 - 1:2)</span>
-                  </div>
-                </el-option>
-                <el-option value="ultra-long">
-                  <div class="size-option">
-                    <div class="size-thumb ultra-long-thumb"></div>
-                    <span class="size-label">超长图 (≤1:2)</span>
-                  </div>
-                </el-option>
-              </el-option-group>
-            </el-select>
-          </div>
-        </el-col>
+        <!-- 随机 -->
+        <div class="search-field">
+          <label class="search-label">随机</label>
+          <el-switch v-model="queryParams.random" size="small" @change="getList" />
+        </div>
 
-        <!-- 随机 - 内容很少（只是一个开关），很窄 -->
-        <el-col :xs="24" :sm="6" :md="4" :lg="4" :xl="4">
-          <div class="search-field">
-            <label class="search-label">随机</label>
-            <el-switch v-model="queryParams.random" size="small" @change="getList" />
-          </div>
-        </el-col>
+        <!-- 时间 -->
+        <div class="search-field search-field-time">
+          <label class="search-label">时间</label>
+          <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
+        </div>
 
-        <!-- 时间 - 内容很多（日期范围选择器），需要很宽 -->
-        <el-col :xs="24" :sm="18" :md="20" :lg="20" :xl="20">
-          <div class="search-field">
-            <label class="search-label">时间</label>
-            <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
-          </div>
-        </el-col>
-      </el-row>
+        <!-- 搜索按钮 -->
+        <div class="search-button-field">
+          <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+        </div>
 
-      <!-- 相似搜索：单独一行，避免挤压导致不齐 -->
-      <el-row :gutter="8" align="middle">
-        <el-col :span="24">
-          <div class="search-field">
-            <label class="search-label">相似</label>
-            <div class="phash-form-row">
-              <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
-              <div class="phash-mode">
-                <el-check-tag :checked="queryParams.phashMode === 'range'" @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
-                <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
-                  <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary" @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
-                </el-tooltip>
-              </div>
-              <div class="phash-actions">
-                <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
-                <el-button @click="clearPhashSearch">清空</el-button>
-              </div>
+        <!-- 相似搜索 -->
+        <div class="search-field">
+          <label class="search-label">相似</label>
+          <div class="phash-form-row">
+            <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
+            <div class="phash-mode">
+              <el-check-tag :checked="queryParams.phashMode === 'range'" @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
+              <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+                <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary" @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
+              </el-tooltip>
+            </div>
+            <div class="phash-actions">
+              <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
+              <el-button @click="clearPhashSearch">清空</el-button>
             </div>
           </div>
-        </el-col>
-      </el-row>
+        </div>
 
-      <!-- 操作按钮：单独一行，统一对齐 -->
-      <el-row :gutter="8" align="middle">
-        <el-col :span="24" class="search-actions-col">
-          <div class="search-actions">
-            <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-            <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
-            <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-            <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
-            <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
-            <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
-          </div>
-        </el-col>
-      </el-row>
+        <!-- 操作按钮 -->
+        <div class=" search-field-actions">
+          <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+          <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
+          <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+          <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
+          <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
+          <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+        </div>
+      </div>
     </div>
     <div v-if="isMobile" class="flex pb-4 justify-end">
       <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
@@ -4912,10 +4880,6 @@ async function handleUrlUpload() {
   min-width: 180px; /* 确保输入框和选择器有足够宽度显示 placeholder */
 }
 .search-field .el-button {
-  min-width: 80px; /* 按钮保持最小宽度 */
-}
-.search-field .el-button {
-  min-width: 80px; /* 按钮保持最小宽度 */
   white-space: nowrap;
 }
 
@@ -4930,6 +4894,79 @@ async function handleUrlUpload() {
 .search-bar-form :deep(.el-switch) {
   width: auto; /* switch 不要被拉伸占满，避免看起来不齐 */
 }
+/* 搜索表单容器 - Flex布局 */
+.search-form-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start; /* 顶部对齐 */
+  justify-content: flex-start;
+  gap: 12px 16px; /* 恢复合适的间距 */
+  margin-bottom: 16px;
+}
+
+.search-form-container .search-field {
+  flex-shrink: 0;
+  /* 使用默认宽度，让内容自然决定大小 */
+}
+
+.search-button-field {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.similar-search-row {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.phash-input-section {
+  flex: 1;
+}
+
+.phash-input-section .search-field-similar {
+  width: 100%;
+}
+
+.phash-input-section .phash-form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.phash-input-section .phash-mode {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.phash-input-section .el-input {
+  min-width: 200px;
+  flex: 1;
+  max-width: 300px;
+}
+
+.phash-actions-section {
+  flex-shrink: 0;
+}
+
+.phash-actions-section .phash-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.phash-actions-section .el-button {
+  white-space: nowrap;
+}
+
+/* 移除按钮字段的特定宽度限制 */
+
+
 /* 搜索区域允许换行 */
 .search-bar .el-row {
   flex-wrap: wrap !important; /* 强制允许换行，避免挤压 */
