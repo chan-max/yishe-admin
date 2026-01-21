@@ -1,61 +1,7 @@
 <template>
   <div>
-    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮（可折叠） -->
-    <!-- 折叠状态：显示常用搜索和操作 -->
-    <div v-show="actionsCollapsed && !isMobile" class="search-bar">
-      <!-- 折叠态：搜索 + 按钮 + 随机，左对齐布局 -->
-      <el-row :gutter="8" align="middle">
-        <el-col :xs="24" :sm="19" :md="19" :lg="20" :xl="20">
-          <div class="search-field">
-            <label class="search-label">搜索</label>
-            <el-input
-              v-model="queryParams.searchText"
-              placeholder="请输入名称、描述或关键词"
-              clearable
-              @change="(val) => { if (!val) getList() }"
-              @keyup.enter="getList"
-            />
-          </div>
-        </el-col>
-
-        <el-col :xs="24" :sm="3" :md="3" :lg="2" :xl="2">
-          <div class="search-field">
-            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-          </div>
-        </el-col>
-
-        <el-col :xs="24" :sm="2" :md="2" :lg="2" :xl="2">
-          <div class="search-field">
-            <label class="search-label">随机</label>
-            <el-switch
-              v-model="queryParams.random"
-              active-text=""
-              inactive-text=""
-              size="small"
-              @change="getList"
-            />
-          </div>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="8" align="middle">
-        <el-col :span="24" class="search-actions-col">
-          <div class="search-actions">
-            <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-            <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-            <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">
-              批量删除({{ ids.length }})
-            </el-button>
-            <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-              展开筛选
-            </el-button>
-          </div>
-        </el-col>
-      </el-row>
-    </div>
-
-    <!-- 展开状态：显示全部搜索功能 -->
-    <div v-show="!actionsCollapsed && !isMobile" class="search-bar">
+    <!-- PC端显示搜索栏，移动端使用筛选对话框 -->
+    <div v-show="!isMobile" class="search-bar">
       <!-- 所有搜索字段在一行，自动换行 -->
       <el-row :gutter="8" align="middle">
         <!-- 搜索 - 内容较多，需要较宽 -->
@@ -257,12 +203,11 @@
             <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
             <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
             <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
-            <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">收起筛选</el-button>
           </div>
         </el-col>
       </el-row>
     </div>
-    <div v-if="isMobile && !actionsCollapsed" class="flex pb-4 justify-end">
+    <div v-if="isMobile" class="flex pb-4 justify-end">
       <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
     </div>
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
@@ -2307,8 +2252,7 @@ const rules = {
 const designModelModalVisible = ref(false)
 const filterDialogVisible = ref(false)
 const isMobile = ref(false)
-// 使用 localStorage 记住折叠状态，刷新后仍保持
-const actionsCollapsed = useLocalStorage('material_filter_collapsed', true)
+// 不再需要折叠状态，所有搜索字段始终显示
 
 // PS 套图制作
 const psdSetDialogVisible = ref(false)
@@ -3874,8 +3818,6 @@ async function handleFindSimilar(row) {
   // 精确匹配更快，行内查找优先用精确模式；可根据需要再切换
   queryParams.phashMode = 'exact';
   await getList();
-  // 如果处于折叠状态，自动展开便于查看结果和输入框
-  actionsCollapsed.value = false;
 }
 
 
