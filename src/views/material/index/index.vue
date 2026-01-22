@@ -1778,18 +1778,35 @@
     <el-dialog
       v-model="aiGenDialogVisible"
       title="AI自动生成内容"
-      width="500px"
+      width="600px"
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
-      <el-input
-        v-model="aiGenPrompt"
-        type="textarea"
-        :rows="6"
-        placeholder="如：请用艺术化语言描述图片内容..."
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
-      />
+      <div class="ai-gen-form">
+        <div class="form-section">
+          <label class="section-label">原始信息（可选）</label>
+          <div class="section-desc">粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容</div>
+          <el-input
+            v-model="aiGenerateRawInfo"
+            type="textarea"
+            :rows="4"
+            placeholder="如：网页上关于这张图片的描述、产品介绍等..."
+            style="font-size:14px;min-height:100px;width:100%;resize:vertical;"
+          />
+        </div>
+
+        <div class="form-section">
+          <label class="section-label">分析风格（可选）</label>
+          <div class="section-desc">请输入你希望AI分析的内容风格或角度</div>
+          <el-input
+            v-model="aiGenPrompt"
+            type="textarea"
+            :rows="4"
+            placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
+            style="font-size:14px;min-height:100px;width:100%;resize:vertical;"
+          />
+        </div>
+      </div>
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
@@ -3729,6 +3746,7 @@ function singleFileUploaded() {
 
 const aiGenDialogVisible = ref(false)
 const aiGenPrompt = ref('')
+const aiGenerateRawInfo = ref('')
 const aiGenDialogLoading = ref(false)
 let aiGenRow = null
 
@@ -3754,6 +3772,7 @@ function onAiTableAutoGenerate(row) {
   if (aiTableLoading.value[row.id]) return
   aiGenRow = row
   aiGenPrompt.value = ''
+  aiGenerateRawInfo.value = ''
   aiGenDialogVisible.value = true
 }
 
@@ -3767,7 +3786,7 @@ async function submitAiGenDialog() {
       aiGenDialogLoading.value = false
       aiGenDialogVisible.value = false
       aiGenRow = null
-    }, aiGenPrompt.value)
+    }, aiGenPrompt.value, aiGenerateRawInfo.value)
   } catch (e) {
     aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: false }
     aiGenDialogLoading.value = false
@@ -3776,11 +3795,12 @@ async function submitAiGenDialog() {
   }
 }
 
-async function handleAiAutoGenerate(row, cb, prompt) {
+async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
   try {
     const res = await aiAutoGenerateMaterialInfo({
       id: row.id,
-      prompt: prompt || ''
+      prompt: prompt || '',
+      aiGenerateRawInfo: aiGenerateRawInfo || ''
     })
     // 更新行数据 - 兼容不同的返回结构
     const resultData = res?.data || res
@@ -4022,9 +4042,28 @@ async function handleGenerateImageInfo(row) {
     ElMessage.error('图片无有效链接，无法生成图片信息');
     return;
   }
+
+  // 弹出对话框让用户输入AI分析的原始信息
+  const { value: aiGenerateRawInfo } = await ElMessageBox.prompt(
+    '请输入AI分析时使用的原始信息（可选）',
+    '生成图片信息',
+    {
+      confirmButtonText: '生成',
+      cancelButtonText: '跳过',
+      inputType: 'textarea',
+      inputPlaceholder: '粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容...',
+      inputPattern: /.*/,
+      inputErrorMessage: '',
+      customClass: 'ai-generate-raw-info-dialog'
+    }
+  ).catch(() => ({ value: '' })); // 用户取消时返回空字符串
+
   try {
     aiTableLoading.value = { ...aiTableLoading.value, [row.id]: true };
-    const res = await generateImageInfo({ id: row.id });
+    const res = await generateImageInfo({
+      id: row.id,
+      aiGenerateRawInfo: aiGenerateRawInfo || undefined
+    });
     if (res) {
       // 更新行数据 - 直接更新 dataSource 中对应的行
       const index = dataSource.value.findIndex(item => String(item.id) === String(row.id));
@@ -6499,3 +6538,53 @@ h1 {
     }
   }
   </style>
+
+<style lang="less">
+.ai-generate-raw-info-dialog {
+  :deep(.el-messagebox__message) {
+    margin: 10px 0 20px 0;
+  }
+
+  :deep(.el-textarea) {
+    width: 100%;
+
+    .el-textarea__inner {
+      min-height: 120px;
+      resize: vertical;
+    }
+  }
+}
+
+.ai-gen-form {
+  .form-section {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-label {
+      display: block;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .section-desc {
+      color: var(--el-text-color-regular);
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+
+    :deep(.el-textarea) {
+      .el-textarea__inner {
+        min-height: 100px;
+        resize: vertical;
+        font-family: inherit;
+      }
+    }
+  }
+}
+</style>
