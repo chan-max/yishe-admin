@@ -95,21 +95,6 @@
           @clear="handleSearch"
         />
       </form-item>
-      <form-item label="社交媒体发布状态">
-        <el-select
-          v-model="queryParams.mediaPublishStatus"
-          clearable
-          placeholder="全部"
-          style="width: 160px"
-          @change="handleSearch"
-        >
-          <el-option label="全部" value="" />
-          <el-option label="待发布" value="pending" />
-          <el-option label="发布中" value="publishing" />
-          <el-option label="成功" value="success" />
-          <el-option label="失败" value="failed" />
-        </el-select>
-      </form-item>
       <form-item label="随机顺序">
         <el-switch
           v-model="queryParams.random"
@@ -188,24 +173,6 @@
                   <el-icon><Delete /></el-icon>
                   <span>删除</span>
                 </el-dropdown-item>
-                
-                <!-- 社交媒体发布状态 -->
-                <el-dropdown-item divided command="mark-pending">
-                  <el-icon><Upload /></el-icon>
-                  <span>社交媒体发布状态：待发布</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-publishing">
-                  <el-icon><Refresh /></el-icon>
-                  <span>社交媒体发布状态：发布中</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-success">
-                  <el-icon><Share /></el-icon>
-                  <span>社交媒体发布状态：成功</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-failed">
-                  <el-icon><Delete /></el-icon>
-                  <span>社交媒体发布状态：失败</span>
-                </el-dropdown-item>
 
                 <!-- 发布状态标记 -->
                 <el-dropdown-item divided command="mark-published">
@@ -239,7 +206,11 @@
                 </el-dropdown-item>
                 <el-dropdown-item command="publish-to-queue">
                   <el-icon><Share /></el-icon>
-                  <span>发布到社交媒体（队列）</span>
+                  <span>发布到平台（队列）</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="view-publish-tasks">
+                  <el-icon><View /></el-icon>
+                  <span>查看发布详情</span>
                 </el-dropdown-item>
                 <el-dropdown-item 
                   v-if="row.psdSetId"
@@ -317,12 +288,6 @@
             </el-carousel>
             <span v-else class="text-gray-400">暂无视频</span>
           </div>
-        </template>
-
-        <template #mediaPublishStatusSlot="{ row }">
-          <el-tag :type="row.mediaPublishStatus === 'success' ? 'success' : (row.mediaPublishStatus === 'publishing' ? 'warning' : (row.mediaPublishStatus === 'failed' ? 'danger' : 'info'))" size="small">
-            {{ row.mediaPublishStatus === 'success' ? '成功' : row.mediaPublishStatus === 'publishing' ? '发布中' : row.mediaPublishStatus === 'failed' ? '失败' : '待发布' }}
-          </el-tag>
         </template>
 
         <template #idSlot="{ row }">
@@ -1583,17 +1548,6 @@
               </div>
             </div>
             <div class="product-info-item">
-              <div class="product-info-label">社交媒体发布状态</div>
-              <div class="product-info-value">
-                <el-tag 
-                  :type="productDetail.mediaPublishStatus === 'success' ? 'success' : (productDetail.mediaPublishStatus === 'publishing' ? 'warning' : (productDetail.mediaPublishStatus === 'failed' ? 'danger' : 'info'))" 
-                  size="small"
-                >
-                  {{ productDetail.mediaPublishStatus === 'success' ? '成功' : productDetail.mediaPublishStatus === 'publishing' ? '发布中' : productDetail.mediaPublishStatus === 'failed' ? '失败' : '待发布' }}
-                </el-tag>
-              </div>
-            </div>
-            <div class="product-info-item">
               <div class="product-info-label">商品描述</div>
               <div class="product-info-value">{{ productDetail.description || '未设置' }}</div>
             </div>
@@ -1826,6 +1780,105 @@
         <el-button @click="productDetailVisible = false">关闭</el-button>
       </template>
     </el-dialog>
+
+    <!-- 发布详情对话框 -->
+    <el-dialog
+      v-model="publishTasksVisible"
+      :title="`发布详情 - ${currentProductForTasks?.name || currentProductForTasks?.id || ''}`"
+      width="80%"
+      :close-on-click-modal="true"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div v-loading="publishTasksLoading" class="publish-tasks-container">
+        <div v-if="publishTasks.length === 0 && !publishTasksLoading" class="empty-state text-center py-8">
+          <el-empty description="暂无发布任务" />
+        </div>
+        <vxe-grid
+          v-else
+          :data="publishTasks"
+          :columns="publishTasksColumns"
+          border
+          stripe
+          size="small"
+          :show-header="true"
+          :show-overflow="true"
+          height="500"
+          class="publish-tasks-grid"
+        >
+          <template #platformSlot="{ row }">
+            {{ formatPlatformName(row.platform) }}
+          </template>
+          <template #statusSlot="{ row }">
+            <el-tag :type="formatTaskStatus(row.status).type" size="small">
+              {{ formatTaskStatus(row.status).label }}
+            </el-tag>
+          </template>
+          <template #attemptsSlot="{ row }">
+            {{ row.attempts || 0 }} / {{ row.maxAttempts || 3 }}
+          </template>
+          <template #createdAtSlot="{ row }">
+            {{ formatTimestamp(row.createdAt) }}
+          </template>
+          <template #updatedAtSlot="{ row }">
+            {{ formatTimestamp(row.updatedAt) }}
+          </template>
+          <template #processedAtSlot="{ row }">
+            {{ row.processedAt ? formatTimestamp(row.processedAt) : '-' }}
+          </template>
+          <template #errorSlot="{ row }">
+            <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+        </vxe-grid>
+      </div>
+      <template #footer>
+        <el-button @click="publishTasksVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 发布平台选择对话框 -->
+    <el-dialog
+      v-model="publishPlatformDialogVisible"
+      title="选择发布平台"
+      width="700px"
+      :close-on-click-modal="true"
+      align-center
+    >
+      <div class="platform-select-container">
+        <div class="mb-4 text-gray-600">
+          请选择要发布的平台（可多选）：
+        </div>
+        <el-checkbox-group v-model="publishQueueSelectedPlatforms" class="platform-checkbox-group">
+          <el-checkbox
+            v-for="platform in publishPlatforms"
+            :key="platform.value"
+            :label="platform.value"
+            class="platform-checkbox-item"
+          >
+            <div class="platform-item-content">
+              <span class="platform-icon" :style="{ backgroundColor: platform.color + '15' }">
+                {{ platform.icon }}
+              </span>
+              <span class="platform-label">{{ platform.label }}</span>
+            </div>
+          </el-checkbox>
+        </el-checkbox-group>
+        <div v-if="publishQueueSelectedPlatforms.length > 0" class="mt-4 text-sm text-gray-500">
+          已选择 {{ publishQueueSelectedPlatforms.length }} 个平台：{{ publishQueueSelectedPlatforms.map(p => formatPlatformName(p)).join('、') }}
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          @click="confirmPublishToPlatforms"
+          :disabled="publishQueueSelectedPlatforms.length === 0"
+        >
+          确认发布
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -1867,7 +1920,7 @@ import {
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, updatePublishStatus, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport } from "@/api/product";
+import { createProduct, getProductList, updateProduct, updatePublishStatus, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport, getProductPublishTasks } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import request from "@/config/axios";
 import { uploadOSSFile } from "@/api/shop/platform";
@@ -1898,7 +1951,6 @@ const queryParams = reactive({
   searchText: '',
   search: '',
   isPublish: undefined as boolean | undefined,
-  mediaPublishStatus: '' as string | '',
   random: false,
   startTime: '',
   endTime: ''
@@ -1958,11 +2010,12 @@ const baseColumns = [
     slots: { default: 'keywordsSlot' }
   },
   { 
-    title: "产品代码", 
-    field: "code", 
-    width: 120, 
-    showOverflow: true,
-    slots: { default: 'codeSlot' }
+    title: "搜索关键字", 
+    field: "searchKeywords", 
+    minWidth: 300, 
+    width: 300,
+    showOverflow: false,
+    slots: { header: 'searchKeywordsHeader', default: 'searchKeywordsSlot' }
   },
 ];
 
@@ -1982,27 +2035,18 @@ const gridColumns = computed(() => {
   }
   columns.push(
     { 
-      title: "搜索关键字", 
-      field: "searchKeywords", 
-      minWidth: 300, 
-      width: 300,
-      showOverflow: false,
-      slots: { header: 'searchKeywordsHeader', default: 'searchKeywordsSlot' }
+      title: "产品代码", 
+      field: "code", 
+      width: 120, 
+      showOverflow: true,
+      slots: { default: 'codeSlot' }
     },
-
     { 
       title: "商品类型", 
       field: "type", 
       width: 140, 
       showOverflow: true,
       slots: { default: 'typeSlot' }
-    },
-    { 
-      title: "社交媒体发布状态", 
-      field: "mediaPublishStatus", 
-      width: 140, 
-      showOverflow: true,
-      slots: { default: 'mediaPublishStatusSlot' }
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
@@ -2705,9 +2749,6 @@ async function getList() {
   if (queryParams.isPublish !== undefined) {
     params.isPublish = queryParams.isPublish;
   }
-  if (queryParams.mediaPublishStatus) {
-    params.mediaPublishStatus = queryParams.mediaPublishStatus;
-  }
   // 时间范围筛选
   if (queryParams.startTime) {
     params.startTime = queryParams.startTime;
@@ -2740,7 +2781,6 @@ const resetQuery = () => {
   queryParams.searchText = '';
   queryParams.search = '';
   queryParams.isPublish = undefined;
-  queryParams.mediaPublishStatus = '';
   queryParams.random = false;
    queryParams.startTime = '';
    queryParams.endTime = '';
@@ -3255,20 +3295,11 @@ function handleOperationCommand(command: string, row: any) {
     case 'export-social-media':
       handleSocialMediaExport(row);
       break;
-    case 'mark-pending':
-      handleUpdateMediaPublishStatus(row, 'pending');
-      break;
-    case 'mark-publishing':
-      handleUpdateMediaPublishStatus(row, 'publishing');
-      break;
-    case 'mark-success':
-      handleUpdateMediaPublishStatus(row, 'success');
-      break;
-    case 'mark-failed':
-      handleUpdateMediaPublishStatus(row, 'failed');
-      break;
     case 'publish-to-queue':
       handlePublishToQueue(row);
+      break;
+    case 'view-publish-tasks':
+      handleViewPublishTasks(row);
       break;
     default:
       console.warn('未知的操作命令:', command);
@@ -3736,19 +3767,6 @@ async function copySourceInfo() {
   }
 }
 
-async function handleUpdateMediaPublishStatus(row: any, status: string) {
-  try {
-    await updateProduct({
-      ...row,
-      mediaPublishStatus: status
-    });
-    ElMessage.success('社交媒体发布状态已更新');
-    getList();
-  } catch (e) {
-    ElMessage.error('更新社交媒体发布状态失败');
-  }
-}
-
 async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
   try {
     await updatePublishStatus({
@@ -3762,46 +3780,144 @@ async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
   }
 }
 
-// 发布到社交媒体队列
+// 发布平台选项
+const publishPlatforms = [
+  { label: '抖音', value: 'douyin', icon: '🎵', color: '#000000' },
+  { label: '小红书', value: 'xiaohongshu', icon: '📕', color: '#FF2442' },
+  { label: '微博', value: 'weibo', icon: '📱', color: '#E6162D' },
+  { label: '快手', value: 'kuaishou', icon: '⚡', color: '#FF6600' },
+  { label: 'B站', value: 'bilibili', icon: '📺', color: '#FB7299' },
+  { label: '知乎', value: 'zhihu', icon: '💡', color: '#0084FF' },
+];
+
+// 格式化平台名称
+function formatPlatformName(platform: string) {
+  const platformMap: Record<string, string> = {
+    douyin: '抖音',
+    xiaohongshu: '小红书',
+    weibo: '微博',
+    kuaishou: '快手',
+    bilibili: 'B站',
+    zhihu: '知乎',
+  };
+  return platformMap[platform] || platform;
+}
+
+// 发布平台选择对话框
+const publishPlatformDialogVisible = ref(false);
+const publishQueueSelectedPlatforms = ref<string[]>([]);
+const currentPublishProduct = ref<any>(null);
+
+// 发布到平台队列
 async function handlePublishToQueue(row: any) {
   if (!row?.id) {
     return ElMessage.warning('商品ID不存在');
   }
   
+  currentPublishProduct.value = row;
+  publishQueueSelectedPlatforms.value = [];
+  publishPlatformDialogVisible.value = true;
+}
+
+// 确认发布到选中的平台
+async function confirmPublishToPlatforms() {
+  if (!currentPublishProduct.value?.id) {
+    return ElMessage.warning('商品ID不存在');
+  }
+  
+  if (publishQueueSelectedPlatforms.value.length === 0) {
+    return ElMessage.warning('请至少选择一个平台');
+  }
+
+  const row = currentPublishProduct.value;
+  const platforms = publishQueueSelectedPlatforms.value;
+
   try {
-    await ElMessageBox.confirm(
-      `确认将商品"${row.name || row.id}"添加到社交媒体发布队列？`,
-      '发布到社交媒体队列',
-      {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'info',
-      }
-    );
-    
-    // 创建队列任务 - 只传递任务类型，后端会自动使用 type 作为 queue
-    // 这样查询时只需要根据 type 查询即可
-    const taskData: CreateTaskDto = {
-      type: 'publish-product-to-social-media',  // 任务类型（作为唯一标识，后端会自动使用它作为 queue）
+    // 为每个平台创建一个单独的任务
+    const tasks = platforms.map(platform => ({
+      type: 'publish-product-to-social-media',
       data: {
         productId: row.id,
+        platform: platform,
       },
-    };
+      description: `发布商品"${row.name || row.id}"到${formatPlatformName(platform)}平台`,
+      metadata: {
+        platform: platform,
+        productId: row.id,
+        productName: row.name,
+      },
+    }));
+
+    // 批量创建任务
+    const results = await Promise.all(
+      tasks.map(task => createTask(task))
+    );
+
+    const successCount = results.filter(r => r && r.messageId).length;
     
-    const res = await createTask(taskData);
+    publishPlatformDialogVisible.value = false;
     
-    if (res && res.messageId) {
-      ElMessage.success('任务已创建成功，已添加到发布队列');
+    if (successCount === platforms.length) {
+      ElMessage.success(`成功创建 ${successCount} 个发布任务，已添加到发布队列`);
     } else {
-      ElMessage.success('任务已创建成功');
+      ElMessage.warning(`成功创建 ${successCount}/${platforms.length} 个发布任务`);
     }
   } catch (error: any) {
-    if (error !== 'cancel') {
-      console.error('创建发布任务失败:', error);
-      ElMessage.error(error?.message || '创建发布任务失败');
-    }
+    console.error('创建发布任务失败:', error);
+    ElMessage.error(error?.message || '创建发布任务失败');
   }
 }
+
+// 查看发布详情
+const publishTasksVisible = ref(false);
+const publishTasks = ref<any[]>([]);
+const currentProductForTasks = ref<any>(null);
+const publishTasksLoading = ref(false);
+
+// 发布任务列表列配置
+const publishTasksColumns = [
+  { field: 'platform', title: '平台', width: 120, slots: { default: 'platformSlot' } },
+  { field: 'status', title: '状态', width: 120, slots: { default: 'statusSlot' } },
+  { field: 'description', title: '描述', minWidth: 200, showOverflow: true },
+  { field: 'attempts', title: '重试次数', width: 120, slots: { default: 'attemptsSlot' } },
+  { field: 'createdAt', title: '创建时间', width: 180, slots: { default: 'createdAtSlot' } },
+  { field: 'updatedAt', title: '更新时间', width: 180, slots: { default: 'updatedAtSlot' } },
+  { field: 'processedAt', title: '完成时间', width: 180, slots: { default: 'processedAtSlot' } },
+  { field: 'error', title: '错误信息', minWidth: 200, showOverflow: true, slots: { default: 'errorSlot' } },
+];
+
+async function handleViewPublishTasks(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning('商品ID不存在');
+  }
+  
+  currentProductForTasks.value = row;
+  publishTasksVisible.value = true;
+  publishTasksLoading.value = true;
+  
+  try {
+    const res = await getProductPublishTasks(row.id);
+    publishTasks.value = res || [];
+  } catch (error: any) {
+    console.error('获取发布任务列表失败:', error);
+    ElMessage.error(error?.message || '获取发布任务列表失败');
+    publishTasks.value = [];
+  } finally {
+    publishTasksLoading.value = false;
+  }
+}
+
+// 格式化任务状态
+function formatTaskStatus(status: string) {
+  const statusMap: Record<string, { label: string; type: string }> = {
+    pending: { label: '待处理', type: 'info' },
+    processing: { label: '处理中', type: 'warning' },
+    completed: { label: '已完成', type: 'success' },
+    failed: { label: '失败', type: 'danger' },
+  };
+  return statusMap[status] || { label: status, type: 'info' };
+}
+
 </script>
 
 <style lang="less">
@@ -4668,6 +4784,102 @@ async function handlePublishToQueue(row: any) {
     .el-icon {
       font-size: 18px;
       color: var(--el-color-primary);
+    }
+  }
+
+  // 发布平台选择对话框样式
+  .platform-select-container {
+    padding: 8px 0;
+  }
+
+  .platform-checkbox-group {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .platform-checkbox-item {
+    margin: 0;
+    height: auto;
+    
+    :deep(.el-checkbox__input) {
+      display: none;
+    }
+    
+    :deep(.el-checkbox__label) {
+      padding: 0;
+      width: 100%;
+    }
+    
+    .platform-item-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 20px;
+      border: 2px solid var(--el-border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      background-color: var(--el-bg-color);
+      min-width: 100px;
+      gap: 8px;
+      
+      &:hover {
+        border-color: var(--el-color-primary);
+        background-color: var(--el-color-primary-light-9);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    &.is-checked {
+      .platform-item-content {
+        border-color: var(--el-color-primary);
+        background-color: var(--el-color-primary-light-9);
+        box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
+      }
+    }
+    
+    .platform-icon {
+      font-size: 32px;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      margin-bottom: 4px;
+    }
+    
+    .platform-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--el-text-color-primary);
+    }
+  }
+
+  // 发布任务列表样式
+  .publish-tasks-container {
+    min-height: 500px;
+  }
+
+  .publish-tasks-grid {
+    min-height: 500px;
+    
+    :deep(.vxe-table) {
+      .vxe-table--header {
+        background-color: var(--el-bg-color-page);
+      }
+      
+      .vxe-table--body {
+        .vxe-body--row {
+          &:hover {
+            background-color: var(--el-fill-color-light);
+          }
+        }
+      }
     }
   }
 }

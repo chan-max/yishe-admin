@@ -107,3 +107,11 @@ export function getProductSocialMediaExport(id: string) {
     method: 'get',
   });
 }
+
+// 获取商品的发布任务列表
+export function getProductPublishTasks(id: string) {
+  return request.get({
+    url: `/product/publish-tasks/${id}`,
+    method: 'get',
+  });
+}
