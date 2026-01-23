@@ -190,7 +190,7 @@
         </div>
 
         <!-- 操作按钮 -->
-        <div class=" search-field-actions">
+        <div class="search-field-actions">
           <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
           <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
           <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
@@ -2365,7 +2365,7 @@ const psdSetTaskCount = computed(() =>
 )
 
 // PSD制作套图允许的图片格式（固定为这三个）
-const psdSetAllowedFormats = ['jpg', 'png', 'jpeg']
+const psdSetAllowedFormats = ['jpg', 'png', 'jpeg','svg']
 
 // 获取当前选中PSD模板的允许格式
 const allowedFormatsForSelectedTemplates = computed(() => {
@@ -4952,6 +4952,14 @@ async function handleUrlUpload() {
   flex-shrink: 0;
   display: flex;
   align-items: flex-start;
+}
+
+.search-field-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .similar-search-row {
