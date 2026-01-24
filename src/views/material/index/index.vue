@@ -87,6 +87,16 @@
           </el-select>
         </div>
 
+        <!-- 抠图 -->
+        <div class="search-field">
+          <label class="search-label">抠图</label>
+          <el-select v-model="queryParams.isCutout" placeholder="抠图" clearable @change="getList">
+            <el-option label="全部" :value="null" />
+            <el-option label="是" :value="true" />
+            <el-option label="否" :value="false" />
+          </el-select>
+        </div>
+
         <!-- 尺寸 -->
         <div class="search-field">
           <label class="search-label">尺寸</label>
@@ -235,6 +245,13 @@
             <el-option label="全部" :value="null" />
             <el-option label="侵权" :value="true" />
             <el-option label="非侵权" :value="false" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="抠图素材">
+          <el-select v-model="queryParams.isCutout" placeholder="请选择类型">
+            <el-option label="全部" :value="null" />
+            <el-option label="是" :value="true" />
+            <el-option label="否" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="尺寸形状">
@@ -840,141 +857,132 @@
               </div>
             </template>
 
-            <template #nameTextSlot="{ row }">
-              <div
-                class="text-cell"
-                :class="{ 'text-cell--empty': !row.name }"
-                @click.stop="handleCopyText(row.name, '中文标题')"
-                role="button"
-              >
-                <el-tooltip
-                  :content="row.name || '-'"
-                  placement="top"
-                  :disabled="!(row.name && row.name.length > 0)"
-                  popper-class="text-cell-tooltip"
+            <template #nameBilingualSlot="{ row }">
+              <div class="bilingual-cell">
+                <div
+                  class="bilingual-cell__item"
+                  :class="{ 'bilingual-cell__item--empty': !row.name }"
+                  @click.stop="handleCopyText(row.name, '中文名称')"
+                  role="button"
                 >
-                  <div class="text-cell__content">
-                    {{ row.name || '-' }}
-                  </div>
-                </el-tooltip>
-                <el-icon v-if="row.name" class="text-cell__icon">
-                  <DocumentCopy />
-                </el-icon>
+                  <span class="bilingual-cell__label">中：</span>
+                  <el-tooltip
+                    :content="row.name || '-'"
+                    placement="top"
+                    :disabled="!(row.name && row.name.length > 0)"
+                    popper-class="text-cell-tooltip"
+                  >
+                    <span class="bilingual-cell__content">{{ row.name || '-' }}</span>
+                  </el-tooltip>
+                  <el-icon v-if="row.name" class="bilingual-cell__icon">
+                    <DocumentCopy />
+                  </el-icon>
+                </div>
+                <div
+                  class="bilingual-cell__item bilingual-cell__item--en"
+                  :class="{ 'bilingual-cell__item--empty': !row.nameEn }"
+                  @click.stop="handleCopyText(row.nameEn, '英文名称')"
+                  role="button"
+                >
+                  <span class="bilingual-cell__label">En:</span>
+                  <el-tooltip
+                    :content="row.nameEn || '-'"
+                    placement="top"
+                    :disabled="!(row.nameEn && row.nameEn.length > 0)"
+                    popper-class="text-cell-tooltip"
+                  >
+                    <span class="bilingual-cell__content">{{ row.nameEn || '-' }}</span>
+                  </el-tooltip>
+                  <el-icon v-if="row.nameEn" class="bilingual-cell__icon">
+                    <DocumentCopy />
+                  </el-icon>
+                </div>
               </div>
             </template>
 
-            <template #nameEnTextSlot="{ row }">
-              <div
-                class="text-cell"
-                :class="{ 'text-cell--empty': !row.nameEn }"
-                @click.stop="handleCopyText(row.nameEn, '英文标题')"
-                role="button"
-              >
-                <el-tooltip
-                  :content="row.nameEn || '-'"
-                  placement="top"
-                  :disabled="!(row.nameEn && row.nameEn.length > 0)"
-                  popper-class="text-cell-tooltip"
+            <template #descriptionBilingualSlot="{ row }">
+              <div class="bilingual-cell">
+                <div
+                  class="bilingual-cell__item"
+                  :class="{ 'bilingual-cell__item--empty': !row.description }"
+                  @click.stop="handleCopyText(row.description, '中文描述')"
+                  role="button"
                 >
-                  <div class="text-cell__content">
-                    {{ row.nameEn || '-' }}
-                  </div>
-                </el-tooltip>
-                <el-icon v-if="row.nameEn" class="text-cell__icon">
-                  <DocumentCopy />
-                </el-icon>
+                  <span class="bilingual-cell__label">中：</span>
+                  <el-tooltip
+                    :content="row.description || '-'"
+                    placement="top"
+                    :disabled="!(row.description && row.description.length > 0)"
+                    popper-class="text-cell-tooltip"
+                  >
+                    <span class="bilingual-cell__content">{{ row.description || '-' }}</span>
+                  </el-tooltip>
+                  <el-icon v-if="row.description" class="bilingual-cell__icon">
+                    <DocumentCopy />
+                  </el-icon>
+                </div>
+                <div
+                  class="bilingual-cell__item bilingual-cell__item--en"
+                  :class="{ 'bilingual-cell__item--empty': !row.descriptionEn }"
+                  @click.stop="handleCopyText(row.descriptionEn, '英文描述')"
+                  role="button"
+                >
+                  <span class="bilingual-cell__label">En:</span>
+                  <el-tooltip
+                    :content="row.descriptionEn || '-'"
+                    placement="top"
+                    :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
+                    popper-class="text-cell-tooltip"
+                  >
+                    <span class="bilingual-cell__content">{{ row.descriptionEn || '-' }}</span>
+                  </el-tooltip>
+                  <el-icon v-if="row.descriptionEn" class="bilingual-cell__icon">
+                    <DocumentCopy />
+                  </el-icon>
+                </div>
               </div>
             </template>
 
-            <template #descriptionTextSlot="{ row }">
-              <div
-                class="text-cell text-cell--long"
-                :class="{ 'text-cell--empty': !row.description }"
-                @click.stop="handleCopyText(row.description, '中文描述')"
-                role="button"
-              >
-                <el-tooltip
-                  :content="row.description || '-'"
-                  placement="top"
-                  :disabled="!(row.description && row.description.length > 0)"
-                  popper-class="text-cell-tooltip"
+            <template #keywordsBilingualSlot="{ row }">
+              <div class="bilingual-cell">
+                <div
+                  class="bilingual-cell__item"
+                  :class="{ 'bilingual-cell__item--empty': !row.keywords }"
+                  @click.stop="handleCopyText(row.keywords, '中文关键词')"
+                  role="button"
                 >
-                  <div class="text-cell__content">
-                    {{ row.description || '-' }}
-                  </div>
-                </el-tooltip>
-                <el-icon v-if="row.description" class="text-cell__icon">
-                  <DocumentCopy />
-                </el-icon>
-              </div>
-            </template>
-
-            <template #descriptionEnTextSlot="{ row }">
-              <div
-                class="text-cell text-cell--long"
-                :class="{ 'text-cell--empty': !row.descriptionEn }"
-                @click.stop="handleCopyText(row.descriptionEn, '英文描述')"
-                role="button"
-              >
-                <el-tooltip
-                  :content="row.descriptionEn || '-'"
-                  placement="top"
-                  :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
-                  popper-class="text-cell-tooltip"
+                  <span class="bilingual-cell__label">中：</span>
+                  <el-tooltip
+                    :content="row.keywords || '-'"
+                    placement="top"
+                    :disabled="!(row.keywords && row.keywords.length > 0)"
+                    popper-class="text-cell-tooltip"
+                  >
+                    <span class="bilingual-cell__content">{{ row.keywords || '-' }}</span>
+                  </el-tooltip>
+                  <el-icon v-if="row.keywords" class="bilingual-cell__icon">
+                    <DocumentCopy />
+                  </el-icon>
+                </div>
+                <div
+                  class="bilingual-cell__item bilingual-cell__item--en"
+                  :class="{ 'bilingual-cell__item--empty': !row.keywordsEn }"
+                  @click.stop="handleCopyText(row.keywordsEn, '英文关键词')"
+                  role="button"
                 >
-                  <div class="text-cell__content">
-                    {{ row.descriptionEn || '-' }}
-                  </div>
-                </el-tooltip>
-                <el-icon v-if="row.descriptionEn" class="text-cell__icon">
-                  <DocumentCopy />
-                </el-icon>
-              </div>
-            </template>
-
-            <template #keywordsTextSlot="{ row }">
-              <div
-                class="text-cell text-cell--long"
-                :class="{ 'text-cell--empty': !row.keywords }"
-                @click.stop="handleCopyText(row.keywords, '中文关键字')"
-                role="button"
-              >
-                <el-tooltip
-                  :content="row.keywords || '-'"
-                  placement="top"
-                  :disabled="!(row.keywords && row.keywords.length > 0)"
-                  popper-class="text-cell-tooltip"
-                >
-                  <div class="text-cell__content">
-                    {{ row.keywords || '-' }}
-                  </div>
-                </el-tooltip>
-                <el-icon v-if="row.keywords" class="text-cell__icon">
-                  <DocumentCopy />
-                </el-icon>
-              </div>
-            </template>
-
-            <template #keywordsEnTextSlot="{ row }">
-              <div
-                class="text-cell text-cell--long"
-                :class="{ 'text-cell--empty': !row.keywordsEn }"
-                @click.stop="handleCopyText(row.keywordsEn, '英文关键字')"
-                role="button"
-              >
-                <el-tooltip
-                  :content="row.keywordsEn || '-'"
-                  placement="top"
-                  :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)"
-                  popper-class="text-cell-tooltip"
-                >
-                  <div class="text-cell__content">
-                    {{ row.keywordsEn || '-' }}
-                  </div>
-                </el-tooltip>
-                <el-icon v-if="row.keywordsEn" class="text-cell__icon">
-                  <DocumentCopy />
-                </el-icon>
+                  <span class="bilingual-cell__label">En:</span>
+                  <el-tooltip
+                    :content="row.keywordsEn || '-'"
+                    placement="top"
+                    :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)"
+                    popper-class="text-cell-tooltip"
+                  >
+                    <span class="bilingual-cell__content">{{ row.keywordsEn || '-' }}</span>
+                  </el-tooltip>
+                  <el-icon v-if="row.keywordsEn" class="bilingual-cell__icon">
+                    <DocumentCopy />
+                  </el-icon>
+                </div>
               </div>
             </template>
 
@@ -1011,6 +1019,15 @@
                 size="small"
               >
                 {{ row.isInfringement ? '侵权' : '非侵权' }}
+              </el-tag>
+            </template>
+
+            <template #isCutoutSlot="{ row }">
+              <el-tag 
+                :type="row.isCutout ? 'success' : 'info'" 
+                size="small"
+              >
+                {{ row.isCutout ? '是' : '否' }}
               </el-tag>
             </template>
 
@@ -1670,6 +1687,18 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
+            <el-form-item label="抠图素材">
+              <el-switch
+                v-model="editForm.isCutout"
+                active-text="是"
+                inactive-text="否"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24">
+          <el-col :span="12">
             <el-form-item label="文件后缀">
               <el-input 
                 v-model="editForm.suffix" 
@@ -2022,6 +2051,7 @@ const queryParams = reactive({
   phashMode: 'range', // range | exact
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
+  isCutout: null, // 新增抠图素材过滤参数
   sizeShape: '', // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long
   random: false, // 是否随机
   folderId: null as string | null, // 文件夹ID
@@ -2072,12 +2102,9 @@ const gridOptions = computed(() => {
       width: 120,
       slots: { default: 'previewDefaultSlot' }
     },
-    { title: '图片名称', field: 'name', minWidth: 220, className: 'font-bold', slots: { default: 'nameTextSlot' } },
-    { title: '英文名称', field: 'nameEn', minWidth: 220, slots: { default: 'nameEnTextSlot' } },
-    { title: '描述', field: 'description', minWidth: 260, slots: { default: 'descriptionTextSlot' } },
-    { title: '英文描述', field: 'descriptionEn', minWidth: 260, slots: { default: 'descriptionEnTextSlot' } },
-    { title: '关键词', field: 'keywords', minWidth: 240, slots: { default: 'keywordsTextSlot' } },
-    { title: '英文关键词', field: 'keywordsEn', minWidth: 240, slots: { default: 'keywordsEnTextSlot' } },
+    { title: '名称（中/英）', field: 'name', minWidth: 280, className: 'font-bold', slots: { default: 'nameBilingualSlot' } },
+    { title: '描述（中/英）', field: 'description', minWidth: 320, slots: { default: 'descriptionBilingualSlot' } },
+    { title: '关键词（中/英）', field: 'keywords', minWidth: 280, slots: { default: 'keywordsBilingualSlot' } },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
     { 
       title: '文件尺寸', 
@@ -2114,6 +2141,12 @@ const gridOptions = computed(() => {
       field: 'isInfringement', 
       width: 100,
       slots: { default: 'isInfringementSlot' }
+    },
+    { 
+      title: '抠图', 
+      field: 'isCutout', 
+      width: 100,
+      slots: { default: 'isCutoutSlot' }
     },
     { 
       title: '文件夹', 
@@ -3861,6 +3894,7 @@ const editForm = ref({
   isPublic: false,
   isTexture: false,
   isInfringement: false, 
+  isCutout: false,
   originUrl: '',
   source: '',
   folderId: null, // 文件夹ID
@@ -3947,6 +3981,7 @@ function handleEdit(row) {
     isPublic: row.isPublic || false,
     isTexture: row.isTexture || false,
     isInfringement: row.isInfringement || false,
+    isCutout: row.isCutout || false,
     originUrl: row.originUrl || '',
     source: row.source || '',
     folderId: row.folderId ?? row.folder?.id ?? null,
@@ -3981,6 +4016,7 @@ async function submitEdit() {
       isPublic: editForm.value.isPublic,
       isTexture: editForm.value.isTexture,
       isInfringement: editForm.value.isInfringement,
+      isCutout: editForm.value.isCutout,
       originUrl: editForm.value.originUrl,
       source: editForm.value.source,
     folderId: editForm.value.folderId ?? null
@@ -4043,26 +4079,10 @@ async function handleGenerateImageInfo(row) {
     return;
   }
 
-  // 弹出对话框让用户输入AI分析的原始信息
-  const { value: aiGenerateRawInfo } = await ElMessageBox.prompt(
-    '请输入AI分析时使用的原始信息（可选）',
-    '生成图片信息',
-    {
-      confirmButtonText: '生成',
-      cancelButtonText: '跳过',
-      inputType: 'textarea',
-      inputPlaceholder: '粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容...',
-      inputPattern: /.*/,
-      inputErrorMessage: '',
-      customClass: 'ai-generate-raw-info-dialog'
-    }
-  ).catch(() => ({ value: '' })); // 用户取消时返回空字符串
-
   try {
     aiTableLoading.value = { ...aiTableLoading.value, [row.id]: true };
     const res = await generateImageInfo({
-      id: row.id,
-      aiGenerateRawInfo: aiGenerateRawInfo || undefined
+      id: row.id
     });
     if (res) {
       // 更新行数据 - 直接更新 dataSource 中对应的行
@@ -4082,6 +4102,7 @@ async function handleGenerateImageInfo(row) {
         if (res.colorPalette !== undefined) targetRow.colorPalette = res.colorPalette;
         if (res.suffix !== undefined) targetRow.suffix = res.suffix;
         if (res.phash !== undefined) targetRow.phash = res.phash;
+        if (res.isCutout !== undefined) targetRow.isCutout = res.isCutout;
       }
       
       // 同时更新当前 row 对象（用于显示）
@@ -4098,6 +4119,7 @@ async function handleGenerateImageInfo(row) {
       if (res.colorPalette !== undefined) row.colorPalette = res.colorPalette;
       if (res.suffix !== undefined) row.suffix = res.suffix;
       if (res.phash !== undefined) row.phash = res.phash;
+      if (res.isCutout !== undefined) row.isCutout = res.isCutout;
       
       const infoParts = [];
       if (res.width && res.height) {
@@ -4110,9 +4132,13 @@ async function handleGenerateImageInfo(row) {
         const colors = res.colorPalette.split(',').slice(0, 3).join(', ');
         infoParts.push(`色系: ${colors}${res.colorPalette.split(',').length > 3 ? '...' : ''}`);
       }
+      if (res.isCutout !== undefined) {
+        infoParts.push(`抠图: ${res.isCutout ? '是' : '否'}`);
+      }
       
       ElNotification.success(`生成图片信息成功${infoParts.length ? `：${infoParts.join('，')}` : ''}`);
-      // 不刷新列表，直接更新当前行数据
+      // 刷新列表以更新所有数据
+      await getList();
     }
   } catch (e) {
     console.error('生成图片信息失败:', e);
@@ -4821,6 +4847,101 @@ async function handleUrlUpload() {
   -webkit-line-clamp: 1;
   color: var(--el-text-color-placeholder);
 }
+
+/* 双语单元格样式 */
+.bilingual-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.bilingual-cell__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: rgba(64, 158, 255, 0.04);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  min-height: 26px;
+  position: relative;
+}
+
+.bilingual-cell__item:hover {
+  background: rgba(64, 158, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.25);
+}
+
+.bilingual-cell__item--en {
+  background: rgba(103, 194, 58, 0.04);
+}
+
+.bilingual-cell__item--en:hover {
+  background: rgba(103, 194, 58, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(103, 194, 58, 0.25);
+}
+
+.bilingual-cell__item--empty {
+  background: transparent;
+  cursor: default;
+  color: var(--el-text-color-placeholder);
+  box-shadow: none;
+}
+
+.bilingual-cell__label {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-color-primary);
+  padding-top: 1px;
+  opacity: 0.8;
+}
+
+.bilingual-cell__item--en .bilingual-cell__label {
+  color: var(--el-color-success);
+}
+
+.bilingual-cell__content {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
+  font-size: 13px;
+  line-height: 1.4;
+  color: inherit;
+}
+
+.bilingual-cell__icon {
+  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--el-color-primary);
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: 2px;
+}
+
+.bilingual-cell__item--en .bilingual-cell__icon {
+  color: var(--el-color-success);
+}
+
+.bilingual-cell__item:not(.bilingual-cell__item--empty):hover .bilingual-cell__icon {
+  opacity: 1;
+}
+
+.bilingual-cell__item--empty .bilingual-cell__icon {
+  display: none;
+}
+
+.bilingual-cell__item--empty .bilingual-cell__content {
+  -webkit-line-clamp: 1;
+  color: var(--el-text-color-placeholder);
+}
+
 .material-dnd-grid :deep(.vxe-table--body tbody tr) {
   cursor: grab;
   user-select: none;
