@@ -100,21 +100,21 @@
         <!-- 尺寸 -->
         <div class="search-field">
           <label class="search-label">尺寸</label>
-          <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable @change="getList" :teleported="false">
+          <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable multiple @change="getList" :teleported="false">
             <el-option-group label="常用">
-              <el-option value="landscape">
+              <el-option value="landscape" label="横图">
                 <div class="size-option">
                   <div class="size-thumb landscape-thumb"></div>
                   <span class="size-label">横图</span>
                 </div>
               </el-option>
-              <el-option value="portrait">
+              <el-option value="portrait" label="竖图">
                 <div class="size-option">
                   <div class="size-thumb portrait-thumb"></div>
                   <span class="size-label">竖图</span>
                 </div>
               </el-option>
-              <el-option value="square">
+              <el-option value="square" label="正方图">
                 <div class="size-option">
                   <div class="size-thumb square-thumb"></div>
                   <span class="size-label">正方图</span>
@@ -122,19 +122,19 @@
               </el-option>
             </el-option-group>
             <el-option-group label="横图细分">
-              <el-option value="ultra-wide">
+              <el-option value="ultra-wide" label="超宽图 (≥2:1)">
                 <div class="size-option">
                   <div class="size-thumb ultra-wide-thumb"></div>
                   <span class="size-label">超宽图 (≥2:1)</span>
                 </div>
               </el-option>
-              <el-option value="wide">
+              <el-option value="wide" label="宽图 (1.5:1 - 2:1)">
                 <div class="size-option">
                   <div class="size-thumb wide-thumb"></div>
                   <span class="size-label">宽图 (1.5:1 - 2:1)</span>
                 </div>
               </el-option>
-              <el-option value="slightly-wide">
+              <el-option value="slightly-wide" label="微宽图 (1.1:1 - 1.5:1)">
                 <div class="size-option">
                   <div class="size-thumb slightly-wide-thumb"></div>
                   <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
@@ -142,19 +142,19 @@
               </el-option>
             </el-option-group>
             <el-option-group label="竖图细分">
-              <el-option value="slightly-long">
+              <el-option value="slightly-long" label="微长图 (1:1.1 - 1:1.5)">
                 <div class="size-option">
                   <div class="size-thumb slightly-long-thumb"></div>
                   <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
                 </div>
               </el-option>
-              <el-option value="long">
+              <el-option value="long" label="长图 (1:1.5 - 1:2)">
                 <div class="size-option">
                   <div class="size-thumb long-thumb"></div>
                   <span class="size-label">长图 (1:1.5 - 1:2)</span>
                 </div>
               </el-option>
-              <el-option value="ultra-long">
+              <el-option value="ultra-long" label="超长图 (≤1:2)">
                 <div class="size-option">
                   <div class="size-thumb ultra-long-thumb"></div>
                   <span class="size-label">超长图 (≤1:2)</span>
@@ -255,21 +255,21 @@
           </el-select>
         </el-form-item>
         <el-form-item label="尺寸形状">
-          <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable>
+          <el-select v-model="queryParams.sizeShape" placeholder="请选择尺寸形状" clearable multiple>
             <el-option-group label="常用">
-              <el-option value="landscape">
+              <el-option value="landscape" label="横图">
                 <div class="size-option">
                   <div class="size-thumb landscape-thumb"></div>
                   <span class="size-label">横图</span>
                 </div>
               </el-option>
-              <el-option value="portrait">
+              <el-option value="portrait" label="竖图">
                 <div class="size-option">
                   <div class="size-thumb portrait-thumb"></div>
                   <span class="size-label">竖图</span>
                 </div>
               </el-option>
-              <el-option value="square">
+              <el-option value="square" label="正方图">
                 <div class="size-option">
                   <div class="size-thumb square-thumb"></div>
                   <span class="size-label">正方图</span>
@@ -277,19 +277,19 @@
               </el-option>
             </el-option-group>
             <el-option-group label="横图细分">
-              <el-option value="ultra-wide">
+              <el-option value="ultra-wide" label="超宽图 (≥2:1)">
                 <div class="size-option">
                   <div class="size-thumb ultra-wide-thumb"></div>
                   <span class="size-label">超宽图 (≥2:1)</span>
                 </div>
               </el-option>
-              <el-option value="wide">
+              <el-option value="wide" label="宽图 (1.5:1 - 2:1)">
                 <div class="size-option">
                   <div class="size-thumb wide-thumb"></div>
                   <span class="size-label">宽图 (1.5:1 - 2:1)</span>
                 </div>
               </el-option>
-              <el-option value="slightly-wide">
+              <el-option value="slightly-wide" label="微宽图 (1.1:1 - 1.5:1)">
                 <div class="size-option">
                   <div class="size-thumb slightly-wide-thumb"></div>
                   <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
@@ -297,19 +297,19 @@
               </el-option>
             </el-option-group>
             <el-option-group label="竖图细分">
-              <el-option value="slightly-long">
+              <el-option value="slightly-long" label="微长图 (1:1.1 - 1:1.5)">
                 <div class="size-option">
                   <div class="size-thumb slightly-long-thumb"></div>
                   <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
                 </div>
               </el-option>
-              <el-option value="long">
+              <el-option value="long" label="长图 (1:1.5 - 1:2)">
                 <div class="size-option">
                   <div class="size-thumb long-thumb"></div>
                   <span class="size-label">长图 (1:1.5 - 1:2)</span>
                 </div>
               </el-option>
-              <el-option value="ultra-long">
+              <el-option value="ultra-long" label="超长图 (≤1:2)">
                 <div class="size-option">
                   <div class="size-thumb ultra-long-thumb"></div>
                   <span class="size-label">超长图 (≤1:2)</span>
@@ -2052,7 +2052,7 @@ const queryParams = reactive({
   isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
   isInfringement: null, // 新增侵权状态过滤参数
   isCutout: null, // 新增抠图素材过滤参数
-  sizeShape: '', // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long
+  sizeShape: [] as string[], // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long（支持多选）
   random: false, // 是否随机
   folderId: null as string | null, // 文件夹ID
 })
@@ -2500,11 +2500,13 @@ async function getList() {
   // 立即清空旧数据，确保旧图片被销毁
   dataSource.value = []
   
-  // 构建查询参数，确保 suffix 数组格式正确传递
+  // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递
   const params = {
     ...queryParams,
     // 如果 suffix 是空数组，传递空数组；如果是旧格式字符串，转换为数组
-    suffix: Array.isArray(queryParams.suffix) ? queryParams.suffix : (queryParams.suffix ? [queryParams.suffix] : [])
+    suffix: Array.isArray(queryParams.suffix) ? queryParams.suffix : (queryParams.suffix ? [queryParams.suffix] : []),
+    // 如果 sizeShape 是空数组，传递空数组；如果是旧格式字符串，转换为数组
+    sizeShape: Array.isArray(queryParams.sizeShape) ? queryParams.sizeShape : (queryParams.sizeShape ? [queryParams.sizeShape] : [])
   }
   
   let res = await getMaterialList(params).finally(() => {
