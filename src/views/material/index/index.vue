@@ -192,18 +192,28 @@
               <el-button @click="clearPhashSearch">清空</el-button>
               <!-- 总体搜索按钮，放在清空右侧 -->
               <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <!-- 上传等操作按钮，同一行展示 -->
+              <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+              <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
+              <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+              <el-button
+                v-if="isAdmin && false"
+                type="success"
+                @click="async () => {
+                  if (!ids.length) {
+                    return ElMessage.warning('请选择要制作的素材')
+                  }
+                  resetDesignModelSteps()
+                  designModelModalVisible = true
+                  await loadDesignModels()
+                }"
+              >
+                制作设计模型({{ ids.length }})
+              </el-button>
+              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
             </div>
           </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="search-field-actions">
-          <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-          <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
-          <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-          <el-button v-if="isAdmin && false" type="success" @click="async () => { if (!ids.length) { return ElMessage.warning('请选择要制作的素材') } resetDesignModelSteps(); designModelModalVisible = true; await loadDesignModels() }">制作设计模型({{ ids.length }})</el-button>
-          <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
-          <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
         </div>
       </div>
     </div>
@@ -5056,11 +5066,7 @@ async function handleUrlUpload() {
   white-space: nowrap;
 }
 
-/* 顶部搜索区域与下方内容留出间距 */
-.search-bar {
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-}
+
 .search-bar-form :deep(.el-form-item__content) > * {
   width: 100%;
 }
