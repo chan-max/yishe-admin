@@ -5,7 +5,7 @@
       <!-- 搜索表单容器 -->
       <div class="search-form-container">
         <!-- AI 提示词搜索 -->
-        <div class="search-field">
+        <div class="search-field search-field-wide">
           <label class="search-label">提示词</label>
           <el-input
             v-model="queryParams.searchPrompt"
@@ -17,7 +17,7 @@
         </div>
 
         <!-- 搜索 -->
-        <div class="search-field">
+        <div class="search-field search-field-wide">
           <label class="search-label">搜索</label>
           <el-input
             v-model="queryParams.searchText"
@@ -165,7 +165,7 @@
         </div>
 
         <!-- 随机 -->
-        <div class="search-field">
+        <div class="search-field search-field-narrow">
           <label class="search-label">随机</label>
           <el-switch v-model="queryParams.random" size="small" @change="getList" />
         </div>
@@ -176,13 +176,8 @@
           <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
         </div>
 
-        <!-- 搜索按钮 -->
-        <div class="search-button-field">
-          <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        </div>
-
         <!-- 相似搜索 -->
-        <div class="search-field">
+        <div class="search-field search-field-similar">
           <label class="search-label">相似</label>
           <div class="phash-form-row">
             <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
@@ -195,6 +190,8 @@
             <div class="phash-actions">
               <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
               <el-button @click="clearPhashSearch">清空</el-button>
+              <!-- 总体搜索按钮，放在清空右侧 -->
+              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
             </div>
           </div>
         </div>
@@ -5019,27 +5016,41 @@ async function handleUrlUpload() {
 .search-field {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-height: 32px;
+  width: 240px; /* 默认固定宽度 */
+  flex-shrink: 0;
+}
+/* 宽字段 - 用于需要更大输入空间的字段 */
+.search-field-wide {
+  width: 320px;
+}
+/* 窄字段 - 用于开关等简单控件 */
+.search-field-narrow {
+  width: 120px;
+}
+/* 时间字段 - 需要更宽的空间 */
+.search-field-time {
+  width: 380px;
 }
 .search-label {
-  width: 84px;
+  width: 48px;
+  min-width: 48px;
   text-align: right;
-  padding-right: 8px;
+  padding-right: 4px;
   line-height: 32px;
   flex-shrink: 0;
   color: var(--el-text-color-regular);
-  font-size: 14px;
+  font-size: 13px;
 }
 .search-field > :not(.search-label) {
   flex: 1;
-  min-width: 180px; /* 确保有最小宽度，能显示完整的 placeholder */
+  min-width: 0;
   max-width: 100%;
 }
 .search-field .el-input,
 .search-field .el-select {
   width: 100%;
-  min-width: 180px; /* 确保输入框和选择器有足够宽度显示 placeholder */
 }
 .search-field .el-button {
   white-space: nowrap;
@@ -5047,8 +5058,8 @@ async function handleUrlUpload() {
 
 /* 顶部搜索区域与下方内容留出间距 */
 .search-bar {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
 }
 .search-bar-form :deep(.el-form-item__content) > * {
   width: 100%;
@@ -5060,77 +5071,71 @@ async function handleUrlUpload() {
 .search-form-container {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start; /* 顶部对齐 */
+  align-items: center;
   justify-content: flex-start;
-  gap: 12px 16px; /* 恢复合适的间距 */
-  margin-bottom: 16px;
-}
-
-.search-form-container .search-field {
-  flex-shrink: 0;
-  /* 使用默认宽度，让内容自然决定大小 */
+  gap: 10px 12px; /* 紧凑的间距 */
+  margin-bottom: 12px;
 }
 
 .search-button-field {
   flex-shrink: 0;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  flex-basis: 100%;
+  margin-top: 8px;
 }
 
 .search-field-actions {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 100%;
+  flex-basis: 100%;
+  padding-top: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
-.similar-search-row {
-  margin-top: 12px;
-  padding-top: 12px;
+/* 相似搜索 - 占满整行 */
+.search-field-similar {
+  width: 100%;
+  flex-basis: 100%;
+  padding-top: 8px;
+  margin-top: 4px;
   border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.search-field-similar .phash-form-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-}
-
-.phash-input-section {
+  gap: 10px;
   flex: 1;
 }
 
-.phash-input-section .search-field-similar {
-  width: 100%;
+.search-field-similar .phash-form-row .el-input {
+  min-width: 200px;
+  max-width: 320px;
+  flex: 1;
 }
 
-.phash-input-section .phash-form-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.phash-input-section .phash-mode {
+.search-field-similar .phash-mode {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
 }
 
-.phash-input-section .el-input {
-  min-width: 200px;
-  flex: 1;
-  max-width: 300px;
-}
-
-.phash-actions-section {
+.search-field-similar .phash-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
   flex-shrink: 0;
 }
 
-.phash-actions-section .phash-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.phash-actions-section .el-button {
+.search-field-similar .el-button {
   white-space: nowrap;
 }
 
