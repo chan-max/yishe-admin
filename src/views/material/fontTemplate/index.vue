@@ -33,15 +33,6 @@
         新增字体
       </el-button>
       <div v-if="isAdmin" class="flex shrink-0 gap-2">
-        <el-button
-          type="primary"
-          plain
-          @click="handleBatchMoveToCurrentFolder"
-          :disabled="!ids.length"
-          :icon="Folder"
-        >
-          移动到当前文件夹 ({{ ids.length }})
-        </el-button>
         <el-button 
           type="success" 
           @click="handleBatchAiGenerate"
@@ -66,13 +57,18 @@
         v-model="selectedFolderId"
         :folder-category="FOLDER_CATEGORY"
         :show-count="false"
+        :drag-state="dragState"
         @change="handleFolderChange"
+        @folder-drag-over="handleFolderDragOver"
+        @folder-drag-leave="handleFolderDragLeave"
+        @folder-drop="handleFolderDrop"
       />
 
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
         <div class="common-table">
           <vxe-grid
+            class="font-template-dnd-grid"
             v-bind="gridOptions"
             :data="dataSource"
             :loading="loading"
@@ -598,17 +594,30 @@
       :image-url="currentImageUrl"
       @close="closeImagePreview"
     />
+
+    <!-- 拖拽提示气泡（跟随鼠标） -->
+    <teleport to="body">
+      <div
+        v-show="dragHint.visible"
+        class="drag-hint-bubble"
+        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }"
+      >
+        <el-icon class="drag-hint-icon"><InfoFilled /></el-icon>
+        <span>{{ dragHint.text }}</span>
+      </div>
+    </teleport>
   </div>
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watchEffect, nextTick } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import FolderTree from "@/components/material/FolderTree.vue";
+import Sortable from "sortablejs";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
 import {
   Search,
@@ -628,7 +637,7 @@ import {
   DocumentCopy,
   Folder,
 } from "@element-plus/icons-vue";
-import { useWindowSize } from "@vueuse/core";
+import { useWindowSize, useMouse } from "@vueuse/core";
 
 import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -826,6 +835,61 @@ const currentRow = ref<{
 }>({});
 const submitLoading = ref(false);
 
+// 拖拽状态（拖模板 -> 文件夹）
+const dragState = reactive({
+  dragging: false,
+  draggingIds: [] as string[],
+  overFolderId: null as string | null,
+  overFolderPath: ''
+});
+const templateDragSortable = ref<Sortable | null>(null);
+const dragHint = reactive({
+  visible: false,
+  text: '',
+  x: -9999,
+  y: -9999
+});
+const dragHintListenerBound = ref(false);
+
+// 跟踪鼠标位置用于拖拽气泡
+const { x: mouseX, y: mouseY } = useMouse({ touch: false });
+
+function bindGlobalDragHint() {
+  if (dragHintListenerBound.value) return;
+  window.addEventListener('dragover', handleGlobalDragOver);
+  dragHintListenerBound.value = true;
+}
+
+function unbindGlobalDragHint() {
+  if (!dragHintListenerBound.value) return;
+  window.removeEventListener('dragover', handleGlobalDragOver);
+  dragHintListenerBound.value = false;
+}
+
+function handleGlobalDragOver(e: DragEvent) {
+  if (!dragState.dragging) return;
+  // 仅在悬停文件夹时显示气泡
+  if (!dragState.overFolderId) return;
+  dragHint.visible = true;
+  dragHint.text = `将 ${dragState.draggingIds.length} 个字体模板移动到 ${dragState.overFolderPath || '该文件夹'}`;
+  updateDragHintPosition(e);
+}
+
+function updateDragHintPosition(e?: DragEvent) {
+  const x = e && 'clientX' in e ? e.clientX : mouseX.value;
+  const y = e && 'clientY' in e ? e.clientY : mouseY.value;
+  dragHint.x = (x || 0) + 14;
+  dragHint.y = (y || 0) + 16;
+}
+
+function hideDragHint() {
+  dragHint.visible = false;
+  dragHint.text = '';
+  dragHint.x = -9999;
+  dragHint.y = -9999;
+  unbindGlobalDragHint();
+}
+
 
 // AI生成内容相关
 const aiGenDialogVisible = ref(false);
@@ -937,6 +1001,49 @@ async function getList() {
   dataSource.value = res.list;
   total.value = res.total;
   ids.value = [];
+  
+  // 列表渲染完成后挂载拖拽（使用 SortableJS）
+  nextTick(setupTemplateDrag);
+}
+
+// 初始化/刷新模板行的拖拽能力
+function setupTemplateDrag() {
+  nextTick(() => {
+    const tbody = document.querySelector('.font-template-dnd-grid .vxe-table--body tbody') as HTMLElement | null;
+    if (!tbody) return;
+
+    // 销毁旧实例，避免重复绑定
+    templateDragSortable.value?.destroy();
+    templateDragSortable.value = Sortable.create(tbody, {
+      animation: 120,
+      sort: false, // 不改变表格排序，只做拖拽数据
+      ghostClass: 'template-drag-ghost',
+      onStart: (evt) => {
+        const row = dataSource.value[evt.oldIndex];
+        const draggingIds = ids.value.length ? [...ids.value] : row ? [String(row.id)] : [];
+        dragState.draggingIds = draggingIds;
+        dragState.dragging = draggingIds.length > 0;
+        dragState.overFolderId = null;
+        dragState.overFolderPath = '';
+        dragHint.visible = false;
+        dragHint.text = '';
+        dragHint.x = -9999;
+        dragHint.y = -9999;
+        bindGlobalDragHint();
+        // 记录初始指针位置
+        if (evt.originalEvent && 'clientX' in evt.originalEvent) {
+          updateDragHintPosition(evt.originalEvent as DragEvent);
+        }
+      },
+      onEnd: () => {
+        dragState.dragging = false;
+        dragState.draggingIds = [];
+        dragState.overFolderId = null;
+        dragState.overFolderPath = '';
+        hideDragHint();
+      }
+    });
+  });
 }
 
 getList();
@@ -1036,19 +1143,53 @@ async function handleBatchDelete() {
   }
 }
 
-async function handleBatchMoveToCurrentFolder() {
-  if (!ids.value.length) {
-    ElMessage.warning('请先选择要移动的字体模板');
-    return;
+// 拖拽到文件夹时的交互
+function handleFolderDragOver(payload: { data: any; event?: DragEvent }) {
+  if (!dragState.dragging) return;
+  dragState.overFolderId = payload.data.id;
+  dragState.overFolderPath = payload.data.path || '';
+  dragHint.visible = true;
+  dragHint.text = `将 ${dragState.draggingIds.length} 个字体模板移动到 ${dragState.overFolderPath || '该文件夹'}`;
+  // 同步指针位置（node 层级的 dragover 事件）
+  updateDragHintPosition(payload.event);
+}
+
+function handleFolderDragLeave(payload: { data: any }) {
+  if (dragState.overFolderId === payload.data.id) {
+    dragState.overFolderId = null;
+    dragState.overFolderPath = '';
+    dragHint.visible = false;
+    dragHint.x = -9999;
+    dragHint.y = -9999;
   }
-  const targetFolderId = queryParams.folderId ?? null;
+}
+
+async function handleFolderDrop(payload: { data: any }) {
+  if (!dragState.draggingIds.length) return;
+
+  const targetFolderId = payload.data.id === '__root__' ? null : payload.data.id;
+  const targetPath = payload.data.path || '';
+  const movingIds = [...dragState.draggingIds];
+
   try {
-    await fontTemplateApi.batchMove({ ids: [...ids.value], folderId: targetFolderId });
-    ElMessage.success(`已移动 ${ids.value.length} 个字体模板`);
+    await fontTemplateApi.batchMove({ ids: movingIds, folderId: targetFolderId });
+    ElMessage.success(`已移动 ${movingIds.length} 个字体模板到 ${targetPath || '根目录'}`);
+
+    // 同步当前选中目录与查询条件
+    selectedFolderId.value = payload.data.id === '__root__' ? '__root__' : payload.data.id;
+    queryParams.folderId = targetFolderId;
+    queryParams.currentPage = 1;
+
+    await getList();
     ids.value = [];
-    getList();
-  } catch (e) {
-    ElMessage.error((e as any)?.message || '移动失败');
+  } catch (error) {
+    ElMessage.error((error as Error).message || '移动失败');
+  } finally {
+    dragState.dragging = false;
+    dragState.draggingIds = [];
+    dragState.overFolderId = null;
+    dragState.overFolderPath = '';
+    hideDragHint();
   }
 }
 
@@ -1617,6 +1758,11 @@ function closeImagePreview() {
   currentImageUrl.value = '';
 }
 
+onUnmounted(() => {
+  templateDragSortable.value?.destroy();
+  unbindGlobalDragHint();
+});
+
 
 
 
@@ -1912,6 +2058,36 @@ function closeImagePreview() {
     min-height: 320px;
     padding: 16px 0;
     align-items: flex-start;
+  }
+}
+
+:deep(.is-dragging-row) {
+  opacity: 0.5;
+}
+
+:deep(.template-drag-ghost) {
+  opacity: 0.4;
+  background-color: var(--el-color-primary-light-9);
+}
+
+.drag-hint-bubble {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--el-color-primary-light-7);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+  white-space: nowrap;
+
+  .drag-hint-icon {
+    font-size: 14px;
   }
 }
 </style>

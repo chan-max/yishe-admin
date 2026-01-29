@@ -31,7 +31,13 @@
       class="sticker-folder-tree"
     >
       <template #default="{ node, data }">
-        <div class="sticker-folder-node">
+        <div 
+          class="sticker-folder-node"
+          :class="{ 'is-drop-hover': dragState?.overFolderId === data.id && dragState?.dragging }"
+          @dragover.prevent="handleFolderDragOver(data, $event)"
+          @dragleave="handleFolderDragLeave(data)"
+          @drop.prevent="handleFolderDrop(data)"
+        >
           <div class="sticker-folder-node-content">
             <img
               v-if="node.expanded && data.children && data.children.length > 0"
@@ -96,11 +102,18 @@ const props = withDefaults(
     showCount?: boolean;
     width?: number;
     showBorder?: boolean;
+    dragState?: {
+      dragging: boolean;
+      draggingIds: string[];
+      overFolderId: string | null;
+      overFolderPath: string;
+    } | null;
   }>(),
   {
     showCount: true,
     width: 280,
     showBorder: true,
+    dragState: null,
   }
 );
 
@@ -108,6 +121,9 @@ const emit = defineEmits<{
   (e: "update:modelValue", v: string | null): void;
   (e: "change", payload: { folderId: string | null; node: any }): void;
   (e: "reloaded"): void;
+  (e: "folder-drag-over", payload: { data: any; event?: DragEvent }): void;
+  (e: "folder-drag-leave", payload: { data: any }): void;
+  (e: "folder-drop", payload: { data: any }): void;
 }>();
 
 const treeRef = ref();
@@ -206,6 +222,18 @@ async function handleCommand(command: string, node: any) {
   }
 }
 
+function handleFolderDragOver(data: any, evt?: DragEvent) {
+  emit("folder-drag-over", { data, event: evt });
+}
+
+function handleFolderDragLeave(data: any) {
+  emit("folder-drag-leave", { data });
+}
+
+function handleFolderDrop(data: any) {
+  emit("folder-drop", { data });
+}
+
 onMounted(loadTree);
 watch(
   () => props.folderCategory,
@@ -251,6 +279,11 @@ watch(
     padding-right: 8px;
     border-radius: 6px;
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
+
+    &.is-drop-hover {
+      background-color: var(--el-color-primary-light-9);
+      box-shadow: 0 0 0 2px var(--el-color-primary-light-7);
+    }
 
     .sticker-folder-node-content {
       display: flex;
