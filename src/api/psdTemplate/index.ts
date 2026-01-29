@@ -43,4 +43,12 @@ export const psdTemplateApi = {
       data: { prompt } 
     })
   },
+
+  // 批量移动PSD模板到文件夹
+  batchMove: async (data: { ids: string[]; folderId: string | null }) => {
+    return await request.post({
+      url: `/psd-template/batch-move`,
+      data
+    })
+  },
 }

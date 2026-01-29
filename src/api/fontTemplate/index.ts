@@ -56,4 +56,12 @@ export const fontTemplateApi = {
     })
   },
 
+  // 批量移动字体模板到文件夹
+  batchMove: async (data: { ids: string[]; folderId: string | null }) => {
+    return await request.post({
+      url: `/font-template/batch-move`,
+      data
+    })
+  },
+
 }

@@ -56,6 +56,15 @@
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
           新增
         </el-button>
+        <el-button
+          type="primary"
+          plain
+          :disabled="!ids.length"
+          @click="handleBatchMoveToCurrentFolder"
+          :icon="Folder"
+        >
+          移动到当前文件夹
+        </el-button>
         <!-- 删除按钮 -->
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
           批量删除
@@ -63,32 +72,41 @@
       </div>
     </div>
 
-    <!-- 表格展示 -->
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        :row-class-name="getRowClassName"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
-        <template #thumbnailSlot="{ row }">
-          <div class="thumbnail-cell">
-            <el-image
-              v-if="row.thumbnail"
-              :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
-              :preview-src-list="[row.thumbnail]"
-              :initial-index="0"
-              preview-teleported
-              hide-on-click-modal
-              fit="contain"
-              :lazy="true"
-              class="thumbnail-image"
-            />
-            <span v-else class="thumbnail-placeholder">暂无缩略图</span>
-          </div>
-        </template>
+    <div class="flex" style="overflow: hidden;">
+      <FolderTree
+        v-model="selectedFolderId"
+        :folder-category="FOLDER_CATEGORY"
+        :show-count="false"
+        @change="handleFolderChange"
+      />
+
+      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
+        <!-- 表格展示 -->
+        <div class="common-table">
+          <vxe-grid
+            v-bind="gridOptions"
+            :data="dataSource"
+            :loading="loading"
+            :row-class-name="getRowClassName"
+            @checkbox-change="checkboxChange"
+            @checkbox-all="checkboxAllChange"
+          >
+            <template #thumbnailSlot="{ row }">
+              <div class="thumbnail-cell">
+                <el-image
+                  v-if="row.thumbnail"
+                  :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                  :preview-src-list="[row.thumbnail]"
+                  :initial-index="0"
+                  preview-teleported
+                  hide-on-click-modal
+                  fit="contain"
+                  :lazy="true"
+                  class="thumbnail-image"
+                />
+                <span v-else class="thumbnail-placeholder">暂无缩略图</span>
+              </div>
+            </template>
 
         <template #titleNameDefaultSlot="{ row }">
           <div v-if="row.titleTemplateId" class="flex items-center gap-2">
@@ -187,17 +205,19 @@
             </template>
           </el-dropdown>
         </template>
-      </vxe-grid>
-    </div>
+          </vxe-grid>
+        </div>
 
-    <!-- 分页 -->
-    <div class="py-4 flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
+        <!-- 分页 -->
+        <div class="py-4 flex justify-end">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </div>
     </div>
 
     <el-dialog
@@ -404,6 +424,7 @@ import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
+import FolderTree from "@/components/material/FolderTree.vue";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
 import {
   Search,
@@ -416,6 +437,7 @@ import {
   ArrowDown,
   InfoFilled,
   RefreshLeft,
+  Folder,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
@@ -432,6 +454,8 @@ import { getPreviewImageUrl } from "@/utils/image";
 
 const userStore = useUserStore()
 
+const FOLDER_CATEGORY = "psdtemplate";
+
 // 查询条件
 const queryParams = reactive({
   currentPage: 1,
@@ -441,6 +465,7 @@ const queryParams = reactive({
   id: "", // ID搜索
   searchKeyword: "", // 搜索关键字（支持名称、关键词、描述）
   enabled: undefined as boolean | undefined, // 是否可用筛选
+  folderId: null as string | null, // 文件夹ID（用于筛选）
 });
 
 const gridOptions = ref<VxeGridProps<any>>({
@@ -586,6 +611,29 @@ async function getList() {
 }
 
 getList();
+
+// ============= 文件夹相关 =============
+const selectedFolderId = ref<string | null>("__root__");
+
+function handleFolderChange(payload: { folderId: string | null }) {
+  queryParams.folderId = payload.folderId ?? null;
+  queryParams.currentPage = 1;
+  getList();
+}
+
+async function handleBatchMoveToCurrentFolder() {
+  if (!ids.value?.length) {
+    return ElMessage.warning("请选择要移动的模板");
+  }
+  const targetFolderId = queryParams.folderId ?? null;
+  try {
+    await psdTemplateApi.batchMove({ ids: [...ids.value], folderId: targetFolderId });
+    ElMessage.success(`已移动 ${ids.value.length} 个模板`);
+    await getList();
+  } catch (e) {
+    ElMessage.error((e as any)?.message || "移动失败");
+  }
+}
 
 // 操作函数
 function handleQuery() {

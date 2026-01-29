@@ -337,7 +337,7 @@ export function svgToPng(data: { id: string, width?: number, height?: number }) 
  */
 
 // 获取文件夹树
-export function getStickerFolderTree(params?: { parentId?: string }) {
+export function getStickerFolderTree(params?: { parentId?: string; folderCategory?: string }) {
   return request.get({
     url: '/sticker/sticker-folder/tree',
     params
@@ -345,14 +345,15 @@ export function getStickerFolderTree(params?: { parentId?: string }) {
 }
 
 // 获取文件夹列表（扁平结构）
-export function getStickerFolderList() {
+export function getStickerFolderList(params?: { folderCategory?: string }) {
   return request.get({
-    url: '/sticker/sticker-folder/list'
+    url: '/sticker/sticker-folder/list',
+    params
   })
 }
 
 // 创建文件夹
-export function createStickerFolder(data: { name: string; parentId?: string | null }) {
+export function createStickerFolder(data: { name: string; parentId?: string | null; folderCategory?: string }) {
   return request.post({
     url: '/sticker/sticker-folder/create',
     data
@@ -360,7 +361,7 @@ export function createStickerFolder(data: { name: string; parentId?: string | nu
 }
 
 // 重命名文件夹
-export function renameStickerFolder(data: { id: string; name: string }) {
+export function renameStickerFolder(data: { id: string; name: string; folderCategory?: string }) {
   return request.post({
     url: '/sticker/sticker-folder/rename',
     data
@@ -368,15 +369,19 @@ export function renameStickerFolder(data: { id: string; name: string }) {
 }
 
 // 删除文件夹
-export function deleteStickerFolder(id: string, moveStickersToRoot: boolean = true) {
+export function deleteStickerFolder(
+  id: string,
+  moveStickersToRoot: boolean = true,
+  params?: { folderCategory?: string }
+) {
   return request.delete({
     url: `/sticker/sticker-folder/${id}`,
-    params: { moveStickersToRoot }
+    params: { moveStickersToRoot, ...(params || {}) }
   })
 }
 
 // 移动文件夹
-export function moveStickerFolder(data: { id: string; parentId: string | null }) {
+export function moveStickerFolder(data: { id: string; parentId: string | null; folderCategory?: string }) {
   return request.post({
     url: '/sticker/sticker-folder/move',
     data

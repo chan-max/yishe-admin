@@ -33,6 +33,15 @@
         新增字体
       </el-button>
       <div v-if="isAdmin" class="flex shrink-0 gap-2">
+        <el-button
+          type="primary"
+          plain
+          @click="handleBatchMoveToCurrentFolder"
+          :disabled="!ids.length"
+          :icon="Folder"
+        >
+          移动到当前文件夹 ({{ ids.length }})
+        </el-button>
         <el-button 
           type="success" 
           @click="handleBatchAiGenerate"
@@ -52,31 +61,40 @@
       </div>
     </div>
 
-    <!-- 表格展示 -->
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
-        <template #thumbnailDefaultSlot="{ row }">
-          <div class="flex items-center justify-center p-2">
-            <img
-              v-if="row.thumbnail"
-              :src="row.thumbnail"
-              :alt="row.name || '字体缩略图'"
-              loading="lazy"
-              style="width:160px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);"
-              @click="openThumbnailPreview(row.thumbnail, row.name)"
-              @error="handleThumbnailError"
-            />
-            <div v-else class="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm">
-              无缩略图
-            </div>
-          </div>
-        </template>
+    <div class="flex" style="overflow: hidden;">
+      <FolderTree
+        v-model="selectedFolderId"
+        :folder-category="FOLDER_CATEGORY"
+        :show-count="false"
+        @change="handleFolderChange"
+      />
+
+      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
+        <!-- 表格展示 -->
+        <div class="common-table">
+          <vxe-grid
+            v-bind="gridOptions"
+            :data="dataSource"
+            :loading="loading"
+            @checkbox-change="checkboxChange"
+            @checkbox-all="checkboxAllChange"
+          >
+            <template #thumbnailDefaultSlot="{ row }">
+              <div class="flex items-center justify-center p-2">
+                <img
+                  v-if="row.thumbnail"
+                  :src="row.thumbnail"
+                  :alt="row.name || '字体缩略图'"
+                  loading="lazy"
+                  style="width:160px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);"
+                  @click="openThumbnailPreview(row.thumbnail, row.name)"
+                  @error="handleThumbnailError"
+                />
+                <div v-else class="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm">
+                  无缩略图
+                </div>
+              </div>
+            </template>
 
         <template #languagesSlot="{ row }">
           <div class="flex flex-wrap gap-1">
@@ -147,17 +165,19 @@
             </el-button>
           </div>
         </template>
-      </vxe-grid>
-    </div>
+          </vxe-grid>
+        </div>
 
-    <!-- 分页 -->
-    <div class=" flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
+        <!-- 分页 -->
+        <div class=" flex justify-end">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </div>
     </div>
 
     <el-dialog
@@ -588,6 +608,7 @@ import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
+import FolderTree from "@/components/material/FolderTree.vue";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
 import {
   Search,
@@ -605,6 +626,7 @@ import {
   MagicStick,
   InfoFilled,
   DocumentCopy,
+  Folder,
 } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 
@@ -702,6 +724,9 @@ const userStore = useUserStore()
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
+const FOLDER_CATEGORY = "fonttemplate";
+const selectedFolderId = ref<string | null>("__root__");
+
 // 查询条件
 const queryParams = reactive({
   currentPage: 1,
@@ -709,7 +734,8 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue(),
   startTime: '',
   endTime: '',
-  searchKeyword: '' // 搜索关键字
+  searchKeyword: '', // 搜索关键字
+  folderId: null as string | null, // 文件夹筛选
 });
 
 const gridOptions = ref({
@@ -915,6 +941,12 @@ async function getList() {
 
 getList();
 
+function handleFolderChange(payload: { folderId: string | null }) {
+  queryParams.folderId = payload.folderId ?? null;
+  queryParams.currentPage = 1;
+  getList();
+}
+
 // 操作函数
 function handleQuery() {
   queryParams.currentPage = 1;
@@ -1001,6 +1033,22 @@ async function handleBatchDelete() {
     }
   } finally {
     batchDeleteLoading.value = false;
+  }
+}
+
+async function handleBatchMoveToCurrentFolder() {
+  if (!ids.value.length) {
+    ElMessage.warning('请先选择要移动的字体模板');
+    return;
+  }
+  const targetFolderId = queryParams.folderId ?? null;
+  try {
+    await fontTemplateApi.batchMove({ ids: [...ids.value], folderId: targetFolderId });
+    ElMessage.success(`已移动 ${ids.value.length} 个字体模板`);
+    ids.value = [];
+    getList();
+  } catch (e) {
+    ElMessage.error((e as any)?.message || '移动失败');
   }
 }
 
