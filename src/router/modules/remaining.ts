@@ -337,6 +337,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '商品',
         }
       },
+      {
+        path: 'queue',
+        component: () => import('@/views/system/queue/index.vue'),
+        name: 'SystemQueue',
+        meta: {
+          title: '任务队列',
+        }
+      },
     ]
   },
   {
@@ -412,14 +420,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: 'SystemOperateLog',
         meta: {
           title: '操作日志',
-        }
-      },
-      {
-        path: 'queue',
-        component: () => import('@/views/system/queue/index.vue'),
-        name: 'SystemQueue',
-        meta: {
-          title: '任务队列',
         }
       },
     ]

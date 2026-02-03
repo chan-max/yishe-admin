@@ -12,13 +12,20 @@
         />
       </form-item>
       <form-item label="任务类型">
-        <el-input 
-          v-model="queryParams.type" 
-          placeholder="留空则查询所有类型" 
-          style="width: 160px" 
-          clearable 
+        <el-select
+          v-model="queryParams.type"
+          placeholder="请选择任务类型"
+          style="width: 200px"
+          clearable
           @keyup.enter="getList"
-        />
+        >
+          <el-option
+            v-for="opt in TASK_TYPE_OPTIONS"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          />
+        </el-select>
       </form-item>
       <form-item label="任务状态">
         <el-select 
@@ -162,7 +169,19 @@
         label-width="100px"
       >
         <el-form-item label="任务类型" prop="type">
-          <el-input v-model="formData.type" placeholder="请输入任务类型（将作为队列名称）" />
+          <el-select
+            v-model="formData.type"
+            placeholder="请选择任务类型"
+            style="width: 100%"
+            clearable
+          >
+            <el-option
+              v-for="opt in TASK_TYPE_OPTIONS"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="任务描述" prop="description">
           <el-input 
@@ -331,6 +350,7 @@ import {
 } from '@/api/system/queue'
 import Pagination from '@/components/Pagination/index.vue'
 import FormItem from '@/components/Erp/formItem.vue'
+import { TASK_TYPE_OPTIONS } from '@/config/task-types'
 
 // 查询条件
 const queryParams = reactive({

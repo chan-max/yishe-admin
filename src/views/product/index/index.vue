@@ -3780,7 +3780,7 @@ async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
   }
 }
 
-// 发布平台选项
+// 发布平台选项（任务类型命名：{action}-{object}-{platform}，便于任务队列查询）
 const publishPlatforms = [
   { label: '抖音', value: 'douyin', icon: '🎵', color: '#000000' },
   { label: '小红书', value: 'xiaohongshu', icon: '📕', color: '#FF2442' },
@@ -3788,6 +3788,9 @@ const publishPlatforms = [
   { label: '快手', value: 'kuaishou', icon: '⚡', color: '#FF6600' },
   { label: 'B站', value: 'bilibili', icon: '📺', color: '#FB7299' },
   { label: '知乎', value: 'zhihu', icon: '💡', color: '#0084FF' },
+  { label: 'TikTok', value: 'tiktok', icon: '🎵', color: '#000000' },
+  { label: 'Temu', value: 'temu', icon: '🛒', color: '#FF6B35' },
+  { label: '淘宝', value: 'taobao', icon: '🛍️', color: '#FF4400' },
 ];
 
 // 格式化平台名称
@@ -3799,8 +3802,16 @@ function formatPlatformName(platform: string) {
     kuaishou: '快手',
     bilibili: 'B站',
     zhihu: '知乎',
+    tiktok: 'TikTok',
+    temu: 'Temu',
+    taobao: '淘宝',
   };
   return platformMap[platform] || platform;
+}
+
+// 任务类型命名：{action}-{object}-{platform}，便于任务队列按平台查询
+function getPublishTaskType(platform: string) {
+  return `publish-product-${platform}`;
 }
 
 // 发布平台选择对话框
@@ -3833,9 +3844,9 @@ async function confirmPublishToPlatforms() {
   const platforms = publishQueueSelectedPlatforms.value;
 
   try {
-    // 为每个平台创建一个单独的任务
+    // 为每个平台创建一个单独的任务（任务类型：publish-product-{platform}）
     const tasks = platforms.map(platform => ({
-      type: 'publish-product-to-social-media',
+      type: getPublishTaskType(platform),
       data: {
         productId: row.id,
         platform: platform,
@@ -3847,7 +3858,7 @@ async function confirmPublishToPlatforms() {
         productName: row.name,
       },
     }));
-
+dev
     // 批量创建任务
     const results = await Promise.all(
       tasks.map(task => createTask(task))
