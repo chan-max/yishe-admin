@@ -1857,23 +1857,31 @@
             class="platform-checkbox-item"
           >
             <div class="platform-item-content">
-              <span class="platform-icon" :style="{ backgroundColor: platform.color + '15' }">
-                {{ platform.icon }}
+              <span class="platform-icon-wrap" :style="{ backgroundColor: platform.color + '18' }">
+                <img
+                  v-if="platform.logoUrl"
+                  :src="platform.logoUrl"
+                  :alt="platform.label"
+                  class="platform-logo"
+                  @error="(e: Event) => ((e.currentTarget as HTMLImageElement).style.display = 'none')"
+                />
+                <span class="platform-icon-fallback">{{ platform.icon }}</span>
               </span>
               <span class="platform-label">{{ platform.label }}</span>
             </div>
           </el-checkbox>
         </el-checkbox-group>
-        <div v-if="publishQueueSelectedPlatforms.length > 0" class="mt-4 text-sm text-gray-500">
-          已选择 {{ publishQueueSelectedPlatforms.length }} 个平台：{{ publishQueueSelectedPlatforms.map(p => formatPlatformName(p)).join('、') }}
+        <div class="publish-selected-summary mt-4 text-sm text-gray-500">
+          已选择 {{ publishQueueSelectedPlatforms.length }} 个平台<span v-if="publishQueueSelectedPlatforms.length > 0">：{{ publishQueueSelectedPlatforms.map(p => formatPlatformName(p)).join('、') }}</span>
         </div>
       </div>
       <template #footer>
         <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
         <el-button 
           type="primary" 
-          @click="confirmPublishToPlatforms"
+          :loading="publishConfirmLoading"
           :disabled="publishQueueSelectedPlatforms.length === 0"
+          @click="confirmPublishToPlatforms"
         >
           确认发布
         </el-button>
@@ -3780,17 +3788,29 @@ async function handleUpdatePublishStatus(row: any, isPublish: boolean) {
   }
 }
 
+// 平台 logo 使用 Iconify API（simple-icons 等），无则用首字 fallback
+const PUBLISH_PLATFORM_LOGOS: Record<string, string> = {
+  douyin: 'https://api.iconify.design/simple-icons/douyin.svg',
+  xiaohongshu: 'https://api.iconify.design/simple-icons/xiaohongshu.svg',
+  weibo: 'https://api.iconify.design/simple-icons/sinaweibo.svg',
+  kuaishou: 'https://api.iconify.design/simple-icons/kuaishou.svg',
+  bilibili: 'https://api.iconify.design/simple-icons/bilibili.svg',
+  zhihu: 'https://api.iconify.design/simple-icons/zhihu.svg',
+  tiktok: 'https://api.iconify.design/simple-icons/tiktok.svg',
+  taobao: 'https://api.iconify.design/simple-icons/taobao.svg',
+};
+
 // 发布平台选项（任务类型命名：{action}-{object}-{platform}，便于任务队列查询）
 const publishPlatforms = [
-  { label: '抖音', value: 'douyin', icon: '🎵', color: '#000000' },
-  { label: '小红书', value: 'xiaohongshu', icon: '📕', color: '#FF2442' },
-  { label: '微博', value: 'weibo', icon: '📱', color: '#E6162D' },
-  { label: '快手', value: 'kuaishou', icon: '⚡', color: '#FF6600' },
-  { label: 'B站', value: 'bilibili', icon: '📺', color: '#FB7299' },
-  { label: '知乎', value: 'zhihu', icon: '💡', color: '#0084FF' },
-  { label: 'TikTok', value: 'tiktok', icon: '🎵', color: '#000000' },
-  { label: 'Temu', value: 'temu', icon: '🛒', color: '#FF6B35' },
-  { label: '淘宝', value: 'taobao', icon: '🛍️', color: '#FF4400' },
+  { label: '抖音', value: 'douyin', icon: '抖', color: '#000000', logoUrl: PUBLISH_PLATFORM_LOGOS.douyin },
+  { label: '小红书', value: 'xiaohongshu', icon: '红', color: '#FF2442', logoUrl: PUBLISH_PLATFORM_LOGOS.xiaohongshu },
+  { label: '微博', value: 'weibo', icon: '微', color: '#E6162D', logoUrl: PUBLISH_PLATFORM_LOGOS.weibo },
+  { label: '快手', value: 'kuaishou', icon: '快', color: '#FF6600', logoUrl: PUBLISH_PLATFORM_LOGOS.kuaishou },
+  { label: 'B站', value: 'bilibili', icon: 'B', color: '#FB7299', logoUrl: PUBLISH_PLATFORM_LOGOS.bilibili },
+  { label: '知乎', value: 'zhihu', icon: '知', color: '#0084FF', logoUrl: PUBLISH_PLATFORM_LOGOS.zhihu },
+  { label: 'TikTok', value: 'tiktok', icon: 'T', color: '#000000', logoUrl: PUBLISH_PLATFORM_LOGOS.tiktok },
+  { label: 'Temu', value: 'temu', icon: 'T', color: '#FF6B35', logoUrl: undefined },
+  { label: '淘宝', value: 'taobao', icon: '淘', color: '#FF4400', logoUrl: PUBLISH_PLATFORM_LOGOS.taobao },
 ];
 
 // 格式化平台名称
@@ -3818,6 +3838,7 @@ function getPublishTaskType(platform: string) {
 const publishPlatformDialogVisible = ref(false);
 const publishQueueSelectedPlatforms = ref<string[]>([]);
 const currentPublishProduct = ref<any>(null);
+const publishConfirmLoading = ref(false);
 
 // 发布到平台队列
 async function handlePublishToQueue(row: any) {
@@ -3842,6 +3863,7 @@ async function confirmPublishToPlatforms() {
 
   const row = currentPublishProduct.value;
   const platforms = publishQueueSelectedPlatforms.value;
+  publishConfirmLoading.value = true;
 
   try {
     // 为每个平台创建一个单独的任务（任务类型：publish-product-{platform}）
@@ -3858,7 +3880,6 @@ async function confirmPublishToPlatforms() {
         productName: row.name,
       },
     }));
-dev
     // 批量创建任务
     const results = await Promise.all(
       tasks.map(task => createTask(task))
@@ -3876,6 +3897,8 @@ dev
   } catch (error: any) {
     console.error('创建发布任务失败:', error);
     ElMessage.error(error?.message || '创建发布任务失败');
+  } finally {
+    publishConfirmLoading.value = false;
   }
 }
 
@@ -4803,6 +4826,11 @@ function formatTaskStatus(status: string) {
     padding: 8px 0;
   }
 
+  .publish-selected-summary {
+    min-height: 22px;
+    line-height: 22px;
+  }
+
   .platform-checkbox-group {
     display: flex;
     flex-direction: row;
@@ -4853,15 +4881,37 @@ function formatTaskStatus(status: string) {
       }
     }
     
-    .platform-icon {
-      font-size: 32px;
-      width: 56px;
-      height: 56px;
+    .platform-icon-wrap {
+      position: relative;
+      width: 48px;
+      height: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 12px;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .platform-logo {
+      position: relative;
+      z-index: 1;
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+    }
+
+    .platform-icon-fallback {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+      z-index: 0;
     }
     
     .platform-label {
