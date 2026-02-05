@@ -210,7 +210,8 @@
               >
                 制作设计模型({{ ids.length }})
               </el-button>
-              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog()">制作PS套图({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length }})</el-button>
               <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
             </div>
           </div>
@@ -526,11 +527,10 @@
             </div>
 
             <div class="psd-set-mode-inline">
-              <span class="psd-set-mode-label">生成方式：</span>
-              <el-radio-group v-model="psdSetMergeSticker" size="small" class="psd-set-mode-group">
-                <el-radio-button :label="false">单素材 × 模板</el-radio-button>
-                <el-radio-button :label="true">合并素材 × 模板</el-radio-button>
-              </el-radio-group>
+              <span class="psd-set-mode-label">生成方式:</span>
+              <el-tag :type="psdSetMergeSticker ? 'success' : 'primary'" size="large">
+                {{ psdSetMergeSticker ? '合并素材 × 模板' : '单素材 × 模板' }}
+              </el-tag>
             </div>
 
             <div>
@@ -3294,12 +3294,18 @@ async function handleDesignModel(row) {
   await loadDesignModels()
 }
 
-async function openPsdSetDialog(row?: any) {
-  if (row) {
-    ids.value = [row.id]
-  } else if (!ids.value.length) {
-    ElMessage.warning('请选择要制作的素材')
-    return
+async function openPsdSetDialog(mergeMode?: boolean | any) {
+  // 如果传入的是对象(row),则是从表格行点击的,默认使用单素材模式
+  if (mergeMode && typeof mergeMode === 'object') {
+    ids.value = [mergeMode.id]
+    psdSetMergeSticker.value = false
+  } else {
+    // 如果是布尔值,则是从按钮点击的,使用传入的模式
+    if (!ids.value.length) {
+      ElMessage.warning('请选择要制作的素材')
+      return
+    }
+    psdSetMergeSticker.value = mergeMode === true
   }
   // 打开弹窗时重置分页
   psdSetTemplatePageParams.currentPage = 1

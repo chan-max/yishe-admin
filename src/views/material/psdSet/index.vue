@@ -258,6 +258,32 @@
       <div v-loading="detailLoading" class="detail-dialog-content" v-if="detailData">
         <div class="detail-section-item">
           <div class="detail-header">
+            <span class="detail-label">基础信息</span>
+          </div>
+          <div class="detail-info-row">
+            <div class="detail-info-item">
+              <span class="info-label">套图名称</span>
+              <span class="info-value">{{ detailData.name || '-' }}</span>
+            </div>
+            <div class="detail-info-item">
+              <span class="info-label">状态</span>
+              <el-tag :type="statusTagType(detailData.status)" size="small" effect="plain">
+                {{ statusLabel(detailData.status) }}
+              </el-tag>
+            </div>
+            <div class="detail-info-item">
+              <span class="info-label">制作耗时</span>
+              <span class="info-value">{{ formatProcessingTime(detailData.processingTime) }}</span>
+            </div>
+            <div class="detail-info-item">
+              <span class="info-label">上传者</span>
+              <span class="info-value">{{ detailData?.uploader?.account || detailData?.uploader?.name || detailData?.uploaderId || '-' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-section-item">
+          <div class="detail-header">
             <span class="detail-label">贴纸信息 ({{ detailStickers.length }})</span>
           </div>
           <div v-if="detailStickers.length" class="detail-sticker-list">
@@ -680,6 +706,12 @@ function getColumns() {
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
     { title: '状态说明', field: 'statusMessage', width: 320, showOverflow: true },
     { title: '配置信息', field: 'config', width: 150, slots: { default: 'configSlot' } },
+    { 
+      title: '制作耗时', 
+      field: 'processingTime', 
+      width: 140,
+      formatter: ({ cellValue }) => formatProcessingTime(cellValue)
+    },
     {
       title: '创建时间',
       field: 'createTime',
@@ -751,6 +783,21 @@ function handleKeywordChange(val: string) {
   }
 }
 
+
+function formatProcessingTime(seconds: any): string {
+  const s = Number(seconds)
+  if (isNaN(s) || s <= 0) return '-'
+  if (s < 60) return `${s.toFixed(2)}秒`
+  if (s < 3600) {
+    const minutes = Math.floor(s / 60)
+    const secs = s % 60
+    return `${minutes}分${secs.toFixed(2)}秒`
+  }
+  const hours = Math.floor(s / 3600)
+  const minutes = Math.floor((s % 3600) / 60)
+  const secs = s % 60
+  return `${hours}小时${minutes}分${secs.toFixed(2)}秒`
+}
 
 function statusLabel(status: string) {
   const item = statusOptions.find((s) => s.value === status)
@@ -1414,6 +1461,29 @@ getList()
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.detail-info-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  background: var(--el-fill-color-lighter);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+.detail-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.info-label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.info-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
 }
 .detail-sticker-card {
   display: flex;
