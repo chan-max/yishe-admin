@@ -91,7 +91,7 @@
               <div class="thumbnail-cell">
                 <el-image
                   v-if="row.thumbnail"
-                  :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                  :src="getPreviewImageUrl(row.thumbnail, { width: 240, height: 240, quality: 80, format: 'webp' })"
                   :preview-src-list="[row.thumbnail]"
                   :initial-index="0"
                   preview-teleported
@@ -1362,6 +1362,7 @@ onUnmounted(() => {
   .thumbnail-image {
     width: 120px;
     height: auto;
+    max-height: 120px;
     min-height: 60px;
     object-fit: contain;
     border: 1px solid var(--el-border-color-light);
