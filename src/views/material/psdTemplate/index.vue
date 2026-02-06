@@ -530,6 +530,19 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
+      title: "文件大小",
+      field: "size",
+      width: 100,
+      showOverflow: true,
+      formatter: ({ cellValue }) => {
+        if (!cellValue) return '0 B';
+        const k = 1024;
+        const ns = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(cellValue) / Math.log(k));
+        return parseFloat((cellValue / Math.pow(k, i)).toFixed(2)) + ' ' + ns[i];
+      },
+    },
+    {
       title: "路径状态",
       field: "pathStatus",
       width: 140,
@@ -827,6 +840,7 @@ function handleAdd() {
     psdTemplateConfig: null,
     psdTemplateConfigText: "",
     enabled: false, // 默认不可用
+    size: 0,
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -884,6 +898,7 @@ const form = ref<any>({
   psdTemplateConfig: null,
   psdTemplateConfigText: "", // 用于表单编辑的文本字段
   enabled: false, // 是否可用，默认不可用
+  size: 0,
 });
 
 // AI生成内容相关
@@ -987,6 +1002,7 @@ const submitForm = async () => {
         thumbnail: thumbnail || "", // 确保是字符串
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
+        size: form.value.size,
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -1051,6 +1067,7 @@ const submitForm = async () => {
         uploaderId: userStore.user?.id,
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
+        size: form.value.size,
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -1084,6 +1101,7 @@ const handleFileChange = (file, files) => {
   fileList.value = files; // 更新文件列表
   form.value.name = file.name;
   form.value.file = file.raw; // 将文件绑定到表单数据
+  form.value.size = file.size; // 记录文件大小
 };
 
 // 文件移除时的回调
