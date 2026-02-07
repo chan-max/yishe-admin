@@ -1,4 +1,4 @@
- import { Layout } from '@/utils/routerHelper'
+import { Layout } from '@/utils/routerHelper'
 
 const { t } = useI18n()
 /**
@@ -106,7 +106,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
             }
           }
         ]
-  },
+      },
       {
         path: 'statistics',
         component: () => import('@/views/Home/Statistics/index.vue'),
@@ -327,6 +327,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noTagsView: false,
           title: '套图',
           requiresAdmin: true
+        }
+      },
+      {
+        path: 'category',
+        component: () => import('@/views/product/category/index.vue'),
+        name: 'ProductCategory',
+        meta: {
+          title: '商品种类',
         }
       },
       {

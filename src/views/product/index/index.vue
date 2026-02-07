@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <ContentWrap>
     <!-- 折叠状态：显示常用搜索和操作 -->
     <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
       <div style="flex: 1"></div>
@@ -1887,11 +1887,12 @@
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, watchEffect } from "vue";
+import { ContentWrap } from '@/components/ContentWrap'
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";

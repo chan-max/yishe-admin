@@ -1,5 +1,5 @@
 <template>
-  <div class="psd-set-page">
+  <ContentWrap class="psd-set-page">
     <div class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
       <div style="flex:1;"></div>
       <form-item label="ID">
@@ -505,11 +505,12 @@
     </div>
     
     <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from 'vue'
+import { ContentWrap } from '@/components/ContentWrap'
 import { useWindowSize } from '@vueuse/core'
 import { Search, ArrowDown, DocumentCopy, WarningFilled, CircleCheck } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
