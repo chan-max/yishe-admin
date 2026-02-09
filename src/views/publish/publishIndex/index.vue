@@ -162,6 +162,9 @@
                       }}</span>     
                   </span>
                 </div>
+                <div style="margin-top: 8px; color: #666; font-size: 12px;">
+                  支持平台：抖音、小红书、微博、快手、咸鱼、速卖通、亚马逊、希音
+                </div>
               </div>
             </el-form-item>
           </el-col>

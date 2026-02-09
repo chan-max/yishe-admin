@@ -3799,6 +3799,11 @@ const PUBLISH_PLATFORM_LOGOS: Record<string, string> = {
   zhihu: 'https://api.iconify.design/simple-icons/zhihu.svg',
   tiktok: 'https://api.iconify.design/simple-icons/tiktok.svg',
   taobao: 'https://api.iconify.design/simple-icons/taobao.svg',
+  youtube: 'https://api.iconify.design/simple-icons/youtube.svg',
+  instagram: 'https://api.iconify.design/simple-icons/instagram.svg',
+  facebook: 'https://api.iconify.design/simple-icons/facebook.svg',
+  twitter: 'https://api.iconify.design/simple-icons/twitter.svg',
+  wechat: 'https://api.iconify.design/simple-icons/wechat.svg',
 };
 
 // 发布平台选项（任务类型命名：{action}-{object}-{platform}，便于任务队列查询）
@@ -3812,6 +3817,12 @@ const publishPlatforms = [
   { label: 'TikTok', value: 'tiktok', icon: 'T', color: '#000000', logoUrl: PUBLISH_PLATFORM_LOGOS.tiktok },
   { label: 'Temu', value: 'temu', icon: 'T', color: '#FF6B35', logoUrl: undefined },
   { label: '淘宝', value: 'taobao', icon: '淘', color: '#FF4400', logoUrl: PUBLISH_PLATFORM_LOGOS.taobao },
+  { label: 'YouTube', value: 'youtube', icon: 'Y', color: '#FF0000', logoUrl: PUBLISH_PLATFORM_LOGOS.youtube },
+  { label: 'Instagram', value: 'instagram', icon: 'I', color: '#E4405F', logoUrl: PUBLISH_PLATFORM_LOGOS.instagram },
+  { label: 'Facebook', value: 'facebook', icon: 'F', color: '#1877F2', logoUrl: PUBLISH_PLATFORM_LOGOS.facebook },
+  { label: 'Twitter', value: 'twitter', icon: 'T', color: '#1DA1F2', logoUrl: PUBLISH_PLATFORM_LOGOS.twitter },
+  { label: '视频号', value: 'wechat_channels', icon: '视', color: '#07C160', logoUrl: PUBLISH_PLATFORM_LOGOS.wechat },
+  { label: '百家号', value: 'baijiahao', icon: '百', color: '#105BFD', logoUrl: undefined },
 ];
 
 // 格式化平台名称
@@ -3826,6 +3837,12 @@ function formatPlatformName(platform: string) {
     tiktok: 'TikTok',
     temu: 'Temu',
     taobao: '淘宝',
+    youtube: 'YouTube',
+    instagram: 'Instagram',
+    facebook: 'Facebook',
+    twitter: 'Twitter',
+    wechat_channels: '视频号',
+    baijiahao: '百家号',
   };
   return platformMap[platform] || platform;
 }
