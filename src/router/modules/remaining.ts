@@ -346,6 +346,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         }
       },
       {
+        path: 'publish-config',
+        component: () => import('@/views/product/publish-config/index.vue'),
+        name: 'PublishConfig',
+        meta: {
+          title: '发布配置',
+        }
+      },
+      {
         path: 'queue',
         component: () => import('@/views/system/queue/index.vue'),
         name: 'SystemQueue',

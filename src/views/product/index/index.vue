@@ -1840,39 +1840,39 @@
     <!-- 发布平台选择对话框 -->
     <el-dialog
       v-model="publishPlatformDialogVisible"
-      title="选择发布平台"
+      title="选择发布配置"
       width="700px"
       :close-on-click-modal="true"
       align-center
     >
       <div class="platform-select-container">
         <div class="mb-4 text-gray-600">
-          请选择要发布的平台（可多选）：
+          请选择要使用的发布配置（可多选）：
         </div>
-        <el-checkbox-group v-model="publishQueueSelectedPlatforms" class="platform-checkbox-group">
+
+        <div v-if="availablePublishConfigs.length === 0" class="empty-config-tips text-center py-10 text-gray-400">
+           暂无发布配置，请先在“发布配置”页面添加
+        </div>
+        
+        <el-checkbox-group v-else v-model="publishQueueSelectedConfigIds" class="platform-checkbox-group flex flex-col">
           <el-checkbox
-            v-for="platform in publishPlatforms"
-            :key="platform.value"
-            :label="platform.value"
-            class="platform-checkbox-item"
+            v-for="config in availablePublishConfigs"
+            :key="config.id"
+            :label="config.id"
+            class="platform-checkbox-item !mr-0 mb-2 p-2 border border-gray-100 rounded hover:bg-gray-50 transition-colors w-full h-auto"
           >
-            <div class="platform-item-content">
-              <span class="platform-icon-wrap" :style="{ backgroundColor: platform.color + '18' }">
-                <img
-                  v-if="platform.logoUrl"
-                  :src="platform.logoUrl"
-                  :alt="platform.label"
-                  class="platform-logo"
-                  @error="(e: Event) => ((e.currentTarget as HTMLImageElement).style.display = 'none')"
-                />
-                <span class="platform-icon-fallback">{{ platform.icon }}</span>
-              </span>
-              <span class="platform-label">{{ platform.label }}</span>
+            <div class="platform-item-content flex items-center w-full">
+              <div class="flex items-center flex-1">
+                  <span class="font-bold mr-2 text-base">{{ config.name }}</span>
+                  <el-tag size="small" effect="plain">{{ formatPlatformName(config.platform) }}</el-tag>
+              </div>
+              <div class="text-xs text-gray-400 truncate max-w-[300px]">{{ config.description }}</div>
             </div>
           </el-checkbox>
         </el-checkbox-group>
+
         <div class="publish-selected-summary mt-4 text-sm text-gray-500">
-          已选择 {{ publishQueueSelectedPlatforms.length }} 个平台<span v-if="publishQueueSelectedPlatforms.length > 0">：{{ publishQueueSelectedPlatforms.map(p => formatPlatformName(p)).join('、') }}</span>
+          已选择 {{ publishQueueSelectedConfigIds.length }} 个配置
         </div>
       </div>
       <template #footer>
@@ -1880,7 +1880,7 @@
         <el-button 
           type="primary" 
           :loading="publishConfirmLoading"
-          :disabled="publishQueueSelectedPlatforms.length === 0"
+          :disabled="publishQueueSelectedConfigIds.length === 0"
           @click="confirmPublishToPlatforms"
         >
           确认发布
@@ -1948,6 +1948,7 @@ import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/conf
 import { createTask, type CreateTaskDto } from '@/api/system/queue'
 import { getClipMaterialList } from '@/api/clip-material'
 import { getPreviewImageUrl } from '@/utils/image'
+import { getPublishConfigListApi } from '@/api/product/publishConfig'
 
 
 
@@ -3823,6 +3824,21 @@ const publishPlatforms = [
   { label: 'Twitter', value: 'twitter', icon: 'T', color: '#1DA1F2', logoUrl: PUBLISH_PLATFORM_LOGOS.twitter },
   { label: '视频号', value: 'wechat_channels', icon: '视', color: '#07C160', logoUrl: PUBLISH_PLATFORM_LOGOS.wechat },
   { label: '百家号', value: 'baijiahao', icon: '百', color: '#105BFD', logoUrl: undefined },
+  { label: '咸鱼', value: 'xianyu', icon: '咸', color: '#FFDA44', logoUrl: undefined },
+  { label: '京东', value: 'jd', icon: '京', color: '#E4393C', logoUrl: undefined },
+  { label: '拼多多', value: 'pinduoduo', icon: '拼', color: '#E02E24', logoUrl: undefined },
+  { label: '今日头条', value: 'toutiao', icon: '头', color: '#ED4040', logoUrl: undefined },
+  { label: '大鱼号', value: 'dayu', icon: '大', color: '#3A76D2', logoUrl: undefined },
+  { label: '企鹅号', value: 'penguin', icon: '企', color: '#2783F4', logoUrl: undefined },
+  { label: '搜狐号', value: 'sohu', icon: '搜', color: '#FFC335', logoUrl: undefined },
+  { label: '网易号', value: 'netease', icon: '网', color: '#D22923', logoUrl: undefined },
+  { label: '度小视', value: 'duxiaoshi', icon: '度', color: '#33BEFF', logoUrl: undefined },
+  { label: '美拍', value: 'meipai', icon: '美', color: '#FF547D', logoUrl: undefined },
+  { label: '秒拍', value: 'miaopai', icon: '秒', color: '#FFD705', logoUrl: undefined },
+  { label: 'A站', value: 'acfun', icon: 'A', color: '#FD4C5D', logoUrl: undefined },
+  { label: '西瓜视频', value: 'xigua', icon: '西', color: '#FE3059', logoUrl: undefined },
+  { label: '好看视频', value: 'haokan', icon: '好', color: '#EE3333', logoUrl: undefined },
+  { label: '全民小视频', value: 'quanmin', icon: '全', color: '#FD3756', logoUrl: undefined },
 ];
 
 // 格式化平台名称
@@ -3843,6 +3859,21 @@ function formatPlatformName(platform: string) {
     twitter: 'Twitter',
     wechat_channels: '视频号',
     baijiahao: '百家号',
+    xianyu: '咸鱼',
+    jd: '京东',
+    pinduoduo: '拼多多',
+    toutiao: '今日头条',
+    dayu: '大鱼号',
+    penguin: '企鹅号',
+    sohu: '搜狐号',
+    netease: '网易号',
+    duxiaoshi: '度小视',
+    meipai: '美拍',
+    miaopai: '秒拍',
+    acfun: 'A站',
+    xigua: '西瓜视频',
+    haokan: '好看视频',
+    quanmin: '全民小视频',
   };
   return platformMap[platform] || platform;
 }
@@ -3854,7 +3885,8 @@ function getPublishTaskType(platform: string) {
 
 // 发布平台选择对话框
 const publishPlatformDialogVisible = ref(false);
-const publishQueueSelectedPlatforms = ref<string[]>([]);
+const publishQueueSelectedConfigIds = ref<string[]>([]);
+const availablePublishConfigs = ref<any[]>([]);
 const currentPublishProduct = ref<any>(null);
 const publishConfirmLoading = ref(false);
 
@@ -3865,7 +3897,24 @@ async function handlePublishToQueue(row: any) {
   }
   
   currentPublishProduct.value = row;
-  publishQueueSelectedPlatforms.value = [];
+  publishQueueSelectedConfigIds.value = [];
+  
+  // 获取发布配置
+  try {
+      const res = await getPublishConfigListApi();
+      if (Array.isArray(res)) {
+          availablePublishConfigs.value = res;
+      } else if (res && res.list) {
+          availablePublishConfigs.value = res.list;
+      } else {
+          availablePublishConfigs.value = [];
+      }
+  } catch (e) {
+      console.error(e);
+      ElMessage.error('获取发布配置失败');
+      return;
+  }
+  
   publishPlatformDialogVisible.value = true;
 }
 
@@ -3875,42 +3924,53 @@ async function confirmPublishToPlatforms() {
     return ElMessage.warning('商品ID不存在');
   }
   
-  if (publishQueueSelectedPlatforms.value.length === 0) {
-    return ElMessage.warning('请至少选择一个平台');
+  if (publishQueueSelectedConfigIds.value.length === 0) {
+    return ElMessage.warning('请至少选择一个发布配置');
   }
 
   const row = currentPublishProduct.value;
-  const platforms = publishQueueSelectedPlatforms.value;
+  const configIds = publishQueueSelectedConfigIds.value;
   publishConfirmLoading.value = true;
 
   try {
-    // 为每个平台创建一个单独的任务（任务类型：publish-product-{platform}）
-    const tasks = platforms.map(platform => ({
-      type: getPublishTaskType(platform),
-      data: {
-        productId: row.id,
-        platform: platform,
-      },
-      description: `发布商品"${row.name || row.id}"到${formatPlatformName(platform)}平台`,
-      metadata: {
-        platform: platform,
-        productId: row.id,
-        productName: row.name,
-      },
-    }));
+    // 为每个配置创建一个单独的任务
+    const tasks = configIds.map(configId => {
+      const config = availablePublishConfigs.value.find(c => c.id === configId);
+      if (!config) return null;
+
+      return {
+        type: getPublishTaskType(config.platform),
+        data: {
+          productId: row.id,
+          platform: config.platform,
+          publishConfigId: config.id,
+          // 将配置中的个性化数据合并到 data 中，供执行端使用
+          ...(config.configData || {})
+        },
+        description: `发布商品"${row.name || row.id}"到${config.name} (${formatPlatformName(config.platform)})`,
+        metadata: {
+          platform: config.platform,
+          productId: row.id,
+          productName: row.name,
+          publishConfigId: config.id,
+          configName: config.name
+        },
+      };
+    }).filter(Boolean);
+
     // 批量创建任务
     const results = await Promise.all(
-      tasks.map(task => createTask(task))
+      tasks.map(task => task && createTask(task))
     );
 
-    const successCount = results.filter(r => r && r.messageId).length;
+    const successCount = results.filter(r => r && r.id).length; // createTask returns Queue entity usually
     
     publishPlatformDialogVisible.value = false;
     
-    if (successCount === platforms.length) {
+    if (successCount === configIds.length) {
       ElMessage.success(`成功创建 ${successCount} 个发布任务，已添加到发布队列`);
     } else {
-      ElMessage.warning(`成功创建 ${successCount}/${platforms.length} 个发布任务`);
+      ElMessage.warning(`成功创建 ${successCount}/${configIds.length} 个发布任务`);
     }
   } catch (error: any) {
     console.error('创建发布任务失败:', error);

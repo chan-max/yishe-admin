@@ -1,8 +1,8 @@
 
 
 export const commonGridOptions = {
-    size: 'mini',
-    border: 'inner',
+    size: 'mini' as const,
+    border: 'inner' as const,
     columnConfig: {
         resizable: true,
     },
