@@ -613,7 +613,7 @@ const userStore = useUserStore()
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 const FOLDER_CATEGORY = "fonttemplate";
-const selectedFolderId = ref<string | null>("__root__");
+const selectedFolderId = ref<string | null>("__all__");
 
 // 查询条件
 const queryParams = reactive({
@@ -928,7 +928,13 @@ function setupTemplateDrag() {
 getList();
 
 function handleFolderChange(payload: { folderId: string | null }) {
-  queryParams.folderId = payload.folderId ?? null;
+  if (payload.folderId === 'all') {
+    queryParams.folderId = undefined as any;
+  } else if (payload.folderId === null) {
+    queryParams.folderId = '0'; // '0' represents Uncategorized (Root)
+  } else {
+    queryParams.folderId = payload.folderId;
+  }
   queryParams.currentPage = 1;
   getList();
 }
@@ -1025,6 +1031,7 @@ async function handleBatchDelete() {
 // 拖拽到文件夹时的交互
 function handleFolderDragOver(payload: { data: any; event?: DragEvent }) {
   if (!dragState.dragging) return;
+  if (payload.data.id === '__all__') return; // Prevent drop on All
   dragState.overFolderId = payload.data.id;
   dragState.overFolderPath = payload.data.path || '';
   dragHint.visible = true;

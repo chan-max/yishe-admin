@@ -606,10 +606,16 @@ function setupTemplateDrag() {
 getList();
 
 // ============= 文件夹相关 =============
-const selectedFolderId = ref<string | null>("__root__");
+const selectedFolderId = ref<string | null>("__all__");
 
 function handleFolderChange(payload: { folderId: string | null }) {
-  queryParams.folderId = payload.folderId ?? null;
+  if (payload.folderId === 'all') {
+    queryParams.folderId = undefined as any;
+  } else if (payload.folderId === null) {
+    queryParams.folderId = '0'; // '0' represents Uncategorized (Root)
+  } else {
+    queryParams.folderId = payload.folderId;
+  }
   queryParams.currentPage = 1;
   getList();
 }

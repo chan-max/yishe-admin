@@ -392,8 +392,8 @@
                 style="flex: 1; overflow-y: auto;">
                 <template #default="{ node, data }">
                   <div class="custom-tree-node" style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
-                    <el-icon v-if="data.isRoot">
-                      <FolderOpened />
+                    <el-icon v-if="data.isRoot" style="color: var(--el-color-primary)">
+                      <Files />
                     </el-icon>
                     <el-icon v-else>
                       <Folder />
@@ -675,9 +675,17 @@
               @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
               @drop.prevent="handleFolderDrop(data)">
               <div class="sticker-folder-node-content">
-                <img v-if="node.expanded && (data.children && data.children.length > 0)" src="/img/folder-open.svg"
-                  class="folder-icon" alt="folder" />
-                <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
+                <template v-if="data.isAll">
+                  <el-icon class="folder-icon"
+                    style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
+                    <Files />
+                  </el-icon>
+                </template>
+                <template v-else>
+                  <img v-if="node.expanded && (data.children && data.children.length > 0)" src="/img/folder-open.svg"
+                    class="folder-icon" alt="folder" />
+                  <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
+                </template>
                 <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
                 }}</span>
                 <span v-if="data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount || 0
@@ -1632,7 +1640,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1677,7 +1685,7 @@ const queryParams = reactive({
   isCutout: null, // 新增抠图素材过滤参数
   sizeShape: [] as string[], // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long（支持多选）
   random: false, // 是否随机
-  folderId: null as string | null, // 文件夹ID
+  folderId: undefined as string | null | undefined, // 文件夹ID
 })
 
 // 尺寸形状选项配置
@@ -2305,7 +2313,7 @@ function clearPhashSearch() {
 
 // 文件夹相关状态
 const stickerFolderTreeRef = ref()
-const selectedStickerFolderId = ref<string | null>('__root__') // 默认选中根目录
+const selectedStickerFolderId = ref<string | null>('__all__') // 默认选中全部
 const selectedStickerFolderPath = ref('')
 const stickerFolderTreeData = ref<any[]>([])
 
@@ -2346,24 +2354,29 @@ async function loadStickerFolderTree() {
     // 确保只显示根文件夹（parentId 为 null 的文件夹）
     const rootFolders = (res || []).filter((folder: any) => folder.parentId === null || folder.parentId === undefined)
 
-    // 创建根目录节点，放在最上方
-    const rootNode = {
-      id: '__root__',
-      name: '根目录',
+    // 创建"全部"节点
+    const allNode = {
+      id: '__all__',
+      name: '全部',
       path: '',
       parentId: null,
-      stickerCount: 0,
-      children: rootFolders, // 将根文件夹作为根目录的子节点
-      isRoot: true
+      children: [] as any[],
+      isAll: true
     }
 
-    stickerFolderTreeData.value = [rootNode]
+    // 创建根目录节点，放在最上方
+    stickerFolderTreeData.value = [allNode, ...rootFolders]
 
     // 确保根目录节点被选中
     nextTick(() => {
       if (stickerFolderTreeRef.value && !selectedStickerFolderId.value) {
-        selectedStickerFolderId.value = '__root__'
-        stickerFolderTreeRef.value.setCurrentKey('__root__')
+        selectedStickerFolderId.value = '__all__' // Default to All? Or Root? Let's Default to Root as before for compatibility, or All? User asked "how to view all".
+        // Let's default to __root__ for now, or ensure selection logic is consistent.
+        if (selectedStickerFolderId.value === '__all__') {
+          stickerFolderTreeRef.value.setCurrentKey('__all__')
+        } else {
+          stickerFolderTreeRef.value.setCurrentKey('__root__')
+        }
       }
     })
   } catch (error) {
@@ -2374,11 +2387,15 @@ async function loadStickerFolderTree() {
 
 // 文件夹节点点击
 function handleStickerFolderNodeClick(data: any) {
-  // 如果是根目录节点
-  if (data.id === '__root__') {
+  if (data.id === '__all__') {
+    selectedStickerFolderId.value = '__all__'
+    selectedStickerFolderPath.value = ''
+    queryParams.folderId = undefined as any
+  } else if (data.id === '__root__') {
+    // 如果是根目录节点
     selectedStickerFolderId.value = '__root__'
     selectedStickerFolderPath.value = ''
-    queryParams.folderId = null
+    queryParams.folderId = '0' // 使用 '0' 代表未分类（根目录）
   } else {
     selectedStickerFolderId.value = data.id
     selectedStickerFolderPath.value = data.path || ''
@@ -2404,6 +2421,7 @@ function handleSelectRootStickerFolder() {
 // 拖拽到文件夹时的交互
 function handleFolderDragOver(data: any, evt?: DragEvent) {
   if (!dragState.dragging) return
+  if (data.id === '__all__') return // Prevent drop on All
   dragState.overFolderId = data.id
   dragState.overFolderPath = data.path || ''
   dragHint.visible = true
