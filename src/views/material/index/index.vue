@@ -7,25 +7,15 @@
         <!-- AI 提示词搜索 -->
         <div class="search-field search-field-wide">
           <label class="search-label">提示词</label>
-          <el-input
-            v-model="queryParams.searchPrompt"
-            placeholder="AI提示词"
-            clearable
-            @change="(val) => { if (!val) getList() }"
-            @keyup.enter="getList"
-          />
+          <el-input v-model="queryParams.searchPrompt" placeholder="AI提示词" clearable
+            @change="(val) => { if (!val) getList() }" @keyup.enter="getList" />
         </div>
 
         <!-- 搜索 -->
         <div class="search-field search-field-wide">
           <label class="search-label">搜索</label>
-          <el-input
-            v-model="queryParams.searchText"
-            placeholder="名称、描述、关键词"
-            clearable
-            @change="(val) => { if (!val) getList() }"
-            @keyup.enter="getList"
-          />
+          <el-input v-model="queryParams.searchText" placeholder="名称、描述、关键词" clearable
+            @change="(val) => { if (!val) getList() }" @keyup.enter="getList" />
         </div>
 
         <!-- 搜索模式 -->
@@ -100,7 +90,8 @@
         <!-- 尺寸 -->
         <div class="search-field">
           <label class="search-label">尺寸</label>
-          <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable multiple @change="getList" :teleported="false">
+          <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable multiple @change="getList"
+            :teleported="false">
             <el-option-group label="常用">
               <el-option value="landscape" label="横图">
                 <div class="size-option">
@@ -173,7 +164,8 @@
         <!-- 时间 -->
         <div class="search-field search-field-time">
           <label class="search-label">时间</label>
-          <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
+          <DateRangePicker
+            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
         </div>
 
         <!-- 相似搜索 -->
@@ -182,9 +174,11 @@
           <div class="phash-form-row">
             <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
             <div class="phash-mode">
-              <el-check-tag :checked="queryParams.phashMode === 'range'" @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
+              <el-check-tag :checked="queryParams.phashMode === 'range'"
+                @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
               <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
-                <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary" @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
+                <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary"
+                  @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
               </el-tooltip>
             </div>
             <div class="phash-actions">
@@ -196,23 +190,22 @@
               <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
               <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
               <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-              <el-button
-                v-if="isAdmin && false"
-                type="success"
-                @click="async () => {
-                  if (!ids.length) {
-                    return ElMessage.warning('请选择要制作的素材')
-                  }
-                  resetDesignModelSteps()
-                  designModelModalVisible = true
-                  await loadDesignModels()
-                }"
-              >
+              <el-button v-if="isAdmin && false" type="success" @click="async () => {
+                if (!ids.length) {
+                  return ElMessage.warning('请选择要制作的素材')
+                }
+                resetDesignModelSteps()
+                designModelModalVisible = true
+                await loadDesignModels()
+              }">
                 制作设计模型({{ ids.length }})
               </el-button>
-              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
+                }})</el-button>
+              <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
+                }})</el-button>
+              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
+                }})</el-button>
             </div>
           </div>
         </div>
@@ -327,7 +320,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="后缀">
-          <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable >
+          <el-select v-model="queryParams.suffix" placeholder="请选择后缀" multiple clearable>
             <el-option label="jpg" value="jpg" />
             <el-option label="jpeg" value="jpeg" />
             <el-option label="png" value="png" />
@@ -339,16 +332,10 @@
           </el-select>
         </el-form-item>
         <el-form-item label="随机顺序">
-          <el-switch
-            v-model="queryParams.random"
-            active-text="随机"
-            inactive-text="默认"
-          />
+          <el-switch v-model="queryParams.random" active-text="随机" inactive-text="默认" />
         </el-form-item>
         <el-form-item label="按时间查询">
-          <DateRangePicker
-            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end }"
-          />
+          <DateRangePicker @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end }" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -360,34 +347,22 @@
     <!-- PC 顶部筛选栅格布局样式 -->
     <!--（放在这里是为了避免全局影响，保持只作用于本页） -->
 
-    <el-dialog
-      v-model="psdSetDialogVisible"
-      title="制作PS套图"
-      width="100%"
-      style="height: 100%"
-      align-center
-      :destroy-on-close="true"
-      class="psd-set-dialog"
-      @close="resetPsdSetState"
-    >
-      <div class="psd-set-body">
-        <div class="psd-set-materials">
+    <el-dialog v-model="psdSetDialogVisible" title="制作PS套图" width="100%" style="height: 100%" align-center
+      :destroy-on-close="true" class="psd-set-dialog" @close="resetPsdSetState">
+      <div class="psd-set-body" style="height: calc(100vh - 160px); display: flex; gap: 16px;">
+        <div class="psd-set-materials"
+          style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid var(--el-border-color-lighter); padding-right: 16px;">
           <div class="section-title">已选择素材 ({{ ids.length }})</div>
-          <div class="thumbs">
-            <div
-              v-for="id in ids"
-              :key="id"
-              class="thumb"
-              :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }"
-            >
+          <div class="thumbs" style="flex: 1; overflow-y: auto; padding-right: 4px;">
+            <div v-for="id in ids" :key="id" class="thumb"
+              :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }">
               <img
                 :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })"
-                class="thumb-img"
-                alt="素材预览"
-                loading="lazy"
-              />
+                class="thumb-img" alt="素材预览" loading="lazy" />
               <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
-                <el-icon><Warning /></el-icon>
+                <el-icon>
+                  <Warning />
+                </el-icon>
                 <span>{{ getMaterialSuffix(id) || '未知' }}</span>
               </div>
               <div v-else-if="getMaterialSuffix(id)" class="thumb-format-badge valid">
@@ -396,112 +371,108 @@
             </div>
           </div>
         </div>
-        <div class="psd-set-templates">
+        <div class="psd-set-templates" style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
           <div class="section-title">
             选择PSD模板 (可多选，支持跨页勾选)
             <span v-if="psdSetTemplatePageParams.total > 0" class="template-count-info">
               (共 {{ psdSetTemplatePageParams.total }} 个)
             </span>
           </div>
-          <div class="psd-set-template-toolbar">
-            <el-input
-              v-model="psdSetTemplateSearchText"
-              placeholder="搜索模板名称、描述等"
-              clearable
-              style="flex: 1; max-width: 300px;"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-            <el-button
-              type="primary"
-              size="small"
-              @click="handlePsdTemplateSelectAll"
-            >
-              {{ isAllPsdTemplatesSelected ? '取消全选' : '全选' }}
-            </el-button>
-            <el-button
-              type="primary"
-              size="small"
-              :icon="Edit"
-              @click="handlePsdTemplateDetailConfig"
-            >
-              详细配置
-            </el-button>
-            <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
-              已选中 {{ selectedPsdTemplateIds.length }} 个
-            </span>
-          </div>
-          <div class="template-list-wrapper">
-            <div class="template-list" v-loading="psdSetTemplatesLoading">
-              <div
-                v-for="tpl in filteredPsdSetTemplates"
-                :key="tpl.id"
-                class="template-item"
-                :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }"
-              >
-                <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
-                  <img
-                    v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                    :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
-                    :alt="tpl.name || '模板缩略图'"
-                    class="template-thumbnail"
-                    loading="lazy"
-                    @error="handleTemplateImageError"
-                  />
-                  <div class="template-info">
-                    <div class="template-header">
-                      <div class="template-title-row">
-                        <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
-                        <el-link
-                          type="primary"
-                          :underline="false"
-                          class="template-detail-link"
-                          @click.stop="openTemplateDetail(tpl)"
-                        >
-                          查看详情
-                        </el-link>
-                      </div>
-                    </div>
-                    <div class="template-paths">
-                      <div class="path-row">
-                        <span class="path-label">远程链接：</span>
-                        <el-link
-                          v-if="tpl.url"
-                          :href="tpl.url"
-                          target="_blank"
-                          type="primary"
-                          :underline="false"
-                          class="path-link"
-                          @click.stop
-                        >
-                          {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
-                        </el-link>
-                        <span v-else class="path-empty">暂无</span>
-                      </div>
-                      <div class="path-row">
-                        <span class="path-label">本地路径：</span>
-                        <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
-                        <span v-else class="path-empty">暂无</span>
+
+          <div class="psd-set-content-container" style="display: flex; gap: 16px; flex: 1; overflow: hidden;">
+            <!-- 文件夹树 -->
+            <div class="psd-folder-tree-wrapper"
+              style="width: 220px; min-width: 220px; border-right: 1px solid var(--el-border-color-lighter); padding-right: 12px; display: flex; flex-direction: column; height: 100%;">
+              <div style="margin-bottom: 12px; font-weight: 500; font-size: 14px; color: var(--el-text-color-primary);">
+                文件夹
+              </div>
+              <el-tree ref="psdFolderTreeRef" :data="psdFolderTreeData" :props="{ children: 'children', label: 'name' }"
+                node-key="id" :expand-on-click-node="false" :default-expand-all="true" :highlight-current="true"
+                :current-node-key="selectedPsdFolderId" @node-click="handlePsdFolderNodeClick" class="psd-folder-tree"
+                style="flex: 1; overflow-y: auto;">
+                <template #default="{ node, data }">
+                  <div class="custom-tree-node" style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                    <el-icon v-if="data.isRoot">
+                      <FolderOpened />
+                    </el-icon>
+                    <el-icon v-else>
+                      <Folder />
+                    </el-icon>
+                    <span class="node-label">{{ data.name }}</span>
+                  </div>
+                </template>
+              </el-tree>
+            </div>
+
+            <!-- 模板列表 -->
+            <div class="psd-template-list-container"
+              style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
+              <div class="psd-set-template-toolbar">
+                <el-input v-model="psdSetTemplateSearchText" placeholder="搜索模板名称、描述等" clearable
+                  style="flex: 1; max-width: 300px;">
+                  <template #prefix>
+                    <el-icon>
+                      <Search />
+                    </el-icon>
+                  </template>
+                </el-input>
+                <el-button type="primary" size="small" @click="handlePsdTemplateSelectAll">
+                  {{ isAllPsdTemplatesSelected ? '取消全选' : '全选' }}
+                </el-button>
+                <el-button type="primary" size="small" :icon="Edit" @click="handlePsdTemplateDetailConfig">
+                  详细配置
+                </el-button>
+                <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
+                  已选中 {{ selectedPsdTemplateIds.length }} 个
+                </span>
+              </div>
+              <div class="template-list-wrapper" style="max-height: none; flex: 1;">
+                <div class="template-list" v-loading="psdSetTemplatesLoading">
+                  <div v-for="tpl in filteredPsdSetTemplates" :key="tpl.id" class="template-item"
+                    :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }">
+                    <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
+                      <img v-if="tpl.thumbnail || tpl.preview || tpl.image"
+                        :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
+                        :alt="tpl.name || '模板缩略图'" class="template-thumbnail" loading="lazy"
+                        @error="handleTemplateImageError" />
+                      <div class="template-info">
+                        <div class="template-header">
+                          <div class="template-title-row">
+                            <div class="template-title">{{ tpl.name || '未命名模板' }}</div>
+                            <el-link type="primary" :underline="false" class="template-detail-link"
+                              @click.stop="openTemplateDetail(tpl)">
+                              查看详情
+                            </el-link>
+                          </div>
+                        </div>
+                        <div class="template-paths">
+                          <div class="path-row">
+                            <span class="path-label">远程链接：</span>
+                            <el-link v-if="tpl.url" :href="tpl.url" target="_blank" type="primary" :underline="false"
+                              class="path-link" @click.stop>
+                              {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
+                            </el-link>
+                            <span v-else class="path-empty">暂无</span>
+                          </div>
+                          <div class="path-row">
+                            <span class="path-label">本地路径：</span>
+                            <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
+                            <span v-else class="path-empty">暂无</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <el-empty v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading"
+                    :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" />
+                </div>
+                <!-- PSD模板分页 -->
+                <div class="template-pagination" v-if="psdSetTemplatePageParams.total > 0">
+                  <pagination v-model:page="psdSetTemplatePageParams.currentPage"
+                    v-model:limit="psdSetTemplatePageParams.pageSize" :total="psdSetTemplatePageParams.total"
+                    @pagination="loadPsdTemplatesForPsdSet" />
                 </div>
               </div>
-              <el-empty 
-                v-if="!filteredPsdSetTemplates.length && !psdSetTemplatesLoading" 
-                :description="psdSetTemplateSearchText ? '未找到匹配的模板' : '暂无PSD模板'" 
-              />
-            </div>
-            <!-- PSD模板分页 -->
-            <div class="template-pagination" v-if="psdSetTemplatePageParams.total > 0">
-              <pagination
-                v-model:page="psdSetTemplatePageParams.currentPage"
-                v-model:limit="psdSetTemplatePageParams.pageSize"
-                :total="psdSetTemplatePageParams.total"
-                @pagination="loadPsdTemplatesForPsdSet"
-              />
             </div>
           </div>
         </div>
@@ -513,7 +484,9 @@
             <div style="flex: 1"></div>
 
             <div class="psd-set-info">
-              <el-icon><InfoFilled /></el-icon>
+              <el-icon>
+                <InfoFilled />
+              </el-icon>
               <div class="psd-set-info-content">
                 <div>
                   {{ psdSetMergeSticker
@@ -535,27 +508,17 @@
 
             <div>
               <el-button @click="psdSetDialogVisible = false">取消</el-button>
-              <el-tooltip
-                v-if="hasInvalidFormatMaterials"
+              <el-tooltip v-if="hasInvalidFormatMaterials"
                 :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map(m => m.name).join('、')}），请移除后重试`"
-                placement="top"
-              >
-                <el-button 
-                  type="primary" 
-                  :disabled="!ids.length || !selectedPsdTemplateIds.length || hasInvalidFormatMaterials" 
-                  :loading="psdSetSubmitting" 
-                  @click="handleCreatePsdSets"
-                >
+                placement="top">
+                <el-button type="primary"
+                  :disabled="!ids.length || !selectedPsdTemplateIds.length || hasInvalidFormatMaterials"
+                  :loading="psdSetSubmitting" @click="handleCreatePsdSets">
                   开始制作
                 </el-button>
               </el-tooltip>
-              <el-button 
-                v-else
-                type="primary" 
-                :disabled="!ids.length || !selectedPsdTemplateIds.length" 
-                :loading="psdSetSubmitting" 
-                @click="handleCreatePsdSets"
-              >
+              <el-button v-else type="primary" :disabled="!ids.length || !selectedPsdTemplateIds.length"
+                :loading="psdSetSubmitting" @click="handleCreatePsdSets">
                 开始制作
               </el-button>
             </div>
@@ -565,12 +528,7 @@
     </el-dialog>
 
     <!-- 批量详细配置全屏弹窗（选中的PSD模板） -->
-    <el-dialog
-      v-model="batchDetailConfigDialogVisible"
-      title="详细配置 - 选中的模板"
-      fullscreen
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="batchDetailConfigDialogVisible" title="详细配置 - 选中的模板" fullscreen :destroy-on-close="true">
       <div class="batch-detail-config-content">
         <div class="batch-detail-config-header">
           <div class="batch-detail-config-title">
@@ -578,18 +536,11 @@
           </div>
         </div>
         <div class="batch-detail-config-body">
-          <div
-            v-for="(template, index) in templateConfigList"
-            :key="template.id"
-            class="template-config-row"
-          >
+          <div v-for="(template, index) in templateConfigList" :key="template.id" class="template-config-row">
             <div class="template-config-left">
               <div class="template-config-header-row">
                 <span class="template-name">{{ template.name || `模板 ${index + 1}` }}</span>
-                <el-tag
-                  :type="template.psdTemplateConfig ? 'success' : 'info'"
-                  size="small"
-                >
+                <el-tag :type="template.psdTemplateConfig ? 'success' : 'info'" size="small">
                   {{ template.psdTemplateConfig ? '已配置' : '未配置' }}
                 </el-tag>
               </div>
@@ -599,23 +550,14 @@
                   <div class="config-image-wrapper">
                     <template v-if="template.materialId !== undefined">
                       <!-- 单素材模式：显示单个匹配的素材图 -->
-                      <img
-                        v-if="getMatchedMaterialId(index)"
-                        :src="getMaterialImageUrl(getMatchedMaterialId(index))"
-                        :alt="'素材'"
-                        class="config-image"
-                      />
+                      <img v-if="getMatchedMaterialId(index)" :src="getMaterialImageUrl(getMatchedMaterialId(index))"
+                        :alt="'素材'" class="config-image" />
                       <span v-else class="config-image-placeholder">无匹配素材</span>
                     </template>
                     <template v-else>
                       <!-- 合并模式：显示所有素材图 -->
-                      <img
-                        v-for="materialId in ids"
-                        :key="materialId"
-                        :src="getMaterialImageUrl(materialId)"
-                        :alt="'素材'"
-                        class="config-image"
-                      />
+                      <img v-for="materialId in ids" :key="materialId" :src="getMaterialImageUrl(materialId)"
+                        :alt="'素材'" class="config-image" />
                       <span v-if="!ids.length" class="config-image-placeholder">无素材</span>
                     </template>
                   </div>
@@ -623,15 +565,12 @@
                 <div class="config-image-item">
                   <div class="config-image-label">模板配置图</div>
                   <div class="config-image-wrapper">
-                      <img
-                        v-if="template.thumbnail"
-                        :src="getPreviewImageUrl(template.thumbnail, { width: 200, quality: 80, format: 'webp' })"
-                        :alt="template.name"
-                        class="config-image"
-                      />
-                      <span v-else class="config-image-placeholder">无缩略图</span>
-                    </div>
+                    <img v-if="template.thumbnail"
+                      :src="getPreviewImageUrl(template.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                      :alt="template.name" class="config-image" />
+                    <span v-else class="config-image-placeholder">无缩略图</span>
                   </div>
+                </div>
               </div>
             </div>
             <div class="template-config-right">
@@ -640,13 +579,9 @@
                   重置为默认
                 </el-button>
               </div>
-              <el-input
-                v-model="template.configText"
-                type="textarea"
-                :rows="18"
+              <el-input v-model="template.configText" type="textarea" :rows="18"
                 placeholder="请输入JSON配置（例如：{&quot;key1&quot;: &quot;value1&quot;, &quot;key2&quot;: &quot;value2&quot;}）"
-                class="config-textarea"
-              />
+                class="config-textarea" />
             </div>
           </div>
         </div>
@@ -660,65 +595,51 @@
     </el-dialog>
 
     <!-- PSD模板详情弹窗 -->
-    <el-dialog
-      v-model="psdTemplateDetailDialogVisible"
-      title="PSD模板详情"
-      fullscreen
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="psdTemplateDetailDialogVisible" title="PSD模板详情" fullscreen align-center
+      :destroy-on-close="true">
       <div v-if="currentPsdTemplate" class="psd-template-detail">
         <div class="detail-layout">
           <div class="detail-left">
             <div class="detail-thumbnail">
-              <img
-                v-if="currentPsdTemplate.thumbnail || currentPsdTemplate.preview || currentPsdTemplate.image"
+              <img v-if="currentPsdTemplate.thumbnail || currentPsdTemplate.preview || currentPsdTemplate.image"
                 :src="getPreviewImageUrl(currentPsdTemplate.thumbnail || currentPsdTemplate.preview || currentPsdTemplate.image, { width: 600, quality: 90, format: 'webp' })"
-                :alt="currentPsdTemplate.name || '模板缩略图'"
-                class="detail-thumbnail-img"
-                loading="lazy"
-              />
+                :alt="currentPsdTemplate.name || '模板缩略图'" class="detail-thumbnail-img" loading="lazy" />
               <div v-else class="detail-thumbnail-placeholder">暂无缩略图</div>
             </div>
           </div>
-          
+
           <div class="detail-right">
             <div class="detail-item">
               <span class="detail-label">模板名称：</span>
               <span class="detail-value">{{ currentPsdTemplate.name || '未命名模板' }}</span>
             </div>
-            
+
             <div class="detail-item">
               <span class="detail-label">描述：</span>
               <span class="detail-value">{{ currentPsdTemplate.description || '暂无' }}</span>
             </div>
-            
+
             <div class="detail-item">
               <span class="detail-label">关键字：</span>
               <span class="detail-value">{{ currentPsdTemplate.keywords || '暂无' }}</span>
             </div>
-            
+
             <div v-if="currentPsdTemplate.psdTemplateConfig" class="detail-item">
               <span class="detail-label">PSD配置：</span>
               <div class="detail-value psd-config-value">{{ currentPsdTemplate.psdTemplateConfig }}</div>
             </div>
-            
+
             <div class="detail-item">
               <span class="detail-label">远程链接：</span>
               <div class="detail-value">
-                <el-link
-                  v-if="currentPsdTemplate.url"
-                  :href="currentPsdTemplate.url"
-                  target="_blank"
-                  type="primary"
-                  :underline="false"
-                >
+                <el-link v-if="currentPsdTemplate.url" :href="currentPsdTemplate.url" target="_blank" type="primary"
+                  :underline="false">
                   {{ currentPsdTemplate.url }}
                 </el-link>
                 <span v-else class="detail-empty">暂无</span>
               </div>
             </div>
-            
+
             <div class="detail-item">
               <span class="detail-label">本地路径：</span>
               <span class="detail-value">{{ currentPsdTemplate.windowsLocalPath || '暂无' }}</span>
@@ -733,70 +654,59 @@
 
     <div class="flex" style="overflow: hidden;">
       <!-- 文件夹树 -->
-      <div class="sticker-folder-tree-container" style="width: 280px; min-width: 280px; max-width: 280px; flex-shrink: 0; border-right: 1px solid var(--el-border-color); padding-right: 16px;">
+      <div class="sticker-folder-tree-container"
+        style="width: 280px; min-width: 280px; max-width: 280px; flex-shrink: 0; border-right: 1px solid var(--el-border-color); padding-right: 16px;">
         <div class="sticker-folder-tree-header" style="margin-bottom: 12px;">
           <el-button type="primary" size="small" plain style="width: 100%;" @click="handleCreateRootStickerFolder">
-            <el-icon><FolderAdd /></el-icon>
+            <el-icon>
+              <FolderAdd />
+            </el-icon>
             新建文件夹
           </el-button>
         </div>
-        <el-tree
-          ref="stickerFolderTreeRef"
-          :data="stickerFolderTreeData"
-          :props="{ children: 'children', label: 'name' }"
-          node-key="id"
-          :expand-on-click-node="false"
-          :default-expand-all="false"
-          :default-expanded-keys="['__root__']"
-          :highlight-current="true"
+        <el-tree ref="stickerFolderTreeRef" :data="stickerFolderTreeData"
+          :props="{ children: 'children', label: 'name' }" node-key="id" :expand-on-click-node="false"
+          :default-expand-all="false" :default-expanded-keys="['__root__']" :highlight-current="true"
           :current-node-key="selectedStickerFolderId"
-          style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden;"
-          class="sticker-folder-tree"
-        >
+          style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden;" class="sticker-folder-tree">
           <template #default="{ node, data }">
-            <div
-              class="sticker-folder-node"
+            <div class="sticker-folder-node"
               :class="{ 'is-drop-hover': dragState.overFolderId === data.id && dragState.dragging }"
-              @dragover.prevent="handleFolderDragOver(data, $event)"
-              @dragleave="handleFolderDragLeave(data)"
-              @drop.prevent="handleFolderDrop(data)"
-            >
+              @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
+              @drop.prevent="handleFolderDrop(data)">
               <div class="sticker-folder-node-content">
-                <img 
-                  v-if="node.expanded && (data.children && data.children.length > 0)" 
-                  src="/img/folder-open.svg" 
-                  class="folder-icon" 
-                  alt="folder"
-                />
-                <img 
-                  v-else 
-                  src="/img/folder-close.svg" 
-                  class="folder-icon" 
-                  alt="folder"
-                />
-                <span 
-                  class="sticker-folder-node-text" 
-                  @click.stop="handleStickerFolderNodeClick(data)"
-                >{{ data.name }}</span>
-                <span v-if="data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount || 0 }})</span>
+                <img v-if="node.expanded && (data.children && data.children.length > 0)" src="/img/folder-open.svg"
+                  class="folder-icon" alt="folder" />
+                <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
+                <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
+                  }}</span>
+                <span v-if="data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount || 0
+                  }})</span>
               </div>
               <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
-                <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop size="small">
+                <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
+                  size="small">
                   <el-icon class="sticker-folder-action-icon">
                     <MoreFilled />
                   </el-icon>
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="create">
-                        <el-icon><FolderAdd /></el-icon>
+                        <el-icon>
+                          <FolderAdd />
+                        </el-icon>
                         新建子文件夹
                       </el-dropdown-item>
                       <el-dropdown-item command="rename">
-                        <el-icon><Edit /></el-icon>
+                        <el-icon>
+                          <Edit />
+                        </el-icon>
                         重命名
                       </el-dropdown-item>
                       <el-dropdown-item command="delete" divided>
-                        <el-icon><Delete /></el-icon>
+                        <el-icon>
+                          <Delete />
+                        </el-icon>
                         删除
                       </el-dropdown-item>
                     </el-dropdown-menu>
@@ -807,42 +717,23 @@
           </template>
         </el-tree>
       </div>
-      
+
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <div class="common-table">
-          <vxe-grid
-            class="material-dnd-grid"
-            ref="gridRef"
-            v-bind="gridOptions"
-            :data="dataSource"
-            :loading="loading"
-            :row-class-name="materialRowClassName"
-            @checkbox-change="checkboxChange"
-            @checkbox-all="checkboxAllChange"
-          >
+          <vxe-grid class="material-dnd-grid" ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading"
+            :row-class-name="materialRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #previewDefaultSlot="{ row }">
               <div class="flex flex-col items-center justify-center p-2">
                 <div class="preview-image-wrapper">
-                  <img
-                    v-if="row._imageLoaded"
-                    :key="`preview-${row.id}-${row.url}`"
+                  <img v-if="row._imageLoaded" :key="`preview-${row.id}-${row.url}`"
                     :src="getPreviewImageUrl(row.url, { width: 200, quality: 80, format: 'webp' })"
-                    :alt="row.name || '素材图片'"
-                    class="preview-image"
-                    loading="lazy"
-                    @click="openImagePreview(row.url, row.name)"
-                  />
-                  <img
-                    v-else
-                    :key="`preview-loading-${row.id}-${row.url}`"
+                    :alt="row.name || '素材图片'" class="preview-image" loading="lazy"
+                    @click="openImagePreview(row.url, row.name)" />
+                  <img v-else :key="`preview-loading-${row.id}-${row.url}`"
                     :src="getPreviewImageUrl(row.url, { width: 200, quality: 80, format: 'webp' })"
-                    :alt="row.name || '素材图片'"
-                    class="preview-image preview-image-loading"
-                    loading="lazy"
-                    @load="(e) => handleImageLoad(row, e)"
-                    @error="() => handleImageError(row)"
-                    @click="openImagePreview(row.url, row.name)"
-                  />
+                    :alt="row.name || '素材图片'" class="preview-image preview-image-loading" loading="lazy"
+                    @load="(e) => handleImageLoad(row, e)" @error="() => handleImageError(row)"
+                    @click="openImagePreview(row.url, row.name)" />
                   <div v-if="!row._imageLoaded" class="preview-loading">加载中...</div>
                 </div>
                 <div class="text-xs text-gray-500 mt-1 text-center">
@@ -866,38 +757,23 @@
 
             <template #nameBilingualSlot="{ row }">
               <div class="bilingual-cell">
-                <div
-                  class="bilingual-cell__item"
-                  :class="{ 'bilingual-cell__item--empty': !row.name }"
-                  @click.stop="handleCopyText(row.name, '中文名称')"
-                  role="button"
-                >
+                <div class="bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.name }"
+                  @click.stop="handleCopyText(row.name, '中文名称')" role="button">
                   <span class="bilingual-cell__label">中：</span>
-                  <el-tooltip
-                    :content="row.name || '-'"
-                    placement="top"
-                    :disabled="!(row.name && row.name.length > 0)"
-                    popper-class="text-cell-tooltip"
-                  >
+                  <el-tooltip :content="row.name || '-'" placement="top" :disabled="!(row.name && row.name.length > 0)"
+                    popper-class="text-cell-tooltip">
                     <span class="bilingual-cell__content">{{ row.name || '-' }}</span>
                   </el-tooltip>
                   <el-icon v-if="row.name" class="bilingual-cell__icon">
                     <DocumentCopy />
                   </el-icon>
                 </div>
-                <div
-                  class="bilingual-cell__item bilingual-cell__item--en"
+                <div class="bilingual-cell__item bilingual-cell__item--en"
                   :class="{ 'bilingual-cell__item--empty': !row.nameEn }"
-                  @click.stop="handleCopyText(row.nameEn, '英文名称')"
-                  role="button"
-                >
+                  @click.stop="handleCopyText(row.nameEn, '英文名称')" role="button">
                   <span class="bilingual-cell__label">En:</span>
-                  <el-tooltip
-                    :content="row.nameEn || '-'"
-                    placement="top"
-                    :disabled="!(row.nameEn && row.nameEn.length > 0)"
-                    popper-class="text-cell-tooltip"
-                  >
+                  <el-tooltip :content="row.nameEn || '-'" placement="top"
+                    :disabled="!(row.nameEn && row.nameEn.length > 0)" popper-class="text-cell-tooltip">
                     <span class="bilingual-cell__content">{{ row.nameEn || '-' }}</span>
                   </el-tooltip>
                   <el-icon v-if="row.nameEn" class="bilingual-cell__icon">
@@ -909,38 +785,23 @@
 
             <template #descriptionBilingualSlot="{ row }">
               <div class="bilingual-cell">
-                <div
-                  class="bilingual-cell__item"
-                  :class="{ 'bilingual-cell__item--empty': !row.description }"
-                  @click.stop="handleCopyText(row.description, '中文描述')"
-                  role="button"
-                >
+                <div class="bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.description }"
+                  @click.stop="handleCopyText(row.description, '中文描述')" role="button">
                   <span class="bilingual-cell__label">中：</span>
-                  <el-tooltip
-                    :content="row.description || '-'"
-                    placement="top"
-                    :disabled="!(row.description && row.description.length > 0)"
-                    popper-class="text-cell-tooltip"
-                  >
+                  <el-tooltip :content="row.description || '-'" placement="top"
+                    :disabled="!(row.description && row.description.length > 0)" popper-class="text-cell-tooltip">
                     <span class="bilingual-cell__content">{{ row.description || '-' }}</span>
                   </el-tooltip>
                   <el-icon v-if="row.description" class="bilingual-cell__icon">
                     <DocumentCopy />
                   </el-icon>
                 </div>
-                <div
-                  class="bilingual-cell__item bilingual-cell__item--en"
+                <div class="bilingual-cell__item bilingual-cell__item--en"
                   :class="{ 'bilingual-cell__item--empty': !row.descriptionEn }"
-                  @click.stop="handleCopyText(row.descriptionEn, '英文描述')"
-                  role="button"
-                >
+                  @click.stop="handleCopyText(row.descriptionEn, '英文描述')" role="button">
                   <span class="bilingual-cell__label">En:</span>
-                  <el-tooltip
-                    :content="row.descriptionEn || '-'"
-                    placement="top"
-                    :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
-                    popper-class="text-cell-tooltip"
-                  >
+                  <el-tooltip :content="row.descriptionEn || '-'" placement="top"
+                    :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)" popper-class="text-cell-tooltip">
                     <span class="bilingual-cell__content">{{ row.descriptionEn || '-' }}</span>
                   </el-tooltip>
                   <el-icon v-if="row.descriptionEn" class="bilingual-cell__icon">
@@ -952,38 +813,23 @@
 
             <template #keywordsBilingualSlot="{ row }">
               <div class="bilingual-cell">
-                <div
-                  class="bilingual-cell__item"
-                  :class="{ 'bilingual-cell__item--empty': !row.keywords }"
-                  @click.stop="handleCopyText(row.keywords, '中文关键词')"
-                  role="button"
-                >
+                <div class="bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.keywords }"
+                  @click.stop="handleCopyText(row.keywords, '中文关键词')" role="button">
                   <span class="bilingual-cell__label">中：</span>
-                  <el-tooltip
-                    :content="row.keywords || '-'"
-                    placement="top"
-                    :disabled="!(row.keywords && row.keywords.length > 0)"
-                    popper-class="text-cell-tooltip"
-                  >
+                  <el-tooltip :content="row.keywords || '-'" placement="top"
+                    :disabled="!(row.keywords && row.keywords.length > 0)" popper-class="text-cell-tooltip">
                     <span class="bilingual-cell__content">{{ row.keywords || '-' }}</span>
                   </el-tooltip>
                   <el-icon v-if="row.keywords" class="bilingual-cell__icon">
                     <DocumentCopy />
                   </el-icon>
                 </div>
-                <div
-                  class="bilingual-cell__item bilingual-cell__item--en"
+                <div class="bilingual-cell__item bilingual-cell__item--en"
                   :class="{ 'bilingual-cell__item--empty': !row.keywordsEn }"
-                  @click.stop="handleCopyText(row.keywordsEn, '英文关键词')"
-                  role="button"
-                >
+                  @click.stop="handleCopyText(row.keywordsEn, '英文关键词')" role="button">
                   <span class="bilingual-cell__label">En:</span>
-                  <el-tooltip
-                    :content="row.keywordsEn || '-'"
-                    placement="top"
-                    :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)"
-                    popper-class="text-cell-tooltip"
-                  >
+                  <el-tooltip :content="row.keywordsEn || '-'" placement="top"
+                    :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)" popper-class="text-cell-tooltip">
                     <span class="bilingual-cell__content">{{ row.keywordsEn || '-' }}</span>
                   </el-tooltip>
                   <el-icon v-if="row.keywordsEn" class="bilingual-cell__icon">
@@ -1012,28 +858,19 @@
             </template>
 
             <template #isCustomSlot="{ row }">
-              <el-tag 
-                :type="row.isCustom ? 'success' : 'info'" 
-                size="small"
-              >
+              <el-tag :type="row.isCustom ? 'success' : 'info'" size="small">
                 {{ row.isCustom ? '是' : '否' }}
               </el-tag>
             </template>
 
             <template #isInfringementSlot="{ row }">
-              <el-tag 
-                :type="row.isInfringement ? 'danger' : 'success'" 
-                size="small"
-              >
+              <el-tag :type="row.isInfringement ? 'danger' : 'success'" size="small">
                 {{ row.isInfringement ? '侵权' : '非侵权' }}
               </el-tag>
             </template>
 
             <template #isCutoutSlot="{ row }">
-              <el-tag 
-                :type="row.isCutout ? 'success' : 'info'" 
-                size="small"
-              >
+              <el-tag :type="row.isCutout ? 'success' : 'info'" size="small">
                 {{ row.isCutout ? '是' : '否' }}
               </el-tag>
             </template>
@@ -1046,28 +883,16 @@
             </template>
 
             <template #suitableForSlot="{ row }">
-              <div v-if="row.suitableFor" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; line-height: 1.5;">
-                <el-tag 
-                  v-for="(item, index) in (row.suitableFor || '').split(',').slice(0, 2)" 
-                  :key="index"
-                  size="small"
-                  type="info"
-                  style="margin: 0; flex-shrink: 0;"
-                >
+              <div v-if="row.suitableFor"
+                style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; line-height: 1.5;">
+                <el-tag v-for="(item, index) in (row.suitableFor || '').split(',').slice(0, 2)" :key="index"
+                  size="small" type="info" style="margin: 0; flex-shrink: 0;">
                   {{ item.trim() }}
                 </el-tag>
-                <el-tooltip
-                  v-if="(row.suitableFor || '').split(',').length > 2"
-                  :content="(row.suitableFor || '').split(',').map(item => item.trim()).join('、')"
-                  placement="top"
-                  effect="dark"
-                  :show-after="200"
-                >
-                  <el-tag 
-                    size="small"
-                    type="info"
-                    style="margin: 0; cursor: pointer; flex-shrink: 0;"
-                  >
+                <el-tooltip v-if="(row.suitableFor || '').split(',').length > 2"
+                  :content="(row.suitableFor || '').split(',').map(item => item.trim()).join('、')" placement="top"
+                  effect="dark" :show-after="200">
+                  <el-tag size="small" type="info" style="margin: 0; cursor: pointer; flex-shrink: 0;">
                     +{{ (row.suitableFor || '').split(',').length - 2 }}
                   </el-tag>
                 </el-tooltip>
@@ -1076,54 +901,52 @@
             </template>
 
             <template #similaritySlot="{ row }">
-              <el-tag 
-                v-if="row.similarity !== undefined"
-                :type="row.similarity >= 90 ? 'success' : row.similarity >= 70 ? 'warning' : 'info'" 
-                size="small"
-              >
+              <el-tag v-if="row.similarity !== undefined"
+                :type="row.similarity >= 90 ? 'success' : row.similarity >= 70 ? 'warning' : 'info'" size="small">
                 {{ row.similarity.toFixed(1) }}%
               </el-tag>
               <span v-else>-</span>
             </template>
 
             <template #colorPaletteSlot="{ row }">
-              <div v-if="row.colorPalette" style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; max-height: 60px; overflow: hidden;">
-                <div
-                  v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)"
-                  :key="index"
-                  :style="{ 
-                    width: '18px', 
-                    height: '18px', 
-                    backgroundColor: color.trim(), 
-                    border: '1px solid #ddd',
-                    borderRadius: '3px',
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }"
-                  :title="color.trim()"
-                />
+              <div v-if="row.colorPalette"
+                style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; max-height: 60px; overflow: hidden;">
+                <div v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)" :key="index" :style="{
+                  width: '18px',
+                  height: '18px',
+                  backgroundColor: color.trim(),
+                  border: '1px solid #ddd',
+                  borderRadius: '3px',
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }" :title="color.trim()" />
               </div>
               <span v-else style="color: #999;">-</span>
             </template>
 
             <template #originUrlSlot="{ row }">
-              <el-link v-if="row.originUrl" :href="row.originUrl" target="_blank" type="primary" :underline="false" style="font-size: 12px;">
+              <el-link v-if="row.originUrl" :href="row.originUrl" target="_blank" type="primary" :underline="false"
+                style="font-size: 12px;">
                 {{ row.originUrl.length > 50 ? row.originUrl.substring(0, 50) + '...' : row.originUrl }}
               </el-link>
               <span v-else style="color: #999; font-size: 12px;">-</span>
             </template>
 
             <template #sourceSlot="{ row }">
-              <el-link v-if="row.source && /^https?:\/\//i.test(row.source)" :href="row.source" target="_blank" type="primary" :underline="false" style="font-size: 12px;">
+              <el-link v-if="row.source && /^https?:\/\//i.test(row.source)" :href="row.source" target="_blank"
+                type="primary" :underline="false" style="font-size: 12px;">
                 {{ row.source.length > 50 ? row.source.substring(0, 50) + '...' : row.source }}
               </el-link>
-              <span v-else-if="row.source" style="font-size: 12px;">{{ row.source.length > 50 ? row.source.substring(0, 50) + '...' : row.source }}</span>
+              <span v-else-if="row.source" style="font-size: 12px;">{{ row.source.length > 50 ? row.source.substring(0,
+                50) + '...' : row.source }}</span>
               <span v-else style="color: #999; font-size: 12px;">-</span>
             </template>
 
             <template #folderSlot="{ row }">
               <el-tag v-if="row.folder" type="info" size="small" style="font-size: 12px;">
-                <el-icon style="margin-right: 4px;"><Folder /></el-icon>
+                <el-icon style="margin-right: 4px;">
+                  <Folder />
+                </el-icon>
                 {{ row.folder }}
               </el-tag>
               <span v-else style="color: #999; font-size: 12px;">根目录</span>
@@ -1133,69 +956,80 @@
               <div class="flex items-center gap-1">
                 <el-dropdown trigger="click" class="operation-dropdown">
                   <el-button type="primary" link size="small">
-                    操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                    操作<el-icon class="el-icon--right">
+                      <ArrowDown />
+                    </el-icon>
                   </el-button>
                   <template #dropdown>
                     <div class="op-menu">
                       <!-- 内容相关（仅管理员） -->
-                      <div 
-                        v-if="isAdmin" 
-                        class="op-menu-item has-submenu"
-                        @mouseenter="handleSubmenuEnter"
-                        @mouseleave="handleSubmenuLeave"
-                      >
-                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                      <div v-if="isAdmin" class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave">
+                        <el-icon class="op-menu-arrow">
+                          <ArrowLeft />
+                        </el-icon>
                         <span class="op-menu-label">内容相关</span>
-                        <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('ai-generate', row)">AI自动生成内容</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('generate-image-info', row)">生成图片信息</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据</div>
+                        <div class="op-submenu" data-submenu="content" @mouseenter="handleSubmenuKeepVisible"
+                          @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('ai-generate', row)">
+                            AI自动生成内容</div>
+                          <div class="op-submenu-item"
+                            @click="() => handleOperationCommand('generate-image-info', row)">生成图片信息</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据
+                          </div>
                         </div>
                       </div>
 
                       <!-- 制作操作（仅管理员） -->
-                      <div 
-                        v-if="isAdmin" 
-                        class="op-menu-item has-submenu"
-                        @mouseenter="handleSubmenuEnter"
-                        @mouseleave="handleSubmenuLeave"
-                      >
-                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                      <div v-if="isAdmin" class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave">
+                        <el-icon class="op-menu-arrow">
+                          <ArrowLeft />
+                        </el-icon>
                         <span class="op-menu-label">制作</span>
-                        <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
-                          <div v-if="false" class="op-submenu-item" @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">制作PS套图</div>
+                        <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible"
+                          @mouseleave="handleSubmenuHide">
+                          <div v-if="false" class="op-submenu-item"
+                            @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">
+                            制作PS套图</div>
                         </div>
                       </div>
 
                       <!-- 图片操作 -->
-                      <div 
-                        class="op-menu-item has-submenu"
-                        @mouseenter="handleSubmenuEnter"
-                        @mouseleave="handleSubmenuLeave"
-                      >
-                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                      <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave">
+                        <el-icon class="op-menu-arrow">
+                          <ArrowLeft />
+                        </el-icon>
                         <span class="op-menu-label">图片操作</span>
-                        <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
+                        <div class="op-submenu" data-submenu="image" @mouseenter="handleSubmenuKeepVisible"
+                          @mouseleave="handleSubmenuHide">
                           <div class="op-submenu-item" @click="() => handleOperationCommand('download', row)">下载</div>
-                          <div v-if="isAdmin" class="op-submenu-item" @click="() => handleOperationCommand('copy', row)">复制</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('find-similar', row)">找相似图</div>
-                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item" @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
-                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item" @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
+                          <div v-if="isAdmin" class="op-submenu-item"
+                            @click="() => handleOperationCommand('copy', row)">复制</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('find-similar', row)">找相似图
+                          </div>
+                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'" class="op-submenu-item"
+                            @click="() => handleOperationCommand('trim-png', row)">生成无空白PNG</div>
+                          <div v-if="isAdmin && (row.suffix || '').toLowerCase() === 'svg'" class="op-submenu-item"
+                            @click="() => handleOperationCommand('svg-to-png', row)">SVG转PNG</div>
                         </div>
                       </div>
 
                       <!-- 图片裂变和视频制作 -->
-                      <div 
-                        class="op-menu-item has-submenu"
-                        @mouseenter="handleSubmenuEnter"
-                        @mouseleave="handleSubmenuLeave"
-                      >
-                        <el-icon class="op-menu-arrow"><ArrowLeft /></el-icon>
+                      <div class="op-menu-item has-submenu" @mouseenter="handleSubmenuEnter"
+                        @mouseleave="handleSubmenuLeave">
+                        <el-icon class="op-menu-arrow">
+                          <ArrowLeft />
+                        </el-icon>
                         <span class="op-menu-label">制作工具</span>
-                        <div class="op-submenu" data-submenu="production" @mouseenter="handleSubmenuKeepVisible" @mouseleave="handleSubmenuHide">
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('image-split', row)">图片裂变</div>
-                          <div class="op-submenu-item" @click="() => handleOperationCommand('video-production', row)">视频制作</div>
+                        <div class="op-submenu" data-submenu="production" @mouseenter="handleSubmenuKeepVisible"
+                          @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('image-split', row)">图片裂变
+                          </div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('video-production', row)">
+                            视频制作</div>
                         </div>
                       </div>
 
@@ -1204,7 +1038,8 @@
                         <span class="op-menu-arrow-placeholder"></span>
                         <span class="op-menu-label">编辑</span>
                       </div>
-                      <div v-if="isAdmin" class="op-menu-item danger" @click="() => handleOperationCommand('delete', row)">
+                      <div v-if="isAdmin" class="op-menu-item danger"
+                        @click="() => handleOperationCommand('delete', row)">
                         <span class="op-menu-arrow-placeholder"></span>
                         <span class="op-menu-label">删除</span>
                       </div>
@@ -1212,7 +1047,8 @@
                   </template>
                 </el-dropdown>
 
-                <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#409EFF;font-size:18px;" />
+                <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2"
+                  style="color:#409EFF;font-size:18px;" />
               </div>
             </template>
           </vxe-grid>
@@ -1220,103 +1056,48 @@
 
         <!-- 分页 -->
         <div class="flex justify-end" style="margin-bottom: 24px; margin-top: 16px;">
-          <pagination
-            v-model:page="queryParams.currentPage"
-            v-model:limit="queryParams.pageSize"
-            :total="total"
-            @pagination="getList"
-          />
+          <pagination v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize" :total="total"
+            @pagination="getList" />
         </div>
       </div>
     </div>
 
-    <el-dialog
-      v-model="uploadModalVisible"
-      title="素材上传"
-      width="100%"
-      style="height: 100%"
-      align-center
-      :footer="false"
-      :destroy-on-close="true"
-      class="material-upload-dialog"
-      @close="uploadModalClose"
-    >
+    <el-dialog v-model="uploadModalVisible" title="素材上传" width="100%" style="height: 100%" align-center :footer="false"
+      :destroy-on-close="true" class="material-upload-dialog" @close="uploadModalClose">
       <div style="height: 100%">
-        <list-upload
-          :current-upload-info="currentUploadInfo"
-          @single-file-uploaded="singleFileUploaded"
-        />
+        <list-upload :current-upload-info="currentUploadInfo" @single-file-uploaded="singleFileUploaded" />
       </div>
     </el-dialog>
 
     <!-- URL上传弹窗 -->
-    <el-dialog
-      v-model="urlUploadModalVisible"
-      title="URL上传素材"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-      @close="resetUrlUploadForm"
-    >
-      <el-form
-        ref="urlUploadFormRef"
-        :model="urlUploadForm"
-        :rules="urlUploadFormRules"
-        label-width="80px"
-      >
+    <el-dialog v-model="urlUploadModalVisible" title="URL上传素材" width="500px" align-center :destroy-on-close="true"
+      @close="resetUrlUploadForm">
+      <el-form ref="urlUploadFormRef" :model="urlUploadForm" :rules="urlUploadFormRules" label-width="80px">
         <el-form-item label="图片URL" prop="url">
-          <el-input
-            v-model="urlUploadForm.url"
-            placeholder="请输入图片的完整URL地址"
-            style="width: 100%"
-            clearable
-          />
+          <el-input v-model="urlUploadForm.url" placeholder="请输入图片的完整URL地址" style="width: 100%" clearable />
         </el-form-item>
         <el-form-item label="文件名" prop="name">
-          <el-input
-            v-model="urlUploadForm.name"
-            placeholder="请输入文件名"
-            style="width: 100%"
-            clearable
-          />
+          <el-input v-model="urlUploadForm.name" placeholder="请输入文件名" style="width: 100%" clearable />
         </el-form-item>
         <el-form-item label="AI生成">
-          <el-switch
-            v-model="urlUploadForm.useAiGenerate"
-            active-text="使用AI自动生成补全内容"
-          />
+          <el-switch v-model="urlUploadForm.useAiGenerate" active-text="使用AI自动生成补全内容" />
         </el-form-item>
         <el-form-item label="文件夹">
-          <el-select 
-            v-model="urlUploadForm.folderId" 
-            placeholder="请选择文件夹（留空为根目录）" 
-            clearable
-            filterable
-            style="width: 100%"
-          >
+          <el-select v-model="urlUploadForm.folderId" placeholder="请选择文件夹（留空为根目录）" clearable filterable
+            style="width: 100%">
             <el-option label="根目录" :value="null" />
-            <el-option 
-              v-for="folder in stickerFolderSelectOptions" 
-              :key="folder.value || 'root'" 
-              :label="folder.label" 
-              :value="folder.value" 
-            />
+            <el-option v-for="folder in stickerFolderSelectOptions" :key="folder.value || 'root'" :label="folder.label"
+              :value="folder.value" />
           </el-select>
         </el-form-item>
       </el-form>
-      
+
       <!-- 预览区域 -->
       <div class="preview-section">
         <div class="preview-label">图片预览</div>
         <div v-if="urlUploadForm.url && urlPreviewVisible" class="image-preview">
-          <img
-            :src="urlUploadForm.url"
-            alt="预览图片"
-            class="preview-image"
-            loading="lazy"
-            @error="handlePreviewError"
-            @load="handlePreviewLoad"
-          />
+          <img :src="urlUploadForm.url" alt="预览图片" class="preview-image" loading="lazy" @error="handlePreviewError"
+            @load="handlePreviewLoad" />
           <div v-if="imageInfo" class="image-info">
             <el-tag size="small" type="info">尺寸: {{ imageInfo.width }} × {{ imageInfo.height }}</el-tag>
           </div>
@@ -1335,7 +1116,7 @@
           <p>请输入图片URL后显示预览</p>
         </div>
       </div>
-      
+
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="urlUploadModalVisible = false">取消</el-button>
@@ -1345,46 +1126,35 @@
     </el-dialog>
 
     <!-- 制作设计模型弹窗 -->
-    <el-dialog
-      v-model="designModelModalVisible"
-      title="制作设计模型"
-      width="100%"
-      style="height: 100%"
-      align-center
-      :destroy-on-close="true"
-      class="design-model-dialog"
-      :footer="null"
-      @close="resetDesignModelSteps"
-    >
+    <el-dialog v-model="designModelModalVisible" title="制作设计模型" width="100%" style="height: 100%" align-center
+      :destroy-on-close="true" class="design-model-dialog" :footer="null" @close="resetDesignModelSteps">
       <!-- 新增flex容器，左右布局 -->
       <div class="design-model-flex">
         <!-- 步骤指示器，纵向 -->
-        <el-steps direction="vertical" :active="currentStep" finish-status="success" align-center class="steps-vertical">
-          <el-step v-for="step in designModelSteps" :key="step.key" :title="step.title" :description="step.description" />
+        <el-steps direction="vertical" :active="currentStep" finish-status="success" align-center
+          class="steps-vertical">
+          <el-step v-for="step in designModelSteps" :key="step.key" :title="step.title"
+            :description="step.description" />
         </el-steps>
         <!-- 步骤内容区域 -->
         <div class="design-model-content">
           <div class="steps-all">
             <!-- 步骤1：选择素材 -->
-            <div
-              class="step-content"
-              :class="{ 'step-active': currentStep === 0, 'step-inactive': currentStep !== 0 }"
-            >
+            <div class="step-content" :class="{ 'step-active': currentStep === 0, 'step-inactive': currentStep !== 0 }">
               <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
               <div class="flex flex-wrap gap-4 mb-6">
                 <template v-for="id in ids" :key="id">
                   <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
-                    <img 
-                      :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 150, quality: 80, format: 'webp' })" 
+                    <img
+                      :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 150, quality: 80, format: 'webp' })"
                       :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                      class="w-20 h-20 object-cover rounded border"
-                      loading="lazy"
-                    />
-                    <div class="text-xs text-gray-500 mt-1">{{ dataSource.find(item => String(item.id) === String(id)).name }}</div>
+                      class="w-20 h-20 object-cover rounded border" loading="lazy" />
+                    <div class="text-xs text-gray-500 mt-1">{{dataSource.find(item => String(item.id) ===
+                      String(id)).name}}</div>
                   </div>
                 </template>
               </div>
-              
+
               <div class="border border-blue-200 rounded-lg p-4">
                 <div class="flex items-start">
                   <el-icon class="text-blue-500 mt-0.5 mr-2">
@@ -1399,50 +1169,40 @@
             </div>
 
             <!-- 步骤2：选择设计模型 -->
-            <div
-              class="step-content"
-              :class="{ 'step-active': currentStep === 1, 'step-inactive': currentStep !== 1 }"
-            >
+            <div class="step-content" :class="{ 'step-active': currentStep === 1, 'step-inactive': currentStep !== 1 }">
               <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
-              
+
               <div class="design-model-list">
                 <div v-if="designModelLoading" class="text-center py-4">
-                  <el-icon class="is-loading"><Loading /></el-icon>
+                  <el-icon class="is-loading">
+                    <Loading />
+                  </el-icon>
                   <span class="ml-2">加载中...</span>
                 </div>
-                
+
                 <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
                   暂无设计模型
                 </div>
-                
+
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div
-                    v-for="model in designModelList"
-                    :key="model.id"
+                  <div v-for="model in designModelList" :key="model.id"
                     class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
                     :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
-                    @click="selectDesignModel(model)"
-                  >
+                    @click="selectDesignModel(model)">
                     <div class="flex items-center space-x-3">
-                      <img
-                        v-if="model.thumbnail"
+                      <img v-if="model.thumbnail"
                         :src="getPreviewImageUrl(model.thumbnail, { width: 150, quality: 80, format: 'webp' })"
-                        :alt="model.name"
-                        class="w-16 h-16 object-cover rounded"
-                        loading="lazy"
-                      />
+                        :alt="model.name" class="w-16 h-16 object-cover rounded" loading="lazy" />
                       <div class="flex-1 min-w-0">
                         <h4 class="font-medium truncate">{{ model.name }}</h4>
                         <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
                         <p class="text-xs text-gray-400">{{ model.createTime }}</p>
                       </div>
                     </div>
-                    
+
                     <!-- 选中状态图标 -->
-                    <div 
-                      v-if="selectedDesignModelIds.includes(model.id)"
-                      class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center"
-                    >
+                    <div v-if="selectedDesignModelIds.includes(model.id)"
+                      class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                       <el-icon class="text-sm">
                         <Check />
                       </el-icon>
@@ -1465,12 +1225,9 @@
             </div>
 
             <!-- 步骤3：确认制作 -->
-            <div
-              class="step-content"
-              :class="{ 'step-active': currentStep === 2, 'step-inactive': currentStep !== 2 }"
-            >
+            <div class="step-content" :class="{ 'step-active': currentStep === 2, 'step-inactive': currentStep !== 2 }">
               <h3 class="text-lg font-bold mb-4">确认制作信息：</h3>
-              
+
               <div class="bg-gray-50 rounded-lg p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <!-- 素材信息 -->
@@ -1478,14 +1235,14 @@
                     <h4 class="font-medium text-gray-700 mb-3">选择的素材 ({{ ids.length }}个)</h4>
                     <div class="space-y-2">
                       <template v-for="id in ids" :key="id">
-                        <div v-if="dataSource.find(item => String(item.id) === String(id))" class="flex items-center space-x-2">
-                          <img 
-                            :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 100, quality: 80, format: 'webp' })" 
+                        <div v-if="dataSource.find(item => String(item.id) === String(id))"
+                          class="flex items-center space-x-2">
+                          <img
+                            :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 100, quality: 80, format: 'webp' })"
                             :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                            class="w-8 h-8 object-cover rounded"
-                            loading="lazy"
-                          />
-                          <span class="text-sm text-gray-600">{{ dataSource.find(item => String(item.id) === String(id)).name }}</span>
+                            class="w-8 h-8 object-cover rounded" loading="lazy" />
+                          <span class="text-sm text-gray-600">{{dataSource.find(item => String(item.id) ===
+                            String(id)).name}}</span>
                         </div>
                       </template>
                     </div>
@@ -1496,15 +1253,14 @@
                     <h4 class="font-medium text-gray-700 mb-3">选择的设计模型 ({{ selectedDesignModelIds.length }}个)</h4>
                     <div class="space-y-2">
                       <template v-for="modelId in selectedDesignModelIds" :key="modelId">
-                        <div v-if="designModelList.find(model => model.id === modelId)" class="flex items-center space-x-2">
-                          <img 
-                            v-if="designModelList.find(model => model.id === modelId).thumbnail"
-                            :src="getPreviewImageUrl(designModelList.find(model => model.id === modelId).thumbnail, { width: 100, quality: 80, format: 'webp' })" 
+                        <div v-if="designModelList.find(model => model.id === modelId)"
+                          class="flex items-center space-x-2">
+                          <img v-if="designModelList.find(model => model.id === modelId).thumbnail"
+                            :src="getPreviewImageUrl(designModelList.find(model => model.id === modelId).thumbnail, { width: 100, quality: 80, format: 'webp' })"
                             :alt="designModelList.find(model => model.id === modelId).name"
-                            class="w-8 h-8 object-cover rounded"
-                            loading="lazy"
-                          />
-                          <span class="text-sm text-gray-600">{{ designModelList.find(model => model.id === modelId).name }}</span>
+                            class="w-8 h-8 object-cover rounded" loading="lazy" />
+                          <span class="text-sm text-gray-600">{{designModelList.find(model => model.id ===
+                            modelId).name}}</span>
                         </div>
                       </template>
                     </div>
@@ -1514,7 +1270,9 @@
                 <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div class="text-center">
                     <div class="text-2xl font-bold text-blue-600 mb-2">
-                      {{ ids.length }} × {{ selectedDesignModelIds.length }} = {{ ids.length * selectedDesignModelIds.length }}
+                      {{ ids.length }} × {{ selectedDesignModelIds.length }} = {{ ids.length *
+                        selectedDesignModelIds.length
+                      }}
                     </div>
                     <div class="text-sm text-blue-700">将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</div>
                   </div>
@@ -1528,26 +1286,15 @@
               <span>步骤 {{ currentStep + 1 }} / {{ designModelSteps.length }}</span>
             </div>
             <div class="flex gap-2">
-              <el-button 
-                v-if="currentStep > 0"
-                @click="prevStep"
-              >
+              <el-button v-if="currentStep > 0" @click="prevStep">
                 上一步
               </el-button>
-              <el-button 
-                v-if="currentStep < designModelSteps.length - 1"
-                type="primary" 
-                @click="nextStep"
-                :disabled="!canProceedToNextStep"
-              >
+              <el-button v-if="currentStep < designModelSteps.length - 1" type="primary" @click="nextStep"
+                :disabled="!canProceedToNextStep">
                 下一步
               </el-button>
-              <el-button 
-                v-if="currentStep === designModelSteps.length - 1"
-                type="success" 
-                @click="handleDesignModelConfirm"
-                :disabled="!selectedDesignModelIds.length"
-              >
+              <el-button v-if="currentStep === designModelSteps.length - 1" type="success"
+                @click="handleDesignModelConfirm" :disabled="!selectedDesignModelIds.length">
                 开始制作
               </el-button>
               <el-button @click="designModelModalVisible = false">取消</el-button>
@@ -1558,26 +1305,19 @@
       <!-- 移除el-dialog的footer插槽 -->
     </el-dialog>
 
-    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="1200px" :destroy-on-close="true" align-center class="edit-material-dialog">
+    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="1200px" :destroy-on-close="true" align-center
+      class="edit-material-dialog">
       <el-form :model="editForm" label-width="120px" class="edit-form">
         <!-- 基本信息 -->
         <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="名称">
-              <el-input 
-                v-model="editForm.name" 
-                placeholder="请输入名称" 
-                clearable
-              />
+              <el-input v-model="editForm.name" placeholder="请输入名称" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="英文名称">
-              <el-input 
-                v-model="editForm.nameEn" 
-                placeholder="请输入英文名称" 
-                clearable
-              />
+              <el-input v-model="editForm.nameEn" placeholder="请输入英文名称" clearable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1585,20 +1325,12 @@
         <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="分组">
-              <el-input 
-                v-model="editForm.group" 
-                placeholder="请输入分组名称" 
-                clearable
-              />
+              <el-input v-model="editForm.group" placeholder="请输入分组名称" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="适用场景">
-              <el-input 
-                v-model="editForm.suitableFor" 
-                placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" 
-                clearable
-              />
+              <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" clearable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1606,26 +1338,14 @@
         <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="描述">
-              <el-input 
-                v-model="editForm.description" 
-                type="textarea" 
-                :rows="4" 
-                placeholder="请输入描述" 
-                maxlength="1000"
-                show-word-limit
-              />
+              <el-input v-model="editForm.description" type="textarea" :rows="4" placeholder="请输入描述" maxlength="1000"
+                show-word-limit />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="英文描述">
-              <el-input 
-                v-model="editForm.descriptionEn" 
-                type="textarea" 
-                :rows="4" 
-                placeholder="请输入英文描述" 
-                maxlength="1000"
-                show-word-limit
-              />
+              <el-input v-model="editForm.descriptionEn" type="textarea" :rows="4" placeholder="请输入英文描述"
+                maxlength="1000" show-word-limit />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1633,20 +1353,12 @@
         <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="关键字">
-              <el-input 
-                v-model="editForm.keywords" 
-                placeholder="请输入关键字（逗号分隔）" 
-                clearable
-              />
+              <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" clearable />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="英文关键字">
-              <el-input 
-                v-model="editForm.keywordsEn" 
-                placeholder="请输入英文关键字（逗号分隔）" 
-                clearable
-              />
+              <el-input v-model="editForm.keywordsEn" placeholder="请输入英文关键字（逗号分隔）" clearable />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1657,29 +1369,17 @@
         <el-row :gutter="24">
           <el-col :span="8">
             <el-form-item label="自定义贴纸">
-              <el-switch
-                v-model="editForm.isCustom"
-                active-text="是"
-                inactive-text="否"
-              />
+              <el-switch v-model="editForm.isCustom" active-text="是" inactive-text="否" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="是否公开">
-              <el-switch
-                v-model="editForm.isPublic"
-                active-text="是"
-                inactive-text="否"
-              />
+              <el-switch v-model="editForm.isPublic" active-text="是" inactive-text="否" />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="是否为材质">
-              <el-switch
-                v-model="editForm.isTexture"
-                active-text="是"
-                inactive-text="否"
-              />
+              <el-switch v-model="editForm.isTexture" active-text="是" inactive-text="否" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1695,11 +1395,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="抠图素材">
-              <el-switch
-                v-model="editForm.isCutout"
-                active-text="是"
-                inactive-text="否"
-              />
+              <el-switch v-model="editForm.isCutout" active-text="是" inactive-text="否" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1707,12 +1403,7 @@
         <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="文件后缀">
-              <el-input 
-                v-model="editForm.suffix" 
-                placeholder="如：png, jpg, svg" 
-                clearable
-                maxlength="20"
-              />
+              <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1723,26 +1414,18 @@
         <el-row :gutter="24">
           <el-col :span="8">
             <el-form-item label="图片尺寸">
-              <el-input 
-                :value="editForm.width && editForm.height ? `${editForm.width} × ${editForm.height}` : '-'"
-                disabled
-              />
+              <el-input :value="editForm.width && editForm.height ? `${editForm.width} × ${editForm.height}` : '-'"
+                disabled />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="宽高比">
-              <el-input 
-                :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'"
-                disabled
-              />
+              <el-input :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="8">
             <el-form-item label="文件大小">
-              <el-input 
-                :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'"
-                disabled
-              />
+              <el-input :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'" disabled />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1750,20 +1433,12 @@
         <el-row :gutter="24">
           <el-col :span="12">
             <el-form-item label="色系">
-              <el-input 
-                :value="editForm.colorPalette || '-'"
-                disabled
-                placeholder="自动生成"
-              />
+              <el-input :value="editForm.colorPalette || '-'" disabled placeholder="自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="感知哈希">
-              <el-input 
-                :value="editForm.phash || '-'"
-                disabled
-                placeholder="自动生成"
-              />
+              <el-input :value="editForm.phash || '-'" disabled placeholder="自动生成" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -1772,34 +1447,16 @@
 
         <!-- URL 信息 -->
         <el-form-item label="原始地址">
-          <el-input 
-            v-model="editForm.originUrl" 
-            placeholder="请输入原始地址" 
-            clearable
-          />
+          <el-input v-model="editForm.originUrl" placeholder="请输入原始地址" clearable />
         </el-form-item>
         <el-form-item label="来源">
-          <el-input 
-            v-model="editForm.source" 
-            placeholder="请输入来源（文字介绍或链接）" 
-            clearable
-          />
+          <el-input v-model="editForm.source" placeholder="请输入来源（文字介绍或链接）" clearable />
         </el-form-item>
         <el-form-item label="文件夹">
-          <el-select 
-            v-model="editForm.folderId" 
-            placeholder="请选择文件夹（留空为根目录）" 
-            clearable
-            filterable
-            style="width: 100%"
-          >
+          <el-select v-model="editForm.folderId" placeholder="请选择文件夹（留空为根目录）" clearable filterable style="width: 100%">
             <el-option label="根目录" :value="null" />
-            <el-option 
-              v-for="folder in stickerFolderSelectOptions" 
-              :key="folder.value || 'root'" 
-              :label="folder.label" 
-              :value="folder.value" 
-            />
+            <el-option v-for="folder in stickerFolderSelectOptions" :key="folder.value || 'root'" :label="folder.label"
+              :value="folder.value" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -1811,36 +1468,20 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
-      width="600px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="600px" align-center :destroy-on-close="true">
       <div class="ai-gen-form">
         <div class="form-section">
           <label class="section-label">原始信息（可选）</label>
           <div class="section-desc">粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容</div>
-          <el-input
-            v-model="aiGenerateRawInfo"
-            type="textarea"
-            :rows="4"
-            placeholder="如：网页上关于这张图片的描述、产品介绍等..."
-            style="font-size:14px;min-height:100px;width:100%;resize:vertical;"
-          />
+          <el-input v-model="aiGenerateRawInfo" type="textarea" :rows="4" placeholder="如：网页上关于这张图片的描述、产品介绍等..."
+            style="font-size:14px;min-height:100px;width:100%;resize:vertical;" />
         </div>
 
         <div class="form-section">
           <label class="section-label">分析风格（可选）</label>
           <div class="section-desc">请输入你希望AI分析的内容风格或角度</div>
-          <el-input
-            v-model="aiGenPrompt"
-            type="textarea"
-            :rows="4"
-            placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
-            style="font-size:14px;min-height:100px;width:100%;resize:vertical;"
-          />
+          <el-input v-model="aiGenPrompt" type="textarea" :rows="4" placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
+            style="font-size:14px;min-height:100px;width:100%;resize:vertical;" />
         </div>
       </div>
       <template #footer>
@@ -1854,13 +1495,7 @@
       <div v-if="metaDialogContent">
         <vue-json-pretty v-if="parsedMetaData" :data="parsedMetaData" />
         <div v-else class="meta-error">
-          <el-alert
-            type="warning"
-            :closable="false"
-            show-icon
-            title="元数据格式错误"
-            description="无法解析元数据，请检查数据格式。"
-          />
+          <el-alert type="warning" :closable="false" show-icon title="元数据格式错误" description="无法解析元数据，请检查数据格式。" />
           <div class="meta-raw-content">
             <pre>{{ metaDialogContent }}</pre>
           </div>
@@ -1872,33 +1507,21 @@
     </el-dialog>
 
     <!-- SVG转PNG尺寸设置弹窗 -->
-    <el-dialog
-      v-model="svgToPngDialogVisible"
-      title="SVG转PNG - 设置输出尺寸"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="svgToPngDialogVisible" title="SVG转PNG - 设置输出尺寸" width="500px" align-center
+      :destroy-on-close="true">
       <div class="svg-to-png-form">
         <div class="form-section">
           <h4 class="section-title">输出尺寸设置</h4>
           <div class="original-info" v-if="svgToPngForm.originalWidth && svgToPngForm.originalHeight">
             <el-tag type="info" size="small">
-              原始尺寸: {{ svgToPngForm.originalWidth }} × {{ svgToPngForm.originalHeight }} 
+              原始尺寸: {{ svgToPngForm.originalWidth }} × {{ svgToPngForm.originalHeight }}
               (宽高比: {{ svgToPngForm.aspectRatio.toFixed(2) }})
             </el-tag>
           </div>
           <el-form :model="svgToPngForm" label-width="120px">
             <el-form-item label="输出宽度 (px)">
-              <el-input-number
-                v-model="svgToPngForm.width"
-                :min="64"
-                :max="4096"
-                :step="64"
-                controls-position="right"
-                style="width: 200px"
-                @change="handleWidthChange"
-              />
+              <el-input-number v-model="svgToPngForm.width" :min="64" :max="4096" :step="64" controls-position="right"
+                style="width: 200px" @change="handleWidthChange" />
             </el-form-item>
             <el-form-item label="自动计算高度">
               <el-tag type="info" size="large">
@@ -1910,22 +1533,17 @@
             </el-form-item>
           </el-form>
         </div>
-        
+
         <div class="preset-section">
           <h4 class="section-title">常用尺寸预设</h4>
           <div class="preset-buttons">
-            <el-button 
-              v-for="preset in sizePresets" 
-              :key="preset.name"
-              size="small"
-              @click="applyPreset(preset)"
-            >
+            <el-button v-for="preset in sizePresets" :key="preset.name" size="small" @click="applyPreset(preset)">
               {{ preset.name }}<br>
               <span class="preset-size">{{ preset.width }}px</span>
             </el-button>
           </div>
         </div>
-        
+
         <div class="preview-section">
           <h4 class="section-title">预览信息</h4>
           <div class="preview-info">
@@ -1938,7 +1556,7 @@
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <el-button @click="svgToPngDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="confirmSvgToPng">开始转换</el-button>
@@ -1946,20 +1564,15 @@
     </el-dialog>
 
     <!-- 图片预览弹窗 -->
-    <ImagePreview
-      :visible="imagePreviewVisible"
-      :image-url="currentImageUrl"
-      @close="closeImagePreview"
-    />
+    <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
     <!-- 拖拽提示气泡（跟随鼠标） -->
     <teleport to="body">
-      <div
-        v-show="dragHint.visible"
-        class="drag-hint-bubble"
-        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }"
-      >
-        <el-icon class="drag-hint-icon"><InfoFilled /></el-icon>
+      <div v-show="dragHint.visible" class="drag-hint-bubble"
+        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
+        <el-icon class="drag-hint-icon">
+          <InfoFilled />
+        </el-icon>
         <span>{{ dragHint.text }}</span>
       </div>
     </teleport>
@@ -1996,11 +1609,14 @@ import {
   getStickerFolderTree,
   createStickerFolder,
   renameStickerFolder,
-  deleteStickerFolder
+  deleteStickerFolder,
+  uploadMaterialFile,
+  copyStickers,
+  trimPng,
+  svgToPng
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
-import { uploadMaterialFile, copyStickers, trimPng, svgToPng } from '@/api/material'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 
 import { commonGridOptions } from '@/common/table'
@@ -2113,51 +1729,51 @@ const gridOptions = computed(() => {
     { title: '描述（中/英）', field: 'description', minWidth: 320, slots: { default: 'descriptionBilingualSlot' } },
     { title: '关键词（中/英）', field: 'keywords', minWidth: 280, slots: { default: 'keywordsBilingualSlot' } },
     { title: '后缀', field: 'suffix', width: 80, }, // 新增后缀列
-    { 
-      title: '文件尺寸', 
-      field: 'fileSize', 
+    {
+      title: '文件尺寸',
+      field: 'fileSize',
       width: 120,
       slots: { default: 'fileSizeSlot' }
     }, // 新增文件尺寸列
-    { 
-      title: '适用商品', 
-      field: 'suitableFor', 
+    {
+      title: '适用商品',
+      field: 'suitableFor',
       minWidth: 150,
       slots: { default: 'suitableForSlot' }
     }, // 新增适用商品列
-    { 
-      title: '相似度', 
-      field: 'similarity', 
+    {
+      title: '相似度',
+      field: 'similarity',
       width: 80,
       slots: { default: 'similaritySlot' }
     }, // 新增相似度列
-    { 
-      title: '上传者', 
-      field: 'uploader', 
-      width: 140, 
-      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.uploaderId || '-' 
+    {
+      title: '上传者',
+      field: 'uploader',
+      width: 140,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.uploaderId || '-'
     },
-    { 
-      title: '色系', 
-      field: 'colorPalette', 
+    {
+      title: '色系',
+      field: 'colorPalette',
       width: 200,
       slots: { default: 'colorPaletteSlot' }
     }, // 新增色系列
-    { 
-      title: '侵权状态', 
-      field: 'isInfringement', 
+    {
+      title: '侵权状态',
+      field: 'isInfringement',
       width: 100,
       slots: { default: 'isInfringementSlot' }
     },
-    { 
-      title: '抠图', 
-      field: 'isCutout', 
+    {
+      title: '抠图',
+      field: 'isCutout',
       width: 100,
       slots: { default: 'isCutoutSlot' }
     },
-    { 
-      title: '文件夹', 
-      field: 'folder', 
+    {
+      title: '文件夹',
+      field: 'folder',
       width: 180,
       slots: { default: 'folderSlot' }
     },
@@ -2165,11 +1781,11 @@ const gridOptions = computed(() => {
 
   // 只有管理员显示的字段
   const adminOnlyColumns = [
-    { title: '感知哈希', field: 'phash', width: 80,  }, // 新增哈希列
-    { title: 'ID', field: 'id', width: 80,  }, // 新增ID列
-    { 
-      title: '自定义贴纸', 
-      field: 'isCustom', 
+    { title: '感知哈希', field: 'phash', width: 80, }, // 新增哈希列
+    { title: 'ID', field: 'id', width: 80, }, // 新增ID列
+    {
+      title: '自定义贴纸',
+      field: 'isCustom',
       width: 100,
       slots: { default: 'isCustomSlot' }
     },
@@ -2320,6 +1936,11 @@ const psdSetDialogVisible = ref(false)
 const psdSetTemplates = ref<any[]>([])
 const psdSetTemplatesLoading = ref(false)
 const selectedPsdTemplateIds = ref<string[]>([])
+// PSD模板文件夹相关
+const psdFolderTreeRef = ref()
+const selectedPsdFolderId = ref<string | null>('__root__')
+const psdFolderTreeData = ref<any[]>([])
+
 // PSD模板分页相关
 const psdSetTemplatePageParams = reactive({
   currentPage: 1,
@@ -2354,7 +1975,7 @@ const filteredPsdSetTemplates = computed(() => {
 // 判断是否所有可见模板都已选中
 const isAllPsdTemplatesSelected = computed(() => {
   if (!filteredPsdSetTemplates.value.length) return false
-  return filteredPsdSetTemplates.value.every(tpl => 
+  return filteredPsdSetTemplates.value.every(tpl =>
     selectedPsdTemplateIds.value.includes(String(tpl.id))
   )
 })
@@ -2405,7 +2026,7 @@ const psdSetTaskCount = computed(() =>
 )
 
 // PSD制作套图允许的图片格式（固定为这三个）
-const psdSetAllowedFormats = ['jpg', 'png', 'jpeg','svg']
+const psdSetAllowedFormats = ['jpg', 'png', 'jpeg', 'svg']
 
 // 获取当前选中PSD模板的允许格式
 const allowedFormatsForSelectedTemplates = computed(() => {
@@ -2416,16 +2037,16 @@ const allowedFormatsForSelectedTemplates = computed(() => {
 // 检查是否有不符合格式的素材
 const hasInvalidFormatMaterials = computed(() => {
   if (!ids.value.length) return false
-  
+
   const allowedFormatsSet = new Set(psdSetAllowedFormats)
-  
+
   return ids.value.some(id => {
     const material = dataSource.value.find(item => String(item.id) === String(id))
     if (!material) return false
-    
+
     const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
     if (!materialSuffix) return true // 没有后缀视为无效
-    
+
     return !allowedFormatsSet.has(materialSuffix)
   })
 })
@@ -2434,11 +2055,11 @@ const hasInvalidFormatMaterials = computed(() => {
 const invalidFormatMaterialsList = computed(() => {
   const allowedFormatsSet = new Set(psdSetAllowedFormats)
   const invalidList: Array<{ name: string, suffix: string }> = []
-  
+
   ids.value.forEach(id => {
     const material = dataSource.value.find(item => String(item.id) === String(id))
     if (!material) return
-    
+
     const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
     if (!materialSuffix || !allowedFormatsSet.has(materialSuffix)) {
       invalidList.push({
@@ -2447,7 +2068,7 @@ const invalidFormatMaterialsList = computed(() => {
       })
     }
   })
-  
+
   return invalidList
 })
 
@@ -2506,7 +2127,7 @@ async function getList() {
   imageLoadTimeouts.clear()
   // 立即清空旧数据，确保旧图片被销毁
   dataSource.value = []
-  
+
   // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递
   const params = {
     ...queryParams,
@@ -2515,7 +2136,7 @@ async function getList() {
     // 如果 sizeShape 是空数组，传递空数组；如果是旧格式字符串，转换为数组
     sizeShape: Array.isArray(queryParams.sizeShape) ? queryParams.sizeShape : (queryParams.sizeShape ? [queryParams.sizeShape] : [])
   }
-  
+
   let res = await getMaterialList(params).finally(() => {
     loading.value = false
   })
@@ -2534,7 +2155,7 @@ async function getList() {
     }
   })
   total.value = res.total
-  
+
   // 为每个图片设置加载超时，防止一直显示加载中
   dataSource.value.forEach((item) => {
     setupImageLoadTimeout(item)
@@ -2591,12 +2212,12 @@ const imageLoadTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 // 设置图片加载超时
 function setupImageLoadTimeout(row: any) {
   const timeoutKey = `image-${row.id}-${row.url}`
-  
+
   // 清除之前的超时（如果存在）
   if (imageLoadTimeouts.has(timeoutKey)) {
     clearTimeout(imageLoadTimeouts.get(timeoutKey))
   }
-  
+
   // 设置5秒超时，如果图片还没加载完成，强制标记为已加载
   const timeout = setTimeout(() => {
     if (!row._imageLoaded) {
@@ -2604,20 +2225,20 @@ function setupImageLoadTimeout(row: any) {
       imageLoadTimeouts.delete(timeoutKey)
     }
   }, 5000)
-  
+
   imageLoadTimeouts.set(timeoutKey, timeout)
 }
 
 // 处理图片加载成功
 function handleImageLoad(row: any, event: Event) {
   const timeoutKey = `image-${row.id}-${row.url}`
-  
+
   // 清除超时定时器
   if (imageLoadTimeouts.has(timeoutKey)) {
     clearTimeout(imageLoadTimeouts.get(timeoutKey))
     imageLoadTimeouts.delete(timeoutKey)
   }
-  
+
   // 检查图片是否真的加载完成（可能因为缓存等原因已经加载）
   const img = event.target as HTMLImageElement
   if (img.complete && img.naturalHeight !== 0) {
@@ -2633,13 +2254,13 @@ function handleImageLoad(row: any, event: Event) {
 // 处理图片加载失败
 function handleImageError(row: any) {
   const timeoutKey = `image-${row.id}-${row.url}`
-  
+
   // 清除超时定时器
   if (imageLoadTimeouts.has(timeoutKey)) {
     clearTimeout(imageLoadTimeouts.get(timeoutKey))
     imageLoadTimeouts.delete(timeoutKey)
   }
-  
+
   // 即使加载失败，也标记为已加载，避免一直显示加载中
   row._imageLoaded = true
 }
@@ -2658,12 +2279,12 @@ onUnmounted(() => {
 async function handlePhashSearch() {
   // 去除phash值的前后空格
   queryParams.phash = queryParams.phash.trim()
-  
+
   if (!queryParams.phash) {
     ElMessage.warning('请输入phash值或图片地址')
     return
   }
-  
+
   // 重置页码
   queryParams.currentPage = 1
   // 调用现有的getList函数，它会自动检测phash参数并调用相似度搜索
@@ -2693,7 +2314,7 @@ const stickerFolderSelectOptions = computed(() => {
   const options: Array<{ label: string; value: string | null; path: string }> = [
     { label: '根目录', value: null, path: '' }
   ]
-  
+
   // 递归构建文件夹选项
   const buildOptions = (folders: any[], prefix = '') => {
     folders.forEach(folder => {
@@ -2708,12 +2329,12 @@ const stickerFolderSelectOptions = computed(() => {
       }
     })
   }
-  
+
   // 从根目录节点的 children 中构建选项
   if (stickerFolderTreeData.value.length > 0 && stickerFolderTreeData.value[0].children) {
     buildOptions(stickerFolderTreeData.value[0].children)
   }
-  
+
   return options
 })
 
@@ -2724,7 +2345,7 @@ async function loadStickerFolderTree() {
     const res = await getStickerFolderTree()
     // 确保只显示根文件夹（parentId 为 null 的文件夹）
     const rootFolders = (res || []).filter((folder: any) => folder.parentId === null || folder.parentId === undefined)
-    
+
     // 创建根目录节点，放在最上方
     const rootNode = {
       id: '__root__',
@@ -2735,9 +2356,9 @@ async function loadStickerFolderTree() {
       children: rootFolders, // 将根文件夹作为根目录的子节点
       isRoot: true
     }
-    
+
     stickerFolderTreeData.value = [rootNode]
-    
+
     // 确保根目录节点被选中
     nextTick(() => {
       if (stickerFolderTreeRef.value && !selectedStickerFolderId.value) {
@@ -2842,7 +2463,7 @@ async function handleCreateRootStickerFolder() {
       inputPattern: /^[^/\\?*<>|"]+$/,
       inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
     })
-    
+
     await createStickerFolder({ name: value, parentId: null })
     ElMessage.success('创建成功')
     await loadStickerFolderTree()
@@ -2877,7 +2498,7 @@ async function handleCreateChildStickerFolder(parent: any) {
       inputPattern: /^[^/\\?*<>|"]+$/,
       inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
     })
-    
+
     await createStickerFolder({ name: value, parentId: parent.id })
     ElMessage.success('创建成功')
     await loadStickerFolderTree()
@@ -2898,11 +2519,11 @@ async function handleRenameStickerFolder(data: any) {
       inputPattern: /^[^/\\?*<>|"]+$/,
       inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
     })
-    
+
     await renameStickerFolder({ id: data.id, name: value })
     ElMessage.success('重命名成功')
     await loadStickerFolderTree()
-    
+
     // 如果当前选中的文件夹被重命名，需要更新查询参数
     if (selectedStickerFolderId.value === data.id) {
       // 重新加载文件夹树后，找到新的文件夹信息
@@ -2918,13 +2539,13 @@ async function handleRenameStickerFolder(data: any) {
         }
         return null
       }
-      
+
       // 从根目录节点的 children 中查找
       const rootNode = stickerFolderTreeData.value[0]
       const updatedFolder = findFolder(rootNode.children || [], data.id)
       if (updatedFolder && updatedFolder.path) {
         selectedStickerFolderPath.value = updatedFolder.path
-        queryParams.folder = updatedFolder.path
+
         getList()
       }
     }
@@ -2947,22 +2568,22 @@ async function handleDeleteStickerFolder(data: any) {
         type: 'warning',
       }
     )
-    
+
     await deleteStickerFolder(data.id, true)
     ElMessage.success('删除成功')
-    
+
     // 如果删除的是当前选中的文件夹，切换到根目录
     if (selectedStickerFolderId.value === data.id) {
       selectedStickerFolderId.value = '__root__'
       selectedStickerFolderPath.value = ''
-      queryParams.folder = ''
+      queryParams.folderId = null
       queryParams.currentPage = 1
       getList()
       if (stickerFolderTreeRef.value) {
         stickerFolderTreeRef.value.setCurrentKey('__root__')
       }
     }
-    
+
     await loadStickerFolderTree()
   } catch (error) {
     if (error !== 'cancel') {
@@ -2991,11 +2612,11 @@ async function handleBatchMoveToFolder() {
   if (!ids.value.length) {
     return ElMessage.warning('请选择要移动的素材')
   }
-  
+
   try {
     const targetFolderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value
     const targetFolderPath = selectedStickerFolderPath.value || ''
-    
+
     await batchMoveStickers({ ids: ids.value, folderId: targetFolderId })
     ElMessage.success(`成功移动 ${ids.value.length} 个素材${targetFolderPath ? `到 ${targetFolderPath}` : '到根目录'}`)
     getList()
@@ -3043,12 +2664,12 @@ function handleMultiDownload() {
         try {
           const downloadUrl = row.url || row.ossObjectName
           const fileName = row.name || row.imageName || `image_${id}.jpg`
-          
+
           if (!downloadUrl) {
             ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`)
             return
           }
-          
+
           // 使用新的下载函数，确保文件被下载而不是打开新页面
           await downloadImage(downloadUrl, fileName)
           ElNotification.success(`图片 ${fileName} 下载成功`)
@@ -3087,7 +2708,7 @@ function handleDelete(row?) {
       resetCheckStatus()
       getList()
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 function checkboxChange(e) {
   const records = Array.isArray(e.records) ? e.records : []
@@ -3106,12 +2727,12 @@ async function handleDownload(row) {
   try {
     const downloadUrl = row.url || row.ossObjectName
     const fileName = row.name || row.imageName || `image_${row.id}.jpg`
-    
+
     if (!downloadUrl) {
       ElMessage.error(`图片 ${fileName} 下载失败：缺少下载链接`)
       return
     }
-    
+
     // 使用新的下载函数，确保文件被下载而不是打开新页面
     await downloadImage(downloadUrl, fileName)
     ElNotification.success(`图片 ${fileName} 下载成功`)
@@ -3158,7 +2779,7 @@ async function handleSvgToPng(row) {
     ElMessage.warning('仅支持 SVG 图片');
     return;
   }
-  
+
   // 获取SVG原始尺寸
   try {
     const svgDimensions = await getSvgDimensions(row.url)
@@ -3166,7 +2787,7 @@ async function handleSvgToPng(row) {
       svgToPngForm.value.originalWidth = (svgDimensions as any).width
       svgToPngForm.value.originalHeight = (svgDimensions as any).height
       svgToPngForm.value.aspectRatio = (svgDimensions as any).width / (svgDimensions as any).height
-      
+
       // 根据原始比例设置默认尺寸
       const baseSize = 512
       if (svgToPngForm.value.aspectRatio > 1) {
@@ -3179,16 +2800,16 @@ async function handleSvgToPng(row) {
         svgToPngForm.value.width = Math.round(baseSize * svgToPngForm.value.aspectRatio)
       }
     }
-    } catch (error) {
-      console.warn('获取SVG尺寸失败:', error)
-      // 如果获取失败，使用默认值
-      svgToPngForm.value.originalWidth = 512
-      svgToPngForm.value.originalHeight = 512
-      svgToPngForm.value.aspectRatio = 1
-      svgToPngForm.value.width = 512
-      svgToPngForm.value.height = 512
-    }
-  
+  } catch (error) {
+    console.warn('获取SVG尺寸失败:', error)
+    // 如果获取失败，使用默认值
+    svgToPngForm.value.originalWidth = 512
+    svgToPngForm.value.originalHeight = 512
+    svgToPngForm.value.aspectRatio = 1
+    svgToPngForm.value.width = 512
+    svgToPngForm.value.height = 512
+  }
+
   // 打开尺寸设置弹窗
   currentSvgRow.value = row
   svgToPngDialogVisible.value = true
@@ -3198,13 +2819,13 @@ async function handleSvgToPng(row) {
 async function getSvgDimensions(svgUrl) {
   return new Promise((resolve) => {
     const img = new Image()
-    
-    img.onload = function() {
+
+    img.onload = function () {
       const naturalWidth = (this as HTMLImageElement).naturalWidth
       const naturalHeight = (this as HTMLImageElement).naturalHeight
-      
+
       console.log('SVG自然尺寸:', { naturalWidth, naturalHeight })
-      
+
       // 如果naturalWidth和naturalHeight都是0或undefined，尝试解析SVG内容
       if (!naturalWidth || !naturalHeight || naturalWidth === 0 || naturalHeight === 0) {
         console.log('naturalWidth/naturalHeight无效，尝试解析SVG内容')
@@ -3213,12 +2834,12 @@ async function getSvgDimensions(svgUrl) {
         resolve({ width: naturalWidth, height: naturalHeight })
       }
     }
-    
-    img.onerror = function() {
+
+    img.onerror = function () {
       console.log('图片加载失败，尝试解析SVG内容')
       parseSvgContent(svgUrl).then(resolve)
     }
-    
+
     // 设置crossOrigin以支持跨域
     img.crossOrigin = 'anonymous'
     img.src = svgUrl
@@ -3230,15 +2851,15 @@ async function parseSvgContent(svgUrl) {
   try {
     const response = await fetch(svgUrl)
     const svgText = await response.text()
-    
+
     const parser = new DOMParser()
     const svgDoc = parser.parseFromString(svgText, 'image/svg+xml')
     const svgElement = svgDoc.querySelector('svg')
-    
+
     if (!svgElement) return { width: 512, height: 512 }
-    
+
     let width, height
-    
+
     // 优先使用viewBox
     const viewBox = svgElement.getAttribute('viewBox')
     if (viewBox) {
@@ -3248,13 +2869,13 @@ async function parseSvgContent(svgUrl) {
         height = parseFloat(parts[3])
       }
     }
-    
+
     // 如果没有viewBox，使用width和height属性
     if (!width || !height) {
       width = parseFloat(svgElement.getAttribute('width')) || 512
       height = parseFloat(svgElement.getAttribute('height')) || 512
     }
-    
+
     console.log('SVG解析尺寸:', { width, height })
     return { width, height }
   } catch (error) {
@@ -3266,10 +2887,10 @@ async function parseSvgContent(svgUrl) {
 // 确认SVG转PNG
 async function confirmSvgToPng() {
   if (!currentSvgRow.value?.id) return
-  
+
   try {
     ElMessage.info('正在转换SVG为PNG，请稍候...');
-    const res = await svgToPng({ 
+    const res = await svgToPng({
       id: String(currentSvgRow.value.id),
       width: svgToPngForm.value.width,
       height: svgToPngForm.value.height
@@ -3310,171 +2931,20 @@ async function openPsdSetDialog(mergeMode?: boolean | any) {
   // 打开弹窗时重置分页
   psdSetTemplatePageParams.currentPage = 1
   psdSetDialogVisible.value = true
+  // 加载PSD模板文件夹
+  loadPsdFolderTree()
   await loadPsdTemplatesForPsdSet()
 }
 
-async function loadPsdTemplatesForPsdSet() {
-  psdSetTemplatesLoading.value = true
-  try {
-    const res = await psdTemplateApi.getPsdTemplatePage({
-      currentPage: psdSetTemplatePageParams.currentPage,
-      pageSize: psdSetTemplatePageParams.pageSize,
-      searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
-      enabled: true
-    })
-    psdSetTemplates.value = res.list || []
-    psdSetTemplatePageParams.total = res.total || 0
-  } catch (error) {
-    console.error('加载PSD模板失败:', error)
-    ElMessage.error('加载PSD模板失败')
-  } finally {
-    psdSetTemplatesLoading.value = false
-  }
-}
 
-// 防抖搜索函数
-const debouncedSearchPsdTemplates = useDebounceFn(() => {
-  if (psdSetDialogVisible.value) {
-    // 搜索时重置到第一页
-    psdSetTemplatePageParams.currentPage = 1
-    loadPsdTemplatesForPsdSet()
-  }
-}, 500)
 
-// 监听搜索文本变化
-watch(psdSetTemplateSearchText, () => {
-  if (psdSetDialogVisible.value) {
-    debouncedSearchPsdTemplates()
-  }
-})
 
-function togglePsdTemplate(templateId: string | number) {
-  const id = String(templateId)
-  const index = selectedPsdTemplateIds.value.indexOf(id)
-  if (index > -1) {
-    selectedPsdTemplateIds.value.splice(index, 1)
-  } else {
-    selectedPsdTemplateIds.value.push(id)
-  }
-}
 
-function resetPsdSetState() {
-  selectedPsdTemplateIds.value = []
-  psdSetMergeSticker.value = false
-  psdSetTemplateSearchText.value = ''
-  psdSetTemplatePageParams.currentPage = 1
-  psdSetTemplatePageParams.total = 0
-}
 
-// 全选/取消全选PSD模板
-function handlePsdTemplateSelectAll() {
-  if (isAllPsdTemplatesSelected.value) {
-    // 取消全选：只取消当前可见的模板
-    filteredPsdSetTemplates.value.forEach(tpl => {
-      const id = String(tpl.id)
-      const index = selectedPsdTemplateIds.value.indexOf(id)
-      if (index > -1) {
-        selectedPsdTemplateIds.value.splice(index, 1)
-      }
-    })
-  } else {
-    // 全选：将当前可见的模板全部选中
-    filteredPsdSetTemplates.value.forEach(tpl => {
-      const id = String(tpl.id)
-      if (!selectedPsdTemplateIds.value.includes(id)) {
-        selectedPsdTemplateIds.value.push(id)
-      }
-    })
-  }
-}
 
-// 处理PSD模板详细配置
-function handlePsdTemplateDetailConfig() {
-  if (!selectedPsdTemplateIds.value.length) {
-    ElMessage.warning('请先选择PSD模板')
-    return
-  }
-  
-  // 根据选中的模板ID，从psdSetTemplates中获取对应的模板数据
-  const selectedTemplates = psdSetTemplates.value.filter(tpl => 
-    selectedPsdTemplateIds.value.includes(String(tpl.id))
-  )
-  
-  if (selectedTemplates.length === 0) {
-    ElMessage.warning('未找到选中的模板数据')
-    return
-  }
-  
-  // 根据合并模式决定配置列表的生成方式
-  templateConfigList.value = []
-  
-  if (psdSetMergeSticker.value) {
-    // 合并模式：有 N 个模板，就生成 N 个配置项（每个模板一个）
-    templateConfigList.value = selectedTemplates.map(template => {
-      // 使用 psdTemplateConfig
-      const templateConfig = template.psdTemplateConfig
-      let psdInfoObj = null
-      let configText = ''
-      if (templateConfig) {
-        try {
-          psdInfoObj = typeof templateConfig === 'string' ? JSON.parse(templateConfig) : templateConfig
-          configText = JSON.stringify(psdInfoObj, null, 2)
-        } catch (e) {
-          console.error('解析模板配置失败:', e)
-          configText = typeof templateConfig === 'string' ? templateConfig : ''
-        }
-      }
-      
-      const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null
-      
-      return {
-        id: String(template.id),
-        name: template.name || '未命名模板',
-        thumbnail: template.thumbnail || template.preview || template.image,
-        psdInfo: psdInfoObj,
-        originalPsdInfo,
-        configText,
-        materialId: undefined, // 合并模式不关联单个素材
-      }
-    })
-  } else {
-    // 单素材模式：生成 素材数 × 模板数 个配置项
-    ids.value.forEach(materialId => {
-      selectedTemplates.forEach(template => {
-        // 使用 psdTemplateConfig
-        const templateConfig = template.psdTemplateConfig
-        let psdInfoObj = null
-        let configText = ''
-        if (templateConfig) {
-          try {
-            psdInfoObj = typeof templateConfig === 'string' ? JSON.parse(templateConfig) : templateConfig
-            configText = JSON.stringify(psdInfoObj, null, 2)
-          } catch (e) {
-            console.error('解析模板配置失败:', e)
-            configText = typeof templateConfig === 'string' ? templateConfig : ''
-          }
-        }
-        
-        const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null
-        
-        const material = dataSource.value.find(item => String(item.id) === String(materialId))
-        const materialName = material?.name || `素材${materialId}`
-        
-        templateConfigList.value.push({
-          id: `${template.id}_${materialId}`, // 使用模板ID和素材ID组合作为唯一标识
-          name: `${materialName} × ${template.name || '未命名模板'}`,
-          thumbnail: template.thumbnail || template.preview || template.image,
-          psdInfo: psdInfoObj,
-          originalPsdInfo,
-          configText,
-          materialId: materialId, // 关联的素材ID
-        })
-      })
-    })
-  }
-  
-  batchDetailConfigDialogVisible.value = true
-}
+
+
+
 
 // 处理PSD模板缩略图加载错误
 function handleTemplateImageError(event: Event) {
@@ -3499,17 +2969,17 @@ function getMaterialImageUrl(materialId: string | number): string {
 function getMatchedMaterialId(configIndex: number): string | number | null {
   const config = templateConfigList.value[configIndex]
   if (!config) return null
-  
+
   // 如果配置项有关联的素材ID（单素材模式），直接返回
   if (config.materialId !== undefined) {
     return config.materialId
   }
-  
+
   // 合并模式：显示第一个素材作为参考（实际上所有素材都会合并）
   if (ids.value.length > 0) {
     return ids.value[0]
   }
-  
+
   return null
 }
 
@@ -3531,7 +3001,7 @@ function handleResetConfigForTemplate(templateIndex: number) {
       }
       ElMessage.success('已重置为默认配置')
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 
 // 验证配置文本格式（在生成套图前调用）
@@ -3541,7 +3011,7 @@ function validateConfigTexts(): boolean {
       // 空配置也是允许的
       continue
     }
-    
+
     try {
       JSON.parse(template.configText.trim())
     } catch (e) {
@@ -3561,7 +3031,7 @@ function handleSaveConfigToMemory() {
       // 空配置也是允许的
       continue
     }
-    
+
     try {
       JSON.parse(template.configText.trim())
     } catch (e) {
@@ -3570,15 +3040,211 @@ function handleSaveConfigToMemory() {
       break
     }
   }
-  
+
   if (hasError) {
     return
   }
-  
+
   // 配置已暂存到内存中（templateConfigList），无需额外操作
   ElMessage.success('配置已保存（暂存），点击"开始制作"时将使用此配置')
   // 可以选择关闭弹窗，或者保持打开让用户继续编辑
   // batchDetailConfigDialogVisible.value = false
+}
+
+// PSD模板相关逻辑
+
+// 重置状态
+function resetPsdSetState() {
+  selectedPsdTemplateIds.value = []
+  psdSetMergeSticker.value = false
+  psdSetTemplateSearchText.value = ''
+  psdSetTemplatePageParams.currentPage = 1
+  psdSetTemplatePageParams.total = 0
+  selectedPsdFolderId.value = '__root__'
+}
+
+// 加载PSD模板文件夹树
+async function loadPsdFolderTree() {
+  try {
+    const res = await getStickerFolderTree({ folderCategory: 'psdtemplate' })
+    const rootFolders = (res || []).filter((folder: any) => folder.parentId === null || folder.parentId === undefined)
+
+    // 创建根目录节点
+    const rootNode = {
+      id: '__root__',
+      name: '全部',
+      path: '',
+      parentId: null,
+      children: rootFolders,
+      isRoot: true
+    }
+
+    psdFolderTreeData.value = [rootNode]
+
+    nextTick(() => {
+      if (psdFolderTreeRef.value && selectedPsdFolderId.value) {
+        psdFolderTreeRef.value.setCurrentKey(selectedPsdFolderId.value)
+      }
+    })
+  } catch (error) {
+    console.error('加载PSD文件夹失败:', error)
+  }
+}
+
+// PSD文件夹节点点击
+function handlePsdFolderNodeClick(data: any) {
+  if (data.id === '__root__') {
+    selectedPsdFolderId.value = '__root__'
+  } else {
+    selectedPsdFolderId.value = data.id
+  }
+  psdSetTemplatePageParams.currentPage = 1
+  loadPsdTemplatesForPsdSet()
+}
+
+// 加载PSD模板列表
+async function loadPsdTemplatesForPsdSet() {
+  psdSetTemplatesLoading.value = true
+  try {
+    const res = await psdTemplateApi.getPsdTemplatePage({
+      currentPage: psdSetTemplatePageParams.currentPage,
+      pageSize: psdSetTemplatePageParams.pageSize,
+      searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
+      enabled: true,
+      folderId: selectedPsdFolderId.value === '__root__' ? null : selectedPsdFolderId.value
+    })
+    psdSetTemplates.value = res.list || []
+    psdSetTemplatePageParams.total = res.total || 0
+  } catch (error) {
+    console.error('加载PSD模板失败:', error)
+    ElMessage.error('加载PSD模板失败')
+  } finally {
+    psdSetTemplatesLoading.value = false
+  }
+}
+
+// 切换选中状态
+function togglePsdTemplate(templateId: string | number) {
+  const id = String(templateId)
+  const index = selectedPsdTemplateIds.value.indexOf(id)
+  if (index > -1) {
+    selectedPsdTemplateIds.value.splice(index, 1)
+  } else {
+    selectedPsdTemplateIds.value.push(id)
+  }
+}
+
+// 搜索防抖
+const debouncedSearchPsdTemplates = useDebounceFn(() => {
+  if (psdSetDialogVisible.value) {
+    psdSetTemplatePageParams.currentPage = 1
+    loadPsdTemplatesForPsdSet()
+  }
+}, 500)
+
+watch(psdSetTemplateSearchText, () => {
+  if (psdSetDialogVisible.value) {
+    debouncedSearchPsdTemplates()
+  }
+})
+
+// 全选/取消全选
+function handlePsdTemplateSelectAll() {
+  if (isAllPsdTemplatesSelected.value) {
+    filteredPsdSetTemplates.value.forEach(tpl => {
+      const id = String(tpl.id)
+      const index = selectedPsdTemplateIds.value.indexOf(id)
+      if (index > -1) {
+        selectedPsdTemplateIds.value.splice(index, 1)
+      }
+    })
+  } else {
+    filteredPsdSetTemplates.value.forEach(tpl => {
+      const id = String(tpl.id)
+      if (!selectedPsdTemplateIds.value.includes(id)) {
+        selectedPsdTemplateIds.value.push(id)
+      }
+    })
+  }
+}
+
+// 详细配置弹窗处理
+function handlePsdTemplateDetailConfig() {
+  if (!selectedPsdTemplateIds.value.length) {
+    ElMessage.warning('请先选择PSD模板')
+    return
+  }
+
+  const selectedTemplates = psdSetTemplates.value.filter(tpl =>
+    selectedPsdTemplateIds.value.includes(String(tpl.id))
+  )
+
+  if (selectedTemplates.length === 0) {
+    ElMessage.warning('未找到选中的模板数据')
+    return
+  }
+
+  templateConfigList.value = []
+
+  if (psdSetMergeSticker.value) {
+    templateConfigList.value = selectedTemplates.map(template => {
+      const templateConfig = template.psdTemplateConfig
+      let psdInfoObj = null
+      let configText = ''
+      if (templateConfig) {
+        try {
+          psdInfoObj = typeof templateConfig === 'string' ? JSON.parse(templateConfig) : templateConfig
+          configText = JSON.stringify(psdInfoObj, null, 2)
+        } catch (e) {
+          console.error('解析模板配置失败:', e)
+          configText = typeof templateConfig === 'string' ? templateConfig : ''
+        }
+      }
+      const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null
+
+      return {
+        id: String(template.id),
+        name: template.name || '未命名模板',
+        thumbnail: template.thumbnail || template.preview || template.image,
+        psdInfo: psdInfoObj,
+        originalPsdInfo,
+        configText,
+        materialId: undefined,
+      }
+    })
+  } else {
+    ids.value.forEach(materialId => {
+      selectedTemplates.forEach(template => {
+        const templateConfig = template.psdTemplateConfig
+        let psdInfoObj = null
+        let configText = ''
+        if (templateConfig) {
+          try {
+            psdInfoObj = typeof templateConfig === 'string' ? JSON.parse(templateConfig) : templateConfig
+            configText = JSON.stringify(psdInfoObj, null, 2)
+          } catch (e) {
+            console.error('解析模板配置失败:', e)
+            configText = typeof templateConfig === 'string' ? templateConfig : ''
+          }
+        }
+        const originalPsdInfo = psdInfoObj ? JSON.parse(JSON.stringify(psdInfoObj)) : null
+        const material = dataSource.value.find(item => String(item.id) === String(materialId))
+        const materialName = material?.name || `素材${materialId}`
+
+        templateConfigList.value.push({
+          id: `${template.id}_${materialId}`,
+          name: `${materialName} × ${template.name || '未命名模板'}`,
+          thumbnail: template.thumbnail || template.preview || template.image,
+          psdInfo: psdInfoObj,
+          originalPsdInfo,
+          configText,
+          materialId: materialId,
+        })
+      })
+    })
+  }
+
+  batchDetailConfigDialogVisible.value = true
 }
 
 async function handleCreatePsdSets() {
@@ -3588,19 +3254,19 @@ async function handleCreatePsdSets() {
   if (!selectedPsdTemplateIds.value.length) {
     return ElMessage.warning('请选择PSD模板')
   }
-  
+
   // 检查图片格式是否符合要求
   const formatCheckResult = checkMaterialFormats()
   if (!formatCheckResult.valid) {
     ElMessage.warning(formatCheckResult.message)
     return
   }
-  
+
   // 验证配置文本格式（如果有配置）
   if (templateConfigList.value.length > 0 && !validateConfigTexts()) {
     return
   }
-  
+
   // 构建配置映射：将详细配置弹窗中的配置信息传递到后台
   const configMap: Record<string, any> = {}
   if (templateConfigList.value.length > 0) {
@@ -3613,12 +3279,12 @@ async function handleCreatePsdSets() {
           console.error('解析配置失败:', e)
         }
       }
-      
+
       // 使用配置项的ID作为key（在单素材模式下是 templateId_materialId，在合并模式下是 templateId）
       configMap[config.id] = psdInfo
     })
   }
-  
+
   psdSetSubmitting.value = true
   try {
     const res = await stickerPsdSetApi.batchCreate({
@@ -3652,10 +3318,10 @@ async function handleCreatePsdSets() {
 function isMaterialFormatInvalid(materialId: string | number): boolean {
   const material = dataSource.value.find(item => String(item.id) === String(materialId))
   if (!material) return false
-  
+
   const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
   if (!materialSuffix) return true // 没有后缀视为无效
-  
+
   // 检查格式是否在允许列表中（jpg、png、jpeg）
   return !psdSetAllowedFormats.includes(materialSuffix)
 }
@@ -3671,16 +3337,16 @@ function getMaterialSuffix(materialId: string | number): string {
 function checkMaterialFormats() {
   // 使用固定的允许格式列表
   const allowedFormatsSet = new Set(psdSetAllowedFormats)
-  
+
   // 检查所有选中素材的格式
   const invalidMaterials: Array<{ id: string | number, name: string, suffix: string }> = []
-  
+
   ids.value.forEach(id => {
     const material = dataSource.value.find(item => String(item.id) === String(id))
     if (!material) return
-    
+
     const materialSuffix = (material.suffix || '').toLowerCase().replace(/^\./, '')
-    
+
     // 如果素材没有后缀，也视为无效
     if (!materialSuffix) {
       invalidMaterials.push({
@@ -3690,7 +3356,7 @@ function checkMaterialFormats() {
       })
       return
     }
-    
+
     // 检查格式是否在允许列表中
     if (!allowedFormatsSet.has(materialSuffix)) {
       invalidMaterials.push({
@@ -3700,19 +3366,19 @@ function checkMaterialFormats() {
       })
     }
   })
-  
+
   // 如果有不符合格式的素材，返回错误信息
   if (invalidMaterials.length > 0) {
     const allowedFormatsList = psdSetAllowedFormats.join('、')
     const invalidNames = invalidMaterials.slice(0, 5).map(m => `${m.name}(${m.suffix})`).join('、')
     const moreCount = invalidMaterials.length > 5 ? `等${invalidMaterials.length}个` : ''
-    
+
     return {
       valid: false,
       message: `所选素材中包含不符合格式要求的图片。\n允许的格式：${allowedFormatsList}\n不符合的素材：${invalidNames}${moreCount}\n请移除不符合格式的素材后重试。`
     }
   }
-  
+
   return { valid: true, message: '' }
 }
 
@@ -3752,11 +3418,11 @@ function handleDesignModelConfirm() {
     ElMessage.warning('请选择设计模型')
     return
   }
-  
+
   // 打印最终数据
   console.log('素材图ID数组:', ids.value)
   console.log('设计模型ID数组:', selectedDesignModelIds.value)
-  
+
   // 发送数据到设计工具
   const designToolMessenger = getDesignToolMessenger()
   const childWindow = designToolMessenger.getChildWindow()
@@ -3765,7 +3431,7 @@ function handleDesignModelConfirm() {
     materialIds: Array.isArray(ids.value) ? [...ids.value] : [],
     designModelIds: selectedDesignModelIds.value
   })
-  
+
   if (success) {
     ElMessage.success('数据已发送到设计工具')
     if (childWindow && typeof childWindow.focus === 'function') {
@@ -3894,21 +3560,21 @@ async function handleFindSimilar(row) {
 
 
 const editDialogVisible = ref(false)
-const editForm = ref({ 
-  id: '', 
-  name: '', 
-  nameEn: '', 
-  description: '', 
-  descriptionEn: '', 
-  keywords: '', 
-  keywordsEn: '', 
+const editForm = ref({
+  id: '',
+  name: '',
+  nameEn: '',
+  description: '',
+  descriptionEn: '',
+  keywords: '',
+  keywordsEn: '',
   group: '',
   suitableFor: '',
   suffix: '',
-  isCustom: false, 
+  isCustom: false,
   isPublic: false,
   isTexture: false,
-  isInfringement: false, 
+  isInfringement: false,
   isCutout: false,
   originUrl: '',
   source: '',
@@ -3981,12 +3647,12 @@ function applyPreset(preset) {
 }
 
 function handleEdit(row) {
-  editForm.value = { 
-    id: row.id, 
-    name: row.name || '', 
+  editForm.value = {
+    id: row.id,
+    name: row.name || '',
     nameEn: row.nameEn || '',
-    description: row.description || '', 
-    descriptionEn: row.descriptionEn || '', 
+    description: row.description || '',
+    descriptionEn: row.descriptionEn || '',
     keywords: row.keywords || '',
     keywordsEn: row.keywordsEn || '',
     group: row.group || '',
@@ -4034,7 +3700,7 @@ async function submitEdit() {
       isCutout: editForm.value.isCutout,
       originUrl: editForm.value.originUrl,
       source: editForm.value.source,
-    folderId: editForm.value.folderId ?? null
+      folderId: editForm.value.folderId ?? null
     }
     await updateAssetLibrary(submitData)
     ElNotification.success('保存成功')
@@ -4065,7 +3731,7 @@ function showMetaDetail(meta: any) {
     ElMessage.warning('该素材没有元数据信息')
     return
   }
-  
+
   try {
     // 如果 meta 是字符串，直接使用
     if (typeof meta === 'string') {
@@ -4119,7 +3785,7 @@ async function handleGenerateImageInfo(row) {
         if (res.phash !== undefined) targetRow.phash = res.phash;
         if (res.isCutout !== undefined) targetRow.isCutout = res.isCutout;
       }
-      
+
       // 同时更新当前 row 对象（用于显示）
       if (res.width !== undefined) {
         row.width = res.width;
@@ -4135,7 +3801,7 @@ async function handleGenerateImageInfo(row) {
       if (res.suffix !== undefined) row.suffix = res.suffix;
       if (res.phash !== undefined) row.phash = res.phash;
       if (res.isCutout !== undefined) row.isCutout = res.isCutout;
-      
+
       const infoParts = [];
       if (res.width && res.height) {
         infoParts.push(`尺寸: ${res.width} × ${res.height}`);
@@ -4150,7 +3816,7 @@ async function handleGenerateImageInfo(row) {
       if (res.isCutout !== undefined) {
         infoParts.push(`抠图: ${res.isCutout ? '是' : '否'}`);
       }
-      
+
       ElNotification.success(`生成图片信息成功${infoParts.length ? `：${infoParts.join('，')}` : ''}`);
       // 刷新列表以更新所有数据
       await getList();
@@ -4238,10 +3904,10 @@ const urlUploadForm = reactive({
 const urlUploadFormRules = {
   url: [
     { required: true, message: '请输入图片URL', trigger: 'blur' },
-    { 
-      pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i, 
-      message: '请输入有效的图片URL', 
-      trigger: 'blur' 
+    {
+      pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i,
+      message: '请输入有效的图片URL',
+      trigger: 'blur'
     }
   ],
   name: [
@@ -4310,23 +3976,23 @@ async function fetchImageFromUrl(url) {
         'Accept': 'image/*'
       }
     })
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
-    
+
     const contentType = response.headers.get('content-type')
     if (!contentType || !contentType.startsWith('image/')) {
       throw new Error('URL指向的不是图片文件')
     }
-    
+
     const blob = await response.blob()
-    
+
     // 检查文件大小（限制10MB）
     if (blob.size > 10 * 1024 * 1024) {
       throw new Error('图片文件过大，请选择小于10MB的图片')
     }
-    
+
     // 从URL或content-type获取文件扩展名
     let extension = 'jpg'
     const urlMatch = url.match(/\.([a-zA-Z0-9]+)(\?.*)?$/i)
@@ -4339,11 +4005,11 @@ async function fetchImageFromUrl(url) {
         if (extension === 'jpeg') extension = 'jpg'
       }
     }
-    
+
     // 创建File对象
     const fileName = urlUploadForm.name || `image_${Date.now()}.${extension}`
     const file = new File([blob], fileName, { type: blob.type })
-    
+
     return { file, extension }
   } catch (error) {
     console.error('获取图片失败:', error)
@@ -4355,10 +4021,10 @@ async function fetchImageFromUrl(url) {
 function handleSubmenuEnter(event: MouseEvent) {
   const menuItem = event.currentTarget as HTMLElement
   if (!menuItem) return
-  
+
   const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
   if (!submenu) return
-  
+
   // 先隐藏所有其他子菜单
   const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
   allSubmenus.forEach((sm) => {
@@ -4368,16 +4034,16 @@ function handleSubmenuEnter(event: MouseEvent) {
       sm.style.pointerEvents = 'none'
     }
   })
-  
+
   // 清除之前的隐藏定时器
   if (submenuHideTimer) {
     clearTimeout(submenuHideTimer)
     submenuHideTimer = null
   }
-  
+
   // 获取菜单项的位置（使用 getBoundingClientRect 获取相对于视口的位置）
   const menuItemRect = menuItem.getBoundingClientRect()
-  
+
   // 临时显示子菜单到屏幕外以获取其真实尺寸
   submenu.style.position = 'fixed'
   submenu.style.left = '-9999px'
@@ -4387,21 +4053,21 @@ function handleSubmenuEnter(event: MouseEvent) {
   submenu.style.visibility = 'visible'
   submenu.style.transform = 'none'
   submenu.style.pointerEvents = 'none'
-  
+
   // 强制重排以获取真实尺寸
   void submenu.offsetWidth
-  
+
   // 获取子菜单的尺寸
   const submenuWidth = submenu.offsetWidth || 160 // 如果没有获取到，使用默认值 160px
   const submenuHeight = submenu.offsetHeight
-  
+
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
-  
+
   // 计算子菜单的位置（优先右侧，空间不足则左侧）
   let left = menuItemRect.right + 4
   let top = menuItemRect.top
-  
+
   // 检查右侧是否有足够空间
   if (left + submenuWidth > viewportWidth - 10) {
     // 如果右侧空间不足，显示在左侧
@@ -4411,17 +4077,17 @@ function handleSubmenuEnter(event: MouseEvent) {
       left = 10
     }
   }
-  
+
   // 检查底部是否有足够空间，如果不够则向上调整
   if (top + submenuHeight > viewportHeight - 10) {
     top = Math.max(10, viewportHeight - submenuHeight - 10)
   }
-  
+
   // 确保顶部不会超出屏幕
   if (top < 10) {
     top = 10
   }
-  
+
   // 设置子菜单的最终位置和样式
   // 使用 setProperty 并设置 important 标志，确保位置不被 CSS 覆盖
   submenu.style.setProperty('right', 'auto', 'important')
@@ -4431,7 +4097,7 @@ function handleSubmenuEnter(event: MouseEvent) {
   submenu.style.visibility = 'visible'
   submenu.style.transform = 'translateX(0)'
   submenu.style.pointerEvents = 'auto'
-  
+
   // 确保位置设置生效，强制重排
   void submenu.offsetWidth
 }
@@ -4441,22 +4107,22 @@ let submenuHideTimer: ReturnType<typeof setTimeout> | null = null
 function handleSubmenuLeave(event: MouseEvent) {
   const menuItem = event.currentTarget as HTMLElement
   if (!menuItem) return
-  
+
   const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
   if (!submenu) return
-  
+
   // 清除之前的定时器
   if (submenuHideTimer) {
     clearTimeout(submenuHideTimer)
   }
-  
+
   // 延迟隐藏，允许鼠标移动到子菜单
   submenuHideTimer = setTimeout(() => {
     // 检查鼠标是否仍在子菜单上
     const elementUnderMouse = document.elementFromPoint(event.clientX, event.clientY)
     const isHovering = elementUnderMouse?.closest('.op-submenu') === submenu ||
-                       elementUnderMouse?.closest('.has-submenu') === menuItem
-    
+      elementUnderMouse?.closest('.has-submenu') === menuItem
+
     if (!isHovering) {
       submenu.style.opacity = '0'
       submenu.style.visibility = 'hidden'
@@ -4469,7 +4135,7 @@ function handleSubmenuLeave(event: MouseEvent) {
 function handleSubmenuKeepVisible(event: MouseEvent) {
   const submenu = event.currentTarget as HTMLElement
   if (!submenu) return
-  
+
   // 先隐藏所有其他子菜单
   const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
   allSubmenus.forEach((sm) => {
@@ -4479,13 +4145,13 @@ function handleSubmenuKeepVisible(event: MouseEvent) {
       sm.style.pointerEvents = 'none'
     }
   })
-  
+
   // 清除隐藏定时器
   if (submenuHideTimer) {
     clearTimeout(submenuHideTimer)
     submenuHideTimer = null
   }
-  
+
   // 确保子菜单可见
   submenu.style.opacity = '1'
   submenu.style.visibility = 'visible'
@@ -4496,7 +4162,7 @@ function handleSubmenuKeepVisible(event: MouseEvent) {
 function handleSubmenuHide(event: MouseEvent) {
   const submenu = event.currentTarget as HTMLElement
   if (!submenu) return
-  
+
   // 延迟隐藏
   submenuHideTimer = setTimeout(() => {
     submenu.style.opacity = '0'
@@ -4511,7 +4177,7 @@ async function handleCopyText(text: string, label: string) {
     ElMessage.warning(`${label}为空，无法复制`)
     return
   }
-  
+
   try {
     await navigator.clipboard.writeText(text)
     ElMessage.success(`${label}已复制到剪贴板`)
@@ -4536,25 +4202,25 @@ async function handleCopyText(text: string, label: string) {
 // 处理URL上传
 async function handleUrlUpload() {
   if (!urlUploadFormRef.value) return
-  
+
   try {
     // 验证表单
     await urlUploadFormRef.value.validate()
-    
+
     urlUploadLoading.value = true
-    
+
     // 获取图片文件
     const { file, extension } = await fetchImageFromUrl(urlUploadForm.url)
-    
+
     // 上传到COS
     const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-    const cos = await uploadToCOS({ 
+    const cos = await uploadToCOS({
       file,
       category: 'sticker', // 素材上传到 sticker 分类
       account: userAccount
     })
     const { key, url } = cos
-    
+
     // 计算图片宽高及宽高比（如果预览阶段已经获取到了尺寸，则优先使用）
     const width = imageInfo.value?.width || 0
     const height = imageInfo.value?.height || 0
@@ -4577,16 +4243,16 @@ async function handleUrlUpload() {
       aspectRatio,
       uploaderId: userStore.user?.id,
       useAiGenerate: urlUploadForm.useAiGenerate, // 是否使用AI生成补全内容
-    folderId: urlUploadForm.folderId ?? null
+      folderId: urlUploadForm.folderId ?? null
     })
-    
+
     ElNotification.success('图片上传成功')
     urlUploadModalVisible.value = false
     resetUrlUploadForm()
-    
+
     // 刷新列表
     getList()
-    
+
   } catch (error) {
     console.error('URL上传失败:', error)
     ElMessage.error(`上传失败: ${error.message}`)
@@ -4603,7 +4269,7 @@ async function handleUrlUpload() {
   position: relative;
   width: 120px;
   min-height: 80px;
-  
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4637,13 +4303,50 @@ async function handleUrlUpload() {
   z-index: 1;
 }
 
-.design-model-dialog :deep(.el-dialog__body) { max-height: calc(100vh - 160px); overflow: hidden; }
-.design-model-flex { height: 100%; overflow: hidden; }
-.design-model-content { max-height: calc(100vh - 80px); overflow: auto; }
-.selected-materials { display: flex; flex-direction: column; min-height: 0; overflow: hidden; height: 100%; }
-.selected-materials .thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
-.selected-materials .thumb { width: 72px; height: 72px; border: 1px solid var(--el-border-color); border-radius: 4px; overflow: hidden; background: var(--el-fill-color-lighter); }
-.selected-materials .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.design-model-dialog :deep(.el-dialog__body) {
+  max-height: calc(100vh - 160px);
+  overflow: hidden;
+}
+
+.design-model-flex {
+  height: 100%;
+  overflow: hidden;
+}
+
+.design-model-content {
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+}
+
+.selected-materials {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+}
+
+.selected-materials .thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selected-materials .thumb {
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--el-fill-color-lighter);
+}
+
+.selected-materials .thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .template-header {
   padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
@@ -4708,7 +4411,15 @@ async function handleUrlUpload() {
   border-radius: 4px;
   border: 1px dashed var(--el-border-color-light);
 }
-.section-title { font-size: 14px;  margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+
+.section-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .section-title .selected-count {
   font-size: 13px;
   color: var(--el-color-primary);
@@ -4718,44 +4429,55 @@ async function handleUrlUpload() {
   border-radius: 4px;
   border: 1px solid rgba(64, 158, 255, 0.3);
 }
+
 .section-title .template-count-info {
   font-size: 12px;
   color: var(--el-text-color-secondary);
   font-weight: normal;
   margin-left: 4px;
 }
-.result-info { grid-column: 1 / -1; }
+
+.result-info {
+  grid-column: 1 / -1;
+}
+
 .psd-set-mode-inline {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
+
 .psd-set-mode-label {
   color: var(--el-text-color-regular);
   font-size: 13px;
   font-weight: 500;
 }
+
 .psd-set-mode-group {
   margin: 0;
 }
+
 .psd-set-mode-tip {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
 }
+
 .psd-set-footer {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
 .psd-set-footer-main {
   display: flex;
   align-items: center;
   gap: 36px;
-  width:100%;
+  width: 100%;
   flex-wrap: wrap;
 }
+
 .psd-set-info {
   display: flex;
   align-items: flex-start;
@@ -4764,17 +4486,20 @@ async function handleUrlUpload() {
   font-size: 13px;
   min-width: 260px;
 }
+
 .psd-set-info :deep(.el-icon) {
   font-size: 16px;
   margin-top: 2px;
   flex-shrink: 0;
 }
+
 .psd-set-info-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex: 1;
 }
+
 .psd-set-formats-tip {
   font-size: 12px;
   color: var(--el-text-color-secondary);
@@ -4784,6 +4509,7 @@ async function handleUrlUpload() {
   border-radius: 4px;
   border-left: 2px solid var(--el-color-warning);
 }
+
 .footer-actions {
   display: flex;
   align-items: center;
@@ -4791,22 +4517,27 @@ async function handleUrlUpload() {
   flex-shrink: 0;
   margin-left: auto;
 }
+
 @media (max-width: 960px) {
   .psd-set-body {
     grid-template-columns: 1fr;
   }
+
   .psd-set-footer {
     align-items: stretch;
   }
+
   .psd-set-dialog :deep(.el-dialog__body) {
     max-height: calc(100vh - 120px);
   }
+
   .footer-actions {
     width: 100%;
     justify-content: flex-end;
     gap: 8px;
   }
 }
+
 /* PC端优化 */
 .text-cell {
   display: flex;
@@ -4820,16 +4551,19 @@ async function handleUrlUpload() {
   min-height: 28px;
   position: relative;
 }
+
 .text-cell:hover {
   background: rgba(64, 158, 255, 0.12);
   box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.25);
 }
+
 .text-cell--empty {
   background: transparent;
   cursor: default;
   color: var(--el-text-color-placeholder);
   box-shadow: none;
 }
+
 .text-cell__content {
   flex: 1;
   min-width: 0;
@@ -4842,9 +4576,11 @@ async function handleUrlUpload() {
   line-height: 1.3;
   color: inherit;
 }
+
 .text-cell--long .text-cell__content {
   -webkit-line-clamp: 3;
 }
+
 .text-cell__icon {
   flex-shrink: 0;
   font-size: 16px;
@@ -4852,12 +4588,15 @@ async function handleUrlUpload() {
   opacity: 0;
   transition: opacity 0.2s;
 }
+
 .text-cell:not(.text-cell--empty):hover .text-cell__icon {
   opacity: 1;
 }
+
 .text-cell--empty .text-cell__icon {
   display: none;
 }
+
 .text-cell--empty .text-cell__content {
   -webkit-line-clamp: 1;
   color: var(--el-text-color-placeholder);
@@ -4961,18 +4700,22 @@ async function handleUrlUpload() {
   cursor: grab;
   user-select: none;
 }
+
 .material-dnd-grid :deep(.vxe-table--body tbody tr.is-dragging-row) {
   opacity: 0.75;
   background: var(--el-color-primary-light-9);
 }
+
 .material-dnd-grid :deep(.vxe-table--body tbody td) {
   user-select: none;
   -webkit-user-drag: none;
 }
+
 .material-drag-ghost {
   opacity: 0.6 !important;
   background: var(--el-color-primary-light-8) !important;
 }
+
 .drag-hint-bubble {
   position: fixed;
   z-index: 99999;
@@ -4990,65 +4733,88 @@ async function handleUrlUpload() {
   transform: translate(6px, 6px);
   transition: opacity 0.12s ease;
 }
+
 .drag-hint-icon {
   display: flex;
   align-items: center;
 }
-.flex.pb-4, .search-bar {
-  gap: 12px; /* 收紧整体水平/垂直间距 */
+
+.flex.pb-4,
+.search-bar {
+  gap: 12px;
+  /* 收紧整体水平/垂直间距 */
   flex-wrap: wrap;
   align-items: center;
 }
-.flex.pb-4 > *, .search-bar > * {
+
+.flex.pb-4>*,
+.search-bar>* {
   margin-bottom: 0;
 }
 
 /* 顶部筛选：el-form 栅格布局（PC） */
 .search-bar-form {
   width: 100%;
-  margin-bottom: 8px; /* 收紧表单与列表间距 */
+  margin-bottom: 8px;
+  /* 收紧表单与列表间距 */
 }
+
 .search-bar-form :deep(.el-form-item) {
-  margin-bottom: 6px; /* 控件间垂直间距收紧 */
+  margin-bottom: 6px;
+  /* 控件间垂直间距收紧 */
 }
+
 .search-bar-form :deep(.el-form-item__label) {
-  padding-right: 6px; /* 收紧 label 与控件的左右间距 */
-  text-align: right; /* label 右对齐，保持整齐 */
+  padding-right: 6px;
+  /* 收紧 label 与控件的左右间距 */
+  text-align: right;
+  /* label 右对齐，保持整齐 */
 }
+
 .search-bar-form :deep(.el-form-item__label),
 .search-bar-form :deep(.el-form-item__content) {
   line-height: 32px;
 }
+
 .search-bar-form :deep(.el-form-item__content) {
   min-height: 32px;
   display: flex;
-  align-items: center; /* 解决 switch / date 等控件高度导致的错位 */
+  align-items: center;
+  /* 解决 switch / date 等控件高度导致的错位 */
 }
+
 .search-btn-offset {
-  padding-left: 84px; /* 与表单 label-width 对齐，避免按钮列挤压导致大屏错位 */
+  padding-left: 84px;
+  /* 与表单 label-width 对齐，避免按钮列挤压导致大屏错位 */
   display: flex;
   align-items: center;
 }
+
 .search-field {
   display: flex;
   align-items: center;
   gap: 6px;
   min-height: 32px;
-  width: 240px; /* 默认固定宽度 */
+  width: 240px;
+  /* 默认固定宽度 */
   flex-shrink: 0;
 }
+
 /* 宽字段 - 用于需要更大输入空间的字段 */
 .search-field-wide {
   width: 320px;
 }
+
 /* 窄字段 - 用于开关等简单控件 */
 .search-field-narrow {
   width: 120px;
 }
+
 /* 时间字段 - 需要更宽的空间 */
 .search-field-time {
   width: 380px;
 }
+
 .search-label {
   width: 48px;
   min-width: 48px;
@@ -5059,33 +4825,40 @@ async function handleUrlUpload() {
   color: var(--el-text-color-regular);
   font-size: 13px;
 }
-.search-field > :not(.search-label) {
+
+.search-field> :not(.search-label) {
   flex: 1;
   min-width: 0;
   max-width: 100%;
 }
+
 .search-field .el-input,
 .search-field .el-select {
   width: 100%;
 }
+
 .search-field .el-button {
   white-space: nowrap;
 }
 
 
-.search-bar-form :deep(.el-form-item__content) > * {
+.search-bar-form :deep(.el-form-item__content)>* {
   width: 100%;
 }
+
 .search-bar-form :deep(.el-switch) {
-  width: auto; /* switch 不要被拉伸占满，避免看起来不齐 */
+  width: auto;
+  /* switch 不要被拉伸占满，避免看起来不齐 */
 }
+
 /* 搜索表单容器 - Flex布局 */
 .search-form-container {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
-  gap: 10px 12px; /* 紧凑的间距 */
+  gap: 10px 12px;
+  /* 紧凑的间距 */
   margin-bottom: 12px;
 }
 
@@ -5156,53 +4929,68 @@ async function handleUrlUpload() {
 
 /* 搜索区域允许换行 */
 .search-bar .el-row {
-  flex-wrap: wrap !important; /* 强制允许换行，避免挤压 */
+  flex-wrap: wrap !important;
+  /* 强制允许换行，避免挤压 */
   row-gap: 12px;
   column-gap: 8px;
 }
+
 .search-bar-form :deep(.el-row) {
-  flex-wrap: wrap; /* 允许控件换行，避免挤压重叠 */
+  flex-wrap: wrap;
+  /* 允许控件换行，避免挤压重叠 */
   row-gap: 6px;
-  column-gap: 6px; /* 进一步收紧间距 */
+  column-gap: 6px;
+  /* 进一步收紧间距 */
 }
+
 .search-bar-form :deep(.el-col) {
   /* 不要覆盖 Element Plus 栅格（span/lg/xl），否则大屏下会错位且宽度调整不生效 */
   max-width: 100%;
   padding-left: 0;
   padding-right: 0;
 }
+
 .search-bar-form :deep(.el-input),
 .search-bar-form :deep(.el-select),
 .search-bar-form :deep(.el-date-editor) {
   width: 100%;
-  min-width: 0; /* 让控件随栅格收缩，不会撑破布局 */
+  min-width: 0;
+  /* 让控件随栅格收缩，不会撑破布局 */
   max-width: 100%;
 }
+
 .search-bar-form :deep(.el-input__wrapper),
 .search-bar-form :deep(.el-select__wrapper),
 .search-bar-form :deep(.el-date-editor .el-input__wrapper) {
   min-width: 0;
   max-width: 100%;
 }
+
 @media (max-width: 1366px) {
+
   /* 在较小分辨率下进一步缩小避免溢出 */
   .search-bar-form :deep(.el-col) {
     /* 保持栅格布局，不再通过 flex-basis/min-width 干预 */
   }
 }
+
 .search-actions-col {
   display: flex;
-  justify-content: flex-start; /* 让筛选表单操作按钮靠左对齐 */
+  justify-content: flex-start;
+  /* 让筛选表单操作按钮靠左对齐 */
   margin-top: 4px;
 }
+
 .search-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start; /* 左对齐避免两侧空白 */
+  justify-content: flex-start;
+  /* 左对齐避免两侧空白 */
   column-gap: 6px;
   row-gap: 6px;
   align-items: center;
 }
+
 .phash-form-row {
   display: grid;
   grid-template-columns: 1fr auto auto;
@@ -5210,43 +4998,54 @@ async function handleUrlUpload() {
   align-items: center;
   width: 100%;
 }
+
 .phash-mode {
   display: flex;
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
+
 .phash-actions {
   display: flex;
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
+
 @media (max-width: 992px) {
   .phash-form-row {
     grid-template-columns: 1fr;
     align-items: stretch;
   }
+
   .search-actions-col {
     justify-content: flex-start;
   }
+
   .search-actions {
     justify-content: flex-start;
   }
 }
+
 @media (max-width: 600px) {
-  .flex.pb-4, .search-bar {
+
+  .flex.pb-4,
+  .search-bar {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 8px !important;
     padding-bottom: 8px !important;
   }
-  .flex.pb-4 > *, .search-bar > * {
+
+  .flex.pb-4>*,
+  .search-bar>* {
     width: 100% !important;
     min-width: 0 !important;
     margin-right: 0 !important;
     margin-bottom: 8px !important;
   }
+
   .el-input,
   .el-select,
   .el-button,
@@ -5255,25 +5054,30 @@ async function handleUrlUpload() {
     min-width: 0 !important;
     box-sizing: border-box;
   }
+
   .date-range-picker {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box;
   }
+
   .date-range-picker .el-date-editor,
   .date-range-picker .el-range-editor {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
   }
+
   .content-container {
     padding: 0 4px !important;
   }
+
   .common-table {
     overflow-x: auto;
   }
 }
+
 .table-header {
   border-radius: 4px;
   box-shadow: rgba(17, 17, 26, 0.15) 0px 1px 0px;
@@ -5282,6 +5086,7 @@ async function handleUrlUpload() {
 h1 {
   font-size: 1rem;
 }
+
 /* 步骤内容区块统一透明背景风格 */
 .step-content {
   margin-bottom: 24px;
@@ -5291,33 +5096,41 @@ h1 {
   background: transparent;
   color: #fff;
 }
+
 .step-active {
   box-shadow: 0 0 0 3px #409eff44;
-  background: rgba(64, 158, 255, 0.10) !important; /* 高亮：主色+透明 */
+  background: rgba(64, 158, 255, 0.10) !important;
+  /* 高亮：主色+透明 */
   opacity: 1;
 }
+
 .step-inactive {
-  background: rgba(100, 100, 100, 0.06) !important; /* 弱化：深灰+透明 */
+  background: rgba(100, 100, 100, 0.06) !important;
+  /* 弱化：深灰+透明 */
   opacity: 0.6;
   filter: grayscale(0.2);
 }
+
 /* 去除步骤内容内部的白色/灰色背景 */
 .bg-gray-50,
 .border-blue-200,
 .bg-blue-50 {
   background: transparent !important;
-  border-color: rgba(64,158,255,0.15) !important;
+  border-color: rgba(64, 158, 255, 0.15) !important;
 }
+
 .design-model-flex {
   display: flex;
   flex-direction: row;
   height: 100%;
 }
+
 .steps-vertical {
   flex-shrink: 0;
   min-width: 180px;
   margin-right: 32px;
 }
+
 .design-model-content {
   flex: 1;
   overflow-y: auto;
@@ -5368,7 +5181,7 @@ h1 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   object-fit: contain;
   background-color: #fff;
-  background-image: 
+  background-image:
     linear-gradient(45deg, #e0e0e0 25%, transparent 25%),
     linear-gradient(-45deg, #e0e0e0 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, #e0e0e0 75%),
@@ -5486,17 +5299,17 @@ h1 {
     flex-direction: column;
     gap: 16px;
   }
-  
+
   .preview-section {
     min-height: 150px;
   }
-  
+
   .image-preview,
   .preview-placeholder,
   .preview-error {
     min-height: 150px;
   }
-  
+
   .preset-buttons {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -5507,30 +5320,30 @@ h1 {
   .sticker-folder-tree-header {
     margin-bottom: 12px;
   }
-  
+
   .sticker-folder-tree {
     --el-tree-node-content-height: 36px;
-    
+
     :deep(.el-tree-node__content) {
       height: 36px;
       padding-left: 8px !important;
-      
+
       &:hover {
         background-color: var(--el-fill-color-light);
       }
     }
-    
+
     :deep(.el-tree-node.is-current > .el-tree-node__content) {
       background-color: var(--el-color-primary-light-9);
       color: var(--el-color-primary);
       font-weight: 500;
     }
-    
+
     :deep(.el-tree-node__expand-icon) {
       color: var(--el-text-color-regular);
     }
   }
-  
+
   .sticker-folder-node {
     display: flex;
     align-items: center;
@@ -5539,30 +5352,30 @@ h1 {
     padding-right: 8px;
     border-radius: 6px;
     transition: background-color 0.15s ease, box-shadow 0.15s ease;
-    
+
     &.is-drop-hover {
       background: var(--el-color-primary-light-9);
       box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
-      
+
       .sticker-folder-node-text {
         color: var(--el-color-primary);
         font-weight: 600;
       }
     }
-    
+
     .sticker-folder-node-content {
       display: flex;
       align-items: center;
       flex: 1;
       min-width: 0;
-      
+
       .folder-icon {
         width: 16px;
         height: 16px;
         margin-right: 6px;
         flex-shrink: 0;
       }
-      
+
       .sticker-folder-node-text {
         flex: 1;
         overflow: hidden;
@@ -5571,12 +5384,12 @@ h1 {
         font-size: 13px;
         cursor: pointer;
         transform-origin: left center;
-        
+
         &:hover {
           transform: scale(1.05);
         }
       }
-      
+
       .sticker-folder-node-count {
         font-size: 11px;
         color: var(--el-color-primary);
@@ -5584,13 +5397,13 @@ h1 {
         margin-left: 6px;
       }
     }
-    
+
     .sticker-folder-node-actions {
       display: flex;
       align-items: center;
       padding-right: 4px;
       margin-left: 12px;
-      
+
       .sticker-folder-action-icon {
         font-size: 14px;
         cursor: pointer;
@@ -5598,20 +5411,20 @@ h1 {
         transition: opacity 0.2s, color 0.2s;
         color: var(--el-text-color-regular);
         padding: 2px;
-        
+
         &:hover {
           opacity: 1;
           color: var(--el-color-primary);
         }
       }
-      
+
       :deep(.el-dropdown) {
         .el-dropdown__caret-button {
           display: none;
         }
       }
     }
-    
+
     &:hover {
       .sticker-folder-node-actions {
         .sticker-folder-action-icon {
@@ -5620,16 +5433,16 @@ h1 {
       }
     }
   }
-  
+
   /* 下拉菜单样式优化 */
   :deep(.el-dropdown-menu) {
     min-width: 140px;
     padding: 4px 0;
-    
+
     .el-dropdown-menu__item {
       padding: 6px 16px;
       font-size: 13px;
-      
+
       .el-icon {
         margin-right: 6px;
         font-size: 14px;
@@ -5638,315 +5451,323 @@ h1 {
   }
 }
 </style>
-  <style scoped>
-  .op-menu { 
-    min-width: 120px; 
-    padding: 1px 0; 
-    position: relative;
-    overflow: visible !important; /* 确保菜单本身允许溢出 */
+<style scoped>
+.op-menu {
+  min-width: 120px;
+  padding: 1px 0;
+  position: relative;
+  overflow: visible !important;
+  /* 确保菜单本身允许溢出 */
+}
+
+/* 一级菜单项 */
+.op-menu-item {
+  position: relative;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: visible !important;
+  /* 确保菜单项允许溢出 */
+}
+
+.op-menu-item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.op-menu-item.danger {
+  color: var(--el-color-danger);
+}
+
+.op-menu-item.danger:hover {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+}
+
+/* 箭头图标 - 放在文字左边 */
+.op-menu-arrow {
+  font-size: 10px;
+  color: var(--el-text-color-secondary);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  width: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 没有子菜单的占位，保持对齐 */
+.op-menu-arrow-placeholder {
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.op-menu-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+
+/* 子菜单 */
+.op-submenu {
+  position: fixed;
+  /* 使用 fixed 定位，避免被父容器裁剪 */
+  min-width: 120px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 1px 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-5px);
+  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+  z-index: 9999;
+  /* 提高 z-index 确保在最上层 */
+  white-space: nowrap;
+  pointer-events: none;
+  /* 初始禁用交互，hover 时启用 */
+  margin: 0;
+  /* 初始位置，会被 JS 动态设置 */
+  left: 0;
+  top: 0;
+}
+
+/* 子菜单显示时保持可见（即使鼠标移开一点） */
+.op-submenu:hover {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+.op-menu-item.has-submenu:hover .op-submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  pointer-events: auto;
+  /* hover 时启用交互 */
+}
+
+/* 子菜单项 */
+.op-submenu-item {
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.op-submenu-item:hover {
+  background: var(--el-fill-color-light);
+}
+
+/* 分隔线 */
+.op-divider {
+  height: 1px;
+  background: var(--el-border-color-lighter);
+  margin: 3px 8px;
+}
+
+/* 针对操作按钮的优化 */
+.operation-dropdown :deep(.el-dropdown__list) {
+  padding: 0;
+  overflow: visible !important;
+}
+
+/* 确保下拉菜单容器允许溢出显示子菜单 */
+.operation-dropdown {
+  position: relative;
+}
+
+/* 修复 Element Plus Dropdown 的 overflow 限制 */
+.operation-dropdown :deep(.el-popper) {
+  overflow: visible !important;
+}
+
+.operation-dropdown :deep(.el-popper__arrow) {
+  display: none;
+}
+
+/* 确保 popper 容器和内部都允许溢出 */
+.operation-dropdown :deep(.el-popper),
+.operation-dropdown :deep(.el-dropdown-menu),
+.operation-dropdown :deep(.el-dropdown-menu__item) {
+  overflow: visible !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .op-menu {
+    min-width: 140px;
   }
-  
-  /* 一级菜单项 */
+
   .op-menu-item {
-    position: relative;
-    padding: 4px 8px;
-    font-size: 11px;
-    color: var(--el-text-color-regular);
-    cursor: pointer;
-    transition: background-color 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    overflow: visible !important; /* 确保菜单项允许溢出 */
-  }
-  
-  .op-menu-item:hover {
-    background: var(--el-fill-color-light);
-  }
-  
-  .op-menu-item.danger {
-    color: var(--el-color-danger);
-  }
-  
-  .op-menu-item.danger:hover {
-    background: var(--el-color-danger-light-9);
-    color: var(--el-color-danger);
-  }
-  
-  /* 箭头图标 - 放在文字左边 */
-  .op-menu-arrow {
-    font-size: 10px;
-    color: var(--el-text-color-secondary);
-    transition: transform 0.2s;
-    flex-shrink: 0;
-    width: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  /* 没有子菜单的占位，保持对齐 */
-  .op-menu-arrow-placeholder {
-    width: 12px;
-    flex-shrink: 0;
-  }
-  
-  .op-menu-label {
-    flex: 1;
-    display: flex;
-    align-items: center;
-  }
-  
-  
-  /* 子菜单 */
-  .op-submenu {
-    position: fixed; /* 使用 fixed 定位，避免被父容器裁剪 */
-    min-width: 120px;
-    background: var(--el-bg-color);
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 2px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    padding: 1px 0;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(-5px);
-    transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
-    z-index: 9999; /* 提高 z-index 确保在最上层 */
-    white-space: nowrap;
-    pointer-events: none; /* 初始禁用交互，hover 时启用 */
-    margin: 0;
-    /* 初始位置，会被 JS 动态设置 */
-    left: 0;
-    top: 0;
-  }
-  
-  /* 子菜单显示时保持可见（即使鼠标移开一点） */
-  .op-submenu:hover {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-  
-  .op-menu-item.has-submenu:hover .op-submenu {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-    pointer-events: auto; /* hover 时启用交互 */
-  }
-  
-  /* 子菜单项 */
-  .op-submenu-item {
-    padding: 4px 10px;
-    font-size: 11px;
-    color: var(--el-text-color-regular);
-    cursor: pointer;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-  }
-  
-  .op-submenu-item:hover {
-    background: var(--el-fill-color-light);
-  }
-  
-  /* 分隔线 */
-  .op-divider { 
-    height: 1px; 
-    background: var(--el-border-color-lighter); 
-    margin: 3px 8px;
-  }
-  
-  /* 针对操作按钮的优化 */
-  .operation-dropdown :deep(.el-dropdown__list) {
-    padding: 0;
-    overflow: visible !important;
-  }
-  
-  /* 确保下拉菜单容器允许溢出显示子菜单 */
-  .operation-dropdown {
-    position: relative;
-  }
-  
-  /* 修复 Element Plus Dropdown 的 overflow 限制 */
-  .operation-dropdown :deep(.el-popper) {
-    overflow: visible !important;
-  }
-  
-  .operation-dropdown :deep(.el-popper__arrow) {
-    display: none;
-  }
-  
-  /* 确保 popper 容器和内部都允许溢出 */
-  .operation-dropdown :deep(.el-popper),
-  .operation-dropdown :deep(.el-dropdown-menu),
-  .operation-dropdown :deep(.el-dropdown-menu__item) {
-    overflow: visible !important;
-    overflow-x: visible !important;
-    overflow-y: visible !important;
-  }
-  
-  /* 移动端优化 */
-  @media (max-width: 768px) {
-    .op-menu {
-      min-width: 140px;
-    }
-    
-    .op-menu-item {
-      padding: 10px 12px;
-      font-size: 14px;
-    }
-    
-    .op-submenu {
-      min-width: 140px;
-    }
-    
-    .op-submenu-item {
-      padding: 10px 14px;
-      font-size: 14px;
-    }
-  }
-  
-  /* 处理右侧屏幕边界情况 */
-  @media (min-width: 769px) {
-    /* 通过JS动态调整，CSS无法完美处理，但可以设置备用方案 */
-    .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu,
-    .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu {
-      left: auto;
-      right: 100%;
-      margin-left: 0;
-      margin-right: 4px;
-    }
-  }
-  </style>
-  
-  <!-- 非 scoped 样式，用于覆盖 Element Plus 的默认样式 -->
-  <style>
-  /* 全局样式：确保 dropdown popper 允许溢出显示子菜单 */
-  .el-popper.is-pure {
-    overflow: visible !important;
-  }
-  
-  .el-popper[x-placement] {
-    overflow: visible !important;
-  }
-  
-  /* 确保所有 dropdown 相关的容器都允许溢出 */
-  .el-dropdown__popper {
-    overflow: visible !important;
-  }
-  
-  .el-dropdown__popper .el-dropdown-menu {
-    overflow: visible !important;
-  }
-  
-  .el-dropdown__popper .el-dropdown-menu__item {
-    overflow: visible !important;
-  }
-  </style>
-
-  <!-- 编辑素材表单样式 -->
-  <style scoped>
-  .edit-material-dialog :deep(.el-dialog__body) {
-    padding: 30px;
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-
-  .edit-material-dialog :deep(.el-dialog) {
-    border-radius: 8px;
-  }
-
-  .edit-form {
-    padding: 0;
-  }
-
-  .edit-form :deep(.el-form-item) {
-    margin-bottom: 24px;
-  }
-
-  .edit-form :deep(.el-form-item__label) {
-    font-weight: 500;
-    color: var(--el-text-color-regular);
+    padding: 10px 12px;
     font-size: 14px;
   }
 
-  .edit-form :deep(.el-row) {
+  .op-submenu {
+    min-width: 140px;
+  }
+
+  .op-submenu-item {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+}
+
+/* 处理右侧屏幕边界情况 */
+@media (min-width: 769px) {
+
+  /* 通过JS动态调整，CSS无法完美处理，但可以设置备用方案 */
+  .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu,
+  .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu {
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: 4px;
+  }
+}
+</style>
+
+<!-- 非 scoped 样式，用于覆盖 Element Plus 的默认样式 -->
+<style>
+/* 全局样式：确保 dropdown popper 允许溢出显示子菜单 */
+.el-popper.is-pure {
+  overflow: visible !important;
+}
+
+.el-popper[x-placement] {
+  overflow: visible !important;
+}
+
+/* 确保所有 dropdown 相关的容器都允许溢出 */
+.el-dropdown__popper {
+  overflow: visible !important;
+}
+
+.el-dropdown__popper .el-dropdown-menu {
+  overflow: visible !important;
+}
+
+.el-dropdown__popper .el-dropdown-menu__item {
+  overflow: visible !important;
+}
+</style>
+
+<!-- 编辑素材表单样式 -->
+<style scoped>
+.edit-material-dialog :deep(.el-dialog__body) {
+  padding: 30px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.edit-material-dialog :deep(.el-dialog) {
+  border-radius: 8px;
+}
+
+.edit-form {
+  padding: 0;
+}
+
+.edit-form :deep(.el-form-item) {
+  margin-bottom: 24px;
+}
+
+.edit-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: var(--el-text-color-regular);
+  font-size: 14px;
+}
+
+.edit-form :deep(.el-row) {
+  margin-bottom: 0;
+}
+
+.edit-form :deep(.el-divider) {
+  margin: 24px 0;
+}
+
+.edit-form :deep(.el-input),
+.edit-form :deep(.el-textarea),
+.edit-form :deep(.el-select) {
+  font-size: 14px;
+}
+
+.edit-form :deep(.el-textarea__inner) {
+  min-height: 100px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+  .edit-material-dialog {
+    width: 95% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .edit-material-dialog {
+    width: 95% !important;
+  }
+
+  .edit-form :deep(.el-col) {
     margin-bottom: 0;
   }
 
-  .edit-form :deep(.el-divider) {
-    margin: 24px 0;
+  .edit-form :deep(.el-col) {
+    margin-bottom: 16px;
   }
+}
 
-  .edit-form :deep(.el-input),
-  .edit-form :deep(.el-textarea),
-  .edit-form :deep(.el-select) {
-    font-size: 14px;
-  }
+/* 元数据弹窗样式 */
+.meta-error {
+  padding: 20px;
+}
 
-  .edit-form :deep(.el-textarea__inner) {
-    min-height: 100px;
-  }
+.meta-raw-content {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
 
-  .dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding-top: 16px;
-  }
+.meta-raw-content pre {
+  margin: 0;
+  padding: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #606266;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 600px;
+  overflow: auto;
+}
 
-  /* 响应式布局 */
-  @media (max-width: 1200px) {
-    .edit-material-dialog {
-      width: 95% !important;
-    }
-  }
+.meta-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
 
-  @media (max-width: 768px) {
-    .edit-material-dialog {
-      width: 95% !important;
-    }
-
-    .edit-form :deep(.el-col) {
-      margin-bottom: 0;
-    }
-
-    .edit-form :deep(.el-col) {
-      margin-bottom: 16px;
-    }
-  }
-
-  /* 元数据弹窗样式 */
-  .meta-error {
-    padding: 20px;
-  }
-
-  .meta-raw-content {
-    margin-top: 20px;
-    padding: 16px;
-    background: #f5f7fa;
-    border-radius: 4px;
-    border: 1px solid #e4e7ed;
-  }
-
-  .meta-raw-content pre {
-    margin: 0;
-    padding: 0;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
-    font-size: 12px;
-    line-height: 1.6;
-    color: #606266;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    max-height: 600px;
-    overflow: auto;
-  }
-
-  .meta-empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-  }
 :global(.text-cell-tooltip) {
   max-width: 520px;
   word-break: break-word;
@@ -5962,6 +5783,7 @@ h1 {
   max-height: calc(100vh - 160px);
   overflow: hidden;
 }
+
 .psd-set-body {
   flex: 1;
   min-height: 0;
@@ -5972,6 +5794,7 @@ h1 {
   overflow: hidden;
   padding-right: 4px;
 }
+
 .psd-set-materials,
 .psd-set-templates {
   border: 1px solid var(--el-border-color);
@@ -5984,6 +5807,7 @@ h1 {
   gap: 12px;
   overflow: hidden;
 }
+
 .psd-set-materials .format-tip {
   display: flex;
   align-items: center;
@@ -5996,10 +5820,12 @@ h1 {
   color: var(--el-text-color-regular);
   border-left: 2px solid var(--el-color-primary);
 }
+
 .psd-set-materials .format-tip .el-icon {
   color: var(--el-color-primary);
   font-size: 14px;
 }
+
 .psd-set-materials .thumbs {
   flex: 1;
   min-height: 0;
@@ -6009,6 +5835,7 @@ h1 {
   overflow-y: auto;
   overflow-x: hidden;
 }
+
 .psd-set-materials .thumb {
   position: relative;
   height: 92px;
@@ -6022,10 +5849,12 @@ h1 {
   justify-content: center;
   transition: all 0.2s;
 }
+
 .psd-set-materials .thumb.thumb-invalid-format {
   border-color: var(--el-color-danger);
   box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
 }
+
 .psd-set-materials .thumb img {
   width: auto;
   height: 100%;
@@ -6033,6 +5862,7 @@ h1 {
   object-fit: contain;
   background: #f5f7fa;
 }
+
 .psd-set-materials .thumb-format-badge {
   position: absolute;
   bottom: 4px;
@@ -6050,12 +5880,15 @@ h1 {
   font-weight: 500;
   backdrop-filter: blur(4px);
 }
+
 .psd-set-materials .thumb-format-badge.valid {
   background: rgba(103, 194, 58, 0.9);
 }
+
 .psd-set-materials .thumb-format-badge .el-icon {
   font-size: 12px;
 }
+
 .psd-set-template-toolbar {
   display: flex;
   align-items: center;
@@ -6064,6 +5897,7 @@ h1 {
   padding-bottom: 12px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
+
 .psd-set-template-toolbar .selected-count {
   font-size: 13px;
   color: var(--el-color-primary);
@@ -6074,6 +5908,7 @@ h1 {
   border: 1px solid rgba(64, 158, 255, 0.3);
   white-space: nowrap;
 }
+
 .psd-set-templates .template-list-wrapper {
   flex: 1;
   min-height: 0;
@@ -6101,6 +5936,7 @@ h1 {
   display: flex;
   justify-content: flex-end;
 }
+
 .psd-set-templates .template-item {
   border: 1px solid var(--el-border-color);
   border-radius: 8px;
@@ -6109,16 +5945,19 @@ h1 {
   transition: all 0.2s;
   background: var(--el-bg-color);
 }
+
 .psd-set-templates .template-item.is-checked {
   border-color: var(--el-color-primary);
   box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.3);
   background: rgba(64, 158, 255, 0.06);
 }
+
 .psd-set-templates .template-content-wrapper {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
+
 .psd-set-templates .template-thumbnail {
   width: 80px;
   height: 80px;
@@ -6129,6 +5968,7 @@ h1 {
   background: var(--el-fill-color-lighter);
   flex-shrink: 0;
 }
+
 .psd-set-templates .template-info {
   flex: 1;
   min-width: 0;
@@ -6136,6 +5976,7 @@ h1 {
   flex-direction: column;
   gap: 8px;
 }
+
 .psd-set-templates .template-title-row {
   display: flex;
   align-items: center;
@@ -6143,16 +5984,19 @@ h1 {
   gap: 8px;
   margin-bottom: 6px;
 }
+
 .psd-set-templates .template-title {
   font-weight: 600;
   font-size: 14px;
   color: var(--el-text-color-primary);
   flex: 1;
 }
+
 .psd-set-templates .template-detail-link {
   font-size: 12px;
   flex-shrink: 0;
 }
+
 .psd-set-templates .template-psd-info {
   font-size: 13px;
   color: var(--el-text-color-regular);
@@ -6163,6 +6007,7 @@ h1 {
   border-radius: 4px;
   border-left: 3px solid var(--el-color-primary);
 }
+
 .psd-set-templates .template-meta {
   margin-top: 4px;
   display: flex;
@@ -6172,6 +6017,7 @@ h1 {
   color: #909399;
   flex-wrap: wrap;
 }
+
 .psd-set-templates .template-paths {
   margin-top: 6px;
   display: flex;
@@ -6180,6 +6026,7 @@ h1 {
   font-size: 12px;
   color: #666;
 }
+
 .psd-set-templates .path-row {
   display: flex;
   align-items: center;
@@ -6187,24 +6034,30 @@ h1 {
   line-height: 1.4;
   word-break: break-all;
 }
+
 .psd-set-templates .path-label {
   color: #909399;
   flex-shrink: 0;
 }
+
 .psd-set-templates .path-empty {
   color: #c0c4cc;
 }
+
 .psd-set-templates .path-text {
   color: #606266;
 }
+
 .psd-set-templates .path-link {
   max-width: 100%;
 }
+
 .psd-set-templates .path-tags {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
+
 .psd-set-footer {
   display: flex;
   align-items: center;
@@ -6313,379 +6166,382 @@ h1 {
   .psd-template-detail .detail-layout {
     flex-direction: column;
   }
-  
+
   .psd-template-detail .detail-left {
     width: 100%;
   }
-  
+
   .psd-template-detail .detail-thumbnail {
     position: static;
   }
 }
+</style>
 
-  </style>
-  
-  <!-- 尺寸形状选择器样式 -->
-  <style scoped>
-  .size-option {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 0;
-    min-height: 40px;
-    box-sizing: border-box;
+<!-- 尺寸形状选择器样式 -->
+<style scoped>
+.size-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.size-thumb {
+  width: 48px;
+  height: 24px;
+  border: 1.5px solid var(--el-border-color);
+  border-radius: 3px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.2) 100%);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.size-thumb::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1px solid rgba(64, 158, 255, 0.3);
+  border-radius: 2px;
+}
+
+.size-label {
+  flex: 1;
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+}
+
+/* 横图系列 */
+.landscape-thumb {
+  width: 48px;
+  height: 24px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+}
+
+.ultra-wide-thumb {
+  width: 56px;
+  height: 20px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+}
+
+.wide-thumb {
+  width: 52px;
+  height: 22px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+}
+
+.slightly-wide-thumb {
+  width: 50px;
+  height: 23px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+}
+
+/* 正方形 */
+.square-thumb {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.25) 100%);
+}
+
+.square-thumb::after {
+  border-color: rgba(103, 194, 58, 0.3);
+}
+
+/* 竖图系列 - 调整尺寸以适应选项高度 */
+.portrait-thumb {
+  width: 20px;
+  height: 36px;
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+}
+
+.portrait-thumb::after {
+  border-color: rgba(245, 108, 108, 0.3);
+}
+
+.slightly-long-thumb {
+  width: 20px;
+  height: 38px;
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+}
+
+.slightly-long-thumb::after {
+  border-color: rgba(245, 108, 108, 0.3);
+}
+
+.long-thumb {
+  width: 18px;
+  height: 40px;
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+}
+
+.long-thumb::after {
+  border-color: rgba(245, 108, 108, 0.3);
+}
+
+.ultra-long-thumb {
+  width: 18px;
+  height: 42px;
+  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
+}
+
+.ultra-long-thumb::after {
+  border-color: rgba(245, 108, 108, 0.3);
+}
+
+/* 选中状态 */
+:deep(.el-select-dropdown__item.is-selected) .size-thumb {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+:deep(.el-select-dropdown__item:hover) .size-thumb {
+  border-color: var(--el-color-primary);
+  transform: scale(1.05);
+  transition: transform 0.2s;
+}
+
+/* 确保选项内容不被截断 - 增加高度和内边距 */
+:deep(.el-select-dropdown__item) {
+  padding: 10px 14px;
+  min-height: 50px;
+  height: auto;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+}
+
+/* 选项组标题样式 */
+:deep(.el-select-group__title) {
+  padding: 8px 14px;
+  font-weight: 600;
+  color: var(--el-text-color-regular);
+}
+
+/* 确保选项容器有足够空间 */
+:deep(.el-select-dropdown__list) {
+  padding: 4px 0;
+}
+
+/* 选中值的显示优化 */
+:deep(.el-select__input-wrapper) {
+  display: flex;
+  align-items: center;
+}
+
+/* 选中值中显示缩略图（如果支持） */
+.size-select-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-select-value .size-thumb {
+  width: 36px;
+  height: 18px;
+}
+
+.size-select-value .square-thumb {
+  width: 18px;
+  height: 18px;
+}
+
+.size-select-value .portrait-thumb,
+.size-select-value .slightly-long-thumb,
+.size-select-value .long-thumb,
+.size-select-value .ultra-long-thumb {
+  width: 18px;
+  height: 36px;
+}
+
+.size-select-value .ultra-wide-thumb {
+  width: 42px;
+  height: 15px;
+}
+
+.size-select-value .wide-thumb {
+  width: 39px;
+  height: 16px;
+}
+
+.size-select-value .slightly-wide-thumb {
+  width: 37px;
+  height: 17px;
+}
+
+.size-select-value .slightly-long-thumb {
+  width: 17px;
+  height: 37px;
+}
+
+.size-select-value .long-thumb {
+  width: 16px;
+  height: 39px;
+}
+
+.size-select-value .ultra-long-thumb {
+  width: 15px;
+  height: 42px;
+}
+</style>
+
+<!-- 模板详情提示框样式 -->
+<style>
+.template-detail-tooltip {
+  max-width: 400px;
+  padding: 12px;
+}
+
+.template-detail-tooltip,
+.template-detail-tooltip.el-popper {
+  transition: none !important;
+}
+
+.template-tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.template-tooltip-content .tooltip-item {
+  padding: 4px 0;
+}
+
+.template-tooltip-content .tooltip-item strong {
+  font-weight: 600;
+  margin-right: 6px;
+  display: inline-block;
+  min-width: 60px;
+}
+</style>
+
+<!-- 批量详细配置弹窗样式 -->
+<style lang="less" scoped>
+.batch-detail-config-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+
+  .batch-detail-config-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--el-border-color);
+    background: var(--el-fill-color-lighter);
+
+    .batch-detail-config-title {
+      font-size: 16px;
+      color: var(--el-text-color-primary);
+      font-weight: 600;
+    }
   }
-  
-  .size-thumb {
-    width: 48px;
-    height: 24px;
-    border: 1.5px solid var(--el-border-color);
-    border-radius: 3px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.2) 100%);
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-  
-  .size-thumb::after {
-    content: '';
-    position: absolute;
-    inset: 2px;
-    border: 1px solid rgba(64, 158, 255, 0.3);
-    border-radius: 2px;
-  }
-  
-  .size-label {
+
+  .batch-detail-config-body {
     flex: 1;
-    font-size: 13px;
-    color: var(--el-text-color-primary);
-  }
-  
-  /* 横图系列 */
-  .landscape-thumb {
-    width: 48px;
-    height: 24px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
-  }
-  
-  .ultra-wide-thumb {
-    width: 56px;
-    height: 20px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
-  }
-  
-  .wide-thumb {
-    width: 52px;
-    height: 22px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
-  }
-  
-  .slightly-wide-thumb {
-    width: 50px;
-    height: 23px;
-    background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
-  }
-  
-  /* 正方形 */
-  .square-thumb {
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.25) 100%);
-  }
-  
-  .square-thumb::after {
-    border-color: rgba(103, 194, 58, 0.3);
-  }
-  
-  /* 竖图系列 - 调整尺寸以适应选项高度 */
-  .portrait-thumb {
-    width: 20px;
-    height: 36px;
-    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-  }
-  
-  .portrait-thumb::after {
-    border-color: rgba(245, 108, 108, 0.3);
-  }
-  
-  .slightly-long-thumb {
-    width: 20px;
-    height: 38px;
-    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-  }
-  
-  .slightly-long-thumb::after {
-    border-color: rgba(245, 108, 108, 0.3);
-  }
-  
-  .long-thumb {
-    width: 18px;
-    height: 40px;
-    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-  }
-  
-  .long-thumb::after {
-    border-color: rgba(245, 108, 108, 0.3);
-  }
-  
-  .ultra-long-thumb {
-    width: 18px;
-    height: 42px;
-    background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-  }
-  
-  .ultra-long-thumb::after {
-    border-color: rgba(245, 108, 108, 0.3);
-  }
-  
-  /* 选中状态 */
-  :deep(.el-select-dropdown__item.is-selected) .size-thumb {
-    border-color: var(--el-color-primary);
-    box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
-  }
-  
-  :deep(.el-select-dropdown__item:hover) .size-thumb {
-    border-color: var(--el-color-primary);
-    transform: scale(1.05);
-    transition: transform 0.2s;
-  }
-  
-  /* 确保选项内容不被截断 - 增加高度和内边距 */
-  :deep(.el-select-dropdown__item) {
-    padding: 10px 14px;
-    min-height: 50px;
-    height: auto;
-    line-height: 1.5;
-    display: flex;
-    align-items: center;
-  }
-  
-  /* 选项组标题样式 */
-  :deep(.el-select-group__title) {
-    padding: 8px 14px;
-    font-weight: 600;
-    color: var(--el-text-color-regular);
-  }
-  
-  /* 确保选项容器有足够空间 */
-  :deep(.el-select-dropdown__list) {
-    padding: 4px 0;
-  }
-  
-  /* 选中值的显示优化 */
-  :deep(.el-select__input-wrapper) {
-    display: flex;
-    align-items: center;
-  }
-  
-  /* 选中值中显示缩略图（如果支持） */
-  .size-select-value {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  .size-select-value .size-thumb {
-    width: 36px;
-    height: 18px;
-  }
-  
-  .size-select-value .square-thumb {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .size-select-value .portrait-thumb,
-  .size-select-value .slightly-long-thumb,
-  .size-select-value .long-thumb,
-  .size-select-value .ultra-long-thumb {
-    width: 18px;
-    height: 36px;
-  }
-  
-  .size-select-value .ultra-wide-thumb {
-    width: 42px;
-    height: 15px;
-  }
-  
-  .size-select-value .wide-thumb {
-    width: 39px;
-    height: 16px;
-  }
-  
-  .size-select-value .slightly-wide-thumb {
-    width: 37px;
-    height: 17px;
-  }
-  
-  .size-select-value .slightly-long-thumb {
-    width: 17px;
-    height: 37px;
-  }
-  
-  .size-select-value .long-thumb {
-    width: 16px;
-    height: 39px;
-  }
-  
-  .size-select-value .ultra-long-thumb {
-    width: 15px;
-    height: 42px;
-  }
-  </style>
-  
-  <!-- 模板详情提示框样式 -->
-  <style>
-  .template-detail-tooltip {
-    max-width: 400px;
-    padding: 12px;
-  }
-  .template-detail-tooltip,
-  .template-detail-tooltip.el-popper {
-    transition: none !important;
-  }
-  .template-tooltip-content {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .template-tooltip-content .tooltip-item {
-    padding: 4px 0;
-  }
-  .template-tooltip-content .tooltip-item strong {
-    font-weight: 600;
-    margin-right: 6px;
-    display: inline-block;
-    min-width: 60px;
-  }
-  </style>
+    overflow: auto;
+    padding: 20px;
+    background: var(--el-bg-color);
 
-  <!-- 批量详细配置弹窗样式 -->
-  <style lang="less" scoped>
-  .batch-detail-config-content {
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 120px);
-    
-    .batch-detail-config-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--el-border-color);
-      background: var(--el-fill-color-lighter);
-      
-      .batch-detail-config-title {
-        font-size: 16px;
-        color: var(--el-text-color-primary);
-        font-weight: 600;
-      }
-    }
-    
-    .batch-detail-config-body {
-      flex: 1;
-      overflow: auto;
+    .template-config-row {
+      display: flex;
+      gap: 20px;
       padding: 20px;
-      background: var(--el-bg-color);
-      
-      .template-config-row {
-        display: flex;
-        gap: 20px;
-        padding: 20px;
-        margin-bottom: 20px;
-        background: var(--el-bg-color-page);
-        border: 1px solid var(--el-border-color-light);
-        border-radius: 8px;
-        
-        .template-config-left {
-          width: 320px;
-          flex-shrink: 0;
-          
-          .template-config-header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--el-border-color-lighter);
-            
-            .template-name {
-              font-size: 15px;
-              font-weight: 600;
-              color: var(--el-text-color-primary);
-            }
+      margin-bottom: 20px;
+      background: var(--el-bg-color-page);
+      border: 1px solid var(--el-border-color-light);
+      border-radius: 8px;
+
+      .template-config-left {
+        width: 320px;
+        flex-shrink: 0;
+
+        .template-config-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 16px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid var(--el-border-color-lighter);
+
+          .template-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--el-text-color-primary);
           }
-          
-          .template-config-images {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            
-            .config-image-item {
-              .config-image-label {
-                font-size: 13px;
-                font-weight: 500;
-                color: var(--el-text-color-regular);
-                margin-bottom: 8px;
+        }
+
+        .template-config-images {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+
+          .config-image-item {
+            .config-image-label {
+              font-size: 13px;
+              font-weight: 500;
+              color: var(--el-text-color-regular);
+              margin-bottom: 8px;
+            }
+
+            .config-image-wrapper {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 8px;
+
+              .config-image {
+                width: 120px;
+                height: 120px;
+                border: 1px solid var(--el-border-color);
+                border-radius: 4px;
+                object-fit: contain;
+                background: var(--el-fill-color-lighter);
               }
-              
-              .config-image-wrapper {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 8px;
-                
-                .config-image {
-                  width: 120px;
-                  height: 120px;
-                  border: 1px solid var(--el-border-color);
-                  border-radius: 4px;
-                  object-fit: contain;
-                  background: var(--el-fill-color-lighter);
-                }
-                
-                .config-image-placeholder {
-                  display: block;
-                  color: var(--el-text-color-placeholder);
-                  font-size: 12px;
-                  padding: 40px 20px;
-                  text-align: center;
-                  border: 1px dashed var(--el-border-color);
-                  border-radius: 4px;
-                  background: var(--el-fill-color-lighter);
-                  width: 120px;
-                  height: 120px;
-                  box-sizing: border-box;
-                }
+
+              .config-image-placeholder {
+                display: block;
+                color: var(--el-text-color-placeholder);
+                font-size: 12px;
+                padding: 40px 20px;
+                text-align: center;
+                border: 1px dashed var(--el-border-color);
+                border-radius: 4px;
+                background: var(--el-fill-color-lighter);
+                width: 120px;
+                height: 120px;
+                box-sizing: border-box;
               }
             }
           }
         }
-        
-        .template-config-right {
-          flex: 1;
-          min-width: 0;
-          
-          .config-editor-toolbar {
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-          }
-          
-          .config-textarea {
-            :deep(.el-textarea__inner) {
-              font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
-              font-size: 13px;
-              line-height: 1.6;
-            }
+      }
+
+      .template-config-right {
+        flex: 1;
+        min-width: 0;
+
+        .config-editor-toolbar {
+          margin-bottom: 12px;
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+        }
+
+        .config-textarea {
+          :deep(.el-textarea__inner) {
+            font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            line-height: 1.6;
           }
         }
       }
     }
   }
-  </style>
+}
+</style>
 
 <style lang="less">
 .ai-generate-raw-info-dialog {
