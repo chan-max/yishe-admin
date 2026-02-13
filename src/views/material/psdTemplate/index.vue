@@ -3,48 +3,23 @@
     <div class="search-form-container">
       <div class="search-form-left">
         <form-item label="ID搜索">
-          <el-input
-            v-model="queryParams.id"
-            clearable
-            placeholder="请输入模板ID"
-            style="width: 200px"
-            @keyup.enter="getList"
-          ></el-input>
+          <el-input v-model="queryParams.id" clearable placeholder="请输入模板ID" style="width: 200px"
+            @keyup.enter="getList"></el-input>
         </form-item>
         <form-item label="搜索">
-          <el-input
-            v-model="queryParams.searchKeyword"
-            clearable
-            placeholder="请输入名称、关键词或描述"
-            style="width: 200px"
-            @keyup.enter="getList"
-          ></el-input>
+          <el-input v-model="queryParams.searchKeyword" clearable placeholder="请输入名称、关键词或描述" style="width: 200px"
+            @keyup.enter="getList"></el-input>
         </form-item>
         <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
 
         <form-item label="排序方式">
-          <el-select
-            v-model="queryParams.sortingFields"
-            style="width: 160px"
-            @change="getList"
-          >
-            <el-option
-              v-for="item in sortTypeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
+          <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
+            <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </form-item>
 
         <form-item label="是否可用">
-          <el-select
-            v-model="queryParams.enabled"
-            style="width: 140px"
-            clearable
-            placeholder="全部"
-            @change="getList"
-          >
+          <el-select v-model="queryParams.enabled" style="width: 140px" clearable placeholder="全部" @change="getList">
             <el-option label="可用" :value="true" />
             <el-option label="不可用" :value="false" />
           </el-select>
@@ -64,165 +39,116 @@
     </div>
 
     <div class="flex" style="overflow: hidden;">
-      <FolderTree
-        v-model="selectedFolderId"
-        :folder-category="FOLDER_CATEGORY"
-        :show-count="false"
-        :drag-state="dragState"
-        @change="handleFolderChange"
-        @folder-drag-over="handleFolderDragOver"
-        @folder-drag-leave="handleFolderDragLeave"
-        @folder-drop="handleFolderDrop"
-      />
+      <FolderTree v-model="selectedFolderId" :folder-category="FOLDER_CATEGORY" :show-count="false"
+        :drag-state="dragState" @change="handleFolderChange" @folder-drag-over="handleFolderDragOver"
+        @folder-drag-leave="handleFolderDragLeave" @folder-drop="handleFolderDrop" />
 
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
         <div class="common-table">
-          <vxe-grid
-            class="psd-template-dnd-grid"
-            v-bind="gridOptions"
-            :data="dataSource"
-            :loading="loading"
-            :row-class-name="getRowClassName"
-            @checkbox-change="checkboxChange"
-            @checkbox-all="checkboxAllChange"
-          >
+          <vxe-grid class="psd-template-dnd-grid" v-bind="gridOptions" :data="dataSource" :loading="loading"
+            :row-class-name="getRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #thumbnailSlot="{ row }">
               <div class="thumbnail-cell">
-                <el-image
-                  v-if="row.thumbnail"
-                  :src="row.thumbnail"
-                  :preview-src-list="[row.thumbnail]"
-                  :initial-index="0"
-                  preview-teleported
-                  hide-on-click-modal
-                  fit="contain"
-                  :lazy="true"
-                  class="thumbnail-image"
-                />
+                <el-image v-if="row.thumbnail" :src="row.thumbnail" :preview-src-list="[row.thumbnail]"
+                  :initial-index="0" preview-teleported hide-on-click-modal fit="contain" :lazy="true"
+                  class="thumbnail-image" />
                 <span v-else class="thumbnail-placeholder">暂无缩略图</span>
               </div>
             </template>
 
-        <template #titleNameDefaultSlot="{ row }">
-          <div v-if="row.titleTemplateId" class="flex items-center gap-2">
-            <span>
-              {{ row.titleName }}
-            </span>
-          </div>
-          <div v-else>
-            <el-button type="danger" @click="handleEdit(row)" link size="small">
-              未选择标题,点击选择
-            </el-button>
-          </div>
-        </template>
-
-        <template #urlSlot="{ row }">
-          <div class="flex items-center gap-1">
-            <a v-if="row.url" :href="row.url" target="_blank" rel="noopener" class="text-primary">
-              {{ row.url }}
-            </a>
-            <span v-else class="text-gray-400">无</span>
-          </div>
-        </template>
-
-        <template #psdInfoSlot="{ row }">
-          <div class="psd-info-cell">
-            <el-button
-              v-if="row.psdTemplateConfig"
-              type="primary"
-              link
-              size="small"
-              @click="handleViewPsdInfo(row)"
-            >
-              <el-icon class="info-icon"><InfoFilled /></el-icon>
-              <span class="info-text">配置</span>
-            </el-button>
-            <span v-else class="text-gray-400 text-xs">无</span>
-          </div>
-        </template>
-
-        <template #pathStatusSlot="{ row }">
-          <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
-          <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
-          <el-tag v-else-if="row.windowsLocalPath" type="warning" size="small">本地路径</el-tag>
-          <el-tag v-else type="info" size="small">未提供路径</el-tag>
-        </template>
-
-        <template #enabledSlot="{ row }">
-          <el-tag
-            v-if="row.enabled"
-            type="success"
-            size="small"
-            effect="dark"
-          >
-            可用
-          </el-tag>
-          <el-tag
-            v-else
-            type="info"
-            size="small"
-            effect="plain"
-          >
-            不可用
-          </el-tag>
-        </template>
-
-        <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click">
-            <el-button type="primary" link size="small">
-              操作
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                <el-dropdown-item @click="handleToggleEnabled(row)">
-                  {{ row.enabled ? '设为不可用' : '设为可用' }}
-                </el-dropdown-item>
-                <el-dropdown-item 
-                  @click="handleAiGenerate(row)"
-                  :disabled="!row.thumbnail || aiTableLoading[row.id]"
-                >
-                  <span v-if="aiTableLoading[row.id]">AI生成中...</span>
-                  <span v-else>AI生成内容</span>
-                </el-dropdown-item>
-                <el-dropdown-item @click="() => downloadFileByElement(row.url, row.name)">
-                  下载源文件
-                </el-dropdown-item>
-                <el-dropdown-item 
-                  divided 
-                  class="dropdown-item-danger" 
-                  @click="handleDelete(row)"
-                >
-                  删除
-                </el-dropdown-item>
-              </el-dropdown-menu>
+            <template #titleNameDefaultSlot="{ row }">
+              <div v-if="row.titleTemplateId" class="flex items-center gap-2">
+                <span>
+                  {{ row.titleName }}
+                </span>
+              </div>
+              <div v-else>
+                <el-button type="danger" @click="handleEdit(row)" link size="small">
+                  未选择标题,点击选择
+                </el-button>
+              </div>
             </template>
-          </el-dropdown>
-        </template>
+
+            <template #urlSlot="{ row }">
+              <div class="flex items-center gap-1">
+                <a v-if="row.url" :href="row.url" target="_blank" rel="noopener" class="text-primary">
+                  {{ row.url }}
+                </a>
+                <span v-else class="text-gray-400">无</span>
+              </div>
+            </template>
+
+            <template #psdInfoSlot="{ row }">
+              <div class="psd-info-cell">
+                <el-button v-if="row.psdTemplateConfig" type="primary" link size="small"
+                  @click="handleViewPsdInfo(row)">
+                  <el-icon class="info-icon">
+                    <InfoFilled />
+                  </el-icon>
+                  <span class="info-text">配置</span>
+                </el-button>
+                <span v-else class="text-gray-400 text-xs">无</span>
+              </div>
+            </template>
+
+            <template #pathStatusSlot="{ row }">
+              <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
+              <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
+              <el-tag v-else-if="row.windowsLocalPath" type="warning" size="small">本地路径</el-tag>
+              <el-tag v-else type="info" size="small">未提供路径</el-tag>
+            </template>
+
+            <template #enabledSlot="{ row }">
+              <el-tag v-if="row.enabled" type="success" size="small" effect="dark">
+                可用
+              </el-tag>
+              <el-tag v-else type="info" size="small" effect="plain">
+                不可用
+              </el-tag>
+            </template>
+
+            <template #operationDefaultSlot="{ row }">
+              <el-dropdown trigger="click">
+                <el-button type="primary" link size="small">
+                  操作
+                  <el-icon class="el-icon--right">
+                    <ArrowDown />
+                  </el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                    <el-dropdown-item @click="handleToggleEnabled(row)">
+                      {{ row.enabled ? '设为不可用' : '设为可用' }}
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handleAiGenerate(row)"
+                      :disabled="!row.thumbnail || aiTableLoading[row.id]">
+                      <span v-if="aiTableLoading[row.id]">AI生成中...</span>
+                      <span v-else>AI生成内容</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="() => downloadFileByElement(row.url, row.name)">
+                      下载源文件
+                    </el-dropdown-item>
+                    <el-dropdown-item divided class="dropdown-item-danger" @click="handleDelete(row)">
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </template>
           </vxe-grid>
         </div>
 
         <!-- 分页 -->
         <div class="py-4 flex justify-end">
-          <pagination
-            :total="total"
-            v-model:page="queryParams.currentPage"
-            v-model:limit="queryParams.pageSize"
-            @pagination="getList"
-          />
+          <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+            @pagination="getList" />
         </div>
       </div>
     </div>
 
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="600px"
-      @close="dialogClose"
-      align-center
-    >
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" @close="dialogClose" align-center>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
         <el-row :gutter="16">
           <el-col :span="24">
@@ -233,46 +159,26 @@
 
           <el-col :span="24">
             <el-form-item label="关键词" prop="keywords">
-              <el-input
-                v-model="form.keywords"
-                placeholder="请输入关键词，多个关键词用逗号分隔"
-              />
+              <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
             <el-form-item label="描述" prop="description">
-              <el-input
-                v-model="form.description"
-                type="textarea"
-                :rows="3"
-                placeholder="请输入模板描述"
-              />
+              <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入模板描述" />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
             <el-form-item label="Windows 本地路径" prop="windowsLocalPath">
-              <el-input
-                v-model="form.windowsLocalPath"
-                placeholder="请输入 Windows 本地路径（将按原样保存）"
-              />
+              <el-input v-model="form.windowsLocalPath" placeholder="请输入 Windows 本地路径（将按原样保存）" />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
             <el-form-item label="模板文件" prop="file">
-              <el-upload
-                style="width: 100%"
-                action="#"
-                :limit="1"
-                :file-list="fileList"
-                :on-change="handleFileChange"
-                :before-upload="beforeUpload"
-                :auto-upload="false"
-                :on-remove="handleFileRemove"
-                accept=".psd"
-              >
+              <el-upload style="width: 100%" action="#" :limit="1" :file-list="fileList" :on-change="handleFileChange"
+                :before-upload="beforeUpload" :auto-upload="false" :on-remove="handleFileRemove" accept=".psd">
                 <el-button type="primary">选择 PSD 文件</el-button>
                 <template #tip>
                   <div class="el-upload__tip">
@@ -285,13 +191,9 @@
 
           <el-col :span="24">
             <el-form-item label="psd模板配置" prop="psdTemplateConfig">
-              <el-input
-                v-model="form.psdTemplateConfigText"
-                type="textarea"
-                :rows="8"
+              <el-input v-model="form.psdTemplateConfigText" type="textarea" :rows="8"
                 :autosize="{ minRows: 8, maxRows: 15 }"
-                placeholder='请输入psd模板配置（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}'
-              />
+                placeholder='请输入psd模板配置（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}' />
               <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
                 提示：支持JSON格式（键需引号）或JavaScript对象格式（键无需引号），例如：{"images": []} 或 {images: []}
               </div>
@@ -301,36 +203,30 @@
           <el-col :span="24">
             <el-form-item label="缩略图">
               <div class="thumbnail-upload-container">
-                <input
-                  ref="thumbnailInputRef"
-                  type="file"
-                  accept="image/*"
-                  style="display: none"
-                  @change="handleThumbnailFileSelect"
-                />
-                <div
-                  v-if="!thumbnailPreviewUrl && !form.thumbnail"
-                  class="thumbnail-upload-placeholder"
-                  @click="triggerThumbnailSelect"
-                >
-                  <el-icon class="upload-icon"><Plus /></el-icon>
+                <input ref="thumbnailInputRef" type="file" accept="image/*" style="display: none"
+                  @change="handleThumbnailFileSelect" />
+                <div v-if="!thumbnailPreviewUrl && !form.thumbnail" class="thumbnail-upload-placeholder"
+                  @click="triggerThumbnailSelect">
+                  <el-icon class="upload-icon">
+                    <Plus />
+                  </el-icon>
                   <div class="upload-text">点击上传缩略图</div>
                   <div class="upload-tip">支持 jpg、png 等图片格式</div>
                 </div>
                 <div v-else class="thumbnail-preview-wrapper">
-                  <el-image
-                    :src="thumbnailPreviewUrl || form.thumbnail"
-                    fit="contain"
-                    :lazy="true"
-                    class="thumbnail-preview-image"
-                  />
+                  <el-image :src="thumbnailPreviewUrl || form.thumbnail" fit="contain" :lazy="true"
+                    class="thumbnail-preview-image" />
                   <div class="thumbnail-action-buttons">
                     <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
-                      <el-icon><Edit /></el-icon>
+                      <el-icon>
+                        <Edit />
+                      </el-icon>
                       替换
                     </el-button>
                     <el-button type="danger" size="small" @click.stop="clearThumbnail">
-                      <el-icon><Delete /></el-icon>
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
                       删除
                     </el-button>
                   </div>
@@ -341,11 +237,7 @@
 
           <el-col :span="24">
             <el-form-item label="是否可用">
-              <el-switch
-                v-model="form.enabled"
-                :active-value="true"
-                :inactive-value="false"
-              />
+              <el-switch v-model="form.enabled" :active-value="true" :inactive-value="false" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -353,34 +245,21 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading"
-          >确定</el-button
-        >
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
 
     <!-- AI生成内容弹窗 -->
-    <el-dialog
-      v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
 
         <span style="color: #f56c6c; font-size: 13px;">
           注意：需要模板有缩略图才能进行AI分析
         </span>
       </div>
-      <el-input
-        v-model="aiGenPrompt"
-        type="textarea"
-        :rows="6"
+      <el-input v-model="aiGenPrompt" type="textarea" :rows="6"
         placeholder="例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点描述商品名称和相关的类别/兼容性关键词，方便搜索。"
-        :autosize="{ minRows: 6, maxRows: 10 }"
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
-      />
+        :autosize="{ minRows: 6, maxRows: 10 }" style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
@@ -388,12 +267,7 @@
     </el-dialog>
 
     <!-- psd模板配置全屏弹窗 -->
-    <el-dialog
-      v-model="psdInfoDialogVisible"
-      title="psd模板配置"
-      fullscreen
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="psdInfoDialogVisible" title="psd模板配置" fullscreen :destroy-on-close="true">
       <div class="psd-info-fullscreen-content">
         <div class="psd-info-header">
           <div class="psd-info-title">
@@ -412,12 +286,11 @@
 
     <!-- 拖拽提示气泡（跟随鼠标） -->
     <teleport to="body">
-      <div
-        v-show="dragHint.visible"
-        class="drag-hint-bubble"
-        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }"
-      >
-        <el-icon class="drag-hint-icon"><InfoFilled /></el-icon>
+      <div v-show="dragHint.visible" class="drag-hint-bubble"
+        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
+        <el-icon class="drag-hint-icon">
+          <InfoFilled />
+        </el-icon>
         <span>{{ dragHint.text }}</span>
       </div>
     </teleport>
@@ -483,10 +356,10 @@ const gridOptions = ref<VxeGridProps<any>>({
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
     { title: "ID", field: "id", width: 140, showOverflow: true },
-    { 
-      title: "缩略图", 
-      field: "thumbnail", 
-      width: 180, 
+    {
+      title: "缩略图",
+      field: "thumbnail",
+      width: 180,
       showOverflow: false,
       slots: {
         default: "thumbnailSlot",
@@ -678,14 +551,14 @@ async function getList() {
     .getPsdTemplatePage({
       ...params,
     })
-    .catch(() => {})
+    .catch(() => { })
     .finally(() => {
       loading.value = false;
     });
   dataSource.value = res.list;
   total.value = res.total;
   ids.value = [];
-  
+
   // 列表渲染完成后挂载拖拽（使用 SortableJS）
   nextTick(setupTemplateDrag);
 }
@@ -773,11 +646,7 @@ async function handleFolderDrop(payload: { data: any }) {
     await psdTemplateApi.batchMove({ ids: movingIds, folderId: targetFolderId });
     ElMessage.success(`已移动 ${movingIds.length} 个模板到 ${targetPath || '根目录'}`);
 
-    // 同步当前选中目录与查询条件
-    selectedFolderId.value = payload.data.id === '__root__' ? '__root__' : payload.data.id;
-    queryParams.folderId = targetFolderId;
-    queryParams.currentPage = 1;
-
+    // Stay in the current folder, just refresh the list
     await getList();
     ids.value = [];
   } catch (error) {
@@ -821,7 +690,7 @@ function handleDelete(row?) {
       ElMessage.success("删除成功");
       getList();
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 function handleAdd() {
@@ -861,12 +730,12 @@ function handleEdit(row) {
   // 清空已选文件列表，只在需要时重新选择文件
   fileList.value = [];
   form.value.file = null;
-  
+
   // 处理psdTemplateConfig：如果是对象，转换为JSON字符串显示
   if (form.value.psdTemplateConfig) {
     try {
-      form.value.psdTemplateConfigText = typeof form.value.psdTemplateConfig === 'string' 
-        ? form.value.psdTemplateConfig 
+      form.value.psdTemplateConfigText = typeof form.value.psdTemplateConfig === 'string'
+        ? form.value.psdTemplateConfig
         : JSON.stringify(form.value.psdTemplateConfig, null, 2);
     } catch (e) {
       form.value.psdTemplateConfigText = '';
@@ -874,7 +743,7 @@ function handleEdit(row) {
   } else {
     form.value.psdTemplateConfigText = '';
   }
-  
+
   // 清空预览（编辑时显示已有的缩略图）
   if (thumbnailPreviewUrl.value) {
     URL.revokeObjectURL(thumbnailPreviewUrl.value);
@@ -904,7 +773,7 @@ const form = ref<any>({
 // AI生成内容相关
 const aiGenDialogVisible = ref(false);
 const aiGenPrompt = ref('');
-const aiDefaultPrompt =   `请描述这是什么商品/物品，以及相关的类别关键词。例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点是商品名称和兼容性关键词和相似商品的关联词，并且尽可能详细一些，方便用户搜索找到。`;
+const aiDefaultPrompt = `请描述这是什么商品/物品，以及相关的类别关键词。例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点是商品名称和兼容性关键词和相似商品的关联词，并且尽可能详细一些，方便用户搜索找到。`;
 const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
 const aiTableLoading = ref<Record<string, boolean>>({});
@@ -954,7 +823,7 @@ const submitForm = async () => {
       let key = form.value.key;
       if (form.value.file) {
         const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-        const cos = await uploadToCOS({ 
+        const cos = await uploadToCOS({
           file: form.value.file,
           category: 'psd-template',
           account: userAccount,
@@ -969,7 +838,7 @@ const submitForm = async () => {
       let thumbnail = form.value.thumbnail;
       if (form.value.thumbnailFile) {
         const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-        const thumbnailCos = await uploadToCOS({ 
+        const thumbnailCos = await uploadToCOS({
           file: form.value.thumbnailFile,
           category: 'psd-template',
           account: userAccount,
@@ -978,7 +847,7 @@ const submitForm = async () => {
         });
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
-      
+
       // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
       let psdTemplateConfig = null;
       if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
@@ -1013,13 +882,13 @@ const submitForm = async () => {
       getList();
     } else {
       submitLoading.value = true;
-      
+
       // 上传PSD文件（如果存在）
       let url = "";
       let key = "";
       const userAccount = userStore.user?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
       if (form.value.file) {
-        const cos = await uploadToCOS({ 
+        const cos = await uploadToCOS({
           file: form.value.file,
           category: 'psd-template',
           account: userAccount,
@@ -1029,11 +898,11 @@ const submitForm = async () => {
         key = cos.key;
         url = cos.url;
       }
-      
+
       // 上传缩略图（如果有）
       let thumbnail = "";
       if (form.value.thumbnailFile) {
-        const thumbnailCos = await uploadToCOS({ 
+        const thumbnailCos = await uploadToCOS({
           file: form.value.thumbnailFile,
           category: 'psd-template',
           account: userAccount,
@@ -1042,7 +911,7 @@ const submitForm = async () => {
         });
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
-      
+
       // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
       let psdTemplateConfig = null;
       if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
@@ -1111,7 +980,7 @@ const handleFileRemove = () => {
 };
 
 // 文件上传前的校验
-const beforeUpload = (file) => {};
+const beforeUpload = (file) => { };
 
 // 触发缩略图文件选择
 const triggerThumbnailSelect = () => {
@@ -1190,14 +1059,14 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     // 调用PSD模板的AI补全接口
     const res = await psdTemplateApi.aiCompleteContent(row.id, prompt || '');
-    
+
     // 更新行数据
     if (res) {
       row.name = res.name || row.name;
       row.description = res.description || row.description;
       row.keywords = res.keywords || row.keywords;
     }
-    
+
     ElMessage.success('AI自动生成内容成功');
     if (typeof cb === 'function') cb();
     getList();
@@ -1210,9 +1079,9 @@ async function handleAiAutoGenerate(row, cb, prompt) {
 // 解析psd模板配置文本（支持JSON和JS对象格式）
 function parsePsdInfoText(text: string): any {
   if (!text || !text.trim()) return null;
-  
+
   const trimmedText = text.trim();
-  
+
   // 先尝试 JSON.parse（标准JSON格式）
   try {
     return JSON.parse(trimmedText);
@@ -1243,18 +1112,18 @@ function handleViewPsdInfo(row: any) {
 // 格式化psd模板配置显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
   if (!psdInfo) return '无';
-  
+
   try {
     // 如果是字符串，尝试解析
     let info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
-    
+
     // 确保处理后端返回的新数据结构（包含 artboards, smart_objects 等）
     // 如果已经是对象，直接使用；如果是字符串，解析后使用
     if (typeof info === 'object' && info !== null) {
       // 格式化为可读的JSON字符串
       return JSON.stringify(info, null, 2);
     }
-    
+
     // 如果解析失败，直接返回字符串
     return String(psdInfo);
   } catch (e) {
@@ -1320,12 +1189,12 @@ onUnmounted(() => {
     align-items: center;
     justify-content: flex-end;
     flex-shrink: 0;
-    
+
     :deep(.form-item) {
       margin-bottom: 0;
       flex-shrink: 0;
     }
-    
+
     .el-button {
       flex-shrink: 0;
     }
@@ -1376,7 +1245,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   padding: 4px;
-  
+
   .thumbnail-image {
     width: 120px;
     height: auto;
@@ -1387,7 +1256,7 @@ onUnmounted(() => {
     border-radius: 4px;
     cursor: pointer;
   }
-  
+
   .thumbnail-placeholder {
     color: var(--el-text-color-placeholder);
     font-size: 12px;
@@ -1396,7 +1265,7 @@ onUnmounted(() => {
 
 :deep(.dropdown-item-danger) {
   color: var(--el-color-danger) !important;
-  
+
   &:hover {
     color: var(--el-color-danger) !important;
     background-color: var(--el-color-danger-light-9) !important;
@@ -1411,7 +1280,7 @@ onUnmounted(() => {
 :deep(.row-disabled) {
   background-color: var(--el-fill-color-lighter) !important;
   opacity: 0.4;
-  
+
   &:hover {
     background-color: var(--el-fill-color-light) !important;
     opacity: 0.55;
@@ -1451,12 +1320,12 @@ onUnmounted(() => {
 .psd-info-cell {
   display: flex;
   align-items: center;
-  
+
   .info-icon {
     font-size: 14px;
     margin-right: 4px;
   }
-  
+
   .info-text {
     line-height: 1;
   }
@@ -1466,30 +1335,30 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 120px);
-  
+
   .psd-info-header {
     padding: 16px;
     border-bottom: 1px solid var(--el-border-color);
     background: var(--el-fill-color-lighter);
-    
+
     .psd-info-title {
       font-size: 16px;
       color: var(--el-text-color-primary);
-      
+
       strong {
         color: var(--el-color-primary);
         font-weight: 600;
       }
     }
   }
-  
+
   .psd-info-body {
     flex: 1;
     overflow: auto;
     padding: 20px;
     background: var(--el-bg-color);
   }
-  
+
   .psd-info-json-fullscreen {
     margin: 0;
     padding: 20px;
@@ -1511,7 +1380,7 @@ onUnmounted(() => {
 
 .thumbnail-upload-container {
   width: 100%;
-  
+
   .thumbnail-upload-placeholder {
     width: 120px;
     height: 120px;
@@ -1526,19 +1395,19 @@ onUnmounted(() => {
     background: var(--el-fill-color-lighter);
     padding: 8px;
     box-sizing: border-box;
-    
+
     &:hover {
       border-color: var(--el-color-primary);
       background: var(--el-color-primary-light-9);
     }
-    
+
     .upload-icon {
       font-size: 28px;
       color: var(--el-text-color-placeholder);
       margin-bottom: 8px;
       flex-shrink: 0;
     }
-    
+
     .upload-text {
       font-size: 14px;
       color: var(--el-text-color-regular);
@@ -1548,7 +1417,7 @@ onUnmounted(() => {
       word-break: break-word;
       width: 100%;
     }
-    
+
     .upload-tip {
       font-size: 12px;
       color: var(--el-text-color-placeholder);
@@ -1558,7 +1427,7 @@ onUnmounted(() => {
       width: 100%;
     }
   }
-  
+
   .thumbnail-preview-wrapper {
     width: 120px;
     min-height: 120px;
@@ -1571,13 +1440,13 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     position: relative;
-    
+
     .thumbnail-preview-image {
       width: 120px;
       height: auto;
       object-fit: contain;
     }
-    
+
     .thumbnail-action-buttons {
       position: absolute;
       bottom: 0;
@@ -1589,11 +1458,11 @@ onUnmounted(() => {
       padding: 4px;
       background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(4px);
-      
+
       .el-button {
         padding: 4px 8px;
         font-size: 12px;
-        
+
         .el-icon {
           font-size: 12px;
         }

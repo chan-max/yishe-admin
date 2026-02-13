@@ -3,16 +3,12 @@
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <!-- 搜索输入框 -->
       <div class="flex items-center gap-2">
-        <el-input
-          v-model="queryParams.searchKeyword"
-          placeholder="搜索字体名称、描述、关键字"
-          style="width: 300px;"
-          clearable
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        >
+        <el-input v-model="queryParams.searchKeyword" placeholder="搜索字体名称、描述、关键字" style="width: 300px;" clearable
+          @keyup.enter="handleSearch" @clear="handleSearch">
           <template #prefix>
-            <el-icon><Search /></el-icon>
+            <el-icon>
+              <Search />
+            </el-icon>
           </template>
         </el-input>
         <el-button type="primary" @click="handleSearch" :icon="Search">
@@ -22,167 +18,139 @@
           重置
         </el-button>
       </div>
-      
+
       <!-- 日期范围选择器 -->
       <form-item class="date-range-picker">
         <DateRangePicker
-          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
-        />
+          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
       </form-item>
       <el-button v-if="isAdmin" type="primary" @click="handleAdd" :icon="Plus">
         新增字体
       </el-button>
       <div v-if="isAdmin" class="flex shrink-0 gap-2">
-        <el-button 
-          type="success" 
-          @click="handleBatchAiGenerate"
-          :disabled="!ids.length"
-          :loading="batchAiLoading"
-        >
+        <el-button type="success" @click="handleBatchAiGenerate" :disabled="!ids.length" :loading="batchAiLoading">
           批量AI补全 ({{ ids.length }})
         </el-button>
-        <el-button 
-          type="danger" 
-          @click="handleBatchDelete"
-          :disabled="!ids.length"
-          :loading="batchDeleteLoading"
-        >
+        <el-button type="danger" @click="handleBatchDelete" :disabled="!ids.length" :loading="batchDeleteLoading">
           批量删除 ({{ ids.length }})
         </el-button>
       </div>
     </div>
 
     <div class="flex" style="overflow: hidden;">
-      <FolderTree
-        v-model="selectedFolderId"
-        :folder-category="FOLDER_CATEGORY"
-        :show-count="false"
-        :drag-state="dragState"
-        @change="handleFolderChange"
-        @folder-drag-over="handleFolderDragOver"
-        @folder-drag-leave="handleFolderDragLeave"
-        @folder-drop="handleFolderDrop"
-      />
+      <FolderTree v-model="selectedFolderId" :folder-category="FOLDER_CATEGORY" :show-count="false"
+        :drag-state="dragState" @change="handleFolderChange" @folder-drag-over="handleFolderDragOver"
+        @folder-drag-leave="handleFolderDragLeave" @folder-drop="handleFolderDrop" />
 
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
         <div class="common-table">
-          <vxe-grid
-            class="font-template-dnd-grid"
-            v-bind="gridOptions"
-            :data="dataSource"
-            :loading="loading"
-            @checkbox-change="checkboxChange"
-            @checkbox-all="checkboxAllChange"
-          >
+          <vxe-grid class="font-template-dnd-grid" v-bind="gridOptions" :data="dataSource" :loading="loading"
+            @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #thumbnailDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
-                <img
-                  v-if="row.thumbnail"
-                  :src="row.thumbnail"
-                  :alt="row.name || '字体缩略图'"
-                  loading="lazy"
+                <img v-if="row.thumbnail" :src="row.thumbnail" :alt="row.name || '字体缩略图'" loading="lazy"
                   style="width:160px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);"
-                  @click="openThumbnailPreview(row.thumbnail, row.name)"
-                  @error="handleThumbnailError"
-                />
-                <div v-else class="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm">
+                  @click="openThumbnailPreview(row.thumbnail, row.name)" @error="handleThumbnailError" />
+                <div v-else
+                  class="w-40 h-40 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-sm">
                   无缩略图
                 </div>
               </div>
             </template>
 
-        <template #languagesSlot="{ row }">
-          <div class="flex flex-wrap gap-1">
-            <el-tag
-              v-for="langCode in (row.languages || [])"
-              :key="langCode"
-              size="small"
-              type="info"
-              class="language-tag"
-            >
-              <span>{{ getLanguageByCode(langCode)?.label || langCode }}</span>
-              <el-tooltip
-                v-if="getLanguageByCode(langCode)"
-                :content="`${getLanguageByCode(langCode)?.example} - ${getLanguageByCode(langCode)?.chineseName}`"
-                placement="top"
-              >
-                <el-icon class="ml-1" style="font-size: 12px;"><InfoFilled /></el-icon>
-              </el-tooltip>
-            </el-tag>
-            <span v-if="!row.languages || row.languages.length === 0" class="text-gray-400 text-xs">未设置</span>
-          </div>
-        </template>
+            <template #languagesSlot="{ row }">
+              <div class="flex flex-wrap gap-1">
+                <el-tag v-for="langCode in (row.languages || [])" :key="langCode" size="small" type="info"
+                  class="language-tag">
+                  <span>{{ getLanguageByCode(langCode)?.label || langCode }}</span>
+                  <el-tooltip v-if="getLanguageByCode(langCode)"
+                    :content="`${getLanguageByCode(langCode)?.example} - ${getLanguageByCode(langCode)?.chineseName}`"
+                    placement="top">
+                    <el-icon class="ml-1" style="font-size: 12px;">
+                      <InfoFilled />
+                    </el-icon>
+                  </el-tooltip>
+                </el-tag>
+                <span v-if="!row.languages || row.languages.length === 0" class="text-gray-400 text-xs">未设置</span>
+              </div>
+            </template>
 
-        <template #operationDefaultSlot="{ row }">
-          <div class="flex items-center">
-            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
-              <el-button type="primary" link size="small">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu class="operation-menu-compact">
-                  <el-dropdown-item v-if="isAdmin" command="edit">
-                    <el-icon><Edit /></el-icon>
-                    <span>编辑</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="generate-thumbnail">
-                    <el-icon><Picture /></el-icon>
-                    <span>生成缩略图</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="download">
-                    <el-icon><Download /></el-icon>
-                    <span>下载源文件</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="copy-url">
-                    <el-icon><DocumentCopy /></el-icon>
-                    <span>复制源文件地址</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="ai-generate">
-                    <el-icon><MagicStick /></el-icon>
-                    <span>AI生成内容</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="delete" divided>
-                    <el-icon><Delete /></el-icon>
-                    <span>删除</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-            <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2" style="color:#67C23A;font-size:18px;" />
-          </div>
-        </template>
+            <template #operationDefaultSlot="{ row }">
+              <div class="flex items-center">
+                <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
+                  class="operation-dropdown">
+                  <el-button type="primary" link size="small">
+                    操作<el-icon class="el-icon--right">
+                      <ArrowDown />
+                    </el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu class="operation-menu-compact">
+                      <el-dropdown-item v-if="isAdmin" command="edit">
+                        <el-icon>
+                          <Edit />
+                        </el-icon>
+                        <span>编辑</span>
+                      </el-dropdown-item>
+                      <el-dropdown-item v-if="isAdmin" command="generate-thumbnail">
+                        <el-icon>
+                          <Picture />
+                        </el-icon>
+                        <span>生成缩略图</span>
+                      </el-dropdown-item>
+                      <el-dropdown-item command="download">
+                        <el-icon>
+                          <Download />
+                        </el-icon>
+                        <span>下载源文件</span>
+                      </el-dropdown-item>
+                      <el-dropdown-item command="copy-url">
+                        <el-icon>
+                          <DocumentCopy />
+                        </el-icon>
+                        <span>复制源文件地址</span>
+                      </el-dropdown-item>
+                      <el-dropdown-item v-if="isAdmin" command="ai-generate">
+                        <el-icon>
+                          <MagicStick />
+                        </el-icon>
+                        <span>AI生成内容</span>
+                      </el-dropdown-item>
+                      <el-dropdown-item v-if="isAdmin" command="delete" divided>
+                        <el-icon>
+                          <Delete />
+                        </el-icon>
+                        <span>删除</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+                <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-2"
+                  style="color:#67C23A;font-size:18px;" />
+              </div>
+            </template>
 
-        <template #urlDefaultSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <span class="truncate flex-1">{{ row.url }}</span>
-            <el-button type="primary" link size="small" @click="copyUrl(row.url)" class="shrink-0">
-              复制
-            </el-button>
-          </div>
-        </template>
+            <template #urlDefaultSlot="{ row }">
+              <div class="flex items-center gap-2">
+                <span class="truncate flex-1">{{ row.url }}</span>
+                <el-button type="primary" link size="small" @click="copyUrl(row.url)" class="shrink-0">
+                  复制
+                </el-button>
+              </div>
+            </template>
           </vxe-grid>
         </div>
 
         <!-- 分页 -->
         <div class=" flex justify-end">
-          <pagination
-            :total="total"
-            v-model:page="queryParams.currentPage"
-            v-model:limit="queryParams.pageSize"
-            @pagination="getList"
-          />
+          <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+            @pagination="getList" />
         </div>
       </div>
     </div>
 
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="700px"
-      @close="dialogClose"
-      align-center
-    >
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="700px" @close="dialogClose" align-center>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -193,40 +161,22 @@
 
           <el-col :span="24">
             <el-form-item label="描述" prop="description">
-              <el-input 
-                v-model="form.description" 
-                type="textarea" 
-                :rows="3"
-                placeholder="请输入字体模板描述" 
-              />
+              <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入字体模板描述" />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
             <el-form-item label="关键字" prop="keywords">
-              <el-input 
-                v-model="form.keywords" 
-                placeholder="请输入关键字，多个关键字用逗号分隔" 
-              />
+              <el-input v-model="form.keywords" placeholder="请输入关键字，多个关键字用逗号分隔" />
             </el-form-item>
           </el-col>
 
           <el-col :span="24">
             <el-form-item label="适用语言" prop="languages">
-              <el-select
-                v-model="form.languages"
-                multiple
-                filterable
-                placeholder="请选择适用语言（可多选）"
-                style="width: 100%"
-                clearable
-              >
-                <el-option
-                  v-for="lang in LANGUAGE_OPTIONS"
-                  :key="lang.code"
-                  :label="`${lang.label} (${lang.example}) - ${lang.chineseName}`"
-                  :value="lang.code"
-                >
+              <el-select v-model="form.languages" multiple filterable placeholder="请选择适用语言（可多选）" style="width: 100%"
+                clearable>
+                <el-option v-for="lang in LANGUAGE_OPTIONS" :key="lang.code"
+                  :label="`${lang.label} (${lang.example}) - ${lang.chineseName}`" :value="lang.code">
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span>{{ lang.label }}</span>
                     <span style="color: #909399; font-size: 12px; margin-left: 8px;">
@@ -243,17 +193,9 @@
 
           <el-col :span="24" v-if="!isEdit">
             <el-form-item label="模板文件" prop="file">
-              <el-upload
-                style="width: 100%"
-                action="#"
-                :limit="1"
-                :file-list="fileList"
-                :on-change="handleFileChange"
-                :before-upload="beforeUpload"
-                :auto-upload="false"
-                :on-remove="handleFileRemove"
-                accept=".ttf,.otf,.woff,.woff2"
-              >
+              <el-upload style="width: 100%" action="#" :limit="1" :file-list="fileList" :on-change="handleFileChange"
+                :before-upload="beforeUpload" :auto-upload="false" :on-remove="handleFileRemove"
+                accept=".ttf,.otf,.woff,.woff2">
                 <el-button type="primary">选择字体文件</el-button>
                 <template #tip>
                   <div class="el-upload__tip">只能上传字体文件（.ttf, .otf, .woff, .woff2）</div>
@@ -266,30 +208,17 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading"
-          >确定</el-button
-        >
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
 
 
 
     <!-- AI生成内容弹窗 -->
-    <el-dialog
-      v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出字体特点等）</div>
-      <el-input
-        v-model="aiGenPrompt"
-        type="textarea"
-        :rows="6"
-        placeholder="如：请用艺术化语言描述字体风格..."
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
-      />
+      <el-input v-model="aiGenPrompt" type="textarea" :rows="6" placeholder="如：请用艺术化语言描述字体风格..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
@@ -297,40 +226,28 @@
     </el-dialog>
 
     <!-- 批量AI补全弹窗 -->
-    <el-dialog
-      v-model="batchAiDialogVisible"
-      title="批量AI补全内容"
-      width="600px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="batchAiDialogVisible" title="批量AI补全内容" width="600px" align-center :destroy-on-close="true">
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
         将为选中的 <strong>{{ ids.length }}</strong> 个字体模板进行AI内容补全
       </div>
-      <el-input
-        v-model="batchAiPrompt"
-        type="textarea"
-        :rows="6"
-        placeholder="请输入统一的AI分析提示词（可选）..."
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
-      />
-      
+      <el-input v-model="batchAiPrompt" type="textarea" :rows="6" placeholder="请输入统一的AI分析提示词（可选）..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
+
       <!-- 进度显示 -->
       <div v-if="batchProgress.total > 0" style="margin-top: 16px;">
         <div style="margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
           <span>处理进度</span>
           <span>{{ batchProgress.processed }}/{{ batchProgress.total }}</span>
         </div>
-        <el-progress 
-          :percentage="Math.round((batchProgress.processed / batchProgress.total) * 100)"
-          :status="batchProgress.processed === batchProgress.total ? 'success' : ''"
-        />
+        <el-progress :percentage="Math.round((batchProgress.processed / batchProgress.total) * 100)"
+          :status="batchProgress.processed === batchProgress.total ? 'success' : ''" />
         <div style="margin-top: 8px; font-size: 12px; color: #909399;">
           成功: {{ batchProgress.success }} | 失败: {{ batchProgress.failed }}
         </div>
       </div>
-      
-      <div style="margin-top: 16px; padding: 12px; background: #f5f7fa; border-radius: 4px; font-size: 14px; color: #606266;">
+
+      <div
+        style="margin-top: 16px; padding: 12px; background: #f5f7fa; border-radius: 4px; font-size: 14px; color: #606266;">
         <div style="margin-bottom: 8px;"><strong>操作说明：</strong></div>
         <div>• 系统将分批处理，每批5个，避免API限流</div>
         <div>• 处理过程中会显示进度和结果</div>
@@ -348,14 +265,8 @@
     </el-dialog>
 
     <!-- 生成缩略图弹窗 -->
-    <el-dialog
-      v-model="generateThumbnailDialogVisible"
-      title="生成字体模板缩略图"
-      fullscreen
-      align-center
-      :destroy-on-close="true"
-      @close="resetFontPreview"
-    >
+    <el-dialog v-model="generateThumbnailDialogVisible" title="生成字体模板缩略图" fullscreen align-center
+      :destroy-on-close="true" @close="resetFontPreview">
       <el-form :model="thumbnailForm" :rules="thumbnailRules" ref="thumbnailFormRef" label-width="100px">
         <!-- 基本信息行 -->
         <el-row :gutter="16">
@@ -370,31 +281,17 @@
             </el-form-item>
           </el-col>
         </el-row>
-        
+
         <el-form-item label="模板文字" prop="templateText">
           <div style="margin-bottom: 12px;">
-            <el-select
-              v-model="selectedTemplateIndex"
-              placeholder="请选择默认模板"
-              style="min-width: 300px;"
-              @change="applyDefaultTemplate"
-              clearable
-            >
-              <el-option
-                v-for="(template, index) in defaultTemplates"
-                :key="index"
-                :label="template.name"
-                :value="index"
-              />
+            <el-select v-model="selectedTemplateIndex" placeholder="请选择默认模板" style="min-width: 300px;"
+              @change="applyDefaultTemplate" clearable>
+              <el-option v-for="(template, index) in defaultTemplates" :key="index" :label="template.name"
+                :value="index" />
             </el-select>
           </div>
-          <el-input
-            v-model="thumbnailForm.templateText"
-            type="textarea"
-            :rows="10"
-            placeholder="请输入用于生成缩略图的模板文字，或从上方选择默认模板"
-            style="font-family: monospace; font-size: 13px;"
-          />
+          <el-input v-model="thumbnailForm.templateText" type="textarea" :rows="10"
+            placeholder="请输入用于生成缩略图的模板文字，或从上方选择默认模板" style="font-family: monospace; font-size: 13px;" />
           <div style="margin-top: 8px; font-size: 12px; color: #909399;">
             支持换行，每行将显示为不同的文字行。可从上方选择默认模板快速应用，或手动输入自定义文字。
           </div>
@@ -405,13 +302,8 @@
             <el-col :span="12">
               <div class="form-item-wrapper">
                 <label class="form-label">字体大小</label>
-                <el-input-number 
-                  v-model="thumbnailForm.options.fontSize" 
-                  :min="20" 
-                  :max="200" 
-                  :step="10"
-                  style="width: 100%"
-                />
+                <el-input-number v-model="thumbnailForm.options.fontSize" :min="20" :max="200" :step="10"
+                  style="width: 100%" />
               </div>
             </el-col>
             <el-col :span="12">
@@ -421,8 +313,9 @@
               </div>
             </el-col>
           </el-row>
-          
-          <div style="margin-top: 12px; padding: 8px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
+
+          <div
+            style="margin-top: 12px; padding: 8px; background: #f0f9ff; border-radius: 4px; border-left: 3px solid #3b82f6;">
             <div style="font-size: 12px; color: #1e40af; font-weight: 500;">智能尺寸</div>
             <div style="font-size: 11px; color: #3b82f6; margin-top: 2px;">
               画布尺寸将根据文字内容和字体大小自动计算
@@ -435,102 +328,92 @@
             <div class="preview-header compact">
               <span>实时预览</span>
               <div v-if="fontLoading" class="font-loading-indicator">
-                <el-icon class="is-loading" style="margin-right: 4px; color: #409EFF;"><Loading /></el-icon>
+                <el-icon class="is-loading" style="margin-right: 4px; color: #409EFF;">
+                  <Loading />
+                </el-icon>
                 <span style="color: #409EFF; font-size: 12px;">字体加载中...</span>
               </div>
             </div>
             <div class="preview-content compact">
               <!-- 预览区域 - 自适应高度 -->
-              <div 
-                v-if="currentRow.url"
-                class="preview-image compact single-preview"
-                :style="{
-                  width: '800px',
-                  minHeight: '400px',
-                  padding: '24px',
-                  color: thumbnailForm.options.textColor,
-                  fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
-                  backgroundColor: 'white',
-                  border: '1px dashed #d9d9d9',
-                  borderRadius: '8px',
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: '1',
-                  fontFamily: loadedFontFamily || 'inherit',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }"
-              >
+              <div v-if="currentRow.url" class="preview-image compact single-preview" :style="{
+                width: '800px',
+                minHeight: '400px',
+                padding: '24px',
+                color: thumbnailForm.options.textColor,
+                fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
+                backgroundColor: 'white',
+                border: '1px dashed #d9d9d9',
+                borderRadius: '8px',
+                whiteSpace: 'pre-wrap',
+                lineHeight: '1',
+                fontFamily: loadedFontFamily || 'inherit',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }">
                 <!-- 状态信息区域 -->
                 <div style="margin-bottom: 8px; font-size: 10px; color: #909399; flex-shrink: 0;">
-                  <i class="el-icon-info"></i> 
+                  <i class="el-icon-info"></i>
                   <span v-if="fontLoading">
-                    <el-icon class="is-loading" style="margin-right: 4px;"><Loading /></el-icon>
+                    <el-icon class="is-loading" style="margin-right: 4px;">
+                      <Loading />
+                    </el-icon>
                     正在加载字体预览...
                   </span>
                   <span v-else-if="!loadedFontFamily">等待加载字体预览...</span>
                   <span v-else>当前使用字体: {{ currentRow.name }}</span>
                 </div>
-                
+
                 <!-- 文字内容区域 -->
-                <div 
-                  class="preview-text-content"
-                  :style="{
-                    flex: '1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    wordBreak: 'break-word',
-                    wordWrap: 'break-word'
-                  }"
-                >
+                <div class="preview-text-content" :style="{
+                  flex: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  wordBreak: 'break-word',
+                  wordWrap: 'break-word'
+                }">
                   {{ thumbnailForm.templateText || defaultTemplates[0].content }}
                 </div>
               </div>
-              
+
               <!-- 默认预览区域 -->
-              <div 
-                v-else
-                class="preview-image compact"
-                :style="{
-                  width: '800px',
-                  minHeight: '400px',
-                  padding: '24px',
-                  color: thumbnailForm.options.textColor,
-                  fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
-                  backgroundColor: 'white',
-                  border: '1px dashed #d9d9d9',
-                  borderRadius: '8px',
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: '1',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }"
-              >
+              <div v-else class="preview-image compact" :style="{
+                width: '800px',
+                minHeight: '400px',
+                padding: '24px',
+                color: thumbnailForm.options.textColor,
+                fontSize: Math.min(thumbnailForm.options.fontSize, 80) + 'px',
+                backgroundColor: 'white',
+                border: '1px dashed #d9d9d9',
+                borderRadius: '8px',
+                whiteSpace: 'pre-wrap',
+                lineHeight: '1',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }">
                 <!-- 状态信息区域 -->
                 <div style="margin-bottom: 8px; font-size: 10px; color: #909399; flex-shrink: 0;">
-                  <i class="el-icon-info"></i> 
+                  <i class="el-icon-info"></i>
                   <span v-if="!currentRow.url">请先选择字体模板</span>
                   <span v-else>当前预览使用系统默认字体</span>
                 </div>
-                
+
                 <!-- 文字内容区域 -->
-                <div 
-                  class="preview-text-content"
-                  :style="{
-                    flex: '1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    wordBreak: 'break-word',
-                    wordWrap: 'break-word'
-                  }"
-                >
+                <div class="preview-text-content" :style="{
+                  flex: '1',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  wordBreak: 'break-word',
+                  wordWrap: 'break-word'
+                }">
                   {{ thumbnailForm.templateText || defaultTemplates[0].content }}
                 </div>
               </div>
@@ -584,25 +467,21 @@
 
       <template #footer>
         <el-button @click="generateThumbnailDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="frontendGenerateLoading" @click="submitFrontendGenerateThumbnail">生成缩略图</el-button>
+        <el-button type="primary" :loading="frontendGenerateLoading"
+          @click="submitFrontendGenerateThumbnail">生成缩略图</el-button>
       </template>
     </el-dialog>
 
     <!-- 图片预览弹窗 -->
-    <ImagePreview
-      :visible="imagePreviewVisible"
-      :image-url="currentImageUrl"
-      @close="closeImagePreview"
-    />
+    <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
     <!-- 拖拽提示气泡（跟随鼠标） -->
     <teleport to="body">
-      <div
-        v-show="dragHint.visible"
-        class="drag-hint-bubble"
-        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }"
-      >
-        <el-icon class="drag-hint-icon"><InfoFilled /></el-icon>
+      <div v-show="dragHint.visible" class="drag-hint-bubble"
+        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
+        <el-icon class="drag-hint-icon">
+          <InfoFilled />
+        </el-icon>
         <span>{{ dragHint.text }}</span>
       </div>
     </teleport>
@@ -751,9 +630,9 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    { 
-      title: "缩略图", 
-      field: "thumbnail", 
+    {
+      title: "缩略图",
+      field: "thumbnail",
       width: 200,
       slots: {
         default: "thumbnailDefaultSlot"
@@ -772,11 +651,11 @@ const gridOptions = ref({
     { title: "描述", field: "description", minWidth: 200, showOverflow: true },
     { title: "关键字", field: "keywords", minWidth: 160, showOverflow: true },
     { title: "分类", field: "category", width: 120, showOverflow: true },
-    { 
-      title: "适用语言", 
-      field: "languages", 
-      minWidth: 200, 
-      slots: { default: "languagesSlot" } 
+    {
+      title: "适用语言",
+      field: "languages",
+      minWidth: 200,
+      slots: { default: "languagesSlot" }
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
@@ -994,14 +873,14 @@ async function getList() {
     .getFontTemplatePage({
       ...params,
     })
-    .catch(() => {})
+    .catch(() => { })
     .finally(() => {
       loading.value = false;
     });
   dataSource.value = res.list;
   total.value = res.total;
   ids.value = [];
-  
+
   // 列表渲染完成后挂载拖拽（使用 SortableJS）
   nextTick(setupTemplateDrag);
 }
@@ -1100,7 +979,7 @@ function handleDelete(row?) {
       ElMessage.success("删除成功");
       getList();
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 // 批量删除功能
@@ -1112,8 +991,8 @@ async function handleBatchDelete() {
 
   try {
     await ElMessageBox.confirm(
-      `确认删除选中的 ${ids.value.length} 个字体模板吗？\n\n删除后将同时删除：\n• 字体文件\n• 缩略图\n\n此操作不可恢复！`, 
-      "批量删除确认", 
+      `确认删除选中的 ${ids.value.length} 个字体模板吗？\n\n删除后将同时删除：\n• 字体文件\n• 缩略图\n\n此操作不可恢复！`,
+      "批量删除确认",
       {
         confirmButtonText: "确认删除",
         cancelButtonText: "取消",
@@ -1123,16 +1002,16 @@ async function handleBatchDelete() {
     );
 
     batchDeleteLoading.value = true;
-    
+
     // 调用删除API
     await fontTemplateApi.deleteFontTemplate({ ids: ids.value });
-    
+
     ElMessage.success(`成功删除 ${ids.value.length} 个字体模板`);
-    
+
     // 清空选择并刷新列表
     ids.value = [];
     getList();
-    
+
   } catch (error) {
     if (error !== 'cancel') {
       console.error('批量删除失败:', error);
@@ -1175,11 +1054,7 @@ async function handleFolderDrop(payload: { data: any }) {
     await fontTemplateApi.batchMove({ ids: movingIds, folderId: targetFolderId });
     ElMessage.success(`已移动 ${movingIds.length} 个字体模板到 ${targetPath || '根目录'}`);
 
-    // 同步当前选中目录与查询条件
-    selectedFolderId.value = payload.data.id === '__root__' ? '__root__' : payload.data.id;
-    queryParams.folderId = targetFolderId;
-    queryParams.currentPage = 1;
-
+    // Stay in current folder, just refresh list
     await getList();
     ids.value = [];
   } catch (error) {
@@ -1296,9 +1171,9 @@ const submitForm = async () => {
       getList();
     } else {
       submitLoading.value = true;
-      
+
       const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-      const cos = await uploadToCOS({ 
+      const cos = await uploadToCOS({
         file: form.value.file,
         category: 'font-template',
         account: userAccount,
@@ -1306,7 +1181,7 @@ const submitForm = async () => {
         isThumbnail: false
       });
       const { key, url } = cos;
-      
+
       await fontTemplateApi.createFontTemplate({
         name: form.value.name,
         description: form.value.description,
@@ -1396,14 +1271,14 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     // 调用字体模板的AI补全接口
     const res = await fontTemplateApi.aiCompleteContent(row.id, prompt || '');
-    
+
     // 更新行数据
     if (res) {
       row.name = res.name || row.name;
       row.description = res.description || row.description;
       row.keywords = res.keywords || row.keywords;
     }
-    
+
     ElMessage.success('AI自动生成内容成功');
     if (typeof cb === 'function') cb();
     getList();
@@ -1426,9 +1301,9 @@ async function handleBatchAiGenerate() {
 
 async function submitBatchAiDialog() {
   if (!ids.value.length) return;
-  
+
   batchAiDialogLoading.value = true;
-  
+
   // 初始化进度
   batchProgress.value = {
     total: ids.value.length,
@@ -1436,32 +1311,32 @@ async function submitBatchAiDialog() {
     success: 0,
     failed: 0
   };
-  
+
   try {
     // 显示确认信息
     ElMessage.info(`开始处理 ${ids.value.length} 个字体模板，请耐心等待...`);
-    
+
     const res = await fontTemplateApi.batchAiCompleteContent({
       ids: ids.value,
       prompt: batchAiPrompt.value,
       batchSize: 5
     });
-    
+
     // 更新最终进度
     batchProgress.value.processed = res.processed;
     batchProgress.value.success = res.success;
     batchProgress.value.failed = res.failed;
-    
+
     if (res.success > 0) {
       // 显示详细结果
       let message = `批量AI补全完成：成功 ${res.success} 个，失败 ${res.failed} 个`;
-      
+
       if (res.failed > 0 && res.errors && res.errors.length > 0) {
         message += `\n失败项目：${res.errors.slice(0, 3).map(e => e.id).join(', ')}${res.errors.length > 3 ? '...' : ''}`;
       }
-      
+
       ElMessage.success(message);
-      
+
       // 刷新列表
       getList();
       // 清空选择
@@ -1477,7 +1352,7 @@ async function submitBatchAiDialog() {
     }
   } catch (error) {
     console.error('批量AI补全失败:', error);
-    
+
     // 根据错误类型显示不同的提示
     let errorMessage = '批量AI补全失败';
     if (error.response?.status === 500) {
@@ -1487,7 +1362,7 @@ async function submitBatchAiDialog() {
     } else if (error.message?.includes('timeout')) {
       errorMessage = '请求超时，请检查网络连接';
     }
-    
+
     ElMessage.error(errorMessage);
     // 重置进度
     batchProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
@@ -1517,7 +1392,7 @@ function handleGenerateThumbnail(row) {
   selectedTemplateIndex.value = 0;
   thumbnailForm.value.templateText = defaultTemplates[0].content;
   generateThumbnailDialogVisible.value = true;
-  
+
   // 弹窗打开后自动加载字体预览
   setTimeout(() => {
     if (currentRow.value?.url) {
@@ -1529,48 +1404,48 @@ function handleGenerateThumbnail(row) {
 // 前端生成缩略图
 async function submitFrontendGenerateThumbnail() {
   if (!thumbnailFormRef.value) return;
-   
+
   try {
     await thumbnailFormRef.value.validate();
     frontendGenerateLoading.value = true;
-    
+
     // 直接使用页面中的实时预览元素
     const previewElement = document.querySelector('.single-preview') as HTMLElement;
     if (!previewElement) {
       ElMessage.error('找不到预览元素，请确保预览区域已正确显示');
       return;
     }
-    
+
     // 确保预览元素有正确的尺寸
     console.log('预览元素尺寸:', previewElement.offsetWidth, 'x', previewElement.offsetHeight);
-    
+
     // 确保字体完全加载和应用
     if (loadedFontFamily.value) {
       console.log('开始等待字体加载完成...');
       console.log('当前加载的字体:', loadedFontFamily.value);
-      
+
       // 等待字体加载完成
       await document.fonts.ready;
       console.log('字体加载完成，等待渲染...');
-      
+
       // 检查字体是否已加载
       const fontFaceSet = document.fonts;
       console.log('字体集合状态:', fontFaceSet);
-      
+
       // 强制应用字体到预览元素
       previewElement.style.fontFamily = loadedFontFamily.value;
-      
+
       // 触发重排，确保字体样式被应用
       previewElement.offsetHeight;
-      
+
       // 等待更长时间确保字体完全渲染
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // 再次检查字体是否已应用
       const computedStyle = window.getComputedStyle(previewElement);
       console.log('当前字体:', computedStyle.fontFamily);
       console.log('字体是否包含自定义字体:', computedStyle.fontFamily.includes(loadedFontFamily.value));
-      
+
       // 如果字体还没有应用，再等待一段时间
       if (!computedStyle.fontFamily.includes(loadedFontFamily.value)) {
         console.log('字体未应用，继续等待...');
@@ -1578,7 +1453,7 @@ async function submitFrontendGenerateThumbnail() {
         // 再次强制应用字体
         previewElement.style.fontFamily = loadedFontFamily.value;
         previewElement.offsetHeight;
-        
+
         // 再次检查
         const finalComputedStyle = window.getComputedStyle(previewElement);
         console.log('最终字体:', finalComputedStyle.fontFamily);
@@ -1586,18 +1461,18 @@ async function submitFrontendGenerateThumbnail() {
     } else {
       console.log('没有加载的字体，使用系统默认字体');
     }
-    
+
     console.log('开始生成图片...');
-    
+
     // 使用htmlToPngFile方法生成PNG文件
     const file = await htmlToPngFile(previewElement, `${currentRow.value.name || 'font'}_thumbnail.png`);
     console.log('PNG文件生成完成:', file);
-    
+
     console.log('PNG文件生成完成，准备上传到COS');
-    
+
     // 上传到COS
     const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-    const cos = await uploadToCOS({ 
+    const cos = await uploadToCOS({
       file,
       category: 'font-template',
       account: userAccount,
@@ -1605,17 +1480,17 @@ async function submitFrontendGenerateThumbnail() {
       isThumbnail: true
     });
     const { url } = cos;
-    
+
     // 调用后端API更新缩略图路径
     await fontTemplateApi.updateFontTemplate({
       id: currentRow.value.id,
       thumbnail: url
     });
-    
+
     ElMessage.success('前端缩略图生成成功');
     generateThumbnailDialogVisible.value = false;
     getList(); // 刷新列表
-    
+
   } catch (error) {
     console.error('前端缩略图生成失败:', error);
     ElMessage.error('前端缩略图生成失败，请稍后重试');
@@ -1629,22 +1504,22 @@ async function loadFontForPreview() {
   if (!currentRow.value?.url) {
     return;
   }
-  
+
   // 重置之前的状态
   loadedFontFamily.value = '';
   fontLoading.value = true;
-  
+
   try {
     console.log('开始加载字体:', currentRow.value.url);
-    
+
     // 创建字体ID
     const fontId = `font_${Date.now()}`;
-    
+
     // 先下载字体文件，然后创建Blob URL（参考1s项目的成功做法）
     const response = await fetch(currentRow.value.url);
     const fontBlob = await response.blob();
     const fontBlobUrl = URL.createObjectURL(fontBlob);
-    
+
     // 创建字体样式标签
     const fontStyle = document.createElement("style");
     fontStyle.innerHTML = `
@@ -1657,45 +1532,45 @@ async function loadFontForPreview() {
         font-display: block;
       }
     `;
-    
+
     // 添加到文档头部
     document.head.appendChild(fontStyle);
-    
+
     // 等待字体加载完成
     console.log('等待字体加载...');
     await document.fonts.ready;
-    
+
     // 使用FontFace API检查字体加载状态
     const fontFace = new FontFace(fontId, `url(${fontBlobUrl})`);
     await fontFace.load();
-    
+
     // 将字体添加到字体集合（兼容性处理）
     try {
       (document.fonts as any).add(fontFace);
     } catch (error) {
       console.warn('FontFace API add方法不支持，跳过:', error);
     }
-    
+
     // 设置字体名称
     loadedFontFamily.value = fontId;
-    
+
     // 强制触发字体重新渲染
     const previewElement = document.querySelector('.single-preview') as HTMLElement;
     if (previewElement) {
       previewElement.style.fontFamily = fontId;
       // 触发重排
       previewElement.offsetHeight;
-      
+
       // 等待字体应用
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // 验证字体是否已应用
       const computedStyle = window.getComputedStyle(previewElement);
       console.log('字体应用状态:', computedStyle.fontFamily);
     }
-    
+
     console.log('字体加载成功:', fontId);
-    
+
   } catch (error) {
     console.error('字体加载失败:', error);
     // 静默失败，不显示错误消息
@@ -1778,28 +1653,36 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.pb-4.flex, .search-bar {
+.pb-4.flex,
+.search-bar {
   gap: 16px;
   flex-wrap: wrap;
   align-items: center;
 }
-.pb-4.flex > *, .search-bar > * {
+
+.pb-4.flex>*,
+.search-bar>* {
   margin-bottom: 0;
 }
 
 @media (max-width: 600px) {
-  .pb-4.flex, .search-bar {
+
+  .pb-4.flex,
+  .search-bar {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 8px !important;
     padding-bottom: 8px !important;
   }
-  .pb-4.flex > *, .search-bar > * {
+
+  .pb-4.flex>*,
+  .search-bar>* {
     width: 100% !important;
     min-width: 0 !important;
     margin-right: 0 !important;
     margin-bottom: 8px !important;
   }
+
   .el-input,
   .el-select,
   .el-button,
@@ -1808,9 +1691,11 @@ onUnmounted(() => {
     min-width: 0 !important;
     box-sizing: border-box;
   }
+
   .content-container {
     padding: 0 4px !important;
   }
+
   .common-table {
     overflow-x: auto;
   }
@@ -1821,14 +1706,14 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-    
+
     .el-icon {
       margin-right: 4px;
       font-size: 14px;
       width: 14px;
       height: 14px;
     }
-    
+
     span {
       font-size: 13px;
       line-height: 1.5;
@@ -1843,19 +1728,19 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  
+
   .form-label {
     font-size: 14px;
     color: #606266;
     font-weight: 500;
     line-height: 1.4;
   }
-  
+
   .el-input-number,
   .el-color-picker {
     width: 100%;
   }
-  
+
   .el-color-picker {
     height: 32px;
   }
@@ -1866,7 +1751,7 @@ onUnmounted(() => {
   .el-form {
     .el-form-item {
       margin-bottom: 20px;
-      
+
       .el-form-item__label {
         font-weight: 500;
         color: #303133;
@@ -1911,9 +1796,11 @@ onUnmounted(() => {
   0% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
+
   100% {
     opacity: 1;
   }
@@ -2021,13 +1908,13 @@ onUnmounted(() => {
   .preview-container {
     padding: 12px;
   }
-  
+
   .preview-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .preview-image.compact {
     /* 在小屏幕上自适应高度 */
     width: 640px !important;
@@ -2036,7 +1923,7 @@ onUnmounted(() => {
     min-height: 320px !important;
     height: auto !important;
   }
-  
+
   .preview-content.compact {
     min-height: 380px;
     padding: 20px 0;
@@ -2053,7 +1940,7 @@ onUnmounted(() => {
     min-height: 260px !important;
     height: auto !important;
   }
-  
+
   .preview-content.compact {
     min-height: 320px;
     padding: 16px 0;

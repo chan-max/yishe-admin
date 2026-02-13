@@ -201,11 +201,11 @@
                 制作设计模型({{ ids.length }})
               </el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
-                }})</el-button>
+              }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
-                }})</el-button>
+              }})</el-button>
               <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
-                }})</el-button>
+              }})</el-button>
             </div>
           </div>
         </div>
@@ -679,9 +679,9 @@
                   class="folder-icon" alt="folder" />
                 <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
                 <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
-                  }}</span>
+                }}</span>
                 <span v-if="data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount || 0
-                  }})</span>
+                }})</span>
               </div>
               <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
                 <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
@@ -2434,12 +2434,7 @@ async function handleFolderDrop(data: any) {
     await batchMoveStickers({ ids: movingIds, folderId: targetFolderId })
     ElMessage.success(`已移动 ${movingIds.length} 个素材到 ${targetPath || '根目录'}`)
 
-    // 同步当前选中目录与查询条件
-    selectedStickerFolderId.value = data.id === '__root__' ? '__root__' : data.id
-    selectedStickerFolderPath.value = targetPath
-    queryParams.folderId = targetFolderId
-    queryParams.currentPage = 1
-
+    // Stay in current folder, just refresh tree and list
     await loadStickerFolderTree() // 确保右侧数量与树同步刷新
     await getList()
     resetCheckStatus()
