@@ -26,7 +26,7 @@
           @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
           @drop.prevent="handleFolderDrop(data)">
           <div class="sticker-folder-node-content">
-            <template v-if="data.isAll">
+            <template v-if="data.isAll || data.id === '__root__'">
               <el-icon class="folder-icon" style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
                 <Files />
               </el-icon>
@@ -38,7 +38,9 @@
             </template>
 
             <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">{{ data.name }}</span>
-            <span v-if="showCount && data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount ||
+            <span v-if="showCount && data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
+              data.stickerCount
+              ||
               0 }})</span>
           </div>
 
@@ -139,7 +141,16 @@ async function loadTree() {
     isAll: true,
   };
 
-  treeData.value = [allNode, ...rootFolders];
+  const rootNode: any = {
+    id: "__root__",
+    name: "未分类",
+    path: "",
+    parentId: null,
+    children: [],
+    stickerCount: 0,
+  };
+
+  treeData.value = [allNode, rootNode, ...rootFolders];
   nextTick(() => {
     // If current modelValue is null (old root), set to __root__? Or if it's __all__?
     // User might have passed __root__ as initial value.

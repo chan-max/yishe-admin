@@ -612,7 +612,7 @@ function handleFolderChange(payload: { folderId: string | null }) {
   if (payload.folderId === 'all') {
     queryParams.folderId = undefined as any;
   } else if (payload.folderId === null) {
-    queryParams.folderId = '0'; // '0' represents Uncategorized (Root)
+    queryParams.folderId = null; // null represents Uncategorized (Root)
   } else {
     queryParams.folderId = payload.folderId;
   }

@@ -201,11 +201,11 @@
                 制作设计模型({{ ids.length }})
               </el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
-              }})</el-button>
+                }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
-              }})</el-button>
+                }})</el-button>
               <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
-              }})</el-button>
+                }})</el-button>
             </div>
           </div>
         </div>
@@ -392,7 +392,7 @@
                 style="flex: 1; overflow-y: auto;">
                 <template #default="{ node, data }">
                   <div class="custom-tree-node" style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
-                    <el-icon v-if="data.isRoot" style="color: var(--el-color-primary)">
+                    <el-icon v-if="data.isRoot || data.id === '__root__'" style="color: var(--el-color-primary)">
                       <Files />
                     </el-icon>
                     <el-icon v-else>
@@ -675,7 +675,7 @@
               @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
               @drop.prevent="handleFolderDrop(data)">
               <div class="sticker-folder-node-content">
-                <template v-if="data.isAll">
+                <template v-if="data.isAll || data.id === '__root__'">
                   <el-icon class="folder-icon"
                     style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
                     <Files />
@@ -688,8 +688,9 @@
                 </template>
                 <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
                 }}</span>
-                <span v-if="data.id !== '__root__'" class="sticker-folder-node-count">({{ data.stickerCount || 0
-                }})</span>
+                <span v-if="data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
+                  data.stickerCount || 0
+                  }})</span>
               </div>
               <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
                 <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
@@ -2364,8 +2365,17 @@ async function loadStickerFolderTree() {
       isAll: true
     }
 
+    const rootNode = {
+      id: '__root__',
+      name: '未分类',
+      path: '',
+      parentId: null,
+      children: [] as any[],
+      stickerCount: 0
+    }
+
     // 创建根目录节点，放在最上方
-    stickerFolderTreeData.value = [allNode, ...rootFolders]
+    stickerFolderTreeData.value = [allNode, rootNode, ...rootFolders]
 
     // 确保根目录节点被选中
     nextTick(() => {
@@ -2395,7 +2405,7 @@ function handleStickerFolderNodeClick(data: any) {
     // 如果是根目录节点
     selectedStickerFolderId.value = '__root__'
     selectedStickerFolderPath.value = ''
-    queryParams.folderId = '0' // 使用 '0' 代表未分类（根目录）
+    queryParams.folderId = 'root' // 使用 'root' 代表未分类（根目录）
   } else {
     selectedStickerFolderId.value = data.id
     selectedStickerFolderPath.value = data.path || ''
@@ -3073,7 +3083,8 @@ function resetPsdSetState() {
   psdSetTemplateSearchText.value = ''
   psdSetTemplatePageParams.currentPage = 1
   psdSetTemplatePageParams.total = 0
-  selectedPsdFolderId.value = '__root__'
+  psdSetTemplatePageParams.total = 0
+  selectedPsdFolderId.value = '__all__'
 }
 
 // 加载PSD模板文件夹树
@@ -3083,16 +3094,34 @@ async function loadPsdFolderTree() {
     const rootFolders = (res || []).filter((folder: any) => folder.parentId === null || folder.parentId === undefined)
 
     // 创建根目录节点
-    const rootNode = {
-      id: '__root__',
+    // 创建"全部"节点
+    const allNode = {
+      id: '__all__',
       name: '全部',
       path: '',
       parentId: null,
-      children: rootFolders,
+      children: rootFolders, // rootFolders nested under All? Or Siblings? 
+      // Wait, if I want Uncategorized as separate, Unc should be sibling of folders?
+      // But rootFolders contains actual folders.
+      // If I nest rootFolders under All, then Uncategorized should also be under All?
+      // Current implementation: children: rootFolders.
+      // I should probably keep nest structure for PSD tree if that's preferred?
+      // Or make it flat like Main Tree?
+      // I'll try Flat to be consistent.
+      // children: [] for All.
       isRoot: true
     }
 
-    psdFolderTreeData.value = [rootNode]
+    const uncatNode = {
+      id: '__root__',
+      name: '未分类',
+      path: '',
+      parentId: null,
+      children: [],
+      isRoot: false
+    }
+
+    psdFolderTreeData.value = [allNode, uncatNode, ...rootFolders]
 
     nextTick(() => {
       if (psdFolderTreeRef.value && selectedPsdFolderId.value) {
@@ -3106,7 +3135,9 @@ async function loadPsdFolderTree() {
 
 // PSD文件夹节点点击
 function handlePsdFolderNodeClick(data: any) {
-  if (data.id === '__root__') {
+  if (data.id === '__all__') {
+    selectedPsdFolderId.value = '__all__'
+  } else if (data.id === '__root__') {
     selectedPsdFolderId.value = '__root__'
   } else {
     selectedPsdFolderId.value = data.id
@@ -3124,7 +3155,7 @@ async function loadPsdTemplatesForPsdSet() {
       pageSize: psdSetTemplatePageParams.pageSize,
       searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
       enabled: true,
-      folderId: selectedPsdFolderId.value === '__root__' ? null : selectedPsdFolderId.value
+      folderId: selectedPsdFolderId.value === '__all__' ? undefined : (selectedPsdFolderId.value === '__root__' ? null : selectedPsdFolderId.value)
     })
     psdSetTemplates.value = res.list || []
     psdSetTemplatePageParams.total = res.total || 0
