@@ -441,6 +441,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   }
 
+  , {
+    path: '/shop',
+    component: Layout,
+    redirect: '/shop/index',
+    name: 'Shop',
+    meta: {
+      title: '运营管理',
+      icon: 'ep:shop',
+      order: 5,
+      alwaysShow: true
+    },
+    children: [
+      {
+        path: 'index',
+        component: () => import('@/views/shop/index.vue'),
+        name: 'ShopIndex',
+        meta: {
+          title: '店铺列表'
+        }
+      }
+    ]
+  }
 ]
 
 export default remainingRouter
