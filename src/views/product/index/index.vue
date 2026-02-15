@@ -1,1893 +1,1561 @@
 <template>
-  <ContentWrap>
-    <!-- 折叠状态：显示常用搜索和操作 -->
-    <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
-      <div style="flex: 1"></div>
-      <form-item label="按ID搜索">
-        <el-input
-          v-model="queryParams.id"
-          clearable
-          placeholder="输入ID"
-          style="width: 160px"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-      </form-item>
-      <form-item label="按产品代码">
-        <el-input
-          v-model="queryParams.code"
-          clearable
-          placeholder="输入产品代码"
-          style="width: 160px"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-      </form-item>
-      <form-item label="搜索">
-        <el-input
-          v-model="queryParams.searchText"
-          clearable
-          placeholder="请输入搜索内容"
-          style="width: 160px"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-      </form-item>
-      <form-item label="随机顺序">
-        <el-switch
-          v-model="queryParams.random"
-          active-text=""
-          inactive-text=""
-          size="small"
-          @change="handleSearch"
-        />
-      </form-item>
-      <form-item label="显示关联信息">
-        <el-switch
-          v-model="showRelations"
-          active-text=""
-          inactive-text=""
-          size="small"
-          @change="handleShowRelationsChange"
-        />
-      </form-item>
-      <form-item class="date-range-picker">
-        <DateRangePicker
-          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }"
-        />
-      </form-item>
-      <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
-      <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-        展开筛选
-      </el-button>
+  <div class="flex gap-3 overflow-visible">
+    <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
+      <div class="h-full overflow-hidden">
+        <div class="h-full w-[280px]">
+          <ContentWrap class="!p-0 h-full">
+            <FolderTree v-model="queryParams.folderId" folder-category="product" width="100%" :show-border="false"
+              class="h-full" @change="handleFolderChange" />
+          </ContentWrap>
+        </div>
+      </div>
+      <div
+        class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
+        @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
+        <el-icon :size="14">
+          <DArrowRight v-if="folderTreeCollapsed" />
+          <DArrowLeft v-else />
+        </el-icon>
+      </div>
     </div>
-
-    <!-- 展开状态：显示全部搜索功能 -->
-    <div v-show="!actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
-      <div style="flex: 1"></div>
-      <form-item label="按ID搜索">
-        <el-input
-          v-model="queryParams.id"
-          clearable
-          placeholder="输入ID"
-          style="width: 160px"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-      </form-item>
-      <form-item label="按产品代码">
-        <el-input
-          v-model="queryParams.code"
-          clearable
-          placeholder="输入产品代码"
-          style="width: 160px"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-      </form-item>
-      <form-item label="搜索">
-        <el-input
-          v-model="queryParams.searchText"
-          clearable
-          placeholder="请输入搜索内容"
-          style="width: 160px"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-      </form-item>
-      <form-item label="随机顺序">
-        <el-switch
-          v-model="queryParams.random"
-          active-text=""
-          inactive-text=""
-          size="small"
-          @change="handleSearch"
-        />
-      </form-item>
-      <form-item label="显示关联信息">
-        <el-switch
-          v-model="showRelations"
-          active-text=""
-          inactive-text=""
-          size="small"
-          @change="handleShowRelationsChange"
-        />
-      </form-item>
-      <form-item class="date-range-picker">
-        <DateRangePicker
-          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }"
-        />
-      </form-item>
-      <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
-
-      <!-- 操作按钮（自适应换行，尽量靠右） -->
-      <div class="shrink-0 ml-auto flex gap-2">
-        <!-- 修改按钮 -->
-        <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
-          新增
-        </el-button>
-        <!-- 删除按钮 -->
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除
-        </el-button>
-        <!-- 批量发布/下架 -->
-        <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Share">
-          批量发布
-        </el-button>
-        <el-button type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">
-          批量下架
-        </el-button>
+    <ContentWrap class="flex-1 min-w-0">
+      <!-- 折叠状态：显示常用搜索和操作 -->
+      <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
+        <div style="flex: 1"></div>
+        <form-item label="按ID搜索">
+          <el-input v-model="queryParams.id" clearable placeholder="输入ID" style="width: 160px"
+            @keyup.enter="handleSearch" @clear="handleSearch" />
+        </form-item>
+        <form-item label="按产品代码">
+          <el-input v-model="queryParams.code" clearable placeholder="输入产品代码" style="width: 160px"
+            @keyup.enter="handleSearch" @clear="handleSearch" />
+        </form-item>
+        <form-item label="搜索">
+          <el-input v-model="queryParams.searchText" clearable placeholder="请输入搜索内容" style="width: 160px"
+            @keyup.enter="handleSearch" @clear="handleSearch" />
+        </form-item>
+        <form-item label="随机顺序">
+          <el-switch v-model="queryParams.random" active-text="" inactive-text="" size="small" @change="handleSearch" />
+        </form-item>
+        <form-item label="显示关联信息">
+          <el-switch v-model="showRelations" active-text="" inactive-text="" size="small"
+            @change="handleShowRelationsChange" />
+        </form-item>
+        <form-item class="date-range-picker">
+          <DateRangePicker
+            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }" />
+        </form-item>
+        <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
         <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-          收起筛选
+          展开筛选
         </el-button>
       </div>
-    </div>
 
-    <!-- 表格展示 -->
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
+      <!-- 展开状态：显示全部搜索功能 -->
+      <div v-show="!actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
+        <div style="flex: 1"></div>
+        <form-item label="按ID搜索">
+          <el-input v-model="queryParams.id" clearable placeholder="输入ID" style="width: 160px"
+            @keyup.enter="handleSearch" @clear="handleSearch" />
+        </form-item>
+        <form-item label="按产品代码">
+          <el-input v-model="queryParams.code" clearable placeholder="输入产品代码" style="width: 160px"
+            @keyup.enter="handleSearch" @clear="handleSearch" />
+        </form-item>
+        <form-item label="搜索">
+          <el-input v-model="queryParams.searchText" clearable placeholder="请输入搜索内容" style="width: 160px"
+            @keyup.enter="handleSearch" @clear="handleSearch" />
+        </form-item>
+        <form-item label="随机顺序">
+          <el-switch v-model="queryParams.random" active-text="" inactive-text="" size="small" @change="handleSearch" />
+        </form-item>
+        <form-item label="显示关联信息">
+          <el-switch v-model="showRelations" active-text="" inactive-text="" size="small"
+            @change="handleShowRelationsChange" />
+        </form-item>
+        <form-item class="date-range-picker">
+          <DateRangePicker
+            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }" />
+        </form-item>
+        <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
 
-        <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown" size="small">
-            <el-button type="primary" link size="small">
-              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu class="operation-menu-compact">
-                <!-- 基础操作 -->
-                <el-dropdown-item command="view-detail">
-                  <el-icon><View /></el-icon>
-                  <span>查看详情</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="edit" divided>
-                  <el-icon><Edit /></el-icon>
-                  <span>编辑</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="delete">
-                  <el-icon><Delete /></el-icon>
-                  <span>删除</span>
-                </el-dropdown-item>
+        <!-- 操作按钮（自适应换行，尽量靠右） -->
+        <div class="shrink-0 ml-auto flex gap-2">
+          <!-- 修改按钮 -->
+          <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
+            新增
+          </el-button>
+          <!-- 删除按钮 -->
+          <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
+            批量删除
+          </el-button>
+          <!-- 批量移动 -->
+          <el-button type="warning" :disabled="!selectedRows.length" @click="handleOpenBatchMove" :icon="Folder">
+            批量移动
+          </el-button>
+          <!-- 批量发布/下架 -->
+          <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Share">
+            批量发布
+          </el-button>
+          <el-button type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">
+            批量下架
+          </el-button>
+          <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
+            收起筛选
+          </el-button>
+        </div>
+      </div>
 
-                <!-- 发布状态标记 -->
-                <el-dropdown-item divided command="mark-published">
-                  <el-icon><Share /></el-icon>
-                  <span>发布状态：标记为已发布</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="mark-unpublished">
-                  <el-icon><Refresh /></el-icon>
-                  <span>发布状态：标记为未发布</span>
-                </el-dropdown-item>
+      <!-- 表格展示 -->
+      <div class="common-table">
+        <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
+          @checkbox-all="checkboxAllChange">
 
-                <!-- 工具类 -->
-                <el-dropdown-item command="ai-generate" divided>
-                  <el-icon><MagicStick /></el-icon>
-                  <span>AI生成内容</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="generate-code">
-                  <el-icon><Refresh /></el-icon>
-                  <span>生成产品代码</span>
-                </el-dropdown-item>
-                <el-dropdown-item 
-                  command="generate-video"
-                  :disabled="generatingVideoId === row.id || !row.images || row.images.length === 0"
-                >
-                  <el-icon><VideoPlay /></el-icon>
-                  <span>{{ generatingVideoId === row.id ? '视频生成中...' : '生成视频' }}</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="export-social-media">
-                  <el-icon><Upload /></el-icon>
-                  <span>导出社交媒体数据</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="publish-to-queue">
-                  <el-icon><Share /></el-icon>
-                  <span>发布到平台（队列）</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="view-publish-tasks">
-                  <el-icon><View /></el-icon>
-                  <span>查看发布详情</span>
-                </el-dropdown-item>
-                <el-dropdown-item 
-                  v-if="row.psdSetId"
-                  command="copy-images-from-psdset" 
-                >
-                  <el-icon><Picture /></el-icon>
-                  <span>复制关联PSD套图信息到商品</span>
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </template>
+          <template #operationDefaultSlot="{ row }">
+            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
+              class="operation-dropdown" size="small">
+              <el-button type="primary" link size="small">
+                操作<el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <!-- 基础操作 -->
+                  <el-dropdown-item command="view-detail">
+                    <el-icon>
+                      <View />
+                    </el-icon>
+                    <span>查看详情</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="edit" divided>
+                    <el-icon>
+                      <Edit />
+                    </el-icon>
+                    <span>编辑</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete">
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
+                    <span>删除</span>
+                  </el-dropdown-item>
 
-        <template #searchKeywordsHeader>
-          <div class="flex items-center gap-1">
-            <span>搜索关键字</span>
-            <el-tooltip
-              effect="dark"
-              content="搜索关键词 不会显示在商品信息中，只会在搜索时供搜索引擎使用"
-              placement="top"
-            >
-              <el-icon class="text-gray-400 cursor-help"><QuestionFilled /></el-icon>
-            </el-tooltip>
-          </div>
-        </template>
+                  <!-- 发布状态标记 -->
+                  <el-dropdown-item divided command="mark-published">
+                    <el-icon>
+                      <Share />
+                    </el-icon>
+                    <span>发布状态：标记为已发布</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="mark-unpublished">
+                    <el-icon>
+                      <Refresh />
+                    </el-icon>
+                    <span>发布状态：标记为未发布</span>
+                  </el-dropdown-item>
 
-        <template #urlDefaultSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <el-carousel 
-              v-if="row.images && row.images.length > 0"
-              :interval="3000"
-              height="100px"
-              indicator-position="none"
-              :arrow="row.images.length > 1 ? 'always' : 'never'"
-              class="w-40 custom-carousel"
-            >
-              <el-carousel-item v-for="(url, index) in row.images" :key="index">
-                <el-image 
-                  :src="url"
-                  :preview-src-list="row.images"
-                  :initial-index="index"
-                  :preview-teleported="true"
-                  :hide-on-click-modal="false"
-                  :preview-class="'custom-image-preview'"
-                  class="w-full h-full object-contain rounded cursor-pointer"
-                  fit="contain"
-                />
-                <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                  {{ index + 1 }}/{{ row.images.length }}
-                </div>
-              </el-carousel-item>
-            </el-carousel>
-            <span v-else class="text-gray-400">暂无图片</span>
-          </div>
-        </template>
-
-        <template #videoDefaultSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <el-carousel 
-              v-if="row.videos && row.videos.length > 0"
-              :interval="3000"
-              height="100px"
-              indicator-position="none"
-              :arrow="row.videos.length > 1 ? 'always' : 'never'"
-              class="w-40 custom-carousel"
-            >
-              <el-carousel-item v-for="(url, index) in row.videos" :key="index">
-            <div class="relative cursor-pointer w-full h-full flex items-center justify-center bg-black rounded" @click="handleVideoPreview(row.videos, index, row)">
-              <video :src="url" class="max-h-[100px] w-auto h-auto object-contain rounded" muted preload="metadata" />
-              <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                {{ index + 1 }}/{{ row.videos.length }}
-              </div>
-            </div>
-              </el-carousel-item>
-            </el-carousel>
-            <span v-else class="text-gray-400">暂无视频</span>
-          </div>
-        </template>
-
-        <template #idSlot="{ row }">
-          <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
-            <span class="text-sm">{{ row.id }}</span>
-            <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-              <DocumentCopy />
-            </el-icon>
-          </div>
-        </template>
-
-        <template #codeSlot="{ row }">
-          <el-tag v-if="row.code" type="info" size="small">
-            {{ row.code }}
-          </el-tag>
-          <span v-else class="text-gray-400 text-xs">未生成</span>
-        </template>
-
-        <template #nameSlot="{ row }">
-          <div class="flex flex-col gap-1">
-            <div v-if="row.name" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.name, '商品名称')">
-              <span class="text-sm">{{ row.name }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="row.enName" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.enName, '英文名称')">
-              <span class="text-sm">{{ row.enName }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="!row.name && !row.enName" class="text-sm text-gray-400">未设置</div>
-          </div>
-        </template>
-
-        <template #descriptionSlot="{ row }">
-          <div class="flex flex-col gap-1">
-            <div v-if="row.description" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.description, '商品描述')">
-              <span class="text-sm">{{ row.description }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="row.enDescription" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.enDescription, '英文描述')">
-              <span class="text-sm">{{ row.enDescription }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="!row.description && !row.enDescription" class="text-sm text-gray-400">未设置</div>
-          </div>
-        </template>
-
-        <template #keywordsSlot="{ row }">
-          <div class="flex flex-col gap-1">
-            <div v-if="row.keywords" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.keywords, '关键词')">
-              <span class="text-sm">{{ row.keywords }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="row.enKeywords" class="flex items-center gap-2 group cursor-pointer" @click.stop="copyText(row.enKeywords, '英文关键词')">
-              <span class="text-sm">{{ row.enKeywords }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="!row.keywords && !row.enKeywords" class="text-sm text-gray-400">未设置</div>
-          </div>
-        </template>
-
-        <template #searchKeywordsSlot="{ row }">
-          <div class="flex flex-col gap-1">
-            <div v-if="row.searchKeywords" class="flex items-start gap-2 group cursor-pointer" @click.stop="copyText(row.searchKeywords, '搜索关键字')">
-              <span class="text-sm line-clamp-2 flex-1">{{ row.searchKeywords }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="row.enSearchKeywords" class="flex items-start gap-2 group cursor-pointer" @click.stop="copyText(row.enSearchKeywords, '英文搜索关键字')">
-              <span class="text-sm line-clamp-2 flex-1">{{ row.enSearchKeywords }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
-                <DocumentCopy />
-              </el-icon>
-            </div>
-            <div v-if="!row.searchKeywords && !row.enSearchKeywords" class="text-sm text-gray-400">未设置</div>
-          </div>
-        </template>
-
-        <template #typeSlot="{ row }">
-          <span v-if="row.type">{{ row.type }}</span>
-          <span v-else class="text-gray-400 text-xs">未设置</span>
-        </template>
-
-        <!-- 关联信息列：显示关联了哪个内容 -->
-        <template #relationsSlot="{ row }">
-          <div class="relations-summary">
-            <div v-if="row.psdSet" class="relations-info">
-              <!-- PSD 套图 -->
-              <div v-if="row.psdSet" class="relation-section-item">
-                <div class="relation-header">
-                  <span class="relation-label">PSD套图：</span>
-                </div>
-                <vxe-grid
-                  :data="[row.psdSet]"
-                  :show-header="true"
-                  border
-                  size="mini"
-                  class="relation-sub-grid"
-                  :columns="psdSetColumns"
-                >
-                  <template #psdSetImagesSlot="{ row: psdRow }">
-                    <div class="flex gap-1 flex-wrap">
-                      <div
-                        v-for="(img, idx) in getPsdSetImages(psdRow).slice(0, 3)"
-                        :key="idx"
-                        class="relation-thumb-wrapper"
-                      >
-                        <el-image
-                          v-if="img"
-                          :src="img"
-                          :preview-src-list="getPsdSetImages(psdRow)"
-                          :initial-index="idx"
-                          :preview-teleported="true"
-                          :hide-on-click-modal="false"
-                          class="relation-thumb-image"
-                          fit="contain"
-                        />
-                        <span v-else class="text-gray-400 text-xs">无</span>
-                      </div>
-                      <span v-if="getPsdSetImages(psdRow).length > 3" class="text-xs text-gray-500">+{{ (getPsdSetImages(psdRow).length - 3) }}</span>
-                      <span v-if="!getPsdSetImages(psdRow).length" class="text-gray-400 text-xs">无</span>
-                    </div>
-                  </template>
-                </vxe-grid>
-              </div>
-            </div>
-            <span v-else class="text-gray-400 text-sm">无关联</span>
-          </div>
-        </template>
-
-        <!-- 旧的关联列模板已移除，统一使用 relationsSlot -->
-      </vxe-grid>
-    </div>
-
-    <!-- 分页 -->
-    <div class="py-4 flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
-
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="100%"
-      :fullscreen="true"
-      @close="dialogClose"
-      align-center
-    >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-row :gutter="20">
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="商品名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入商品名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="英文名称" prop="enName">
-              <el-input v-model="form.enName" placeholder="请输入英文名称" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="商品类型" prop="type">
-              <el-select
-                v-model="form.type"
-                placeholder="请选择商品类型"
-                clearable
-                filterable
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="category in PRODUCT_CATEGORIES"
-                  :key="category.value"
-                  :label="category.label"
-                  :value="category.value"
-                >
-                  <span>{{ category.label }}</span>
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="商品标签" prop="tags">
-              <el-input v-model="form.tags" placeholder="请输入商品标签，多个标签用逗号分隔" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
-            <el-form-item label="商品番号" prop="code">
-              <el-input v-model="form.code" placeholder="留空则自动生成" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="商品描述" prop="description">
-              <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入商品描述" />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="英文描述" prop="enDescription">
-              <el-input v-model="form.enDescription" type="textarea" :rows="4" placeholder="请输入英文描述" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="关键词" prop="keywords">
-              <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="英文关键词" prop="enKeywords">
-              <el-input v-model="form.enKeywords" placeholder="请输入英文关键词，多个关键词用逗号分隔" />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="搜索关键字" prop="searchKeywords">
-              <el-input 
-                v-model="form.searchKeywords" 
-                type="textarea" 
-                :rows="3" 
-                placeholder="请输入搜索关键字，逗号分隔，用于优化搜索功能。例如：黄色,体恤,T恤,短袖,卡通,动物,男款,童装,纯棉,休闲,日常,聚会,可爱,儿童,上衣" 
-              />
-              <div class="text-xs text-gray-500 mt-1">
-                提示：建议包含商品名称、颜色、材质、风格、适用人群、使用场合等相关词汇，提高搜索命中率
-              </div>
-            </el-form-item>
-          </el-col>
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="英文搜索关键字" prop="enSearchKeywords">
-              <el-input 
-                v-model="form.enSearchKeywords" 
-                type="textarea" 
-                :rows="3" 
-                placeholder="请输入英文搜索关键字，逗号分隔，用于优化搜索功能。例如：yellow,T-shirt,short sleeve,cartoon,animal,men,kids,cotton,casual,daily,party,cute,children,top" 
-              />
-              <div class="text-xs text-gray-500 mt-1">
-                提示：建议包含商品名称、颜色、材质、风格、适用人群、使用场合等相关词汇的英文表达，提高搜索命中率
-              </div>
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="商品图片" prop="images">
-              <ProductImageUpload 
-                ref="productImageUploadRef"
-                v-model="form.images" 
-                :max-count="10" 
-                @files-change="handleFilesChange"
-              />
-            </el-form-item>
-          </el-col>
-
-          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
-            <el-form-item label="商品视频" prop="videos">
-              <ProductVideoUpload
-                ref="productVideoUploadRef"
-                v-model="form.videos"
-                :max-count="5"
-                @files-change="handleVideoFilesChange"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 发布弹窗 -->
-    <el-dialog
-      title="发布到多媒体平台"
-      v-model="publishDialogVisible"
-      width="100%"
-      :fullscreen="true"
-      @close="publishDialogClose"
-      align-center
-    >
-      <div class="p-3">
-        <el-alert
-          title="多媒体说明"
-          description="默认引用设计模型缩略图、相关截图和视频，可勾选选择图片和视频"
-          type="info"
-          :closable="false"
-          show-icon
-          class="mb-3"
-        />
-        
-        <h3 class="text-base font-medium my-2">选择发布平台</h3>
-        
-        <!-- 平台选择 -->
-        <el-checkbox-group v-model="selectedPlatforms" class="mb-4">
-          <el-checkbox label="douyin">抖音</el-checkbox>
-          <el-checkbox label="xiaohongshu">小红书</el-checkbox>
-          <el-checkbox label="weibo">微博</el-checkbox>
-          <el-checkbox label="kuaishou">快手</el-checkbox>
-        </el-checkbox-group>
-        
-        <!-- 平台表单 -->
-        <div class="platform-grid">
-          <div v-for="platform in selectedPlatforms" :key="platform" class="platform-item">
-            <el-card class="platform-form-compact" shadow="hover">
-              <template #header>
-                <div class="flex items-center">
-                  <span class="text-base font-medium">{{ getPlatformName(platform) }}</span>
-                </div>
+                  <!-- 工具类 -->
+                  <el-dropdown-item command="ai-generate" divided>
+                    <el-icon>
+                      <MagicStick />
+                    </el-icon>
+                    <span>AI生成内容</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="generate-code">
+                    <el-icon>
+                      <Refresh />
+                    </el-icon>
+                    <span>生成产品代码</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="generate-video"
+                    :disabled="generatingVideoId === row.id || !row.images || row.images.length === 0">
+                    <el-icon>
+                      <VideoPlay />
+                    </el-icon>
+                    <span>{{ generatingVideoId === row.id ? '视频生成中...' : '生成视频' }}</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="export-social-media">
+                    <el-icon>
+                      <Upload />
+                    </el-icon>
+                    <span>导出社交媒体数据</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="publish-to-queue">
+                    <el-icon>
+                      <Share />
+                    </el-icon>
+                    <span>发布到平台（队列）</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="view-publish-tasks">
+                    <el-icon>
+                      <View />
+                    </el-icon>
+                    <span>查看发布详情</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="row.psdSetId" command="copy-images-from-psdset">
+                    <el-icon>
+                      <Picture />
+                    </el-icon>
+                    <span>复制关联PSD套图信息到商品</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
               </template>
-              <!-- 只在表单已初始化时渲染 -->
-              <el-form v-if="publishForm[platform]" :model="publishForm[platform]" label-width="60px" size="small" :data-platform="platform">
-                <el-form-item v-if="platform !== 'weibo'" label="标题" required>
-                  <el-input 
-                    v-model="publishForm[platform].title" 
-                    :placeholder="`请输入${getPlatformName(platform)}标题`"
-                  />
-                </el-form-item>
-                <el-form-item label="内容" required>
-                  <el-input 
-                    v-model="publishForm[platform].content" 
-                    type="textarea" 
-                    :rows="2"
-                    :autosize="{ minRows: 2, maxRows: 8 }"
-                    :placeholder="`请输入${getPlatformName(platform)}内容`"
-                    @input="handleContentInput(platform)"
-                  />
-                </el-form-item>
-                
-                <el-form-item label="商品图片">
-                  <div class="flex flex-wrap gap-1">
-                    <div 
-                      v-for="(url, index) in publishForm[platform].images" 
-                      :key="index" 
-                      class="relative cursor-pointer select-item-compact"
-                      :class="{ 'selected': publishForm[platform].selectedImages.includes(url) }"
-                      @click="toggleImageSelection(platform, url)"
-                    >
-                      <img 
-                        :src="url"
-                        class="w-20 h-20 object-cover rounded transition-all duration-200"
-                        @click.stop="preview(index, publishForm[platform].images)"
-                      />
-                      <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                        {{ index + 1 }}/{{ publishForm[platform].images.length }}
-                      </div>
-                      <div class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-md">
-                        <el-icon v-if="publishForm[platform].selectedImages.includes(url)" class="text-blue-600 text-xs check-icon">
-                          <Check />
-                        </el-icon>
-                      </div>
-                    </div>
-                  </div>
-                </el-form-item>
-                
-                <el-form-item label="商品视频" v-if="publishForm[platform].videos && publishForm[platform].videos.length > 0">
-                  <div class="flex flex-wrap gap-1">
-                    <div 
-                      v-for="(url, index) in publishForm[platform].videos" 
-                      :key="index" 
-                      class="relative cursor-pointer select-item-compact"
-                      :class="{ 'selected': publishForm[platform].selectedVideos.includes(url) }"
-                      @click="toggleVideoSelection(platform, url)"
-                    >
-                      <div 
-                        class="w-20 h-20 bg-black rounded relative overflow-hidden transition-all duration-200"
-                        @click.stop="handlePublishVideoPreview(publishForm[platform].videos, index)"
-                      >
-                        <video 
-                          :src="url" 
-                          class="w-full h-full object-cover"
-                          muted 
-                          preload="metadata"
-                        />
-                        <div class="absolute inset-0 flex items-center justify-center">
-                          <div class="w-6 h-6 bg-black bg-opacity-60 rounded-full flex items-center justify-center">
-                            <el-icon class="text-white text-xs"><VideoPlay /></el-icon>
-                          </div>
-                        </div>
-                        <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                          {{ index + 1 }}/{{ publishForm[platform].videos.length }}
-                        </div>
-                      </div>
-                      <div class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-md">
-                        <el-icon v-if="publishForm[platform].selectedVideos.includes(url)" class="text-blue-600 text-xs check-icon">
-                          <Check />
-                        </el-icon>
-                      </div>
-                    </div>
-                  </div>
-                </el-form-item>
-              </el-form>
-            </el-card>
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <el-button @click="publishDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handlePublishSubmit" :loading="publishLoading">确定发布</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 发布结果弹窗 -->
-    <el-dialog
-      title="发布结果"
-      v-model="publishResultVisible"
-      width="900px"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      align-center
-    >
-      <div class="p-4 publish-result-dark-bg">
-        <div v-if="publishResults.length > 0">
-          <div class="flex flex-wrap gap-4 mb-4">
-            <div v-for="result in publishResults" :key="result.platform" class="publish-result-card">
-              <div class="flex items-center justify-between p-3 rounded-lg border publish-result-dark-item"
-                   :class="{
-                     'border-green-400 bg-green-900 bg-opacity-80': result.success,
-                     'border-red-400 bg-red-900 bg-opacity-80': !result.success
-                   }">
-                <div class="flex items-center">
-                  <div class="w-3 h-3 rounded-full mr-2"
-                       :class="{
-                         'bg-green-400': result.success,
-                         'bg-red-400': !result.success
-                       }"></div>
-                  <span class="font-medium text-gray-100">{{ getPlatformName(result.platform) }}</span>
-                </div>
-                <div class="text-right ml-2">
-                  <div class="font-medium"
-                       :class="{
-                         'text-green-400': result.success,
-                         'text-red-400': !result.success
-                       }">
-                    {{ result.success ? '发布成功' : '发布失败' }}
-                  </div>
-                  <div class="text-xs text-gray-300 mt-1 max-w-[180px] break-words">{{ result.message }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 总体结果 -->
-          <div class="mt-4 p-3 rounded-lg border publish-result-dark-item"
-               :class="{
-                 'border-green-400 bg-green-900 bg-opacity-80': publishSummary.success,
-                 'border-yellow-400 bg-yellow-900 bg-opacity-80': publishSummary.partial,
-                 'border-red-400 bg-red-900 bg-opacity-80': publishSummary.failed
-               }">
-            <div class="text-center">
-              <div class="font-medium"
-                   :class="{
-                     'text-green-400': publishSummary.success,
-                     'text-yellow-400': publishSummary.partial,
-                     'text-red-400': publishSummary.failed
-                   }">
-                {{ publishSummary.message }}
-              </div>
-              <div class="text-sm text-gray-300 mt-1">
-                成功：{{ publishSummary.successCount }} 个，失败：{{ publishSummary.failCount }} 个
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <el-button type="primary" @click="closePublishResultDialog">确认</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 图片预览 -->
-    <el-dialog v-model="previewVisible" title="预览" width="90%" :close-on-click-modal="true">
-      <div v-if="previewList.length > 0" class="flex flex-col items-center">
-        <el-image
-          :src="previewList[previewIndex]"
-          :preview-src-list="previewList"
-          :initial-index="previewIndex"
-          fit="contain"
-          style="max-width: 100%; max-height: 70vh;"
-          :preview-teleported="true"
-        />
-        <div v-if="previewList.length > 1" class="mt-4 flex items-center gap-4">
-          <el-button @click="previewIndex = Math.max(0, previewIndex - 1)" :disabled="previewIndex === 0">上一张</el-button>
-          <span>{{ previewIndex + 1 }} / {{ previewList.length }}</span>
-          <el-button @click="previewIndex = Math.min(previewList.length - 1, previewIndex + 1)" :disabled="previewIndex === previewList.length - 1">下一张</el-button>
-        </div>
-      </div>
-      <div v-else-if="previewUrl" class="flex justify-center">
-        <img :src="previewUrl" alt="Preview" style="max-width: 100%; max-height: 70vh;" />
-      </div>
-    </el-dialog>
-
-    <!-- 视频预览弹窗 -->
-    <el-dialog
-      v-model="videoPreviewVisible"
-      title="视频预览"
-      width="100%"
-      :fullscreen="true"
-      :close-on-click-modal="true"
-    >
-      <div v-if="videoPreviewList.length > 0" class="video-preview-container">
-        <div class="video-preview-header">
-          <div class="actions" v-if="videoPreviewAllowDelete && videoPreviewRowId">
-            <el-button
-              type="danger"
-              size="small"
-              :icon="Delete"
-              :loading="deletingVideoKey === `${videoPreviewRowId}-${videoPreviewList[videoPreviewIndex]}`"
-              @click="handleDeleteVideo({ id: videoPreviewRowId, videos: videoPreviewList }, videoPreviewList[videoPreviewIndex])"
-            >
-              删除
-            </el-button>
-          </div>
-        </div>
-        <div class="video-preview-content">
-          <el-button
-            v-if="videoPreviewList.length > 1"
-            class="video-nav-btn video-nav-prev"
-            :icon="ArrowLeft"
-            circle
-            @click="prevVideo"
-            :disabled="videoPreviewIndex === 0"
-          />
-          <div class="video-wrapper">
-            <transition name="fade" mode="out-in">
-              <video
-                :key="videoPreviewIndex"
-                :src="videoPreviewList[videoPreviewIndex]"
-                controls
-                preload="auto"
-                class="video-preview-player"
-              />
-            </transition>
-          </div>
-          <el-button
-            v-if="videoPreviewList.length > 1"
-            class="video-nav-btn video-nav-next"
-            :icon="ArrowRight"
-            circle
-            @click="nextVideo"
-            :disabled="videoPreviewIndex === videoPreviewList.length - 1"
-          />
-        </div>
-        <div v-if="videoPreviewList.length > 1" class="video-pagination">
-          <span class="video-page-info">
-            {{ videoPreviewIndex + 1 }} / {{ videoPreviewList.length }}
-          </span>
-        </div>
-      </div>
-      <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
-    </el-dialog>
-
-    <!-- 生成视频配置弹窗（ffmpeg） -->
-    <el-dialog
-      v-model="videoGenDialogVisible"
-      title="视频生成配置"
-      width="100%"
-      :fullscreen="true"
-      :close-on-click-modal="false"
-      :destroy-on-close="false"
-      align-center
-    >
-      <div class="video-gen-container">
-        <el-alert
-          type="info"
-          :closable="false"
-          show-icon
-          class="mb-4"
-        >
-          <template #title>
-            支持多图合成视频，可选择多张图片并设置过渡效果。每张图片的显示时长可自定义。
+            </el-dropdown>
           </template>
-        </el-alert>
 
-        <el-form :model="videoGenForm" label-width="160px" size="default" class="video-gen-form">
-          <!-- 尺寸设置 -->
-          <el-card class="mb-4" shadow="never">
-            <template #header>
-              <div class="flex items-center gap-2">
-                <el-icon><Setting /></el-icon>
-                <span>尺寸设置</span>
-              </div>
-            </template>
-            <el-row :gutter="8">
-              <el-col :xs="24" :sm="12" :md="12">
-                <el-form-item label="尺寸模式">
-                  <el-radio-group v-model="videoGenForm.sizeMode" @change="handleSizeModeChange">
-                    <el-radio label="keep-original">保持原图尺寸</el-radio>
-                    <el-radio label="custom">自定义尺寸</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="8">
-              <el-col :xs="12" :sm="6" :md="6">
-                <el-form-item label="宽度">
-                  <el-input-number 
-                    v-model="videoGenForm.width" 
-        
-                    :step="10"
-                    controls-position="right"
-                    style="width: 100%"
-                  />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="12" :sm="6" :md="6">
-                <el-form-item label="高度">
-                  <el-input-number 
-                    v-model="videoGenForm.height" 
-        
-                    :step="10"
-                    controls-position="right"
-                    style="width: 100%"
-                    :disabled="videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight"
-                    @change="handleHeightChange"
-                  />
-                  <div v-if="videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight" class="text-xs text-gray-500 mt-1">
-                    高度将根据原图比例自动计算
-                  </div>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12" :md="12" v-if="videoGenForm.sizeMode === 'keep-original'">
-                <el-form-item label="自动计算高度">
-                  <div class="flex items-center gap-3">
-                    <el-switch 
-                      v-model="videoGenForm.autoHeight"
-                      @change="handleAutoHeightChange"
-                    />
-                    <div v-if="imageSize" class="text-xs text-gray-500">
-                      原图尺寸: {{ imageSize.width }} × {{ imageSize.height }}
-                    </div>
-                  </div>
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="12" v-if="videoGenForm.sizeMode === 'custom'">
-              <el-col :xs="12" :sm="6" :md="6">
-                <el-form-item label="缩放模式">
-                  <el-select v-model="videoGenForm.scaleMode" style="width: 100%">
-                    <el-option label="Cover（填充，可能裁剪）" value="cover" />
-                    <el-option label="Contain（适应，可能有空白）" value="contain" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.scaleMode === 'contain'">
-                <el-form-item label="背景颜色">
-                  <el-color-picker v-model="videoGenForm.backgroundColor" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-card>
-
-          <!-- 图片选择 -->
-          <el-card class="mb-4" shadow="never">
-            <template #header>
-              <div class="flex items-center gap-2">
-                <el-icon><Picture /></el-icon>
-                <span>图片选择</span>
-              </div>
-            </template>
-            <el-row :gutter="8">
-              <!-- 商品图片选择 -->
-              <el-col :xs="24" :sm="24" :md="24" v-if="videoGenRow?.images && videoGenRow.images.length > 0">
-                <el-form-item label="选择商品图片">
-                  <div class="flex flex-wrap gap-2 mb-2">
-                    <div 
-                      v-for="(url, index) in videoGenRow.images" 
-                      :key="index"
-                      class="relative cursor-pointer select-item-compact"
-                      :class="{ 'selected': videoGenForm.selectedImages.includes(url) }"
-                      @click="toggleVideoGenImageSelection(url)"
-                    >
-                      <el-image
-                        :src="url"
-                        class="w-20 h-20 object-cover rounded transition-all duration-200"
-                        fit="cover"
-                        :preview-src-list="videoGenRow.images"
-                        :initial-index="index"
-                        :preview-teleported="true"
-                        :hide-on-click-modal="false"
-                      />
-                      <div class="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-md">
-                        <el-icon v-if="videoGenForm.selectedImages.includes(url)" class="text-blue-600 text-xs check-icon">
-                          <Check />
-                        </el-icon>
-                      </div>
-                      <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 text-center rounded-b">
-                        {{ index + 1 }}
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-xs text-gray-500 mt-1">
-                    已选择 {{ videoGenForm.selectedImages.length }} 张图片，点击图片可切换选择状态
-                  </div>
-                </el-form-item>
-              </el-col>
-              <!-- 无产品图片提示 -->
-              <el-col :xs="24" :sm="24" :md="24" v-else>
-                <el-form-item label="选择商品图片">
-                  <el-alert
-                    type="warning"
-                    :closable="false"
-                    show-icon
-                  >
-                    <template #title>
-                      该商品没有图片，无法生成视频。请先为商品添加图片。
-                    </template>
-                  </el-alert>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-card>
-
-          <!-- 视频设置 -->
-          <el-card class="mb-4" shadow="never">
-            <template #header>
-              <div class="flex items-center gap-2">
-                <el-icon><VideoCamera /></el-icon>
-                <span>视频设置</span>
-              </div>
-            </template>
-            <el-row :gutter="8">
-              <el-col :xs="12" :sm="6" :md="6">
-                <el-form-item label="视频时长（秒）">
-                  <el-input-number 
-                    v-model="videoGenForm.clipDuration" 
-                    :min="0.5" 
-                    :max="30" 
-                    :step="0.5"
-                    :precision="1"
-                    controls-position="right"
-                    style="width: 100%"
-                  />
-                  <div class="text-xs text-gray-500 mt-1">
-                    视频总时长（多图时会自动均分到每张图片并叠加过渡时间）
-                  </div>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="12" :sm="6" :md="6">
-                <el-form-item label="视频格式">
-                  <el-select v-model="videoGenForm.outputFormat" style="width: 100%">
-                    <el-option label="MP4" value="mp4" />
-                    <el-option label="WebM" value="webm" />
-                    <el-option label="MKV" value="mkv" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.selectedImages.length > 1">
-                <el-form-item label="过渡效果">
-                  <el-select v-model="videoGenForm.transition" style="width: 100%">
-                    <el-option label="淡入淡出" value="fade" />
-                    <el-option label="向左滑动" value="directional-left" />
-                    <el-option label="向右滑动" value="directional-right" />
-                    <el-option label="无过渡" value="none" />
-                  </el-select>
-                  <div class="text-xs text-gray-500 mt-1">
-                    多张图片之间的过渡效果
-                  </div>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-card>
-
-          <!-- 背景音乐设置 -->
-          <el-card class="mb-4" shadow="never">
-            <template #header>
-              <div class="flex items-center gap-2">
-                <el-icon><Headset /></el-icon>
-                <span>背景音乐设置</span>
-              </div>
-            </template>
-            <el-row :gutter="8">
-              <el-col :xs="24" :sm="12" :md="12">
-                <el-form-item label="背景音乐">
-                  <el-select
-                    v-model="videoGenForm.audioUrl"
-                    filterable
-                    remote
-                    reserve-keyword
-                    placeholder="请搜索并选择背景音乐"
-                    :remote-method="remoteSearchAudio"
-                    :loading="audioLoading"
-                    clearable
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="audio in audioList"
-                      :key="audio.id"
-                      :label="audio.name || '未命名音频'"
-                      :value="audio.url"
-                    >
-                      <div class="flex items-center justify-between">
-                        <span>{{ audio.name || '未命名音频' }}</span>
-                        <span class="text-xs text-gray-400 ml-2">{{ audio.suffix?.toUpperCase() }}</span>
-                      </div>
-                    </el-option>
-                  </el-select>
-                  <div class="text-xs text-gray-500 mt-1">
-                    从剪辑素材库中选择音频文件作为背景音乐（可选，yishe-videos 会自动处理音频链接）
-                  </div>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-card>
-
-          <!-- 操作选项 -->
-          <el-card class="mb-4" shadow="never">
-            <template #header>
-              <div class="flex items-center gap-2">
-                <el-icon><Operation /></el-icon>
-                <span>操作选项</span>
-              </div>
-            </template>
-            <el-row :gutter="8">
-              <el-col :xs="24" :sm="12" :md="12">
-                <el-form-item label="视频处理方式">
-                  <el-radio-group v-model="videoGenForm.replace">
-                    <el-radio :label="false">追加到现有视频</el-radio>
-                    <el-radio :label="true">替换现有视频</el-radio>
-                  </el-radio-group>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-card>
-        </el-form>
-      </div>
-
-      <template #footer>
-        <div class="flex justify-end gap-2">
-        <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
-        <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
-            <el-icon class="mr-1"><VideoPlay /></el-icon>
-            {{ generatingVideoId ? '生成中...' : '开始生成视频' }}
-        </el-button>
-        </div>
-      </template>
-    </el-dialog>
-
-    <!-- 导出社交媒体数据弹窗 -->
-    <el-dialog
-      v-model="socialExportVisible"
-      title="社交媒体发布数据（导出）"
-      width="60%"
-      :fullscreen="false"
-      :close-on-click-modal="true"
-      align-center
-    >
-      <div class="p-4 max-w-5xl mx-auto">
-        <el-input v-model="socialExportText" type="textarea" :rows="18" readonly />
-      </div>
-      <template #footer>
-        <el-button @click="socialExportVisible = false">取消</el-button>
-        <el-button type="primary" @click="copySocialExport" :disabled="!socialExportText">复制JSON</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true" :close-on-click-modal="false">
-      <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
-        <el-row :gutter="32">
-          <!-- 左侧图片区 -->
-          <el-col :span="8" class="flex flex-col items-center justify-center">
-            <img v-if="customModelDetail.thumbnail" :src="getPreviewImageUrl(customModelDetail.thumbnail, { width: 300, quality: 80, format: 'webp' })" style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin-bottom: 16px; cursor:pointer;" @click="preview(0, [customModelDetail.thumbnail])" />
-            <div v-else class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded mb-4">无缩略图</div>
-            <!-- 预留更多图片展示（如有） -->
-            <template v-if="customModelDetail.images && customModelDetail.images.length">
-              <div class="flex flex-wrap gap-2 mt-2">
-                <img v-for="(img, idx) in customModelDetail.images" :key="idx" :src="img" style="width: 60px; height: 60px; border-radius: 6px; object-fit: cover; cursor:pointer;" @click="preview(idx, customModelDetail.images)" />
-              </div>
-            </template>
-          </el-col>
-          <!-- 右侧基础信息区 -->
-          <el-col :span="16">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="ID">{{ customModelDetail.id }}</el-descriptions-item>
-              <el-descriptions-item label="名称">{{ customModelDetail.name }}</el-descriptions-item>
-              <el-descriptions-item label="描述" :span="2">{{ customModelDetail.description || '无' }}</el-descriptions-item>
-              <el-descriptions-item label="关键词">{{ customModelDetail.keywords || '无' }}</el-descriptions-item>
-              <el-descriptions-item label="标签">{{ customModelDetail.tags || '无' }}</el-descriptions-item>
-              <el-descriptions-item label="作者">
-                <template v-if="customModelDetail.uploader && (customModelDetail.uploader.name || customModelDetail.uploader.account)">
-                  {{ customModelDetail.uploader.name || customModelDetail.uploader.account }}
-                </template>
-                <template v-else>无</template>
-              </el-descriptions-item>
-              <el-descriptions-item label="创建时间">{{ customModelDetail.createTime ? (customModelDetail.createTime + '').replace('T', ' ').slice(0, 19) : '无' }}</el-descriptions-item>
-              <el-descriptions-item label="更新时间">{{ customModelDetail.updateTime ? (customModelDetail.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</el-descriptions-item>
-              <el-descriptions-item v-if="customModelDetail.url" label="模型文件">
-                <el-link :href="customModelDetail.url" target="_blank" type="primary">下载/预览</el-link>
-              </el-descriptions-item>
-            </el-descriptions>
-          </el-col>
-        </el-row>
-        <!-- 元数据结构化展示 -->
-        <div v-if="customModelDetail.meta" class="mt-6">
-          <h4 class="font-medium mb-2">元数据</h4>
-          <el-scrollbar style="max-height: 200px;">
-            <pre style="background:none;padding:0;margin:0;font-size:13px;">{{ JSON.stringify(customModelDetail.meta, null, 2) }}</pre>
-          </el-scrollbar>
-        </div>
-      </div>
-      <div v-else class="p-8 text-center text-gray-400">暂无详情</div>
-      <template #footer>
-        <el-button @click="customModelDetailVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 关联信息详情弹窗 -->
-    <el-dialog 
-      v-model="relationsDetailVisible" 
-      title="关联信息详情" 
-      width="90%" 
-      :close-on-click-modal="false"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div v-if="currentRelationsRow" class="relations-detail-content">
-        <!-- 关联设计模型 -->
-        <div v-if="currentRelationsRow.customModel" class="relation-section">
-          <h3 class="relation-section-title">关联设计模型</h3>
-          <vxe-grid
-            :data="[currentRelationsRow.customModel]"
-            :show-header="true"
-            border
-            size="mini"
-            style="margin: 0; padding: 0; background: none;"
-            :columns="[
-              { field: 'thumbnail', title: '缩略图', width: '120', slots: { default: 'customModelThumbnailSlot' } },
-              { field: 'name', title: '名称', minWidth: 80 },
-              { field: 'description', title: '描述', minWidth: 120 },
-              { field: 'keywords', title: '关键词', minWidth: 100 },
-              { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
-              { title: '操作', field: 'operation', width: 'auto', slots: { default: 'customModelOperationSlot' } }
-            ]"
-          >
-            <template #customModelThumbnailSlot="{ row }">
-              <div class="flex items-center justify-center p-2">
-                <el-image
-                  v-if="row.thumbnail"
-                  :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
-                  :preview-src-list="[row.thumbnail]"
-                  :initial-index="0"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                />
-                <span v-else class="text-gray-400">无</span>
-              </div>
-            </template>
-            <template #customModelUpdateTimeSlot="{ row }">
-              <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-            </template>
-            <template #customModelOperationSlot="{ row }">
-              <div class="flex gap-2">
-                <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
-                <el-button 
-                  v-if="row.thumbnail" 
-                  type="success" 
-                  link 
-                  size="small" 
-                  @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')"
-                >
-                  下载缩略图
-                </el-button>
-              </div>
-            </template>
-          </vxe-grid>
-        </div>
-
-        <!-- 关联贴纸 -->
-        <div v-if="currentRelationsRow.sticker" class="relation-section">
-          <h3 class="relation-section-title">关联贴纸</h3>
-          <vxe-grid
-            :data="[currentRelationsRow.sticker]"
-            :show-header="true"
-            border
-            size="mini"
-            style="margin: 0; padding: 0; background: none;"
-            :columns="[
-              { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
-              { field: 'name', title: '名称', minWidth: 80 },
-              { field: 'description', title: '描述', minWidth: 120 },
-              { field: 'keywords', title: '关键词', minWidth: 100 },
-              { field: 'suffix', title: '后缀', width: 80 },
-              { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
-              { title: '操作', field: 'operation', width: 'auto', slots: { default: 'stickerOperationSlot' } }
-            ]"
-          >
-            <template #stickerImageSlot="{ row }">
-              <div class="flex items-center justify-center p-2">
-                <el-image
-                  v-if="row.url"
-                  :src="row.url"
-                  :preview-src-list="[row.url]"
-                  :initial-index="0"
-                  style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
-                />
-                <span v-else class="text-gray-400">无</span>
-              </div>
-            </template>
-            <template #stickerUpdateTimeSlot="{ row }">
-              <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-            </template>
-            <template #stickerOperationSlot="{ row }">
-              <div class="flex gap-2">
-                <el-button 
-                  v-if="row.url"
-                  type="primary" 
-                  link 
-                  size="small" 
-                  @click="preview(0, [row.url])"
-                >
-                  预览
-                </el-button>
-              </div>
-            </template>
-          </vxe-grid>
-        </div>
-
-        <!-- 关联 PSD 套图 -->
-        <div v-if="currentRelationsRow.psdSet" class="relation-section">
-          <h3 class="relation-section-title">关联PSD套图</h3>
-          <vxe-grid
-            :data="[currentRelationsRow.psdSet]"
-            :show-header="true"
-            border
-            size="mini"
-            style="margin: 0; padding: 0; background: none;"
-            :columns="psdSetDetailColumns"
-          >
-            <template #psdSetImagesSlot="{ row }">
-              <div class="flex gap-1 flex-wrap">
-                <div
-                  v-for="(img, idx) in getPsdSetImages(row).slice(0, 3)"
-                  :key="idx"
-                  class="relation-thumb-wrapper"
-                >
-                  <el-image
-                    v-if="img"
-                    :src="img"
-                    :preview-src-list="getPsdSetImages(row)"
-                    :initial-index="idx"
-                    :preview-teleported="true"
-                    :hide-on-click-modal="false"
-                    class="relation-thumb-image"
-                    fit="contain"
-                  />
-                  <span v-else class="text-gray-400 text-xs">无</span>
-                </div>
-                <span v-if="getPsdSetImages(row).length > 3" class="text-xs text-gray-500">+{{ (getPsdSetImages(row).length - 3) }}</span>
-                <span v-if="!getPsdSetImages(row).length" class="text-gray-400 text-xs">无</span>
-              </div>
-            </template>
-          </vxe-grid>
-        </div>
-
-        <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.psdSet" class="text-center py-8 text-gray-400">
-          无关联信息
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="relationsDetailVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 查看源信息对话框 -->
-    <el-dialog
-      v-model="relationsSourceInfoVisible"
-      title="关联信息源数据"
-      width="80%"
-      :close-on-click-modal="false"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div v-if="currentSourceInfoRow" class="source-info-content">
-        <el-tabs v-model="activeSourceTab" type="border-card">
-          <el-tab-pane v-if="currentSourceInfoRow.customModel" label="设计模型" name="customModel">
-            <div class="source-info-section">
-              <h4 class="source-info-title">设计模型原始数据</h4>
-              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.customModel) }}</pre>
+          <template #searchKeywordsHeader>
+            <div class="flex items-center gap-1">
+              <span>搜索关键字</span>
+              <el-tooltip effect="dark" content="搜索关键词 不会显示在商品信息中，只会在搜索时供搜索引擎使用" placement="top">
+                <el-icon class="text-gray-400 cursor-help">
+                  <QuestionFilled />
+                </el-icon>
+              </el-tooltip>
             </div>
-          </el-tab-pane>
-          <el-tab-pane v-if="currentSourceInfoRow.sticker" label="贴纸" name="sticker">
-            <div class="source-info-section">
-              <h4 class="source-info-title">贴纸原始数据</h4>
-              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.sticker) }}</pre>
-            </div>
-          </el-tab-pane>
-          <el-tab-pane v-if="currentSourceInfoRow.psdSet" label="PSD套图" name="psdSet">
-            <div class="source-info-section">
-              <h4 class="source-info-title">PSD套图原始数据</h4>
-              <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.psdSet) }}</pre>
-            </div>
-          </el-tab-pane>
-        </el-tabs>
-      </div>
-      <template #footer>
-        <el-button @click="relationsSourceInfoVisible = false">关闭</el-button>
-        <el-button type="primary" @click="copySourceInfo">复制JSON</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog 
-      v-model="customModelDraftDialogVisible" 
-      title="关联草稿" 
-      width="80%" 
-      :close-on-click-modal="false"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div v-if="customModelDrafts.length === 0" class="empty-state text-center py-8">
-        <el-empty description="暂无关联草稿" />
-      </div>
-      <div v-else class="draft-grid">
-        <div 
-          v-for="draft in customModelDrafts" 
-          :key="draft.id" 
-          class="draft-item"
-        >
-          <div class="draft-preview">
-            <!-- 视频预览 -->
-            <div 
-              v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
-              class="video-preview-container"
-              @click="handleDraftVideoPlay(draft)"
-            >
-              <video 
-                :src="draft.url" 
-                class="w-full h-32 rounded cursor-pointer object-cover"
-                preload="metadata"
-                muted
-              />
-              <div class="video-overlay">
-                <el-icon class="play-icon"><VideoPlay /></el-icon>
-              </div>
-            </div>
-            <!-- 图片预览 -->
-            <el-image 
-              v-else
-              :src="draft.url" 
-              fit="cover" 
-              class="w-full h-32 rounded cursor-pointer"
-              :preview-src-list="[draft.url]"
-              :preview-teleported="true"
-              :z-index="9999"
-            />
-          </div>
-          <div class="draft-info p-3">
-            <div class="draft-header flex justify-between items-start mb-2">
-              <div class="draft-name text-sm font-medium truncate flex-1">
-                {{ draft.name || '未命名' }}
-              </div>
-            </div>
-            <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
-              {{ draft.description }}
-            </div>
-            <div class="draft-meta text-xs text-color-placeholder mt-2">
-              <span>{{ formatTimestamp(draft.createTime) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="customModelDraftDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog
-      v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
-      <el-input
-        v-model="aiGenPrompt"
-        type="textarea"
-        :rows="6"
-        placeholder="如：请用艺术化语言描述商品内容..."
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
-      />
-      <template #footer>
-        <el-button @click="aiGenDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 产品详情弹窗 -->
-    <el-dialog
-      v-model="productDetailVisible"
-      title="产品详情"
-      width="90%"
-      :fullscreen="true"
-      :close-on-click-modal="false"
-      align-center
-      :destroy-on-close="true"
-      class="product-detail-dialog"
-    >
-      <div class="product-detail-wrapper">
-        <div v-if="productDetailLoading" class="flex items-center justify-center py-20">
-          <el-icon class="is-loading" style="font-size: 32px;"><Loading /></el-icon>
-          <span class="ml-2">加载中...</span>
-        </div>
-        <div v-else-if="productDetail" class="product-detail-content">
-        <!-- 基本信息 -->
-        <div class="product-detail-section mb-4">
-          <div class="product-detail-section-title">
-            <el-icon><Document /></el-icon>
-            <span>基本信息</span>
-          </div>
-          <div class="product-info-list">
-            <div class="product-info-item">
-              <div class="product-info-label">ID</div>
-              <div class="product-info-value">{{ productDetail.id }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">产品代码</div>
-              <div class="product-info-value">
-                <el-tag v-if="productDetail.code" type="info" size="small">{{ productDetail.code }}</el-tag>
-                <span v-else class="text-gray-400">未生成</span>
-              </div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">商品名称</div>
-              <div class="product-info-value">{{ productDetail.name || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">英文名称</div>
-              <div class="product-info-value">{{ productDetail.enName || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">商品类型</div>
-              <div class="product-info-value">{{ productDetail.type || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">发布状态</div>
-              <div class="product-info-value">
-                <el-tag v-if="productDetail.isPublish" type="success" size="small">已发布</el-tag>
-                <el-tag v-else type="warning" size="small">未发布</el-tag>
-              </div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">商品描述</div>
-              <div class="product-info-value">{{ productDetail.description || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">英文描述</div>
-              <div class="product-info-value">{{ productDetail.enDescription || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">关键词</div>
-              <div class="product-info-value">{{ productDetail.keywords || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">英文关键词</div>
-              <div class="product-info-value">{{ productDetail.enKeywords || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">搜索关键字</div>
-              <div class="product-info-value">{{ productDetail.searchKeywords || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">英文搜索关键字</div>
-              <div class="product-info-value">{{ productDetail.enSearchKeywords || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">创建人</div>
-              <div class="product-info-value">{{ productDetail.creatorName || '未设置' }}</div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">创建时间</div>
-              <div class="product-info-value">
-                {{ productDetail.createTime ? formatTimestamp(productDetail.createTime) : '未设置' }}
-              </div>
-            </div>
-            <div class="product-info-item">
-              <div class="product-info-label">修改时间</div>
-              <div class="product-info-value">
-                {{ productDetail.updateTime ? formatTimestamp(productDetail.updateTime) : '未设置' }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 商品图片 -->
-        <div class="product-detail-section mb-4" v-if="productDetail.images && productDetail.images.length > 0">
-          <div class="product-detail-section-title">
-            <el-icon><Picture /></el-icon>
-            <span>商品图片 ({{ productDetail.images.length }})</span>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <el-image
-              v-for="(url, index) in productDetail.images"
-              :key="index"
-              :src="url"
-              :preview-src-list="productDetail.images"
-              :initial-index="index"
-              :preview-teleported="true"
-              :hide-on-click-modal="false"
-              class="w-32 h-32 object-cover rounded cursor-pointer"
-              fit="cover"
-            />
-          </div>
-        </div>
-
-        <!-- 商品视频 -->
-        <div class="product-detail-section mb-4" v-if="productDetail.videos && productDetail.videos.length > 0">
-          <div class="product-detail-section-title">
-            <el-icon><VideoPlay /></el-icon>
-            <span>商品视频 ({{ productDetail.videos.length }})</span>
-          </div>
-          <div class="flex flex-wrap gap-2">
-            <div
-              v-for="(url, index) in productDetail.videos"
-              :key="index"
-              class="relative cursor-pointer"
-              @click="handleVideoPreview(productDetail.videos, index, productDetail)"
-            >
-              <video
-                :src="url"
-                class="w-32 h-32 object-cover rounded"
-                muted
-                preload="metadata"
-              />
-              <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
-                <el-icon class="text-white text-2xl"><VideoPlay /></el-icon>
-              </div>
-              <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                {{ index + 1 }}/{{ productDetail.videos.length }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 关联信息 -->
-        <div class="product-detail-section mb-4" v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet">
-          <div class="product-detail-section-title">
-            <el-icon><Box /></el-icon>
-            <span>关联信息</span>
-          </div>
-          <div class="relations-detail-content">
-            <!-- 使用已有的关联信息展示逻辑 -->
-            <div v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet" class="relations-info">
-              <!-- 设计模型 -->
-              <div v-if="productDetail.customModel" class="relation-section-item">
-                <div class="relation-header">
-                  <span class="relation-label">设计模型：</span>
-                </div>
-                <vxe-grid
-                  :data="[productDetail.customModel]"
-                  :show-header="true"
-                  border
-                  size="mini"
-                  class="relation-sub-grid"
-                  :columns="[
-                    { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'customModelThumbnailSlot' } },
-                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                    { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'customModelUpdateTimeSlot' } }
-                  ]"
-                >
-                  <template #customModelThumbnailSlot="{ row: modelRow }">
-                    <div class="flex items-center justify-center p-1">
-                      <el-image
-                        v-if="modelRow.thumbnail"
-                        :src="getPreviewImageUrl(modelRow.thumbnail, { width: 200, quality: 80, format: 'webp' })"
-                        :preview-src-list="getCustomModelImages(modelRow)"
-                        :initial-index="0"
-                        :preview-teleported="true"
-                        :hide-on-click-modal="false"
-                        class="relation-thumb-image"
-                        fit="contain"
-                      />
-                      <span v-else class="text-gray-400 text-xs">无</span>
-                    </div>
-                  </template>
-                  <template #customModelUpdateTimeSlot="{ row: modelRow }">
-                    <span class="text-xs">{{ modelRow.updateTime ? (modelRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-                  </template>
-                </vxe-grid>
-              </div>
-              
-              <!-- 贴纸 -->
-              <div v-if="productDetail.sticker" class="relation-section-item">
-                <div class="relation-header">
-                  <span class="relation-label">贴纸：</span>
-                </div>
-                <vxe-grid
-                  :data="[productDetail.sticker]"
-                  :show-header="true"
-                  border
-                  size="mini"
-                  class="relation-sub-grid"
-                  :columns="[
-                    { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
-                    { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
-                    { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
-                    { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
-                    { field: 'suffix', title: '后缀', width: 60 },
-                    { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
-                  ]"
-                >
-                  <template #stickerImageSlot="{ row: stickerRow }">
-                    <div class="flex items-center justify-center p-1">
-                      <el-image
-                        v-if="stickerRow.url"
-                        :src="stickerRow.url"
-                        :preview-src-list="[stickerRow.url]"
-                        :initial-index="0"
-                        :preview-teleported="true"
-                        :hide-on-click-modal="false"
-                        class="relation-thumb-image"
-                        fit="contain"
-                      />
-                      <span v-else class="text-gray-400 text-xs">无</span>
-                    </div>
-                  </template>
-                  <template #stickerUpdateTimeSlot="{ row: stickerRow }">
-                    <span class="text-xs">{{ stickerRow.updateTime ? (stickerRow.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
-                  </template>
-                </vxe-grid>
-              </div>
-              
-              <!-- PSD 套图 -->
-              <div v-if="productDetail.psdSet" class="relation-section-item">
-                <div class="relation-header">
-                  <span class="relation-label">PSD套图：</span>
-                </div>
-                <vxe-grid
-                  :data="[productDetail.psdSet]"
-                  :show-header="true"
-                  border
-                  size="mini"
-                  class="relation-sub-grid"
-                  :columns="psdSetColumns"
-                >
-                  <template #psdSetImagesSlot="{ row: psdRow }">
-                    <div class="flex gap-1 flex-wrap">
-                      <div
-                        v-for="(img, idx) in getPsdSetImages(psdRow).slice(0, 3)"
-                        :key="idx"
-                        class="relation-thumb-wrapper"
-                      >
-                        <el-image
-                          v-if="img"
-                          :src="img"
-                          :preview-src-list="getPsdSetImages(psdRow)"
-                          :initial-index="idx"
-                          :preview-teleported="true"
-                          :hide-on-click-modal="false"
-                          class="relation-thumb-image"
-                          fit="contain"
-                        />
-                        <span v-else class="text-gray-400 text-xs">无</span>
-                      </div>
-                      <span v-if="getPsdSetImages(psdRow).length > 3" class="text-xs text-gray-500">+{{ (getPsdSetImages(psdRow).length - 3) }}</span>
-                      <span v-if="!getPsdSetImages(psdRow).length" class="text-gray-400 text-xs">无</span>
-                    </div>
-                  </template>
-                </vxe-grid>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
-        <div v-else-if="!productDetailLoading" class="text-center py-20 text-gray-400">
-          暂无数据
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="productDetailVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 发布详情对话框 -->
-    <el-dialog
-      v-model="publishTasksVisible"
-      :title="`发布详情 - ${currentProductForTasks?.name || currentProductForTasks?.id || ''}`"
-      width="80%"
-      :close-on-click-modal="true"
-      align-center
-      :destroy-on-close="true"
-    >
-      <div v-loading="publishTasksLoading" class="publish-tasks-container">
-        <div v-if="publishTasks.length === 0 && !publishTasksLoading" class="empty-state text-center py-8">
-          <el-empty description="暂无发布任务" />
-        </div>
-        <vxe-grid
-          v-else
-          :data="publishTasks"
-          :columns="publishTasksColumns"
-          border
-          stripe
-          size="small"
-          :show-header="true"
-          :show-overflow="true"
-          height="500"
-          class="publish-tasks-grid"
-        >
-          <template #platformSlot="{ row }">
-            {{ formatPlatformName(row.platform) }}
           </template>
-          <template #statusSlot="{ row }">
-            <el-tag :type="formatTaskStatus(row.status).type" size="small">
-              {{ formatTaskStatus(row.status).label }}
+
+          <template #urlDefaultSlot="{ row }">
+            <div class="flex items-center gap-2">
+              <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="100px"
+                indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
+                class="w-40 custom-carousel">
+                <el-carousel-item v-for="(url, index) in row.images" :key="index">
+                  <el-image :src="url" :preview-src-list="row.images" :initial-index="index" :preview-teleported="true"
+                    :hide-on-click-modal="false" :preview-class="'custom-image-preview'"
+                    class="w-full h-full object-contain rounded cursor-pointer" fit="contain" />
+                  <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                    {{ index + 1 }}/{{ row.images.length }}
+                  </div>
+                </el-carousel-item>
+              </el-carousel>
+              <span v-else class="text-gray-400">暂无图片</span>
+            </div>
+          </template>
+
+          <template #videoDefaultSlot="{ row }">
+            <div class="flex items-center gap-2">
+              <el-carousel v-if="row.videos && row.videos.length > 0" :interval="3000" height="100px"
+                indicator-position="none" :arrow="row.videos.length > 1 ? 'always' : 'never'"
+                class="w-40 custom-carousel">
+                <el-carousel-item v-for="(url, index) in row.videos" :key="index">
+                  <div class="relative cursor-pointer w-full h-full flex items-center justify-center bg-black rounded"
+                    @click="handleVideoPreview(row.videos, index, row)">
+                    <video :src="url" class="max-h-[100px] w-auto h-auto object-contain rounded" muted
+                      preload="metadata" />
+                    <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                      {{ index + 1 }}/{{ row.videos.length }}
+                    </div>
+                  </div>
+                </el-carousel-item>
+              </el-carousel>
+              <span v-else class="text-gray-400">暂无视频</span>
+            </div>
+          </template>
+
+          <template #idSlot="{ row }">
+            <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
+              <span class="text-sm">{{ row.id }}</span>
+              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                <DocumentCopy />
+              </el-icon>
+            </div>
+          </template>
+
+          <template #codeSlot="{ row }">
+            <el-tag v-if="row.code" type="info" size="small">
+              {{ row.code }}
             </el-tag>
+            <span v-else class="text-gray-400 text-xs">未生成</span>
           </template>
-          <template #attemptsSlot="{ row }">
-            {{ row.attempts || 0 }} / {{ row.maxAttempts || 3 }}
+
+          <template #nameSlot="{ row }">
+            <div class="flex flex-col gap-1">
+              <div v-if="row.name" class="flex items-center gap-2 group cursor-pointer"
+                @click.stop="copyText(row.name, '商品名称')">
+                <span class="text-sm">{{ row.name }}</span>
+                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="row.enName" class="flex items-center gap-2 group cursor-pointer"
+                @click.stop="copyText(row.enName, '英文名称')">
+                <span class="text-sm">{{ row.enName }}</span>
+                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="!row.name && !row.enName" class="text-sm text-gray-400">未设置</div>
+            </div>
           </template>
-          <template #createdAtSlot="{ row }">
-            {{ formatTimestamp(row.createdAt) }}
+
+          <template #descriptionSlot="{ row }">
+            <div class="flex flex-col gap-1">
+              <div v-if="row.description" class="flex items-center gap-2 group cursor-pointer"
+                @click.stop="copyText(row.description, '商品描述')">
+                <span class="text-sm">{{ row.description }}</span>
+                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="row.enDescription" class="flex items-center gap-2 group cursor-pointer"
+                @click.stop="copyText(row.enDescription, '英文描述')">
+                <span class="text-sm">{{ row.enDescription }}</span>
+                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="!row.description && !row.enDescription" class="text-sm text-gray-400">未设置</div>
+            </div>
           </template>
-          <template #updatedAtSlot="{ row }">
-            {{ formatTimestamp(row.updatedAt) }}
+
+          <template #keywordsSlot="{ row }">
+            <div class="flex flex-col gap-1">
+              <div v-if="row.keywords" class="flex items-center gap-2 group cursor-pointer"
+                @click.stop="copyText(row.keywords, '关键词')">
+                <span class="text-sm">{{ row.keywords }}</span>
+                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="row.enKeywords" class="flex items-center gap-2 group cursor-pointer"
+                @click.stop="copyText(row.enKeywords, '英文关键词')">
+                <span class="text-sm">{{ row.enKeywords }}</span>
+                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="!row.keywords && !row.enKeywords" class="text-sm text-gray-400">未设置</div>
+            </div>
           </template>
-          <template #processedAtSlot="{ row }">
-            {{ row.processedAt ? formatTimestamp(row.processedAt) : '-' }}
+
+          <template #searchKeywordsSlot="{ row }">
+            <div class="flex flex-col gap-1">
+              <div v-if="row.searchKeywords" class="flex items-start gap-2 group cursor-pointer"
+                @click.stop="copyText(row.searchKeywords, '搜索关键字')">
+                <span class="text-sm line-clamp-2 flex-1">{{ row.searchKeywords }}</span>
+                <el-icon
+                  class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="row.enSearchKeywords" class="flex items-start gap-2 group cursor-pointer"
+                @click.stop="copyText(row.enSearchKeywords, '英文搜索关键字')">
+                <span class="text-sm line-clamp-2 flex-1">{{ row.enSearchKeywords }}</span>
+                <el-icon
+                  class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div v-if="!row.searchKeywords && !row.enSearchKeywords" class="text-sm text-gray-400">未设置</div>
+            </div>
           </template>
-          <template #errorSlot="{ row }">
-            <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
-            <span v-else class="text-gray-400">-</span>
+
+          <template #typeSlot="{ row }">
+            <span v-if="row.type">{{ row.type }}</span>
+            <span v-else class="text-gray-400 text-xs">未设置</span>
           </template>
+
+          <!-- 关联信息列：显示关联了哪个内容 -->
+          <template #relationsSlot="{ row }">
+            <div class="relations-summary">
+              <div v-if="row.psdSet" class="relations-info">
+                <!-- PSD 套图 -->
+                <div v-if="row.psdSet" class="relation-section-item">
+                  <div class="relation-header">
+                    <span class="relation-label">PSD套图：</span>
+                  </div>
+                  <vxe-grid :data="[row.psdSet]" :show-header="true" border size="mini" class="relation-sub-grid"
+                    :columns="psdSetColumns">
+                    <template #psdSetImagesSlot="{ row: psdRow }">
+                      <div class="flex gap-1 flex-wrap">
+                        <div v-for="(img, idx) in getPsdSetImages(psdRow).slice(0, 3)" :key="idx"
+                          class="relation-thumb-wrapper">
+                          <el-image v-if="img" :src="img" :preview-src-list="getPsdSetImages(psdRow)"
+                            :initial-index="idx" :preview-teleported="true" :hide-on-click-modal="false"
+                            class="relation-thumb-image" fit="contain" />
+                          <span v-else class="text-gray-400 text-xs">无</span>
+                        </div>
+                        <span v-if="getPsdSetImages(psdRow).length > 3" class="text-xs text-gray-500">+{{
+                          (getPsdSetImages(psdRow).length - 3) }}</span>
+                        <span v-if="!getPsdSetImages(psdRow).length" class="text-gray-400 text-xs">无</span>
+                      </div>
+                    </template>
+                  </vxe-grid>
+                </div>
+              </div>
+              <span v-else class="text-gray-400 text-sm">无关联</span>
+            </div>
+          </template>
+
+          <!-- 旧的关联列模板已移除，统一使用 relationsSlot -->
         </vxe-grid>
       </div>
-      <template #footer>
-        <el-button @click="publishTasksVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
 
-    <!-- 发布平台选择对话框 -->
-    <el-dialog
-      v-model="publishPlatformDialogVisible"
-      title="选择发布配置"
-      width="700px"
-      :close-on-click-modal="true"
-      align-center
-    >
-      <div class="platform-select-container">
-        <div class="mb-4 text-gray-600">
-          请选择要使用的发布配置（可多选）：
+      <!-- 分页 -->
+      <div class="py-4 flex justify-end">
+        <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+          @pagination="getList" />
+      </div>
+
+      <el-dialog :title="dialogTitle" v-model="dialogVisible" width="100%" :fullscreen="true" @close="dialogClose"
+        align-center>
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+          <el-row :gutter="20">
+            <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+              <el-form-item label="商品名称" prop="name">
+                <el-input v-model="form.name" placeholder="请输入商品名称" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+              <el-form-item label="英文名称" prop="enName">
+                <el-input v-model="form.enName" placeholder="请输入英文名称" />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+              <el-form-item label="商品类型" prop="type">
+                <el-select v-model="form.type" placeholder="请选择商品类型" clearable filterable style="width: 100%">
+                  <el-option v-for="category in PRODUCT_CATEGORIES" :key="category.value" :label="category.label"
+                    :value="category.value">
+                    <span>{{ category.label }}</span>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+              <el-form-item label="商品标签" prop="tags">
+                <el-input v-model="form.tags" placeholder="请输入商品标签，多个标签用逗号分隔" />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+              <el-form-item label="商品番号" prop="code">
+                <el-input v-model="form.code" placeholder="留空则自动生成" />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="商品描述" prop="description">
+                <el-input v-model="form.description" type="textarea" :rows="4" placeholder="请输入商品描述" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="英文描述" prop="enDescription">
+                <el-input v-model="form.enDescription" type="textarea" :rows="4" placeholder="请输入英文描述" />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="关键词" prop="keywords">
+                <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="英文关键词" prop="enKeywords">
+                <el-input v-model="form.enKeywords" placeholder="请输入英文关键词，多个关键词用逗号分隔" />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="搜索关键字" prop="searchKeywords">
+                <el-input v-model="form.searchKeywords" type="textarea" :rows="3"
+                  placeholder="请输入搜索关键字，逗号分隔，用于优化搜索功能。例如：黄色,体恤,T恤,短袖,卡通,动物,男款,童装,纯棉,休闲,日常,聚会,可爱,儿童,上衣" />
+                <div class="text-xs text-gray-500 mt-1">
+                  提示：建议包含商品名称、颜色、材质、风格、适用人群、使用场合等相关词汇，提高搜索命中率
+                </div>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="英文搜索关键字" prop="enSearchKeywords">
+                <el-input v-model="form.enSearchKeywords" type="textarea" :rows="3"
+                  placeholder="请输入英文搜索关键字，逗号分隔，用于优化搜索功能。例如：yellow,T-shirt,short sleeve,cartoon,animal,men,kids,cotton,casual,daily,party,cute,children,top" />
+                <div class="text-xs text-gray-500 mt-1">
+                  提示：建议包含商品名称、颜色、材质、风格、适用人群、使用场合等相关词汇的英文表达，提高搜索命中率
+                </div>
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="商品图片" prop="images">
+                <ProductImageUpload ref="productImageUploadRef" v-model="form.images" :max-count="10"
+                  @files-change="handleFilesChange" />
+              </el-form-item>
+            </el-col>
+
+            <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+              <el-form-item label="商品视频" prop="videos">
+                <ProductVideoUpload ref="productVideoUploadRef" v-model="form.videos" :max-count="5"
+                  @files-change="handleVideoFilesChange" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+
+        <template #footer>
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 发布弹窗 -->
+      <el-dialog title="发布到多媒体平台" v-model="publishDialogVisible" width="100%" :fullscreen="true"
+        @close="publishDialogClose" align-center>
+        <div class="p-3">
+          <el-alert title="多媒体说明" description="默认引用设计模型缩略图、相关截图和视频，可勾选选择图片和视频" type="info" :closable="false" show-icon
+            class="mb-3" />
+
+          <h3 class="text-base font-medium my-2">选择发布平台</h3>
+
+          <!-- 平台选择 -->
+          <el-checkbox-group v-model="selectedPlatforms" class="mb-4">
+            <el-checkbox label="douyin">抖音</el-checkbox>
+            <el-checkbox label="xiaohongshu">小红书</el-checkbox>
+            <el-checkbox label="weibo">微博</el-checkbox>
+            <el-checkbox label="kuaishou">快手</el-checkbox>
+          </el-checkbox-group>
+
+          <!-- 平台表单 -->
+          <div class="platform-grid">
+            <div v-for="platform in selectedPlatforms" :key="platform" class="platform-item">
+              <el-card class="platform-form-compact" shadow="hover">
+                <template #header>
+                  <div class="flex items-center">
+                    <span class="text-base font-medium">{{ getPlatformName(platform) }}</span>
+                  </div>
+                </template>
+                <!-- 只在表单已初始化时渲染 -->
+                <el-form v-if="publishForm[platform]" :model="publishForm[platform]" label-width="60px" size="small"
+                  :data-platform="platform">
+                  <el-form-item v-if="platform !== 'weibo'" label="标题" required>
+                    <el-input v-model="publishForm[platform].title"
+                      :placeholder="`请输入${getPlatformName(platform)}标题`" />
+                  </el-form-item>
+                  <el-form-item label="内容" required>
+                    <el-input v-model="publishForm[platform].content" type="textarea" :rows="2"
+                      :autosize="{ minRows: 2, maxRows: 8 }" :placeholder="`请输入${getPlatformName(platform)}内容`"
+                      @input="handleContentInput(platform)" />
+                  </el-form-item>
+
+                  <el-form-item label="商品图片">
+                    <div class="flex flex-wrap gap-1">
+                      <div v-for="(url, index) in publishForm[platform].images" :key="index"
+                        class="relative cursor-pointer select-item-compact"
+                        :class="{ 'selected': publishForm[platform].selectedImages.includes(url) }"
+                        @click="toggleImageSelection(platform, url)">
+                        <img :src="url" class="w-20 h-20 object-cover rounded transition-all duration-200"
+                          @click.stop="preview(index, publishForm[platform].images)" />
+                        <div
+                          class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                          {{ index + 1 }}/{{ publishForm[platform].images.length }}
+                        </div>
+                        <div
+                          class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-md">
+                          <el-icon v-if="publishForm[platform].selectedImages.includes(url)"
+                            class="text-blue-600 text-xs check-icon">
+                            <Check />
+                          </el-icon>
+                        </div>
+                      </div>
+                    </div>
+                  </el-form-item>
+
+                  <el-form-item label="商品视频"
+                    v-if="publishForm[platform].videos && publishForm[platform].videos.length > 0">
+                    <div class="flex flex-wrap gap-1">
+                      <div v-for="(url, index) in publishForm[platform].videos" :key="index"
+                        class="relative cursor-pointer select-item-compact"
+                        :class="{ 'selected': publishForm[platform].selectedVideos.includes(url) }"
+                        @click="toggleVideoSelection(platform, url)">
+                        <div class="w-20 h-20 bg-black rounded relative overflow-hidden transition-all duration-200"
+                          @click.stop="handlePublishVideoPreview(publishForm[platform].videos, index)">
+                          <video :src="url" class="w-full h-full object-cover" muted preload="metadata" />
+                          <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-6 h-6 bg-black bg-opacity-60 rounded-full flex items-center justify-center">
+                              <el-icon class="text-white text-xs">
+                                <VideoPlay />
+                              </el-icon>
+                            </div>
+                          </div>
+                          <div
+                            class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                            {{ index + 1 }}/{{ publishForm[platform].videos.length }}
+                          </div>
+                        </div>
+                        <div
+                          class="absolute top-1 right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center shadow-md">
+                          <el-icon v-if="publishForm[platform].selectedVideos.includes(url)"
+                            class="text-blue-600 text-xs check-icon">
+                            <Check />
+                          </el-icon>
+                        </div>
+                      </div>
+                    </div>
+                  </el-form-item>
+                </el-form>
+              </el-card>
+            </div>
+          </div>
         </div>
 
-        <div v-if="availablePublishConfigs.length === 0" class="empty-config-tips text-center py-10 text-gray-400">
-           暂无发布配置，请先在“发布配置”页面添加
+        <template #footer>
+          <el-button @click="publishDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handlePublishSubmit" :loading="publishLoading">确定发布</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 发布结果弹窗 -->
+      <el-dialog title="发布结果" v-model="publishResultVisible" width="900px" :close-on-click-modal="false"
+        :close-on-press-escape="false" :show-close="false" align-center>
+        <div class="p-4 publish-result-dark-bg">
+          <div v-if="publishResults.length > 0">
+            <div class="flex flex-wrap gap-4 mb-4">
+              <div v-for="result in publishResults" :key="result.platform" class="publish-result-card">
+                <div class="flex items-center justify-between p-3 rounded-lg border publish-result-dark-item" :class="{
+                  'border-green-400 bg-green-900 bg-opacity-80': result.success,
+                  'border-red-400 bg-red-900 bg-opacity-80': !result.success
+                }">
+                  <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full mr-2" :class="{
+                      'bg-green-400': result.success,
+                      'bg-red-400': !result.success
+                    }"></div>
+                    <span class="font-medium text-gray-100">{{ getPlatformName(result.platform) }}</span>
+                  </div>
+                  <div class="text-right ml-2">
+                    <div class="font-medium" :class="{
+                      'text-green-400': result.success,
+                      'text-red-400': !result.success
+                    }">
+                      {{ result.success ? '发布成功' : '发布失败' }}
+                    </div>
+                    <div class="text-xs text-gray-300 mt-1 max-w-[180px] break-words">{{ result.message }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 总体结果 -->
+            <div class="mt-4 p-3 rounded-lg border publish-result-dark-item" :class="{
+              'border-green-400 bg-green-900 bg-opacity-80': publishSummary.success,
+              'border-yellow-400 bg-yellow-900 bg-opacity-80': publishSummary.partial,
+              'border-red-400 bg-red-900 bg-opacity-80': publishSummary.failed
+            }">
+              <div class="text-center">
+                <div class="font-medium" :class="{
+                  'text-green-400': publishSummary.success,
+                  'text-yellow-400': publishSummary.partial,
+                  'text-red-400': publishSummary.failed
+                }">
+                  {{ publishSummary.message }}
+                </div>
+                <div class="text-sm text-gray-300 mt-1">
+                  成功：{{ publishSummary.successCount }} 个，失败：{{ publishSummary.failCount }} 个
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <el-checkbox-group v-else v-model="publishQueueSelectedConfigIds" class="platform-checkbox-group flex flex-col">
-          <el-checkbox
-            v-for="config in availablePublishConfigs"
-            :key="config.id"
-            :label="config.id"
-            class="platform-checkbox-item !mr-0 mb-2 p-2 border border-gray-100 rounded hover:bg-gray-50 transition-colors w-full h-auto"
-          >
-            <div class="platform-item-content flex items-center w-full">
-              <div class="flex items-center flex-1">
+
+        <template #footer>
+          <el-button type="primary" @click="closePublishResultDialog">确认</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 图片预览 -->
+      <el-dialog v-model="previewVisible" title="预览" width="90%" :close-on-click-modal="true">
+        <div v-if="previewList.length > 0" class="flex flex-col items-center">
+          <el-image :src="previewList[previewIndex]" :preview-src-list="previewList" :initial-index="previewIndex"
+            fit="contain" style="max-width: 100%; max-height: 70vh;" :preview-teleported="true" />
+          <div v-if="previewList.length > 1" class="mt-4 flex items-center gap-4">
+            <el-button @click="previewIndex = Math.max(0, previewIndex - 1)"
+              :disabled="previewIndex === 0">上一张</el-button>
+            <span>{{ previewIndex + 1 }} / {{ previewList.length }}</span>
+            <el-button @click="previewIndex = Math.min(previewList.length - 1, previewIndex + 1)"
+              :disabled="previewIndex === previewList.length - 1">下一张</el-button>
+          </div>
+        </div>
+        <div v-else-if="previewUrl" class="flex justify-center">
+          <img :src="previewUrl" alt="Preview" style="max-width: 100%; max-height: 70vh;" />
+        </div>
+      </el-dialog>
+
+      <!-- 视频预览弹窗 -->
+      <el-dialog v-model="videoPreviewVisible" title="视频预览" width="100%" :fullscreen="true"
+        :close-on-click-modal="true">
+        <div v-if="videoPreviewList.length > 0" class="video-preview-container">
+          <div class="video-preview-header">
+            <div class="actions" v-if="videoPreviewAllowDelete && videoPreviewRowId">
+              <el-button type="danger" size="small" :icon="Delete"
+                :loading="deletingVideoKey === `${videoPreviewRowId}-${videoPreviewList[videoPreviewIndex]}`"
+                @click="handleDeleteVideo({ id: videoPreviewRowId, videos: videoPreviewList }, videoPreviewList[videoPreviewIndex])">
+                删除
+              </el-button>
+            </div>
+          </div>
+          <div class="video-preview-content">
+            <el-button v-if="videoPreviewList.length > 1" class="video-nav-btn video-nav-prev" :icon="ArrowLeft" circle
+              @click="prevVideo" :disabled="videoPreviewIndex === 0" />
+            <div class="video-wrapper">
+              <transition name="fade" mode="out-in">
+                <video :key="videoPreviewIndex" :src="videoPreviewList[videoPreviewIndex]" controls preload="auto"
+                  class="video-preview-player" />
+              </transition>
+            </div>
+            <el-button v-if="videoPreviewList.length > 1" class="video-nav-btn video-nav-next" :icon="ArrowRight" circle
+              @click="nextVideo" :disabled="videoPreviewIndex === videoPreviewList.length - 1" />
+          </div>
+          <div v-if="videoPreviewList.length > 1" class="video-pagination">
+            <span class="video-page-info">
+              {{ videoPreviewIndex + 1 }} / {{ videoPreviewList.length }}
+            </span>
+          </div>
+        </div>
+        <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
+      </el-dialog>
+
+      <!-- 生成视频配置弹窗（ffmpeg） -->
+      <el-dialog v-model="videoGenDialogVisible" title="视频生成配置" width="100%" :fullscreen="true"
+        :close-on-click-modal="false" :destroy-on-close="false" align-center>
+        <div class="video-gen-container">
+          <el-alert type="info" :closable="false" show-icon class="mb-4">
+            <template #title>
+              支持多图合成视频，可选择多张图片并设置过渡效果。每张图片的显示时长可自定义。
+            </template>
+          </el-alert>
+
+          <el-form :model="videoGenForm" label-width="160px" size="default" class="video-gen-form">
+            <!-- 尺寸设置 -->
+            <el-card class="mb-4" shadow="never">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <el-icon>
+                    <Setting />
+                  </el-icon>
+                  <span>尺寸设置</span>
+                </div>
+              </template>
+              <el-row :gutter="8">
+                <el-col :xs="24" :sm="12" :md="12">
+                  <el-form-item label="尺寸模式">
+                    <el-radio-group v-model="videoGenForm.sizeMode" @change="handleSizeModeChange">
+                      <el-radio label="keep-original">保持原图尺寸</el-radio>
+                      <el-radio label="custom">自定义尺寸</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="8">
+                <el-col :xs="12" :sm="6" :md="6">
+                  <el-form-item label="宽度">
+                    <el-input-number v-model="videoGenForm.width" :step="10" controls-position="right"
+                      style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="12" :sm="6" :md="6">
+                  <el-form-item label="高度">
+                    <el-input-number v-model="videoGenForm.height" :step="10" controls-position="right"
+                      style="width: 100%"
+                      :disabled="videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight"
+                      @change="handleHeightChange" />
+                    <div v-if="videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight"
+                      class="text-xs text-gray-500 mt-1">
+                      高度将根据原图比例自动计算
+                    </div>
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="24" :sm="12" :md="12" v-if="videoGenForm.sizeMode === 'keep-original'">
+                  <el-form-item label="自动计算高度">
+                    <div class="flex items-center gap-3">
+                      <el-switch v-model="videoGenForm.autoHeight" @change="handleAutoHeightChange" />
+                      <div v-if="imageSize" class="text-xs text-gray-500">
+                        原图尺寸: {{ imageSize.width }} × {{ imageSize.height }}
+                      </div>
+                    </div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row :gutter="12" v-if="videoGenForm.sizeMode === 'custom'">
+                <el-col :xs="12" :sm="6" :md="6">
+                  <el-form-item label="缩放模式">
+                    <el-select v-model="videoGenForm.scaleMode" style="width: 100%">
+                      <el-option label="Cover（填充，可能裁剪）" value="cover" />
+                      <el-option label="Contain（适应，可能有空白）" value="contain" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.scaleMode === 'contain'">
+                  <el-form-item label="背景颜色">
+                    <el-color-picker v-model="videoGenForm.backgroundColor" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </el-card>
+
+            <!-- 图片选择 -->
+            <el-card class="mb-4" shadow="never">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <el-icon>
+                    <Picture />
+                  </el-icon>
+                  <span>图片选择</span>
+                </div>
+              </template>
+              <el-row :gutter="8">
+                <!-- 商品图片选择 -->
+                <el-col :xs="24" :sm="24" :md="24" v-if="videoGenRow?.images && videoGenRow.images.length > 0">
+                  <el-form-item label="选择商品图片">
+                    <div class="flex flex-wrap gap-2 mb-2">
+                      <div v-for="(url, index) in videoGenRow.images" :key="index"
+                        class="relative cursor-pointer select-item-compact"
+                        :class="{ 'selected': videoGenForm.selectedImages.includes(url) }"
+                        @click="toggleVideoGenImageSelection(url)">
+                        <el-image :src="url" class="w-20 h-20 object-cover rounded transition-all duration-200"
+                          fit="cover" :preview-src-list="videoGenRow.images" :initial-index="index"
+                          :preview-teleported="true" :hide-on-click-modal="false" />
+                        <div
+                          class="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-md">
+                          <el-icon v-if="videoGenForm.selectedImages.includes(url)"
+                            class="text-blue-600 text-xs check-icon">
+                            <Check />
+                          </el-icon>
+                        </div>
+                        <div
+                          class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 text-center rounded-b">
+                          {{ index + 1 }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">
+                      已选择 {{ videoGenForm.selectedImages.length }} 张图片，点击图片可切换选择状态
+                    </div>
+                  </el-form-item>
+                </el-col>
+                <!-- 无产品图片提示 -->
+                <el-col :xs="24" :sm="24" :md="24" v-else>
+                  <el-form-item label="选择商品图片">
+                    <el-alert type="warning" :closable="false" show-icon>
+                      <template #title>
+                        该商品没有图片，无法生成视频。请先为商品添加图片。
+                      </template>
+                    </el-alert>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </el-card>
+
+            <!-- 视频设置 -->
+            <el-card class="mb-4" shadow="never">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <el-icon>
+                    <VideoCamera />
+                  </el-icon>
+                  <span>视频设置</span>
+                </div>
+              </template>
+              <el-row :gutter="8">
+                <el-col :xs="12" :sm="6" :md="6">
+                  <el-form-item label="视频时长（秒）">
+                    <el-input-number v-model="videoGenForm.clipDuration" :min="0.5" :max="30" :step="0.5" :precision="1"
+                      controls-position="right" style="width: 100%" />
+                    <div class="text-xs text-gray-500 mt-1">
+                      视频总时长（多图时会自动均分到每张图片并叠加过渡时间）
+                    </div>
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="12" :sm="6" :md="6">
+                  <el-form-item label="视频格式">
+                    <el-select v-model="videoGenForm.outputFormat" style="width: 100%">
+                      <el-option label="MP4" value="mp4" />
+                      <el-option label="WebM" value="webm" />
+                      <el-option label="MKV" value="mkv" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.selectedImages.length > 1">
+                  <el-form-item label="过渡效果">
+                    <el-select v-model="videoGenForm.transition" style="width: 100%">
+                      <el-option label="淡入淡出" value="fade" />
+                      <el-option label="向左滑动" value="directional-left" />
+                      <el-option label="向右滑动" value="directional-right" />
+                      <el-option label="无过渡" value="none" />
+                    </el-select>
+                    <div class="text-xs text-gray-500 mt-1">
+                      多张图片之间的过渡效果
+                    </div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </el-card>
+
+            <!-- 背景音乐设置 -->
+            <el-card class="mb-4" shadow="never">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <el-icon>
+                    <Headset />
+                  </el-icon>
+                  <span>背景音乐设置</span>
+                </div>
+              </template>
+              <el-row :gutter="8">
+                <el-col :xs="24" :sm="12" :md="12">
+                  <el-form-item label="背景音乐">
+                    <el-select v-model="videoGenForm.audioUrl" filterable remote reserve-keyword
+                      placeholder="请搜索并选择背景音乐" :remote-method="remoteSearchAudio" :loading="audioLoading" clearable
+                      style="width: 100%">
+                      <el-option v-for="audio in audioList" :key="audio.id" :label="audio.name || '未命名音频'"
+                        :value="audio.url">
+                        <div class="flex items-center justify-between">
+                          <span>{{ audio.name || '未命名音频' }}</span>
+                          <span class="text-xs text-gray-400 ml-2">{{ audio.suffix?.toUpperCase() }}</span>
+                        </div>
+                      </el-option>
+                    </el-select>
+                    <div class="text-xs text-gray-500 mt-1">
+                      从剪辑素材库中选择音频文件作为背景音乐（可选，yishe-videos 会自动处理音频链接）
+                    </div>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </el-card>
+
+            <!-- 操作选项 -->
+            <el-card class="mb-4" shadow="never">
+              <template #header>
+                <div class="flex items-center gap-2">
+                  <el-icon>
+                    <Operation />
+                  </el-icon>
+                  <span>操作选项</span>
+                </div>
+              </template>
+              <el-row :gutter="8">
+                <el-col :xs="24" :sm="12" :md="12">
+                  <el-form-item label="视频处理方式">
+                    <el-radio-group v-model="videoGenForm.replace">
+                      <el-radio :label="false">追加到现有视频</el-radio>
+                      <el-radio :label="true">替换现有视频</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </el-card>
+          </el-form>
+        </div>
+
+        <template #footer>
+          <div class="flex justify-end gap-2">
+            <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
+            <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
+              <el-icon class="mr-1">
+                <VideoPlay />
+              </el-icon>
+              {{ generatingVideoId ? '生成中...' : '开始生成视频' }}
+            </el-button>
+          </div>
+        </template>
+      </el-dialog>
+
+      <!-- 导出社交媒体数据弹窗 -->
+      <el-dialog v-model="socialExportVisible" title="社交媒体发布数据（导出）" width="60%" :fullscreen="false"
+        :close-on-click-modal="true" align-center>
+        <div class="p-4 max-w-5xl mx-auto">
+          <el-input v-model="socialExportText" type="textarea" :rows="18" readonly />
+        </div>
+        <template #footer>
+          <el-button @click="socialExportVisible = false">取消</el-button>
+          <el-button type="primary" @click="copySocialExport" :disabled="!socialExportText">复制JSON</el-button>
+        </template>
+      </el-dialog>
+
+      <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true"
+        :close-on-click-modal="false">
+        <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
+          <el-row :gutter="32">
+            <!-- 左侧图片区 -->
+            <el-col :span="8" class="flex flex-col items-center justify-center">
+              <img v-if="customModelDetail.thumbnail"
+                :src="getPreviewImageUrl(customModelDetail.thumbnail, { width: 300, quality: 80, format: 'webp' })"
+                style="max-width: 240px; max-height: 240px; border-radius: 12px; box-shadow: 0 2px 8px #0001; margin-bottom: 16px; cursor:pointer;"
+                @click="preview(0, [customModelDetail.thumbnail])" />
+              <div v-else
+                class="w-[240px] h-[240px] flex items-center justify-center bg-gray-100 text-gray-400 rounded mb-4">
+                无缩略图</div>
+              <!-- 预留更多图片展示（如有） -->
+              <template v-if="customModelDetail.images && customModelDetail.images.length">
+                <div class="flex flex-wrap gap-2 mt-2">
+                  <img v-for="(img, idx) in customModelDetail.images" :key="idx" :src="img"
+                    style="width: 60px; height: 60px; border-radius: 6px; object-fit: cover; cursor:pointer;"
+                    @click="preview(idx, customModelDetail.images)" />
+                </div>
+              </template>
+            </el-col>
+            <!-- 右侧基础信息区 -->
+            <el-col :span="16">
+              <el-descriptions :column="2" border>
+                <el-descriptions-item label="ID">{{ customModelDetail.id }}</el-descriptions-item>
+                <el-descriptions-item label="名称">{{ customModelDetail.name }}</el-descriptions-item>
+                <el-descriptions-item label="描述" :span="2">{{ customModelDetail.description || '无'
+                }}</el-descriptions-item>
+                <el-descriptions-item label="关键词">{{ customModelDetail.keywords || '无' }}</el-descriptions-item>
+                <el-descriptions-item label="标签">{{ customModelDetail.tags || '无' }}</el-descriptions-item>
+                <el-descriptions-item label="作者">
+                  <template
+                    v-if="customModelDetail.uploader && (customModelDetail.uploader.name || customModelDetail.uploader.account)">
+                    {{ customModelDetail.uploader.name || customModelDetail.uploader.account }}
+                  </template>
+                  <template v-else>无</template>
+                </el-descriptions-item>
+                <el-descriptions-item label="创建时间">{{ customModelDetail.createTime ? (customModelDetail.createTime +
+                  '').replace('T', ' ').slice(0, 19) : '无' }}</el-descriptions-item>
+                <el-descriptions-item label="更新时间">{{ customModelDetail.updateTime ? (customModelDetail.updateTime +
+                  '').replace('T', ' ').slice(0, 19) : '无' }}</el-descriptions-item>
+                <el-descriptions-item v-if="customModelDetail.url" label="模型文件">
+                  <el-link :href="customModelDetail.url" target="_blank" type="primary">下载/预览</el-link>
+                </el-descriptions-item>
+              </el-descriptions>
+            </el-col>
+          </el-row>
+          <!-- 元数据结构化展示 -->
+          <div v-if="customModelDetail.meta" class="mt-6">
+            <h4 class="font-medium mb-2">元数据</h4>
+            <el-scrollbar style="max-height: 200px;">
+              <pre style="background:none;padding:0;margin:0;font-size:13px;">{{ JSON.stringify(customModelDetail.meta, null,
+                2) }}</pre>
+            </el-scrollbar>
+          </div>
+        </div>
+        <div v-else class="p-8 text-center text-gray-400">暂无详情</div>
+        <template #footer>
+          <el-button @click="customModelDetailVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 关联信息详情弹窗 -->
+      <el-dialog v-model="relationsDetailVisible" title="关联信息详情" width="90%" :close-on-click-modal="false" align-center
+        :destroy-on-close="true">
+        <div v-if="currentRelationsRow" class="relations-detail-content">
+          <!-- 关联设计模型 -->
+          <div v-if="currentRelationsRow.customModel" class="relation-section">
+            <h3 class="relation-section-title">关联设计模型</h3>
+            <vxe-grid :data="[currentRelationsRow.customModel]" :show-header="true" border size="mini"
+              style="margin: 0; padding: 0; background: none;" :columns="[
+                { field: 'thumbnail', title: '缩略图', width: '120', slots: { default: 'customModelThumbnailSlot' } },
+                { field: 'name', title: '名称', minWidth: 80 },
+                { field: 'description', title: '描述', minWidth: 120 },
+                { field: 'keywords', title: '关键词', minWidth: 100 },
+                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
+                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'customModelOperationSlot' } }
+              ]">
+              <template #customModelThumbnailSlot="{ row }">
+                <div class="flex items-center justify-center p-2">
+                  <el-image v-if="row.thumbnail"
+                    :src="getPreviewImageUrl(row.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                    :preview-src-list="[row.thumbnail]" :initial-index="0"
+                    style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;" />
+                  <span v-else class="text-gray-400">无</span>
+                </div>
+              </template>
+              <template #customModelUpdateTimeSlot="{ row }">
+                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+              </template>
+              <template #customModelOperationSlot="{ row }">
+                <div class="flex gap-2">
+                  <el-button type="primary" link size="small" @click="showCustomModelDrafts(row)">查看草稿截图</el-button>
+                  <el-button v-if="row.thumbnail" type="success" link size="small"
+                    @click="downloadThumbnail(row.thumbnail, row.name || '缩略图')">
+                    下载缩略图
+                  </el-button>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+
+          <!-- 关联贴纸 -->
+          <div v-if="currentRelationsRow.sticker" class="relation-section">
+            <h3 class="relation-section-title">关联贴纸</h3>
+            <vxe-grid :data="[currentRelationsRow.sticker]" :show-header="true" border size="mini"
+              style="margin: 0; padding: 0; background: none;" :columns="[
+                { field: 'url', title: '图片', width: '120', slots: { default: 'stickerImageSlot' } },
+                { field: 'name', title: '名称', minWidth: 80 },
+                { field: 'description', title: '描述', minWidth: 120 },
+                { field: 'keywords', title: '关键词', minWidth: 100 },
+                { field: 'suffix', title: '后缀', width: 80 },
+                { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
+                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'stickerOperationSlot' } }
+              ]">
+              <template #stickerImageSlot="{ row }">
+                <div class="flex items-center justify-center p-2">
+                  <el-image v-if="row.url" :src="row.url" :preview-src-list="[row.url]" :initial-index="0"
+                    style="width:120px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;" />
+                  <span v-else class="text-gray-400">无</span>
+                </div>
+              </template>
+              <template #stickerUpdateTimeSlot="{ row }">
+                <span>{{ row.updateTime ? (row.updateTime + '').replace('T', ' ').slice(0, 19) : '无' }}</span>
+              </template>
+              <template #stickerOperationSlot="{ row }">
+                <div class="flex gap-2">
+                  <el-button v-if="row.url" type="primary" link size="small" @click="preview(0, [row.url])">
+                    预览
+                  </el-button>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+
+          <!-- 关联 PSD 套图 -->
+          <div v-if="currentRelationsRow.psdSet" class="relation-section">
+            <h3 class="relation-section-title">关联PSD套图</h3>
+            <vxe-grid :data="[currentRelationsRow.psdSet]" :show-header="true" border size="mini"
+              style="margin: 0; padding: 0; background: none;" :columns="psdSetDetailColumns">
+              <template #psdSetImagesSlot="{ row }">
+                <div class="flex gap-1 flex-wrap">
+                  <div v-for="(img, idx) in getPsdSetImages(row).slice(0, 3)" :key="idx" class="relation-thumb-wrapper">
+                    <el-image v-if="img" :src="img" :preview-src-list="getPsdSetImages(row)" :initial-index="idx"
+                      :preview-teleported="true" :hide-on-click-modal="false" class="relation-thumb-image"
+                      fit="contain" />
+                    <span v-else class="text-gray-400 text-xs">无</span>
+                  </div>
+                  <span v-if="getPsdSetImages(row).length > 3" class="text-xs text-gray-500">+{{
+                    (getPsdSetImages(row).length - 3) }}</span>
+                  <span v-if="!getPsdSetImages(row).length" class="text-gray-400 text-xs">无</span>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+
+          <div v-if="!currentRelationsRow.customModel && !currentRelationsRow.sticker && !currentRelationsRow.psdSet"
+            class="text-center py-8 text-gray-400">
+            无关联信息
+          </div>
+        </div>
+        <template #footer>
+          <el-button @click="relationsDetailVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 查看源信息对话框 -->
+      <el-dialog v-model="relationsSourceInfoVisible" title="关联信息源数据" width="80%" :close-on-click-modal="false"
+        align-center :destroy-on-close="true">
+        <div v-if="currentSourceInfoRow" class="source-info-content">
+          <el-tabs v-model="activeSourceTab" type="border-card">
+            <el-tab-pane v-if="currentSourceInfoRow.customModel" label="设计模型" name="customModel">
+              <div class="source-info-section">
+                <h4 class="source-info-title">设计模型原始数据</h4>
+                <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.customModel) }}</pre>
+              </div>
+            </el-tab-pane>
+            <el-tab-pane v-if="currentSourceInfoRow.sticker" label="贴纸" name="sticker">
+              <div class="source-info-section">
+                <h4 class="source-info-title">贴纸原始数据</h4>
+                <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.sticker) }}</pre>
+              </div>
+            </el-tab-pane>
+            <el-tab-pane v-if="currentSourceInfoRow.psdSet" label="PSD套图" name="psdSet">
+              <div class="source-info-section">
+                <h4 class="source-info-title">PSD套图原始数据</h4>
+                <pre class="source-info-json">{{ formatJSON(currentSourceInfoRow.psdSet) }}</pre>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
+        <template #footer>
+          <el-button @click="relationsSourceInfoVisible = false">关闭</el-button>
+          <el-button type="primary" @click="copySourceInfo">复制JSON</el-button>
+        </template>
+      </el-dialog>
+
+      <el-dialog v-model="customModelDraftDialogVisible" title="关联草稿" width="80%" :close-on-click-modal="false"
+        align-center :destroy-on-close="true">
+        <div v-if="customModelDrafts.length === 0" class="empty-state text-center py-8">
+          <el-empty description="暂无关联草稿" />
+        </div>
+        <div v-else class="draft-grid">
+          <div v-for="draft in customModelDrafts" :key="draft.id" class="draft-item">
+            <div class="draft-preview">
+              <!-- 视频预览 -->
+              <div v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
+                class="video-preview-container" @click="handleDraftVideoPlay(draft)">
+                <video :src="draft.url" class="w-full h-32 rounded cursor-pointer object-cover" preload="metadata"
+                  muted />
+                <div class="video-overlay">
+                  <el-icon class="play-icon">
+                    <VideoPlay />
+                  </el-icon>
+                </div>
+              </div>
+              <!-- 图片预览 -->
+              <el-image v-else :src="draft.url" fit="cover" class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[draft.url]" :preview-teleported="true" :z-index="9999" />
+            </div>
+            <div class="draft-info p-3">
+              <div class="draft-header flex justify-between items-start mb-2">
+                <div class="draft-name text-sm font-medium truncate flex-1">
+                  {{ draft.name || '未命名' }}
+                </div>
+              </div>
+              <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
+                {{ draft.description }}
+              </div>
+              <div class="draft-meta text-xs text-color-placeholder mt-2">
+                <span>{{ formatTimestamp(draft.createTime) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <template #footer>
+          <el-button @click="customModelDraftDialogVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
+        <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
+        <el-input v-model="aiGenPrompt" type="textarea" :rows="6" placeholder="如：请用艺术化语言描述商品内容..."
+          style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
+        <template #footer>
+          <el-button @click="aiGenDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 产品详情弹窗 -->
+      <el-dialog v-model="productDetailVisible" title="产品详情" width="90%" :fullscreen="true"
+        :close-on-click-modal="false" align-center :destroy-on-close="true" class="product-detail-dialog">
+        <div class="product-detail-wrapper">
+          <div v-if="productDetailLoading" class="flex items-center justify-center py-20">
+            <el-icon class="is-loading" style="font-size: 32px;">
+              <Loading />
+            </el-icon>
+            <span class="ml-2">加载中...</span>
+          </div>
+          <div v-else-if="productDetail" class="product-detail-content">
+            <!-- 基本信息 -->
+            <div class="product-detail-section mb-4">
+              <div class="product-detail-section-title">
+                <el-icon>
+                  <Document />
+                </el-icon>
+                <span>基本信息</span>
+              </div>
+              <div class="product-info-list">
+                <div class="product-info-item">
+                  <div class="product-info-label">ID</div>
+                  <div class="product-info-value">{{ productDetail.id }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">产品代码</div>
+                  <div class="product-info-value">
+                    <el-tag v-if="productDetail.code" type="info" size="small">{{ productDetail.code }}</el-tag>
+                    <span v-else class="text-gray-400">未生成</span>
+                  </div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">商品名称</div>
+                  <div class="product-info-value">{{ productDetail.name || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">英文名称</div>
+                  <div class="product-info-value">{{ productDetail.enName || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">商品类型</div>
+                  <div class="product-info-value">{{ productDetail.type || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">发布状态</div>
+                  <div class="product-info-value">
+                    <el-tag v-if="productDetail.isPublish" type="success" size="small">已发布</el-tag>
+                    <el-tag v-else type="warning" size="small">未发布</el-tag>
+                  </div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">商品描述</div>
+                  <div class="product-info-value">{{ productDetail.description || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">英文描述</div>
+                  <div class="product-info-value">{{ productDetail.enDescription || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">关键词</div>
+                  <div class="product-info-value">{{ productDetail.keywords || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">英文关键词</div>
+                  <div class="product-info-value">{{ productDetail.enKeywords || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">搜索关键字</div>
+                  <div class="product-info-value">{{ productDetail.searchKeywords || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">英文搜索关键字</div>
+                  <div class="product-info-value">{{ productDetail.enSearchKeywords || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">创建人</div>
+                  <div class="product-info-value">{{ productDetail.creatorName || '未设置' }}</div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">创建时间</div>
+                  <div class="product-info-value">
+                    {{ productDetail.createTime ? formatTimestamp(productDetail.createTime) : '未设置' }}
+                  </div>
+                </div>
+                <div class="product-info-item">
+                  <div class="product-info-label">修改时间</div>
+                  <div class="product-info-value">
+                    {{ productDetail.updateTime ? formatTimestamp(productDetail.updateTime) : '未设置' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 商品图片 -->
+            <div class="product-detail-section mb-4" v-if="productDetail.images && productDetail.images.length > 0">
+              <div class="product-detail-section-title">
+                <el-icon>
+                  <Picture />
+                </el-icon>
+                <span>商品图片 ({{ productDetail.images.length }})</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <el-image v-for="(url, index) in productDetail.images" :key="index" :src="url"
+                  :preview-src-list="productDetail.images" :initial-index="index" :preview-teleported="true"
+                  :hide-on-click-modal="false" class="w-32 h-32 object-cover rounded cursor-pointer" fit="cover" />
+              </div>
+            </div>
+
+            <!-- 商品视频 -->
+            <div class="product-detail-section mb-4" v-if="productDetail.videos && productDetail.videos.length > 0">
+              <div class="product-detail-section-title">
+                <el-icon>
+                  <VideoPlay />
+                </el-icon>
+                <span>商品视频 ({{ productDetail.videos.length }})</span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <div v-for="(url, index) in productDetail.videos" :key="index" class="relative cursor-pointer"
+                  @click="handleVideoPreview(productDetail.videos, index, productDetail)">
+                  <video :src="url" class="w-32 h-32 object-cover rounded" muted preload="metadata" />
+                  <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                    <el-icon class="text-white text-2xl">
+                      <VideoPlay />
+                    </el-icon>
+                  </div>
+                  <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                    {{ index + 1 }}/{{ productDetail.videos.length }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 关联信息 -->
+            <div class="product-detail-section mb-4"
+              v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet">
+              <div class="product-detail-section-title">
+                <el-icon>
+                  <Box />
+                </el-icon>
+                <span>关联信息</span>
+              </div>
+              <div class="relations-detail-content">
+                <!-- 使用已有的关联信息展示逻辑 -->
+                <div v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet"
+                  class="relations-info">
+                  <!-- 设计模型 -->
+                  <div v-if="productDetail.customModel" class="relation-section-item">
+                    <div class="relation-header">
+                      <span class="relation-label">设计模型：</span>
+                    </div>
+                    <vxe-grid :data="[productDetail.customModel]" :show-header="true" border size="mini"
+                      class="relation-sub-grid" :columns="[
+                        { field: 'thumbnail', title: '缩略图', width: 120, slots: { default: 'customModelThumbnailSlot' } },
+                        { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                        { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                        { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                        { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'customModelUpdateTimeSlot' } }
+                      ]">
+                      <template #customModelThumbnailSlot="{ row: modelRow }">
+                        <div class="flex items-center justify-center p-1">
+                          <el-image v-if="modelRow.thumbnail"
+                            :src="getPreviewImageUrl(modelRow.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                            :preview-src-list="getCustomModelImages(modelRow)" :initial-index="0"
+                            :preview-teleported="true" :hide-on-click-modal="false" class="relation-thumb-image"
+                            fit="contain" />
+                          <span v-else class="text-gray-400 text-xs">无</span>
+                        </div>
+                      </template>
+                      <template #customModelUpdateTimeSlot="{ row: modelRow }">
+                        <span class="text-xs">{{ modelRow.updateTime ? formatTimestamp(modelRow.updateTime) : '无'
+                        }}</span>
+                      </template>
+                    </vxe-grid>
+                  </div>
+
+                  <!-- 贴纸 -->
+                  <div v-if="productDetail.sticker" class="relation-section-item">
+                    <div class="relation-header">
+                      <span class="relation-label">贴纸：</span>
+                    </div>
+                    <vxe-grid :data="[productDetail.sticker]" :show-header="true" border size="mini"
+                      class="relation-sub-grid" :columns="[
+                        { field: 'url', title: '图片', width: 120, slots: { default: 'stickerImageSlot' } },
+                        { field: 'name', title: '名称', minWidth: 100, showOverflow: true },
+                        { field: 'description', title: '描述', minWidth: 120, showOverflow: true },
+                        { field: 'keywords', title: '关键词', minWidth: 100, showOverflow: true },
+                        { field: 'suffix', title: '后缀', width: 60 },
+                        { field: 'updateTime', title: '更新时间', width: 140, slots: { default: 'stickerUpdateTimeSlot' } }
+                      ]">
+                      <template #stickerImageSlot="{ row: stickerRow }">
+                        <div class="flex items-center justify-center p-1">
+                          <el-image v-if="stickerRow.url" :src="stickerRow.url" :preview-src-list="[stickerRow.url]"
+                            :initial-index="0" :preview-teleported="true" :hide-on-click-modal="false"
+                            class="relation-thumb-image" fit="contain" />
+                          <span v-else class="text-gray-400 text-xs">无</span>
+                        </div>
+                      </template>
+                      <template #stickerUpdateTimeSlot="{ row: stickerRow }">
+                        <span class="text-xs">{{ stickerRow.updateTime ? formatTimestamp(stickerRow.updateTime) : '无'
+                        }}</span>
+                      </template>
+                    </vxe-grid>
+                  </div>
+
+                  <!-- PSD 套图 -->
+                  <div v-if="productDetail.psdSet" class="relation-section-item">
+                    <div class="relation-header">
+                      <span class="relation-label">PSD套图：</span>
+                    </div>
+                    <vxe-grid :data="[productDetail.psdSet]" :show-header="true" border size="mini"
+                      class="relation-sub-grid" :columns="psdSetColumns">
+                      <template #psdSetImagesSlot="{ row: psdRow }">
+                        <div class="flex gap-1 flex-wrap">
+                          <div v-for="(img, idx) in getPsdSetImages(psdRow).slice(0, 3)" :key="idx"
+                            class="relation-thumb-wrapper">
+                            <el-image v-if="img" :src="img" :preview-src-list="getPsdSetImages(psdRow)"
+                              :initial-index="idx" :preview-teleported="true" :hide-on-click-modal="false"
+                              class="relation-thumb-image" fit="contain" />
+                            <span v-else class="text-gray-400 text-xs">无</span>
+                          </div>
+                          <span v-if="getPsdSetImages(psdRow).length > 3" class="text-xs text-gray-500">+{{
+                            (getPsdSetImages(psdRow).length - 3) }}</span>
+                          <span v-if="!getPsdSetImages(psdRow).length" class="text-gray-400 text-xs">无</span>
+                        </div>
+                      </template>
+                    </vxe-grid>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="!productDetailLoading" class="text-center py-20 text-gray-400">
+            暂无数据
+          </div>
+        </div>
+        <template #footer>
+          <el-button @click="productDetailVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 发布详情对话框 -->
+      <el-dialog v-model="publishTasksVisible"
+        :title="`发布详情 - ${currentProductForTasks?.name || currentProductForTasks?.id || ''}`" width="80%"
+        :close-on-click-modal="true" align-center :destroy-on-close="true">
+        <div v-loading="publishTasksLoading" class="publish-tasks-container">
+          <div v-if="publishTasks.length === 0 && !publishTasksLoading" class="empty-state text-center py-8">
+            <el-empty description="暂无发布任务" />
+          </div>
+          <vxe-grid v-else :data="publishTasks" :columns="publishTasksColumns" border stripe size="small"
+            :show-header="true" :show-overflow="true" height="500" class="publish-tasks-grid">
+            <template #platformSlot="{ row }">
+              {{ formatPlatformName(row.platform) }}
+            </template>
+            <template #statusSlot="{ row }">
+              <el-tag :type="formatTaskStatus(row.status).type" size="small">
+                {{ formatTaskStatus(row.status).label }}
+              </el-tag>
+            </template>
+            <template #attemptsSlot="{ row }">
+              {{ row.attempts || 0 }} / {{ row.maxAttempts || 3 }}
+            </template>
+            <template #createdAtSlot="{ row }">
+              {{ formatTimestamp(row.createdAt) }}
+            </template>
+            <template #updatedAtSlot="{ row }">
+              {{ formatTimestamp(row.updatedAt) }}
+            </template>
+            <template #processedAtSlot="{ row }">
+              {{ row.processedAt ? formatTimestamp(row.processedAt) : '-' }}
+            </template>
+            <template #errorSlot="{ row }">
+              <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </vxe-grid>
+        </div>
+        <template #footer>
+          <el-button @click="publishTasksVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 发布平台选择对话框 -->
+      <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="700px" :close-on-click-modal="true"
+        align-center>
+        <div class="platform-select-container">
+          <div class="mb-4 text-gray-600">
+            请选择要使用的发布配置（可多选）：
+          </div>
+
+          <div v-if="availablePublishConfigs.length === 0" class="empty-config-tips text-center py-10 text-gray-400">
+            暂无发布配置，请先在“发布配置”页面添加
+          </div>
+
+          <el-checkbox-group v-else v-model="publishQueueSelectedConfigIds"
+            class="platform-checkbox-group flex flex-col">
+            <el-checkbox v-for="config in availablePublishConfigs" :key="config.id" :label="config.id"
+              class="platform-checkbox-item !mr-0 mb-2 p-2 border border-gray-100 rounded hover:bg-gray-50 transition-colors w-full h-auto">
+              <div class="platform-item-content flex items-center w-full">
+                <div class="flex items-center flex-1">
                   <span class="font-bold mr-2 text-base">{{ config.name }}</span>
                   <el-tag size="small" effect="plain">{{ formatPlatformName(config.platform) }}</el-tag>
+                </div>
+                <div class="text-xs text-gray-400 truncate max-w-[300px]">{{ config.description }}</div>
               </div>
-              <div class="text-xs text-gray-400 truncate max-w-[300px]">{{ config.description }}</div>
-            </div>
-          </el-checkbox>
-        </el-checkbox-group>
+            </el-checkbox>
+          </el-checkbox-group>
 
-        <div class="publish-selected-summary mt-4 text-sm text-gray-500">
-          已选择 {{ publishQueueSelectedConfigIds.length }} 个配置
+          <div class="publish-selected-summary mt-4 text-sm text-gray-500">
+            已选择 {{ publishQueueSelectedConfigIds.length }} 个配置
+          </div>
         </div>
-      </div>
-      <template #footer>
-        <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
-        <el-button 
-          type="primary" 
-          :loading="publishConfirmLoading"
-          :disabled="publishQueueSelectedConfigIds.length === 0"
-          @click="confirmPublishToPlatforms"
-        >
-          确认发布
-        </el-button>
-      </template>
-    </el-dialog>
-  </ContentWrap>
+        <template #footer>
+          <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="publishConfirmLoading"
+            :disabled="publishQueueSelectedConfigIds.length === 0" @click="confirmPublishToPlatforms">
+            确认发布
+          </el-button>
+        </template>
+      </el-dialog>
+
+      <!-- 批量移动弹窗 -->
+      <el-dialog title="移动到文件夹" v-model="batchMoveDialogVisible" width="400px" align-center>
+        <div class="h-[400px] border rounded overflow-hidden">
+          <FolderTree v-model="targetFolderId" folder-category="product" :width="350" :show-border="false"
+            :show-count="false" mode="select" class="w-full h-full" />
+        </div>
+        <template #footer>
+          <el-button @click="batchMoveDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmBatchMove">确定</el-button>
+        </template>
+      </el-dialog>
+    </ContentWrap>
+  </div>
 </template>
 
 <script setup lang="tsx">
@@ -1901,6 +1569,9 @@ import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Search,
+  DArrowLeft,
+  DArrowRight,
+  Folder,
   Plus,
   Delete,
   Picture,
@@ -1929,7 +1600,7 @@ import {
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, updatePublishStatus, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport, getProductPublishTasks } from "@/api/product";
+import { createProduct, getProductList, updateProduct, updatePublishStatus, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport, getProductPublishTasks, batchMoveProducts } from "@/api/product";
 import { getTitleTemplateList } from "@/api/publish";
 import request from "@/config/axios";
 import { uploadOSSFile } from "@/api/shop/platform";
@@ -1949,6 +1620,7 @@ import { createTask, type CreateTaskDto } from '@/api/system/queue'
 import { getClipMaterialList } from '@/api/clip-material'
 import { getPreviewImageUrl } from '@/utils/image'
 import { getPublishConfigListApi } from '@/api/product/publishConfig'
+import FolderTree from '@/components/material/FolderTree.vue'
 
 
 
@@ -1963,11 +1635,19 @@ const queryParams = reactive({
   isPublish: undefined as boolean | undefined,
   random: false,
   startTime: '',
-  endTime: ''
+  endTime: '',
+  folderId: ''
 });
+
+// 文件夹变更处理
+const handleFolderChange = ({ folderId }) => {
+  queryParams.folderId = folderId
+  handleSearch()
+}
 
 // 搜索筛选折叠状态
 const actionsCollapsed = useLocalStorage('product_filter_collapsed', true);
+const folderTreeCollapsed = useLocalStorage('product_folder_collapsed', false);
 
 // 是否显示关联信息
 const showRelations = useLocalStorage('product_show_relations', true);
@@ -1975,10 +1655,10 @@ const showRelations = useLocalStorage('product_show_relations', true);
 // 基础列配置
 const baseColumns = [
   { type: "checkbox", width: 50, showOverflow: true },
-  { 
-    title: "ID", 
-    field: "id", 
-    width: 120, 
+  {
+    title: "ID",
+    field: "id",
+    width: 120,
     showOverflow: false,
     slots: { default: 'idSlot' }
   },
@@ -1998,31 +1678,31 @@ const baseColumns = [
       default: "videoDefaultSlot",
     },
   },
-  { 
-    title: "商品名称", 
-    field: "name", 
-    width: 280, 
+  {
+    title: "商品名称",
+    field: "name",
+    width: 280,
     showOverflow: false,
     slots: { default: 'nameSlot' }
   },
-  { 
-    title: "商品描述", 
-    field: "description", 
-    width: 300, 
+  {
+    title: "商品描述",
+    field: "description",
+    width: 300,
     showOverflow: false,
     slots: { default: 'descriptionSlot' }
   },
-  { 
-    title: "关键词", 
-    field: "keywords", 
-    width: 280, 
+  {
+    title: "关键词",
+    field: "keywords",
+    width: 280,
     showOverflow: false,
     slots: { default: 'keywordsSlot' }
   },
-  { 
-    title: "搜索关键字", 
-    field: "searchKeywords", 
-    minWidth: 300, 
+  {
+    title: "搜索关键字",
+    field: "searchKeywords",
+    minWidth: 300,
     width: 300,
     showOverflow: false,
     slots: { header: 'searchKeywordsHeader', default: 'searchKeywordsSlot' }
@@ -2030,10 +1710,10 @@ const baseColumns = [
 ];
 
 // 关联信息列
-const relationsColumn = { 
-  title: "关联信息", 
-  field: "relations", 
-  width: 'auto', 
+const relationsColumn = {
+  title: "关联信息",
+  field: "relations",
+  width: 'auto',
   slots: { default: 'relationsSlot' }
 };
 
@@ -2044,17 +1724,17 @@ const gridColumns = computed(() => {
     columns.push(relationsColumn);
   }
   columns.push(
-    { 
-      title: "产品代码", 
-      field: "code", 
-      width: 120, 
+    {
+      title: "产品代码",
+      field: "code",
+      width: 120,
       showOverflow: true,
       slots: { default: 'codeSlot' }
     },
-    { 
-      title: "商品类型", 
-      field: "type", 
-      width: 140, 
+    {
+      title: "商品类型",
+      field: "type",
+      width: 140,
       showOverflow: true,
       slots: { default: 'typeSlot' }
     },
@@ -2096,8 +1776,8 @@ const gridOptions = computed(() => ({
   rowClassName: ({ row }) => {
     return row.isPublish ? 'published-row' : 'unpublished-row';
   },
-  rowConfig:{
-    height:'auto'
+  rowConfig: {
+    height: 'auto'
   },
   columns: gridColumns.value,
 }));
@@ -2146,6 +1826,31 @@ const existingVideos = ref([]);
 const generatingVideoId = ref<string>('');
 const deletingVideoKey = ref<string>('');
 const publishDialogVisible = ref(false);
+const batchMoveDialogVisible = ref(false);
+const targetFolderId = ref<string | null>(null);
+
+const handleOpenBatchMove = () => {
+  if (!selectedRows.value.length) return;
+  targetFolderId.value = '__root__'; // 默认选中根目录
+  batchMoveDialogVisible.value = true;
+}
+
+const confirmBatchMove = async () => {
+  if (!selectedRows.value.length) return;
+  try {
+    const ids = selectedRows.value.map((r: any) => r.id);
+    // targetFolderId.value is usually '__root__' or a UUID
+    await batchMoveProducts({
+      ids,
+      folderId: targetFolderId.value || '__root__'
+    });
+    ElMessage.success('移动成功');
+    batchMoveDialogVisible.value = false;
+    getList();
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 // 生成视频（ffmpeg）配置弹窗
 const videoGenDialogVisible = ref(false);
@@ -2194,20 +1899,20 @@ async function searchAudioFiles(keyword: string = '') {
       currentPage: 1,
       pageSize: 50,
     };
-    
+
     // 如果有搜索关键词，添加到查询参数
     if (keyword && keyword.trim()) {
       params.keyword = keyword.trim();
     }
-    
+
     // 使用 suffix 过滤音频文件，由于后端是精确匹配，我们需要多次查询
     // 或者使用一个包含所有音频后缀的查询（如果有多个，需要分别查询）
     // 这里先查询所有，然后在前端过滤音频文件
     const res = await getClipMaterialList(params);
     const allItems = res.list || [];
-    
+
     // 过滤出音频文件
-    audioList.value = allItems.filter((item: any) => 
+    audioList.value = allItems.filter((item: any) =>
       item.suffix && isAudioFile(item.suffix)
     );
   } catch (error) {
@@ -2318,7 +2023,7 @@ watchEffect(() => {
   const sizeMode = videoGenForm.sizeMode;
   const autoHeight = videoGenForm.autoHeight;
   const imgSize = imageSize.value;
-  
+
   if (sizeMode === 'keep-original' && autoHeight && imgSize) {
     const newHeight = calculateHeightFromWidth(width);
     // 只在高度确实需要更新时才更新，避免循环
@@ -2351,16 +2056,16 @@ async function handleGenerateVideo(row: any) {
   if (!row?.id) return;
 
   videoGenRow.value = row;
-  
+
   // 先重置表单为默认值
   resetVideoGenForm();
-  
+
   // 如果有商品图片，默认选中所有图片
   const hasImages = Array.isArray(row.images) && row.images.length > 0;
   if (hasImages) {
-  videoGenForm.selectedImages = [...(row.images || [])];
-  
-  // 获取第一张图片的尺寸
+    videoGenForm.selectedImages = [...(row.images || [])];
+
+    // 获取第一张图片的尺寸
     const firstImageUrl = row.images[0];
     const size = await getImageSize(firstImageUrl);
     if (size) {
@@ -2383,10 +2088,10 @@ async function handleGenerateVideo(row: any) {
     // 没有商品图片时，提示用户
     ElMessage.warning('该商品没有图片，无法生成视频');
   }
-  
+
   // 加载音频列表
   await searchAudioFiles('');
-  
+
   videoGenDialogVisible.value = true;
 }
 
@@ -2395,8 +2100,8 @@ const socialExportVisible = ref(false);
 const socialExportText = ref('');
 
 const publishLoading = ref(false);
-const currentPublishRow = ref<{ 
-  id?: string; 
+const currentPublishRow = ref<{
+  id?: string;
   name?: string;
   description?: string;
   images?: string[];
@@ -2431,18 +2136,18 @@ const publishSummary = computed(() => {
       failCount: 0
     };
   }
-  
+
   const successCount = publishResults.value.filter(r => r.success).length;
   const failCount = publishResults.value.filter(r => !r.success).length;
   const total = publishResults.value.length;
-  
+
   return {
     success: successCount === total,
     partial: successCount > 0 && failCount > 0,
     failed: failCount === total,
-    message: successCount === total ? '所有平台发布成功！' : 
-             successCount > 0 ? `部分平台发布成功` : 
-             '所有平台发布失败',
+    message: successCount === total ? '所有平台发布成功！' :
+      successCount > 0 ? `部分平台发布成功` :
+        '所有平台发布失败',
     successCount,
     failCount
   };
@@ -2621,7 +2326,7 @@ const submitForm = async () => {
     if (pendingFiles.value.length > 0) {
       const uploadPromises = pendingFiles.value.map(async (file) => {
         try {
-          const result = await uploadToCOS({ 
+          const result = await uploadToCOS({
             file,
             category: 'product',
             account: userAccount,
@@ -2646,7 +2351,7 @@ const submitForm = async () => {
     if (pendingVideoFiles.value.length > 0) {
       const uploadPromises = pendingVideoFiles.value.map(async (file) => {
         try {
-          const result = await uploadToCOS({ 
+          const result = await uploadToCOS({
             file,
             category: 'product',
             account: userAccount,
@@ -2741,12 +2446,12 @@ async function getList() {
     currentPage: queryParams.currentPage,
     pageSize: queryParams.pageSize,
   };
-  
+
   // 通用搜索文本：只在有值时才传递
   if (queryParams.searchText && String(queryParams.searchText).trim()) {
     params.searchText = String(queryParams.searchText).trim();
   }
-  
+
   // 精确搜索条件
   if (queryParams.id && String(queryParams.id).trim()) {
     params.id = String(queryParams.id).trim();
@@ -2754,7 +2459,7 @@ async function getList() {
   if (queryParams.code && String(queryParams.code).trim()) {
     params.code = String(queryParams.code).trim();
   }
-  
+
   // 如果选择了发布状态，添加到查询参数中
   if (queryParams.isPublish !== undefined) {
     params.isPublish = queryParams.isPublish;
@@ -2792,8 +2497,8 @@ const resetQuery = () => {
   queryParams.search = '';
   queryParams.isPublish = undefined;
   queryParams.random = false;
-   queryParams.startTime = '';
-   queryParams.endTime = '';
+  queryParams.startTime = '';
+  queryParams.endTime = '';
 };
 
 // 搜索按钮点击事件
@@ -2813,11 +2518,11 @@ async function handleViewDetail(row: any) {
     ElMessage.warning('产品ID不存在');
     return;
   }
-  
+
   productDetailLoading.value = true;
   productDetailVisible.value = true;
   productDetail.value = null;
-  
+
   try {
     // 根据 id 查询产品详情
     const res = await getProductList({
@@ -2825,7 +2530,7 @@ async function handleViewDetail(row: any) {
       currentPage: 1,
       pageSize: 1
     });
-    
+
     if (res && res.list && res.list.length > 0) {
       productDetail.value = res.list[0];
     } else {
@@ -2865,7 +2570,7 @@ function handleDelete(row?) {
         ElMessage.error("删除失败");
       }
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 function handleAdd() {
@@ -2943,13 +2648,13 @@ async function handleTogglePublish(row) {
         type: "warning",
       }
     );
-    
+
     // 调用更新发布状态接口，只传递id和isPublish
     await updatePublishStatus({
       id: row.id,
       isPublish: !row.isPublish
     });
-    
+
     ElMessage.success(`${action}成功`);
     getList(); // 重新获取列表
   } catch (error) {
@@ -3001,7 +2706,7 @@ async function initPublishForm(row, platforms) {
       videos = [];
     }
   }
-  
+
   // 添加关联模型的缩略图
   if ((row as any)?.customModel?.thumbnail) {
     const thumbnailUrl = (row as any).customModel.thumbnail;
@@ -3010,7 +2715,7 @@ async function initPublishForm(row, platforms) {
       images.unshift(thumbnailUrl);
     }
   }
-  
+
   // 添加商品本身的图片和视频
   if (row.images && Array.isArray(row.images)) {
     images = [...images, ...row.images];
@@ -3018,7 +2723,7 @@ async function initPublishForm(row, platforms) {
   if (row.videos && Array.isArray(row.videos)) {
     videos = [...videos, ...row.videos];
   }
-  
+
   // 初始化每个平台的表单
   platforms.forEach(platform => {
     publishForm.value[platform as keyof PublishForm | 'kuaishou'] = {
@@ -3198,7 +2903,7 @@ const activeSourceTab = ref('customModel')
 
 async function showCustomModelDetail(id: string) {
   try {
-    const res = await getDesignModel({id})
+    const res = await getDesignModel({ id })
     customModelDetail.value = res.data || res // 兼容不同返回结构
     customModelDetailVisible.value = true
   } catch (e) {
@@ -3420,13 +3125,13 @@ async function submitGenerateVideo() {
 
   try {
     generatingVideoId.value = videoGenRow.value.id;
-    
+
     // 计算每张图片的展示时长
     const clipDuration = Number(videoGenForm.clipDuration) || 2;
-    const imageDuration = videoGenForm.selectedImages.length > 0 
-      ? clipDuration / videoGenForm.selectedImages.length 
+    const imageDuration = videoGenForm.selectedImages.length > 0
+      ? clipDuration / videoGenForm.selectedImages.length
       : clipDuration;
-    
+
     // 构建 resources 数组（yishe-videos 格式）
     const resources: any[] = videoGenForm.selectedImages.map((imageUrl, index) => {
       const resource: any = {
@@ -3436,25 +3141,25 @@ async function submitGenerateVideo() {
         transition: index === 0 ? 'none' : (videoGenForm.transition || 'fade'),
         transitionDuration: 0.5,
         position: 'center',
-    };
-    
+      };
+
       // 设置缩放模式
-    if (videoGenForm.sizeMode === 'keep-original') {
+      if (videoGenForm.sizeMode === 'keep-original') {
         resource.scaleMode = 'fit'; // 保持原图比例
-    } else {
-      // 自定义尺寸模式
-      if (videoGenForm.scaleMode === 'contain') {
+      } else {
+        // 自定义尺寸模式
+        if (videoGenForm.scaleMode === 'contain') {
           resource.scaleMode = 'fit';
         } else if (videoGenForm.scaleMode === 'cover') {
           resource.scaleMode = 'fill';
         } else {
           resource.scaleMode = 'fit';
+        }
       }
-    }
-    
+
       return resource;
     });
-    
+
     // 如果选择了背景音乐，直接添加到 resources 中（yishe-videos 会自动处理）
     if (videoGenForm.audioUrl && videoGenForm.audioUrl.trim()) {
       resources.push({
@@ -3463,7 +3168,7 @@ async function submitGenerateVideo() {
         volume: 100,
       });
     }
-    
+
     // 构建 options 对象（yishe-videos 格式）
     const options: any = {
       width: Number(videoGenForm.width) || 720,
@@ -3475,7 +3180,7 @@ async function submitGenerateVideo() {
       videoPreset: 'medium',
       videoCrf: 23,
     };
-    
+
     // 构建请求数据（直接兼容 yishe-videos 格式）
     const requestData: any = {
       id: videoGenRow.value.id,
@@ -3483,7 +3188,7 @@ async function submitGenerateVideo() {
       resources: resources,
       options: options,
     };
-    
+
     await generateProductVideo(requestData);
     ElMessage.success('视频生成成功');
     videoGenDialogVisible.value = false;
@@ -3507,11 +3212,11 @@ async function handleDeleteVideo(row: any, url: string) {
     deletingVideoKey.value = `${row.id}-${url}`;
     const newVideos = (row.videos || []).filter((v: string) => v !== url);
     await updateProduct({ id: row.id, videos: newVideos });
-    
+
     // 更新预览列表和索引
     const deletedIndex = videoPreviewList.value.findIndex(v => v === url);
     videoPreviewList.value = newVideos;
-    
+
     if (videoPreviewList.value.length === 0) {
       // 如果没有视频了，关闭弹窗
       videoPreviewVisible.value = false;
@@ -3525,7 +3230,7 @@ async function handleDeleteVideo(row: any, url: string) {
         videoPreviewIndex.value = videoPreviewList.value.length - 1;
       }
     }
-    
+
     ElMessage.success('视频已删除');
     getList();
   } catch (error: any) {
@@ -3584,7 +3289,7 @@ function handlePublishVideoPreview(videos: string[], index: number) {
 function toggleImageSelection(platform: string, url: string) {
   const form = publishForm.value[platform as keyof PublishForm | 'kuaishou'];
   if (!form) return;
-  
+
   const index = form.selectedImages.indexOf(url);
   if (index > -1) {
     form.selectedImages.splice(index, 1);
@@ -3597,7 +3302,7 @@ function toggleImageSelection(platform: string, url: string) {
 function toggleVideoSelection(platform: string, url: string) {
   const form = publishForm.value[platform as keyof PublishForm | 'kuaishou'];
   if (!form) return;
-  
+
   const index = form.selectedVideos.indexOf(url);
   if (index > -1) {
     form.selectedVideos.splice(index, 1);
@@ -3610,12 +3315,12 @@ function toggleVideoSelection(platform: string, url: string) {
 async function downloadThumbnail(url: string, filename: string) {
   try {
     ElMessage.info('正在准备下载...');
-    
+
     const result = await downloadImageEnhanced(url, filename, {
       showMessage: false, // 关闭通用方法的console消息，使用我们的ElMessage
       fallbackToNewWindow: true
     });
-    
+
     if (result.success) {
       ElMessage.success('下载完成');
     } else if (result.fallback) {
@@ -3642,12 +3347,12 @@ function preview(index: number, urls: string[]) {
 function getCustomModelImages(customModel: any): string[] {
   if (!customModel) return []
   const images: string[] = []
-  
+
   // 添加缩略图
   if (customModel.thumbnail && typeof customModel.thumbnail === 'string' && customModel.thumbnail.trim()) {
     images.push(customModel.thumbnail)
   }
-  
+
   // 添加其他图片
   if (customModel.images && Array.isArray(customModel.images)) {
     customModel.images.forEach((url: string) => {
@@ -3656,7 +3361,7 @@ function getCustomModelImages(customModel: any): string[] {
       }
     })
   }
-  
+
   return images
 }
 
@@ -3750,7 +3455,7 @@ function formatJSON(obj: any): string {
 // 复制源信息
 async function copySourceInfo() {
   if (!currentSourceInfoRow.value) return
-  
+
   let jsonText = ''
   if (activeSourceTab.value === 'customModel' && currentSourceInfoRow.value.customModel) {
     jsonText = JSON.stringify(currentSourceInfoRow.value.customModel, null, 2)
@@ -3759,7 +3464,7 @@ async function copySourceInfo() {
   } else if (activeSourceTab.value === 'psdSet' && currentSourceInfoRow.value.psdSet) {
     jsonText = JSON.stringify(currentSourceInfoRow.value.psdSet, null, 2)
   }
-  
+
   if (jsonText) {
     try {
       await navigator.clipboard.writeText(jsonText)
@@ -3895,26 +3600,26 @@ async function handlePublishToQueue(row: any) {
   if (!row?.id) {
     return ElMessage.warning('商品ID不存在');
   }
-  
+
   currentPublishProduct.value = row;
   publishQueueSelectedConfigIds.value = [];
-  
+
   // 获取发布配置
   try {
-      const res = await getPublishConfigListApi();
-      if (Array.isArray(res)) {
-          availablePublishConfigs.value = res;
-      } else if (res && res.list) {
-          availablePublishConfigs.value = res.list;
-      } else {
-          availablePublishConfigs.value = [];
-      }
+    const res = await getPublishConfigListApi();
+    if (Array.isArray(res)) {
+      availablePublishConfigs.value = res;
+    } else if (res && res.list) {
+      availablePublishConfigs.value = res.list;
+    } else {
+      availablePublishConfigs.value = [];
+    }
   } catch (e) {
-      console.error(e);
-      ElMessage.error('获取发布配置失败');
-      return;
+    console.error(e);
+    ElMessage.error('获取发布配置失败');
+    return;
   }
-  
+
   publishPlatformDialogVisible.value = true;
 }
 
@@ -3923,7 +3628,7 @@ async function confirmPublishToPlatforms() {
   if (!currentPublishProduct.value?.id) {
     return ElMessage.warning('商品ID不存在');
   }
-  
+
   if (publishQueueSelectedConfigIds.value.length === 0) {
     return ElMessage.warning('请至少选择一个发布配置');
   }
@@ -3964,9 +3669,9 @@ async function confirmPublishToPlatforms() {
     );
 
     const successCount = results.filter(r => r && r.id).length; // createTask returns Queue entity usually
-    
+
     publishPlatformDialogVisible.value = false;
-    
+
     if (successCount === configIds.length) {
       ElMessage.success(`成功创建 ${successCount} 个发布任务，已添加到发布队列`);
     } else {
@@ -4002,11 +3707,11 @@ async function handleViewPublishTasks(row: any) {
   if (!row?.id) {
     return ElMessage.warning('商品ID不存在');
   }
-  
+
   currentProductForTasks.value = row;
   publishTasksVisible.value = true;
   publishTasksLoading.value = true;
-  
+
   try {
     const res = await getProductPublishTasks(row.id);
     publishTasks.value = res || [];
@@ -4036,7 +3741,7 @@ function formatTaskStatus(status: string) {
 .custom-carousel {
   position: relative;
   padding: 0 20px;
-  
+
   .el-carousel__container {
     margin: 0 -20px;
   }
@@ -4046,16 +3751,20 @@ function formatTaskStatus(status: string) {
     border-radius: 50%;
     width: 24px;
     height: 24px;
+
     &:hover {
       background-color: rgba(0, 0, 0, 0.5);
     }
+
     i {
       font-size: 14px;
     }
   }
+
   .el-carousel__arrow--left {
     left: 0;
   }
+
   .el-carousel__arrow--right {
     right: 0;
   }
@@ -4064,21 +3773,27 @@ function formatTaskStatus(status: string) {
 
 // 未发布商品行的样式
 .common-table .unpublished-row {
-  background-color: rgba(255, 193, 7, 0.08) !important; /* 浅浅的半透明警告色 */
-  border-left: 3px solid rgba(255, 193, 7, 0.3) !important; /* 左侧半透明橙色边框 */
-  
+  background-color: rgba(255, 193, 7, 0.08) !important;
+  /* 浅浅的半透明警告色 */
+  border-left: 3px solid rgba(255, 193, 7, 0.3) !important;
+  /* 左侧半透明橙色边框 */
+
   &:hover {
-    background-color: rgba(255, 193, 7, 0.12) !important; /* 悬停时稍微明显一点 */
+    background-color: rgba(255, 193, 7, 0.12) !important;
+    /* 悬停时稍微明显一点 */
   }
 }
 
 // 已发布商品行的样式（用背景色表示）
 .common-table .published-row {
-  background-color: rgba(22, 163, 74, 0.08) !important; /* 浅浅的半透明绿色 */
-  border-left: 3px solid rgba(22, 163, 74, 0.4) !important; /* 左侧半透明绿色边框 */
-  
+  background-color: rgba(22, 163, 74, 0.08) !important;
+  /* 浅浅的半透明绿色 */
+  border-left: 3px solid rgba(22, 163, 74, 0.4) !important;
+  /* 左侧半透明绿色边框 */
+
   &:hover {
-    background-color: rgba(22, 163, 74, 0.12) !important; /* 悬停时稍微明显一点 */
+    background-color: rgba(22, 163, 74, 0.12) !important;
+    /* 悬停时稍微明显一点 */
   }
 }
 
@@ -4087,6 +3802,7 @@ function formatTaskStatus(status: string) {
   color: #fff !important;
   border: none;
 }
+
 .dark-btn:hover {
   background: linear-gradient(90deg, #414345 0%, #232526 100%);
   color: #fff !important;
@@ -4098,16 +3814,20 @@ function formatTaskStatus(status: string) {
   color: #fff;
   border-bottom: 1px solid #333;
 }
+
 .publish-result-dark-bg {
   background: #18191c;
 }
+
 .publish-result-dark-item {
   background: #232526 !important;
   border-color: #333 !important;
 }
+
 .publish-result-dark-dialog .el-dialog__body {
   background: #18191c;
 }
+
 .publish-result-dark-dialog .el-dialog__footer {
   background: #232526;
   border-top: 1px solid #333;
@@ -4121,6 +3841,7 @@ function formatTaskStatus(status: string) {
   flex: 1 1 29%;
   box-sizing: border-box;
 }
+
 @media (max-width: 900px) {
   .publish-result-card {
     width: 100%;
@@ -4130,13 +3851,16 @@ function formatTaskStatus(status: string) {
 
 .custom-model-detail-dialog {
   min-height: 320px;
+
   .el-form-item {
     margin-bottom: 18px;
   }
+
   .el-form-item__label {
     font-weight: 500;
     font-size: 15px;
   }
+
   pre {
     border-radius: 4px;
     padding: 0;
@@ -4154,26 +3878,32 @@ function formatTaskStatus(status: string) {
   max-height: 60vh;
   overflow-y: auto;
 }
+
 .draft-item {
   border: 1px solid var(--el-border-color);
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.3s ease;
+
   &:hover {
     box-shadow: var(--el-box-shadow-light);
   }
 }
+
 .draft-preview {
   position: relative;
 }
+
 .draft-info {
   background: var(--el-bg-color);
 }
+
 .draft-header {
   .draft-name {
     font-weight: 500;
   }
 }
+
 .draft-desc {
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -4181,10 +3911,12 @@ function formatTaskStatus(status: string) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .draft-meta {
   border-top: 1px solid var(--el-border-color-lighter);
   padding-top: 8px;
 }
+
 .empty-state {
   color: var(--el-text-color-placeholder);
 }
@@ -4195,7 +3927,7 @@ function formatTaskStatus(status: string) {
   .text-orange-500 {
     color: #f97316;
   }
-  
+
   .text-green-500 {
     color: #22c55e;
   }
@@ -4248,26 +3980,26 @@ function formatTaskStatus(status: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 1);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
 
   }
-  
+
   &:disabled {
     opacity: 0.4;
     cursor: not-allowed;
   }
-  
+
   &.video-nav-prev {
     left: 30px;
   }
-  
+
   &.video-nav-next {
     right: 30px;
   }
-  
+
   .el-icon {
     font-size: 20px;
     color: #333;
@@ -4326,11 +4058,11 @@ function formatTaskStatus(status: string) {
     max-height: 80vh;
     overflow-y: auto;
   }
-  
+
   .el-message-box__message {
     margin: 0;
   }
-  
+
   video {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -4382,11 +4114,11 @@ function formatTaskStatus(status: string) {
   .el-form-item {
     margin-bottom: 20px;
   }
-  
+
   video {
     border-radius: 8px;
   }
-  
+
   .el-checkbox-group {
     .el-checkbox {
       margin-right: 0;
@@ -4400,29 +4132,29 @@ function formatTaskStatus(status: string) {
   .el-form-item {
     margin-bottom: 12px;
   }
-  
+
   .el-form-item__label {
     font-size: 13px;
     line-height: 1.4;
   }
-  
+
   .el-input__inner,
   .el-textarea__inner {
     font-size: 13px;
   }
-  
+
   .el-card__header {
     padding: 12px 16px;
   }
-  
+
   .el-card__body {
     padding: 12px 16px;
   }
-  
+
   video {
     border-radius: 6px;
   }
-  
+
   .el-checkbox-group {
     .el-checkbox {
       margin-right: 0;
@@ -4485,24 +4217,24 @@ function formatTaskStatus(status: string) {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .platform-form-compact {
     .el-card__header {
       padding: 8px 12px;
     }
-    
+
     .el-card__body {
       padding: 8px 12px;
     }
-    
+
     .el-form-item {
       margin-bottom: 8px;
     }
-    
+
     .el-form-item__label {
       font-size: 12px;
     }
-    
+
     .el-input__inner,
     .el-textarea__inner {
       font-size: 12px;
@@ -4514,14 +4246,14 @@ function formatTaskStatus(status: string) {
 .select-item {
   position: relative;
   transition: all 0.2s ease;
-  
-  
+
+
   &.selected {
     .w-32 {
       box-shadow: 0 0 0 4px #3b82f6, 0 6px 20px rgba(59, 130, 246, 0.4);
     }
   }
-  
+
   .w-32 {
     transition: all 0.2s ease;
   }
@@ -4531,14 +4263,14 @@ function formatTaskStatus(status: string) {
 .select-item-compact {
   position: relative;
   transition: all 0.2s ease;
-  
-  
+
+
   &.selected {
     .w-20 {
       box-shadow: 0 0 0 4px #3b82f6, 0 3px 12px rgba(59, 130, 246, 0.4);
     }
   }
-  
+
   .w-20 {
     transition: all 0.2s ease;
   }
@@ -4551,8 +4283,9 @@ function formatTaskStatus(status: string) {
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: #2563eb !important; /* 蓝色 */
-  
+  color: #2563eb !important;
+  /* 蓝色 */
+
   svg {
     width: 12px;
     height: 12px;
@@ -4620,23 +4353,23 @@ function formatTaskStatus(status: string) {
   margin: 0;
   padding: 0;
   background: none;
-  
+
   :deep(.vxe-table) {
     font-size: 12px;
   }
-  
+
   :deep(.vxe-table--header) {
     background-color: var(--el-table-header-bg-color);
   }
-  
+
   :deep(.vxe-table--body) {
     background-color: transparent;
   }
-  
+
   :deep(.vxe-cell) {
     padding: 4px 8px;
   }
-  
+
   :deep(.vxe-table--header-wrapper) {
     .vxe-cell {
       font-weight: 500;
@@ -4654,7 +4387,7 @@ function formatTaskStatus(status: string) {
   border: 1px solid var(--el-border-color-lighter);
   transition: all 0.2s ease;
   background-color: var(--el-bg-color-page);
-  
+
   &:hover {
     border-color: var(--el-color-primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -4715,7 +4448,7 @@ function formatTaskStatus(status: string) {
 
 .relation-section {
   margin-bottom: 24px;
-  
+
   &:last-child {
     margin-bottom: 0;
   }
@@ -4753,21 +4486,21 @@ function formatTaskStatus(status: string) {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  
+
   .el-card {
     .el-card__header {
       padding: 16px 20px;
     }
-    
+
     .el-card__body {
       padding: 20px;
     }
   }
-  
+
   .el-form-item {
     margin-bottom: 16px;
   }
-  
+
   .el-row {
     margin-bottom: 0;
   }
@@ -4778,12 +4511,12 @@ function formatTaskStatus(status: string) {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 4px;
   text-align: center;
-  
+
   .preview-label {
     font-size: 12px;
     margin-bottom: 8px;
   }
-  
+
   .preview-value {
     font-size: 16px;
     font-weight: 600;
@@ -4799,7 +4532,7 @@ function formatTaskStatus(status: string) {
     padding: 20px;
     overflow: hidden;
   }
-  
+
   .product-detail-wrapper {
     display: flex;
     flex-direction: column;
@@ -4807,54 +4540,54 @@ function formatTaskStatus(status: string) {
     min-height: 0;
     overflow: hidden;
   }
-  
+
   .product-detail-content {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 8px;
-    
+
     // 自定义滚动条样式
     &::-webkit-scrollbar {
       width: 8px;
     }
-    
+
     &::-webkit-scrollbar-track {
       background: #f1f1f1;
       border-radius: 4px;
     }
-    
+
     &::-webkit-scrollbar-thumb {
       background: #c1c1c1;
       border-radius: 4px;
-      
+
       &:hover {
         background: #a8a8a8;
       }
     }
   }
-  
+
   .el-dialog__footer {
     flex-shrink: 0;
     padding: 20px;
     border-top: 1px solid var(--el-border-color-lighter);
   }
-  
+
   // 产品信息列表样式
   .product-info-list {
     border: 1px solid var(--el-border-color);
     border-radius: 4px;
     overflow: hidden;
   }
-  
+
   .product-info-item {
     display: flex;
     border-bottom: 1px solid var(--el-border-color-lighter);
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
+
     .product-info-label {
       width: 180px;
       min-width: 180px;
@@ -4865,7 +4598,7 @@ function formatTaskStatus(status: string) {
       border-right: 1px solid var(--el-border-color-lighter);
       flex-shrink: 0;
     }
-    
+
     .product-info-value {
       flex: 1;
       padding: 12px 16px;
@@ -4873,7 +4606,7 @@ function formatTaskStatus(status: string) {
       word-break: break-word;
     }
   }
-  
+
   // 产品详情 section 样式
   .product-detail-section {
     padding: 16px;
@@ -4881,7 +4614,7 @@ function formatTaskStatus(status: string) {
     border-radius: 4px;
     border: 1px solid var(--el-border-color-lighter);
   }
-  
+
   .product-detail-section-title {
     display: flex;
     align-items: center;
@@ -4892,7 +4625,7 @@ function formatTaskStatus(status: string) {
     margin-bottom: 16px;
     padding-bottom: 12px;
     border-bottom: 1px solid var(--el-border-color-lighter);
-    
+
     .el-icon {
       font-size: 18px;
       color: var(--el-color-primary);
@@ -4919,16 +4652,16 @@ function formatTaskStatus(status: string) {
   .platform-checkbox-item {
     margin: 0;
     height: auto;
-    
+
     :deep(.el-checkbox__input) {
       display: none;
     }
-    
+
     :deep(.el-checkbox__label) {
       padding: 0;
       width: 100%;
     }
-    
+
     .platform-item-content {
       display: flex;
       flex-direction: column;
@@ -4942,7 +4675,7 @@ function formatTaskStatus(status: string) {
       background-color: var(--el-bg-color);
       min-width: 100px;
       gap: 8px;
-      
+
       &:hover {
         border-color: var(--el-color-primary);
         background-color: var(--el-color-primary-light-9);
@@ -4950,7 +4683,7 @@ function formatTaskStatus(status: string) {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       }
     }
-    
+
     &.is-checked {
       .platform-item-content {
         border-color: var(--el-color-primary);
@@ -4958,7 +4691,7 @@ function formatTaskStatus(status: string) {
         box-shadow: 0 2px 8px rgba(64, 158, 255, 0.2);
       }
     }
-    
+
     .platform-icon-wrap {
       position: relative;
       width: 48px;
@@ -4991,7 +4724,7 @@ function formatTaskStatus(status: string) {
       color: var(--el-text-color-primary);
       z-index: 0;
     }
-    
+
     .platform-label {
       font-size: 14px;
       font-weight: 500;
@@ -5006,12 +4739,12 @@ function formatTaskStatus(status: string) {
 
   .publish-tasks-grid {
     min-height: 500px;
-    
+
     :deep(.vxe-table) {
       .vxe-table--header {
         background-color: var(--el-bg-color-page);
       }
-      
+
       .vxe-table--body {
         .vxe-body--row {
           &:hover {

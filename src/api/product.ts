@@ -113,5 +113,14 @@ export function getProductPublishTasks(id: string) {
   return request.get({
     url: `/product/publish-tasks/${id}`,
     method: 'get',
+    data: null
+  });
+}
+
+export function batchMoveProducts(data: { ids: string[]; folderId: string }) {
+  return request.post({
+    url: '/product/batch-move',
+    method: 'post',
+    data,
   });
 }

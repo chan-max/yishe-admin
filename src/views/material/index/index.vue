@@ -201,11 +201,11 @@
                 制作设计模型({{ ids.length }})
               </el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
-                }})</el-button>
+              }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
-                }})</el-button>
+              }})</el-button>
               <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
-                }})</el-button>
+              }})</el-button>
             </div>
           </div>
         </div>
@@ -652,79 +652,92 @@
       </template>
     </el-dialog>
 
-    <div class="flex" style="overflow: hidden;">
+    <div class="flex overflow-visible" style="overflow: hidden;">
       <!-- 文件夹树 -->
-      <div class="sticker-folder-tree-container"
-        style="width: 280px; min-width: 280px; max-width: 280px; flex-shrink: 0; border-right: 1px solid var(--el-border-color); padding-right: 16px;">
-        <div class="sticker-folder-tree-header" style="margin-bottom: 12px;">
-          <el-button type="primary" size="small" plain style="width: 100%;" @click="handleCreateRootStickerFolder">
-            <el-icon>
-              <FolderAdd />
-            </el-icon>
-            新建文件夹
-          </el-button>
-        </div>
-        <el-tree ref="stickerFolderTreeRef" :data="stickerFolderTreeData"
-          :props="{ children: 'children', label: 'name' }" node-key="id" :expand-on-click-node="false"
-          :default-expand-all="false" :default-expanded-keys="['__root__']" :highlight-current="true"
-          :current-node-key="selectedStickerFolderId"
-          style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden;" class="sticker-folder-tree">
-          <template #default="{ node, data }">
-            <div class="sticker-folder-node"
-              :class="{ 'is-drop-hover': dragState.overFolderId === data.id && dragState.dragging }"
-              @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
-              @drop.prevent="handleFolderDrop(data)">
-              <div class="sticker-folder-node-content">
-                <template v-if="data.isAll || data.id === '__root__'">
-                  <el-icon class="folder-icon"
-                    style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
-                    <Files />
-                  </el-icon>
-                </template>
-                <template v-else>
-                  <img v-if="node.expanded && (data.children && data.children.length > 0)" src="/img/folder-open.svg"
-                    class="folder-icon" alt="folder" />
-                  <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
-                </template>
-                <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
-                }}</span>
-                <span v-if="data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
-                  data.stickerCount || 0
-                  }})</span>
-              </div>
-              <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
-                <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
-                  size="small">
-                  <el-icon class="sticker-folder-action-icon">
-                    <MoreFilled />
-                  </el-icon>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="create">
-                        <el-icon>
-                          <FolderAdd />
-                        </el-icon>
-                        新建子文件夹
-                      </el-dropdown-item>
-                      <el-dropdown-item command="rename">
-                        <el-icon>
-                          <Edit />
-                        </el-icon>
-                        重命名
-                      </el-dropdown-item>
-                      <el-dropdown-item command="delete" divided>
-                        <el-icon>
-                          <Delete />
-                        </el-icon>
-                        删除
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
+      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
+        <div class="h-full overflow-hidden">
+          <div class="sticker-folder-tree-container h-full w-[280px]"
+            style="border-right: 1px solid var(--el-border-color); padding-right: 16px;">
+            <div class="sticker-folder-tree-header" style="margin-bottom: 12px;">
+              <el-button type="primary" size="small" plain style="width: 100%;" @click="handleCreateRootStickerFolder">
+                <el-icon>
+                  <FolderAdd />
+                </el-icon>
+                新建文件夹
+              </el-button>
             </div>
-          </template>
-        </el-tree>
+            <el-tree ref="stickerFolderTreeRef" :data="stickerFolderTreeData"
+              :props="{ children: 'children', label: 'name' }" node-key="id" :expand-on-click-node="false"
+              :default-expand-all="false" :default-expanded-keys="['__root__']" :highlight-current="true"
+              :current-node-key="selectedStickerFolderId"
+              style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden;"
+              class="sticker-folder-tree">
+              <template #default="{ node, data }">
+                <div class="sticker-folder-node"
+                  :class="{ 'is-drop-hover': dragState.overFolderId === data.id && dragState.dragging }"
+                  @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
+                  @drop.prevent="handleFolderDrop(data)">
+                  <div class="sticker-folder-node-content">
+                    <template v-if="data.isAll || data.id === '__root__'">
+                      <el-icon class="folder-icon"
+                        style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
+                        <Files />
+                      </el-icon>
+                    </template>
+                    <template v-else>
+                      <img v-if="node.expanded && (data.children && data.children.length > 0)"
+                        src="/img/folder-open.svg" class="folder-icon" alt="folder" />
+                      <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
+                    </template>
+                    <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
+                      }}</span>
+                    <span v-if="data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
+                      data.stickerCount || 0
+                      }})</span>
+                  </div>
+                  <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
+                    <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
+                      size="small">
+                      <el-icon class="sticker-folder-action-icon">
+                        <MoreFilled />
+                      </el-icon>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item command="create">
+                            <el-icon>
+                              <FolderAdd />
+                            </el-icon>
+                            新建子文件夹
+                          </el-dropdown-item>
+                          <el-dropdown-item command="rename">
+                            <el-icon>
+                              <Edit />
+                            </el-icon>
+                            重命名
+                          </el-dropdown-item>
+                          <el-dropdown-item command="delete" divided>
+                            <el-icon>
+                              <Delete />
+                            </el-icon>
+                            删除
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </div>
+              </template>
+            </el-tree>
+          </div>
+        </div>
+        <div
+          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
+          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
+          <el-icon :size="14">
+            <DArrowRight v-if="folderTreeCollapsed" />
+            <DArrowLeft v-else />
+          </el-icon>
+        </div>
       </div>
 
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
@@ -1641,7 +1654,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -2313,6 +2326,7 @@ function clearPhashSearch() {
 }
 
 // 文件夹相关状态
+const folderTreeCollapsed = useLocalStorage('material_folder_collapsed', false)
 const stickerFolderTreeRef = ref()
 const selectedStickerFolderId = ref<string | null>('__all__') // 默认选中全部
 const selectedStickerFolderPath = ref('')

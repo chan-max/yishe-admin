@@ -38,10 +38,24 @@
       </div>
     </div>
 
-    <div class="flex" style="overflow: hidden;">
-      <FolderTree v-model="selectedFolderId" :folder-category="FOLDER_CATEGORY" :show-count="false"
-        :drag-state="dragState" @change="handleFolderChange" @folder-drag-over="handleFolderDragOver"
-        @folder-drag-leave="handleFolderDragLeave" @folder-drop="handleFolderDrop" />
+    <div class="flex relative overflow-visible">
+      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
+        <div class="h-full overflow-hidden">
+          <div class="h-full w-[280px]">
+            <FolderTree v-model="selectedFolderId" :folder-category="FOLDER_CATEGORY" :show-count="false"
+              :drag-state="dragState" @change="handleFolderChange" @folder-drag-over="handleFolderDragOver"
+              @folder-drag-leave="handleFolderDragLeave" @folder-drop="handleFolderDrop" />
+          </div>
+        </div>
+        <div
+          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
+          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
+          <el-icon :size="14">
+            <DArrowRight v-if="folderTreeCollapsed" />
+            <DArrowLeft v-else />
+          </el-icon>
+        </div>
+      </div>
 
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
@@ -320,8 +334,10 @@ import {
   InfoFilled,
   RefreshLeft,
   Folder,
+  DArrowLeft,
+  DArrowRight,
 } from "@element-plus/icons-vue";
-import { useWindowSize, useMouse } from "@vueuse/core";
+import { useWindowSize, useMouse, useLocalStorage } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
 import { psdTemplateApi } from "@/api/psdTemplate";
 import { ShopPlatformApi } from "@/api/shop/platform";
@@ -606,6 +622,7 @@ function setupTemplateDrag() {
 getList();
 
 // ============= 文件夹相关 =============
+const folderTreeCollapsed = useLocalStorage('psd_template_folder_collapsed', false);
 const selectedFolderId = ref<string | null>("__all__");
 
 function handleFolderChange(payload: { folderId: string | null }) {

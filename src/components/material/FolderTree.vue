@@ -1,13 +1,13 @@
 <template>
   <div class="sticker-folder-tree-container" :style="{
-    width: width + 'px',
-    minWidth: width + 'px',
-    maxWidth: width + 'px',
+    width: typeof width === 'number' ? width + 'px' : width,
+    minWidth: typeof width === 'number' ? width + 'px' : width,
+    maxWidth: typeof width === 'number' ? width + 'px' : width,
     flexShrink: 0,
     borderRight: showBorder ? '1px solid var(--el-border-color)' : undefined,
     paddingRight: showBorder ? '16px' : undefined,
   }">
-    <div class="sticker-folder-tree-header">
+    <div v-if="mode === 'manage'" class="sticker-folder-tree-header">
       <el-button type="primary" size="small" plain style="width: 100%" @click="handleCreateRoot">
         <el-icon>
           <FolderAdd />
@@ -44,7 +44,7 @@
               0 }})</span>
           </div>
 
-          <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
+          <div v-if="data.id !== '__root__' && mode === 'manage'" class="sticker-folder-node-actions">
             <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, data)" @click.stop size="small">
               <el-icon class="sticker-folder-action-icon">
                 <MoreFilled />
@@ -99,7 +99,7 @@ const props = withDefaults(
     modelValue: string | null;
     folderCategory: string;
     showCount?: boolean;
-    width?: number;
+    width?: number | string;
     showBorder?: boolean;
     dragState?: {
       dragging: boolean;
@@ -107,12 +107,14 @@ const props = withDefaults(
       overFolderId: string | null;
       overFolderPath: string;
     } | null;
+    mode?: 'manage' | 'select';
   }>(),
   {
     showCount: true,
     width: 280,
     showBorder: true,
     dragState: null,
+    mode: 'manage',
   }
 );
 
@@ -150,7 +152,11 @@ async function loadTree() {
     stickerCount: 0,
   };
 
-  treeData.value = [allNode, rootNode, ...rootFolders];
+  if (props.mode === 'select') {
+    treeData.value = [rootNode, ...rootFolders];
+  } else {
+    treeData.value = [allNode, rootNode, ...rootFolders];
+  }
   nextTick(() => {
     // If current modelValue is null (old root), set to __root__? Or if it's __all__?
     // User might have passed __root__ as initial value.
@@ -281,7 +287,7 @@ watch(
 
     :deep(.el-tree-node__content) {
       height: 36px;
-      padding-left: 8px !important;
+      /* padding-left: 8px !important; // 移除强制左内边距，以免破坏层级缩进 */
 
       &:hover {
         background-color: var(--el-fill-color-light);
