@@ -508,21 +508,49 @@
 
           <h3 class="text-base font-medium my-2">选择发布平台</h3>
 
-          <!-- 平台选择 -->
-          <el-checkbox-group v-model="selectedPlatforms" class="mb-4">
-            <el-checkbox label="douyin">抖音</el-checkbox>
-            <el-checkbox label="xiaohongshu">小红书</el-checkbox>
-            <el-checkbox label="weibo">微博</el-checkbox>
-            <el-checkbox label="kuaishou">快手</el-checkbox>
-          </el-checkbox-group>
+          <!-- 平台选择 (视觉优化版) -->
+          <div class="platform-selector-visual mb-6">
+            <el-checkbox-group v-model="selectedPlatforms">
+              <div class="platform-check-grid">
+                <el-checkbox
+                  v-for="item in publishPlatforms.filter(p => ['douyin', 'kuaishou', 'xiaohongshu', 'weibo', 'bilibili', 'xianyu', 'tiktok', 'youtube'].includes(p.value))"
+                  :key="item.value" :label="item.value" class="platform-card-checkbox">
+                  <div class="platform-card-inner" :style="{ '--platform-color': item.color }">
+                    <div class="platform-card-logo">
+                      <img v-if="item.logoUrl" :src="item.logoUrl" :alt="item.label" class="logo-img" />
+                      <div v-else class="logo-fallback" :style="{ backgroundColor: item.color }">{{ item.icon }}</div>
+                    </div>
+                    <span class="platform-card-label">{{ item.label }}</span>
+                    <div class="platform-card-indicator">
+                      <el-icon v-if="selectedPlatforms.includes(item.value)">
+                        <Check />
+                      </el-icon>
+                    </div>
+                  </div>
+                </el-checkbox>
+              </div>
+            </el-checkbox-group>
+          </div>
 
           <!-- 平台表单 -->
           <div class="platform-grid">
             <div v-for="platform in selectedPlatforms" :key="platform" class="platform-item">
               <el-card class="platform-form-compact" shadow="hover">
                 <template #header>
-                  <div class="flex items-center">
-                    <span class="text-base font-medium">{{ getPlatformName(platform) }}</span>
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <div class="platform-mini-icon"
+                        :style="{ backgroundColor: publishPlatforms.find(p => p.value === platform)?.color || '#999' }">
+                        <img v-if="publishPlatforms.find(p => p.value === platform)?.logoUrl"
+                          :src="publishPlatforms.find(p => p.value === platform)?.logoUrl"
+                          class="w-4 h-4 object-contain invert" />
+                        <span v-else class="text-[10px] text-white font-bold">{{publishPlatforms.find(p => p.value ===
+                          platform)?.icon}}</span>
+                      </div>
+                      <span class="text-base font-semibold">{{ getPlatformName(platform) }}</span>
+                    </div>
+                    <el-tag size="small" effect="plain" round>{{ ['tiktok', 'youtube'].includes(platform) ?
+                      'International' : 'Domestic' }}</el-tag>
                   </div>
                 </template>
                 <!-- 只在表单已初始化时渲染 -->
@@ -606,8 +634,7 @@
       </el-dialog>
 
       <!-- 发布结果弹窗 -->
-      <el-dialog title="发布结果" v-model="publishResultVisible" width="900px" :close-on-click-modal="false"
-        :close-on-press-escape="false" :show-close="false" align-center>
+      <el-dialog v-model="publishResultVisible" title="发布结果" width="900px">
         <div class="p-4 publish-result-dark-bg">
           <div v-if="publishResults.length > 0">
             <div class="flex flex-wrap gap-4 mb-4">
@@ -1504,42 +1531,60 @@
         </template>
       </el-dialog>
 
-      <!-- 发布平台选择对话框 -->
-      <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="700px" :close-on-click-modal="true"
+      <!-- 发布平台选择对话框 (vxe-grid 优化版) -->
+      <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="800px" :close-on-click-modal="true"
         align-center>
-        <div class="platform-select-container">
-          <div class="mb-4 text-gray-600">
-            请选择要使用的发布配置（可多选）：
-          </div>
-
-          <div v-if="availablePublishConfigs.length === 0" class="empty-config-tips text-center py-10 text-gray-400">
-            暂无发布配置，请先在“发布配置”页面添加
-          </div>
-
-          <el-checkbox-group v-else v-model="publishQueueSelectedConfigIds"
-            class="platform-checkbox-group flex flex-col">
-            <el-checkbox v-for="config in availablePublishConfigs" :key="config.id" :label="config.id"
-              class="platform-checkbox-item !mr-0 mb-2 p-2 border border-gray-100 rounded hover:bg-gray-50 transition-colors w-full h-auto">
-              <div class="platform-item-content flex items-center w-full">
-                <div class="flex items-center flex-1">
-                  <span class="font-bold mr-2 text-base">{{ config.name }}</span>
-                  <el-tag size="small" effect="plain">{{ formatPlatformName(config.platform) }}</el-tag>
-                </div>
-                <div class="text-xs text-gray-400 truncate max-w-[300px]">{{ config.description }}</div>
+        <div class="platform-select-container flex flex-col gap-4">
+          <!-- 搜索与筛选 -->
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2 flex-1">
+              <el-input v-model="publishConfigSearchText" placeholder="搜索配置名称或平台..." prefix-icon="Search" clearable
+                @input="publishConfigCurrentPage = 1" style="width: 300px" />
+              <div class="text-xs text-gray-500">
+                支持多选配置并行发布到不同平台
               </div>
-            </el-checkbox>
-          </el-checkbox-group>
+            </div>
+            <div class="flex items-center gap-2">
+              <el-tag v-if="publishQueueSelectedConfigIds.length" type="primary" effect="dark" round>
+                已选 {{ publishQueueSelectedConfigIds.length }} 项
+              </el-tag>
+            </div>
+          </div>
 
-          <div class="publish-selected-summary mt-4 text-sm text-gray-500">
-            已选择 {{ publishQueueSelectedConfigIds.length }} 个配置
+          <!-- vxe-grid 表格 -->
+          <div class="config-grid-wrapper border rounded-lg overflow-hidden">
+            <vxe-grid v-bind="publishConfigGridOptions" :data="publishConfigDataSource"
+              @checkbox-change="handlePublishConfigCheckboxChange" @checkbox-all="handlePublishConfigCheckboxAllChange">
+
+              <template #platformSlot="{ row }">
+                <div class="flex items-center gap-2">
+                  <div class="w-6 h-6 rounded flex items-center justify-center p-1"
+                    :style="{ backgroundColor: getPlatformColor(row.platform) }">
+                    <img v-if="getPlatformLogo(row.platform)" :src="getPlatformLogo(row.platform)"
+                      class="w-4 h-4 object-contain invert" />
+                    <span v-else class="text-[10px] text-white font-bold">{{ getPlatformIcon(row.platform) }}</span>
+                  </div>
+                  <span>{{ formatPlatformName(row.platform) }}</span>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
+
+          <!-- 分页 -->
+          <div class="flex justify-end pt-2">
+            <el-pagination v-model:current-page="publishConfigCurrentPage" v-model:page-size="publishConfigPageSize"
+              :total="filteredPublishConfigs.length" :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next" small background />
           </div>
         </div>
         <template #footer>
-          <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="publishConfirmLoading"
-            :disabled="publishQueueSelectedConfigIds.length === 0" @click="confirmPublishToPlatforms">
-            确认发布
-          </el-button>
+          <div class="flex justify-end gap-2">
+            <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="publishConfirmLoading"
+              :disabled="publishQueueSelectedConfigIds.length === 0" @click="confirmPublishToPlatforms">
+              确认发布任务 ({{ publishQueueSelectedConfigIds.length }})
+            </el-button>
+          </div>
         </template>
       </el-dialog>
 
@@ -2167,16 +2212,97 @@ interface PublishForm {
   douyin: PlatformForm | null;
   xiaohongshu: PlatformForm | null;
   weibo: PlatformForm | null;
+  kuaishou: PlatformForm | null;
+  bilibili: PlatformForm | null;
+  xianyu: PlatformForm | null;
+  tiktok: PlatformForm | null;
+  youtube: PlatformForm | null;
 }
 
 // 发布相关的状态
 const selectedPlatforms = ref<string[]>([]);
-const publishForm = ref<PublishForm & { kuaishou: PlatformForm | null }>({
+const publishForm = ref<PublishForm>({
   douyin: null,
   xiaohongshu: null,
   weibo: null,
-  kuaishou: null
+  kuaishou: null,
+  bilibili: null,
+  xianyu: null,
+  tiktok: null,
+  youtube: null
 });
+
+// 发布配置选择相关状态
+const publishConfigSearchText = ref('');
+const publishConfigCurrentPage = ref(1);
+const publishConfigPageSize = ref(10);
+const availablePublishConfigs = ref<any[]>([]);
+const publishQueueSelectedConfigIds = ref<string[]>([]);
+const publishConfirmLoading = ref(false);
+const publishPlatformDialogVisible = ref(false);
+const currentPublishProduct = ref<any>(null);
+
+const filteredPublishConfigs = computed(() => {
+  const text = publishConfigSearchText.value.toLowerCase().trim();
+  let filtered = availablePublishConfigs.value;
+  if (text) {
+    filtered = filtered.filter(c =>
+      c.name?.toLowerCase().includes(text) ||
+      formatPlatformName(c.platform).toLowerCase().includes(text)
+    );
+  }
+  return filtered;
+});
+
+const publishConfigDataSource = computed(() => {
+  const start = (publishConfigCurrentPage.value - 1) * publishConfigPageSize.value;
+  const end = start + publishConfigPageSize.value;
+  return filteredPublishConfigs.value.slice(start, end);
+});
+
+const publishConfigGridOptions = computed(() => ({
+  border: true,
+  height: 480,
+  loading: false,
+  rowConfig: { isHover: true, keyField: 'id' },
+  columnConfig: { resizable: true },
+  checkboxConfig: {
+    checkRowKeys: publishQueueSelectedConfigIds.value,
+    highlight: true,
+    trigger: 'row'
+  },
+  columns: [
+    { type: 'checkbox', width: 60, align: 'center' },
+    { field: 'platform', title: '平台', width: 140, slots: { default: 'platformSlot' } },
+    { field: 'name', title: '配置名称', minWidth: 180, showOverflow: true },
+    { field: 'description', title: '备注说明', minWidth: 200, showOverflow: true }
+  ]
+}));
+
+// 处理配置选择变更
+function handlePublishConfigCheckboxChange({ checked, row }) {
+  if (checked) {
+    if (!publishQueueSelectedConfigIds.value.includes(row.id)) {
+      publishQueueSelectedConfigIds.value.push(row.id);
+    }
+  } else {
+    publishQueueSelectedConfigIds.value = publishQueueSelectedConfigIds.value.filter(id => id !== row.id);
+  }
+}
+
+function handlePublishConfigCheckboxAllChange({ checked, records }) {
+  // 只操作当前页的数据
+  const currentPageIds = publishConfigDataSource.value.map(r => r.id);
+  if (checked) {
+    currentPageIds.forEach(id => {
+      if (!publishQueueSelectedConfigIds.value.includes(id)) {
+        publishQueueSelectedConfigIds.value.push(id);
+      }
+    });
+  } else {
+    publishQueueSelectedConfigIds.value = publishQueueSelectedConfigIds.value.filter(id => !currentPageIds.includes(id));
+  }
+}
 
 // 监听平台选择变化
 // watch(selectedPlatforms, async (newPlatforms) => {
@@ -2489,7 +2615,7 @@ async function getList() {
 
 // 重置查询参数
 const resetQuery = () => {
-  queryParams.currentPage = 1;
+  queryParams.currentPage = 1; // 搜索时重置到第一页
   queryParams.pageSize = 20;
   queryParams.id = '';
   queryParams.code = '';
@@ -2665,11 +2791,15 @@ async function handleTogglePublish(row) {
 }
 
 // 处理发布按钮点击
-function handlePublish(row) {
+function handlePublish(row: any) {
   currentPublishRow.value = row;
   publishDialogVisible.value = true;
-  // 默认选中所有平台
-  selectedPlatforms.value = ['douyin', 'xiaohongshu', 'weibo', 'kuaishou'];
+  // 默认选中主要平台
+  selectedPlatforms.value = ['douyin', 'kuaishou', 'xiaohongshu', 'weibo'];
+  // 如果有英文字段，默认也选中国际化平台
+  if (row.enName || row.enDescription) {
+    selectedPlatforms.value.push('tiktok', 'youtube');
+  }
   // 初始化表单
   initPublishForm(row, selectedPlatforms.value);
 }
@@ -2726,9 +2856,20 @@ async function initPublishForm(row, platforms) {
 
   // 初始化每个平台的表单
   platforms.forEach(platform => {
-    publishForm.value[platform as keyof PublishForm | 'kuaishou'] = {
-      title: row?.name || '',
-      content: row?.description || '',
+    // 判断是否优先使用英文字段
+    const isEnPlatform = ['tiktok', 'youtube'].includes(platform);
+
+    let title = row?.name || '';
+    let content = row?.description || '';
+
+    if (isEnPlatform) {
+      title = (row.enName && row.enName.trim() ? row.enName : (row.name || ''));
+      content = (row.enDescription && row.enDescription.trim() ? row.enDescription : (row.description || ''));
+    }
+
+    publishForm.value[platform as keyof PublishForm] = {
+      title: title,
+      content: content,
       images: images,
       selectedImages: [...images],
       videos: videos,
@@ -2738,18 +2879,22 @@ async function initPublishForm(row, platforms) {
   // 清理未选中的平台
   Object.keys(publishForm.value).forEach(platform => {
     if (!platforms.includes(platform)) {
-      publishForm.value[platform as keyof PublishForm | 'kuaishou'] = null;
+      publishForm.value[platform as keyof PublishForm] = null;
     }
   });
 }
 
 // 获取平台名称
 const getPlatformName = (platform: string) => {
-  const platformNames = {
+  const platformNames: Record<string, string> = {
     douyin: '抖音',
     xiaohongshu: '小红书',
     weibo: '微博',
-    kuaishou: '快手'
+    kuaishou: '快手',
+    bilibili: 'B站',
+    xianyu: '咸鱼',
+    tiktok: 'TikTok',
+    youtube: 'YouTube'
   };
   return platformNames[platform] || platform;
 };
@@ -2796,57 +2941,76 @@ function handleContentInput(platform: string) {
 
 // 修改发布提交方法
 async function handlePublishSubmit() {
+  if (!currentPublishRow.value?.id) {
+    return ElMessage.warning('商品ID不存在');
+  }
+
+  if (selectedPlatforms.value.length === 0) {
+    return ElMessage.warning('请至少选择一个发布平台');
+  }
+
+  // 验证每个选中平台的表单
+  for (const platform of selectedPlatforms.value) {
+    const pForm = publishForm.value[platform as keyof PublishForm];
+    if (!pForm) continue;
+
+    if (platform !== 'weibo' && (!pForm.title || !pForm.content)) {
+      return ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+    }
+    if (platform === 'weibo' && !pForm.content) {
+      return ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
+    }
+    if (pForm.selectedImages.length === 0 && pForm.selectedVideos.length === 0) {
+      return ElMessage.warning(`请至少选择一张图片或一个视频用于${getPlatformName(platform)}发布`);
+    }
+  }
+
   publishLoading.value = true;
   try {
-    // 验证表单
-    if (selectedPlatforms.value.length === 0) {
-      ElMessage.warning('请至少选择一个发布平台');
-      return;
+    const row = currentPublishRow.value as any;
+
+    // 为每个选中的平台创建任务
+    const tasks = selectedPlatforms.value.map(platform => {
+      const pForm = publishForm.value[platform as keyof PublishForm];
+      if (!pForm) return null;
+
+      return {
+        type: getPublishTaskType(platform),
+        data: {
+          productId: row.id,
+          platform: platform,
+          // 手动输入的数据作为覆盖
+          title: pForm.title,
+          description: pForm.content,
+          images: pForm.selectedImages,
+          videos: pForm.selectedVideos,
+        },
+        description: `手动发布商品"${row.name || row.id}"到${getPlatformName(platform)}`,
+        metadata: {
+          platform: platform,
+          productId: row.id,
+          productName: row.name,
+          manual: true
+        },
+      };
+    }).filter(Boolean);
+
+    // 批量创建任务
+    const results = await Promise.all(
+      tasks.map(task => task && createTask(task as any))
+    );
+
+    const successCount = results.filter(r => r && r.id).length;
+
+    if (successCount === selectedPlatforms.value.length) {
+      ElMessage.success(`成功创建 ${successCount} 个发布任务，已添加到发布队列`);
+      publishDialogVisible.value = false;
+    } else {
+      ElMessage.warning(`成功创建 ${successCount}/${selectedPlatforms.value.length} 个发布任务`);
     }
-
-    // 验证每个选中平台的表单
-    for (const platform of selectedPlatforms.value) {
-      const form = publishForm.value[platform as keyof PublishForm | 'kuaishou'];
-      if (platform !== 'weibo' && (!form || !form.title || !form.content)) {
-        ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
-        return;
-      }
-      if (platform === 'weibo' && (!form || !form.content)) {
-        ElMessage.warning(`请完善${getPlatformName(platform)}的发布内容`);
-        return;
-      }
-      if (form.selectedImages.length === 0 && form.selectedVideos.length === 0) {
-        ElMessage.warning(`请至少选择一张图片或一个视频用于${getPlatformName(platform)}发布`);
-        return;
-      }
-    }
-
-    // 构建发布数据
-    const publishData = {
-      productId: currentPublishRow.value.id,
-      platforms: selectedPlatforms.value.map(platform => {
-        const base = {
-          platform,
-          content: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.content,
-          images: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.selectedImages,
-          videos: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.selectedVideos
-        };
-        if (platform !== 'weibo') {
-          return {
-            ...base,
-            title: publishForm.value[platform as keyof PublishForm | 'kuaishou']!.title
-          };
-        }
-        return base;
-      })
-    };
-
-    // puppeteer 社交媒体发布功能已移除
-    ElMessage.warning('社交媒体发布功能已移除，请使用队列发布');
-    publishDialogVisible.value = false;
-  } catch (error) {
-    console.error('发布失败:', error);
-    ElMessage.error('发布失败，请重试');
+  } catch (error: any) {
+    console.error('手动创建发布任务失败:', error);
+    ElMessage.error(error?.message || '发布任务创建失败');
   } finally {
     publishLoading.value = false;
   }
@@ -3546,6 +3710,19 @@ const publishPlatforms = [
   { label: '全民小视频', value: 'quanmin', icon: '全', color: '#FD3756', logoUrl: undefined },
 ];
 
+// 获取平台相关元数据
+const getPlatformColor = (platform: string) => {
+  return publishPlatforms.find(p => p.value === platform)?.color || '#999';
+};
+
+const getPlatformLogo = (platform: string) => {
+  return publishPlatforms.find(p => p.value === platform)?.logoUrl;
+};
+
+const getPlatformIcon = (platform: string) => {
+  return publishPlatforms.find(p => p.value === platform)?.icon || 'P';
+};
+
 // 格式化平台名称
 function formatPlatformName(platform: string) {
   const platformMap: Record<string, string> = {
@@ -3588,13 +3765,6 @@ function getPublishTaskType(platform: string) {
   return `publish-product-${platform}`;
 }
 
-// 发布平台选择对话框
-const publishPlatformDialogVisible = ref(false);
-const publishQueueSelectedConfigIds = ref<string[]>([]);
-const availablePublishConfigs = ref<any[]>([]);
-const currentPublishProduct = ref<any>(null);
-const publishConfirmLoading = ref(false);
-
 // 发布到平台队列
 async function handlePublishToQueue(row: any) {
   if (!row?.id) {
@@ -3603,6 +3773,8 @@ async function handlePublishToQueue(row: any) {
 
   currentPublishProduct.value = row;
   publishQueueSelectedConfigIds.value = [];
+  publishConfigSearchText.value = '';
+  publishConfigCurrentPage.value = 1;
 
   // 获取发布配置
   try {
@@ -3668,7 +3840,7 @@ async function confirmPublishToPlatforms() {
       tasks.map(task => task && createTask(task))
     );
 
-    const successCount = results.filter(r => r && r.id).length; // createTask returns Queue entity usually
+    const successCount = results.filter(r => r && r.id).length;
 
     publishPlatformDialogVisible.value = false;
 
@@ -4754,5 +4926,189 @@ function formatTaskStatus(status: string) {
       }
     }
   }
+}
+
+// 社交媒体发布 UI 优化样式
+.platform-selector-visual {
+  .platform-check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+  }
+
+  .platform-card-checkbox {
+    margin: 0;
+    height: auto;
+    width: 100%;
+
+    :deep(.el-checkbox__input) {
+      display: none;
+    }
+
+    :deep(.el-checkbox__label) {
+      padding: 0;
+      width: 100%;
+    }
+
+    .platform-card-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 8px;
+      background: var(--el-bg-color);
+      border: 2px solid var(--el-border-color-lighter);
+      border-radius: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+
+      &:hover {
+        border-color: var(--platform-color);
+        background: var(--el-color-primary-light-9);
+        transform: translateY(-2px);
+      }
+
+      .platform-card-logo {
+        width: 32px;
+        height: 32px;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .logo-img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+
+        .logo-fallback {
+          width: 100%;
+          height: 100%;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-weight: bold;
+          font-size: 16px;
+        }
+      }
+
+      .platform-card-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--el-text-color-primary);
+        width: 100%;
+        text-align: center;
+      }
+
+      .platform-card-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .platform-card-sub {
+        color: var(--el-text-color-secondary);
+        opacity: 0.8;
+      }
+
+      .platform-card-indicator {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--el-border-color-lighter);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 10px;
+        transition: all 0.2s;
+      }
+    }
+
+    &.is-checked {
+      .platform-card-inner {
+        border-color: var(--platform-color);
+        background: var(--el-color-primary-light-9);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+        .platform-card-indicator {
+          background: var(--platform-color);
+        }
+      }
+    }
+  }
+}
+
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 16px;
+  align-items: start;
+
+  .platform-form-compact {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s;
+
+    :deep(.el-card__header) {
+      padding: 12px 16px;
+      background-color: var(--el-fill-color-light);
+    }
+
+    .platform-mini-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+.select-item-compact {
+  border: 2px solid transparent;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.2s;
+
+  &.selected {
+    border-color: var(--el-color-primary);
+    transform: scale(0.95);
+    box-shadow: 0 0 0 2px var(--el-color-primary-light-7);
+  }
+
+  &:hover:not(.selected) {
+    border-color: var(--el-border-color-darker);
+  }
+
+  .check-icon {
+    font-weight: bold;
+  }
+}
+
+.publish-result-dark-bg {
+  background: #1a1a1a;
+  border-radius: 8px;
+  min-height: 200px;
+}
+
+.publish-result-card {
+  flex: 1 1 200px;
+}
+
+.publish-result-dark-item {
+  color: #fff;
+  background: rgba(45, 45, 45, 0.8);
 }
 </style>
