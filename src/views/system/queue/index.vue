@@ -3,37 +3,17 @@
     <!-- 搜索栏 -->
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <form-item label="任务ID">
-        <el-input 
-          v-model="queryParams.id" 
-          placeholder="留空则查询所有ID" 
-          style="width: 200px" 
-          clearable 
-          @keyup.enter="getList"
-        />
+        <el-input v-model="queryParams.id" placeholder="留空则查询所有ID" style="width: 200px" clearable
+          @keyup.enter="getList" />
       </form-item>
       <form-item label="任务类型">
-        <el-select
-          v-model="queryParams.type"
-          placeholder="请选择任务类型"
-          style="width: 200px"
-          clearable
-          @keyup.enter="getList"
-        >
-          <el-option
-            v-for="opt in TASK_TYPE_OPTIONS"
-            :key="opt.value"
-            :label="opt.label"
-            :value="opt.value"
-          />
+        <el-select v-model="queryParams.type" placeholder="请选择任务类型" style="width: 200px" clearable
+          @keyup.enter="getList">
+          <el-option v-for="opt in TASK_TYPE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
       </form-item>
       <form-item label="任务状态">
-        <el-select 
-          v-model="queryParams.status" 
-          placeholder="请选择状态" 
-          style="width: 160px"
-          clearable
-        >
+        <el-select v-model="queryParams.status" placeholder="请选择状态" style="width: 160px" clearable>
           <el-option label="待处理" value="pending" />
           <el-option label="处理中" value="processing" />
           <el-option label="已完成" value="completed" />
@@ -42,12 +22,7 @@
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
-      <el-button
-        type="danger"
-        :icon="Delete"
-        @click="handleDelete(null)"
-        :disabled="!ids.length"
-      >
+      <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
         批量删除
       </el-button>
     </div>
@@ -88,13 +63,8 @@
 
     <!-- 表格展示 -->
     <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
+      <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
+        @checkbox-all="checkboxAllChange">
         <template #statusDefaultSlot="{ row }">
           <el-tag :type="getStatusType(row.status)">
             {{ getStatusText(row.status) }}
@@ -102,40 +72,20 @@
         </template>
 
         <template #dataDefaultSlot="{ row }">
-          <el-button 
-            type="primary" 
-            link 
-            size="small" 
-            @click="handleViewData(row)"
-          >
+          <el-button type="primary" link size="small" @click="handleViewData(row)">
             查看数据
           </el-button>
         </template>
 
         <template #operationDefaultSlot="{ row }">
           <div class="flex table-operation-column">
-            <el-button 
-              type="info" 
-              link 
-              size="small" 
-              @click="handleUpdateData(row)"
-            >
+            <el-button type="info" link size="small" @click="handleUpdateData(row)">
               更新数据
             </el-button>
-            <el-button 
-              type="primary" 
-              link 
-              size="small" 
-              @click="handleEdit(row)"
-            >
+            <el-button type="primary" link size="small" @click="handleEdit(row)">
               标记状态
             </el-button>
-            <el-button 
-              type="danger" 
-              link 
-              size="small" 
-              @click="handleDelete(row)"
-            >
+            <el-button type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
           </div>
@@ -145,91 +95,41 @@
 
     <!-- 分页 -->
     <div class="py-4 flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+        @pagination="getList" />
     </div>
 
     <!-- 新增任务对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      :title="dialogTitle" 
-      width="700px" 
-      :center="false"
-      align-center
-      @close="resetForm"
-    >
-      <el-form 
-        ref="formRef" 
-        :model="formData" 
-        :rules="formRules" 
-        label-width="100px"
-      >
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" :center="false" align-center
+      @close="resetForm">
+      <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-form-item label="任务类型" prop="type">
-          <el-select
-            v-model="formData.type"
-            placeholder="请选择任务类型"
-            style="width: 100%"
-            clearable
-          >
-            <el-option
-              v-for="opt in TASK_TYPE_OPTIONS"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
-            />
+          <el-select v-model="formData.type" placeholder="请选择任务类型" style="width: 100%" clearable>
+            <el-option v-for="opt in TASK_TYPE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </el-form-item>
         <el-form-item label="任务描述" prop="description">
-          <el-input 
-            v-model="formData.description" 
-            type="textarea" 
-            :rows="2"
-            placeholder="请输入任务描述（可选）" 
-          />
+          <el-input v-model="formData.description" type="textarea" :rows="2" placeholder="请输入任务描述（可选）" />
         </el-form-item>
         <el-form-item label="任务数据" prop="data">
-          <el-input 
-            v-model="formData.dataStr" 
-            type="textarea" 
-            :rows="6"
-            placeholder="请输入JSON格式的任务数据，例如：{&quot;key&quot;: &quot;value&quot;}"
-          />
+          <el-input v-model="formData.dataStr" type="textarea" :rows="6"
+            placeholder="请输入JSON格式的任务数据，例如：{&quot;key&quot;: &quot;value&quot;}" />
         </el-form-item>
         <el-row :gutter="12">
           <el-col :span="12">
             <el-form-item label="优先级" prop="priority">
-              <el-input-number 
-                v-model="formData.priority" 
-                :min="0" 
-                :max="100"
-                placeholder="数字越大优先级越高"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.priority" :min="0" :max="100" placeholder="数字越大优先级越高"
+                style="width: 100%" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="延迟(秒)" prop="delay">
-              <el-input-number 
-                v-model="formData.delay" 
-                :min="0"
-                placeholder="延迟执行时间（秒）"
-                style="width: 100%"
-              />
+              <el-input-number v-model="formData.delay" :min="0" placeholder="延迟执行时间（秒）" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-form-item label="最大重试" prop="maxAttempts">
-          <el-input-number 
-            v-model="formData.maxAttempts" 
-            :min="1" 
-            :max="10"
-            placeholder="最大重试次数"
-            style="width: 100%"
-          />
+          <el-input-number v-model="formData.maxAttempts" :min="1" :max="10" placeholder="最大重试次数" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -241,19 +141,8 @@
     </el-dialog>
 
     <!-- 编辑状态对话框 -->
-    <el-dialog 
-      v-model="statusDialogVisible" 
-      title="修改任务状态" 
-      width="500px" 
-      :center="false"
-      align-center
-    >
-      <el-form 
-        ref="statusFormRef" 
-        :model="statusFormData" 
-        :rules="statusFormRules" 
-        label-width="100px"
-      >
+    <el-dialog v-model="statusDialogVisible" title="修改任务状态" width="500px" :center="false" align-center>
+      <el-form ref="statusFormRef" :model="statusFormData" :rules="statusFormRules" label-width="100px">
         <el-form-item label="任务ID">
           <el-input v-model="statusFormData.id" disabled />
         </el-form-item>
@@ -270,6 +159,9 @@
             <el-option label="失败" value="failed" />
           </el-select>
         </el-form-item>
+        <el-form-item label="错误信息" prop="error" v-if="statusFormData.newStatus === 'failed'">
+          <el-input v-model="statusFormData.error" type="textarea" :rows="3" placeholder="请输入错误信息" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -280,13 +172,7 @@
     </el-dialog>
 
     <!-- 查看数据对话框 -->
-    <el-dialog 
-      v-model="dataDialogVisible" 
-      title="任务数据" 
-      width="600px" 
-      :center="false"
-      align-center
-    >
+    <el-dialog v-model="dataDialogVisible" title="任务数据" width="600px" :center="false" align-center>
       <pre class="data-preview">{{ JSON.stringify(currentTaskData, null, 2) }}</pre>
       <template #footer>
         <div class="dialog-footer">
@@ -296,26 +182,12 @@
     </el-dialog>
 
     <!-- 更新数据对话框 -->
-    <el-dialog 
-      v-model="dataUpdateDialogVisible" 
-      title="更新数据" 
-      width="600px" 
-      :center="false"
-      align-center
-      @close="resetDataUpdateForm"
-    >
-      <el-form 
-        ref="dataUpdateFormRef" 
-        :model="dataUpdateFormData" 
-        label-width="100px"
-      >
+    <el-dialog v-model="dataUpdateDialogVisible" title="更新数据" width="600px" :center="false" align-center
+      @close="resetDataUpdateForm">
+      <el-form ref="dataUpdateFormRef" :model="dataUpdateFormData" label-width="100px">
         <el-form-item label="数据" prop="dataStr">
-          <el-input 
-            v-model="dataUpdateFormData.dataStr" 
-            type="textarea" 
-            :rows="10"
-            placeholder='请输入JSON格式的数据，例如：{"key": "value"}'
-          />
+          <el-input v-model="dataUpdateFormData.dataStr" type="textarea" :rows="10"
+            placeholder='请输入JSON格式的数据，例如：{"key": "value"}' />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -338,7 +210,7 @@ import {
   Delete,
   Plus,
 } from '@element-plus/icons-vue'
-import { 
+import {
   getTaskList,
   createTask,
   deleteTask,
@@ -384,9 +256,9 @@ const gridOptions = ref({
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     { title: '任务ID', field: 'id', minWidth: 200, showOverflow: true },
     { title: '任务类型', field: 'type', width: 240 },
-    { 
-      title: '任务描述', 
-      field: 'description', 
+    {
+      title: '任务描述',
+      field: 'description',
       minWidth: 200,
       showOverflow: true,
       formatter: (e) => {
@@ -401,17 +273,17 @@ const gridOptions = ref({
         default: 'statusDefaultSlot'
       }
     },
-    { 
-      title: '优先级', 
-      field: 'priority', 
+    {
+      title: '优先级',
+      field: 'priority',
       width: 80,
       formatter: (e) => {
         return e.cellValue || 0
       }
     },
-    { 
-      title: '重试次数', 
-      field: 'attempts', 
+    {
+      title: '重试次数',
+      field: 'attempts',
       width: 100,
       formatter: (e) => {
         const attempts = e.cellValue || 0
@@ -519,11 +391,15 @@ const statusFormData = reactive({
   type: '',
   status: '' as QueueMessage['status'],
   newStatus: '' as QueueMessage['status'],
+  error: '',
 })
 
 const statusFormRules = {
   newStatus: [
     { required: true, message: '请选择新状态', trigger: 'change' }
+  ],
+  error: [
+    { required: true, message: '请输入错误信息', trigger: 'blur' }
   ]
 }
 
@@ -568,7 +444,7 @@ async function getList() {
   loading.value = true
   try {
     console.log('🔍 开始查询任务列表，任务ID:', queryParams.id?.trim() || '(所有ID)', '任务类型:', queryParams.type?.trim() || '(所有类型)', '状态:', queryParams.status || '(所有状态)')
-    
+
     const res = await getTaskList({
       status: queryParams.status, // 不传 status 则查询所有状态
       type: queryParams.type?.trim() || undefined, // 不传 type 则查询所有类型
@@ -576,16 +452,16 @@ async function getList() {
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     })
-    
+
     console.log('📦 获取列表完整响应:', JSON.stringify(res, null, 2))
-    
+
     // 后端返回格式可能是：
     // 1. { data: { success: true, list: [...], total: 6 }, code: 0, status: true } (TransformInterceptor 包装)
     // 2. { success: true, list: [...], total: 6 } (直接返回)
     // axios 拦截器处理后，如果 code === 200 会返回 data，否则可能返回整个对象或 reject
-    
+
     let responseData = res
-    
+
     // 如果 res 有 data 字段且 data 是对象，说明是包装后的响应
     if (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
       // 检查 data 中是否有 success 或 list 字段（说明是队列接口的响应）
@@ -593,32 +469,32 @@ async function getList() {
         responseData = res.data
       }
     }
-    
+
     // 处理响应数据
     console.log('📊 解析响应数据，responseData:', responseData)
-    
+
     if (responseData) {
       // 检查是否是成功响应
       const isSuccess = responseData.success !== false && responseData.success !== undefined ? responseData.success : true
       console.log('✅ 响应成功状态:', isSuccess)
-      
+
       if (isSuccess) {
         const messages = responseData.list || responseData.messages || []
         // 后端已去掉 count 字段，仅返回 total；前端如需当前页数量，使用 messages.length
         const totalCount = responseData.total !== undefined
           ? Number(responseData.total) || 0
           : (Array.isArray(messages) ? messages.length : 0)
-        
+
         console.log('📋 解析后的数据:', {
           messagesCount: Array.isArray(messages) ? messages.length : 0,
           messagesType: Array.isArray(messages) ? 'array' : typeof messages,
           total: totalCount,
           messages: messages
         })
-        
+
         dataSource.value = Array.isArray(messages) ? messages : []
         total.value = totalCount
-        
+
         console.log(`✅ 最终显示 ${dataSource.value.length} 条任务，总数: ${total.value}`)
       } else {
         console.warn('❌ 响应显示失败:', responseData)
@@ -648,14 +524,14 @@ async function refreshStats() {
     const queueName = queryParams.type?.trim() || ''
     const res = await getQueueStats(queueName)
     console.log('获取统计信息完整响应:', JSON.stringify(res, null, 2))
-    
+
     // 后端返回格式可能是：
     // 1. { data: { queue: 'xxx', pending: 0, ... }, code: 0, status: true } (TransformInterceptor 包装)
     // 2. { queue: 'xxx', pending: 0, ... } (直接返回)
     // axios 拦截器处理后，如果 code === 200 会返回 data，否则可能返回整个对象
-    
+
     let statsData = res
-    
+
     // 如果 res 有 data 字段且 data 是对象，说明是包装后的响应
     if (res && res.data && typeof res.data === 'object' && !Array.isArray(res.data)) {
       // 检查 data 中是否有 queue 或 pending 字段（说明是统计数据的响应）
@@ -666,7 +542,7 @@ async function refreshStats() {
         statsData = res.data.data
       }
     }
-    
+
     // 处理统计数据
     if (statsData && typeof statsData === 'object' && !Array.isArray(statsData)) {
       stats.value = {
@@ -729,6 +605,7 @@ function handleEdit(row: QueueMessage) {
   statusFormData.type = row.type
   statusFormData.status = row.status
   statusFormData.newStatus = row.status
+  statusFormData.error = row.error || ''
   statusDialogVisible.value = true
 }
 
@@ -770,20 +647,20 @@ function handleDelete(row?: QueueMessage) {
         ElMessage.error('删除失败')
       }
     })
-    .catch(() => {})
+    .catch(() => { })
 }
 
 // 提交表单
 async function handleSubmit() {
   try {
     await formRef.value.validate()
-    
+
     // 检查任务类型
     if (!formData.type || !formData.type.trim()) {
       ElMessage.warning('请输入任务类型')
       return
     }
-    
+
     let taskData
     try {
       taskData = JSON.parse(formData.dataStr)
@@ -791,9 +668,9 @@ async function handleSubmit() {
       ElMessage.error('任务数据格式错误，请输入有效的JSON')
       return
     }
-    
+
     loading.value = true
-    
+
     // 只传递任务类型，后端会自动使用 type 作为 queue
     const createRes = await createTask({
       type: formData.type.trim(),
@@ -803,25 +680,25 @@ async function handleSubmit() {
       delay: formData.delay,
       maxAttempts: formData.maxAttempts,
     })
-    
+
     console.log('创建任务响应:', createRes)
-    
+
     ElMessage.success('任务创建成功')
     dialogVisible.value = false
-    
+
     // 创建成功后，自动设置查询条件并刷新列表和统计
     const createdType = formData.type.trim()
     const currentType = queryParams.type?.trim() || ''
-    
+
     // 如果当前没有查询条件，或者查询的就是创建的任务类型，则刷新
     if (!currentType || currentType === createdType) {
       queryParams.type = createdType
       queryParams.currentPage = 1 // 重置到第一页
       console.log('准备刷新列表和统计，任务类型:', createdType)
-      
+
       // 等待一小段时间，确保后端数据已写入
       await new Promise(resolve => setTimeout(resolve, 300))
-      
+
       await getList()
       await refreshStats()
     } else {
@@ -842,17 +719,23 @@ async function handleSubmit() {
 async function handleStatusSubmit() {
   try {
     await statusFormRef.value.validate()
-    
+
     // 如果新状态和当前状态相同，直接返回
     if (statusFormData.newStatus === statusFormData.status) {
       ElMessage.info('状态未发生变化')
       statusDialogVisible.value = false
       return
     }
-    
+
     // 直接更新状态
-    await updateTaskStatus(statusFormData.type, statusFormData.id, statusFormData.newStatus)
-    
+    console.log('📝 提交状态更新:', statusFormData.id, statusFormData.type, statusFormData.newStatus, statusFormData.error)
+    await updateTaskStatus(
+      statusFormData.type,
+      statusFormData.id,
+      statusFormData.newStatus,
+      statusFormData.newStatus === 'failed' ? statusFormData.error : undefined
+    )
+
     ElMessage.success('状态修改成功')
     statusDialogVisible.value = false
     getList()
@@ -888,11 +771,11 @@ function handleUpdateData(row: QueueMessage) {
   const dataStrValue = typeof currentData === 'object' && currentData !== null
     ? JSON.stringify(currentData, null, 2)
     : String(currentData || '{}')
-  
+
   dataUpdateFormData.queue = row.queue
   dataUpdateFormData.messageId = row.id
   dataUpdateFormData.dataStr = dataStrValue
-  
+
   dataUpdateDialogVisible.value = true
 }
 
@@ -902,7 +785,7 @@ async function handleDataUpdateSubmit() {
     ElMessage.warning('请输入数据')
     return
   }
-  
+
   let data: any
   try {
     data = JSON.parse(dataUpdateFormData.dataStr)
@@ -910,7 +793,7 @@ async function handleDataUpdateSubmit() {
     ElMessage.error('请输入有效的JSON格式')
     return
   }
-  
+
   try {
     loading.value = true
     await updateTaskData(dataUpdateFormData.queue, dataUpdateFormData.messageId, data)
@@ -965,4 +848,3 @@ onMounted(() => {
   line-height: 1.6;
 }
 </style>
-
