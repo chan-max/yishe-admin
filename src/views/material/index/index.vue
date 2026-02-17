@@ -351,7 +351,7 @@
       :destroy-on-close="true" class="psd-set-dialog" @close="resetPsdSetState">
       <div class="psd-set-body" style="height: calc(100vh - 160px); display: flex; gap: 16px;">
         <div class="psd-set-materials"
-          style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid var(--el-border-color-lighter); padding-right: 16px;">
+          style="width: 480px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid var(--el-border-color-lighter); padding-right: 16px;">
           <div class="section-title">已选择素材 ({{ ids.length }})</div>
           <div class="thumbs" style="flex: 1; overflow-y: auto; padding-right: 4px;">
             <div v-for="id in ids" :key="id" class="thumb"
@@ -3114,15 +3114,7 @@ async function loadPsdFolderTree() {
       name: '全部',
       path: '',
       parentId: null,
-      children: rootFolders, // rootFolders nested under All? Or Siblings? 
-      // Wait, if I want Uncategorized as separate, Unc should be sibling of folders?
-      // But rootFolders contains actual folders.
-      // If I nest rootFolders under All, then Uncategorized should also be under All?
-      // Current implementation: children: rootFolders.
-      // I should probably keep nest structure for PSD tree if that's preferred?
-      // Or make it flat like Main Tree?
-      // I'll try Flat to be consistent.
-      // children: [] for All.
+      children: [],
       isRoot: true
     }
 
@@ -5846,7 +5838,7 @@ h1 {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(280px, 1.2fr) minmax(360px, 1.6fr);
+  grid-template-columns: minmax(360px, 1.6fr) minmax(280px, 1.2fr);
   gap: 16px;
   width: 100%;
   overflow: hidden;
@@ -5896,7 +5888,7 @@ h1 {
 
 .psd-set-materials .thumb {
   position: relative;
-  height: 92px;
+  height: 120px;
   width: auto;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
