@@ -201,11 +201,11 @@
                 制作设计模型({{ ids.length }})
               </el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
-              }})</el-button>
+                }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
-              }})</el-button>
+                }})</el-button>
               <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
-              }})</el-button>
+                }})</el-button>
             </div>
           </div>
         </div>
@@ -690,10 +690,10 @@
                       <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
                     </template>
                     <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
-                      }}</span>
+                    }}</span>
                     <span v-if="data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
                       data.stickerCount || 0
-                      }})</span>
+                    }})</span>
                   </div>
                   <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
                     <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
@@ -1490,20 +1490,20 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="600px" align-center :destroy-on-close="true">
+    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="1000px" align-center :destroy-on-close="true">
       <div class="ai-gen-form">
         <div class="form-section">
           <label class="section-label">原始信息（可选）</label>
           <div class="section-desc">粘贴网页内容或其他原始信息，帮助AI更好地理解图片内容</div>
-          <el-input v-model="aiGenerateRawInfo" type="textarea" :rows="4" placeholder="如：网页上关于这张图片的描述、产品介绍等..."
-            style="font-size:14px;min-height:100px;width:100%;resize:vertical;" />
+          <el-input v-model="aiGenerateRawInfo" type="textarea" :rows="10" placeholder="如：网页上关于这张图片的描述、产品介绍等..."
+            style="font-size:14px;min-height:200px;width:100%;resize:vertical;" />
         </div>
 
         <div class="form-section">
           <label class="section-label">分析风格（可选）</label>
           <div class="section-desc">请输入你希望AI分析的内容风格或角度</div>
-          <el-input v-model="aiGenPrompt" type="textarea" :rows="4" placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
-            style="font-size:14px;min-height:100px;width:100%;resize:vertical;" />
+          <el-input v-model="aiGenPrompt" type="textarea" :rows="10" placeholder="如：请用艺术化语言描述图片内容、突出色彩特点等..."
+            style="font-size:14px;min-height:200px;width:100%;resize:vertical;" />
         </div>
       </div>
       <template #footer>
