@@ -364,6 +364,26 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ]
   },
   {
+    path: '/ai',
+    component: Layout,
+    name: 'AiService',
+    meta: {
+      title: 'AI服务',
+      icon: 'ep:cpu',
+      alwaysShow: true
+    },
+    children: [
+      {
+        path: 'tts',
+        component: () => import('@/views/ai/tts.vue'),
+        name: 'AiTts',
+        meta: {
+          title: 'AI文字转语音',
+        }
+      }
+    ]
+  },
+  {
     path: '/common-url',
     component: Layout,
     name: 'CommonUrl',
