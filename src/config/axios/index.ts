@@ -24,7 +24,7 @@ export default {
     if (option.data) {
       if (option.data.sortingFields) {
         try {
-          if(typeof option.data.sortingFields === 'string'){
+          if (typeof option.data.sortingFields === 'string') {
             option.data.sortingFields = JSON.parse(option.data.sortingFields)
           }
         } catch (e) {
@@ -33,6 +33,10 @@ export default {
     }
 
     const res = await request({ method: 'POST', ...option })
+    // 如果返回的是 Blob（如 TTS 语音、导出文件等），直接返回，不要访问 .data
+    if (res instanceof Blob || res instanceof ArrayBuffer) {
+      return res as unknown as T
+    }
     return res.data as unknown as T
   },
   postOriginal: async (option: any) => {
