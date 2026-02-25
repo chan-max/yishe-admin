@@ -1,118 +1,133 @@
 <template>
-  <div class="tts-container">
-    <el-card class="tts-card">
-      <template #header>
-        <div class="card-header">
-          <span class="title">
-            <el-icon class="title-icon">
-              <Microphone />
-            </el-icon>
-            AI 文字转语音助手 (Qwen Powered)
-          </span>
-          <div class="header-actions">
-            <el-tag type="success" effect="dark" round>Premium</el-tag>
-          </div>
-        </div>
-      </template>
+  <ContentWrap title="AI 文字转语音助手">
+    <template #header>
+      <div class="flex flex-grow justify-end">
+        <el-tag type="success" effect="dark" round>Premium</el-tag>
+      </div>
+    </template>
 
-      <div class="tts-content">
-        <div class="input-section">
-          <div class="section-label">输入文本</div>
-          <el-input v-model="ttsForm.text" type="textarea" :rows="8" placeholder="请输入您想要转换成语音的文字内容..." maxlength="500"
+    <el-row :gutter="24">
+      <!-- 左侧：文本输入区 -->
+      <el-col :lg="15" :md="14" :sm="24" :xs="24">
+        <div class="input-card">
+          <div class="card-title">
+            <el-icon>
+              <EditPen />
+            </el-icon>
+            输入转换文本
+          </div>
+          <el-input v-model="ttsForm.text" type="textarea" :rows="18" placeholder="请输入您想要转换成语音的文字内容..." maxlength="500"
             show-word-limit class="premium-textarea" />
-        </div>
-
-        <div class="settings-grid">
-          <div class="setting-item">
-            <div class="section-label">选择音色</div>
-            <el-select v-model="ttsForm.voice" placeholder="请选择音色" class="premium-select">
-              <el-option-group v-for="group in voiceGroups" :key="group.label" :label="group.label">
-                <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value">
-                  <div class="voice-option">
-                    <span class="voice-label">{{ item.label }}</span>
-                    <span class="voice-desc">{{ item.desc }}</span>
-                  </div>
-                </el-option>
-              </el-option-group>
-            </el-select>
-          </div>
-
-          <div class="setting-item">
-            <div class="section-label">AI 模型</div>
-            <el-select v-model="ttsForm.model" placeholder="请选择模型" class="premium-select">
-              <el-option label="Qwen3 TTS Flash (最新版)" value="qwen3-tts-flash-2025-11-27" />
-              <el-option label="Qwen3 TTS Flash (通用版)" value="qwen3-tts-flash" />
-              <el-option label="Qwen3 TTS Instruct (指令版)" value="qwen3-tts-instruct-flash" />
-            </el-select>
-          </div>
-
-          <div class="setting-item">
-            <div class="section-label">输出格式</div>
-            <el-radio-group v-model="ttsForm.format" size="small">
-              <el-radio-button label="mp3">MP3</el-radio-button>
-              <el-radio-button label="wav">WAV</el-radio-button>
-            </el-radio-group>
-          </div>
-        </div>
-
-        <!-- Advanced Settings -->
-        <div class="advanced-settings">
-          <div class="setting-row">
-            <div class="label-with-value">
-              <span class="section-label">语速</span>
-              <span class="value-badge">{{ ttsForm.speed }}x</span>
+          <div class="tips-wrapper mt-6">
+            <div class="tip-card">
+              <el-icon class="tip-icon">
+                <InfoFilled />
+              </el-icon>
+              <div class="tip-text">
+                提示：Qwen3-TTS 提供了极其拟人的语音合成效果。如果文本过长，建议分段生成以获得最佳韵律。
+              </div>
             </div>
-            <el-slider v-model="ttsForm.speed" :min="0.5" :max="2.0" :step="0.1" />
           </div>
-          <div class="setting-row">
-            <div class="label-with-value">
-              <span class="section-label">语调</span>
-              <span class="value-badge">{{ ttsForm.pitch }}x</span>
+        </div>
+      </el-col>
+
+      <!-- 右侧：设置与结果 -->
+      <el-col :lg="9" :md="10" :sm="24" :xs="24">
+        <div class="settings-sidebar">
+          <div class="sidebar-section">
+            <div class="section-title">基准配置</div>
+            <div class="setting-list">
+              <div class="setting-item">
+                <span class="setting-label">选择音色</span>
+                <el-select v-model="ttsForm.voice" placeholder="选择预设或角色" class="w-full">
+                  <el-option-group v-for="group in voiceGroups" :key="group.label" :label="group.label">
+                    <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value">
+                      <div class="voice-option">
+                        <span class="voice-label">{{ item.label }}</span>
+                        <span class="voice-desc">{{ item.desc }}</span>
+                      </div>
+                    </el-option>
+                  </el-option-group>
+                </el-select>
+              </div>
+
+              <div class="setting-item">
+                <span class="setting-label">模型引擎</span>
+                <el-select v-model="ttsForm.model" placeholder="选择版本" class="w-full">
+                  <el-option label="Qwen3 TTS Flash (最新)" value="qwen3-tts-flash" />
+                  <el-option label="Qwen3 TTS Instruct (指令)" value="qwen3-tts-instruct-flash" />
+                </el-select>
+              </div>
+
+              <div class="setting-item">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="setting-label">输出格式</span>
+                  <el-radio-group v-model="ttsForm.format" size="small">
+                    <el-radio-button label="mp3">MP3</el-radio-button>
+                    <el-radio-button label="wav">WAV</el-radio-button>
+                  </el-radio-group>
+                </div>
+              </div>
             </div>
-            <el-slider v-model="ttsForm.pitch" :min="0.5" :max="2.0" :step="0.1" />
           </div>
-        </div>
 
-        <div class="action-footer">
-          <el-button type="primary" class="generate-btn" :loading="loading" @click="handleGenerate">
-            <el-icon v-if="!loading">
-              <MagicStick />
-            </el-icon>
-            {{ loading ? '生成中...' : '开始合成语音' }}
-          </el-button>
-        </div>
-
-        <div v-if="audioUrl" class="result-section">
-          <div class="result-header">
-            <span class="result-title">生成结果</span>
-            <el-button type="primary" link :icon="Download" @click="handleDownload">下载音频</el-button>
+          <div class="sidebar-section mt-6">
+            <div class="section-title">语气微调</div>
+            <div class="slider-group">
+              <div class="slider-item">
+                <div class="slider-header">
+                  <span>语速 (Speed)</span>
+                  <span class="slider-value">{{ ttsForm.speed }}x</span>
+                </div>
+                <el-slider v-model="ttsForm.speed" :min="0.5" :max="2.0" :step="0.1" />
+              </div>
+              <div class="slider-item">
+                <div class="slider-header">
+                  <span>语调 (Pitch)</span>
+                  <span class="slider-value">{{ ttsForm.pitch }}x</span>
+                </div>
+                <el-slider v-model="ttsForm.pitch" :min="0.5" :max="2.0" :step="0.1" />
+              </div>
+            </div>
           </div>
-          <div class="audio-player-container">
-            <audio ref="audioRef" :src="audioUrl" controls class="audio-player"></audio>
-          </div>
-        </div>
-      </div>
-    </el-card>
 
-    <!-- Tips Section -->
-    <div class="tips-container">
-      <div class="tip-card">
-        <el-icon class="tip-icon">
-          <InfoFilled />
-        </el-icon>
-        <div class="tip-text">
-          提示：Qwen3-TTS 提供了极高质量的语音合成。如果文本过长，请尝试减少字数或分段生成。
+          <div class="action-btn-wrapper mt-8">
+            <el-button type="primary" class="generate-btn" :loading="loading" @click="handleGenerate">
+              <el-icon v-if="!loading" class="mr-1">
+                <MagicStick />
+              </el-icon>
+              {{ loading ? '并行生成中...' : '生成音频' }}
+            </el-button>
+          </div>
+
+          <transition name="el-zoom-in-top">
+            <div v-if="audioUrl" class="result-sidebar-box mt-6">
+              <div class="result-box-header">
+                <div class="flex items-center gap-1">
+                  <el-icon color="#67C23A">
+                    <Checked />
+                  </el-icon>
+                  <span>生成完毕</span>
+                </div>
+                <el-button type="primary" link @click="handleDownload">下载文件</el-button>
+              </div>
+              <div class="player-wrapper mt-3">
+                <audio ref="audioRef" :src="audioUrl" controls class="custom-audio" />
+              </div>
+            </div>
+          </transition>
         </div>
-      </div>
-    </div>
-  </div>
+      </el-col>
+    </el-row>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { Microphone, MagicStick, InfoFilled, Download } from '@element-plus/icons-vue'
+import { MagicStick, InfoFilled, Download, EditPen, Checked } from '@element-plus/icons-vue'
 import { generateTts } from '@/api/ai/tts'
 import { ElMessage, ElNotification } from 'element-plus'
+import { ContentWrap } from '@/components/ContentWrap'
 
 const loading = ref(false)
 const audioUrl = ref('')
@@ -265,188 +280,197 @@ const handleDownload = () => {
 }
 </script>
 
-<style scoped>
-.tts-container {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-}
+<style scoped lang="scss">
+.input-card {
+  background: var(--el-bg-color);
+  padding: 0;
 
-.tts-card {
-  border-radius: 8px;
-  border: 1px solid var(--el-border-color-light);
-  background-color: var(--el-bg-color-overlay);
-}
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--el-text-color-primary);
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.title-icon {
-  color: var(--el-color-primary);
-}
-
-.tts-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--el-text-color-regular);
-  margin-bottom: 8px;
+    .el-icon {
+      color: var(--el-color-primary);
+    }
+  }
 }
 
 .premium-textarea :deep(.el-textarea__inner) {
+  padding: 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  border-radius: 8px;
   background-color: var(--el-fill-color-blank);
-  border-color: var(--el-border-color);
-  color: var(--el-text-color-primary);
+  transition: all 0.3s ease;
+
+  &:focus {
+    background-color: var(--el-bg-color);
+    box-shadow: 0 0 0 1px var(--el-color-primary-light-8);
+  }
 }
 
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-}
-
-.premium-select {
-  width: 100%;
-}
-
-.voice-option {
+.settings-sidebar {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 2px 0;
 }
 
-.voice-label {
-  font-weight: 500;
-  color: var(--el-text-color-primary);
-}
-
-.voice-desc {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.2;
-}
-
-.advanced-settings {
-  background-color: var(--el-fill-color-blank);
+.sidebar-section {
+  background: var(--el-fill-color-light);
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--el-border-color-lighter);
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--el-text-color-primary);
+    position: relative;
+    padding-left: 10px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 14px;
+      background: var(--el-color-primary);
+      border-radius: 2px;
+    }
+  }
+}
+
+.setting-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.setting-row {
+.setting-item {
+  .setting-label {
+    display: block;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 6px;
+  }
+}
+
+.slider-group {
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
-.label-with-value {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
+.slider-item {
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+    margin-bottom: 4px;
 
-.value-badge {
-  font-size: 12px;
-  background-color: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 600;
-}
-
-.action-footer {
-  display: flex;
-  justify-content: center;
-  padding-top: 10px;
+    .slider-value {
+      font-weight: 600;
+      color: var(--el-color-primary);
+    }
+  }
 }
 
 .generate-btn {
-  padding: 24px 60px;
+  width: 100%;
+  padding: 24px 0;
   font-size: 16px;
-  border-radius: 8px;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
-  transition: all 0.3s ease;
-}
-
-.generate-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
-}
-
-.result-section {
-  margin-top: 10px;
-  background: var(--el-color-primary-light-9);
-  padding: 20px;
   border-radius: 8px;
-  border: 1px dashed var(--el-color-primary-light-5);
+  letter-spacing: 1px;
+  box-shadow: var(--el-box-shadow-light);
 }
 
-.result-header {
+.result-sidebar-box {
+  background: var(--el-color-success-light-9);
+  border: 1px solid var(--el-color-success-light-7);
+  border-radius: 12px;
+  padding: 16px;
+
+  .result-box-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+}
+
+.player-wrapper {
+  .custom-audio {
+    width: 100%;
+    height: 36px;
+  }
+}
+
+.tips-wrapper {
+  .tip-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--el-fill-color-blank);
+    border: 1px dashed var(--el-border-color);
+    border-radius: 8px;
+
+    .tip-icon {
+      margin-top: 2px;
+      color: var(--el-color-warning);
+    }
+
+    .tip-text {
+      font-size: 13px;
+      color: var(--el-text-color-secondary);
+      line-height: 1.5;
+    }
+  }
+}
+
+.voice-option {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-direction: column;
+  line-height: 1.3;
+  padding: 4px 0;
+
+  .voice-label {
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .voice-desc {
+    font-size: 11px;
+    color: var(--el-text-color-secondary);
+  }
 }
 
-.result-title {
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  font-size: 14px;
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.audio-player-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.audio-player {
-  flex: 1;
-  height: 40px;
-}
-
-.tips-container {
-  margin-top: 20px;
-}
-
-.tip-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background-color: var(--el-color-warning-light-9);
-  border-radius: 8px;
-  border: 1px solid var(--el-color-warning-light-8);
-}
-
-.tip-icon {
-  color: var(--el-color-warning);
-  font-size: 18px;
-}
-
-.tip-text {
-  font-size: 13px;
-  color: var(--el-color-warning-darker);
+.scale-in-center {
+  animation: fadeIn 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
 }
 </style>
