@@ -201,11 +201,11 @@
                 制作设计模型({{ ids.length }})
               </el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
-                }})</el-button>
+              }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
-                }})</el-button>
+              }})</el-button>
               <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
-                }})</el-button>
+              }})</el-button>
             </div>
           </div>
         </div>
@@ -690,10 +690,10 @@
                       <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
                     </template>
                     <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
-                    }}</span>
+                      }}</span>
                     <span v-if="data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
                       data.stickerCount || 0
-                    }})</span>
+                      }})</span>
                   </div>
                   <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
                     <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
@@ -2048,7 +2048,7 @@ const psdSetTaskCount = computed(() =>
 )
 
 // PSD制作套图允许的图片格式（固定为这三个）
-const psdSetAllowedFormats = ['jpg', 'png', 'jpeg', 'svg']
+const psdSetAllowedFormats = ['jpg', 'png', 'jpeg', 'svg', 'webp']
 
 // 获取当前选中PSD模板的允许格式
 const allowedFormatsForSelectedTemplates = computed(() => {
