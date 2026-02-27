@@ -1425,6 +1425,7 @@ import {
   watchEffect,
   nextTick
 } from 'vue'
+import { gridRef, resetCheckStatus } from './selection'
 
 import {
   getMaterialList,
@@ -1524,18 +1525,7 @@ const sizeShapeOptions = {
   'ultra-long': { label: '超长图 (≤1:2)', thumbClass: 'ultra-long-thumb' }
 }
 
-// 展示模式
-const gridRef = ref()
-
-function resetCheckStatus() {
-  if (gridRef.value?.clearCheckboxRow) {
-    gridRef.value?.clearCheckboxRow()
-  }
-  if (gridRef.value?.clearCheckboxReserve) {
-    gridRef.value?.clearCheckboxReserve()
-  }
-  ids.value = []
-}
+// 展示模式见 ./selection.ts
 
 // 格式化文件大小
 function formatFileSize(bytes: number): string {
@@ -2300,7 +2290,7 @@ async function handleFolderDrop(data: any) {
     // Stay in current folder, just refresh tree and list
     await loadStickerFolderTree() // 确保右侧数量与树同步刷新
     await getList()
-    resetCheckStatus()
+    resetCheckStatus(ids)
   } catch (error) {
     ElMessage.error((error as Error).message || '移动失败')
   } finally {
@@ -2479,7 +2469,7 @@ async function handleBatchMoveToFolder() {
     ElMessage.success(`成功移动 ${ids.value.length} 个素材${targetFolderPath ? `到 ${targetFolderPath}` : '到根目录'}`)
     getList()
     ids.value = []
-    resetCheckStatus()
+    resetCheckStatus(ids)
   } catch (error) {
     ElMessage.error((error as Error).message || '移动失败')
   }
@@ -2563,7 +2553,7 @@ function handleDelete(row?) {
       delIds = delIds.map((id) => String(id))
       await deleteAssetLibrary({ ids: delIds })
       ElNotification.success('删除成功')
-      resetCheckStatus()
+      resetCheckStatus(ids)
       getList()
     })
     .catch(() => { })
@@ -3984,10 +3974,8 @@ function checkMaterialFormats() {
     } finally {
       urlUploadLoading.value = false
     }
-  }
-
+  }}
 </script>
-
 <style scoped>
 /* 预览图片容器样式 */
 .preview-image-wrapper {
@@ -5363,9 +5351,7 @@ h1 {
 }
 </style>
 
-<!-- 非 scoped 样式，用于覆盖 Element Plus 的默认样式 -->
 <style>
-/* 全局样式：确保 dropdown popper 允许溢出显示子菜单 */
 .el-popper.is-pure {
   overflow: visible !important;
 }
@@ -5387,8 +5373,6 @@ h1 {
   overflow: visible !important;
 }
 </style>
-
-<!-- 编辑素材表单样式 -->
 <style scoped>
 .edit-material-dialog :deep(.el-dialog__body) {
   padding: 30px;
@@ -5902,7 +5886,6 @@ h1 {
 }
 </style>
 
-<!-- 尺寸形状选择器样式 -->
 <style scoped>
 .size-option {
   display: flex;
@@ -6114,7 +6097,6 @@ h1 {
 }
 </style>
 
-<!-- 模板详情提示框样式 -->
 <style>
 .template-detail-tooltip {
   max-width: 400px;
@@ -6146,7 +6128,6 @@ h1 {
 }
 </style>
 
-<!-- 批量详细配置弹窗样式 -->
 <style lang="less" scoped>
 .batch-detail-config-content {
   display: flex;
