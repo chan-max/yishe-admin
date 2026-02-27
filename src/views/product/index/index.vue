@@ -10,7 +10,7 @@
         </div>
       </div>
       <div
-        class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
+        class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-[var(--el-text-color-primary)] hover:text-primary transition-colors"
         @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
         <el-icon :size="14">
           <DArrowRight v-if="folderTreeCollapsed" />
@@ -225,11 +225,11 @@
                     :hide-on-click-modal="false" :preview-class="'custom-image-preview'"
                     class="w-full h-full object-contain rounded cursor-pointer" fit="contain" />
                   <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                    {{ index + 1 }}/{{ row.images.length }}
+                    {{ (index as any) + 1 }}/{{ row.images.length }}
                   </div>
                 </el-carousel-item>
               </el-carousel>
-              <span v-else class="text-gray-400">暂无图片</span>
+              <span v-else class="text-[var(--el-text-color-secondary)]">暂无图片</span>
             </div>
           </template>
 
@@ -240,16 +240,16 @@
                 class="w-40 custom-carousel">
                 <el-carousel-item v-for="(url, index) in row.videos" :key="index">
                   <div class="relative cursor-pointer w-full h-full flex items-center justify-center bg-black rounded"
-                    @click="handleVideoPreview(row.videos, index, row)">
+                    @click="handleVideoPreview(row.videos, index as any, row)">
                     <video :src="url" class="max-h-[100px] w-auto h-auto object-contain rounded" muted
                       preload="metadata" />
                     <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                      {{ index + 1 }}/{{ row.videos.length }}
+                      {{ (index as any) + 1 }}/{{ row.videos.length }}
                     </div>
                   </div>
                 </el-carousel-item>
               </el-carousel>
-              <span v-else class="text-gray-400">暂无视频</span>
+              <span v-else class="text-[var(--el-text-color-secondary)]">暂无视频</span>
             </div>
           </template>
 
@@ -506,7 +506,7 @@
           <el-alert title="多媒体说明" description="默认引用设计模型缩略图、相关截图和视频，可勾选选择图片和视频" type="info" :closable="false" show-icon
             class="mb-3" />
 
-          <h3 class="text-base font-medium my-2">选择发布平台</h3>
+          <h3 class="text-base font-bold my-2 text-[var(--el-text-color-primary)]">选择发布平台</h3>
 
           <!-- 平台选择 (视觉优化版) -->
           <div class="platform-selector-visual mb-6">
@@ -648,7 +648,8 @@
                       'bg-green-400': result.success,
                       'bg-red-400': !result.success
                     }"></div>
-                    <span class="font-medium text-gray-100">{{ getPlatformName(result.platform) }}</span>
+                    <span class="font-medium text-[var(--el-text-color-primary)]">{{ getPlatformName(result.platform)
+                      }}</span>
                   </div>
                   <div class="text-right ml-2">
                     <div class="font-medium" :class="{
@@ -657,7 +658,8 @@
                     }">
                       {{ result.success ? '发布成功' : '发布失败' }}
                     </div>
-                    <div class="text-xs text-gray-300 mt-1 max-w-[180px] break-words">{{ result.message }}</div>
+                    <div class="text-xs text-[var(--el-text-color-secondary)] mt-1 max-w-[180px] break-words">{{
+                      result.message }}</div>
                   </div>
                 </div>
               </div>
@@ -677,7 +679,7 @@
                 }">
                   {{ publishSummary.message }}
                 </div>
-                <div class="text-sm text-gray-300 mt-1">
+                <div class="text-sm text-[var(--el-text-color-secondary)] mt-1">
                   成功：{{ publishSummary.successCount }} 个，失败：{{ publishSummary.failCount }} 个
                 </div>
               </div>
@@ -742,250 +744,9 @@
         <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
       </el-dialog>
 
-      <!-- 生成视频配置弹窗（ffmpeg） -->
-      <el-dialog v-model="videoGenDialogVisible" title="视频生成配置" width="100%" :fullscreen="true"
-        :close-on-click-modal="false" :destroy-on-close="false" align-center>
-        <div class="video-gen-container">
-          <el-alert type="info" :closable="false" show-icon class="mb-4">
-            <template #title>
-              支持多图合成视频，可选择多张图片并设置过渡效果。每张图片的显示时长可自定义。
-            </template>
-          </el-alert>
+      <!-- 高级视频生成弹窗 (已抽离) -->
+      <VideoGenDialog v-model:visible="videoGenDialogVisible" :row="videoGenRow" @success="getList" />
 
-          <el-form :model="videoGenForm" label-width="160px" size="default" class="video-gen-form">
-            <!-- 尺寸设置 -->
-            <el-card class="mb-4" shadow="never">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <el-icon>
-                    <Setting />
-                  </el-icon>
-                  <span>尺寸设置</span>
-                </div>
-              </template>
-              <el-row :gutter="8">
-                <el-col :xs="24" :sm="12" :md="12">
-                  <el-form-item label="尺寸模式">
-                    <el-radio-group v-model="videoGenForm.sizeMode" @change="handleSizeModeChange">
-                      <el-radio label="keep-original">保持原图尺寸</el-radio>
-                      <el-radio label="custom">自定义尺寸</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row :gutter="8">
-                <el-col :xs="12" :sm="6" :md="6">
-                  <el-form-item label="宽度">
-                    <el-input-number v-model="videoGenForm.width" :step="10" controls-position="right"
-                      style="width: 100%" />
-                  </el-form-item>
-                </el-col>
-                <el-col :xs="12" :sm="6" :md="6">
-                  <el-form-item label="高度">
-                    <el-input-number v-model="videoGenForm.height" :step="10" controls-position="right"
-                      style="width: 100%"
-                      :disabled="videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight"
-                      @change="handleHeightChange" />
-                    <div v-if="videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight"
-                      class="text-xs text-gray-500 mt-1">
-                      高度将根据原图比例自动计算
-                    </div>
-                  </el-form-item>
-                </el-col>
-                <el-col :xs="24" :sm="12" :md="12" v-if="videoGenForm.sizeMode === 'keep-original'">
-                  <el-form-item label="自动计算高度">
-                    <div class="flex items-center gap-3">
-                      <el-switch v-model="videoGenForm.autoHeight" @change="handleAutoHeightChange" />
-                      <div v-if="imageSize" class="text-xs text-gray-500">
-                        原图尺寸: {{ imageSize.width }} × {{ imageSize.height }}
-                      </div>
-                    </div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row :gutter="12" v-if="videoGenForm.sizeMode === 'custom'">
-                <el-col :xs="12" :sm="6" :md="6">
-                  <el-form-item label="缩放模式">
-                    <el-select v-model="videoGenForm.scaleMode" style="width: 100%">
-                      <el-option label="Cover（填充，可能裁剪）" value="cover" />
-                      <el-option label="Contain（适应，可能有空白）" value="contain" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.scaleMode === 'contain'">
-                  <el-form-item label="背景颜色">
-                    <el-color-picker v-model="videoGenForm.backgroundColor" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-card>
-
-            <!-- 图片选择 -->
-            <el-card class="mb-4" shadow="never">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <el-icon>
-                    <Picture />
-                  </el-icon>
-                  <span>图片选择</span>
-                </div>
-              </template>
-              <el-row :gutter="8">
-                <!-- 商品图片选择 -->
-                <el-col :xs="24" :sm="24" :md="24" v-if="videoGenRow?.images && videoGenRow.images.length > 0">
-                  <el-form-item label="选择商品图片">
-                    <div class="flex flex-wrap gap-2 mb-2">
-                      <div v-for="(url, index) in videoGenRow.images" :key="index"
-                        class="relative cursor-pointer select-item-compact"
-                        :class="{ 'selected': videoGenForm.selectedImages.includes(url) }"
-                        @click="toggleVideoGenImageSelection(url)">
-                        <el-image :src="url" class="w-20 h-20 object-cover rounded transition-all duration-200"
-                          fit="cover" :preview-src-list="videoGenRow.images" :initial-index="index"
-                          :preview-teleported="true" :hide-on-click-modal="false" />
-                        <div
-                          class="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-md">
-                          <el-icon v-if="videoGenForm.selectedImages.includes(url)"
-                            class="text-blue-600 text-xs check-icon">
-                            <Check />
-                          </el-icon>
-                        </div>
-                        <div
-                          class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 text-center rounded-b">
-                          {{ index + 1 }}
-                        </div>
-                      </div>
-                    </div>
-                    <div class="text-xs text-gray-500 mt-1">
-                      已选择 {{ videoGenForm.selectedImages.length }} 张图片，点击图片可切换选择状态
-                    </div>
-                  </el-form-item>
-                </el-col>
-                <!-- 无产品图片提示 -->
-                <el-col :xs="24" :sm="24" :md="24" v-else>
-                  <el-form-item label="选择商品图片">
-                    <el-alert type="warning" :closable="false" show-icon>
-                      <template #title>
-                        该商品没有图片，无法生成视频。请先为商品添加图片。
-                      </template>
-                    </el-alert>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-card>
-
-            <!-- 视频设置 -->
-            <el-card class="mb-4" shadow="never">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <el-icon>
-                    <VideoCamera />
-                  </el-icon>
-                  <span>视频设置</span>
-                </div>
-              </template>
-              <el-row :gutter="8">
-                <el-col :xs="12" :sm="6" :md="6">
-                  <el-form-item label="视频时长（秒）">
-                    <el-input-number v-model="videoGenForm.clipDuration" :min="0.5" :max="30" :step="0.5" :precision="1"
-                      controls-position="right" style="width: 100%" />
-                    <div class="text-xs text-gray-500 mt-1">
-                      视频总时长（多图时会自动均分到每张图片并叠加过渡时间）
-                    </div>
-                  </el-form-item>
-                </el-col>
-                <el-col :xs="12" :sm="6" :md="6">
-                  <el-form-item label="视频格式">
-                    <el-select v-model="videoGenForm.outputFormat" style="width: 100%">
-                      <el-option label="MP4" value="mp4" />
-                      <el-option label="WebM" value="webm" />
-                      <el-option label="MKV" value="mkv" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :xs="12" :sm="6" :md="6" v-if="videoGenForm.selectedImages.length > 1">
-                  <el-form-item label="过渡效果">
-                    <el-select v-model="videoGenForm.transition" style="width: 100%">
-                      <el-option label="淡入淡出" value="fade" />
-                      <el-option label="向左滑动" value="directional-left" />
-                      <el-option label="向右滑动" value="directional-right" />
-                      <el-option label="无过渡" value="none" />
-                    </el-select>
-                    <div class="text-xs text-gray-500 mt-1">
-                      多张图片之间的过渡效果
-                    </div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-card>
-
-            <!-- 背景音乐设置 -->
-            <el-card class="mb-4" shadow="never">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <el-icon>
-                    <Headset />
-                  </el-icon>
-                  <span>背景音乐设置</span>
-                </div>
-              </template>
-              <el-row :gutter="8">
-                <el-col :xs="24" :sm="12" :md="12">
-                  <el-form-item label="背景音乐">
-                    <el-select v-model="videoGenForm.audioUrl" filterable remote reserve-keyword
-                      placeholder="请搜索并选择背景音乐" :remote-method="remoteSearchAudio" :loading="audioLoading" clearable
-                      style="width: 100%">
-                      <el-option v-for="audio in audioList" :key="audio.id" :label="audio.name || '未命名音频'"
-                        :value="audio.url">
-                        <div class="flex items-center justify-between">
-                          <span>{{ audio.name || '未命名音频' }}</span>
-                          <span class="text-xs text-gray-400 ml-2">{{ audio.suffix?.toUpperCase() }}</span>
-                        </div>
-                      </el-option>
-                    </el-select>
-                    <div class="text-xs text-gray-500 mt-1">
-                      从剪辑素材库中选择音频文件作为背景音乐（可选，yishe-videos 会自动处理音频链接）
-                    </div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-card>
-
-            <!-- 操作选项 -->
-            <el-card class="mb-4" shadow="never">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <el-icon>
-                    <Operation />
-                  </el-icon>
-                  <span>操作选项</span>
-                </div>
-              </template>
-              <el-row :gutter="8">
-                <el-col :xs="24" :sm="12" :md="12">
-                  <el-form-item label="视频处理方式">
-                    <el-radio-group v-model="videoGenForm.replace">
-                      <el-radio :label="false">追加到现有视频</el-radio>
-                      <el-radio :label="true">替换现有视频</el-radio>
-                    </el-radio-group>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-card>
-          </el-form>
-        </div>
-
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <el-button @click="videoGenDialogVisible = false" :disabled="generatingVideoId">取消</el-button>
-            <el-button type="primary" :loading="!!generatingVideoId" @click="submitGenerateVideo">
-              <el-icon class="mr-1">
-                <VideoPlay />
-              </el-icon>
-              {{ generatingVideoId ? '生成中...' : '开始生成视频' }}
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
 
       <!-- 导出社交媒体数据弹窗 -->
       <el-dialog v-model="socialExportVisible" title="社交媒体发布数据（导出）" width="60%" :fullscreen="false"
@@ -1017,7 +778,7 @@
                 <div class="flex flex-wrap gap-2 mt-2">
                   <img v-for="(img, idx) in customModelDetail.images" :key="idx" :src="img"
                     style="width: 60px; height: 60px; border-radius: 6px; object-fit: cover; cursor:pointer;"
-                    @click="preview(idx, customModelDetail.images)" />
+                    @click="preview(idx as any, customModelDetail.images)" />
                 </div>
               </template>
             </el-col>
@@ -1368,7 +1129,7 @@
               </div>
               <div class="flex flex-wrap gap-2">
                 <div v-for="(url, index) in productDetail.videos" :key="index" class="relative cursor-pointer"
-                  @click="handleVideoPreview(productDetail.videos, index, productDetail)">
+                  @click="handleVideoPreview(productDetail.videos, index as any, productDetail)">
                   <video :src="url" class="w-32 h-32 object-cover rounded" muted preload="metadata" />
                   <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
                     <el-icon class="text-white text-2xl">
@@ -1376,7 +1137,7 @@
                     </el-icon>
                   </div>
                   <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                    {{ index + 1 }}/{{ productDetail.videos.length }}
+                    {{ (index as any) + 1 }}/{{ productDetail.videos.length }}
                   </div>
                 </div>
               </div>
@@ -1604,13 +1365,11 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted, watch, watchEffect } from "vue";
-import { ContentWrap } from '@/components/ContentWrap'
+import { ref, reactive, computed, watchEffect } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 const userStore = useUserStore()
-import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   Search,
@@ -1632,37 +1391,33 @@ import {
   Check,
   Refresh,
   QuestionFilled,
-  Setting,
-  Headset,
-  VideoCamera,
-  Document,
   View,
-  Operation,
   DocumentCopy,
   Grid,
   Loading,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
-import { downloadFileByElement, downloadImageEnhanced } from "@/common/download";
+import { downloadImageEnhanced } from "@/common/download";
+import {
+  createProduct,
+  getProductList,
+  updateProduct,
+  updatePublishStatus,
+  deleteProduct,
+  generateProductCode,
+  getProductSocialMediaExport,
+  getProductPublishTasks,
+  batchMoveProducts,
+  aiGenerateProductInfo
+} from "@/api/product";
 import { uploadToCOS } from "@/api/cos";
-import { createProduct, getProductList, updateProduct, updatePublishStatus, deleteProduct, generateProductCode, generateProductVideo, getProductSocialMediaExport, getProductPublishTasks, batchMoveProducts } from "@/api/product";
-import { getTitleTemplateList } from "@/api/publish";
-import request from "@/config/axios";
-import { uploadOSSFile } from "@/api/shop/platform";
-import { ShopCategoryApi } from "@/api/shop/category";
-import { ShopApi } from "@/api/shop/shopIndex";
-import { PsdPreview } from "@/components/PsdPreview";
-import { fontTemplateApi } from "@/api/fontTemplate";
-import ProductImageUpload from '@/components/ProductImageUpload.vue'
-import ProductVideoUpload from '@/components/ProductVideoUpload.vue'
-import { getDesignModel } from '@/api/designModel'
-// import { preview as previewImage } from "@/components/PreviewImage/index"; // 已使用本地 preview 函数
-import { getDraftList } from '@/api/draft'
-import { aiGenerateProductInfo } from '@/api/product'
 import { copyLink } from '@/utils/clipboard'
-import { PRODUCT_CATEGORIES, getCategoryByValue, getCategoryImage } from '@/config/product-categories'
-import { createTask, type CreateTaskDto } from '@/api/system/queue'
-import { getClipMaterialList } from '@/api/clip-material'
+import { getDraftList } from '@/api/draft'
+import { createTask } from '@/api/system/queue'
+import { getDesignModel } from '@/api/designModel'
+import request from "@/config/axios";
+import VideoGenDialog from './components/VideoGenDialog.vue';
+import { PRODUCT_CATEGORIES } from '@/config/product-categories'
 import { getPreviewImageUrl } from '@/utils/image'
 import { getPublishConfigListApi } from '@/api/product/publishConfig'
 import FolderTree from '@/components/material/FolderTree.vue'
@@ -1698,7 +1453,7 @@ const folderTreeCollapsed = useLocalStorage('product_folder_collapsed', false);
 const showRelations = useLocalStorage('product_show_relations', true);
 
 // 基础列配置
-const baseColumns = [
+const baseColumns: any[] = [
   { type: "checkbox", width: 50, showOverflow: true },
   {
     title: "ID",
@@ -1822,7 +1577,7 @@ const gridOptions = computed(() => ({
     return row.isPublish ? 'published-row' : 'unpublished-row';
   },
   rowConfig: {
-    height: 'auto'
+    isHover: true
   },
   columns: gridColumns.value,
 }));
@@ -1869,6 +1624,8 @@ const videoFileList = ref([]);
 const pendingVideoFiles = ref([]);
 const existingVideos = ref([]);
 const generatingVideoId = ref<string>('');
+const videoGenDialogVisible = ref(false);
+const videoGenRow = ref<any>(null);
 const deletingVideoKey = ref<string>('');
 const publishDialogVisible = ref(false);
 const batchMoveDialogVisible = ref(false);
@@ -1897,248 +1654,13 @@ const confirmBatchMove = async () => {
   }
 }
 
-// 生成视频（ffmpeg）配置弹窗
-const videoGenDialogVisible = ref(false);
-const videoGenRow = ref<any>(null);
-const videoGenForm = reactive({
-  // 尺寸设置
-  sizeMode: 'keep-original' as 'keep-original' | 'custom', // 尺寸模式：保持原图尺寸 / 自定义尺寸
-  width: 720,
-  height: 720,
-  autoHeight: true, // 保持原图尺寸时，是否自动计算高度
-  scaleMode: 'contain' as 'cover' | 'contain', // 自定义尺寸时的缩放模式
-  backgroundColor: '#000000', // contain 模式时的背景颜色
-  // 视频设置
-  clipDuration: 2, // 每张图片显示时长（秒）
-  outputFormat: 'mp4' as 'mp4' | 'webm' | 'mkv', // 视频格式
-  fps: 25, // 帧率
-  transition: 'fade' as 'fade' | 'slide' | 'directional-left' | 'directional-right' | 'none', // 过渡效果
-  // 图片选择
-  selectedImages: [] as string[], // 选中的图片URL数组（仅限产品图片）
-  // 操作选项
-  replace: false, // 默认追加
-  // 背景音乐
-  audioUrl: null as string | null, // 背景音乐URL（直接传递给 yishe-videos）
-});
-
-// 图片尺寸信息
-const imageSize = ref<{ width: number; height: number } | null>(null);
-
-// 背景音乐相关
-const audioList = ref<any[]>([]);
-const audioLoading = ref(false);
-const audioSearchKeyword = ref('');
-
-// 判断是否为音频文件
-function isAudioFile(suffix: string): boolean {
-  const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr']
-  return audioSuffixes.includes(suffix.toLowerCase())
-}
-
-// 搜索音频文件
-async function searchAudioFiles(keyword: string = '') {
-  audioLoading.value = true;
-  try {
-    const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr'];
-    const params: any = {
-      currentPage: 1,
-      pageSize: 50,
-    };
-
-    // 如果有搜索关键词，添加到查询参数
-    if (keyword && keyword.trim()) {
-      params.keyword = keyword.trim();
-    }
-
-    // 使用 suffix 过滤音频文件，由于后端是精确匹配，我们需要多次查询
-    // 或者使用一个包含所有音频后缀的查询（如果有多个，需要分别查询）
-    // 这里先查询所有，然后在前端过滤音频文件
-    const res = await getClipMaterialList(params);
-    const allItems = res.list || [];
-
-    // 过滤出音频文件
-    audioList.value = allItems.filter((item: any) =>
-      item.suffix && isAudioFile(item.suffix)
-    );
-  } catch (error) {
-    console.error('搜索音频文件失败:', error);
-    ElMessage.error('搜索音频文件失败');
-    audioList.value = [];
-  } finally {
-    audioLoading.value = false;
-  }
-}
-
-// 远程搜索音频（用于 el-select 的 remote-method）
-async function remoteSearchAudio(query: string) {
-  if (query) {
-    await searchAudioFiles(query);
-  } else {
-    await searchAudioFiles('');
-  }
-}
-
-// 获取图片尺寸
-async function getImageSize(imageUrl: string): Promise<{ width: number; height: number } | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      resolve({ width: img.naturalWidth, height: img.naturalHeight });
-    };
-    img.onerror = () => {
-      resolve(null);
-    };
-    img.src = imageUrl;
-  });
-}
-
-// 根据图片比例计算高度
-function calculateHeightFromWidth(width: number): number {
-  if (!imageSize.value) {
-    return videoGenForm.height;
-  }
-  const imageAspectRatio = imageSize.value.width / imageSize.value.height;
-  const height = Math.round(width / imageAspectRatio);
-  // 确保为偶数（x264要求）
-  return height % 2 === 0 ? height : height - 1;
-}
-
-// 根据图片比例计算宽度
-function calculateWidthFromHeight(height: number): number {
-  if (!imageSize.value) {
-    return videoGenForm.width;
-  }
-  const imageAspectRatio = imageSize.value.width / imageSize.value.height;
-  const width = Math.round(height * imageAspectRatio);
-  // 确保为偶数
-  return width % 2 === 0 ? width : width - 1;
-}
-
-// 处理尺寸模式变化
-function handleSizeModeChange() {
-  if (videoGenForm.sizeMode === 'keep-original' && imageSize.value) {
-    if (videoGenForm.autoHeight) {
-      // 切换到保持原图尺寸时，如果启用了自动计算高度，根据比例计算高度
-      videoGenForm.width = imageSize.value.width;
-      videoGenForm.height = calculateHeightFromWidth(imageSize.value.width);
-    } else {
-      // 未启用自动计算高度时，直接使用原图尺寸
-      videoGenForm.width = imageSize.value.width;
-      videoGenForm.height = imageSize.value.height;
-    }
-  }
-}
-
-// 处理宽度变化
-function handleWidthChange() {
-  if (videoGenForm.sizeMode === 'keep-original' && videoGenForm.autoHeight && imageSize.value) {
-    const newHeight = calculateHeightFromWidth(videoGenForm.width);
-    if (newHeight !== videoGenForm.height) {
-      videoGenForm.height = newHeight;
-    }
-  }
-}
-
-// 处理高度变化
-function handleHeightChange() {
-  // 只有在非自动计算高度模式下，才允许通过修改高度来更新宽度
-  if (videoGenForm.sizeMode === 'keep-original' && !videoGenForm.autoHeight && imageSize.value) {
-    const newWidth = calculateWidthFromHeight(videoGenForm.height);
-    if (newWidth !== videoGenForm.width) {
-      videoGenForm.width = newWidth;
-    }
-  }
-}
-
-// 处理自动计算高度切换
-function handleAutoHeightChange(value: boolean) {
-  if (value && imageSize.value && videoGenForm.sizeMode === 'keep-original') {
-    // 启用时，根据当前宽度和图片比例计算高度
-    videoGenForm.height = calculateHeightFromWidth(videoGenForm.width);
-  } else if (!value && imageSize.value && videoGenForm.sizeMode === 'keep-original') {
-    // 禁用时，如果当前尺寸不是原图尺寸，恢复为原图尺寸
-    // 或者保持当前尺寸（由用户决定）
-  }
-}
-
-// 监听宽度变化，实时同步高度
-watchEffect(() => {
-  // 只监听需要的值，避免不必要的计算
-  const width = videoGenForm.width;
-  const sizeMode = videoGenForm.sizeMode;
-  const autoHeight = videoGenForm.autoHeight;
-  const imgSize = imageSize.value;
-
-  if (sizeMode === 'keep-original' && autoHeight && imgSize) {
-    const newHeight = calculateHeightFromWidth(width);
-    // 只在高度确实需要更新时才更新，避免循环
-    if (newHeight !== videoGenForm.height) {
-      videoGenForm.height = newHeight;
-    }
-  }
-});
-
-// 重置表单为默认值
-function resetVideoGenForm() {
-  videoGenForm.sizeMode = 'keep-original';
-  videoGenForm.width = 720;
-  videoGenForm.height = 720;
-  videoGenForm.autoHeight = true;
-  videoGenForm.scaleMode = 'contain';
-  videoGenForm.backgroundColor = '#000000';
-  videoGenForm.clipDuration = 2;
-  videoGenForm.outputFormat = 'mp4';
-  videoGenForm.transition = 'fade';
-  videoGenForm.selectedImages = [];
-  videoGenForm.replace = false; // 默认追加
-  videoGenForm.audioUrl = null;
-}
-
-// 手动输入图片功能已移除，只能选择产品已有的图片
-
-// 打开视频生成对话框时，加载音频列表
+// 打开视频生成对话框
 async function handleGenerateVideo(row: any) {
   if (!row?.id) return;
-
   videoGenRow.value = row;
-
-  // 先重置表单为默认值
-  resetVideoGenForm();
-
-  // 如果有商品图片，默认选中所有图片
-  const hasImages = Array.isArray(row.images) && row.images.length > 0;
-  if (hasImages) {
-    videoGenForm.selectedImages = [...(row.images || [])];
-
-    // 获取第一张图片的尺寸
-    const firstImageUrl = row.images[0];
-    const size = await getImageSize(firstImageUrl);
-    if (size) {
-      imageSize.value = size;
-      // 如果使用保持原图尺寸模式，根据 autoHeight 设置尺寸
-      if (videoGenForm.sizeMode === 'keep-original') {
-        if (videoGenForm.autoHeight) {
-          // 启用自动计算高度时，先设置宽度，然后根据比例计算高度
-          videoGenForm.width = size.width;
-          // 直接计算高度，确保按比例同步
-          videoGenForm.height = calculateHeightFromWidth(size.width);
-        } else {
-          // 未启用自动计算高度时，直接使用原图尺寸
-          videoGenForm.width = size.width;
-          videoGenForm.height = size.height;
-        }
-      }
-    }
-  } else {
-    // 没有商品图片时，提示用户
-    ElMessage.warning('该商品没有图片，无法生成视频');
-  }
-
-  // 加载音频列表
-  await searchAudioFiles('');
-
   videoGenDialogVisible.value = true;
 }
+
 
 // 社交媒体导出
 const socialExportVisible = ref(false);
@@ -2269,10 +1791,10 @@ const publishConfigGridOptions = computed(() => ({
   checkboxConfig: {
     checkRowKeys: publishQueueSelectedConfigIds.value,
     highlight: true,
-    trigger: 'row'
+    trigger: 'row' as const
   },
   columns: [
-    { type: 'checkbox', width: 60, align: 'center' },
+    { type: 'checkbox' as any, width: 60, align: 'center' as any },
     { field: 'platform', title: '平台', width: 140, slots: { default: 'platformSlot' } },
     { field: 'name', title: '配置名称', minWidth: 180, showOverflow: true },
     { field: 'description', title: '备注说明', minWidth: 200, showOverflow: true }
@@ -3259,110 +2781,16 @@ async function handleGenerateProductCode(row: any) {
   }
 }
 
-// 切换图片选择状态（视频生成）
+// 切换图片选择状态（视频生成）- 已由于抽离组件而弃用
 function toggleVideoGenImageSelection(url: string) {
-  const index = videoGenForm.selectedImages.indexOf(url);
-  if (index > -1) {
-    videoGenForm.selectedImages.splice(index, 1);
-  } else {
-    videoGenForm.selectedImages.push(url);
-  }
+  // logic moved to VideoGenDialog
 }
 
-// 根据商品图片生成视频
+// 根据商品图片生成视频 - 已由于抽离组件而弃用
 async function submitGenerateVideo() {
-  if (!videoGenRow.value?.id) return;
-
-  // 验证是否选择了图片
-  if (!videoGenForm.selectedImages || videoGenForm.selectedImages.length === 0) {
-    return ElMessage.warning('请至少选择一张图片');
-  }
-
-  // 验证：确保选中的图片都是产品图片（安全验证）
-  const productImages = videoGenRow.value?.images || [];
-  const invalidImages = videoGenForm.selectedImages.filter(
-    url => !productImages.includes(url)
-  );
-  if (invalidImages.length > 0) {
-    return ElMessage.error('只能选择产品已有的图片');
-  }
-
-  try {
-    generatingVideoId.value = videoGenRow.value.id;
-
-    // 计算每张图片的展示时长
-    const clipDuration = Number(videoGenForm.clipDuration) || 2;
-    const imageDuration = videoGenForm.selectedImages.length > 0
-      ? clipDuration / videoGenForm.selectedImages.length
-      : clipDuration;
-
-    // 构建 resources 数组（yishe-videos 格式）
-    const resources: any[] = videoGenForm.selectedImages.map((imageUrl, index) => {
-      const resource: any = {
-        type: 'image',
-        url: imageUrl,
-        duration: imageDuration,
-        transition: index === 0 ? 'none' : (videoGenForm.transition || 'fade'),
-        transitionDuration: 0.5,
-        position: 'center',
-      };
-
-      // 设置缩放模式
-      if (videoGenForm.sizeMode === 'keep-original') {
-        resource.scaleMode = 'fit'; // 保持原图比例
-      } else {
-        // 自定义尺寸模式
-        if (videoGenForm.scaleMode === 'contain') {
-          resource.scaleMode = 'fit';
-        } else if (videoGenForm.scaleMode === 'cover') {
-          resource.scaleMode = 'fill';
-        } else {
-          resource.scaleMode = 'fit';
-        }
-      }
-
-      return resource;
-    });
-
-    // 如果选择了背景音乐，直接添加到 resources 中（yishe-videos 会自动处理）
-    if (videoGenForm.audioUrl && videoGenForm.audioUrl.trim()) {
-      resources.push({
-        type: 'audio',
-        url: videoGenForm.audioUrl.trim(),
-        volume: 100,
-      });
-    }
-
-    // 构建 options 对象（yishe-videos 格式）
-    const options: any = {
-      width: Number(videoGenForm.width) || 720,
-      height: Number(videoGenForm.height) || 720,
-      fps: Number(videoGenForm.fps) || 25,
-      videoCodec: 'libx264',
-      audioCodec: 'aac',
-      backgroundColor: videoGenForm.backgroundColor || '#000000',
-      videoPreset: 'medium',
-      videoCrf: 23,
-    };
-
-    // 构建请求数据（直接兼容 yishe-videos 格式）
-    const requestData: any = {
-      id: videoGenRow.value.id,
-      replace: !!videoGenForm.replace,
-      resources: resources,
-      options: options,
-    };
-
-    await generateProductVideo(requestData);
-    ElMessage.success('视频生成成功');
-    videoGenDialogVisible.value = false;
-    getList();
-  } catch (error: any) {
-    ElMessage.error(error?.message || '视频生成失败');
-  } finally {
-    generatingVideoId.value = '';
-  }
+  // logic moved to VideoGenDialog
 }
+
 
 // 删除单个视频（会触发后端删除 COS 对应文件）
 async function handleDeleteVideo(row: any, url: string) {
@@ -3943,41 +3371,11 @@ function formatTaskStatus(status: string) {
 }
 
 
-// 未发布商品行的样式
-.common-table .unpublished-row {
-  background-color: rgba(255, 193, 7, 0.08) !important;
-  /* 浅浅的半透明警告色 */
-  border-left: 3px solid rgba(255, 193, 7, 0.3) !important;
-  /* 左侧半透明橙色边框 */
 
-  &:hover {
-    background-color: rgba(255, 193, 7, 0.12) !important;
-    /* 悬停时稍微明显一点 */
-  }
-}
-
-// 已发布商品行的样式（用背景色表示）
-.common-table .published-row {
-  background-color: rgba(22, 163, 74, 0.08) !important;
-  /* 浅浅的半透明绿色 */
-  border-left: 3px solid rgba(22, 163, 74, 0.4) !important;
-  /* 左侧半透明绿色边框 */
-
-  &:hover {
-    background-color: rgba(22, 163, 74, 0.12) !important;
-    /* 悬停时稍微明显一点 */
-  }
-}
 
 .dark-btn {
-  background: linear-gradient(90deg, #232526 0%, #414345 100%);
-  color: #fff !important;
-  border: none;
-}
-
-.dark-btn:hover {
-  background: linear-gradient(90deg, #414345 0%, #232526 100%);
-  color: #fff !important;
+  background: var(--el-button-bg-color);
+  color: var(--el-button-text-color) !important;
 }
 
 // 夜间模式风格的发布结果弹窗
@@ -4498,10 +3896,8 @@ function formatTaskStatus(status: string) {
   font-size: 13px;
   line-height: 1.4;
   margin-bottom: 6px;
-  padding: 4px 8px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.05) 100%);
-  border-radius: 4px;
-  border-left: 3px solid var(--el-color-primary);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .relation-label {
@@ -4597,7 +3993,7 @@ function formatTaskStatus(status: string) {
 }
 
 .source-info-json {
-  background: #f5f7fa;
+  background: var(--el-bg-color-page);
   border: 1px solid #e4e7ed;
   border-radius: 4px;
   padding: 16px;
@@ -5110,5 +4506,265 @@ function formatTaskStatus(status: string) {
 .publish-result-dark-item {
   color: #fff;
   background: rgba(45, 45, 45, 0.8);
+}
+
+// 视频生成高级对话框样式
+.video-gen-compact-dialog {
+  :deep(.el-dialog__header) {
+    padding: 0;
+    margin-right: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 0;
+    background: var(--el-bg-color);
+  }
+
+  .video-gen-dialog-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    gap: 16px;
+
+    .header-icon {
+      font-size: 28px;
+      color: var(--el-color-primary);
+      background: var(--el-fill-color-light);
+      padding: 8px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .header-text {
+      .title {
+        display: block;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--el-text-color-primary);
+      }
+
+      .subtitle {
+        font-size: 12px;
+        color: var(--el-text-color-secondary);
+      }
+    }
+  }
+
+  .video-gen-main-content {
+    padding: 20px;
+    height: 600px;
+
+    .video-gen-tabs {
+      height: 100%;
+
+      :deep(.el-tabs__content) {
+        height: calc(100% - 40px);
+        overflow: hidden;
+      }
+
+      .tab-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .tab-content-scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding: 10px 4px;
+      }
+    }
+  }
+
+  .form-section {
+    margin-bottom: 24px;
+
+    .section-header {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--el-text-color-primary);
+      margin-bottom: 12px;
+      padding-left: 8px;
+      border-left: 4px solid var(--el-color-primary);
+    }
+  }
+
+  .image-grid-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+
+    .image-item-card {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      &.is-selected {
+        border-color: var(--el-color-primary);
+
+        .selection-overlay {
+          opacity: 1;
+        }
+      }
+
+      .thumb {
+        width: 100%;
+        height: 100%;
+      }
+
+      .selection-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(var(--el-color-primary-rgb), 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+
+        .el-icon {
+          color: #fff;
+          font-size: 24px;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+      }
+
+      .image-index {
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        backdrop-filter: blur(4px);
+      }
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    background: var(--el-fill-color-light);
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+
+    .grid-item {
+      .label {
+        font-size: 12px;
+        color: var(--el-text-color-secondary);
+        margin-bottom: 6px;
+      }
+
+      .unit {
+        font-size: 12px;
+        margin-left: 6px;
+        color: var(--el-text-color-secondary);
+      }
+    }
+  }
+
+  .param-preview-panel {
+    height: 100%;
+    background: var(--el-bg-color);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+    .panel-header {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--el-fill-color-light);
+      border-bottom: 1px solid var(--el-border-color-lighter);
+      color: var(--el-text-color-primary);
+      font-size: 13px;
+    }
+
+    .json-content {
+      flex: 1;
+      overflow: auto;
+      padding: 16px;
+
+      pre {
+        margin: 0;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        color: var(--el-text-color-primary);
+
+        code {
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+      }
+    }
+
+    .panel-footer {
+      padding: 12px 20px;
+      background: var(--el-fill-color-light);
+      border-top: 1px solid var(--el-border-color-lighter);
+      display: flex;
+      gap: 16px;
+
+      .info-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: #888;
+
+        .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #4caf50;
+
+          &.blue {
+            background: #2196f3;
+          }
+        }
+      }
+    }
+  }
+
+  .video-gen-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+
+    .submit-btn {
+      padding: 0 24px;
+      height: 40px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(var(--el-color-primary-rgb), 0.3);
+
+      .el-icon {
+        margin-right: 8px;
+        font-size: 18px;
+      }
+    }
+  }
 }
 </style>

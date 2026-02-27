@@ -1,22 +1,15 @@
 /*
  * @Author: chan-max jackieontheway666@gmail.com
- * @Date: 2025-12-03 19:27:39
- * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-12-13 22:24:45
- * @FilePath: /design-server/Users/jackie/workspace/yishe-admin/src/stores/connectionStatus.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
- */
-/*
- * @Author: chan-max jackieontheway666@gmail.com
  * @Date: 2025-07-09 19:04:50
  * @LastEditors: chan-max jackieontheway666@gmail.com
  * @LastEditTime: 2025-07-16 20:30:58
- * @FilePath: /design-server/Users/jackie/workspace/yishe-admin/src/stores/connectionStatus.ts
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @FilePath: /yishe-admin/src/stores/connectionStatus.ts
+ * @Description: 管理与本地客户端和远程服务的连接状态
  */
 import { ref, computed } from 'vue'
 import { websocketClient } from '@/services/websocketClient'
 import { getAccessToken } from '@/utils/auth'
+import { isClientAuthorized as checkClientAuthApi } from '@/api/user'
 
 // 本地客户端连接状态
 export const isLocalConnected = ref(false)
@@ -29,19 +22,11 @@ export const isRemoteConnected = computed(() => {
   return websocketClient.state.status === 'connected'
 })
 
-// 设计工具连接状态
-export const isDesignToolConnected = ref(false)
-export const setDesignToolConnected = (val: boolean) => {
-  isDesignToolConnected.value = val
-}
-
 // 客户端授权状态
 export const isClientAuthorized = ref(false)
 export const setClientAuthorized = (val: boolean) => {
   isClientAuthorized.value = val
 }
-
-import { isClientAuthorized as checkClientAuthApi } from '@/api/user'
 
 export const checkClientAuthorized = async () => {
   try {
@@ -52,36 +37,24 @@ export const checkClientAuthorized = async () => {
   }
 }
 
-// 本地客户端连接状态通过 WebSocket 更新，不再使用 HTTP health check
-
 // 检查客户端连接状态
 let checkClientConnectionTimer: ReturnType<typeof setInterval> | null = null
 
-// 已移除本地 IP 检测逻辑，完全通过 WebSocket 连接列表判断
-
-// 通过 WebSocket 检查客户端连接状态（不调用连接列表 API）
+// 通过 WebSocket 检查客户端连接状态
 export const checkClientConnection = () => {
-  // 只有在 WebSocket 已连接时才检查
   if (websocketClient.state.status !== 'connected') {
     setLocalConnected(false)
     return
   }
-
-  // 通过 WebSocket 发送检查请求
   websocketClient.checkMyClientStatus()
 }
 
 // 启动客户端连接状态检查
 const startClientConnectionCheck = () => {
-  // 清理旧的定时器
   if (checkClientConnectionTimer) {
     clearInterval(checkClientConnectionTimer)
   }
-  
-  // 立即检查一次
   checkClientConnection()
-  
-  // 每 5 秒检查一次
   checkClientConnectionTimer = setInterval(checkClientConnection, 5000)
 }
 
@@ -98,75 +71,61 @@ const stopClientConnectionCheck = () => {
 let statusWatcher: ReturnType<typeof setInterval> | null = null
 
 const watchWebSocketStatus = () => {
-  // 清理旧的监听器
   if (statusWatcher) {
     clearInterval(statusWatcher)
   }
-  
-  // 每 1 秒检查一次 WebSocket 状态
+
   statusWatcher = setInterval(() => {
     const status = websocketClient.state.status
     if (status === 'connected') {
-      // WebSocket 已连接，启动客户端连接检查
       if (!checkClientConnectionTimer) {
         startClientConnectionCheck()
       }
     } else {
-      // WebSocket 未连接，停止客户端连接检查
       stopClientConnectionCheck()
     }
   }, 1000)
-  
-  // 立即检查一次
-  const status = websocketClient.state.status
-  if (status === 'connected') {
+
+  if (websocketClient.state.status === 'connected') {
     startClientConnectionCheck()
   } else {
     stopClientConnectionCheck()
   }
 }
 
-// 启动 WebSocket 连接（仅在用户登录后调用）
+// 启动 WebSocket 连接
 export const startWebSocketConnection = () => {
-  // 检查是否有 token
   const token = getAccessToken()
   if (!token) {
     console.warn('[ws] 无 token，跳过 WebSocket 连接')
     return
   }
-  
-  // 启动 WebSocket 连接（如果还未连接）
+
   if (websocketClient.state.status === 'idle' || websocketClient.state.status === 'disconnected') {
     console.log('[ws] 启动 WebSocket 连接...')
     websocketClient.connect()
   }
-  
-  // 监听客户端连接状态响应
+
   websocketClient.events.on('myClientStatus', ({ hasClient }) => {
     setLocalConnected(hasClient)
   })
-  
-  // 启动状态监听
+
   watchWebSocketStatus()
 }
 
-// 启动所有连接检查（不包含 WebSocket，WebSocket 需要在用户登录后单独启动）
-// 本地客户端连接状态通过 WebSocket 更新，不再需要定时器
+// 启动所有连接检查
 export const startConnectionChecks = () => {
-  // 本地连接状态通过 WebSocket 更新，不再需要 HTTP health check
   return {
-    localTimer: 0, // 不再需要本地定时器
-    remoteTimer: 0 // 不再需要远程定时器，使用 WebSocket 状态
+    localTimer: 0,
+    remoteTimer: 0
   }
 }
 
 // 清理所有定时器
 export const clearConnectionChecks = (timers: { localTimer: number, remoteTimer: number }) => {
-  // 清理客户端连接检查定时器
   stopClientConnectionCheck()
-  // 清理状态监听器
   if (statusWatcher) {
     clearInterval(statusWatcher)
     statusWatcher = null
   }
-} 
+}

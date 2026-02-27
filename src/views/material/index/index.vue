@@ -190,16 +190,6 @@
               <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
               <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
               <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin && false" type="success" @click="async () => {
-                if (!ids.length) {
-                  return ElMessage.warning('请选择要制作的素材')
-                }
-                resetDesignModelSteps()
-                designModelModalVisible = true
-                await loadDesignModels()
-              }">
-                制作设计模型({{ ids.length }})
-              </el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
               }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
@@ -390,7 +380,7 @@
                 node-key="id" :expand-on-click-node="false" :default-expand-all="true" :highlight-current="true"
                 :current-node-key="selectedPsdFolderId" @node-click="handlePsdFolderNodeClick" class="psd-folder-tree"
                 style="flex: 1; overflow-y: auto;">
-                <template #default="{ node, data }">
+                <template #default="{ data }">
                   <div class="custom-tree-node" style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
                     <el-icon v-if="data.isRoot || data.id === '__root__'" style="color: var(--el-color-primary)">
                       <Files />
@@ -1011,8 +1001,6 @@
                         <span class="op-menu-label">制作</span>
                         <div class="op-submenu" data-submenu="design" @mouseenter="handleSubmenuKeepVisible"
                           @mouseleave="handleSubmenuHide">
-                          <div v-if="false" class="op-submenu-item"
-                            @click="() => handleOperationCommand('design-model', row)">制作设计模型</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">
                             制作PS套图</div>
                         </div>
@@ -1148,184 +1136,6 @@
     </el-dialog>
 
     <!-- 制作设计模型弹窗 -->
-    <el-dialog v-model="designModelModalVisible" title="制作设计模型" width="100%" style="height: 100%" align-center
-      :destroy-on-close="true" class="design-model-dialog" :footer="null" @close="resetDesignModelSteps">
-      <!-- 新增flex容器，左右布局 -->
-      <div class="design-model-flex">
-        <!-- 步骤指示器，纵向 -->
-        <el-steps direction="vertical" :active="currentStep" finish-status="success" align-center
-          class="steps-vertical">
-          <el-step v-for="step in designModelSteps" :key="step.key" :title="step.title"
-            :description="step.description" />
-        </el-steps>
-        <!-- 步骤内容区域 -->
-        <div class="design-model-content">
-          <div class="steps-all">
-            <!-- 步骤1：选择素材 -->
-            <div class="step-content" :class="{ 'step-active': currentStep === 0, 'step-inactive': currentStep !== 0 }">
-              <h3 class="text-lg font-bold mb-4">已选择的素材图：</h3>
-              <div class="flex flex-wrap gap-4 mb-6">
-                <template v-for="id in ids" :key="id">
-                  <div v-if="dataSource.find(item => String(item.id) === String(id))" class="text-center">
-                    <img
-                      :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 150, quality: 80, format: 'webp' })"
-                      :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                      class="w-20 h-20 object-cover rounded border" loading="lazy" />
-                    <div class="text-xs text-gray-500 mt-1">{{dataSource.find(item => String(item.id) ===
-                      String(id)).name}}</div>
-                  </div>
-                </template>
-              </div>
-
-              <div class="border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start">
-                  <el-icon class="text-blue-500 mt-0.5 mr-2">
-                    <InfoFilled />
-                  </el-icon>
-                  <div class="text-sm text-blue-700">
-                    <p class="font-medium mb-1">已选择 {{ ids.length }} 个素材</p>
-                    <p>这些素材将用于制作设计模型，请确认选择无误后点击下一步。</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 步骤2：选择设计模型 -->
-            <div class="step-content" :class="{ 'step-active': currentStep === 1, 'step-inactive': currentStep !== 1 }">
-              <h3 class="text-lg font-bold mb-4">选择设计模型：</h3>
-
-              <div class="design-model-list">
-                <div v-if="designModelLoading" class="text-center py-4">
-                  <el-icon class="is-loading">
-                    <Loading />
-                  </el-icon>
-                  <span class="ml-2">加载中...</span>
-                </div>
-
-                <div v-else-if="designModelList.length === 0" class="text-center py-4 text-gray-500">
-                  暂无设计模型
-                </div>
-
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div v-for="model in designModelList" :key="model.id"
-                    class="border rounded-lg p-4 cursor-pointer hover:border-blue-500 transition-all relative"
-                    :class="{ 'border-blue-500 shadow-[0_0_0_4px_rgba(64,158,255,0.6)]': selectedDesignModelIds.includes(model.id) }"
-                    @click="selectDesignModel(model)">
-                    <div class="flex items-center space-x-3">
-                      <img v-if="model.thumbnail"
-                        :src="getPreviewImageUrl(model.thumbnail, { width: 150, quality: 80, format: 'webp' })"
-                        :alt="model.name" class="w-16 h-16 object-cover rounded" loading="lazy" />
-                      <div class="flex-1 min-w-0">
-                        <h4 class="font-medium truncate">{{ model.name }}</h4>
-                        <p class="text-sm text-gray-500 truncate">{{ model.description || '暂无描述' }}</p>
-                        <p class="text-xs text-gray-400">{{ model.createTime }}</p>
-                      </div>
-                    </div>
-
-                    <!-- 选中状态图标 -->
-                    <div v-if="selectedDesignModelIds.includes(model.id)"
-                      class="absolute top-2 right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                      <el-icon class="text-sm">
-                        <Check />
-                      </el-icon>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class=" border border-blue-200 rounded-lg p-4 mt-4">
-                <div class="flex items-start">
-                  <el-icon class="text-blue-500 mt-0.5 mr-2">
-                    <InfoFilled />
-                  </el-icon>
-                  <div class="text-sm text-blue-700">
-                    <p class="font-medium mb-1">已选择 {{ selectedDesignModelIds.length }} 个设计模型</p>
-                    <p>将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 步骤3：确认制作 -->
-            <div class="step-content" :class="{ 'step-active': currentStep === 2, 'step-inactive': currentStep !== 2 }">
-              <h3 class="text-lg font-bold mb-4">确认制作信息：</h3>
-
-              <div class="bg-gray-50 rounded-lg p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <!-- 素材信息 -->
-                  <div>
-                    <h4 class="font-medium text-gray-700 mb-3">选择的素材 ({{ ids.length }}个)</h4>
-                    <div class="space-y-2">
-                      <template v-for="id in ids" :key="id">
-                        <div v-if="dataSource.find(item => String(item.id) === String(id))"
-                          class="flex items-center space-x-2">
-                          <img
-                            :src="getPreviewImageUrl(dataSource.find(item => String(item.id) === String(id)).url, { width: 100, quality: 80, format: 'webp' })"
-                            :alt="dataSource.find(item => String(item.id) === String(id)).name"
-                            class="w-8 h-8 object-cover rounded" loading="lazy" />
-                          <span class="text-sm text-gray-600">{{dataSource.find(item => String(item.id) ===
-                            String(id)).name}}</span>
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-
-                  <!-- 设计模型信息 -->
-                  <div>
-                    <h4 class="font-medium text-gray-700 mb-3">选择的设计模型 ({{ selectedDesignModelIds.length }}个)</h4>
-                    <div class="space-y-2">
-                      <template v-for="modelId in selectedDesignModelIds" :key="modelId">
-                        <div v-if="designModelList.find(model => model.id === modelId)"
-                          class="flex items-center space-x-2">
-                          <img v-if="designModelList.find(model => model.id === modelId).thumbnail"
-                            :src="getPreviewImageUrl(designModelList.find(model => model.id === modelId).thumbnail, { width: 100, quality: 80, format: 'webp' })"
-                            :alt="designModelList.find(model => model.id === modelId).name"
-                            class="w-8 h-8 object-cover rounded" loading="lazy" />
-                          <span class="text-sm text-gray-600">{{designModelList.find(model => model.id ===
-                            modelId).name}}</span>
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div class="text-center">
-                    <div class="text-2xl font-bold text-blue-600 mb-2">
-                      {{ ids.length }} × {{ selectedDesignModelIds.length }} = {{ ids.length *
-                        selectedDesignModelIds.length
-                      }}
-                    </div>
-                    <div class="text-sm text-blue-700">将生成 {{ ids.length * selectedDesignModelIds.length }} 个新设计模型</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 步骤导航按钮，移到内容底部 -->
-          <div class="dialog-footer" style="margin-top: 16px;">
-            <div class="flex-1 text-sm text-gray-600">
-              <span>步骤 {{ currentStep + 1 }} / {{ designModelSteps.length }}</span>
-            </div>
-            <div class="flex gap-2">
-              <el-button v-if="currentStep > 0" @click="prevStep">
-                上一步
-              </el-button>
-              <el-button v-if="currentStep < designModelSteps.length - 1" type="primary" @click="nextStep"
-                :disabled="!canProceedToNextStep">
-                下一步
-              </el-button>
-              <el-button v-if="currentStep === designModelSteps.length - 1" type="success"
-                @click="handleDesignModelConfirm" :disabled="!selectedDesignModelIds.length">
-                开始制作
-              </el-button>
-              <el-button @click="designModelModalVisible = false">取消</el-button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- 移除el-dialog的footer插槽 -->
-    </el-dialog>
 
     <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="1200px" :destroy-on-close="true" align-center
       class="edit-material-dialog">
@@ -1667,7 +1477,6 @@ import { getAccessToken } from '@/utils/auth'
 import { getTenantId } from '@/utils/auth'
 import useListSelect from '@/components/common/userListSelect.vue'
 import { getDesignModelList } from '@/api/designModel'
-import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
@@ -1835,7 +1644,7 @@ const gridOptions = computed(() => {
 
   const operationColumn = {
     title: '操作',
-    fixed: 'right',
+    fixed: 'right' as const,
     width: 'auto',
     field: 'operation',
     slots: { default: 'operationDefaultSlot' }
@@ -1948,7 +1757,73 @@ const rules = {
   name: [{ required: true, message: '', trigger: 'blur' }]
 }
 
-const designModelModalVisible = ref(false)
+const editDialogVisible = ref(false)
+const editForm = ref({
+  id: '',
+  name: '',
+  nameEn: '',
+  description: '',
+  descriptionEn: '',
+  keywords: '',
+  keywordsEn: '',
+  group: '',
+  suitableFor: '',
+  suffix: '',
+  isCustom: false,
+  isPublic: false,
+  isTexture: false,
+  isInfringement: false,
+  isCutout: false,
+  originUrl: '',
+  source: '',
+  folderId: null, // 文件夹ID
+  folderPath: '', // 展示用路径
+  // 只读字段（用于显示）
+  width: null,
+  height: null,
+  aspectRatio: null,
+  fileSize: null,
+  colorPalette: '',
+  phash: ''
+})
+const editLoading = ref(false)
+
+// 其他缺少的变量
+const currentUploadInfo = ref({ path: '', folderId: null as string | null, folderPath: '', folder: '' })
+const currentGenPictureConfig = ref([])
+const genPicturesForm = ref({})
+const genPicturesFormRules = ref({})
+const genPicturesModalVisible = ref(false)
+
+// 图片预览相关状态
+const imagePreviewVisible = ref(false)
+const currentImageUrl = ref('')
+
+// SVG转PNG相关状态
+const svgToPngDialogVisible = ref(false)
+const currentSvgRow = ref<any>(null)
+const svgToPngForm = ref({
+  width: 512,
+  height: 512,
+  originalWidth: 512,
+  originalHeight: 512,
+  aspectRatio: 1
+})
+
+// 尺寸预设
+const sizePresets = ref([
+  { name: '小图标', width: 64 },
+  { name: '中图标', width: 128 },
+  { name: '大图标', width: 256 },
+  { name: '标准', width: 512 },
+  { name: '高清', width: 1024 },
+  { name: '超高清', width: 2048 },
+  { name: '常用', width: 800 },
+  { name: '中等', width: 1200 },
+  { name: '大图', width: 1600 },
+  { name: '超大', width: 2400 }
+])
+
 const filterDialogVisible = ref(false)
 const isMobile = ref(false)
 // 不再需要折叠状态，所有搜索字段始终显示
@@ -1979,6 +1854,7 @@ const templateConfigList = ref<Array<{
   psdInfo: any
   originalPsdInfo: any
   configText: string
+  psdTemplateConfig?: any
   materialId?: string | number // 关联的素材ID
 }>>([])
 const psdSetSubmitting = ref(false)
@@ -2002,44 +1878,7 @@ const isAllPsdTemplatesSelected = computed(() => {
   )
 })
 
-// 设计模型相关
-const designModelList = ref([])
-const designModelLoading = ref(false)
-const selectedDesignModelIds = ref([])
 
-// 分步骤相关
-const currentStep = ref(0)
-const designModelSteps = ref([
-  {
-    key: 'select-materials',
-    title: '选择素材',
-    description: '确认要使用的素材'
-  },
-  {
-    key: 'select-models',
-    title: '选择设计模型',
-    description: '选择要应用的设计模型'
-  },
-  {
-    key: 'confirm',
-    title: '确认制作',
-    description: '确认制作信息并开始制作'
-  }
-])
-
-// 计算是否可以进入下一步
-const canProceedToNextStep = computed(() => {
-  switch (currentStep.value) {
-    case 0: // 选择素材步骤
-      return ids.value.length > 0
-    case 1: // 选择设计模型步骤
-      return selectedDesignModelIds.value.length > 0
-    case 2: // 确认制作步骤
-      return true
-    default:
-      return false
-  }
-})
 
 const psdSetTaskCount = computed(() =>
   psdSetMergeSticker.value
@@ -2094,24 +1933,6 @@ const invalidFormatMaterialsList = computed(() => {
   return invalidList
 })
 
-// 步骤导航方法
-function nextStep() {
-  if (currentStep.value < designModelSteps.value.length - 1 && canProceedToNextStep.value) {
-    currentStep.value++
-  }
-}
-
-function prevStep() {
-  if (currentStep.value > 0) {
-    currentStep.value--
-  }
-}
-
-// 重置步骤状态
-function resetDesignModelSteps() {
-  currentStep.value = 0
-  selectedDesignModelIds.value = []
-}
 
 
 // 处理上传
@@ -2944,13 +2765,6 @@ async function confirmSvgToPng() {
   }
 }
 
-async function handleDesignModel(row) {
-  // 设置当前选中的素材为单个素材
-  ids.value = [row.id]
-  resetDesignModelSteps()
-  designModelModalVisible.value = true
-  await loadDesignModels()
-}
 
 async function openPsdSetDialog(mergeMode?: boolean | any) {
   // 如果传入的是对象(row),则是从表格行点击的,默认使用单素材模式
@@ -3427,889 +3241,750 @@ function checkMaterialFormats() {
       valid: false,
       message: `所选素材中包含不符合格式要求的图片。\n允许的格式：${allowedFormatsList}\n不符合的素材：${invalidNames}${moreCount}\n请移除不符合格式的素材后重试。`
     }
+    return { valid: true, message: '' }
   }
 
-  return { valid: true, message: '' }
-}
+  const delayUpdateList = useDebounceFn(() => {
+    getList()
+  }, 1999)
 
-async function loadDesignModels() {
-  designModelLoading.value = true
-  try {
-    // 只查母版模型
-    const res = await getDesignModelList({
-      currentPage: 1,
-      pageSize: 100,
-      isTemplate: true
-    })
-    designModelList.value = res.list || []
-  } catch (error) {
-    console.error('加载设计模型失败:', error)
-    ElMessage.error('加载设计模型失败')
-  } finally {
-    designModelLoading.value = false
-  }
-}
-
-
-
-function selectDesignModel(model) {
-  const index = selectedDesignModelIds.value.indexOf(model.id)
-  if (index > -1) {
-    // 如果已选中，则取消选中
-    selectedDesignModelIds.value.splice(index, 1)
-  } else {
-    // 如果未选中，则添加到选中列表
-    selectedDesignModelIds.value.push(model.id)
-  }
-}
-
-function handleDesignModelConfirm() {
-  if (!selectedDesignModelIds.value.length) {
-    ElMessage.warning('请选择设计模型')
-    return
+  function singleFileUploaded() {
+    console.log('单个文件上传')
+    delayUpdateList()
   }
 
-  // 打印最终数据
-  console.log('素材图ID数组:', ids.value)
-  console.log('设计模型ID数组:', selectedDesignModelIds.value)
+  /**
+   * @group
+   */
 
-  // 发送数据到设计工具
-  const designToolMessenger = getDesignToolMessenger()
-  const childWindow = designToolMessenger.getChildWindow()
+  const aiGenDialogVisible = ref(false)
+  const aiGenPrompt = ref('')
+  const aiGenerateRawInfo = ref('')
+  const aiGenDialogLoading = ref(false)
+  let aiGenRow = null
 
-  const success = designToolMessenger.sendDesignModelData({
-    materialIds: Array.isArray(ids.value) ? [...ids.value] : [],
-    designModelIds: selectedDesignModelIds.value
+
+  const aiTableLoading = ref<Record<string, boolean>>({})
+
+  // meta相关变量
+  const metaDialogVisible = ref(false)
+  const metaDialogContent = ref('')
+  const parsedMetaData = computed(() => {
+    if (!metaDialogContent.value) return null
+    try {
+      // 尝试解析 JSON 字符串
+      const parsed = JSON.parse(metaDialogContent.value)
+      return parsed
+    } catch (error) {
+      // 如果解析失败，返回 null，显示原始内容
+      return null
+    }
   })
 
-  if (success) {
-    ElMessage.success('数据已发送到设计工具')
-    if (childWindow && typeof childWindow.focus === 'function') {
-      childWindow.focus()
-    }
-    // 关闭弹窗并重置步骤
-    designModelModalVisible.value = false
-    resetDesignModelSteps()
+  function onAiTableAutoGenerate(row) {
+    if (aiTableLoading.value[row.id]) return
+    aiGenRow = row
+    aiGenPrompt.value = ''
+    aiGenerateRawInfo.value = ''
+    aiGenDialogVisible.value = true
   }
-}
 
-
-
-const delayUpdateList = useDebounceFn(() => {
-  getList()
-}, 1999)
-
-function singleFileUploaded() {
-  console.log('单个文件上传')
-  delayUpdateList()
-}
-
-/**
- * @group
- */
-
-const aiGenDialogVisible = ref(false)
-const aiGenPrompt = ref('')
-const aiGenerateRawInfo = ref('')
-const aiGenDialogLoading = ref(false)
-let aiGenRow = null
-
-
-const aiTableLoading = ref<Record<string, boolean>>({})
-
-// meta相关变量
-const metaDialogVisible = ref(false)
-const metaDialogContent = ref('')
-const parsedMetaData = computed(() => {
-  if (!metaDialogContent.value) return null
-  try {
-    // 尝试解析 JSON 字符串
-    const parsed = JSON.parse(metaDialogContent.value)
-    return parsed
-  } catch (error) {
-    // 如果解析失败，返回 null，显示原始内容
-    return null
-  }
-})
-
-function onAiTableAutoGenerate(row) {
-  if (aiTableLoading.value[row.id]) return
-  aiGenRow = row
-  aiGenPrompt.value = ''
-  aiGenerateRawInfo.value = ''
-  aiGenDialogVisible.value = true
-}
-
-async function submitAiGenDialog() {
-  if (!aiGenRow) return
-  aiGenDialogLoading.value = true
-  aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: true }
-  try {
-    await handleAiAutoGenerate(aiGenRow, () => {
+  async function submitAiGenDialog() {
+    if (!aiGenRow) return
+    aiGenDialogLoading.value = true
+    aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: true }
+    try {
+      await handleAiAutoGenerate(aiGenRow, () => {
+        aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: false }
+        aiGenDialogLoading.value = false
+        aiGenDialogVisible.value = false
+        aiGenRow = null
+      }, aiGenPrompt.value, aiGenerateRawInfo.value)
+    } catch (e) {
       aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: false }
       aiGenDialogLoading.value = false
       aiGenDialogVisible.value = false
       aiGenRow = null
-    }, aiGenPrompt.value, aiGenerateRawInfo.value)
-  } catch (e) {
-    aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.id]: false }
-    aiGenDialogLoading.value = false
-    aiGenDialogVisible.value = false
-    aiGenRow = null
+    }
   }
-}
 
-async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
-  try {
-    const res = await aiAutoGenerateMaterialInfo({
+  async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
+    try {
+      const res = await aiAutoGenerateMaterialInfo({
+        id: row.id,
+        prompt: prompt || '',
+        aiGenerateRawInfo: aiGenerateRawInfo || ''
+      })
+      // 更新行数据 - 兼容不同的返回结构
+      const resultData = res?.data || res
+      if (resultData) {
+        row.name = resultData.name || row.name
+        row.nameEn = resultData.nameEn || row.nameEn
+        row.description = resultData.description || row.description
+        row.descriptionEn = resultData.descriptionEn || row.descriptionEn
+        row.keywords = resultData.keywords || row.keywords
+        row.keywordsEn = resultData.keywordsEn || row.keywordsEn
+        // 更新侵权信息
+        if (typeof resultData.isInfringement === 'boolean') {
+          row.isInfringement = resultData.isInfringement
+        }
+        // 更新适用商品
+        if (resultData.suitableFor) {
+          row.suitableFor = resultData.suitableFor
+        }
+      }
+      const infringementText = resultData?.isInfringement ? '（已标记为侵权）' : '（已标记为非侵权）'
+      const suitableText = resultData?.suitableFor ? `，适用商品：${resultData.suitableFor}` : ''
+      ElNotification.success(`AI自动生成内容成功${infringementText}${suitableText}`)
+      if (typeof cb === 'function') cb()
+      getList()
+    } catch (e) {
+      ElNotification.error('AI自动生成内容失败')
+      if (typeof cb === 'function') cb()
+    }
+  }
+
+  // 查找相似图：将当前行的 phash 带入搜索
+  async function handleFindSimilar(row) {
+    if (!row?.phash) {
+      ElMessage.warning('该图片暂无 phash，请先生成后再搜索相似图');
+      return;
+    }
+    queryParams.phash = (row.phash || '').trim();
+    queryParams.currentPage = 1;
+    // 精确匹配更快，行内查找优先用精确模式；可根据需要再切换
+    queryParams.phashMode = 'exact';
+    await getList();
+  }
+
+
+
+  // 处理宽度变化
+  function handleWidthChange(value) {
+    // 根据原始宽高比自动计算高度
+    if (svgToPngForm.value.aspectRatio) {
+      svgToPngForm.value.height = Math.round(value / svgToPngForm.value.aspectRatio)
+    }
+  }
+
+  // 应用预设尺寸
+  function applyPreset(preset) {
+    // 设置宽度，高度会自动计算
+    svgToPngForm.value.width = preset.width
+    handleWidthChange(preset.width)
+  }
+
+  function handleEdit(row) {
+    editForm.value = {
       id: row.id,
-      prompt: prompt || '',
-      aiGenerateRawInfo: aiGenerateRawInfo || ''
-    })
-    // 更新行数据 - 兼容不同的返回结构
-    const resultData = res?.data || res
-    if (resultData) {
-      row.name = resultData.name || row.name
-      row.nameEn = resultData.nameEn || row.nameEn
-      row.description = resultData.description || row.description
-      row.descriptionEn = resultData.descriptionEn || row.descriptionEn
-      row.keywords = resultData.keywords || row.keywords
-      row.keywordsEn = resultData.keywordsEn || row.keywordsEn
-      // 更新侵权信息
-      if (typeof resultData.isInfringement === 'boolean') {
-        row.isInfringement = resultData.isInfringement
+      name: row.name || '',
+      nameEn: row.nameEn || '',
+      description: row.description || '',
+      descriptionEn: row.descriptionEn || '',
+      keywords: row.keywords || '',
+      keywordsEn: row.keywordsEn || '',
+      group: row.group || '',
+      suitableFor: row.suitableFor || '',
+      suffix: row.suffix || '',
+      isCustom: row.isCustom || false,
+      isPublic: row.isPublic || false,
+      isTexture: row.isTexture || false,
+      isInfringement: row.isInfringement || false,
+      isCutout: row.isCutout || false,
+      originUrl: row.originUrl || '',
+      source: row.source || '',
+      folderId: row.folderId ?? row.folder?.id ?? null,
+      folderPath: row.folder || row.folderEntity?.path || '',
+      // 只读字段（用于显示）
+      width: row.width || null,
+      height: row.height || null,
+      aspectRatio: row.aspectRatio || null,
+      fileSize: row.fileSize || null,
+      colorPalette: row.colorPalette || '',
+      phash: row.phash || ''
+    }
+    editDialogVisible.value = true
+  }
+
+  async function submitEdit() {
+    editLoading.value = true
+    try {
+      // 只提交可编辑的字段，排除只读字段
+      const submitData = {
+        id: editForm.value.id,
+        name: editForm.value.name,
+        nameEn: editForm.value.nameEn,
+        description: editForm.value.description,
+        descriptionEn: editForm.value.descriptionEn,
+        keywords: editForm.value.keywords,
+        keywordsEn: editForm.value.keywordsEn,
+        group: editForm.value.group,
+        suitableFor: editForm.value.suitableFor,
+        suffix: editForm.value.suffix,
+        isCustom: editForm.value.isCustom,
+        isPublic: editForm.value.isPublic,
+        isTexture: editForm.value.isTexture,
+        isInfringement: editForm.value.isInfringement,
+        isCutout: editForm.value.isCutout,
+        originUrl: editForm.value.originUrl,
+        source: editForm.value.source,
+        folderId: editForm.value.folderId ?? null
       }
-      // 更新适用商品
-      if (resultData.suitableFor) {
-        row.suitableFor = resultData.suitableFor
+      await updateAssetLibrary(submitData)
+      ElNotification.success('保存成功')
+      editDialogVisible.value = false
+      getList()
+    } catch (e) {
+      ElNotification.error('保存失败')
+    } finally {
+      editLoading.value = false
+    }
+  }
+
+  // 图片预览相关方法
+  function openImagePreview(imageUrl: string, imageName?: string) {
+    currentImageUrl.value = imageUrl
+    imagePreviewVisible.value = true
+  }
+
+  function closeImagePreview() {
+    imagePreviewVisible.value = false
+    currentImageUrl.value = ''
+  }
+
+
+  // 显示meta详情
+  function showMetaDetail(meta: any) {
+    if (!meta) {
+      ElMessage.warning('该素材没有元数据信息')
+      return
+    }
+
+    try {
+      // 如果 meta 是字符串，直接使用
+      if (typeof meta === 'string') {
+        metaDialogContent.value = meta
+      } else {
+        // 如果是对象，转换为格式化的 JSON 字符串
+        metaDialogContent.value = JSON.stringify(meta, null, 2)
       }
+      metaDialogVisible.value = true
+    } catch (error) {
+      console.error('处理元数据失败:', error)
+      ElMessage.error('处理元数据失败，请检查数据格式')
+      // 即使出错也显示原始数据
+      metaDialogContent.value = String(meta)
+      metaDialogVisible.value = true
     }
-    const infringementText = resultData?.isInfringement ? '（已标记为侵权）' : '（已标记为非侵权）'
-    const suitableText = resultData?.suitableFor ? `，适用商品：${resultData.suitableFor}` : ''
-    ElNotification.success(`AI自动生成内容成功${infringementText}${suitableText}`)
-    if (typeof cb === 'function') cb()
-    getList()
-  } catch (e) {
-    ElNotification.error('AI自动生成内容失败')
-    if (typeof cb === 'function') cb()
   }
-}
-
-// 查找相似图：将当前行的 phash 带入搜索
-async function handleFindSimilar(row) {
-  if (!row?.phash) {
-    ElMessage.warning('该图片暂无 phash，请先生成后再搜索相似图');
-    return;
-  }
-  queryParams.phash = (row.phash || '').trim();
-  queryParams.currentPage = 1;
-  // 精确匹配更快，行内查找优先用精确模式；可根据需要再切换
-  queryParams.phashMode = 'exact';
-  await getList();
-}
 
 
-const editDialogVisible = ref(false)
-const editForm = ref({
-  id: '',
-  name: '',
-  nameEn: '',
-  description: '',
-  descriptionEn: '',
-  keywords: '',
-  keywordsEn: '',
-  group: '',
-  suitableFor: '',
-  suffix: '',
-  isCustom: false,
-  isPublic: false,
-  isTexture: false,
-  isInfringement: false,
-  isCutout: false,
-  originUrl: '',
-  source: '',
-  folderId: null, // 文件夹ID
-  folderPath: '', // 展示用路径
-  // 只读字段（用于显示）
-  width: null,
-  height: null,
-  aspectRatio: null,
-  fileSize: null,
-  colorPalette: '',
-  phash: ''
-})
-const editLoading = ref(false)
 
-// 其他缺少的变量
-const currentUploadInfo = ref({ path: '', folderId: null as string | null, folderPath: '', folder: '' })
-const currentGenPictureConfig = ref([])
-const genPicturesForm = ref({})
-const genPicturesFormRules = ref({})
-const genPicturesModalVisible = ref(false)
 
-// 配置变更函数
-function configChange(config) {
-  currentGenPictureConfig.value = config
-}
-
-// 图片预览相关状态
-const imagePreviewVisible = ref(false)
-const currentImageUrl = ref('')
-
-// SVG转PNG相关状态
-const svgToPngDialogVisible = ref(false)
-const currentSvgRow = ref<any>(null)
-const svgToPngForm = ref({
-  width: 512,
-  height: 512,
-  originalWidth: 512,
-  originalHeight: 512,
-  aspectRatio: 1
-})
-
-// 尺寸预设
-const sizePresets = ref([
-  { name: '小图标', width: 64 },
-  { name: '中图标', width: 128 },
-  { name: '大图标', width: 256 },
-  { name: '标准', width: 512 },
-  { name: '高清', width: 1024 },
-  { name: '超高清', width: 2048 },
-  { name: '常用', width: 800 },
-  { name: '中等', width: 1200 },
-  { name: '大图', width: 1600 },
-  { name: '超大', width: 2400 }
-])
-
-// 处理宽度变化
-function handleWidthChange(value) {
-  // 根据原始宽高比自动计算高度
-  if (svgToPngForm.value.aspectRatio) {
-    svgToPngForm.value.height = Math.round(value / svgToPngForm.value.aspectRatio)
-  }
-}
-
-// 应用预设尺寸
-function applyPreset(preset) {
-  // 设置宽度，高度会自动计算
-  svgToPngForm.value.width = preset.width
-  handleWidthChange(preset.width)
-}
-
-function handleEdit(row) {
-  editForm.value = {
-    id: row.id,
-    name: row.name || '',
-    nameEn: row.nameEn || '',
-    description: row.description || '',
-    descriptionEn: row.descriptionEn || '',
-    keywords: row.keywords || '',
-    keywordsEn: row.keywordsEn || '',
-    group: row.group || '',
-    suitableFor: row.suitableFor || '',
-    suffix: row.suffix || '',
-    isCustom: row.isCustom || false,
-    isPublic: row.isPublic || false,
-    isTexture: row.isTexture || false,
-    isInfringement: row.isInfringement || false,
-    isCutout: row.isCutout || false,
-    originUrl: row.originUrl || '',
-    source: row.source || '',
-    folderId: row.folderId ?? row.folder?.id ?? null,
-    folderPath: row.folder || row.folderEntity?.path || '',
-    // 只读字段（用于显示）
-    width: row.width || null,
-    height: row.height || null,
-    aspectRatio: row.aspectRatio || null,
-    fileSize: row.fileSize || null,
-    colorPalette: row.colorPalette || '',
-    phash: row.phash || ''
-  }
-  editDialogVisible.value = true
-}
-
-async function submitEdit() {
-  editLoading.value = true
-  try {
-    // 只提交可编辑的字段，排除只读字段
-    const submitData = {
-      id: editForm.value.id,
-      name: editForm.value.name,
-      nameEn: editForm.value.nameEn,
-      description: editForm.value.description,
-      descriptionEn: editForm.value.descriptionEn,
-      keywords: editForm.value.keywords,
-      keywordsEn: editForm.value.keywordsEn,
-      group: editForm.value.group,
-      suitableFor: editForm.value.suitableFor,
-      suffix: editForm.value.suffix,
-      isCustom: editForm.value.isCustom,
-      isPublic: editForm.value.isPublic,
-      isTexture: editForm.value.isTexture,
-      isInfringement: editForm.value.isInfringement,
-      isCutout: editForm.value.isCutout,
-      originUrl: editForm.value.originUrl,
-      source: editForm.value.source,
-      folderId: editForm.value.folderId ?? null
+  // 生成图片信息
+  async function handleGenerateImageInfo(row) {
+    if (!row.url) {
+      ElMessage.error('图片无有效链接，无法生成图片信息');
+      return;
     }
-    await updateAssetLibrary(submitData)
-    ElNotification.success('保存成功')
-    editDialogVisible.value = false
-    getList()
-  } catch (e) {
-    ElNotification.error('保存失败')
-  } finally {
-    editLoading.value = false
-  }
-}
 
-// 图片预览相关方法
-function openImagePreview(imageUrl: string, imageName?: string) {
-  currentImageUrl.value = imageUrl
-  imagePreviewVisible.value = true
-}
+    try {
+      aiTableLoading.value = { ...aiTableLoading.value, [row.id]: true };
+      const res = await generateImageInfo({
+        id: row.id
+      });
+      if (res) {
+        // 更新行数据 - 直接更新 dataSource 中对应的行
+        const index = dataSource.value.findIndex(item => String(item.id) === String(row.id));
+        if (index !== -1) {
+          const targetRow = dataSource.value[index];
+          if (res.width !== undefined) {
+            targetRow.width = res.width;
+            targetRow.resolutionWidth = res.width;
+          }
+          if (res.height !== undefined) {
+            targetRow.height = res.height;
+            targetRow.resolutionHeight = res.height;
+          }
+          if (res.aspectRatio !== undefined) targetRow.aspectRatio = res.aspectRatio;
+          if (res.fileSize !== undefined) targetRow.fileSize = res.fileSize;
+          if (res.colorPalette !== undefined) targetRow.colorPalette = res.colorPalette;
+          if (res.suffix !== undefined) targetRow.suffix = res.suffix;
+          if (res.phash !== undefined) targetRow.phash = res.phash;
+          if (res.isCutout !== undefined) targetRow.isCutout = res.isCutout;
+        }
 
-function closeImagePreview() {
-  imagePreviewVisible.value = false
-  currentImageUrl.value = ''
-}
-
-
-// 显示meta详情
-function showMetaDetail(meta: any) {
-  if (!meta) {
-    ElMessage.warning('该素材没有元数据信息')
-    return
-  }
-
-  try {
-    // 如果 meta 是字符串，直接使用
-    if (typeof meta === 'string') {
-      metaDialogContent.value = meta
-    } else {
-      // 如果是对象，转换为格式化的 JSON 字符串
-      metaDialogContent.value = JSON.stringify(meta, null, 2)
-    }
-    metaDialogVisible.value = true
-  } catch (error) {
-    console.error('处理元数据失败:', error)
-    ElMessage.error('处理元数据失败，请检查数据格式')
-    // 即使出错也显示原始数据
-    metaDialogContent.value = String(meta)
-    metaDialogVisible.value = true
-  }
-}
-
-
-
-
-// 生成图片信息
-async function handleGenerateImageInfo(row) {
-  if (!row.url) {
-    ElMessage.error('图片无有效链接，无法生成图片信息');
-    return;
-  }
-
-  try {
-    aiTableLoading.value = { ...aiTableLoading.value, [row.id]: true };
-    const res = await generateImageInfo({
-      id: row.id
-    });
-    if (res) {
-      // 更新行数据 - 直接更新 dataSource 中对应的行
-      const index = dataSource.value.findIndex(item => String(item.id) === String(row.id));
-      if (index !== -1) {
-        const targetRow = dataSource.value[index];
+        // 同时更新当前 row 对象（用于显示）
         if (res.width !== undefined) {
-          targetRow.width = res.width;
-          targetRow.resolutionWidth = res.width;
+          row.width = res.width;
+          row.resolutionWidth = res.width;
         }
         if (res.height !== undefined) {
-          targetRow.height = res.height;
-          targetRow.resolutionHeight = res.height;
+          row.height = res.height;
+          row.resolutionHeight = res.height;
         }
-        if (res.aspectRatio !== undefined) targetRow.aspectRatio = res.aspectRatio;
-        if (res.fileSize !== undefined) targetRow.fileSize = res.fileSize;
-        if (res.colorPalette !== undefined) targetRow.colorPalette = res.colorPalette;
-        if (res.suffix !== undefined) targetRow.suffix = res.suffix;
-        if (res.phash !== undefined) targetRow.phash = res.phash;
-        if (res.isCutout !== undefined) targetRow.isCutout = res.isCutout;
-      }
+        if (res.aspectRatio !== undefined) row.aspectRatio = res.aspectRatio;
+        if (res.fileSize !== undefined) row.fileSize = res.fileSize;
+        if (res.colorPalette !== undefined) row.colorPalette = res.colorPalette;
+        if (res.suffix !== undefined) row.suffix = res.suffix;
+        if (res.phash !== undefined) row.phash = res.phash;
+        if (res.isCutout !== undefined) row.isCutout = res.isCutout;
 
-      // 同时更新当前 row 对象（用于显示）
-      if (res.width !== undefined) {
-        row.width = res.width;
-        row.resolutionWidth = res.width;
-      }
-      if (res.height !== undefined) {
-        row.height = res.height;
-        row.resolutionHeight = res.height;
-      }
-      if (res.aspectRatio !== undefined) row.aspectRatio = res.aspectRatio;
-      if (res.fileSize !== undefined) row.fileSize = res.fileSize;
-      if (res.colorPalette !== undefined) row.colorPalette = res.colorPalette;
-      if (res.suffix !== undefined) row.suffix = res.suffix;
-      if (res.phash !== undefined) row.phash = res.phash;
-      if (res.isCutout !== undefined) row.isCutout = res.isCutout;
+        const infoParts = [];
+        if (res.width && res.height) {
+          infoParts.push(`尺寸: ${res.width} × ${res.height}`);
+        }
+        if (res.fileSize) {
+          infoParts.push(`大小: ${formatFileSize(res.fileSize)}`);
+        }
+        if (res.colorPalette) {
+          const colors = res.colorPalette.split(',').slice(0, 3).join(', ');
+          infoParts.push(`色系: ${colors}${res.colorPalette.split(',').length > 3 ? '...' : ''}`);
+        }
+        if (res.isCutout !== undefined) {
+          infoParts.push(`抠图: ${res.isCutout ? '是' : '否'}`);
+        }
 
-      const infoParts = [];
-      if (res.width && res.height) {
-        infoParts.push(`尺寸: ${res.width} × ${res.height}`);
+        ElNotification.success(`生成图片信息成功${infoParts.length ? `：${infoParts.join('，')}` : ''}`);
+        // 刷新列表以更新所有数据
+        await getList();
       }
-      if (res.fileSize) {
-        infoParts.push(`大小: ${formatFileSize(res.fileSize)}`);
-      }
-      if (res.colorPalette) {
-        const colors = res.colorPalette.split(',').slice(0, 3).join(', ');
-        infoParts.push(`色系: ${colors}${res.colorPalette.split(',').length > 3 ? '...' : ''}`);
-      }
-      if (res.isCutout !== undefined) {
-        infoParts.push(`抠图: ${res.isCutout ? '是' : '否'}`);
-      }
-
-      ElNotification.success(`生成图片信息成功${infoParts.length ? `：${infoParts.join('，')}` : ''}`);
-      // 刷新列表以更新所有数据
-      await getList();
+    } catch (e) {
+      console.error('生成图片信息失败:', e);
+      ElMessage.error(`生成图片信息失败: ${e?.message || '未知错误'}`);
+    } finally {
+      aiTableLoading.value = { ...aiTableLoading.value, [row.id]: false };
     }
-  } catch (e) {
-    console.error('生成图片信息失败:', e);
-    ElMessage.error(`生成图片信息失败: ${e?.message || '未知错误'}`);
-  } finally {
-    aiTableLoading.value = { ...aiTableLoading.value, [row.id]: false };
   }
-}
 
-// 处理dropdown操作命令
-function handleOperationCommand(command: string, row: any) {
-  switch (command) {
-    case 'edit':
-      handleEdit(row);
-      break;
-    case 'download':
-      handleDownload(row);
-      break;
-    case 'design-model':
-      handleDesignModel(row);
-      break;
-    case 'ai-generate':
-      onAiTableAutoGenerate(row);
-      break;
-    case 'generate-image-info':
-      handleGenerateImageInfo(row);
-      break;
-    case 'find-similar':
-      handleFindSimilar(row);
-      break;
-    case 'view-meta':
-      showMetaDetail(row.meta);
-      break;
-    case 'trim-png':
-      handleTrimPng(row);
-      break;
-    case 'svg-to-png':
-      handleSvgToPng(row);
-      break;
-    case 'copy':
-      handleCopy(row);
-      break;
-    case 'create-ps-set':
-      openPsdSetDialog(row);
-      break;
-    case 'image-split':
-      ElMessage.info('图片裂变功能开发中...');
-      break;
-    case 'video-production':
-      ElMessage.info('视频制作功能开发中...');
-      break;
-    case 'delete':
-      handleDelete(row);
-      break;
-    default:
-      console.warn('未知的操作命令:', command);
-  }
-}
-
-// URL上传相关
-const urlUploadModalVisible = ref(false)
-const urlUploadLoading = ref(false)
-const urlUploadFormRef = ref()
-const urlPreviewVisible = ref(false)
-const imageInfo = ref(null)
-
-const urlUploadForm = reactive({
-  url: '',
-  name: '',
-  nameEn: '',
-  description: '',
-  descriptionEn: '',
-  keywords: '',
-  keywordsEn: '',
-  isCustom: false,
-  isInfringement: false,
-  useAiGenerate: false, // 是否使用AI生成补全内容
-  folderId: null as string | null, // 文件夹ID
-  folderPath: '' // 展示路径
-})
-
-const urlUploadFormRules = {
-  url: [
-    { required: true, message: '请输入图片URL', trigger: 'blur' },
-    {
-      pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i,
-      message: '请输入有效的图片URL',
-      trigger: 'blur'
+  // 处理dropdown操作命令
+  function handleOperationCommand(command: string, row: any) {
+    switch (command) {
+      case 'edit':
+        handleEdit(row);
+        break;
+      case 'download':
+        handleDownload(row);
+        break;
+      case 'ai-generate':
+        onAiTableAutoGenerate(row);
+        break;
+      case 'generate-image-info':
+        handleGenerateImageInfo(row);
+        break;
+      case 'find-similar':
+        handleFindSimilar(row);
+        break;
+      case 'view-meta':
+        showMetaDetail(row.meta);
+        break;
+      case 'trim-png':
+        handleTrimPng(row);
+        break;
+      case 'svg-to-png':
+        handleSvgToPng(row);
+        break;
+      case 'copy':
+        handleCopy(row);
+        break;
+      case 'create-ps-set':
+        openPsdSetDialog(row);
+        break;
+      case 'image-split':
+        ElMessage.info('图片裂变功能开发中...');
+        break;
+      case 'video-production':
+        ElMessage.info('视频制作功能开发中...');
+        break;
+      case 'delete':
+        handleDelete(row);
+        break;
+      default:
+        console.warn('未知的操作命令:', command);
     }
-  ],
-  name: [
-    { required: true, message: '请输入文件名', trigger: 'blur' }
-  ]
-}
+  }
 
-// 重置URL上传表单
-function resetUrlUploadForm() {
-  urlUploadForm.url = ''
-  urlUploadForm.name = ''
-  urlUploadForm.nameEn = ''
-  urlUploadForm.description = ''
-  urlUploadForm.descriptionEn = ''
-  urlUploadForm.keywords = ''
-  urlUploadForm.keywordsEn = ''
-  urlUploadForm.isCustom = false
-  urlUploadForm.isInfringement = false
-  urlUploadForm.useAiGenerate = false
-  urlUploadForm.folderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value // 重置为当前选中的文件夹
-  urlUploadForm.folderPath = selectedStickerFolderPath.value || ''
-  urlPreviewVisible.value = false
-  imageInfo.value = null
-}
+  // URL上传相关
+  const urlUploadModalVisible = ref(false)
+  const urlUploadLoading = ref(false)
+  const urlUploadFormRef = ref()
+  const urlPreviewVisible = ref(false)
+  const imageInfo = ref(null)
 
-// 监听URL变化，自动显示预览
-watch(() => urlUploadForm.url, (newUrl) => {
-  if (newUrl && isValidImageUrl(newUrl)) {
-    urlPreviewVisible.value = true
-    imageInfo.value = null
-  } else {
+  const urlUploadForm = reactive({
+    url: '',
+    name: '',
+    nameEn: '',
+    description: '',
+    descriptionEn: '',
+    keywords: '',
+    keywordsEn: '',
+    isCustom: false,
+    isInfringement: false,
+    useAiGenerate: false, // 是否使用AI生成补全内容
+    folderId: null as string | null, // 文件夹ID
+    folderPath: '' // 展示路径
+  })
+
+  const urlUploadFormRules = {
+    url: [
+      { required: true, message: '请输入图片URL', trigger: 'blur' },
+      {
+        pattern: /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i,
+        message: '请输入有效的图片URL',
+        trigger: 'blur'
+      }
+    ],
+    name: [
+      { required: true, message: '请输入文件名', trigger: 'blur' }
+    ]
+  }
+
+  // 重置URL上传表单
+  function resetUrlUploadForm() {
+    urlUploadForm.url = ''
+    urlUploadForm.name = ''
+    urlUploadForm.nameEn = ''
+    urlUploadForm.description = ''
+    urlUploadForm.descriptionEn = ''
+    urlUploadForm.keywords = ''
+    urlUploadForm.keywordsEn = ''
+    urlUploadForm.isCustom = false
+    urlUploadForm.isInfringement = false
+    urlUploadForm.useAiGenerate = false
+    urlUploadForm.folderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value // 重置为当前选中的文件夹
+    urlUploadForm.folderPath = selectedStickerFolderPath.value || ''
     urlPreviewVisible.value = false
     imageInfo.value = null
   }
-})
 
-// 验证是否为有效的图片URL
-function isValidImageUrl(url) {
-  const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i
-  return imageExtensions.test(url)
-}
-
-// 处理预览图片加载成功
-function handlePreviewLoad(event) {
-  const img = event.target
-  imageInfo.value = {
-    width: img.naturalWidth,
-    height: img.naturalHeight,
-    size: '未知'
-  }
-}
-
-// 处理预览图片加载失败
-function handlePreviewError() {
-  ElMessage.warning('图片预览加载失败，请检查URL是否正确')
-  urlPreviewVisible.value = false
-}
-
-// 从URL获取图片文件
-async function fetchImageFromUrl(url) {
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      mode: 'cors',
-      headers: {
-        'Accept': 'image/*'
-      }
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-    }
-
-    const contentType = response.headers.get('content-type')
-    if (!contentType || !contentType.startsWith('image/')) {
-      throw new Error('URL指向的不是图片文件')
-    }
-
-    const blob = await response.blob()
-
-    // 检查文件大小（限制10MB）
-    if (blob.size > 10 * 1024 * 1024) {
-      throw new Error('图片文件过大，请选择小于10MB的图片')
-    }
-
-    // 从URL或content-type获取文件扩展名
-    let extension = 'jpg'
-    const urlMatch = url.match(/\.([a-zA-Z0-9]+)(\?.*)?$/i)
-    if (urlMatch) {
-      extension = urlMatch[1].toLowerCase()
-    } else if (contentType) {
-      const typeMatch = contentType.match(/image\/([a-zA-Z0-9]+)/i)
-      if (typeMatch) {
-        extension = typeMatch[1].toLowerCase()
-        if (extension === 'jpeg') extension = 'jpg'
-      }
-    }
-
-    // 创建File对象
-    const fileName = urlUploadForm.name || `image_${Date.now()}.${extension}`
-    const file = new File([blob], fileName, { type: blob.type })
-
-    return { file, extension }
-  } catch (error) {
-    console.error('获取图片失败:', error)
-    throw new Error(`获取图片失败: ${error.message}`)
-  }
-}
-
-// 处理子菜单显示和定位
-function handleSubmenuEnter(event: MouseEvent) {
-  const menuItem = event.currentTarget as HTMLElement
-  if (!menuItem) return
-
-  const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
-  if (!submenu) return
-
-  // 先隐藏所有其他子菜单
-  const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
-  allSubmenus.forEach((sm) => {
-    if (sm !== submenu) {
-      sm.style.opacity = '0'
-      sm.style.visibility = 'hidden'
-      sm.style.pointerEvents = 'none'
+  // 监听URL变化，自动显示预览
+  watch(() => urlUploadForm.url, (newUrl) => {
+    if (newUrl && isValidImageUrl(newUrl)) {
+      urlPreviewVisible.value = true
+      imageInfo.value = null
+    } else {
+      urlPreviewVisible.value = false
+      imageInfo.value = null
     }
   })
 
-  // 清除之前的隐藏定时器
-  if (submenuHideTimer) {
-    clearTimeout(submenuHideTimer)
-    submenuHideTimer = null
+  // 验证是否为有效的图片URL
+  function isValidImageUrl(url) {
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|tiff)(\?.*)?$/i
+    return imageExtensions.test(url)
   }
 
-  // 获取菜单项的位置（使用 getBoundingClientRect 获取相对于视口的位置）
-  const menuItemRect = menuItem.getBoundingClientRect()
-
-  // 临时显示子菜单到屏幕外以获取其真实尺寸
-  submenu.style.position = 'fixed'
-  submenu.style.left = '-9999px'
-  submenu.style.top = '0'
-  submenu.style.right = 'auto' // 清除可能存在的 right 属性
-  submenu.style.opacity = '1'
-  submenu.style.visibility = 'visible'
-  submenu.style.transform = 'none'
-  submenu.style.pointerEvents = 'none'
-
-  // 强制重排以获取真实尺寸
-  void submenu.offsetWidth
-
-  // 获取子菜单的尺寸
-  const submenuWidth = submenu.offsetWidth || 160 // 如果没有获取到，使用默认值 160px
-  const submenuHeight = submenu.offsetHeight
-
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
-
-  // 计算子菜单的位置（优先右侧，空间不足则左侧）
-  let left = menuItemRect.right + 4
-  let top = menuItemRect.top
-
-  // 检查右侧是否有足够空间
-  if (left + submenuWidth > viewportWidth - 10) {
-    // 如果右侧空间不足，显示在左侧
-    left = menuItemRect.left - submenuWidth - 4
-    // 确保不会超出屏幕左边界
-    if (left < 10) {
-      left = 10
+  // 处理预览图片加载成功
+  function handlePreviewLoad(event) {
+    const img = event.target
+    imageInfo.value = {
+      width: img.naturalWidth,
+      height: img.naturalHeight,
+      size: '未知'
     }
   }
 
-  // 检查底部是否有足够空间，如果不够则向上调整
-  if (top + submenuHeight > viewportHeight - 10) {
-    top = Math.max(10, viewportHeight - submenuHeight - 10)
+  // 处理预览图片加载失败
+  function handlePreviewError() {
+    ElMessage.warning('图片预览加载失败，请检查URL是否正确')
+    urlPreviewVisible.value = false
   }
 
-  // 确保顶部不会超出屏幕
-  if (top < 10) {
-    top = 10
+  // 从URL获取图片文件
+  async function fetchImageFromUrl(url) {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        headers: {
+          'Accept': 'image/*'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.startsWith('image/')) {
+        throw new Error('URL指向的不是图片文件')
+      }
+
+      const blob = await response.blob()
+
+      // 检查文件大小（限制10MB）
+      if (blob.size > 10 * 1024 * 1024) {
+        throw new Error('图片文件过大，请选择小于10MB的图片')
+      }
+
+      // 从URL或content-type获取文件扩展名
+      let extension = 'jpg'
+      const urlMatch = url.match(/\.([a-zA-Z0-9]+)(\?.*)?$/i)
+      if (urlMatch) {
+        extension = urlMatch[1].toLowerCase()
+      } else if (contentType) {
+        const typeMatch = contentType.match(/image\/([a-zA-Z0-9]+)/i)
+        if (typeMatch) {
+          extension = typeMatch[1].toLowerCase()
+          if (extension === 'jpeg') extension = 'jpg'
+        }
+      }
+
+      // 创建File对象
+      const fileName = urlUploadForm.name || `image_${Date.now()}.${extension}`
+      const file = new File([blob], fileName, { type: blob.type })
+
+      return { file, extension }
+    } catch (error) {
+      console.error('获取图片失败:', error)
+      throw new Error(`获取图片失败: ${error.message}`)
+    }
   }
 
-  // 设置子菜单的最终位置和样式
-  // 使用 setProperty 并设置 important 标志，确保位置不被 CSS 覆盖
-  submenu.style.setProperty('right', 'auto', 'important')
-  submenu.style.setProperty('left', `${left}px`, 'important')
-  submenu.style.setProperty('top', `${top}px`, 'important')
-  submenu.style.opacity = '1'
-  submenu.style.visibility = 'visible'
-  submenu.style.transform = 'translateX(0)'
-  submenu.style.pointerEvents = 'auto'
+  // 处理子菜单显示和定位
+  function handleSubmenuEnter(event: MouseEvent) {
+    const menuItem = event.currentTarget as HTMLElement
+    if (!menuItem) return
 
-  // 确保位置设置生效，强制重排
-  void submenu.offsetWidth
-}
+    const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
+    if (!submenu) return
 
-let submenuHideTimer: ReturnType<typeof setTimeout> | null = null
+    // 先隐藏所有其他子菜单
+    const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
+    allSubmenus.forEach((sm) => {
+      if (sm !== submenu) {
+        sm.style.opacity = '0'
+        sm.style.visibility = 'hidden'
+        sm.style.pointerEvents = 'none'
+      }
+    })
 
-function handleSubmenuLeave(event: MouseEvent) {
-  const menuItem = event.currentTarget as HTMLElement
-  if (!menuItem) return
+    // 清除之前的隐藏定时器
+    if (submenuHideTimer) {
+      clearTimeout(submenuHideTimer)
+      submenuHideTimer = null
+    }
 
-  const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
-  if (!submenu) return
+    // 获取菜单项的位置（使用 getBoundingClientRect 获取相对于视口的位置）
+    const menuItemRect = menuItem.getBoundingClientRect()
 
-  // 清除之前的定时器
-  if (submenuHideTimer) {
-    clearTimeout(submenuHideTimer)
+    // 临时显示子菜单到屏幕外以获取其真实尺寸
+    submenu.style.position = 'fixed'
+    submenu.style.left = '-9999px'
+    submenu.style.top = '0'
+    submenu.style.right = 'auto' // 清除可能存在的 right 属性
+    submenu.style.opacity = '1'
+    submenu.style.visibility = 'visible'
+    submenu.style.transform = 'none'
+    submenu.style.pointerEvents = 'none'
+
+    // 强制重排以获取真实尺寸
+    void submenu.offsetWidth
+
+    // 获取子菜单的尺寸
+    const submenuWidth = submenu.offsetWidth || 160 // 如果没有获取到，使用默认值 160px
+    const submenuHeight = submenu.offsetHeight
+
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+
+    // 计算子菜单的位置（优先右侧，空间不足则左侧）
+    let left = menuItemRect.right + 4
+    let top = menuItemRect.top
+
+    // 检查右侧是否有足够空间
+    if (left + submenuWidth > viewportWidth - 10) {
+      // 如果右侧空间不足，显示在左侧
+      left = menuItemRect.left - submenuWidth - 4
+      // 确保不会超出屏幕左边界
+      if (left < 10) {
+        left = 10
+      }
+    }
+
+    // 检查底部是否有足够空间，如果不够则向上调整
+    if (top + submenuHeight > viewportHeight - 10) {
+      top = Math.max(10, viewportHeight - submenuHeight - 10)
+    }
+
+    // 确保顶部不会超出屏幕
+    if (top < 10) {
+      top = 10
+    }
+
+    // 设置子菜单的最终位置和样式
+    // 使用 setProperty 并设置 important 标志，确保位置不被 CSS 覆盖
+    submenu.style.setProperty('right', 'auto', 'important')
+    submenu.style.setProperty('left', `${left}px`, 'important')
+    submenu.style.setProperty('top', `${top}px`, 'important')
+    submenu.style.opacity = '1'
+    submenu.style.visibility = 'visible'
+    submenu.style.transform = 'translateX(0)'
+    submenu.style.pointerEvents = 'auto'
+
+    // 确保位置设置生效，强制重排
+    void submenu.offsetWidth
   }
 
-  // 延迟隐藏，允许鼠标移动到子菜单
-  submenuHideTimer = setTimeout(() => {
-    // 检查鼠标是否仍在子菜单上
-    const elementUnderMouse = document.elementFromPoint(event.clientX, event.clientY)
-    const isHovering = elementUnderMouse?.closest('.op-submenu') === submenu ||
-      elementUnderMouse?.closest('.has-submenu') === menuItem
+  let submenuHideTimer: ReturnType<typeof setTimeout> | null = null
 
-    if (!isHovering) {
+  function handleSubmenuLeave(event: MouseEvent) {
+    const menuItem = event.currentTarget as HTMLElement
+    if (!menuItem) return
+
+    const submenu = menuItem.querySelector('.op-submenu') as HTMLElement
+    if (!submenu) return
+
+    // 清除之前的定时器
+    if (submenuHideTimer) {
+      clearTimeout(submenuHideTimer)
+    }
+
+    // 延迟隐藏，允许鼠标移动到子菜单
+    submenuHideTimer = setTimeout(() => {
+      // 检查鼠标是否仍在子菜单上
+      const elementUnderMouse = document.elementFromPoint(event.clientX, event.clientY)
+      const isHovering = elementUnderMouse?.closest('.op-submenu') === submenu ||
+        elementUnderMouse?.closest('.has-submenu') === menuItem
+
+      if (!isHovering) {
+        submenu.style.opacity = '0'
+        submenu.style.visibility = 'hidden'
+        submenu.style.pointerEvents = 'none'
+      }
+    }, 200)
+  }
+
+  // 保持子菜单可见
+  function handleSubmenuKeepVisible(event: MouseEvent) {
+    const submenu = event.currentTarget as HTMLElement
+    if (!submenu) return
+
+    // 先隐藏所有其他子菜单
+    const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
+    allSubmenus.forEach((sm) => {
+      if (sm !== submenu) {
+        sm.style.opacity = '0'
+        sm.style.visibility = 'hidden'
+        sm.style.pointerEvents = 'none'
+      }
+    })
+
+    // 清除隐藏定时器
+    if (submenuHideTimer) {
+      clearTimeout(submenuHideTimer)
+      submenuHideTimer = null
+    }
+
+    // 确保子菜单可见
+    submenu.style.opacity = '1'
+    submenu.style.visibility = 'visible'
+    submenu.style.pointerEvents = 'auto'
+  }
+
+  // 隐藏子菜单
+  function handleSubmenuHide(event: MouseEvent) {
+    const submenu = event.currentTarget as HTMLElement
+    if (!submenu) return
+
+    // 延迟隐藏
+    submenuHideTimer = setTimeout(() => {
       submenu.style.opacity = '0'
       submenu.style.visibility = 'hidden'
       submenu.style.pointerEvents = 'none'
-    }
-  }, 200)
-}
-
-// 保持子菜单可见
-function handleSubmenuKeepVisible(event: MouseEvent) {
-  const submenu = event.currentTarget as HTMLElement
-  if (!submenu) return
-
-  // 先隐藏所有其他子菜单
-  const allSubmenus = document.querySelectorAll('.op-submenu') as NodeListOf<HTMLElement>
-  allSubmenus.forEach((sm) => {
-    if (sm !== submenu) {
-      sm.style.opacity = '0'
-      sm.style.visibility = 'hidden'
-      sm.style.pointerEvents = 'none'
-    }
-  })
-
-  // 清除隐藏定时器
-  if (submenuHideTimer) {
-    clearTimeout(submenuHideTimer)
-    submenuHideTimer = null
+    }, 200)
   }
 
-  // 确保子菜单可见
-  submenu.style.opacity = '1'
-  submenu.style.visibility = 'visible'
-  submenu.style.pointerEvents = 'auto'
-}
+  // 复制文本到剪贴板
+  async function handleCopyText(text: string, label: string) {
+    if (!text) {
+      ElMessage.warning(`${label}为空，无法复制`)
+      return
+    }
 
-// 隐藏子菜单
-function handleSubmenuHide(event: MouseEvent) {
-  const submenu = event.currentTarget as HTMLElement
-  if (!submenu) return
-
-  // 延迟隐藏
-  submenuHideTimer = setTimeout(() => {
-    submenu.style.opacity = '0'
-    submenu.style.visibility = 'hidden'
-    submenu.style.pointerEvents = 'none'
-  }, 200)
-}
-
-// 复制文本到剪贴板
-async function handleCopyText(text: string, label: string) {
-  if (!text) {
-    ElMessage.warning(`${label}为空，无法复制`)
-    return
-  }
-
-  try {
-    await navigator.clipboard.writeText(text)
-    ElMessage.success(`${label}已复制到剪贴板`)
-  } catch (error) {
-    // 降级方案：使用传统方法
-    const textarea = document.createElement('textarea')
-    textarea.value = text
-    textarea.style.position = 'fixed'
-    textarea.style.opacity = '0'
-    document.body.appendChild(textarea)
-    textarea.select()
     try {
-      document.execCommand('copy')
+      await navigator.clipboard.writeText(text)
       ElMessage.success(`${label}已复制到剪贴板`)
-    } catch (e) {
-      ElMessage.error('复制失败')
+    } catch (error) {
+      // 降级方案：使用传统方法
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      try {
+        document.execCommand('copy')
+        ElMessage.success(`${label}已复制到剪贴板`)
+      } catch (e) {
+        ElMessage.error('复制失败')
+      }
+      document.body.removeChild(textarea)
     }
-    document.body.removeChild(textarea)
   }
-}
 
-// 处理URL上传
-async function handleUrlUpload() {
-  if (!urlUploadFormRef.value) return
+  // 处理URL上传
+  async function handleUrlUpload() {
+    if (!urlUploadFormRef.value) return
 
-  try {
-    // 验证表单
-    await urlUploadFormRef.value.validate()
+    try {
+      // 验证表单
+      await urlUploadFormRef.value.validate()
 
-    urlUploadLoading.value = true
+      urlUploadLoading.value = true
 
-    // 获取图片文件
-    const { file, extension } = await fetchImageFromUrl(urlUploadForm.url)
+      // 获取图片文件
+      const { file, extension } = await fetchImageFromUrl(urlUploadForm.url)
 
-    // 上传到COS
-    const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-    const cos = await uploadToCOS({
-      file,
-      category: 'sticker', // 素材上传到 sticker 分类
-      account: userAccount
-    })
-    const { key, url } = cos
+      // 上传到COS
+      const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+      const cos = await uploadToCOS({
+        file,
+        category: 'sticker', // 素材上传到 sticker 分类
+        account: userAccount
+      })
+      const { key, url } = cos
 
-    // 计算图片宽高及宽高比（如果预览阶段已经获取到了尺寸，则优先使用）
-    const width = imageInfo.value?.width || 0
-    const height = imageInfo.value?.height || 0
-    const aspectRatio = width && height ? width / height : undefined
+      // 计算图片宽高及宽高比（如果预览阶段已经获取到了尺寸，则优先使用）
+      const width = imageInfo.value?.width || 0
+      const height = imageInfo.value?.height || 0
+      const aspectRatio = width && height ? width / height : undefined
 
-    // 上传到服务器
-    await uploadMaterialFile({
-      url,
-      name: urlUploadForm.name,
-      nameEn: urlUploadForm.nameEn,
-      description: urlUploadForm.description,
-      descriptionEn: urlUploadForm.descriptionEn,
-      keywords: urlUploadForm.keywords,
-      keywordsEn: urlUploadForm.keywordsEn,
-      suffix: extension,
-      isCustom: urlUploadForm.isCustom,
-      isInfringement: urlUploadForm.isInfringement,
-      width,
-      height,
-      aspectRatio,
-      uploaderId: userStore.user?.id,
-      useAiGenerate: urlUploadForm.useAiGenerate, // 是否使用AI生成补全内容
-      folderId: urlUploadForm.folderId ?? null
-    })
+      // 上传到服务器
+      await uploadMaterialFile({
+        url,
+        name: urlUploadForm.name,
+        nameEn: urlUploadForm.nameEn,
+        description: urlUploadForm.description,
+        descriptionEn: urlUploadForm.descriptionEn,
+        keywords: urlUploadForm.keywords,
+        keywordsEn: urlUploadForm.keywordsEn,
+        suffix: extension,
+        isCustom: urlUploadForm.isCustom,
+        isInfringement: urlUploadForm.isInfringement,
+        width,
+        height,
+        aspectRatio,
+        uploaderId: userStore.user?.id,
+        useAiGenerate: urlUploadForm.useAiGenerate, // 是否使用AI生成补全内容
+        folderId: urlUploadForm.folderId ?? null
+      })
 
-    ElNotification.success('图片上传成功')
-    urlUploadModalVisible.value = false
-    resetUrlUploadForm()
+      ElNotification.success('图片上传成功')
+      urlUploadModalVisible.value = false
+      resetUrlUploadForm()
 
-    // 刷新列表
-    getList()
+      // 刷新列表
+      getList()
 
-  } catch (error) {
-    console.error('URL上传失败:', error)
-    ElMessage.error(`上传失败: ${error.message}`)
-  } finally {
-    urlUploadLoading.value = false
+    } catch (error) {
+      console.error('URL上传失败:', error)
+      ElMessage.error(`上传失败: ${error.message}`)
+    } finally {
+      urlUploadLoading.value = false
+    }
   }
-}
 
 </script>
 

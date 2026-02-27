@@ -5,22 +5,14 @@
       <div class="flex gap-4 items-center">
 
         <form-item label="发布状态">
-          <el-select v-model="queryParams.publishStatus" placeholder="选择状态"  style="width: 160px" @change="handleStatusFilter">
-            <el-option
-              v-for="option in STATUS_OPTIONS"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
+          <el-select v-model="queryParams.publishStatus" placeholder="选择状态" style="width: 160px"
+            @change="handleStatusFilter">
+            <el-option v-for="option in STATUS_OPTIONS" :key="option.value" :label="option.label"
+              :value="option.value" />
           </el-select>
-          </form-item>
+        </form-item>
         <form-item label="按名称搜索">
-          <el-input
-            v-model="queryParams.name"
-            clearable
-            placeholder="请输入名称"
-            style="width: 160px"
-          />
+          <el-input v-model="queryParams.name" clearable placeholder="请输入名称" style="width: 160px" />
         </form-item>
         <form-item label="只看母版">
           <el-switch v-model="queryParams.isTemplate" :active-value="true" :inactive-value="false" @change="getList" />
@@ -36,84 +28,108 @@
     </div>
     <!-- 表格展示 -->
     <div class="common-table">
-      <vxe-grid
-        v-bind="(gridOptions as any)"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
+      <vxe-grid v-bind="(gridOptions as any)" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
+        @checkbox-all="checkboxAllChange">
         <template #operationDefaultSlot="{ row }">
           <div class="operation-buttons">
             <!-- 操作下拉菜单 -->
-            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
+            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
+              class="operation-dropdown">
               <el-button type="primary" link size="small">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                操作<el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="view-drafts">
-                    <el-icon><Picture /></el-icon>
+                    <el-icon>
+                      <Picture />
+                    </el-icon>
                     <span>查看草稿截图</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="edit">
-                    <el-icon><Edit /></el-icon>
+                    <el-icon>
+                      <Edit />
+                    </el-icon>
                     <span>编辑</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="ai-generate" :disabled="aiGenerateLoading[row.id]">
-                    <el-icon><MagicStick /></el-icon>
+                    <el-icon>
+                      <MagicStick />
+                    </el-icon>
                     <span>{{ aiGenerateLoading[row.id] ? 'AI生成中...' : 'AI生成内容' }}</span>
                   </el-dropdown-item>
-                  <el-dropdown-item command="enter-design-tool">
-                    <el-icon><View /></el-icon>
-                    <span>进入设计工具查看</span>
-                  </el-dropdown-item>
                   <el-dropdown-item command="download-thumbnail" :disabled="!row.thumbnail">
-                    <el-icon><Download /></el-icon>
+                    <el-icon>
+                      <Download />
+                    </el-icon>
                     <span>下载缩略图</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="download-drafts">
-                    <el-icon><Download /></el-icon>
+                    <el-icon>
+                      <Download />
+                    </el-icon>
                     <span>下载草稿</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="copy-info" divided>
-                    <el-icon><CopyDocument /></el-icon>
+                    <el-icon>
+                      <CopyDocument />
+                    </el-icon>
                     <span>复制信息</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-meta">
-                    <el-icon><Document /></el-icon>
+                    <el-icon>
+                      <Document />
+                    </el-icon>
                     <span>查看元数据</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="view-stickers">
-                    <el-icon><Picture /></el-icon>
+                    <el-icon>
+                      <Picture />
+                    </el-icon>
                     <span>查看关联贴纸</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-template" :disabled="templateLoading[row.id]">
-                    <el-icon><Star /></el-icon>
+                    <el-icon>
+                      <Star />
+                    </el-icon>
                     <span>{{ templateLoading[row.id] ? '处理中...' : (row.isTemplate ? '取消母版' : '设为母版') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="toggle-public" :disabled="publicLoading[row.id]">
-                    <el-icon><Share /></el-icon>
+                    <el-icon>
+                      <Share />
+                    </el-icon>
                     <span>{{ publicLoading[row.id] ? '处理中...' : (row.isPublic ? '取消发布' : '发布') }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-pending" divided>
-                    <el-icon><Clock /></el-icon>
+                    <el-icon>
+                      <Clock />
+                    </el-icon>
                     <span>标记为待发布</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-published">
-                    <el-icon><Check /></el-icon>
+                    <el-icon>
+                      <Check />
+                    </el-icon>
                     <span>标记为已发布</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-draft">
-                    <el-icon><Edit /></el-icon>
+                    <el-icon>
+                      <Edit />
+                    </el-icon>
                     <span>标记为草稿</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="mark-archived">
-                    <el-icon><Folder /></el-icon>
+                    <el-icon>
+                      <Folder />
+                    </el-icon>
                     <span>标记为已归档</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="delete" divided :disabled="deleteLoading[row.id]">
-                    <el-icon><Delete /></el-icon>
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
                     <span>{{ deleteLoading[row.id] ? '删除中...' : '删除' }}</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -122,16 +138,9 @@
           </div>
         </template>
         <template #thumbnailSlot="{ row }">
-          <el-image
-            v-if="row.thumbnail"
-            :src="row.thumbnail"
-            :lazy="true"
-            :preview-src-list="[row.thumbnail]"
-            style="width: 64px; height: 64px; object-fit: cover; cursor: pointer;"
-            fit="cover"
-            :z-index="3000"
-            preview-teleported
-          />
+          <el-image v-if="row.thumbnail" :src="row.thumbnail" :lazy="true" :preview-src-list="[row.thumbnail]"
+            style="width: 64px; height: 64px; object-fit: cover; cursor: pointer;" fit="cover" :z-index="3000"
+            preview-teleported />
         </template>
 
         <template #uploaderSlot="{ row }">
@@ -139,12 +148,7 @@
         </template>
         <template #phashSlot="{ row }">
           <div class="phash-display">
-            <el-tooltip 
-              v-if="row.phash" 
-              :content="row.phash" 
-              placement="top" 
-              :show-after="500"
-            >
+            <el-tooltip v-if="row.phash" :content="row.phash" placement="top" :show-after="500">
               <span class="phash-text">{{ formatPhash(row.phash) }}</span>
             </el-tooltip>
             <span v-else class="no-phash">未生成</span>
@@ -167,20 +171,10 @@
     </div>
     <!-- 分页 -->
     <div class=" flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
+      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+        @pagination="getList" />
     </div>
-    <el-dialog
-      :title="dialogTitle"
-      v-model="dialogVisible"
-      width="600px"
-      @close="dialogClose"
-      align-center
-    >
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" @close="dialogClose" align-center>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-row>
           <el-col :span="24">
@@ -208,14 +202,9 @@
     <el-dialog v-model="metaDialogVisible" fullscreen title="元数据详情" :close-on-click-modal="false">
       <vue-json-pretty :data="JSON.parse(metaDialogContent)" />
     </el-dialog>
-    
+
     <!-- 关联草稿弹窗 -->
-    <el-dialog 
-      v-model="draftDialogVisible" 
-      title="关联草稿" 
-      width="80%" 
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="draftDialogVisible" title="关联草稿" width="80%" :close-on-click-modal="false">
       <div class="draft-dialog-content">
         <div class="draft-info mb-4">
           <h3 class="text-lg font-medium mb-2">
@@ -225,58 +214,38 @@
             {{ currentModel.description }}
           </p>
         </div>
-        
+
         <div v-if="relatedDrafts.length === 0" class="empty-state text-center py-8">
           <el-empty description="暂无关联草稿" />
         </div>
-        
+
         <div v-else class="draft-grid">
-          <div 
-            v-for="draft in relatedDrafts" 
-            :key="draft.id" 
-            class="draft-item"
-          >
+          <div v-for="draft in relatedDrafts" :key="draft.id" class="draft-item">
             <div class="draft-preview">
               <!-- 视频预览 -->
-              <div 
-                v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
-                class="video-preview-container"
-                @click="handleDraftVideoPlay(draft)"
-              >
-                <video 
-                  :src="draft.url" 
-                  class="w-full h-32 rounded cursor-pointer object-cover"
-                  preload="metadata"
-                  muted
-                />
+              <div v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
+                class="video-preview-container" @click="handleDraftVideoPlay(draft)">
+                <video :src="draft.url" class="w-full h-32 rounded cursor-pointer object-cover" preload="metadata"
+                  muted />
                 <div class="video-overlay">
-                  <el-icon class="play-icon"><VideoPlay /></el-icon>
+                  <el-icon class="play-icon">
+                    <VideoPlay />
+                  </el-icon>
                 </div>
               </div>
               <!-- 图片预览 -->
-              <el-image 
-                v-else
-                :src="draft.url" 
-                fit="cover" 
-                class="w-full h-32 rounded cursor-pointer"
-                :preview-src-list="[draft.url]"
-                :preview-teleported="true"
-                :z-index="9999"
-              />
+              <el-image v-else :src="draft.url" fit="cover" class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[draft.url]" :preview-teleported="true" :z-index="9999" />
             </div>
             <div class="draft-info p-3">
               <div class="draft-header flex justify-between items-start mb-2">
                 <div class="draft-name text-sm font-medium truncate flex-1">
                   {{ draft.name || '未命名' }}
                 </div>
-                <el-button 
-                  type="danger" 
-                  link 
-                  size="small" 
-                  @click="deleteDraftItem(draft)"
-                  class="ml-2 flex-shrink-0"
-                >
-                  <el-icon><Delete /></el-icon>
+                <el-button type="danger" link size="small" @click="deleteDraftItem(draft)" class="ml-2 flex-shrink-0">
+                  <el-icon>
+                    <Delete />
+                  </el-icon>
                 </el-button>
               </div>
               <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
@@ -289,27 +258,16 @@
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <el-button @click="draftDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="aiGenDialogVisible"
-      title="AI自动生成内容"
-      width="500px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
       <div style="margin-bottom: 16px; color: #888; font-size: 15px;">请输入你希望AI分析的内容风格或角度（如：偏艺术描述、简洁风格、突出色彩等）</div>
-      <el-input
-        v-model="aiGenPrompt"
-        type="textarea"
-        :rows="6"
-        placeholder="如：请用艺术化语言描述模型内容..."
-        style="font-size:16px;min-height:120px;width:100%;resize:vertical;"
-      />
+      <el-input v-model="aiGenPrompt" type="textarea" :rows="6" placeholder="如：请用艺术化语言描述模型内容..."
+        style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
         <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
@@ -317,13 +275,8 @@
     </el-dialog>
 
     <!-- 草稿下载弹窗 -->
-    <el-dialog 
-      v-model="draftDownloadDialogVisible" 
-      title="下载草稿" 
-      :width="isMobile ? '95%' : '80%'" 
-      :close-on-click-modal="false"
-      :fullscreen="isMobile"
-    >
+    <el-dialog v-model="draftDownloadDialogVisible" title="下载草稿" :width="isMobile ? '95%' : '80%'"
+      :close-on-click-modal="false" :fullscreen="isMobile">
       <div class="draft-download-content">
         <div class="draft-info mb-4">
           <h3 class="text-lg font-medium mb-2">
@@ -333,59 +286,39 @@
             {{ currentModel.description }}
           </p>
         </div>
-        
+
         <div v-if="relatedDrafts.length === 0" class="empty-state text-center py-8">
           <el-empty description="暂无关联草稿" />
         </div>
-        
+
         <div v-else class="draft-grid" :class="{ 'mobile-grid': isMobile }">
-          <div 
-            v-for="draft in relatedDrafts" 
-            :key="draft.id" 
-            class="draft-item"
-            :class="{ 'mobile-item': isMobile }"
-          >
+          <div v-for="draft in relatedDrafts" :key="draft.id" class="draft-item" :class="{ 'mobile-item': isMobile }">
             <div class="draft-preview">
               <!-- 视频预览 -->
-              <div 
-                v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
-                class="video-preview-container"
-                @click="handleDraftVideoPlay(draft)"
-              >
-                <video 
-                  :src="draft.url" 
-                  class="w-full h-32 rounded cursor-pointer object-cover"
-                  preload="metadata"
-                  muted
-                />
+              <div v-if="draft.suffix && ['mp4', 'webm', 'avi', 'mov', 'mkv'].includes(draft.suffix.toLowerCase())"
+                class="video-preview-container" @click="handleDraftVideoPlay(draft)">
+                <video :src="draft.url" class="w-full h-32 rounded cursor-pointer object-cover" preload="metadata"
+                  muted />
                 <div class="video-overlay">
-                  <el-icon class="play-icon"><VideoPlay /></el-icon>
+                  <el-icon class="play-icon">
+                    <VideoPlay />
+                  </el-icon>
                 </div>
               </div>
               <!-- 图片预览 -->
-              <el-image 
-                v-else
-                :src="draft.url" 
-                fit="cover" 
-                class="w-full h-32 rounded cursor-pointer"
-                :preview-src-list="[draft.url]"
-                :preview-teleported="true"
-                :z-index="9999"
-              />
+              <el-image v-else :src="draft.url" fit="cover" class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[draft.url]" :preview-teleported="true" :z-index="9999" />
             </div>
             <div class="draft-info p-3">
               <div class="draft-header flex justify-between items-start mb-2">
                 <div class="draft-name text-sm font-medium truncate flex-1">
                   {{ draft.name || '未命名' }}
                 </div>
-                <el-button 
-                  type="primary" 
-                  link 
-                  size="small" 
-                  @click="downloadSingleDraft(draft)"
-                  class="ml-2 flex-shrink-0"
-                >
-                  <el-icon><Download /></el-icon>
+                <el-button type="primary" link size="small" @click="downloadSingleDraft(draft)"
+                  class="ml-2 flex-shrink-0">
+                  <el-icon>
+                    <Download />
+                  </el-icon>
                 </el-button>
               </div>
               <div v-if="draft.description" class="draft-desc text-xs text-color-regular mt-1 line-clamp-2">
@@ -398,7 +331,7 @@
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <div class="dialog-footer" :class="{ 'mobile-footer': isMobile }">
           <div class="flex justify-between items-center" :class="{ 'mobile-footer-content': isMobile }">
@@ -406,19 +339,14 @@
               共 {{ relatedDrafts.length }} 个草稿
             </div>
             <div class="flex gap-2" :class="{ 'mobile-buttons': isMobile }">
-              <el-button 
-                type="success" 
-                @click="downloadAllDrafts"
-                :disabled="relatedDrafts.length === 0"
-                :size="isMobile ? 'large' : 'default'"
-              >
-                <el-icon><Download /></el-icon>
+              <el-button type="success" @click="downloadAllDrafts" :disabled="relatedDrafts.length === 0"
+                :size="isMobile ? 'large' : 'default'">
+                <el-icon>
+                  <Download />
+                </el-icon>
                 下载所有草稿
               </el-button>
-              <el-button 
-                @click="draftDownloadDialogVisible = false"
-                :size="isMobile ? 'large' : 'default'"
-              >
+              <el-button @click="draftDownloadDialogVisible = false" :size="isMobile ? 'large' : 'default'">
                 关闭
               </el-button>
             </div>
@@ -428,12 +356,7 @@
     </el-dialog>
 
     <!-- 关联贴纸弹窗 -->
-    <el-dialog 
-      v-model="stickersDialogVisible" 
-      title="关联贴纸" 
-      width="80%" 
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="stickersDialogVisible" title="关联贴纸" width="80%" :close-on-click-modal="false">
       <div class="stickers-dialog-content">
         <div class="stickers-info mb-4">
           <h3 class="text-lg font-medium mb-2">
@@ -443,41 +366,27 @@
             {{ currentModel.description }}
           </p>
         </div>
-        
+
         <div v-if="relatedStickers.length === 0" class="empty-state text-center py-8">
           <el-empty description="暂无关联贴纸" />
         </div>
-        
+
         <div v-else class="stickers-grid">
-          <div 
-            v-for="sticker in relatedStickers" 
-            :key="sticker.id" 
-            class="sticker-item"
-          >
+          <div v-for="sticker in relatedStickers" :key="sticker.id" class="sticker-item">
             <div class="sticker-preview">
-              <el-image 
-                :src="sticker.url" 
-                fit="cover"
-                :lazy="true" 
-                class="w-full h-32 rounded cursor-pointer"
-                :preview-src-list="[sticker.url]"
-                :preview-teleported="true"
-                :z-index="9999"
-              />
+              <el-image :src="sticker.url" fit="cover" :lazy="true" class="w-full h-32 rounded cursor-pointer"
+                :preview-src-list="[sticker.url]" :preview-teleported="true" :z-index="9999" />
             </div>
             <div class="sticker-info p-3">
               <div class="sticker-header flex justify-between items-start mb-2">
                 <div class="sticker-name text-sm font-medium truncate flex-1">
                   {{ sticker.name || '未命名' }}
                 </div>
-                <el-button 
-                  type="primary" 
-                  link 
-                  size="small" 
-                  @click="downloadSticker(sticker)"
-                  class="ml-2 flex-shrink-0"
-                >
-                  <el-icon><Download /></el-icon>
+                <el-button type="primary" link size="small" @click="downloadSticker(sticker)"
+                  class="ml-2 flex-shrink-0">
+                  <el-icon>
+                    <Download />
+                  </el-icon>
                 </el-button>
               </div>
               <div v-if="sticker.description" class="sticker-desc text-xs text-color-regular mt-1 line-clamp-2">
@@ -493,19 +402,17 @@
           </div>
         </div>
       </div>
-      
+
       <template #footer>
         <div class="flex justify-between items-center">
           <div class="text-sm text-gray-600">
             共 {{ relatedStickers.length }} 个贴纸
           </div>
           <div class="flex gap-2">
-            <el-button 
-              type="success" 
-              @click="downloadAllStickers"
-              :disabled="relatedStickers.length === 0"
-            >
-              <el-icon><Download /></el-icon>
+            <el-button type="success" @click="downloadAllStickers" :disabled="relatedStickers.length === 0">
+              <el-icon>
+                <Download />
+              </el-icon>
               下载所有贴纸
             </el-button>
             <el-button @click="stickersDialogVisible = false">关闭</el-button>
@@ -515,89 +422,60 @@
     </el-dialog>
 
     <!-- 复制信息弹窗 -->
-    <el-dialog
-      v-model="copyInfoDialogVisible"
-      title="复制信息"
-      width="400px"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="copyInfoDialogVisible" title="复制信息" width="400px" align-center :destroy-on-close="true">
       <div class="copy-info-content">
         <div class="copy-item" v-if="currentCopyModel?.name">
           <div class="copy-label">标题：</div>
           <div class="copy-content">
-            <el-input 
-              v-model="currentCopyModel.name" 
-              readonly 
-              class="copy-input"
-            />
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="copyToClipboard(currentCopyModel.name, '标题')"
-              class="copy-btn"
-            >
-              <el-icon><CopyDocument /></el-icon>
+            <el-input v-model="currentCopyModel.name" readonly class="copy-input" />
+            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.name, '标题')"
+              class="copy-btn">
+              <el-icon>
+                <CopyDocument />
+              </el-icon>
               复制
             </el-button>
           </div>
         </div>
-        
+
         <div class="copy-item" v-if="currentCopyModel?.description">
           <div class="copy-label">描述：</div>
           <div class="copy-content">
-            <el-input 
-              v-model="currentCopyModel.description" 
-              type="textarea"
-              :rows="3"
-              readonly 
-              class="copy-input"
-            />
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="copyToClipboard(currentCopyModel.description, '描述')"
-              class="copy-btn"
-            >
-              <el-icon><CopyDocument /></el-icon>
+            <el-input v-model="currentCopyModel.description" type="textarea" :rows="3" readonly class="copy-input" />
+            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.description, '描述')"
+              class="copy-btn">
+              <el-icon>
+                <CopyDocument />
+              </el-icon>
               复制
             </el-button>
           </div>
         </div>
-        
+
         <div class="copy-item" v-if="currentCopyModel?.keywords">
           <div class="copy-label">关键词：</div>
           <div class="copy-content">
-            <el-input 
-              v-model="currentCopyModel.keywords" 
-              readonly 
-              class="copy-input"
-            />
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click="copyToClipboard(currentCopyModel.keywords, '关键词')"
-              class="copy-btn"
-            >
-              <el-icon><CopyDocument /></el-icon>
+            <el-input v-model="currentCopyModel.keywords" readonly class="copy-input" />
+            <el-button type="primary" size="small" @click="copyToClipboard(currentCopyModel.keywords, '关键词')"
+              class="copy-btn">
+              <el-icon>
+                <CopyDocument />
+              </el-icon>
               复制
             </el-button>
           </div>
         </div>
-        
+
         <div class="copy-all-section">
-          <el-button 
-            type="success" 
-            @click="copyAllInfo"
-            class="copy-all-btn"
-            :loading="copyAllLoading"
-          >
-            <el-icon><CopyDocument /></el-icon>
+          <el-button type="success" @click="copyAllInfo" class="copy-all-btn" :loading="copyAllLoading">
+            <el-icon>
+              <CopyDocument />
+            </el-icon>
             复制全部信息
           </el-button>
         </div>
       </div>
-      
+
       <template #footer>
         <el-button @click="copyInfoDialogVisible = false">关闭</el-button>
       </template>
@@ -608,7 +486,8 @@
 import { ref, reactive, onMounted, watchEffect, computed } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Delete, ArrowDown, Edit, Picture, Goods, MagicStick, View, Star, Document, VideoPlay, Share, Download, CopyDocument, Clock, Check, Folder } from '@element-plus/icons-vue'
+import Pagination from '@/components/Pagination/index.vue'
+import { Search, Delete, ArrowDown, Edit, Picture, MagicStick, Star, Document, VideoPlay, Share, Download, CopyDocument, Clock, Check, Folder } from '@element-plus/icons-vue'
 import { getDesignModelList, updateDesignModel, deleteDesignModel, aiAutoGenerateDesignModelInfo } from '@/api/designModel'
 import { getDraftList, deleteDraft } from '@/api/draft'
 import { getStickerById } from '@/api/material'
@@ -617,8 +496,6 @@ import { formatTimestamp } from '@/common/date'
 import type { DesignModelVO } from '@/api/designModel'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import Pagination from '@/components/Pagination/index.vue'
-import { getDesignToolMessenger } from '@/utils/designToolMessenger'
 import { useWindowSize } from '@vueuse/core'
 
 // 获取窗口尺寸
@@ -676,8 +553,8 @@ const gridOptions = ref({
   checkboxConfig: {
     reserve: true
   },
-      columns: [
-      { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
+  columns: [
+    { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     // { title: 'ID', field: 'id', width: 240 },
     { title: '缩略图', field: 'thumbnail', width: 120, slots: { default: 'thumbnailSlot' } },
     { title: '模型名称', field: 'name', width: 200 },
@@ -744,7 +621,7 @@ function showMetaDetail(meta: any) {
 async function viewRelatedDrafts(model: any) {
   currentModel.value = model
   draftDialogVisible.value = true
-  
+
   try {
     const res = await getDraftList({
       customModelId: model.id,
@@ -762,18 +639,18 @@ async function viewRelatedDrafts(model: any) {
 async function deleteDraftItem(draft: any) {
   try {
     await ElMessageBox.confirm(
-      `确认删除草稿"${draft.name || '未命名'}"吗？`, 
-      '删除提示', 
+      `确认删除草稿"${draft.name || '未命名'}"吗？`,
+      '删除提示',
       {
         confirmButtonText: '确认',
         cancelButtonText: '取消',
         type: 'warning'
       }
     )
-    
+
     await deleteDraft([draft.id])
     ElMessage.success('删除成功')
-    
+
     // 从当前列表中移除已删除的草稿
     const index = relatedDrafts.value.findIndex(item => item.id === draft.id)
     if (index > -1) {
@@ -938,18 +815,6 @@ function handleDelete(row?) {
 }
 
 
-function enterDesignToolWithId(row: any) {
-  const messenger = getDesignToolMessenger()
-  if (!messenger.isDesignToolConnected()) {
-    ElMessage.warning('设计工具未打开，请先打开设计工具子系统')
-    return
-  }
-  messenger.sendOpenDesignModel(row.id)
-  const childWindow = messenger.getChildWindow && messenger.getChildWindow()
-  if (childWindow && typeof childWindow.focus === 'function') {
-    childWindow.focus()
-  }
-}
 async function toggleTemplate(row) {
   templateLoading.value[row.id] = true
   const newVal = !row.isTemplate
@@ -989,9 +854,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case 'ai-generate':
       onAiTableAutoGenerate(row);
-      break;
-    case 'enter-design-tool':
-      enterDesignToolWithId(row);
       break;
     case 'download-thumbnail':
       downloadThumbnail(row);
@@ -1092,7 +954,7 @@ async function downloadThumbnail(model: any) {
     ElMessage.warning('该模型没有缩略图')
     return
   }
-  
+
   try {
     const response = await fetch(model.thumbnail)
     const blob = await response.blob()
@@ -1114,7 +976,7 @@ async function downloadThumbnail(model: any) {
 async function showDraftDownloadDialog(model: any) {
   currentModel.value = model
   draftDownloadDialogVisible.value = true
-  
+
   try {
     const res = await getDraftList({
       customModelId: model.id,
@@ -1134,19 +996,19 @@ async function downloadSingleDraft(draft: any) {
     ElMessage.warning('该草稿没有下载链接')
     return
   }
-  
+
   try {
     const response = await fetch(draft.url)
     const blob = await response.blob()
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    
+
     // 根据文件类型设置扩展名
     const extension = draft.suffix || getFileExtension(draft.url)
     const filename = `${currentModel.value?.name || 'model'}_${draft.name || 'draft'}.${extension}`
     link.download = filename
-    
+
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -1163,9 +1025,9 @@ async function downloadAllDrafts() {
     ElMessage.warning('没有可下载的草稿')
     return
   }
-  
+
   ElMessage.info(`开始下载 ${relatedDrafts.value.length} 个草稿文件...`)
-  
+
   for (let i = 0; i < relatedDrafts.value.length; i++) {
     const draft = relatedDrafts.value[i]
     try {
@@ -1175,17 +1037,17 @@ async function downloadAllDrafts() {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        
+
         // 根据文件类型设置扩展名
         const extension = draft.suffix || getFileExtension(draft.url)
         const filename = `${currentModel.value?.name || 'model'}_draft_${i + 1}_${draft.name || 'unnamed'}.${extension}`
         link.download = filename
-        
+
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
-        
+
         // 添加延迟避免浏览器阻止多个下载
         if (i < relatedDrafts.value.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500))
@@ -1195,7 +1057,7 @@ async function downloadAllDrafts() {
       console.error(`下载草稿 ${draft.name} 失败:`, error)
     }
   }
-  
+
   ElMessage.success(`草稿下载完成，共 ${relatedDrafts.value.length} 个文件`)
 }
 
@@ -1233,7 +1095,7 @@ async function copyToClipboard(text: string, type: string) {
 // 复制全部信息
 async function copyAllInfo() {
   if (!currentCopyModel.value) return
-  
+
   copyAllLoading.value = true
   try {
     const allInfo = []
@@ -1246,7 +1108,7 @@ async function copyAllInfo() {
     if (currentCopyModel.value.keywords) {
       allInfo.push(`关键词：${currentCopyModel.value.keywords}`)
     }
-    
+
     const fullText = allInfo.join('\n\n')
     await copyToClipboard(fullText, '全部信息')
   } finally {
@@ -1264,17 +1126,17 @@ function showCopyInfoDialog(model: any) {
 async function viewRelatedStickers(model: any) {
   currentModel.value = model
   stickersDialogVisible.value = true
-  
+
   try {
     // 从模型的meta中提取贴纸ID
     const decals = model.meta?.modelInfo?.decals || []
     const stickerIds = decals.map(decal => decal.id).filter(id => id)
-    
+
     if (stickerIds.length === 0) {
       relatedStickers.value = []
       return
     }
-    
+
     // 循环查询每个贴纸的详情
     const stickers = []
     for (const id of stickerIds) {
@@ -1288,7 +1150,7 @@ async function viewRelatedStickers(model: any) {
         // 继续查询其他贴纸，不中断整个流程
       }
     }
-    
+
     relatedStickers.value = stickers
   } catch (error) {
     ElMessage.error('获取关联贴纸失败')
@@ -1302,7 +1164,7 @@ async function downloadSticker(sticker: any) {
     ElMessage.warning('该贴纸没有下载链接')
     return
   }
-  
+
   try {
     const response = await fetch(sticker.url)
     const blob = await response.blob()
@@ -1326,9 +1188,9 @@ async function downloadAllStickers() {
     ElMessage.warning('没有可下载的贴纸')
     return
   }
-  
+
   ElMessage.info(`开始下载 ${relatedStickers.value.length} 个贴纸...`)
-  
+
   for (let i = 0; i < relatedStickers.value.length; i++) {
     const sticker = relatedStickers.value[i]
     try {
@@ -1338,16 +1200,16 @@ async function downloadAllStickers() {
         const url = window.URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        
+
         const extension = sticker.suffix || 'jpg'
         const filename = `${sticker.name || 'sticker'}_${i + 1}.${extension}`
         link.download = filename
-        
+
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
         window.URL.revokeObjectURL(url)
-        
+
         // 添加延迟避免浏览器阻止多个下载
         if (i < relatedStickers.value.length - 1) {
           await new Promise(resolve => setTimeout(resolve, 500))
@@ -1357,7 +1219,7 @@ async function downloadAllStickers() {
       console.error(`下载贴纸 ${sticker.name} 失败:`, error)
     }
   }
-  
+
   ElMessage.success(`贴纸下载完成，共 ${relatedStickers.value.length} 个文件`)
 }
 </script>
@@ -1370,19 +1232,19 @@ async function downloadAllStickers() {
     max-height: 60vh;
     overflow-y: auto;
   }
-  
+
   .draft-item {
     border: 1px solid var(--el-border-color);
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
-    
+
     &:hover {
       box-shadow: var(--el-box-shadow-light);
       transform: translateY(-2px);
     }
   }
-  
+
   .draft-preview {
     position: relative;
   }
@@ -1425,30 +1287,30 @@ async function downloadAllStickers() {
       }
     }
   }
-  
+
   .draft-info {
     background: var(--el-bg-color);
   }
-  
+
   .draft-header {
     .draft-name {
       font-weight: 500;
     }
-    
+
     .el-button {
       opacity: 0.6;
       transition: opacity 0.3s ease;
-      
+
       &:hover {
         opacity: 1;
       }
     }
   }
-  
+
   .draft-item:hover .draft-header .el-button {
     opacity: 1;
   }
-  
+
   .draft-desc {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1456,7 +1318,7 @@ async function downloadAllStickers() {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .draft-meta {
     border-top: 1px solid var(--el-border-color-lighter);
     padding-top: 8px;
@@ -1475,35 +1337,35 @@ async function downloadAllStickers() {
     gap: 16px;
     max-height: 60vh;
     overflow-y: auto;
-    
+
     &.mobile-grid {
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
       gap: 12px;
       max-height: 70vh;
     }
   }
-  
+
   .draft-item {
     border: 1px solid var(--el-border-color);
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
-    
+
     &:hover {
       box-shadow: var(--el-box-shadow-light);
       transform: translateY(-2px);
     }
-    
+
     &.mobile-item {
       border-radius: 6px;
-      
+
       &:hover {
         transform: none;
         box-shadow: var(--el-box-shadow-light);
       }
     }
   }
-  
+
   .draft-preview {
     position: relative;
   }
@@ -1546,30 +1408,30 @@ async function downloadAllStickers() {
       }
     }
   }
-  
+
   .draft-info {
     background: var(--el-bg-color);
   }
-  
+
   .draft-header {
     .draft-name {
       font-weight: 500;
     }
-    
+
     .el-button {
       opacity: 0.6;
       transition: opacity 0.3s ease;
-      
+
       &:hover {
         opacity: 1;
       }
     }
   }
-  
+
   .draft-item:hover .draft-header .el-button {
     opacity: 1;
   }
-  
+
   .draft-desc {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1577,7 +1439,7 @@ async function downloadAllStickers() {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .draft-meta {
     border-top: 1px solid var(--el-border-color-lighter);
     padding-top: 8px;
@@ -1587,18 +1449,18 @@ async function downloadAllStickers() {
 // 移动端弹窗底部样式
 .mobile-footer {
   padding: 16px;
-  
+
   .mobile-footer-content {
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
   }
-  
+
   .mobile-buttons {
     flex-direction: column;
     gap: 8px;
     width: 100%;
-    
+
     .el-button {
       width: 100%;
       height: 48px;
@@ -1612,40 +1474,40 @@ async function downloadAllStickers() {
   .draft-download-content {
     .draft-info {
       padding: 0 8px;
-      
+
       h3 {
         font-size: 16px;
         margin-bottom: 8px;
       }
-      
+
       p {
         font-size: 14px;
         line-height: 1.4;
       }
     }
-    
+
     .draft-item {
       .draft-info {
         padding: 12px;
-        
+
         .draft-header {
           margin-bottom: 8px;
-          
+
           .draft-name {
             font-size: 14px;
           }
-          
+
           .el-button {
             padding: 4px 8px;
             font-size: 12px;
           }
         }
-        
+
         .draft-desc {
           font-size: 12px;
           margin-top: 6px;
         }
-        
+
         .draft-meta {
           font-size: 11px;
           padding-top: 6px;
@@ -1653,7 +1515,7 @@ async function downloadAllStickers() {
       }
     }
   }
-  
+
   .mobile-footer {
     .text-sm {
       font-size: 14px;
@@ -1672,46 +1534,46 @@ async function downloadAllStickers() {
     max-height: 60vh;
     overflow-y: auto;
   }
-  
+
   .sticker-item {
     border: 1px solid var(--el-border-color);
     border-radius: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
-    
+
     &:hover {
       box-shadow: var(--el-box-shadow-light);
       transform: translateY(-2px);
     }
   }
-  
+
   .sticker-preview {
     position: relative;
   }
-  
+
   .sticker-info {
     background: var(--el-bg-color);
   }
-  
+
   .sticker-header {
     .sticker-name {
       font-weight: 500;
     }
-    
+
     .el-button {
       opacity: 0.6;
       transition: opacity 0.3s ease;
-      
+
       &:hover {
         opacity: 1;
       }
     }
   }
-  
+
   .sticker-item:hover .sticker-header .el-button {
     opacity: 1;
   }
-  
+
   .sticker-desc {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1719,7 +1581,7 @@ async function downloadAllStickers() {
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .sticker-meta {
     border-top: 1px solid var(--el-border-color-lighter);
     padding-top: 8px;
@@ -1731,7 +1593,7 @@ async function downloadAllStickers() {
   display: flex;
   align-items: center;
   gap: 8px;
-  
+
   .el-button {
     flex-shrink: 0;
   }
@@ -1746,11 +1608,11 @@ async function downloadAllStickers() {
     max-height: 80vh;
     overflow-y: auto;
   }
-  
+
   .el-message-box__message {
     margin: 0;
   }
-  
+
   video {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1758,6 +1620,7 @@ async function downloadAllStickers() {
     object-fit: contain;
   }
 }
+
 .operation-btn-group {
   display: flex;
   flex-wrap: wrap;
@@ -1768,7 +1631,11 @@ async function downloadAllStickers() {
   align-items: center;
   row-gap: 4px;
 }
-.is-template-tag, .not-template-tag, .is-public-tag, .not-public-tag {
+
+.is-template-tag,
+.not-template-tag,
+.is-public-tag,
+.not-public-tag {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1778,6 +1645,7 @@ async function downloadAllStickers() {
   border-radius: 16px;
   font-size: 15px;
 }
+
 .is-template-tag {
   font-weight: bold;
   color: #fff;
@@ -1785,13 +1653,15 @@ async function downloadAllStickers() {
   box-shadow: 0 2px 8px rgba(255, 215, 0, 0.12);
   border: 1.5px solid #FFD700;
 }
+
 .not-template-tag {
   font-weight: 500;
-  color: rgba(120,120,120,0.25);
-  background: rgba(220,220,220,0.12);
-  border: 1px solid rgba(200,200,200,0.12);
+  color: rgba(120, 120, 120, 0.25);
+  background: rgba(220, 220, 220, 0.12);
+  border: 1px solid rgba(200, 200, 200, 0.12);
   transition: all 0.2s;
 }
+
 .is-public-tag {
   font-weight: bold;
   color: #fff;
@@ -1799,11 +1669,12 @@ async function downloadAllStickers() {
   box-shadow: 0 2px 8px rgba(103, 194, 58, 0.12);
   border: 1.5px solid #67C23A;
 }
+
 .not-public-tag {
   font-weight: 500;
-  color: rgba(120,120,120,0.25);
-  background: rgba(220,220,220,0.12);
-  border: 1px solid rgba(200,200,200,0.12);
+  color: rgba(120, 120, 120, 0.25);
+  background: rgba(220, 220, 220, 0.12);
+  border: 1px solid rgba(200, 200, 200, 0.12);
   transition: all 0.2s;
 }
 
@@ -1818,13 +1689,13 @@ async function downloadAllStickers() {
     cursor: pointer;
     user-select: none;
     transition: all 0.2s ease;
-    
+
     &:hover {
       background: rgba(64, 158, 255, 0.2);
       color: #337ecc;
     }
   }
-  
+
   .no-phash {
     color: #909399;
     font-size: 12px;
@@ -1836,21 +1707,21 @@ async function downloadAllStickers() {
 .copy-info-content {
   .copy-item {
     margin-bottom: 20px;
-    
+
     .copy-label {
       font-weight: 500;
       margin-bottom: 8px;
       color: var(--el-text-color-primary);
     }
-    
+
     .copy-content {
       display: flex;
       gap: 8px;
       align-items: flex-start;
-      
+
       .copy-input {
         flex: 1;
-        
+
         :deep(.el-input__inner),
         :deep(.el-textarea__inner) {
           background-color: var(--el-fill-color-light);
@@ -1860,29 +1731,29 @@ async function downloadAllStickers() {
           line-height: 1.4;
         }
       }
-      
+
       .copy-btn {
         flex-shrink: 0;
         height: 32px;
         padding: 0 12px;
-        
+
         .el-icon {
           margin-right: 4px;
         }
       }
     }
   }
-  
+
   .copy-all-section {
     margin-top: 24px;
     padding-top: 16px;
     border-top: 1px solid var(--el-border-color-lighter);
     text-align: center;
-    
+
     .copy-all-btn {
       padding: 12px 24px;
       font-size: 14px;
-      
+
       .el-icon {
         margin-right: 6px;
       }
@@ -1896,14 +1767,14 @@ async function downloadAllStickers() {
     .copy-content {
       flex-direction: column;
       gap: 12px;
-      
+
       .copy-btn {
         width: 100%;
         height: 40px;
         font-size: 16px;
       }
     }
-    
+
     .copy-all-section {
       .copy-all-btn {
         width: 100%;
@@ -1913,4 +1784,4 @@ async function downloadAllStickers() {
     }
   }
 }
-</style> 
+</style>
