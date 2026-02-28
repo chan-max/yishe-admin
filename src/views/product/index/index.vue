@@ -216,20 +216,38 @@
           </template>
 
           <template #urlDefaultSlot="{ row }">
-            <div class="flex items-center gap-2">
-              <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="100px"
-                indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
-                class="w-40 custom-carousel">
-                <el-carousel-item v-for="(url, index) in row.images" :key="index">
-                  <el-image :src="url" :preview-src-list="row.images" :initial-index="index" :preview-teleported="true"
-                    :hide-on-click-modal="false" :preview-class="'custom-image-preview'"
-                    class="w-full h-full object-contain rounded cursor-pointer" fit="contain" />
-                  <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                    {{ (index as any) + 1 }}/{{ row.images.length }}
-                  </div>
-                </el-carousel-item>
-              </el-carousel>
-              <span v-else class="text-[var(--el-text-color-secondary)]">暂无图片</span>
+            <div class="flex items-start gap-2">
+              <div class="flex flex-col items-center w-40">
+                <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="100px"
+                  indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
+                  class="w-full custom-carousel">
+                  <el-carousel-item v-for="(url, index) in row.images" :key="index">
+                    <el-image :src="url" :preview-src-list="row.images" :initial-index="index"
+                      :preview-teleported="true" :hide-on-click-modal="false" :preview-class="'custom-image-preview'"
+                      class="w-full h-full object-contain rounded cursor-pointer" fit="contain" />
+                    <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                      {{ (index as any) + 1 }}/{{ row.images.length }}
+                    </div>
+                  </el-carousel-item>
+                </el-carousel>
+                <span v-else class="text-[var(--el-text-color-secondary)]">暂无图片</span>
+
+                <el-tooltip
+                  v-if="row.images && row.images.length > 0"
+                  content="批量下载该商品的所有图片"
+                  placement="top"
+                >
+                  <el-button
+                    type="primary"
+                    link
+                    size="small"
+                    class="!text-[11px] !px-0 !h-auto mt-1"
+                    @click.stop="handleDownloadRowImages(row)"
+                  >
+                    全部下载
+                  </el-button>
+                </el-tooltip>
+              </div>
             </div>
           </template>
 
@@ -1106,11 +1124,16 @@
 
             <!-- 商品图片 -->
             <div class="product-detail-section mb-4" v-if="productDetail.images && productDetail.images.length > 0">
-              <div class="product-detail-section-title">
-                <el-icon>
-                  <Picture />
-                </el-icon>
-                <span>商品图片 ({{ productDetail.images.length }})</span>
+              <div class="product-detail-section-title flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <el-icon>
+                    <Picture />
+                  </el-icon>
+                  <span>商品图片 ({{ productDetail.images.length }})</span>
+                </div>
+                <el-button type="primary" link size="small" @click="handleDownloadAllProductImages">
+                  批量下载所有图片
+                </el-button>
               </div>
               <div class="flex flex-wrap gap-2">
                 <el-image v-for="(url, index) in productDetail.images" :key="index" :src="url"
@@ -2924,6 +2947,42 @@ async function downloadThumbnail(url: string, filename: string) {
     console.error('下载失败:', error);
     ElMessage.error('下载失败，请重试');
   }
+}
+
+// 批量下载某一行商品的所有图片（列表中“批量下载”按钮）
+async function handleDownloadRowImages(row: any) {
+  if (!row || !Array.isArray(row.images) || !row.images.length) {
+    ElMessage.warning('暂无可下载的商品图片');
+    return;
+  }
+
+  const images: string[] = row.images.filter((u: any) => typeof u === 'string' && u.trim());
+  if (!images.length) {
+    ElMessage.warning('暂无可下载的商品图片');
+    return;
+  }
+
+  const baseName = row.name || '商品图片';
+
+  ElMessage.info(`开始下载 ${images.length} 张图片，请稍候...`);
+
+  for (let i = 0; i < images.length; i++) {
+    const url = images[i];
+    const suffixMatch = url.match(/\.([a-zA-Z0-9]+)(\?.*)?$/);
+    const ext = suffixMatch ? suffixMatch[1] : 'jpg';
+    const filename = `${baseName}_${i + 1}.${ext}`;
+
+    try {
+      await downloadImageEnhanced(url, filename, {
+        showMessage: false,
+        fallbackToNewWindow: true,
+      });
+    } catch (e) {
+      console.error('下载单张图片失败:', e);
+    }
+  }
+
+  ElMessage.success('商品图片批量下载任务已完成');
 }
 
 // 预览图片
