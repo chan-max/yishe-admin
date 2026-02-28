@@ -2766,18 +2766,19 @@ async function batchUnpublish(rows?: any[]) {
   }
 }
 
-// 处理生成产品代码
+// 处理生成产品代码（统一走后端接口，由后端保证唯一不重复）
 async function handleGenerateProductCode(row: any) {
   try {
     const res = await generateProductCode({ id: row.id });
     if (res && res.code) {
       row.code = res.code;
       ElMessage.success('产品代码生成成功');
-      // 刷新列表
       getList();
+    } else {
+      ElMessage.warning('未返回产品代码，请重试');
     }
-  } catch (error) {
-    ElMessage.error('生成产品代码失败');
+  } catch (error: any) {
+    ElMessage.error(error?.message || '生成产品代码失败');
   }
 }
 
