@@ -61,7 +61,7 @@
         <div class="search-field">
           <label class="search-label">自定义</label>
           <el-select v-model="queryParams.isCustom" placeholder="自定义" clearable @change="getList">
-            <el-option label="全部" :value="null" />
+            <el-option label="全部" value="" />
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
           </el-select>
@@ -71,7 +71,7 @@
         <div class="search-field">
           <label class="search-label">侵权</label>
           <el-select v-model="queryParams.isInfringement" placeholder="侵权" clearable @change="getList">
-            <el-option label="全部" :value="null" />
+            <el-option label="全部" value="" />
             <el-option label="侵权" :value="true" />
             <el-option label="非侵权" :value="false" />
           </el-select>
@@ -81,7 +81,7 @@
         <div class="search-field">
           <label class="search-label">抠图</label>
           <el-select v-model="queryParams.isCutout" placeholder="抠图" clearable @change="getList">
-            <el-option label="全部" :value="null" />
+            <el-option label="全部" value="" />
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
           </el-select>
@@ -172,30 +172,33 @@
         <div class="search-field search-field-similar">
           <label class="search-label">相似</label>
           <div class="phash-form-row">
-            <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable @blur="onPhashInputBlur" />
-            <div class="phash-mode">
-              <el-check-tag :checked="queryParams.phashMode === 'range'"
-                @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
-              <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
-                <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary"
-                  @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
-              </el-tooltip>
+            <!-- 上半部分：相似输入与相似相关按钮 -->
+            <div class="phash-top-row">
+              <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable
+                @blur="onPhashInputBlur" />
+              <div class="phash-mode">
+                <el-check-tag :checked="queryParams.phashMode === 'range'"
+                  @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
+                <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+                  <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary"
+                    @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
+                </el-tooltip>
+              </div>
+              <div class="phash-top-actions">
+                <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
+                <el-button @click="clearPhashSearch">清空</el-button>
+              </div>
             </div>
+
+            <!-- 下半部分：操作按钮组（不与相似输入同一行） -->
             <div class="phash-actions">
-              <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
-              <el-button @click="clearPhashSearch">清空</el-button>
-              <!-- 总体搜索按钮，放在清空右侧 -->
               <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <!-- 上传等操作按钮，同一行展示 -->
               <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
               <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
               <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length
-              }})</el-button>
-              <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length
-              }})</el-button>
-              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length
-              }})</el-button>
+              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
             </div>
           </div>
         </div>
@@ -226,21 +229,21 @@
         </el-form-item>
         <el-form-item label="自定义贴纸">
           <el-select v-model="queryParams.isCustom" placeholder="请选择类型">
-            <el-option label="全部" :value="null" />
+            <el-option label="全部" value="" />
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="侵权状态">
           <el-select v-model="queryParams.isInfringement" placeholder="请选择状态">
-            <el-option label="全部" :value="null" />
+            <el-option label="全部" value="" />
             <el-option label="侵权" :value="true" />
             <el-option label="非侵权" :value="false" />
           </el-select>
         </el-form-item>
         <el-form-item label="抠图素材">
           <el-select v-model="queryParams.isCutout" placeholder="请选择类型">
-            <el-option label="全部" :value="null" />
+            <el-option label="全部" value="" />
             <el-option label="是" :value="true" />
             <el-option label="否" :value="false" />
           </el-select>
@@ -1463,7 +1466,7 @@ import { saveAs } from 'file-saver'
 
 import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
-import { materialConfig, getMaterialConfig, categoryOptions } from '@/views/material/collect/index'
+
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
 import tree from './tree.vue'
@@ -1504,9 +1507,9 @@ const queryParams = reactive({
   id: '', // 新增ID精确查询参数
   phash: '', // phash值或直接输入图片地址
   phashMode: 'range', // range | exact
-  isCustom: null, // 新增自定义贴纸过滤参数，使用null而不是空字符串
-  isInfringement: null, // 新增侵权状态过滤参数
-  isCutout: null, // 新增抠图素材过滤参数
+  isCustom: '' as boolean | string, // 空字符串表示“全部”，请求时转为 null
+  isInfringement: '' as boolean | string,
+  isCutout: '' as boolean | string,
   sizeShape: [] as string[], // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long（支持多选）
   random: false, // 是否随机
   folderId: undefined as string | null | undefined, // 文件夹ID
@@ -1789,6 +1792,15 @@ const genPicturesModalVisible = ref(false)
 const imagePreviewVisible = ref(false)
 const currentImageUrl = ref('')
 
+function closeImagePreview() {
+  imagePreviewVisible.value = false
+  currentImageUrl.value = ''
+}
+
+// 元数据弹窗（提前定义，避免与模板渲染顺序问题）
+const metaDialogVisible = ref(false)
+const metaDialogContent = ref('')
+
 // SVG转PNG相关状态
 const svgToPngDialogVisible = ref(false)
 const currentSvgRow = ref<any>(null)
@@ -1961,12 +1973,13 @@ async function getList() {
   // 立即清空旧数据，确保旧图片被销毁
   dataSource.value = []
 
-  // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递
+  // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递；空字符串转为 null 以兼容后端
   const params = {
     ...queryParams,
-    // 如果 suffix 是空数组，传递空数组；如果是旧格式字符串，转换为数组
+    isCustom: queryParams.isCustom === '' ? null : queryParams.isCustom,
+    isInfringement: queryParams.isInfringement === '' ? null : queryParams.isInfringement,
+    isCutout: queryParams.isCutout === '' ? null : queryParams.isCutout,
     suffix: Array.isArray(queryParams.suffix) ? queryParams.suffix : (queryParams.suffix ? [queryParams.suffix] : []),
-    // 如果 sizeShape 是空数组，传递空数组；如果是旧格式字符串，转换为数组
     sizeShape: Array.isArray(queryParams.sizeShape) ? queryParams.sizeShape : (queryParams.sizeShape ? [queryParams.sizeShape] : [])
   }
 
@@ -3111,8 +3124,8 @@ async function handleCreatePsdSets() {
 
   // 检查图片格式是否符合要求
   const formatCheckResult = checkMaterialFormats()
-  if (!formatCheckResult.valid) {
-    ElMessage.warning(formatCheckResult.message)
+  if (!formatCheckResult || !formatCheckResult.valid) {
+    ElMessage.warning(formatCheckResult?.message || '素材格式检查异常，请重试')
     return
   }
 
@@ -3231,12 +3244,14 @@ function checkMaterialFormats() {
       valid: false,
       message: `所选素材中包含不符合格式要求的图片。\n允许的格式：${allowedFormatsList}\n不符合的素材：${invalidNames}${moreCount}\n请移除不符合格式的素材后重试。`
     }
-    return { valid: true, message: '' }
   }
 
-  const delayUpdateList = useDebounceFn(() => {
-    getList()
-  }, 1999)
+  return { valid: true, message: '' }
+}
+
+const delayUpdateList = useDebounceFn(() => {
+  getList()
+}, 1999)
 
   function singleFileUploaded() {
     console.log('单个文件上传')
@@ -3256,9 +3271,7 @@ function checkMaterialFormats() {
 
   const aiTableLoading = ref<Record<string, boolean>>({})
 
-  // meta相关变量
-  const metaDialogVisible = ref(false)
-  const metaDialogContent = ref('')
+  // meta 内容解析（metaDialogVisible/metaDialogContent 已在前方定义）
   const parsedMetaData = computed(() => {
     if (!metaDialogContent.value) return null
     try {
@@ -3431,17 +3444,11 @@ function checkMaterialFormats() {
     }
   }
 
-  // 图片预览相关方法
+  // 图片预览相关方法（closeImagePreview 已在前方定义）
   function openImagePreview(imageUrl: string, imageName?: string) {
     currentImageUrl.value = imageUrl
     imagePreviewVisible.value = true
   }
-
-  function closeImagePreview() {
-    imagePreviewVisible.value = false
-    currentImageUrl.value = ''
-  }
-
 
   // 显示meta详情
   function showMetaDetail(meta: any) {
@@ -3974,7 +3981,7 @@ function checkMaterialFormats() {
     } finally {
       urlUploadLoading.value = false
     }
-  }}
+  }
 </script>
 <style scoped>
 /* 预览图片容器样式 */
@@ -4605,19 +4612,21 @@ function checkMaterialFormats() {
   padding-top: 8px;
   margin-top: 4px;
   border-top: 1px solid var(--el-border-color-lighter);
+  align-items: flex-start;
 }
 
 .search-field-similar .phash-form-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 10px;
   flex: 1;
+  min-width: 0;
 }
 
 .search-field-similar .phash-form-row .el-input {
-  min-width: 200px;
-  max-width: 320px;
-  flex: 1;
+  max-width: none;
+  flex: 1 1 auto;
 }
 
 .search-field-similar .phash-mode {
@@ -4626,11 +4635,34 @@ function checkMaterialFormats() {
   flex-shrink: 0;
 }
 
+.search-field-similar .phash-top-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.search-field-similar .phash-top-row .el-input {
+  min-width: 260px;
+  flex: 1 1 420px;
+}
+
+.search-field-similar .phash-top-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
 .search-field-similar .phash-actions {
   display: flex;
   gap: 6px;
   align-items: center;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  width: 100%;
+  flex: 0 0 auto;
 }
 
 .search-field-similar .el-button {

@@ -55,6 +55,7 @@ export function aiGenerateProductInfo(data: { id: string; prompt?: string }) {
   });
 }
 
+/** 由后端生成产品代码，保证唯一不重复 */
 export function generateProductCode(data: { id: string }) {
   return request.post({
     url: '/product/generate-code',
