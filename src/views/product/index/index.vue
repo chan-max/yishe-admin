@@ -1316,7 +1316,7 @@
       </el-dialog>
 
       <!-- 发布平台选择对话框 (vxe-grid 优化版) -->
-      <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="800px" :close-on-click-modal="true"
+      <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="100%" :fullscreen="true" :close-on-click-modal="true"
         align-center>
         <div class="platform-select-container flex flex-col gap-4">
           <!-- 搜索与筛选 -->
