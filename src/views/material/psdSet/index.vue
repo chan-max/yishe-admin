@@ -144,33 +144,52 @@
           </el-tag>
         </template>
         <template #imagesSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <el-carousel 
-              v-if="row.images && row.images.length > 0"
-              :interval="3000"
-              height="100px"
-              indicator-position="none"
-              :arrow="row.images.length > 1 ? 'always' : 'never'"
-              class="w-40 custom-carousel"
-            >
-              <el-carousel-item v-for="(url, index) in row.images" :key="index">
-                <el-image 
-                  :src="url"
-                  :preview-src-list="row.images"
-                  :initial-index="index"
-                  :preview-teleported="true"
-                  :hide-on-click-modal="false"
-                  :lazy="true"
-                  loading="lazy"
-                  class="w-full h-full object-contain rounded cursor-pointer"
-                  fit="contain"
-                />
-                <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
-                  {{ Number(index) + 1 }}/{{ row.images.length }}
-                </div>
-              </el-carousel-item>
-            </el-carousel>
-            <span v-else class="text-gray-400 text-xs">无</span>
+          <div class="flex items-start">
+            <div class="flex flex-col items-center w-40">
+              <el-carousel 
+                v-if="row.images && row.images.length > 0"
+                :interval="3000"
+                height="100px"
+                indicator-position="none"
+                :arrow="row.images.length > 1 ? 'always' : 'never'"
+                class="w-full custom-carousel"
+              >
+                <el-carousel-item v-for="(url, index) in row.images" :key="index">
+                  <el-image 
+                    :src="url"
+                    :preview-src-list="row.images"
+                    :initial-index="index"
+                    :preview-teleported="true"
+                    :hide-on-click-modal="false"
+                    :lazy="true"
+                    loading="lazy"
+                    class="w-full h-full object-contain rounded cursor-pointer"
+                    fit="contain"
+                  />
+                  <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                    {{ Number(index) + 1 }}/{{ row.images.length }}
+                  </div>
+                </el-carousel-item>
+              </el-carousel>
+
+              <span v-else class="text-gray-400 text-xs">无</span>
+
+              <el-tooltip
+                v-if="row.images && row.images.length > 0"
+                content="批量下载该套图的所有图片"
+                placement="top"
+              >
+                <el-button
+                  type="primary"
+                  link
+                  size="small"
+                  class="!text-[11px] !px-0 !h-auto mt-1"
+                  @click.stop="handleDownloadPsdSetImages(row)"
+                >
+                  全部下载
+                </el-button>
+              </el-tooltip>
+            </div>
           </div>
         </template>
         <template #configSlot="{ row }">
@@ -522,6 +541,7 @@ import { isLocalConnected } from '@/stores/connectionStatus'
 import { websocketClient } from '@/services/websocketClient'
 import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
 import { getPreviewImageUrl } from '@/utils/image'
+import { downloadImageEnhanced } from '@/common/download'
 
 const loading = ref(false)
 const dataSource = ref<any[]>([])
@@ -798,6 +818,38 @@ function formatProcessingTime(seconds: any): string {
   const minutes = Math.floor((s % 3600) / 60)
   const secs = s % 60
   return `${hours}小时${minutes}分${secs.toFixed(2)}秒`
+}
+
+// 批量下载套图图片（与商品页面逻辑一致）
+async function handleDownloadPsdSetImages(row: any) {
+  if (!row || !Array.isArray(row.images) || !row.images.length) {
+    ElMessage.warning('暂无可下载的套图图片')
+    return
+  }
+
+  const images: string[] = row.images.filter((u: any) => typeof u === 'string' && u.trim())
+  if (!images.length) {
+    ElMessage.warning('暂无可下载的套图图片')
+    return
+  }
+
+  const baseName = row.name || '套图图片'
+  ElMessage.info(`开始下载 ${images.length} 张图片，请稍候...`)
+
+  for (let i = 0; i < images.length; i++) {
+    const url = images[i]
+    const suffixMatch = String(url).match(/\.([a-zA-Z0-9]+)(\?.*)?$/)
+    const ext = suffixMatch ? suffixMatch[1] : 'jpg'
+    const filename = `${baseName}_${i + 1}.${ext}`
+
+    try {
+      await downloadImageEnhanced(url, filename, { showMessage: false, fallbackToNewWindow: true })
+    } catch (e) {
+      console.error('下载单张图片失败:', e)
+    }
+  }
+
+  ElMessage.success('套图图片批量下载任务已完成')
 }
 
 function statusLabel(status: string) {
