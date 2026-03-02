@@ -24,6 +24,26 @@
             <el-option label="不可用" :value="false" />
           </el-select>
         </form-item>
+
+        <form-item label="适合尺寸">
+          <el-select
+            v-model="queryParams.suitableSizesArray"
+            style="width: 280px"
+            clearable
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            placeholder="请选择适合尺寸"
+            @change="handleQuerySuitableSizesChange"
+          >
+            <el-option
+              v-for="config in sizeConfigs"
+              :key="config.key"
+              :label="getFullLabel(config)"
+              :value="config.key"
+            />
+          </el-select>
+        </form-item>
       </div>
 
       <div class="search-form-right">
@@ -106,6 +126,40 @@
               </div>
             </template>
 
+            <template #suitableSizesSlot="{ row }">
+              <div class="suitable-sizes-cell-compact">
+                <template v-if="row.suitableSizes && row.suitableSizes.length > 0">
+                  <el-popover placement="top" :width="360" trigger="hover">
+                    <template #reference>
+                      <span class="size-summary-link">
+                        {{ (row.suitableSizes || [])
+                          .slice(0, 2)
+                          .map((sizeKey) => getSizeShapeUiConfig(sizeKey)?.label || sizeKey)
+                          .join(' / ') }}
+                        <span v-if="row.suitableSizes.length > 2"> 等{{ row.suitableSizes.length }}个</span>
+                      </span>
+                    </template>
+                    <div class="suitable-sizes-popover">
+                      <el-tag
+                        v-for="sizeKey in row.suitableSizes"
+                        :key="sizeKey"
+                        size="small"
+                        class="size-tag-mini"
+                        :style="{
+                          backgroundColor: getSizeShapeUiConfig(sizeKey)?.color + '20',
+                          borderColor: getSizeShapeUiConfig(sizeKey)?.color,
+                          color: getSizeShapeUiConfig(sizeKey)?.color
+                        }"
+                      >
+                        {{ getSizeShapeUiConfig(sizeKey)?.label || sizeKey }}
+                      </el-tag>
+                    </div>
+                  </el-popover>
+                </template>
+                <span v-else class="text-gray-400 text-xs">未设置</span>
+              </div>
+            </template>
+
             <template #pathStatusSlot="{ row }">
               <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
               <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
@@ -162,104 +216,197 @@
       </div>
     </div>
 
-    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" @close="dialogClose" align-center>
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="140px">
-        <el-row :gutter="16">
-          <el-col :span="24">
-            <el-form-item label="模板名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入模板名称" />
-            </el-form-item>
-          </el-col>
+    <el-dialog
+      :title="dialogTitle"
+      v-model="dialogVisible"
+      fullscreen
+      :destroy-on-close="true"
+      class="psd-template-fullscreen-dialog"
+      @close="dialogClose"
+    >
+      <div class="psd-template-dialog-layout">
+        <div class="psd-template-dialog-main">
+          <!-- 基础信息 -->
+          <div class="dialog-section">
+            <div class="dialog-section-title">基础信息</div>
+            <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" class="psd-template-form">
+              <el-row :gutter="20">
+                <el-col :span="12">
+                  <el-form-item label="模板名称" prop="name">
+                    <el-input v-model="form.name" placeholder="请输入模板名称" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="是否可用">
+                    <el-switch v-model="form.enabled" :active-value="true" :inactive-value="false" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-          <el-col :span="24">
-            <el-form-item label="关键词" prop="keywords">
-              <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
-            </el-form-item>
-          </el-col>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="关键词" prop="keywords">
+                    <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-          <el-col :span="24">
-            <el-form-item label="描述" prop="description">
-              <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入模板描述" />
-            </el-form-item>
-          </el-col>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="描述" prop="description">
+                    <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入模板描述" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
-          <el-col :span="24">
-            <el-form-item label="Windows 本地路径" prop="windowsLocalPath">
-              <el-input v-model="form.windowsLocalPath" placeholder="请输入 Windows 本地路径（将按原样保存）" />
-            </el-form-item>
-          </el-col>
+              <el-row :gutter="20">
+                <el-col :span="24">
+                  <el-form-item label="本地路径" prop="windowsLocalPath">
+                    <el-input v-model="form.windowsLocalPath" placeholder="请输入 Windows 本地路径" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </el-form>
+          </div>
 
-          <el-col :span="24">
-            <el-form-item label="模板文件" prop="file">
-              <el-upload style="width: 100%" action="#" :limit="1" :file-list="fileList" :on-change="handleFileChange"
-                :before-upload="beforeUpload" :auto-upload="false" :on-remove="handleFileRemove" accept=".psd">
-                <el-button type="primary">选择 PSD 文件</el-button>
-                <template #tip>
-                  <div class="el-upload__tip">
-                    {{ isEdit ? '如需替换 PSD 文件，请重新上传；不上传则保留原文件' : '只能上传 PSD 文件（可选）' }}
-                  </div>
-                </template>
-              </el-upload>
-            </el-form-item>
-          </el-col>
+          <!-- PSD 文件与缩略图 -->
+          <div class="dialog-section">
+            <div class="dialog-section-title">PSD 文件与缩略图</div>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-form :model="form" label-width="100px">
+                  <el-form-item label="PSD 文件" prop="file">
+                    <el-upload
+                      style="width: 100%"
+                      action="#"
+                      :limit="1"
+                      :file-list="fileList"
+                      :on-change="handleFileChange"
+                      :before-upload="beforeUpload"
+                      :auto-upload="false"
+                      :on-remove="handleFileRemove"
+                      accept=".psd"
+                    >
+                      <el-button type="primary">选择文件</el-button>
+                      <template #tip>
+                        <div class="el-upload__tip">
+                          {{ isEdit ? '可选，替换则重新上传' : '可选' }}
+                        </div>
+                      </template>
+                    </el-upload>
+                  </el-form-item>
+                </el-form>
+              </el-col>
+              <el-col :span="12">
+                <el-form :model="form" label-width="100px">
+                  <el-form-item label="缩略图">
+                    <div class="thumbnail-upload-container">
+                      <input
+                        ref="thumbnailInputRef"
+                        type="file"
+                        accept="image/*"
+                        style="display: none"
+                        @change="handleThumbnailFileSelect"
+                      />
+                      <div
+                        v-if="!thumbnailPreviewUrl && !form.thumbnail"
+                        class="thumbnail-upload-placeholder"
+                        @click="triggerThumbnailSelect"
+                      >
+                        <el-icon class="upload-icon">
+                          <Plus />
+                        </el-icon>
+                        <div class="upload-text">上传</div>
+                      </div>
+                      <div v-else class="thumbnail-preview-wrapper">
+                        <el-image
+                          :src="thumbnailPreviewUrl || form.thumbnail"
+                          fit="contain"
+                          :lazy="true"
+                          class="thumbnail-preview-image"
+                        />
+                        <div class="thumbnail-action-buttons">
+                          <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
+                            <el-icon>
+                              <Edit />
+                            </el-icon>
+                          </el-button>
+                          <el-button type="danger" size="small" @click.stop="clearThumbnail">
+                            <el-icon>
+                              <Delete />
+                            </el-icon>
+                          </el-button>
+                        </div>
+                      </div>
+                    </div>
+                  </el-form-item>
+                </el-form>
+              </el-col>
+            </el-row>
+          </div>
 
-          <el-col :span="24">
-            <el-form-item label="psd模板配置" prop="psdTemplateConfig">
-              <el-input v-model="form.psdTemplateConfigText" type="textarea" :rows="8"
-                :autosize="{ minRows: 8, maxRows: 15 }"
-                placeholder='请输入psd模板配置（支持JSON或JS对象格式），例如：{"images": [], "description": ""} 或 {images: [], description: ""}' />
-              <div class="el-form-item__tip" style="margin-top: 4px; color: #909399; font-size: 12px;">
-                提示：支持JSON格式（键需引号）或JavaScript对象格式（键无需引号），例如：{"images": []} 或 {images: []}
-              </div>
-            </el-form-item>
-          </el-col>
+          <!-- 适用尺寸 -->
+          <div class="dialog-section">
+            <div class="dialog-section-title">适用尺寸</div>
+            <el-form :model="form" label-width="100px" class="psd-template-form">
+              <el-form-item label="选择尺寸" prop="suitableSizes">
+                <el-select
+                  v-model="form.suitableSizesArray"
+                  multiple
+                  clearable
+                  placeholder="请选择适用的图片尺寸"
+                  class="size-select"
+                  popper-class="psd-size-select-dropdown"
+                  teleported
+                  :popper-append-to-body="true"
+                  @change="handleSuitableSizesChange"
+                >
+                  <el-option
+                    v-for="config in sizeConfigs"
+                    :key="config.key"
+                    :value="config.key"
+                    :label="getFullLabel(config)"
+                  >
+                    <div class="size-option-simple">
+                      <div class="size-option-label">{{ config.label }}</div>
+                      <div class="size-option-ratio">{{ config.ratio }}</div>
+                      <div class="size-option-key">{{ config.key }}</div>
+                    </div>
+                  </el-option>
+                </el-select>
 
-          <el-col :span="24">
-            <el-form-item label="缩略图">
-              <div class="thumbnail-upload-container">
-                <input ref="thumbnailInputRef" type="file" accept="image/*" style="display: none"
-                  @change="handleThumbnailFileSelect" />
-                <div v-if="!thumbnailPreviewUrl && !form.thumbnail" class="thumbnail-upload-placeholder"
-                  @click="triggerThumbnailSelect">
-                  <el-icon class="upload-icon">
-                    <Plus />
-                  </el-icon>
-                  <div class="upload-text">点击上传缩略图</div>
-                  <div class="upload-tip">支持 jpg、png 等图片格式</div>
-                </div>
-                <div v-else class="thumbnail-preview-wrapper">
-                  <el-image :src="thumbnailPreviewUrl || form.thumbnail" fit="contain" :lazy="true"
-                    class="thumbnail-preview-image" />
-                  <div class="thumbnail-action-buttons">
-                    <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
-                      <el-icon>
-                        <Edit />
-                      </el-icon>
-                      替换
-                    </el-button>
-                    <el-button type="danger" size="small" @click.stop="clearThumbnail">
-                      <el-icon>
-                        <Delete />
-                      </el-icon>
-                      删除
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </el-form-item>
-          </el-col>
+              </el-form-item>
+            </el-form>
+          </div>
 
-          <el-col :span="24">
-            <el-form-item label="是否可用">
-              <el-switch v-model="form.enabled" :active-value="true" :inactive-value="false" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+          <!-- PSD 模板配置 -->
+          <div class="dialog-section">
+            <div class="dialog-section-title">PSD 模板配置</div>
+            <el-form :model="form" label-width="100px" class="psd-template-form">
+              <el-form-item label="配置内容" prop="psdTemplateConfig">
+                <el-input
+                  v-model="form.psdTemplateConfigText"
+                  type="textarea"
+                  :rows="8"
+                  :autosize="{ minRows: 8, maxRows: 12 }"
+                  placeholder='支持 JSON 格式，如：{"images": [], "description": ""}'
+                />
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+      </div>
 
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+        <div class="psd-template-dialog-footer">
+          <div class="footer-left">
+            <span class="footer-tip">填写完成后请点击“确定”保存，表单验证未通过会在对应项下方提示。</span>
+          </div>
+          <div class="footer-right">
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+          </div>
+        </div>
       </template>
     </el-dialog>
 
@@ -349,6 +496,11 @@ import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
 import { generateUUID } from "@/utils";
 import { getPreviewImageUrl } from "@/utils/image";
+import {
+  SIZE_SHAPE_UI_CONFIGS as sizeConfigs,
+  getFullLabel,
+  getSizeShapeUiConfig,
+} from "../index/sizeShapeConfig";
 
 const userStore = useUserStore()
 
@@ -363,6 +515,7 @@ const queryParams = reactive({
   id: "", // ID搜索
   searchKeyword: "", // 搜索关键字（支持名称、关键词、描述）
   enabled: undefined as boolean | undefined, // 是否可用筛选
+  suitableSizesArray: [] as string[], // 适合尺寸筛选（多选）
   folderId: null as string | null, // 文件夹ID（用于筛选）
 });
 
@@ -393,6 +546,15 @@ const gridOptions = ref<VxeGridProps<any>>({
       field: "keywords",
       minWidth: 150,
       showOverflow: true,
+    },
+    {
+      title: "支持尺寸",
+      field: "suitableSizes",
+      minWidth: 300,
+      showOverflow: true,
+      slots: {
+        default: "suitableSizesSlot",
+      },
     },
     {
       title: "psd模板配置",
@@ -559,8 +721,11 @@ function hideDragHint() {
 async function getList() {
   loading.value = true;
 
+  const { suitableSizesArray, ...restQueryParams } = queryParams;
+
   let params = {
-    ...queryParams,
+    ...restQueryParams,
+    suitableSizes: suitableSizesArray?.length ? suitableSizesArray.join(',') : undefined,
   };
 
   let res = await psdTemplateApi
@@ -571,7 +736,17 @@ async function getList() {
     .finally(() => {
       loading.value = false;
     });
-  dataSource.value = res.list;
+  // convert suitableSizes field to array for easier handling
+  dataSource.value = (res.list || []).map(item => {
+    if (item && typeof item.suitableSizes === 'string') {
+      try {
+        item.suitableSizes = item.suitableSizes ? item.suitableSizes.split(',') : [];
+      } catch (e) {
+        item.suitableSizes = [];
+      }
+    }
+    return item;
+  });
   total.value = res.total;
   ids.value = [];
 
@@ -688,6 +863,11 @@ function handleQuery() {
   queryParams.currentPage = 1;
 }
 
+function handleQuerySuitableSizesChange() {
+  queryParams.currentPage = 1;
+  getList();
+}
+
 function resetQuery() {
   getList();
 }
@@ -733,6 +913,7 @@ function handleAdd() {
     psdTemplateConfigText: "",
     enabled: false, // 默认不可用
     size: 0,
+    suitableSizesArray: [],
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -749,6 +930,7 @@ function handleEdit(row) {
   form.value = {
     ...row,
     enabled: row.enabled !== undefined ? row.enabled : false, // 确保enabled有默认值
+    suitableSizesArray: Array.isArray(row.suitableSizes) ? row.suitableSizes : (row.suitableSizes ? row.suitableSizes.split(',') : []),
   };
   // 清空已选文件列表，只在需要时重新选择文件
   fileList.value = [];
@@ -895,6 +1077,7 @@ const submitForm = async () => {
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,
+        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(',') : "",
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -960,6 +1143,7 @@ const submitForm = async () => {
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,
+        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(',') : "",
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -1192,6 +1376,24 @@ onUnmounted(() => {
   unbindGlobalDragHint();
 });
 
+// ============= 适用尺寸相关 =============
+// 处理适用尺寸变化
+function handleSuitableSizesChange(values: string[]) {
+  if (form.value) {
+    form.value.suitableSizesArray = values;
+  }
+}
+
+// 移除某个适用尺寸
+function removeSuitableSize(sizeKey: string) {
+  if (form.value && form.value.suitableSizesArray) {
+    const index = form.value.suitableSizesArray.indexOf(sizeKey);
+    if (index > -1) {
+      form.value.suitableSizesArray.splice(index, 1);
+    }
+  }
+}
+
 </script>
 
 <style lang="less" scoped>
@@ -1283,6 +1485,200 @@ onUnmounted(() => {
   .thumbnail-placeholder {
     color: var(--el-text-color-placeholder);
     font-size: 12px;
+  }
+}
+
+.psd-template-fullscreen-dialog {
+  :deep(.el-dialog__body) {
+    padding: 0;
+  }
+}
+
+.psd-template-dialog-layout {
+  display: flex;
+  height: calc(100vh - 110px);
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.psd-template-dialog-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  padding: 16px 20px 16px;
+}
+
+.dialog-section {
+  background: var(--el-bg-color-overlay);
+  border-radius: 8px;
+  padding: 16px 18px 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.dialog-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 12px;
+}
+
+.psd-template-form {
+  :deep(.el-form-item) {
+    margin-bottom: 14px;
+  }
+}
+
+.size-select {
+  width: 100%;
+}
+
+/* list column tags wrap */
+
+/* 修复支持尺寸插槽高度遮挡问题 */
+.suitable-sizes-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: flex-start;
+  min-height: 28px;
+  max-width: 100%;
+  overflow: visible;
+  line-height: 1.5;
+}
+
+
+.suitable-sizes-cell .size-tag-mini {
+  white-space: normal;
+  line-height: 1.4 !important;
+  padding: 2px 6px !important;
+}
+
+.suitable-sizes-cell-compact {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.size-summary-link {
+  display: inline-block;
+  max-width: 100%;
+  font-size: 12px;
+  color: var(--el-color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suitable-sizes-popover {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 100%;
+}
+
+/* ensure table rows and cells can grow with content, and fix cell clipping */
+.psd-template-dnd-grid .vxe-body--row {
+  height: auto !important;
+  min-height: 32px !important;
+}
+.psd-template-dnd-grid .vxe-body--cell {
+  white-space: normal !important;
+  height: auto !important;
+  min-height: 28px !important;
+  overflow: visible !important;
+  vertical-align: top !important;
+}
+
+.size-option-simple {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+  width: 100%;
+}
+
+.size-option-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  min-width: 100px;
+}
+
+.size-option-ratio {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  min-width: 80px;
+}
+
+.size-option-key {
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  font-family: 'Courier New', monospace;
+}
+
+// 调整下拉项高度，避免内容被裁切
+:deep(.psd-size-select-dropdown) {
+  max-height: calc(100vh - 200px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+:deep(.el-select-dropdown__wrap) {
+  max-height: calc(100vh - 200px) !important;
+  overflow-y: auto !important;
+}
+
+:deep(.el-select-dropdown__list) {
+  max-height: calc(100vh - 200px) !important;
+  overflow-y: auto !important;
+  padding: 4px 0;
+}
+
+:deep(.el-select-dropdown__item) {
+  padding: 6px 12px;
+  min-height: auto;
+  height: auto;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-select-dropdown__item:hover) {
+  background-color: var(--el-fill-color-light);
+}
+
+
+
+.psd-template-dialog-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.psd-template-dialog-footer .footer-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-template-dialog-footer .footer-right {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 1200px) {
+  .psd-template-dialog-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .psd-template-dialog-main {
+    height: auto;
   }
 }
 

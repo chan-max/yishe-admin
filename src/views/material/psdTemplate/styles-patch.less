@@ -1,0 +1,93 @@
+/* 
+ * 将以下样式添加到 index.vue 的 </style> 标签之前
+ * 位置：大约在第 1640 行，在 .thumbnail-upload-container 样式块之后
+ */
+
+// 适用尺寸单元格样式
+.suitable-sizes-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+
+  .size-tag-mini {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-width: 1px;
+    border-style: solid;
+  }
+}
+
+// 适用尺寸选择器样式
+.size-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+
+  .size-thumb {
+    border: 2px solid currentColor;
+    border-radius: 2px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+
+  .size-label {
+    font-size: 14px;
+    color: var(--el-text-color-primary);
+    flex: 1;
+  }
+
+  .size-ratio {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    margin-left: 4px;
+  }
+
+  &:hover .size-thumb {
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// 已选尺寸预览
+.selected-sizes-preview {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--el-fill-color-lighter);
+  border-radius: 4px;
+  border: 1px solid var(--el-border-color-lighter);
+
+  .preview-title {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .preview-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .size-tag {
+      font-size: 13px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-width: 1px;
+      border-style: solid;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+:deep(.el-select-dropdown__item) {
+  height: auto;
+  padding: 8px 12px;
+  line-height: 1.5;
+}

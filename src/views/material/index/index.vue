@@ -92,63 +92,54 @@
           <label class="search-label">尺寸</label>
           <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable multiple @change="getList"
             :teleported="false">
-            <el-option-group label="常用">
-              <el-option value="landscape" label="横图">
+            <el-option-group label="正方形">
+              <el-option 
+                v-for="config in sizeShapeGroups.square" 
+                :key="config.key"
+                :value="config.key" 
+                :label="getFullLabel(config)">
                 <div class="size-option">
-                  <div class="size-thumb landscape-thumb"></div>
-                  <span class="size-label">横图</span>
-                </div>
-              </el-option>
-              <el-option value="portrait" label="竖图">
-                <div class="size-option">
-                  <div class="size-thumb portrait-thumb"></div>
-                  <span class="size-label">竖图</span>
-                </div>
-              </el-option>
-              <el-option value="square" label="正方图">
-                <div class="size-option">
-                  <div class="size-thumb square-thumb"></div>
-                  <span class="size-label">正方图</span>
+                  <div 
+                    class="size-thumb" 
+                    :class="`${config.key}-thumb`"
+                    :style="{ width: `${config.thumbWidth}px`, height: `${config.thumbHeight}px` }">
+                  </div>
+                  <span class="size-label">{{ config.label }} ({{ config.ratio }})</span>
+                  <span class="size-key">[{{ config.key }}]</span>
                 </div>
               </el-option>
             </el-option-group>
-            <el-option-group label="横图细分">
-              <el-option value="ultra-wide" label="超宽图 (≥2:1)">
+            <el-option-group label="横图 (宽>高)">
+              <el-option 
+                v-for="config in sizeShapeGroups.landscape" 
+                :key="config.key"
+                :value="config.key" 
+                :label="getFullLabel(config)">
                 <div class="size-option">
-                  <div class="size-thumb ultra-wide-thumb"></div>
-                  <span class="size-label">超宽图 (≥2:1)</span>
-                </div>
-              </el-option>
-              <el-option value="wide" label="宽图 (1.5:1 - 2:1)">
-                <div class="size-option">
-                  <div class="size-thumb wide-thumb"></div>
-                  <span class="size-label">宽图 (1.5:1 - 2:1)</span>
-                </div>
-              </el-option>
-              <el-option value="slightly-wide" label="微宽图 (1.1:1 - 1.5:1)">
-                <div class="size-option">
-                  <div class="size-thumb slightly-wide-thumb"></div>
-                  <span class="size-label">微宽图 (1.1:1 - 1.5:1)</span>
+                  <div 
+                    class="size-thumb" 
+                    :class="`${config.key}-thumb`"
+                    :style="{ width: `${config.thumbWidth}px`, height: `${config.thumbHeight}px` }">
+                  </div>
+                  <span class="size-label">{{ config.label }} ({{ config.ratio }})</span>
+                  <span class="size-key">[{{ config.key }}]</span>
                 </div>
               </el-option>
             </el-option-group>
-            <el-option-group label="竖图细分">
-              <el-option value="slightly-long" label="微长图 (1:1.1 - 1:1.5)">
+            <el-option-group label="竖图 (高>宽)">
+              <el-option 
+                v-for="config in sizeShapeGroups.portrait" 
+                :key="config.key"
+                :value="config.key" 
+                :label="getFullLabel(config)">
                 <div class="size-option">
-                  <div class="size-thumb slightly-long-thumb"></div>
-                  <span class="size-label">微长图 (1:1.1 - 1:1.5)</span>
-                </div>
-              </el-option>
-              <el-option value="long" label="长图 (1:1.5 - 1:2)">
-                <div class="size-option">
-                  <div class="size-thumb long-thumb"></div>
-                  <span class="size-label">长图 (1:1.5 - 1:2)</span>
-                </div>
-              </el-option>
-              <el-option value="ultra-long" label="超长图 (≤1:2)">
-                <div class="size-option">
-                  <div class="size-thumb ultra-long-thumb"></div>
-                  <span class="size-label">超长图 (≤1:2)</span>
+                  <div 
+                    class="size-thumb" 
+                    :class="`${config.key}-thumb`"
+                    :style="{ width: `${config.thumbWidth}px`, height: `${config.thumbHeight}px` }">
+                  </div>
+                  <span class="size-label">{{ config.label }} ({{ config.ratio }})</span>
+                  <span class="size-key">[{{ config.key }}]</span>
                 </div>
               </el-option>
             </el-option-group>
@@ -1485,11 +1476,15 @@ import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { getPreviewImageUrl } from '@/utils/image'
+import { SIZE_SHAPE_GROUPS, getFullLabel } from './sizeShapeConfig'
 
 const userStore = useUserStore()
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
+
+// 尺寸形状配置
+const sizeShapeGroups = SIZE_SHAPE_GROUPS
 
 const form = ref({})
 
@@ -3982,6 +3977,7 @@ const delayUpdateList = useDebounceFn(() => {
       urlUploadLoading.value = false
     }
   }
+
 </script>
 <style scoped>
 /* 预览图片容器样式 */
@@ -5956,35 +5952,28 @@ h1 {
   color: var(--el-text-color-primary);
 }
 
-/* 横图系列 */
-.landscape-thumb {
-  width: 48px;
-  height: 24px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
+.size-key {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+  background: var(--el-fill-color-light);
+  padding: 2px 6px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
-.ultra-wide-thumb {
-  width: 56px;
-  height: 20px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
-}
-
-.wide-thumb {
-  width: 52px;
-  height: 22px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
-}
-
-.slightly-wide-thumb {
-  width: 50px;
-  height: 23px;
+/* 横图系列 - 使用渐变背景区分 */
+.landscape-thumb,
+.slightly-wide-thumb,
+.wide-thumb,
+.very-wide-thumb,
+.ultra-wide-thumb,
+.extreme-wide-thumb {
   background: linear-gradient(135deg, rgba(64, 158, 255, 0.15) 0%, rgba(64, 158, 255, 0.25) 100%);
 }
 
 /* 正方形 */
 .square-thumb {
-  width: 24px;
-  height: 24px;
   background: linear-gradient(135deg, rgba(103, 194, 58, 0.15) 0%, rgba(103, 194, 58, 0.25) 100%);
 }
 
@@ -5992,44 +5981,22 @@ h1 {
   border-color: rgba(103, 194, 58, 0.3);
 }
 
-/* 竖图系列 - 调整尺寸以适应选项高度 */
-.portrait-thumb {
-  width: 20px;
-  height: 36px;
+/* 竖图系列 - 使用渐变背景区分 */
+.portrait-thumb,
+.slightly-long-thumb,
+.long-thumb,
+.very-long-thumb,
+.ultra-long-thumb,
+.extreme-long-thumb {
   background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
 }
 
-.portrait-thumb::after {
-  border-color: rgba(245, 108, 108, 0.3);
-}
-
-.slightly-long-thumb {
-  width: 20px;
-  height: 38px;
-  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-}
-
-.slightly-long-thumb::after {
-  border-color: rgba(245, 108, 108, 0.3);
-}
-
-.long-thumb {
-  width: 18px;
-  height: 40px;
-  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-}
-
-.long-thumb::after {
-  border-color: rgba(245, 108, 108, 0.3);
-}
-
-.ultra-long-thumb {
-  width: 18px;
-  height: 42px;
-  background: linear-gradient(135deg, rgba(245, 108, 108, 0.15) 0%, rgba(245, 108, 108, 0.25) 100%);
-}
-
-.ultra-long-thumb::after {
+.portrait-thumb::after,
+.slightly-long-thumb::after,
+.long-thumb::after,
+.very-long-thumb::after,
+.ultra-long-thumb::after,
+.extreme-long-thumb::after {
   border-color: rgba(245, 108, 108, 0.3);
 }
 
@@ -6080,52 +6047,10 @@ h1 {
   gap: 8px;
 }
 
+/* 选中值显示时的缩略图尺寸会根据实际比例自动缩放 */
 .size-select-value .size-thumb {
-  width: 36px;
-  height: 18px;
-}
-
-.size-select-value .square-thumb {
-  width: 18px;
-  height: 18px;
-}
-
-.size-select-value .portrait-thumb,
-.size-select-value .slightly-long-thumb,
-.size-select-value .long-thumb,
-.size-select-value .ultra-long-thumb {
-  width: 18px;
-  height: 36px;
-}
-
-.size-select-value .ultra-wide-thumb {
-  width: 42px;
-  height: 15px;
-}
-
-.size-select-value .wide-thumb {
-  width: 39px;
-  height: 16px;
-}
-
-.size-select-value .slightly-wide-thumb {
-  width: 37px;
-  height: 17px;
-}
-
-.size-select-value .slightly-long-thumb {
-  width: 17px;
-  height: 37px;
-}
-
-.size-select-value .long-thumb {
-  width: 16px;
-  height: 39px;
-}
-
-.size-select-value .ultra-long-thumb {
-  width: 15px;
-  height: 42px;
+  max-width: 40px;
+  max-height: 32px;
 }
 </style>
 
