@@ -726,8 +726,16 @@
 
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <div class="common-table">
-          <vxe-grid class="material-dnd-grid" ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading"
+          <vxe-grid class="material-dnd-grid dnd-text-selectable" ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading"
             :row-class-name="materialRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
+            <template #dragHandleSlot>
+              <div
+                class="row-drag-handle flex items-center justify-center cursor-move text-gray-400 hover:text-primary">
+                <el-icon :size="14">
+                  <Rank />
+                </el-icon>
+              </div>
+            </template>
             <template #previewDefaultSlot="{ row }">
               <div class="flex flex-col items-center justify-center p-2">
                 <div class="preview-image-wrapper">
@@ -1459,7 +1467,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1477,6 +1485,7 @@ import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { getPreviewImageUrl } from '@/utils/image'
 import { SIZE_SHAPE_GROUPS, getFullLabel } from './sizeShapeConfig'
+import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 
 const userStore = useUserStore()
 
@@ -1487,6 +1496,13 @@ const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 const sizeShapeGroups = SIZE_SHAPE_GROUPS
 
 const form = ref({})
+
+const { height } = useWindowSize()
+const maxHeight = ref(0)
+
+watchEffect(() => {
+  maxHeight.value = height.value - 260
+})
 
 const queryParams = reactive({
   currentPage: 1,
@@ -1536,14 +1552,24 @@ function formatFileSize(bytes: number): string {
 
 const gridOptions = computed(() => {
   const baseColumns = [
-    { type: 'checkbox' as const, field: 'checkbox', title: '', width: 50, ellipsis: true, reserve: true, minWidth: 50, fixed: 'left' as const, className: '' as any },
-    // { title: 'ID', field: 'id', width: 80, ellipsis: true },
+    {
+      title: '',
+      field: 'dragHandle',
+      width: 40,
+      showOverflow: false,
+      align: 'center' as const,
+      slots: {
+        default: 'dragHandleSlot'
+      }
+    },
+    { type: 'checkbox' as const, field: 'checkbox', title: '', width: 50, ellipsis: true, reserve: true, minWidth: 50, className: '' as any },
     {
       title: '图片预览',
       field: 'url',
       width: 120,
       slots: { default: 'previewDefaultSlot' }
     },
+    { title: 'ID', field: 'id', width: 80, ellipsis: true },
     { title: '名称（中/英）', field: 'name', minWidth: 280, className: 'font-bold', slots: { default: 'nameBilingualSlot' } },
     { title: '描述（中/英）', field: 'description', minWidth: 320, slots: { default: 'descriptionBilingualSlot' } },
     { title: '关键词（中/英）', field: 'keywords', minWidth: 280, slots: { default: 'keywordsBilingualSlot' } },
@@ -1601,7 +1627,6 @@ const gridOptions = computed(() => {
   // 只有管理员显示的字段
   const adminOnlyColumns = [
     { title: '感知哈希', field: 'phash', width: 80, }, // 新增哈希列
-    { title: 'ID', field: 'id', width: 80, }, // 新增ID列
     {
       title: '自定义贴纸',
       field: 'isCustom',
@@ -1655,75 +1680,24 @@ const gridOptions = computed(() => {
   }
 })
 
-const { height } = useWindowSize()
-const maxHeight = ref(null)
-// 跟踪鼠标位置用于拖拽气泡
-const { x: mouseX, y: mouseY } = useMouse({ touch: false })
-
-watchEffect(() => {
-  maxHeight.value = height.value - 200
-})
-
 const dataSource = ref([])
 const loading = ref(false)
 const open = ref(false)
 const title = ref('')
 const ids = ref<string[]>([])
-// 拖拽状态（拖素材 -> 文件夹）
-const dragState = reactive({
-  dragging: false,
-  draggingIds: [] as string[],
-  overFolderId: null as string | null,
-  overFolderPath: ''
+const {
+  dragState,
+  dragHint,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop
+} = useFolderRowDrag({
+  gridClass: 'material-dnd-grid',
+  itemLabel: '素材',
+  dataSource,
+  selectedIds: ids
 })
-const materialDragSortable = ref<Sortable | null>(null)
-const dragHint = reactive({
-  visible: false,
-  text: '',
-  x: -9999,
-  y: -9999
-})
-const dragHintListenerBound = ref(false)
-
-function bindGlobalDragHint() {
-  if (dragHintListenerBound.value) return
-  window.addEventListener('dragover', handleGlobalDragOver)
-  dragHintListenerBound.value = true
-}
-
-function unbindGlobalDragHint() {
-  if (!dragHintListenerBound.value) return
-  window.removeEventListener('dragover', handleGlobalDragOver)
-  dragHintListenerBound.value = false
-}
-
-function handleGlobalDragOver(e: DragEvent) {
-  if (!dragState.dragging) return
-  // 仅在悬停文件夹时显示气泡
-  if (!dragState.overFolderId) return
-  dragHint.visible = true
-  dragHint.text = `将 ${dragState.draggingIds.length} 个素材移动到 ${dragState.overFolderPath || '该文件夹'}`
-  updateDragHintPosition(e)
-}
-
-function updateDragHintPosition(e?: DragEvent) {
-  const x = e && 'clientX' in e ? e.clientX : mouseX.value
-  const y = e && 'clientY' in e ? e.clientY : mouseY.value
-  dragHint.x = (x || 0) + 14
-  dragHint.y = (y || 0) + 16
-}
-
-function getDefaultDragHint() {
-  return `拖到左侧文件夹以移动（当前 ${dragState.draggingIds.length} 个）`
-}
-
-function hideDragHint() {
-  dragHint.visible = false
-  dragHint.text = ''
-  dragHint.x = -9999
-  dragHint.y = -9999
-  unbindGlobalDragHint()
-}
 
 function materialRowClassName({ row }: any) {
   if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
@@ -2003,48 +1977,7 @@ async function getList() {
   })
 
   // 列表渲染完成后挂载拖拽（使用 SortableJS）
-  nextTick(setupMaterialDrag)
-}
-
-// 初始化/刷新素材行的拖拽能力
-function setupMaterialDrag() {
-  nextTick(() => {
-    const tbody = document.querySelector('.material-dnd-grid .vxe-table--body tbody') as HTMLElement | null
-    if (!tbody) return
-
-    // 销毁旧实例，避免重复绑定
-    materialDragSortable.value?.destroy()
-    materialDragSortable.value = Sortable.create(tbody, {
-      animation: 120,
-      sort: false, // 不改变表格排序，只做拖拽数据
-      ghostClass: 'material-drag-ghost',
-      onStart: (evt) => {
-        const row = dataSource.value[evt.oldIndex]
-        const draggingIds = ids.value.length ? [...ids.value] : row ? [String(row.id)] : []
-        dragState.draggingIds = draggingIds
-        dragState.dragging = draggingIds.length > 0
-        // 仅当悬停在文件夹上时才显示气泡
-        dragHint.visible = false
-        dragHint.text = ''
-        dragHint.x = -9999
-        dragHint.y = -9999
-        dragState.overFolderId = null
-        dragState.overFolderPath = ''
-        bindGlobalDragHint()
-        // 记录初始指针位置
-        if (evt.originalEvent && 'clientX' in evt.originalEvent) {
-          updateDragHintPosition(evt.originalEvent as DragEvent)
-        }
-      },
-      onEnd: () => {
-        dragState.dragging = false
-        dragState.draggingIds = []
-        dragState.overFolderId = null
-        dragState.overFolderPath = ''
-        hideDragHint()
-      }
-    })
-  })
+  nextTick(setupRowDrag)
 }
 
 // 图片加载超时处理映射
@@ -2112,8 +2045,7 @@ onUnmounted(() => {
     clearTimeout(timeout)
   })
   imageLoadTimeouts.clear()
-  materialDragSortable.value?.destroy()
-  unbindGlobalDragHint()
+  resetAfterDrop()
 })
 
 // phash相似图片搜索
@@ -2262,28 +2194,6 @@ function handleSelectRootStickerFolder() {
 }
 
 // 拖拽到文件夹时的交互
-function handleFolderDragOver(data: any, evt?: DragEvent) {
-  if (!dragState.dragging) return
-  if (data.id === '__all__') return // Prevent drop on All
-  dragState.overFolderId = data.id
-  dragState.overFolderPath = data.path || ''
-  dragHint.visible = true
-  dragHint.text = `将 ${dragState.draggingIds.length} 个素材移动到 ${dragState.overFolderPath || '该文件夹'}`
-  // 同步指针位置（node 层级的 dragover 事件）
-  updateDragHintPosition(evt)
-}
-
-function handleFolderDragLeave(data: any) {
-  if (dragState.overFolderId === data.id) {
-    dragState.overFolderId = null
-    dragState.overFolderPath = ''
-    dragHint.text = getDefaultDragHint()
-    dragHint.visible = false
-    dragHint.x = -9999
-    dragHint.y = -9999
-  }
-}
-
 async function handleFolderDrop(data: any) {
   if (!dragState.draggingIds.length) return
 
@@ -2302,11 +2212,7 @@ async function handleFolderDrop(data: any) {
   } catch (error) {
     ElMessage.error((error as Error).message || '移动失败')
   } finally {
-    hideDragHint()
-    dragState.dragging = false
-    dragState.draggingIds = []
-    dragState.overFolderId = null
-    dragState.overFolderPath = ''
+    resetAfterDrop()
   }
 }
 
@@ -4412,47 +4318,14 @@ const delayUpdateList = useDebounceFn(() => {
   color: var(--el-text-color-placeholder);
 }
 
-.material-dnd-grid :deep(.vxe-table--body tbody tr) {
-  cursor: grab;
-  user-select: none;
-}
-
 .material-dnd-grid :deep(.vxe-table--body tbody tr.is-dragging-row) {
-  opacity: 0.75;
-  background: var(--el-color-primary-light-9);
-}
-
-.material-dnd-grid :deep(.vxe-table--body tbody td) {
-  user-select: none;
-  -webkit-user-drag: none;
+  opacity: 0.6 !important;
+  background: var(--el-color-primary-light-9) !important;
 }
 
 .material-drag-ghost {
-  opacity: 0.6 !important;
+  opacity: 0.4 !important;
   background: var(--el-color-primary-light-8) !important;
-}
-
-.drag-hint-bubble {
-  position: fixed;
-  z-index: 99999;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-  color: var(--el-color-primary);
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--el-color-primary-light-7);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  pointer-events: none;
-  transform: translate(6px, 6px);
-  transition: opacity 0.12s ease;
-}
-
-.drag-hint-icon {
-  display: flex;
-  align-items: center;
 }
 
 .flex.pb-4,

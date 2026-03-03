@@ -5,7 +5,9 @@
         <div class="h-full w-[280px]">
           <ContentWrap class="!p-0 h-full">
             <FolderTree v-model="queryParams.folderId" folder-category="product" width="100%" :show-border="false"
-              class="h-full" @change="handleFolderChange" />
+              class="h-full" :drag-state="dragState" @change="handleFolderChange"
+              @folder-drag-over="handleFolderDragOver" @folder-drag-leave="handleFolderDragLeave"
+              @folder-drop="handleFolderDrop" />
           </ContentWrap>
         </div>
       </div>
@@ -108,8 +110,16 @@
 
       <!-- 表格展示 -->
       <div class="common-table">
-        <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
+        <vxe-grid class="product-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
           @checkbox-all="checkboxAllChange">
+
+          <template #dragHandleSlot>
+            <div class="row-drag-handle flex items-center justify-center cursor-move text-gray-400 hover:text-primary">
+              <el-icon :size="14">
+                <Rank />
+              </el-icon>
+            </div>
+          </template>
 
           <template #operationDefaultSlot="{ row }">
             <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
@@ -1383,12 +1393,23 @@
           <el-button type="primary" @click="confirmBatchMove">确定</el-button>
         </template>
       </el-dialog>
+
+      <!-- 拖拽提示气泡（跟随鼠标） -->
+      <teleport to="body">
+        <div v-show="dragHint.visible" class="drag-hint-bubble"
+          :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
+          <el-icon class="drag-hint-icon">
+            <InfoFilled />
+          </el-icon>
+          <span>{{ dragHint.text }}</span>
+        </div>
+      </teleport>
     </ContentWrap>
   </div>
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, watchEffect } from "vue";
+import { ref, reactive, computed, watchEffect, nextTick } from "vue";
 import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -1418,6 +1439,8 @@ import {
   DocumentCopy,
   Grid,
   Loading,
+  Rank,
+  InfoFilled,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import { downloadImageEnhanced } from "@/common/download";
@@ -1444,6 +1467,7 @@ import { PRODUCT_CATEGORIES } from '@/config/product-categories'
 import { getPreviewImageUrl } from '@/utils/image'
 import { getPublishConfigListApi } from '@/api/product/publishConfig'
 import FolderTree from '@/components/material/FolderTree.vue'
+import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 
 
 
@@ -1477,6 +1501,14 @@ const showRelations = useLocalStorage('product_show_relations', true);
 
 // 基础列配置
 const baseColumns: any[] = [
+  {
+    title: "",
+    field: "dragHandle",
+    width: 40,
+    showOverflow: false,
+    align: "center",
+    slots: { default: 'dragHandleSlot' }
+  },
   { type: "checkbox", width: 50, showOverflow: true },
   {
     title: "ID",
@@ -1597,7 +1629,11 @@ const gridOptions = computed(() => ({
   ...commonGridOptions,
   maxHeight: gridMaxHeight.value,
   rowClassName: ({ row }) => {
-    return row.isPublish ? 'published-row' : 'unpublished-row';
+    const baseClass = row.isPublish ? 'published-row' : 'unpublished-row';
+    if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
+      return `${baseClass} is-dragging-row`;
+    }
+    return baseClass;
   },
   rowConfig: {
     isHover: true
@@ -1653,6 +1689,42 @@ const deletingVideoKey = ref<string>('');
 const publishDialogVisible = ref(false);
 const batchMoveDialogVisible = ref(false);
 const targetFolderId = ref<string | null>(null);
+
+// 拖拽状态（拖商品 -> 文件夹）
+const {
+  dragState,
+  dragHint,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop
+} = useFolderRowDrag({
+  gridClass: 'product-dnd-grid',
+  itemLabel: '商品',
+  dataSource,
+  selectedIds: ids
+});
+
+async function handleFolderDrop(payload: { data: any }) {
+  if (!dragState.draggingIds.length) return;
+  if (payload.data.id === '__all__') return;
+
+  const targetFolderId = payload.data.id === '__root__' ? '__root__' : payload.data.id;
+  const targetPath = payload.data.path || '';
+  const movingIds = [...dragState.draggingIds];
+
+  try {
+    await batchMoveProducts({ ids: movingIds, folderId: targetFolderId });
+    ElMessage.success(`已移动 ${movingIds.length} 个商品到 ${targetPath || '根目录'}`);
+    await getList();
+    ids.value = [];
+    selectedRows.value = [];
+  } catch (error) {
+    ElMessage.error((error as Error).message || '移动失败');
+  } finally {
+    resetAfterDrop();
+  }
+}
 
 const handleOpenBatchMove = () => {
   if (!selectedRows.value.length) return;
@@ -2149,6 +2221,7 @@ async function getList() {
     dataSource.value = res.list || [];
     total.value = res.total || 0;
     ids.value = [];
+    nextTick(setupRowDrag);
   } catch (error) {
     ElMessage.error("获取列表失败");
     dataSource.value = [];

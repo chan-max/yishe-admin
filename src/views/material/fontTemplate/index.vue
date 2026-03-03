@@ -59,8 +59,16 @@
       <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
         <div class="common-table">
-          <vxe-grid class="font-template-dnd-grid" v-bind="gridOptions" :data="dataSource" :loading="loading"
+          <vxe-grid class="font-template-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading"
             @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
+            <template #dragHandleSlot>
+              <div
+                class="row-drag-handle flex items-center justify-center cursor-move text-gray-400 hover:text-primary">
+                <el-icon :size="14">
+                  <Rank />
+                </el-icon>
+              </div>
+            </template>
             <template #thumbnailDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
                 <img v-if="row.thumbnail" :src="row.thumbnail" :alt="row.name || '字体缩略图'" loading="lazy"
@@ -531,8 +539,9 @@ import {
   Folder,
   DArrowLeft,
   DArrowRight,
+  Rank,
 } from "@element-plus/icons-vue";
-import { useWindowSize, useMouse, useLocalStorage } from "@vueuse/core";
+import { useWindowSize, useLocalStorage } from "@vueuse/core";
 
 import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
@@ -545,6 +554,7 @@ import { fontTemplateApi } from "@/api/fontTemplate";
 import { ImagePreview } from '@/components/ImagePreview';
 import { htmlToPngFile } from '@/utils/htmlToPng';
 import { copyLink } from '@/utils/clipboard';
+import { useFolderRowDrag } from '@/hooks/useFolderRowDrag';
 
 // 语言枚举定义
 const LANGUAGE_OPTIONS = [
@@ -646,6 +656,16 @@ const queryParams = reactive({
 const gridOptions = ref({
   ...commonGridOptions,
   columns: [
+    {
+      title: "",
+      field: "dragHandle",
+      width: 40,
+      showOverflow: false,
+      align: "center",
+      slots: {
+        default: "dragHandleSlot"
+      }
+    },
     { type: "checkbox", width: 50, showOverflow: true },
     {
       title: "缩略图",
@@ -732,59 +752,19 @@ const currentRow = ref<{
 const submitLoading = ref(false);
 
 // 拖拽状态（拖模板 -> 文件夹）
-const dragState = reactive({
-  dragging: false,
-  draggingIds: [] as string[],
-  overFolderId: null as string | null,
-  overFolderPath: ''
+const {
+  dragState,
+  dragHint,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop
+} = useFolderRowDrag({
+  gridClass: 'font-template-dnd-grid',
+  itemLabel: '字体模板',
+  dataSource,
+  selectedIds: ids
 });
-const templateDragSortable = ref<Sortable | null>(null);
-const dragHint = reactive({
-  visible: false,
-  text: '',
-  x: -9999,
-  y: -9999
-});
-const dragHintListenerBound = ref(false);
-
-// 跟踪鼠标位置用于拖拽气泡
-const { x: mouseX, y: mouseY } = useMouse({ touch: false });
-
-function bindGlobalDragHint() {
-  if (dragHintListenerBound.value) return;
-  window.addEventListener('dragover', handleGlobalDragOver);
-  dragHintListenerBound.value = true;
-}
-
-function unbindGlobalDragHint() {
-  if (!dragHintListenerBound.value) return;
-  window.removeEventListener('dragover', handleGlobalDragOver);
-  dragHintListenerBound.value = false;
-}
-
-function handleGlobalDragOver(e: DragEvent) {
-  if (!dragState.dragging) return;
-  // 仅在悬停文件夹时显示气泡
-  if (!dragState.overFolderId) return;
-  dragHint.visible = true;
-  dragHint.text = `将 ${dragState.draggingIds.length} 个字体模板移动到 ${dragState.overFolderPath || '该文件夹'}`;
-  updateDragHintPosition(e);
-}
-
-function updateDragHintPosition(e?: DragEvent) {
-  const x = e && 'clientX' in e ? e.clientX : mouseX.value;
-  const y = e && 'clientY' in e ? e.clientY : mouseY.value;
-  dragHint.x = (x || 0) + 14;
-  dragHint.y = (y || 0) + 16;
-}
-
-function hideDragHint() {
-  dragHint.visible = false;
-  dragHint.text = '';
-  dragHint.x = -9999;
-  dragHint.y = -9999;
-  unbindGlobalDragHint();
-}
 
 
 // AI生成内容相关
@@ -899,47 +879,7 @@ async function getList() {
   ids.value = [];
 
   // 列表渲染完成后挂载拖拽（使用 SortableJS）
-  nextTick(setupTemplateDrag);
-}
-
-// 初始化/刷新模板行的拖拽能力
-function setupTemplateDrag() {
-  nextTick(() => {
-    const tbody = document.querySelector('.font-template-dnd-grid .vxe-table--body tbody') as HTMLElement | null;
-    if (!tbody) return;
-
-    // 销毁旧实例，避免重复绑定
-    templateDragSortable.value?.destroy();
-    templateDragSortable.value = Sortable.create(tbody, {
-      animation: 120,
-      sort: false, // 不改变表格排序，只做拖拽数据
-      ghostClass: 'template-drag-ghost',
-      onStart: (evt) => {
-        const row = dataSource.value[evt.oldIndex];
-        const draggingIds = ids.value.length ? [...ids.value] : row ? [String(row.id)] : [];
-        dragState.draggingIds = draggingIds;
-        dragState.dragging = draggingIds.length > 0;
-        dragState.overFolderId = null;
-        dragState.overFolderPath = '';
-        dragHint.visible = false;
-        dragHint.text = '';
-        dragHint.x = -9999;
-        dragHint.y = -9999;
-        bindGlobalDragHint();
-        // 记录初始指针位置
-        if (evt.originalEvent && 'clientX' in evt.originalEvent) {
-          updateDragHintPosition(evt.originalEvent as DragEvent);
-        }
-      },
-      onEnd: () => {
-        dragState.dragging = false;
-        dragState.draggingIds = [];
-        dragState.overFolderId = null;
-        dragState.overFolderPath = '';
-        hideDragHint();
-      }
-    });
-  });
+  nextTick(setupRowDrag);
 }
 
 getList();
@@ -1046,27 +986,6 @@ async function handleBatchDelete() {
 }
 
 // 拖拽到文件夹时的交互
-function handleFolderDragOver(payload: { data: any; event?: DragEvent }) {
-  if (!dragState.dragging) return;
-  if (payload.data.id === '__all__') return; // Prevent drop on All
-  dragState.overFolderId = payload.data.id;
-  dragState.overFolderPath = payload.data.path || '';
-  dragHint.visible = true;
-  dragHint.text = `将 ${dragState.draggingIds.length} 个字体模板移动到 ${dragState.overFolderPath || '该文件夹'}`;
-  // 同步指针位置（node 层级的 dragover 事件）
-  updateDragHintPosition(payload.event);
-}
-
-function handleFolderDragLeave(payload: { data: any }) {
-  if (dragState.overFolderId === payload.data.id) {
-    dragState.overFolderId = null;
-    dragState.overFolderPath = '';
-    dragHint.visible = false;
-    dragHint.x = -9999;
-    dragHint.y = -9999;
-  }
-}
-
 async function handleFolderDrop(payload: { data: any }) {
   if (!dragState.draggingIds.length) return;
 
@@ -1084,11 +1003,7 @@ async function handleFolderDrop(payload: { data: any }) {
   } catch (error) {
     ElMessage.error((error as Error).message || '移动失败');
   } finally {
-    dragState.dragging = false;
-    dragState.draggingIds = [];
-    dragState.overFolderId = null;
-    dragState.overFolderPath = '';
-    hideDragHint();
+    resetAfterDrop();
   }
 }
 
@@ -1657,11 +1572,6 @@ function closeImagePreview() {
   currentImageUrl.value = '';
 }
 
-onUnmounted(() => {
-  templateDragSortable.value?.destroy();
-  unbindGlobalDragHint();
-});
-
 
 
 
@@ -1972,33 +1882,4 @@ onUnmounted(() => {
   }
 }
 
-:deep(.is-dragging-row) {
-  opacity: 0.5;
-}
-
-:deep(.template-drag-ghost) {
-  opacity: 0.4;
-  background-color: var(--el-color-primary-light-9);
-}
-
-.drag-hint-bubble {
-  position: fixed;
-  z-index: 99999;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-  color: var(--el-color-primary);
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--el-color-primary-light-7);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  pointer-events: none;
-  white-space: nowrap;
-
-  .drag-hint-icon {
-    font-size: 14px;
-  }
-}
 </style>
