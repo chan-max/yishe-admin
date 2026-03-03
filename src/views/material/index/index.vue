@@ -1005,6 +1005,8 @@
                           @mouseleave="handleSubmenuHide">
                           <div class="op-submenu-item" @click="() => handleOperationCommand('create-ps-set', row)">
                             制作PS套图</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('view-ps-sets', row)">
+                            查看该素材套图</div>
                         </div>
                       </div>
 
@@ -1397,6 +1399,8 @@
       </template>
     </el-dialog>
 
+    <RelatedPsdSetDialog ref="relatedPsdSetDialogRef" />
+
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
@@ -1486,6 +1490,7 @@ import 'vue-json-pretty/lib/styles.css';
 import { getPreviewImageUrl } from '@/utils/image'
 import { SIZE_SHAPE_GROUPS, getFullLabel } from './sizeShapeConfig'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
+import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
 
 const userStore = useUserStore()
 
@@ -1856,6 +1861,7 @@ const psdSetTaskCount = computed(() =>
     ? selectedPsdTemplateIds.value.length
     : ids.value.length * selectedPsdTemplateIds.value.length,
 )
+const relatedPsdSetDialogRef = ref<any>(null)
 
 // PSD制作套图允许的图片格式（固定为这三个）
 const psdSetAllowedFormats = ['jpg', 'png', 'jpeg', 'svg', 'webp']
@@ -3487,6 +3493,9 @@ const delayUpdateList = useDebounceFn(() => {
         break;
       case 'create-ps-set':
         openPsdSetDialog(row);
+        break;
+      case 'view-ps-sets':
+        relatedPsdSetDialogRef.value?.open(row);
         break;
       case 'image-split':
         ElMessage.info('图片裂变功能开发中...');
