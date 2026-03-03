@@ -44,6 +44,26 @@
             />
           </el-select>
         </form-item>
+
+        <form-item label="抠图支持">
+          <el-select
+            v-model="queryParams.cutoutModesArray"
+            style="width: 220px"
+            clearable
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            placeholder="请选择抠图支持"
+            @change="handleQueryCutoutModesChange"
+          >
+            <el-option
+              v-for="item in cutoutModeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </form-item>
       </div>
 
       <div class="search-form-right">
@@ -155,6 +175,23 @@
                       </el-tag>
                     </div>
                   </el-popover>
+                </template>
+                <span v-else class="text-gray-400 text-xs">未设置</span>
+              </div>
+            </template>
+
+            <template #cutoutModesSlot="{ row }">
+              <div class="suitable-sizes-cell-compact">
+                <template v-if="row.cutoutModes && row.cutoutModes.length > 0">
+                  <el-tag
+                    v-for="mode in row.cutoutModes"
+                    :key="mode"
+                    size="small"
+                    class="size-tag-mini"
+                    type="info"
+                  >
+                    {{ getCutoutModeLabel(mode) }}
+                  </el-tag>
                 </template>
                 <span v-else class="text-gray-400 text-xs">未设置</span>
               </div>
@@ -376,6 +413,24 @@
                 </el-select>
 
               </el-form-item>
+
+              <el-form-item label="抠图支持" prop="cutoutModes">
+                <el-select
+                  v-model="form.cutoutModesArray"
+                  multiple
+                  clearable
+                  placeholder="请选择模板支持的抠图类型"
+                  class="size-select"
+                  @change="handleCutoutModesChange"
+                >
+                  <el-option
+                    v-for="item in cutoutModeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
             </el-form>
           </div>
 
@@ -505,6 +560,18 @@ import {
 const userStore = useUserStore()
 
 const FOLDER_CATEGORY = "psdtemplate";
+const cutoutModeOptions = [
+  { label: '抠图', value: 'CUTOUT' },
+  { label: '非抠图', value: 'NON_CUTOUT' },
+];
+
+const getCutoutModeLabel = (mode: string) => {
+  const map = {
+    CUTOUT: '抠图',
+    NON_CUTOUT: '非抠图',
+  };
+  return map[mode] || mode;
+};
 
 // 查询条件
 const queryParams = reactive({
@@ -516,6 +583,7 @@ const queryParams = reactive({
   searchKeyword: "", // 搜索关键字（支持名称、关键词、描述）
   enabled: undefined as boolean | undefined, // 是否可用筛选
   suitableSizesArray: [] as string[], // 适合尺寸筛选（多选）
+  cutoutModesArray: [] as string[], // 抠图支持筛选（多选）
   folderId: null as string | null, // 文件夹ID（用于筛选）
 });
 
@@ -554,6 +622,15 @@ const gridOptions = ref<VxeGridProps<any>>({
       showOverflow: true,
       slots: {
         default: "suitableSizesSlot",
+      },
+    },
+    {
+      title: "抠图支持",
+      field: "cutoutModes",
+      minWidth: 180,
+      showOverflow: true,
+      slots: {
+        default: "cutoutModesSlot",
       },
     },
     {
@@ -721,11 +798,12 @@ function hideDragHint() {
 async function getList() {
   loading.value = true;
 
-  const { suitableSizesArray, ...restQueryParams } = queryParams;
+  const { suitableSizesArray, cutoutModesArray, ...restQueryParams } = queryParams;
 
   let params = {
     ...restQueryParams,
     suitableSizes: suitableSizesArray?.length ? suitableSizesArray.join(',') : undefined,
+    cutoutModes: cutoutModesArray?.length ? cutoutModesArray.join(',') : undefined,
   };
 
   let res = await psdTemplateApi
@@ -743,6 +821,13 @@ async function getList() {
         item.suitableSizes = item.suitableSizes ? item.suitableSizes.split(',') : [];
       } catch (e) {
         item.suitableSizes = [];
+      }
+    }
+    if (item && typeof item.cutoutModes === 'string') {
+      try {
+        item.cutoutModes = item.cutoutModes ? item.cutoutModes.split(',').map(mode => mode.trim()).filter(Boolean) : [];
+      } catch (e) {
+        item.cutoutModes = [];
       }
     }
     return item;
@@ -868,6 +953,11 @@ function handleQuerySuitableSizesChange() {
   getList();
 }
 
+function handleQueryCutoutModesChange() {
+  queryParams.currentPage = 1;
+  getList();
+}
+
 function resetQuery() {
   getList();
 }
@@ -914,6 +1004,7 @@ function handleAdd() {
     enabled: false, // 默认不可用
     size: 0,
     suitableSizesArray: [],
+    cutoutModesArray: [],
   };
   // 清空预览
   if (thumbnailPreviewUrl.value) {
@@ -931,6 +1022,7 @@ function handleEdit(row) {
     ...row,
     enabled: row.enabled !== undefined ? row.enabled : false, // 确保enabled有默认值
     suitableSizesArray: Array.isArray(row.suitableSizes) ? row.suitableSizes : (row.suitableSizes ? row.suitableSizes.split(',') : []),
+    cutoutModesArray: Array.isArray(row.cutoutModes) ? row.cutoutModes : (row.cutoutModes ? row.cutoutModes.split(',') : []),
   };
   // 清空已选文件列表，只在需要时重新选择文件
   fileList.value = [];
@@ -973,6 +1065,7 @@ const form = ref<any>({
   psdTemplateConfigText: "", // 用于表单编辑的文本字段
   enabled: false, // 是否可用，默认不可用
   size: 0,
+  cutoutModesArray: [],
 });
 
 // AI生成内容相关
@@ -1078,6 +1171,7 @@ const submitForm = async () => {
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,
         suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(',') : "",
+        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(',') : "",
       });
       ElMessage.success("更新成功");
       // 释放预览URL
@@ -1144,6 +1238,7 @@ const submitForm = async () => {
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,
         suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(',') : "",
+        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(',') : "",
       });
       ElMessage.success("添加成功");
       // 释放预览URL
@@ -1381,6 +1476,13 @@ onUnmounted(() => {
 function handleSuitableSizesChange(values: string[]) {
   if (form.value) {
     form.value.suitableSizesArray = values;
+  }
+}
+
+// 处理抠图支持类型变化
+function handleCutoutModesChange(values: string[]) {
+  if (form.value) {
+    form.value.cutoutModesArray = values;
   }
 }
 
