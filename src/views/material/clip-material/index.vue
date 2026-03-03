@@ -135,11 +135,20 @@
                   v-if="row.url && isVideoFile(row.suffix)"
                   :src="row.url"
                   :alt="row.name || '文件素材'"
-                  style="width:100%; max-width:380px; height:auto; object-fit:contain; background:#f5f5f5; cursor:pointer;"
+                  class="media-preview"
                   @click="openVideoPreview(row.url, row.name)"
                   @error="handleVideoError"
                   controls
                   preload="metadata"
+                />
+                <img
+                  v-else-if="row.url && isImageFile(row.suffix)"
+                  :src="row.url"
+                  :alt="row.name || '图片素材'"
+                  class="media-preview"
+                  loading="lazy"
+                  @click="openImagePreview(row.url)"
+                  @error="handleImageError"
                 />
                 <div
                   v-else-if="row.url && isAudioFile(row.suffix)"
@@ -299,6 +308,26 @@
       :video-name="currentVideoName"
       @close="closeVideoPreview"
     />
+
+    <el-dialog
+      v-model="imagePreviewVisible"
+      title="图片预览"
+      width="70%"
+      :destroy-on-close="true"
+      align-center
+      @close="closeImagePreview"
+    >
+      <div style="display: flex; justify-content: center; align-items: center; min-height: 320px;">
+        <img
+          v-if="currentImageUrl"
+          :src="currentImageUrl"
+          alt="图片预览"
+          style="max-width: 100%; max-height: 70vh; object-fit: contain;"
+          @error="handleImageError"
+        />
+        <span v-else style="color: #909399">暂无可预览图片</span>
+      </div>
+    </el-dialog>
 
   </div>
 </template>
@@ -659,6 +688,8 @@ async function submitEdit() {
 const videoPreviewVisible = ref(false)
 const currentVideoUrl = ref('')
 const currentVideoName = ref('')
+const imagePreviewVisible = ref(false)
+const currentImageUrl = ref('')
 
 function openVideoPreview(videoUrl: string, videoName?: string) {
   currentVideoUrl.value = videoUrl
@@ -672,6 +703,16 @@ function closeVideoPreview() {
   currentVideoName.value = ''
 }
 
+function openImagePreview(imageUrl: string) {
+  currentImageUrl.value = imageUrl
+  imagePreviewVisible.value = true
+}
+
+function closeImagePreview() {
+  imagePreviewVisible.value = false
+  currentImageUrl.value = ''
+}
+
 function handleVideoError(event: Event) {
   const video = event.target as HTMLVideoElement
   console.warn('视频加载失败:', video.src)
@@ -682,16 +723,31 @@ function handleAudioError(event: Event) {
   console.warn('音频加载失败:', audio.src)
 }
 
+function handleImageError(event: Event) {
+  const image = event.target as HTMLImageElement
+  console.warn('图片加载失败:', image.src)
+}
+
+function normalizeSuffix(suffix: string): string {
+  return String(suffix || '').trim().toLowerCase()
+}
+
 // 判断是否为视频文件
 function isVideoFile(suffix: string): boolean {
   const videoSuffixes = ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv']
-  return videoSuffixes.includes(suffix.toLowerCase())
+  return videoSuffixes.includes(normalizeSuffix(suffix))
 }
 
 // 判断是否为音频文件
 function isAudioFile(suffix: string): boolean {
   const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr']
-  return audioSuffixes.includes(suffix.toLowerCase())
+  return audioSuffixes.includes(normalizeSuffix(suffix))
+}
+
+// 判断是否为图片文件
+function isImageFile(suffix: string): boolean {
+  const imageSuffixes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif']
+  return imageSuffixes.includes(normalizeSuffix(suffix))
 }
 
 // 获取文件图标
@@ -700,14 +756,15 @@ function getFileIcon(suffix: string) {
   const audioSuffixes = ['mp3', 'wav', 'aac', 'ogg', 'oga', 'm4a', 'flac', 'wma', 'opus', 'amr']
   const imageSuffixes = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'ico', 'tiff', 'tif']
   const documentSuffixes = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'rtf']
+  const normalizedSuffix = normalizeSuffix(suffix)
   
-  if (videoSuffixes.includes(suffix.toLowerCase())) {
+  if (videoSuffixes.includes(normalizedSuffix)) {
     return VideoPlay
-  } else if (audioSuffixes.includes(suffix.toLowerCase())) {
+  } else if (audioSuffixes.includes(normalizedSuffix)) {
     return Headset
-  } else if (imageSuffixes.includes(suffix.toLowerCase())) {
+  } else if (imageSuffixes.includes(normalizedSuffix)) {
     return Picture
-  } else if (documentSuffixes.includes(suffix.toLowerCase())) {
+  } else if (documentSuffixes.includes(normalizedSuffix)) {
     return Document
   } else {
     return Folder
@@ -878,6 +935,18 @@ function handleOperationCommand(command: string, row: any) {
 
 h1 {
   font-size: 1rem;
+}
+
+.media-preview {
+  width: auto;
+  height: auto;
+  max-width: 180px;
+  max-height: 120px;
+  object-fit: contain;
+  background: #f5f5f5;
+  border-radius: 6px;
+  cursor: pointer;
+  display: block;
 }
 
 /* 音频预览样式 */
