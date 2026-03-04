@@ -730,7 +730,7 @@
             :row-class-name="materialRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #dragHandleSlot>
               <div
-                class="row-drag-handle flex items-center justify-center cursor-move text-gray-400 hover:text-primary">
+                class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary">
                 <el-icon :size="14">
                   <Rank />
                 </el-icon>
@@ -757,6 +757,9 @@
                     </div>
                     <div v-if="row.aspectRatio" style="color:#999; margin-top:2px; font-size: 11px;">
                       宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
+                    </div>
+                    <div v-if="row.shapeLabel" style="color:#999; margin-top:2px; font-size: 11px;">
+                      类型：{{ row.shapeLabel }}
                     </div>
                   </template>
                   <template v-else>
@@ -1488,7 +1491,7 @@ import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { getPreviewImageUrl } from '@/utils/image'
-import { SIZE_SHAPE_GROUPS, getFullLabel } from './sizeShapeConfig'
+import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio } from './sizeShapeConfig'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
 
@@ -1966,12 +1969,17 @@ async function getList() {
     const width = item.width
     const height = item.height
     const aspectRatio = item.aspectRatio || (width && height ? width / height : undefined)
+    const shapeConfig = aspectRatio ? getSizeShapeByRatio(aspectRatio) : undefined
+    const shapeLabel = shapeConfig
+      ? (shapeConfig.group === 'portrait' ? '长图' : shapeConfig.group === 'landscape' ? '宽图' : '正方图')
+      : ''
 
     return {
       ...item,
       resolutionWidth: width ?? item.resolutionWidth,
       resolutionHeight: height ?? item.resolutionHeight,
       aspectRatio,
+      shapeLabel,
       _imageLoaded: false // 重置图片加载状态，确保分页切换时显示加载提示
     }
   })

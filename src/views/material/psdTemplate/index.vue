@@ -104,7 +104,7 @@
             :row-class-name="getRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #dragHandleSlot>
               <div
-                class="row-drag-handle flex items-center justify-center cursor-move text-gray-400 hover:text-primary">
+                class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary">
                 <el-icon :size="14">
                   <Rank />
                 </el-icon>
