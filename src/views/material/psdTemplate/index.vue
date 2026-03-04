@@ -1,77 +1,68 @@
 <template>
   <div>
     <div class="search-form-container">
-      <div class="search-form-left">
-        <form-item label="ID搜索">
-          <el-input v-model="queryParams.id" clearable placeholder="请输入模板ID" style="width: 200px"
-            @keyup.enter="getList"></el-input>
-        </form-item>
-        <form-item label="搜索">
-          <el-input v-model="queryParams.searchKeyword" clearable placeholder="请输入名称、关键词或描述" style="width: 200px"
-            @keyup.enter="getList"></el-input>
-        </form-item>
+      <form-item label="ID搜索">
+        <el-input v-model="queryParams.id" clearable placeholder="请输入模板ID" style="width: 200px"
+          @keyup.enter="getList"></el-input>
+      </form-item>
+      <form-item label="搜索">
+        <el-input v-model="queryParams.searchKeyword" clearable placeholder="请输入名称、关键词或描述" style="width: 200px"
+          @keyup.enter="getList"></el-input>
+      </form-item>
+      <form-item label="排序方式">
+        <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
+          <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+        </el-select>
+      </form-item>
+      <form-item label="是否可用">
+        <el-select v-model="queryParams.enabled" style="width: 140px" clearable placeholder="全部" @change="getList">
+          <el-option label="可用" :value="true" />
+          <el-option label="不可用" :value="false" />
+        </el-select>
+      </form-item>
+      <form-item label="适合尺寸">
+        <el-select
+          v-model="queryParams.suitableSizesArray"
+          style="width: 280px"
+          clearable
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="请选择适合尺寸"
+          @change="handleQuerySuitableSizesChange"
+        >
+          <el-option
+            v-for="config in sizeConfigs"
+            :key="config.key"
+            :label="getFullLabel(config)"
+            :value="config.key"
+          />
+        </el-select>
+      </form-item>
+      <form-item label="抠图支持">
+        <el-select
+          v-model="queryParams.cutoutModesArray"
+          style="width: 220px"
+          clearable
+          multiple
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="请选择抠图支持"
+          @change="handleQueryCutoutModesChange"
+        >
+          <el-option
+            v-for="item in cutoutModeOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
+      </form-item>
+      <div class="search-actions">
         <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
-
-        <form-item label="排序方式">
-          <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
-            <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </form-item>
-
-        <form-item label="是否可用">
-          <el-select v-model="queryParams.enabled" style="width: 140px" clearable placeholder="全部" @change="getList">
-            <el-option label="可用" :value="true" />
-            <el-option label="不可用" :value="false" />
-          </el-select>
-        </form-item>
-
-        <form-item label="适合尺寸">
-          <el-select
-            v-model="queryParams.suitableSizesArray"
-            style="width: 280px"
-            clearable
-            multiple
-            collapse-tags
-            collapse-tags-tooltip
-            placeholder="请选择适合尺寸"
-            @change="handleQuerySuitableSizesChange"
-          >
-            <el-option
-              v-for="config in sizeConfigs"
-              :key="config.key"
-              :label="getFullLabel(config)"
-              :value="config.key"
-            />
-          </el-select>
-        </form-item>
-
-        <form-item label="抠图支持">
-          <el-select
-            v-model="queryParams.cutoutModesArray"
-            style="width: 220px"
-            clearable
-            multiple
-            collapse-tags
-            collapse-tags-tooltip
-            placeholder="请选择抠图支持"
-            @change="handleQueryCutoutModesChange"
-          >
-            <el-option
-              v-for="item in cutoutModeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </form-item>
-      </div>
-
-      <div class="search-form-right">
-        <!-- 修改按钮 -->
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
           新增
         </el-button>
-        <!-- 删除按钮 -->
         <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
           批量删除
         </el-button>
@@ -1411,69 +1402,80 @@ function removeSuitableSize(sizeKey: string) {
 
 <style lang="less" scoped>
 .search-form-container {
-  padding: 16px 0;
+  padding: 12px 16px;
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  align-items: center;
-  justify-content: flex-end;
+  gap: 12px;
+  align-items: flex-end;
   width: 100%;
   box-sizing: border-box;
+  background: var(--el-bg-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 
-  .search-form-left {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    align-items: center;
-    justify-content: flex-end;
+  :deep(.form-item) {
+    margin-bottom: 0;
     flex-shrink: 0;
+  }
 
-    :deep(.form-item) {
-      margin-bottom: 0;
-      flex-shrink: 0;
-    }
+  .search-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
 
     .el-button {
       flex-shrink: 0;
     }
   }
 
-  .search-form-right {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    flex-shrink: 0;
-  }
+  @media (max-width: 1200px) {
+    gap: 10px;
+    padding: 10px 16px;
 
-  // 小屏幕时，按钮组换行并左对齐
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: flex-start;
+    .search-actions {
+      gap: 8px;
 
-    .search-form-left {
-      width: 100%;
-      justify-content: flex-start;
-    }
-
-    .search-form-right {
-      width: 100%;
-      justify-content: flex-start;
-    }
-  }
-
-  // 超小屏幕时，输入框宽度自适应
-  @media (max-width: 480px) {
-    .search-form-left {
-      :deep(.el-input) {
-        width: 100% !important;
-        max-width: 100%;
+      .el-button {
+        padding: 8px 12px;
+        font-size: 13px;
       }
+    }
+  }
 
-      :deep(.el-select) {
-        width: 100% !important;
-        max-width: 100%;
+  @media (max-width: 768px) {
+    gap: 8px;
+    padding: 10px 12px;
+    flex-direction: column;
+    align-items: stretch;
+
+    :deep(.form-item) {
+      width: 100%;
+    }
+
+    .search-actions {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    gap: 6px;
+    padding: 8px 10px;
+
+    :deep(.form-item) {
+      width: 100%;
+    }
+
+    .search-actions {
+      gap: 4px;
+
+      .el-button {
+        flex: 1;
+        font-size: 12px;
+        padding: 6px 8px;
       }
     }
   }
@@ -1705,10 +1707,6 @@ function removeSuitableSize(sizeKey: string) {
 }
 
 // 行样式区分是否可用
-:deep(.row-enabled) {
-  // 可用行使用默认样式
-}
-
 :deep(.row-disabled) {
   background-color: var(--el-fill-color-lighter) !important;
   opacity: 0.4;

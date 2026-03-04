@@ -340,17 +340,28 @@
           <div class="thumbs" style="flex: 1; overflow-y: auto; padding-right: 4px;">
             <div v-for="id in ids" :key="id" class="thumb"
               :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }">
-              <img
-                :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })"
-                class="thumb-img" alt="素材预览" loading="lazy" />
-              <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
-                <el-icon>
-                  <Warning />
-                </el-icon>
-                <span>{{ getMaterialSuffix(id) || '未知' }}</span>
+              <div class="thumb-image-wrapper">
+                <img
+                  :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })"
+                  class="thumb-img" alt="素材预览" loading="lazy" />
+                <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
+                  <el-icon>
+                    <Warning />
+                  </el-icon>
+                  <span>{{ getMaterialSuffix(id) || '未知' }}</span>
+                </div>
+                <div v-else-if="getMaterialSuffix(id)" class="thumb-format-badge valid">
+                  <span>{{ getMaterialSuffix(id) }}</span>
+                </div>
               </div>
-              <div v-else-if="getMaterialSuffix(id)" class="thumb-format-badge valid">
-                <span>{{ getMaterialSuffix(id) }}</span>
+              <div class="thumb-info-row">
+                <el-tag v-if="getMaterialShapeLabel(id)" size="small" type="info" class="thumb-info-tag">
+                  {{ getMaterialShapeLabel(id) }}
+                </el-tag>
+                <el-tag v-if="getMaterialCutoutStatus(id) !== null" size="small" 
+                  :type="getMaterialCutoutStatus(id) ? 'success' : 'info'" class="thumb-info-tag">
+                  {{ getMaterialCutoutStatus(id) ? '抠图' : '非抠图' }}
+                </el-tag>
               </div>
             </div>
           </div>
@@ -400,10 +411,35 @@
                     </el-icon>
                   </template>
                 </el-input>
-                <el-button type="primary" size="small" @click="handlePsdTemplateSelectAll">
+                
+                <!-- 尺寸过滤 -->
+                <el-select v-model="psdSetTemplatePageParams.suitableSizesArray" placeholder="尺寸" clearable multiple
+                  style="max-width: 200px;" @change="() => { psdSetTemplatePageParams.currentPage = 1; loadPsdTemplatesForPsdSet() }">
+                  <el-option-group label="正方形">
+                    <el-option v-for="config in SIZE_SHAPE_GROUPS.square" :key="config.key" 
+                      :label="config.label" :value="config.key" />
+                  </el-option-group>
+                  <el-option-group label="横图">
+                    <el-option v-for="config in SIZE_SHAPE_GROUPS.landscape" :key="config.key" 
+                      :label="config.label" :value="config.key" />
+                  </el-option-group>
+                  <el-option-group label="竖图">
+                    <el-option v-for="config in SIZE_SHAPE_GROUPS.portrait" :key="config.key" 
+                      :label="config.label" :value="config.key" />
+                  </el-option-group>
+                </el-select>
+
+                <!-- 抠图过滤 -->
+                <el-select v-model="psdSetTemplatePageParams.cutoutModesArray" placeholder="抠图支持" clearable multiple
+                  style="max-width: 200px;" @change="() => { psdSetTemplatePageParams.currentPage = 1; loadPsdTemplatesForPsdSet() }">
+                  <el-option label="抠图" value="CUTOUT" />
+                  <el-option label="非抠图" value="NON_CUTOUT" />
+                </el-select>
+
+                <el-button type="primary" size="default" @click="handlePsdTemplateSelectAll">
                   {{ isAllPsdTemplatesSelected ? '取消全选' : '全选' }}
                 </el-button>
-                <el-button type="primary" size="small" :icon="Edit" @click="handlePsdTemplateDetailConfig">
+                <el-button type="primary" size="default" :icon="Edit" @click="handlePsdTemplateDetailConfig">
                   详细配置
                 </el-button>
                 <span class="selected-count" v-if="selectedPsdTemplateIds.length > 0">
@@ -1862,7 +1898,9 @@ const psdFolderTreeData = ref<any[]>([])
 const psdSetTemplatePageParams = reactive({
   currentPage: 1,
   pageSize: 12,
-  total: 0
+  total: 0,
+  suitableSizesArray: [] as string[], // 适用尺寸筛选
+  cutoutModesArray: [] as string[], // 抠图模式筛选
 })
 
 // 批量详细配置相关状态
@@ -2937,6 +2975,8 @@ async function loadPsdTemplatesForPsdSet() {
       currentPage: psdSetTemplatePageParams.currentPage,
       pageSize: psdSetTemplatePageParams.pageSize,
       searchKeyword: psdSetTemplateSearchText.value.trim() || undefined,
+      suitableSizes: psdSetTemplatePageParams.suitableSizesArray?.length ? psdSetTemplatePageParams.suitableSizesArray.join(',') : undefined,
+      cutoutModes: psdSetTemplatePageParams.cutoutModesArray?.length ? psdSetTemplatePageParams.cutoutModesArray.join(',') : undefined,
       enabled: true,
       folderId: selectedPsdFolderId.value === '__all__' ? undefined : (selectedPsdFolderId.value === '__root__' ? null : selectedPsdFolderId.value)
     })
@@ -3188,6 +3228,21 @@ function getMaterialSuffix(materialId: string | number): string {
   const material = dataSource.value.find(item => String(item.id) === String(materialId))
   if (!material || !material.suffix) return ''
   return (material.suffix || '').toLowerCase().replace(/^\./, '')
+}
+
+// 获取素材的形状标签（长图/宽图/正方图）
+function getMaterialShapeLabel(materialId: string | number): string {
+  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  if (!material || !material.aspectRatio) return ''
+  const sizeShape = getSizeShapeByRatio(material.aspectRatio)
+  return sizeShape?.label || ''
+}
+
+// 获取素材的抠图状态
+function getMaterialCutoutStatus(materialId: string | number): boolean | null {
+  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  if (!material) return null
+  return material.isCutout ?? null
 }
 
 // 检查素材格式是否符合PSD模板要求
@@ -5540,15 +5595,17 @@ h1 {
 
 .psd-set-materials .thumb {
   position: relative;
-  height: 120px;
+  height: 160px;
   width: auto;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
   overflow: hidden;
   background: var(--el-fill-color-lighter);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 8px;
   transition: all 0.2s;
 }
 
@@ -5557,10 +5614,21 @@ h1 {
   box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
 }
 
+.psd-set-materials .thumb-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
 .psd-set-materials .thumb img {
   width: auto;
-  height: 100%;
+  height: auto;
   max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   background: #f5f7fa;
 }
@@ -5589,6 +5657,21 @@ h1 {
 
 .psd-set-materials .thumb-format-badge .el-icon {
   font-size: 12px;
+}
+
+.psd-set-materials .thumb-info-row {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.psd-set-materials .thumb-info-tag {
+  font-size: 11px;
+  height: 20px;
+  line-height: 18px;
+  padding: 0 6px;
 }
 
 .psd-set-template-toolbar {
