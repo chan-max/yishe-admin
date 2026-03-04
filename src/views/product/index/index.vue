@@ -1,26 +1,7 @@
 <template>
-  <div class="flex gap-3 overflow-visible">
-    <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
-      <div class="h-full overflow-hidden">
-        <div class="h-full w-[280px]">
-          <ContentWrap class="!p-0 h-full">
-            <FolderTree v-model="queryParams.folderId" folder-category="product" width="100%" :show-border="false"
-              class="h-full" :drag-state="dragState" @change="handleFolderChange"
-              @folder-drag-over="handleFolderDragOver" @folder-drag-leave="handleFolderDragLeave"
-              @folder-drop="handleFolderDrop" />
-          </ContentWrap>
-        </div>
-      </div>
-      <div
-        class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-[var(--el-text-color-primary)] hover:text-primary transition-colors"
-        @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
-        <el-icon :size="14">
-          <DArrowRight v-if="folderTreeCollapsed" />
-          <DArrowLeft v-else />
-        </el-icon>
-      </div>
-    </div>
-    <ContentWrap class="flex-1 min-w-0">
+  <div class="flex flex-col gap-3 overflow-visible h-full">
+    <!-- 上方：搜索条件 -->
+    <ContentWrap class="flex-shrink-0">
       <!-- 折叠状态：显示常用搜索和操作 -->
       <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
         <div style="flex: 1"></div>
@@ -91,10 +72,6 @@
           <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
             批量删除
           </el-button>
-          <!-- 批量移动 -->
-          <el-button type="warning" :disabled="!selectedRows.length" @click="handleOpenBatchMove" :icon="Folder">
-            批量移动
-          </el-button>
           <!-- 批量发布/下架 -->
           <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Share">
             批量发布
@@ -107,9 +84,33 @@
           </el-button>
         </div>
       </div>
+    </ContentWrap>
 
-      <!-- 表格展示 -->
-      <div class="common-table">
+    <!-- 下方：左侧分类文件夹，右侧表格 -->
+    <div class="flex gap-3 overflow-visible flex-1 min-h-0">
+      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
+        <div class="h-full overflow-hidden">
+          <div class="h-full w-[280px]">
+            <ContentWrap class="!p-0 h-full">
+              <FolderTree v-model="queryParams.folderId" folder-category="product" width="100%" :show-border="false"
+                class="h-full" :drag-state="dragState" @change="handleFolderChange"
+                @folder-drag-over="handleFolderDragOver" @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop" />
+            </ContentWrap>
+          </div>
+        </div>
+        <div
+          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-[var(--el-text-color-primary)] hover:text-primary transition-colors"
+          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
+          <el-icon :size="14">
+            <DArrowRight v-if="folderTreeCollapsed" />
+            <DArrowLeft v-else />
+          </el-icon>
+        </div>
+      </div>
+      <ContentWrap class="flex-1 min-w-0">
+        <!-- 表格展示 -->
+        <div class="common-table">
         <vxe-grid class="product-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
           @checkbox-all="checkboxAllChange">
 
@@ -418,15 +419,15 @@
 
           <!-- 旧的关联列模板已移除，统一使用 relationsSlot -->
         </vxe-grid>
-      </div>
+        </div>
 
-      <!-- 分页 -->
-      <div class="py-4 flex justify-end">
-        <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
-          @pagination="getList" />
-      </div>
+        <!-- 分页 -->
+        <div class="py-4 flex justify-end">
+          <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+            @pagination="getList" />
+        </div>
 
-      <el-dialog :title="dialogTitle" v-model="dialogVisible" width="100%" :fullscreen="true" @close="dialogClose"
+        <el-dialog :title="dialogTitle" v-model="dialogVisible" width="100%" :fullscreen="true" @close="dialogClose"
         align-center>
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
           <el-row :gutter="20">
@@ -1382,29 +1383,18 @@
         </template>
       </el-dialog>
 
-      <!-- 批量移动弹窗 -->
-      <el-dialog title="移动到文件夹" v-model="batchMoveDialogVisible" width="400px" align-center>
-        <div class="h-[400px] border rounded overflow-hidden">
-          <FolderTree v-model="targetFolderId" folder-category="product" :width="350" :show-border="false"
-            :show-count="false" mode="select" class="w-full h-full" />
-        </div>
-        <template #footer>
-          <el-button @click="batchMoveDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmBatchMove">确定</el-button>
-        </template>
-      </el-dialog>
-
-      <!-- 拖拽提示气泡（跟随鼠标） -->
-      <teleport to="body">
-        <div v-show="dragHint.visible" class="drag-hint-bubble"
-          :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
-          <el-icon class="drag-hint-icon">
-            <InfoFilled />
-          </el-icon>
-          <span>{{ dragHint.text }}</span>
-        </div>
-      </teleport>
-    </ContentWrap>
+        <!-- 拖拽提示气泡（跟随鼠标） -->
+        <teleport to="body">
+          <div v-show="dragHint.visible" class="drag-hint-bubble"
+            :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
+            <el-icon class="drag-hint-icon">
+              <InfoFilled />
+            </el-icon>
+            <span>{{ dragHint.text }}</span>
+          </div>
+        </teleport>
+      </ContentWrap>
+      </div>
   </div>
 </template>
 
@@ -1687,8 +1677,6 @@ const videoGenDialogVisible = ref(false);
 const videoGenRow = ref<any>(null);
 const deletingVideoKey = ref<string>('');
 const publishDialogVisible = ref(false);
-const batchMoveDialogVisible = ref(false);
-const targetFolderId = ref<string | null>(null);
 
 // 拖拽状态（拖商品 -> 文件夹）
 const {
@@ -1723,29 +1711,6 @@ async function handleFolderDrop(payload: { data: any }) {
     ElMessage.error((error as Error).message || '移动失败');
   } finally {
     resetAfterDrop();
-  }
-}
-
-const handleOpenBatchMove = () => {
-  if (!selectedRows.value.length) return;
-  targetFolderId.value = '__root__'; // 默认选中根目录
-  batchMoveDialogVisible.value = true;
-}
-
-const confirmBatchMove = async () => {
-  if (!selectedRows.value.length) return;
-  try {
-    const ids = selectedRows.value.map((r: any) => r.id);
-    // targetFolderId.value is usually '__root__' or a UUID
-    await batchMoveProducts({
-      ids,
-      folderId: targetFolderId.value || '__root__'
-    });
-    ElMessage.success('移动成功');
-    batchMoveDialogVisible.value = false;
-    getList();
-  } catch (error) {
-    console.error(error);
   }
 }
 
