@@ -1203,6 +1203,14 @@ const handleThumbnailFileSelect = (event) => {
     return;
   }
 
+  // 限制缩略图大小为 10MB
+  const maxSizeBytes = 10 * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    ElMessage.error('缩略图大小不能超过 10MB!');
+    event.target.value = '';
+    return;
+  }
+
   // 创建预览URL
   if (thumbnailPreviewUrl.value) {
     URL.revokeObjectURL(thumbnailPreviewUrl.value);
