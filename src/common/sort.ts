@@ -28,6 +28,6 @@ sortTypeOptions.forEach((item) => {
 })
 
 export function defaultSortingValue(){
-    // 默认使用"按更新时间降序"（索引2）
-    return sortTypeOptions[2].value
+    // 默认使用"按创建时间降序"（索引0）
+    return sortTypeOptions[0].value
 }
