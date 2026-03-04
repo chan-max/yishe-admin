@@ -81,6 +81,7 @@ export function useFolderRowDrag<TItem extends { id?: string | number }>(
 
   const dragHintListenerBound = ref(false)
   const sortableRef = ref<Sortable | null>(null)
+  let rafId = 0  // 用于防抖位置更新
 
   const { x: mouseX, y: mouseY } = useMouse({ touch: false })
 
@@ -96,7 +97,13 @@ export function useFolderRowDrag<TItem extends { id?: string | number }>(
     if (!dragState.overFolderId) return
     dragHint.visible = true
     dragHint.text = `将 ${dragState.draggingIds.length} 个${itemLabel}移动到 ${dragState.overFolderPath || '该文件夹'}`
-    updateDragHintPosition(e)
+    
+    // 使用 RAF 防抖位置更新，避免频繁更新
+    if (rafId) cancelAnimationFrame(rafId)
+    rafId = requestAnimationFrame(() => {
+      updateDragHintPosition(e)
+      rafId = 0
+    })
   }
 
   function bindGlobalDragHint() {
@@ -186,11 +193,23 @@ export function useFolderRowDrag<TItem extends { id?: string | number }>(
     if (!dragState.dragging) return
     if (!payload || !payload.data) return
     if (payload.data.id === '__all__') return
-    dragState.overFolderId = payload.data.id
-    dragState.overFolderPath = payload.data.path || ''
-    dragHint.visible = true
-    dragHint.text = `将 ${dragState.draggingIds.length} 个${itemLabel}移动到 ${dragState.overFolderPath || '该文件夹'}`
-    updateDragHintPosition(payload.event)
+    
+    // 只有当进入新文件夹时才更新状态，避免频繁更新
+    if (dragState.overFolderId !== payload.data.id) {
+      dragState.overFolderId = payload.data.id
+      dragState.overFolderPath = payload.data.path || ''
+      dragHint.visible = true
+      dragHint.text = `将 ${dragState.draggingIds.length} 个${itemLabel}移动到 ${dragState.overFolderPath || '该文件夹'}`
+    }
+    
+    // 位置更新用 RAF 防抖，减少频繁更新
+    if (payload.event) {
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        updateDragHintPosition(payload.event)
+        rafId = 0
+      })
+    }
   }
 
   function handleFolderDragLeave(payloadOrData: { data: any } | any) {
@@ -216,6 +235,7 @@ export function useFolderRowDrag<TItem extends { id?: string | number }>(
   onUnmounted(() => {
     sortableRef.value?.destroy()
     unbindGlobalDragHint()
+    if (rafId) cancelAnimationFrame(rafId)
   })
 
   return {

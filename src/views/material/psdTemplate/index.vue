@@ -103,7 +103,7 @@
             </template>
             <template #thumbnailSlot="{ row }">
               <div class="thumbnail-cell">
-                <el-image v-if="row.thumbnail" :src="row.thumbnail" :preview-src-list="[row.thumbnail]"
+                <el-image v-if="row.thumbnail" :src="getPreviewImageUrl(row.thumbnail, { width: 150, height: 150, quality: 80, format: 'webp' })" :preview-src-list="[row.thumbnail]"
                   :initial-index="0" preview-teleported hide-on-click-modal fit="contain" :lazy="true"
                   class="thumbnail-image" />
                 <span v-else class="thumbnail-placeholder">暂无缩略图</span>
@@ -356,7 +356,7 @@
                       </div>
                       <div v-else class="thumbnail-preview-wrapper">
                         <el-image
-                          :src="thumbnailPreviewUrl || form.thumbnail"
+                          :src="getPreviewImageUrl(thumbnailPreviewUrl || form.thumbnail, { width: 180, height: 180, quality: 85, format: 'webp' })"
                           fit="contain"
                           :lazy="true"
                           class="thumbnail-preview-image"
@@ -545,11 +545,7 @@ import { psdTemplateApi } from "@/api/psdTemplate";
 import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
-import { downloadFileByElement } from "@/common/download";
-import { getTitleTemplateList } from "@/api/publish";
-import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
-import { generateUUID } from "@/utils";
 import { getPreviewImageUrl } from "@/utils/image";
 import {
   SIZE_SHAPE_UI_CONFIGS as sizeConfigs,
@@ -629,7 +625,7 @@ const gridOptions = ref<VxeGridProps<any>>({
     {
       title: "支持尺寸",
       field: "suitableSizes",
-      minWidth: 300,
+      minWidth: 160,
       showOverflow: true,
       slots: {
         default: "suitableSizesSlot",
