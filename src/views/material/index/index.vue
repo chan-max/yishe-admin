@@ -431,16 +431,35 @@
                         </div>
                         <div class="template-paths">
                           <div class="path-row">
-                            <span class="path-label">远程链接：</span>
-                            <el-link v-if="tpl.url" :href="tpl.url" target="_blank" type="primary" :underline="false"
-                              class="path-link" @click.stop>
-                              {{ tpl.url.length > 60 ? tpl.url.slice(0, 60) + '...' : tpl.url }}
-                            </el-link>
+                            <span class="path-label">适用尺寸：</span>
+                            <div v-if="tpl.suitableSizes && tpl.suitableSizes.length > 0" class="suitable-sizes-wrap">
+                              <el-tag
+                                v-for="sizeKey in tpl.suitableSizes"
+                                :key="sizeKey"
+                                size="small"
+                                :style="{
+                                  backgroundColor: getSizeShapeUiConfig(sizeKey)?.color + '20',
+                                  borderColor: getSizeShapeUiConfig(sizeKey)?.color,
+                                  color: getSizeShapeUiConfig(sizeKey)?.color,
+                                  marginRight: '4px'
+                                }">
+                                {{ getSizeShapeUiConfig(sizeKey)?.label || sizeKey }}
+                              </el-tag>
+                            </div>
                             <span v-else class="path-empty">暂无</span>
                           </div>
                           <div class="path-row">
-                            <span class="path-label">本地路径：</span>
-                            <span v-if="tpl.windowsLocalPath" class="path-text">{{ tpl.windowsLocalPath }}</span>
+                            <span class="path-label">适用抠图：</span>
+                            <div v-if="tpl.cutoutModes && tpl.cutoutModes.length > 0" class="suitable-cutout-wrap">
+                              <el-tag
+                                v-for="mode in tpl.cutoutModes"
+                                :key="mode"
+                                size="small"
+                                type="info"
+                                style="margin-right: 4px">
+                                {{ getCutoutModeLabel(mode) }}
+                              </el-tag>
+                            </div>
                             <span v-else class="path-empty">暂无</span>
                           </div>
                         </div>
@@ -1504,7 +1523,7 @@ import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { getPreviewImageUrl } from '@/utils/image'
-import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio } from './sizeShapeConfig'
+import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio, getSizeShapeUiConfig } from './sizeShapeConfig'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
 
@@ -1515,6 +1534,15 @@ const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
 
 // 尺寸形状配置
 const sizeShapeGroups = SIZE_SHAPE_GROUPS
+
+// 抠图模式标签映射
+const getCutoutModeLabel = (mode: string) => {
+  const map = {
+    CUTOUT: '抠图',
+    NON_CUTOUT: '非抠图',
+  };
+  return map[mode] || mode;
+};
 
 const form = ref({})
 
@@ -2912,7 +2940,24 @@ async function loadPsdTemplatesForPsdSet() {
       enabled: true,
       folderId: selectedPsdFolderId.value === '__all__' ? undefined : (selectedPsdFolderId.value === '__root__' ? null : selectedPsdFolderId.value)
     })
-    psdSetTemplates.value = res.list || []
+    // 处理 suitableSizes 和 cutoutModes 字段（从字符串转为数组）
+    psdSetTemplates.value = (res.list || []).map(item => {
+      if (item && typeof item.suitableSizes === 'string') {
+        try {
+          item.suitableSizes = item.suitableSizes ? item.suitableSizes.split(',').map(s => s.trim()).filter(Boolean) : []
+        } catch (e) {
+          item.suitableSizes = []
+        }
+      }
+      if (item && typeof item.cutoutModes === 'string') {
+        try {
+          item.cutoutModes = item.cutoutModes ? item.cutoutModes.split(',').map(mode => mode.trim()).filter(Boolean) : []
+        } catch (e) {
+          item.cutoutModes = []
+        }
+      }
+      return item
+    })
     psdSetTemplatePageParams.total = res.total || 0
   } catch (error) {
     console.error('加载PSD模板失败:', error)
@@ -5690,6 +5735,14 @@ h1 {
   gap: 6px;
   line-height: 1.4;
   word-break: break-all;
+}
+
+.psd-set-templates .suitable-sizes-wrap,
+.psd-set-templates .suitable-cutout-wrap {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .psd-set-templates .path-label {
