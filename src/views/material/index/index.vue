@@ -490,8 +490,10 @@
               </el-tag>
             </div>
 
-            <div>
+            <div style="display: flex; gap: 8px; align-items: center;">
               <el-button @click="psdSetDialogVisible = false">取消</el-button>
+              <el-button type="info" :disabled="!ids.length || !selectedPsdTemplateIds.length" 
+                @click="showPsdSetParams">查看发送参数</el-button>
               <el-tooltip v-if="hasInvalidFormatMaterials"
                 :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map(m => m.name).join('、')}），请移除后重试`"
                 placement="top">
@@ -1404,6 +1406,17 @@
 
     <RelatedPsdSetDialog ref="relatedPsdSetDialogRef" />
 
+    <!-- PSD套图参数查看弹窗 -->
+    <el-dialog v-model="psdSetParamsDialogVisible" title="PSD套图发送参数" width="80%" :destroy-on-close="true" align-center>
+      <div class="psd-params-viewer">
+        <pre class="params-content">{{ psdSetParamsContent }}</pre>
+      </div>
+      <template #footer>
+        <el-button @click="psdSetParamsDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="() => { navigator.clipboard.writeText(psdSetParamsContent); ElMessage.success('已复制到剪贴板') }">复制参数</el-button>
+      </template>
+    </el-dialog>
+
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
@@ -1839,6 +1852,10 @@ const templateConfigList = ref<Array<{
 const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
 const psdSetTemplateSearchText = ref('')
+
+// PSD参数查看
+const psdSetParamsDialogVisible = ref(false)
+const psdSetParamsContent = ref('')
 
 // PSD模板详情弹窗
 const psdTemplateDetailDialogVisible = ref(false)
@@ -3029,6 +3046,41 @@ function handlePsdTemplateDetailConfig() {
   batchDetailConfigDialogVisible.value = true
 }
 
+// 构建PSD套图发送参数
+function buildPsdSetParams() {
+  // 构建配置映射：将详细配置弹窗中的配置信息传递到后台
+  const configMap: Record<string, any> = {}
+  if (templateConfigList.value.length > 0) {
+    templateConfigList.value.forEach(config => {
+      let psdInfo = null
+      if (config.configText && config.configText.trim()) {
+        try {
+          psdInfo = JSON.parse(config.configText.trim())
+        } catch (e) {
+          console.error('解析配置失败:', e)
+        }
+      }
+
+      // 使用配置项的ID作为key（在单素材模式下是 templateId_materialId，在合并模式下是 templateId）
+      configMap[config.id] = psdInfo
+    })
+  }
+
+  return {
+    stickerIds: ids.value.map((id) => String(id)),
+    psdTemplateIds: [...selectedPsdTemplateIds.value],
+    mergeSticker: psdSetMergeSticker.value,
+    configMap: Object.keys(configMap).length > 0 ? configMap : undefined
+  }
+}
+
+// 显示PSD套图发送参数
+function showPsdSetParams() {
+  const params = buildPsdSetParams()
+  psdSetParamsContent.value = JSON.stringify(params, null, 2)
+  psdSetParamsDialogVisible.value = true
+}
+
 async function handleCreatePsdSets() {
   if (!ids.value.length) {
     return ElMessage.warning('请先勾选素材')
@@ -3049,32 +3101,10 @@ async function handleCreatePsdSets() {
     return
   }
 
-  // 构建配置映射：将详细配置弹窗中的配置信息传递到后台
-  const configMap: Record<string, any> = {}
-  if (templateConfigList.value.length > 0) {
-    templateConfigList.value.forEach(config => {
-      let psdInfo = null
-      if (config.configText && config.configText.trim()) {
-        try {
-          psdInfo = JSON.parse(config.configText.trim())
-        } catch (e) {
-          console.error('解析配置失败:', e)
-        }
-      }
-
-      // 使用配置项的ID作为key（在单素材模式下是 templateId_materialId，在合并模式下是 templateId）
-      configMap[config.id] = psdInfo
-    })
-  }
-
   psdSetSubmitting.value = true
   try {
-    const res = await stickerPsdSetApi.batchCreate({
-      stickerIds: ids.value.map((id) => String(id)),
-      psdTemplateIds: [...selectedPsdTemplateIds.value],
-      mergeSticker: psdSetMergeSticker.value,
-      configMap: Object.keys(configMap).length > 0 ? configMap : undefined
-    })
+    const params = buildPsdSetParams()
+    const res = await stickerPsdSetApi.batchCreate(params)
     const createdList = (res as any)?.list
     const createdCount = Array.isArray(createdList)
       ? createdList.length
