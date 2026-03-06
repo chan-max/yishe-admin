@@ -555,6 +555,7 @@ import { ImagePreview } from '@/components/ImagePreview';
 import { htmlToPngFile } from '@/utils/htmlToPng';
 import { copyLink } from '@/utils/clipboard';
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag';
+import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder';
 
 // 语言枚举定义
 const LANGUAGE_OPTIONS = [
@@ -988,14 +989,15 @@ async function handleBatchDelete() {
 // 拖拽到文件夹时的交互
 async function handleFolderDrop(payload: { data: any }) {
   if (!dragState.draggingIds.length) return;
+  if (payload.data.id === FOLDER_FILTER.ALL) return;
 
-  const targetFolderId = payload.data.id === '__root__' ? null : payload.data.id;
+  const targetFolderId = payload.data.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : payload.data.id;
   const targetPath = payload.data.path || '';
   const movingIds = [...dragState.draggingIds];
 
   try {
-    await fontTemplateApi.batchMove({ ids: movingIds, folderId: targetFolderId });
-    ElMessage.success(`已移动 ${movingIds.length} 个字体模板到 ${targetPath || '根目录'}`);
+    await fontTemplateApi.batchMove({ ids: movingIds, folderId: convertFolderIdToApiParam(targetFolderId) as string });
+    ElMessage.success(`已移动 ${movingIds.length} 个字体模板到 ${targetPath || '未分组'}`);
 
     // Stay in current folder, just refresh list
     await getList();

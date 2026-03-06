@@ -1458,6 +1458,7 @@ import { getPreviewImageUrl } from '@/utils/image'
 import { getPublishConfigListApi } from '@/api/product/publishConfig'
 import FolderTree from '@/components/material/FolderTree.vue'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
+import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder'
 
 
 
@@ -1695,15 +1696,15 @@ const {
 
 async function handleFolderDrop(payload: { data: any }) {
   if (!dragState.draggingIds.length) return;
-  if (payload.data.id === '__all__') return;
+  if (payload.data.id === FOLDER_FILTER.ALL) return;
 
-  const targetFolderId = payload.data.id === '__root__' ? '__root__' : payload.data.id;
+  const targetFolderId = payload.data.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : payload.data.id;
   const targetPath = payload.data.path || '';
   const movingIds = [...dragState.draggingIds];
 
   try {
-    await batchMoveProducts({ ids: movingIds, folderId: targetFolderId });
-    ElMessage.success(`已移动 ${movingIds.length} 个商品到 ${targetPath || '根目录'}`);
+    await batchMoveProducts({ ids: movingIds, folderId: convertFolderIdToApiParam(targetFolderId) as string });
+    ElMessage.success(`已移动 ${movingIds.length} 个商品到 ${targetPath || '未分组'}`);
     await getList();
     ids.value = [];
     selectedRows.value = [];
@@ -2178,6 +2179,10 @@ async function getList() {
   }
   if (queryParams.endTime) {
     params.endTime = queryParams.endTime;
+  }
+  // 文件夹筛选
+  if (queryParams.folderId && String(queryParams.folderId).trim()) {
+    params.folderId = String(queryParams.folderId).trim();
   }
   params.random = queryParams.random;
 

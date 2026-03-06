@@ -550,6 +550,7 @@ import {
   getSizeShapeUiConfig,
 } from "../index/sizeShapeConfig";
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag';
+import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder';
 
 const userStore = useUserStore()
 
@@ -578,7 +579,7 @@ const queryParams = reactive({
   enabled: undefined as boolean | undefined, // 是否可用筛选
   suitableSizesArray: [] as string[], // 适合尺寸筛选（多选）
   cutoutModesArray: [] as string[], // 抠图支持筛选（多选）
-  folderId: null as string | null, // 文件夹ID（用于筛选）
+  folderId: FOLDER_FILTER.ALL as string | null, // 文件夹ID（默认显示全部）
 });
 
 const gridOptions = ref<VxeGridProps<any>>({
@@ -767,6 +768,8 @@ async function getList() {
 
   let params = {
     ...restQueryParams,
+    // 转换文件夹ID为后端API参数
+    folderId: convertFolderIdToApiParam(queryParams.folderId),
     suitableSizes: suitableSizesArray?.length ? suitableSizesArray.join(',') : undefined,
     cutoutModes: cutoutModesArray?.length ? cutoutModesArray.join(',') : undefined,
   };
@@ -808,16 +811,11 @@ getList();
 
 // ============= 文件夹相关 =============
 const folderTreeCollapsed = useLocalStorage('psd_template_folder_collapsed', false);
-const selectedFolderId = ref<string | null>("__all__");
+const selectedFolderId = ref<string | null>(FOLDER_FILTER.ALL); // 默认选中"全部"
 
 function handleFolderChange(payload: { folderId: string | null }) {
-  if (payload.folderId === 'all') {
-    queryParams.folderId = undefined as any;
-  } else if (payload.folderId === null) {
-    queryParams.folderId = null; // null represents Uncategorized (Root)
-  } else {
-    queryParams.folderId = payload.folderId;
-  }
+  // 直接使用传入的 folderId，现在使用明确的常量标识
+  queryParams.folderId = payload.folderId || FOLDER_FILTER.ALL;
   queryParams.currentPage = 1;
   getList();
 }
@@ -825,13 +823,28 @@ function handleFolderChange(payload: { folderId: string | null }) {
 async function handleFolderDrop(payload: { data: any }) {
   if (!dragState.draggingIds.length) return;
 
-  const targetFolderId = payload.data.id === '__root__' ? null : payload.data.id;
+  // 使用新的常量标识处理目标文件夹ID
+  let targetFolderId: string | null = null;
+  if (payload.data.id === FOLDER_FILTER.NOT_GROUP) {
+    targetFolderId = FOLDER_FILTER.NOT_GROUP; // 拖到未分组
+  } else if (payload.data.id === FOLDER_FILTER.ALL) {
+    // 不允许拖到"全部"
+    ElMessage.warning('不能移动到"全部"');
+    resetAfterDrop();
+    return;
+  } else {
+    targetFolderId = payload.data.id; // 普通文件夹
+  }
+  
   const targetPath = payload.data.path || '';
   const movingIds = [...dragState.draggingIds];
 
   try {
-    await psdTemplateApi.batchMove({ ids: movingIds, folderId: targetFolderId });
-    ElMessage.success(`已移动 ${movingIds.length} 个模板到 ${targetPath || '根目录'}`);
+    await psdTemplateApi.batchMove({ 
+      ids: movingIds, 
+      folderId: convertFolderIdToApiParam(targetFolderId) 
+    });
+    ElMessage.success(`已移动 ${movingIds.length} 个模板到 ${targetPath || '未分组'}`);
 
     // Stay in the current folder, just refresh the list
     await getList();

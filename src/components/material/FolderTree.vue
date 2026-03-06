@@ -17,8 +17,8 @@
     </div>
 
     <el-tree ref="treeRef" :data="treeData" :props="{ children: 'children', label: 'name' }" node-key="id"
-      :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="['__root__']"
-      :highlight-current="true" :current-node-key="modelValue || '__root__'"
+      :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="[FOLDER_FILTER.NOT_GROUP]"
+      :highlight-current="true" :current-node-key="modelValue || FOLDER_FILTER.NOT_GROUP"
       style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden" class="sticker-folder-tree">
       <template #default="{ node, data }">
         <div class="sticker-folder-node"
@@ -26,7 +26,7 @@
           @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
           @drop.prevent="handleFolderDrop(data)">
           <div class="sticker-folder-node-content">
-            <template v-if="data.isAll || data.id === '__root__'">
+            <template v-if="data.isAll || data.id === FOLDER_FILTER.NOT_GROUP">
               <el-icon class="folder-icon" style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
                 <Files />
               </el-icon>
@@ -38,13 +38,13 @@
             </template>
 
             <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">{{ data.name }}</span>
-            <span v-if="showCount && data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
+            <span v-if="showCount && data.id !== FOLDER_FILTER.NOT_GROUP && !data.isAll" class="sticker-folder-node-count">({{
               data.stickerCount
               ||
               0 }})</span>
           </div>
 
-          <div v-if="data.id !== '__root__' && mode === 'manage'" class="sticker-folder-node-actions">
+          <div v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'" class="sticker-folder-node-actions">
             <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, data)" @click.stop size="small">
               <el-icon class="sticker-folder-action-icon">
                 <MoreFilled />
@@ -84,6 +84,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { FolderAdd, MoreFilled, Edit, Delete, Files } from "@element-plus/icons-vue";
 import { createStickerFolder, deleteStickerFolder, getStickerFolderTree, renameStickerFolder } from "@/api/material";
+import { FOLDER_FILTER } from "@/constants/folder";
 
 type FolderNode = {
   id: string;
@@ -135,7 +136,7 @@ async function loadTree() {
   const rootFolders = (res || []).filter((f: any) => f.parentId === null || f.parentId === undefined);
 
   const allNode: any = {
-    id: "__all__",
+    id: FOLDER_FILTER.ALL,
     name: "全部",
     path: "",
     parentId: null,
@@ -144,8 +145,8 @@ async function loadTree() {
   };
 
   const rootNode: any = {
-    id: "__root__",
-    name: "未分类",
+    id: FOLDER_FILTER.NOT_GROUP,
+    name: "未分组",
     path: "",
     parentId: null,
     children: [],
@@ -158,21 +159,21 @@ async function loadTree() {
     treeData.value = [allNode, rootNode, ...rootFolders];
   }
   nextTick(() => {
-    // If current modelValue is null (old root), set to __root__? Or if it's __all__?
-    // User might have passed __root__ as initial value.
-    treeRef.value?.setCurrentKey(props.modelValue || "__all__");
+    // If current modelValue is null (old root), set to NOT_GROUP? Or if it's ALL?
+    // User might have passed NOT_GROUP as initial value.
+    treeRef.value?.setCurrentKey(props.modelValue || FOLDER_FILTER.ALL);
   });
   emit("reloaded");
 }
 
 function handleNodeClick(node: any) {
-  if (node.id === '__all__') {
-    emit("update:modelValue", "__all__");
-    emit("change", { folderId: 'all', node });
+  if (node.id === FOLDER_FILTER.ALL) {
+    emit("update:modelValue", FOLDER_FILTER.ALL);
+    emit("change", { folderId: FOLDER_FILTER.ALL, node });
     return;
   }
-  const folderId = node.id === "__root__" ? null : node.id;
-  emit("update:modelValue", node.id === "__root__" ? "__root__" : node.id);
+  const folderId = node.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : node.id;
+  emit("update:modelValue", node.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : node.id);
   emit("change", { folderId, node });
 }
 
@@ -245,8 +246,8 @@ async function handleCommand(command: string, data: any) {
       ElMessage.success("删除成功");
       // 如果删除的是当前选中的文件夹，重置选中状态
       if (props.modelValue === data.id) {
-        emit("update:modelValue", "__all__");
-        emit("change", { folderId: 'all', node: null });
+        emit("update:modelValue", FOLDER_FILTER.ALL);
+        emit("change", { folderId: FOLDER_FILTER.ALL, node: null });
       }
       loadTree();
     } catch (error) {
@@ -256,7 +257,7 @@ async function handleCommand(command: string, data: any) {
 }
 
 function handleFolderDragOver(data: any, evt?: DragEvent) {
-  if (data.id === '__all__') return; // Prevent drop on All
+  if (data.id === FOLDER_FILTER.ALL) return; // Prevent drop on All
   emit("folder-drag-over", { data, event: evt });
 }
 
