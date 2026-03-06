@@ -29,6 +29,7 @@
           collapse-tags
           collapse-tags-tooltip
           placeholder="请选择适合尺寸"
+          popper-class="psd-size-select-dropdown"
           @change="handleQuerySuitableSizesChange"
         >
           <el-option
@@ -48,6 +49,7 @@
           collapse-tags
           collapse-tags-tooltip
           placeholder="请选择抠图支持"
+          popper-class="psd-size-select-dropdown"
           @change="handleQueryCutoutModesChange"
         >
           <el-option
@@ -402,13 +404,7 @@
                     :key="config.key"
                     :value="config.key"
                     :label="getFullLabel(config)"
-                  >
-                    <div class="size-option-simple">
-                      <div class="size-option-label">{{ config.label }}</div>
-                      <div class="size-option-ratio">{{ config.ratio }}</div>
-                      <div class="size-option-key">{{ config.key }}</div>
-                    </div>
-                  </el-option>
+                  />
                 </el-select>
 
               </el-form-item>
@@ -420,6 +416,7 @@
                   clearable
                   placeholder="请选择模板支持的抠图类型"
                   class="size-select"
+                  popper-class="psd-size-select-dropdown"
                   @change="handleCutoutModesChange"
                 >
                   <el-option
@@ -599,7 +596,7 @@ const gridOptions = ref<VxeGridProps<any>>({
       }
     },
     { type: "checkbox", width: 50, showOverflow: true },
-    { title: "ID", field: "id", width: 140, showOverflow: true },
+
     {
       title: "缩略图",
       field: "thumbnail",
@@ -649,6 +646,7 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "psdInfoSlot",
       },
     },
+        { title: "ID", field: "id", width: 140, showOverflow: true },
     {
       title: "本地路径",
       field: "windowsLocalPath",
@@ -1665,6 +1663,7 @@ function removeSuitableSize(sizeKey: string) {
   line-height: 1.4;
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 :deep(.el-select-dropdown__item:hover) {
@@ -1701,14 +1700,6 @@ function removeSuitableSize(sizeKey: string) {
   }
 }
 
-:deep(.dropdown-item-danger) {
-  color: var(--el-color-danger) !important;
-
-  &:hover {
-    color: var(--el-color-danger) !important;
-    background-color: var(--el-color-danger-light-9) !important;
-  }
-}
 
 // 行样式区分是否可用
 :deep(.row-disabled) {
