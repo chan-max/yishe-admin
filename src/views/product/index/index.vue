@@ -1303,6 +1303,15 @@
                 {{ formatTaskStatus(row.status).label }}
               </el-tag>
             </template>
+            <template #executionStatusSlot="{ row }">
+              <el-tag v-if="row.status === 'waiting'" type="warning" size="small">
+                等待中
+              </el-tag>
+              <el-tag v-else-if="row.status === 'pending'" type="success" size="small">
+                可执行
+              </el-tag>
+              <span v-else class="text-gray-400 text-sm">-</span>
+            </template>
             <template #attemptsSlot="{ row }">
               {{ row.attempts || 0 }} / {{ row.maxAttempts || 3 }}
             </template>
@@ -3413,6 +3422,7 @@ const publishTasksLoading = ref(false);
 const publishTasksColumns = [
   { field: 'platform', title: '平台', width: 120, slots: { default: 'platformSlot' } },
   { field: 'status', title: '状态', width: 120, slots: { default: 'statusSlot' } },
+  { field: 'executionStatus', title: '可执行状态', width: 120, slots: { default: 'executionStatusSlot' } },
   { field: 'description', title: '描述', minWidth: 200, showOverflow: true },
   { field: 'attempts', title: '重试次数', width: 120, slots: { default: 'attemptsSlot' } },
   { field: 'createdAt', title: '创建时间', width: 180, slots: { default: 'createdAtSlot' } },
@@ -3446,6 +3456,7 @@ async function handleViewPublishTasks(row: any) {
 function formatTaskStatus(status: string) {
   const statusMap: Record<string, { label: string; type: string }> = {
     pending: { label: '待处理', type: 'info' },
+    waiting: { label: '等待中', type: 'warning' },
     processing: { label: '处理中', type: 'warning' },
     completed: { label: '已完成', type: 'success' },
     failed: { label: '失败', type: 'danger' },

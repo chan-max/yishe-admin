@@ -85,33 +85,13 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     supportImage: false,
     titleMaxLength: 30,
     fields: [
-      ...videoCommonFields,
       {
-        key: 'coverType',
-        label: '封面类型',
-        type: 'select',
-        options: [
-          { label: '自动生成', value: 'auto' },
-          { label: '自定义上传', value: 'custom' }
-        ],
-        defaultValue: 'auto',
-        span: 8
-      },
-      {
-        key: 'syncToutiao',
-        label: '同步到头条',
-        type: 'switch',
-        defaultValue: false,
-        span: 8,
-        tooltip: '是否同步发布到今日头条'
-      },
-      {
-        key: 'syncXigua',
-        label: '同步到西瓜',
-        type: 'switch',
-        defaultValue: false,
-        span: 8,
-        tooltip: '是否同步发布到西瓜视频'
+        key: 'tagPrompt',
+        label: 'Tag 提示词',
+        type: 'textarea',
+        placeholder: '例如：分析其tag，要求可爱风，三个即可',
+        rows: 3,
+        span: 24
       }
     ]
   },

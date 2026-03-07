@@ -77,6 +77,16 @@
           </el-tag>
         </template>
 
+        <template #executionStatusDefaultSlot="{ row }">
+          <el-tag v-if="row.status === 'waiting'" type="warning" size="small">
+            等待中
+          </el-tag>
+          <el-tag v-else-if="row.status === 'pending'" type="success" size="small">
+            可执行
+          </el-tag>
+          <span v-else class="text-gray-400 text-sm">-</span>
+        </template>
+
         <template #dataDefaultSlot="{ row }">
           <el-button type="primary" link size="small" @click="handleViewData(row)">
             查看数据
@@ -287,6 +297,14 @@ const gridOptions = ref({
       width: 120,
       slots: {
         default: 'titleStatusDefaultSlot'
+      }
+    },
+    {
+      title: '可执行状态',
+      field: 'executionStatus',
+      width: 120,
+      slots: {
+        default: 'executionStatusDefaultSlot'
       }
     },
     {

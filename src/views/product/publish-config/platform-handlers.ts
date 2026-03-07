@@ -41,40 +41,22 @@ export interface PlatformHandler {
 const douyinHandler: PlatformHandler = {
   platform: 'douyin',
   
-  validateConfig(configData) {
-    const errors: string[] = []
-    
-    // 抖音特定校验
-    if (configData.syncToutiao && !configData.privacy) {
-      errors.push('同步到头条时必须设置隐私选项')
-    }
-    
+  validateConfig(_configData) {
     return {
-      valid: errors.length === 0,
-      errors
+      valid: true,
+      errors: []
     }
   },
   
   formatConfigForSubmit(configData) {
     // 抖音特定格式化
-    const formatted = { ...configData }
-    
-    // 确保布尔值类型正确
-    if (formatted.syncToutiao !== undefined) {
-      formatted.syncToutiao = Boolean(formatted.syncToutiao)
-    }
-    if (formatted.syncXigua !== undefined) {
-      formatted.syncXigua = Boolean(formatted.syncXigua)
-    }
-    
-    return formatted
+    return { ...configData }
   },
   
   getHints() {
     return [
       '抖音标题限制：最多30个字符',
-      '视频时长：15秒-5分钟',
-      '支持同步到头条和西瓜视频'
+      '视频时长：15秒-5分钟'
     ]
   }
 }
