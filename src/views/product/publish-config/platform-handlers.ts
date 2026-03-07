@@ -1,0 +1,356 @@
+/**
+ * 前端平台处理器 - 每个平台独立的业务逻辑
+ * 用于处理平台特定的数据转换、校验、格式化等
+ */
+
+/**
+ * 平台处理器接口
+ */
+export interface PlatformHandler {
+  platform: string
+  
+  /**
+   * 校验配置数据
+   */
+  validateConfig?: (configData: Record<string, any>) => { valid: boolean; errors: string[] }
+  
+  /**
+   * 格式化配置数据（提交前）
+   */
+  formatConfigForSubmit?: (configData: Record<string, any>) => Record<string, any>
+  
+  /**
+   * 格式化配置数据（编辑时）
+   */
+  formatConfigForEdit?: (configData: Record<string, any>) => Record<string, any>
+  
+  /**
+   * 获取平台特定的提示信息
+   */
+  getHints?: () => string[]
+  
+  /**
+   * 数据转换钩子（在提交前）
+   */
+  beforeSubmit?: (formData: any) => any
+}
+
+/**
+ * 抖音平台处理器
+ */
+const douyinHandler: PlatformHandler = {
+  platform: 'douyin',
+  
+  validateConfig(configData) {
+    const errors: string[] = []
+    
+    // 抖音特定校验
+    if (configData.syncToutiao && !configData.privacy) {
+      errors.push('同步到头条时必须设置隐私选项')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  },
+  
+  formatConfigForSubmit(configData) {
+    // 抖音特定格式化
+    const formatted = { ...configData }
+    
+    // 确保布尔值类型正确
+    if (formatted.syncToutiao !== undefined) {
+      formatted.syncToutiao = Boolean(formatted.syncToutiao)
+    }
+    if (formatted.syncXigua !== undefined) {
+      formatted.syncXigua = Boolean(formatted.syncXigua)
+    }
+    
+    return formatted
+  },
+  
+  getHints() {
+    return [
+      '抖音标题限制：最多30个字符',
+      '视频时长：15秒-5分钟',
+      '支持同步到头条和西瓜视频'
+    ]
+  }
+}
+
+/**
+ * 快手平台处理器
+ */
+const kuaishouHandler: PlatformHandler = {
+  platform: 'kuaishou',
+  
+  validateConfig(configData) {
+    const errors: string[] = []
+    
+    if (configData.photoType === 'long' && configData.privacy === 'private') {
+      errors.push('长视频不支持私密模式')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  },
+  
+  getHints() {
+    return [
+      '快手标题限制：最多30个字符',
+      '普通视频：最长57秒',
+      '长视频：1-10分钟'
+    ]
+  }
+}
+
+/**
+ * 小红书平台处理器
+ */
+const xiaohongshuHandler: PlatformHandler = {
+  platform: 'xiaohongshu',
+  
+  validateConfig(configData) {
+    const errors: string[] = []
+    
+    // 小红书特定校验
+    if (configData.noteType === 'video' && !configData.topic) {
+      errors.push('视频笔记建议添加话题标签')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  },
+  
+  formatConfigForSubmit(configData) {
+    const formatted = { ...configData }
+    
+    // 话题标签处理
+    if (formatted.topic && typeof formatted.topic === 'string') {
+      formatted.topic = formatted.topic.trim()
+    }
+    
+    return formatted
+  },
+  
+  getHints() {
+    return [
+      '小红书标题限制：最多100个字符',
+      '支持1-9张图片或1个视频',
+      '建议添加话题标签提高曝光',
+      '图片建议尺寸：3:4 或 1:1'
+    ]
+  }
+}
+
+/**
+ * 微博平台处理器
+ */
+const weiboHandler: PlatformHandler = {
+  platform: 'weibo',
+  
+  validateConfig() {
+    return {
+      valid: true,
+      errors: []
+    }
+  },
+  
+  getHints() {
+    return [
+      '微博标题限制：最多140个字符',
+      '支持1-9张图片',
+      '视频时长：5分钟以内'
+    ]
+  }
+}
+
+/**
+ * YouTube平台处理器
+ */
+const youtubeHandler: PlatformHandler = {
+  platform: 'youtube',
+  
+  validateConfig(configData) {
+    const errors: string[] = []
+    
+    if (!configData.privacy) {
+      errors.push('必须设置隐私选项')
+    }
+    
+    if (!configData.category) {
+      errors.push('必须选择视频分类')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  },
+  
+  formatConfigForSubmit(configData) {
+    const formatted = { ...configData }
+    
+    // 确保分类是字符串
+    if (formatted.category) {
+      formatted.category = String(formatted.category)
+    }
+    
+    return formatted
+  },
+  
+  getHints() {
+    return [
+      'YouTube标题限制：最多100个字符',
+      '描述限制：最多5000个字符',
+      '标签：最多500个字符',
+      '视频时长：最长12小时'
+    ]
+  }
+}
+
+/**
+ * TikTok平台处理器
+ */
+const tiktokHandler: PlatformHandler = {
+  platform: 'tiktok',
+  
+  validateConfig() {
+    return {
+      valid: true,
+      errors: []
+    }
+  },
+  
+  getHints() {
+    return [
+      'TikTok标题限制：最多100个字符',
+      '视频时长：15秒-10分钟',
+      '支持Duet和Stitch功能'
+    ]
+  }
+}
+
+/**
+ * 咸鱼平台处理器
+ */
+const xianyuHandler: PlatformHandler = {
+  platform: 'xianyu',
+  
+  validateConfig(configData) {
+    const errors: string[] = []
+    
+    if (!configData.price || configData.price <= 0) {
+      errors.push('必须设置有效的商品价格')
+    }
+    
+    if (configData.originalPrice && configData.originalPrice < configData.price) {
+      errors.push('原价不能低于现价')
+    }
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  },
+  
+  formatConfigForSubmit(configData) {
+    const formatted = { ...configData }
+    
+    // 价格转换为数字
+    if (formatted.price) {
+      formatted.price = Number(formatted.price)
+    }
+    if (formatted.originalPrice) {
+      formatted.originalPrice = Number(formatted.originalPrice)
+    }
+    
+    return formatted
+  },
+  
+  getHints() {
+    return [
+      '咸鱼标题限制：最多50个字符',
+      '必须设置商品价格',
+      '支持1-9张图片',
+      '建议上传清晰的商品图片'
+    ]
+  },
+  
+  beforeSubmit(formData) {
+    // 咸鱼必须有价格
+    if (!formData.configData?.price) {
+      throw new Error('咸鱼平台必须设置商品价格')
+    }
+    return formData
+  }
+}
+
+/**
+ * 平台处理器注册表
+ */
+const PLATFORM_HANDLERS: Record<string, PlatformHandler> = {
+  douyin: douyinHandler,
+  kuaishou: kuaishouHandler,
+  xiaohongshu: xiaohongshuHandler,
+  weibo: weiboHandler,
+  youtube: youtubeHandler,
+  tiktok: tiktokHandler,
+  xianyu: xianyuHandler
+}
+
+/**
+ * 获取平台处理器
+ */
+export function getPlatformHandler(platform: string): PlatformHandler | null {
+  return PLATFORM_HANDLERS[platform] || null
+}
+
+/**
+ * 校验平台配置数据
+ */
+export function validatePlatformConfig(platform: string, configData: Record<string, any>) {
+  const handler = getPlatformHandler(platform)
+  if (!handler || !handler.validateConfig) {
+    return { valid: true, errors: [] }
+  }
+  return handler.validateConfig(configData)
+}
+
+/**
+ * 格式化配置数据（提交前）
+ */
+export function formatConfigForSubmit(platform: string, configData: Record<string, any>) {
+  const handler = getPlatformHandler(platform)
+  if (!handler || !handler.formatConfigForSubmit) {
+    return configData
+  }
+  return handler.formatConfigForSubmit(configData)
+}
+
+/**
+ * 获取平台提示信息
+ */
+export function getPlatformHints(platform: string): string[] {
+  const handler = getPlatformHandler(platform)
+  if (!handler || !handler.getHints) {
+    return []
+  }
+  return handler.getHints()
+}
+
+/**
+ * 执行提交前钩子
+ */
+export function executePlatformBeforeSubmit(platform: string, formData: any) {
+  const handler = getPlatformHandler(platform)
+  if (!handler || !handler.beforeSubmit) {
+    return formData
+  }
+  return handler.beforeSubmit(formData)
+}

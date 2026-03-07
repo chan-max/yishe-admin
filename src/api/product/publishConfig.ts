@@ -30,3 +30,15 @@ export const updatePublishConfigApi = (id: string, data: any) => {
 export const deletePublishConfigApi = (id: string) => {
   return request.delete({ url: '/publish-config/' + id })
 }
+
+// 创建发布任务（服务端自动生成标题并写入任务数据）
+export const createPublishTaskApi = (data: {
+  productId: string
+  platform: string
+  publishConfigId: string
+  publishOptions?: any
+  description?: string
+  metadata?: Record<string, any>
+}) => {
+  return request.post({ url: '/publish-config/create-publish-task', data })
+}

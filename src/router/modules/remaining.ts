@@ -358,7 +358,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import('@/views/system/queue/index.vue'),
         name: 'SystemQueue',
         meta: {
-          title: '任务队列',
+          title: '平台发布任务',
         }
       },
     ]

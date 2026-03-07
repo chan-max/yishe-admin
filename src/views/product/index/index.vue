@@ -1455,7 +1455,7 @@ import request from "@/config/axios";
 import VideoGenDialog from './components/VideoGenDialog.vue';
 import { PRODUCT_CATEGORIES } from '@/config/product-categories'
 import { getPreviewImageUrl } from '@/utils/image'
-import { getPublishConfigListApi } from '@/api/product/publishConfig'
+import { getPublishConfigListApi, createPublishTaskApi } from '@/api/product/publishConfig'
 import FolderTree from '@/components/material/FolderTree.vue'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder'
@@ -2583,18 +2583,27 @@ async function handlePublishSubmit() {
       };
     }).filter(Boolean);
 
-    // 批量创建任务
-    const results = await Promise.all(
+    // 批量创建任务（使用 allSettled，避免单个失败导致整体中断）
+    const settledResults = await Promise.allSettled(
       tasks.map(task => task && createTask(task as any))
     );
 
-    const successCount = results.filter(r => r && r.id).length;
+    const successCount = settledResults.filter((item: any) => {
+      if (item.status !== 'fulfilled') return false;
+      const r = item.value;
+      return !!(r?.messageId || r?.id || r?.data?.messageId || r?.data?.id);
+    }).length;
 
-    if (successCount === selectedPlatforms.value.length) {
-      ElMessage.success(`成功创建 ${successCount} 个发布任务，已添加到发布队列`);
+    const totalCount = tasks.length;
+    const failedCount = Math.max(totalCount - successCount, 0);
+
+    if (successCount === totalCount) {
+      ElMessage.success(`成功创建 ${successCount}/${totalCount} 个发布任务，已添加到发布队列`);
       publishDialogVisible.value = false;
+    } else if (successCount > 0) {
+      ElMessage.warning(`部分创建成功：${successCount}/${totalCount} 个发布任务，失败 ${failedCount} 个`);
     } else {
-      ElMessage.warning(`成功创建 ${successCount}/${selectedPlatforms.value.length} 个发布任务`);
+      ElMessage.error(`发布任务创建失败：0/${totalCount}`);
     }
   } catch (error: any) {
     console.error('手动创建发布任务失败:', error);
@@ -3347,14 +3356,10 @@ async function confirmPublishToPlatforms() {
       if (!config) return null;
 
       return {
-        type: getPublishTaskType(config.platform),
-        data: {
-          productId: row.id,
-          platform: config.platform,
-          publishConfigId: config.id,
-          // 将配置中的个性化数据合并到 data 中，供执行端使用
-          ...(config.configData || {})
-        },
+        productId: row.id,
+        platform: config.platform,
+        publishConfigId: config.id,
+        publishOptions: config.configData || {},
         description: `发布商品"${row.name || row.id}"到${config.name} (${formatPlatformName(config.platform)})`,
         metadata: {
           platform: config.platform,
@@ -3362,23 +3367,33 @@ async function confirmPublishToPlatforms() {
           productName: row.name,
           publishConfigId: config.id,
           configName: config.name
-        },
+        }
       };
     }).filter(Boolean);
 
-    // 批量创建任务
-    const results = await Promise.all(
-      tasks.map(task => task && createTask(task))
+    // 批量创建任务（使用 allSettled，避免单个失败导致整体中断）
+    const settledResults = await Promise.allSettled(
+      tasks.map(task => task && createPublishTaskApi(task as any))
     );
 
-    const successCount = results.filter(r => r && r.id).length;
+    const successCount = settledResults.filter((item: any) => {
+      if (item.status !== 'fulfilled') return false;
+      const r = item.value;
+      // createPublishTaskApi 正常返回 messageId（兼容不同响应结构）
+      return !!(r?.messageId || r?.id || r?.data?.messageId || r?.data?.id);
+    }).length;
+
+    const totalCount = tasks.length;
+    const failedCount = Math.max(totalCount - successCount, 0);
 
     publishPlatformDialogVisible.value = false;
 
-    if (successCount === configIds.length) {
-      ElMessage.success(`成功创建 ${successCount} 个发布任务，已添加到发布队列`);
+    if (successCount === totalCount) {
+      ElMessage.success(`成功创建 ${successCount}/${totalCount} 个发布任务，已添加到发布队列`);
+    } else if (successCount > 0) {
+      ElMessage.warning(`部分创建成功：${successCount}/${totalCount} 个发布任务，失败 ${failedCount} 个`);
     } else {
-      ElMessage.warning(`成功创建 ${successCount}/${configIds.length} 个发布任务`);
+      ElMessage.error(`发布任务创建失败：0/${totalCount}`);
     }
   } catch (error: any) {
     console.error('创建发布任务失败:', error);

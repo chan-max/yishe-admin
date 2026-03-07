@@ -71,6 +71,12 @@
           </el-tag>
         </template>
 
+        <template #titleStatusDefaultSlot="{ row }">
+          <el-tag :type="getTitleStatusType(getTitleStatusValue(row))">
+            {{ getTitleStatusText(getTitleStatusValue(row)) }}
+          </el-tag>
+        </template>
+
         <template #dataDefaultSlot="{ row }">
           <el-button type="primary" link size="small" @click="handleViewData(row)">
             查看数据
@@ -173,7 +179,9 @@
 
     <!-- 查看数据对话框 -->
     <el-dialog v-model="dataDialogVisible" title="任务数据" width="600px" :center="false" align-center>
-      <pre class="data-preview">{{ JSON.stringify(currentTaskData, null, 2) }}</pre>
+      <div v-loading="dataDialogLoading">
+        <pre class="data-preview">{{ JSON.stringify(currentTaskData, null, 2) }}</pre>
+      </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dataDialogVisible = false">关闭</el-button>
@@ -271,6 +279,14 @@ const gridOptions = ref({
       width: 100,
       slots: {
         default: 'statusDefaultSlot'
+      }
+    },
+    {
+      title: '标题状态',
+      field: 'titleStatus',
+      width: 120,
+      slots: {
+        default: 'titleStatusDefaultSlot'
       }
     },
     {
@@ -405,6 +421,7 @@ const statusFormRules = {
 
 // 查看数据对话框
 const dataDialogVisible = ref(false)
+const dataDialogLoading = ref(false)
 const currentTaskData = ref<any>({})
 
 // 更新数据对话框
@@ -437,6 +454,47 @@ function getStatusText(status: QueueMessage['status']) {
     failed: '失败',
   }
   return map[status] || status
+}
+
+function parseMaybeJson(value: any) {
+  if (!value) return null
+  if (typeof value === 'object') return value
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value)
+    } catch (e) {
+      return null
+    }
+  }
+  return null
+}
+
+function getTitleStatusValue(row: any) {
+  const data = parseMaybeJson(row?.data)
+  const metadata = parseMaybeJson(row?.metadata)
+  return data?.titleStatus || metadata?.titleStatus || ''
+}
+
+function getTitleStatusText(status: string) {
+  const map: Record<string, string> = {
+    generated: '已生成',
+    pending: '生成中',
+    failed: '生成失败',
+    default: '默认标题',
+    not_configured: '未配置'
+  }
+  return map[status] || (status || '-')
+}
+
+function getTitleStatusType(status: string) {
+  const map: Record<string, string> = {
+    generated: 'success',
+    pending: 'warning',
+    failed: 'danger',
+    default: 'info',
+    not_configured: 'warning'
+  }
+  return map[status] || 'info'
 }
 
 // 获取列表
@@ -609,10 +667,11 @@ function handleEdit(row: QueueMessage) {
   statusDialogVisible.value = true
 }
 
-// 查看数据
-function handleViewData(row: QueueMessage) {
-  currentTaskData.value = row.data
+// 查看数据（直接展示任务行 data）
+async function handleViewData(row: QueueMessage) {
   dataDialogVisible.value = true
+  dataDialogLoading.value = false
+  currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {}
 }
 
 
