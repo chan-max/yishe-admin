@@ -1298,6 +1298,11 @@
 
         <el-row :gutter="24">
           <el-col :span="12">
+            <el-form-item label="素材编码">
+              <el-input v-model="editForm.code" placeholder="格式：2-7位字母+2-7位数字，如 abs123" clearable maxlength="14" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
             <el-form-item label="文件后缀">
               <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
             </el-form-item>
@@ -1655,6 +1660,7 @@ const gridOptions = computed(() => {
       slots: { default: 'previewDefaultSlot' }
     },
     { title: 'ID', field: 'id', width: 80, ellipsis: true },
+    { title: '编码', field: 'code', width: 120, ellipsis: true },
     { title: '名称（中/英）', field: 'name', minWidth: 280, className: 'font-bold', slots: { default: 'nameBilingualSlot' } },
     { title: '描述（中/英）', field: 'description', minWidth: 320, slots: { default: 'descriptionBilingualSlot' } },
     { title: '关键词（中/英）', field: 'keywords', minWidth: 280, slots: { default: 'keywordsBilingualSlot' } },
@@ -1807,6 +1813,7 @@ const rules = {
 const editDialogVisible = ref(false)
 const editForm = ref({
   id: '',
+  code: '',
   name: '',
   nameEn: '',
   description: '',
@@ -3425,6 +3432,7 @@ const delayUpdateList = useDebounceFn(() => {
   function handleEdit(row) {
     editForm.value = {
       id: row.id,
+      code: row.code || '',
       name: row.name || '',
       nameEn: row.nameEn || '',
       description: row.description || '',
@@ -3457,9 +3465,16 @@ const delayUpdateList = useDebounceFn(() => {
   async function submitEdit() {
     editLoading.value = true
     try {
+      const inputCode = (editForm.value.code || '').trim().toLowerCase()
+      if (inputCode && !/^[a-z]{2,7}\d{2,7}$/.test(inputCode)) {
+        ElMessage.warning('编码格式必须为 2-7 位字母 + 2-7 位数字，例如 abs123')
+        return
+      }
+
       // 只提交可编辑的字段，排除只读字段
       const submitData = {
         id: editForm.value.id,
+        code: inputCode,
         name: editForm.value.name,
         nameEn: editForm.value.nameEn,
         description: editForm.value.description,

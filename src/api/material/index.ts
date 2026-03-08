@@ -222,6 +222,16 @@ export function generateImageInfo(data) {
 }
 
 /**
+ * 生成唯一素材编码
+ */
+export function generateStickerCode(data?: { prefix?: string }) {
+  return request.post({
+    url: '/sticker/generate-code',
+    data: data || {}
+  })
+}
+
+/**
  * 编辑素材信息
  */
 export function updateAssetLibrary(data) {
