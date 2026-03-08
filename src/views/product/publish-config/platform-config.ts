@@ -305,6 +305,53 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
         span: 8
       }
     ]
+  },
+
+  temu: {
+    platform: 'temu',
+    label: 'Temu',
+    description: 'Temu 跨境电商平台配置',
+    supportVideo: false,
+    supportImage: true,
+    titleMaxLength: 60,
+    fields: [
+      {
+        key: 'price',
+        label: '商品价格',
+        type: 'number',
+        placeholder: '输入价格',
+        span: 8,
+        required: true
+      },
+      {
+        key: 'stock',
+        label: '库存',
+        type: 'number',
+        placeholder: '可选，库存数量',
+        span: 8
+      },
+      {
+        key: 'categoryId',
+        label: '类目ID',
+        type: 'input',
+        placeholder: '可选，Temu类目ID',
+        span: 8
+      },
+      {
+        key: 'shippingTemplate',
+        label: '运费模板',
+        type: 'input',
+        placeholder: '可选，运费模板名称/ID',
+        span: 12
+      },
+      {
+        key: 'brand',
+        label: '品牌',
+        type: 'input',
+        placeholder: '可选，品牌名称',
+        span: 12
+      }
+    ]
   }
 }
 

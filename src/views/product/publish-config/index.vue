@@ -20,8 +20,7 @@ import {
 import {
   validatePlatformConfig,
   formatConfigForSubmit,
-  executePlatformBeforeSubmit,
-  getPlatformHints
+  executePlatformBeforeSubmit
 } from './platform-handlers'
 
 const loading = ref(false)
@@ -133,7 +132,6 @@ const formRef = ref()
 // 动态平台配置
 const currentPlatformConfig = ref<PlatformConfig | null>(null)
 const platformConfigData = ref<Record<string, any>>({})
-const platformHints = ref<string[]>([])
 
 const form = reactive({
   id: undefined,
@@ -141,15 +139,22 @@ const form = reactive({
   platform: '',
   description: '',
   isActive: true,
-  titleTemplate: '',
-  titleConfig: '{}'
+  titleTemplate: ''
+})
+
+const titleConfigForm = reactive({
+  maxLength: undefined as number | undefined,
+  style: '',
+  tone: '',
+  includeEmoji: null as boolean | null,
+  requiredKeywords: [] as string[],
+  avoidWords: [] as string[]
 })
 
 // 监听平台变化，更新配置字段
 watch(() => form.platform, (newPlatform) => {
   if (newPlatform) {
     currentPlatformConfig.value = getPlatformConfig(newPlatform)
-    platformHints.value = getPlatformHints(newPlatform)
     // 如果是新增，初始化默认值
     if (!form.id) {
       platformConfigData.value = getPlatformDefaultData(newPlatform)
@@ -157,7 +162,6 @@ watch(() => form.platform, (newPlatform) => {
   } else {
     currentPlatformConfig.value = null
     platformConfigData.value = {}
-    platformHints.value = []
   }
 }, { immediate: true })
 
@@ -174,9 +178,14 @@ const handleAdd = () => {
   form.name = ''
   form.platform = ''
   form.titleTemplate = ''
-  form.titleConfig = '{}'
   form.description = ''
   form.isActive = true
+  titleConfigForm.maxLength = undefined
+  titleConfigForm.style = ''
+  titleConfigForm.tone = ''
+  titleConfigForm.includeEmoji = null
+  titleConfigForm.requiredKeywords = []
+  titleConfigForm.avoidWords = []
   platformConfigData.value = {}
   currentPlatformConfig.value = null
   dialogVisible.value = true
@@ -188,9 +197,17 @@ const handleEdit = (row: any) => {
   form.name = row.name
   form.platform = row.platform
   form.titleTemplate = row.titleTemplate || ''
-  form.titleConfig = row.titleConfig ? JSON.stringify(row.titleConfig, null, 2) : '{}'
   form.description = row.description
   form.isActive = row.isActive
+
+  titleConfigForm.maxLength = typeof row.titleConfig?.maxLength === 'number' ? row.titleConfig.maxLength : undefined
+  titleConfigForm.style = row.titleConfig?.style || ''
+  titleConfigForm.tone = row.titleConfig?.tone || ''
+  titleConfigForm.includeEmoji = typeof row.titleConfig?.includeEmoji === 'boolean' ? row.titleConfig.includeEmoji : null
+  titleConfigForm.requiredKeywords = Array.isArray(row.titleConfig?.requiredKeywords)
+    ? row.titleConfig.requiredKeywords
+    : (Array.isArray(row.titleConfig?.keywords) ? row.titleConfig.keywords : [])
+  titleConfigForm.avoidWords = Array.isArray(row.titleConfig?.avoidWords) ? row.titleConfig.avoidWords : []
   
   // 加载平台配置数据
   currentPlatformConfig.value = getPlatformConfig(row.platform)
@@ -214,15 +231,13 @@ const submitForm = async () => {
         // 格式化平台配置
         const formattedConfigData = formatConfigForSubmit(form.platform, platformConfigData.value)
         
-        let parsedTitleConfig = {}
-        
-        if (form.titleConfig && form.titleConfig.trim()) {
-          try {
-            parsedTitleConfig = JSON.parse(form.titleConfig)
-          } catch (e) {
-            ElMessage.error('标题配置 JSON 格式错误')
-            return
-          }
+        const parsedTitleConfig = {
+          maxLength: typeof titleConfigForm.maxLength === 'number' ? titleConfigForm.maxLength : undefined,
+          style: titleConfigForm.style?.trim() || undefined,
+          tone: titleConfigForm.tone?.trim() || undefined,
+          includeEmoji: typeof titleConfigForm.includeEmoji === 'boolean' ? titleConfigForm.includeEmoji : undefined,
+          requiredKeywords: Array.isArray(titleConfigForm.requiredKeywords) ? titleConfigForm.requiredKeywords : undefined,
+          avoidWords: Array.isArray(titleConfigForm.avoidWords) ? titleConfigForm.avoidWords : undefined
         }
 
         let data = {
@@ -347,21 +362,6 @@ onMounted(() => {
             <span style="font-size: 12px; color: #909399; margin-left: 10px;">{{ currentPlatformConfig.description }}</span>
           </el-divider>
 
-          <!-- 平台提示信息 -->
-          <el-alert
-            v-if="platformHints.length > 0"
-            :title="`${currentPlatformConfig.label}平台提示`"
-            type="info"
-            :closable="false"
-            style="margin-bottom: 20px;"
-          >
-            <ul style="margin: 0; padding-left: 20px;">
-              <li v-for="(hint, index) in platformHints" :key="index" style="margin: 5px 0;">
-                {{ hint }}
-              </li>
-            </ul>
-          </el-alert>
-
           <!-- 动态渲染平台字段 -->
           <el-row :gutter="24">
             <el-col 
@@ -448,12 +448,48 @@ onMounted(() => {
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="标题配置" prop="titleConfig">
-              <el-input
-                v-model="form.titleConfig"
-                type="textarea"
-                :rows="15"
-                placeholder="JSON格式配置标题生成参数，例如：&#10;{&#10;  'maxLength': 50,&#10;  'style': 'marketing',&#10;  'includeEmoji': true,&#10;  'tone': 'enthusiastic',&#10;  'keywords': ['热销', '爆款'],&#10;  'avoidWords': ['劣质', '便宜']&#10;}"
+            <el-form-item label="最大字符数">
+              <el-input-number
+                v-model="titleConfigForm.maxLength"
+                :min="1"
+                :max="200"
+                style="width: 100%;"
+                placeholder="例如：50"
+              />
+            </el-form-item>
+            <el-form-item label="风格">
+              <el-input v-model="titleConfigForm.style" placeholder="如 marketing / formal / cute" />
+            </el-form-item>
+            <el-form-item label="语气">
+              <el-input v-model="titleConfigForm.tone" placeholder="如 enthusiastic / neutral" />
+            </el-form-item>
+            <el-form-item label="包含 Emoji">
+              <el-radio-group v-model="titleConfigForm.includeEmoji">
+                <el-radio :label="true">允许</el-radio>
+                <el-radio :label="false">禁止</el-radio>
+                <el-radio :label="null">不限制</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="必含关键词">
+              <el-select
+                v-model="titleConfigForm.requiredKeywords"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                placeholder="输入后回车添加"
+                style="width: 100%;"
+              />
+            </el-form-item>
+            <el-form-item label="禁用词">
+              <el-select
+                v-model="titleConfigForm.avoidWords"
+                multiple
+                filterable
+                allow-create
+                default-first-option
+                placeholder="输入后回车添加"
+                style="width: 100%;"
               />
             </el-form-item>
           </el-col>

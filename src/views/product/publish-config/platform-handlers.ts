@@ -274,6 +274,47 @@ const xianyuHandler: PlatformHandler = {
 }
 
 /**
+ * Temu 平台处理器
+ */
+const temuHandler: PlatformHandler = {
+  platform: 'temu',
+
+  validateConfig(configData) {
+    const errors: string[] = []
+
+    if (!configData.price || Number(configData.price) <= 0) {
+      errors.push('必须设置有效的商品价格')
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    }
+  },
+
+  formatConfigForSubmit(configData) {
+    const formatted = { ...configData }
+
+    if (formatted.price) {
+      formatted.price = Number(formatted.price)
+    }
+    if (formatted.stock) {
+      formatted.stock = Number(formatted.stock)
+    }
+
+    return formatted
+  },
+
+  getHints() {
+    return [
+      'Temu 标题建议：不超过60字符',
+      '主图清晰、白底更佳',
+      '请确保价格与库存填写准确'
+    ]
+  }
+}
+
+/**
  * 平台处理器注册表
  */
 const PLATFORM_HANDLERS: Record<string, PlatformHandler> = {
@@ -283,7 +324,8 @@ const PLATFORM_HANDLERS: Record<string, PlatformHandler> = {
   weibo: weiboHandler,
   youtube: youtubeHandler,
   tiktok: tiktokHandler,
-  xianyu: xianyuHandler
+  xianyu: xianyuHandler,
+  temu: temuHandler
 }
 
 /**
