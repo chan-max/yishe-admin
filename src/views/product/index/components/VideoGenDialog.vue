@@ -180,6 +180,39 @@
               <el-scrollbar>
                 <div class="p-6 space-y-8">
                   <!-- Previous options content -->
+                  <!-- 执行模式选择 -->
+                  <section>
+                    <div class="flex items-center gap-2 mb-4">
+                      <div class="w-1 h-4 bg-green-500 rounded-full"></div>
+                      <span class="font-bold text-[var(--el-text-color-primary)]">执行模式</span>
+                    </div>
+                    <el-form label-position="top">
+                      <el-form-item>
+                        <el-radio-group v-model="form.syncMode" class="w-full">
+                          <el-radio :label="false" size="large" border class="flex-1 mb-2">
+                            <div class="flex flex-col gap-1 py-2">
+                              <div class="flex items-center gap-2">
+                                <el-icon class="text-blue-500"><Clock /></el-icon>
+                                <span class="font-bold">异步模式</span>
+                                <el-tag type="success" size="small">推荐</el-tag>
+                              </div>
+                              <span class="text-xs text-gray-500">创建任务后立即返回，适合自动化流程，不阻塞界面</span>
+                            </div>
+                          </el-radio>
+                          <el-radio :label="true" size="large" border class="flex-1">
+                            <div class="flex flex-col gap-1 py-2">
+                              <div class="flex items-center gap-2">
+                                <el-icon class="text-orange-500"><Loading /></el-icon>
+                                <span class="font-bold">同步模式</span>
+                              </div>
+                              <span class="text-xs text-gray-500">等待视频生成完成后返回结果，可能需要 3-5 分钟</span>
+                            </div>
+                          </el-radio>
+                        </el-radio-group>
+                      </el-form-item>
+                    </el-form>
+                  </section>
+
                   <section>
                     <div class="flex items-center gap-2 mb-4">
                       <div class="w-1 h-4 bg-blue-500 rounded-full"></div>
@@ -334,6 +367,40 @@
       </div>
     </div>
 
+    <!-- 异步任务结果对话框 -->
+    <el-dialog v-model="asyncTaskResult.visible" width="600px" append-to-body title="视频生成任务已创建">
+      <div class="space-y-4">
+        <el-alert type="success" :closable="false">
+          <template #title>
+            <div class="flex items-center gap-2">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span>任务正在后台处理中...</span>
+            </div>
+          </template>
+        </el-alert>
+        
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <div class="text-sm text-gray-600 mb-2">任务 ID</div>
+          <div class="flex items-center gap-2">
+            <el-input v-model="asyncTaskResult.taskId" readonly class="flex-1" />
+            <el-button @click="copyTaskId" type="primary" plain>复制</el-button>
+          </div>
+        </div>
+
+        <el-alert type="info" :closable="false">
+          <div class="text-sm space-y-2">
+            <p>• 视频生成需要 3-5 分钟，请稍后刷新商品列表查看结果</p>
+            <p>• 任务完成后，视频会自动添加到商品的 videos 字段</p>
+            <p>• 您也可以通过任务ID在队列管理中查询进度</p>
+          </div>
+        </el-alert>
+      </div>
+      <template #footer>
+        <el-button @click="closeAsyncResult">知道了</el-button>
+        <el-button type="primary" @click="closeAsyncResultAndRefresh">关闭并刷新</el-button>
+      </template>
+    </el-dialog>
+
     <!-- Payload 查看对话框 -->
     <el-dialog v-model="payloadVisible" width="60%" append-to-body class="payload-preview-dialog">
       <template #header>
@@ -370,7 +437,9 @@ import {
   MagicStick,
   Files,
   InfoFilled,
-  Delete
+  Delete,
+  Clock,
+  Loading
 } from '@element-plus/icons-vue';
 import { generateProductVideo } from '@/api/product';
 import { getClipMaterialList } from '@/api/clip-material';
@@ -406,7 +475,14 @@ const form = reactive({
   selectedImages: [] as string[],
   outputFormat: 'mp4',
   audioUrl: null as string | null,
-  replace: false
+  replace: false,
+  syncMode: false // false=异步(默认), true=同步
+});
+
+// 异步任务结果
+const asyncTaskResult = reactive({
+  taskId: null as string | null,
+  visible: false
 });
 
 const options = reactive({
@@ -474,6 +550,7 @@ const finalPayload = computed(() => {
   return {
     id: props.row.id,
     replace: form.replace,
+    sync: form.syncMode, // 同步/异步模式
     resources,
     options: {
       ...options,
@@ -582,10 +659,23 @@ async function handleSubmit() {
   generating.value = true;
   try {
     const payload = finalPayload.value;
-    await generateProductVideo(payload);
-    ElMessage.success('视频生成任务已提交，请稍后查看');
-    emit('success');
-    handleClose();
+    const result = await generateProductVideo(payload);
+    
+    // 判断是否为异步任务
+    if (result?.async && result?.taskId) {
+      // 异步模式：显示任务ID
+      asyncTaskResult.taskId = result.taskId;
+      asyncTaskResult.visible = true;
+      ElMessage.success({
+        message: '视频生成任务已创建，可通过任务ID查询进度',
+        duration: 5000
+      });
+    } else {
+      // 同步模式：直接完成
+      ElMessage.success('视频生成成功');
+      emit('success');
+      handleClose();
+    }
   } catch (e: any) {
     ElMessage.error(e?.message || '生成视频失败');
   } finally {
@@ -601,6 +691,28 @@ function copyPayload() {
   } catch (e) {
     ElMessage.error('复制失败');
   }
+}
+
+function copyTaskId() {
+  try {
+    if (asyncTaskResult.taskId) {
+      navigator.clipboard.writeText(asyncTaskResult.taskId);
+      ElMessage.success('任务ID已复制到剪贴板');
+    }
+  } catch (e) {
+    ElMessage.error('复制失败');
+  }
+}
+
+function closeAsyncResult() {
+  asyncTaskResult.visible = false;
+  handleClose();
+}
+
+function closeAsyncResultAndRefresh() {
+  asyncTaskResult.visible = false;
+  emit('success');
+  handleClose();
 }
 
 onMounted(() => {
