@@ -19,7 +19,8 @@ export interface CreateTtsRecordDto {
 }
 
 export interface CreateCustomVoiceDto {
-  audioBase64: string
+  audioBase64?: string
+  audioUrl?: string
   targetModel: string
   preferredName?: string
   audioMimeType?: string

@@ -117,7 +117,7 @@
           <el-form-item v-if="isVoiceCloneModel" label="音色来源" required>
             <el-radio-group v-model="voiceSource">
               <el-radio value="existing">选择已有音色</el-radio>
-              <el-radio value="upload">上传新音频</el-radio>
+              <el-radio value="material">从剪辑素材创建</el-radio>
             </el-radio-group>
           </el-form-item>
 
@@ -163,16 +163,16 @@
                 </el-option>
               </el-select>
               <div v-if="customVoiceList.length === 0 && !loadingVoices" class="voice-empty">
-                暂无已创建音色，请上传音频创建
+                暂无已创建音色，请从剪辑素材创建
               </div>
             </div>
           </el-form-item>
 
-          <!-- 上传新音频 -->
-          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'upload'" label="音色名称">
+          <!-- 从剪辑素材创建音色 -->
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音色名称">
             <el-input 
               v-model="customVoiceName" 
-              placeholder="请输入音色名称（可选，留空则使用文件名）" 
+              placeholder="请输入音色名称（可选，留空则使用素材名称）" 
               :disabled="uploadingAudio"
               clearable
               maxlength="32"
@@ -183,24 +183,47 @@
             </div>
           </el-form-item>
 
-          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'upload'" label="音频上传" required>
-            <el-upload
-              class="audio-upload"
-              :auto-upload="false"
-              :on-change="handleAudioChange"
-              :limit="1"
-              :accept="'audio/*'"
-              :disabled="uploadingAudio"
-              drag
-            >
-              <div class="upload-content" v-loading="uploadingAudio">
-                <el-icon class="upload-icon"><Upload /></el-icon>
-                <div class="upload-text">
-                  <p>{{ uploadingAudio ? '正在创建音色...' : '点击或拖拽音频文件到此处' }}</p>
-                  <p class="upload-tip">支持 mp3/wav 格式，建议 3-10s 清晰声音</p>
-                </div>
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音频素材" required>
+            <div class="voice-list-container">
+              <div class="clip-material-toolbar">
+                <el-input
+                  v-model="clipMaterialKeyword"
+                  placeholder="搜索素材名称/描述/关键词"
+                  clearable
+                  @keyup.enter="loadClipMaterialAudios"
+                />
+                <el-button :loading="loadingClipMaterials" @click="loadClipMaterialAudios">查询</el-button>
               </div>
-            </el-upload>
+
+              <el-select
+                v-model="selectedClipMaterialId"
+                class="w-full"
+                placeholder="请选择音频素材"
+                :loading="loadingClipMaterials"
+                clearable
+              >
+                <el-option
+                  v-for="item in clipMaterialAudios"
+                  :key="item.id"
+                  :label="`${item.name || '未命名'} (${(item.suffix || '').toLowerCase()})`"
+                  :value="item.id"
+                />
+              </el-select>
+
+              <div class="clip-material-actions">
+                <el-button type="primary" :loading="uploadingAudio" @click="handleCreateVoiceFromMaterial">
+                  使用所选素材创建音色
+                </el-button>
+              </div>
+
+              <audio
+                v-if="selectedClipMaterial?.url"
+                :src="selectedClipMaterial.url"
+                controls
+                preload="none"
+                class="audio-preview"
+              />
+            </div>
             <div v-if="customVoiceInfo" class="voice-info">
               <el-alert type="success" :closable="false">
                 <template #title>
@@ -209,7 +232,7 @@
               </el-alert>
             </div>
             <div v-if="!customVoiceInfo && form.model === 'qwen3-tts-vc-2026-01-22'" class="voice-tip">
-              请先上传音频文件创建自定义音色，然后才能生成语音
+              请先选择剪辑音频素材创建自定义音色，然后才能生成语音
             </div>
           </el-form-item>
 
@@ -314,7 +337,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Upload, Delete, Refresh } from '@element-plus/icons-vue'
+import { Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import { 
   createCustomVoice, 
   createTtsRecord, 
@@ -323,6 +346,7 @@ import {
   listCustomVoices,
   deleteCustomVoice 
 } from '@/api/ai/tts'
+import { getClipMaterialList } from '@/api/clip-material'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 
@@ -376,10 +400,42 @@ const form = reactive({
 const selectedInstructionTemplate = ref('')
 const customVoiceInfo = ref<any>(null)
 const uploadingAudio = ref(false)
-const voiceSource = ref<'existing' | 'upload'>('existing') // 音色来源：existing=选择已有，upload=上传新音频
+const voiceSource = ref<'existing' | 'material'>('existing') // 音色来源：existing=选择已有，material=从素材创建
 const customVoiceName = ref('') // 用户输入的音色名称
 const customVoiceList = ref<any[]>([]) // 已创建的音色列表
 const loadingVoices = ref(false) // 加载音色列表中
+const clipMaterialKeyword = ref('')
+const clipMaterialAudios = ref<any[]>([])
+const selectedClipMaterialId = ref('')
+const loadingClipMaterials = ref(false)
+
+const selectedClipMaterial = computed(() => {
+  return clipMaterialAudios.value.find((item) => item.id === selectedClipMaterialId.value)
+})
+
+const audioSuffixSet = new Set(['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'amr', 'opus'])
+
+const resolveAudioMimeType = (suffix?: string) => {
+  const normalized = (suffix || '').toLowerCase()
+  const map: Record<string, string> = {
+    mp3: 'audio/mpeg',
+    wav: 'audio/wav',
+    m4a: 'audio/mp4',
+    aac: 'audio/aac',
+    ogg: 'audio/ogg',
+    flac: 'audio/flac',
+    amr: 'audio/amr',
+    opus: 'audio/opus'
+  }
+  return map[normalized] || 'audio/mpeg'
+}
+
+const sanitizePreferredName = (value: string) => {
+  return value
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/^[0-9_-]+/, '')
+    .substring(0, 32)
+}
 
 // 格式化音色显示名称
 const formatVoiceName = (item: any) => {
@@ -472,6 +528,7 @@ watch(
       // 加载音色列表
       if (dialogVisible.value) {
         loadCustomVoices()
+        loadClipMaterialAudios()
       }
     }
   }
@@ -484,6 +541,7 @@ watch(
     form.voice = ''
     customVoiceInfo.value = null
     customVoiceName.value = ''
+    selectedClipMaterialId.value = ''
   }
 )
 
@@ -504,6 +562,9 @@ const resetForm = () => {
   customVoiceInfo.value = null
   customVoiceName.value = ''
   voiceSource.value = 'existing'
+  clipMaterialKeyword.value = ''
+  clipMaterialAudios.value = []
+  selectedClipMaterialId.value = ''
   form.sample_rate = 24000
   form.speed = 1
   form.pitch = 1
@@ -568,82 +629,64 @@ const handleDeleteVoice = async (voice: string) => {
   }
 }
 
-const handleAudioChange = async (file: any) => {
-  if (!file || !file.raw) return
+const loadClipMaterialAudios = async () => {
+  if (loadingClipMaterials.value) return
+  loadingClipMaterials.value = true
+  try {
+    const res = await getClipMaterialList({
+      currentPage: 1,
+      pageSize: 200,
+      keyword: clipMaterialKeyword.value || undefined,
+      isDeleted: false
+    })
+    const payload = res?.data ?? res
+    const list = payload?.list || []
+    clipMaterialAudios.value = list.filter((item) => audioSuffixSet.has(String(item?.suffix || '').toLowerCase()))
+  } catch (error: any) {
+    ElMessage.error(error?.message || '查询剪辑音频素材失败')
+  } finally {
+    loadingClipMaterials.value = false
+  }
+}
 
-  const audioFile = file.raw
-  const maxSize = 10 * 1024 * 1024 // 10MB
-  if (audioFile.size > maxSize) {
-    ElMessage.error('音频文件不能超过10MB')
+const handleCreateVoiceFromMaterial = async () => {
+  if (!selectedClipMaterial.value?.url) {
+    ElMessage.warning('请先选择音频素材')
     return
+  }
+
+  let preferredName = sanitizePreferredName(customVoiceName.value.trim())
+  if (!preferredName) {
+    preferredName = sanitizePreferredName(selectedClipMaterial.value.name || '') || `custom_voice_${Date.now()}`
   }
 
   uploadingAudio.value = true
   try {
-    // 读取文件并转base64
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string
-      const base64Data = base64.split(',')[1]
+    const res = await createCustomVoice({
+      audioUrl: selectedClipMaterial.value.url,
+      targetModel: 'qwen3-tts-vc-2026-01-22',
+      preferredName,
+      audioMimeType: resolveAudioMimeType(selectedClipMaterial.value.suffix)
+    })
 
-      // 确定音色名称：优先使用用户输入，否则使用文件名生成
-      let preferredName = ''
-      if (customVoiceName.value.trim()) {
-        // 使用用户输入的名称，清理非法字符
-        preferredName = customVoiceName.value.trim()
-          .replace(/[^a-zA-Z0-9_-]/g, '_')
-          .replace(/^[0-9_-]+/, '')
-          .substring(0, 32)
+    const payload = res?.data ?? res
+    if (payload?.success && payload?.voice) {
+      customVoiceInfo.value = {
+        voice: payload.voice,
+        preferredName: payload.preferredName,
+        targetModel: payload.targetModel
       }
-      
-      // 如果用户未输入或清理后为空，使用文件名生成
-      if (!preferredName) {
-        const rawName = audioFile.name.replace(/\.[^/.]+$/, '')
-        preferredName = rawName
-          .replace(/[^a-zA-Z0-9_-]/g, '_')
-          .replace(/^[0-9_-]+/, '')
-          .substring(0, 32)
-          || 'custom_voice_' + Date.now()
-      }
-
-      try {
-        const res = await createCustomVoice({
-          audioBase64: base64Data,
-          targetModel: 'qwen3-tts-vc-2026-01-22',
-          preferredName: preferredName,
-          audioMimeType: audioFile.type || 'audio/mpeg'
-        })
-
-        const payload = res?.data ?? res
-        if (payload?.success && payload?.voice) {
-          customVoiceInfo.value = {
-            voice: payload.voice,
-            preferredName: payload.preferredName,
-            targetModel: payload.targetModel
-          }
-          form.voice = payload.voice
-          ElMessage.success(`自定义音色"${payload.preferredName}"创建成功`)
-          // 清空输入的音色名称
-          customVoiceName.value = ''
-          // 刷新音色列表
-          await loadCustomVoices()
-        } else {
-          throw new Error('创建音色失败')
-        }
-      } catch (error: any) {
-        ElMessage.error(error?.message || '创建自定义音色失败')
-        customVoiceInfo.value = null
-      } finally {
-        uploadingAudio.value = false
-      }
+      form.voice = payload.voice
+      customVoiceName.value = ''
+      ElMessage.success(`自定义音色"${payload.preferredName}"创建成功`)
+      await loadCustomVoices()
+    } else {
+      throw new Error('创建音色失败')
     }
-    reader.onerror = () => {
-      ElMessage.error('读取音频文件失败')
-      uploadingAudio.value = false
-    }
-    reader.readAsDataURL(audioFile)
-  } catch (error) {
-    ElMessage.error('处理音频文件失败')
+  } catch (error: any) {
+    ElMessage.error(error?.message || '创建自定义音色失败')
+    customVoiceInfo.value = null
+  } finally {
     uploadingAudio.value = false
   }
 }
@@ -698,6 +741,7 @@ const handleAdd = () => {
   dialogVisible.value = true
   // 默认加载音色列表（声音复刻模型可能用到）
   loadCustomVoices()
+  loadClipMaterialAudios()
 }
 
 const submitForm = async () => {
@@ -709,8 +753,8 @@ const submitForm = async () => {
       ElMessage.warning('请选择已有音色')
       return
     }
-    if (voiceSource.value === 'upload' && !customVoiceInfo.value) {
-      ElMessage.warning('请先上传音频文件创建自定义音色')
+    if (voiceSource.value === 'material' && !customVoiceInfo.value) {
+      ElMessage.warning('请先从剪辑素材创建自定义音色')
       return
     }
   }
@@ -1002,5 +1046,17 @@ onMounted(() => {
   background-color: var(--el-fill-color-light);
   border-radius: 4px;
   margin-top: 8px;
+}
+
+.clip-material-toolbar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.clip-material-actions {
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 </style>
