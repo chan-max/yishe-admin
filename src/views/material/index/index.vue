@@ -1453,7 +1453,7 @@
       </div>
       <template #footer>
         <el-button @click="psdSetParamsDialogVisible = false">关闭</el-button>
-        <el-button type="primary" @click="() => { navigator.clipboard.writeText(psdSetParamsContent); ElMessage.success('已复制到剪贴板') }">复制参数</el-button>
+        <el-button type="primary" @click="() => { (navigator as any).clipboard.writeText(psdSetParamsContent); ElMessage.success('已复制到剪贴板') }">复制参数</el-button>
       </template>
     </el-dialog>
 

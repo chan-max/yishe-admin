@@ -1,476 +1,404 @@
 <template>
-  <ContentWrap title="AI 文字转语音助手">
-    <template #header>
-      <div class="flex flex-grow justify-end">
-        <el-tag type="success" effect="dark" round>Premium</el-tag>
+  <ContentWrap title="AI 文字转语音记录">
+    <div class="list-page-layout">
+      <div class="filter-section">
+        <div class="search-bar">
+          <div class="search-form-container">
+            <div class="search-field search-field-wide">
+              <label class="search-label">搜索</label>
+              <el-input
+                v-model="queryParams.search"
+                placeholder="文案 / 返回URL"
+                clearable
+                @keyup.enter="getList"
+                @clear="getList"
+              />
+            </div>
+            <div class="search-field">
+              <label class="search-label"></label>
+              <div class="search-actions">
+                <el-button type="primary" @click="getList">搜索</el-button>
+                <el-button type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </template>
 
-    <el-row :gutter="24">
-      <!-- 左侧：文本输入区 -->
-      <el-col :lg="15" :md="14" :sm="24" :xs="24">
-        <div class="input-card">
-          <div class="card-title">
-            <el-icon>
-              <EditPen />
-            </el-icon>
-            输入转换文本
-          </div>
-          <el-input v-model="ttsForm.text" type="textarea" :rows="18" placeholder="请输入您想要转换成语音的文字内容..." maxlength="500"
-            show-word-limit class="premium-textarea" />
-          <div class="tips-wrapper mt-6">
-            <div class="tip-card">
-              <el-icon class="tip-icon">
-                <InfoFilled />
-              </el-icon>
-              <div class="tip-text">
-                提示：Qwen3-TTS 提供了极其拟人的语音合成效果。如果文本过长，建议分段生成以获得最佳韵律。
-              </div>
-            </div>
+      <div class="content-container">
+        <div class="table-section">
+          <div class="common-table">
+            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading">
+            <template #textSlot="{ row }">
+              <div class="clamp-3">{{ row.text || '-' }}</div>
+            </template>
+            <template #configSlot="{ row }">
+              <div class="config-cell">{{ formatConfig(row.configParams) }}</div>
+            </template>
+            <template #previewSlot="{ row }">
+              <audio v-if="row.resultUrl" :src="row.resultUrl" controls preload="none" class="audio-preview" />
+              <span v-else>-</span>
+            </template>
+            <template #statusSlot="{ row }">
+              <el-tag :type="row.status === 'success' ? 'success' : 'danger'">
+                {{ row.status === 'success' ? '成功' : '失败' }}
+              </el-tag>
+            </template>
+            <template #operationSlot="{ row }">
+              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            </template>
+            </vxe-grid>
           </div>
         </div>
-      </el-col>
 
-      <!-- 右侧：设置与结果 -->
-      <el-col :lg="9" :md="10" :sm="24" :xs="24">
-        <div class="settings-sidebar">
-          <div class="sidebar-section">
-            <div class="section-title">基准配置</div>
-            <div class="setting-list">
-              <div class="setting-item">
-                <span class="setting-label">选择音色</span>
-                <el-select v-model="ttsForm.voice" placeholder="选择预设或角色" class="w-full">
-                  <el-option-group v-for="group in voiceGroups" :key="group.label" :label="group.label">
-                    <el-option v-for="item in group.options" :key="item.value" :label="item.label" :value="item.value">
-                      <div class="voice-option">
-                        <span class="voice-label">{{ item.label }}</span>
-                        <span class="voice-desc">{{ item.desc }}</span>
-                      </div>
-                    </el-option>
-                  </el-option-group>
-                </el-select>
-              </div>
-
-              <div class="setting-item">
-                <span class="setting-label">模型引擎</span>
-                <el-select v-model="ttsForm.model" placeholder="选择版本" class="w-full">
-                  <el-option label="Qwen3 TTS Flash (最新)" value="qwen3-tts-flash" />
-                  <el-option label="Qwen3 TTS Instruct (指令)" value="qwen3-tts-instruct-flash" />
-                </el-select>
-              </div>
-
-              <div class="setting-item">
-                <div class="flex justify-between items-center mb-1">
-                  <span class="setting-label">输出格式</span>
-                  <el-radio-group v-model="ttsForm.format" size="small">
-                    <el-radio-button label="mp3">MP3</el-radio-button>
-                    <el-radio-button label="wav">WAV</el-radio-button>
-                  </el-radio-group>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="sidebar-section mt-6">
-            <div class="section-title">语气微调</div>
-            <div class="slider-group">
-              <div class="slider-item">
-                <div class="slider-header">
-                  <span>语速 (Speed)</span>
-                  <span class="slider-value">{{ ttsForm.speed }}x</span>
-                </div>
-                <el-slider v-model="ttsForm.speed" :min="0.5" :max="2.0" :step="0.1" />
-              </div>
-              <div class="slider-item">
-                <div class="slider-header">
-                  <span>语调 (Pitch)</span>
-                  <span class="slider-value">{{ ttsForm.pitch }}x</span>
-                </div>
-                <el-slider v-model="ttsForm.pitch" :min="0.5" :max="2.0" :step="0.1" />
-              </div>
-            </div>
-          </div>
-
-          <div class="action-btn-wrapper mt-8">
-            <el-button type="primary" class="generate-btn" :loading="loading" @click="handleGenerate">
-              <el-icon v-if="!loading" class="mr-1">
-                <MagicStick />
-              </el-icon>
-              {{ loading ? '并行生成中...' : '生成音频' }}
-            </el-button>
-          </div>
-
-          <transition name="el-zoom-in-top">
-            <div v-if="audioUrl" class="result-sidebar-box mt-6">
-              <div class="result-box-header">
-                <div class="flex items-center gap-1">
-                  <el-icon color="#67C23A">
-                    <Checked />
-                  </el-icon>
-                  <span>生成完毕</span>
-                </div>
-                <el-button type="primary" link @click="handleDownload">下载文件</el-button>
-              </div>
-              <div class="player-wrapper mt-3">
-                <audio ref="audioRef" :src="audioUrl" controls class="custom-audio" />
-              </div>
-            </div>
-          </transition>
+        <div class="pagination-section">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.page"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
         </div>
-      </el-col>
-    </el-row>
+      </div>
+    </div>
+
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" fullscreen class="tts-create-dialog" :destroy-on-close="true">
+      <div class="tts-create-body">
+        <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
+          <el-form-item label="文案" prop="text">
+            <el-input v-model="form.text" type="textarea" :rows="6" maxlength="1000" show-word-limit />
+          </el-form-item>
+
+          <el-row :gutter="16">
+            <el-col :xs="24" :md="12">
+              <el-form-item label="音色" prop="voice">
+                <el-select v-model="form.voice" class="w-full">
+                  <el-option label="Cherry" value="Cherry" />
+                  <el-option label="Serena" value="Serena" />
+                  <el-option label="Ethan" value="Ethan" />
+                  <el-option label="Vivian" value="Vivian" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="12">
+              <el-form-item label="模型" prop="model">
+                <el-select v-model="form.model" class="w-full">
+                  <el-option label="qwen3-tts-flash" value="qwen3-tts-flash" />
+                  <el-option label="qwen3-tts-instruct-flash" value="qwen3-tts-instruct-flash" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="16">
+            <el-col :xs="24" :md="8">
+              <el-form-item label="格式" prop="format">
+                <el-select v-model="form.format" class="w-full">
+                  <el-option label="mp3" value="mp3" />
+                  <el-option label="wav" value="wav" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="8">
+              <el-form-item label="语速" prop="speed">
+                <el-input-number v-model="form.speed" :min="0.5" :max="2" :step="0.1" class="w-full" />
+              </el-form-item>
+            </el-col>
+            <el-col :xs="24" :md="8">
+              <el-form-item label="语调" prop="pitch">
+                <el-input-number v-model="form.pitch" :min="0.5" :max="2" :step="0.1" class="w-full" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="submitForm">创建并生成</el-button>
+      </template>
+    </el-dialog>
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { MagicStick, InfoFilled, Download, EditPen, Checked } from '@element-plus/icons-vue'
-import { generateTts } from '@/api/ai/tts'
-import { ElMessage, ElNotification } from 'element-plus'
+import { onMounted, reactive, ref, watchEffect } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
+import { createTtsRecord, deleteTtsRecord, getTtsRecordPage } from '@/api/ai/tts'
+import { commonGridOptions } from '@/common/table'
+import { useWindowSize } from '@vueuse/core'
 
 const loading = ref(false)
-const audioUrl = ref('')
-const audioRef = ref<HTMLAudioElement | null>(null)
+const submitLoading = ref(false)
+const dialogVisible = ref(false)
+const dialogTitle = ref('创建语音')
+const total = ref(0)
+const dataSource = ref<any[]>([])
+const formRef = ref()
 
-const ttsForm = reactive({
+const queryParams = reactive({
+  page: 1,
+  pageSize: 20,
+  search: ''
+})
+
+const { height } = useWindowSize()
+const gridOptions = ref<any>({
+  ...commonGridOptions,
+  columns: [
+    { type: 'seq', title: '#', width: 58 },
+    { title: '文案', field: 'text', minWidth: 220, slots: { default: 'textSlot' } },
+    { title: '配置参数', field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
+    { title: '试听', field: 'preview', width: 200, slots: { default: 'previewSlot' } },
+    { title: '时长(秒)', field: 'duration', width: 96 },
+    { title: '状态', field: 'status', width: 88, slots: { default: 'statusSlot' } },
+    { title: '创建时间', field: 'createTime', width: 170 },
+    { title: '操作', fixed: 'right', width: 90, slots: { default: 'operationSlot' } }
+  ]
+})
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 255
+})
+
+const form = reactive({
+  id: '',
   text: '',
   voice: 'Cherry',
   model: 'qwen3-tts-flash',
   format: 'mp3',
   sample_rate: 24000,
-  speed: 1.0,
-  pitch: 1.0
+  speed: 1,
+  pitch: 1
 })
 
-const voiceGroups = [
-  {
-    label: '精品人声 (Boutique)',
-    options: [
-      { label: 'Cherry (芊悦)', value: 'Cherry', desc: '阳光积极、亲切自然小姐姐' },
-      { label: 'Serena (苏瑶)', value: 'Serena', desc: '温柔小姐姐' },
-      { label: 'Ethan (晨煦)', value: 'Ethan', desc: '标准普通话，阳光温暖朝气男声' },
-      { label: 'Chelsie (千雪)', value: 'Chelsie', desc: '二次元虚拟女友' },
-    ]
-  },
-  {
-    label: '角色与趣味 (Roles & Fun)',
-    options: [
-      { label: 'Momo (茉兔)', value: 'Momo', desc: '撒娇搞怪，逗你开心' },
-      { label: 'Vivian (十三)', value: 'Vivian', desc: '可爱的小暴躁，拽拽的' },
-      { label: 'Moon (月白)', value: 'Moon', desc: '率性帅气的月白男声' },
-      { label: 'Maia (四月)', value: 'Maia', desc: '知性与温柔的碰撞' },
-      { label: 'Kai (凯)', value: 'Kai', desc: '耳朵的一场 SPA' },
-      { label: 'Nofish (不吃鱼)', value: 'Nofish', desc: '不会翘舌音的设计师男声' },
-      { label: 'Bella (萌宝)', value: 'Bella', desc: '不打醉拳的小萝莉' },
-      { label: 'Eldric Sage (沧明子)', value: 'Eldric Sage', desc: '沉稳睿智的老者' },
-      { label: 'Mia (乖小妹)', value: 'Mia', desc: '温顺如春水，乖巧如初雪' },
-      { label: 'Mochi (沙小弥)', value: 'Mochi', desc: '聪明伶俐的小大人' },
-      { label: 'Bellona (燕铮莺)', value: 'Bellona', desc: '字正腔圆，尽显江湖' },
-      { label: 'Vincent (田叔)', value: 'Vincent', desc: '独特的沙哑烟嗓，豪情万丈' },
-      { label: 'Bunny (萌小姬)', value: 'Bunny', desc: '“萌属性”爆棚的小萝莉' },
-      { label: 'Neil (阿闻)', value: 'Neil', desc: '最专业的新闻主持人' },
-      { label: 'Elias (墨讲师)', value: 'Elias', desc: '学科严谨，讲课好听' },
-      { label: 'Arthur (徐大爷)', value: 'Arthur', desc: '质朴的烟嗓，讲村里的故事' },
-      { label: 'Nini (邻家妹妹)', value: 'Nini', desc: '软糯黏人，这一声哥哥太酥了' },
-      { label: 'Ebona (诡婆婆)', value: 'Ebona', desc: '幽暗低语，童年阴影风格' },
-      { label: 'Seren (小婉)', value: 'Seren', desc: '温和舒缓，助你晚安好梦' },
-      { label: 'Pip (顽屁小孩)', value: 'Pip', desc: '调皮捣蛋充满童真' },
-      { label: 'Stella (少女阿月)', value: 'Stella', desc: '迷糊少女，代表月亮消灭你' },
-    ]
-  },
-  {
-    label: '多语种与国际 (Global)',
-    options: [
-      { label: 'Jennifer (詹妮弗)', value: 'Jennifer', desc: '电影质感般美语女声' },
-      { label: 'Ryan (甜茶)', value: 'Ryan', desc: '戏感炸裂，真实与张力共舞' },
-      { label: 'Katerina (卡捷琳娜)', value: 'Katerina', desc: '御姐音色，韵律回味' },
-      { label: 'Aiden (艾登)', value: 'Aiden', desc: '精通厨艺的美语大男孩' },
-      { label: 'Bodega (博德加)', value: 'Bodega', desc: '热情的西班牙大叔' },
-      { label: 'Sonrisa (索尼莎)', value: 'Sonrisa', desc: '热情开朗的拉美大姐' },
-      { label: 'Alek (阿列克)', value: 'Alek', desc: '战斗民族的冷与暖' },
-      { label: 'Dolce (多尔切)', value: 'Dolce', desc: '慵懒的意大利大叔' },
-      { label: 'Sohee (素熙)', value: 'Sohee', desc: '情绪丰富的韩国欧尼' },
-      { label: 'Ono Anna (小野杏)', value: 'Ono Anna', desc: '鬼灵精怪的青梅竹马' },
-      { label: 'Lenn (莱恩)', value: 'Lenn', desc: '理性是底色，叛逆的德国青年' },
-      { label: 'Emilien (埃米尔安)', value: 'Emilien', desc: '浪漫的法国大哥哥' },
-      { label: 'Andre (安德雷)', value: 'Andre', desc: '自然舒服、沉稳男声' },
-      { label: 'Radio Gol (拉迪奥)', value: 'Radio Gol', desc: '足球解说风格声' },
-    ]
-  },
-  {
-    label: '特色方言 (Dialects)',
-    options: [
-      { label: 'Jada (上海-阿珍)', value: 'Jada', desc: '风风火火的沪上阿姐' },
-      { label: 'Dylan (北京-晓东)', value: 'Dylan', desc: '北京胡同长大的少年' },
-      { label: 'Li (南京-老李)', value: 'Li', desc: '耐心的瑜伽老师' },
-      { label: 'Marcus (陕西-秦川)', value: 'Marcus', desc: '心实声沉，老陕的味道' },
-      { label: 'Roy (闽南-阿杰)', value: 'Roy', desc: '诙谐直爽台北哥仔' },
-      { label: 'Peter (天津-李彼得)', value: 'Peter', desc: '天津相声，专业捧哏' },
-      { label: 'Sunny (四川-晴儿)', value: 'Sunny', desc: '甜到心里的川妹子' },
-      { label: 'Eric (四川-程川)', value: 'Eric', desc: '跳脱市井的成都男子' },
-      { label: 'Rocky (粤语-阿强)', value: 'Rocky', desc: '幽默阿强在线陪聊' },
-      { label: 'Kiki (粤语-阿清)', value: 'Kiki', desc: '甜美的港妹闺蜜' },
-    ]
-  }
-]
+const rules = {
+  text: [{ required: true, message: '请输入文案', trigger: 'blur' }],
+  voice: [{ required: true, message: '请选择音色', trigger: 'change' }],
+  model: [{ required: true, message: '请选择模型', trigger: 'change' }]
+}
 
-const handleGenerate = async () => {
-  if (!ttsForm.text) {
-    return ElMessage.warning('请输入要生成的文字')
-  }
+const resetForm = () => {
+  form.id = ''
+  form.text = ''
+  form.voice = 'Cherry'
+  form.model = 'qwen3-tts-flash'
+  form.format = 'mp3'
+  form.sample_rate = 24000
+  form.speed = 1
+  form.pitch = 1
+}
 
+const formatConfig = (configParams: any) => {
+  if (!configParams) return '-'
+  const parts = [
+    `voice:${configParams.voice || '-'}`,
+    `model:${configParams.model || '-'}`,
+    `format:${configParams.format || '-'}`,
+    `speed:${configParams.speed ?? '-'}`,
+    `pitch:${configParams.pitch ?? '-'}`
+  ]
+  return parts.join(' | ')
+}
+
+const getList = async () => {
   loading.value = true
   try {
-    const res = await generateTts({
-      ...ttsForm
+    const res = await getTtsRecordPage({
+      page: queryParams.page,
+      pageSize: queryParams.pageSize,
+      search: queryParams.search
     })
-
-    console.log('📥 [Frontend] TTS Response received:', res)
-
-    // 创建新的 Blob URL
-    if (audioUrl.value) {
-      URL.revokeObjectURL(audioUrl.value)
-    }
-
-    // axios 拦截器已经处理了 blob 转换 JSON 的情况
-    // 如果走到这里 res 就是 audio blob
-    const blob = res instanceof Blob ? res : new Blob([res], { type: `audio/${ttsForm.format === 'mp3' ? 'mpeg' : ttsForm.format}` })
-
-    // 检查 blob 大小，如果太小可能是错误信息被包装成了 blob
-    if (blob.size < 200) {
-      const text = await blob.text()
-      try {
-        const errorData = JSON.parse(text)
-        throw new Error(errorData.message || '生成失败')
-      } catch (e) {
-        // 不是 JSON，可能真的是很短的音频或者是其他错误
-      }
-    }
-
-    audioUrl.value = URL.createObjectURL(blob)
-
-    ElNotification({
-      title: '成功',
-      message: '语音合成成功',
-      type: 'success',
-      position: 'top-right'
-    })
-
-    // 自动播放
-    setTimeout(() => {
-      audioRef.value?.play()
-    }, 100)
-  } catch (error: any) {
-    console.error('TTS Generate Error:', error)
-    ElMessage.error(error.message || '生成失败，请稍后重试')
+    const payload = res?.data ?? res
+    dataSource.value = payload?.list || []
+    total.value = payload?.total || 0
   } finally {
     loading.value = false
   }
 }
 
-const handleDownload = () => {
-  if (!audioUrl.value) return
-  const a = document.createElement('a')
-  a.href = audioUrl.value
-  a.download = `yishe_ai_voice_${Date.now()}.${ttsForm.format}`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
+const handleAdd = () => {
+  dialogTitle.value = '创建语音'
+  resetForm()
+  dialogVisible.value = true
 }
+
+const submitForm = async () => {
+  await formRef.value?.validate()
+
+  submitLoading.value = true
+  try {
+    const res = await createTtsRecord({
+      text: form.text,
+      voice: form.voice,
+      model: form.model,
+      format: form.format,
+      sample_rate: form.sample_rate,
+      speed: form.speed,
+      pitch: form.pitch
+    })
+    const payload = res?.data ?? res
+
+    if (payload?.status === 'failed') {
+      ElMessage.warning(`创建成功，但生成失败：${payload?.errorMessage || '未知错误'}`)
+    } else {
+      ElMessage.success('创建并生成成功')
+    }
+
+    dialogVisible.value = false
+    await getList()
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+const handleDelete = async (row: any) => {
+  await ElMessageBox.confirm('确认删除该记录吗？', '提示', { type: 'warning' })
+  await deleteTtsRecord(row.id)
+  ElMessage.success('删除成功')
+  await getList()
+}
+
+onMounted(() => {
+  getList()
+})
 </script>
 
-<style scoped lang="scss">
-.input-card {
-  background: var(--el-bg-color);
-  padding: 0;
-
-  .card-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: var(--el-text-color-primary);
-
-    .el-icon {
-      color: var(--el-color-primary);
-    }
-  }
-}
-
-.premium-textarea :deep(.el-textarea__inner) {
-  padding: 16px;
-  font-size: 15px;
-  line-height: 1.6;
-  border-radius: 8px;
-  background-color: var(--el-fill-color-blank);
-  transition: all 0.3s ease;
-
-  &:focus {
-    background-color: var(--el-bg-color);
-    box-shadow: 0 0 0 1px var(--el-color-primary-light-8);
-  }
-}
-
-.settings-sidebar {
+<style scoped>
+.list-page-layout {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  padding: 0;
+}
+
+.filter-section {
+  margin: 0;
+  margin-bottom: 1rem;
+  flex-shrink: 0;
+}
+
+.table-section {
+  flex: 1;
+  min-height: 0;
+}
+
+.pagination-section {
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  margin-top: 16px;
+  margin-bottom: 24px;
 }
 
-.sidebar-section {
-  background: var(--el-fill-color-light);
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-
-  .section-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: var(--el-text-color-primary);
-    position: relative;
-    padding-left: 10px;
-
-    &::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3px;
-      height: 14px;
-      background: var(--el-color-primary);
-      border-radius: 2px;
-    }
-  }
+.content-container {
+  padding: 0 4px;
 }
 
-.setting-list {
+.common-table {
+  overflow-x: auto;
+}
+
+.search-bar {
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-form-container {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px 12px;
+  margin-bottom: 12px;
 }
 
-.setting-item {
-  .setting-label {
-    display: block;
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-    margin-bottom: 6px;
-  }
-}
-
-.slider-group {
+.search-field {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  width: 240px;
+  flex-shrink: 0;
 }
 
-.slider-item {
-  .slider-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--el-text-color-regular);
-    margin-bottom: 4px;
-
-    .slider-value {
-      font-weight: 600;
-      color: var(--el-color-primary);
-    }
-  }
+.search-field-wide {
+  width: 320px;
 }
 
-.generate-btn {
+.search-label {
+  width: 48px;
+  min-width: 48px;
+  text-align: right;
+  padding-right: 4px;
+  line-height: 32px;
+  flex-shrink: 0;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+}
+
+.search-field > :not(.search-label) {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.search-field .el-input,
+.search-field .el-select {
   width: 100%;
-  padding: 24px 0;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 8px;
-  letter-spacing: 1px;
-  box-shadow: var(--el-box-shadow-light);
 }
 
-.result-sidebar-box {
-  background: var(--el-color-success-light-9);
-  border: 1px solid var(--el-color-success-light-7);
-  border-radius: 12px;
-  padding: 16px;
-
-  .result-box-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
+.search-field .el-button {
+  white-space: nowrap;
 }
 
-.player-wrapper {
-  .custom-audio {
-    width: 100%;
-    height: 36px;
-  }
-}
-
-.tips-wrapper {
-  .tip-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 14px 16px;
-    background: var(--el-fill-color-blank);
-    border: 1px dashed var(--el-border-color);
-    border-radius: 8px;
-
-    .tip-icon {
-      margin-top: 2px;
-      color: var(--el-color-warning);
-    }
-
-    .tip-text {
-      font-size: 13px;
-      color: var(--el-text-color-secondary);
-      line-height: 1.5;
-    }
-  }
-}
-
-.voice-option {
+.search-actions {
   display: flex;
-  flex-direction: column;
-  line-height: 1.3;
-  padding: 4px 0;
-
-  .voice-label {
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
-
-  .voice-desc {
-    font-size: 11px;
-    color: var(--el-text-color-secondary);
-  }
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  column-gap: 6px;
+  row-gap: 6px;
+  align-items: center;
 }
 
-/* 动画效果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.audio-preview {
+  width: 180px;
+  height: 28px;
 }
 
-.scale-in-center {
-  animation: fadeIn 0.4s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  word-break: break-all;
+}
+
+.config-cell {
+  white-space: normal;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.tts-create-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.tts-create-body {
+  height: calc(100vh - 124px);
+  overflow-y: auto;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .tts-create-body {
+    padding: 16px;
+    height: calc(100vh - 116px);
+  }
 }
 </style>
