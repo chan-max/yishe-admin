@@ -1,5 +1,5 @@
 <template>
-  <ContentWrap title="AI 文字转语音记录">
+  <div class="tts-page">
     <div class="list-page-layout">
       <div class="filter-section">
         <div class="search-bar">
@@ -14,10 +14,18 @@
                 @clear="getList"
               />
             </div>
-            <div class="search-field">
+            <div class="search-field search-field-actions">
               <label class="search-label"></label>
               <div class="search-actions">
                 <el-button type="primary" @click="getList">搜索</el-button>
+                <el-button 
+                  type="danger" 
+                  :icon="Delete" 
+                  :disabled="selectedRows.length === 0"
+                  @click="handleBatchDelete"
+                >
+                  批量删除({{ selectedRows.length }})
+                </el-button>
                 <el-button type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
               </div>
             </div>
@@ -28,7 +36,13 @@
       <div class="content-container">
         <div class="table-section">
           <div class="common-table">
-            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading">
+            <vxe-grid 
+              v-bind="gridOptions" 
+              :data="dataSource" 
+              :loading="loading"
+              @checkbox-change="handleCheckboxChange"
+              @checkbox-all="handleCheckboxAll"
+            >
             <template #textSlot="{ row }">
               <div class="clamp-3">{{ row.text || '-' }}</div>
             </template>
@@ -99,9 +113,109 @@
             </div>
           </el-form-item>
 
+          <!-- 声音复刻模型的音色选择 -->
+          <el-form-item v-if="isVoiceCloneModel" label="音色来源" required>
+            <el-radio-group v-model="voiceSource">
+              <el-radio value="existing">选择已有音色</el-radio>
+              <el-radio value="upload">上传新音频</el-radio>
+            </el-radio-group>
+          </el-form-item>
+
+          <!-- 选择已有音色 -->
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'existing'" label="选择音色" required>
+            <div class="voice-list-container">
+              <div class="voice-list-header">
+                <span>已创建音色列表</span>
+                <el-button 
+                  :icon="Refresh" 
+                  size="small" 
+                  :loading="loadingVoices" 
+                  @click="loadCustomVoices"
+                >
+                  刷新
+                </el-button>
+              </div>
+              <el-select 
+                v-model="form.voice" 
+                class="w-full" 
+                placeholder="请选择音色" 
+                :loading="loadingVoices"
+                clearable
+                @change="handleVoiceSelect"
+                @clear="customVoiceInfo = null"
+              >
+                <el-option
+                  v-for="item in customVoiceList"
+                  :key="item.voice"
+                  :label="`${formatVoiceName(item)} (${new Date(item.gmt_create).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })})`"
+                  :value="item.voice"
+                >
+                  <div class="voice-option">
+                    <span :title="item.voice">{{ formatVoiceName(item) }}</span>
+                    <el-button
+                      :icon="Delete"
+                      size="small"
+                      type="danger"
+                      text
+                      @click.stop="handleDeleteVoice(item.voice)"
+                    />
+                  </div>
+                </el-option>
+              </el-select>
+              <div v-if="customVoiceList.length === 0 && !loadingVoices" class="voice-empty">
+                暂无已创建音色，请上传音频创建
+              </div>
+            </div>
+          </el-form-item>
+
+          <!-- 上传新音频 -->
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'upload'" label="音色名称">
+            <el-input 
+              v-model="customVoiceName" 
+              placeholder="请输入音色名称（可选，留空则使用文件名）" 
+              :disabled="uploadingAudio"
+              clearable
+              maxlength="32"
+              show-word-limit
+            />
+            <div class="voice-name-tip">
+              仅支持字母、数字、下划线、横线，不能以数字开头，最多32个字符
+            </div>
+          </el-form-item>
+
+          <el-form-item v-if="isVoiceCloneModel && voiceSource === 'upload'" label="音频上传" required>
+            <el-upload
+              class="audio-upload"
+              :auto-upload="false"
+              :on-change="handleAudioChange"
+              :limit="1"
+              :accept="'audio/*'"
+              :disabled="uploadingAudio"
+              drag
+            >
+              <div class="upload-content" v-loading="uploadingAudio">
+                <el-icon class="upload-icon"><Upload /></el-icon>
+                <div class="upload-text">
+                  <p>{{ uploadingAudio ? '正在创建音色...' : '点击或拖拽音频文件到此处' }}</p>
+                  <p class="upload-tip">支持 mp3/wav 格式，建议 3-10s 清晰声音</p>
+                </div>
+              </div>
+            </el-upload>
+            <div v-if="customVoiceInfo" class="voice-info">
+              <el-alert type="success" :closable="false">
+                <template #title>
+                  <span>已创建音色：{{ customVoiceInfo.preferredName }}</span>
+                </template>
+              </el-alert>
+            </div>
+            <div v-if="!customVoiceInfo && form.model === 'qwen3-tts-vc-2026-01-22'" class="voice-tip">
+              请先上传音频文件创建自定义音色，然后才能生成语音
+            </div>
+          </el-form-item>
+
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
-              <el-form-item label="音色" prop="voice">
+              <el-form-item v-if="!isVoiceCloneModel" label="音色" prop="voice">
                 <el-select v-model="form.voice" class="w-full">
                   <el-option label="Cherry（音色名：芊悦｜描述：阳光积极、亲切自然小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Cherry" />
                   <el-option label="Serena（音色名：苏瑶｜描述：温柔小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Serena" />
@@ -158,8 +272,9 @@
             <el-col :xs="24" :md="12">
               <el-form-item label="模型" prop="model">
                 <el-select v-model="form.model" class="w-full">
-                  <el-option label="qwen3-tts-flash" value="qwen3-tts-flash" />
-                  <el-option label="qwen3-tts-instruct-flash" value="qwen3-tts-instruct-flash" />
+                  <el-option label="qwen3-tts-flash【快速】" value="qwen3-tts-flash" />
+                  <el-option label="qwen3-tts-instruct-flash【指令控制】" value="qwen3-tts-instruct-flash" />
+                  <el-option label="qwen3-tts-vc-2026-01-22【声音复刻】" value="qwen3-tts-vc-2026-01-22" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -190,18 +305,24 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" @click="submitForm">创建并生成</el-button>
+        <el-button type="primary" :loading="submitLoading" :disabled="uploadingAudio" @click="submitForm">创建并生成</el-button>
       </template>
     </el-dialog>
-  </ContentWrap>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import { ContentWrap } from '@/components/ContentWrap'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { createTtsRecord, deleteTtsRecord, getTtsRecordPage } from '@/api/ai/tts'
+import { Plus, Upload, Delete, Refresh } from '@element-plus/icons-vue'
+import { 
+  createCustomVoice, 
+  createTtsRecord, 
+  deleteTtsRecord, 
+  getTtsRecordPage,
+  listCustomVoices,
+  deleteCustomVoice 
+} from '@/api/ai/tts'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 
@@ -212,6 +333,7 @@ const dialogTitle = ref('创建语音')
 const total = ref(0)
 const dataSource = ref<any[]>([])
 const formRef = ref()
+const selectedRows = ref<any[]>([]) // 多选行
 
 const queryParams = reactive({
   page: 1,
@@ -223,6 +345,7 @@ const { height } = useWindowSize()
 const gridOptions = ref<any>({
   ...commonGridOptions,
   columns: [
+    { type: 'checkbox', width: 50 },
     { type: 'seq', title: '#', width: 58 },
     { title: '文案', field: 'text', minWidth: 220, slots: { default: 'textSlot' } },
     { title: '配置参数', field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
@@ -251,6 +374,24 @@ const form = reactive({
 })
 
 const selectedInstructionTemplate = ref('')
+const customVoiceInfo = ref<any>(null)
+const uploadingAudio = ref(false)
+const voiceSource = ref<'existing' | 'upload'>('existing') // 音色来源：existing=选择已有，upload=上传新音频
+const customVoiceName = ref('') // 用户输入的音色名称
+const customVoiceList = ref<any[]>([]) // 已创建的音色列表
+const loadingVoices = ref(false) // 加载音色列表中
+
+// 格式化音色显示名称
+const formatVoiceName = (item: any) => {
+  // 如果有 preferred_name 就用它
+  if (item.preferred_name) {
+    return item.preferred_name
+  }
+  // 否则从 voice ID 中提取后缀作为标识
+  const voice = item.voice || ''
+  const lastPart = voice.split('-').slice(-2).join('-') // 提取最后两段
+  return lastPart || voice
+}
 
 const instructionTemplates = [
   {
@@ -308,6 +449,7 @@ const instructionTemplates = [
 ]
 
 const isInstructModel = computed(() => form.model === 'qwen3-tts-instruct-flash')
+const isVoiceCloneModel =computed(() => form.model === 'qwen3-tts-vc-2026-01-22')
 
 watch(
   () => form.model,
@@ -316,6 +458,32 @@ watch(
       form.instructions = ''
       selectedInstructionTemplate.value = ''
     }
+    if (model !== 'qwen3-tts-vc-2026-01-22') {
+      customVoiceInfo.value = null
+      voiceSource.value = 'existing'
+      // 切换到其他模型时，恢复默认音色
+      if (!form.voice || form.voice.startsWith('qwen-tts-vc-')) {
+        form.voice = 'Cherry'
+      }
+    } else {
+      // 切换到声音复刻模型时，清空音色选择
+      form.voice = ''
+      customVoiceInfo.value = null
+      // 加载音色列表
+      if (dialogVisible.value) {
+        loadCustomVoices()
+      }
+    }
+  }
+)
+
+// 监听音色来源变化，清空相关状态
+watch(
+  () => voiceSource.value,
+  () => {
+    form.voice = ''
+    customVoiceInfo.value = null
+    customVoiceName.value = ''
   }
 )
 
@@ -333,9 +501,151 @@ const resetForm = () => {
   form.format = 'mp3'
   form.instructions = ''
   selectedInstructionTemplate.value = ''
+  customVoiceInfo.value = null
+  customVoiceName.value = ''
+  voiceSource.value = 'existing'
   form.sample_rate = 24000
   form.speed = 1
   form.pitch = 1
+}
+
+// 加载自定义音色列表
+const loadCustomVoices = async () => {
+  if (loadingVoices.value) return
+  
+  loadingVoices.value = true
+  try {
+    const res = await listCustomVoices({ pageIndex: 0, pageSize: 100 })
+    const payload = res?.data ?? res
+    customVoiceList.value = payload?.voices || []
+    if (customVoiceList.value.length > 0) {
+      console.log('成功加载音色列表，共', customVoiceList.value.length, '个音色')
+    }
+  } catch (error: any) {
+    console.error('loadCustomVoices error:', error)
+    ElMessage.error(error?.message || '加载音色列表失败')
+  } finally {
+    loadingVoices.value = false
+  }
+}
+
+// 选择音色
+const handleVoiceSelect = (voice: string) => {
+  const selectedVoice = customVoiceList.value.find(v => v.voice === voice)
+  if (selectedVoice) {
+    customVoiceInfo.value = {
+      voice: selectedVoice.voice,
+      preferredName: formatVoiceName(selectedVoice),
+      targetModel: selectedVoice.target_model
+    }
+  }
+}
+
+// 删除自定义音色
+const handleDeleteVoice = async (voice: string) => {
+  try {
+    await ElMessageBox.confirm('确认删除该音色吗？删除后将无法恢复。', '删除确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await deleteCustomVoice(voice)
+    ElMessage.success('音色删除成功')
+    
+    // 如果删除的是当前选中的音色，清空选择
+    if (form.voice === voice) {
+      form.voice = ''
+      customVoiceInfo.value = null
+    }
+    
+    // 刷新列表
+    await loadCustomVoices()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '删除音色失败')
+    }
+  }
+}
+
+const handleAudioChange = async (file: any) => {
+  if (!file || !file.raw) return
+
+  const audioFile = file.raw
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  if (audioFile.size > maxSize) {
+    ElMessage.error('音频文件不能超过10MB')
+    return
+  }
+
+  uploadingAudio.value = true
+  try {
+    // 读取文件并转base64
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string
+      const base64Data = base64.split(',')[1]
+
+      // 确定音色名称：优先使用用户输入，否则使用文件名生成
+      let preferredName = ''
+      if (customVoiceName.value.trim()) {
+        // 使用用户输入的名称，清理非法字符
+        preferredName = customVoiceName.value.trim()
+          .replace(/[^a-zA-Z0-9_-]/g, '_')
+          .replace(/^[0-9_-]+/, '')
+          .substring(0, 32)
+      }
+      
+      // 如果用户未输入或清理后为空，使用文件名生成
+      if (!preferredName) {
+        const rawName = audioFile.name.replace(/\.[^/.]+$/, '')
+        preferredName = rawName
+          .replace(/[^a-zA-Z0-9_-]/g, '_')
+          .replace(/^[0-9_-]+/, '')
+          .substring(0, 32)
+          || 'custom_voice_' + Date.now()
+      }
+
+      try {
+        const res = await createCustomVoice({
+          audioBase64: base64Data,
+          targetModel: 'qwen3-tts-vc-2026-01-22',
+          preferredName: preferredName,
+          audioMimeType: audioFile.type || 'audio/mpeg'
+        })
+
+        const payload = res?.data ?? res
+        if (payload?.success && payload?.voice) {
+          customVoiceInfo.value = {
+            voice: payload.voice,
+            preferredName: payload.preferredName,
+            targetModel: payload.targetModel
+          }
+          form.voice = payload.voice
+          ElMessage.success(`自定义音色"${payload.preferredName}"创建成功`)
+          // 清空输入的音色名称
+          customVoiceName.value = ''
+          // 刷新音色列表
+          await loadCustomVoices()
+        } else {
+          throw new Error('创建音色失败')
+        }
+      } catch (error: any) {
+        ElMessage.error(error?.message || '创建自定义音色失败')
+        customVoiceInfo.value = null
+      } finally {
+        uploadingAudio.value = false
+      }
+    }
+    reader.onerror = () => {
+      ElMessage.error('读取音频文件失败')
+      uploadingAudio.value = false
+    }
+    reader.readAsDataURL(audioFile)
+  } catch (error) {
+    ElMessage.error('处理音频文件失败')
+    uploadingAudio.value = false
+  }
 }
 
 const applyInstructionTemplate = (value: string) => {
@@ -386,10 +696,24 @@ const handleAdd = () => {
   dialogTitle.value = '创建语音'
   resetForm()
   dialogVisible.value = true
+  // 默认加载音色列表（声音复刻模型可能用到）
+  loadCustomVoices()
 }
 
 const submitForm = async () => {
   await formRef.value?.validate()
+
+  // 如果是声音复刻模型，检查音色
+  if (form.model === 'qwen3-tts-vc-2026-01-22') {
+    if (voiceSource.value === 'existing' && !form.voice) {
+      ElMessage.warning('请选择已有音色')
+      return
+    }
+    if (voiceSource.value === 'upload' && !customVoiceInfo.value) {
+      ElMessage.warning('请先上传音频文件创建自定义音色')
+      return
+    }
+  }
 
   submitLoading.value = true
   try {
@@ -425,12 +749,58 @@ const handleDelete = async (row: any) => {
   await getList()
 }
 
+// 多选change事件
+const handleCheckboxChange = ({ records }: any) => {
+  selectedRows.value = records
+}
+
+// 全选change事件
+const handleCheckboxAll = ({ records }: any) => {
+  selectedRows.value = records
+}
+
+// 批量删除
+const handleBatchDelete = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning('请选择要删除的记录')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(`确认删除选中的 ${selectedRows.value.length} 条记录吗？`, '批量删除确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    loading.value = true
+    const deletePromises = selectedRows.value.map(row => deleteTtsRecord(row.id))
+    await Promise.all(deletePromises)
+    
+    ElMessage.success(`成功删除 ${selectedRows.value.length} 条记录`)
+    selectedRows.value = []
+    await getList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '批量删除失败')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(() => {
   getList()
 })
 </script>
 
 <style scoped>
+.tts-page {
+  height: 100%;
+  padding: 10px;
+  background-color: var(--el-bg-color);
+}
+
 .list-page-layout {
   display: flex;
   flex-direction: column;
@@ -440,7 +810,7 @@ onMounted(() => {
 
 .filter-section {
   margin: 0;
-  margin-bottom: 1rem;
+  margin-bottom: 12px;
   flex-shrink: 0;
 }
 
@@ -458,7 +828,7 @@ onMounted(() => {
 }
 
 .content-container {
-  padding: 0 4px;
+  padding: 0;
 }
 
 .common-table {
@@ -473,7 +843,7 @@ onMounted(() => {
 
 .search-form-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-start;
   gap: 10px 12px;
@@ -491,6 +861,15 @@ onMounted(() => {
 
 .search-field-wide {
   width: 320px;
+}
+
+.search-field-actions {
+  width: auto;
+  flex: 1;
+}
+
+.search-field-actions .search-label {
+  display: none;
 }
 
 .search-label {
@@ -521,11 +900,26 @@ onMounted(() => {
 
 .search-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-start;
   column-gap: 6px;
   row-gap: 6px;
   align-items: center;
+}
+
+@media (max-width: 1200px) {
+  .search-form-container {
+    flex-wrap: wrap;
+  }
+
+  .search-field-actions {
+    flex: none;
+    width: 100%;
+  }
+
+  .search-actions {
+    flex-wrap: wrap;
+  }
 }
 
 
@@ -556,6 +950,13 @@ onMounted(() => {
   line-height: 1.5;
 }
 
+.voice-name-tip {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .tts-create-dialog :deep(.el-dialog__body) {
   padding: 0;
 }
@@ -571,5 +972,35 @@ onMounted(() => {
     padding: 16px;
     height: calc(100vh - 116px);
   }
+}
+
+.voice-list-container {
+  width: 100%;
+}
+
+.voice-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+}
+
+.voice-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.voice-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  background-color: var(--el-fill-color-light);
+  border-radius: 4px;
+  margin-top: 8px;
 }
 </style>

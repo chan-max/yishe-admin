@@ -210,7 +210,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '剪辑素材'
+          title: '媒体剪辑素材'
         }
       },
       {

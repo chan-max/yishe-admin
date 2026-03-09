@@ -18,6 +18,27 @@ export interface CreateTtsRecordDto {
   pitch?: number
 }
 
+export interface CreateCustomVoiceDto {
+  audioBase64: string
+  targetModel: string
+  preferredName?: string
+  audioMimeType?: string
+}
+
+export interface ListCustomVoicesDto {
+  pageIndex?: number
+  pageSize?: number
+}
+
+export interface CustomVoiceItem {
+  voice: string
+  gmt_create: string
+  gmt_modified: string
+  language: string
+  target_model: string
+  preferred_name?: string
+}
+
 export const generateTts = (data: {
   text: string
   voice?: string
@@ -67,4 +88,24 @@ export const getTtsRecordById = (id: string) => {
 
 export const getAvailableModels = () => {
   return request.get({ url: '/ai/models' })
+}
+
+export const createCustomVoice = (data: CreateCustomVoiceDto) => {
+  return request.post({
+    url: '/ai/tts/custom-voice',
+    data
+  })
+}
+
+export const listCustomVoices = (data: ListCustomVoicesDto = {}) => {
+  return request.post({
+    url: '/ai/tts/custom-voice/list',
+    data
+  })
+}
+
+export const deleteCustomVoice = (voice: string) => {
+  return request.delete({
+    url: `/ai/tts/custom-voice/${voice}`
+  })
 }
