@@ -12,6 +12,7 @@ export interface CreateTtsRecordDto {
   voice?: string
   model?: string
   format?: string
+  instructions?: string
   sample_rate?: number
   speed?: number
   pitch?: number
@@ -22,6 +23,7 @@ export const generateTts = (data: {
   voice?: string
   model?: string
   format?: string
+  instructions?: string
 }) => {
   return request.post({
     url: '/ai/tts',

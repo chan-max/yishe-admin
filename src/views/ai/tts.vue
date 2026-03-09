@@ -69,6 +69,36 @@
             <el-input v-model="form.text" type="textarea" :rows="6" maxlength="1000" show-word-limit />
           </el-form-item>
 
+          <el-form-item v-if="isInstructModel" label="指令模板">
+            <el-select
+              v-model="selectedInstructionTemplate"
+              class="w-full"
+              placeholder="选择模板后会自动填入指令"
+              @change="applyInstructionTemplate"
+            >
+              <el-option
+                v-for="item in instructionTemplates"
+                :key="item.label"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+
+          <el-form-item v-if="isInstructModel" label="指令控制" prop="instructions">
+            <el-input
+              v-model="form.instructions"
+              type="textarea"
+              :rows="5"
+              maxlength="1600"
+              show-word-limit
+              placeholder="示例：语速较快，带有明显的上扬语调，适合介绍时尚产品"
+            />
+            <div class="instruction-tip">
+              仅支持 qwen3-tts-instruct-flash，指令文本仅支持中文/英文，建议描述音调、语速、情感等特征。
+            </div>
+          </el-form-item>
+
           <el-row :gutter="16">
             <el-col :xs="24" :md="12">
               <el-form-item label="音色" prop="voice">
@@ -167,7 +197,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watchEffect } from 'vue'
+import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import { ContentWrap } from '@/components/ContentWrap'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
@@ -196,7 +226,7 @@ const gridOptions = ref<any>({
     { type: 'seq', title: '#', width: 58 },
     { title: '文案', field: 'text', minWidth: 220, slots: { default: 'textSlot' } },
     { title: '配置参数', field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
-    { title: '试听', field: 'preview', width: 200, slots: { default: 'previewSlot' } },
+    { title: '试听', field: 'preview', width: 320, slots: { default: 'previewSlot' } },
     { title: '时长(秒)', field: 'duration', width: 96 },
     { title: '状态', field: 'status', width: 88, slots: { default: 'statusSlot' } },
     { title: '创建时间', field: 'createTime', width: 170 },
@@ -214,10 +244,80 @@ const form = reactive({
   voice: 'Cherry',
   model: 'qwen3-tts-flash',
   format: 'mp3',
+  instructions: '',
   sample_rate: 24000,
   speed: 1,
   pitch: 1
 })
+
+const selectedInstructionTemplate = ref('')
+
+const instructionTemplates = [
+  {
+    label: '标准播音风格：字正腔圆，吐字清晰',
+    value: '标准播音风格：吐字清晰精准，字正腔圆，语速中等，语调稳健。'
+  },
+  {
+    label: '广告配音：活力感染力强',
+    value: '广告配音风格：音调偏高，语速中等偏快，充满活力和感染力，强调卖点。'
+  },
+  {
+    label: '温柔治愈：语速偏慢，温暖亲切',
+    value: '温柔治愈风格：语速偏慢，音调柔和甜美，语气温暖关怀，像贴心朋友。'
+  },
+  {
+    label: '新闻播报：冷静客观',
+    value: '新闻播报风格：语速中等偏快，吐字清晰，语调平稳，客观冷静。'
+  },
+  {
+    label: '纪录片解说：沉稳厚重',
+    value: '纪录片解说：语速中等，音色浑厚，语调沉稳，叙事感强。'
+  },
+  {
+    label: '有声书朗读：情感细腻',
+    value: '有声书朗读：语速中等偏慢，情感细腻，停顿自然，带叙事节奏。'
+  },
+  {
+    label: '游戏角色：性格鲜明',
+    value: '游戏角色配音：语调起伏明显，情绪鲜明，节奏感强，角色感突出。'
+  },
+  {
+    label: '情绪递进：由平静到激动',
+    value: '情绪递进效果：从平静叙述逐渐增强情绪，音量上扬，语速略快。'
+  },
+  {
+    label: '低沉磁性：稳重有力',
+    value: '低沉磁性：音调偏低，语速中等，音色有磁性，沉稳有力。'
+  },
+  {
+    label: '清脆甜美：轻快俏皮',
+    value: '清脆甜美：音调偏高，语速偏快，语气轻快俏皮，活泼明亮。'
+  },
+  {
+    label: '理性教学：清晰有条理',
+    value: '理性教学风格：语速中等，吐字清楚，逻辑感强，节奏有条理。'
+  },
+  {
+    label: '高能发布：节奏紧凑',
+    value: '高能发布：语速偏快，语调上扬，节奏紧凑，情绪饱满。'
+  },
+  {
+    label: '舒缓冥想：平稳放松',
+    value: '舒缓冥想：语速慢，音调平稳，语气柔和放松，适合引导与放松。'
+  }
+]
+
+const isInstructModel = computed(() => form.model === 'qwen3-tts-instruct-flash')
+
+watch(
+  () => form.model,
+  (model) => {
+    if (model !== 'qwen3-tts-instruct-flash') {
+      form.instructions = ''
+      selectedInstructionTemplate.value = ''
+    }
+  }
+)
 
 const rules = {
   text: [{ required: true, message: '请输入文案', trigger: 'blur' }],
@@ -231,13 +331,23 @@ const resetForm = () => {
   form.voice = 'Cherry'
   form.model = 'qwen3-tts-flash'
   form.format = 'mp3'
+  form.instructions = ''
+  selectedInstructionTemplate.value = ''
   form.sample_rate = 24000
   form.speed = 1
   form.pitch = 1
 }
 
+const applyInstructionTemplate = (value: string) => {
+  if (!value) return
+  form.instructions = value
+}
+
 const formatConfig = (configParams: any) => {
   if (!configParams) return '-'
+  const instructions = configParams.instructions
+    ? truncateText(String(configParams.instructions), 60)
+    : ''
   const parts = [
     `voice:${configParams.voice || '-'}`,
     `model:${configParams.model || '-'}`,
@@ -245,7 +355,15 @@ const formatConfig = (configParams: any) => {
     `speed:${configParams.speed ?? '-'}`,
     `pitch:${configParams.pitch ?? '-'}`
   ]
+  if (instructions) {
+    parts.push(`instructions:${instructions}`)
+  }
   return parts.join(' | ')
+}
+
+const truncateText = (text: string, maxLength: number) => {
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, maxLength)}...`
 }
 
 const getList = async () => {
@@ -280,6 +398,7 @@ const submitForm = async () => {
       voice: form.voice,
       model: form.model,
       format: form.format,
+      instructions: form.instructions,
       sample_rate: form.sample_rate,
       speed: form.speed,
       pitch: form.pitch
@@ -411,7 +530,7 @@ onMounted(() => {
 
 
 .audio-preview {
-  width: 180px;
+  width: 300px;
   height: 28px;
 }
 
@@ -428,6 +547,13 @@ onMounted(() => {
   white-space: normal;
   line-height: 1.4;
   word-break: break-all;
+}
+
+.instruction-tip {
+  margin-top: 6px;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .tts-create-dialog :deep(.el-dialog__body) {
