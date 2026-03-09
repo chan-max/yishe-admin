@@ -7,141 +7,91 @@
       </div>
 
       <!-- 爬图模块 -->
-      <div class="module-section  mb-24px">
-        <h3 class="module-title">爬图模块</h3>
-        <el-row :gutter="20">
-          <!-- 左侧：统计卡片 -->
-          <el-col :xs="24" :sm="24" :md="10" :lg="9" :xl="8">
-            <el-row :gutter="12">
-              <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12" v-if="crawlerTodayCard">
-                <el-card class="statistics-card statistics-card--small" shadow="hover">
-                  <div class="statistics-card__content">
-                    <div class="statistics-card__label">{{ crawlerTodayCard.label }}</div>
-                    <div class="statistics-card__value">{{ crawlerTodayCard.value }}</div>
-                    <div v-if="crawlerTodayCard.trend !== undefined && crawlerTodayCard.trend !== null" class="statistics-card__trend">
-                      <el-icon :class="crawlerTodayCard.trend >= 0 ? 'trend-up' : 'trend-down'" :size="12">
-                        <ArrowUp v-if="crawlerTodayCard.trend >= 0" />
-                        <ArrowDown v-else />
-                      </el-icon>
-                      <span :class="crawlerTodayCard.trend >= 0 ? 'trend-up' : 'trend-down'">
-                        {{ Math.abs(crawlerTodayCard.trend) }}%
-                      </span>
-                    </div>
-                  </div>
-                  <div class="statistics-card__icon" :style="{ background: crawlerTodayCard.color }">
-                    <Icon :icon="crawlerTodayCard.icon" :size="16" />
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12" v-for="(item, index) in crawlerOtherCards" :key="index">
-                <el-card class="statistics-card statistics-card--small" shadow="hover">
-                  <div class="statistics-card__content">
-                    <div class="statistics-card__label">{{ item.label }}</div>
-                    <div class="statistics-card__value">{{ item.value }}</div>
-                    <div v-if="item.trend !== undefined && item.trend !== null" class="statistics-card__trend">
-                      <el-icon :class="item.trend >= 0 ? 'trend-up' : 'trend-down'" :size="12">
-                        <ArrowUp v-if="item.trend >= 0" />
-                        <ArrowDown v-else />
-                      </el-icon>
-                      <span :class="item.trend >= 0 ? 'trend-up' : 'trend-down'">
-                        {{ Math.abs(item.trend) }}%
-                      </span>
-                    </div>
-                  </div>
-                  <div class="statistics-card__icon" :style="{ background: item.color }">
-                    <Icon :icon="item.icon" :size="16" />
-                  </div>
-                </el-card>
-              </el-col>
-            </el-row>
-          </el-col>
+      <div class="module-section mb-24px">
+        <div class="module-head">
+          <div>
+            <h3 class="module-title">爬图模块</h3>
+            <p class="module-subtitle">抓取与上传数据概览</p>
+          </div>
+        </div>
 
-          <!-- 右侧：柱状图 -->
-          <el-col :xs="24" :sm="24" :md="14" :lg="15" :xl="16">
-            <el-card v-loading="crawlerLoading" class="chart-card">
-              <template #header>
-                <div class="card-header">
-                  <span>爬图上传趋势统计</span>
-                  <el-select v-model="crawlerDailyDays" size="small" style="width: 120px" @change="loadCrawlerDailyData">
-                    <el-option label="最近7天" :value="7" />
-                    <el-option label="最近30天" :value="30" />
-                    <el-option label="最近60天" :value="60" />
-                  </el-select>
-                </div>
-              </template>
-              <div ref="crawlerChartRef" style="width: 100%; height: 350px"></div>
-            </el-card>
-          </el-col>
-        </el-row>
+        <div class="mirror-layout">
+          <div class="stats-column">
+            <div class="stat-row" v-for="item in crawlerLeftStats" :key="item.label">
+              <span class="stat-label">{{ item.label }}</span>
+              <span class="stat-value">{{ item.value }}</span>
+            </div>
+          </div>
+
+          <div class="center-panel" v-loading="crawlerLoading">
+            <div class="center-total">
+              <span class="center-total__label">总上传</span>
+              <span class="center-total__value">{{ crawlerTotal }}</span>
+            </div>
+            <div class="center-chart">
+              <div class="chart-head">
+                <span>趋势</span>
+                <el-select v-model="crawlerDailyDays" size="small" @change="loadCrawlerDailyData">
+                  <el-option label="7天" :value="7" />
+                  <el-option label="30天" :value="30" />
+                  <el-option label="60天" :value="60" />
+                </el-select>
+              </div>
+              <div ref="crawlerChartRef" class="chart-canvas"></div>
+            </div>
+          </div>
+
+          <div class="stats-column">
+            <div class="stat-row" v-for="item in crawlerRightStats" :key="item.label">
+              <span class="stat-label">{{ item.label }}</span>
+              <span class="stat-value">{{ item.value }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 图库模块 -->
       <div class="module-section">
-        <h3 class="module-title">图库模块</h3>
-        <el-row :gutter="20">
-          <!-- 左侧：统计卡片 -->
-          <el-col :xs="24" :sm="24" :md="10" :lg="9" :xl="8">
-            <el-row :gutter="12">
-              <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12" v-if="stickerTodayCard">
-                <el-card class="statistics-card statistics-card--small" shadow="hover">
-                  <div class="statistics-card__content">
-                    <div class="statistics-card__label">{{ stickerTodayCard.label }}</div>
-                    <div class="statistics-card__value">{{ stickerTodayCard.value }}</div>
-                    <div v-if="stickerTodayCard.trend !== undefined && stickerTodayCard.trend !== null" class="statistics-card__trend">
-                      <el-icon :class="stickerTodayCard.trend >= 0 ? 'trend-up' : 'trend-down'" :size="12">
-                        <ArrowUp v-if="stickerTodayCard.trend >= 0" />
-                        <ArrowDown v-else />
-                      </el-icon>
-                      <span :class="stickerTodayCard.trend >= 0 ? 'trend-up' : 'trend-down'">
-                        {{ Math.abs(stickerTodayCard.trend) }}%
-                      </span>
-                    </div>
-                  </div>
-                  <div class="statistics-card__icon" :style="{ background: stickerTodayCard.color }">
-                    <Icon :icon="stickerTodayCard.icon" :size="16" />
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :xs="12" :sm="12" :md="12" :lg="12" :xl="12" v-for="(item, index) in stickerOtherCards" :key="index">
-                <el-card class="statistics-card statistics-card--small" shadow="hover">
-                  <div class="statistics-card__content">
-                    <div class="statistics-card__label">{{ item.label }}</div>
-                    <div class="statistics-card__value">{{ item.value }}</div>
-                    <div v-if="item.trend !== undefined && item.trend !== null" class="statistics-card__trend">
-                      <el-icon :class="item.trend >= 0 ? 'trend-up' : 'trend-down'" :size="12">
-                        <ArrowUp v-if="item.trend >= 0" />
-                        <ArrowDown v-else />
-                      </el-icon>
-                      <span :class="item.trend >= 0 ? 'trend-up' : 'trend-down'">
-                        {{ Math.abs(item.trend) }}%
-                      </span>
-                    </div>
-                  </div>
-                  <div class="statistics-card__icon" :style="{ background: item.color }">
-                    <Icon :icon="item.icon" :size="16" />
-                  </div>
-                </el-card>
-              </el-col>
-            </el-row>
-          </el-col>
+        <div class="module-head">
+          <div>
+            <h3 class="module-title">图库模块</h3>
+            <p class="module-subtitle">素材上传数据概览</p>
+          </div>
+        </div>
 
-          <!-- 右侧：柱状图 -->
-          <el-col :xs="24" :sm="24" :md="14" :lg="15" :xl="16">
-            <el-card v-loading="stickerLoading" class="chart-card">
-              <template #header>
-                <div class="card-header">
-                  <span>图库上传趋势统计</span>
-                  <el-select v-model="stickerDailyDays" size="small" style="width: 120px" @change="loadStickerDailyData">
-                    <el-option label="最近7天" :value="7" />
-                    <el-option label="最近30天" :value="30" />
-                    <el-option label="最近60天" :value="60" />
-                  </el-select>
-                </div>
-              </template>
-              <div ref="stickerChartRef" style="width: 100%; height: 350px"></div>
-            </el-card>
-          </el-col>
-        </el-row>
+        <div class="mirror-layout">
+          <div class="stats-column">
+            <div class="stat-row" v-for="item in stickerLeftStats" :key="item.label">
+              <span class="stat-label">{{ item.label }}</span>
+              <span class="stat-value">{{ item.value }}</span>
+            </div>
+          </div>
+
+          <div class="center-panel" v-loading="stickerLoading">
+            <div class="center-total">
+              <span class="center-total__label">总上传</span>
+              <span class="center-total__value">{{ stickerTotal }}</span>
+            </div>
+            <div class="center-chart">
+              <div class="chart-head">
+                <span>趋势</span>
+                <el-select v-model="stickerDailyDays" size="small" @change="loadStickerDailyData">
+                  <el-option label="7天" :value="7" />
+                  <el-option label="30天" :value="30" />
+                  <el-option label="60天" :value="60" />
+                </el-select>
+              </div>
+              <div ref="stickerChartRef" class="chart-canvas"></div>
+            </div>
+          </div>
+
+          <div class="stats-column">
+            <div class="stat-row" v-for="item in stickerRightStats" :key="item.label">
+              <span class="stat-label">{{ item.label }}</span>
+              <span class="stat-value">{{ item.value }}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </ContentWrap>
   </div>
@@ -150,11 +100,9 @@
 <script lang="ts" setup>
 import { ref, onMounted, nextTick, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import type { EChartsOption } from 'echarts'
 import { ContentWrap } from '@/components/ContentWrap'
-import { Icon } from '@/components/Icon'
 import {
   getStatisticsOverview,
   getDailyStatistics,
@@ -180,153 +128,50 @@ const crawlerDailyDays = ref(30)
 const crawlerChartRef = ref<HTMLDivElement>()
 let crawlerChart: echarts.ECharts | null = null
 
-// 计算图库"今天上传"卡片
-const stickerTodayCard = computed(() => {
-  if (!stickerOverview.value) {
-    return null
-  }
+type StatItem = { label: string; value: number }
 
-  const ov = stickerOverview.value
-  return {
-    label: '今天上传',
-    value: ov.today || 0,
-    icon: 'ep:upload-filled',
-    color: '#409EFF',
-    trend: undefined
-  }
-})
+function mapStats(overview: StatisticsOverview | null, items: Array<{ key: keyof StatisticsOverview; label: string }>): StatItem[] {
+  return items.map((item) => ({
+    label: item.label,
+    value: overview ? Number(overview[item.key] || 0) : 0
+  }))
+}
 
-// 计算图库其他概览卡片数据
-const stickerOtherCards = computed(() => {
-  if (!stickerOverview.value) {
-    return []
-  }
+const stickerLeftStats = computed(() =>
+  mapStats(stickerOverview.value, [
+    { key: 'today', label: '今天上传' },
+    { key: 'yesterday', label: '昨天上传' },
+    { key: 'last7Days', label: '最近7天' }
+  ])
+)
 
-  const ov = stickerOverview.value
-  const cards = [
-    {
-      label: '昨天上传',
-      value: ov.yesterday || 0,
-      icon: 'ep:clock',
-      color: '#67C23A',
-      trend: undefined
-    },
-    {
-      label: '本周上传',
-      value: ov.thisWeek || 0,
-      icon: 'ep:calendar',
-      color: '#E6A23C',
-      trend: (ov.lastWeek || 0) > 0
-        ? Math.round(((ov.thisWeek || 0) - (ov.lastWeek || 0)) / (ov.lastWeek || 1) * 100)
-        : undefined
-    },
-    {
-      label: '本月上传',
-      value: ov.thisMonth || 0,
-      icon: 'ep:data-line',
-      color: '#F56C6C',
-      trend: (ov.lastMonth || 0) > 0
-        ? Math.round(((ov.thisMonth || 0) - (ov.lastMonth || 0)) / (ov.lastMonth || 1) * 100)
-        : undefined
-    },
-    {
-      label: '最近7天',
-      value: ov.last7Days || 0,
-      icon: 'ep:pie-chart',
-      color: '#909399',
-      trend: undefined
-    },
-    {
-      label: '最近30天',
-      value: ov.last30Days || 0,
-      icon: 'ep:trend-charts',
-      color: '#606266',
-      trend: undefined
-    },
-    {
-      label: '总上传数',
-      value: ov.total || 0,
-      icon: 'ep:collection',
-      color: '#303133',
-      trend: undefined
-    }
-  ]
-  return cards
-})
+const stickerRightStats = computed(() =>
+  mapStats(stickerOverview.value, [
+    { key: 'thisWeek', label: '本周上传' },
+    { key: 'thisMonth', label: '本月上传' },
+    { key: 'last30Days', label: '最近30天' }
+  ])
+)
 
-// 计算爬图"今天上传"卡片
-const crawlerTodayCard = computed(() => {
-  if (!crawlerOverview.value) {
-    return null
-  }
+const stickerTotal = computed(() => (stickerOverview.value ? Number(stickerOverview.value.total || 0) : 0))
 
-  const ov = crawlerOverview.value
-  return {
-    label: '今天上传',
-    value: ov.today || 0,
-    icon: 'ep:upload-filled',
-    color: '#409EFF',
-    trend: undefined
-  }
-})
+const crawlerLeftStats = computed(() =>
+  mapStats(crawlerOverview.value, [
+    { key: 'today', label: '今天上传' },
+    { key: 'yesterday', label: '昨天上传' },
+    { key: 'last7Days', label: '最近7天' }
+  ])
+)
 
-// 计算爬图其他概览卡片数据
-const crawlerOtherCards = computed(() => {
-  if (!crawlerOverview.value) {
-    return []
-  }
+const crawlerRightStats = computed(() =>
+  mapStats(crawlerOverview.value, [
+    { key: 'thisWeek', label: '本周上传' },
+    { key: 'thisMonth', label: '本月上传' },
+    { key: 'last30Days', label: '最近30天' }
+  ])
+)
 
-  const ov = crawlerOverview.value
-  const cards = [
-    {
-      label: '昨天上传',
-      value: ov.yesterday || 0,
-      icon: 'ep:clock',
-      color: '#67C23A',
-      trend: undefined
-    },
-    {
-      label: '本周上传',
-      value: ov.thisWeek || 0,
-      icon: 'ep:calendar',
-      color: '#E6A23C',
-      trend: (ov.lastWeek || 0) > 0
-        ? Math.round(((ov.thisWeek || 0) - (ov.lastWeek || 0)) / (ov.lastWeek || 1) * 100)
-        : undefined
-    },
-    {
-      label: '本月上传',
-      value: ov.thisMonth || 0,
-      icon: 'ep:data-line',
-      color: '#F56C6C',
-      trend: (ov.lastMonth || 0) > 0
-        ? Math.round(((ov.thisMonth || 0) - (ov.lastMonth || 0)) / (ov.lastMonth || 1) * 100)
-        : undefined
-    },
-    {
-      label: '最近7天',
-      value: ov.last7Days || 0,
-      icon: 'ep:pie-chart',
-      color: '#909399',
-      trend: undefined
-    },
-    {
-      label: '最近30天',
-      value: ov.last30Days || 0,
-      icon: 'ep:trend-charts',
-      color: '#606266',
-      trend: undefined
-    },
-    {
-      label: '总上传数',
-      value: ov.total || 0,
-      icon: 'ep:collection',
-      color: '#303133',
-      trend: undefined
-    }
-  ]
-  return cards
-})
+const crawlerTotal = computed(() => (crawlerOverview.value ? Number(crawlerOverview.value.total || 0) : 0))
 
 // 加载图库概览数据
 const loadStickerOverview = async () => {
@@ -606,59 +451,66 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .statistics-page {
+  --stat-bg: #f6f7fb;
+  --stat-border: rgba(15, 23, 42, 0.08);
+  --stat-text: #0f172a;
+  --stat-muted: #64748b;
+  --stat-accent: #ff6b35;
+  --stat-accent-2: #2563eb;
+  --stat-surface: #ffffff;
+
+  font-family: "Space Grotesk", "IBM Plex Sans", "Noto Sans SC", sans-serif;
+  background:
+    radial-gradient(1200px 600px at 10% -20%, rgba(255, 107, 53, 0.12), transparent 60%),
+    radial-gradient(900px 500px at 90% 0%, rgba(37, 99, 235, 0.12), transparent 55%),
+    linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #f8fafc 100%);
+  padding: 8px 0 24px;
+
   .page-header {
     margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--el-border-color-lighter, #EBEEF5);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--stat-border);
 
     .page-title {
       margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--el-text-color-primary, #303133);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--stat-text);
+      letter-spacing: 0.02em;
     }
   }
 
   .module-section {
     margin-bottom: 24px;
+    padding: 18px 20px 20px;
+    border-radius: 18px;
+    border: 1px solid var(--stat-border);
+    background: var(--stat-surface);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    animation: slideUp 0.5s ease;
 
     &:last-child {
       margin-bottom: 0;
     }
 
+    .module-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+
     .module-title {
-      margin: 0 0 16px 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--el-text-color-primary, #303133);
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--el-border-color-lighter, #EBEEF5);
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--stat-text);
     }
 
-
-
-    // 统计卡片区域，确保在左侧显示时卡片排列正确
-    .el-col:first-child {
-      .el-row {
-        .el-col {
-          margin-bottom: 12px;
-          
-          &:last-child {
-            margin-bottom: 0;
-          }
-        }
-      }
-    }
-
-    // 图表卡片区域，确保高度自适应
-    .chart-card {
-      height: 100%;
-      min-height: 400px;
-      
-      :deep(.el-card__body) {
-        height: calc(100% - 57px);
-        min-height: 350px;
-      }
+    .module-subtitle {
+      margin: 6px 0 0;
+      font-size: 12px;
+      color: var(--stat-muted);
     }
   }
 
@@ -666,78 +518,106 @@ onMounted(async () => {
     margin-bottom: 24px;
   }
 
-  .statistics-card {
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 0;
-
-    &--small {
-      :deep(.el-card__body) {
-        padding: 12px;
-      }
-    }
-
-    &__content {
-      position: relative;
-      z-index: 1;
-    }
-
-    &__label {
-      font-size: 12px;
-      color: var(--el-text-color-secondary, #909399);
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    &__value {
-      font-size: 20px;
-      font-weight: bold;
-      color: var(--el-text-color-primary, #303133);
-      margin-bottom: 4px;
-      line-height: 1.2;
-    }
-
-    &__trend {
-      display: flex;
-      align-items: center;
-      gap: 2px;
-      font-size: 11px;
-
-      .trend-up {
-        color: var(--el-color-success, #67C23A);
-      }
-
-      .trend-down {
-        color: var(--el-color-danger, #F56C6C);
-      }
-    }
-
-    &__icon {
-      position: absolute;
-      right: 8px;
-      top: 8px;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0.15;
-    }
+  .mirror-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr 1fr;
+    gap: 16px;
   }
 
-  .card-header {
+  .stats-column {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stat-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
-    color: var(--el-text-color-primary, #303133);
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--stat-bg);
+    border: 1px solid var(--stat-border);
   }
 
-  .mb-16px {
-    margin-bottom: 16px;
+  .stat-label {
+    font-size: 12px;
+    color: var(--stat-muted);
+  }
+
+  .stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--stat-text);
+  }
+
+  .center-panel {
+    border-radius: 16px;
+    border: 1px solid var(--stat-border);
+    background: linear-gradient(180deg, #ffffff, #f9fafb);
+    padding: 14px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .center-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed var(--stat-border);
+  }
+
+  .center-total__label {
+    font-size: 12px;
+    color: var(--stat-muted);
+  }
+
+  .center-total__value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--stat-accent);
+  }
+
+  .center-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .chart-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--stat-muted);
+  }
+
+  .chart-canvas {
+    width: 100%;
+    height: 260px;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .mirror-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .center-panel {
+      order: -1;
+    }
   }
 }
 </style>
