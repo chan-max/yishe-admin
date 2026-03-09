@@ -706,13 +706,7 @@ const formattedConfig = computed(() => {
 function getColumns() {
   const baseColumns = [
     { type: 'checkbox', width: 50, fixed: 'left' as const },
-    { 
-      title: 'ID', 
-      field: 'id', 
-      width: 120, 
-      showOverflow: false,
-      slots: { default: 'idSlot' }
-    },
+
     { title: '套图图片', field: 'images', width: 200, slots: { default: 'imagesSlot' } },
     { title: '套图名称', field: 'name', minWidth: 180 },
     { title: '多素材关联', field: 'stickers', width: 120, slots: { default: 'stickersCountSlot' } },
@@ -732,6 +726,13 @@ function getColumns() {
       field: 'processingTime', 
       width: 140,
       formatter: ({ cellValue }) => formatProcessingTime(cellValue)
+    },
+        { 
+      title: 'ID', 
+      field: 'id', 
+      width: 120, 
+      showOverflow: false,
+      slots: { default: 'idSlot' }
     },
     {
       title: '创建时间',

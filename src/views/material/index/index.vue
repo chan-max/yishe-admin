@@ -1218,20 +1218,15 @@
                   <el-input v-model="editForm.nameEn" placeholder="请输入英文名称" clearable />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :md="12">
-                <el-form-item label="适用场景">
-                  <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" clearable />
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :md="12">
+              <el-col :xs="24">
                 <el-form-item label="描述">
-                  <el-input v-model="editForm.description" type="textarea" :rows="5" placeholder="请输入描述" maxlength="1000"
+                  <el-input v-model="editForm.description" type="textarea" :rows="8" placeholder="请输入描述" maxlength="1000"
                     show-word-limit />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :md="12">
+              <el-col :xs="24">
                 <el-form-item label="英文描述">
-                  <el-input v-model="editForm.descriptionEn" type="textarea" :rows="5" placeholder="请输入英文描述"
+                  <el-input v-model="editForm.descriptionEn" type="textarea" :rows="8" placeholder="请输入英文描述"
                     maxlength="1000" show-word-limit />
                 </el-form-item>
               </el-col>
@@ -1243,6 +1238,11 @@
               <el-col :xs="24" :md="12">
                 <el-form-item label="英文关键字">
                   <el-input v-model="editForm.keywordsEn" placeholder="请输入英文关键字（逗号分隔）" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="适用场景">
+                  <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" clearable />
                 </el-form-item>
               </el-col>
             </el-row>
@@ -1281,7 +1281,7 @@
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="素材编码">
-                  <el-input v-model="editForm.code" placeholder="格式：2-7位字母+2-7位数字，如 abs123" clearable maxlength="14" />
+                  <el-input v-model="editForm.code" placeholder="格式：2-7位随机字母+2-7位数字，如 xyz123" clearable maxlength="14" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
@@ -1639,8 +1639,7 @@ const gridOptions = computed(() => {
       width: 120,
       slots: { default: 'previewDefaultSlot' }
     },
-    { title: 'ID', field: 'id', width: 80, ellipsis: true },
-    { title: '编码', field: 'code', width: 120, ellipsis: true },
+
     { title: '名称（中/英）', field: 'name', minWidth: 280, className: 'font-bold', slots: { default: 'nameBilingualSlot' } },
     { title: '描述（中/英）', field: 'description', minWidth: 320, slots: { default: 'descriptionBilingualSlot' } },
     { title: '关键词（中/英）', field: 'keywords', minWidth: 280, slots: { default: 'keywordsBilingualSlot' } },
@@ -1657,6 +1656,8 @@ const gridOptions = computed(() => {
       minWidth: 150,
       slots: { default: 'suitableForSlot' }
     }, // 新增适用商品列
+        { title: 'ID', field: 'id', width: 80, ellipsis: true },
+    { title: '编码', field: 'code', width: 120, ellipsis: true },
     {
       title: '相似度',
       field: 'similarity',
@@ -5450,7 +5451,7 @@ h1 {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  padding: 16px 16px 0;
+  padding: 20px 20px 4px;
 }
 
 .edit-section-title {
@@ -5481,7 +5482,8 @@ h1 {
 }
 
 .edit-form :deep(.el-textarea__inner) {
-  min-height: 100px;
+  min-height: 120px;
+  line-height: 1.6;
 }
 
 .edit-dialog-footer {

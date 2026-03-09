@@ -394,7 +394,7 @@ const gridOptions = computed(() => {
 
   // 只有管理员显示的字段
   const adminOnlyColumns = [
-    { title: "ID", field: "id", width: 80 },
+
     { title: "来源", field: "source", minWidth: 160 }, // 新增来源列
     {
       title: "原始地址",
@@ -402,6 +402,7 @@ const gridOptions = computed(() => {
       width: 200,
       slots: { default: "originUrlSlot" },
     }, // 原始地址列
+        { title: "ID", field: "id", width: 80 },
     {
       title: "创建时间",
       field: "createTime",
