@@ -1201,168 +1201,148 @@
 
     <!-- 制作设计模型弹窗 -->
 
-    <el-dialog v-model="editDialogVisible" title="编辑素材信息" width="1200px" :destroy-on-close="true" align-center
+    <el-dialog v-model="editDialogVisible" title="编辑素材信息" fullscreen :destroy-on-close="true"
       class="edit-material-dialog">
-      <el-form :model="editForm" label-width="120px" class="edit-form">
-        <!-- 基本信息 -->
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="名称">
-              <el-input v-model="editForm.name" placeholder="请输入名称" clearable />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="英文名称">
-              <el-input v-model="editForm.nameEn" placeholder="请输入英文名称" clearable />
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <div class="edit-material-body">
+        <el-form :model="editForm" label-width="110px" class="edit-form">
+          <section class="edit-section">
+            <div class="edit-section-title">基础信息</div>
+            <el-row :gutter="20">
+              <el-col :xs="24" :md="12">
+                <el-form-item label="名称">
+                  <el-input v-model="editForm.name" placeholder="请输入名称" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="英文名称">
+                  <el-input v-model="editForm.nameEn" placeholder="请输入英文名称" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="适用场景">
+                  <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="描述">
+                  <el-input v-model="editForm.description" type="textarea" :rows="5" placeholder="请输入描述" maxlength="1000"
+                    show-word-limit />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="英文描述">
+                  <el-input v-model="editForm.descriptionEn" type="textarea" :rows="5" placeholder="请输入英文描述"
+                    maxlength="1000" show-word-limit />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="关键字">
+                  <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="英文关键字">
+                  <el-input v-model="editForm.keywordsEn" placeholder="请输入英文关键字（逗号分隔）" clearable />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="分组">
-              <el-input v-model="editForm.group" placeholder="请输入分组名称" clearable />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="适用场景">
-              <el-input v-model="editForm.suitableFor" placeholder="请输入适用场景（逗号分隔，如：phone_case,tshirt,mug）" clearable />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <section class="edit-section">
+            <div class="edit-section-title">状态与属性</div>
+            <el-row :gutter="20">
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="自定义贴纸">
+                  <el-switch v-model="editForm.isCustom" active-text="是" inactive-text="否" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="是否公开">
+                  <el-switch v-model="editForm.isPublic" active-text="是" inactive-text="否" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="是否为材质">
+                  <el-switch v-model="editForm.isTexture" active-text="是" inactive-text="否" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="抠图素材">
+                  <el-switch v-model="editForm.isCutout" active-text="是" inactive-text="否" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="侵权状态">
+                  <el-select v-model="editForm.isInfringement" placeholder="请选择" style="width: 100%">
+                    <el-option label="非侵权" :value="false" />
+                    <el-option label="侵权" :value="true" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="素材编码">
+                  <el-input v-model="editForm.code" placeholder="格式：2-7位字母+2-7位数字，如 abs123" clearable maxlength="14" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="文件后缀">
+                  <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="描述">
-              <el-input v-model="editForm.description" type="textarea" :rows="4" placeholder="请输入描述" maxlength="1000"
-                show-word-limit />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="英文描述">
-              <el-input v-model="editForm.descriptionEn" type="textarea" :rows="4" placeholder="请输入英文描述"
-                maxlength="1000" show-word-limit />
-            </el-form-item>
-          </el-col>
-        </el-row>
+          <section class="edit-section">
+            <div class="edit-section-title">元信息（只读）</div>
+            <el-row :gutter="20">
+              <el-col :xs="24" :sm="12" :lg="8">
+                <el-form-item label="图片尺寸">
+                  <el-input :value="editForm.width && editForm.height ? `${editForm.width} × ${editForm.height}` : '-'"
+                    disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="8">
+                <el-form-item label="宽高比">
+                  <el-input :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="8">
+                <el-form-item label="文件大小">
+                  <el-input :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'" disabled />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="色系">
+                  <el-input :value="editForm.colorPalette || '-'" disabled placeholder="自动生成" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :md="12">
+                <el-form-item label="感知哈希">
+                  <el-input :value="editForm.phash || '-'" disabled placeholder="自动生成" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
 
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="关键字">
-              <el-input v-model="editForm.keywords" placeholder="请输入关键字（逗号分隔）" clearable />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="英文关键字">
-              <el-input v-model="editForm.keywordsEn" placeholder="请输入英文关键字（逗号分隔）" clearable />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-divider />
-
-        <!-- 状态和属性 -->
-        <el-row :gutter="24">
-          <el-col :span="8">
-            <el-form-item label="自定义贴纸">
-              <el-switch v-model="editForm.isCustom" active-text="是" inactive-text="否" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="是否公开">
-              <el-switch v-model="editForm.isPublic" active-text="是" inactive-text="否" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="是否为材质">
-              <el-switch v-model="editForm.isTexture" active-text="是" inactive-text="否" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="侵权状态">
-              <el-select v-model="editForm.isInfringement" placeholder="请选择" style="width: 100%">
-                <el-option label="非侵权" :value="false" />
-                <el-option label="侵权" :value="true" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="抠图素材">
-              <el-switch v-model="editForm.isCutout" active-text="是" inactive-text="否" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="素材编码">
-              <el-input v-model="editForm.code" placeholder="格式：2-7位字母+2-7位数字，如 abs123" clearable maxlength="14" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="文件后缀">
-              <el-input v-model="editForm.suffix" placeholder="如：png, jpg, svg" clearable maxlength="20" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-divider />
-
-        <!-- 只读信息 -->
-        <el-row :gutter="24">
-          <el-col :span="8">
-            <el-form-item label="图片尺寸">
-              <el-input :value="editForm.width && editForm.height ? `${editForm.width} × ${editForm.height}` : '-'"
-                disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="宽高比">
-              <el-input :value="editForm.aspectRatio ? editForm.aspectRatio.toFixed(4) : '-'" disabled />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="文件大小">
-              <el-input :value="editForm.fileSize ? formatFileSize(editForm.fileSize) : '-'" disabled />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="色系">
-              <el-input :value="editForm.colorPalette || '-'" disabled placeholder="自动生成" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="感知哈希">
-              <el-input :value="editForm.phash || '-'" disabled placeholder="自动生成" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-divider />
-
-        <!-- URL 信息 -->
-        <el-form-item label="原始地址">
-          <el-input v-model="editForm.originUrl" placeholder="请输入原始地址" clearable />
-        </el-form-item>
-        <el-form-item label="来源">
-          <el-input v-model="editForm.source" placeholder="请输入来源（文字介绍或链接）" clearable />
-        </el-form-item>
-        <el-form-item label="文件夹">
-          <el-select v-model="editForm.folderId" placeholder="请选择文件夹（留空为根目录）" clearable filterable style="width: 100%">
-            <el-option label="根目录" :value="null" />
-            <el-option v-for="folder in stickerFolderSelectOptions" :key="folder.value || 'root'" :label="folder.label"
-              :value="folder.value" />
-          </el-select>
-        </el-form-item>
-      </el-form>
+          <section class="edit-section">
+            <div class="edit-section-title">来源信息</div>
+            <el-row :gutter="20">
+              <el-col :xs="24">
+                <el-form-item label="原始地址">
+                  <el-input v-model="editForm.originUrl" placeholder="请输入原始地址" clearable />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24">
+                <el-form-item label="来源">
+                  <el-input v-model="editForm.source" placeholder="请输入来源（文字介绍或链接）" clearable />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
+        </el-form>
+      </div>
       <template #footer>
-        <div class="dialog-footer">
+        <div class="edit-dialog-footer">
           <el-button @click="editDialogVisible = false">取消</el-button>
           <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
         </div>
@@ -1820,7 +1800,6 @@ const editForm = ref({
   descriptionEn: '',
   keywords: '',
   keywordsEn: '',
-  group: '',
   suitableFor: '',
   suffix: '',
   isCustom: false,
@@ -3439,7 +3418,6 @@ const delayUpdateList = useDebounceFn(() => {
       descriptionEn: row.descriptionEn || '',
       keywords: row.keywords || '',
       keywordsEn: row.keywordsEn || '',
-      group: row.group || '',
       suitableFor: row.suitableFor || '',
       suffix: row.suffix || '',
       isCustom: row.isCustom || false,
@@ -3481,7 +3459,6 @@ const delayUpdateList = useDebounceFn(() => {
         descriptionEn: editForm.value.descriptionEn,
         keywords: editForm.value.keywords,
         keywordsEn: editForm.value.keywordsEn,
-        group: editForm.value.group,
         suitableFor: editForm.value.suitableFor,
         suffix: editForm.value.suffix,
         isCustom: editForm.value.isCustom,
@@ -3490,8 +3467,7 @@ const delayUpdateList = useDebounceFn(() => {
         isInfringement: editForm.value.isInfringement,
         isCutout: editForm.value.isCutout,
         originUrl: editForm.value.originUrl,
-        source: editForm.value.source,
-        folderId: editForm.value.folderId ?? null
+        source: editForm.value.source
       }
       await updateAssetLibrary(submitData)
       ElNotification.success('保存成功')
@@ -5438,21 +5414,54 @@ h1 {
 </style>
 <style scoped>
 .edit-material-dialog :deep(.el-dialog__body) {
-  padding: 30px;
-  max-height: 70vh;
-  overflow-y: auto;
+  padding: 0;
+  overflow: hidden;
 }
 
 .edit-material-dialog :deep(.el-dialog) {
-  border-radius: 8px;
+  border-radius: 0;
+}
+
+.edit-material-dialog :deep(.el-dialog__header) {
+  padding: 16px 24px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.edit-material-dialog :deep(.el-dialog__footer) {
+  padding: 12px 24px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.edit-material-body {
+  height: calc(100vh - 124px);
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--el-bg-color-page);
 }
 
 .edit-form {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edit-section {
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  padding: 16px 16px 0;
+}
+
+.edit-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-bottom: 12px;
 }
 
 .edit-form :deep(.el-form-item) {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .edit-form :deep(.el-form-item__label) {
@@ -5465,10 +5474,6 @@ h1 {
   margin-bottom: 0;
 }
 
-.edit-form :deep(.el-divider) {
-  margin: 24px 0;
-}
-
 .edit-form :deep(.el-input),
 .edit-form :deep(.el-textarea),
 .edit-form :deep(.el-select) {
@@ -5479,31 +5484,33 @@ h1 {
   min-height: 100px;
 }
 
-.dialog-footer {
+.edit-dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding-top: 16px;
 }
 
 /* 响应式布局 */
 @media (max-width: 1200px) {
-  .edit-material-dialog {
-    width: 95% !important;
+  .edit-material-body {
+    padding: 16px;
   }
 }
 
 @media (max-width: 768px) {
-  .edit-material-dialog {
-    width: 95% !important;
+  .edit-material-dialog :deep(.el-dialog__header),
+  .edit-material-dialog :deep(.el-dialog__footer) {
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
-  .edit-form :deep(.el-col) {
-    margin-bottom: 0;
+  .edit-material-body {
+    padding: 12px;
+    height: calc(100vh - 116px);
   }
 
-  .edit-form :deep(.el-col) {
-    margin-bottom: 16px;
+  .edit-section {
+    padding: 12px 12px 0;
   }
 }
 
