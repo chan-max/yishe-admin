@@ -49,6 +49,19 @@
             <template #configSlot="{ row }">
               <div class="config-cell">{{ formatConfig(row.configParams) }}</div>
             </template>
+            <template #subtitleSlot="{ row }">
+              <div v-if="row.subtitle">
+                <div class="subtitle-original">原文：{{ row.subtitle.originalText }}</div>
+                <div class="subtitle-total">总时长：{{ row.subtitle.totalDuration }} 秒</div>
+                <ul class="subtitle-list">
+                  <li v-for="s in row.subtitle.sentences" :key="s.index">
+                    <span class="subtitle-time">[{{ s.start }}~{{ s.end }}s]（{{ s.duration }}秒）</span>
+                    <span class="subtitle-text"> {{ s.text }}</span>
+                  </li>
+                </ul>
+              </div>
+              <div v-else>无字幕</div>
+            </template>
             <template #previewSlot="{ row }">
               <audio v-if="row.resultUrl" :src="row.resultUrl" controls preload="none" class="audio-preview" />
               <span v-else>-</span>
@@ -59,11 +72,70 @@
               </el-tag>
             </template>
             <template #operationSlot="{ row }">
-              <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+              <el-dropdown trigger="click" @command="(cmd) => handleOperation(row, cmd)">
+                <el-button type="primary" link size="small">
+                  操作
+                  <i class="mdi mdi-chevron-down" style="margin-left: 4px" />
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
+                    <el-dropdown-item command="play">试听音频</el-dropdown-item>
+                    <el-dropdown-item command="delete">删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
             </vxe-grid>
           </div>
         </div>
+
+        <!-- 字幕预览弹窗 -->
+        <el-dialog v-model="previewDialogVisible" class="subtitle-preview-dialog" title="字幕预览" width="880px" :destroy-on-close="true" @close="closePreview">
+          <div class="subtitle-preview-body">
+            <div v-if="previewRow?.resultUrl" class="preview-audio-row">
+              <audio
+                ref="previewAudio"
+                :src="previewRow.resultUrl"
+                preload="auto"
+                class="audio-preview"
+                @timeupdate="onPreviewTimeUpdate"
+                @ended="onPreviewEnded"
+                @play="onPreviewPlay"
+                @pause="onPreviewPause"
+              />
+              <div class="preview-controls">
+                <el-button size="small" type="primary" @click="isPlaying ? pausePreview() : playPreview()">
+                  {{ isPlaying ? '暂停' : '开始' }}
+                </el-button>
+                <el-button size="small" @click="closePreview">停止并关闭</el-button>
+              </div>
+            </div>
+            <div v-else class="no-audio">无可用音频</div>
+
+            <div class="subtitle-preview-track">
+              <ul class="preview-sentences">
+                <li
+                  v-for="(s, idx) in previewRow?.subtitle?.sentences || []"
+                  :key="s.index"
+                  :class="['preview-sentence', { active: idx === currentSentenceIndex }]"
+                >
+                  <span class="sentence-time">[{{ s.start }}~{{ s.end }}s]</span>
+                  <span class="sentence-text-overlay">
+                    <span class="text-base">{{ s.text }}</span>
+                    <span
+                      class="text-highlight"
+                      :style="{ width: getProgressPercent(idx) }"
+                    >{{ s.text }}</span>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <template #footer>
+            <el-button @click="closePreview">关闭</el-button>
+          </template>
+        </el-dialog>
 
         <div class="pagination-section">
           <pagination
@@ -335,7 +407,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, reactive, ref, watch, watchEffect, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import { 
@@ -359,6 +431,146 @@ const dataSource = ref<any[]>([])
 const formRef = ref()
 const selectedRows = ref<any[]>([]) // 多选行
 
+// 字幕预览相关
+const previewDialogVisible = ref(false)
+const previewRow = ref<any | null>(null)
+const previewAudio = ref<HTMLAudioElement | null>(null)
+const currentTime = ref(0)
+const currentSentenceIndex = ref(-1)
+const charProgress = ref(0) // 0..1
+const isPlaying = ref(false)
+const rafId = ref<number | null>(null)
+
+const openSubtitlePreview = async (row: any) => {
+  previewRow.value = row
+  previewDialogVisible.value = true
+  await nextTick()
+  if (previewAudio.value) {
+    try {
+      previewAudio.value.currentTime = 0
+      await previewAudio.value.play()
+    } catch (e) {
+      // autoplay might be blocked
+    }
+  }
+}
+
+const playPreview = async () => {
+  if (!previewAudio.value) return
+  try {
+    await previewAudio.value.play()
+  } catch (e) {}
+}
+
+const pausePreview = () => {
+  if (!previewAudio.value) return
+  previewAudio.value.pause()
+}
+
+const onPreviewPlay = () => { isPlaying.value = true }
+const onPreviewPause = () => { isPlaying.value = false }
+
+const onPreviewTimeUpdate = (e: any) => {
+  const t = e.target.currentTime || 0
+  currentTime.value = t
+  const sentences = previewRow.value?.subtitle?.sentences || []
+  if (!sentences.length) return
+
+  // end threshold: when current time is within this distance to sentence end, treat as finished
+  const endEps = 0.06
+
+  // find last sentence whose start <= t
+  let lo = 0
+  let hi = sentences.length - 1
+  let idx = -1
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2)
+    const sStart = Number(sentences[mid]?.start ?? 0)
+    if (sStart <= t) {
+      idx = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
+  }
+  if (idx === -1) idx = 0
+
+  const s = sentences[idx] || {}
+  const sStart = Number(s.start ?? 0)
+  const sEnd = Number(s.end ?? (sStart + (s.duration ?? 0)))
+  const sDur = Number((s.duration ?? (sEnd - sStart)) || 1)
+
+  let rel = 0
+  if (t >= sEnd - endEps) {
+    // close to or past end -> show fully covered
+    rel = 1
+  } else if (t <= sStart) {
+    rel = 0
+  } else {
+    rel = Math.max(0, Math.min(1, (t - sStart) / sDur))
+  }
+
+  if (rafId.value) cancelAnimationFrame(rafId.value)
+  rafId.value = requestAnimationFrame(() => {
+    currentSentenceIndex.value = idx
+    charProgress.value = rel
+    rafId.value = null
+  })
+}
+
+const onPreviewEnded = () => {
+  currentTime.value = 0
+  if (rafId.value) cancelAnimationFrame(rafId.value)
+  rafId.value = null
+  currentSentenceIndex.value = -1
+  charProgress.value = 0
+  isPlaying.value = false
+}
+
+const closePreview = () => {
+  previewDialogVisible.value = false
+  if (previewAudio.value) {
+    try {
+      previewAudio.value.pause()
+      previewAudio.value.currentTime = 0
+    } catch (e) {}
+  }
+  previewRow.value = null
+  if (rafId.value) cancelAnimationFrame(rafId.value)
+  rafId.value = null
+  currentSentenceIndex.value = -1
+  charProgress.value = 0
+  isPlaying.value = false
+}
+
+const getProgressPercent = (idx: number) => {
+  if (!previewRow.value?.subtitle?.sentences) return '0%'
+  if (idx < currentSentenceIndex.value) return '100%'
+  if (idx > currentSentenceIndex.value) return '0%'
+  return `${Math.round((charProgress.value || 0) * 100)}%`
+}
+
+const handleOperation = (row: any, cmd: string) => {
+  if (cmd === 'preview') {
+    openSubtitlePreview(row)
+    return
+  }
+  if (cmd === 'play') {
+    // 在弹窗打开前直接播放音频（使用浏览器 autoplay 限制可能失败）
+    if (row?.resultUrl) {
+      const a = new Audio(row.resultUrl)
+      a.play().catch(() => {})
+    } else {
+      ElMessage.warning('该记录无可用音频')
+    }
+    return
+  }
+  if (cmd === 'delete') {
+    handleDelete(row)
+    return
+  }
+}
+
 const queryParams = reactive({
   page: 1,
   pageSize: 20,
@@ -373,6 +585,7 @@ const gridOptions = ref<any>({
     { type: 'seq', title: '#', width: 58 },
     { title: '文案', field: 'text', minWidth: 220, slots: { default: 'textSlot' } },
     { title: '配置参数', field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
+    { title: '字幕', field: 'subtitle', minWidth: 320, slots: { default: 'subtitleSlot' } },
     { title: '试听', field: 'preview', width: 320, slots: { default: 'previewSlot' } },
     { title: '时长(秒)', field: 'duration', width: 96 },
     { title: '状态', field: 'status', width: 88, slots: { default: 'statusSlot' } },
@@ -1058,5 +1271,80 @@ onMounted(() => {
 .clip-material-actions {
   margin-top: 8px;
   margin-bottom: 8px;
+}
+
+/* 字幕预览样式 */
+.subtitle-preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.subtitle-preview-track {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--el-fill-color-1);
+  border-radius: 6px;
+}
+.preview-sentences {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.preview-sentence {
+  padding: 6px 8px;
+  border-radius: 4px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--el-text-color-secondary);
+}
+.preview-sentence.active {
+  background: rgba(64,158,255,0.08);
+  color: var(--el-text-color-regular);
+}
+.sentence-time {
+  width: 120px;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+}
+.sentence-text { white-space: pre-wrap; word-break: break-word; }
+.sentence-text-overlay { position: relative; display: inline-block; }
+.sentence-text-overlay {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+  /* ensure overlay width is based on available space */
+  max-width: 100%;
+}
+.sentence-text-overlay .text-base,
+.sentence-text-overlay .text-highlight {
+  display: block;
+  white-space: pre-wrap;
+  word-break: break-word;
+  /* inherit font metrics to keep perfect alignment */
+  font: inherit;
+  line-height: inherit;
+}
+.sentence-text-overlay .text-base {
+  color: var(--el-text-color-secondary);
+  z-index: 1;
+}
+.sentence-text-overlay .text-highlight {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: #409EFF;
+  font-weight: 600;
+  z-index: 2;
+  transition: width 140ms linear; /* 平滑过渡，略微加长 */
+}
+
+/* 让弹窗垂直居中 */
+.subtitle-preview-dialog :deep(.el-dialog__wrapper) {
+  align-items: center !important;
 }
 </style>
