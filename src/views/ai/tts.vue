@@ -66,6 +66,7 @@
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
+                      <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
                       <el-dropdown-item command="delete">删除</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -77,6 +78,17 @@
 
         <!-- 字幕预览弹窗组件 -->
         <SubtitlePreview v-model="previewDialogVisible" :row="previewRow" />
+
+        <!-- 字幕元数据弹窗 -->
+        <el-dialog v-model="metadataDialogVisible" title="字幕元数据" width="800px" :destroy-on-close="true">
+          <div class="metadata-container">
+            <pre class="metadata-pre">{{ JSON.stringify(metadataContent, null, 2) }}</pre>
+          </div>
+          <template #footer>
+            <el-button type="primary" @click="copyMetadata">复制 JSON</el-button>
+            <el-button @click="metadataDialogVisible = false">关闭</el-button>
+          </template>
+        </el-dialog>
 
         <div class="pagination-section">
           <pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
@@ -402,10 +414,29 @@ const handleOperation = (row: any, cmd: string) => {
     openSubtitlePreview(row)
     return
   }
+  if (cmd === 'metadata') {
+    openMetadataDialog(row)
+    return
+  }
   if (cmd === 'delete') {
     handleDelete(row)
     return
   }
+}
+
+const metadataDialogVisible = ref(false)
+const metadataContent = ref<any>(null)
+
+const openMetadataDialog = (row: any) => {
+  metadataContent.value = row.subtitle || {}
+  metadataDialogVisible.value = true
+}
+
+const copyMetadata = () => {
+  const text = JSON.stringify(metadataContent.value, null, 2)
+  navigator.clipboard.writeText(text).then(() => {
+    ElMessage.success('已复制到剪贴板')
+  })
 }
 
 const queryParams = reactive({
@@ -1159,5 +1190,23 @@ onMounted(() => {
 :global(.copy-tooltip) {
   max-width: 400px !important;
   line-height: 1.6;
+}
+
+.metadata-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  background: #f5f7fa;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.metadata-pre {
+  margin: 0;
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #303133;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>
