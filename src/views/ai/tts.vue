@@ -65,9 +65,8 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
-                      <el-dropdown-item command="play">试听音频</el-dropdown-item>
-                      <el-dropdown-item command="delete">删除</el-dropdown-item>
+                        <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
+                          <el-dropdown-item command="delete">删除</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -82,13 +81,22 @@
           <div class="subtitle-preview-body">
             <div v-if="previewRow?.resultUrl" class="preview-audio-row">
               <audio ref="previewAudio" :src="previewRow.resultUrl" preload="auto" class="audio-preview"
-                @timeupdate="onPreviewTimeUpdate" @ended="onPreviewEnded" @play="onPreviewPlay"
+                @loadedmetadata="onPreviewLoadedMetadata" @timeupdate="onPreviewTimeUpdate" @ended="onPreviewEnded" @play="onPreviewPlay"
                 @pause="onPreviewPause" />
               <div class="preview-controls">
                 <el-button size="small" type="primary" @click="isPlaying ? pausePreview() : playPreview()">
                   {{ isPlaying ? '暂停' : '开始' }}
                 </el-button>
                 <el-button size="small" @click="closePreview">停止并关闭</el-button>
+                <div class="time-info" style="margin-left:12px; line-height:32px; color:var(--el-text-color-secondary)">
+                  播放：{{ formatDuration(currentTime) }} / {{ formatDuration(audioDuration) }} s
+                </div>
+              </div>
+              <div class="audio-progress-wrapper" style="margin-top:8px; display:flex; align-items:center; gap:8px">
+                <div class="audio-progress" style="flex:1; height:8px; background:var(--el-border-color); border-radius:4px; overflow:hidden">
+                  <div class="audio-progress-fill" :style="{ width: audioProgressPercent, background: 'var(--el-color-primary)' , height: '100%'}"></div>
+                </div>
+                <div class="audio-progress-percent" style="min-width:48px; text-align:right; color:var(--el-text-color-secondary)">{{ audioProgressPercent }}</div>
               </div>
             </div>
             <div v-else class="no-audio">无可用音频</div>
@@ -425,6 +433,7 @@ const previewDialogVisible = ref(false)
 const previewRow = ref<any | null>(null)
 const previewAudio = ref<HTMLAudioElement | null>(null)
 const currentTime = ref(0)
+const audioDuration = ref(0)
 const currentSentenceIndex = ref(-1)
 const charProgress = ref(0) // 0..1
 const isPlaying = ref(false)
@@ -437,6 +446,8 @@ const openSubtitlePreview = async (row: any) => {
   if (previewAudio.value) {
     try {
       previewAudio.value.currentTime = 0
+      // update duration if available
+      audioDuration.value = Number((previewAudio.value.duration || previewRow.value?.duration || 0))
       await previewAudio.value.play()
     } catch (e) {
       // autoplay might be blocked
@@ -462,6 +473,8 @@ const onPreviewPause = () => { isPlaying.value = false }
 const onPreviewTimeUpdate = (e: any) => {
   const t = e.target.currentTime || 0
   currentTime.value = t
+  // keep audio duration updated
+  audioDuration.value = Number((e.target.duration || audioDuration.value || previewRow.value?.duration || 0))
   const sentences = previewRow.value?.subtitle?.sentences || []
   if (!sentences.length) return
 
@@ -509,6 +522,7 @@ const onPreviewTimeUpdate = (e: any) => {
 
 const onPreviewEnded = () => {
   currentTime.value = 0
+  audioDuration.value = Number((previewAudio.value?.duration || previewRow.value?.duration || 0))
   if (rafId.value) cancelAnimationFrame(rafId.value)
   rafId.value = null
   currentSentenceIndex.value = -1
@@ -532,6 +546,10 @@ const closePreview = () => {
   isPlaying.value = false
 }
 
+const onPreviewLoadedMetadata = (e: any) => {
+  audioDuration.value = Number((e.target.duration || previewRow.value?.duration || 0))
+}
+
 const getProgressPercent = (idx: number) => {
   if (!previewRow.value?.subtitle?.sentences) return '0%'
   if (idx < currentSentenceIndex.value) return '100%'
@@ -539,19 +557,17 @@ const getProgressPercent = (idx: number) => {
   return `${Math.round((charProgress.value || 0) * 100)}%`
 }
 
+const audioProgressPercent = computed(() => {
+  const dur = Number(audioDuration.value || previewRow.value?.duration || 0)
+  const t = Number(currentTime.value || 0)
+  if (!dur || dur <= 0) return '0%'
+  const p = Math.max(0, Math.min(100, Math.round((t / dur) * 100)))
+  return `${p}%`
+})
+
 const handleOperation = (row: any, cmd: string) => {
   if (cmd === 'preview') {
     openSubtitlePreview(row)
-    return
-  }
-  if (cmd === 'play') {
-    // 在弹窗打开前直接播放音频（使用浏览器 autoplay 限制可能失败）
-    if (row?.resultUrl) {
-      const a = new Audio(row.resultUrl)
-      a.play().catch(() => { })
-    } else {
-      ElMessage.warning('该记录无可用音频')
-    }
     return
   }
   if (cmd === 'delete') {
