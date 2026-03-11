@@ -380,6 +380,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: 'AI文字转语音',
         }
+      },
+      {
+        path: 'tti',
+        component: () => import('@/views/ai/tti.vue'),
+        name: 'AiTti',
+        meta: {
+          title: 'AI文字生成图片',
+        }
       }
     ]
   },
