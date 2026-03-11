@@ -6,24 +6,15 @@
           <div class="search-form-container">
             <div class="search-field search-field-wide">
               <label class="search-label">搜索</label>
-              <el-input
-                v-model="queryParams.search"
-                placeholder="文案 / 返回URL"
-                clearable
-                @keyup.enter="getList"
-                @clear="getList"
-              />
+              <el-input v-model="queryParams.search" placeholder="文案 / 返回URL" clearable @keyup.enter="getList"
+                @clear="getList" />
             </div>
             <div class="search-field search-field-actions">
               <label class="search-label"></label>
               <div class="search-actions">
                 <el-button type="primary" @click="getList">搜索</el-button>
-                <el-button 
-                  type="danger" 
-                  :icon="Delete" 
-                  :disabled="selectedRows.length === 0"
-                  @click="handleBatchDelete"
-                >
+                <el-button type="danger" :icon="Delete" :disabled="selectedRows.length === 0"
+                  @click="handleBatchDelete">
                   批量删除({{ selectedRows.length }})
                 </el-button>
                 <el-button type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
@@ -36,74 +27,63 @@
       <div class="content-container">
         <div class="table-section">
           <div class="common-table">
-            <vxe-grid 
-              v-bind="gridOptions" 
-              :data="dataSource" 
-              :loading="loading"
-              @checkbox-change="handleCheckboxChange"
-              @checkbox-all="handleCheckboxAll"
-            >
-            <template #textSlot="{ row }">
-              <div class="clamp-3">{{ row.text || '-' }}</div>
-            </template>
-            <template #configSlot="{ row }">
-              <div class="config-cell">{{ formatConfig(row.configParams) }}</div>
-            </template>
-            <template #subtitleSlot="{ row }">
-              <div v-if="row.subtitle">
-                <div class="subtitle-original">原文：{{ row.subtitle.originalText }}</div>
-                <div class="subtitle-total">总时长：{{ row.subtitle.totalDuration }} 秒</div>
-                <ul class="subtitle-list">
-                  <li v-for="s in row.subtitle.sentences" :key="s.index">
-                    <span class="subtitle-time">[{{ s.start }}~{{ s.end }}s]（{{ s.duration }}秒）</span>
-                    <span class="subtitle-text"> {{ s.text }}</span>
-                  </li>
-                </ul>
-              </div>
-              <div v-else>无字幕</div>
-            </template>
-            <template #previewSlot="{ row }">
-              <audio v-if="row.resultUrl" :src="row.resultUrl" controls preload="none" class="audio-preview" />
-              <span v-else>-</span>
-            </template>
-            <template #statusSlot="{ row }">
-              <el-tag :type="row.status === 'success' ? 'success' : 'danger'">
-                {{ row.status === 'success' ? '成功' : '失败' }}
-              </el-tag>
-            </template>
-            <template #operationSlot="{ row }">
-              <el-dropdown trigger="click" @command="(cmd) => handleOperation(row, cmd)">
-                <el-button type="primary" link size="small">
-                  操作
-                  <i class="mdi mdi-chevron-down" style="margin-left: 4px" />
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
-                    <el-dropdown-item command="play">试听音频</el-dropdown-item>
-                    <el-dropdown-item command="delete">删除</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
+            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange"
+              @checkbox-all="handleCheckboxAll">
+              <template #textSlot="{ row }">
+                <el-tooltip v-if="row.text" :content="row.text" placement="top" effect="dark" raw-content
+                  popper-class="copy-tooltip">
+                  <div class="clamp-3">{{ row.text }}</div>
+                </el-tooltip>
+                <span v-else>-</span>
+              </template>
+              <template #configSlot="{ row }">
+                <div class="config-cell">{{ formatConfig(row.configParams) }}</div>
+              </template>
+              <template #subtitleSlot="{ row }">
+                <div v-if="row.subtitle" class="subtitle-column-wrapper">
+                  <div class="subtitle-list-container">
+                    <ul class="subtitle-list">
+                      <li v-for="s in row.subtitle.sentences" :key="s.index">
+                        <span class="subtitle-time">[{{ formatDuration(s.start) }}~{{ formatDuration(s.end) }}s]（{{
+                          formatDuration(s.duration) }}s）</span>
+                        <span class="subtitle-text"> {{ s.text }}</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div v-else>无字幕</div>
+              </template>
+              <template #previewSlot="{ row }">
+                <audio v-if="row.resultUrl" :src="row.resultUrl" controls preload="none" class="audio-preview" />
+                <span v-else>-</span>
+              </template>
+              <template #operationSlot="{ row }">
+                <el-dropdown trigger="click" @command="(cmd) => handleOperation(row, cmd)">
+                  <el-button type="primary" link size="small">
+                    操作
+                    <i class="mdi mdi-chevron-down" style="margin-left: 4px" />
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
+                      <el-dropdown-item command="play">试听音频</el-dropdown-item>
+                      <el-dropdown-item command="delete">删除</el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </template>
             </vxe-grid>
           </div>
         </div>
 
         <!-- 字幕预览弹窗 -->
-        <el-dialog v-model="previewDialogVisible" class="subtitle-preview-dialog" title="字幕预览" width="880px" :destroy-on-close="true" @close="closePreview">
+        <el-dialog v-model="previewDialogVisible" class="subtitle-preview-dialog" title="字幕预览" width="880px"
+          :destroy-on-close="true" @close="closePreview">
           <div class="subtitle-preview-body">
             <div v-if="previewRow?.resultUrl" class="preview-audio-row">
-              <audio
-                ref="previewAudio"
-                :src="previewRow.resultUrl"
-                preload="auto"
-                class="audio-preview"
-                @timeupdate="onPreviewTimeUpdate"
-                @ended="onPreviewEnded"
-                @play="onPreviewPlay"
-                @pause="onPreviewPause"
-              />
+              <audio ref="previewAudio" :src="previewRow.resultUrl" preload="auto" class="audio-preview"
+                @timeupdate="onPreviewTimeUpdate" @ended="onPreviewEnded" @play="onPreviewPlay"
+                @pause="onPreviewPause" />
               <div class="preview-controls">
                 <el-button size="small" type="primary" @click="isPlaying ? pausePreview() : playPreview()">
                   {{ isPlaying ? '暂停' : '开始' }}
@@ -115,18 +95,12 @@
 
             <div class="subtitle-preview-track">
               <ul class="preview-sentences">
-                <li
-                  v-for="(s, idx) in previewRow?.subtitle?.sentences || []"
-                  :key="s.index"
-                  :class="['preview-sentence', { active: idx === currentSentenceIndex }]"
-                >
+                <li v-for="(s, idx) in previewRow?.subtitle?.sentences || []" :key="s.index"
+                  :class="['preview-sentence', { active: idx === currentSentenceIndex }]">
                   <span class="sentence-time">[{{ s.start }}~{{ s.end }}s]</span>
                   <span class="sentence-text-overlay">
                     <span class="text-base">{{ s.text }}</span>
-                    <span
-                      class="text-highlight"
-                      :style="{ width: getProgressPercent(idx) }"
-                    >{{ s.text }}</span>
+                    <span class="text-highlight" :style="{ width: getProgressPercent(idx) }">{{ s.text }}</span>
                   </span>
                 </li>
               </ul>
@@ -138,17 +112,14 @@
         </el-dialog>
 
         <div class="pagination-section">
-          <pagination
-            :total="total"
-            v-model:page="queryParams.page"
-            v-model:limit="queryParams.pageSize"
-            @pagination="getList"
-          />
+          <pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
+            @pagination="getList" />
         </div>
       </div>
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" fullscreen class="tts-create-dialog" :destroy-on-close="true">
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" fullscreen class="tts-create-dialog"
+      :destroy-on-close="true">
       <div class="tts-create-body">
         <el-form ref="formRef" :model="form" :rules="rules" label-width="96px">
           <el-form-item label="文案" prop="text">
@@ -156,30 +127,16 @@
           </el-form-item>
 
           <el-form-item v-if="isInstructModel" label="指令模板">
-            <el-select
-              v-model="selectedInstructionTemplate"
-              class="w-full"
-              placeholder="选择模板后会自动填入指令"
-              @change="applyInstructionTemplate"
-            >
-              <el-option
-                v-for="item in instructionTemplates"
-                :key="item.label"
-                :label="item.label"
-                :value="item.value"
-              />
+            <el-select v-model="selectedInstructionTemplate" class="w-full" placeholder="选择模板后会自动填入指令"
+              @change="applyInstructionTemplate">
+              <el-option v-for="item in instructionTemplates" :key="item.label" :label="item.label"
+                :value="item.value" />
             </el-select>
           </el-form-item>
 
           <el-form-item v-if="isInstructModel" label="指令控制" prop="instructions">
-            <el-input
-              v-model="form.instructions"
-              type="textarea"
-              :rows="5"
-              maxlength="1600"
-              show-word-limit
-              placeholder="示例：语速较快，带有明显的上扬语调，适合介绍时尚产品"
-            />
+            <el-input v-model="form.instructions" type="textarea" :rows="5" maxlength="1600" show-word-limit
+              placeholder="示例：语速较快，带有明显的上扬语调，适合介绍时尚产品" />
             <div class="instruction-tip">
               仅支持 qwen3-tts-instruct-flash，指令文本仅支持中文/英文，建议描述音调、语速、情感等特征。
             </div>
@@ -198,39 +155,19 @@
             <div class="voice-list-container">
               <div class="voice-list-header">
                 <span>已创建音色列表</span>
-                <el-button 
-                  :icon="Refresh" 
-                  size="small" 
-                  :loading="loadingVoices" 
-                  @click="loadCustomVoices"
-                >
+                <el-button :icon="Refresh" size="small" :loading="loadingVoices" @click="loadCustomVoices">
                   刷新
                 </el-button>
               </div>
-              <el-select 
-                v-model="form.voice" 
-                class="w-full" 
-                placeholder="请选择音色" 
-                :loading="loadingVoices"
-                clearable
-                @change="handleVoiceSelect"
-                @clear="customVoiceInfo = null"
-              >
-                <el-option
-                  v-for="item in customVoiceList"
-                  :key="item.voice"
+              <el-select v-model="form.voice" class="w-full" placeholder="请选择音色" :loading="loadingVoices" clearable
+                @change="handleVoiceSelect" @clear="customVoiceInfo = null">
+                <el-option v-for="item in customVoiceList" :key="item.voice"
                   :label="`${formatVoiceName(item)} (${new Date(item.gmt_create).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })})`"
-                  :value="item.voice"
-                >
+                  :value="item.voice">
                   <div class="voice-option">
                     <span :title="item.voice">{{ formatVoiceName(item) }}</span>
-                    <el-button
-                      :icon="Delete"
-                      size="small"
-                      type="danger"
-                      text
-                      @click.stop="handleDeleteVoice(item.voice)"
-                    />
+                    <el-button :icon="Delete" size="small" type="danger" text
+                      @click.stop="handleDeleteVoice(item.voice)" />
                   </div>
                 </el-option>
               </el-select>
@@ -242,14 +179,8 @@
 
           <!-- 从剪辑素材创建音色 -->
           <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音色名称">
-            <el-input 
-              v-model="customVoiceName" 
-              placeholder="请输入音色名称（可选，留空则使用素材名称）" 
-              :disabled="uploadingAudio"
-              clearable
-              maxlength="32"
-              show-word-limit
-            />
+            <el-input v-model="customVoiceName" placeholder="请输入音色名称（可选，留空则使用素材名称）" :disabled="uploadingAudio" clearable
+              maxlength="32" show-word-limit />
             <div class="voice-name-tip">
               仅支持字母、数字、下划线、横线，不能以数字开头，最多32个字符
             </div>
@@ -258,28 +189,15 @@
           <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音频素材" required>
             <div class="voice-list-container">
               <div class="clip-material-toolbar">
-                <el-input
-                  v-model="clipMaterialKeyword"
-                  placeholder="搜索素材名称/描述/关键词"
-                  clearable
-                  @keyup.enter="loadClipMaterialAudios"
-                />
+                <el-input v-model="clipMaterialKeyword" placeholder="搜索素材名称/描述/关键词" clearable
+                  @keyup.enter="loadClipMaterialAudios" />
                 <el-button :loading="loadingClipMaterials" @click="loadClipMaterialAudios">查询</el-button>
               </div>
 
-              <el-select
-                v-model="selectedClipMaterialId"
-                class="w-full"
-                placeholder="请选择音频素材"
-                :loading="loadingClipMaterials"
-                clearable
-              >
-                <el-option
-                  v-for="item in clipMaterialAudios"
-                  :key="item.id"
-                  :label="`${item.name || '未命名'} (${(item.suffix || '').toLowerCase()})`"
-                  :value="item.id"
-                />
+              <el-select v-model="selectedClipMaterialId" class="w-full" placeholder="请选择音频素材"
+                :loading="loadingClipMaterials" clearable>
+                <el-option v-for="item in clipMaterialAudios" :key="item.id"
+                  :label="`${item.name || '未命名'} (${(item.suffix || '').toLowerCase()})`" :value="item.id" />
               </el-select>
 
               <div class="clip-material-actions">
@@ -288,13 +206,8 @@
                 </el-button>
               </div>
 
-              <audio
-                v-if="selectedClipMaterial?.url"
-                :src="selectedClipMaterial.url"
-                controls
-                preload="none"
-                class="audio-preview"
-              />
+              <audio v-if="selectedClipMaterial?.url" :src="selectedClipMaterial.url" controls preload="none"
+                class="audio-preview" />
             </div>
             <div v-if="customVoiceInfo" class="voice-info">
               <el-alert type="success" :closable="false">
@@ -312,55 +225,123 @@
             <el-col :xs="24" :md="12">
               <el-form-item v-if="!isVoiceCloneModel" label="音色" prop="voice">
                 <el-select v-model="form.voice" class="w-full">
-                  <el-option label="Cherry（音色名：芊悦｜描述：阳光积极、亲切自然小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Cherry" />
-                  <el-option label="Serena（音色名：苏瑶｜描述：温柔小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Serena" />
-                  <el-option label="Ethan（音色名：晨煦｜描述：标准普通话，带部分北方口音。阳光、温暖、活力、朝气（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Ethan" />
-                  <el-option label="Chelsie（音色名：千雪｜描述：二次元虚拟女友（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Chelsie" />
-                  <el-option label="Momo（音色名：茉兔｜描述：撒娇搞怪，逗你开心（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Momo" />
-                  <el-option label="Vivian（音色名：十三｜描述：拽拽的、可爱的小暴躁（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Vivian" />
-                  <el-option label="Moon（音色名：月白｜描述：率性帅气的月白（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Moon" />
-                  <el-option label="Maia（音色名：四月｜描述：知性与温柔的碰撞（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Maia" />
-                  <el-option label="Kai（音色名：凯｜描述：耳朵的一场SPA（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Kai" />
-                  <el-option label="Nofish（音色名：不吃鱼｜描述：不会翘舌音的设计师（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Nofish" />
-                  <el-option label="Bella（音色名：萌宝｜描述：喝酒不打醉拳的小萝莉（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Bella" />
-                  <el-option label="Jennifer（音色名：詹妮弗｜描述：品牌级、电影质感般美语女声（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Jennifer" />
-                  <el-option label="Ryan（音色名：甜茶｜描述：节奏拉满，戏感炸裂，真实与张力共舞（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Ryan" />
-                  <el-option label="Katerina（音色名：卡捷琳娜｜描述：御姐音色，韵律回味十足（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Katerina" />
-                  <el-option label="Aiden（音色名：艾登｜描述：精通厨艺的美语大男孩（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Aiden" />
-                  <el-option label="Eldric Sage（音色名：沧明子｜描述：沉稳睿智的老者，沧桑如松却心明如镜（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Eldric Sage" />
-                  <el-option label="Mia（音色名：乖小妹｜描述：温顺如春水，乖巧如初雪（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Mia" />
-                  <el-option label="Mochi（音色名：沙小弥｜描述：聪明伶俐的小大人，童真未泯却早慧如禅（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Mochi" />
-                  <el-option label="Bellona（音色名：燕铮莺｜描述：声音洪亮，吐字清晰，人物鲜活，听得人热血沸腾；金戈铁马入梦来，字正腔圆间尽显千面人声的江湖（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Bellona" />
-                  <el-option label="Vincent（音色名：田叔｜描述：一口独特的沙哑烟嗓，一开口便道尽了千军万马与江湖豪情（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Vincent" />
-                  <el-option label="Bunny（音色名：萌小姬｜描述：“萌属性”爆棚的小萝莉（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Bunny" />
-                  <el-option label="Neil（音色名：阿闻｜描述：平直的基线语调，字正腔圆的咬字发音，这就是最专业的新闻主持人（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Neil" />
-                  <el-option label="Elias（音色名：墨讲师｜描述：既保持学科严谨性，又通过叙事技巧将复杂知识转化为可消化的认知模块（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Elias" />
-                  <el-option label="Arthur（音色名：徐大爷｜描述：被岁月和旱烟浸泡过的质朴嗓音，不疾不徐地摇开了满村的奇闻异事（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Arthur" />
-                  <el-option label="Nini（音色名：邻家妹妹｜描述：糯米糍一样又软又黏的嗓音，那一声声拉长了的“哥哥”，甜得能把人的骨头都叫酥了（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Nini" />
-                  <el-option label="Ebona（音色名：诡婆婆｜描述：她的低语像一把生锈的钥匙，缓慢转动你内心最深处的幽暗角落——那里藏着所有你不敢承认的童年阴影与未知恐惧（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Ebona" />
-                  <el-option label="Seren（音色名：小婉｜描述：温和舒缓的声线，助你更快地进入睡眠，晚安，好梦（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Seren" />
-                  <el-option label="Pip（音色名：顽屁小孩｜描述：调皮捣蛋却充满童真的他来了，这是你记忆中的小新吗（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Pip" />
-                  <el-option label="Stella（音色名：少女阿月｜描述：平时是甜到发腻的迷糊少女音，但在喊出“代表月亮消灭你”时，瞬间充满不容置疑的爱与正义（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Stella" />
-                  <el-option label="Bodega（音色名：博德加｜描述：热情的西班牙大叔（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Bodega" />
-                  <el-option label="Sonrisa（音色名：索尼莎｜描述：热情开朗的拉美大姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Sonrisa" />
-                  <el-option label="Alek（音色名：阿列克｜描述：一开口，是战斗民族的冷，也是毛呢大衣下的暖（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Alek" />
-                  <el-option label="Dolce（音色名：多尔切｜描述：慵懒的意大利大叔（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Dolce" />
-                  <el-option label="Sohee（音色名：素熙｜描述：温柔开朗，情绪丰富的韩国欧尼（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Sohee" />
-                  <el-option label="Ono Anna（音色名：小野杏｜描述：鬼灵精怪的青梅竹马（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Ono Anna" />
-                  <el-option label="Lenn（音色名：莱恩｜描述：理性是底色，叛逆藏在细节里——穿西装也听后朋克的德国青年（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Lenn" />
-                  <el-option label="Emilien（音色名：埃米尔安｜描述：浪漫的法国大哥哥（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Emilien" />
-                  <el-option label="Andre（音色名：安德雷｜描述：声音磁性，自然舒服、沉稳男生（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Andre" />
-                  <el-option label="Radio Gol（音色名：拉迪奥·戈尔｜描述：足球诗人Rádio Gol！今天我要用名字为你们解说足球（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Radio Gol" />
-                  <el-option label="Jada（音色名：上海-阿珍｜描述：风风火火的沪上阿姐（女性）｜支持语种：中文（上海话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Jada" />
-                  <el-option label="Dylan（音色名：北京-晓东｜描述：北京胡同里长大的少年（男性）｜支持语种：中文（北京话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Dylan" />
-                  <el-option label="Li（音色名：南京-老李｜描述：耐心的瑜伽老师（男性）｜支持语种：中文（南京话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Li" />
-                  <el-option label="Marcus（音色名：陕西-秦川｜描述：面宽话短，心实声沉——老陕的味道（男性）｜支持语种：中文（陕西话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Marcus" />
-                  <el-option label="Roy（音色名：闽南-阿杰｜描述：诙谐直爽、市井活泼的台湾哥仔形象（男性）｜支持语种：中文（闽南语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Roy" />
-                  <el-option label="Peter（音色名：天津-李彼得｜描述：天津相声，专业捧哏（男性）｜支持语种：中文（天津话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Peter" />
-                  <el-option label="Sunny（音色名：四川-晴儿｜描述：甜到你心里的川妹子（女性）｜支持语种：中文（四川话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Sunny" />
-                  <el-option label="Eric（音色名：四川-程川｜描述：一个跳脱市井的四川成都男子（男性）｜支持语种：中文（四川话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Eric" />
-                  <el-option label="Rocky（音色名：粤语-阿强｜描述：幽默风趣的阿强，在线陪聊（男性）｜支持语种：中文（粤语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Rocky" />
-                  <el-option label="Kiki（音色名：粤语-阿清｜描述：甜美的港妹闺蜜（女性）｜支持语种：中文（粤语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）" value="Kiki" />
+                  <el-option label="Cherry（音色名：芊悦｜描述：阳光积极、亲切自然小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Cherry" />
+                  <el-option label="Serena（音色名：苏瑶｜描述：温柔小姐姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Serena" />
+                  <el-option
+                    label="Ethan（音色名：晨煦｜描述：标准普通话，带部分北方口音。阳光、温暖、活力、朝气（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Ethan" />
+                  <el-option label="Chelsie（音色名：千雪｜描述：二次元虚拟女友（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Chelsie" />
+                  <el-option label="Momo（音色名：茉兔｜描述：撒娇搞怪，逗你开心（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Momo" />
+                  <el-option label="Vivian（音色名：十三｜描述：拽拽的、可爱的小暴躁（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Vivian" />
+                  <el-option label="Moon（音色名：月白｜描述：率性帅气的月白（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Moon" />
+                  <el-option label="Maia（音色名：四月｜描述：知性与温柔的碰撞（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Maia" />
+                  <el-option label="Kai（音色名：凯｜描述：耳朵的一场SPA（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Kai" />
+                  <el-option label="Nofish（音色名：不吃鱼｜描述：不会翘舌音的设计师（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Nofish" />
+                  <el-option label="Bella（音色名：萌宝｜描述：喝酒不打醉拳的小萝莉（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Bella" />
+                  <el-option
+                    label="Jennifer（音色名：詹妮弗｜描述：品牌级、电影质感般美语女声（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Jennifer" />
+                  <el-option label="Ryan（音色名：甜茶｜描述：节奏拉满，戏感炸裂，真实与张力共舞（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Ryan" />
+                  <el-option label="Katerina（音色名：卡捷琳娜｜描述：御姐音色，韵律回味十足（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Katerina" />
+                  <el-option label="Aiden（音色名：艾登｜描述：精通厨艺的美语大男孩（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Aiden" />
+                  <el-option
+                    label="Eldric Sage（音色名：沧明子｜描述：沉稳睿智的老者，沧桑如松却心明如镜（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Eldric Sage" />
+                  <el-option label="Mia（音色名：乖小妹｜描述：温顺如春水，乖巧如初雪（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Mia" />
+                  <el-option
+                    label="Mochi（音色名：沙小弥｜描述：聪明伶俐的小大人，童真未泯却早慧如禅（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Mochi" />
+                  <el-option
+                    label="Bellona（音色名：燕铮莺｜描述：声音洪亮，吐字清晰，人物鲜活，听得人热血沸腾；金戈铁马入梦来，字正腔圆间尽显千面人声的江湖（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Bellona" />
+                  <el-option
+                    label="Vincent（音色名：田叔｜描述：一口独特的沙哑烟嗓，一开口便道尽了千军万马与江湖豪情（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Vincent" />
+                  <el-option label="Bunny（音色名：萌小姬｜描述：“萌属性”爆棚的小萝莉（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Bunny" />
+                  <el-option
+                    label="Neil（音色名：阿闻｜描述：平直的基线语调，字正腔圆的咬字发音，这就是最专业的新闻主持人（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Neil" />
+                  <el-option
+                    label="Elias（音色名：墨讲师｜描述：既保持学科严谨性，又通过叙事技巧将复杂知识转化为可消化的认知模块（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Elias" />
+                  <el-option
+                    label="Arthur（音色名：徐大爷｜描述：被岁月和旱烟浸泡过的质朴嗓音，不疾不徐地摇开了满村的奇闻异事（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Arthur" />
+                  <el-option
+                    label="Nini（音色名：邻家妹妹｜描述：糯米糍一样又软又黏的嗓音，那一声声拉长了的“哥哥”，甜得能把人的骨头都叫酥了（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Nini" />
+                  <el-option
+                    label="Ebona（音色名：诡婆婆｜描述：她的低语像一把生锈的钥匙，缓慢转动你内心最深处的幽暗角落——那里藏着所有你不敢承认的童年阴影与未知恐惧（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Ebona" />
+                  <el-option
+                    label="Seren（音色名：小婉｜描述：温和舒缓的声线，助你更快地进入睡眠，晚安，好梦（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Seren" />
+                  <el-option
+                    label="Pip（音色名：顽屁小孩｜描述：调皮捣蛋却充满童真的他来了，这是你记忆中的小新吗（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Pip" />
+                  <el-option
+                    label="Stella（音色名：少女阿月｜描述：平时是甜到发腻的迷糊少女音，但在喊出“代表月亮消灭你”时，瞬间充满不容置疑的爱与正义（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Stella" />
+                  <el-option label="Bodega（音色名：博德加｜描述：热情的西班牙大叔（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Bodega" />
+                  <el-option label="Sonrisa（音色名：索尼莎｜描述：热情开朗的拉美大姐（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Sonrisa" />
+                  <el-option
+                    label="Alek（音色名：阿列克｜描述：一开口，是战斗民族的冷，也是毛呢大衣下的暖（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Alek" />
+                  <el-option label="Dolce（音色名：多尔切｜描述：慵懒的意大利大叔（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Dolce" />
+                  <el-option label="Sohee（音色名：素熙｜描述：温柔开朗，情绪丰富的韩国欧尼（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Sohee" />
+                  <el-option label="Ono Anna（音色名：小野杏｜描述：鬼灵精怪的青梅竹马（女性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Ono Anna" />
+                  <el-option
+                    label="Lenn（音色名：莱恩｜描述：理性是底色，叛逆藏在细节里——穿西装也听后朋克的德国青年（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Lenn" />
+                  <el-option label="Emilien（音色名：埃米尔安｜描述：浪漫的法国大哥哥（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Emilien" />
+                  <el-option label="Andre（音色名：安德雷｜描述：声音磁性，自然舒服、沉稳男生（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Andre" />
+                  <el-option
+                    label="Radio Gol（音色名：拉迪奥·戈尔｜描述：足球诗人Rádio Gol！今天我要用名字为你们解说足球（男性）｜支持语种：中文（普通话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Radio Gol" />
+                  <el-option label="Jada（音色名：上海-阿珍｜描述：风风火火的沪上阿姐（女性）｜支持语种：中文（上海话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Jada" />
+                  <el-option label="Dylan（音色名：北京-晓东｜描述：北京胡同里长大的少年（男性）｜支持语种：中文（北京话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Dylan" />
+                  <el-option label="Li（音色名：南京-老李｜描述：耐心的瑜伽老师（男性）｜支持语种：中文（南京话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Li" />
+                  <el-option
+                    label="Marcus（音色名：陕西-秦川｜描述：面宽话短，心实声沉——老陕的味道（男性）｜支持语种：中文（陕西话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Marcus" />
+                  <el-option
+                    label="Roy（音色名：闽南-阿杰｜描述：诙谐直爽、市井活泼的台湾哥仔形象（男性）｜支持语种：中文（闽南语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Roy" />
+                  <el-option label="Peter（音色名：天津-李彼得｜描述：天津相声，专业捧哏（男性）｜支持语种：中文（天津话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Peter" />
+                  <el-option label="Sunny（音色名：四川-晴儿｜描述：甜到你心里的川妹子（女性）｜支持语种：中文（四川话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Sunny" />
+                  <el-option label="Eric（音色名：四川-程川｜描述：一个跳脱市井的四川成都男子（男性）｜支持语种：中文（四川话）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Eric" />
+                  <el-option label="Rocky（音色名：粤语-阿强｜描述：幽默风趣的阿强，在线陪聊（男性）｜支持语种：中文（粤语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Rocky" />
+                  <el-option label="Kiki（音色名：粤语-阿清｜描述：甜美的港妹闺蜜（女性）｜支持语种：中文（粤语）、英语、法语、德语、俄语、意大利语、西班牙语、葡萄牙语、日语、韩语）"
+                    value="Kiki" />
                 </el-select>
               </el-form-item>
             </el-col>
@@ -400,7 +381,8 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitLoading" :disabled="uploadingAudio" @click="submitForm">创建并生成</el-button>
+        <el-button type="primary" :loading="submitLoading" :disabled="uploadingAudio"
+          @click="submitForm">创建并生成</el-button>
       </template>
     </el-dialog>
   </div>
@@ -410,17 +392,24 @@
 import { computed, onMounted, reactive, ref, watch, watchEffect, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Refresh } from '@element-plus/icons-vue'
-import { 
-  createCustomVoice, 
-  createTtsRecord, 
-  deleteTtsRecord, 
+import {
+  createCustomVoice,
+  createTtsRecord,
+  deleteTtsRecord,
   getTtsRecordPage,
   listCustomVoices,
-  deleteCustomVoice 
+  deleteCustomVoice
 } from '@/api/ai/tts'
 import { getClipMaterialList } from '@/api/clip-material'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
+
+const formatDuration = (val: any) => {
+  if (val === undefined || val === null || val === '') return '-'
+  const num = parseFloat(val)
+  if (isNaN(num)) return val
+  return num.toFixed(2)
+}
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -459,7 +448,7 @@ const playPreview = async () => {
   if (!previewAudio.value) return
   try {
     await previewAudio.value.play()
-  } catch (e) {}
+  } catch (e) { }
 }
 
 const pausePreview = () => {
@@ -533,7 +522,7 @@ const closePreview = () => {
     try {
       previewAudio.value.pause()
       previewAudio.value.currentTime = 0
-    } catch (e) {}
+    } catch (e) { }
   }
   previewRow.value = null
   if (rafId.value) cancelAnimationFrame(rafId.value)
@@ -559,7 +548,7 @@ const handleOperation = (row: any, cmd: string) => {
     // 在弹窗打开前直接播放音频（使用浏览器 autoplay 限制可能失败）
     if (row?.resultUrl) {
       const a = new Audio(row.resultUrl)
-      a.play().catch(() => {})
+      a.play().catch(() => { })
     } else {
       ElMessage.warning('该记录无可用音频')
     }
@@ -587,8 +576,7 @@ const gridOptions = ref<any>({
     { title: '配置参数', field: 'configParams', minWidth: 260, slots: { default: 'configSlot' } },
     { title: '字幕', field: 'subtitle', minWidth: 320, slots: { default: 'subtitleSlot' } },
     { title: '试听', field: 'preview', width: 320, slots: { default: 'previewSlot' } },
-    { title: '时长(秒)', field: 'duration', width: 96 },
-    { title: '状态', field: 'status', width: 88, slots: { default: 'statusSlot' } },
+    { title: '时长(秒)', field: 'duration', width: 96, formatter: ({ cellValue }) => formatDuration(cellValue) },
     { title: '创建时间', field: 'createTime', width: 170 },
     { title: '操作', fixed: 'right', width: 90, slots: { default: 'operationSlot' } }
   ]
@@ -718,7 +706,7 @@ const instructionTemplates = [
 ]
 
 const isInstructModel = computed(() => form.model === 'qwen3-tts-instruct-flash')
-const isVoiceCloneModel =computed(() => form.model === 'qwen3-tts-vc-2026-01-22')
+const isVoiceCloneModel = computed(() => form.model === 'qwen3-tts-vc-2026-01-22')
 
 watch(
   () => form.model,
@@ -786,7 +774,7 @@ const resetForm = () => {
 // 加载自定义音色列表
 const loadCustomVoices = async () => {
   if (loadingVoices.value) return
-  
+
   loadingVoices.value = true
   try {
     const res = await listCustomVoices({ pageIndex: 0, pageSize: 100 })
@@ -823,16 +811,16 @@ const handleDeleteVoice = async (voice: string) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     await deleteCustomVoice(voice)
     ElMessage.success('音色删除成功')
-    
+
     // 如果删除的是当前选中的音色，清空选择
     if (form.voice === voice) {
       form.voice = ''
       customVoiceInfo.value = null
     }
-    
+
     // 刷新列表
     await loadCustomVoices()
   } catch (error: any) {
@@ -1033,7 +1021,7 @@ const handleBatchDelete = async () => {
     loading.value = true
     const deletePromises = selectedRows.value.map(row => deleteTtsRecord(row.id))
     await Promise.all(deletePromises)
-    
+
     ElMessage.success(`成功删除 ${selectedRows.value.length} 条记录`)
     selectedRows.value = []
     await getList()
@@ -1140,7 +1128,7 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.search-field > :not(.search-label) {
+.search-field> :not(.search-label) {
   flex: 1;
   min-width: 0;
   max-width: 100%;
@@ -1279,6 +1267,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 12px;
 }
+
 .subtitle-preview-track {
   max-height: 320px;
   overflow-y: auto;
@@ -1286,11 +1275,13 @@ onMounted(() => {
   background: var(--el-fill-color-1);
   border-radius: 6px;
 }
+
 .preview-sentences {
   list-style: none;
   padding: 0;
   margin: 0;
 }
+
 .preview-sentence {
   padding: 6px 8px;
   border-radius: 4px;
@@ -1299,17 +1290,28 @@ onMounted(() => {
   align-items: center;
   color: var(--el-text-color-secondary);
 }
+
 .preview-sentence.active {
-  background: rgba(64,158,255,0.08);
+  background: rgba(64, 158, 255, 0.08);
   color: var(--el-text-color-regular);
 }
+
 .sentence-time {
   width: 120px;
   font-size: 12px;
   color: var(--el-text-color-regular);
 }
-.sentence-text { white-space: pre-wrap; word-break: break-word; }
-.sentence-text-overlay { position: relative; display: inline-block; }
+
+.sentence-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sentence-text-overlay {
+  position: relative;
+  display: inline-block;
+}
+
 .sentence-text-overlay {
   position: relative;
   display: inline-block;
@@ -1317,6 +1319,7 @@ onMounted(() => {
   /* ensure overlay width is based on available space */
   max-width: 100%;
 }
+
 .sentence-text-overlay .text-base,
 .sentence-text-overlay .text-highlight {
   display: block;
@@ -1326,10 +1329,12 @@ onMounted(() => {
   font: inherit;
   line-height: inherit;
 }
+
 .sentence-text-overlay .text-base {
   color: var(--el-text-color-secondary);
   z-index: 1;
 }
+
 .sentence-text-overlay .text-highlight {
   position: absolute;
   left: 0;
@@ -1340,11 +1345,58 @@ onMounted(() => {
   color: #409EFF;
   font-weight: 600;
   z-index: 2;
-  transition: width 140ms linear; /* 平滑过渡，略微加长 */
+  transition: width 140ms linear;
+  /* 平滑过渡，略微加长 */
 }
 
 /* 让弹窗垂直居中 */
 .subtitle-preview-dialog :deep(.el-dialog__wrapper) {
   align-items: center !important;
+}
+
+.subtitle-column-wrapper {
+  max-width: 100%;
+}
+
+.subtitle-header {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+
+.subtitle-list-container {
+  max-height: 100px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.subtitle-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+}
+
+.subtitle-list li {
+  margin-bottom: 2px;
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.subtitle-time {
+  color: var(--el-text-color-placeholder);
+  font-size: 11px;
+}
+
+.subtitle-text {
+  color: var(--el-text-color-regular);
+}
+
+:global(.copy-tooltip) {
+  max-width: 400px !important;
+  line-height: 1.6;
 }
 </style>
