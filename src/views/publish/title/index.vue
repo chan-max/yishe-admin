@@ -30,9 +30,9 @@
           </el-option>
         </el-select>
       </form-item>
-      <div class="flex shrink-0">
+        <div class="flex shrink-0">
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus"> 新增 </el-button>
-        <el-button type="danger" @click="handleDelete(null)" :icon="Delete"> 批量删除 ({{ ids.length }}) </el-button>
+        <el-button v-admin-only type="danger" @click="handleDelete(null)" :icon="Delete"> 批量删除 ({{ ids.length }}) </el-button>
       </div>
     </div>
 
@@ -76,7 +76,7 @@
             <el-button type="primary" size="small" @click="handleUpload(row)" link>
               上传素材图
             </el-button>
-            <el-button type="danger" size="small" @click="handleDelete(row)" link>
+            <el-button v-admin-only type="danger" size="small" @click="handleDelete(row)" link>
               删除
             </el-button>
           </div>

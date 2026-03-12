@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watchEffect, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useUserStore } from '@/store/modules/user'
 import {
   getPublishConfigListApi,
   createPublishConfigApi,
@@ -98,6 +99,10 @@ const handleSelectionChange = (e: any) => {
 }
 
 const handleBatchDelete = () => {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   if (!selectedIds.value.length) {
     ElMessage.warning('请先选择要删除的配置')
     return
@@ -271,6 +276,10 @@ const submitForm = async () => {
 }
 
 const handleDelete = (row: any) => {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   ElMessageBox.confirm('确认删除该配置吗?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -297,7 +306,7 @@ onMounted(() => {
       <div class="flex items-center gap-2">
          <!-- Search logic could be improved with backend support -->
         <el-button type="primary" @click="handleSearch">刷新</el-button>
-              <el-button 
+              <el-button v-admin-only
                 type="danger" 
                 :disabled="selectedIds.length === 0"
                 @click="handleBatchDelete"
@@ -319,7 +328,7 @@ onMounted(() => {
     >
       <template #action="{ row }">
         <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-        <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+        <el-button v-admin-only link type="danger" @click="handleDelete(row)">删除</el-button>
       </template>
     </vxe-grid>
 

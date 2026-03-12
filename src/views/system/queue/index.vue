@@ -22,7 +22,7 @@
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
-      <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
+      <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
         批量删除
       </el-button>
     </div>
@@ -101,7 +101,7 @@
             <el-button type="primary" link size="small" @click="handleEdit(row)">
               标记状态
             </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
+            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
           </div>
@@ -239,6 +239,7 @@ import {
   type QueueStats,
 } from '@/api/system/queue'
 import Pagination from '@/components/Pagination/index.vue'
+import { useUserStore } from '@/store/modules/user'
 import FormItem from '@/components/Erp/formItem.vue'
 import { TASK_TYPE_OPTIONS } from '@/config/task-types'
 
@@ -695,6 +696,10 @@ async function handleViewData(row: QueueMessage) {
 
 // 删除任务
 function handleDelete(row?: QueueMessage) {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   let delIds: string[] = []
   if (row) {
     delIds = [row.id]

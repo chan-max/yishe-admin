@@ -24,7 +24,7 @@
         <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
         <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
         <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
-        <el-button
+        <el-button v-admin-only
           type="danger"
           :icon="Delete"
           @click="handleDelete(null)"
@@ -74,7 +74,7 @@
               <el-button type="warning" link size="small" @click="handleResetPassword(row)">
                 重置密码
               </el-button>
-              <el-button type="danger" link size="small" @click="handleDelete(row)">
+              <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
                 删除
               </el-button>
             </div>
@@ -304,6 +304,7 @@ import {
   deleteUser,
   updateUserPassword
 } from '@/api/user'
+import { useUserStore } from '@/store/modules/user'
 import { getCompanyList } from '@/api/company'
 import Pagination from '@/components/Pagination/index.vue'
 
@@ -570,6 +571,10 @@ function handleResetPassword(row) {
 
 // 删除用户
 function handleDelete(row?) {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   let delIds: string[] = []
   if (row) {
     delIds = [row.id]

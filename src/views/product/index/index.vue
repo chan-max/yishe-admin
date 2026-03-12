@@ -69,7 +69,7 @@
             新增
           </el-button>
           <!-- 删除按钮 -->
-          <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
+          <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)">
             批量删除
           </el-button>
           <!-- 批量发布/下架 -->
@@ -145,7 +145,7 @@
                     </el-icon>
                     <span>编辑</span>
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete">
+                  <el-dropdown-item v-admin-only command="delete">
                     <el-icon>
                       <Delete />
                     </el-icon>

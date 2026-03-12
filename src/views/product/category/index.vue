@@ -138,19 +138,25 @@ const submitForm = async () => {
   })
 }
 
+import { useUserStore } from '@/store/modules/user'
+
 const handleDelete = (row: any) => {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   ElMessageBox.confirm('确认删除该商品种类吗?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
-    try {
-      await productCategoryApi.delete(row.id)
-      ElMessage.success('删除成功')
-      getList()
-    } catch (err) {
-      console.error(err)
-    }
+      try {
+        await productCategoryApi.delete(row.id)
+        ElMessage.success('删除成功')
+        getList()
+      } catch (err) {
+        console.error(err)
+      }
   })
 }
 

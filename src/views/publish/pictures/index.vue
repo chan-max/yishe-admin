@@ -48,7 +48,7 @@
       </form-item>
 
       <div class="flex shrink-0">
-        <el-button type="danger" @click="handleDelete(null)"> 批量删除({{ ids.length }}) </el-button>
+        <el-button v-admin-only type="danger" @click="handleDelete(null)"> 批量删除({{ ids.length }}) </el-button>
       </div>
     </div>
 
@@ -121,7 +121,7 @@
               </el-button>
             </template>
 
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
+            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
           </div>
@@ -487,6 +487,10 @@ function resetQuery() {
 }
 
 function handleDelete(row?) {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   let delIds: any = null;
   if (row) {
     delIds = [row.id];

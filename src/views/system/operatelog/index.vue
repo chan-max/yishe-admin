@@ -21,7 +21,7 @@
       </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
-      <el-button 
+      <el-button v-admin-only
         type="danger" 
         :icon="Delete" 
         @click="handleClear"
@@ -87,6 +87,7 @@ import {
   clearOperateLog,
   type OperateLogVO
 } from '@/api/system/operatelog'
+import { useUserStore } from '@/store/modules/user'
 import Pagination from '@/components/Pagination/index.vue'
 
 // 查询条件
@@ -221,6 +222,10 @@ function resetQuery() {
 
 // 清空日志
 async function handleClear() {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行清空日志操作')
+  }
   try {
     await ElMessageBox.confirm(
       '确定要清空所有操作日志吗？此操作不可恢复！',

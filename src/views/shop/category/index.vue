@@ -23,7 +23,7 @@
         <!-- 修改按钮 -->
         <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus"> 新增 </el-button>
         <!-- 删除按钮 -->
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)"> 批量删除 </el-button>
+        <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)"> 批量删除 </el-button>
       </div>
     </div>
 
@@ -36,7 +36,7 @@
             <el-button type="primary" link size="small" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
+            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
           </div>
@@ -178,6 +178,10 @@ function resetQuery() {
 }
 
 function handleDelete(row?) {
+  const userStore = useUserStore()
+  if (!userStore.user?.isAdmin) {
+    return ElMessage.warning('无权限：仅管理员可执行删除操作')
+  }
   let delIds: any = null;
   if (row) {
     delIds = [row.id];
