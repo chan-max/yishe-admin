@@ -45,3 +45,11 @@ export function getAllClipMaterials() {
     url: '/clip-material'
   })
 }
+
+// 批量移动剪辑素材到文件夹
+export function batchMoveClipMaterial(data: { ids: string[]; folderId: string | null }) {
+  return request.post({
+    url: '/clip-material/batch-move',
+    data
+  })
+}

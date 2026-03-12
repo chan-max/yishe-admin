@@ -109,17 +109,44 @@
       </template>
     </el-dialog>
 
-    <div class="flex gap-4">
-      <div class="content-container" :style="{ width: '100%' }">
+    <div class="flex relative overflow-visible">
+      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
+        <div class="h-full overflow-hidden">
+          <div class="h-full w-[280px]">
+            <FolderTree v-model="selectedFolderId" :folder-category="FOLDER_CATEGORY" :show-count="false"
+              :drag-state="dragState" @change="handleFolderChange" @folder-drag-over="handleFolderDragOver"
+              @folder-drag-leave="handleFolderDragLeave" @folder-drop="handleFolderDrop" />
+          </div>
+        </div>
+        <div
+          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
+          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
+          <el-icon :size="14">
+            <DArrowRight v-if="folderTreeCollapsed" />
+            <DArrowLeft v-else />
+          </el-icon>
+        </div>
+      </div>
+
+      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <div class="common-table">
           <vxe-grid
             ref="gridRef"
+            class="clip-material-dnd-grid"
             v-bind="gridOptions"
             :data="dataSource"
             :loading="loading"
             @checkbox-change="checkboxChange"
             @checkbox-all="checkboxAllChange"
           >
+            <template #dragHandleSlot>
+              <div class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary">
+                <el-icon :size="14">
+                  <Rank />
+                </el-icon>
+              </div>
+            </template>
+
             <template #previewDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
                 <video
@@ -241,10 +268,7 @@
       @close="uploadModalClose"
     >
       <div style="height: 100%">
-        <clip-material-upload
-          :current-upload-info="currentUploadInfo"
-          @single-file-uploaded="singleFileUploaded"
-        />
+        <clip-material-upload @single-file-uploaded="singleFileUploaded" />
       </div>
     </el-dialog>
 
@@ -316,6 +340,7 @@ import {
   ref,
   reactive,
   computed,
+  nextTick,
   onMounted,
   onUnmounted,
   watch,
@@ -327,7 +352,7 @@ import {
   getClipMaterialList,
   deleteClipMaterial,
   updateClipMaterial,
-  createClipMaterial
+  batchMoveClipMaterial
 } from '@/api/clip-material'
 
 import { commonGridOptions } from '@/common/table'
@@ -339,15 +364,19 @@ import { saveAs } from 'file-saver'
 import { useUserStore } from '@/store/modules/user'
 import clipMaterialUpload from './clip-material-upload.vue'
 import VideoPreview from './VideoPreview.vue'
+import FolderTree from '@/components/material/FolderTree.vue'
 import DateRangePicker from '@/components/DateRangePicker.vue'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, VideoPlay, Document, Picture, Folder, Headset } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, Edit, Download, VideoPlay, Document, Picture, Folder, Headset, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
 import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '@/common/download'
 import { useRouter } from 'vue-router'
+import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
+import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder'
 
 const userStore = useUserStore()
+const FOLDER_CATEGORY = 'clipmaterial'
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
@@ -363,7 +392,8 @@ const queryParams = reactive({
   suffix: '',
   id: '',
   category: '',
-  sortingFields: 'createTime DESC'
+  sortingFields: 'createTime DESC',
+  folderId: FOLDER_FILTER.ALL as string | null
 })
 
 // 移动端相关
@@ -397,6 +427,13 @@ const gridOptions = ref({
     reserve: true
   },
   columns: [
+    {
+      title: '',
+      field: 'dragHandle',
+      width: 40,
+      align: 'center',
+      slots: { default: 'dragHandleSlot' }
+    },
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     {
       title: '文件预览',
@@ -465,21 +502,37 @@ const rules = {
   name: [{ required: true, message: '', trigger: 'blur' }]
 }
 
+const {
+  dragState,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop
+} = useFolderRowDrag({
+  gridClass: 'clip-material-dnd-grid',
+  itemLabel: '素材',
+  dataSource,
+  selectedIds: ids
+})
+
 // 上传相关
 const uploadModalVisible = ref(false)
-const currentUploadInfo = ref({})
+const folderTreeCollapsed = useLocalStorage('clip_material_folder_collapsed', false)
+const selectedFolderId = ref<string | null>(FOLDER_FILTER.ALL)
 
 function uploadModalClose() {}
 
 async function getList() {
   loading.value = true
   let res = await getClipMaterialList({
-    ...queryParams
+    ...queryParams,
+    folderId: convertFolderIdToApiParam(queryParams.folderId)
   }).finally(() => {
     loading.value = false
   })
   dataSource.value = res.list
   total.value = res.total
+  nextTick(setupRowDrag)
 }
 
 getList()
@@ -613,6 +666,47 @@ const delayUpdateList = useDebounceFn(() => {
   getList()
 }, 1999)
 
+function handleFolderChange(payload: { folderId: string | null; node?: any }) {
+  selectedFolderId.value = payload.folderId || FOLDER_FILTER.ALL
+  queryParams.folderId = selectedFolderId.value
+  queryParams.currentPage = 1
+  getList()
+}
+
+async function handleFolderDrop(payload: { data: any }) {
+  if (!dragState.draggingIds.length) return
+
+  let targetFolderId: string | null = null
+  if (payload.data.id === FOLDER_FILTER.ALL) {
+    ElMessage.warning('不能移动到全部')
+    resetAfterDrop()
+    return
+  }
+
+  if (payload.data.id === FOLDER_FILTER.NOT_GROUP) {
+    targetFolderId = FOLDER_FILTER.NOT_GROUP
+  } else {
+    targetFolderId = payload.data.id
+  }
+
+  const movingIds = dragState.draggingIds.map((id) => String(id))
+  const targetPath = payload.data.path || ''
+
+  try {
+    await batchMoveClipMaterial({
+      ids: movingIds,
+      folderId: convertFolderIdToApiParam(targetFolderId) as string | null
+    })
+    ElMessage.success(`已移动 ${movingIds.length} 个素材到 ${targetPath || '未分类'}`)
+    resetCheckStatus()
+    await getList()
+  } catch (error) {
+    ElMessage.error((error as Error).message || '移动失败')
+  } finally {
+    resetAfterDrop()
+  }
+}
+
 function singleFileUploaded() {
   console.log('单个文件上传')
   delayUpdateList()
@@ -626,7 +720,8 @@ const editForm = ref({
   description: '', 
   keywords: '', 
   category: '',
-  tags: ''
+  tags: '',
+  folderId: null as string | null
 })
 const editLoading = ref(false)
 
@@ -640,7 +735,8 @@ function handleEdit(row) {
     description: row.description, 
     keywords: row.keywords,
     category: row.category || '',
-    tags: row.tags || ''
+    tags: row.tags || '',
+    folderId: row.folderId ?? row.folder?.id ?? null
   }
   editDialogVisible.value = true
 }
