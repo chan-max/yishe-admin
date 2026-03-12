@@ -43,11 +43,7 @@
         </el-select>
       </form-item>
       <form-item label="公开状态">
-        <el-select v-model="queryParams.isPublic" placeholder="请选择状态" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" value="" />
-          <el-option label="公开" :value="true" />
-          <el-option label="私有" :value="false" />
-        </el-select>
+        <!-- 公开/私有筛选已移除 -->
       </form-item>
       <form-item label="ID精确查询">
         <el-input
@@ -66,8 +62,7 @@
       <div class="flex shrink-0">
         <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="success" @click="handleBatchSetPublic" :disabled="!ids.length" :loading="batchSetPublicLoading">批量设为公开({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="warning" @click="handleBatchSetPrivate" :disabled="!ids.length" :loading="batchSetPrivateLoading">批量设为私有({{ ids.length }})</el-button>
+        <!-- 批量公开/私有功能已移除 -->
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
@@ -100,11 +95,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="公开状态">
-          <el-select v-model="queryParams.isPublic" placeholder="请选择状态">
-            <el-option label="全部" value="" />
-            <el-option label="公开" :value="true" />
-            <el-option label="私有" :value="false" />
-          </el-select>
+            <!-- 公开/私有筛选已移除 -->
         </el-form-item>
         <el-form-item label="按时间查询">
           <DateRangePicker
@@ -191,14 +182,7 @@
               <span v-else>-</span>
             </template>
 
-            <template #isPublicSlot="{ row }">
-              <el-tag 
-                :type="row.isPublic ? 'success' : 'info'" 
-                size="small"
-              >
-                {{ row.isPublic ? '公开' : '私有' }}
-              </el-tag>
-            </template>
+            <!-- isPublic display removed -->
 
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center">
@@ -220,10 +204,7 @@
                     <el-icon><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset v-else /></el-icon>
                     <span>预览</span>
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="isAdmin" command="toggle-public" divided>
-                    <el-icon><View /></el-icon>
-                    <span>{{ row.isPublic ? '设为私有' : '设为公开' }}</span>
-                  </el-dropdown-item>
+                  <!-- toggle public/private removed -->
                   <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
                     <span>删除</span>
@@ -291,9 +272,7 @@
         <el-form-item label="标签">
           <el-input v-model="editForm.tags" placeholder="请输入标签（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
         </el-form-item>
-        <el-form-item label="是否公开">
-          <el-switch v-model="editForm.isPublic" />
-        </el-form-item>
+        <!-- 是否公开 编辑项已移除 -->
       </el-form>
       <template #footer>
         <el-button @click="editDialogVisible = false">取消</el-button>
@@ -384,7 +363,6 @@ const queryParams = reactive({
   suffix: '',
   id: '',
   category: '',
-  isPublic: '',
   sortingFields: 'createTime DESC'
 })
 
@@ -432,7 +410,7 @@ const gridOptions = ref({
     { title: '后缀', field: 'suffix', width: 80 },
     { title: '分类', field: 'category', width: 100, slots: { default: 'categorySlot' } },
     { title: '标签', field: 'tags', minWidth: 150, slots: { default: 'tagsSlot' } },
-    { title: '是否公开', field: 'isPublic', width: 100, slots: { default: 'isPublicSlot' } },
+    
     { title: 'ID', field: 'id', width: 80 },
     {
       title: '创建时间',
@@ -648,14 +626,12 @@ const editForm = ref({
   description: '', 
   keywords: '', 
   category: '',
-  tags: '',
-  isPublic: false 
+  tags: ''
 })
 const editLoading = ref(false)
 
 // 批量操作loading状态
-const batchSetPublicLoading = ref(false)
-const batchSetPrivateLoading = ref(false)
+// batch public/private removed
 
 function handleEdit(row) {
   editForm.value = { 
@@ -664,8 +640,7 @@ function handleEdit(row) {
     description: row.description, 
     keywords: row.keywords,
     category: row.category || '',
-    tags: row.tags || '',
-    isPublic: row.isPublic || false
+    tags: row.tags || ''
   }
   editDialogVisible.value = true
 }
@@ -784,71 +759,7 @@ function getCategoryTagType(category: string) {
   return typeMap[category] || ''
 }
 
-// 切换公开状态
-async function handleTogglePublic(row: any) {
-  const newStatus = !row.isPublic
-  const statusText = newStatus ? '公开' : '私有'
-  
-  try {
-    // 直接调用更新接口
-    await updateClipMaterial({
-      id: row.id,
-      isPublic: newStatus
-    })
-    
-    ElMessage.success(`已设为${statusText}`)
-    getList() // 刷新列表
-  } catch (error) {
-    console.error('切换公开状态失败:', error)
-    ElMessage.error('切换公开状态失败，请稍后重试')
-  }
-}
-
-// 批量设为公开
-async function handleBatchSetPublic() {
-  if (!ids.value.length) {
-    return ElMessage.warning('请选择要设为公开的素材')
-  }
-  
-  batchSetPublicLoading.value = true
-  try {
-    const promises = ids.value.map(id => 
-      updateClipMaterial({ id, isPublic: true })
-    )
-    await Promise.all(promises)
-    ElMessage.success(`成功设为公开 ${ids.value.length} 个素材`)
-    resetCheckStatus()
-    getList()
-  } catch (error) {
-    console.error('批量设为公开失败:', error)
-    ElMessage.error('批量设为公开失败，请稍后重试')
-  } finally {
-    batchSetPublicLoading.value = false
-  }
-}
-
-// 批量设为私有
-async function handleBatchSetPrivate() {
-  if (!ids.value.length) {
-    return ElMessage.warning('请选择要设为私有的素材')
-  }
-  
-  batchSetPrivateLoading.value = true
-  try {
-    const promises = ids.value.map(id => 
-      updateClipMaterial({ id, isPublic: false })
-    )
-    await Promise.all(promises)
-    ElMessage.success(`成功设为私有 ${ids.value.length} 个素材`)
-    resetCheckStatus()
-    getList()
-  } catch (error) {
-    console.error('批量设为私有失败:', error)
-    ElMessage.error('批量设为私有失败，请稍后重试')
-  } finally {
-    batchSetPrivateLoading.value = false
-  }
-}
+// public/private toggle and batch functions removed
 
 // 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
@@ -865,9 +776,7 @@ function handleOperationCommand(command: string, row: any) {
       }
       // 音频文件在列表中已直接显示播放控件，无需额外预览弹窗
       break;
-    case 'toggle-public':
-      handleTogglePublic(row);
-      break;
+    
     case 'delete':
       handleDelete(row);
       break;

@@ -65,9 +65,10 @@
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
-                      <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
-                      <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
-                      <el-dropdown-item command="delete">删除</el-dropdown-item>
+                            <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
+                            <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
+                            <el-dropdown-item command="copyParams">复制参数</el-dropdown-item>
+                            <el-dropdown-item command="delete">删除</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -360,6 +361,7 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="copyCreateParams">复制参数</el-button>
         <el-button type="primary" :loading="submitLoading" :disabled="uploadingAudio"
           @click="submitForm">创建并生成</el-button>
       </template>
@@ -418,6 +420,10 @@ const handleOperation = (row: any, cmd: string) => {
     openMetadataDialog(row)
     return
   }
+  if (cmd === 'copyParams') {
+    copyRecordParams(row)
+    return
+  }
   if (cmd === 'delete') {
     handleDelete(row)
     return
@@ -437,6 +443,60 @@ const copyMetadata = () => {
   navigator.clipboard.writeText(text).then(() => {
     ElMessage.success('已复制到剪贴板')
   })
+}
+
+// 复制用于创建语音的参数（从表单）
+const composeCreateParams = () => {
+  const payload: any = {
+    text: form.text,
+    voice: form.voice,
+    model: form.model,
+    format: form.format,
+    instructions: form.instructions,
+    sample_rate: form.sample_rate,
+    speed: form.speed,
+    pitch: form.pitch
+  }
+
+  // 如果是声音复刻并且使用从素材创建的自定义音色，确保使用已创建的 voice
+  if (form.model === 'qwen3-tts-vc-2026-01-22') {
+    if (voiceSource.value === 'material' && customVoiceInfo.value) {
+      payload.voice = customVoiceInfo.value.voice
+    }
+  }
+
+  return payload
+}
+
+const copyCreateParams = async () => {
+  try {
+    const text = JSON.stringify(composeCreateParams(), null, 2)
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('创建参数已复制到剪贴板')
+  } catch (err: any) {
+    ElMessage.error(err?.message || '复制失败')
+  }
+}
+
+// 复制已有记录的参数
+const copyRecordParams = async (row: any) => {
+  try {
+    const params = row?.configParams || {
+      text: row.text,
+      voice: row.voice || row?.configParams?.voice || '',
+      model: row.configParams?.model || row.model || '',
+      format: row.configParams?.format || row.format || '',
+      instructions: row.configParams?.instructions || '' ,
+      sample_rate: row.configParams?.sample_rate || row.sample_rate || 24000,
+      speed: row.configParams?.speed ?? row.speed ?? 1,
+      pitch: row.configParams?.pitch ?? row.pitch ?? 1
+    }
+
+    await navigator.clipboard.writeText(JSON.stringify(params, null, 2))
+    ElMessage.success('记录参数已复制到剪贴板')
+  } catch (err: any) {
+    ElMessage.error(err?.message || '复制失败')
+  }
 }
 
 const queryParams = reactive({
@@ -518,14 +578,7 @@ const sanitizePreferredName = (value: string) => {
 
 // 格式化音色显示名称
 const formatVoiceName = (item: any) => {
-  // 如果有 preferred_name 就用它
-  if (item.preferred_name) {
-    return item.preferred_name
-  }
-  // 否则从 voice ID 中提取后缀作为标识
-  const voice = item.voice || ''
-  const lastPart = voice.split('-').slice(-2).join('-') // 提取最后两段
-  return lastPart || voice
+ return item.voice
 }
 
 const instructionTemplates = [
@@ -964,53 +1017,55 @@ onMounted(() => {
   align-items: center;
 }
 
-.search-form-container {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 10px 12px;
-  margin-bottom: 12px;
-}
+  .search-form-container {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    width: 100%;
+  }
 
-.search-field {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  width: 240px;
-  flex-shrink: 0;
-}
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    width: 100%;
+  }
 
-.search-field-wide {
-  width: 320px;
-}
+  .search-field-wide {
+    max-width: 640px;
+    width: 100%;
+  }
 
-.search-field-actions {
-  width: auto;
-  flex: 1;
-}
+  .search-field-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+  }
 
 .search-field-actions .search-label {
   display: none;
 }
 
-.search-label {
-  width: 48px;
-  min-width: 48px;
-  text-align: right;
-  padding-right: 4px;
-  line-height: 32px;
-  flex-shrink: 0;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-}
+  .search-label {
+    width: 96px;
+    min-width: 64px;
+    text-align: right;
+    padding-right: 8px;
+    line-height: 32px;
+    flex-shrink: 0;
+    color: var(--el-text-color-regular);
+    font-size: 13px;
+  }
 
-.search-field> :not(.search-label) {
-  flex: 1;
-  min-width: 0;
-  max-width: 100%;
-}
+  .search-field> :not(.search-label) {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+  }
 
 .search-field .el-input,
 .search-field .el-select {
@@ -1021,27 +1076,34 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.search-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-  column-gap: 6px;
-  row-gap: 6px;
-  align-items: center;
-}
-
-@media (max-width: 1200px) {
-  .search-form-container {
+  .search-actions {
+    display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
+    column-gap: 6px;
+    row-gap: 6px;
+    align-items: center;
+  }
+
+@media (max-width: 900px) {
+  .search-form-container {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    gap: 8px;
+  }
+
+  .search-label {
+    width: auto;
+    padding-right: 0;
+    text-align: left;
   }
 
   .search-field-actions {
-    flex: none;
-    width: 100%;
+    justify-content: flex-start;
   }
 
   .search-actions {
-    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 
