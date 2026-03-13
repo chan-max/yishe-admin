@@ -1,6 +1,7 @@
 import type { App } from 'vue'
 import { hasRole } from './permission/hasRole'
 import { hasPermi } from './permission/hasPermi'
+import { adminOnly } from './permission/adminOnly'
 
 /**
  * 导出指令：v-xxx
@@ -10,6 +11,7 @@ import { hasPermi } from './permission/hasPermi'
 export const setupAuth = (app: App<Element>) => {
   hasRole(app)
   hasPermi(app)
+  adminOnly(app)
 }
 
 /**

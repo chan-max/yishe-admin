@@ -10,7 +10,7 @@
             </el-tag>
           </div>
           <div class="ws-test-card__actions">
-            <el-button text type="primary" @click="clearLogs" :disabled="logList.length === 0">
+            <el-button v-admin-only text type="primary" @click="clearLogs" :disabled="logList.length === 0">
               清空日志
             </el-button>
             <el-button text type="primary" @click="testCardCollapsed = !testCardCollapsed">
@@ -299,6 +299,7 @@ import { formatDate, formatPast } from '@/utils/formatTime'
 import { useWindowSize } from '@vueuse/core'
 import { commonGridOptions } from '@/common/table'
 import * as WebsocketApi from '@/api/system/websocket'
+import { useUserStore } from '@/store/modules/user'
 import type {
   WebsocketConnectionVO,
   WebsocketClientInfo,
@@ -899,7 +900,13 @@ const pushLog = (label: string, detail: string) => {
   }
 }
 
+const userStore = useUserStore()
+
 const clearLogs = () => {
+  if (!userStore.user?.isAdmin) {
+    message.warning('仅管理员可清空日志')
+    return
+  }
   logList.value = []
 }
 

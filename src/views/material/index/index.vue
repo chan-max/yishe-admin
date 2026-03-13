@@ -189,7 +189,7 @@
               <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
               <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
               <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
+              <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
             </div>
           </div>
         </div>

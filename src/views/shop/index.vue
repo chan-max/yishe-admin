@@ -21,7 +21,7 @@
       <el-table-column label="操作" width="180">
         <template #default="{ row }">
           <el-button link type="primary" @click="openDialog(row.id)">编辑</el-button>
-          <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+          <el-button v-admin-only link type="danger" @click="handleDelete(row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -46,7 +46,7 @@
         <el-button type="warning" @click="handleMultipleRemakeTitle"> 批量重试标题({{ ids.length }}) </el-button>
         <el-button type="warning" @click="handleMultipleRemakePicture"> 批量重试套图({{ ids.length }}) </el-button>
         <el-button type="primary" @click="handleMultiplePublish"> 批量发布({{ ids.length }}) </el-button>
-        <el-button type="danger" @click="handleDelete(null)" :icon="Delete"> 批量删除({{ ids.length }}) </el-button>
+        <el-button v-admin-only type="danger" @click="handleDelete(null)" :icon="Delete"> 批量删除({{ ids.length }}) </el-button>
       </div>
     </div>
 
@@ -149,7 +149,7 @@
                 currentRow = row
                 publishModalVisible = true
               }">发布</el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
+            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
               删除
             </el-button>
           </div>

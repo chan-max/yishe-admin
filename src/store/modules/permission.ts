@@ -14,26 +14,29 @@ function filterAdminRoutes(routes: AppRouteRecordRaw[], isAdmin: boolean): AppRo
   if (isAdmin) {
     return routes // 管理员可以看到所有路由
   }
-  
+
+  // 非管理员：仅隐藏“系统管理”相关路由（路径以 /system 开头 或 显式标记 meta.system）
   return routes
-    .map(route => {
-      // 如果路由需要管理员权限，不显示
-      if (route.meta?.requiresAdmin) {
+    .map((route) => {
+      const path = route.path || ''
+      const isSystemRoute = path.startsWith('/system') || route.meta?.system === true
+
+      if (isSystemRoute) {
         return null
       }
-      
-      // 如果有子路由，递归过滤
+
+      // 递归过滤子路由
       if (route.children && route.children.length > 0) {
         const filteredChildren = filterAdminRoutes(route.children, isAdmin)
         if (filteredChildren.length === 0) {
-          return null // 如果所有子路由都被过滤掉，父路由也不显示
+          return null
         }
         return {
           ...route,
           children: filteredChildren
         }
       }
-      
+
       return route
     })
     .filter(Boolean) as AppRouteRecordRaw[]
