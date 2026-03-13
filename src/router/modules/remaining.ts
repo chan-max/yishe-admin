@@ -265,7 +265,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '视频生成',
+          title: '视频生成(remotion)',
           requiresAdmin: true
         }
       },

@@ -41,3 +41,10 @@ export function deleteRemotionVideoRecord(id: string) {
     url: `/remotion-video-record/${id}`
   })
 }
+
+export function batchDeleteRemotionVideoRecord(ids: string[]) {
+  return request.post({
+    url: '/remotion-video-record/batch-delete',
+    data: { ids }
+  })
+}

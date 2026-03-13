@@ -144,7 +144,14 @@ service.interceptors.response.use(
       // 其他接口的 401 错误，直接未授权，强制登出并跳转首页
       return handleAuthorized()
     } else if (code === 500) {
-      ElMessage.error(t('sys.api.errMsg500'))
+      // 如果后端返回的 500 错误包含明确的服务不可用提示（例如 Remotion 服务未启动），
+      // 则优先展示后端提供的具体消息，便于用户定位问题；否则展示通用提示。
+      const lowerMsg = (msg || '').toLowerCase()
+      if (lowerMsg.includes('remotion') || lowerMsg.includes('connection refused') || lowerMsg.includes('econnrefused') || lowerMsg.includes('connectionrefused')) {
+        ElMessage.error(msg)
+      } else {
+        ElMessage.error(t('sys.api.errMsg500'))
+      }
       return Promise.reject(new Error(msg))
     } else if (code === 901) {
       ElMessage.error({
