@@ -35,6 +35,13 @@ export const deleteTtiRecord = (id: string) => {
   })
 }
 
+export const batchDeleteTtiRecord = (ids: string[]) => {
+  return request.post({
+    url: '/ai/tti-record/batch-delete',
+    data: { ids }
+  })
+}
+
 export const getTtiRecordById = (id: string) => {
   return request.get({
     url: `/ai/tti-record/${id}`

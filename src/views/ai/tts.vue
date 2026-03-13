@@ -374,6 +374,7 @@ import { computed, onMounted, reactive, ref, watch, watchEffect, nextTick } from
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import {
+  batchDeleteTtsRecord,
   createCustomVoice,
   createTtsRecord,
   deleteTtsRecord,
@@ -950,8 +951,7 @@ const handleBatchDelete = async () => {
     })
 
     loading.value = true
-    const deletePromises = selectedRows.value.map(row => deleteTtsRecord(row.id))
-    await Promise.all(deletePromises)
+    await batchDeleteTtsRecord(selectedRows.value.map(row => row.id))
 
     ElMessage.success(`成功删除 ${selectedRows.value.length} 条记录`)
     selectedRows.value = []

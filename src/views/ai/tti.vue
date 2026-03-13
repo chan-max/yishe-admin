@@ -1,22 +1,28 @@
-<template>
+﻿<template>
   <div class="list-page-layout">
-    <!-- 过滤表单区域 -->
     <div class="filter-section">
       <div class="search-bar">
-        <form-item label="关键词搜索">
-          <el-input v-model="queryParams.search" placeholder="请输入内容..." class="w-60" clearable @keyup.enter="getList"
-            @clear="getList" />
-        </form-item>
-        <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-        <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
-        <el-button type="primary" :icon="Plus" @click="handleAdd"> 创建生成 </el-button>
-        <el-button type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
-          批量删除 {{ selectedIds.length ? `(${selectedIds.length})` : '' }}
-        </el-button>
+        <div class="search-form-container">
+          <div class="search-field search-field-wide">
+            <label class="search-label">搜索</label>
+            <el-input v-model="queryParams.search" placeholder="请输入提示词内容" clearable @keyup.enter="getList"
+              @clear="getList" />
+          </div>
+          <div class="search-field search-field-actions">
+            <label class="search-label"></label>
+            <div class="search-actions">
+              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
+              <el-button type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
+                批量删除{{ selectedIds.length ? `(${selectedIds.length})` : '' }}
+              </el-button>
+              <el-button type="primary" :icon="Plus" @click="handleAdd">创建生成</el-button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- 表格区域 -->
     <div class="table-section">
       <div class="common-table">
         <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
@@ -66,25 +72,22 @@
       </div>
     </div>
 
-    <!-- 分页区域 -->
     <div class="pagination-section">
-      <pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
+      <Pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
         @pagination="getList" />
     </div>
 
-    <!-- 创建弹窗 -->
-    <el-dialog v-model="dialogVisible" title="AI 文生图 (Qwen-Image-2.0)" width="500px" :destroy-on-close="true"
-      align-center>
+    <el-dialog v-model="dialogVisible" title="AI 文字生图" width="500px" :destroy-on-close="true" align-center>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" class="create-form">
-        <el-form-item label="描述内容" prop="prompt">
-          <el-input v-model="form.prompt" type="textarea" :rows="6" placeholder="请详细描述你想要生成的图片内容（Qwen模型对中文理解极佳）..." />
+        <el-form-item label="提示词" prop="prompt">
+          <el-input v-model="form.prompt" type="textarea" :rows="6" placeholder="请输入图片描述，例如：一只坐在窗边的橘猫，阳光照射，治愈风格" />
         </el-form-item>
 
-        <el-form-item label="选择尺寸" prop="size">
+        <el-form-item label="尺寸" prop="size">
           <el-select v-model="form.size" class="w-full">
             <el-option label="正方形 (1024x1024)" value="1024*1024" />
-            <el-option label="长图 3:4 (768x1024)" value="768*1024" />
-            <el-option label="宽图 4:3 (1024x768)" value="1024*768" />
+            <el-option label="竖图 3:4 (768x1024)" value="768*1024" />
+            <el-option label="横图 4:3 (1024x768)" value="1024*768" />
             <el-option label="横屏 16:9 (1664x928)" value="1664*928" />
             <el-option label="竖屏 9:16 (928x1664)" value="928*1664" />
           </el-select>
@@ -92,7 +95,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :icon="MagicStick" :loading="submitLoading" @click="submitForm">立即开始生成</el-button>
+        <el-button type="primary" :icon="MagicStick" :loading="submitLoading" @click="submitForm">立即生成</el-button>
       </template>
     </el-dialog>
   </div>
@@ -102,7 +105,7 @@
 import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Delete, Loading, MagicStick } from '@element-plus/icons-vue'
-import { getTtiRecordPage, createTtiRecord, deleteTtiRecord } from '@/api/ai/tti'
+import { getTtiRecordPage, createTtiRecord, deleteTtiRecord, batchDeleteTtiRecord } from '@/api/ai/tti'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 import Pagination from '@/components/Pagination/index.vue'
@@ -112,7 +115,7 @@ const loading = ref(false)
 const submitLoading = ref(false)
 const dialogVisible = ref(false)
 const total = ref(0)
-const dataSource = ref([])
+const dataSource = ref<any[]>([])
 const formRef = ref()
 const selectedIds = ref<string[]>([])
 
@@ -133,14 +136,14 @@ const gridOptions = reactive({
     { type: 'checkbox', width: 45 },
     { type: 'seq', title: '#', width: 50 },
     { title: '成品图', field: 'url', width: 100, slots: { default: 'imageSlot' } },
-    { title: '描述词(Prompt)', field: 'prompt', minWidth: 200, slots: { default: 'promptSlot' } },
+    { title: '提示词', field: 'prompt', minWidth: 200, slots: { default: 'promptSlot' } },
     { title: '配置参数', field: 'configParams', width: 140, slots: { default: 'configParamsSlot' } },
     { title: '状态', field: 'status', width: 100, slots: { default: 'statusSlot' } },
     {
       title: '创建时间',
       field: 'createTime',
       width: 160,
-      formatter: ({ cellValue }: any) => cellValue ? formatTimestamp(cellValue) : '-'
+      formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : '-')
     },
     { title: '操作', width: 80, slots: { default: 'operationSlot' }, fixed: 'right' }
   ] as any[]
@@ -156,7 +159,7 @@ const form = reactive({
 })
 
 const rules = {
-  prompt: [{ required: true, message: '描述词不能为空', trigger: 'blur' }]
+  prompt: [{ required: true, message: '提示词不能为空', trigger: 'blur' }]
 }
 
 const getList = async () => {
@@ -180,12 +183,12 @@ const resetQuery = () => {
   getList()
 }
 
-const checkboxChange = (e: any) => {
-  selectedIds.value = e.records.map((r: any) => r.id)
+const checkboxChange = (event: any) => {
+  selectedIds.value = event.records.map((row: any) => row.id)
 }
 
-const checkboxAllChange = (e: any) => {
-  selectedIds.value = e.records.map((r: any) => r.id)
+const checkboxAllChange = (event: any) => {
+  selectedIds.value = event.records.map((row: any) => row.id)
 }
 
 const handleAdd = () => {
@@ -213,7 +216,7 @@ const submitForm = async () => {
 
 const handleDelete = async (row: any) => {
   try {
-    await ElMessageBox.confirm('确定要删除吗？', '提示', {
+    await ElMessageBox.confirm('确定要删除这条记录吗？', '提示', {
       type: 'warning',
       confirmButtonText: '确定',
       cancelButtonText: '取消'
@@ -225,37 +228,43 @@ const handleDelete = async (row: any) => {
 }
 
 const handleBatchDelete = async () => {
+  if (!selectedIds.value.length) {
+    ElMessage.warning('请选择要删除的记录')
+    return
+  }
+
   try {
-    await ElMessageBox.confirm(`确定删除选中的 ${selectedIds.value.length} 条数据吗？`, '提示', {
-      type: 'error'
+    await ElMessageBox.confirm(`确定删除选中的 ${selectedIds.value.length} 条记录吗？`, '批量删除', {
+      type: 'warning',
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
     })
     loading.value = true
-    for (const id of selectedIds.value) {
-      await deleteTtiRecord(id)
-    }
+    await batchDeleteTtiRecord(selectedIds.value)
     ElMessage.success('批量删除完成')
     getList()
-  } catch (error) { } finally {
+  } catch (error) {
+  } finally {
     loading.value = false
   }
 }
 
 const getStatusType = (status: string) => {
-  const map: any = {
-    'success': 'success',
-    'failed': 'danger',
-    'processing': 'warning',
-    'pending': 'info'
+  const map: Record<string, string> = {
+    success: 'success',
+    failed: 'danger',
+    processing: 'warning',
+    pending: 'info'
   }
   return map[status] || 'info'
 }
 
 const formatStatus = (status: string) => {
-  const map: any = {
-    'success': '已生成',
-    'failed': '失败',
-    'processing': '生成中',
-    'pending': '排队中'
+  const map: Record<string, string> = {
+    success: '已生成',
+    failed: '失败',
+    processing: '生成中',
+    pending: '排队中'
   }
   return map[status] || status
 }
@@ -281,10 +290,72 @@ onMounted(() => {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
     .search-bar {
-      display: flex;
+      gap: 12px;
       flex-wrap: wrap;
       align-items: center;
+    }
+
+    .search-form-container {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .search-field {
+      display: flex;
+      align-items: center;
       gap: 8px;
+      min-height: 32px;
+      width: 100%;
+    }
+
+    .search-field-wide {
+      max-width: 640px;
+      width: 100%;
+    }
+
+    .search-field-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      width: 100%;
+    }
+
+    .search-label {
+      width: 96px;
+      min-width: 64px;
+      text-align: right;
+      padding-right: 8px;
+      line-height: 32px;
+      flex-shrink: 0;
+      color: var(--el-text-color-regular);
+      font-size: 13px;
+    }
+
+    .search-field-actions .search-label {
+      display: none;
+    }
+
+    .search-field> :not(.search-label) {
+      flex: 1;
+      min-width: 0;
+      max-width: 100%;
+    }
+
+    .search-field .el-input,
+    .search-field .el-select {
+      width: 100%;
+    }
+
+    .search-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      column-gap: 6px;
+      row-gap: 6px;
+      align-items: center;
     }
   }
 
@@ -361,5 +432,26 @@ onMounted(() => {
 
 :deep(.el-form-item__label) {
   font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .list-page-layout .filter-section {
+    .search-form-container {
+      grid-template-columns: 1fr;
+      grid-auto-flow: row;
+      gap: 8px;
+    }
+
+    .search-label {
+      width: auto;
+      padding-right: 0;
+      text-align: left;
+    }
+
+    .search-field-actions,
+    .search-actions {
+      justify-content: flex-start;
+    }
+  }
 }
 </style>

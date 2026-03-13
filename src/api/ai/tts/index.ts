@@ -81,6 +81,13 @@ export const deleteTtsRecord = (id: string) => {
   })
 }
 
+export const batchDeleteTtsRecord = (ids: string[]) => {
+  return request.post({
+    url: '/ai/tts-record/batch-delete',
+    data: { ids }
+  })
+}
+
 export const getTtsRecordById = (id: string) => {
   return request.get({
     url: `/ai/tts-record/${id}`

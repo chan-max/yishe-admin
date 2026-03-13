@@ -1,73 +1,50 @@
 ﻿<template>
   <div class="list-page-layout">
     <div class="filter-section">
-      <CollapsibleFilterForm>
-        <template #collapsed>
-          <form-item label="关键词">
+      <div class="search-bar">
+        <div class="search-form-container">
+          <div class="search-field">
+            <label class="search-label">关键词</label>
             <el-input
               v-model="queryParams.keyword"
               placeholder="标题 / 正文 / 标签"
-              class="w-60"
               clearable
               @keyup.enter="getList"
               @change="handleKeywordChange"
             />
-          </form-item>
-          <form-item label="场景">
+          </div>
+          <div class="search-field">
+            <label class="search-label">场景</label>
             <el-select v-model="queryParams.sceneType" class="story-scene-select" clearable placeholder="全部场景" @change="getList">
               <el-option label="社交平台文案" value="social_post" />
               <el-option label="短视频字幕" value="short_video_subtitle" />
               <el-option label="口播脚本" value="voiceover" />
             </el-select>
-          </form-item>
-          <form-item label="素材ID">
+          </div>
+          <div class="search-field">
+            <label class="search-label">素材ID</label>
             <el-input
               v-model="queryParams.stickerId"
               placeholder="素材ID"
-              class="w-52"
               clearable
               @keyup.enter="getList"
               @change="handleStickerIdChange"
             />
-          </form-item>
-          <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        </template>
-        <template #expanded>
-          <form-item label="关键词">
-            <el-input
-              v-model="queryParams.keyword"
-              placeholder="标题 / 正文 / 标签"
-              class="w-60"
-              clearable
-              @keyup.enter="getList"
-              @change="handleKeywordChange"
-            />
-          </form-item>
-          <form-item label="场景">
-            <el-select v-model="queryParams.sceneType" class="story-scene-select" clearable placeholder="全部场景" @change="getList">
-              <el-option label="社交平台文案" value="social_post" />
-              <el-option label="短视频字幕" value="short_video_subtitle" />
-              <el-option label="口播脚本" value="voiceover" />
-            </el-select>
-          </form-item>
-          <form-item label="素材ID">
-            <el-input
-              v-model="queryParams.stickerId"
-              placeholder="素材ID"
-              class="w-52"
-              clearable
-              @keyup.enter="getList"
-              @change="handleStickerIdChange"
-            />
-          </form-item>
-          <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        </template>
-      </CollapsibleFilterForm>
+          </div>
+          <div class="search-field search-field-actions">
+            <label class="search-label"></label>
+            <div class="search-actions">
+              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除({{ selectedIds.length }})</el-button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="table-section story-table-section">
       <div class="common-table">
-        <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading">
+        <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
           <template #materialSlot="{ row }">
             <div class="story-material-cell">
               <div class="story-material-thumb">
@@ -191,11 +168,10 @@ import { ArrowDown, Delete, Search, View } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { formatTimestamp } from '@/common/date'
 import { commonGridOptions } from '@/common/table'
-import { deleteStickerStoryScript, getMaterialList, getStickerStoryScriptPage } from '@/api/material'
+import { batchDeleteStickerStoryScript, deleteStickerStoryScript, getMaterialList, getStickerStoryScriptPage } from '@/api/material'
 import { getPreviewImageUrl } from '@/utils/image'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
-import CollapsibleFilterForm from '@/components/CollapsibleFilterForm/index.vue'
 
 const loading = ref(false)
 const total = ref(0)
@@ -203,6 +179,7 @@ const dataSource = ref<any[]>([])
 const detailVisible = ref(false)
 const currentRow = ref<any>(null)
 const materialMap = ref<Record<string, any>>({})
+const selectedIds = ref<string[]>([])
 
 const queryParams = reactive({
   currentPage: 1,
@@ -223,7 +200,9 @@ const gridOptions = computed(() => ({
   ...commonGridOptions,
   maxHeight: Math.max(height.value - 250, 420),
   rowConfig: { keyField: 'id' },
+  checkboxConfig: { reserve: true },
   columns: [
+    { type: 'checkbox', width: 48 },
     { title: '关联素材', field: 'stickerId', minWidth: 280, slots: { default: 'materialSlot' } },
     { title: '脚本标题', field: 'title', minWidth: 220, slots: { default: 'titleSlot' } },
     { title: '正文', field: 'content', minWidth: 360, slots: { default: 'contentSlot' } },
@@ -297,13 +276,23 @@ async function getList() {
     const result: any = await getStickerStoryScriptPage({ ...queryParams })
     dataSource.value = result?.list || result?.records || []
     total.value = result?.total || 0
+    selectedIds.value = []
   } catch (error: any) {
     dataSource.value = []
     total.value = 0
+    selectedIds.value = []
     ElMessage.error(error?.message || '获取故事脚本列表失败')
   } finally {
     loading.value = false
   }
+}
+
+function handleCheckboxChange({ records }: any) {
+  selectedIds.value = records.map((item: any) => item.id)
+}
+
+function handleCheckboxAll({ records }: any) {
+  selectedIds.value = records.map((item: any) => item.id)
 }
 
 function openDetail(row: any) {
@@ -327,6 +316,28 @@ async function handleDelete(row: any) {
   }
 }
 
+async function handleBatchDelete() {
+  if (!selectedIds.value.length) {
+    ElMessage.warning('请选择要删除的故事脚本')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(`确认删除选中的 ${selectedIds.value.length} 条故事脚本吗？`, '批量删除', { type: 'warning' })
+    await batchDeleteStickerStoryScript(selectedIds.value)
+    ElMessage.success('批量删除成功')
+    if (dataSource.value.length === selectedIds.value.length && queryParams.currentPage > 1) {
+      queryParams.currentPage -= 1
+    }
+    selectedIds.value = []
+    await getList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '批量删除故事脚本失败')
+    }
+  }
+}
+
 function handleOperationCommand(command: string, row: any) {
   if (command === 'detail') {
     openDetail(row)
@@ -343,6 +354,96 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.search-bar {
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-form-container {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  width: 100%;
+}
+
+.search-field-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  grid-column: 1 / -1;
+}
+
+.search-label {
+  width: 72px;
+  min-width: 72px;
+  text-align: right;
+  padding-right: 8px;
+  line-height: 32px;
+  flex-shrink: 0;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+}
+
+.search-field-actions .search-label {
+  display: none;
+}
+
+.search-field > :not(.search-label) {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.search-field .el-input,
+.search-field .el-select {
+  width: 100%;
+}
+
+.search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  column-gap: 6px;
+  row-gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .search-form-container {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .search-form-container {
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    gap: 8px;
+  }
+
+  .search-label {
+    width: auto;
+    min-width: auto;
+    padding-right: 0;
+    text-align: left;
+  }
+
+  .search-field-actions,
+  .search-actions {
+    justify-content: flex-start;
+  }
+}
 .story-material-cell {
   display: flex;
   align-items: center;
@@ -530,3 +631,7 @@ onMounted(() => {
   margin-right: 6px;
 }
 </style>
+
+
+
+

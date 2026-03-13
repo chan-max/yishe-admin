@@ -2,7 +2,7 @@ import request from '@/config/axios'
 import { getPaginationMockData, toPromiseData } from '../mock'
 
 /**
- * @api 上传素材
+ * Upload material
  */
 
 export function uploadMaterialFile(data) {
@@ -13,7 +13,7 @@ export function uploadMaterialFile(data) {
 }
 
 /**
- * @api 上传素材
+ * Upload material
  */
 
 export function uploadMaterial(data) {
@@ -27,7 +27,7 @@ export function uploadMaterial(data) {
 }
 
 /**
- * @api 素材库爬虫配置
+ * Get crawler config
  */
 
 export const getMaterialConfigApi = (params) => {
@@ -91,7 +91,7 @@ export function deleteLabel(data) {
 }
 
 /**
- * @api 获取素材库资源
+ * Get material list
  */
 
 export const getMaterialList = async (data) => {
@@ -102,7 +102,7 @@ export const getMaterialList = async (data) => {
 }
 
 /**
- * 查看素材图详情
+ * Get material detail
  */
 
 export function getMaterialDetail(params) {
@@ -144,20 +144,20 @@ export const handleDropMaterial = (data) => {
  * @genpictures
  */
 
-// 创建套图
+// Create picture set
 export function materialCreatePictures(data) {
   return request.post({ url: '/publish/product/asset/generator', data })
 }
 
-// 素材分配店铺
+// Distribute materials to shops
 export function materialDistribute(data) {
   return request.put({ url: '/asset/material-management/updateList', data })
 }
 
 /**
- * @素材池相关
+ * Material pool APIs
  */
-// 获取素材池分页
+// Get material pool page
 export const getMaterialRawList = async (data) => {
   return request.post({
     url: '/asset/material-management-reptile/page',
@@ -166,7 +166,7 @@ export const getMaterialRawList = async (data) => {
 }
 
 /**
- * @获取爬虫状态
+ * Get crawler task status
  */
 export const getCrawlingStatus = async () => {
   return request.get({
@@ -174,7 +174,7 @@ export const getCrawlingStatus = async () => {
   })
 }
 
-// 删除素材池
+// Delete raw materials
 export const deleteMaterialRaw = async (data) => {
   return request.post({
     url: '/asset/material-management-reptile/delete',
@@ -182,7 +182,7 @@ export const deleteMaterialRaw = async (data) => {
   })
 }
 
-// 素材入库
+// Store raw materials
 export const storageMaterialRaw = async (data) => {
   return request.post({
     url: '/asset/material-management-reptile/batch-storage',
@@ -191,7 +191,7 @@ export const storageMaterialRaw = async (data) => {
 }
 
 /**
- * @获取当前用户素材最大序号
+ * Get current user's max material order
  */
 
 export const getMaterialMaxOrder = async (params) => {
@@ -202,7 +202,7 @@ export const getMaterialMaxOrder = async (params) => {
 }
 
 /**
- * AI自动生成素材内容
+ * AI generate material info
  */
 export function aiAutoGenerateMaterialInfo(data) {
   return request.post({
@@ -212,7 +212,7 @@ export function aiAutoGenerateMaterialInfo(data) {
 }
 
 /**
- * 生成图片信息（宽高、文件大小、色系）
+ * Generate image metadata (size, file size, color)
  */
 export function generateImageInfo(data) {
   return request.post({
@@ -222,7 +222,7 @@ export function generateImageInfo(data) {
 }
 
 /**
- * 生成唯一素材编码
+ * Generate unique sticker code
  */
 export function generateStickerCode(data?: { prefix?: string }) {
   return request.post({
@@ -232,7 +232,7 @@ export function generateStickerCode(data?: { prefix?: string }) {
 }
 
 /**
- * 编辑素材信息
+ * Update material info
  */
 export function updateAssetLibrary(data) {
   return request.post({
@@ -242,10 +242,10 @@ export function updateAssetLibrary(data) {
 }
 
 /**
- * @api 爬图素材相关
+ * Crawler material APIs
  */
 
-// 分页获取爬图素材
+// Get crawler material page
 export const getCrawlerMaterialPage = (data) => {
   return request.post({
     url: '/crawler/material/page',
@@ -253,7 +253,7 @@ export const getCrawlerMaterialPage = (data) => {
   })
 }
 
-// 获取单个素材
+// Get single crawler material
 export const getCrawlerMaterial = (params) => {
   return request.get({
     url: '/crawler/material',
@@ -261,7 +261,7 @@ export const getCrawlerMaterial = (params) => {
   })
 }
 
-// 更新素材
+// Update crawler material
 export const updateCrawlerMaterial = (data) => {
   return request.post({
     url: '/crawler/material/update',
@@ -269,7 +269,7 @@ export const updateCrawlerMaterial = (data) => {
   })
 }
 
-// 删除素材
+// Delete crawler material
 export const deleteCrawlerMaterial = (data) => {
   return request.post({
     url: '/crawler/material/delete',
@@ -278,7 +278,7 @@ export const deleteCrawlerMaterial = (data) => {
 }
 
 /**
- * 计算图片感知哈希
+ * Calculate image perceptual hash
  */
 export function calculatePhash(data) {
   return request.post({
@@ -287,9 +287,9 @@ export function calculatePhash(data) {
   })
 }
 
-// 已移除：AI判断侵权功能已整合到 ai-generate-info 接口中
+// Removed: AI infringement check was merged into the ai-generate-info API
 // /**
-//  * AI判断贴纸是否侵权
+//  * AI check whether the sticker is infringing
 //  */
 // export function aiJudgeInfringement(data) {
 //   return request.post({
@@ -299,7 +299,7 @@ export function calculatePhash(data) {
 // }
 
 /**
- * 根据ID查询单个贴纸详情
+ * Get sticker detail by id
  */
 export function getStickerById(id) {
   return request.post({
@@ -313,7 +313,7 @@ export function getStickerById(id) {
 }
 
 /**
- * 复制素材（贴纸）
+ * Copy stickers
  */
 export function copyStickers(data: { ids: string[] | string }) {
   return request.post({
@@ -323,7 +323,7 @@ export function copyStickers(data: { ids: string[] | string }) {
 }
 
 /**
- * 生成无空白PNG（仅支持 PNG 后缀）
+ * Trim transparent PNG borders (PNG only)
  */
 export function trimPng(data: { id: string, threshold?: number }) {
   return request.post({
@@ -333,7 +333,7 @@ export function trimPng(data: { id: string, threshold?: number }) {
 }
 
 /**
- * @api SVG转PNG
+ * Convert SVG to PNG
  */
 export function svgToPng(data: { id: string, width?: number, height?: number }) {
   return request.post({
@@ -343,10 +343,10 @@ export function svgToPng(data: { id: string, width?: number, height?: number }) 
 }
 
 /**
- * 文件夹相关 API
+ * Sticker folder APIs
  */
 
-// 获取文件夹树
+// Get sticker folder tree
 export function getStickerFolderTree(params?: { parentId?: string; folderCategory?: string }) {
   return request.get({
     url: '/sticker/sticker-folder/tree',
@@ -354,7 +354,7 @@ export function getStickerFolderTree(params?: { parentId?: string; folderCategor
   })
 }
 
-// 获取文件夹列表（扁平结构）
+// Get sticker folder list (flat)
 export function getStickerFolderList(params?: { folderCategory?: string }) {
   return request.get({
     url: '/sticker/sticker-folder/list',
@@ -362,7 +362,7 @@ export function getStickerFolderList(params?: { folderCategory?: string }) {
   })
 }
 
-// 创建文件夹
+// Create sticker folder
 export function createStickerFolder(data: { name: string; parentId?: string | null; folderCategory?: string }) {
   return request.post({
     url: '/sticker/sticker-folder/create',
@@ -370,7 +370,7 @@ export function createStickerFolder(data: { name: string; parentId?: string | nu
   })
 }
 
-// 重命名文件夹
+// Rename sticker folder
 export function renameStickerFolder(data: { id: string; name: string; folderCategory?: string }) {
   return request.post({
     url: '/sticker/sticker-folder/rename',
@@ -378,7 +378,7 @@ export function renameStickerFolder(data: { id: string; name: string; folderCate
   })
 }
 
-// 删除文件夹
+// Delete sticker folder
 export function deleteStickerFolder(
   id: string,
   moveStickersToRoot: boolean = true,
@@ -390,7 +390,7 @@ export function deleteStickerFolder(
   })
 }
 
-// 移动文件夹
+// Move sticker folder
 export function moveStickerFolder(data: { id: string; parentId: string | null; folderCategory?: string }) {
   return request.post({
     url: '/sticker/sticker-folder/move',
@@ -398,7 +398,7 @@ export function moveStickerFolder(data: { id: string; parentId: string | null; f
   })
 }
 
-// 批量移动素材到文件夹
+// Batch move stickers to folder
 export function batchMoveStickers(data: { ids: string[]; folderId: string | null }) {
   return request.post({
     url: '/sticker/batch-move',
@@ -447,3 +447,15 @@ export function deleteStickerStoryScript(id: string) {
     url: `/sticker/story-script/${id}`
   })
 }
+export function batchDeleteStickerStoryScript(ids: string[]) {
+  return request.post({
+    url: '/sticker/story-script/batch-delete',
+    data: { ids }
+  })
+}
+export function getStickerStoryScriptDetail(id: string) {
+  return request.get({
+    url: `/sticker/story-script/${id}`
+  })
+}
+

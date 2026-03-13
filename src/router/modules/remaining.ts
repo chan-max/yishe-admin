@@ -244,6 +244,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           requiresAdmin: true
         }
       },
+      
       {
         path: 'story-script',
         component: () => import('@/views/material/storyScript/index.vue'),
@@ -253,6 +254,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: '故事脚本',
+          requiresAdmin: true
+        }
+      },
+      {
+        path: 'remotion-video-record',
+        component: () => import('@/views/material/remotionVideoRecord/index.vue'),
+        name: 'RemotionVideoRecord',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '视频生成',
           requiresAdmin: true
         }
       },
@@ -491,6 +504,12 @@ const remainingRouter: AppRouteRecordRaw[] = [
 ]
 
 export default remainingRouter
+
+
+
+
+
+
 
 
 
