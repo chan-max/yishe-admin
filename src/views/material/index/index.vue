@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <!-- PC端显示搜索栏，移动端使用筛选对话框 -->
     <div v-show="!isMobile" class="search-bar">
@@ -1049,6 +1049,7 @@
                             AI自动生成内容</div>
                           <div class="op-submenu-item"
                             @click="() => handleOperationCommand('generate-image-info', row)">生成图片信息</div>
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('story-script', row)">生成故事脚本</div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('view-meta', row)">查看元数据
                           </div>
                         </div>
@@ -1445,6 +1446,143 @@
     </el-dialog>
 
     <RelatedPsdSetDialog ref="relatedPsdSetDialogRef" />
+    <el-dialog
+      v-model="storyScriptDialogVisible"
+      fullscreen
+      destroy-on-close
+      class="story-script-dialog"
+      :title="`故事脚本 - ${storyScriptCurrentSticker?.name || '素材图'}`">
+      <div class="grid h-[calc(100vh-96px)] min-h-0 grid-cols-1 gap-4 overflow-hidden lg:grid-cols-[320px_minmax(0,1fr)]">
+        <aside class="min-h-0 overflow-hidden rounded-2xl border shadow-sm">
+          <div class="flex h-full min-h-0 flex-col overflow-hidden">
+            <div class="border-b px-5 py-4">
+              <div class="text-base font-semibold">脚本列表</div>
+              <div class="mt-1 text-xs opacity-70">选择一个版本，在右侧查看内容和操作。</div>
+            </div>
+
+            <div v-if="storyScriptCurrentSticker" class="border-b px-5 py-4 text-sm">
+              <div class="truncate font-medium">{{ storyScriptCurrentSticker.name || '未命名素材' }}</div>
+              <div class="mt-2 line-clamp-3 text-xs opacity-70">{{ storyScriptCurrentSticker.description || storyScriptCurrentSticker.keywords || '暂无素材补充信息' }}</div>
+            </div>
+
+            <div v-if="!storyScriptList.length && !storyScriptListLoading" class="flex flex-1 items-center justify-center px-4">
+              <el-empty description="暂无脚本" :image-size="88" />
+            </div>
+
+            <div v-else class="flex-1 overflow-y-auto p-3">
+              <button
+                v-for="item in storyScriptList"
+                :key="item.id"
+                type="button"
+                class="mb-3 block w-full rounded-xl border px-4 py-3 text-left transition last:mb-0"
+                :class="selectedStoryScript?.id === item.id ? 'border-primary' : ''"
+                @click="selectedStoryScriptId = item.id">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0 truncate text-sm font-medium">{{ item.title || `版本 ${item.versionNo}` }}</div>
+                </div>
+                <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs opacity-70">
+                  <span>v{{ item.versionNo }}</span>
+                  <span>{{ item.sceneType }}</span>
+                </div>
+                <div class="mt-2 line-clamp-3 text-xs leading-5 opacity-80">{{ item.content || '暂无正文' }}</div>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="min-h-0 overflow-hidden rounded-2xl border shadow-sm" v-loading="storyScriptListLoading">
+          <div class="flex h-full min-h-0 flex-col overflow-hidden">
+
+            <div class="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px]">
+              <div class="min-h-0 px-6 py-5 xl:border-r">
+                <div v-if="!selectedStoryScript" class="flex h-full items-center justify-center">
+                  <el-empty description="请选择左侧版本或先生成脚本" />
+                </div>
+
+                <div v-else class="flex h-full min-h-0 flex-col">
+                  <div class="flex flex-wrap items-start justify-between gap-4 border-b pb-4">
+                    <div class="min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <h3 class="break-words text-lg font-semibold">{{ selectedStoryScript.title || `版本 ${selectedStoryScript.versionNo}` }}</h3>
+                        <el-tag effect="plain">{{ selectedStoryScript.status || 'generated' }}</el-tag>
+                      </div>
+                      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-xs opacity-70">
+                        <span>版本 v{{ selectedStoryScript.versionNo }}</span>
+                        <span>场景 {{ selectedStoryScript.sceneType }}</span>
+                        <span>{{ selectedStoryScript.createTime ? formatTimestamp(selectedStoryScript.createTime) : '' }}</span>
+                      </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2">
+                      <el-button size="small" @click="handleCopyStoryScript(selectedStoryScript.content, '正文')">复制正文</el-button>
+                      <el-button v-if="selectedStoryScript.subtitleContent" size="small" @click="handleCopyStoryScript(selectedStoryScript.subtitleContent, '字幕稿')">复制字幕</el-button>
+                      <el-button size="small" type="danger" plain @click="handleDeleteStoryScript(selectedStoryScript)">删除</el-button>
+                    </div>
+                  </div>
+
+                  <div class="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
+                    <div class="rounded-2xl border p-4">
+                      <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">正文</div>
+                      <div class="whitespace-pre-wrap break-words text-[15px] leading-7">
+                        {{ selectedStoryScript.content || '-' }}
+                      </div>
+                    </div>
+
+                    <div v-if="selectedStoryScript.subtitleContent" class="mt-4 rounded-2xl border p-4">
+                      <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">字幕稿</div>
+                      <pre class="whitespace-pre-wrap break-words font-sans text-sm leading-7">{{ selectedStoryScript.subtitleContent }}</pre>
+                    </div>
+
+                    <div v-if="selectedStoryScript.hashtags" class="mt-4 rounded-2xl border p-4 text-sm">
+                      <div class="mb-2 text-xs font-medium uppercase tracking-wide opacity-60">标签</div>
+                      <div class="break-all">{{ selectedStoryScript.hashtags }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="min-h-0 border-t px-6 py-5 xl:border-t-0 xl:border-l">
+                <div class="h-full overflow-y-auto pl-0 xl:pl-1">
+                  <div class="mb-4">
+                    <div class="text-base font-semibold">生成配置</div>
+                    <div class="mt-1 text-xs opacity-70">填写右侧控制条件后生成新版本故事脚本。</div>
+                  </div>
+
+                  <el-form label-position="top" class="space-y-1">
+                    <el-form-item label="使用场景">
+                      <el-select v-model="storyScriptForm.sceneType" class="w-full">
+                        <el-option label="社交平台文案" value="social_post" />
+                        <el-option label="短视频字幕" value="short_video_subtitle" />
+                        <el-option label="口播脚本" value="voiceover" />
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item label="风格要求">
+                      <el-input v-model="storyScriptForm.stylePrompt" type="textarea" :rows="4" resize="vertical" />
+                    </el-form-item>
+                    <el-form-item label="语气要求">
+                      <el-input v-model="storyScriptForm.tonePrompt" type="textarea" :rows="4" resize="vertical" />
+                    </el-form-item>
+                    <el-form-item label="长度要求">
+                      <el-input v-model="storyScriptForm.lengthPrompt" />
+                    </el-form-item>
+                    <el-form-item label="补充要求">
+                      <el-input v-model="storyScriptForm.extraPrompt" type="textarea" :rows="8" resize="vertical" />
+                    </el-form-item>
+                  </el-form>
+
+                  <div class="mt-4 flex flex-col gap-3">
+                    <el-button type="primary" class="!ml-0 w-full" :loading="storyScriptSubmitting" @click="handleGenerateStoryScript">
+                      生成故事脚本
+                    </el-button>
+                    <el-button class="!ml-0 w-full" @click="refreshStoryScriptList">刷新列表</el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </el-dialog>
 
     <!-- PSD套图参数查看弹窗 -->
     <el-dialog v-model="psdSetParamsDialogVisible" title="PSD套图发送参数" width="80%" :destroy-on-close="true" align-center>
@@ -1508,7 +1646,10 @@ import {
   uploadMaterialFile,
   copyStickers,
   trimPng,
-  svgToPng
+  svgToPng,
+  generateStickerStoryScript,
+  getStickerStoryScriptList,
+  deleteStickerStoryScript
 } from '@/api/material' // 实际接口导入
 
 import { uploadToCOS } from '@/api/cos'
@@ -1552,6 +1693,109 @@ const userStore = useUserStore()
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
+const storyScriptDialogVisible = ref(false)
+const storyScriptSubmitting = ref(false)
+const storyScriptListLoading = ref(false)
+const storyScriptCurrentSticker = ref<any>(null)
+const storyScriptList = ref<any[]>([])
+const selectedStoryScriptId = ref('')
+const selectedStoryScript = computed(() => {
+  if (!storyScriptList.value.length) return null
+  return storyScriptList.value.find((item) => item.id === selectedStoryScriptId.value) || storyScriptList.value[0]
+})
+const storyScriptForm = reactive({
+  sceneType: 'social_post',
+  stylePrompt: '真实自然，有画面感，适合社交平台传播',
+  tonePrompt: '口语化、有温度、不要营销腔',
+  lengthPrompt: '120字以内',
+  extraPrompt: ''
+})
+
+async function openStoryScriptDialog(row: any) {
+  storyScriptCurrentSticker.value = row
+  storyScriptDialogVisible.value = true
+  storyScriptForm.sceneType = 'social_post'
+  storyScriptForm.stylePrompt = '真实自然，有画面感，适合社交平台传播'
+  storyScriptForm.tonePrompt = '口语化、有温度、不要营销腔'
+  storyScriptForm.lengthPrompt = '120字以内'
+  storyScriptForm.extraPrompt = ''
+  await loadStoryScriptList(row.id)
+}
+
+async function loadStoryScriptList(stickerId?: string) {
+  const currentStickerId = stickerId || storyScriptCurrentSticker.value?.id
+  if (!currentStickerId) {
+    storyScriptList.value = []
+    return
+  }
+  storyScriptListLoading.value = true
+  try {
+    const result = await getStickerStoryScriptList({ stickerId: currentStickerId })
+    storyScriptList.value = Array.isArray(result) ? result : []
+    selectedStoryScriptId.value = storyScriptList.value[0]?.id || ''
+  } catch (error: any) {
+    storyScriptList.value = []
+    selectedStoryScriptId.value = ''
+    ElMessage.error(error?.message || '获取故事脚本列表失败')
+  } finally {
+    storyScriptListLoading.value = false
+  }
+}
+
+async function refreshStoryScriptList() {
+  await loadStoryScriptList()
+}
+
+async function handleGenerateStoryScript() {
+  if (!storyScriptCurrentSticker.value?.id) {
+    ElMessage.warning('请先选择素材图')
+    return
+  }
+  storyScriptSubmitting.value = true
+  try {
+    await generateStickerStoryScript({
+      stickerId: storyScriptCurrentSticker.value.id,
+      sceneType: storyScriptForm.sceneType,
+      stylePrompt: storyScriptForm.stylePrompt,
+      tonePrompt: storyScriptForm.tonePrompt,
+      lengthPrompt: storyScriptForm.lengthPrompt,
+      extraPrompt: storyScriptForm.extraPrompt
+    })
+    ElMessage.success('故事脚本生成成功')
+    await loadStoryScriptList()
+  } catch (error: any) {
+    ElMessage.error(error?.message || '故事脚本生成失败')
+  } finally {
+    storyScriptSubmitting.value = false
+  }
+}
+
+async function handleDeleteStoryScript(item: any) {
+  try {
+    await ElMessageBox.confirm('确认删除该故事脚本版本吗？', '删除确认', { type: 'warning' })
+    await deleteStickerStoryScript(item.id)
+    ElMessage.success('删除成功')
+    await loadStoryScriptList()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error(error?.message || '删除故事脚本失败')
+    }
+  }
+}
+
+async function handleCopyStoryScript(text: string, label: string) {
+  if (!text) {
+    ElMessage.warning(label + '为空')
+    return
+  }
+  try {
+    await navigator.clipboard.writeText(text)
+    ElMessage.success(label + '已复制')
+  } catch (error) {
+    ElMessage.error(label + '复制失败')
+  }
+}
+
 
 // 尺寸形状配置
 const sizeShapeGroups = SIZE_SHAPE_GROUPS
@@ -3632,6 +3876,9 @@ const delayUpdateList = useDebounceFn(() => {
         break;
       case 'video-production':
         ElMessage.info('视频制作功能开发中...');
+        break;
+      case 'story-script':
+        openStoryScriptDialog(row);
         break;
       case 'delete':
         handleDelete(row);
@@ -6335,3 +6582,7 @@ h1 {
   }
 }
 </style>
+
+
+
+

@@ -405,3 +405,45 @@ export function batchMoveStickers(data: { ids: string[]; folderId: string | null
     data
   })
 }
+
+export interface GenerateStickerStoryScriptDto {
+  stickerId: string
+  sceneType?: string
+  stylePrompt?: string
+  tonePrompt?: string
+  lengthPrompt?: string
+  extraPrompt?: string
+}
+
+export function generateStickerStoryScript(data: GenerateStickerStoryScriptDto) {
+  return request.post({
+    url: '/sticker/story-script/generate',
+    data
+  })
+}
+
+export function getStickerStoryScriptList(params: { stickerId: string }) {
+  return request.get({
+    url: '/sticker/story-script/list',
+    params
+  })
+}
+
+export function getStickerStoryScriptPage(params: {
+  currentPage?: number
+  pageSize?: number
+  stickerId?: string
+  keyword?: string
+  sceneType?: string
+}) {
+  return request.get({
+    url: '/sticker/story-script/page',
+    params
+  })
+}
+
+export function deleteStickerStoryScript(id: string) {
+  return request.delete({
+    url: `/sticker/story-script/${id}`
+  })
+}
