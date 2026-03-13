@@ -258,32 +258,32 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
 
       // 仅管理员可见
-      {
-        path: 'draft',
-        component: () => import('@/views/draft/index/index.vue'),
-        name: 'Draft',
-        meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: '草稿图',
-          requiresAdmin: true
-        }
-      },
+      // {
+      //   path: 'draft',
+      //   component: () => import('@/views/draft/index/index.vue'),
+      //   name: 'Draft',
+      //   meta: {
+      //     canTo: true,
+      //     hidden: false,
+      //     noTagsView: false,
+      //     title: '草稿图',
+      //     requiresAdmin: true
+      //   }
+      // },
 
       // 仅管理员可见
-      {
-        path: 'productModel',
-        component: () => import('@/views/material/productModel/index.vue'),
-        name: 'ProductModel',
-        meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: '商品3D模型',
-          requiresAdmin: true
-        }
-      },
+      // {
+      //   path: 'productModel',
+      //   component: () => import('@/views/material/productModel/index.vue'),
+      //   name: 'ProductModel',
+      //   meta: {
+      //     canTo: true,
+      //     hidden: false,
+      //     noTagsView: false,
+      //     title: '商品3D模型',
+      //     requiresAdmin: true
+      //   }
+      // },
     ]
   },
   {
