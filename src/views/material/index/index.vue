@@ -697,78 +697,18 @@
       <!-- 文件夹树 -->
       <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
         <div class="h-full overflow-hidden">
-          <div class="sticker-folder-tree-container h-full w-[280px]"
-            style="border-right: 1px solid var(--el-border-color); padding-right: 16px;">
-            <div class="sticker-folder-tree-header" style="margin-bottom: 12px;">
-              <el-button type="primary" size="small" plain style="width: 100%;" @click="handleCreateRootStickerFolder">
-                <el-icon>
-                  <FolderAdd />
-                </el-icon>
-                新建文件夹
-              </el-button>
-            </div>
-            <el-tree ref="stickerFolderTreeRef" :data="stickerFolderTreeData"
-              :props="{ children: 'children', label: 'name' }" node-key="id" :expand-on-click-node="false"
-              :default-expand-all="false" :default-expanded-keys="['__root__']" :highlight-current="true"
-              :current-node-key="selectedStickerFolderId"
-              style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden;"
-              class="sticker-folder-tree">
-              <template #default="{ node, data }">
-                <div class="sticker-folder-node"
-                  :class="{ 'is-drop-hover': dragState.overFolderId === data.id && dragState.dragging }"
-                  @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
-                  @drop.prevent="handleFolderDrop(data)">
-                  <div class="sticker-folder-node-content">
-                    <template v-if="data.isAll || data.id === '__root__'">
-                      <el-icon class="folder-icon"
-                        style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
-                        <Files />
-                      </el-icon>
-                    </template>
-                    <template v-else>
-                      <img v-if="node.expanded && (data.children && data.children.length > 0)"
-                        src="/img/folder-open.svg" class="folder-icon" alt="folder" />
-                      <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
-                    </template>
-                    <span class="sticker-folder-node-text" @click.stop="handleStickerFolderNodeClick(data)">{{ data.name
-                      }}</span>
-                    <span v-if="data.id !== '__root__' && !data.isAll" class="sticker-folder-node-count">({{
-                      data.stickerCount || 0
-                      }})</span>
-                  </div>
-                  <div v-if="data.id !== '__root__'" class="sticker-folder-node-actions">
-                    <el-dropdown trigger="click" @command="(cmd) => handleStickerFolderCommand(cmd, data)" @click.stop
-                      size="small">
-                      <el-icon class="sticker-folder-action-icon">
-                        <MoreFilled />
-                      </el-icon>
-                      <template #dropdown>
-                        <el-dropdown-menu>
-                          <el-dropdown-item command="create">
-                            <el-icon>
-                              <FolderAdd />
-                            </el-icon>
-                            新建子文件夹
-                          </el-dropdown-item>
-                          <el-dropdown-item command="rename">
-                            <el-icon>
-                              <Edit />
-                            </el-icon>
-                            重命名
-                          </el-dropdown-item>
-                          <el-dropdown-item command="delete" divided>
-                            <el-icon>
-                              <Delete />
-                            </el-icon>
-                            删除
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
-                  </div>
-                </div>
-              </template>
-            </el-tree>
+          <div class="h-full w-[280px]">
+            <FolderTree
+              v-model="selectedStickerFolderId"
+              width="100%"
+              :folder-category="FOLDER_CATEGORY"
+              :drag-state="dragState"
+              @change="handleStickerFolderChange"
+              @reloaded="loadStickerFolderTree"
+              @folder-drag-over="handleFolderDragOver"
+              @folder-drag-leave="handleFolderDragLeave"
+              @folder-drop="handleFolderDrop"
+            />
           </div>
         </div>
         <div
@@ -1640,9 +1580,6 @@ import {
   generateImageInfo, // 新增
   batchMoveStickers,
   getStickerFolderTree,
-  createStickerFolder,
-  renameStickerFolder,
-  deleteStickerFolder,
   uploadMaterialFile,
   copyStickers,
   trimPng,
@@ -1668,7 +1605,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, FolderOpened, FolderAdd, MoreFilled, Files, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, Files, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1688,8 +1625,11 @@ import { getPreviewImageUrl } from '@/utils/image'
 import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio, getSizeShapeUiConfig } from './sizeShapeConfig'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
+import FolderTree from '@/components/material/FolderTree.vue'
+import { FOLDER_FILTER } from '@/constants/folder'
 
 const userStore = useUserStore()
+const FOLDER_CATEGORY = 'sticker'
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false)
@@ -1837,7 +1777,7 @@ const queryParams = reactive({
   isCutout: '' as boolean | string,
   sizeShape: [] as string[], // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long（支持多选）
   random: false, // 是否随机
-  folderId: undefined as string | null | undefined, // 文件夹ID
+  folderId: FOLDER_FILTER.ALL as string | null | undefined, // 文件夹ID
 })
 
 // 尺寸形状选项配置
@@ -2237,7 +2177,7 @@ function uploadModalClose() {
   // 关闭时更新 currentUploadInfo，确保下次打开时使用当前选中的文件夹
   currentUploadInfo.value = {
     path: '',
-    folderId: selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value,
+    folderId: getSelectedStickerFolderTargetId(),
     folderPath: selectedStickerFolderPath.value || '',
     folder: selectedStickerFolderPath.value || ''
   }
@@ -2248,7 +2188,7 @@ watch(uploadModalVisible, (visible) => {
   if (visible) {
     currentUploadInfo.value = {
       path: '',
-      folderId: selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value,
+      folderId: getSelectedStickerFolderTargetId(),
       folderPath: selectedStickerFolderPath.value || '',
       folder: selectedStickerFolderPath.value || ''
     }
@@ -2268,6 +2208,7 @@ async function getList() {
   // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递；空字符串转为 null 以兼容后端
   const params = {
     ...queryParams,
+    folderId: getStickerFolderFilterForQuery(queryParams.folderId),
     isCustom: queryParams.isCustom === '' ? null : queryParams.isCustom,
     isInfringement: queryParams.isInfringement === '' ? null : queryParams.isInfringement,
     isCutout: queryParams.isCutout === '' ? null : queryParams.isCutout,
@@ -2406,10 +2347,29 @@ function clearPhashSearch() {
 
 // 文件夹相关状态
 const folderTreeCollapsed = useLocalStorage('material_folder_collapsed', false)
-const stickerFolderTreeRef = ref()
-const selectedStickerFolderId = ref<string | null>('__all__') // 默认选中全部
+const selectedStickerFolderId = ref<string | null>(FOLDER_FILTER.ALL)
 const selectedStickerFolderPath = ref('')
 const stickerFolderTreeData = ref<any[]>([])
+
+function getSelectedStickerFolderTargetId() {
+  if (
+    selectedStickerFolderId.value === FOLDER_FILTER.ALL ||
+    selectedStickerFolderId.value === FOLDER_FILTER.NOT_GROUP
+  ) {
+    return null
+  }
+  return selectedStickerFolderId.value
+}
+
+function getStickerFolderFilterForQuery(folderId: string | null | undefined) {
+  if (folderId === FOLDER_FILTER.ALL || folderId === undefined || folderId === null) {
+    return undefined
+  }
+  if (folderId === FOLDER_FILTER.NOT_GROUP) {
+    return 'root'
+  }
+  return folderId
+}
 
 // 文件夹选择选项（用于下拉框）
 const stickerFolderSelectOptions = computed(() => {
@@ -2432,10 +2392,11 @@ const stickerFolderSelectOptions = computed(() => {
     })
   }
 
-  // 从根目录节点的 children 中构建选项
-  if (stickerFolderTreeData.value.length > 0 && stickerFolderTreeData.value[0].children) {
-    buildOptions(stickerFolderTreeData.value[0].children)
-  }
+  buildOptions(
+    stickerFolderTreeData.value.filter(
+      (folder) => folder.id !== FOLDER_FILTER.ALL && folder.id !== FOLDER_FILTER.NOT_GROUP
+    )
+  )
 
   return options
 })
@@ -2443,14 +2404,11 @@ const stickerFolderSelectOptions = computed(() => {
 // 加载文件夹树
 async function loadStickerFolderTree() {
   try {
-    // 不传 parentId，确保只获取根文件夹
-    const res = await getStickerFolderTree()
-    // 确保只显示根文件夹（parentId 为 null 的文件夹）
+    const res = await getStickerFolderTree({ folderCategory: FOLDER_CATEGORY })
     const rootFolders = (res || []).filter((folder: any) => folder.parentId === null || folder.parentId === undefined)
 
-    // 创建"全部"节点
     const allNode = {
-      id: '__all__',
+      id: FOLDER_FILTER.ALL,
       name: '全部',
       path: '',
       parentId: null,
@@ -2459,7 +2417,7 @@ async function loadStickerFolderTree() {
     }
 
     const rootNode = {
-      id: '__root__',
+      id: FOLDER_FILTER.NOT_GROUP,
       name: '未分类',
       path: '',
       parentId: null,
@@ -2467,74 +2425,45 @@ async function loadStickerFolderTree() {
       stickerCount: 0
     }
 
-    // 创建根目录节点，放在最上方
     stickerFolderTreeData.value = [allNode, rootNode, ...rootFolders]
-
-    // 确保根目录节点被选中
-    nextTick(() => {
-      if (stickerFolderTreeRef.value && !selectedStickerFolderId.value) {
-        selectedStickerFolderId.value = '__all__' // Default to All? Or Root? Let's Default to Root as before for compatibility, or All? User asked "how to view all".
-        // Let's default to __root__ for now, or ensure selection logic is consistent.
-        if (selectedStickerFolderId.value === '__all__') {
-          stickerFolderTreeRef.value.setCurrentKey('__all__')
-        } else {
-          stickerFolderTreeRef.value.setCurrentKey('__root__')
-        }
-      }
-    })
+    if (!selectedStickerFolderId.value) {
+      selectedStickerFolderId.value = FOLDER_FILTER.ALL
+    }
   } catch (error) {
     console.error('加载文件夹失败:', error)
     ElMessage.error('加载文件夹失败')
   }
 }
 
-// 文件夹节点点击
-function handleStickerFolderNodeClick(data: any) {
-  if (data.id === '__all__') {
-    selectedStickerFolderId.value = '__all__'
-    selectedStickerFolderPath.value = ''
-    queryParams.folderId = undefined as any
-  } else if (data.id === '__root__') {
-    // 如果是根目录节点
-    selectedStickerFolderId.value = '__root__'
-    selectedStickerFolderPath.value = ''
-    queryParams.folderId = 'root' // 使用 'root' 代表未分类（根目录）
-  } else {
-    selectedStickerFolderId.value = data.id
-    selectedStickerFolderPath.value = data.path || ''
-    queryParams.folderId = data.id || null
-  }
+function handleStickerFolderChange(payload: { folderId: string | null; node?: any }) {
+  const { folderId, node } = payload
+  selectedStickerFolderId.value = folderId
+  selectedStickerFolderPath.value =
+    folderId && folderId !== FOLDER_FILTER.ALL && folderId !== FOLDER_FILTER.NOT_GROUP
+      ? node?.path || ''
+      : ''
+  queryParams.folderId = folderId
   queryParams.currentPage = 1
   getList()
-}
-
-// 选择根目录（保留此函数以防其他地方调用）
-function handleSelectRootStickerFolder() {
-  selectedStickerFolderId.value = '__root__'
-  selectedStickerFolderPath.value = ''
-  queryParams.folderId = null
-  queryParams.currentPage = 1
-  getList()
-  // 设置树节点选中状态
-  if (stickerFolderTreeRef.value) {
-    stickerFolderTreeRef.value.setCurrentKey('__root__')
-  }
 }
 
 // 拖拽到文件夹时的交互
-async function handleFolderDrop(data: any) {
+async function handleFolderDrop(payload: { data: any }) {
   if (!dragState.draggingIds.length) return
+  if (payload.data.id === FOLDER_FILTER.ALL) {
+    resetAfterDrop()
+    return
+  }
 
-  const targetFolderId = data.id === '__root__' ? null : data.id
-  const targetPath = data.path || ''
+  const targetFolderId = payload.data.id === FOLDER_FILTER.NOT_GROUP ? null : payload.data.id
+  const targetPath = payload.data.path || ''
   const movingIds = [...dragState.draggingIds]
 
   try {
     await batchMoveStickers({ ids: movingIds, folderId: targetFolderId })
     ElMessage.success(`已移动 ${movingIds.length} 个素材到 ${targetPath || '根目录'}`)
 
-    // Stay in current folder, just refresh tree and list
-    await loadStickerFolderTree() // 确保右侧数量与树同步刷新
+    await loadStickerFolderTree()
     await getList()
     resetCheckStatus(ids)
   } catch (error) {
@@ -2544,151 +2473,13 @@ async function handleFolderDrop(data: any) {
   }
 }
 
-// 创建根文件夹
-async function handleCreateRootStickerFolder() {
-  try {
-    const { value } = await ElMessageBox.prompt('请输入文件夹名称', '新建文件夹', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputPattern: /^[^/\\?*<>|"]+$/,
-      inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
-    })
-
-    await createStickerFolder({ name: value, parentId: null })
-    ElMessage.success('创建成功')
-    await loadStickerFolderTree()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error((error as Error).message || '创建失败')
-    }
-  }
-}
-
-// 文件夹操作命令
-async function handleStickerFolderCommand(command: string, data: any) {
-  switch (command) {
-    case 'create':
-      await handleCreateChildStickerFolder(data)
-      break
-    case 'rename':
-      await handleRenameStickerFolder(data)
-      break
-    case 'delete':
-      await handleDeleteStickerFolder(data)
-      break
-  }
-}
-
-// 创建子文件夹
-async function handleCreateChildStickerFolder(parent: any) {
-  try {
-    const { value } = await ElMessageBox.prompt('请输入文件夹名称', '新建子文件夹', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputPattern: /^[^/\\?*<>|"]+$/,
-      inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
-    })
-
-    await createStickerFolder({ name: value, parentId: parent.id })
-    ElMessage.success('创建成功')
-    await loadStickerFolderTree()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error((error as Error).message || '创建失败')
-    }
-  }
-}
-
-// 重命名文件夹
-async function handleRenameStickerFolder(data: any) {
-  try {
-    const { value } = await ElMessageBox.prompt('请输入新名称', '重命名文件夹', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      inputValue: data.name,
-      inputPattern: /^[^/\\?*<>|"]+$/,
-      inputErrorMessage: '文件夹名称不能包含特殊字符：/ \\ ? * < > | "',
-    })
-
-    await renameStickerFolder({ id: data.id, name: value })
-    ElMessage.success('重命名成功')
-    await loadStickerFolderTree()
-
-    // 如果当前选中的文件夹被重命名，需要更新查询参数
-    if (selectedStickerFolderId.value === data.id) {
-      // 重新加载文件夹树后，找到新的文件夹信息
-      const findFolder = (folders: any[], targetId: string): any => {
-        for (const folder of folders) {
-          if (folder.id === targetId) {
-            return folder
-          }
-          if (folder.children && folder.children.length > 0) {
-            const found = findFolder(folder.children, targetId)
-            if (found) return found
-          }
-        }
-        return null
-      }
-
-      // 从根目录节点的 children 中查找
-      const rootNode = stickerFolderTreeData.value[0]
-      const updatedFolder = findFolder(rootNode.children || [], data.id)
-      if (updatedFolder && updatedFolder.path) {
-        selectedStickerFolderPath.value = updatedFolder.path
-
-        getList()
-      }
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error((error as Error).message || '重命名失败')
-    }
-  }
-}
-
-// 删除文件夹
-async function handleDeleteStickerFolder(data: any) {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除文件夹"${data.name}"吗？${data.stickerCount > 0 ? `文件夹下有 ${data.stickerCount} 个素材，删除后素材将移动到根目录。` : ''}`,
-      '删除文件夹',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    )
-
-    await deleteStickerFolder(data.id, true)
-    ElMessage.success('删除成功')
-
-    // 如果删除的是当前选中的文件夹，切换到根目录
-    if (selectedStickerFolderId.value === data.id) {
-      selectedStickerFolderId.value = '__root__'
-      selectedStickerFolderPath.value = ''
-      queryParams.folderId = null
-      queryParams.currentPage = 1
-      getList()
-      if (stickerFolderTreeRef.value) {
-        stickerFolderTreeRef.value.setCurrentKey('__root__')
-      }
-    }
-
-    await loadStickerFolderTree()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error((error as Error).message || '删除失败')
-    }
-  }
-}
-
 // 文件夹变更时，同步更新上传信息
 watch(selectedStickerFolderPath, (newPath) => {
   currentUploadInfo.value = {
     ...currentUploadInfo.value,
     folderPath: newPath || '',
     folder: newPath || '',
-    folderId: selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value
+    folderId: getSelectedStickerFolderTargetId()
   }
 })
 
@@ -2704,7 +2495,7 @@ async function handleBatchMoveToFolder() {
   }
 
   try {
-    const targetFolderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value
+    const targetFolderId = getSelectedStickerFolderTargetId()
     const targetFolderPath = selectedStickerFolderPath.value || ''
 
     await batchMoveStickers({ ids: ids.value, folderId: targetFolderId })
@@ -3936,7 +3727,7 @@ const delayUpdateList = useDebounceFn(() => {
     urlUploadForm.isCustom = false
     urlUploadForm.isInfringement = false
     urlUploadForm.useAiGenerate = false
-    urlUploadForm.folderId = selectedStickerFolderId.value === '__root__' ? null : selectedStickerFolderId.value // 重置为当前选中的文件夹
+    urlUploadForm.folderId = getSelectedStickerFolderTargetId()
     urlUploadForm.folderPath = selectedStickerFolderPath.value || ''
     urlPreviewVisible.value = false
     imageInfo.value = null
@@ -6582,10 +6373,3 @@ h1 {
   }
 }
 </style>
-
-
-
-
-
-
-
