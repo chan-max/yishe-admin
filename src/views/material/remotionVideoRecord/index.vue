@@ -234,7 +234,7 @@
           <el-empty v-else description="当前记录暂无视频结果" :image-size="96" />
         </div>
       </el-card>
-      <div class="remotion-detail-grid">
+      <div class="remotion-detail-side">
         <el-card shadow="never">
           <template #header>基础信息</template>
           <div class="detail-section">
@@ -821,13 +821,29 @@ onMounted(async () => {
 .remotion-detail-layout {
   height: calc(100vh - 56px);
   display: grid;
-  /* 放大视频区高度并使用视口高度限制，下面区域允许滚动，避免被挤出视窗 */
-  grid-template-rows: minmax(420px, 62vh) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 0.9fr);
+  gap: 16px;
+}
+
+.remotion-detail-layout > .el-card,
+.remotion-detail-side,
+.remotion-detail-side > .el-card {
+  min-height: 0;
+}
+
+.remotion-detail-layout > .el-card:first-child :deep(.el-card__body) {
+  height: calc(100% - 56px);
+}
+
+.remotion-detail-side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 16px;
 }
 
 .remotion-video-preview {
   width: 100%;
+  height: 100%;
   background: #000;
   display: flex;
   align-items: center;
@@ -845,9 +861,8 @@ onMounted(async () => {
 }
 
 .remotion-video-preview {
-  /* 尝试保持常见视频比例，且在较大屏幕时限制最大高度 */
   aspect-ratio: 16 / 9;
-  max-height: 70vh;
+  max-height: 100%;
 }
 
 .cell-video-player {
@@ -912,7 +927,7 @@ onMounted(async () => {
 }
 
 .detail-json-panel pre {
-  max-height: calc(100vh - 480px);
+  max-height: none;
   overflow: auto;
 }
 
@@ -940,11 +955,8 @@ onMounted(async () => {
   }
 
   .remotion-detail-layout {
-    grid-template-rows: minmax(360px, 50vh) auto;
-  }
-
-  .remotion-detail-grid {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(360px, 50vh) minmax(0, 1fr);
   }
 }
 
