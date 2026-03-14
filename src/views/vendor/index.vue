@@ -6,7 +6,7 @@
           批量删除 ({{ selectedIds.length }})
         </el-button>
       </div>
-      <el-button type="primary" @click="openDialog()">新增店铺</el-button>
+      <el-button type="primary" @click="openDialog()">新增厂家</el-button>
     </div>
 
     <div class="common-table">
@@ -17,33 +17,19 @@
         @checkbox-change="handleCheckboxChange"
         @checkbox-all="handleCheckboxAll"
       >
-        <template #logoSlot="{ row }">
-          <div class="flex items-center">
-            <el-image
-              v-if="row.logo"
-              :src="row.logo"
-              fit="contain"
-              :preview-src-list="[row.logo]"
-              preview-teleported
-              class="h-12 w-12 rounded border border-solid border-[var(--el-border-color-light)] bg-black/5 p-1"
-            />
-            <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
-          </div>
-        </template>
-
-        <template #carouselSlot="{ row }">
+        <template #imagesSlot="{ row }">
           <div class="flex items-center gap-2">
-            <template v-if="row.carousel?.length">
+            <template v-if="row.images?.length">
               <el-image
-                v-for="image in row.carousel.slice(0, 3)"
+                v-for="image in row.images.slice(0, 3)"
                 :key="image"
                 :src="image"
                 fit="cover"
-                :preview-src-list="row.carousel"
+                :preview-src-list="row.images"
                 preview-teleported
                 class="h-10 w-10 rounded border border-solid border-[var(--el-border-color-light)]"
               />
-              <span v-if="row.carousel.length > 3" class="text-xs text-[var(--el-text-color-secondary)]">+{{ row.carousel.length - 3 }}</span>
+              <span v-if="row.images.length > 3" class="text-xs text-[var(--el-text-color-secondary)]">+{{ row.images.length - 3 }}</span>
             </template>
             <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
           </div>
@@ -62,7 +48,7 @@
       </vxe-grid>
     </div>
 
-    <ShopDialog ref="dialogRef" @success="getList" />
+    <VendorDialog ref="dialogRef" @success="getList" />
   </ContentWrap>
 </template>
 
@@ -70,8 +56,8 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
-import { batchDeleteShop, deleteShop, getShopList } from '@/api/shop'
-import ShopDialog from './components/ShopDialog.vue'
+import { batchDeleteVendor, deleteVendor, getVendorList } from '@/api/vendor'
+import VendorDialog from './components/VendorDialog.vue'
 import { formatDate } from '@/utils/formatTime'
 
 const loading = ref(false)
@@ -94,9 +80,11 @@ const gridOptions = ref({
   columns: [
     { type: 'checkbox', width: 48 },
     { title: 'ID', field: 'id', width: 80 },
-    { title: '店铺名称', field: 'name', minWidth: 180 },
-    { title: 'Logo', field: 'logo', width: 100, slots: { default: 'logoSlot' } },
-    { title: '轮播图', field: 'carousel', width: 180, slots: { default: 'carouselSlot' } },
+    { title: '厂家名称', field: 'name', minWidth: 180 },
+    { title: '联系人', field: 'contactName', width: 120 },
+    { title: '联系电话', field: 'contactPhone', width: 140 },
+    { title: '图片', field: 'images', width: 180, slots: { default: 'imagesSlot' } },
+    { title: '地址', field: 'address', minWidth: 220, showOverflow: 'tooltip' },
     { title: '描述', field: 'description', minWidth: 240, showOverflow: 'tooltip' },
     { title: '创建时间', field: 'createTime', width: 180, slots: { default: 'createTimeSlot' } },
     { title: '操作', field: 'operation', width: 160, fixed: 'right', slots: { default: 'operationSlot' } }
@@ -106,7 +94,7 @@ const gridOptions = ref({
 const getList = async () => {
   loading.value = true
   try {
-    const data = await getShopList()
+    const data = await getVendorList()
     list.value = Array.isArray(data) ? data : []
     selectedIds.value = []
   } finally {
@@ -128,8 +116,8 @@ const handleCheckboxAll = ({ records }: any) => {
 
 const handleDelete = async (id: number) => {
   try {
-    await ElMessageBox.confirm('确认删除该店铺吗？', '提示', { type: 'warning' })
-    await deleteShop(id)
+    await ElMessageBox.confirm('确认删除该厂家吗？删除后会同步清理对应的 COS 图片。', '提示', { type: 'warning' })
+    await deleteVendor(id)
     ElMessage.success('删除成功')
     await getList()
   } catch {}
@@ -138,8 +126,8 @@ const handleDelete = async (id: number) => {
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return
   try {
-    await ElMessageBox.confirm(`确认批量删除 ${selectedIds.value.length} 个店铺吗？`, '提示', { type: 'warning' })
-    await batchDeleteShop(selectedIds.value)
+    await ElMessageBox.confirm(`确认批量删除 ${selectedIds.value.length} 个厂家吗？删除后会同步清理对应的 COS 图片。`, '提示', { type: 'warning' })
+    await batchDeleteVendor(selectedIds.value)
     ElMessage.success('批量删除成功')
     await getList()
   } catch {}
