@@ -535,6 +535,9 @@
                 <div class="psd-set-formats-tip">
                   允许的图片格式：{{ allowedFormatsForSelectedTemplates.join('、') }}
                 </div>
+                <div class="psd-set-formats-tip">
+                  自动化动作：{{ enabledPsdSetAutomationCount ? enabledPsdSetAutomationKeys.join('、') : '未启用' }}
+                </div>
               </div>
             </div>
 
@@ -547,6 +550,9 @@
 
             <div style="display: flex; gap: 8px; align-items: center;">
               <el-button @click="psdSetDialogVisible = false">取消</el-button>
+              <el-button @click="psdSetAutomationDialogVisible = true">
+                完成后动作{{ enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : '' }}
+              </el-button>
               <el-button type="info" :disabled="!ids.length || !selectedPsdTemplateIds.length" 
                 @click="showPsdSetParams">查看发送参数</el-button>
               <el-tooltip v-if="hasInvalidFormatMaterials"
@@ -565,6 +571,57 @@
             </div>
           </div>
         </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="psdSetAutomationDialogVisible"
+      title="完成后自动执行"
+      fullscreen
+      align-center
+      class="psd-set-automation-dialog"
+    >
+      <div class="psd-set-automation-dialog-body">
+        <div
+          v-for="action in psdSetAutomationActions"
+          :key="action.key"
+          class="psd-set-automation-item"
+        >
+          <div class="psd-set-automation-head">
+            <el-checkbox v-model="action.enabled">
+              {{ action.label }}
+            </el-checkbox>
+            <span class="psd-set-automation-key">{{ action.key }}</span>
+          </div>
+          <div class="psd-set-automation-desc">{{ action.description }}</div>
+          <div v-if="action.enabled && action.fields?.length" class="psd-set-automation-config">
+            <div
+              v-for="field in action.fields"
+              :key="`${action.key}-${field.key}`"
+              class="psd-set-automation-field"
+            >
+              <div class="psd-set-automation-field-title">
+                <span>{{ field.label }}</span>
+                <span class="psd-set-automation-field-key">{{ field.key }}</span>
+              </div>
+              <el-input
+                v-if="field.component === 'textarea'"
+                v-model="action.params[field.key]"
+                type="textarea"
+                :rows="field.rows || 2"
+                :placeholder="field.placeholder"
+              />
+              <el-input
+                v-else
+                v-model="action.params[field.key]"
+                :placeholder="field.placeholder"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="psdSetAutomationDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
 
@@ -2089,6 +2146,27 @@ const templateConfigList = ref<Array<{
 const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
 const psdSetTemplateSearchText = ref('')
+const psdSetAutomationDialogVisible = ref(false)
+const psdSetAutomationActions = ref([
+  {
+    key: 'generate_product',
+    label: '自动生成商品',
+    description: '套图制作完成后自动创建商品，并进入商品生成流程。',
+    enabled: false,
+    params: {
+      aiPrompt: ''
+    },
+    fields: [
+      {
+        key: 'aiPrompt',
+        label: 'AI 提示词',
+        component: 'textarea',
+        rows: 2,
+        placeholder: '可选：输入自动生成商品时使用的 AI 提示词'
+      }
+    ]
+  }
+])
 
 // PSD参数查看
 const psdSetParamsDialogVisible = ref(false)
@@ -2117,6 +2195,14 @@ const psdSetTaskCount = computed(() =>
   psdSetMergeSticker.value
     ? selectedPsdTemplateIds.value.length
     : ids.value.length * selectedPsdTemplateIds.value.length,
+)
+const enabledPsdSetAutomationCount = computed(() =>
+  psdSetAutomationActions.value.filter(action => action.enabled).length
+)
+const enabledPsdSetAutomationKeys = computed(() =>
+  psdSetAutomationActions.value
+    .filter(action => action.enabled)
+    .map(action => action.key)
 )
 const relatedPsdSetDialogRef = ref<any>(null)
 
@@ -2932,10 +3018,19 @@ function resetPsdSetState() {
   selectedPsdTemplateIds.value = []
   psdSetMergeSticker.value = false
   psdSetTemplateSearchText.value = ''
+  psdSetAutomationDialogVisible.value = false
   psdSetTemplatePageParams.currentPage = 1
   psdSetTemplatePageParams.total = 0
   psdSetTemplatePageParams.total = 0
   selectedPsdFolderId.value = '__all__'
+  psdSetAutomationActions.value = psdSetAutomationActions.value.map(action => ({
+    ...action,
+    enabled: false,
+    params: {
+      ...(action.params || {}),
+      aiPrompt: ''
+    }
+  }))
 }
 
 // 加载PSD模板文件夹树
@@ -3154,6 +3249,23 @@ function handlePsdTemplateDetailConfig() {
 }
 
 // 构建PSD套图发送参数
+function buildPsdSetAutomationConfig() {
+  const automations = psdSetAutomationActions.value
+    .filter(action => action.enabled)
+    .map(action => ({
+      action_type: action.key,
+      config: Object.fromEntries(
+        Object.entries(action.params || {}).filter(([, value]) => value !== '' && value !== null && value !== undefined)
+      )
+    }))
+
+  if (!automations.length) {
+    return undefined
+  }
+
+  return automations
+}
+
 function buildPsdSetParams() {
   // 构建配置映射：将详细配置弹窗中的配置信息传递到后台
   const configMap: Record<string, any> = {}
@@ -3173,11 +3285,14 @@ function buildPsdSetParams() {
     })
   }
 
+  const automationConfig = buildPsdSetAutomationConfig()
+
   return {
     stickerIds: ids.value.map((id) => String(id)),
     psdTemplateIds: [...selectedPsdTemplateIds.value],
     mergeSticker: psdSetMergeSticker.value,
-    configMap: Object.keys(configMap).length > 0 ? configMap : undefined
+    configMap: Object.keys(configMap).length > 0 ? configMap : undefined,
+    meta: automationConfig ? { automations: automationConfig } : undefined
   }
 }
 
@@ -4297,6 +4412,65 @@ const delayUpdateList = useDebounceFn(() => {
   flex-direction: column;
   gap: 4px;
   flex: 1;
+}
+
+.psd-set-automation-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.psd-set-automation-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.psd-set-automation-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.psd-set-automation-key {
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-set-automation-desc {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
+.psd-set-automation-config {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+}
+
+.psd-set-automation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.psd-set-automation-field-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-automation-field-key {
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .psd-set-formats-tip {
