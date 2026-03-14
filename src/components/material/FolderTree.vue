@@ -16,9 +16,18 @@
       </el-button>
     </div>
 
-    <el-tree ref="treeRef" :data="treeData" :props="{ children: 'children', label: 'name' }" node-key="id"
-      :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="[FOLDER_FILTER.NOT_GROUP]"
-      :highlight-current="true" :current-node-key="modelValue || FOLDER_FILTER.NOT_GROUP"
+    <div class="sticker-folder-tree-search">
+      <el-input
+        v-model="searchKeyword"
+        clearable
+        size="small"
+        placeholder="搜索文件夹"
+      />
+    </div>
+
+    <el-tree ref="treeRef" :data="displayTreeData" :props="{ children: 'children', label: 'name' }" node-key="id"
+      :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="expandedKeys"
+      :highlight-current="true" :current-node-key="modelValue || getDefaultCurrentKey()"
       style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden" class="sticker-folder-tree">
       <template #default="{ node, data }">
         <div class="sticker-folder-node"
@@ -37,7 +46,12 @@
               <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
             </template>
 
-            <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">{{ data.name }}</span>
+            <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">
+              <template v-for="(segment, index) in getHighlightedSegments(data.name)" :key="`${data.id}-${index}`">
+                <span v-if="segment.matched" class="sticker-folder-node-highlight">{{ segment.text }}</span>
+                <span v-else>{{ segment.text }}</span>
+              </template>
+            </span>
             <span v-if="showCount && data.id !== FOLDER_FILTER.NOT_GROUP && !data.isAll" class="sticker-folder-node-count">({{
               data.stickerCount
               ||
@@ -129,7 +143,101 @@ const emit = defineEmits<{
 }>();
 
 const treeRef = ref();
-const treeData = ref<any[]>([]);
+const rawTreeData = ref<any[]>([]);
+const searchKeyword = ref("");
+
+const isSearching = computed(() => searchKeyword.value.trim().length > 0);
+const displayTreeData = computed(() => {
+  if (!isSearching.value) {
+    return rawTreeData.value;
+  }
+  return filterTree(rawTreeData.value, searchKeyword.value);
+});
+const expandedKeys = computed(() => {
+  if (!isSearching.value) {
+    return [FOLDER_FILTER.NOT_GROUP];
+  }
+  return collectExpandedKeys(displayTreeData.value);
+});
+
+function getDefaultCurrentKey() {
+  return props.mode === "select" ? FOLDER_FILTER.NOT_GROUP : FOLDER_FILTER.ALL;
+}
+
+function cloneNode(node: FolderNode) {
+  return {
+    ...node,
+    children: Array.isArray(node.children) ? node.children.map((child) => cloneNode(child)) : [],
+  };
+}
+
+function filterTree(nodes: FolderNode[], keyword: string): FolderNode[] {
+  const normalizedKeyword = keyword.trim().toLowerCase();
+  if (!normalizedKeyword) {
+    return nodes;
+  }
+
+  return nodes.reduce<FolderNode[]>((result, node) => {
+    const clonedNode = cloneNode(node);
+    const filteredChildren = filterTree(clonedNode.children || [], keyword);
+    const selfMatched = clonedNode.name.toLowerCase().includes(normalizedKeyword);
+
+    if (selfMatched || filteredChildren.length > 0) {
+      clonedNode.children = filteredChildren;
+      result.push(clonedNode);
+    }
+
+    return result;
+  }, []);
+}
+
+function collectExpandedKeys(nodes: FolderNode[]) {
+  const keys: string[] = [];
+
+  const walk = (items: FolderNode[]) => {
+    items.forEach((item) => {
+      if (item.children && item.children.length > 0) {
+        keys.push(item.id);
+        walk(item.children);
+      }
+    });
+  };
+
+  walk(nodes);
+  return keys;
+}
+
+function getHighlightedSegments(name: string) {
+  const keyword = searchKeyword.value.trim();
+  if (!keyword) {
+    return [{ text: name, matched: false }];
+  }
+
+  const lowerName = name.toLowerCase();
+  const lowerKeyword = keyword.toLowerCase();
+  const segments: Array<{ text: string; matched: boolean }> = [];
+  let startIndex = 0;
+
+  while (startIndex < name.length) {
+    const matchIndex = lowerName.indexOf(lowerKeyword, startIndex);
+    if (matchIndex === -1) {
+      segments.push({ text: name.slice(startIndex), matched: false });
+      break;
+    }
+
+    if (matchIndex > startIndex) {
+      segments.push({ text: name.slice(startIndex, matchIndex), matched: false });
+    }
+
+    segments.push({
+      text: name.slice(matchIndex, matchIndex + keyword.length),
+      matched: true,
+    });
+    startIndex = matchIndex + keyword.length;
+  }
+
+  return segments.length > 0 ? segments : [{ text: name, matched: false }];
+}
 
 async function loadTree() {
   const res = await getStickerFolderTree({ folderCategory: props.folderCategory });
@@ -154,14 +262,12 @@ async function loadTree() {
   };
 
   if (props.mode === 'select') {
-    treeData.value = [rootNode, ...rootFolders];
+    rawTreeData.value = [rootNode, ...rootFolders];
   } else {
-    treeData.value = [allNode, rootNode, ...rootFolders];
+    rawTreeData.value = [allNode, rootNode, ...rootFolders];
   }
   nextTick(() => {
-    // If current modelValue is null (old root), set to NOT_GROUP? Or if it's ALL?
-    // User might have passed NOT_GROUP as initial value.
-    treeRef.value?.setCurrentKey(props.modelValue || FOLDER_FILTER.ALL);
+    treeRef.value?.setCurrentKey(props.modelValue || getDefaultCurrentKey());
   });
   emit("reloaded");
 }
@@ -274,12 +380,21 @@ watch(
   () => props.folderCategory,
   () => loadTree()
 );
+watch(displayTreeData, () => {
+  nextTick(() => {
+    treeRef.value?.setCurrentKey(props.modelValue || getDefaultCurrentKey());
+  });
+});
 </script>
 
 <style lang="less" scoped>
 /* 文件夹树样式（复用 material/index 的样式） */
 .sticker-folder-tree-container {
   .sticker-folder-tree-header {
+    margin-bottom: 12px;
+  }
+
+  .sticker-folder-tree-search {
     margin-bottom: 12px;
   }
 
@@ -344,6 +459,14 @@ watch(
 
         &:hover {
           transform: scale(1.05);
+        }
+
+        .sticker-folder-node-highlight {
+          color: var(--el-color-danger);
+          font-weight: 600;
+          background-color: var(--el-color-danger-light-9);
+          border-radius: 2px;
+          padding: 0 1px;
         }
       }
 
