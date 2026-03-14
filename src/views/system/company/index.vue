@@ -1,8 +1,7 @@
 <template>
-  <div class="list-page-layout">
-    <!-- 过滤表单区域 -->
-    <div class="filter-section">
-      <div class="search-bar">
+  <ContentWrap>
+    <div class="flex flex-wrap items-start justify-between gap-3 py-3">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
         <form-item label="按名称搜索">
           <el-input 
             v-model="queryParams.name" 
@@ -12,6 +11,8 @@
             @change="(val) => { if (!val) getList() }" 
           />
         </form-item>
+      </div>
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
         <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
         <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
         <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
@@ -26,33 +27,29 @@
       </div>
     </div>
 
-    <!-- 表格区域 -->
-    <div class="table-section">
-      <div class="common-table">
-        <vxe-grid
-          v-bind="gridOptions"
-          :data="dataSource"
-          :loading="loading"
-          @checkbox-change="checkboxChange"
-          @checkbox-all="checkboxAllChange"
-          ref="gridRef"
-        >
-          <template #operationDefaultSlot="{ row }">
-            <div class="table-operation-column">
-              <el-button type="primary" link size="small" @click="handleEdit(row)">
-                编辑
-              </el-button>
-              <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
-                删除
-              </el-button>
-            </div>
-          </template>
-        </vxe-grid>
-      </div>
+    <div class="common-table">
+      <vxe-grid
+        v-bind="gridOptions"
+        :data="dataSource"
+        :loading="loading"
+        @checkbox-change="checkboxChange"
+        @checkbox-all="checkboxAllChange"
+        ref="gridRef"
+      >
+        <template #operationDefaultSlot="{ row }">
+          <div class="flex items-center justify-end gap-3">
+            <el-button type="primary" link size="small" @click="handleEdit(row)">
+              编辑
+            </el-button>
+            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
+              删除
+            </el-button>
+          </div>
+        </template>
+      </vxe-grid>
     </div>
 
-    <!-- 分页区域 -->
-    <div class="pagination-section">
+    <div class="flex justify-end py-4">
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -60,9 +57,8 @@
         @pagination="getList"
       />
     </div>
-  </div>
+  </ContentWrap>
 
-    <!-- 新增/编辑对话框 -->
     <el-dialog 
       v-model="dialogVisible" 
       :title="dialogTitle" 
@@ -76,10 +72,11 @@
         :model="formData" 
         :rules="formRules" 
         label-width="100px"
+        class="space-y-4"
       >
         <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="form-section-title">基本信息</div>
+        <div class="rounded-lg border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-extra-light)] p-4">
+          <div class="mb-4 text-sm font-semibold text-[var(--el-text-color-primary)]">基本信息</div>
           <el-form-item label="公司名称" prop="name">
             <el-input v-model="formData.name" placeholder="请输入公司名称" />
           </el-form-item>
@@ -101,21 +98,21 @@
         </div>
 
         <!-- 其他设置 -->
-        <div class="form-section">
-          <div class="form-section-title">其他设置</div>
+        <div class="rounded-lg border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-extra-light)] p-4">
+          <div class="mb-4 text-sm font-semibold text-[var(--el-text-color-primary)]">其他设置</div>
           <el-form-item label="过期时间" prop="expireTime">
             <el-date-picker 
               v-model="formData.expireTime" 
               type="datetime" 
               placeholder="请选择过期时间"
-              style="width: 100%"
+              class="!w-full"
               :disabled-date="(date) => date.getTime() < Date.now() - 86400000"
             />
           </el-form-item>
         </div>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
+        <div class="flex justify-end gap-3 border-t border-solid border-[var(--el-border-color-lighter)] pt-4">
           <el-button @click="dialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleSubmit">确定</el-button>
         </div>
@@ -376,38 +373,3 @@ function resetForm() {
 getList()
 </script>
 
-<style scoped>
-/* 列表页面布局样式 */
-.list-page-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 1rem;
-}
-
-.filter-section {
-  margin: 0;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
-}
-
-.filter-section > *:first-child {
-  margin-top: 0;
-}
-
-.table-section {
-  flex: 1;
-  min-height: 0;
-}
-
-.pagination-section {
-  padding: 1rem 0;
-  display: flex;
-  justify-content: flex-end;
-  flex-shrink: 0;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 16px;
-}
-</style> 

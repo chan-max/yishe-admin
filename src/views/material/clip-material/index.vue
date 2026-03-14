@@ -1,71 +1,69 @@
 <template>
   <div>
     <!-- 搜索栏和按钮区域 -->
-    <div class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
-      <div style="flex: 1"></div>
-      <form-item label="按名称搜索">
-        <el-input
-          v-model="queryParams.keyword"
-          placeholder="请输入名称、描述或关键词"
-          style="width: 160px"
-          clearable
-          @change="(val) => { if (!val) getList() }"
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <form-item label="排序">
-        <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" style="width: 140px" @change="getList">
-          <el-option label="创建时间倒序" value="createTime DESC" />
-          <el-option label="创建时间正序" value="createTime ASC" />
-        </el-select>
-      </form-item>
-      <form-item label="后缀">
-        <el-select v-model="queryParams.suffix" placeholder="请选择后缀" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" value="" />
-          <el-option label="mp4" value="mp4" />
-          <el-option label="mov" value="mov" />
-          <el-option label="avi" value="avi" />
-          <el-option label="mkv" value="mkv" />
-          <el-option label="wmv" value="wmv" />
-          <el-option label="flv" value="flv" />
-          <el-option label="webm" value="webm" />
-        </el-select>
-      </form-item>
-      <form-item label="分类">
-        <el-select v-model="queryParams.category" placeholder="请选择分类" style="width: 120px" clearable @change="getList">
-          <el-option label="全部" value="" />
-          <el-option label="风景" value="风景" />
-          <el-option label="人物" value="人物" />
-          <el-option label="动物" value="动物" />
-          <el-option label="建筑" value="建筑" />
-          <el-option label="动画" value="动画" />
-          <el-option label="其他" value="其他" />
-        </el-select>
-      </form-item>
-      <form-item label="公开状态">
-        <!-- 公开/私有筛选已移除 -->
-      </form-item>
-      <form-item label="ID精确查询">
-        <el-input
-          v-model="queryParams.id"
-          placeholder="请输入ID"
-          style="width: 120px"
-          clearable
-          @change="(val) => { if (!val) getList() }"
-        />
-      </form-item>
-      <form-item class="date-range-picker">
-        <DateRangePicker
-          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
-        />
-      </form-item>
-      <div class="flex shrink-0">
+    <div class="flex flex-wrap items-start justify-between gap-3 py-3">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+        <form-item label="按名称搜索">
+          <el-input
+            v-model="queryParams.keyword"
+            placeholder="请输入名称、描述或关键词"
+            class="w-40"
+            clearable
+            @change="(val) => { if (!val) getList() }"
+          />
+        </form-item>
+        <form-item label="排序">
+          <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" class="w-36" @change="getList">
+            <el-option label="创建时间倒序" value="createTime DESC" />
+            <el-option label="创建时间正序" value="createTime ASC" />
+          </el-select>
+        </form-item>
+        <form-item label="后缀">
+          <el-select v-model="queryParams.suffix" placeholder="请选择后缀" class="w-30" clearable @change="getList">
+            <el-option label="全部" value="" />
+            <el-option label="mp4" value="mp4" />
+            <el-option label="mov" value="mov" />
+            <el-option label="avi" value="avi" />
+            <el-option label="mkv" value="mkv" />
+            <el-option label="wmv" value="wmv" />
+            <el-option label="flv" value="flv" />
+            <el-option label="webm" value="webm" />
+          </el-select>
+        </form-item>
+        <form-item label="分类">
+          <el-select v-model="queryParams.category" placeholder="请选择分类" class="w-30" clearable @change="getList">
+            <el-option label="全部" value="" />
+            <el-option label="风景" value="风景" />
+            <el-option label="人物" value="人物" />
+            <el-option label="动物" value="动物" />
+            <el-option label="建筑" value="建筑" />
+            <el-option label="动画" value="动画" />
+            <el-option label="其他" value="其他" />
+          </el-select>
+        </form-item>
+        <form-item label="ID精确查询">
+          <el-input
+            v-model="queryParams.id"
+            placeholder="请输入ID"
+            class="w-30"
+            clearable
+            @change="(val) => { if (!val) getList() }"
+          />
+        </form-item>
+        <form-item class="shrink-0 date-range-picker">
+          <DateRangePicker
+            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
+          />
+        </form-item>
+      </div>
+      <div class="flex shrink-0 flex-wrap items-center gap-2">
+        <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
         <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
         <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <!-- 批量公开/私有功能已移除 -->
         <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
       </div>
     </div>
+    
     
     <!-- 移动端筛选按钮（始终显示） -->
     <div v-if="isMobile" class="flex pb-4 justify-end">

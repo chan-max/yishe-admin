@@ -1,6 +1,6 @@
 <template>
-  <div class="websocket-page">
-    <ContentWrap class="mb-16px">
+  <div class="flex flex-col gap-4 p-4">
+    <ContentWrap>
       <div class="ws-test-card">
         <div class="ws-test-card__header">
           <div class="ws-test-card__status">
@@ -73,13 +73,15 @@
     </ContentWrap>
 
     <ContentWrap>
-      <div class="websocket-toolbar">
-        <el-button type="primary" @click="fetchConnections" :loading="loading">
-          <Icon icon="ep:refresh" class="mr-5px" /> 刷新
-        </el-button>
-        <el-switch v-model="autoRefresh" active-text="自动刷新" />
-        <span class="websocket-toolbar__hint">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
-        <div class="websocket-toolbar__admin-status">
+      <div class="flex flex-wrap items-start justify-between gap-3 py-3">
+        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+          <el-button type="primary" @click="fetchConnections" :loading="loading">
+            <Icon icon="ep:refresh" class="mr-5px" /> 刷新
+          </el-button>
+          <el-switch v-model="autoRefresh" active-text="自动刷新" />
+          <span class="text-sm text-[var(--el-text-color-secondary)]">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
+        </div>
+        <div class="flex shrink-0 items-center gap-1.5">
           <el-tag :type="adminWsStatusTag.type" size="small">
             管理后台: {{ adminWsStatusTag.text }}
           </el-tag>
@@ -1172,16 +1174,6 @@ const stringifyData = (value: unknown) => {
 </script>
 
 <style scoped>
-.websocket-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.mb-16px {
-  margin-bottom: 16px;
-}
-
 .ws-test-card {
   display: flex;
   flex-direction: column;
@@ -1265,25 +1257,6 @@ const stringifyData = (value: unknown) => {
 
 .ws-test-card__log-item:last-child {
   border-bottom: none;
-}
-
-.websocket-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.websocket-toolbar__hint {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.websocket-toolbar__admin-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
 }
 
 .admin-connection-id {

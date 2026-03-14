@@ -1,37 +1,40 @@
 <template>
-  <div>
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <form-item label="用户名">
-        <el-input 
-          v-model="queryParams.userName" 
-          placeholder="请输入用户名" 
-          style="width: 160px" 
-          clearable 
-          @change="(val) => { if (!val) getList() }" 
-        />
-      </form-item>
-      <form-item label="操作内容">
-        <el-input 
-          v-model="queryParams.action" 
-          placeholder="请输入操作内容" 
-          style="width: 200px" 
-          clearable 
-          @change="(val) => { if (!val) getList() }" 
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
-      <el-button v-admin-only
-        type="danger" 
-        :icon="Delete" 
-        @click="handleClear"
-        :disabled="loading"
-      >
-        清空日志
-      </el-button>
+  <ContentWrap>
+    <div class="flex flex-wrap items-center justify-between gap-3 py-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <form-item label="用户名">
+          <el-input 
+            v-model="queryParams.userName" 
+            placeholder="请输入用户名" 
+            class="w-40" 
+            clearable 
+            @change="(val) => { if (!val) getList() }" 
+          />
+        </form-item>
+        <form-item label="操作内容">
+          <el-input 
+            v-model="queryParams.action" 
+            placeholder="请输入操作内容" 
+            class="w-50" 
+            clearable 
+            @change="(val) => { if (!val) getList() }" 
+          />
+        </form-item>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
+        <el-button :icon="Refresh" @click="resetQuery"> 重置 </el-button>
+        <el-button v-admin-only
+          type="danger" 
+          :icon="Delete" 
+          @click="handleClear"
+          :disabled="loading"
+        >
+          清空日志
+        </el-button>
+      </div>
     </div>
 
-    <!-- 表格展示 -->
     <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
@@ -40,7 +43,7 @@
         ref="gridRef"
       >
         <template #actionDefaultSlot="{ row }">
-          <div class="action-cell">
+          <div class="break-all text-sm leading-6">
             {{ row.action }}
           </div>
         </template>
@@ -51,7 +54,7 @@
 
         <template #userAgentDefaultSlot="{ row }">
           <el-tooltip :content="row.userAgent || '-'" placement="top" :disabled="!row.userAgent">
-            <div class="user-agent-cell">
+            <div class="cursor-pointer break-all text-sm leading-6">
               {{ formatUserAgent(row.userAgent) }}
             </div>
           </el-tooltip>
@@ -59,8 +62,7 @@
       </vxe-grid>
     </div>
 
-    <!-- 分页 -->
-    <div class="py-4 flex justify-end">
+    <div class="flex justify-end py-4">
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -68,7 +70,7 @@
         @pagination="getList"
       />
     </div>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -90,7 +92,7 @@ import {
 import { useUserStore } from '@/store/modules/user'
 import Pagination from '@/components/Pagination/index.vue'
 
-// 查询条件
+// ????
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
@@ -173,7 +175,6 @@ const gridOptions = ref({
 
 const { height } = useWindowSize()
 
-// 格式化 User Agent
 function formatUserAgent(ua?: string): string {
   if (!ua) return '-'
   if (ua.length > 50) {
@@ -182,7 +183,6 @@ function formatUserAgent(ua?: string): string {
   return ua
 }
 
-// 获取列表
 async function getList() {
   loading.value = true
   try {
@@ -192,12 +192,12 @@ async function getList() {
       userName: queryParams.userName || undefined,
       action: queryParams.action || undefined,
     })
-    
+
     if (res.code === 0 && res.data) {
       dataSource.value = res.data.list || []
       total.value = res.data.total || 0
     } else {
-      ElMessage.error(res.message || '获取日志列表失败')
+      ElMessage.error('获取日志列表失败')
       dataSource.value = []
       total.value = 0
     }
@@ -211,7 +211,6 @@ async function getList() {
   }
 }
 
-// 重置查询
 function resetQuery() {
   queryParams.currentPage = 1
   queryParams.pageSize = 20
@@ -220,7 +219,6 @@ function resetQuery() {
   getList()
 }
 
-// 清空日志
 async function handleClear() {
   const userStore = useUserStore()
   if (!userStore.user?.isAdmin) {
@@ -239,12 +237,12 @@ async function handleClear() {
 
     loading.value = true
     const res = await clearOperateLog()
-    
+
     if (res.code === 0) {
       ElMessage.success('清空成功')
       getList()
     } else {
-      ElMessage.error(res.message || '清空失败')
+      ElMessage.error('清空失败')
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -256,7 +254,6 @@ async function handleClear() {
   }
 }
 
-// 动态设置表格高度
 import { watchEffect } from 'vue'
 watchEffect(() => {
   if (gridOptions.value) {
@@ -268,14 +265,3 @@ onMounted(() => {
   getList()
 })
 </script>
-
-<style scoped lang="scss">
-.action-cell {
-  word-break: break-word;
-}
-
-.user-agent-cell {
-  word-break: break-word;
-  cursor: pointer;
-}
-</style>
