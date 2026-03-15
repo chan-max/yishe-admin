@@ -403,7 +403,7 @@
             <div class="psd-template-list-container"
               style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
               <div class="psd-set-template-toolbar">
-                <el-input v-model="psdSetTemplateSearchText" placeholder="搜索模板名称、描述等" clearable
+                <el-input v-model="psdSetTemplateSearchText" placeholder="搜索" clearable
                   style="flex: 1; max-width: 300px;">
                   <template #prefix>
                     <el-icon>
