@@ -8,6 +8,7 @@ import {
   updatePublishConfigApi,
   deletePublishConfigApi
 } from '@/api/product/publishConfig'
+import { getPromptList } from '@/api/prompt'
 import { ContentWrap } from '@/components/ContentWrap'
 import { formatTime } from '@/utils'
 import { commonGridOptions } from "@/common/table"
@@ -49,7 +50,7 @@ const gridOptions = computed(() => ({
     { field: 'name', title: '配置名称', minWidth: 150 },
     { field: 'platform', title: '平台', minWidth: 100 },
     { field: 'description', title: '描述', minWidth: 200, showOverflow: true },
-    { field: 'titleTemplate', title: '标题提示词', minWidth: 220, showOverflow: true },
+    { field: 'titlePromptTitle', title: '标题提示词', minWidth: 220, showOverflow: true },
     {
       field: 'createTime',
       title: '创建时间',
@@ -137,17 +138,19 @@ const formRef = ref()
 // 动态平台配置
 const currentPlatformConfig = ref<PlatformConfig | null>(null)
 const platformConfigData = ref<Record<string, any>>({})
+const promptOptions = ref<any[]>([])
+const promptLoading = ref(false)
 
 const form = reactive({
   id: undefined,
   name: '',
   platform: '',
   description: '',
-  isActive: true,
-  titleTemplate: ''
+  isActive: true
 })
 
 const titleConfigForm = reactive({
+  promptId: undefined as number | undefined,
   maxLength: undefined as number | undefined,
   style: '',
   tone: '',
@@ -182,9 +185,9 @@ const handleAdd = () => {
   form.id = undefined
   form.name = ''
   form.platform = ''
-  form.titleTemplate = ''
   form.description = ''
   form.isActive = true
+  titleConfigForm.promptId = undefined
   titleConfigForm.maxLength = undefined
   titleConfigForm.style = ''
   titleConfigForm.tone = ''
@@ -201,10 +204,10 @@ const handleEdit = (row: any) => {
   form.id = row.id
   form.name = row.name
   form.platform = row.platform
-  form.titleTemplate = row.titleTemplate || ''
   form.description = row.description
   form.isActive = row.isActive
 
+  titleConfigForm.promptId = row.titleConfig?.promptId || row.titlePromptId || undefined
   titleConfigForm.maxLength = typeof row.titleConfig?.maxLength === 'number' ? row.titleConfig.maxLength : undefined
   titleConfigForm.style = row.titleConfig?.style || ''
   titleConfigForm.tone = row.titleConfig?.tone || ''
@@ -237,6 +240,7 @@ const submitForm = async () => {
         const formattedConfigData = formatConfigForSubmit(form.platform, platformConfigData.value)
         
         const parsedTitleConfig = {
+          promptId: typeof titleConfigForm.promptId === 'number' ? titleConfigForm.promptId : undefined,
           maxLength: typeof titleConfigForm.maxLength === 'number' ? titleConfigForm.maxLength : undefined,
           style: titleConfigForm.style?.trim() || undefined,
           tone: titleConfigForm.tone?.trim() || undefined,
@@ -250,7 +254,6 @@ const submitForm = async () => {
           platform: form.platform,
           description: form.description,
           isActive: form.isActive,
-          titleTemplate: form.titleTemplate,
           titleConfig: parsedTitleConfig,
           configData: formattedConfigData
         }
@@ -295,7 +298,22 @@ const handleDelete = (row: any) => {
   })
 }
 
+const loadPromptOptions = async () => {
+  if (promptLoading.value) return
+  promptLoading.value = true
+  try {
+    const res = await getPromptList({
+      currentPage: 1,
+      pageSize: 1000
+    })
+    promptOptions.value = Array.isArray((res as any)?.list) ? (res as any).list : []
+  } finally {
+    promptLoading.value = false
+  }
+}
+
 onMounted(() => {
+  loadPromptOptions()
   getList()
 })
 </script>
@@ -447,13 +465,26 @@ onMounted(() => {
         <!-- AI配置 - 两列并排最大化空间 -->
         <el-row :gutter="24">
           <el-col :span="12">
-            <el-form-item label="标题提示词" prop="titleTemplate">
-              <el-input
-                v-model="form.titleTemplate"
-                type="textarea"
-                :rows="15"
-                :placeholder="`用于AI生成标题的提示词。${currentPlatformConfig ? '当前平台标题限制：' + (currentPlatformConfig.titleMaxLength || '无') + '字符' : ''}`"
-              />
+            <el-form-item label="标题提示词模板" prop="titlePromptId">
+              <el-select
+                v-model="titleConfigForm.promptId"
+                filterable
+                clearable
+                :loading="promptLoading"
+                placeholder="请选择预定义提示词模板"
+                style="width: 100%;"
+              >
+                <el-option
+                  v-for="item in promptOptions"
+                  :key="item.id"
+                  :label="item.title"
+                  :value="item.id"
+                />
+              </el-select>
+              <div style="margin-top: 8px; color: var(--el-text-color-secondary); font-size: 12px;">
+                所有平台统一从提示词模块选择标题模板，不再手动输入。
+                {{ currentPlatformConfig ? `当前平台标题限制：${currentPlatformConfig.titleMaxLength || '无'}字符。` : '' }}
+              </div>
             </el-form-item>
           </el-col>
           <el-col :span="12">

@@ -73,8 +73,11 @@
             批量删除
           </el-button>
           <!-- 批量发布/下架 -->
-          <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Share">
-            批量发布
+          <el-button type="primary" :disabled="!selectedRows.length" @click="batchPublishToPlatforms" :icon="Share">
+            批量发布到平台
+          </el-button>
+          <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Check">
+            批量标记发布
           </el-button>
           <el-button type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">
             批量下架
@@ -145,7 +148,7 @@
                     </el-icon>
                     <span>编辑</span>
                   </el-dropdown-item>
-                  <el-dropdown-item v-admin-only command="delete">
+                  <el-dropdown-item v-if="userStore.user?.isAdmin" command="delete">
                     <el-icon>
                       <Delete />
                     </el-icon>
@@ -383,6 +386,12 @@
           <template #typeSlot="{ row }">
             <span v-if="row.type">{{ row.type }}</span>
             <span v-else class="text-gray-400 text-xs">未设置</span>
+          </template>
+
+          <template #publishStatusSlot="{ row }">
+            <el-tag :type="row.isPublish ? 'success' : 'info'" size="small">
+              {{ row.isPublish ? '已发布' : '未发布' }}
+            </el-tag>
           </template>
 
           <!-- 关联信息列：显示关联了哪个内容 -->
@@ -1337,12 +1346,22 @@
 
       <!-- 发布平台选择对话框 (vxe-grid 优化版) -->
       <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="100%" :fullscreen="true" :close-on-click-modal="true"
-        align-center>
+        @close="publishPlatformDialogClose" align-center>
         <div class="platform-select-container flex flex-col gap-4">
-          <!-- 搜索与筛选 -->
+          <div class="flex items-center justify-between gap-4">
+            <div class="text-sm text-gray-600">
+              当前将为
+              <el-tag type="primary" effect="plain" class="mx-1">{{ currentPublishProducts.length }}</el-tag>
+              个商品创建发布任务
+            </div>
+            <div v-if="currentPublishProducts.length === 1" class="text-sm text-gray-500 truncate max-w-[50%]">
+              {{ currentPublishProducts[0]?.name || currentPublishProducts[0]?.id }}
+            </div>
+          </div>
+
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-2 flex-1">
-              <el-input v-model="publishConfigSearchText" placeholder="搜索配置名称或平台..." prefix-icon="Search" clearable
+              <el-input v-model="publishConfigSearchText" placeholder="搜索配置名称或平台..." clearable
                 @input="publishConfigCurrentPage = 1" style="width: 300px" />
               <div class="text-xs text-gray-500">
                 支持多选配置并行发布到不同平台
@@ -1355,30 +1374,16 @@
             </div>
           </div>
 
-          <!-- vxe-grid 表格 -->
-          <div class="config-grid-wrapper border rounded-lg overflow-hidden">
+          <div class="common-table">
             <vxe-grid v-bind="publishConfigGridOptions" :data="publishConfigDataSource"
               @checkbox-change="handlePublishConfigCheckboxChange" @checkbox-all="handlePublishConfigCheckboxAllChange">
-
-              <template #platformSlot="{ row }">
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded flex items-center justify-center p-1"
-                    :style="{ backgroundColor: getPlatformColor(row.platform) }">
-                    <img v-if="getPlatformLogo(row.platform)" :src="getPlatformLogo(row.platform)"
-                      class="w-4 h-4 object-contain invert" />
-                    <span v-else class="text-[10px] text-white font-bold">{{ getPlatformIcon(row.platform) }}</span>
-                  </div>
-                  <span>{{ formatPlatformName(row.platform) }}</span>
-                </div>
-              </template>
             </vxe-grid>
           </div>
 
-          <!-- 分页 -->
           <div class="flex justify-end pt-2">
             <el-pagination v-model:current-page="publishConfigCurrentPage" v-model:page-size="publishConfigPageSize"
               :total="filteredPublishConfigs.length" :page-sizes="[10, 20, 50, 100]"
-              layout="total, sizes, prev, pager, next" small background />
+              layout="total, sizes, prev, pager, next" size="small" background />
           </div>
         </div>
         <template #footer>
@@ -1386,7 +1391,7 @@
             <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
             <el-button type="primary" :loading="publishConfirmLoading"
               :disabled="publishQueueSelectedConfigIds.length === 0" @click="confirmPublishToPlatforms">
-              确认发布任务 ({{ publishQueueSelectedConfigIds.length }})
+              确认发布任务 ({{ currentPublishProducts.length }} x {{ publishQueueSelectedConfigIds.length }})
             </el-button>
           </div>
         </template>
@@ -1418,6 +1423,7 @@ import {
   Search,
   DArrowLeft,
   DArrowRight,
+  Check,
   Folder,
   Plus,
   Delete,
@@ -1431,10 +1437,10 @@ import {
   Share,
   MagicStick,
   VideoPlay,
-  Check,
   Refresh,
   QuestionFilled,
   View,
+  Document,
   DocumentCopy,
   Grid,
   Loading,
@@ -1592,6 +1598,13 @@ const gridColumns = computed(() => {
       width: 140,
       showOverflow: true,
       slots: { default: 'typeSlot' }
+    },
+    {
+      title: "发布状态",
+      field: "isPublish",
+      width: 100,
+      align: 'center',
+      slots: { default: 'publishStatusSlot' }
     },
     { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
@@ -1833,6 +1846,7 @@ const publishQueueSelectedConfigIds = ref<string[]>([]);
 const publishConfirmLoading = ref(false);
 const publishPlatformDialogVisible = ref(false);
 const currentPublishProduct = ref<any>(null);
+const currentPublishProducts = ref<any[]>([]);
 
 const filteredPublishConfigs = computed(() => {
   const text = publishConfigSearchText.value.toLowerCase().trim();
@@ -1853,7 +1867,7 @@ const publishConfigDataSource = computed(() => {
 });
 
 const publishConfigGridOptions = computed(() => ({
-  border: true,
+  ...commonGridOptions,
   height: 480,
   loading: false,
   rowConfig: { isHover: true, keyField: 'id' },
@@ -1865,9 +1879,14 @@ const publishConfigGridOptions = computed(() => ({
   },
   columns: [
     { type: 'checkbox' as any, width: 60, align: 'center' as any },
-    { field: 'platform', title: '平台', width: 140, slots: { default: 'platformSlot' } },
+    {
+      field: 'platform',
+      title: '平台',
+      width: 140,
+      formatter: ({ cellValue }: any) => formatPlatformName(cellValue)
+    },
     { field: 'name', title: '配置名称', minWidth: 180, showOverflow: true },
-    { field: 'description', title: '备注说明', minWidth: 200, showOverflow: true }
+    { field: 'description', title: '备注说明', minWidth: 220, showOverflow: true }
   ]
 }));
 
@@ -2530,6 +2549,14 @@ function publishDialogClose() {
   currentPublishRow.value = {};
 }
 
+function publishPlatformDialogClose() {
+  publishQueueSelectedConfigIds.value = [];
+  publishConfigSearchText.value = '';
+  publishConfigCurrentPage.value = 1;
+  currentPublishProduct.value = null;
+  currentPublishProducts.value = [];
+}
+
 // 处理内容输入，自适应textarea高度
 function handleContentInput(platform: string) {
   // Element Plus的autosize属性会自动处理高度调整
@@ -2832,6 +2859,41 @@ async function batchPublish(rows?: any[]) {
   } catch (e) {
     ElMessage.error('批量发布失败，请重试');
   }
+}
+
+async function openPublishPlatformDialog(rows: any[]) {
+  const list = (rows || []).filter(item => item?.id);
+  if (list.length === 0) {
+    return ElMessage.warning('请先选择要发布的商品');
+  }
+
+  currentPublishProducts.value = list;
+  currentPublishProduct.value = list[0] || null;
+  publishQueueSelectedConfigIds.value = [];
+  publishConfigSearchText.value = '';
+  publishConfigCurrentPage.value = 1;
+
+  try {
+    const res = await getPublishConfigListApi();
+    if (Array.isArray(res)) {
+      availablePublishConfigs.value = res;
+    } else if (res && res.list) {
+      availablePublishConfigs.value = res.list;
+    } else {
+      availablePublishConfigs.value = [];
+    }
+  } catch (e) {
+    console.error(e);
+    ElMessage.error('获取发布配置失败');
+    return;
+  }
+
+  publishPlatformDialogVisible.value = true;
+}
+
+async function batchPublishToPlatforms(rows?: any[]) {
+  const list = rows && rows.length ? rows : selectedRows.value;
+  await openPublishPlatformDialog(list || []);
 }
 
 // 批量下架
@@ -3259,19 +3321,6 @@ const publishPlatforms = [
   { label: '全民小视频', value: 'quanmin', icon: '全', color: '#FD3756', logoUrl: undefined },
 ];
 
-// 获取平台相关元数据
-const getPlatformColor = (platform: string) => {
-  return publishPlatforms.find(p => p.value === platform)?.color || '#999';
-};
-
-const getPlatformLogo = (platform: string) => {
-  return publishPlatforms.find(p => p.value === platform)?.logoUrl;
-};
-
-const getPlatformIcon = (platform: string) => {
-  return publishPlatforms.find(p => p.value === platform)?.icon || 'P';
-};
-
 // 格式化平台名称
 function formatPlatformName(platform: string) {
   const platformMap: Record<string, string> = {
@@ -3319,65 +3368,43 @@ async function handlePublishToQueue(row: any) {
   if (!row?.id) {
     return ElMessage.warning('商品ID不存在');
   }
-
-  currentPublishProduct.value = row;
-  publishQueueSelectedConfigIds.value = [];
-  publishConfigSearchText.value = '';
-  publishConfigCurrentPage.value = 1;
-
-  // 获取发布配置
-  try {
-    const res = await getPublishConfigListApi();
-    if (Array.isArray(res)) {
-      availablePublishConfigs.value = res;
-    } else if (res && res.list) {
-      availablePublishConfigs.value = res.list;
-    } else {
-      availablePublishConfigs.value = [];
-    }
-  } catch (e) {
-    console.error(e);
-    ElMessage.error('获取发布配置失败');
-    return;
-  }
-
-  publishPlatformDialogVisible.value = true;
+  await openPublishPlatformDialog([row]);
 }
 
 // 确认发布到选中的平台
 async function confirmPublishToPlatforms() {
-  if (!currentPublishProduct.value?.id) {
-    return ElMessage.warning('商品ID不存在');
+  if (!currentPublishProducts.value.length) {
+    return ElMessage.warning('商品不存在');
   }
 
   if (publishQueueSelectedConfigIds.value.length === 0) {
     return ElMessage.warning('请至少选择一个发布配置');
   }
 
-  const row = currentPublishProduct.value;
   const configIds = publishQueueSelectedConfigIds.value;
   publishConfirmLoading.value = true;
 
   try {
-    // 为每个配置创建一个单独的任务
-    const tasks = configIds.map(configId => {
-      const config = availablePublishConfigs.value.find(c => c.id === configId);
-      if (!config) return null;
+    const tasks = currentPublishProducts.value.flatMap(row => {
+      return configIds.map(configId => {
+        const config = availablePublishConfigs.value.find(c => c.id === configId);
+        if (!config) return null;
 
-      return {
-        productId: row.id,
-        platform: config.platform,
-        publishConfigId: config.id,
-        publishOptions: config.configData || {},
-        description: `发布商品"${row.name || row.id}"到${config.name} (${formatPlatformName(config.platform)})`,
-        metadata: {
-          platform: config.platform,
+        return {
           productId: row.id,
-          productName: row.name,
+          platform: config.platform,
           publishConfigId: config.id,
-          configName: config.name
-        }
-      };
+          publishOptions: config.configData || {},
+          description: `发布商品"${row.name || row.id}"到${config.name} (${formatPlatformName(config.platform)})`,
+          metadata: {
+            platform: config.platform,
+            productId: row.id,
+            productName: row.name,
+            publishConfigId: config.id,
+            configName: config.name
+          }
+        };
+      });
     }).filter(Boolean);
 
     // 批量创建任务（使用 allSettled，避免单个失败导致整体中断）
@@ -3396,6 +3423,8 @@ async function confirmPublishToPlatforms() {
     const failedCount = Math.max(totalCount - successCount, 0);
 
     publishPlatformDialogVisible.value = false;
+    currentPublishProducts.value = [];
+    currentPublishProduct.value = null;
 
     if (successCount === totalCount) {
       ElMessage.success(`成功创建 ${successCount}/${totalCount} 个发布任务，已添加到发布队列`);
