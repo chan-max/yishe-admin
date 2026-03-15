@@ -4,6 +4,8 @@ export const stickerPsdSetApi = {
   page: (data: any) => request.post({ url: '/sticker-psd-set/page', data }),
   create: (data: any) => request.post({ url: '/sticker-psd-set', data }),
   batchCreate: (data: any) => request.post({ url: '/sticker-psd-set/batch', data }),
+  generateProduct: (data: { id: string; promptId?: number | null }) =>
+    request.post({ url: '/sticker-psd-set/generate-product', data }),
   update: (id: string, data: any) => request.patch({ url: `/sticker-psd-set/${id}`, data }),
   updateStatus: (id: string, data: { status: string; statusMessage?: string }) =>
     request.post({ url: `/sticker-psd-set/${id}/status`, data }),
@@ -14,4 +16,3 @@ export const stickerPsdSetApi = {
   // 根据ID查询PSD模板详情
   getPsdTemplateById: (id: string) => request.get({ url: `/psd-template/${id}` })
 }
-

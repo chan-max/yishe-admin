@@ -611,6 +611,39 @@
                 :rows="field.rows || 2"
                 :placeholder="field.placeholder"
               />
+              <el-select
+                v-else-if="field.component === 'select-single'"
+                v-model="action.params[field.key]"
+                clearable
+                filterable
+                :loading="psdSetAutomationPromptLoading"
+                :placeholder="field.placeholder"
+              >
+                <el-option
+                  v-for="prompt in psdSetAutomationPromptOptions"
+                  :key="prompt.id"
+                  :label="prompt.title"
+                  :value="prompt.id"
+                />
+              </el-select>
+              <el-select
+                v-else-if="field.component === 'select-multiple'"
+                v-model="action.params[field.key]"
+                multiple
+                clearable
+                filterable
+                collapse-tags
+                collapse-tags-tooltip
+                :loading="psdSetAutomationPublishConfigsLoading"
+                :placeholder="field.placeholder"
+              >
+                <el-option
+                  v-for="config in psdSetAutomationPublishConfigs"
+                  :key="config.id"
+                  :label="`${config.name} [${config.platform}]`"
+                  :value="config.id"
+                />
+              </el-select>
               <el-input
                 v-else
                 v-model="action.params[field.key]"
@@ -1670,6 +1703,8 @@ import { formatDate } from '@/utils/formatTime'
 import { getTitleTemplateList } from '@/api/publish'
 import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from '@/common/download'
 import { getConfigTemplateList } from '@/api/publish/config'
+import { getPublishConfigListApi } from '@/api/product/publishConfig'
+import { getPromptList } from '@/api/prompt'
 import genPicture from './genPicture.vue'
 import { getAccessToken } from '@/utils/auth'
 import { getTenantId } from '@/utils/auth'
@@ -2147,6 +2182,10 @@ const psdSetSubmitting = ref(false)
 const psdSetMergeSticker = ref(false)
 const psdSetTemplateSearchText = ref('')
 const psdSetAutomationDialogVisible = ref(false)
+const psdSetAutomationPublishConfigsLoading = ref(false)
+const psdSetAutomationPublishConfigs = ref<any[]>([])
+const psdSetAutomationPromptLoading = ref(false)
+const psdSetAutomationPromptOptions = ref<any[]>([])
 const psdSetAutomationActions = ref([
   {
     key: 'generate_product',
@@ -2154,15 +2193,21 @@ const psdSetAutomationActions = ref([
     description: '套图制作完成后自动创建商品，并进入商品生成流程。',
     enabled: false,
     params: {
-      aiPrompt: ''
+      promptId: null as number | null,
+      publishConfigIds: [] as string[]
     },
     fields: [
       {
-        key: 'aiPrompt',
+        key: 'promptId',
         label: 'AI 提示词',
-        component: 'textarea',
-        rows: 2,
-        placeholder: '可选：输入自动生成商品时使用的 AI 提示词'
+        component: 'select-single',
+        placeholder: '可选：选择生成商品名称、描述、关键词时使用的 AI 提示词'
+      },
+      {
+        key: 'publishConfigIds',
+        label: '发布配置',
+        component: 'select-multiple',
+        placeholder: '可选：选择生成商品后立即创建的发布任务配置'
       }
     ]
   }
@@ -3028,9 +3073,53 @@ function resetPsdSetState() {
     enabled: false,
     params: {
       ...(action.params || {}),
-      aiPrompt: ''
+      promptId: null,
+      publishConfigIds: []
     }
   }))
+}
+
+async function loadPromptOptionsForPsdAutomation() {
+  if (psdSetAutomationPromptLoading.value || psdSetAutomationPromptOptions.value.length > 0) {
+    return
+  }
+
+  psdSetAutomationPromptLoading.value = true
+  try {
+    const res = await getPromptList({
+      currentPage: 1,
+      pageSize: 1000
+    })
+    psdSetAutomationPromptOptions.value = Array.isArray((res as any)?.list) ? (res as any).list : []
+  } catch (error) {
+    console.error('加载提示词失败:', error)
+    ElMessage.error('加载提示词失败')
+  } finally {
+    psdSetAutomationPromptLoading.value = false
+  }
+}
+
+async function loadPublishConfigsForPsdAutomation() {
+  if (psdSetAutomationPublishConfigsLoading.value || psdSetAutomationPublishConfigs.value.length > 0) {
+    return
+  }
+
+  psdSetAutomationPublishConfigsLoading.value = true
+  try {
+    const res = await getPublishConfigListApi()
+    if (Array.isArray(res)) {
+      psdSetAutomationPublishConfigs.value = res
+    } else if (Array.isArray((res as any)?.list)) {
+      psdSetAutomationPublishConfigs.value = (res as any).list
+    } else {
+      psdSetAutomationPublishConfigs.value = []
+    }
+  } catch (error) {
+    console.error('加载发布配置失败:', error)
+    ElMessage.error('加载发布配置失败')
+  } finally {
+    psdSetAutomationPublishConfigsLoading.value = false
+  }
 }
 
 // 加载PSD模板文件夹树
@@ -3146,6 +3235,13 @@ const debouncedSearchPsdTemplates = useDebounceFn(() => {
 watch(psdSetTemplateSearchText, () => {
   if (psdSetDialogVisible.value) {
     debouncedSearchPsdTemplates()
+  }
+})
+
+watch(psdSetAutomationDialogVisible, (visible) => {
+  if (visible) {
+    loadPromptOptionsForPsdAutomation()
+    loadPublishConfigsForPsdAutomation()
   }
 })
 

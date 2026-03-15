@@ -514,6 +514,69 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="generateProductDialogVisible"
+      fullscreen
+      :show-close="true"
+      :destroy-on-close="false"
+      class="generate-product-dialog"
+      @close="handleCloseGenerateProductDialog"
+    >
+      <template #header>
+        <div class="generate-product-dialog-header">
+          <div>
+            <div class="generate-product-dialog-title">套图生成产品</div>
+            <div class="generate-product-dialog-subtitle">
+              已选择 {{ generateProductTargetIds.length }} 个套图，配置商品信息生成提示词
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div v-loading="generateProductDialogLoading" class="generate-product-dialog-body">
+        <div class="generate-product-panel">
+          <div class="generate-product-panel-title">基础配置</div>
+          <el-form label-position="top">
+            <el-form-item label="AI 提示词">
+              <el-select
+                v-model="generateProductForm.promptId"
+                filterable
+                clearable
+                placeholder="请选择提示词"
+                class="w-full"
+              >
+                <el-option
+                  v-for="item in generateProductPromptOptions"
+                  :key="item.id"
+                  :label="item.title"
+                  :value="item.id"
+                >
+                  <div class="generate-product-option">
+                    <span>{{ item.title }}</span>
+                    <span class="generate-product-option-id">#{{ item.id }}</span>
+                  </div>
+                </el-option>
+              </el-select>
+              <div class="generate-product-tip">用于生成商品的名称、描述、关键词等信息，与发布平台无关。</div>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="generate-product-dialog-footer">
+          <el-button @click="handleCloseGenerateProductDialog">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="generateProductSubmitting"
+            @click="handleSubmitGenerateProduct"
+          >
+            确定生成产品
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <div class="pagination-container">
       <pagination
         :total="total"
@@ -536,6 +599,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
+import { getPromptList } from '@/api/prompt'
 import request from '@/config/axios'
 import { isLocalConnected } from '@/stores/connectionStatus'
 import { websocketClient } from '@/services/websocketClient'
@@ -551,6 +615,14 @@ const generatingProductId = ref<string>('')
 const batchGeneratingProducts = ref(false)
 const batchUpdatingStatus = ref(false)
 const startingProductionId = ref<string>('')
+const generateProductDialogVisible = ref(false)
+const generateProductDialogLoading = ref(false)
+const generateProductSubmitting = ref(false)
+const generateProductTargetIds = ref<string[]>([])
+const generateProductPromptOptions = ref<any[]>([])
+const generateProductForm = reactive({
+  promptId: null as number | null
+})
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value)
@@ -940,35 +1012,8 @@ async function handleToProduct(row: any) {
   if (!row?.id) {
     return ElMessage.warning('缺少ID，无法生成产品')
   }
-  try {
-    await ElMessageBox.confirm(
-      `确认根据该套图生成一个产品吗？`,
-      '生成确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-  } catch (e) {
-    return
-  }
-
-  try {
-    generatingProductId.value = row.id
-    const result = await request.post({
-      url: '/sticker-psd-set/to-product',
-      data: { id: row.id }
-    })
-    const message = result?.data?.message || '生成产品成功'
-    ElMessage.success(message)
-    getList()
-  } catch (error: any) {
-    console.error('生成产品失败:', error)
-    ElMessage.error(error?.message || '生成产品失败')
-  } finally {
-    generatingProductId.value = ''
-  }
+  generatingProductId.value = row.id
+  await openGenerateProductDialog([row.id])
 }
 
 // 查看配置信息（独立的弹窗）
@@ -1295,29 +1340,64 @@ async function handleBatchGenerateProduct() {
   if (!selectedIds.value.length) {
     return ElMessage.warning('请选择需要生成产品的记录')
   }
+  await openGenerateProductDialog(selectedIds.value)
+}
 
-  try {
-    await ElMessageBox.confirm(
-      `确认根据选中的 ${selectedIds.value.length} 条记录生成产品吗？`,
-      '批量生成确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-  } catch (error) {
-    return
+async function ensureGenerateProductDialogOptions() {
+  if (!generateProductPromptOptions.value.length) {
+    const res = await getPromptList({
+      currentPage: 1,
+      pageSize: 1000
+    })
+    generateProductPromptOptions.value = Array.isArray(res?.list) ? res.list : []
+  }
+}
+
+async function openGenerateProductDialog(ids: string[]) {
+  const normalizedIds = Array.from(new Set((ids || []).map((item) => String(item).trim()).filter(Boolean)))
+  if (!normalizedIds.length) {
+    return ElMessage.warning('请选择需要生成产品的套图')
   }
 
-  batchGeneratingProducts.value = true
+  generateProductTargetIds.value = normalizedIds
+  generateProductForm.promptId = null
+  generateProductDialogVisible.value = true
+  generateProductDialogLoading.value = true
+
+  try {
+    await ensureGenerateProductDialogOptions()
+  } catch (error: any) {
+    console.error('加载生成产品配置失败:', error)
+    ElMessage.error(error?.message || '加载配置失败')
+  } finally {
+    generateProductDialogLoading.value = false
+  }
+}
+
+function handleCloseGenerateProductDialog() {
+  generateProductDialogVisible.value = false
+  generateProductTargetIds.value = []
+  generateProductForm.promptId = null
+  generatingProductId.value = ''
+  batchGeneratingProducts.value = false
+}
+
+async function handleSubmitGenerateProduct() {
+  if (!generateProductTargetIds.value.length) {
+    return ElMessage.warning('未选择套图')
+  }
+
+  generateProductSubmitting.value = true
   let successCount = 0
   let failCount = 0
 
   try {
-    for (const id of selectedIds.value) {
+    for (const id of generateProductTargetIds.value) {
       try {
-        await request.post({ url: '/sticker-psd-set/to-product', data: { id } })
+        await stickerPsdSetApi.generateProduct({
+          id,
+          promptId: generateProductForm.promptId
+        })
         successCount += 1
       } catch (error) {
         failCount += 1
@@ -1331,9 +1411,17 @@ async function handleBatchGenerateProduct() {
     if (failCount) {
       ElMessage.warning(`有 ${failCount} 个产品生成失败，请稍后重试`)
     }
-    getList()
+
+    if (successCount > 0) {
+      handleCloseGenerateProductDialog()
+      getList()
+    }
   } finally {
+    generateProductSubmitting.value = false
     batchGeneratingProducts.value = false
+    if (!generateProductDialogVisible.value) {
+      generatingProductId.value = ''
+    }
   }
 }
 
@@ -1968,5 +2056,68 @@ getList()
   text-align: center;
   font-size: 14px;
 }
-</style>
 
+.generate-product-dialog-body {
+  min-height: calc(100vh - 140px);
+  padding: 8px 0 24px;
+}
+
+.generate-product-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.generate-product-dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.generate-product-dialog-subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.generate-product-panel {
+  width: min(880px, 100%);
+}
+
+.generate-product-panel-title {
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.generate-product-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.generate-product-option-id,
+.generate-product-option-meta {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.generate-product-tip {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+}
+
+.generate-product-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  width: 100%;
+}
+</style>
