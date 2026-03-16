@@ -319,14 +319,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: '设计请求',
         }
       },
-      {
-        path: 'designModel',
-        component: () => import('@/views/material/designModel/index.vue'),
-        name: 'DesignModel',
-        meta: {
-          title: '设计模型',
-        }
-      },
+      // {
+      //   path: 'designModel',
+      //   component: () => import('@/views/material/designModel/index.vue'),
+      //   name: 'DesignModel',
+      //   meta: {
+      //     title: '设计模型',
+      //   }
+      // },
       {
         path: 'psd-set',
         component: () => import('@/views/material/psdSet/index.vue'),

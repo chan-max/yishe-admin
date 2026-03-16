@@ -170,11 +170,6 @@
                   v-else-if="row.url && isAudioFile(row.suffix)"
                   class="audio-preview-container"
                 >
-                  <div class="audio-preview-icon">
-                    <el-icon size="32" color="var(--el-color-primary)">
-                      <Headset />
-                    </el-icon>
-                  </div>
                   <audio
                     :src="row.url"
                     controls
@@ -955,14 +950,12 @@ h1 {
 /* 音频预览样式 */
 .audio-preview-container {
   width: 100%;
-  padding: 12px;
   background: var(--el-fill-color-light);
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 80px;
 }
 
 .audio-preview-icon {
