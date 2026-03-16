@@ -1299,10 +1299,20 @@
         :title="`发布详情 - ${currentProductForTasks?.name || currentProductForTasks?.id || ''}`" width="80%"
         :close-on-click-modal="true" align-center :destroy-on-close="true">
         <div v-loading="publishTasksLoading" class="publish-tasks-container">
+          <div v-if="publishTasks.length > 0" class="flex justify-end mb-3">
+            <el-select v-model="publishTasksSortType" style="width: 220px">
+              <el-option
+                v-for="item in publishTaskSortOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </div>
           <div v-if="publishTasks.length === 0 && !publishTasksLoading" class="empty-state text-center py-8">
             <el-empty description="暂无发布任务" />
           </div>
-          <vxe-grid v-else :data="publishTasks" :columns="publishTasksColumns" border stripe size="small"
+          <vxe-grid v-else :data="sortedPublishTasks" :columns="publishTasksColumns" border stripe size="small"
             :show-header="true" :show-overflow="true" height="500" class="publish-tasks-grid">
             <template #platformSlot="{ row }">
               {{ formatPlatformName(row.platform) }}
@@ -3446,6 +3456,58 @@ const publishTasksVisible = ref(false);
 const publishTasks = ref<any[]>([]);
 const currentProductForTasks = ref<any>(null);
 const publishTasksLoading = ref(false);
+const publishTasksSortType = ref('created_desc');
+const publishTaskSortOptions = [
+  { label: '创建时间: 最新在前', value: 'created_desc' },
+  { label: '创建时间: 最早在前', value: 'created_asc' },
+  { label: '更新时间: 最新在前', value: 'updated_desc' },
+  { label: '更新时间: 最早在前', value: 'updated_asc' },
+  { label: '完成时间: 最新在前', value: 'processed_desc' },
+  { label: '完成时间: 最早在前', value: 'processed_asc' },
+];
+
+function normalizePublishTaskTime(value: any): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+    const ts = new Date(normalized).getTime();
+    return Number.isFinite(ts) ? ts : 0;
+  }
+  return 0;
+}
+
+const sortedPublishTasks = computed(() => {
+  const list = [...publishTasks.value];
+  const getTime = (row: any, field: 'created' | 'updated' | 'processed') => {
+    if (field === 'created') {
+      return normalizePublishTaskTime(row?.createdAtTs ?? row?.createdAt);
+    }
+    if (field === 'updated') {
+      return normalizePublishTaskTime(row?.updatedAtTs ?? row?.updatedAt);
+    }
+    return normalizePublishTaskTime(row?.processedAtTs ?? row?.processedAt);
+  };
+
+  return list.sort((a, b) => {
+    switch (publishTasksSortType.value) {
+      case 'created_asc':
+        return getTime(a, 'created') - getTime(b, 'created');
+      case 'updated_desc':
+        return getTime(b, 'updated') - getTime(a, 'updated');
+      case 'updated_asc':
+        return getTime(a, 'updated') - getTime(b, 'updated');
+      case 'processed_desc':
+        return getTime(b, 'processed') - getTime(a, 'processed');
+      case 'processed_asc':
+        return getTime(a, 'processed') - getTime(b, 'processed');
+      case 'created_desc':
+      default:
+        return getTime(b, 'created') - getTime(a, 'created');
+    }
+  });
+});
 
 // 发布任务列表列配置
 const publishTasksColumns = [
@@ -3466,12 +3528,13 @@ async function handleViewPublishTasks(row: any) {
   }
 
   currentProductForTasks.value = row;
+  publishTasksSortType.value = 'created_desc';
   publishTasksVisible.value = true;
   publishTasksLoading.value = true;
 
   try {
     const res = await getProductPublishTasks(row.id);
-    publishTasks.value = res || [];
+    publishTasks.value = Array.isArray(res) ? res : [];
   } catch (error: any) {
     console.error('获取发布任务列表失败:', error);
     ElMessage.error(error?.message || '获取发布任务列表失败');

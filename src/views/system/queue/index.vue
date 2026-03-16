@@ -20,6 +20,16 @@
           <el-option label="失败" value="failed" />
         </el-select>
       </form-item>
+      <form-item label="时间排序">
+        <el-select v-model="queryParams.sortType" style="width: 180px" @change="handleSortTypeChange">
+          <el-option label="创建时间倒序" value="createdAt_DESC" />
+          <el-option label="创建时间正序" value="createdAt_ASC" />
+          <el-option label="更新时间倒序" value="updatedAt_DESC" />
+          <el-option label="更新时间正序" value="updatedAt_ASC" />
+          <el-option label="完成时间倒序" value="processedAt_DESC" />
+          <el-option label="完成时间正序" value="processedAt_ASC" />
+        </el-select>
+      </form-item>
       <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
       <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
       <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
@@ -245,6 +255,7 @@ const queryParams = reactive({
   status: undefined as 'pending' | 'processing' | 'completed' | 'failed' | undefined,
   type: '', // 任务类型，默认为空（留空则查询所有类型）
   id: '', // 任务ID，默认为空（留空则查询所有ID）
+  sortType: 'createdAt_DESC',
 })
 
 const stats = ref<QueueStats>({
@@ -488,10 +499,13 @@ async function getList() {
   try {
     console.log('🔍 开始查询任务列表，任务ID:', queryParams.id?.trim() || '(所有ID)', '任务类型:', queryParams.type?.trim() || '(所有类型)', '状态:', queryParams.status || '(所有状态)')
 
+    const [sortField, sortOrder] = queryParams.sortType.split('_')
     const res = await getTaskList({
       status: queryParams.status, // 不传 status 则查询所有状态
       type: queryParams.type?.trim() || undefined, // 不传 type 则查询所有类型
       id: queryParams.id?.trim() || undefined, // 不传 id 则查询所有ID
+      sortField: sortField as 'createdAt' | 'updatedAt' | 'processedAt',
+      sortOrder: sortOrder as 'ASC' | 'DESC',
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     })
@@ -558,6 +572,11 @@ async function getList() {
   } finally {
     loading.value = false
   }
+}
+
+function handleSortTypeChange() {
+  queryParams.currentPage = 1
+  getList()
 }
 
 // 刷新统计信息

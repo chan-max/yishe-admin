@@ -3346,8 +3346,12 @@ function handlePsdTemplateDetailConfig() {
 
 // 构建PSD套图发送参数
 function buildPsdSetAutomationConfig() {
+  console.log('[PSD 套图] 自动化动作:', psdSetAutomationActions.value)
   const automations = psdSetAutomationActions.value
-    .filter(action => action.enabled)
+    .filter(action => {
+      console.log('[PSD 套图] 动作', action.key, 'enabled:', action.enabled, 'params:', action.params)
+      return action.enabled
+    })
     .map(action => ({
       action_type: action.key,
       config: Object.fromEntries(
@@ -3355,6 +3359,7 @@ function buildPsdSetAutomationConfig() {
       )
     }))
 
+  console.log('[PSD 套图] 构建的自动化配置:', automations)
   if (!automations.length) {
     return undefined
   }
@@ -3422,7 +3427,9 @@ async function handleCreatePsdSets() {
   psdSetSubmitting.value = true
   try {
     const params = buildPsdSetParams()
+    console.log('[PSD 套图] 发送参数:', JSON.stringify(params, null, 2))
     const res = await stickerPsdSetApi.batchCreate(params)
+    console.log('[PSD 套图] 后端响应:', res)
     const createdList = (res as any)?.list
     const createdCount = Array.isArray(createdList)
       ? createdList.length

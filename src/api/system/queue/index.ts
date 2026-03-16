@@ -55,6 +55,8 @@ export const getTaskList = (params: {
   status?: 'pending' | 'processing' | 'completed' | 'failed'
   type?: string    // 任务类型（可选，不传则查询所有类型）
   id?: string      // 任务ID（可选，不传则查询所有ID）
+  sortField?: 'createdAt' | 'updatedAt' | 'processedAt'
+  sortOrder?: 'ASC' | 'DESC'
   limit?: number
   offset?: number
 }) => {
