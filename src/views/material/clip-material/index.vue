@@ -1,75 +1,76 @@
 <template>
-  <div>
-    <!-- 搜索栏和按钮区域 -->
-    <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-        <form-item label="按名称搜索">
-          <el-input
-            v-model="queryParams.keyword"
-            placeholder="请输入名称、描述或关键词"
-            class="w-40"
-            clearable
-            @change="(val) => { if (!val) getList() }"
-          />
-        </form-item>
-        <form-item label="排序">
-          <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" class="w-36" @change="getList">
-            <el-option label="创建时间倒序" value="createTime DESC" />
-            <el-option label="创建时间正序" value="createTime ASC" />
-          </el-select>
-        </form-item>
-        <form-item label="后缀">
-          <el-select v-model="queryParams.suffix" placeholder="请选择后缀" class="w-30" clearable @change="getList">
-            <el-option label="全部" value="" />
-            <el-option label="mp4" value="mp4" />
-            <el-option label="mov" value="mov" />
-            <el-option label="avi" value="avi" />
-            <el-option label="mkv" value="mkv" />
-            <el-option label="wmv" value="wmv" />
-            <el-option label="flv" value="flv" />
-            <el-option label="webm" value="webm" />
-          </el-select>
-        </form-item>
-        <form-item label="分类">
-          <el-select v-model="queryParams.category" placeholder="请选择分类" class="w-30" clearable @change="getList">
-            <el-option label="全部" value="" />
-            <el-option label="风景" value="风景" />
-            <el-option label="人物" value="人物" />
-            <el-option label="动物" value="动物" />
-            <el-option label="建筑" value="建筑" />
-            <el-option label="动画" value="动画" />
-            <el-option label="其他" value="其他" />
-          </el-select>
-        </form-item>
-        <form-item label="ID精确查询">
-          <el-input
-            v-model="queryParams.id"
-            placeholder="请输入ID"
-            class="w-30"
-            clearable
-            @change="(val) => { if (!val) getList() }"
-          />
-        </form-item>
-        <form-item class="shrink-0 date-range-picker">
-          <DateRangePicker
-            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
-          />
-        </form-item>
+  <ContentWrap>
+    <div class="flex flex-col gap-4 py-3">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="grid min-w-0 flex-1 grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+          <form-item label="按名称搜索" class="min-w-0">
+            <el-input
+              v-model="queryParams.keyword"
+              placeholder="请输入名称、描述或关键词"
+              class="w-full"
+              clearable
+              @change="(val) => { if (!val) getList() }"
+            />
+          </form-item>
+          <form-item label="排序" class="min-w-0">
+            <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式" class="w-full" @change="getList">
+              <el-option label="创建时间倒序" value="createTime DESC" />
+              <el-option label="创建时间正序" value="createTime ASC" />
+            </el-select>
+          </form-item>
+          <form-item label="后缀" class="min-w-0">
+            <el-select v-model="queryParams.suffix" placeholder="请选择后缀" class="w-full" clearable @change="getList">
+              <el-option label="全部" value="" />
+              <el-option label="mp4" value="mp4" />
+              <el-option label="mov" value="mov" />
+              <el-option label="avi" value="avi" />
+              <el-option label="mkv" value="mkv" />
+              <el-option label="wmv" value="wmv" />
+              <el-option label="flv" value="flv" />
+              <el-option label="webm" value="webm" />
+            </el-select>
+          </form-item>
+          <form-item label="分类" class="min-w-0">
+            <el-select v-model="queryParams.category" placeholder="请选择分类" class="w-full" clearable @change="getList">
+              <el-option label="全部" value="" />
+              <el-option label="风景" value="风景" />
+              <el-option label="人物" value="人物" />
+              <el-option label="动物" value="动物" />
+              <el-option label="建筑" value="建筑" />
+              <el-option label="动画" value="动画" />
+              <el-option label="其他" value="其他" />
+            </el-select>
+          </form-item>
+          <form-item label="ID精确查询" class="min-w-0">
+            <el-input
+              v-model="queryParams.id"
+              placeholder="请输入ID"
+              class="w-full"
+              clearable
+              @change="(val) => { if (!val) getList() }"
+            />
+          </form-item>
+          <form-item label="时间范围" class="min-w-0">
+            <DateRangePicker
+              @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
+            />
+          </form-item>
+        </div>
+        <div class="flex w-full flex-wrap items-center justify-end gap-2 xl:w-auto xl:justify-start">
+          <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+          <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+          <el-button @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+          <el-button v-if="isAdmin" type="danger" plain :icon="Delete" :disabled="!ids.length" @click="handleDelete(null)">
+            批量删除 ({{ ids.length }})
+          </el-button>
+        </div>
       </div>
-      <div class="flex shrink-0 flex-wrap items-center gap-2">
-        <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-        <el-button v-if="isAdmin" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-        <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
-      </div>
-    </div>
-    
-    
+
     <!-- 移动端筛选按钮（始终显示） -->
-    <div v-if="isMobile" class="flex pb-4 justify-end">
+    <div v-if="isMobile" class="flex justify-end">
       <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
     </div>
-    
+
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
       <el-form :model="queryParams" label-width="80px">
         <el-form-item label="按名称搜索">
@@ -92,8 +93,20 @@
             <el-option label="其他" value="其他" />
           </el-select>
         </el-form-item>
-        <el-form-item label="公开状态">
-            <!-- 公开/私有筛选已移除 -->
+        <el-form-item label="后缀">
+          <el-select v-model="queryParams.suffix" placeholder="请选择后缀" clearable>
+            <el-option label="全部" value="" />
+            <el-option label="mp4" value="mp4" />
+            <el-option label="mov" value="mov" />
+            <el-option label="avi" value="avi" />
+            <el-option label="mkv" value="mkv" />
+            <el-option label="wmv" value="wmv" />
+            <el-option label="flv" value="flv" />
+            <el-option label="webm" value="webm" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="ID精确查询">
+          <el-input v-model="queryParams.id" placeholder="请输入ID" clearable />
         </el-form-item>
         <el-form-item label="按时间查询">
           <DateRangePicker
@@ -107,7 +120,7 @@
       </template>
     </el-dialog>
 
-    <div class="flex relative overflow-visible">
+    <div class="relative flex overflow-visible">
       <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
         <div class="h-full overflow-hidden">
           <div class="h-full w-[280px]">
@@ -126,7 +139,7 @@
         </div>
       </div>
 
-      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
+      <div class="min-w-0 flex-1 overflow-hidden">
         <div class="common-table">
           <vxe-grid
             ref="gridRef"
@@ -146,39 +159,40 @@
             </template>
 
             <template #previewDefaultSlot="{ row }">
-              <div class="flex items-center justify-center p-2">
+              <div class="flex justify-start p-2">
                 <video
                   v-if="row.url && isVideoFile(row.suffix)"
                   :src="row.url"
                   :alt="row.name || '文件素材'"
-                  class="media-preview"
+                  class="block max-h-[120px] max-w-[180px] cursor-pointer rounded-md bg-black/5 object-contain"
                   @click="openVideoPreview(row.url, row.name)"
                   @error="handleVideoError"
                   controls
                   preload="metadata"
                 />
-                <img
+                <el-image
                   v-else-if="row.url && isImageFile(row.suffix)"
                   :src="row.url"
                   :alt="row.name || '图片素材'"
-                  class="media-preview"
-                  loading="lazy"
+                  fit="contain"
+                  preview-teleported
+                  class="h-[120px] w-[180px] cursor-pointer rounded-md border border-solid border-[var(--el-border-color-light)] bg-black/5"
                   @click="openImagePreview(row.url)"
                   @error="handleImageError"
                 />
                 <div
                   v-else-if="row.url && isAudioFile(row.suffix)"
-                  class="audio-preview-container"
+                  class="flex w-full flex-col items-start justify-center rounded-lg bg-[var(--el-fill-color-light)] px-2 py-2"
                 >
                   <audio
                     :src="row.url"
                     controls
                     preload="metadata"
-                    style="width: 100%; margin-top: 8px;"
+                    class="h-7 w-full"
                     @error="handleAudioError"
                   />
                 </div>
-                <div v-else class="w-30 h-20 bg-gray-200 flex items-center justify-center text-gray-500">
+                <div v-else class="flex h-20 w-30 items-center justify-center rounded-md bg-gray-100 text-gray-500">
                   <el-icon size="24">
                     <component :is="getFileIcon(row.suffix)" />
                   </el-icon>
@@ -238,7 +252,7 @@
         </div>
 
         <!-- 分页 -->
-        <div class="flex justify-end">
+        <div class="flex justify-end pt-4">
           <pagination
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
@@ -266,18 +280,18 @@
     </el-dialog>
 
     <el-dialog v-model="editDialogVisible" title="编辑剪辑素材信息" width="800px" :destroy-on-close="true" align-center>
-      <el-form :model="editForm" label-width="100px">
+      <el-form :model="editForm" label-width="100px" class="px-2">
         <el-form-item label="名称">
-          <el-input v-model="editForm.name" placeholder="请输入名称" style="font-size:16px;height:48px;width:100%;" />
+          <el-input v-model="editForm.name" placeholder="请输入名称" class="w-full" />
         </el-form-item>
         <el-form-item label="描述">
-          <el-input v-model="editForm.description" type="textarea" :rows="5" placeholder="请输入描述" style="font-size:16px;min-height:100px;width:100%;" />
+          <el-input v-model="editForm.description" type="textarea" :rows="5" placeholder="请输入描述" class="w-full" />
         </el-form-item>
         <el-form-item label="关键词">
-          <el-input v-model="editForm.keywords" placeholder="请输入关键词（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
+          <el-input v-model="editForm.keywords" placeholder="请输入关键词（逗号分隔）" class="w-full" />
         </el-form-item>
         <el-form-item label="分类">
-          <el-select v-model="editForm.category" placeholder="请选择分类" style="font-size:16px;height:48px;width:100%;">
+          <el-select v-model="editForm.category" placeholder="请选择分类" class="w-full">
             <el-option label="风景" value="风景" />
             <el-option label="人物" value="人物" />
             <el-option label="动物" value="动物" />
@@ -287,7 +301,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="标签">
-          <el-input v-model="editForm.tags" placeholder="请输入标签（逗号分隔）" style="font-size:16px;height:48px;width:100%;" />
+          <el-input v-model="editForm.tags" placeholder="请输入标签（逗号分隔）" class="w-full" />
         </el-form-item>
         <!-- 是否公开 编辑项已移除 -->
       </el-form>
@@ -305,27 +319,9 @@
       @close="closeVideoPreview"
     />
 
-    <el-dialog
-      v-model="imagePreviewVisible"
-      title="图片预览"
-      width="70%"
-      :destroy-on-close="true"
-      align-center
-      @close="closeImagePreview"
-    >
-      <div style="display: flex; justify-content: center; align-items: center; min-height: 320px;">
-        <img
-          v-if="currentImageUrl"
-          :src="currentImageUrl"
-          alt="图片预览"
-          style="max-width: 100%; max-height: 70vh; object-fit: contain;"
-          @error="handleImageError"
-        />
-        <span v-else style="color: #909399">暂无可预览图片</span>
-      </div>
-    </el-dialog>
-
-  </div>
+    <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
+    </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -876,128 +872,10 @@ function handleOperationCommand(command: string, row: any) {
 
 </script>
 
-<style scoped>
-/* PC端优化 */
-.flex.pb-4, .search-bar {
-  gap: 16px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-.flex.pb-4 > *, .search-bar > * {
-  margin-bottom: 0;
-}
-@media (max-width: 600px) {
-  .flex.pb-4, .search-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 8px !important;
-    padding-bottom: 8px !important;
-  }
-  .flex.pb-4 > *, .search-bar > * {
-    width: 100% !important;
-    min-width: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 8px !important;
-  }
-  .el-input,
-  .el-select,
-  .el-button,
-  .el-date-editor {
-    width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-  .date-range-picker {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-  .date-range-picker .el-date-editor,
-  .date-range-picker .el-range-editor {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-  }
-  .content-container {
-    padding: 0 4px !important;
-  }
-  .common-table {
-    overflow-x: auto;
-  }
-}
-.table-header {
-  border-radius: 4px;
-  box-shadow: rgba(17, 17, 26, 0.15) 0px 1px 0px;
-}
-
-h1 {
-  font-size: 1rem;
-}
-
-.media-preview {
-  width: auto;
-  height: auto;
-  max-width: 180px;
-  max-height: 120px;
-  object-fit: contain;
-  background: #f5f5f5;
-  border-radius: 6px;
-  cursor: pointer;
-  display: block;
-}
-
-/* 音频预览样式 */
-.audio-preview-container {
-  width: 100%;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.audio-preview-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 4px;
-}
-
-.audio-preview-container audio {
-  width: 100%;
-  height: 32px;
-}
-</style>
-
 <style lang="less">
 .clip-material-upload-dialog {
   .el-dialog__body {
     height: calc(100% - 40px);
   }
 }
-
-// 操作dropdown样式
-.operation-dropdown {
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    .el-icon {
-      margin-right: 4px;
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-    
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-}
-
-/* 操作dropdown样式已移至公共样式文件 list-page-common.css */
 </style>
