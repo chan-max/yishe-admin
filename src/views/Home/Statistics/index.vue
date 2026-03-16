@@ -1,624 +1,407 @@
 <template>
-  <div class="statistics-page">
-    <ContentWrap>
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h2 class="page-title">数据统计</h2>
-      </div>
-
-      <!-- 爬图模块 -->
-      <div class="module-section mb-24px">
-        <div class="module-head">
-          <div>
-            <h3 class="module-title">爬图模块</h3>
-            <p class="module-subtitle">抓取与上传数据概览</p>
+  <ContentWrap>
+    <div class="space-y-6" v-loading="loading">
+      <section class="flex flex-col gap-4 rounded-3xl border border-[var(--el-border-color-light)] bg-[var(--el-bg-color)] p-6 shadow-sm lg:flex-row lg:items-end lg:justify-between">
+        <div class="space-y-2">
+          <p class="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--el-text-color-secondary)]">Statistics</p>
+          <div class="space-y-1">
+            <h1 class="text-3xl font-semibold text-[var(--el-text-color-primary)]">模块数据统计</h1>
+            <p class="text-sm text-[var(--el-text-color-regular)]">统一查看各模块近阶段新增与修改情况，统计口径基于 createTime / updateTime。</p>
           </div>
         </div>
 
-        <div class="mirror-layout">
-          <div class="stats-column">
-            <div class="stat-row" v-for="item in crawlerLeftStats" :key="item.label">
-              <span class="stat-label">{{ item.label }}</span>
-              <span class="stat-value">{{ item.value }}</span>
-            </div>
+        <div class="flex items-center gap-3">
+          <div class="rounded-2xl border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-1">
+            <button
+              v-for="option in dayOptions"
+              :key="option"
+              class="rounded-xl px-4 py-2 text-sm font-medium transition"
+              :class="
+                selectedDays === option
+                  ? 'bg-[var(--el-color-primary)] text-white shadow-sm'
+                  : 'text-[var(--el-text-color-regular)] hover:text-[var(--el-text-color-primary)]'
+              "
+              @click="changeDays(option)"
+            >
+              {{ option }} 天
+            </button>
           </div>
+          <el-button @click="loadStatistics">刷新</el-button>
+        </div>
+      </section>
 
-          <div class="center-panel" v-loading="crawlerLoading">
-            <div class="center-total">
-              <span class="center-total__label">总上传</span>
-              <span class="center-total__value">{{ crawlerTotal }}</span>
-            </div>
-            <div class="center-chart">
-              <div class="chart-head">
-                <span>趋势</span>
-                <el-select v-model="crawlerDailyDays" size="small" @change="loadCrawlerDailyData">
-                  <el-option label="7天" :value="7" />
-                  <el-option label="30天" :value="30" />
-                  <el-option label="60天" :value="60" />
-                </el-select>
+      <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <article
+          v-for="card in summaryCards"
+          :key="card.label"
+          class="rounded-3xl border border-[var(--el-border-color-light)] bg-[var(--el-bg-color)] p-5 shadow-sm"
+        >
+          <p class="text-sm text-[var(--el-text-color-regular)]">{{ card.label }}</p>
+          <div class="mt-3 flex items-end justify-between gap-3">
+            <strong class="text-3xl font-semibold text-[var(--el-text-color-primary)]">{{ formatNumber(card.value) }}</strong>
+            <span class="rounded-full px-3 py-1 text-xs font-medium" :class="card.badgeClass">
+              {{ card.badge }}
+            </span>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid gap-5 xl:grid-cols-2">
+        <article
+          v-for="module in moduleCards"
+          :key="module.key"
+          class="overflow-hidden rounded-3xl border border-[var(--el-border-color-light)] bg-[var(--el-bg-color)] shadow-sm"
+        >
+          <div class="border-b border-[var(--el-border-color-lighter)] p-6">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2">
+                <div class="flex items-center gap-3">
+                  <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold" :class="module.palette.badgeClass">
+                    {{ module.label }}
+                  </span>
+                  <span class="text-xs uppercase tracking-[0.2em] text-[var(--el-text-color-secondary)]">{{ module.key }}</span>
+                </div>
+                <div>
+                  <h2 class="text-xl font-semibold text-[var(--el-text-color-primary)]">{{ module.label }}</h2>
+                  <p class="mt-1 text-sm text-[var(--el-text-color-regular)]">{{ module.description }}</p>
+                </div>
               </div>
-              <div ref="crawlerChartRef" class="chart-canvas"></div>
-            </div>
-          </div>
 
-          <div class="stats-column">
-            <div class="stat-row" v-for="item in crawlerRightStats" :key="item.label">
-              <span class="stat-label">{{ item.label }}</span>
-              <span class="stat-value">{{ item.value }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 图库模块 -->
-      <div class="module-section">
-        <div class="module-head">
-          <div>
-            <h3 class="module-title">图库模块</h3>
-            <p class="module-subtitle">素材上传数据概览</p>
-          </div>
-        </div>
-
-        <div class="mirror-layout">
-          <div class="stats-column">
-            <div class="stat-row" v-for="item in stickerLeftStats" :key="item.label">
-              <span class="stat-label">{{ item.label }}</span>
-              <span class="stat-value">{{ item.value }}</span>
-            </div>
-          </div>
-
-          <div class="center-panel" v-loading="stickerLoading">
-            <div class="center-total">
-              <span class="center-total__label">总上传</span>
-              <span class="center-total__value">{{ stickerTotal }}</span>
-            </div>
-            <div class="center-chart">
-              <div class="chart-head">
-                <span>趋势</span>
-                <el-select v-model="stickerDailyDays" size="small" @change="loadStickerDailyData">
-                  <el-option label="7天" :value="7" />
-                  <el-option label="30天" :value="30" />
-                  <el-option label="60天" :value="60" />
-                </el-select>
+              <div class="grid grid-cols-2 gap-3 text-right sm:grid-cols-3">
+                <div class="rounded-2xl bg-[var(--el-fill-color-light)] px-4 py-3">
+                  <p class="text-xs text-[var(--el-text-color-regular)]">总记录</p>
+                  <p class="mt-1 text-2xl font-semibold text-[var(--el-text-color-primary)]">{{ formatNumber(module.total) }}</p>
+                </div>
+                <div class="rounded-2xl bg-[var(--el-fill-color-light)] px-4 py-3">
+                  <p class="text-xs text-[var(--el-text-color-regular)]">累计修改</p>
+                  <p class="mt-1 text-2xl font-semibold text-[var(--el-text-color-primary)]">{{ formatNumber(module.updatedTotal) }}</p>
+                </div>
+                <div class="col-span-2 rounded-2xl bg-[var(--el-fill-color-light)] px-4 py-3 sm:col-span-1">
+                  <p class="text-xs text-[var(--el-text-color-regular)]">近 {{ selectedDays }} 天活跃</p>
+                  <p class="mt-1 text-2xl font-semibold text-[var(--el-text-color-primary)]">
+                    {{ formatNumber(module.period.created + module.period.updated) }}
+                  </p>
+                </div>
               </div>
-              <div ref="stickerChartRef" class="chart-canvas"></div>
             </div>
           </div>
 
-          <div class="stats-column">
-            <div class="stat-row" v-for="item in stickerRightStats" :key="item.label">
-              <span class="stat-label">{{ item.label }}</span>
-              <span class="stat-value">{{ item.value }}</span>
+          <div class="grid gap-6 p-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-sm font-semibold text-[var(--el-text-color-primary)]">近 {{ selectedDays }} 天趋势</h3>
+                  <p class="text-xs text-[var(--el-text-color-regular)]">使用系统默认主色和警告色显示新增与修改</p>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-[var(--el-text-color-regular)]">
+                  <span class="inline-flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full" :class="module.palette.createdClass"></span>
+                    新增
+                  </span>
+                  <span class="inline-flex items-center gap-2">
+                    <span class="h-2.5 w-2.5 rounded-full" :class="module.palette.updatedClass"></span>
+                    修改
+                  </span>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-[var(--el-border-color-lighter)] bg-[var(--el-fill-color-lighter)] p-4">
+                <Echart :options="module.chartOptions" height="240px" />
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div
+                v-for="item in module.metrics"
+                :key="item.label"
+                class="rounded-2xl border border-[var(--el-border-color-light)] p-4"
+              >
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-[var(--el-text-color-primary)]">{{ item.label }}</p>
+                    <p class="mt-1 text-xs text-[var(--el-text-color-regular)]">{{ item.description }}</p>
+                  </div>
+                  <span class="text-xs text-[var(--el-text-color-secondary)]">{{ item.window }}</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="rounded-2xl px-4 py-3" :class="module.palette.softCreatedClass">
+                    <p class="text-xs text-[var(--el-text-color-regular)]">新增</p>
+                    <p class="mt-1 text-2xl font-semibold text-[var(--el-text-color-primary)]">{{ formatNumber(item.created) }}</p>
+                  </div>
+                  <div class="rounded-2xl px-4 py-3" :class="module.palette.softUpdatedClass">
+                    <p class="text-xs text-[var(--el-text-color-regular)]">修改</p>
+                    <p class="mt-1 text-2xl font-semibold text-[var(--el-text-color-primary)]">{{ formatNumber(item.updated) }}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </ContentWrap>
-  </div>
+        </article>
+      </section>
+    </div>
+  </ContentWrap>
 </template>
 
-<script lang="ts" setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
-import { ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
 import type { EChartsOption } from 'echarts'
+import { ElMessage } from 'element-plus'
 import { ContentWrap } from '@/components/ContentWrap'
-import {
-  getStatisticsOverview,
-  getDailyStatistics,
-  getCrawlerStatisticsOverview,
-  getCrawlerDailyStatistics,
-  type StatisticsOverview,
-  type DailyStatistics
-} from '@/api/statistics'
+import { Echart } from '@/components/Echart'
+import { getModuleStatisticsApi, type ModuleStatisticsItem, type ModuleStatisticsResponse } from '@/api/statistics'
+import { useAppStore } from '@/store/modules/app'
 
 defineOptions({ name: 'Statistics' })
 
-// 图库模块数据
-const stickerOverview = ref<StatisticsOverview | null>(null)
-const stickerLoading = ref(false)
-const stickerDailyDays = ref(30)
-const stickerChartRef = ref<HTMLDivElement>()
-let stickerChart: echarts.ECharts | null = null
-
-// 爬图模块数据
-const crawlerOverview = ref<StatisticsOverview | null>(null)
-const crawlerLoading = ref(false)
-const crawlerDailyDays = ref(30)
-const crawlerChartRef = ref<HTMLDivElement>()
-let crawlerChart: echarts.ECharts | null = null
-
-type StatItem = { label: string; value: number }
-
-function mapStats(overview: StatisticsOverview | null, items: Array<{ key: keyof StatisticsOverview; label: string }>): StatItem[] {
-  return items.map((item) => ({
-    label: item.label,
-    value: overview ? Number(overview[item.key] || 0) : 0
-  }))
+type Palette = {
+  badgeClass: string
+  createdClass: string
+  updatedClass: string
+  softCreatedClass: string
+  softUpdatedClass: string
 }
 
-const stickerLeftStats = computed(() =>
-  mapStats(stickerOverview.value, [
-    { key: 'today', label: '今天上传' },
-    { key: 'yesterday', label: '昨天上传' },
-    { key: 'last7Days', label: '最近7天' }
-  ])
-)
+const dayOptions = [7, 30, 90]
+const selectedDays = ref(30)
+const loading = ref(false)
+const statistics = ref<ModuleStatisticsResponse | null>(null)
+const chartColors = ['#2563eb', '#dc2626']
+const appStore = useAppStore()
 
-const stickerRightStats = computed(() =>
-  mapStats(stickerOverview.value, [
-    { key: 'thisWeek', label: '本周上传' },
-    { key: 'thisMonth', label: '本月上传' },
-    { key: 'last30Days', label: '最近30天' }
-  ])
-)
-
-const stickerTotal = computed(() => (stickerOverview.value ? Number(stickerOverview.value.total || 0) : 0))
-
-const crawlerLeftStats = computed(() =>
-  mapStats(crawlerOverview.value, [
-    { key: 'today', label: '今天上传' },
-    { key: 'yesterday', label: '昨天上传' },
-    { key: 'last7Days', label: '最近7天' }
-  ])
-)
-
-const crawlerRightStats = computed(() =>
-  mapStats(crawlerOverview.value, [
-    { key: 'thisWeek', label: '本周上传' },
-    { key: 'thisMonth', label: '本月上传' },
-    { key: 'last30Days', label: '最近30天' }
-  ])
-)
-
-const crawlerTotal = computed(() => (crawlerOverview.value ? Number(crawlerOverview.value.total || 0) : 0))
-
-// 加载图库概览数据
-const loadStickerOverview = async () => {
-  try {
-    stickerLoading.value = true
-    const response = await getStatisticsOverview()
-    const data = response?.data || response
-    if (data && typeof data === 'object' && 'today' in data) {
-      stickerOverview.value = data as StatisticsOverview
-    } else {
-      stickerOverview.value = {
-        today: 0,
-        yesterday: 0,
-        thisWeek: 0,
-        lastWeek: 0,
-        thisMonth: 0,
-        lastMonth: 0,
-        last7Days: 0,
-        last30Days: 0,
-        total: 0
-      }
-    }
-  } catch (error: any) {
-    console.error('加载图库概览数据失败:', error)
-    ElMessage.error(error?.message || '加载图库概览数据失败')
-    stickerOverview.value = {
-      today: 0,
-      yesterday: 0,
-      thisWeek: 0,
-      lastWeek: 0,
-      thisMonth: 0,
-      lastMonth: 0,
-      last7Days: 0,
-      last30Days: 0,
-      total: 0
-    }
-  } finally {
-    stickerLoading.value = false
-  }
+const palette: Palette = {
+  badgeClass: 'bg-[var(--el-fill-color-light)] text-[var(--el-text-color-primary)]',
+  createdClass: 'bg-[var(--el-color-primary)]',
+  updatedClass: 'bg-[var(--el-color-warning)]',
+  softCreatedClass: 'bg-[var(--el-color-primary-light-9)]',
+  softUpdatedClass: 'bg-[var(--el-color-warning-light-9)]'
 }
 
-// 加载爬图概览数据
-const loadCrawlerOverview = async () => {
-  try {
-    crawlerLoading.value = true
-    const response = await getCrawlerStatisticsOverview()
-    const data = response?.data || response
-    if (data && typeof data === 'object' && 'today' in data) {
-      crawlerOverview.value = data as StatisticsOverview
-    } else {
-      crawlerOverview.value = {
-        today: 0,
-        yesterday: 0,
-        thisWeek: 0,
-        lastWeek: 0,
-        thisMonth: 0,
-        lastMonth: 0,
-        last7Days: 0,
-        last30Days: 0,
-        total: 0
-      }
-    }
-  } catch (error: any) {
-    console.error('加载爬图概览数据失败:', error)
-    ElMessage.error(error?.message || '加载爬图概览数据失败')
-    crawlerOverview.value = {
-      today: 0,
-      yesterday: 0,
-      thisWeek: 0,
-      lastWeek: 0,
-      thisMonth: 0,
-      lastMonth: 0,
-      last7Days: 0,
-      last30Days: 0,
-      total: 0
-    }
-  } finally {
-    crawlerLoading.value = false
-  }
-}
+const summaryCards = computed(() => {
+  const summary = statistics.value?.summary
+  if (!summary) return []
 
-// 加载图库每日统计数据 - 使用柱状图
-const loadStickerDailyData = async () => {
-  if (!stickerChartRef.value) return
-
-  try {
-    stickerLoading.value = true
-    const response = await getDailyStatistics(stickerDailyDays.value)
-    const data = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : [])
-    
-    if (!stickerChart) {
-      stickerChart = echarts.init(stickerChartRef.value)
+  return [
+    {
+      label: '统计模块数',
+      value: summary.moduleCount,
+      badge: 'Modules',
+      badgeClass: 'bg-[var(--el-fill-color-light)] text-[var(--el-text-color-regular)]'
+    },
+    {
+      label: '总记录数',
+      value: summary.totalRecords,
+      badge: 'Total',
+      badgeClass: 'bg-[var(--el-fill-color-light)] text-[var(--el-text-color-primary)]'
+    },
+    {
+      label: `近 ${selectedDays.value} 天新增`,
+      value: summary.periodCreated,
+      badge: 'Created',
+      badgeClass: 'bg-[var(--el-color-primary-light-9)] text-[var(--el-color-primary)]'
+    },
+    {
+      label: `近 ${selectedDays.value} 天修改`,
+      value: summary.periodUpdated,
+      badge: 'Updated',
+      badgeClass: 'bg-[var(--el-color-warning-light-9)] text-[var(--el-color-warning)]'
     }
+  ]
+})
 
-    const option: EChartsOption = {
-      title: {
-        text: '图库每日上传趋势',
-        left: 'center',
-        textStyle: {
-          fontSize: 14,
-          fontWeight: 'bold'
-        }
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow'
-        },
-        formatter: (params: any) => {
-          const param = params[0]
-          return `${param.name}<br/>${param.seriesName}: ${param.value}`
-        }
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '15%',
-        top: '15%',
-        containLabel: true
-      },
-      xAxis: {
-        type: 'category',
-        data: data.map((item) => item.date || ''),
-        axisLabel: {
-          rotate: 45,
-          interval: data.length > 30 ? Math.max(0, Math.floor(data.length / 10)) : 0
-        }
-      },
-      yAxis: {
-        type: 'value',
-        name: '上传数量',
-        nameLocation: 'middle',
-        nameGap: 50
-      },
-      series: [
+const moduleCards = computed(() =>
+  (statistics.value?.modules || []).map((item) => {
+    return {
+      ...item,
+      palette,
+      chartOptions: buildTrendOptions(item.series),
+      metrics: [
         {
-          name: '上传数量',
-          type: 'bar',
-          data: data.map((item) => item.count || 0),
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#409EFF' },
-              { offset: 1, color: '#66B1FF' }
-            ]),
-            borderRadius: [4, 4, 0, 0]
-          },
-          emphasis: {
-            itemStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#66B1FF' },
-                { offset: 1, color: '#409EFF' }
-              ])
-            }
-          }
+          label: '今日',
+          window: 'Today',
+          description: '今天新增与修改的记录数',
+          created: item.today.created,
+          updated: item.today.updated
+        },
+        {
+          label: '最近 7 天',
+          window: '7 Days',
+          description: '近 7 天累计活跃情况',
+          created: item.last7Days.created,
+          updated: item.last7Days.updated
+        },
+        {
+          label: `最近 ${item.period.days} 天`,
+          window: `${item.period.days} Days`,
+          description: '当前筛选周期内的累计数据',
+          created: item.period.created,
+          updated: item.period.updated
         }
       ]
     }
-
-    stickerChart.setOption(option)
-  } catch (error: any) {
-    console.error('加载图库每日统计数据失败:', error)
-    ElMessage.error(error?.message || '加载图库统计数据失败')
-  } finally {
-    stickerLoading.value = false
-  }
-}
-
-// 加载爬图每日统计数据 - 使用柱状图
-const loadCrawlerDailyData = async () => {
-  if (!crawlerChartRef.value) return
-
-  try {
-    crawlerLoading.value = true
-    const response = await getCrawlerDailyStatistics(crawlerDailyDays.value)
-    const data = Array.isArray(response?.data) ? response.data : (Array.isArray(response) ? response : [])
-    
-    if (!crawlerChart) {
-      crawlerChart = echarts.init(crawlerChartRef.value)
-    }
-
-    const option: EChartsOption = {
-      title: {
-        text: '爬图每日上传趋势',
-        left: 'center',
-        textStyle: {
-          fontSize: 14,
-          fontWeight: 'bold'
-        }
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow'
-        },
-        formatter: (params: any) => {
-          const param = params[0]
-          return `${param.name}<br/>${param.seriesName}: ${param.value}`
-        }
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '15%',
-        top: '15%',
-        containLabel: true
-      },
-      xAxis: {
-        type: 'category',
-        data: data.map((item) => item.date || ''),
-        axisLabel: {
-          rotate: 45,
-          interval: data.length > 30 ? Math.max(0, Math.floor(data.length / 10)) : 0
-        }
-      },
-      yAxis: {
-        type: 'value',
-        name: '上传数量',
-        nameLocation: 'middle',
-        nameGap: 50
-      },
-      series: [
-        {
-          name: '上传数量',
-          type: 'bar',
-          data: data.map((item) => item.count || 0),
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#67C23A' },
-              { offset: 1, color: '#95D475' }
-            ]),
-            borderRadius: [4, 4, 0, 0]
-          },
-          emphasis: {
-            itemStyle: {
-              color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                { offset: 0, color: '#95D475' },
-                { offset: 1, color: '#67C23A' }
-              ])
-            }
-          }
-        }
-      ]
-    }
-
-    crawlerChart.setOption(option)
-  } catch (error: any) {
-    console.error('加载爬图每日统计数据失败:', error)
-    ElMessage.error(error?.message || '加载爬图统计数据失败')
-  } finally {
-    crawlerLoading.value = false
-  }
-}
-
-// 组件挂载
-onMounted(async () => {
-  // 并行加载两个模块的数据
-  await Promise.all([
-    loadStickerOverview(),
-    loadCrawlerOverview()
-  ])
-  
-  await nextTick()
-  
-  // 并行加载两个模块的图表
-  await Promise.all([
-    loadStickerDailyData(),
-    loadCrawlerDailyData()
-  ])
-
-  // 监听窗口大小变化，自动调整图表大小
-  window.addEventListener('resize', () => {
-    stickerChart?.resize()
-    crawlerChart?.resize()
   })
+)
+
+const getCssColor = (name: string, fallback: string) => {
+  if (typeof window === 'undefined') return fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  return value || fallback
+}
+
+const buildTrendOptions = (series: ModuleStatisticsItem['series']): EChartsOption => {
+  const axisTextColor = getCssColor('--el-text-color-secondary', appStore.getIsDark ? '#c0c4cc' : '#606266')
+  const legendTextColor = getCssColor('--el-text-color-regular', appStore.getIsDark ? '#e5eaf3' : '#303133')
+  const axisLineColor = getCssColor('--el-border-color', appStore.getIsDark ? '#4c4d4f' : '#d4d7de')
+  const splitLineColor = getCssColor('--el-border-color-lighter', appStore.getIsDark ? '#414243' : '#ebeef5')
+
+  return {
+    color: chartColors,
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' }
+    },
+    legend: {
+      top: 0,
+      right: 0,
+      textStyle: {
+        color: legendTextColor,
+        fontSize: 12
+      }
+    },
+    grid: {
+      top: 36,
+      left: 12,
+      right: 12,
+      bottom: 12,
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: series.map((point) => point.date.slice(5)),
+      axisLine: {
+        lineStyle: { color: axisLineColor }
+      },
+      axisLabel: {
+        color: axisTextColor,
+        fontSize: 11,
+        interval: series.length > 14 ? Math.ceil(series.length / 7) - 1 : 0
+      },
+      axisTick: { show: false }
+    },
+    yAxis: {
+      type: 'value',
+      splitLine: {
+        lineStyle: { color: splitLineColor }
+      },
+      axisLabel: {
+        color: axisTextColor,
+        fontSize: 11
+      }
+    },
+    series: [
+      {
+        name: '新增',
+        type: 'bar',
+        barMaxWidth: 10,
+        itemStyle: {
+          borderRadius: [4, 4, 0, 0],
+          color: chartColors[0]
+        },
+        emphasis: {
+          itemStyle: {
+            color: '#1d4ed8'
+          }
+        },
+        data: series.map((point) => point.created)
+      },
+      {
+        name: '修改',
+        type: 'bar',
+        barMaxWidth: 10,
+        itemStyle: {
+          borderRadius: [4, 4, 0, 0],
+          color: chartColors[1]
+        },
+        emphasis: {
+          itemStyle: {
+            color: '#b91c1c'
+          }
+        },
+        data: series.map((point) => point.updated)
+      }
+    ]
+  }
+}
+
+const loadStatistics = async () => {
+  loading.value = true
+  try {
+    const response = await getModuleStatisticsApi(selectedDays.value)
+    statistics.value = normalizeResponse(response)
+  } catch (error: any) {
+    console.error('加载统计数据失败:', error)
+    ElMessage.error(error?.message || '加载统计数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const changeDays = async (days: number) => {
+  if (selectedDays.value === days) return
+  selectedDays.value = days
+  await loadStatistics()
+}
+
+const normalizeResponse = (response: any): ModuleStatisticsResponse => {
+  const payload = response?.data || response
+  return {
+    generatedAt: payload?.generatedAt || '',
+    summary: {
+      moduleCount: Number(payload?.summary?.moduleCount || 0),
+      totalRecords: Number(payload?.summary?.totalRecords || 0),
+      updatedRecords: Number(payload?.summary?.updatedRecords || 0),
+      periodDays: Number(payload?.summary?.periodDays || selectedDays.value),
+      periodCreated: Number(payload?.summary?.periodCreated || 0),
+      periodUpdated: Number(payload?.summary?.periodUpdated || 0)
+    },
+    modules: Array.isArray(payload?.modules) ? payload.modules.map(normalizeModule) : []
+  }
+}
+
+const normalizeModule = (item: any): ModuleStatisticsItem => ({
+  key: String(item?.key || ''),
+  label: String(item?.label || ''),
+  description: String(item?.description || ''),
+  total: Number(item?.total || 0),
+  updatedTotal: Number(item?.updatedTotal || 0),
+  today: {
+    created: Number(item?.today?.created || 0),
+    updated: Number(item?.today?.updated || 0)
+  },
+  last7Days: {
+    created: Number(item?.last7Days?.created || 0),
+    updated: Number(item?.last7Days?.updated || 0)
+  },
+  last30Days: {
+    created: Number(item?.last30Days?.created || 0),
+    updated: Number(item?.last30Days?.updated || 0)
+  },
+  period: {
+    days: Number(item?.period?.days || selectedDays.value),
+    created: Number(item?.period?.created || 0),
+    updated: Number(item?.period?.updated || 0)
+  },
+  series: Array.isArray(item?.series)
+    ? item.series.map((point: any) => ({
+        date: String(point?.date || ''),
+        created: Number(point?.created || 0),
+        updated: Number(point?.updated || 0)
+      }))
+    : []
+})
+
+const formatNumber = (value: number) => new Intl.NumberFormat('zh-CN').format(value || 0)
+
+onMounted(() => {
+  loadStatistics()
 })
 </script>
-
-<style lang="scss" scoped>
-.statistics-page {
-  --stat-bg: #f6f7fb;
-  --stat-border: rgba(15, 23, 42, 0.08);
-  --stat-text: #0f172a;
-  --stat-muted: #64748b;
-  --stat-accent: #ff6b35;
-  --stat-accent-2: #2563eb;
-  --stat-surface: #ffffff;
-
-  font-family: "Space Grotesk", "IBM Plex Sans", "Noto Sans SC", sans-serif;
-  background:
-    radial-gradient(1200px 600px at 10% -20%, rgba(255, 107, 53, 0.12), transparent 60%),
-    radial-gradient(900px 500px at 90% 0%, rgba(37, 99, 235, 0.12), transparent 55%),
-    linear-gradient(180deg, #f8fafc 0%, #ffffff 45%, #f8fafc 100%);
-  padding: 8px 0 24px;
-
-  .page-header {
-    margin-bottom: 20px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--stat-border);
-
-    .page-title {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--stat-text);
-      letter-spacing: 0.02em;
-    }
-  }
-
-  .module-section {
-    margin-bottom: 24px;
-    padding: 18px 20px 20px;
-    border-radius: 18px;
-    border: 1px solid var(--stat-border);
-    background: var(--stat-surface);
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-    animation: slideUp 0.5s ease;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    .module-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      margin-bottom: 16px;
-    }
-
-    .module-title {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--stat-text);
-    }
-
-    .module-subtitle {
-      margin: 6px 0 0;
-      font-size: 12px;
-      color: var(--stat-muted);
-    }
-  }
-
-  .mb-24px {
-    margin-bottom: 24px;
-  }
-
-  .mirror-layout {
-    display: grid;
-    grid-template-columns: 1fr 1.6fr 1fr;
-    gap: 16px;
-  }
-
-  .stats-column {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: var(--stat-bg);
-    border: 1px solid var(--stat-border);
-  }
-
-  .stat-label {
-    font-size: 12px;
-    color: var(--stat-muted);
-  }
-
-  .stat-value {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--stat-text);
-  }
-
-  .center-panel {
-    border-radius: 16px;
-    border: 1px solid var(--stat-border);
-    background: linear-gradient(180deg, #ffffff, #f9fafb);
-    padding: 14px 16px 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .center-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    padding-bottom: 8px;
-    border-bottom: 1px dashed var(--stat-border);
-  }
-
-  .center-total__label {
-    font-size: 12px;
-    color: var(--stat-muted);
-  }
-
-  .center-total__value {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--stat-accent);
-  }
-
-  .center-chart {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .chart-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 12px;
-    color: var(--stat-muted);
-  }
-
-  .chart-canvas {
-    width: 100%;
-    height: 260px;
-  }
-
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @media (max-width: 1200px) {
-    .mirror-layout {
-      grid-template-columns: 1fr;
-    }
-
-    .center-panel {
-      order: -1;
-    }
-  }
-}
-</style>
-
