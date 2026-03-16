@@ -358,10 +358,17 @@
                 <el-tag v-if="getMaterialShapeLabel(id)" size="small" type="info" class="thumb-info-tag">
                   {{ getMaterialShapeLabel(id) }}
                 </el-tag>
-                <el-tag v-if="getMaterialCutoutStatus(id) !== null" size="small" 
+                <el-tag v-if="getMaterialCutoutStatus(id) !== null" size="small"
                   :type="getMaterialCutoutStatus(id) ? 'success' : 'info'" class="thumb-info-tag">
                   {{ getMaterialCutoutStatus(id) ? '抠图' : '非抠图' }}
                 </el-tag>
+              </div>
+              <div class="thumb-action-row">
+                <el-button size="small" type="primary" link
+                  :disabled="!getMaterialShapeKey(id) && !getMaterialCutoutMode(id)"
+                  @click="applyMaterialFilters(id)">
+                  用当前图筛选模板
+                </el-button>
               </div>
             </div>
           </div>
@@ -3465,24 +3472,57 @@ function isMaterialFormatInvalid(materialId: string | number): boolean {
 
 // 获取素材的后缀
 function getMaterialSuffix(materialId: string | number): string {
-  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  const material = getMaterialById(materialId)
   if (!material || !material.suffix) return ''
   return (material.suffix || '').toLowerCase().replace(/^\./, '')
 }
 
+function getMaterialById(materialId: string | number) {
+  return dataSource.value.find(item => String(item.id) === String(materialId))
+}
+
 // 获取素材的形状标签（长图/宽图/正方图）
 function getMaterialShapeLabel(materialId: string | number): string {
-  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  const material = getMaterialById(materialId)
   if (!material || !material.aspectRatio) return ''
   const sizeShape = getSizeShapeByRatio(material.aspectRatio)
   return sizeShape?.label || ''
 }
 
+function getMaterialShapeKey(materialId: string | number): string {
+  const material = getMaterialById(materialId)
+  if (!material || !material.aspectRatio) return ''
+  const sizeShape = getSizeShapeByRatio(material.aspectRatio)
+  return sizeShape?.key || ''
+}
+
 // 获取素材的抠图状态
 function getMaterialCutoutStatus(materialId: string | number): boolean | null {
-  const material = dataSource.value.find(item => String(item.id) === String(materialId))
+  const material = getMaterialById(materialId)
   if (!material) return null
   return material.isCutout ?? null
+}
+
+function getMaterialCutoutMode(materialId: string | number): string {
+  const isCutout = getMaterialCutoutStatus(materialId)
+  if (isCutout === true) return 'CUTOUT'
+  if (isCutout === false) return 'NON_CUTOUT'
+  return ''
+}
+
+function applyMaterialFilters(materialId: string | number) {
+  const sizeKey = getMaterialShapeKey(materialId)
+  const cutoutMode = getMaterialCutoutMode(materialId)
+
+  if (!sizeKey && !cutoutMode) {
+    ElMessage.warning('当前素材缺少可用于筛选的比例和抠图信息')
+    return
+  }
+
+  psdSetTemplatePageParams.currentPage = 1
+  psdSetTemplatePageParams.suitableSizesArray = sizeKey ? [sizeKey] : []
+  psdSetTemplatePageParams.cutoutModesArray = cutoutMode ? [cutoutMode] : []
+  loadPsdTemplatesForPsdSet()
 }
 
 // 检查素材格式是否符合PSD模板要求
@@ -5934,7 +5974,8 @@ h1 {
 
 .psd-set-materials .thumb {
   position: relative;
-  height: 160px;
+  min-height: 160px;
+  max-height: 188px;
   width: auto;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
@@ -6011,6 +6052,22 @@ h1 {
   height: 20px;
   line-height: 18px;
   padding: 0 6px;
+}
+
+.psd-set-materials .thumb-action-row {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  line-height: 1;
+}
+
+.psd-set-materials .thumb-action-row .el-button {
+  margin: 0;
+  padding: 0;
+  min-height: auto;
+  font-size: 12px;
 }
 
 .psd-set-template-toolbar {
