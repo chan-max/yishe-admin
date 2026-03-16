@@ -1,13 +1,17 @@
 <template>
   <el-image
-  v-bind="$attrs" style="width: 120px; object-fit: contain" :src="src"
-    class="cursor-pointer" @click="doPreview(src)">
+    v-bind="$attrs"
+    :style="imageStyle"
+    :src="src"
+    :fit="fit"
+    class="single-image cursor-pointer"
+    @click="doPreview(src)">
     <template #placeholder>
-      <div class="img-loading" style="min-width: 120px;min-height:120px;">
+      <div class="img-loading" :style="placeholderStyle">
       </div>
     </template>
     <template #error>
-      <div class="flex items-center justify-center w-full h-full" style="color: red;min-height:80px;">
+      <div class="single-image-error" :style="placeholderStyle">
         加载失败
       </div>
     </template>
@@ -15,14 +19,45 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { api as viewerApi } from "v-viewer";
 const props = defineProps({
   src:{
     default:''
+  },
+  width: {
+    type: [String, Number],
+    default: 120
+  },
+  height: {
+    type: [String, Number],
+    default: 120
+  },
+  fit: {
+    type: String,
+    default: 'contain'
   }
 })
 
+const normalizeSize = (value) => {
+  if (value === undefined || value === null || value === '') return undefined
+  return typeof value === 'number' ? `${value}px` : value
+}
+
+const imageStyle = computed(() => ({
+  width: normalizeSize(props.width),
+  height: normalizeSize(props.height)
+}))
+
+const placeholderStyle = computed(() => ({
+  minWidth: normalizeSize(props.width),
+  minHeight: normalizeSize(props.height),
+  width: '100%',
+  height: '100%'
+}))
+
 async function doPreview(url) {
+  if (!url) return
   viewerApi({
     images: [url],
     options: {
@@ -68,6 +103,10 @@ async function doPreview(url) {
 </script>
 
 <style lang="less">
+.single-image {
+  display: block;
+}
+
 .img-loading {
   width: 100%;
   height: 100%;
@@ -91,6 +130,15 @@ async function doPreview(url) {
 
 .cursor-pointer{
 
+}
+
+.single-image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f56c6c;
+  background: #fafafa;
+  font-size: 12px;
 }
 
 // .cursor-pointer,

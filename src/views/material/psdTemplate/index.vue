@@ -265,7 +265,7 @@
       <div class="psd-template-dialog-layout">
         <div class="psd-template-dialog-main">
           <!-- 基础信息 -->
-          <div class="dialog-section">
+          <div class="dialog-section dialog-section-basic">
             <div class="dialog-section-title">基础信息</div>
             <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" class="psd-template-form">
               <el-row :gutter="20">
@@ -292,7 +292,7 @@
               <el-row :gutter="20">
                 <el-col :span="24">
                   <el-form-item label="描述" prop="description">
-                    <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入模板描述" />
+                    <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入模板描述" />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -308,7 +308,7 @@
           </div>
 
           <!-- PSD 文件与缩略图 -->
-          <div class="dialog-section">
+          <div class="dialog-section dialog-section-assets">
             <div class="dialog-section-title">PSD 文件与缩略图</div>
             <el-row :gutter="20">
               <el-col :span="12">
@@ -384,7 +384,7 @@
           </div>
 
           <!-- 适用尺寸 -->
-          <div class="dialog-section">
+          <div class="dialog-section dialog-section-sizes">
             <div class="dialog-section-title">适用尺寸</div>
             <el-form :model="form" label-width="100px" class="psd-template-form">
               <el-form-item label="选择尺寸" prop="suitableSizes">
@@ -431,15 +431,15 @@
           </div>
 
           <!-- PSD 模板配置 -->
-          <div class="dialog-section">
+          <div class="dialog-section dialog-section-config">
             <div class="dialog-section-title">PSD 模板配置</div>
             <el-form :model="form" label-width="100px" class="psd-template-form">
               <el-form-item label="配置内容" prop="psdTemplateConfig">
                 <el-input
                   v-model="form.psdTemplateConfigText"
                   type="textarea"
-                  :rows="8"
-                  :autosize="{ minRows: 8, maxRows: 12 }"
+                  :rows="6"
+                  :autosize="{ minRows: 6, maxRows: 8 }"
                   placeholder='支持 JSON 格式，如：{"images": [], "description": ""}'
                 />
               </el-form-item>
@@ -1519,46 +1519,81 @@ function removeSuitableSize(sizeKey: string) {
 }
 
 .psd-template-fullscreen-dialog {
+  :deep(.el-dialog) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+  }
+
   :deep(.el-dialog__body) {
+    flex: 1;
+    min-height: 0;
     padding: 0;
+    overflow: hidden;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 12px 20px 14px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
   }
 }
 
 .psd-template-dialog-layout {
-  display: flex;
-  height: calc(100vh - 110px);
-  padding: 0;
+  height: 100%;
+  padding: 0 20px 16px;
   box-sizing: border-box;
 }
 
 .psd-template-dialog-main {
-  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  grid-template-areas:
+    "basic assets"
+    "sizes config";
+  gap: 14px;
+  width: 100%;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  overflow-y: auto;
-  padding: 16px 20px 16px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .dialog-section {
   background: var(--el-bg-color-overlay);
   border-radius: 8px;
-  padding: 16px 18px 12px;
+  padding: 14px 16px 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   border: 1px solid var(--el-border-color-lighter);
+  min-height: 0;
 }
 
 .dialog-section-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
+}
+
+.dialog-section-basic {
+  grid-area: basic;
+}
+
+.dialog-section-assets {
+  grid-area: assets;
+}
+
+.dialog-section-sizes {
+  grid-area: sizes;
+}
+
+.dialog-section-config {
+  grid-area: config;
 }
 
 .psd-template-form {
   :deep(.el-form-item) {
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
 }
 
@@ -1704,12 +1739,18 @@ function removeSuitableSize(sizeKey: string) {
 
 @media (max-width: 1200px) {
   .psd-template-dialog-layout {
-    flex-direction: column;
     height: auto;
+    padding: 0 16px 16px;
   }
 
   .psd-template-dialog-main {
-    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "basic"
+      "assets"
+      "sizes"
+      "config";
+    overflow-y: auto;
   }
 }
 

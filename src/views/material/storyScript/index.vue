@@ -48,11 +48,18 @@
           <template #materialSlot="{ row }">
             <div class="story-material-cell">
               <div class="story-material-thumb">
-                <img
-                  v-if="getMaterialPreview(row)"
-                  :src="getMaterialPreview(row)"
+                <el-skeleton v-if="isMaterialHydrating(row)" animated>
+                  <template #template>
+                    <div class="story-material-skeleton"></div>
+                  </template>
+                </el-skeleton>
+                <SingleImage
+                  v-else-if="getMaterialPreview(row)"
+                  :src="getMaterialPreview(row, 'list')"
+                  :width="'100%'"
+                  :height="'100%'"
+                  fit="cover"
                   :alt="getMaterialName(row)"
-                  loading="lazy"
                 />
                 <div v-else class="story-material-placeholder">暂无预览</div>
               </div>
@@ -118,7 +125,19 @@
         <template #header>关联素材</template>
         <div class="story-detail-material">
           <div class="story-detail-thumb">
-            <img v-if="getMaterialPreview(currentRow)" :src="getMaterialPreview(currentRow)" :alt="getMaterialName(currentRow)" loading="lazy" />
+            <el-skeleton v-if="isMaterialHydrating(currentRow)" animated>
+              <template #template>
+                <div class="story-detail-skeleton"></div>
+              </template>
+            </el-skeleton>
+            <SingleImage
+              v-else-if="getMaterialPreview(currentRow)"
+              :src="getMaterialPreview(currentRow, 'detail')"
+              :width="'100%'"
+              :height="'100%'"
+              fit="cover"
+              :alt="getMaterialName(currentRow)"
+            />
             <div v-else class="story-material-placeholder">暂无预览</div>
           </div>
           <div class="story-detail-meta">
@@ -180,6 +199,7 @@ const detailVisible = ref(false)
 const currentRow = ref<any>(null)
 const materialMap = ref<Record<string, any>>({})
 const selectedIds = ref<string[]>([])
+const materialLoadingIds = ref<string[]>([])
 
 const queryParams = reactive({
   currentPage: 1,
@@ -241,20 +261,30 @@ function getMaterialName(row: any) {
   return material?.name || '未命名素材'
 }
 
-function getMaterialPreview(row: any) {
+function getMaterialPreview(row: any, scene: 'list' | 'detail' = 'list') {
   const material = getRelatedMaterial(row)
   if (!material?.url) return ''
-  return getPreviewImageUrl(material.url, { width: 200, quality: 80, format: 'webp' })
+  const width = scene === 'detail' ? 420 : 240
+  return getPreviewImageUrl(material.url, { width, quality: 80, format: 'webp' })
+}
+
+function isMaterialHydrating(row: any) {
+  const id = String(row?.stickerId || '')
+  if (!id) return false
+  return materialLoadingIds.value.includes(id) && !materialMap.value[id]
 }
 
 async function hydrateRelatedMaterials() {
   const ids = Array.from(new Set(dataSource.value.map((item) => String(item?.stickerId || '')).filter(Boolean)))
   if (!ids.length) {
     materialMap.value = {}
+    materialLoadingIds.value = []
     return
   }
 
   const nextMap: Record<string, any> = { ...materialMap.value }
+  const pendingIds = ids.filter((id) => !nextMap[id])
+  materialLoadingIds.value = pendingIds
   await Promise.all(
     ids.map(async (id) => {
       if (nextMap[id]) return
@@ -268,6 +298,7 @@ async function hydrateRelatedMaterials() {
     })
   )
   materialMap.value = nextMap
+  materialLoadingIds.value = []
 }
 
 async function getList() {
@@ -452,21 +483,13 @@ onMounted(() => {
 }
 
 .story-material-thumb {
-  width: 56px;
-  height: 56px;
-  border-radius: 8px;
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--el-border-color-light);
   flex-shrink: 0;
   background: var(--el-fill-color-light);
-}
-
-.story-material-thumb img,
-.story-detail-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 
 .story-material-placeholder {
@@ -479,6 +502,16 @@ onMounted(() => {
   font-size: 12px;
   text-align: center;
   padding: 6px;
+}
+
+.story-material-skeleton,
+.story-detail-skeleton {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(110deg, #f4f6fb 25%, #e9edf5 37%, #f4f6fb 63%);
+  background-size: 400% 100%;
+  animation: story-material-shimmer 1.4s ease infinite;
 }
 
 .story-material-meta {
@@ -531,9 +564,9 @@ onMounted(() => {
 }
 
 .story-detail-thumb {
-  width: 120px;
-  height: 120px;
-  border-radius: 12px;
+  width: 180px;
+  height: 180px;
+  border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-fill-color-light);
@@ -587,6 +620,16 @@ onMounted(() => {
 
 .story-scene-select {
   width: 176px;
+}
+
+@keyframes story-material-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
 }
 
 :deep(.story-detail-dialog .el-dialog__body) {
