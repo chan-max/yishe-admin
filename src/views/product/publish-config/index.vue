@@ -50,7 +50,6 @@ const gridOptions = computed(() => ({
     { field: 'name', title: '配置名称', minWidth: 150 },
     { field: 'platform', title: '平台', minWidth: 100 },
     { field: 'description', title: '描述', minWidth: 200, showOverflow: true },
-    { field: 'titlePromptTitle', title: '标题提示词', minWidth: 220, showOverflow: true },
     {
       field: 'createTime',
       title: '创建时间',
