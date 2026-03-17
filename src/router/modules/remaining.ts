@@ -244,6 +244,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
           requiresAdmin: true
         }
       },
+      {
+        path: 'code-script',
+        component: () => import('@/views/material/codeScript/index.vue'),
+        name: 'CodeScript',
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: '代码脚本',
+          requiresAdmin: true
+        }
+      },
       
       {
         path: 'story-script',

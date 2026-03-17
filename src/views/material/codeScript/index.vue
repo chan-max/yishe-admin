@@ -1,0 +1,896 @@
+<template>
+  <ContentWrap>
+    <div class="flex items-center justify-between gap-3 py-3">
+      <div class="flex items-center gap-3">
+        <form-item label="按名称搜索">
+          <el-input
+            v-model="queryParams.search"
+            placeholder="请输入脚本名称"
+            clearable
+            class="w-60"
+            @keyup.enter="getList"
+            @change="(val) => { if (!val) getList() }"
+          />
+        </form-item>
+        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+        <el-button type="danger" plain :disabled="!ids.length" @click="handleDelete(null)">
+          批量删除 ({{ ids.length }})
+        </el-button>
+      </div>
+      <el-button type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
+    </div>
+
+    <div class="common-table">
+      <vxe-grid
+        v-bind="gridOptions"
+        :data="dataSource"
+        :loading="loading"
+        @checkbox-change="checkboxChange"
+        @checkbox-all="checkboxAllChange"
+      >
+        <template #statusSlot="{ row }">
+          <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
+            {{ row.isEnabled ? '启用' : '停用' }}
+          </el-tag>
+        </template>
+        <template #tagsSlot="{ row }">
+          <div class="flex flex-wrap items-center gap-1">
+            <el-tag v-for="tag in getTagsArray(row.tags)" :key="tag" size="small">{{ tag }}</el-tag>
+            <span v-if="!row.tags" class="text-xs text-[var(--el-text-color-secondary)]">-</span>
+          </div>
+        </template>
+        <template #operationSlot="{ row }">
+          <div class="flex items-center">
+            <el-dropdown
+              trigger="click"
+              @command="(command) => handleOperationCommand(command, row)"
+              class="operation-dropdown"
+            >
+              <el-button type="primary" link size="small">
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item command="run">
+                    <span>执行</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="edit">
+                    <span>编辑</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="records">
+                    <span>记录</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>
+                    <span>删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </template>
+      </vxe-grid>
+    </div>
+
+    <div class="flex justify-end py-4">
+      <pagination
+        :total="total"
+        v-model:page="queryParams.currentPage"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
+      />
+    </div>
+  </ContentWrap>
+
+  <el-dialog :title="dialogTitle" v-model="dialogVisible" fullscreen @close="dialogClose" align-center>
+    <div class="grid h-[calc(100vh-120px)] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <section class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)]">
+        <div class="border-b border-solid border-[var(--el-border-color-light)] px-4 py-3">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-sm font-600">代码编辑</div>
+            <div class="text-xs text-[var(--el-text-color-secondary)]">$result 返回结果，console.log 记录日志</div>
+          </div>
+        </div>
+        <div class="min-h-0 flex-1 p-4">
+          <el-form :model="form" :rules="rules" ref="formRef" label-width="0" class="h-full">
+            <el-form-item prop="code" class="mb-0 h-full">
+              <div class="h-full min-h-0 w-full overflow-hidden rounded border border-solid border-[var(--el-border-color-light)] bg-[#0f172a]">
+                <div ref="editorHostRef" class="h-full min-h-0 w-full"></div>
+              </div>
+            </el-form-item>
+          </el-form>
+        </div>
+      </section>
+
+      <section class="flex min-h-0 flex-col gap-4 overflow-auto">
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
+          <div class="mb-3 text-sm font-600">基础信息</div>
+          <el-form :model="form" :rules="rules" label-width="90px">
+            <el-form-item label="脚本名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入脚本名称" maxlength="200" show-word-limit />
+            </el-form-item>
+            <el-form-item label="超时(ms)" prop="timeoutMs">
+              <el-input-number v-model="form.timeoutMs" :min="100" :max="1800000" class="w-full!" />
+            </el-form-item>
+            <el-form-item label="描述" prop="description">
+              <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入脚本描述" />
+            </el-form-item>
+            <el-form-item label="标签" prop="tags">
+              <el-input v-model="form.tags" placeholder="例如：爬虫,下载,COS" />
+            </el-form-item>
+            <el-form-item label="是否启用" prop="isEnabled">
+              <el-switch v-model="form.isEnabled" />
+            </el-form-item>
+          </el-form>
+        </div>
+
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
+          <div class="mb-3 text-sm font-600">测试配置</div>
+          <el-form label-width="90px">
+            <el-form-item label="执行参数">
+              <el-input
+                v-model="form.paramsTemplate"
+                type="textarea"
+                :rows="10"
+                placeholder='请输入 JSON，例如 { "url": "https://httpbin.org/json" }'
+              />
+            </el-form-item>
+          </el-form>
+          <div class="mb-3 text-xs leading-6 text-[var(--el-text-color-secondary)]">
+            代码可直接写脚本体，使用 `$params`、`$tools`、`$result`。旧版 `module.exports = async function (...) {}` 仍兼容。
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <el-button @click="dialogVisible = false">关闭</el-button>
+            <el-button type="primary" @click="submitForm" :loading="submitLoading">保存</el-button>
+            <el-button type="success" @click="runTestFromEditor" :loading="runSubmitLoading">测试执行</el-button>
+          </div>
+        </div>
+
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
+          <div class="mb-3 text-sm font-600">最近一次测试结果</div>
+          <div class="mb-3 flex flex-wrap items-center gap-2 text-xs text-[var(--el-text-color-secondary)]">
+            <el-tag v-if="editorTestResult.status" :type="getRunStatusType(editorTestResult.status)" size="small">
+              {{ editorTestResult.status }}
+            </el-tag>
+            <span v-if="editorTestResult.durationMs">耗时 {{ editorTestResult.durationMs }} ms</span>
+          </div>
+          <div class="grid grid-cols-1 gap-3">
+            <div class="rounded bg-[var(--el-fill-color-lighter)] p-3">
+              <div class="mb-2 text-xs font-600">结果</div>
+              <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ formatJson(editorTestResult.runResult) }}</pre>
+            </div>
+            <div class="rounded bg-[var(--el-fill-color-lighter)] p-3">
+              <div class="mb-2 text-xs font-600">日志</div>
+              <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ formatJson(editorTestResult.logs) }}</pre>
+            </div>
+            <div v-if="editorTestResult.errorText" class="rounded bg-[var(--el-fill-color-lighter)] p-3">
+              <div class="mb-2 text-xs font-600">错误</div>
+              <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ editorTestResult.errorText }}</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </el-dialog>
+
+  <el-dialog title="执行脚本" v-model="runDialogVisible" width="780px" align-center>
+    <el-form :model="runForm" label-width="100px">
+      <el-form-item label="脚本名称">
+        <div>{{ currentScript?.name || '-' }}</div>
+      </el-form-item>
+      <el-form-item label="执行参数">
+        <el-input v-model="runForm.paramsText" type="textarea" :rows="10" placeholder="请输入执行参数 JSON" />
+      </el-form-item>
+      <el-form-item label="超时(ms)">
+        <el-input-number v-model="runForm.timeoutMs" :min="100" :max="1800000" style="width: 100%" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="runDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="submitRun" :loading="runSubmitLoading">执行</el-button>
+    </template>
+  </el-dialog>
+
+  <el-dialog title="执行详情" v-model="runDetailVisible" fullscreen align-center>
+    <div class="h-[calc(100vh-120px)] overflow-auto" v-loading="runDetailLoading">
+      <div class="mb-3 flex flex-wrap items-center gap-3 text-[var(--el-text-color-secondary)]">
+        <el-tag :type="getRunStatusType(runDetail.status)" size="small">{{ runDetail.status || '-' }}</el-tag>
+        <span>脚本：{{ runDetail.scriptName || '-' }}</span>
+        <span>沙盒运行ID：{{ runDetail.sandboxRunId || '-' }}</span>
+        <span>耗时：{{ runDetail.durationMs || 0 }} ms</span>
+      </div>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3">
+          <div class="mb-2 text-sm font-600">参数</div>
+          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ formatJson(runDetail.params) }}</pre>
+        </div>
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3">
+          <div class="mb-2 text-sm font-600">结果</div>
+          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ formatJson(runDetail.runResult) }}</pre>
+        </div>
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3 md:col-span-2">
+          <div class="mb-2 text-sm font-600">日志</div>
+          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ formatJson(runDetail.logs) }}</pre>
+        </div>
+        <div v-if="runDetail.errorText" class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3 md:col-span-2">
+          <div class="mb-2 text-sm font-600">错误</div>
+          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{ runDetail.errorText }}</pre>
+        </div>
+      </div>
+    </div>
+  </el-dialog>
+
+  <el-dialog title="执行记录" v-model="runListVisible" fullscreen align-center>
+    <div class="flex h-[calc(100vh-120px)] flex-col">
+      <div class="mb-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <el-tag v-if="runQuery.scriptId" size="small" type="primary">脚本ID: {{ runQuery.scriptId }}</el-tag>
+        <el-button type="danger" plain size="small" :disabled="!runIds.length" @click="handleDeleteRun()">
+          批量删除 ({{ runIds.length }})
+        </el-button>
+      </div>
+      <div class="flex items-center gap-2">
+        <el-button size="small" @click="clearRunFilter">查看全部</el-button>
+        <el-button size="small" type="primary" @click="getRunList">刷新记录</el-button>
+      </div>
+      </div>
+      <div class="common-table flex-1 min-h-0">
+        <vxe-grid
+          v-bind="runGridOptions"
+          :data="runDataSource"
+          :loading="runLoading"
+          @checkbox-change="runCheckboxChange"
+          @checkbox-all="runCheckboxAllChange"
+        >
+          <template #runStatusSlot="{ row }">
+            <el-tag :type="getRunStatusType(row.status)" size="small">{{ row.status }}</el-tag>
+          </template>
+          <template #runOperationSlot="{ row }">
+            <div class="flex items-center">
+              <el-dropdown
+                trigger="click"
+                @command="(command) => handleRunOperationCommand(command, row)"
+                class="operation-dropdown"
+              >
+                <el-button type="primary" link size="small">
+                  操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu class="operation-menu-compact">
+                    <el-dropdown-item command="detail">
+                      <span>详情</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided>
+                      <span>删除</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </template>
+        </vxe-grid>
+      </div>
+      <div class="flex justify-end pt-3">
+        <pagination
+          :total="runTotal"
+          v-model:page="runQuery.currentPage"
+          v-model:limit="runQuery.pageSize"
+          @pagination="getRunList"
+        />
+      </div>
+    </div>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown, Search, Plus } from '@element-plus/icons-vue'
+import { commonGridOptions } from '@/common/table'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import FormItem from '@/components/Erp/formItem.vue'
+import Pagination from '@/components/Pagination/index.vue'
+import { useWindowSize } from '@vueuse/core'
+import { EditorState } from '@codemirror/state'
+import {
+  EditorView,
+  drawSelection,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  keymap,
+  lineNumbers,
+} from '@codemirror/view'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { bracketMatching, defaultHighlightStyle, foldGutter, indentOnInput, syntaxHighlighting } from '@codemirror/language'
+import { autocompletion, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
+import { javascript } from '@codemirror/lang-javascript'
+import { oneDark } from '@codemirror/theme-one-dark'
+import {
+  createCodeScript,
+  deleteCodeScript,
+  deleteCodeScriptRun,
+  getCodeScript,
+  getCodeScriptList,
+  getCodeScriptRun,
+  getCodeScriptRunList,
+  runCodeScript,
+  updateCodeScript,
+} from '@/api/codeScript'
+
+const { height } = useWindowSize()
+
+const queryParams = reactive({
+  currentPage: 1,
+  pageSize: 20,
+  search: '',
+})
+
+const runQuery = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  scriptId: undefined as number | undefined,
+})
+
+const gridOptions = ref({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: { keyField: 'id' },
+  checkboxConfig: { reserve: true },
+  columns: [
+    { type: 'checkbox', width: 48, reserve: true },
+    { title: 'ID', field: 'id', width: 80 },
+    { title: '脚本名称', field: 'name', minWidth: 180, showOverflow: true },
+    { title: '描述', field: 'description', minWidth: 200, showOverflow: true },
+    { title: '标签', field: 'tags', minWidth: 160, slots: { default: 'tagsSlot' } },
+    { title: '超时(ms)', field: 'timeoutMs', width: 100 },
+    { title: '状态', field: 'isEnabled', width: 90, slots: { default: 'statusSlot' } },
+    { title: '更新时间', field: 'updatedAt', width: 170, showOverflow: true },
+    { title: '操作', field: 'operation', fixed: 'right' as const, width: 100, slots: { default: 'operationSlot' } },
+  ],
+} as any)
+
+const runGridOptions = ref({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: { keyField: 'id' },
+  checkboxConfig: { reserve: true },
+  columns: [
+    { type: 'checkbox', width: 48, reserve: true },
+    { title: '记录ID', field: 'id', width: 90 },
+    { title: '脚本名称', field: 'scriptName', minWidth: 160, showOverflow: true },
+    { title: '状态', field: 'status', width: 100, slots: { default: 'runStatusSlot' } },
+    { title: '沙盒ID', field: 'sandboxRunId', minWidth: 180, showOverflow: true },
+    { title: '耗时(ms)', field: 'durationMs', width: 100 },
+    { title: '创建时间', field: 'createdAt', width: 170, showOverflow: true },
+    { title: '操作', width: 100, slots: { default: 'runOperationSlot' } },
+  ],
+} as any)
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 260
+  runGridOptions.value.maxHeight = height.value - 240
+})
+
+const loading = ref(false)
+const dataSource = ref<any[]>([])
+const ids = ref<number[]>([])
+const total = ref(0)
+
+const runLoading = ref(false)
+const runDataSource = ref<any[]>([])
+const runTotal = ref(0)
+const runIds = ref<number[]>([])
+
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const submitLoading = ref(false)
+const isEdit = ref(false)
+const formRef = ref()
+const editorHostRef = ref<HTMLDivElement>()
+let editorView: EditorView | null = null
+const form = ref({
+  id: undefined as number | undefined,
+  name: '',
+  description: '',
+  code: `console.log('script start')\n$result = {\n  ok: true,\n  params: $params,\n}`,
+  paramsTemplate: '{}',
+  timeoutMs: 1800000,
+  tags: '',
+  isEnabled: true,
+})
+
+const runDialogVisible = ref(false)
+const runSubmitLoading = ref(false)
+const currentScript = ref<any>(null)
+const runForm = reactive({
+  paramsText: '{}',
+  timeoutMs: 1800000,
+})
+
+const runDetailVisible = ref(false)
+const runDetailLoading = ref(false)
+const runListVisible = ref(false)
+const editorTestResult = reactive<any>({
+  status: '',
+  durationMs: 0,
+  runResult: null,
+  logs: [],
+  errorText: '',
+})
+const runDetail = reactive<any>({
+  id: undefined,
+  status: '',
+  scriptName: '',
+  sandboxRunId: '',
+  durationMs: 0,
+  params: {},
+  runResult: null,
+  logs: [],
+  errorText: '',
+})
+
+const rules = {
+  name: [{ required: true, message: '请输入脚本名称', trigger: 'blur' }],
+  code: [{ required: true, message: '请输入脚本代码', trigger: 'blur' }],
+  paramsTemplate: [{ required: true, message: '请输入默认参数 JSON', trigger: 'blur' }],
+}
+
+
+function getTagsArray(tags: string) {
+  if (!tags) return []
+  return tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+}
+
+function getRunStatusType(status: string) {
+  if (status === 'completed') return 'success'
+  if (status === 'running' || status === 'queued') return 'warning'
+  if (status === 'failed' || status === 'timed_out' || status === 'cancelled') return 'danger'
+  return 'info'
+}
+
+function formatJson(value: any) {
+  return JSON.stringify(value ?? null, null, 2)
+}
+
+async function getList() {
+  loading.value = true
+  try {
+    const res = await getCodeScriptList({ ...queryParams })
+    dataSource.value = res.list || []
+    total.value = res.total || 0
+    ids.value = []
+  } catch (error) {
+    ElMessage.error('获取脚本列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function getRunList() {
+  runLoading.value = true
+  try {
+    const res = await getCodeScriptRunList({ ...runQuery })
+    runDataSource.value = res.list || []
+    runTotal.value = res.total || 0
+    runIds.value = []
+  } catch {
+    ElMessage.error('获取执行记录失败')
+  } finally {
+    runLoading.value = false
+  }
+}
+
+function runCheckboxChange(e) {
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  runIds.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+}
+
+function runCheckboxAllChange(e) {
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  runIds.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+}
+
+function checkboxChange(e) {
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+}
+
+function checkboxAllChange(e) {
+  const records = Array.isArray(e.records) ? e.records : []
+  const reserves = Array.isArray(e.reserves) ? e.reserves : []
+  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)]
+}
+
+function handleAdd() {
+  isEdit.value = false
+  dialogTitle.value = '新增代码脚本'
+  dialogVisible.value = true
+  form.value = {
+    id: undefined,
+    name: '',
+    description: '',
+    code: `console.log('script start')\n$result = {\n  ok: true,\n  params: $params,\n}`,
+    paramsTemplate: '{}',
+    timeoutMs: 1800000,
+    tags: '',
+    isEnabled: true,
+  }
+  Object.assign(editorTestResult, {
+    status: '',
+    durationMs: 0,
+    runResult: null,
+    logs: [],
+    errorText: '',
+  })
+}
+
+async function handleEdit(row) {
+  isEdit.value = true
+  dialogTitle.value = '编辑代码脚本'
+  const detail = await getCodeScript(row.id)
+  form.value = {
+    id: detail.id,
+    name: detail.name || '',
+    description: detail.description || '',
+    code: detail.code || '',
+    paramsTemplate: detail.paramsTemplate || '{}',
+    timeoutMs: detail.timeoutMs || 1800000,
+    tags: detail.tags || '',
+    isEnabled: detail.isEnabled !== false,
+  }
+  Object.assign(editorTestResult, {
+    status: '',
+    durationMs: 0,
+    runResult: null,
+    logs: [],
+    errorText: '',
+  })
+  dialogVisible.value = true
+}
+
+function handleDelete(row?) {
+  const delIds = row ? [row.id] : [...ids.value]
+  if (!delIds.length) {
+    return ElMessage.warning('请选择要删除的数据')
+  }
+
+  ElMessageBox.confirm(`确认删除选中的 ${delIds.length} 条脚本吗？`, '删除提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(async () => {
+    await deleteCodeScript({ ids: delIds })
+    ElMessage.success('删除成功')
+    getList()
+    getRunList()
+  }).catch(() => {})
+}
+
+async function submitForm() {
+  submitLoading.value = true
+  try {
+    validateScriptForm()
+    if (isEdit.value) {
+      await updateCodeScript(form.value)
+      ElMessage.success('更新成功')
+    } else {
+      await createCodeScript(form.value)
+      ElMessage.success('新增成功')
+    }
+    dialogVisible.value = false
+    getList()
+  } catch (error: any) {
+    ElMessage.error(error?.message || '保存失败，请检查 JSON 格式')
+  } finally {
+    submitLoading.value = false
+  }
+}
+
+function dialogClose() {
+  formRef.value?.resetFields?.()
+  destroyEditor()
+}
+
+function validateScriptForm() {
+  if (!form.value.name?.trim()) {
+    throw new Error('请输入脚本名称')
+  }
+  if (!form.value.code?.trim()) {
+    throw new Error('请输入脚本代码')
+  }
+  JSON.parse(form.value.paramsTemplate || '{}')
+}
+
+async function runTestFromEditor() {
+  runSubmitLoading.value = true
+  try {
+    validateScriptForm()
+    const payload = isEdit.value && form.value.id
+      ? { ...form.value }
+      : await createCodeScript({ ...form.value })
+
+    if (!isEdit.value && payload?.id) {
+      form.value.id = payload.id
+      isEdit.value = true
+      dialogTitle.value = '编辑代码脚本'
+      ElMessage.success('已先保存脚本，再执行测试')
+    } else if (isEdit.value) {
+      await updateCodeScript(form.value)
+    }
+
+    const result = await runCodeScript({
+      scriptId: form.value.id,
+      params: JSON.parse(form.value.paramsTemplate || '{}'),
+      timeoutMs: form.value.timeoutMs,
+    })
+
+    Object.assign(editorTestResult, {
+      status: result?.status || '',
+      durationMs: result?.durationMs || 0,
+      runResult: result?.runResult ?? null,
+      logs: result?.logs || [],
+      errorText: result?.errorText || '',
+    })
+    ElMessage.success(result.status === 'completed' ? '测试执行完成' : '测试执行已结束')
+    await getList()
+  } catch (error: any) {
+    ElMessage.error(error?.message || '测试执行失败')
+  } finally {
+    runSubmitLoading.value = false
+  }
+}
+
+async function handleRun(row) {
+  const detail = await getCodeScript(row.id)
+  currentScript.value = detail
+  runForm.paramsText = detail.paramsTemplate || '{\n}'
+  runForm.timeoutMs = detail.timeoutMs || 1800000
+  runDialogVisible.value = true
+}
+
+function initEditor() {
+  if (!editorHostRef.value) return
+  destroyEditor()
+
+  const updateListener = EditorView.updateListener.of((update) => {
+    if (update.docChanged) {
+      form.value.code = update.state.doc.toString()
+    }
+  })
+
+  const editorTheme = EditorView.theme({
+    '&': {
+      height: '100%',
+      fontSize: '12px',
+    },
+    '.cm-scroller': {
+      overflow: 'auto',
+      fontFamily: 'Menlo, Monaco, Consolas, monospace',
+      lineHeight: '1.75',
+    },
+    '.cm-content': {
+      minHeight: '100%',
+      padding: '16px',
+    },
+    '.cm-focused': {
+      outline: 'none',
+    },
+  })
+
+  editorView = new EditorView({
+    state: EditorState.create({
+      doc: form.value.code || '',
+      extensions: [
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        history(),
+        drawSelection(),
+        indentOnInput(),
+        bracketMatching(),
+        closeBrackets(),
+        autocompletion(),
+        foldGutter(),
+        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        keymap.of([
+          ...closeBracketsKeymap,
+          ...defaultKeymap,
+          ...historyKeymap,
+          indentWithTab,
+        ]),
+        highlightActiveLine(),
+        javascript(),
+        oneDark,
+        updateListener,
+        editorTheme,
+      ],
+    }),
+    parent: editorHostRef.value,
+  })
+}
+
+function syncEditorDoc(value: string) {
+  if (!editorView) return
+  const current = editorView.state.doc.toString()
+  if (current === value) return
+  editorView.dispatch({
+    changes: { from: 0, to: current.length, insert: value || '' },
+  })
+}
+
+function destroyEditor() {
+  if (!editorView) return
+  editorView.destroy()
+  editorView = null
+}
+
+watch(() => dialogVisible.value, async (visible) => {
+  if (!visible) return
+  await nextTick()
+  initEditor()
+})
+
+watch(() => form.value.code, (value) => {
+  syncEditorDoc(value || '')
+})
+
+async function submitRun() {
+  if (!currentScript.value) return
+  runSubmitLoading.value = true
+  try {
+    const params = JSON.parse(runForm.paramsText || '{}')
+    const result = await runCodeScript({
+      scriptId: currentScript.value.id,
+      params,
+      timeoutMs: runForm.timeoutMs,
+    })
+    ElMessage.success(result.status === 'completed' ? '执行完成' : '执行已结束')
+    runDialogVisible.value = false
+    runQuery.scriptId = currentScript.value.id
+    runQuery.currentPage = 1
+    await getRunList()
+    if (result?.id) {
+      await openRunDetail(result)
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || '执行失败')
+  } finally {
+    runSubmitLoading.value = false
+  }
+}
+
+function showRunRecords(row) {
+  runQuery.scriptId = row.id
+  runQuery.currentPage = 1
+  runListVisible.value = true
+  getRunList()
+}
+
+function handleOperationCommand(command: string, row: any) {
+  if (command === 'run') {
+    handleRun(row)
+    return
+  }
+  if (command === 'edit') {
+    handleEdit(row)
+    return
+  }
+  if (command === 'records') {
+    showRunRecords(row)
+    return
+  }
+  if (command === 'delete') {
+    handleDelete(row)
+  }
+}
+
+function clearRunFilter() {
+  runQuery.scriptId = undefined
+  runQuery.currentPage = 1
+  getRunList()
+}
+
+function handleRunOperationCommand(command: string, row: any) {
+  if (command === 'detail') {
+    openRunDetail(row)
+    return
+  }
+  if (command === 'delete') {
+    handleDeleteRun(row)
+  }
+}
+
+function handleDeleteRun(row?: any) {
+  const deleteIds = row?.id ? [row.id] : [...runIds.value]
+  if (!deleteIds.length) {
+    return ElMessage.warning('请选择要删除的执行记录')
+  }
+
+  ElMessageBox.confirm(`确认删除选中的 ${deleteIds.length} 条执行记录吗？`, '删除提示', {
+    confirmButtonText: '确认',
+    cancelButtonText: '取消',
+    type: 'warning',
+  }).then(async () => {
+    await deleteCodeScriptRun({ ids: deleteIds })
+    ElMessage.success('删除成功')
+    if (row?.id && runDetailVisible.value && runDetail.id === row.id) {
+      runDetailVisible.value = false
+    }
+    await getRunList()
+  }).catch(() => {})
+}
+
+async function openRunDetail(row) {
+  runDetailVisible.value = true
+  runDetailLoading.value = true
+  try {
+    const detail = await getCodeScriptRun(row.id)
+    Object.assign(runDetail, {
+      id: detail?.id,
+      status: detail?.status || '',
+      scriptName: detail?.scriptName || '',
+      sandboxRunId: detail?.sandboxRunId || '',
+      durationMs: detail?.durationMs || 0,
+      params: detail?.params || {},
+      runResult: detail?.runResult ?? null,
+      logs: detail?.logs || [],
+      errorText: detail?.errorText || '',
+    })
+  } finally {
+    runDetailLoading.value = false
+  }
+}
+
+onMounted(async () => {
+  await getList()
+})
+
+onBeforeUnmount(() => {
+  destroyEditor()
+})
+</script>
+
+<style scoped>
+.operation-dropdown {
+  margin-right: 8px;
+}
+
+.operation-dropdown .el-dropdown-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.operation-dropdown .el-dropdown-menu__item span {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.operation-menu-compact {
+  min-width: 120px !important;
+  padding: 4px 0 !important;
+}
+
+.operation-menu-compact .el-dropdown-menu__item {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  height: auto !important;
+  min-height: 32px !important;
+}
+
+.operation-menu-compact .el-dropdown-menu__item span {
+  font-size: 13px !important;
+}
+
+.operation-menu-compact .el-dropdown-menu__item:hover {
+  background-color: var(--el-fill-color-light) !important;
+}
+
+.operation-menu-compact .el-dropdown-menu__item--divided {
+  margin-top: 4px !important;
+  border-top: 1px solid var(--el-border-color-lighter) !important;
+  padding-top: 8px !important;
+}
+</style>

@@ -1921,4 +1921,3 @@ function removeSuitableSize(sizeKey: string) {
   }
 }
 </style>
-@/api/psdTemplate
