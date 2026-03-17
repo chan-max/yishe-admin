@@ -233,7 +233,7 @@
                       <span v-if="aiTableLoading[row.id]">AI生成中...</span>
                       <span v-else>AI生成内容</span>
                     </el-dropdown-item>
-                    <el-dropdown-item @click="() => downloadFileByElement(row.url, row.name)">
+                    <el-dropdown-item :disabled="!row.url" @click="() => downloadFileByElement(row.url, row.name)">
                       下载源文件
                     </el-dropdown-item>
                     <el-dropdown-item divided class="dropdown-item-danger" @click="handleDelete(row)">
@@ -544,6 +544,7 @@ import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
 import { uploadToCOS } from "@/api/cos";
 import { getPreviewImageUrl } from "@/utils/image";
+import { downloadFileByElement } from "@/common/download";
 import {
   SIZE_SHAPE_UI_CONFIGS as sizeConfigs,
   getFullLabel,
