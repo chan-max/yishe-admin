@@ -1,67 +1,47 @@
 <template>
-  <div class="list-page-layout">
-    <div class="filter-section">
-      <CollapsibleFilterForm :show-expand-button="false" :show-collapse-button="false">
-        <template #collapsed>
-          <form-item label="关键词">
-            <el-input
-              v-model="queryParams.keyword"
-              placeholder="标题"
-              class="w-60"
-              clearable
-              @keyup.enter="getList"
-              @change="handleKeywordChange"
-            />
-          </form-item>
-          <form-item label="状态">
-            <el-select
-              v-model="queryParams.status"
-              class="remotion-filter-select"
-              clearable
-              placeholder="全部状态"
-              @change="getList"
-            >
-              <el-option label="处理中" value="processing" />
-              <el-option label="成功" value="success" />
-              <el-option label="失败" value="failed" />
-            </el-select>
-          </form-item>
-            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除({{ selectedRows.length }})</el-button>
-              <el-button type="primary" plain @click="openCreateDialog()">新增</el-button>
-        </template>
-        <template #expanded>
-          <form-item label="关键词">
-            <el-input
-              v-model="queryParams.keyword"
-              placeholder="标题"
-              class="w-60"
-              clearable
-              @keyup.enter="getList"
-              @change="handleKeywordChange"
-            />
-          </form-item>
-          <form-item label="状态">
-            <el-select
-              v-model="queryParams.status"
-              class="remotion-filter-select"
-              clearable
-              placeholder="全部状态"
-              @change="getList"
-            >
-              <el-option label="处理中" value="processing" />
-              <el-option label="成功" value="success" />
-              <el-option label="失败" value="failed" />
-            </el-select>
-          </form-item>
-          <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-          <el-button type="primary" plain @click="openCreateDialog()">新增</el-button>
-        </template>
-      </CollapsibleFilterForm>
+  <ContentWrap>
+    <div class="flex flex-wrap items-center justify-between gap-3 py-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <form-item label="关键词">
+          <el-input
+            v-model="queryParams.keyword"
+            placeholder="标题"
+            class="w-60"
+            clearable
+            @keyup.enter="getList"
+            @change="handleKeywordChange"
+          />
+        </form-item>
+        <form-item label="状态">
+          <el-select
+            v-model="queryParams.status"
+            class="w-36 min-w-[144px]"
+            clearable
+            placeholder="全部状态"
+            @change="getList"
+          >
+            <el-option label="处理中" value="processing" />
+            <el-option label="成功" value="success" />
+            <el-option label="失败" value="failed" />
+          </el-select>
+        </form-item>
+        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+        <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除({{ selectedRows.length }})</el-button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <el-tag :type="remotionStatus.available ? 'success' : remotionStatus.checked ? 'danger' : 'warning'" size="small">
+          Remotion 服务 {{ remotionStatus.available ? '可用' : remotionStatus.checked ? '不可用' : '检测中' }}
+        </el-tag>
+        <span class="max-w-[320px] truncate text-xs text-[var(--el-text-color-secondary)]" :title="remotionStatus.message">
+          {{ remotionStatus.message || remotionStatus.baseUrl }}
+        </span>
+        <el-button size="small" @click="checkRemotionHealth" :loading="remotionStatus.loading">刷新状态</el-button>
+        <el-button type="primary" plain @click="openCreateDialog()">新增</el-button>
+      </div>
     </div>
 
-    <div class="table-section remotion-table-section">
-      <div class="common-table">
+    <div class="common-table">
         <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
           <template #titleSlot="{ row }">
             <div class="record-title-cell">
@@ -112,7 +92,7 @@
                   操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-small">
+                  <el-dropdown-menu>
                     <el-dropdown-item command="detail">
                       <el-icon><View /></el-icon>
                       <span>查看详情</span>
@@ -128,10 +108,9 @@
             </div>
           </template>
         </vxe-grid>
-      </div>
     </div>
 
-    <div class="pagination-section">
+    <div class="flex justify-end py-4">
       <Pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -139,7 +118,7 @@
         @pagination="getList"
       />
     </div>
-  </div>
+  </ContentWrap>
 
   <el-dialog v-model="createVisible" title="新增视频制作" fullscreen destroy-on-close class="remotion-create-dialog">
     <div class="remotion-create-layout">
@@ -259,7 +238,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, Delete, Search, View } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
@@ -269,13 +248,14 @@ import {
   deleteRemotionVideoRecord,
   batchDeleteRemotionVideoRecord,
   generateRemotionVideoRecord,
+  getRemotionVideoHealth,
   getRemotionTemplateList,
   getRemotionVideoRecordDetail,
   getRemotionVideoRecordPage,
 } from '@/api/remotion-video-record'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
-import CollapsibleFilterForm from '@/components/CollapsibleFilterForm/index.vue'
 
 const { height } = useWindowSize()
 const loading = ref(false)
@@ -286,6 +266,15 @@ const createVisible = ref(false)
 const detailVisible = ref(false)
 const submitLoading = ref(false)
 const currentRow = ref<any>(null)
+const remotionStatus = reactive({
+  loading: false,
+  checked: false,
+  available: false,
+  baseUrl: '',
+  message: '',
+  timestamp: '',
+})
+let remotionHealthTimer: number | null = null
 
 const queryParams = reactive({
   currentPage: 1,
@@ -427,6 +416,38 @@ function formatJson(value: any) {
 async function loadTemplates() {
   const result: any = await getRemotionTemplateList()
   templateOptions.value = Array.isArray(result) ? result : []
+}
+
+async function checkRemotionHealth() {
+  remotionStatus.loading = true
+  try {
+    const result: any = await getRemotionVideoHealth()
+    remotionStatus.checked = true
+    remotionStatus.available = !!result?.available
+    remotionStatus.baseUrl = result?.baseUrl || ''
+    remotionStatus.message = result?.message || ''
+    remotionStatus.timestamp = result?.timestamp || ''
+  } catch (error: any) {
+    remotionStatus.checked = true
+    remotionStatus.available = false
+    remotionStatus.message = error?.message || 'Remotion 服务检测失败'
+  } finally {
+    remotionStatus.loading = false
+  }
+}
+
+function startRemotionHealthPolling() {
+  stopRemotionHealthPolling()
+  remotionHealthTimer = window.setInterval(() => {
+    checkRemotionHealth()
+  }, 30000)
+}
+
+function stopRemotionHealthPolling() {
+  if (remotionHealthTimer !== null) {
+    window.clearInterval(remotionHealthTimer)
+    remotionHealthTimer = null
+  }
 }
 
 function resetForm() {
@@ -627,15 +648,16 @@ function handleOperationCommand(command: string, row: any) {
 onMounted(async () => {
   await loadTemplates()
   resetForm()
-  await getList()
+  await Promise.all([getList(), checkRemotionHealth()])
+  startRemotionHealthPolling()
+})
+
+onBeforeUnmount(() => {
+  stopRemotionHealthPolling()
 })
 </script>
 
 <style scoped>
-.remotion-table-section {
-  margin-top: 16px;
-}
-
 .record-title-cell,
 .record-template-cell,
 .record-video-cell,
@@ -937,17 +959,6 @@ onMounted(async () => {
   padding: 16px 20px 20px;
 }
 
-:deep(.operation-menu-small .el-dropdown-menu__item) {
-  min-height: 28px;
-  padding: 4px 10px;
-  font-size: 12px;
-}
-
-:deep(.operation-menu-small .el-dropdown-menu__item .el-icon) {
-  font-size: 12px;
-  margin-right: 6px;
-}
-
 @media (max-width: 1280px) {
   .remotion-create-layout {
     grid-template-columns: 1fr;
@@ -958,9 +969,5 @@ onMounted(async () => {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(360px, 50vh) minmax(0, 1fr);
   }
-}
-
-.remotion-filter-select {
-  min-width: 132px;
 }
 </style>

@@ -13,6 +13,12 @@ export function getCodeScript(id: number | string) {
   })
 }
 
+export function getCodeScriptSandboxHealth() {
+  return request.get({
+    url: '/code-script/sandbox/health',
+  })
+}
+
 export function createCodeScript(data) {
   return request.post({
     url: '/code-script/create',

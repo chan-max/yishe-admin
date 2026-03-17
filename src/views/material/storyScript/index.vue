@@ -1,79 +1,67 @@
 ﻿<template>
-  <div class="list-page-layout">
-    <div class="filter-section">
-      <div class="search-bar">
-        <div class="search-form-container">
-          <div class="search-field">
-            <label class="search-label">关键词</label>
-            <el-input
-              v-model="queryParams.keyword"
-              placeholder="标题 / 正文 / 标签"
-              clearable
-              @keyup.enter="getList"
-              @change="handleKeywordChange"
-            />
-          </div>
-          <div class="search-field">
-            <label class="search-label">场景</label>
-            <el-select v-model="queryParams.sceneType" class="story-scene-select" clearable placeholder="全部场景" @change="getList">
-              <el-option label="社交平台文案" value="social_post" />
-              <el-option label="短视频字幕" value="short_video_subtitle" />
-              <el-option label="口播脚本" value="voiceover" />
-            </el-select>
-          </div>
-          <div class="search-field">
-            <label class="search-label">素材ID</label>
-            <el-input
-              v-model="queryParams.stickerId"
-              placeholder="素材ID"
-              clearable
-              @keyup.enter="getList"
-              @change="handleStickerIdChange"
-            />
-          </div>
-          <div class="search-field search-field-actions">
-            <label class="search-label"></label>
-            <div class="search-actions">
-              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除({{ selectedIds.length }})</el-button>
-            </div>
-          </div>
-        </div>
+  <ContentWrap>
+    <div class="flex flex-wrap items-center justify-between gap-3 py-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <form-item label="关键词">
+          <el-input
+            v-model="queryParams.keyword"
+            placeholder="标题 / 正文 / 标签"
+            clearable
+            class="w-60"
+            @keyup.enter="getList"
+            @change="handleKeywordChange"
+          />
+        </form-item>
+        <form-item label="场景">
+          <el-select v-model="queryParams.sceneType" class="w-44 min-w-[176px]" clearable placeholder="全部场景" @change="getList">
+            <el-option label="社交平台文案" value="social_post" />
+            <el-option label="短视频字幕" value="short_video_subtitle" />
+            <el-option label="口播脚本" value="voiceover" />
+          </el-select>
+        </form-item>
+        <form-item label="素材ID">
+          <el-input
+            v-model="queryParams.stickerId"
+            placeholder="素材ID"
+            clearable
+            class="w-44"
+            @keyup.enter="getList"
+            @change="handleStickerIdChange"
+          />
+        </form-item>
+        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+        <el-button type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除({{ selectedIds.length }})</el-button>
       </div>
     </div>
 
-    <div class="table-section story-table-section">
-      <div class="common-table">
+    <div class="common-table">
         <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
           <template #materialSlot="{ row }">
-            <div class="story-material-cell">
-              <div class="story-material-thumb">
-                <el-skeleton v-if="isMaterialHydrating(row)" animated>
-                  <template #template>
-                    <div class="story-material-skeleton"></div>
-                  </template>
-                </el-skeleton>
-                <SingleImage
-                  v-else-if="getMaterialPreview(row)"
-                  :src="getMaterialPreview(row, 'list')"
-                  :width="'100%'"
-                  :height="'100%'"
-                  fit="cover"
-                  :alt="getMaterialName(row)"
-                />
-                <div v-else class="story-material-placeholder">暂无预览</div>
-              </div>
-              <div class="story-material-meta">
-                <div class="story-material-name">{{ getMaterialName(row) }}</div>
-                <div class="story-material-id">ID: {{ row.stickerId || '-' }}</div>
-              </div>
+            <div class="story-material-thumb">
+              <el-skeleton v-if="isMaterialHydrating(row)" animated>
+                <template #template>
+                  <div class="story-material-skeleton"></div>
+                </template>
+              </el-skeleton>
+              <SingleImage
+                v-else-if="getMaterialPreview(row)"
+                :src="getMaterialPreview(row, 'list')"
+                :width="'100%'"
+                :height="'100%'"
+                fit="cover"
+                :alt="getMaterialName(row)"
+              />
+              <div v-else class="story-material-placeholder">暂无预览</div>
             </div>
           </template>
-          <template #titleSlot="{ row }">
-            <div class="story-title-cell">
-              <div class="story-title-text">{{ row.title || '-' }}</div>
-              <el-tag effect="plain" size="small">{{ getSceneLabel(row.sceneType) }}</el-tag>
-            </div>
+          <template #materialNameSlot="{ row }">
+            <div class="story-cell-text">{{ getMaterialName(row) }}</div>
+          </template>
+          <template #materialIdSlot="{ row }">
+            <div class="story-cell-text">{{ row.stickerId || '-' }}</div>
+          </template>
+          <template #sceneSlot="{ row }">
+            <el-tag effect="plain" size="small">{{ getSceneLabel(row.sceneType) }}</el-tag>
           </template>
           <template #contentSlot="{ row }">
             <div class="story-content-cell">{{ row.content || '-' }}</div>
@@ -86,12 +74,12 @@
           </template>
           <template #operationDefaultSlot="{ row }">
             <div class="flex items-center">
-              <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown" size="small">
+              <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" size="small">
                 <el-button type="primary" link size="small">
                   操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact operation-menu-small">
+                  <el-dropdown-menu>
                     <el-dropdown-item command="detail">
                       <el-icon><View /></el-icon>
                       <span>查看详情</span>
@@ -106,10 +94,9 @@
             </div>
           </template>
         </vxe-grid>
-      </div>
     </div>
 
-    <div class="pagination-section">
+    <div class="flex justify-end py-4">
       <Pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -117,7 +104,7 @@
         @pagination="getList"
       />
     </div>
-  </div>
+  </ContentWrap>
 
   <el-dialog v-model="detailVisible" title="故事脚本详情" fullscreen destroy-on-close class="story-detail-dialog">
     <div v-if="currentRow" class="story-detail-layout story-detail-fullscreen">
@@ -189,6 +176,7 @@ import { formatTimestamp } from '@/common/date'
 import { commonGridOptions } from '@/common/table'
 import { batchDeleteStickerStoryScript, deleteStickerStoryScript, getMaterialList, getStickerStoryScriptPage } from '@/api/material'
 import { getPreviewImageUrl } from '@/utils/image'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
 
@@ -223,8 +211,11 @@ const gridOptions = computed(() => ({
   checkboxConfig: { reserve: true },
   columns: [
     { type: 'checkbox', width: 48 },
-    { title: '关联素材', field: 'stickerId', minWidth: 280, slots: { default: 'materialSlot' } },
-    { title: '脚本标题', field: 'title', minWidth: 220, slots: { default: 'titleSlot' } },
+    { title: '预览', field: 'stickerId', width: 110, slots: { default: 'materialSlot' } },
+    { title: '素材名称', field: 'materialName', minWidth: 180, slots: { default: 'materialNameSlot' } },
+    { title: '素材ID', field: 'stickerId', width: 120, slots: { default: 'materialIdSlot' } },
+    { title: '场景', field: 'sceneType', width: 140, slots: { default: 'sceneSlot' } },
+    { title: '标题', field: 'title', minWidth: 220, showOverflow: true },
     { title: '正文', field: 'content', minWidth: 360, slots: { default: 'contentSlot' } },
     { title: '标签', field: 'hashtags', minWidth: 220, slots: { default: 'hashtagsSlot' } },
     { title: '创建时间', field: 'createTime', width: 180, slots: { default: 'createTimeSlot' } },
@@ -385,103 +376,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.search-bar {
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.search-form-container {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-
-.search-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  width: 100%;
-}
-
-.search-field-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  grid-column: 1 / -1;
-}
-
-.search-label {
-  width: 72px;
-  min-width: 72px;
-  text-align: right;
-  padding-right: 8px;
-  line-height: 32px;
-  flex-shrink: 0;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-}
-
-.search-field-actions .search-label {
-  display: none;
-}
-
-.search-field > :not(.search-label) {
-  flex: 1;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.search-field .el-input,
-.search-field .el-select {
-  width: 100%;
-}
-
-.search-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  column-gap: 6px;
-  row-gap: 6px;
-  align-items: center;
-  width: 100%;
-}
-
-@media (max-width: 1200px) {
-  .search-form-container {
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .search-form-container {
-    grid-template-columns: 1fr;
-    grid-auto-flow: row;
-    gap: 8px;
-  }
-
-  .search-label {
-    width: auto;
-    min-width: auto;
-    padding-right: 0;
-    text-align: left;
-  }
-
-  .search-field-actions,
-  .search-actions {
-    justify-content: flex-start;
-  }
-}
-.story-material-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
 .story-material-thumb {
   width: 84px;
   height: 84px;
@@ -514,25 +408,13 @@ onMounted(() => {
   animation: story-material-shimmer 1.4s ease infinite;
 }
 
-.story-material-meta {
-  min-width: 0;
-}
-
-.story-material-name,
+.story-cell-text,
 .story-title-text {
   color: var(--el-text-color-primary);
   font-weight: 500;
   line-height: 1.5;
   word-break: break-word;
 }
-
-.story-material-id {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.story-title-cell,
 .story-content-cell,
 .story-hashtag-cell {
   display: flex;
@@ -614,14 +496,6 @@ onMounted(() => {
   }
 }
 
-.story-table-section {
-  margin-top: 16px;
-}
-
-.story-scene-select {
-  width: 176px;
-}
-
 @keyframes story-material-shimmer {
   0% {
     background-position: 100% 50%;
@@ -662,17 +536,6 @@ onMounted(() => {
   overflow: auto;
 }
 
-:deep(.operation-menu-small .el-dropdown-menu__item) {
-  min-height: 28px;
-  padding: 4px 10px;
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-:deep(.operation-menu-small .el-dropdown-menu__item .el-icon) {
-  font-size: 12px;
-  margin-right: 6px;
-}
 </style>
 
 

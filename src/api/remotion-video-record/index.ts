@@ -6,6 +6,12 @@ export function getRemotionTemplateList() {
   })
 }
 
+export function getRemotionVideoHealth() {
+  return request.get({
+    url: '/remotion-video-record/health'
+  })
+}
+
 export function generateRemotionVideoRecord(data: {
   templateId: string
   title?: string

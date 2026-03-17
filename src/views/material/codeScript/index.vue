@@ -17,7 +17,16 @@
           批量删除 ({{ ids.length }})
         </el-button>
       </div>
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
+      <div class="flex items-center gap-2">
+        <el-tag :type="sandboxStatus.available ? 'success' : sandboxStatus.checked ? 'danger' : 'warning'" size="small">
+          沙盒服务 {{ sandboxStatus.available ? '可用' : sandboxStatus.checked ? '不可用' : '检测中' }}
+        </el-tag>
+        <span class="max-w-[280px] truncate text-xs text-[var(--el-text-color-secondary)]" :title="sandboxStatus.message">
+          {{ sandboxStatus.message || sandboxStatus.baseUrl }}
+        </span>
+        <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading">刷新状态</el-button>
+        <el-button type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
+      </div>
     </div>
 
     <div class="common-table">
@@ -44,13 +53,12 @@
             <el-dropdown
               trigger="click"
               @command="(command) => handleOperationCommand(command, row)"
-              class="operation-dropdown"
             >
               <el-button type="primary" link size="small">
                 操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
-                <el-dropdown-menu class="operation-menu-compact">
+                <el-dropdown-menu>
                   <el-dropdown-item command="run">
                     <span>执行</span>
                   </el-dropdown-item>
@@ -249,13 +257,12 @@
               <el-dropdown
                 trigger="click"
                 @command="(command) => handleRunOperationCommand(command, row)"
-                class="operation-dropdown"
               >
                 <el-button type="primary" link size="small">
                   操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-menu>
                     <el-dropdown-item command="detail">
                       <span>详情</span>
                     </el-dropdown-item>
@@ -308,6 +315,7 @@ import {
   createCodeScript,
   deleteCodeScript,
   deleteCodeScriptRun,
+  getCodeScriptSandboxHealth,
   getCodeScript,
   getCodeScriptList,
   getCodeScriptRun,
@@ -374,6 +382,15 @@ const loading = ref(false)
 const dataSource = ref<any[]>([])
 const ids = ref<number[]>([])
 const total = ref(0)
+const sandboxStatus = reactive({
+  loading: false,
+  checked: false,
+  available: false,
+  baseUrl: '',
+  message: '',
+  timestamp: '',
+})
+let sandboxHealthTimer: number | null = null
 
 const runLoading = ref(false)
 const runDataSource = ref<any[]>([])
@@ -462,6 +479,38 @@ async function getList() {
     ElMessage.error('获取脚本列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function checkSandboxHealth() {
+  sandboxStatus.loading = true
+  try {
+    const res = await getCodeScriptSandboxHealth()
+    sandboxStatus.checked = true
+    sandboxStatus.available = !!res?.available
+    sandboxStatus.baseUrl = res?.baseUrl || ''
+    sandboxStatus.message = res?.message || ''
+    sandboxStatus.timestamp = res?.timestamp || ''
+  } catch (error: any) {
+    sandboxStatus.checked = true
+    sandboxStatus.available = false
+    sandboxStatus.message = error?.message || '沙盒服务检测失败'
+  } finally {
+    sandboxStatus.loading = false
+  }
+}
+
+function startSandboxHealthPolling() {
+  stopSandboxHealthPolling()
+  sandboxHealthTimer = window.setInterval(() => {
+    checkSandboxHealth()
+  }, 30000)
+}
+
+function stopSandboxHealthPolling() {
+  if (sandboxHealthTimer !== null) {
+    window.clearInterval(sandboxHealthTimer)
+    sandboxHealthTimer = null
   }
 }
 
@@ -843,54 +892,12 @@ async function openRunDetail(row) {
 }
 
 onMounted(async () => {
-  await getList()
+  await Promise.all([getList(), checkSandboxHealth()])
+  startSandboxHealthPolling()
 })
 
 onBeforeUnmount(() => {
   destroyEditor()
+  stopSandboxHealthPolling()
 })
 </script>
-
-<style scoped>
-.operation-dropdown {
-  margin-right: 8px;
-}
-
-.operation-dropdown .el-dropdown-menu__item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.operation-dropdown .el-dropdown-menu__item span {
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.operation-menu-compact {
-  min-width: 120px !important;
-  padding: 4px 0 !important;
-}
-
-.operation-menu-compact .el-dropdown-menu__item {
-  padding: 8px 16px !important;
-  font-size: 13px !important;
-  line-height: 1.5 !important;
-  height: auto !important;
-  min-height: 32px !important;
-}
-
-.operation-menu-compact .el-dropdown-menu__item span {
-  font-size: 13px !important;
-}
-
-.operation-menu-compact .el-dropdown-menu__item:hover {
-  background-color: var(--el-fill-color-light) !important;
-}
-
-.operation-menu-compact .el-dropdown-menu__item--divided {
-  margin-top: 4px !important;
-  border-top: 1px solid var(--el-border-color-lighter) !important;
-  padding-top: 8px !important;
-}
-</style>
