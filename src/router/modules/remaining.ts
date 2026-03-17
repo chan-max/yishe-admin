@@ -1,6 +1,6 @@
-﻿import { Layout } from '@/utils/routerHelper'
+﻿import { Layout } from "@/utils/routerHelper";
 
-const { t } = useI18n()
+const { t } = useI18n();
 /**
  * 路由字段说明：
  * redirect: 设置重定向地址。
@@ -19,267 +19,279 @@ const { t } = useI18n()
  */
 const remainingRouter: AppRouteRecordRaw[] = [
   {
-    path: '/',
-    name: 'Root',
-    redirect: '/home/index',
+    path: "/",
+    name: "Root",
+    redirect: "/home/index",
     meta: {
-      hidden: true
-    }
+      hidden: true,
+    },
   },
   {
-    path: '/redirect',
+    path: "/redirect",
     component: Layout,
-    name: 'Redirect',
+    name: "Redirect",
     children: [
       {
-        path: '/redirect/:path(.*)',
-        name: 'Redirect',
-        component: () => import('@/views/Redirect/Redirect.vue'),
-        meta: {}
-      }
+        path: "/redirect/:path(.*)",
+        name: "Redirect",
+        component: () => import("@/views/Redirect/Redirect.vue"),
+        meta: {},
+      },
     ],
     meta: {
       hidden: true,
-      noTagsView: true
-    }
+      noTagsView: true,
+    },
   },
   {
-    path: '/home',
+    path: "/home",
     component: Layout,
-    name: 'Home',
-    redirect: '/home/index',
+    name: "Home",
+    redirect: "/home/index",
     meta: {
-      title: '工作台',
-      icon: 'ep:home-filled',
+      title: "工作台",
+      icon: "ep:home-filled",
       order: 1,
-      alwaysShow: true
+      alwaysShow: true,
     },
     children: [
       {
-        path: 'index',
-        component: () => import('@/views/Home/Index.vue'),
-        name: 'Index',
+        path: "index",
+        component: () => import("@/views/Home/Index.vue"),
+        name: "Index",
         meta: {
-          title: '首页',
+          title: "首页",
           noCache: false,
-          affix: true
-        }
+          affix: true,
+        },
       },
       {
-        path: 'hot-search',
-        component: () => import('@/views/Home/HotSearch.vue'),
-        name: 'HotSearch',
+        path: "hot-search",
+        component: () => import("@/views/Home/HotSearch.vue"),
+        name: "HotSearch",
         meta: {
-          title: '热搜'
-        }
+          title: "热搜",
+        },
       },
       {
-        path: 'tools',
+        path: "tools",
         component: Layout,
-        redirect: '/home/tools/index',
-        name: 'Tools',
+        redirect: "/home/tools/index",
+        name: "Tools",
         meta: {
-          title: '工具集合'
+          title: "工具集合",
         },
         children: [
           {
-            path: 'index',
-            component: () => import('@/views/Home/Tools/Index.vue'),
-            name: 'ToolsIndex',
+            path: "index",
+            component: () => import("@/views/Home/Tools/Index.vue"),
+            name: "ToolsIndex",
             meta: {
-              title: '工具列表'
-            }
-          }
-        ]
+              title: "工具列表",
+            },
+          },
+        ],
       },
       {
-        path: 'statistics',
-        component: () => import('@/views/Home/Statistics/index.vue'),
-        name: 'Statistics',
+        path: "statistics",
+        component: () => import("@/views/Home/Statistics/index.vue"),
+        name: "Statistics",
         meta: {
-          title: '数据统计',
-          requiresAdmin: true
-        }
-      }
-    ]
+          title: "数据统计",
+          requiresAdmin: true,
+        },
+      },
+    ],
   },
   {
-    path: '/login',
-    component: () => import('@/views/Login/Login.vue'),
-    name: 'Login',
+    path: "/login",
+    component: () => import("@/views/Login/Login.vue"),
+    name: "Login",
     meta: {
       hidden: true,
-      title: t('router.login'),
-      noTagsView: true
-    }
+      title: t("router.login"),
+      noTagsView: true,
+    },
   },
   {
-    path: '/403',
-    component: () => import('@/views/Error/403.vue'),
-    name: 'NoAccess',
+    path: "/403",
+    component: () => import("@/views/Error/403.vue"),
+    name: "NoAccess",
     meta: {
       hidden: true,
-      title: '403',
-      noTagsView: true
-    }
+      title: "403",
+      noTagsView: true,
+    },
   },
   {
-    path: '/404',
-    component: () => import('@/views/Error/404.vue'),
-    name: 'NoFound',
+    path: "/404",
+    component: () => import("@/views/Error/404.vue"),
+    name: "NoFound",
     meta: {
       hidden: true,
-      title: '404',
-      noTagsView: true
-    }
+      title: "404",
+      noTagsView: true,
+    },
   },
   {
-    path: '/500',
-    component: () => import('@/views/Error/500.vue'),
-    name: 'Error',
+    path: "/500",
+    component: () => import("@/views/Error/500.vue"),
+    name: "Error",
     meta: {
       hidden: true,
-      title: '500',
-      noTagsView: true
-    }
+      title: "500",
+      noTagsView: true,
+    },
   },
   {
-    path: '/:pathMatch(.*)*',
-    component: () => import('@/views/Error/404.vue'),
-    name: '',
+    path: "/:pathMatch(.*)*",
+    component: () => import("@/views/Error/404.vue"),
+    name: "",
     meta: {
-      title: '404',
+      title: "404",
       hidden: true,
-      breadcrumb: false
-    }
+      breadcrumb: false,
+    },
   },
   {
-    path: '/resource',
+    path: "/resource",
     component: Layout,
-    name: 'Resource',
+    name: "Resource",
     meta: {
       hidden: false,
-      title: '设计资源',
-      icon: 'ep:collection',
+      title: "设计资源",
+      icon: "ep:collection",
       noCache: false,
-      affix: false
+      affix: false,
     },
     children: [
       {
-        path: 'crawler-material',
-        component: () => import('@/views/material/index/crawler-material.vue'),
-        name: 'CrawlerMaterial',
+        path: "crawler-material",
+        component: () => import("@/views/material/index/crawler-material.vue"),
+        name: "CrawlerMaterial",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '爬图素材'
-        }
+          title: "爬图素材",
+        },
       },
       {
-        path: 'material',
-        component: () => import('@/views/material/index/index.vue'),
-        name: 'Material',
+        path: "material",
+        component: () => import("@/views/material/index/index.vue"),
+        name: "Material",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '图片素材'
-        }
+          title: "图片素材",
+        },
       },
       {
-        path: 'clip-material',
-        component: () => import('@/views/material/clip-material/index.vue'),
-        name: 'ClipMaterial',
+        path: "clip-material",
+        component: () => import("@/views/material/clip-material/index.vue"),
+        name: "ClipMaterial",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '媒体剪辑素材'
-        }
+          title: "媒体剪辑素材",
+        },
       },
       {
-        path: 'font',
-        component: () => import('@/views/material/fontTemplate/index.vue'),
-        name: 'Font',
+        path: "font",
+        component: () => import("@/views/material/fontTemplate/index.vue"),
+        name: "Font",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '字体'
-        }
+          title: "字体",
+        },
       },
       {
-        path: 'psd',
-        component: () => import('@/views/material/psdTemplate/index.vue'),
-        name: 'Psd',
+        path: "psd",
+        component: () => import("@/views/material/psdTemplate/index.vue"),
+        name: "Psd",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: 'PSD模板'
-        }
+          title: "PSD模板",
+        },
       },
 
       {
-        path: 'sentence',
-        component: () => import('@/views/material/sentence/index.vue'),
-        name: 'Sentence',
+        path: "sentence",
+        component: () => import("@/views/material/sentence/index.vue"),
+        name: "Sentence",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '句子管理'
-        }
+          title: "句子管理",
+        },
       },
       {
-        path: 'prompt',
-        component: () => import('@/views/material/prompt/index.vue'),
-        name: 'Prompt',
+        path: "prompt",
+        component: () => import("@/views/material/prompt/index.vue"),
+        name: "Prompt",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: 'AI提示词管理',
-          requiresAdmin: true
-        }
+          title: "AI提示词管理",
+          requiresAdmin: true,
+        },
       },
       {
-        path: 'code-script',
-        component: () => import('@/views/material/codeScript/index.vue'),
-        name: 'CodeScript',
+        path: "code-script",
+        component: () => import("@/views/material/codeScript/index.vue"),
+        name: "CodeScript",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '代码脚本',
-          requiresAdmin: true
-        }
-      },
-      
-      {
-        path: 'story-script',
-        component: () => import('@/views/material/storyScript/index.vue'),
-        name: 'StoryScript',
-        meta: {
-          canTo: true,
-          hidden: false,
-          noTagsView: false,
-          title: '故事脚本',
-          requiresAdmin: true
-        }
+          title: "代码脚本",
+          requiresAdmin: true,
+        },
       },
       {
-        path: 'remotion-video-record',
-        component: () => import('@/views/material/remotionVideoRecord/index.vue'),
-        name: 'RemotionVideoRecord',
+        path: "code-script-schedule",
+        component: () => import("@/views/material/codeScriptSchedule/index.vue"),
+        name: "CodeScriptSchedule",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '视频生成(remotion)',
-          requiresAdmin: true
-        }
+          title: "脚本调度",
+          requiresAdmin: true,
+        },
+      },
+
+      {
+        path: "story-script",
+        component: () => import("@/views/material/storyScript/index.vue"),
+        name: "StoryScript",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "故事脚本",
+          requiresAdmin: true,
+        },
+      },
+      {
+        path: "remotion-video-record",
+        component: () => import("@/views/material/remotionVideoRecord/index.vue"),
+        name: "RemotionVideoRecord",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "视频生成(remotion)",
+          requiresAdmin: true,
+        },
       },
 
       // 仅管理员可见
@@ -309,27 +321,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
       //     requiresAdmin: true
       //   }
       // },
-    ]
+    ],
   },
   {
-    path: '/product',
+    path: "/product",
     component: Layout,
-    name: 'Product',
+    name: "Product",
     meta: {
-      title: '商品管理',
-      icon: 'ep:goods',
+      title: "商品管理",
+      icon: "ep:goods",
       order: 2,
       alwaysShow: true,
-      requiresAdmin: true
+      requiresAdmin: true,
     },
     children: [
       {
-        path: 'designRequest',
-        component: () => import('@/views/material/designRequest/index.vue'),
-        name: 'DesignRequest',
+        path: "designRequest",
+        component: () => import("@/views/material/designRequest/index.vue"),
+        name: "DesignRequest",
         meta: {
-          title: '设计请求',
-        }
+          title: "设计请求",
+        },
       },
       // {
       //   path: 'designModel',
@@ -340,196 +352,186 @@ const remainingRouter: AppRouteRecordRaw[] = [
       //   }
       // },
       {
-        path: 'psd-set',
-        component: () => import('@/views/material/psdSet/index.vue'),
-        name: 'PsdSet',
+        path: "psd-set",
+        component: () => import("@/views/material/psdSet/index.vue"),
+        name: "PsdSet",
         meta: {
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: '套图',
-          requiresAdmin: true
-        }
+          title: "套图",
+          requiresAdmin: true,
+        },
       },
       {
-        path: 'category',
-        component: () => import('@/views/product/category/index.vue'),
-        name: 'ProductCategory',
+        path: "category",
+        component: () => import("@/views/product/category/index.vue"),
+        name: "ProductCategory",
         meta: {
-          title: '商品种类',
-        }
+          title: "商品种类",
+        },
       },
       {
-        path: 'index',
-        component: () => import('@/views/product/index/index.vue'),
-        name: 'ProductIndex',
+        path: "index",
+        component: () => import("@/views/product/index/index.vue"),
+        name: "ProductIndex",
         meta: {
-          title: '商品',
-        }
+          title: "商品",
+        },
       },
       {
-        path: 'publish-config',
-        component: () => import('@/views/product/publish-config/index.vue'),
-        name: 'PublishConfig',
+        path: "publish-config",
+        component: () => import("@/views/product/publish-config/index.vue"),
+        name: "PublishConfig",
         meta: {
-          title: '发布配置',
-        }
+          title: "发布配置",
+        },
       },
       {
-        path: 'queue',
-        component: () => import('@/views/system/queue/index.vue'),
-        name: 'SystemQueue',
+        path: "queue",
+        component: () => import("@/views/system/queue/index.vue"),
+        name: "SystemQueue",
         meta: {
-          title: '平台发布任务',
-        }
+          title: "平台发布任务",
+        },
       },
-    ]
+    ],
   },
   {
-    path: '/ai',
+    path: "/ai",
     component: Layout,
-    name: 'AiService',
+    name: "AiService",
     meta: {
-      title: 'AI服务',
-      icon: 'ep:cpu',
-      alwaysShow: true
+      title: "AI服务",
+      icon: "ep:cpu",
+      alwaysShow: true,
     },
     children: [
       {
-        path: 'tts',
-        component: () => import('@/views/ai/tts.vue'),
-        name: 'AiTts',
+        path: "tts",
+        component: () => import("@/views/ai/tts.vue"),
+        name: "AiTts",
         meta: {
-          title: 'AI文字转语音',
-        }
+          title: "AI文字转语音",
+        },
       },
       {
-        path: 'tti',
-        component: () => import('@/views/ai/tti.vue'),
-        name: 'AiTti',
+        path: "tti",
+        component: () => import("@/views/ai/tti.vue"),
+        name: "AiTti",
         meta: {
-          title: 'AI文字生成图片',
-        }
-      }
-    ]
+          title: "AI文字生成图片",
+        },
+      },
+    ],
   },
   {
-    path: '/common-url',
+    path: "/common-url",
     component: Layout,
-    name: 'CommonUrl',
+    name: "CommonUrl",
     meta: {
-      title: '常用网址',
-      icon: 'ep:link',
+      title: "常用网址",
+      icon: "ep:link",
       order: 4,
       alwaysShow: true,
-      requiresAdmin: true
+      requiresAdmin: true,
     },
     children: [
       {
-        path: 'index',
-        component: () => import('@/views/material/commonUrl/index.vue'),
-        name: 'CommonUrlIndex',
+        path: "index",
+        component: () => import("@/views/material/commonUrl/index.vue"),
+        name: "CommonUrlIndex",
         meta: {
-          title: '网址管理',
-        }
+          title: "网址管理",
+        },
       },
-    ]
+    ],
   },
   {
-    path: '/system',
+    path: "/system",
     component: Layout,
-    name: 'System',
+    name: "System",
     meta: {
-      title: '系统管理',
-      icon: 'ep:setting',
+      title: "系统管理",
+      icon: "ep:setting",
       order: 3,
       alwaysShow: true,
-      requiresAdmin: true
+      requiresAdmin: true,
     },
     children: [
       {
-        path: 'company',
-        component: () => import('@/views/system/company/index.vue'),
-        name: 'Company',
+        path: "company",
+        component: () => import("@/views/system/company/index.vue"),
+        name: "Company",
         meta: {
-          title: '公司管理',
-        }
+          title: "公司管理",
+        },
       },
       {
-        path: 'user',
-        component: () => import('@/views/system/user/index.vue'),
-        name: 'User',
+        path: "user",
+        component: () => import("@/views/system/user/index.vue"),
+        name: "User",
         meta: {
-          title: '用户管理',
-        }
+          title: "用户管理",
+        },
       },
       {
-        path: 'public-user',
-        component: () => import('@/views/system/public-user/index.vue'),
-        name: 'PublicUser',
+        path: "public-user",
+        component: () => import("@/views/system/public-user/index.vue"),
+        name: "PublicUser",
         meta: {
-          title: '开放用户管理',
-        }
+          title: "开放用户管理",
+        },
       },
       {
-        path: 'websocket',
-        component: () => import('@/views/system/websocket/index.vue'),
-        name: 'SystemWebsocketConnections',
+        path: "websocket",
+        component: () => import("@/views/system/websocket/index.vue"),
+        name: "SystemWebsocketConnections",
         meta: {
-          title: '远程连接',
-          requiresAdmin: true
-        }
+          title: "远程连接",
+          requiresAdmin: true,
+        },
       },
       {
-        path: 'operatelog',
-        component: () => import('@/views/system/operatelog/index.vue'),
-        name: 'SystemOperateLog',
+        path: "operatelog",
+        component: () => import("@/views/system/operatelog/index.vue"),
+        name: "SystemOperateLog",
         meta: {
-          title: '操作日志',
-        }
+          title: "操作日志",
+        },
       },
-    ]
-  }
-
-  , {
-    path: '/shop',
+    ],
+  },
+  {
+    path: "/shop",
     component: Layout,
-    redirect: '/shop/index',
-    name: 'Shop',
+    redirect: "/shop/index",
+    name: "Shop",
     meta: {
-      title: '运营管理',
-      icon: 'ep:shop',
+      title: "运营管理",
+      icon: "ep:shop",
       order: 5,
-      alwaysShow: true
+      alwaysShow: true,
     },
     children: [
       {
-        path: 'index',
-        component: () => import('@/views/shop/index.vue'),
-        name: 'ShopIndex',
+        path: "index",
+        component: () => import("@/views/shop/index.vue"),
+        name: "ShopIndex",
         meta: {
-          title: '店铺列表'
-        }
+          title: "店铺列表",
+        },
       },
       {
-        path: 'vendor',
-        component: () => import('@/views/vendor/index.vue'),
-        name: 'VendorIndex',
+        path: "vendor",
+        component: () => import("@/views/vendor/index.vue"),
+        name: "VendorIndex",
         meta: {
-          title: '厂家管理'
-        }
-      }
-    ]
-  }
-]
+          title: "厂家管理",
+        },
+      },
+    ],
+  },
+];
 
-export default remainingRouter
-
-
-
-
-
-
-
-
-
+export default remainingRouter;
