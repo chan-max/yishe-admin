@@ -986,7 +986,7 @@ function handleOperationCommand(command: string, row: any) {
   }
   if (command === "schedule") {
     router.push({
-      path: "/resource/code-script-schedule",
+      path: "/content/automation/code-script-schedule",
       query: { scriptId: String(row.id) },
     });
     return;

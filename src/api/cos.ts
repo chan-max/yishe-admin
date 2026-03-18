@@ -21,8 +21,6 @@ const decryptConfig = (encryptedString: string) => {
   const SECRET_KEY = '1s';
   
   try {
-    console.log('开始解密配置...')
-    
     // 使用 AES-256-CBC 解密
     const decrypted = CryptoJS.AES.decrypt(encryptedString, SECRET_KEY, {
       mode: CryptoJS.mode.CBC,
@@ -39,11 +37,9 @@ const decryptConfig = (encryptedString: string) => {
     // 解析 JSON 对象
     const config = JSON.parse(decryptedString);
     
-    console.log('解密后的COS配置:', config)
     return config;
-      } catch (error) {
-    console.error('解密配置失败:', error)
-    throw new Error(`解密配置失败: ${error.message}`)
+  } catch (error: any) {
+    throw new Error(`解密配置失败: ${error?.message || '未知错误'}`)
   }
 }
 
@@ -54,29 +50,22 @@ export const initCOS = async () => {
   }
 
   try {
-    console.log('开始获取COS配置...')
     const res = await request.post({
       url: '/getBasicConfig'
     })
-    
-    console.log('获取到的加密配置:', res)
 
     // 解密配置（后端直接返回加密字符串，经过拦截器后 res.data 就是字符串）
     _cosConfig = decryptConfig(res)
-    
-    console.log('解密后的COS配置:', _cosConfig)
-    
+
     _cos = new COS({
       SecretId: _cosConfig.SecretId,
       SecretKey: _cosConfig.SecretKey,
       Bucket: _cosConfig.Bucket,
       Region: _cosConfig.Region
     } as any)
-    
-    console.log('COS客户端初始化成功')
+
     return _cos
   } catch (error) {
-    console.error('获取COS配置失败:', error)
     throw error
   }
 }
@@ -116,8 +105,7 @@ export async function uploadToCOS({
   if (!_cos) {
     try {
       await initCOS()
-    } catch (error) {
-      console.error('初始化COS失败:', error)
+    } catch {
       throw new Error('COS未初始化，无法上传文件')
     }
   }
@@ -146,8 +134,7 @@ export async function uploadToCOS({
           const userInfo = JSON.parse(userInfoStr)
           userAccount = userInfo?.user?.account || userInfo?.user?.shortName || userInfo?.user?.name || 'anonymous'
         }
-      } catch (e) {
-        console.warn('无法从 localStorage 获取用户信息:', e)
+      } catch {
       }
       if (!userAccount) {
         userAccount = 'anonymous'
@@ -201,34 +188,18 @@ export async function uploadToCOS({
   }
   
   try {
-    console.log('开始上传文件到COS...')
-    console.log('文件对象:', file)
-    console.log('文件类型:', typeof file)
-    console.log('文件大小:', file?.size)
-    console.log('文件名称:', file?.name)
-    console.log('生成的 Key:', finalKey)
-    
     const res = await cos.uploadFile({
       Key: String(finalKey),
       Body: file,
       Bucket: cos.options.Bucket,
       Region: cos.options.Region
     })
-    console.log('文件上传成功:', res)
     return {
       url: `https://${res.Location}`,
       key: finalKey
     }
   } catch (e: any) {
-    console.error('文件上传失败:', e)
     const errorMessage = e?.message || e?.toString() || '未知错误'
-    console.error('错误详情:', {
-      message: errorMessage,
-      stack: e?.stack,
-      code: e?.code,
-      statusCode: e?.statusCode,
-      requestId: e?.requestId
-    })
     throw new Error(`COS上传失败: ${errorMessage}`)
   }
 }
@@ -250,10 +221,8 @@ export async function deleteCOSFile(key) {
       },
       function (err, data) {
         if (err) {
-          console.error('删除文件失败:', err)
           reject(err)
         } else {
-          console.log('删除文件成功:', data)
           resolve(data)
         }
       }
@@ -288,10 +257,8 @@ export async function copyCOSObject(sourceUrl, targetKey = null) {
       },
       function (err, data) {
         if (err) {
-          console.error('复制文件失败:', err)
           reject(err)
         } else {
-          console.log('复制文件成功:', data)
           resolve({
             url: `https://${data.Location}`,
             key: targetKey
