@@ -116,6 +116,9 @@
           </el-tag>
           <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
         </template>
+        <template #nextRunAtSlot="{ row }">
+          <span>{{ formatScheduleDateTime(row.nextRunAt) }}</span>
+        </template>
         <template #operationSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button type="primary" link size="small">
@@ -292,6 +295,12 @@
               row.status
             }}</el-tag>
           </template>
+          <template #scheduledAtSlot="{ row }">
+            <span>{{ formatScheduleDateTime(row.scheduledAt) }}</span>
+          </template>
+          <template #startedAtSlot="{ row }">
+            <span>{{ formatScheduleDateTime(row.startedAt) }}</span>
+          </template>
           <template #executionOperationSlot="{ row }">
             <el-dropdown
               trigger="click"
@@ -379,6 +388,7 @@ import { commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import FormItem from "@/components/Erp/formItem.vue";
 import Pagination from "@/components/Pagination/index.vue";
+import { formatDate } from "@/utils/formatTime";
 import { getCodeScriptList } from "@/api/codeScript";
 import {
   createCodeScriptSchedule,
@@ -489,7 +499,7 @@ const gridOptions = ref({
     { title: "触发方式", field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
     { title: "启用状态", field: "isEnabled", width: 100, slots: { default: "enabledSlot" } },
     { title: "执行状态", field: "lastStatus", width: 110, slots: { default: "lastStatusSlot" } },
-    { title: "下次执行", field: "nextRunAt", width: 170, showOverflow: true },
+    { title: "下次执行", field: "nextRunAt", width: 170, showOverflow: true, slots: { default: "nextRunAtSlot" } },
     { title: "操作", width: 110, fixed: "right" as const, slots: { default: "operationSlot" } },
   ],
 } as any);
@@ -504,8 +514,8 @@ const executionGridOptions = ref({
     { title: "记录ID", field: "id", width: 90 },
     { title: "状态", field: "status", width: 100, slots: { default: "executionStatusSlot" } },
     { title: "触发来源", field: "triggerSource", width: 100 },
-    { title: "计划执行时间", field: "scheduledAt", width: 170, showOverflow: true },
-    { title: "开始时间", field: "startedAt", width: 170, showOverflow: true },
+    { title: "计划执行时间", field: "scheduledAt", width: 170, showOverflow: true, slots: { default: "scheduledAtSlot" } },
+    { title: "开始时间", field: "startedAt", width: 170, showOverflow: true, slots: { default: "startedAtSlot" } },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
     { title: "操作", width: 100, slots: { default: "executionOperationSlot" } },
@@ -569,6 +579,29 @@ function getExecutionStatusType(status: string) {
 
 function formatJson(value: any) {
   return JSON.stringify(value ?? null, null, 2);
+}
+
+function formatScheduleDateTime(value: unknown) {
+  if (!value) return "-";
+
+  if (value instanceof Date) {
+    return formatDate(value);
+  }
+
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return "-";
+
+    const hasTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(raw);
+    const normalized = hasTimezone ? raw : raw.replace(" ", "T") + "Z";
+    const parsed = new Date(normalized);
+    if (!Number.isNaN(parsed.getTime())) {
+      return formatDate(parsed);
+    }
+  }
+
+  const parsed = new Date(value as any);
+  return Number.isNaN(parsed.getTime()) ? String(value) : formatDate(parsed);
 }
 
 function applyCronTemplate(expr: string) {
