@@ -30,8 +30,8 @@
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
-        <el-tag :type="remotionStatus.available ? 'success' : remotionStatus.checked ? 'danger' : 'warning'" size="small">
-          Remotion 服务 {{ remotionStatus.available ? '可用' : remotionStatus.checked ? '不可用' : '检测中' }}
+        <el-tag :type="remotionStatusTagType" size="small">
+          Remotion 服务 {{ remotionStatusLabel }}
         </el-tag>
         <span class="max-w-[320px] truncate text-xs text-[var(--el-text-color-secondary)]" :title="remotionStatus.message">
           {{ remotionStatus.message || remotionStatus.baseUrl }}
@@ -276,6 +276,16 @@ const remotionStatus = reactive({
 })
 let remotionHealthTimer: number | null = null
 
+const remotionStatusLabel = computed(() => {
+  if (remotionStatus.loading && !remotionStatus.checked) return '检测中'
+  return remotionStatus.available ? '可用' : '不可用'
+})
+
+const remotionStatusTagType = computed(() => {
+  if (remotionStatus.loading && !remotionStatus.checked) return 'warning'
+  return remotionStatus.available ? 'success' : 'danger'
+})
+
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
@@ -414,8 +424,13 @@ function formatJson(value: any) {
 }
 
 async function loadTemplates() {
-  const result: any = await getRemotionTemplateList()
-  templateOptions.value = Array.isArray(result) ? result : []
+  try {
+    const result: any = await getRemotionTemplateList()
+    templateOptions.value = Array.isArray(result) ? result : []
+  } catch (error: any) {
+    templateOptions.value = []
+    ElMessage.error(error?.message || '获取 Remotion 模板失败')
+  }
 }
 
 async function checkRemotionHealth() {
@@ -428,10 +443,12 @@ async function checkRemotionHealth() {
     remotionStatus.message = result?.message || ''
     remotionStatus.timestamp = result?.timestamp || ''
   } catch (error: any) {
-    remotionStatus.checked = true
     remotionStatus.available = false
+    remotionStatus.baseUrl = remotionStatus.baseUrl || '未知地址'
     remotionStatus.message = error?.message || 'Remotion 服务检测失败'
+    remotionStatus.timestamp = new Date().toISOString()
   } finally {
+    remotionStatus.checked = true
     remotionStatus.loading = false
   }
 }
@@ -646,9 +663,8 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 onMounted(async () => {
-  await loadTemplates()
   resetForm()
-  await Promise.all([getList(), checkRemotionHealth()])
+  await Promise.allSettled([loadTemplates(), getList(), checkRemotionHealth()])
   startRemotionHealthPolling()
 })
 
