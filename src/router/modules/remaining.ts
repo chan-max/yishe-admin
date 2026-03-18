@@ -75,7 +75,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "tools",
-        component: Layout,
         redirect: "/home/tools/index",
         name: "Tools",
         meta: {
@@ -160,7 +159,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "material-center",
-        component: Layout,
         redirect: "/resource/material-center/material",
         name: "ResourceMaterialCenter",
         meta: {
@@ -205,7 +203,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "asset-library",
-        component: Layout,
         redirect: "/resource/asset-library/font",
         name: "ResourceAssetLibrary",
         meta: {
@@ -239,7 +236,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "content-assets",
-        component: Layout,
         redirect: "/resource/content-assets/story-script",
         name: "ResourceContentAssets",
         meta: {
@@ -289,7 +285,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "automation",
-        component: Layout,
         redirect: "/content/automation/code-script",
         name: "ContentAutomation",
         meta: {
@@ -351,7 +346,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "generation",
-        component: Layout,
         redirect: "/ai/generation/tti",
         name: "AiGeneration",
         meta: {
@@ -379,7 +373,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "assets",
-        component: Layout,
         redirect: "/ai/assets/prompt",
         name: "AiAssets",
         meta: {
@@ -418,7 +411,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "catalog",
-        component: Layout,
         redirect: "/product/catalog/index",
         name: "ProductCatalog",
         meta: {
@@ -458,7 +450,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "collaboration",
-        component: Layout,
         redirect: "/product/collaboration/design-request",
         name: "ProductCollaboration",
         meta: {
@@ -486,7 +477,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "publishing",
-        component: Layout,
         redirect: "/product/publishing/publish-config",
         name: "ProductPublishing",
         meta: {
@@ -528,7 +518,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "shop",
-        component: Layout,
         redirect: "/operation/shop/index",
         name: "OperationShop",
         meta: {
@@ -548,7 +537,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "tools",
-        component: Layout,
         redirect: "/operation/tools/common-url",
         name: "OperationTools",
         meta: {
@@ -584,7 +572,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "account",
-        component: Layout,
         redirect: "/system/account/user",
         name: "SystemAccount",
         meta: {
@@ -620,7 +607,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       },
       {
         path: "ops",
-        component: Layout,
         redirect: "/system/ops/websocket",
         name: "SystemOps",
         meta: {
