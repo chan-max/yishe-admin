@@ -3,6 +3,8 @@ name: Deploy to Tencent Cloud
 on:
   push:
     branches: ["main"]
+    paths:
+      - "package.json"
   workflow_dispatch:
 
 jobs:
@@ -11,20 +13,56 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check package version changed
+        id: version_check
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "current_version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PREVIOUS_CONTENT=$(git show HEAD^:package.json 2>/dev/null || true)
+
+          if [ -z "$PREVIOUS_CONTENT" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PREVIOUS_VERSION=$(printf '%s' "$PREVIOUS_CONTENT" | node -e "let data=''; process.stdin.on('data', c => data += c); process.stdin.on('end', () => console.log(JSON.parse(data).version || ''))")
+
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "previous_version=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
+        if: steps.version_check.outputs.changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.version_check.outputs.changed == 'true'
         run: npm install
 
       - name: Build
+        if: steps.version_check.outputs.changed == 'true'
         run: npm run build:prod
 
       - name: Deploy to Tencent Cloud
+        if: steps.version_check.outputs.changed == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -41,6 +79,7 @@ jobs:
           debug: true
 
       - name: Deploy to 1s.design/admin
+        if: steps.version_check.outputs.changed == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -56,6 +95,10 @@ jobs:
           timeout: "10m"
           debug: true
 
+      - name: Skip deploy when package version is unchanged
+        if: steps.version_check.outputs.changed != 'true'
+        run: echo "package.json version unchanged, skipping build and deploy."
+
       - name: Send Feishu Notification
         if: always()
         uses: actions/github-script@v6
@@ -63,10 +106,14 @@ jobs:
           script: |
             const status = '${{ job.status }}';
             const emoji = status === 'success' ? '🚀' : '❌';
+            const skipped = '${{ steps.version_check.outputs.changed }}' !== 'true';
+            const versionText = skipped
+              ? '版本号未变化，已跳过编译部署'
+              : `部署版本: ${{ steps.version_check.outputs.current_version }}`;
             const message = {
               msg_type: "text",
               content: {
-                text: `${emoji} 衣设管理员后台部署${status === 'success' ? '成功' : '失败'}通知\n\n项目: ${{ github.repository }}\n分支: ${{ github.ref }}\n提交者: ${{ github.actor }}\n提交信息: ${{ github.event.head_commit.message }}\n部署时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n状态: ${status === 'success' ? '✅ 成功' : '❌ 失败'}`
+                text: `${emoji} 衣设管理员后台部署${status === 'success' ? '成功' : '失败'}通知\n\n项目: ${{ github.repository }}\n分支: ${{ github.ref }}\n提交者: ${{ github.actor }}\n提交信息: ${{ github.event.head_commit.message }}\n${versionText}\n部署时间: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}\n状态: ${status === 'success' ? '✅ 成功' : '❌ 失败'}`
               }
             };
             
