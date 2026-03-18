@@ -60,3 +60,10 @@ export function getCodeScriptScheduleExecution(id: number | string) {
     url: `/code-script/schedule/execution/get?id=${id}`,
   });
 }
+
+export function deleteCodeScriptScheduleExecution(data) {
+  return request.delete({
+    url: "/code-script/schedule/execution/delete",
+    data,
+  });
+}

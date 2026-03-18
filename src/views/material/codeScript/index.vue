@@ -276,39 +276,47 @@
         <span>沙盒运行ID：{{ runDetail.sandboxRunId || "-" }}</span>
         <span>耗时：{{ runDetail.durationMs || 0 }} ms</span>
       </div>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div class="grid h-[78vh] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
         <div
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-        >
-          <div class="mb-2 text-sm font-600">参数</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
-            formatJson(runDetail.params)
-          }}</pre>
-        </div>
-        <div
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
+          class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
         >
           <div class="mb-2 text-sm font-600">结果</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
+          <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
             formatJson(runDetail.runResult)
           }}</pre>
         </div>
-        <div
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3 md:col-span-2"
-        >
-          <div class="mb-2 text-sm font-600">日志</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
-            formatJson(runDetail.logs)
-          }}</pre>
-        </div>
-        <div
-          v-if="runDetail.errorText"
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3 md:col-span-2"
-        >
-          <div class="mb-2 text-sm font-600">错误</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
-            runDetail.errorText
-          }}</pre>
+        <div class="grid h-full min-h-0 gap-3 grid-rows-2">
+          <div
+            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
+          >
+            <div class="mb-2 text-sm font-600">参数</div>
+            <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+              formatJson(runDetail.params)
+            }}</pre>
+          </div>
+          <div
+            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
+          >
+            <div class="mb-2 text-sm font-600">日志</div>
+            <div class="flex-1 overflow-auto rounded bg-[var(--el-bg-color)]/80 px-3 py-2">
+              <div class="space-y-1 font-mono text-xs leading-6">
+                <div
+                  v-for="(item, index) in runDetailLogItems"
+                  :key="`${index}-${item.level}`"
+                  :class="getLogLevelClass(item.level)"
+                >
+                  <span class="mr-2 text-[10px] uppercase opacity-70">[{{ item.level }}]</span>
+                  <span class="whitespace-pre-wrap break-all">{{ item.message }}</span>
+                </div>
+                <div
+                  v-if="!runDetailLogItems.length"
+                  class="text-[var(--el-text-color-secondary)]"
+                >
+                  暂无日志
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -384,7 +392,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowDown, Search, Plus } from "@element-plus/icons-vue";
@@ -553,6 +561,7 @@ const runDetail = reactive<any>({
   logs: [],
   errorText: "",
 });
+const runDetailLogItems = computed(() => formatLogItems(runDetail.logs, runDetail.errorText));
 
 const rules = {
   name: [{ required: true, message: "请输入脚本名称", trigger: "blur" }],
@@ -577,6 +586,47 @@ function getRunStatusType(status: string) {
 
 function formatJson(value: any) {
   return JSON.stringify(value ?? null, null, 2);
+}
+
+function normalizeLogMessage(value: any) {
+  if (typeof value === "string") return value;
+  if (value === null || value === undefined) return "";
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+function formatLogItems(logs: any[], errorText?: string) {
+  const items = Array.isArray(logs)
+    ? logs.map((item) => {
+        if (typeof item === "string") {
+          return { level: "info", message: item };
+        }
+        return {
+          level: String(item?.level || "info").toLowerCase(),
+          message: normalizeLogMessage(item?.message ?? item),
+        };
+      })
+    : [];
+
+  if (errorText) {
+    items.push({
+      level: "error",
+      message: normalizeLogMessage(errorText),
+    });
+  }
+
+  return items.filter((item) => item.message);
+}
+
+function getLogLevelClass(level?: string) {
+  const normalized = String(level || "info").toLowerCase();
+  if (normalized === "error") return "text-red-600";
+  if (normalized === "warn" || normalized === "warning") return "text-amber-600";
+  if (normalized === "debug") return "text-sky-600";
+  return "text-[var(--el-text-color-primary)]";
 }
 
 async function getList() {

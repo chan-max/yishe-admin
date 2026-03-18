@@ -100,20 +100,21 @@
             }}</span>
           </div>
         </template>
-        <template #statusSlot="{ row }">
-          <div class="flex flex-col gap-1">
-            <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
-              {{ row.isEnabled ? "启用" : "停用" }}
-            </el-tag>
-            <el-tag
-              v-if="row.lastStatus"
-              :type="getExecutionStatusType(row.lastStatus)"
-              size="small"
-              effect="plain"
-            >
-              {{ row.lastStatus }}
-            </el-tag>
-          </div>
+        <template #enabledSlot="{ row }">
+          <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
+            {{ row.isEnabled ? "启用" : "停用" }}
+          </el-tag>
+        </template>
+        <template #lastStatusSlot="{ row }">
+          <el-tag
+            v-if="row.lastStatus"
+            :type="getExecutionStatusType(row.lastStatus)"
+            size="small"
+            effect="plain"
+          >
+            {{ row.lastStatus }}
+          </el-tag>
+          <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
         </template>
         <template #operationSlot="{ row }">
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
@@ -149,67 +150,107 @@
   <el-dialog
     :title="dialogTitle"
     v-model="dialogVisible"
-    width="760px"
+    fullscreen
     align-center
     destroy-on-close
   >
-    <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-      <el-form-item label="调度名称" prop="name">
-        <el-input
-          v-model="form.name"
-          maxlength="200"
-          show-word-limit
-          placeholder="请输入调度名称"
-        />
-      </el-form-item>
-      <el-form-item label="代码脚本" prop="scriptId">
-        <el-select v-model="form.scriptId" filterable class="w-full" placeholder="请选择代码脚本">
-          <el-option
-            v-for="script in scriptOptions"
-            :key="script.id"
-            :label="`${script.name} (#${script.id})`"
-            :value="script.id"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="运行环境" prop="runtimeEnv">
-        <el-radio-group v-model="form.runtimeEnv">
-          <el-radio label="development">开发环境</el-radio>
-          <el-radio label="production">生产环境</el-radio>
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item label="触发方式" prop="triggerType">
-        <el-radio-group v-model="form.triggerType">
-          <el-radio label="cron">固定时间</el-radio>
-          <el-radio label="interval">间隔执行</el-radio>
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item v-if="form.triggerType === 'cron'" label="Cron 表达式" prop="cronExpr">
-        <el-input v-model="form.cronExpr" placeholder="例如：0 9 * * *" />
-      </el-form-item>
-      <el-form-item v-else label="间隔分钟" prop="intervalMinutes">
-        <el-input-number v-model="form.intervalMinutes" :min="1" :max="1440" class="w-full!" />
-      </el-form-item>
-      <el-form-item label="参数覆盖" prop="paramsOverride">
-        <el-input
-          v-model="form.paramsOverride"
-          type="textarea"
-          :rows="8"
-          placeholder='请输入 JSON，例如 { "shopId": 1 }'
-        />
-      </el-form-item>
-      <el-form-item label="超时覆盖(ms)" prop="timeoutMsOverride">
-        <el-input-number
-          v-model="form.timeoutMsOverride"
-          :min="100"
-          :max="1800000"
-          class="w-full!"
-        />
-      </el-form-item>
-      <el-form-item label="是否启用" prop="isEnabled">
-        <el-switch v-model="form.isEnabled" />
-      </el-form-item>
-    </el-form>
+    <div class="mx-auto grid h-[calc(100vh-120px)] max-w-[1440px] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" class="grid min-h-0 gap-4">
+        <div class="grid gap-4 lg:grid-cols-2">
+          <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
+            <div class="mb-3 text-sm font-600">基础信息</div>
+            <el-form-item label="调度名称" prop="name" class="mb-4">
+              <el-input
+                v-model="form.name"
+                maxlength="200"
+                show-word-limit
+                placeholder="请输入调度名称"
+              />
+            </el-form-item>
+            <el-form-item label="代码脚本" prop="scriptId" class="mb-4">
+              <el-select v-model="form.scriptId" filterable class="w-full" placeholder="请选择代码脚本">
+                <el-option
+                  v-for="script in scriptOptions"
+                  :key="script.id"
+                  :label="`${script.name} (#${script.id})`"
+                  :value="script.id"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="运行环境" prop="runtimeEnv" class="mb-4">
+              <el-radio-group v-model="form.runtimeEnv">
+                <el-radio label="development">开发环境</el-radio>
+                <el-radio label="production">生产环境</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="是否启用" prop="isEnabled" class="mb-0">
+              <el-switch v-model="form.isEnabled" />
+            </el-form-item>
+          </div>
+
+          <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
+            <div class="mb-3 text-sm font-600">执行配置</div>
+            <el-form-item label="触发方式" prop="triggerType" class="mb-4">
+              <el-radio-group v-model="form.triggerType">
+                <el-radio label="cron">固定时间</el-radio>
+                <el-radio label="interval">间隔执行</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item v-if="form.triggerType === 'cron'" label="Cron 表达式" prop="cronExpr" class="mb-4">
+              <el-input v-model="form.cronExpr" placeholder="例如：0 9 * * *" />
+            </el-form-item>
+            <el-form-item v-else label="间隔分钟" prop="intervalMinutes" class="mb-4">
+              <el-input-number v-model="form.intervalMinutes" :min="1" :max="1440" class="w-full!" />
+            </el-form-item>
+            <el-form-item label="超时覆盖(ms)" prop="timeoutMsOverride" class="mb-0">
+              <el-input-number
+                v-model="form.timeoutMsOverride"
+                :min="100"
+                :max="1800000"
+                class="w-full!"
+              />
+            </el-form-item>
+          </div>
+        </div>
+
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
+          <div class="mb-3 text-sm font-600">参数覆盖</div>
+          <el-form-item label-width="0" prop="paramsOverride" class="mb-0">
+            <el-input
+              v-model="form.paramsOverride"
+              type="textarea"
+              :rows="12"
+              placeholder='请输入 JSON，例如 { "shopId": 1 }'
+            />
+          </el-form-item>
+        </div>
+      </el-form>
+
+      <div class="grid min-h-0 gap-4">
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4">
+          <div class="mb-3 text-sm font-600">Cron 快捷模板</div>
+          <div class="flex flex-wrap gap-2">
+            <el-button
+              v-for="item in cronTemplates"
+              :key="item.expr"
+              size="small"
+              @click="applyCronTemplate(item.expr)"
+            >
+              {{ item.label }}
+            </el-button>
+          </div>
+        </div>
+
+        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4">
+          <div class="mb-3 text-sm font-600">Cron 参考</div>
+          <div class="space-y-2 text-xs leading-6 text-[var(--el-text-color-secondary)]">
+            <div v-for="item in cronTemplates" :key="`${item.expr}-desc`">
+              {{ item.label }}: <span class="font-mono text-[var(--el-text-color-primary)]">{{ item.expr }}</span> {{ item.desc }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <template #footer>
       <el-button @click="dialogVisible = false">取消</el-button>
       <el-button type="primary" :loading="submitLoading" @click="submitForm">保存</el-button>
@@ -224,7 +265,18 @@
             {{ currentSchedule.name }} (#{{ currentSchedule.id }})
           </el-tag>
         </div>
-        <el-button size="small" type="primary" @click="getExecutionList">刷新记录</el-button>
+        <div class="flex items-center gap-2">
+          <el-button
+            size="small"
+            type="danger"
+            plain
+            :disabled="!executionIds.length"
+            @click="handleDeleteExecution()"
+          >
+            批量删除 ({{ executionIds.length }})
+          </el-button>
+          <el-button size="small" type="primary" @click="getExecutionList">刷新记录</el-button>
+        </div>
       </div>
 
       <div class="common-table flex-1 min-h-0">
@@ -232,6 +284,8 @@
           v-bind="executionGridOptions"
           :data="executionDataSource"
           :loading="executionLoading"
+          @checkbox-change="executionCheckboxChange"
+          @checkbox-all="executionCheckboxAllChange"
         >
           <template #executionStatusSlot="{ row }">
             <el-tag :type="getExecutionStatusType(row.status)" size="small">{{
@@ -239,9 +293,20 @@
             }}</el-tag>
           </template>
           <template #executionOperationSlot="{ row }">
-            <el-button type="primary" link size="small" @click="openExecutionDetail(row)"
-              >详情</el-button
+            <el-dropdown
+              trigger="click"
+              @command="(command) => handleExecutionOperationCommand(command, row)"
             >
+              <el-button type="primary" link size="small">
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="detail">详情</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </vxe-grid>
       </div>
@@ -268,39 +333,36 @@
         <span>脚本执行ID：{{ executionDetail.codeScriptRunId || "-" }}</span>
         <span>沙盒运行ID：{{ executionDetail.sandboxRunId || "-" }}</span>
       </div>
-      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div class="grid h-[72vh] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
         <div
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-        >
-          <div class="mb-2 text-sm font-600">参数快照</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
-            formatJson(executionDetail.paramsSnapshotJson)
-          }}</pre>
-        </div>
-        <div
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
+          class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
         >
           <div class="mb-2 text-sm font-600">执行结果</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
+          <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
             formatJson(executionDetail.runResult)
           }}</pre>
         </div>
         <div
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3 md:col-span-2"
+          class="grid h-full min-h-0 gap-3 grid-rows-2"
         >
-          <div class="mb-2 text-sm font-600">日志</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
-            formatJson(executionDetail.logs)
-          }}</pre>
-        </div>
-        <div
-          v-if="executionDetail.errorText"
-          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3 md:col-span-2"
-        >
-          <div class="mb-2 text-sm font-600">错误</div>
-          <pre class="m-0 whitespace-pre-wrap break-all text-xs leading-6">{{
-            executionDetail.errorText
-          }}</pre>
+          <div
+            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
+          >
+            <div class="mb-2 text-sm font-600">参数快照</div>
+            <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+              formatJson(executionDetail.paramsSnapshotJson)
+            }}</pre>
+          </div>
+          <div
+            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
+          >
+            <div class="mb-2 text-sm font-600">日志</div>
+            <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+              executionDetail.errorText
+                ? `${formatJson(executionDetail.logs)}\n\n[ERROR]\n${executionDetail.errorText}`
+                : formatJson(executionDetail.logs)
+            }}</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -320,6 +382,7 @@ import Pagination from "@/components/Pagination/index.vue";
 import { getCodeScriptList } from "@/api/codeScript";
 import {
   createCodeScriptSchedule,
+  deleteCodeScriptScheduleExecution,
   deleteCodeScriptSchedule,
   getCodeScriptSchedule,
   getCodeScriptScheduleExecution,
@@ -358,6 +421,7 @@ const scriptOptions = ref<any[]>([]);
 const executionLoading = ref(false);
 const executionDataSource = ref<any[]>([]);
 const executionTotal = ref(0);
+const executionIds = ref<number[]>([]);
 
 const dialogVisible = ref(false);
 const dialogTitle = ref("");
@@ -394,6 +458,23 @@ const executionDetail = reactive<any>({
   errorText: "",
 });
 
+const cronTemplates = [
+  { label: "每 5 分钟", expr: "*/5 * * * *", desc: "适合高频轻量任务" },
+  { label: "每 10 分钟", expr: "*/10 * * * *", desc: "常用轮询任务" },
+  { label: "每 30 分钟", expr: "*/30 * * * *", desc: "中频同步任务" },
+  { label: "每小时整点", expr: "0 * * * *", desc: "每小时执行一次" },
+  { label: "每天 09:00", expr: "0 9 * * *", desc: "每天上午 9 点" },
+  { label: "每天 12:00", expr: "0 12 * * *", desc: "每天中午 12 点" },
+  { label: "每天 18:00", expr: "0 18 * * *", desc: "每天下午 6 点" },
+  { label: "每天 00:30", expr: "30 0 * * *", desc: "适合夜间批处理" },
+  { label: "工作日 09:00", expr: "0 9 * * 1-5", desc: "周一到周五上午 9 点" },
+  { label: "工作日 18:00", expr: "0 18 * * 1-5", desc: "周一到周五下午 6 点" },
+  { label: "每周一 09:00", expr: "0 9 * * 1", desc: "每周一上午 9 点" },
+  { label: "每周日 23:00", expr: "0 23 * * 0", desc: "每周日晚上 11 点" },
+  { label: "每月 1 日 09:00", expr: "0 9 1 * *", desc: "每月 1 日上午 9 点" },
+  { label: "每月最后一天 23:00", expr: "0 23 28-31 * *", desc: "需脚本内自行兜底最后一天判断" },
+];
+
 const gridOptions = ref({
   ...commonGridOptions,
   maxHeight: null,
@@ -406,7 +487,8 @@ const gridOptions = ref({
     { title: "关联脚本", field: "scriptName", minWidth: 180, slots: { default: "scriptSlot" } },
     { title: "运行环境", field: "runtimeEnv", width: 110, slots: { default: "envSlot" } },
     { title: "触发方式", field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
-    { title: "最近状态", field: "lastStatus", width: 110, slots: { default: "statusSlot" } },
+    { title: "启用状态", field: "isEnabled", width: 100, slots: { default: "enabledSlot" } },
+    { title: "执行状态", field: "lastStatus", width: 110, slots: { default: "lastStatusSlot" } },
     { title: "下次执行", field: "nextRunAt", width: 170, showOverflow: true },
     { title: "操作", width: 110, fixed: "right" as const, slots: { default: "operationSlot" } },
   ],
@@ -416,7 +498,9 @@ const executionGridOptions = ref({
   ...commonGridOptions,
   maxHeight: null,
   rowConfig: { keyField: "id" },
+  checkboxConfig: { reserve: true },
   columns: [
+    { type: "checkbox", width: 48, reserve: true },
     { title: "记录ID", field: "id", width: 90 },
     { title: "状态", field: "status", width: 100, slots: { default: "executionStatusSlot" } },
     { title: "触发来源", field: "triggerSource", width: 100 },
@@ -424,7 +508,7 @@ const executionGridOptions = ref({
     { title: "开始时间", field: "startedAt", width: 170, showOverflow: true },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
-    { title: "操作", width: 90, slots: { default: "executionOperationSlot" } },
+    { title: "操作", width: 100, slots: { default: "executionOperationSlot" } },
   ],
 } as any);
 
@@ -487,6 +571,10 @@ function formatJson(value: any) {
   return JSON.stringify(value ?? null, null, 2);
 }
 
+function applyCronTemplate(expr: string) {
+  form.cronExpr = expr;
+}
+
 async function getScriptOptions() {
   const res = await getCodeScriptList({
     currentPage: 1,
@@ -517,6 +605,7 @@ async function getExecutionList() {
     const res = await getCodeScriptScheduleExecutionList({ ...executionQuery });
     executionDataSource.value = res.list || [];
     executionTotal.value = res.total || 0;
+    executionIds.value = [];
   } catch (error: any) {
     ElMessage.error(error?.message || "获取执行记录失败");
   } finally {
@@ -530,6 +619,14 @@ function checkboxChange({ records }) {
 
 function checkboxAllChange({ records }) {
   ids.value = records.map((item) => item.id);
+}
+
+function executionCheckboxChange({ records }) {
+  executionIds.value = records.map((item) => item.id);
+}
+
+function executionCheckboxAllChange({ records }) {
+  executionIds.value = records.map((item) => item.id);
 }
 
 function syncRouteScriptId(scriptId?: number) {
@@ -693,6 +790,43 @@ async function openExecutionDetail(row: any) {
     ElMessage.error(error?.message || "获取执行详情失败");
   } finally {
     executionDetailLoading.value = false;
+  }
+}
+
+async function handleDeleteExecution(row?: any) {
+  const deleteIds = row?.id ? [row.id] : [...executionIds.value];
+  if (!deleteIds.length) {
+    ElMessage.warning("请选择要删除的执行记录");
+    return;
+  }
+
+  await ElMessageBox.confirm(
+    `确认删除选中的 ${deleteIds.length} 条执行记录吗？`,
+    "删除提示",
+    {
+      type: "warning",
+    },
+  );
+
+  try {
+    await deleteCodeScriptScheduleExecution({ ids: deleteIds });
+    ElMessage.success("删除成功");
+    if (row?.id && executionDetailVisible.value && executionDetail.id === row.id) {
+      executionDetailVisible.value = false;
+    }
+    await getExecutionList();
+  } catch (error: any) {
+    ElMessage.error(error?.message || "删除执行记录失败");
+  }
+}
+
+async function handleExecutionOperationCommand(command: string, row: any) {
+  if (command === "detail") {
+    await openExecutionDetail(row);
+    return;
+  }
+  if (command === "delete") {
+    await handleDeleteExecution(row);
   }
 }
 
