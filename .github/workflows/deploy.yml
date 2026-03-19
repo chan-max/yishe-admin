@@ -7,6 +7,10 @@ on:
       - "package.json"
   workflow_dispatch:
 
+concurrency:
+  group: yishe-admin-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -52,16 +56,21 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         if: steps.version_check.outputs.changed == 'true'
-        run: npm install
+        run: npm ci --prefer-offline --no-audit
 
       - name: Build
         if: steps.version_check.outputs.changed == 'true'
         run: npm run build:prod
 
-      - name: Deploy to Tencent Cloud
+      - name: Package build artifacts
+        if: steps.version_check.outputs.changed == 'true'
+        run: tar -czf dist-prod.tar.gz dist-prod
+
+      - name: Upload package to Tencent Cloud
         if: steps.version_check.outputs.changed == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -69,28 +78,27 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
-          source: "dist-prod/**"
-          target: "/www/wwwroot/49.232.186.238_1521"
-          rm: false
-          strip_components: 1
-          overwrite: true
+          source: "dist-prod.tar.gz"
+          target: "/tmp"
           command_timeout: "10m"
           timeout: "10m"
           debug: true
 
-      - name: Deploy to 1s.design/admin
+      - name: Extract package on Tencent Cloud
         if: steps.version_check.outputs.changed == 'true'
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           port: 22
-          source: "dist-prod/**"
-          target: "/www/wwwroot/1s.design/admin"
-          rm: false
-          strip_components: 1
-          overwrite: true
+          script: |
+            mkdir -p /www/wwwroot/49.232.186.238_1521
+            tar -xzf /tmp/dist-prod.tar.gz -C /tmp
+            rm -rf /www/wwwroot/49.232.186.238_1521/*
+            cp -r /tmp/dist-prod/. /www/wwwroot/49.232.186.238_1521/
+            rm -rf /tmp/dist-prod
+            rm -f /tmp/dist-prod.tar.gz
           command_timeout: "10m"
           timeout: "10m"
           debug: true
