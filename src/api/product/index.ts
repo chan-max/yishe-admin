@@ -57,13 +57,6 @@ export const deleteProduct = (ids: string[]) => {
   })
 }
 
-// 获取商品社交媒体导出数据
-export const getProductSocialMediaExport = (id: string) => {
-  return request.get({
-    url: `/product/social-media-export/${id}`
-  })
-}
-
 // 获取商品的发布任务列表
 export const getProductPublishTasks = (id: string) => {
   return request.get({

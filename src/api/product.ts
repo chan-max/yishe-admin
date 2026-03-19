@@ -101,14 +101,6 @@ export function generateProductVideo(data: {
   });
 }
 
-// 导出社交媒体发布数据结构（GET）
-export function getProductSocialMediaExport(id: string) {
-  return request.get({
-    url: `/product/social-media-export/${id}`,
-    method: 'get',
-  });
-}
-
 // 获取商品的发布任务列表
 export function getProductPublishTasks(id: string) {
   return request.get({

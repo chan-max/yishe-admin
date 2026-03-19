@@ -189,12 +189,6 @@
                     </el-icon>
                     <span>{{ generatingVideoId === row.id ? '视频生成中...' : '生成视频' }}</span>
                   </el-dropdown-item>
-                  <el-dropdown-item command="export-social-media">
-                    <el-icon>
-                      <Upload />
-                    </el-icon>
-                    <span>导出社交媒体数据</span>
-                  </el-dropdown-item>
                   <el-dropdown-item command="publish-to-queue">
                     <el-icon>
                       <Share />
@@ -784,20 +778,6 @@
 
       <!-- 高级视频生成弹窗 (已抽离) -->
       <VideoGenDialog v-model:visible="videoGenDialogVisible" :row="videoGenRow" @success="getList" />
-
-
-      <!-- 导出社交媒体数据弹窗 -->
-      <el-dialog v-model="socialExportVisible" title="社交媒体发布数据（导出）" width="60%" :fullscreen="false"
-        :close-on-click-modal="true" align-center>
-        <div class="p-4 max-w-5xl mx-auto">
-          <el-input v-model="socialExportText" type="textarea" :rows="18" readonly />
-        </div>
-        <template #footer>
-          <el-button @click="socialExportVisible = false">取消</el-button>
-          <el-button type="primary" @click="copySocialExport" :disabled="!socialExportText">复制JSON</el-button>
-        </template>
-      </el-dialog>
-
       <el-dialog v-model="customModelDetailVisible" title="关联设计模型详情" width="100%" :fullscreen="true"
         :close-on-click-modal="false">
         <div v-if="customModelDetail" class="custom-model-detail-dialog p-8">
@@ -1347,10 +1327,25 @@
               <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
               <span v-else class="text-gray-400">-</span>
             </template>
+            <template #operationSlot="{ row }">
+              <el-button type="primary" link size="small" @click="handlePreviewPublishTaskData(row)">
+                查看发布数据
+              </el-button>
+            </template>
           </vxe-grid>
         </div>
         <template #footer>
           <el-button @click="publishTasksVisible = false">关闭</el-button>
+        </template>
+      </el-dialog>
+
+      <el-dialog v-model="publishTaskPreviewVisible" title="发布数据预览" width="60%" :close-on-click-modal="true">
+        <div class="mb-3 text-xs text-[#E6A23C] bg-[#fdf6ec] px-3 py-2 rounded">
+          这里展示的是客户端调用发布端接口时的请求体预览，当前不做资源本地化替换，仅用于查看参数结构。
+        </div>
+        <pre class="source-info-json">{{ JSON.stringify(currentPublishTaskPreviewData, null, 2) }}</pre>
+        <template #footer>
+          <el-button @click="publishTaskPreviewVisible = false">关闭</el-button>
         </template>
       </el-dialog>
 
@@ -1466,7 +1461,6 @@ import {
   updatePublishStatus,
   deleteProduct,
   generateProductCode,
-  getProductSocialMediaExport,
   getProductPublishTasks,
   batchMoveProducts,
   aiGenerateProductInfo
@@ -1753,11 +1747,6 @@ async function handleGenerateVideo(row: any) {
   videoGenRow.value = row;
   videoGenDialogVisible.value = true;
 }
-
-
-// 社交媒体导出
-const socialExportVisible = ref(false);
-const socialExportText = ref('');
 
 const publishLoading = ref(false);
 const currentPublishRow = ref<{
@@ -2814,9 +2803,6 @@ function handleOperationCommand(command: string, row: any) {
     case 'generate-video':
       handleGenerateVideo(row);
       break;
-    case 'export-social-media':
-      handleSocialMediaExport(row);
-      break;
     case 'publish-to-queue':
       handlePublishToQueue(row);
       break;
@@ -2825,33 +2811,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     default:
       console.warn('未知的操作命令:', command);
-  }
-}
-
-async function handleSocialMediaExport(row: any) {
-  if (!row?.id) return;
-  try {
-    const res = await getProductSocialMediaExport(row.id);
-    socialExportText.value = JSON.stringify(res, null, 2);
-    socialExportVisible.value = true;
-  } catch (e: any) {
-    ElMessage.error(e?.message || '导出失败');
-  }
-}
-
-async function copySocialExport() {
-  if (!socialExportText.value) return;
-  try {
-    await navigator.clipboard.writeText(socialExportText.value);
-    ElMessage.success('已复制');
-  } catch {
-    const textarea = document.createElement('textarea');
-    textarea.value = socialExportText.value;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    ElMessage.success('已复制');
   }
 }
 
@@ -3520,6 +3479,7 @@ const publishTasksColumns = [
   { field: 'updatedAt', title: '更新时间', width: 180, slots: { default: 'updatedAtSlot' } },
   { field: 'processedAt', title: '完成时间', width: 180, slots: { default: 'processedAtSlot' } },
   { field: 'error', title: '错误信息', minWidth: 200, showOverflow: true, slots: { default: 'errorSlot' } },
+  { field: 'operation', title: '操作', width: 120, fixed: 'right', slots: { default: 'operationSlot' } },
 ];
 
 async function handleViewPublishTasks(row: any) {
@@ -3554,6 +3514,40 @@ function formatTaskStatus(status: string) {
     failed: { label: '失败', type: 'danger' },
   };
   return statusMap[status] || { label: status, type: 'info' };
+}
+
+const publishTaskPreviewVisible = ref(false);
+const currentPublishTaskPreviewData = ref<any>({});
+
+function buildPublishTaskRequestPreview(task: any) {
+  const data = task?.data || {};
+  const platform = data?.publishData?.platform || data?.meta?.platform || task?.platform || task?.type?.replace('publish-product-', '') || '';
+  const rawPublishData = data?.publishData && typeof data.publishData === 'object'
+    ? data.publishData
+    : {};
+  const fallbackRequestData = rawPublishData?.post || rawPublishData?.assets || rawPublishData?.options
+    ? {
+        platform,
+        title: rawPublishData?.post?.title || '',
+        description: rawPublishData?.post?.description || undefined,
+        content: rawPublishData?.post?.content || undefined,
+        tags: Array.isArray(rawPublishData?.post?.tags) ? rawPublishData.post.tags : undefined,
+        imageSources: Array.isArray(rawPublishData?.assets?.images) ? rawPublishData.assets.images : undefined,
+        videoSource: Array.isArray(rawPublishData?.assets?.videos) ? rawPublishData.assets.videos?.[0] : undefined,
+        ...(rawPublishData?.options || {}),
+      }
+    : { ...rawPublishData, platform };
+
+  return {
+    ...fallbackRequestData,
+    platforms: platform ? [platform] : [],
+    platform,
+  };
+}
+
+function handlePreviewPublishTaskData(task: any) {
+  currentPublishTaskPreviewData.value = buildPublishTaskRequestPreview(task);
+  publishTaskPreviewVisible.value = true;
 }
 
 </script>
