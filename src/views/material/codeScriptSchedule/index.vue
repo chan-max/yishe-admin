@@ -366,11 +366,15 @@
             class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
           >
             <div class="mb-2 text-sm font-600">日志</div>
-            <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
-              executionDetail.errorText
-                ? `${formatJson(executionDetail.logs)}\n\n[ERROR]\n${executionDetail.errorText}`
-                : formatJson(executionDetail.logs)
-            }}</pre>
+            <div class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all rounded bg-[#0f172a] p-3 font-mono text-xs leading-6 text-slate-200">
+              <div
+                v-for="(line, index) in formattedExecutionLogLines"
+                :key="`${index}-${line.text}`"
+                :class="line.className"
+              >
+                {{ line.text }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -379,7 +383,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch, watchEffect } from "vue";
+import { computed, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowDown, Plus, Search } from "@element-plus/icons-vue";
@@ -467,6 +471,18 @@ const executionDetail = reactive<any>({
   logs: [],
   errorText: "",
 });
+
+const LOG_TYPE_CLASS_MAP: Record<string, string> = {
+  success: "text-emerald-300",
+  fail: "text-rose-300",
+  error: "text-rose-300",
+  done: "text-sky-300",
+  start: "text-amber-300",
+  page: "text-violet-300",
+  request: "text-cyan-300",
+  warn: "text-yellow-300",
+  info: "text-slate-200",
+};
 
 const cronTemplates = [
   { label: "每 5 分钟", expr: "*/5 * * * *", desc: "适合高频轻量任务" },
@@ -580,6 +596,81 @@ function getExecutionStatusType(status: string) {
 function formatJson(value: any) {
   return JSON.stringify(value ?? null, null, 2);
 }
+
+function detectLogLineType(text: string) {
+  const normalized = String(text || "").toUpperCase();
+  if (normalized.includes("[SUCCESS]")) return "success";
+  if (normalized.includes("[FAIL]")) return "fail";
+  if (normalized.includes("[ERROR]")) return "error";
+  if (normalized.includes("[DONE]")) return "done";
+  if (normalized.includes("[START]")) return "start";
+  if (normalized.includes("[PAGE]")) return "page";
+  if (normalized.includes("[REQUEST]")) return "request";
+  if (normalized.includes("[WARN]") || normalized.includes("[WARNING]")) return "warn";
+  return "info";
+}
+
+function normalizeLogLines(logs: any, errorText?: string) {
+  const result: Array<{ text: string; className: string }> = [];
+
+  const appendLine = (raw: unknown, preferredType?: string) => {
+    const text = String(raw ?? "").trimEnd();
+    if (!text) return;
+    const type = preferredType || detectLogLineType(text);
+    result.push({
+      text,
+      className: LOG_TYPE_CLASS_MAP[type] || LOG_TYPE_CLASS_MAP.info,
+    });
+  };
+
+  if (Array.isArray(logs)) {
+    logs.forEach((item) => {
+      if (typeof item === "string") {
+        item.split("\n").forEach((line) => appendLine(line));
+        return;
+      }
+
+      if (item && typeof item === "object") {
+        const ts = item.ts ? `[${formatScheduleDateTime(item.ts)}] ` : "";
+        const message = item.message ?? formatJson(item);
+        const type =
+          item.level === "error"
+            ? "error"
+            : item.level === "warn" || item.level === "warning"
+              ? "warn"
+              : detectLogLineType(String(message));
+
+        String(message)
+          .split("\n")
+          .forEach((line) => appendLine(`${ts}${line}`, type));
+        return;
+      }
+
+      appendLine(item);
+    });
+  } else if (logs) {
+    String(formatJson(logs))
+      .split("\n")
+      .forEach((line) => appendLine(line));
+  }
+
+  if (errorText) {
+    appendLine("[ERROR]", "error");
+    String(errorText)
+      .split("\n")
+      .forEach((line) => appendLine(line, "error"));
+  }
+
+  if (!result.length) {
+    appendLine("暂无日志", "info");
+  }
+
+  return result;
+}
+
+const formattedExecutionLogLines = computed(() =>
+  normalizeLogLines(executionDetail.logs, executionDetail.errorText),
+);
 
 function formatScheduleDateTime(value: unknown) {
   if (!value) return "-";
