@@ -1,131 +1,296 @@
-﻿<template>
-  <div class="list-page-layout">
-    <div class="filter-section">
-      <div class="search-bar">
-        <div class="search-form-container">
-          <div class="search-field search-field-wide">
-            <label class="search-label">搜索</label>
-            <el-input v-model="queryParams.search" placeholder="请输入提示词内容" clearable @keyup.enter="getList"
-              @clear="getList" />
+<template>
+  <ContentWrap>
+    <div class="flex items-center justify-between gap-3 py-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <form-item label="搜索提示词">
+          <el-input
+            v-model="queryParams.search"
+            clearable
+            placeholder="请输入提示词内容"
+            class="min-w-[220px]"
+            @keyup.enter="getList"
+            @clear="getList"
+          />
+        </form-item>
+        <form-item label="图片尺寸">
+          <el-select v-model="queryParams.size" clearable placeholder="全部" class="min-w-[180px]">
+            <el-option
+              v-for="item in sizeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </form-item>
+        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
+        <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <el-button type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
+          批量删除{{ selectedIds.length ? `(${selectedIds.length})` : "" }}
+        </el-button>
+        <el-button type="primary" :icon="Plus" @click="handleAdd">创建生成</el-button>
+      </div>
+    </div>
+
+    <div class="common-table">
+      <vxe-grid
+        v-bind="gridOptions"
+        :data="dataSource"
+        :loading="loading"
+        @checkbox-change="checkboxChange"
+        @checkbox-all="checkboxAllChange"
+      >
+        <template #imageSlot="{ row }">
+          <el-image
+            v-if="row.url || row.resultUrl"
+            :src="row.url || row.resultUrl"
+            :preview-src-list="[row.url || row.resultUrl]"
+            :preview-teleported="true"
+            fit="cover"
+            class="h-16 w-16 rounded"
+          />
+          <div
+            v-else-if="row.status === 'processing'"
+            class="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded text-[11px]"
+          >
+            <el-icon class="is-loading text-base">
+              <Loading />
+            </el-icon>
+            <span>生成中</span>
           </div>
-          <div class="search-field search-field-actions">
-            <label class="search-label"></label>
-            <div class="search-actions">
-              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-              <el-button type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
-                批量删除{{ selectedIds.length ? `(${selectedIds.length})` : '' }}
-              </el-button>
-              <el-button type="primary" :icon="Plus" @click="handleAdd">创建生成</el-button>
+          <span v-else-if="row.status === 'failed'">失败</span>
+          <span v-else>-</span>
+        </template>
+
+        <template #promptSlot="{ row }">
+          <el-tooltip v-if="row.prompt" :content="row.prompt" placement="top" :show-after="500">
+            <div class="line-clamp-2 cursor-pointer text-xs leading-5">
+              {{ row.prompt }}
+            </div>
+          </el-tooltip>
+          <span v-else>-</span>
+        </template>
+
+        <template #statusSlot="{ row }">
+          <el-tag :type="getStatusType(row.status)" size="small">
+            {{ formatStatus(row.status) }}
+          </el-tag>
+        </template>
+
+        <template #configParamsSlot="{ row }">
+          <div v-if="row.configParams" class="flex flex-wrap gap-1 text-[11px]">
+            <span
+              v-if="row.configParams.size"
+              class="inline-flex items-center rounded px-2 py-1"
+            >
+              <i class="mdi mdi-aspect-ratio mr-1"></i>{{ row.configParams.size }}
+            </span>
+            <span
+              v-if="row.configParams.style"
+              class="inline-flex items-center rounded px-2 py-1"
+            >
+              {{ currentStyleLabelMap[row.configParams.style] || row.configParams.style }}
+            </span>
+          </div>
+          <span v-else>-</span>
+        </template>
+
+        <template #operationSlot="{ row }">
+          <div class="flex items-center">
+            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+          </div>
+        </template>
+      </vxe-grid>
+    </div>
+
+    <div class="flex justify-end py-4">
+      <Pagination
+        :total="total"
+        v-model:page="queryParams.page"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
+      />
+    </div>
+
+    <el-dialog
+      v-model="dialogVisible"
+      class="tti-fullscreen-dialog"
+      :fullscreen="true"
+      :destroy-on-close="true"
+      align-center
+    >
+      <template #header>
+        <div class="py-2">
+          <div>
+            <div class="text-lg font-semibold">AI 文字生图</div>
+            <div class="mt-1 text-sm">
+              选择提示词模板或手动输入，完成参数配置后直接提交生成
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </template>
 
-    <div class="table-section">
-      <div class="common-table">
-        <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
-          @checkbox-all="checkboxAllChange">
-          <template #imageSlot="{ row }">
-            <el-image v-if="row.url || row.resultUrl" :src="row.url || row.resultUrl"
-              :preview-src-list="[row.url || row.resultUrl]" :preview-teleported="true" fit="cover"
-              class="image-preview" />
-            <div v-else-if="row.status === 'processing'" class="status-processing">
-              <el-icon class="is-loading">
-                <Loading />
-              </el-icon>
-              <span>生成中...</span>
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <div class="flex h-[calc(100vh-180px)] gap-4 overflow-y-auto py-4">
+          <div class="flex min-w-0 flex-1 flex-col gap-4">
+            <div class="rounded-lg border p-4">
+              <div class="mb-4 text-base font-medium">提示词来源</div>
+              <el-radio-group v-model="promptMode">
+                <el-radio label="manual">手动输入</el-radio>
+                <el-radio label="template">AI 提示词模块</el-radio>
+              </el-radio-group>
+              <div v-if="promptMode === 'template'" class="mt-4">
+                <div class="flex flex-wrap items-end gap-3">
+                  <el-select
+                    v-model="selectedPromptId"
+                    clearable
+                    filterable
+                    placeholder="请选择提示词模板"
+                    :loading="promptLoading"
+                    class="min-w-[360px]"
+                    @visible-change="handlePromptDropdownVisible"
+                    @change="handlePromptChange"
+                  >
+                    <el-option
+                      v-for="item in promptOptions"
+                      :key="item.id"
+                      :label="item.title"
+                      :value="item.id"
+                    />
+                  </el-select>
+                </div>
+                <div
+                  v-if="selectedPromptContent"
+                  class="mt-4 rounded-lg border p-4"
+                >
+                  <div class="mb-2 text-sm font-medium">模板内容预览</div>
+                  <div class="max-h-40 overflow-auto whitespace-pre-wrap text-sm leading-6">
+                    {{ selectedPromptContent }}
+                  </div>
+                </div>
+              </div>
             </div>
-            <span v-else-if="row.status === 'failed'" class="text-red-400">失败</span>
-            <span v-else class="text-gray-400">-</span>
-          </template>
 
-          <template #promptSlot="{ row }">
-            <el-tooltip v-if="row.prompt" :content="row.prompt" placement="top" :show-after="500">
-              <div class="prompt-text line-clamp-2">{{ row.prompt }}</div>
-            </el-tooltip>
-            <span v-else>-</span>
-          </template>
-
-          <template #statusSlot="{ row }">
-            <el-tag :type="getStatusType(row.status)" size="small">
-              {{ formatStatus(row.status) }}
-            </el-tag>
-          </template>
-
-          <template #configParamsSlot="{ row }">
-            <div v-if="row.configParams" class="config-params">
-              <span v-if="row.configParams.size" class="param-item">
-                <i class="mdi mdi-aspect-ratio mr-1"></i>{{ row.configParams.size }}
-              </span>
+            <div class="rounded-lg border p-4">
+              <el-form-item label="画面提示词" prop="prompt" class="mb-4">
+                <el-input
+                  v-model="form.prompt"
+                  type="textarea"
+                  resize="none"
+                  :rows="18"
+                  placeholder="请输入图片描述，支持在模板基础上继续微调"
+                />
+              </el-form-item>
+              <el-form-item label="负向提示词" prop="negativePrompt" class="mb-0">
+                <el-input
+                  v-model="form.negativePrompt"
+                  type="textarea"
+                  :rows="8"
+                  resize="none"
+                  placeholder="可选，不需要可留空"
+                />
+              </el-form-item>
             </div>
-            <span v-else>-</span>
-          </template>
+          </div>
 
-          <template #operationSlot="{ row }">
-            <div class="table-operation-column">
-              <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+          <div class="flex w-[360px] flex-shrink-0 flex-col gap-4">
+            <div class="rounded-lg border p-4">
+              <div class="mb-4 text-base font-medium">生成参数</div>
+              <el-form-item label="图片尺寸" prop="size">
+                <el-select v-model="form.size" class="w-full">
+                  <el-option
+                    v-for="item in sizeOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="风格" prop="style">
+                <el-select v-model="form.style" class="w-full" clearable placeholder="默认">
+                  <el-option label="通用" value="" />
+                  <el-option label="写实" value="photography" />
+                  <el-option label="插画" value="illustration" />
+                  <el-option label="二次元" value="anime" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="生成数量" prop="n" class="mb-0">
+                <el-input-number v-model="form.n" :min="1" :max="4" class="w-full" />
+              </el-form-item>
             </div>
-          </template>
-        </vxe-grid>
-      </div>
-    </div>
 
-    <div class="pagination-section">
-      <Pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
-        @pagination="getList" />
-    </div>
-
-    <el-dialog v-model="dialogVisible" title="AI 文字生图" width="500px" :destroy-on-close="true" align-center>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" class="create-form">
-        <el-form-item label="提示词" prop="prompt">
-          <el-input v-model="form.prompt" type="textarea" :rows="6" placeholder="请输入图片描述，例如：一只坐在窗边的橘猫，阳光照射，治愈风格" />
-        </el-form-item>
-
-        <el-form-item label="尺寸" prop="size">
-          <el-select v-model="form.size" class="w-full">
-            <el-option label="正方形 (1024x1024)" value="1024*1024" />
-            <el-option label="竖图 3:4 (768x1024)" value="768*1024" />
-            <el-option label="横图 4:3 (1024x768)" value="1024*768" />
-            <el-option label="横屏 16:9 (1664x928)" value="1664*928" />
-            <el-option label="竖屏 9:16 (928x1664)" value="928*1664" />
-          </el-select>
-        </el-form-item>
+            <div class="rounded-lg border p-4">
+              <div class="mb-3 text-base font-medium">使用建议</div>
+              <div class="space-y-2 text-sm leading-6">
+                <div>主体、材质、光线、构图和风格描述越明确，结果越稳定。</div>
+                <div>选择模板后可以继续在左侧输入框里修改，适合快速微调。</div>
+                <div>如果生成结果杂乱，优先补充负向提示词。</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </el-form>
+
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" :icon="MagicStick" :loading="submitLoading" @click="submitForm">立即生成</el-button>
+        <div class="flex items-center justify-end gap-2">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :icon="MagicStick" :loading="submitLoading" @click="submitForm">
+            立即生成
+          </el-button>
+        </div>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watchEffect } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Delete, Loading, MagicStick } from '@element-plus/icons-vue'
-import { getTtiRecordPage, createTtiRecord, deleteTtiRecord, batchDeleteTtiRecord } from '@/api/ai/tti'
-import { commonGridOptions } from '@/common/table'
-import { useWindowSize } from '@vueuse/core'
-import Pagination from '@/components/Pagination/index.vue'
-import { formatTimestamp } from '@/common/date'
+import { ref, reactive, onMounted, watchEffect, computed, watch } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { Plus, Search, Refresh, Delete, Loading, MagicStick } from "@element-plus/icons-vue";
+import { getTtiRecordPage, createTtiRecord, deleteTtiRecord, batchDeleteTtiRecord } from "@/api/ai/tti";
+import { getPromptList } from "@/api/prompt";
+import { commonGridOptions } from "@/common/table";
+import { useWindowSize } from "@vueuse/core";
+import Pagination from "@/components/Pagination/index.vue";
+import { formatTimestamp } from "@/common/date";
 
-const loading = ref(false)
-const submitLoading = ref(false)
-const dialogVisible = ref(false)
-const total = ref(0)
-const dataSource = ref<any[]>([])
-const formRef = ref()
-const selectedIds = ref<string[]>([])
+const sizeOptions = [
+  { label: "正方形 1024 x 1024", value: "1024*1024" },
+  { label: "竖图 768 x 1024", value: "768*1024" },
+  { label: "横图 1024 x 768", value: "1024*768" },
+  { label: "横屏 1664 x 928", value: "1664*928" },
+  { label: "竖屏 928 x 1664", value: "928*1664" }
+];
+
+const currentStyleLabelMap: Record<string, string> = {
+  "": "通用",
+  photography: "写实",
+  illustration: "插画",
+  anime: "二次元"
+};
+
+const loading = ref(false);
+const submitLoading = ref(false);
+const dialogVisible = ref(false);
+const total = ref(0);
+const dataSource = ref<any[]>([]);
+const formRef = ref();
+const selectedIds = ref<string[]>([]);
+const promptMode = ref<"manual" | "template">("manual");
+const selectedPromptId = ref<number | null>(null);
+const promptLoading = ref(false);
+const promptOptions = ref<any[]>([]);
 
 const queryParams = reactive({
   page: 1,
   pageSize: 20,
-  search: ''
-})
+  search: "",
+  size: ""
+});
 
-const { height } = useWindowSize()
+const { height } = useWindowSize();
 const gridOptions = reactive({
   ...commonGridOptions,
   maxHeight: null as any,
@@ -133,325 +298,213 @@ const gridOptions = reactive({
     reserve: true
   },
   columns: [
-    { type: 'checkbox', width: 45 },
-    { type: 'seq', title: '#', width: 50 },
-    { title: '成品图', field: 'url', width: 100, slots: { default: 'imageSlot' } },
-    { title: '提示词', field: 'prompt', minWidth: 200, slots: { default: 'promptSlot' } },
-    { title: '配置参数', field: 'configParams', width: 140, slots: { default: 'configParamsSlot' } },
-    { title: '状态', field: 'status', width: 100, slots: { default: 'statusSlot' } },
+    { type: "checkbox", width: 45 },
+    { type: "seq", title: "#", width: 50 },
+    { title: "成品图", field: "url", width: 100, slots: { default: "imageSlot" } },
+    { title: "提示词", field: "prompt", minWidth: 240, slots: { default: "promptSlot" } },
+    { title: "配置参数", field: "configParams", width: 180, slots: { default: "configParamsSlot" } },
+    { title: "状态", field: "status", width: 100, slots: { default: "statusSlot" } },
     {
-      title: '创建时间',
-      field: 'createTime',
+      title: "创建时间",
+      field: "createTime",
       width: 160,
-      formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : '-')
+      formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-")
     },
-    { title: '操作', width: 80, slots: { default: 'operationSlot' }, fixed: 'right' }
+    { title: "操作", width: 80, slots: { default: "operationSlot" }, fixed: "right" }
   ] as any[]
-})
+});
 
 watchEffect(() => {
-  gridOptions.maxHeight = height.value - 200
-})
+  gridOptions.maxHeight = height.value - 260;
+});
 
 const form = reactive({
-  prompt: '',
-  size: '1024*1024'
-})
+  prompt: "",
+  negativePrompt: "",
+  size: "1024*1024",
+  n: 1,
+  style: ""
+});
 
 const rules = {
-  prompt: [{ required: true, message: '提示词不能为空', trigger: 'blur' }]
-}
+  prompt: [{ required: true, message: "提示词不能为空", trigger: "blur" }]
+};
+
+const selectedPrompt = computed(() => {
+  return promptOptions.value.find((item: any) => Number(item.id) === Number(selectedPromptId.value)) || null;
+});
+
+const selectedPromptContent = computed(() => {
+  return selectedPrompt.value?.content ? String(selectedPrompt.value.content).trim() : "";
+});
+
+const resolvedPrompt = computed(() => form.prompt.trim());
+
+watch(promptMode, (mode) => {
+  if (mode === "template") {
+    loadPromptOptions();
+    form.prompt = selectedPromptContent.value;
+    return;
+  }
+  selectedPromptId.value = null;
+  form.prompt = "";
+});
+
+watch(selectedPromptContent, (value) => {
+  if (promptMode.value === "template") {
+    form.prompt = value;
+  }
+});
 
 const getList = async () => {
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getTtiRecordPage(queryParams)
-    dataSource.value = res.list || []
-    total.value = res.total || 0
-    selectedIds.value = []
+    const res = await getTtiRecordPage(queryParams);
+    dataSource.value = res.list || [];
+    total.value = res.total || 0;
+    selectedIds.value = [];
   } catch (error) {
-    console.error('加载记录失败:', error)
-    ElMessage.error('加载失败')
+    console.error("加载记录失败:", error);
+    ElMessage.error("加载失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const resetQuery = () => {
-  queryParams.page = 1
-  queryParams.search = ''
-  getList()
-}
+  queryParams.page = 1;
+  queryParams.search = "";
+  queryParams.size = "";
+  getList();
+};
 
 const checkboxChange = (event: any) => {
-  selectedIds.value = event.records.map((row: any) => row.id)
-}
+  selectedIds.value = event.records.map((row: any) => row.id);
+};
 
 const checkboxAllChange = (event: any) => {
-  selectedIds.value = event.records.map((row: any) => row.id)
-}
+  selectedIds.value = event.records.map((row: any) => row.id);
+};
 
 const handleAdd = () => {
   Object.assign(form, {
-    prompt: '',
-    size: '1024*1024'
-  })
-  dialogVisible.value = true
-}
+    prompt: "",
+    negativePrompt: "",
+    size: "1024*1024",
+    n: 1,
+    style: ""
+  });
+  promptMode.value = "manual";
+  selectedPromptId.value = null;
+  dialogVisible.value = true;
+};
 
 const submitForm = async () => {
-  await formRef.value.validate()
-  submitLoading.value = true
+  await formRef.value.validate();
+  submitLoading.value = true;
   try {
-    await createTtiRecord(form)
-    ElMessage.success('提交成功')
-    dialogVisible.value = false
-    getList()
+    await createTtiRecord({
+      prompt: resolvedPrompt.value,
+      negativePrompt: form.negativePrompt || undefined,
+      size: form.size,
+      n: form.n,
+      style: form.style || undefined
+    });
+    ElMessage.success("提交成功");
+    dialogVisible.value = false;
+    getList();
   } catch (error) {
-    ElMessage.error('提交失败')
+    ElMessage.error("提交失败");
   } finally {
-    submitLoading.value = false
+    submitLoading.value = false;
   }
-}
+};
 
 const handleDelete = async (row: any) => {
   try {
-    await ElMessageBox.confirm('确定要删除这条记录吗？', '提示', {
-      type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
-    })
-    await deleteTtiRecord(row.id)
-    ElMessage.success('删除成功')
-    getList()
-  } catch (error) { }
-}
+    await ElMessageBox.confirm("确定要删除这条记录吗？", "提示", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消"
+    });
+    await deleteTtiRecord(row.id);
+    ElMessage.success("删除成功");
+    getList();
+  } catch {}
+};
+
+const loadPromptOptions = async () => {
+  if (promptLoading.value) return;
+  promptLoading.value = true;
+  try {
+    const res = await getPromptList({
+      currentPage: 1,
+      pageSize: 100
+    });
+    promptOptions.value = Array.isArray((res as any)?.list) ? res.list : [];
+  } catch (error) {
+    console.error("加载提示词模板失败:", error);
+    ElMessage.error("加载提示词模板失败");
+  } finally {
+    promptLoading.value = false;
+  }
+};
+
+const handlePromptDropdownVisible = (visible: boolean) => {
+  if (visible) {
+    loadPromptOptions();
+  }
+};
+
+const handlePromptChange = () => {
+  if (promptMode.value === "template") {
+    form.prompt = selectedPromptContent.value;
+  }
+};
 
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) {
-    ElMessage.warning('请选择要删除的记录')
-    return
+    ElMessage.warning("请选择要删除的记录");
+    return;
   }
 
   try {
-    await ElMessageBox.confirm(`确定删除选中的 ${selectedIds.value.length} 条记录吗？`, '批量删除', {
-      type: 'warning',
-      confirmButtonText: '确定',
-      cancelButtonText: '取消'
-    })
-    loading.value = true
-    await batchDeleteTtiRecord(selectedIds.value)
-    ElMessage.success('批量删除完成')
-    getList()
-  } catch (error) {
+    await ElMessageBox.confirm(`确定删除选中的 ${selectedIds.value.length} 条记录吗？`, "批量删除", {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消"
+    });
+    loading.value = true;
+    await batchDeleteTtiRecord(selectedIds.value);
+    ElMessage.success("批量删除完成");
+    getList();
+  } catch {
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 const getStatusType = (status: string) => {
   const map: Record<string, string> = {
-    success: 'success',
-    failed: 'danger',
-    processing: 'warning',
-    pending: 'info'
-  }
-  return map[status] || 'info'
-}
+    success: "success",
+    failed: "danger",
+    processing: "warning",
+    pending: "info"
+  };
+  return map[status] || "info";
+};
 
 const formatStatus = (status: string) => {
   const map: Record<string, string> = {
-    success: '已生成',
-    failed: '失败',
-    processing: '生成中',
-    pending: '排队中'
-  }
-  return map[status] || status
-}
+    success: "已生成",
+    failed: "失败",
+    processing: "生成中",
+    pending: "排队中"
+  };
+  return map[status] || status;
+};
 
 onMounted(() => {
-  getList()
-})
+  getList();
+});
 </script>
-
-<style scoped lang="scss">
-.list-page-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 8px 10px;
-  background-color: var(--el-bg-color-page);
-  gap: 8px;
-
-  .filter-section {
-    background-color: var(--el-bg-color);
-    padding: 8px 12px;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-
-    .search-bar {
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .search-form-container {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-    }
-
-    .search-field {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 32px;
-      width: 100%;
-    }
-
-    .search-field-wide {
-      max-width: 640px;
-      width: 100%;
-    }
-
-    .search-field-actions {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      width: 100%;
-    }
-
-    .search-label {
-      width: 96px;
-      min-width: 64px;
-      text-align: right;
-      padding-right: 8px;
-      line-height: 32px;
-      flex-shrink: 0;
-      color: var(--el-text-color-regular);
-      font-size: 13px;
-    }
-
-    .search-field-actions .search-label {
-      display: none;
-    }
-
-    .search-field> :not(.search-label) {
-      flex: 1;
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .search-field .el-input,
-    .search-field .el-select {
-      width: 100%;
-    }
-
-    .search-actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      column-gap: 6px;
-      row-gap: 6px;
-      align-items: center;
-    }
-  }
-
-  .table-section {
-    flex: 1;
-    min-height: 0;
-    background-color: var(--el-bg-color);
-    padding: 10px 12px;
-    border-radius: 4px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  }
-
-  .pagination-section {
-    padding: 8px 0 0 0;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-
-.image-preview {
-  width: 60px;
-  height: 60px;
-  border-radius: 4px;
-  border: 1px solid var(--el-border-color-lighter);
-}
-
-.status-processing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 60px;
-  color: var(--el-color-warning);
-  font-size: 11px;
-  gap: 4px;
-
-  .el-icon {
-    font-size: 16px;
-  }
-}
-
-.prompt-text {
-  font-size: 12px;
-  color: var(--el-text-color-primary);
-  line-height: 1.4;
-  cursor: pointer;
-}
-
-.config-params {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-
-  .param-item {
-    display: flex;
-    align-items: center;
-    background: var(--el-fill-color-light);
-    padding: 2px 6px;
-    border-radius: 4px;
-    width: fit-content;
-  }
-}
-
-.w-full {
-  width: 100%;
-}
-
-.table-operation-column {
-  display: flex;
-  gap: 4px;
-}
-
-:deep(.el-form-item) {
-  margin-bottom: 12px;
-}
-
-:deep(.el-form-item__label) {
-  font-size: 13px;
-}
-
-@media (max-width: 900px) {
-  .list-page-layout .filter-section {
-    .search-form-container {
-      grid-template-columns: 1fr;
-      grid-auto-flow: row;
-      gap: 8px;
-    }
-
-    .search-label {
-      width: auto;
-      padding-right: 0;
-      text-align: left;
-    }
-
-    .search-field-actions,
-    .search-actions {
-      justify-content: flex-start;
-    }
-  }
-}
-</style>

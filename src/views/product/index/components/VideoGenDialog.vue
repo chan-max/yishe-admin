@@ -127,8 +127,13 @@
                         <div class="flex flex-col gap-1">
                           <span
                             class="text-[10px] text-[var(--el-text-color-secondary)] uppercase font-bold tracking-wider">时长</span>
-                          <el-input-number v-model="scene.duration" size="small" :min="0.5" style="width: 100%"
-                            controls-position="right" />
+                          <el-input-number
+                            v-model="scene.duration"
+                            size="small"
+                            :min="0.5"
+                            class="w-full"
+                            controls-position="right"
+                          />
                         </div>
                         <div class="flex flex-col gap-1">
                           <span
@@ -181,6 +186,85 @@
                 <div class="p-6 space-y-8">
                   <!-- Previous options content -->
                   <!-- 执行模式选择 -->
+                  <section>
+                    <div class="flex items-center gap-2 mb-4">
+                      <div class="w-1 h-4 bg-cyan-500 rounded-full"></div>
+                      <span class="font-bold text-[var(--el-text-color-primary)]">视频提示词</span>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <div class="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
+                        <div class="space-y-3">
+                          <div class="text-xs font-medium uppercase tracking-[0.12em] text-slate-400">提示词来源</div>
+                          <el-radio-group v-model="promptMode" class="grid grid-cols-1 gap-2">
+                            <el-radio-button label="manual">手动填写</el-radio-button>
+                            <el-radio-button label="template">提示词模块</el-radio-button>
+                          </el-radio-group>
+                          <div class="rounded-xl bg-white p-3 text-xs leading-5 text-slate-500">
+                            <div>手动填写：适合本次视频做临时镜头要求。</div>
+                            <div class="mt-1">提示词模块：适合复用团队沉淀的标准模板。</div>
+                          </div>
+                        </div>
+
+                        <div class="space-y-4">
+                          <template v-if="promptMode === 'manual'">
+                            <div class="space-y-2">
+                              <div class="text-sm font-medium text-slate-700">手动提示词</div>
+                              <el-input
+                                v-model="videoPrompt"
+                                type="textarea"
+                                :rows="6"
+                                resize="vertical"
+                                placeholder="例如：镜头缓慢推近商品主体，突出材质细节和柔和光泽，整体节奏克制高级。"
+                              />
+                            </div>
+                          </template>
+
+                          <template v-else>
+                            <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+                              <div class="space-y-2">
+                                <div class="text-sm font-medium text-slate-700">选择 AI 提示词模板</div>
+                                <el-select
+                                  v-model="selectedPromptId"
+                                  class="w-full"
+                                  filterable
+                                  clearable
+                                  :loading="promptLoading"
+                                  placeholder="请选择提示词模板"
+                                  @visible-change="handlePromptDropdownVisible"
+                                  @change="handlePromptChange"
+                                >
+                                  <el-option
+                                    v-for="item in promptOptions"
+                                    :key="item.id"
+                                    :label="item.title"
+                                    :value="item.id"
+                                  />
+                                </el-select>
+                              </div>
+                              <div class="flex items-end">
+                                <el-button plain @click="openPromptManager">打开提示词模块</el-button>
+                              </div>
+                            </div>
+                            <div class="rounded-xl border border-dashed border-slate-300 bg-white p-4">
+                              <div class="mb-2 flex items-center justify-between">
+                                <div class="text-sm font-medium text-slate-700">模板内容预览</div>
+                                <div v-if="selectedPromptTitle" class="text-xs text-slate-400">{{ selectedPromptTitle }}</div>
+                              </div>
+                              <div class="max-h-40 overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-600">
+                                {{ selectedPromptContent || "选择后将在这里预览提示词内容" }}
+                              </div>
+                            </div>
+                          </template>
+
+                          <div v-if="resolvedVideoPrompt" class="rounded-xl bg-slate-900 p-4 text-slate-100">
+                            <div class="mb-2 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">本次将提交的提示词</div>
+                            <div class="whitespace-pre-wrap text-sm leading-6">{{ resolvedVideoPrompt }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
                   <section>
                     <div class="flex items-center gap-2 mb-4">
                       <div class="w-1 h-4 bg-green-500 rounded-full"></div>
@@ -245,7 +329,7 @@
                           <el-form-item label="背景颜色">
                             <div class="flex items-center gap-4">
                               <el-color-picker v-model="options.backgroundColor" />
-                              <el-input v-model="options.backgroundColor" placeholder="#000000" style="width: 120px" />
+                              <el-input v-model="options.backgroundColor" placeholder="#000000" class="w-[120px]" />
                             </div>
                           </el-form-item>
                           <el-form-item label="输出格式">
@@ -444,6 +528,7 @@ import {
 import { generateProductVideo } from '@/api/product';
 import { getClipMaterialList } from '@/api/clip-material';
 import { getPreviewImageUrl } from '@/utils/image';
+import { getPromptList } from '@/api/prompt';
 
 const props = defineProps({
   visible: {
@@ -469,6 +554,11 @@ const generating = ref(false);
 const audioLoading = ref(false);
 const audioMaterials = ref<any[]>([]);
 const payloadVisible = ref(false);
+const promptMode = ref<'manual' | 'template'>('manual');
+const videoPrompt = ref('');
+const selectedPromptId = ref<number | null>(null);
+const promptLoading = ref(false);
+const promptOptions = ref<any[]>([]);
 
 // 表单数据
 const form = reactive({
@@ -554,9 +644,32 @@ const finalPayload = computed(() => {
     resources,
     options: {
       ...options,
-      format: form.outputFormat
-    }
+      format: form.outputFormat,
+      prompt: resolvedVideoPrompt.value || undefined,
+      promptId: promptMode.value === 'template' ? selectedPromptId.value || undefined : undefined
+    },
+    prompt: resolvedVideoPrompt.value || undefined,
+    promptId: promptMode.value === 'template' ? selectedPromptId.value || undefined : undefined
   };
+});
+
+const selectedPrompt = computed(() => {
+  return promptOptions.value.find((item: any) => item.id === selectedPromptId.value) || null;
+});
+
+const selectedPromptContent = computed(() => {
+  return selectedPrompt.value?.content ? String(selectedPrompt.value.content).trim() : '';
+});
+
+const selectedPromptTitle = computed(() => {
+  return selectedPrompt.value?.title ? String(selectedPrompt.value.title).trim() : '';
+});
+
+const resolvedVideoPrompt = computed(() => {
+  if (promptMode.value === 'template') {
+    return selectedPromptContent.value;
+  }
+  return videoPrompt.value.trim();
 });
 
 // 监听
@@ -570,9 +683,31 @@ watch(() => props.row, (newRow) => {
   }
 }, { immediate: true });
 
+watch(dialogVisible, (visible) => {
+  if (visible) {
+    if (promptMode.value === 'template') {
+      loadPromptOptions();
+    }
+    return;
+  }
+  resetPromptState();
+});
+
+watch(promptMode, (mode) => {
+  if (mode === 'template') {
+    loadPromptOptions();
+  }
+});
+
 // 方法
 function handleClose() {
   emit('update:visible', false);
+}
+
+function resetPromptState() {
+  promptMode.value = 'manual';
+  videoPrompt.value = '';
+  selectedPromptId.value = null;
 }
 
 function toggleImageSelection(url: string) {
@@ -649,6 +784,41 @@ async function loadAudioMaterials(keyword: string = '') {
   } finally {
     audioLoading.value = false;
   }
+}
+
+async function loadPromptOptions() {
+  if (promptLoading.value || promptOptions.value.length) return;
+  promptLoading.value = true;
+  try {
+    const res = await getPromptList({
+      currentPage: 1,
+      pageSize: 100
+    });
+    promptOptions.value = Array.isArray((res as any)?.list) ? res.list : [];
+  } catch (e) {
+    console.error(e);
+    ElMessage.error('加载提示词模板失败');
+  } finally {
+    promptLoading.value = false;
+  }
+}
+
+function handlePromptDropdownVisible(visible: boolean) {
+  if (visible) {
+    loadPromptOptions();
+  }
+}
+
+function handlePromptChange() {
+  if (selectedPromptId.value) {
+    promptMode.value = 'template';
+    return;
+  }
+  videoPrompt.value = '';
+}
+
+function openPromptManager() {
+  window.open('/#/ai/assets/prompt', '_blank');
 }
 
 async function handleSubmit() {
