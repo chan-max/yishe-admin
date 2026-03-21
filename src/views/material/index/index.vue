@@ -1319,7 +1319,16 @@
               </el-col>
               <el-col :xs="24" :md="12">
                 <el-form-item label="素材编码">
-                  <el-input v-model="editForm.code" placeholder="格式：2-7位随机字母+2-7位数字，如 xyz123" clearable maxlength="14" />
+                  <el-input
+                    v-model="editForm.code"
+                    placeholder="格式：3-6位随机字母+2-7位数字，如 abc123"
+                    clearable
+                    maxlength="14"
+                  >
+                    <template #append>
+                      <el-button :loading="generatingCode" @click="handleGenerateMaterialCode">生成编码</el-button>
+                    </template>
+                  </el-input>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
@@ -1675,6 +1684,7 @@ import {
   aiAutoGenerateMaterialInfo,
   updateAssetLibrary,
   generateImageInfo, // 新增
+  generateStickerCode,
   batchMoveStickers,
   getStickerFolderTree,
   uploadMaterialFile,
@@ -2104,6 +2114,7 @@ const editForm = ref({
   phash: ''
 })
 const editLoading = ref(false)
+const generatingCode = ref(false)
 
 // 其他缺少的变量
 const currentUploadInfo = ref({ path: '', folderId: null as string | null, folderPath: '', folder: '' })
@@ -3734,12 +3745,33 @@ const delayUpdateList = useDebounceFn(() => {
     editDialogVisible.value = true
   }
 
+  async function handleGenerateMaterialCode() {
+    if (generatingCode.value) return
+
+    generatingCode.value = true
+    try {
+      const res = await generateStickerCode()
+      const generatedCode = (res?.code || res?.data?.code || '').trim().toLowerCase()
+
+      if (!generatedCode) {
+        throw new Error('未返回有效编码')
+      }
+
+      editForm.value.code = generatedCode
+      ElMessage.success('编码生成成功')
+    } catch (e: any) {
+      ElMessage.error(e?.message || '编码生成失败')
+    } finally {
+      generatingCode.value = false
+    }
+  }
+
   async function submitEdit() {
     editLoading.value = true
     try {
       const inputCode = (editForm.value.code || '').trim().toLowerCase()
-      if (inputCode && !/^[a-z]{2,7}\d{2,7}$/.test(inputCode)) {
-        ElMessage.warning('编码格式必须为 2-7 位字母 + 2-7 位数字，例如 abs123')
+      if (inputCode && !/^[a-z]{3,6}\d{2,7}$/.test(inputCode)) {
+        ElMessage.warning('编码格式必须为 3-6 位字母 + 2-7 位数字，例如 abc123')
         return
       }
 
