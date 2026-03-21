@@ -40,9 +40,28 @@
         </template>
 
         <template #operationSlot="{ row }">
-          <div class="flex items-center justify-end gap-3">
-            <el-button link type="primary" size="small" @click="openDialog(row.id)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
+          <div class="flex justify-end">
+            <el-dropdown
+              trigger="click"
+              @command="(command) => handleOperationCommand(command, row)"
+              class="operation-dropdown"
+            >
+              <el-button type="primary" link size="small">
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item command="edit">
+                    <el-icon><Edit /></el-icon>
+                    <span>编辑</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>
+                    <el-icon><Delete /></el-icon>
+                    <span>删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </template>
       </vxe-grid>
@@ -87,7 +106,7 @@ const gridOptions = ref({
     { title: '地址', field: 'address', minWidth: 220, showOverflow: 'tooltip' },
     { title: '描述', field: 'description', minWidth: 240, showOverflow: 'tooltip' },
     { title: '创建时间', field: 'createTime', width: 180, slots: { default: 'createTimeSlot' } },
-    { title: '操作', field: 'operation', width: 160, fixed: 'right', slots: { default: 'operationSlot' } }
+    { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationSlot' } }
   ]
 })
 
@@ -104,6 +123,17 @@ const getList = async () => {
 
 const openDialog = (id?: number) => {
   dialogRef.value?.open(id)
+}
+
+const handleOperationCommand = (command: string, row: any) => {
+  switch (command) {
+    case 'edit':
+      openDialog(row.id)
+      break
+    case 'delete':
+      handleDelete(row.id)
+      break
+  }
 }
 
 const handleCheckboxChange = ({ records }: any) => {

@@ -465,14 +465,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
               title: "设计请求",
             },
           },
-          {
-            path: "vendor",
-            component: () => import("@/views/vendor/index.vue"),
-            name: "VendorIndex",
-            meta: {
-              title: "厂家管理",
-            },
-          },
         ],
       },
       {
@@ -531,6 +523,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
             name: "ShopIndex",
             meta: {
               title: "店铺列表",
+            },
+          },
+          {
+            path: "vendor",
+            component: () => import("@/views/vendor/index.vue"),
+            name: "VendorIndex",
+            meta: {
+              title: "厂家管理",
             },
           },
         ],
@@ -754,8 +754,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/shop/vendor",
-    redirect: "/product/collaboration/vendor",
+    redirect: "/operation/shop/vendor",
     name: "ShopVendorCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/product/collaboration/vendor",
+    redirect: "/operation/shop/vendor",
+    name: "ProductCollaborationVendorCompat",
     meta: {
       hidden: true,
       noTagsView: true,
