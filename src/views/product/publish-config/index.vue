@@ -8,7 +8,6 @@ import {
   updatePublishConfigApi,
   deletePublishConfigApi
 } from '@/api/product/publishConfig'
-import { getPromptList } from '@/api/prompt'
 import { ContentWrap } from '@/components/ContentWrap'
 import { formatTime } from '@/utils'
 import { commonGridOptions } from "@/common/table"
@@ -138,8 +137,6 @@ const submitLoading = ref(false)
 // 动态平台配置
 const currentPlatformConfig = ref<PlatformConfig | null>(null)
 const platformConfigData = ref<Record<string, any>>({})
-const promptOptions = ref<any[]>([])
-const promptLoading = ref(false)
 
 const form = reactive({
   id: undefined,
@@ -150,7 +147,6 @@ const form = reactive({
 })
 
 const titleConfigForm = reactive({
-  promptId: undefined as number | undefined,
   templateContent: '',
   maxLength: undefined as number | undefined,
   style: '',
@@ -188,7 +184,6 @@ const handleAdd = () => {
   form.platform = ''
   form.description = ''
   form.isActive = true
-  titleConfigForm.promptId = undefined
   titleConfigForm.templateContent = ''
   titleConfigForm.maxLength = undefined
   titleConfigForm.style = ''
@@ -209,7 +204,6 @@ const handleEdit = (row: any) => {
   form.description = row.description
   form.isActive = row.isActive
 
-  titleConfigForm.promptId = row.titleConfig?.promptId || row.titlePromptId || undefined
   titleConfigForm.templateContent = row.titleTemplate || ''
   titleConfigForm.maxLength = typeof row.titleConfig?.maxLength === 'number' ? row.titleConfig.maxLength : undefined
   titleConfigForm.style = row.titleConfig?.style || ''
@@ -245,7 +239,6 @@ const submitForm = async () => {
     const formattedConfigData = formatConfigForSubmit(form.platform, platformConfigData.value)
 
     const parsedTitleConfig = {
-      promptId: typeof titleConfigForm.promptId === 'number' ? titleConfigForm.promptId : undefined,
       maxLength: typeof titleConfigForm.maxLength === 'number' ? titleConfigForm.maxLength : undefined,
       style: titleConfigForm.style?.trim() || undefined,
       tone: titleConfigForm.tone?.trim() || undefined,
@@ -307,55 +300,7 @@ const handleDelete = (row: any) => {
   })
 }
 
-const loadPromptOptions = async () => {
-  if (promptLoading.value) return
-  promptLoading.value = true
-  try {
-    const res = await getPromptList({
-      currentPage: 1,
-      pageSize: 1000
-    })
-    promptOptions.value = Array.isArray((res as any)?.list) ? (res as any).list : []
-  } finally {
-    promptLoading.value = false
-  }
-}
-
-const applyPromptTemplateContent = (promptId?: number) => {
-  if (typeof promptId !== 'number') {
-    return
-  }
-  const selectedPrompt = promptOptions.value.find((item: any) => item.id === promptId)
-  if (selectedPrompt?.content) {
-    titleConfigForm.templateContent = String(selectedPrompt.content)
-  }
-}
-
-watch(
-  () => titleConfigForm.promptId,
-  (promptId, previousPromptId) => {
-    if (typeof promptId !== 'number') {
-      return
-    }
-    if (promptId === previousPromptId && titleConfigForm.templateContent?.trim()) {
-      return
-    }
-    applyPromptTemplateContent(promptId)
-  }
-)
-
-watch(
-  () => promptOptions.value,
-  (options) => {
-    if (!Array.isArray(options) || options.length === 0) return
-    if (typeof titleConfigForm.promptId === 'number' && !titleConfigForm.templateContent?.trim()) {
-      applyPromptTemplateContent(titleConfigForm.promptId)
-    }
-  }
-)
-
 onMounted(() => {
-  loadPromptOptions()
   getList()
 })
 </script>
@@ -441,7 +386,7 @@ onMounted(() => {
               <div class="publish-config-panel__header">
                 <div>
                   <div class="publish-config-panel__title">平台配置</div>
-                  <div class="publish-config-panel__desc">平台专属字段放在左侧主区域，充分利用横向空间。</div>
+                  <div class="publish-config-panel__desc">第二步填写平台专属字段，按实际发布流程逐项补齐，避免左右来回切换视线。</div>
                 </div>
                 <el-tag v-if="currentPlatformConfig" type="info" effect="plain" round>
                   {{ currentPlatformConfig.label }}
@@ -517,43 +462,22 @@ onMounted(() => {
               <div class="publish-config-panel__header">
                 <div>
                   <div class="publish-config-panel__title">AI 标题生成配置</div>
-                  <div class="publish-config-panel__desc">模板正文和标题参数拆分为上下区块，减少留白。</div>
+                  <div class="publish-config-panel__desc">第三步配置标题生成规则与提示词，整体改为纵向录入，更符合配置流程。</div>
                 </div>
               </div>
 
               <div class="publish-config-ai-grid">
                 <div class="publish-config-ai-grid__main">
-                  <el-form-item label="提示词模板" prop="titlePromptId">
-                    <el-select
-                      v-model="titleConfigForm.promptId"
-                      filterable
-                      clearable
-                      :loading="promptLoading"
-                      placeholder="请选择预定义提示词模板"
-                      style="width: 100%;"
-                    >
-                      <el-option
-                        v-for="item in promptOptions"
-                        :key="item.id"
-                        :label="item.title"
-                        :value="item.id"
-                      />
-                    </el-select>
-                    <div class="publish-config-field-tip">
-                      可从提示词模块选择模板，也可在下方直接输入或二次修改。这里修改的是当前发布配置副本，不会改动原提示词模板。
-                      {{ currentPlatformConfig ? `当前平台标题限制：${currentPlatformConfig.titleMaxLength || '无'} 字符。` : '' }}
-                    </div>
-                  </el-form-item>
-
-                  <el-form-item label="提示词内容" class="publish-config-ai-grid__editor">
+                  <el-form-item label="标题模板" class="publish-config-ai-grid__editor">
                     <el-input
                       v-model="titleConfigForm.templateContent"
                       type="textarea"
                       :autosize="{ minRows: 14, maxRows: 22 }"
-                      placeholder="可直接输入标题提示词；如果已选择模板，这里会复制模板内容，支持继续修改。"
+                      placeholder="直接填写发布任务标题生成模板。发布任务生成标题时只使用这里的内容。"
                     />
                     <div class="publish-config-field-tip">
-                      留空时，后端会回退使用所选模板原文；填写后，将优先使用这里的内容。
+                      当前配置不再保存或依赖 `promptId`。发布任务生成标题时只读取这里的 `titleTemplate` 内容。
+                      {{ currentPlatformConfig ? `当前平台标题限制：${currentPlatformConfig.titleMaxLength || '无'} 字符。` : '' }}
                     </div>
                   </el-form-item>
                 </div>
@@ -612,11 +536,11 @@ onMounted(() => {
       <template #footer>
         <div class="publish-config-dialog__footer">
           <div class="publish-config-dialog__footer-tip">
-            当前弹窗已按“基础信息 / 平台配置 / AI 标题配置”重排，更适合大屏连续录入。
+            当前弹窗已按“基础信息 → 平台配置 → AI 标题配置”纵向排布，更适合连续配置与核对。
           </div>
           <div class="publish-config-dialog__footer-actions">
-            <el-button @click="dialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitForm">确定</el-button>
+            <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" :loading="submitLoading" @click="submitForm">保存配置</el-button>
           </div>
         </div>
       </template>
@@ -666,10 +590,9 @@ onMounted(() => {
 }
 
 .publish-config-workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(380px, 0.9fr);
+  display: flex;
+  flex-direction: column;
   gap: 16px;
-  align-items: start;
 }
 
 .publish-config-panel__header {
@@ -709,8 +632,18 @@ onMounted(() => {
 
 .publish-config-ai-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  grid-template-columns: 1fr;
   gap: 16px;
+}
+
+.publish-config-panel--ai {
+  padding-bottom: 18px;
+}
+
+.publish-config-ai-grid__side {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
 }
 
 .publish-config-ai-grid__editor {
@@ -724,6 +657,16 @@ onMounted(() => {
   font-size: 12px;
   line-height: 1.6;
   color: var(--el-text-color-secondary);
+}
+
+.publish-config-field-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .publish-config-switch {
@@ -757,16 +700,13 @@ onMounted(() => {
   gap: 10px;
 }
 
-@media (max-width: 1320px) {
-  .publish-config-workspace,
-  .publish-config-ai-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 768px) {
   .publish-config-dialog__body {
     padding: 14px;
+  }
+
+  .publish-config-ai-grid__side {
+    grid-template-columns: 1fr;
   }
 
   .publish-config-dialog__footer {
