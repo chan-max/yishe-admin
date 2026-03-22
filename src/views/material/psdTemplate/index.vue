@@ -332,6 +332,39 @@
                         </div>
                       </template>
                     </el-upload>
+                    <div v-if="psdFileInfo" class="asset-file-meta">
+                      <div class="asset-file-meta__title">已选 PSD 文件</div>
+                      <div class="asset-file-meta__grid">
+                        <div class="asset-file-meta__item">
+                          <span class="asset-file-meta__label">文件名</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.name }}</span>
+                        </div>
+                        <div class="asset-file-meta__item">
+                          <span class="asset-file-meta__label">大小</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.sizeLabel }}</span>
+                        </div>
+                        <div class="asset-file-meta__item">
+                          <span class="asset-file-meta__label">像素尺寸</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.dimensionsLabel }}</span>
+                        </div>
+                        <div class="asset-file-meta__item">
+                          <span class="asset-file-meta__label">格式</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.formatLabel }}</span>
+                        </div>
+                        <div class="asset-file-meta__item">
+                          <span class="asset-file-meta__label">颜色模式</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.colorModeLabel }}</span>
+                        </div>
+                        <div class="asset-file-meta__item">
+                          <span class="asset-file-meta__label">色深 / 通道</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.depthLabel }} / {{ psdFileInfo.channelLabel }}</span>
+                        </div>
+                        <div class="asset-file-meta__item asset-file-meta__item--full">
+                          <span class="asset-file-meta__label">修改时间</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.modifiedAtLabel }}</span>
+                        </div>
+                      </div>
+                    </div>
                   </el-form-item>
                 </el-form>
               </el-col>
@@ -374,6 +407,31 @@
                               <Delete />
                             </el-icon>
                           </el-button>
+                        </div>
+                      </div>
+                      <div v-if="thumbnailFileInfo" class="asset-file-meta asset-file-meta--thumbnail">
+                        <div class="asset-file-meta__title">已选缩略图</div>
+                        <div class="asset-file-meta__grid">
+                          <div class="asset-file-meta__item">
+                            <span class="asset-file-meta__label">文件名</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.name }}</span>
+                          </div>
+                          <div class="asset-file-meta__item">
+                            <span class="asset-file-meta__label">类型</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.typeLabel }}</span>
+                          </div>
+                          <div class="asset-file-meta__item">
+                            <span class="asset-file-meta__label">大小</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.sizeLabel }}</span>
+                          </div>
+                          <div class="asset-file-meta__item">
+                            <span class="asset-file-meta__label">像素尺寸</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.dimensionsLabel }}</span>
+                          </div>
+                          <div class="asset-file-meta__item asset-file-meta__item--full">
+                            <span class="asset-file-meta__label">修改时间</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.modifiedAtLabel }}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -904,6 +962,7 @@ function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
   dialogTitle.value = "新建模板";
+  originalPsdSize.value = 0;
   form.value = {
     id: "",
     file: null,
@@ -920,17 +979,15 @@ function handleAdd() {
     suitableSizesArray: [],
     cutoutModesArray: [],
   };
-  // 清空预览
-  if (thumbnailPreviewUrl.value) {
-    URL.revokeObjectURL(thumbnailPreviewUrl.value);
-    thumbnailPreviewUrl.value = '';
-  }
+  resetSelectedFileState();
+  resetThumbnailLocalState();
 }
 
 function handleEdit(row) {
   isEdit.value = true;
   dialogVisible.value = true;
   dialogTitle.value = "编辑";
+  originalPsdSize.value = Number(row.size || 0);
 
   form.value = {
     ...row,
@@ -938,9 +995,7 @@ function handleEdit(row) {
     suitableSizesArray: Array.isArray(row.suitableSizes) ? row.suitableSizes : (row.suitableSizes ? row.suitableSizes.split(',') : []),
     cutoutModesArray: Array.isArray(row.cutoutModes) ? row.cutoutModes : (row.cutoutModes ? row.cutoutModes.split(',') : []),
   };
-  // 清空已选文件列表，只在需要时重新选择文件
-  fileList.value = [];
-  form.value.file = null;
+  resetSelectedFileState();
 
   // 处理psdTemplateConfig：如果是对象，转换为JSON字符串显示
   if (form.value.psdTemplateConfig) {
@@ -955,11 +1010,7 @@ function handleEdit(row) {
     form.value.psdTemplateConfigText = '';
   }
 
-  // 清空预览（编辑时显示已有的缩略图）
-  if (thumbnailPreviewUrl.value) {
-    URL.revokeObjectURL(thumbnailPreviewUrl.value);
-    thumbnailPreviewUrl.value = '';
-  }
+  resetThumbnailLocalState();
 }
 
 function cancel() {
@@ -1003,12 +1054,8 @@ const rules = {
 
 const dialogClose = () => {
   dialogVisible.value = false;
-  fileList.value = [];
-  // 释放预览URL
-  if (thumbnailPreviewUrl.value) {
-    URL.revokeObjectURL(thumbnailPreviewUrl.value);
-    thumbnailPreviewUrl.value = '';
-  }
+  resetSelectedFileState();
+  resetThumbnailLocalState();
   submitLoading.value = false;
 };
 
@@ -1180,19 +1227,204 @@ const submitForm = async () => {
 const fileList = ref([]);
 const thumbnailInputRef = ref();
 const thumbnailPreviewUrl = ref(''); // 新选择的文件预览URL
+const originalPsdSize = ref(0);
+const psdFileInfo = ref<PsdFileInfo | null>(null);
+const thumbnailFileInfo = ref<ImageFileInfo | null>(null);
+
+type PsdFileInfo = {
+  name: string;
+  sizeLabel: string;
+  dimensionsLabel: string;
+  formatLabel: string;
+  colorModeLabel: string;
+  depthLabel: string;
+  channelLabel: string;
+  modifiedAtLabel: string;
+};
+
+type ImageFileInfo = {
+  name: string;
+  typeLabel: string;
+  sizeLabel: string;
+  dimensionsLabel: string;
+  modifiedAtLabel: string;
+};
+
+const PSD_COLOR_MODE_MAP: Record<number, string> = {
+  0: '位图',
+  1: '灰度',
+  2: '索引颜色',
+  3: 'RGB',
+  4: 'CMYK',
+  7: '多通道',
+  8: '双色调',
+  9: 'Lab'
+};
+
+const formatBytes = (size = 0) => {
+  if (!size) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let currentSize = size;
+  let unitIndex = 0;
+
+  while (currentSize >= 1024 && unitIndex < units.length - 1) {
+    currentSize /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${currentSize.toFixed(currentSize >= 10 || unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+};
+
+const formatDateTime = (timestamp?: number) => {
+  if (!timestamp) return '—';
+  return new Date(timestamp).toLocaleString('zh-CN', { hour12: false });
+};
+
+const formatDimensions = (width?: number, height?: number) => {
+  if (!width || !height) return '—';
+  return `${width} × ${height} px`;
+};
+
+const getPsdFormatLabel = (file: File, version?: number) => {
+  if (version === 2) return 'PSB';
+  if (version === 1) return 'PSD';
+  return file.name.toLowerCase().endsWith('.psb') ? 'PSB' : 'PSD';
+};
+
+const clearThumbnailPreviewUrl = () => {
+  if (thumbnailPreviewUrl.value) {
+    URL.revokeObjectURL(thumbnailPreviewUrl.value);
+    thumbnailPreviewUrl.value = '';
+  }
+};
+
+const resetThumbnailLocalState = () => {
+  clearThumbnailPreviewUrl();
+  form.value.thumbnailFile = null;
+  thumbnailFileInfo.value = null;
+  if (thumbnailInputRef.value) {
+    thumbnailInputRef.value.value = '';
+  }
+};
+
+const resetSelectedFileState = () => {
+  fileList.value = [];
+  form.value.file = null;
+  form.value.size = originalPsdSize.value;
+  psdFileInfo.value = null;
+};
+
+const readPsdHeader = async (file: File) => {
+  const headerBuffer = await file.slice(0, 26).arrayBuffer();
+  if (headerBuffer.byteLength < 26) {
+    throw new Error('文件头不完整');
+  }
+
+  const view = new DataView(headerBuffer);
+  const signature = String.fromCharCode(
+    view.getUint8(0),
+    view.getUint8(1),
+    view.getUint8(2),
+    view.getUint8(3)
+  );
+
+  if (signature !== '8BPS') {
+    throw new Error('不是有效的 PSD 文件');
+  }
+
+  return {
+    version: view.getUint16(4, false),
+    channels: view.getUint16(12, false),
+    height: view.getUint32(14, false),
+    width: view.getUint32(18, false),
+    depth: view.getUint16(22, false),
+    colorMode: view.getUint16(24, false)
+  };
+};
+
+const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
+  const baseInfo: PsdFileInfo = {
+    name: file.name,
+    sizeLabel: formatBytes(file.size),
+    dimensionsLabel: '解析失败',
+    formatLabel: getPsdFormatLabel(file),
+    colorModeLabel: '解析失败',
+    depthLabel: '解析失败',
+    channelLabel: '解析失败',
+    modifiedAtLabel: formatDateTime(file.lastModified)
+  };
+
+  try {
+    const header = await readPsdHeader(file);
+    return {
+      ...baseInfo,
+      dimensionsLabel: formatDimensions(header.width, header.height),
+      formatLabel: getPsdFormatLabel(file, header.version),
+      colorModeLabel: PSD_COLOR_MODE_MAP[header.colorMode] || `模式 ${header.colorMode}`,
+      depthLabel: `${header.depth} bit`,
+      channelLabel: `${header.channels} 通道`
+    };
+  } catch (error) {
+    return baseInfo;
+  }
+};
+
+const readImageDimensions = (src: string) =>
+  new Promise<{ width: number; height: number }>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      resolve({
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height
+      });
+    };
+    img.onerror = () => reject(new Error('图片尺寸解析失败'));
+    img.src = src;
+  });
+
+const buildImageFileInfo = async (file: File, previewUrl: string): Promise<ImageFileInfo> => {
+  const baseInfo: ImageFileInfo = {
+    name: file.name,
+    typeLabel: file.type || '未知',
+    sizeLabel: formatBytes(file.size),
+    dimensionsLabel: '解析失败',
+    modifiedAtLabel: formatDateTime(file.lastModified)
+  };
+
+  try {
+    const dimensions = await readImageDimensions(previewUrl);
+    return {
+      ...baseInfo,
+      dimensionsLabel: formatDimensions(dimensions.width, dimensions.height)
+    };
+  } catch (error) {
+    return baseInfo;
+  }
+};
 
 // 文件选择改变时的回调
-const handleFileChange = (file, files) => {
+const handleFileChange = async (file, files) => {
+  const rawFile = file?.raw as File | undefined;
   fileList.value = files; // 更新文件列表
+
+  if (!rawFile) {
+    psdFileInfo.value = null;
+    return;
+  }
+
   form.value.name = file.name;
-  form.value.file = file.raw; // 将文件绑定到表单数据
-  form.value.size = file.size; // 记录文件大小
+  form.value.file = rawFile; // 将文件绑定到表单数据
+  form.value.size = rawFile.size; // 记录文件大小
+
+  const nextInfo = await buildPsdFileInfo(rawFile);
+  if (form.value.file === rawFile) {
+    psdFileInfo.value = nextInfo;
+  }
 };
 
 // 文件移除时的回调
 const handleFileRemove = () => {
-  fileList.value = []; // 清空文件列表
-  form.value.file = null; // 清空表单中的文件
+  resetSelectedFileState();
 };
 
 // 文件上传前的校验
@@ -1204,7 +1436,7 @@ const triggerThumbnailSelect = () => {
 };
 
 // 缩略图文件选择处理
-const handleThumbnailFileSelect = (event) => {
+const handleThumbnailFileSelect = async (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
 
@@ -1224,11 +1456,15 @@ const handleThumbnailFileSelect = (event) => {
   }
 
   // 创建预览URL
-  if (thumbnailPreviewUrl.value) {
-    URL.revokeObjectURL(thumbnailPreviewUrl.value);
-  }
-  thumbnailPreviewUrl.value = URL.createObjectURL(file);
+  clearThumbnailPreviewUrl();
+  const previewUrl = URL.createObjectURL(file);
+  thumbnailPreviewUrl.value = previewUrl;
   form.value.thumbnailFile = file;
+
+  const nextInfo = await buildImageFileInfo(file, previewUrl);
+  if (form.value.thumbnailFile === file) {
+    thumbnailFileInfo.value = nextInfo;
+  }
 
   // 清空input，允许重复选择同一文件
   event.target.value = '';
@@ -1236,16 +1472,8 @@ const handleThumbnailFileSelect = (event) => {
 
 // 清除缩略图
 const clearThumbnail = () => {
-  // 释放预览URL
-  if (thumbnailPreviewUrl.value) {
-    URL.revokeObjectURL(thumbnailPreviewUrl.value);
-    thumbnailPreviewUrl.value = '';
-  }
+  resetThumbnailLocalState();
   form.value.thumbnail = "";
-  form.value.thumbnailFile = null;
-  if (thumbnailInputRef.value) {
-    thumbnailInputRef.value.value = '';
-  }
 };
 
 // AI生成内容相关方法
@@ -1827,6 +2055,50 @@ function removeSuitableSize(sizeKey: string) {
   }
 }
 
+.asset-file-meta {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+
+  &__title {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 12px;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__item--full {
+    grid-column: 1 / -1;
+  }
+
+  &__label {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
+  &__value {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--el-text-color-primary);
+    word-break: break-word;
+  }
+}
+
 
 .thumbnail-upload-container {
   width: 100%;
@@ -1917,6 +2189,14 @@ function removeSuitableSize(sizeKey: string) {
           font-size: 12px;
         }
       }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .asset-file-meta {
+    &__grid {
+      grid-template-columns: minmax(0, 1fr);
     }
   }
 }
