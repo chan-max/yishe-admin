@@ -281,6 +281,136 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     ]
   },
 
+  doudian: {
+    platform: 'doudian',
+    label: '抖店',
+    description: '抖店商品发布骨架配置',
+    supportVideo: true,
+    supportImage: true,
+    titleMaxLength: 60,
+    fields: [
+      {
+        key: 'draftOnly',
+        label: '仅保存草稿',
+        type: 'switch',
+        defaultValue: true,
+        span: 8,
+        tooltip: '基础支持阶段默认建议仅保存草稿，不直接点击最终发布'
+      },
+      {
+        key: 'price',
+        label: '商品价格',
+        type: 'number',
+        placeholder: '可选，后续完善价格映射',
+        span: 8
+      },
+      {
+        key: 'stock',
+        label: '库存',
+        type: 'number',
+        placeholder: '可选，后续完善库存映射',
+        span: 8
+      },
+      {
+        key: 'categoryId',
+        label: '类目ID',
+        type: 'input',
+        placeholder: '可选，后续补充类目映射',
+        span: 12
+      },
+      {
+        key: 'shopId',
+        label: '店铺ID',
+        type: 'input',
+        placeholder: '可选，抖店店铺标识',
+        span: 12
+      },
+      {
+        key: 'deliveryTemplate',
+        label: '运费模板',
+        type: 'input',
+        placeholder: '可选，后续补充模板映射',
+        span: 12
+      },
+      {
+        key: 'productType',
+        label: '商品类型',
+        type: 'select',
+        options: [
+          { label: '普通商品', value: 'normal' },
+          { label: '预售商品', value: 'presale' }
+        ],
+        defaultValue: 'normal',
+        span: 12
+      }
+    ]
+  },
+
+  kuaishou_shop: {
+    platform: 'kuaishou_shop',
+    label: '快手小店',
+    description: '快手小店商品发布骨架配置',
+    supportVideo: true,
+    supportImage: true,
+    titleMaxLength: 60,
+    fields: [
+      {
+        key: 'draftOnly',
+        label: '仅保存草稿',
+        type: 'switch',
+        defaultValue: true,
+        span: 8,
+        tooltip: '基础支持阶段默认建议仅保存草稿，不直接点击最终发布'
+      },
+      {
+        key: 'price',
+        label: '商品价格',
+        type: 'number',
+        placeholder: '可选，后续完善价格映射',
+        span: 8
+      },
+      {
+        key: 'stock',
+        label: '库存',
+        type: 'number',
+        placeholder: '可选，后续完善库存映射',
+        span: 8
+      },
+      {
+        key: 'categoryId',
+        label: '类目ID',
+        type: 'input',
+        placeholder: '可选，后续补充类目映射',
+        span: 12
+      },
+      {
+        key: 'shopId',
+        label: '店铺ID',
+        type: 'input',
+        placeholder: '可选，快手小店店铺标识',
+        span: 12
+      },
+      {
+        key: 'deliveryTemplate',
+        label: '运费模板',
+        type: 'input',
+        placeholder: '可选，后续补充模板映射',
+        span: 12
+      },
+      {
+        key: 'productType',
+        label: '商品类型',
+        type: 'select',
+        options: [
+          { label: '普通商品', value: 'normal' },
+          { label: '预售商品', value: 'presale' }
+        ],
+        defaultValue: 'normal',
+        span: 12
+      }
+    ]
+  },
+
   xianyu: {
     platform: 'xianyu',
     label: '咸鱼',

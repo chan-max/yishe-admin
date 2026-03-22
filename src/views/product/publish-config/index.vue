@@ -133,6 +133,7 @@ const handleBatchDelete = () => {
 const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const formRef = ref()
+const submitLoading = ref(false)
 
 // 动态平台配置
 const currentPlatformConfig = ref<PlatformConfig | null>(null)
@@ -150,6 +151,7 @@ const form = reactive({
 
 const titleConfigForm = reactive({
   promptId: undefined as number | undefined,
+  templateContent: '',
   maxLength: undefined as number | undefined,
   style: '',
   tone: '',
@@ -187,6 +189,7 @@ const handleAdd = () => {
   form.description = ''
   form.isActive = true
   titleConfigForm.promptId = undefined
+  titleConfigForm.templateContent = ''
   titleConfigForm.maxLength = undefined
   titleConfigForm.style = ''
   titleConfigForm.tone = ''
@@ -207,6 +210,7 @@ const handleEdit = (row: any) => {
   form.isActive = row.isActive
 
   titleConfigForm.promptId = row.titleConfig?.promptId || row.titlePromptId || undefined
+  titleConfigForm.templateContent = row.titleTemplate || ''
   titleConfigForm.maxLength = typeof row.titleConfig?.maxLength === 'number' ? row.titleConfig.maxLength : undefined
   titleConfigForm.style = row.titleConfig?.style || ''
   titleConfigForm.tone = row.titleConfig?.tone || ''
@@ -224,57 +228,63 @@ const handleEdit = (row: any) => {
 }
 
 const submitForm = async () => {
-  if (!formRef.value) return
-  await formRef.value.validate(async (valid: boolean) => {
-    if (valid) {
-      try {
-        // 校验平台配置
-        const validation = validatePlatformConfig(form.platform, platformConfigData.value)
-        if (!validation.valid) {
-          ElMessage.error(validation.errors.join('；'))
-          return
-        }
-        
-        // 格式化平台配置
-        const formattedConfigData = formatConfigForSubmit(form.platform, platformConfigData.value)
-        
-        const parsedTitleConfig = {
-          promptId: typeof titleConfigForm.promptId === 'number' ? titleConfigForm.promptId : undefined,
-          maxLength: typeof titleConfigForm.maxLength === 'number' ? titleConfigForm.maxLength : undefined,
-          style: titleConfigForm.style?.trim() || undefined,
-          tone: titleConfigForm.tone?.trim() || undefined,
-          includeEmoji: typeof titleConfigForm.includeEmoji === 'boolean' ? titleConfigForm.includeEmoji : undefined,
-          requiredKeywords: Array.isArray(titleConfigForm.requiredKeywords) ? titleConfigForm.requiredKeywords : undefined,
-          avoidWords: Array.isArray(titleConfigForm.avoidWords) ? titleConfigForm.avoidWords : undefined
-        }
+  if (!formRef.value || submitLoading.value) return
 
-        let data = {
-          name: form.name,
-          platform: form.platform,
-          description: form.description,
-          isActive: form.isActive,
-          titleConfig: parsedTitleConfig,
-          configData: formattedConfigData
-        }
-        
-        // 执行平台特定的提交前钩子
-        data = executePlatformBeforeSubmit(form.platform, data)
+  submitLoading.value = true
+  try {
+    await formRef.value.validate()
 
-        if (form.id) {
-          await updatePublishConfigApi(form.id, data)
-          ElMessage.success('更新成功')
-        } else {
-          await createPublishConfigApi(data)
-          ElMessage.success('创建成功')
-        }
-        dialogVisible.value = false
-        getList()
-      } catch (err: any) {
-        console.error(err)
-        ElMessage.error(err.message || '操作失败')
-      }
+    // 校验平台配置
+    const validation = validatePlatformConfig(form.platform, platformConfigData.value)
+    if (!validation.valid) {
+      ElMessage.error(validation.errors.join('；'))
+      return
     }
-  })
+
+    // 格式化平台配置
+    const formattedConfigData = formatConfigForSubmit(form.platform, platformConfigData.value)
+
+    const parsedTitleConfig = {
+      promptId: typeof titleConfigForm.promptId === 'number' ? titleConfigForm.promptId : undefined,
+      maxLength: typeof titleConfigForm.maxLength === 'number' ? titleConfigForm.maxLength : undefined,
+      style: titleConfigForm.style?.trim() || undefined,
+      tone: titleConfigForm.tone?.trim() || undefined,
+      includeEmoji: typeof titleConfigForm.includeEmoji === 'boolean' ? titleConfigForm.includeEmoji : undefined,
+      requiredKeywords: Array.isArray(titleConfigForm.requiredKeywords) ? titleConfigForm.requiredKeywords : undefined,
+      avoidWords: Array.isArray(titleConfigForm.avoidWords) ? titleConfigForm.avoidWords : undefined
+    }
+
+    let data = {
+      name: form.name,
+      platform: form.platform,
+      description: form.description,
+      isActive: form.isActive,
+      titleTemplate: titleConfigForm.templateContent?.trim() || undefined,
+      titleConfig: parsedTitleConfig,
+      configData: formattedConfigData
+    }
+
+    // 执行平台特定的提交前钩子
+    data = executePlatformBeforeSubmit(form.platform, data)
+
+    if (form.id) {
+      await updatePublishConfigApi(form.id, data)
+      ElMessage.success('更新成功')
+    } else {
+      await createPublishConfigApi(data)
+      ElMessage.success('创建成功')
+    }
+    dialogVisible.value = false
+    getList()
+  } catch (err: any) {
+    console.error(err)
+    const message = String(err?.message || '')
+    if (message && !message.toLowerCase().includes('validation')) {
+      ElMessage.error(err.message || '操作失败')
+    }
+  } finally {
+    submitLoading.value = false
+  }
 }
 
 const handleDelete = (row: any) => {
@@ -310,6 +320,39 @@ const loadPromptOptions = async () => {
     promptLoading.value = false
   }
 }
+
+const applyPromptTemplateContent = (promptId?: number) => {
+  if (typeof promptId !== 'number') {
+    return
+  }
+  const selectedPrompt = promptOptions.value.find((item: any) => item.id === promptId)
+  if (selectedPrompt?.content) {
+    titleConfigForm.templateContent = String(selectedPrompt.content)
+  }
+}
+
+watch(
+  () => titleConfigForm.promptId,
+  (promptId, previousPromptId) => {
+    if (typeof promptId !== 'number') {
+      return
+    }
+    if (promptId === previousPromptId && titleConfigForm.templateContent?.trim()) {
+      return
+    }
+    applyPromptTemplateContent(promptId)
+  }
+)
+
+watch(
+  () => promptOptions.value,
+  (options) => {
+    if (!Array.isArray(options) || options.length === 0) return
+    if (typeof titleConfigForm.promptId === 'number' && !titleConfigForm.templateContent?.trim()) {
+      applyPromptTemplateContent(titleConfigForm.promptId)
+    }
+  }
+)
 
 onMounted(() => {
   loadPromptOptions()
@@ -349,197 +392,390 @@ onMounted(() => {
       </template>
     </vxe-grid>
 
-    <el-dialog :title="dialogTitle" v-model="dialogVisible" :fullscreen="true">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="120px" style="max-width: 100%; margin: 0; padding: 20px 40px;">
-        <!-- 基本信息 - 三列布局 -->
-        <el-row :gutter="24">
-          <el-col :span="8">
-            <el-form-item label="配置名称" prop="name">
-              <el-input v-model="form.name" placeholder="例如：抖音-主账号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="平台" prop="platform">
-              <el-select v-model="form.platform" placeholder="请选择平台" style="width: 100%;">
-                <el-option v-for="item in platformOptions" :key="item.value" :label="item.label" :value="item.value" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="启用状态" prop="isActive">
-              <el-switch v-model="form.isActive" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <!-- 描述 - 全宽 -->
-        <el-row :gutter="24">
-          <el-col :span="24">
-            <el-form-item label="描述" prop="description">
-              <el-input v-model="form.description" placeholder="配置描述信息" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <!-- 平台配置 - 动态渲染 -->
-        <template v-if="currentPlatformConfig && form.platform">
-          <el-divider content-position="left" style="margin: 24px 0;">
-            {{ currentPlatformConfig.label }}平台配置
-            <span style="font-size: 12px; color: #909399; margin-left: 10px;">{{ currentPlatformConfig.description }}</span>
-          </el-divider>
-
-          <!-- 动态渲染平台字段 -->
-          <el-row :gutter="24">
-            <el-col 
-              v-for="field in currentPlatformConfig.fields" 
-              :key="field.key" 
-              :span="field.span || 24"
-            >
-              <el-form-item 
-                :label="field.label" 
-                :required="field.required"
-              >
-                <!-- 输入框 -->
-                <el-input 
-                  v-if="field.type === 'input'"
-                  v-model="platformConfigData[field.key]"
-                  :placeholder="field.placeholder"
-                />
-                
-                <!-- 文本域 -->
-                <el-input 
-                  v-else-if="field.type === 'textarea'"
-                  v-model="platformConfigData[field.key]"
-                  type="textarea"
-                  :rows="field.rows || 3"
-                  :placeholder="field.placeholder"
-                />
-                
-                <!-- 数字输入 -->
-                <el-input-number
-                  v-else-if="field.type === 'number'"
-                  v-model="platformConfigData[field.key]"
-                  :placeholder="field.placeholder"
-                  style="width: 100%;"
-                />
-                
-                <!-- 选择器 -->
-                <el-select 
-                  v-else-if="field.type === 'select'"
-                  v-model="platformConfigData[field.key]"
-                  :placeholder="field.placeholder || '请选择'"
-                  style="width: 100%;"
-                >
-                  <el-option
-                    v-for="option in field.options"
-                    :key="option.value"
-                    :label="option.label"
-                    :value="option.value"
-                  />
-                </el-select>
-                
-                <!-- 开关 -->
-                <div v-else-if="field.type === 'switch'" style="display: flex; align-items: center;">
-                  <el-switch v-model="platformConfigData[field.key]" />
-                  <span v-if="field.tooltip" style="margin-left: 10px; font-size: 12px; color: #909399;">
-                    {{ field.tooltip }}
-                  </span>
-                </div>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </template>
-
-        <!-- 未选择平台时的提示 -->
-        <el-alert
-          v-else-if="!form.platform"
-          title="请先选择发布平台"
-          type="info"
-          :closable="false"
-          style="margin: 24px 0;"
-        />
-
-        <el-divider content-position="left" style="margin: 24px 0;">AI 标题生成配置</el-divider>
-
-        <!-- AI配置 - 两列并排最大化空间 -->
-        <el-row :gutter="24">
-          <el-col :span="12">
-            <el-form-item label="标题提示词模板" prop="titlePromptId">
-              <el-select
-                v-model="titleConfigForm.promptId"
-                filterable
-                clearable
-                :loading="promptLoading"
-                placeholder="请选择预定义提示词模板"
-                style="width: 100%;"
-              >
-                <el-option
-                  v-for="item in promptOptions"
-                  :key="item.id"
-                  :label="item.title"
-                  :value="item.id"
-                />
-              </el-select>
-              <div style="margin-top: 8px; color: var(--el-text-color-secondary); font-size: 12px;">
-                所有平台统一从提示词模块选择标题模板，不再手动输入。
-                {{ currentPlatformConfig ? `当前平台标题限制：${currentPlatformConfig.titleMaxLength || '无'}字符。` : '' }}
+    <el-dialog :title="dialogTitle" v-model="dialogVisible" :fullscreen="true" class="publish-config-dialog">
+      <div class="publish-config-dialog__body">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="104px" class="publish-config-form">
+          <section class="publish-config-panel publish-config-panel--basic">
+            <div class="publish-config-panel__header">
+              <div>
+                <div class="publish-config-panel__title">基础信息</div>
+                <div class="publish-config-panel__desc">先确定配置名称、平台和启用状态，描述放在同一区域便于集中录入。</div>
               </div>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="最大字符数">
-              <el-input-number
-                v-model="titleConfigForm.maxLength"
-                :min="1"
-                :max="200"
-                style="width: 100%;"
-                placeholder="例如：50"
+            </div>
+            <el-row :gutter="18">
+              <el-col :span="10">
+                <el-form-item label="配置名称" prop="name">
+                  <el-input v-model="form.name" placeholder="例如：抖店主账号 / 快手小店测试配置" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="平台" prop="platform">
+                  <el-select v-model="form.platform" placeholder="请选择平台" style="width: 100%;">
+                    <el-option v-for="item in platformOptions" :key="item.value" :label="item.label" :value="item.value" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="启用状态" prop="isActive">
+                  <div class="publish-config-switch">
+                    <el-switch v-model="form.isActive" />
+                    <span class="publish-config-switch__text">{{ form.isActive ? '启用中' : '已停用' }}</span>
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col :span="24">
+                <el-form-item label="描述" prop="description">
+                  <el-input
+                    v-model="form.description"
+                    type="textarea"
+                    :autosize="{ minRows: 2, maxRows: 4 }"
+                    placeholder="简要说明这条发布配置的适用场景"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </section>
+
+          <div class="publish-config-workspace">
+            <section class="publish-config-panel publish-config-panel--platform">
+              <div class="publish-config-panel__header">
+                <div>
+                  <div class="publish-config-panel__title">平台配置</div>
+                  <div class="publish-config-panel__desc">平台专属字段放在左侧主区域，充分利用横向空间。</div>
+                </div>
+                <el-tag v-if="currentPlatformConfig" type="info" effect="plain" round>
+                  {{ currentPlatformConfig.label }}
+                </el-tag>
+              </div>
+
+              <template v-if="currentPlatformConfig && form.platform">
+                <div class="publish-config-platform__summary">
+                  <span>{{ currentPlatformConfig.description }}</span>
+                  <span>图片：{{ currentPlatformConfig.supportImage ? '支持' : '不支持' }}</span>
+                  <span>视频：{{ currentPlatformConfig.supportVideo ? '支持' : '不支持' }}</span>
+                </div>
+
+                <el-row :gutter="18">
+                  <el-col
+                    v-for="field in currentPlatformConfig.fields"
+                    :key="field.key"
+                    :span="field.span || 24"
+                  >
+                    <el-form-item :label="field.label" :required="field.required">
+                      <el-input
+                        v-if="field.type === 'input'"
+                        v-model="platformConfigData[field.key]"
+                        :placeholder="field.placeholder"
+                      />
+
+                      <el-input
+                        v-else-if="field.type === 'textarea'"
+                        v-model="platformConfigData[field.key]"
+                        type="textarea"
+                        :rows="field.rows || 3"
+                        :placeholder="field.placeholder"
+                      />
+
+                      <el-input-number
+                        v-else-if="field.type === 'number'"
+                        v-model="platformConfigData[field.key]"
+                        :placeholder="field.placeholder"
+                        style="width: 100%;"
+                      />
+
+                      <el-select
+                        v-else-if="field.type === 'select'"
+                        v-model="platformConfigData[field.key]"
+                          :placeholder="field.placeholder || '请选择'"
+                        style="width: 100%;"
+                      >
+                        <el-option
+                          v-for="option in field.options"
+                          :key="option.value"
+                          :label="option.label"
+                          :value="option.value"
+                        />
+                      </el-select>
+
+                      <div v-else-if="field.type === 'switch'" class="publish-config-switch">
+                        <el-switch v-model="platformConfigData[field.key]" />
+                        <span v-if="field.tooltip" class="publish-config-switch__hint">{{ field.tooltip }}</span>
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
+              </template>
+
+              <el-empty
+                v-else
+                description="请选择平台后再配置专属字段"
+                :image-size="92"
               />
-            </el-form-item>
-            <el-form-item label="风格">
-              <el-input v-model="titleConfigForm.style" placeholder="如 marketing / formal / cute" />
-            </el-form-item>
-            <el-form-item label="语气">
-              <el-input v-model="titleConfigForm.tone" placeholder="如 enthusiastic / neutral" />
-            </el-form-item>
-            <el-form-item label="包含 Emoji">
-              <el-radio-group v-model="titleConfigForm.includeEmoji">
-                <el-radio :label="true">允许</el-radio>
-                <el-radio :label="false">禁止</el-radio>
-                <el-radio :label="null">不限制</el-radio>
-              </el-radio-group>
-            </el-form-item>
-            <el-form-item label="必含关键词">
-              <el-select
-                v-model="titleConfigForm.requiredKeywords"
-                multiple
-                filterable
-                allow-create
-                default-first-option
-                placeholder="输入后回车添加"
-                style="width: 100%;"
-              />
-            </el-form-item>
-            <el-form-item label="禁用词">
-              <el-select
-                v-model="titleConfigForm.avoidWords"
-                multiple
-                filterable
-                allow-create
-                default-first-option
-                placeholder="输入后回车添加"
-                style="width: 100%;"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-      </el-form>
+            </section>
+
+            <section class="publish-config-panel publish-config-panel--ai">
+              <div class="publish-config-panel__header">
+                <div>
+                  <div class="publish-config-panel__title">AI 标题生成配置</div>
+                  <div class="publish-config-panel__desc">模板正文和标题参数拆分为上下区块，减少留白。</div>
+                </div>
+              </div>
+
+              <div class="publish-config-ai-grid">
+                <div class="publish-config-ai-grid__main">
+                  <el-form-item label="提示词模板" prop="titlePromptId">
+                    <el-select
+                      v-model="titleConfigForm.promptId"
+                      filterable
+                      clearable
+                      :loading="promptLoading"
+                      placeholder="请选择预定义提示词模板"
+                      style="width: 100%;"
+                    >
+                      <el-option
+                        v-for="item in promptOptions"
+                        :key="item.id"
+                        :label="item.title"
+                        :value="item.id"
+                      />
+                    </el-select>
+                    <div class="publish-config-field-tip">
+                      可从提示词模块选择模板，也可在下方直接输入或二次修改。这里修改的是当前发布配置副本，不会改动原提示词模板。
+                      {{ currentPlatformConfig ? `当前平台标题限制：${currentPlatformConfig.titleMaxLength || '无'} 字符。` : '' }}
+                    </div>
+                  </el-form-item>
+
+                  <el-form-item label="提示词内容" class="publish-config-ai-grid__editor">
+                    <el-input
+                      v-model="titleConfigForm.templateContent"
+                      type="textarea"
+                      :autosize="{ minRows: 14, maxRows: 22 }"
+                      placeholder="可直接输入标题提示词；如果已选择模板，这里会复制模板内容，支持继续修改。"
+                    />
+                    <div class="publish-config-field-tip">
+                      留空时，后端会回退使用所选模板原文；填写后，将优先使用这里的内容。
+                    </div>
+                  </el-form-item>
+                </div>
+
+                <div class="publish-config-ai-grid__side">
+                  <el-form-item label="最大字数">
+                    <el-input-number
+                      v-model="titleConfigForm.maxLength"
+                      :min="1"
+                      :max="200"
+                      style="width: 100%;"
+                      placeholder="例如：30"
+                    />
+                  </el-form-item>
+                  <el-form-item label="风格">
+                    <el-input v-model="titleConfigForm.style" placeholder="如 marketing / formal / cute" />
+                  </el-form-item>
+                  <el-form-item label="语气">
+                    <el-input v-model="titleConfigForm.tone" placeholder="如 enthusiastic / neutral" />
+                  </el-form-item>
+                  <el-form-item label="包含 Emoji">
+                    <el-radio-group v-model="titleConfigForm.includeEmoji">
+                      <el-radio :label="true">允许</el-radio>
+                      <el-radio :label="false">禁止</el-radio>
+                      <el-radio :label="null">不限</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                  <el-form-item label="必含关键词">
+                    <el-select
+                      v-model="titleConfigForm.requiredKeywords"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      placeholder="输入后回车添加"
+                      style="width: 100%;"
+                    />
+                  </el-form-item>
+                  <el-form-item label="禁用词">
+                    <el-select
+                      v-model="titleConfigForm.avoidWords"
+                      multiple
+                      filterable
+                      allow-create
+                      default-first-option
+                      placeholder="输入后回车添加"
+                      style="width: 100%;"
+                    />
+                  </el-form-item>
+                </div>
+              </div>
+            </section>
+          </div>
+        </el-form>
+      </div>
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm">确定</el-button>
-        </span>
+        <div class="publish-config-dialog__footer">
+          <div class="publish-config-dialog__footer-tip">
+            当前弹窗已按“基础信息 / 平台配置 / AI 标题配置”重排，更适合大屏连续录入。
+          </div>
+          <div class="publish-config-dialog__footer-actions">
+            <el-button @click="dialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="submitForm">确定</el-button>
+          </div>
+        </div>
       </template>
     </el-dialog>
   </ContentWrap>
 </template>
+
+
+<style scoped lang="less">
+.publish-config-dialog {
+  :deep(.el-dialog__body) {
+    padding: 0;
+    background: var(--el-fill-color-light);
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 14px 24px 18px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+  }
+}
+
+.publish-config-dialog__body {
+  min-height: calc(100vh - 126px);
+  padding: 18px 22px 22px;
+  box-sizing: border-box;
+}
+
+.publish-config-form {
+  height: 100%;
+}
+
+.publish-config-panel {
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  padding: 18px 18px 8px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+
+  :deep(.el-form-item) {
+    margin-bottom: 16px;
+  }
+}
+
+.publish-config-panel--basic {
+  margin-bottom: 16px;
+}
+
+.publish-config-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(380px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.publish-config-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.publish-config-panel__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.3;
+}
+
+.publish-config-panel__desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.publish-config-platform__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--el-fill-color-extra-light);
+  border: 1px dashed var(--el-border-color);
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.publish-config-ai-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 16px;
+}
+
+.publish-config-ai-grid__editor {
+  :deep(.el-form-item__content) {
+    display: block;
+  }
+}
+
+.publish-config-field-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.publish-config-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+}
+
+.publish-config-switch__text,
+.publish-config-switch__hint {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.5;
+}
+
+.publish-config-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.publish-config-dialog__footer-tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.publish-config-dialog__footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 1320px) {
+  .publish-config-workspace,
+  .publish-config-ai-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .publish-config-dialog__body {
+    padding: 14px;
+  }
+
+  .publish-config-dialog__footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .publish-config-dialog__footer-actions {
+    justify-content: flex-end;
+  }
+}
+</style>

@@ -274,6 +274,76 @@ const xianyuHandler: PlatformHandler = {
 }
 
 /**
+ * 抖店平台处理器
+ */
+const doudianHandler: PlatformHandler = {
+  platform: 'doudian',
+
+  validateConfig(_configData) {
+    return {
+      valid: true,
+      errors: []
+    }
+  },
+
+  formatConfigForSubmit(configData) {
+    const formatted = { ...configData }
+
+    if (formatted.price !== undefined && formatted.price !== null && formatted.price !== '') {
+      formatted.price = Number(formatted.price)
+    }
+    if (formatted.stock !== undefined && formatted.stock !== null && formatted.stock !== '') {
+      formatted.stock = Number(formatted.stock)
+    }
+
+    return formatted
+  },
+
+  getHints() {
+    return [
+      '抖店已接入基础骨架支持',
+      '当前先支持标题、描述、图片和少量可选参数透传',
+      '类目、SKU、物流模板等详细字段后续再补充'
+    ]
+  }
+}
+
+/**
+ * 快手小店平台处理器
+ */
+const kuaishouShopHandler: PlatformHandler = {
+  platform: 'kuaishou_shop',
+
+  validateConfig(_configData) {
+    return {
+      valid: true,
+      errors: []
+    }
+  },
+
+  formatConfigForSubmit(configData) {
+    const formatted = { ...configData }
+
+    if (formatted.price !== undefined && formatted.price !== null && formatted.price !== '') {
+      formatted.price = Number(formatted.price)
+    }
+    if (formatted.stock !== undefined && formatted.stock !== null && formatted.stock !== '') {
+      formatted.stock = Number(formatted.stock)
+    }
+
+    return formatted
+  },
+
+  getHints() {
+    return [
+      '快手小店已接入基础骨架支持',
+      '当前先支持标题、描述、图片和少量可选参数透传',
+      '类目、SKU、物流模板等详细字段后续再补充'
+    ]
+  }
+}
+
+/**
  * Temu 平台处理器
  */
 const temuHandler: PlatformHandler = {
@@ -325,6 +395,8 @@ const PLATFORM_HANDLERS: Record<string, PlatformHandler> = {
   youtube: youtubeHandler,
   tiktok: tiktokHandler,
   xianyu: xianyuHandler,
+  doudian: doudianHandler,
+  kuaishou_shop: kuaishouShopHandler,
   temu: temuHandler
 }
 

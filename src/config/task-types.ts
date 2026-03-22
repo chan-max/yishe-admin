@@ -8,6 +8,8 @@ export const TASK_TYPE_OPTIONS = [
   { label: '发布商品-小红书', value: 'publish-product-xiaohongshu' },
   { label: '发布商品-微博', value: 'publish-product-weibo' },
   { label: '发布商品-快手', value: 'publish-product-kuaishou' },
+  { label: '发布商品-抖店', value: 'publish-product-doudian' },
+  { label: '发布商品-快手小店', value: 'publish-product-kuaishou_shop' },
   { label: '发布商品-B站', value: 'publish-product-bilibili' },
   { label: '发布商品-知乎', value: 'publish-product-zhihu' },
   { label: '发布商品-TikTok', value: 'publish-product-tiktok' },

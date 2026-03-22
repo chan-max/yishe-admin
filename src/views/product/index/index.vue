@@ -545,7 +545,7 @@
             <el-checkbox-group v-model="selectedPlatforms">
               <div class="platform-check-grid">
                 <el-checkbox
-                  v-for="item in publishPlatforms.filter(p => ['douyin', 'kuaishou', 'xiaohongshu', 'weibo', 'bilibili', 'xianyu', 'tiktok', 'youtube'].includes(p.value))"
+                  v-for="item in publishPlatforms.filter(p => ['douyin', 'kuaishou', 'doudian', 'kuaishou_shop', 'xiaohongshu', 'weibo', 'bilibili', 'xianyu', 'tiktok', 'youtube'].includes(p.value))"
                   :key="item.value" :label="item.value" class="platform-card-checkbox">
                   <div class="platform-card-inner" :style="{ '--platform-color': item.color }">
                     <div class="platform-card-logo">
@@ -1817,6 +1817,8 @@ interface PublishForm {
   xiaohongshu: PlatformForm | null;
   weibo: PlatformForm | null;
   kuaishou: PlatformForm | null;
+  doudian: PlatformForm | null;
+  kuaishou_shop: PlatformForm | null;
   bilibili: PlatformForm | null;
   xianyu: PlatformForm | null;
   tiktok: PlatformForm | null;
@@ -1830,6 +1832,8 @@ const publishForm = ref<PublishForm>({
   xiaohongshu: null,
   weibo: null,
   kuaishou: null,
+  doudian: null,
+  kuaishou_shop: null,
   bilibili: null,
   xianyu: null,
   tiktok: null,
@@ -2506,6 +2510,8 @@ const getPlatformName = (platform: string) => {
     xiaohongshu: '小红书',
     weibo: '微博',
     kuaishou: '快手',
+    doudian: '抖店',
+    kuaishou_shop: '快手小店',
     bilibili: 'B站',
     xianyu: '咸鱼',
     tiktok: 'TikTok',
@@ -3262,6 +3268,8 @@ const publishPlatforms = [
   { label: '小红书', value: 'xiaohongshu', icon: '红', color: '#FF2442', logoUrl: PUBLISH_PLATFORM_LOGOS.xiaohongshu },
   { label: '微博', value: 'weibo', icon: '微', color: '#E6162D', logoUrl: PUBLISH_PLATFORM_LOGOS.weibo },
   { label: '快手', value: 'kuaishou', icon: '快', color: '#FF6600', logoUrl: PUBLISH_PLATFORM_LOGOS.kuaishou },
+  { label: '抖店', value: 'doudian', icon: '店', color: '#2F54EB', logoUrl: undefined },
+  { label: '快手小店', value: 'kuaishou_shop', icon: '店', color: '#FA8C16', logoUrl: undefined },
   { label: 'B站', value: 'bilibili', icon: 'B', color: '#FB7299', logoUrl: PUBLISH_PLATFORM_LOGOS.bilibili },
   { label: '知乎', value: 'zhihu', icon: '知', color: '#0084FF', logoUrl: PUBLISH_PLATFORM_LOGOS.zhihu },
   { label: 'TikTok', value: 'tiktok', icon: 'T', color: '#000000', logoUrl: PUBLISH_PLATFORM_LOGOS.tiktok },
