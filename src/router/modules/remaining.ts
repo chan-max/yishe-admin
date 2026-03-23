@@ -369,6 +369,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
               title: "AI文字转语音",
             },
           },
+          {
+            path: "agent",
+            component: () => import("@/views/ai/agent/index.vue"),
+            name: "AiAgentConsole",
+            meta: {
+              title: "Agent 控制台",
+              requiresAdmin: true,
+            },
+          },
         ],
       },
       {
