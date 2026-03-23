@@ -21,6 +21,7 @@ import {
 import {
   validatePlatformConfig,
   formatConfigForSubmit,
+  formatConfigForEdit,
   executePlatformBeforeSubmit
 } from './platform-handlers'
 
@@ -156,6 +157,63 @@ const titleConfigForm = reactive({
   avoidWords: [] as string[]
 })
 
+const appendImageUrlValidation = computed(() => {
+  if (form.platform !== 'doudian') {
+    return {
+      hasError: false,
+      invalidUrls: [] as Array<{ index: number; value: string }>
+    }
+  }
+
+  const rawValue = platformConfigData.value?.appendImageUrls
+  const lines = Array.isArray(rawValue)
+    ? rawValue
+    : typeof rawValue === 'string'
+      ? rawValue.split(/\r?\n/)
+      : []
+
+  const invalidUrls = lines
+    .map((item: any, index: number) => ({
+      index,
+      value: String(item || '').trim()
+    }))
+    .filter((item) => item.value)
+    .filter((item) => !/^https?:\/\//i.test(item.value))
+
+  return {
+    hasError: invalidUrls.length > 0,
+    invalidUrls
+  }
+})
+
+function ensureUrlListField(fieldKey: string) {
+  const currentValue = platformConfigData.value?.[fieldKey]
+  if (!Array.isArray(currentValue)) {
+    platformConfigData.value[fieldKey] = currentValue ? [String(currentValue)] : []
+  }
+}
+
+function addUrlListItem(fieldKey: string) {
+  ensureUrlListField(fieldKey)
+  platformConfigData.value[fieldKey].push('')
+}
+
+function removeUrlListItem(fieldKey: string, index: number) {
+  ensureUrlListField(fieldKey)
+  const nextList = [...platformConfigData.value[fieldKey]]
+  nextList.splice(index, 1)
+  platformConfigData.value[fieldKey] = nextList
+}
+
+function getUrlListItemError(fieldKey: string, index: number) {
+  if (fieldKey !== 'appendImageUrls') {
+    return ''
+  }
+  const invalidItem = appendImageUrlValidation.value.invalidUrls.find((item) => item.index === index)
+  return invalidItem ? '仅支持 http/https URL' : ''
+}
+
+
 // 监听平台变化，更新配置字段
 watch(() => form.platform, (newPlatform) => {
   if (newPlatform) {
@@ -216,7 +274,7 @@ const handleEdit = (row: any) => {
   
   // 加载平台配置数据
   currentPlatformConfig.value = getPlatformConfig(row.platform)
-  platformConfigData.value = row.configData || {}
+  platformConfigData.value = formatConfigForEdit(row.platform, row.configData || {})
   
   dialogVisible.value = true
 }
@@ -344,7 +402,7 @@ onMounted(() => {
             <div class="publish-config-panel__header">
               <div>
                 <div class="publish-config-panel__title">基础信息</div>
-                <div class="publish-config-panel__desc">先确定配置名称、平台和启用状态，描述放在同一区域便于集中录入。</div>
+                <div class="publish-config-panel__desc">配置名称、平台、启用状态与描述。</div>
               </div>
             </div>
             <el-row :gutter="18">
@@ -384,10 +442,10 @@ onMounted(() => {
           <div class="publish-config-workspace">
             <section class="publish-config-panel publish-config-panel--platform">
               <div class="publish-config-panel__header">
-                <div>
-                  <div class="publish-config-panel__title">平台配置</div>
-                  <div class="publish-config-panel__desc">第二步填写平台专属字段，按实际发布流程逐项补齐，避免左右来回切换视线。</div>
-                </div>
+              <div>
+                <div class="publish-config-panel__title">平台配置</div>
+                  <div class="publish-config-panel__desc">平台专属字段。</div>
+              </div>
                 <el-tag v-if="currentPlatformConfig" type="info" effect="plain" round>
                   {{ currentPlatformConfig.label }}
                 </el-tag>
@@ -400,7 +458,7 @@ onMounted(() => {
                   <span>视频：{{ currentPlatformConfig.supportVideo ? '支持' : '不支持' }}</span>
                 </div>
 
-                <el-row :gutter="18">
+                <el-row v-if="currentPlatformConfig.fields.length > 0" :gutter="18">
                   <el-col
                     v-for="field in currentPlatformConfig.fields"
                     :key="field.key"
@@ -420,6 +478,40 @@ onMounted(() => {
                         :rows="field.rows || 3"
                         :placeholder="field.placeholder"
                       />
+
+                      <div v-else-if="field.type === 'url-list'">
+                        <div class="publish-config-url-list">
+                          <div
+                            v-for="(_, index) in (Array.isArray(platformConfigData[field.key]) ? platformConfigData[field.key] : [])"
+                            :key="`${field.key}-${index}`"
+                            class="publish-config-url-list__item"
+                          >
+                            <div>
+                              <el-input
+                                v-model="platformConfigData[field.key][index]"
+                                :placeholder="field.placeholder"
+                              />
+                              <div v-if="getUrlListItemError(field.key, index)" class="publish-config-field-error">
+                                {{ getUrlListItemError(field.key, index) }}
+                              </div>
+                            </div>
+                            <el-button
+                              text
+                              type="danger"
+                              @click="removeUrlListItem(field.key, index)"
+                            >
+                              删除
+                            </el-button>
+                          </div>
+                        </div>
+                        <el-button text type="primary" @click="addUrlListItem(field.key)">新增地址</el-button>
+                        <div v-if="field.tooltip" class="publish-config-field-tip">
+                          {{ field.tooltip }}
+                        </div>
+                        <div v-if="field.key === 'appendImageUrls'" class="publish-config-field-note">
+                          一个输入框对应一个地址，生成发布任务时会追加到商品图片后面。
+                        </div>
+                      </div>
 
                       <el-input-number
                         v-else-if="field.type === 'number'"
@@ -449,6 +541,12 @@ onMounted(() => {
                     </el-form-item>
                   </el-col>
                 </el-row>
+
+                <el-empty
+                  v-else
+                  description="该平台暂未定义专属字段，后续确认发布流程后再补充"
+                  :image-size="88"
+                />
               </template>
 
               <el-empty
@@ -460,10 +558,10 @@ onMounted(() => {
 
             <section class="publish-config-panel publish-config-panel--ai">
               <div class="publish-config-panel__header">
-                <div>
-                  <div class="publish-config-panel__title">AI 标题生成配置</div>
-                  <div class="publish-config-panel__desc">第三步配置标题生成规则与提示词，整体改为纵向录入，更符合配置流程。</div>
-                </div>
+              <div>
+                <div class="publish-config-panel__title">AI 标题生成配置</div>
+                  <div class="publish-config-panel__desc">标题模板与规则。</div>
+              </div>
               </div>
 
               <div class="publish-config-ai-grid">
@@ -535,9 +633,6 @@ onMounted(() => {
       </div>
       <template #footer>
         <div class="publish-config-dialog__footer">
-          <div class="publish-config-dialog__footer-tip">
-            当前弹窗已按“基础信息 → 平台配置 → AI 标题配置”纵向排布，更适合连续配置与核对。
-          </div>
           <div class="publish-config-dialog__footer-actions">
             <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
             <el-button type="primary" :loading="submitLoading" @click="submitForm">保存配置</el-button>
@@ -551,12 +646,28 @@ onMounted(() => {
 
 <style scoped lang="less">
 .publish-config-dialog {
+  :deep(.el-dialog) {
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  :deep(.el-dialog__header) {
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+  }
+
   :deep(.el-dialog__body) {
+    flex: 1;
     padding: 0;
     background: var(--el-fill-color-light);
+    overflow: hidden;
   }
 
   :deep(.el-dialog__footer) {
+    flex-shrink: 0;
     padding: 14px 24px 18px;
     border-top: 1px solid var(--el-border-color-lighter);
     background: var(--el-bg-color);
@@ -564,13 +675,14 @@ onMounted(() => {
 }
 
 .publish-config-dialog__body {
-  min-height: calc(100vh - 126px);
+  height: 100%;
   padding: 18px 22px 22px;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .publish-config-form {
-  height: 100%;
+  min-height: 100%;
 }
 
 .publish-config-panel {
@@ -669,6 +781,27 @@ onMounted(() => {
   line-height: 1.5;
 }
 
+.publish-config-url-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.publish-config-url-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.publish-config-field-error {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-color-danger);
+  word-break: break-all;
+}
+
 .publish-config-switch {
   display: flex;
   align-items: center;
@@ -686,18 +819,13 @@ onMounted(() => {
 .publish-config-dialog__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.publish-config-dialog__footer-tip {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
+  justify-content: flex-end;
 }
 
 .publish-config-dialog__footer-actions {
   display: flex;
   gap: 10px;
+  margin-left: auto;
 }
 
 @media (max-width: 768px) {

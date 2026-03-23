@@ -35,6 +35,23 @@ export interface PlatformHandler {
   beforeSubmit?: (formData: any) => any
 }
 
+function normalizeHttpUrlList(input: unknown): string[] {
+  const values = Array.isArray(input)
+    ? input
+    : typeof input === 'string'
+      ? input.split(/\r?\n/)
+      : [];
+
+  return Array.from(
+    new Set(
+      values
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .filter((item) => /^https?:\/\//i.test(item))
+    )
+  );
+}
+
 /**
  * 抖音平台处理器
  */
@@ -279,10 +296,34 @@ const xianyuHandler: PlatformHandler = {
 const doudianHandler: PlatformHandler = {
   platform: 'doudian',
 
-  validateConfig(_configData) {
+  validateConfig(configData) {
+    const errors: string[] = []
+    const rawValue = configData?.appendImageUrls
+
+    if (typeof rawValue === 'string' && rawValue.trim()) {
+      const lines = rawValue
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+
+      const invalidLines = lines.filter((item) => !/^https?:\/\//i.test(item))
+      if (invalidLines.length > 0) {
+        errors.push('附加图片只支持 http/https URL，且每行一条')
+      }
+    } else if (Array.isArray(rawValue)) {
+      const invalidItems = rawValue
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+        .filter((item) => !/^https?:\/\//i.test(item))
+
+      if (invalidItems.length > 0) {
+        errors.push('附加图片只支持 http/https URL')
+      }
+    }
+
     return {
-      valid: true,
-      errors: []
+      valid: errors.length === 0,
+      errors
     }
   },
 
@@ -295,7 +336,15 @@ const doudianHandler: PlatformHandler = {
     if (formatted.stock !== undefined && formatted.stock !== null && formatted.stock !== '') {
       formatted.stock = Number(formatted.stock)
     }
+    formatted.appendImageUrls = normalizeHttpUrlList(formatted.appendImageUrls)
 
+    return formatted
+  },
+
+  formatConfigForEdit(configData) {
+    const formatted = { ...configData }
+    const urls = normalizeHttpUrlList(formatted.appendImageUrls)
+    formatted.appendImageUrls = urls
     return formatted
   },
 
@@ -303,6 +352,7 @@ const doudianHandler: PlatformHandler = {
     return [
       '抖店已接入基础骨架支持',
       '当前先支持标题、描述、图片和少量可选参数透传',
+      '支持附加图片，会在生成发布任务时追加到商品图片后面',
       '类目、SKU、物流模板等详细字段后续再补充'
     ]
   }
@@ -427,6 +477,14 @@ export function formatConfigForSubmit(platform: string, configData: Record<strin
     return configData
   }
   return handler.formatConfigForSubmit(configData)
+}
+
+export function formatConfigForEdit(platform: string, configData: Record<string, any>) {
+  const handler = getPlatformHandler(platform)
+  if (!handler || !handler.formatConfigForEdit) {
+    return configData
+  }
+  return handler.formatConfigForEdit(configData)
 }
 
 /**
