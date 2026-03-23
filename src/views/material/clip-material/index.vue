@@ -499,7 +499,6 @@ const {
   resetAfterDrop
 } = useFolderRowDrag({
   gridClass: 'clip-material-dnd-grid',
-  itemLabel: '素材',
   dataSource,
   selectedIds: ids
 })

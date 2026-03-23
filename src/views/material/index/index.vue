@@ -1644,18 +1644,6 @@
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
-    <!-- 拖拽提示气泡（跟随鼠标） -->
-    <teleport to="body">
-      <div v-show="dragHint.visible" class="drag-hint-bubble"
-        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
-        <el-icon class="drag-hint-icon">
-          <InfoFilled />
-        </el-icon>
-        <span>{{ dragHint.text }}</span>
-      </div>
-    </teleport>
-
-
   </div>
 </template>
 
@@ -2052,14 +2040,12 @@ const title = ref('')
 const ids = ref<string[]>([])
 const {
   dragState,
-  dragHint,
   setupRowDrag,
   handleFolderDragOver,
   handleFolderDragLeave,
   resetAfterDrop
 } = useFolderRowDrag({
   gridClass: 'material-dnd-grid',
-  itemLabel: '素材',
   dataSource,
   selectedIds: ids
 })

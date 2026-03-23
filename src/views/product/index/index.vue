@@ -1402,16 +1402,6 @@
         </template>
       </el-dialog>
 
-        <!-- 拖拽提示气泡（跟随鼠标） -->
-        <teleport to="body">
-          <div v-show="dragHint.visible" class="drag-hint-bubble"
-            :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
-            <el-icon class="drag-hint-icon">
-              <InfoFilled />
-            </el-icon>
-            <span>{{ dragHint.text }}</span>
-          </div>
-        </teleport>
       </ContentWrap>
       </div>
   </div>
@@ -1708,14 +1698,12 @@ const publishDialogVisible = ref(false);
 // 拖拽状态（拖商品 -> 文件夹）
 const {
   dragState,
-  dragHint,
   setupRowDrag,
   handleFolderDragOver,
   handleFolderDragLeave,
   resetAfterDrop
 } = useFolderRowDrag({
   gridClass: 'product-dnd-grid',
-  itemLabel: '商品',
   dataSource,
   selectedIds: ids
 });

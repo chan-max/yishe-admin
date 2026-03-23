@@ -497,16 +497,6 @@
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
-    <!-- 拖拽提示气泡（跟随鼠标） -->
-    <teleport to="body">
-      <div v-show="dragHint.visible" class="drag-hint-bubble"
-        :style="{ left: `${dragHint.x}px`, top: `${dragHint.y}px` }">
-        <el-icon class="drag-hint-icon">
-          <InfoFilled />
-        </el-icon>
-        <span>{{ dragHint.text }}</span>
-      </div>
-    </teleport>
   </div>
 </template>
 
@@ -755,14 +745,12 @@ const submitLoading = ref(false);
 // 拖拽状态（拖模板 -> 文件夹）
 const {
   dragState,
-  dragHint,
   setupRowDrag,
   handleFolderDragOver,
   handleFolderDragLeave,
   resetAfterDrop
 } = useFolderRowDrag({
   gridClass: 'font-template-dnd-grid',
-  itemLabel: '字体模板',
   dataSource,
   selectedIds: ids
 });

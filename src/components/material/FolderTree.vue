@@ -1,5 +1,5 @@
 <template>
-  <div class="sticker-folder-tree-container" :style="{
+  <div class="sticker-folder-tree-container" :class="{ 'is-dragging-over-folders': dragState?.dragging }" :style="{
     width: typeof width === 'number' ? width + 'px' : width,
     minWidth: typeof width === 'number' ? width + 'px' : width,
     maxWidth: typeof width === 'number' ? width + 'px' : width,
@@ -25,71 +25,74 @@
       />
     </div>
 
-    <el-tree ref="treeRef" :data="displayTreeData" :props="{ children: 'children', label: 'name' }" node-key="id"
-      :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="expandedKeys"
-      :highlight-current="true" :current-node-key="modelValue || getDefaultCurrentKey()"
-      style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden" class="sticker-folder-tree">
-      <template #default="{ node, data }">
-        <div class="sticker-folder-node"
-          :class="{ 'is-drop-hover': dragState?.overFolderId === data.id && dragState?.dragging }"
-          @dragover.prevent="handleFolderDragOver(data, $event)" @dragleave="handleFolderDragLeave(data)"
-          @drop.prevent="handleFolderDrop(data)">
-          <div class="sticker-folder-node-content">
-            <template v-if="data.isAll || data.id === FOLDER_FILTER.NOT_GROUP">
-              <el-icon class="folder-icon" style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
-                <Files />
-              </el-icon>
-            </template>
-            <template v-else>
-              <img v-if="node.expanded && data.children && data.children.length > 0" src="/img/folder-open.svg"
-                class="folder-icon" alt="folder" />
-              <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
-            </template>
-
-            <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">
-              <template v-for="(segment, index) in getHighlightedSegments(data.name)" :key="`${data.id}-${index}`">
-                <span v-if="segment.matched" class="sticker-folder-node-highlight">{{ segment.text }}</span>
-                <span v-else>{{ segment.text }}</span>
+    <div class="sticker-folder-tree-drag-surface" @dragleave="handleTreeDragLeave">
+      <el-tree ref="treeRef" :data="displayTreeData" :props="{ children: 'children', label: 'name' }" node-key="id"
+        :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="expandedKeys"
+        :highlight-current="true" :current-node-key="modelValue || getDefaultCurrentKey()"
+        style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden" class="sticker-folder-tree">
+        <template #default="{ node, data }">
+          <div class="sticker-folder-node"
+            :class="{ 'is-drop-hover': String(dragState?.overFolderId ?? '') === String(data.id) && dragState?.dragging }"
+            @dragenter.prevent="handleFolderDragEnter(data, $event)"
+            @dragover.prevent="handleFolderDragOver(data, $event)"
+            @drop.prevent="handleFolderDrop(data)">
+            <div class="sticker-folder-node-content">
+              <template v-if="data.isAll || data.id === FOLDER_FILTER.NOT_GROUP">
+                <el-icon class="folder-icon" style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
+                  <Files />
+                </el-icon>
               </template>
-            </span>
-            <span v-if="showCount && data.id !== FOLDER_FILTER.NOT_GROUP && !data.isAll" class="sticker-folder-node-count">({{
-              data.stickerCount
-              ||
-              0 }})</span>
-          </div>
-
-          <div v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'" class="sticker-folder-node-actions">
-            <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, data)" @click.stop size="small">
-              <el-icon class="sticker-folder-action-icon">
-                <MoreFilled />
-              </el-icon>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="create">
-                    <el-icon>
-                      <FolderAdd />
-                    </el-icon>
-                    新建子文件夹
-                  </el-dropdown-item>
-                  <el-dropdown-item command="rename">
-                    <el-icon>
-                      <Edit />
-                    </el-icon>
-                    重命名
-                  </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>
-                    <el-icon>
-                      <Delete />
-                    </el-icon>
-                    删除
-                  </el-dropdown-item>
-                </el-dropdown-menu>
+              <template v-else>
+                <img v-if="node.expanded && data.children && data.children.length > 0" src="/img/folder-open.svg"
+                  class="folder-icon" alt="folder" />
+                <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
               </template>
-            </el-dropdown>
+
+              <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">
+                <template v-for="(segment, index) in getHighlightedSegments(data.name)" :key="`${data.id}-${index}`">
+                  <span v-if="segment.matched" class="sticker-folder-node-highlight">{{ segment.text }}</span>
+                  <span v-else>{{ segment.text }}</span>
+                </template>
+              </span>
+              <span v-if="showCount && data.id !== FOLDER_FILTER.NOT_GROUP && !data.isAll" class="sticker-folder-node-count">({{
+                data.stickerCount
+                ||
+                0 }})</span>
+            </div>
+
+            <div v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'" class="sticker-folder-node-actions">
+              <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, data)" @click.stop size="small">
+                <el-icon class="sticker-folder-action-icon">
+                  <MoreFilled />
+                </el-icon>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="create">
+                      <el-icon>
+                        <FolderAdd />
+                      </el-icon>
+                      新建子文件夹
+                    </el-dropdown-item>
+                    <el-dropdown-item command="rename">
+                      <el-icon>
+                        <Edit />
+                      </el-icon>
+                      重命名
+                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided>
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </div>
-        </div>
-      </template>
-    </el-tree>
+        </template>
+      </el-tree>
+    </div>
   </div>
 </template>
 
@@ -138,14 +141,13 @@ const emit = defineEmits<{
   (e: "change", payload: { folderId: string | null; node: any }): void;
   (e: "reloaded"): void;
   (e: "folder-drag-over", payload: { data: any; event?: DragEvent }): void;
-  (e: "folder-drag-leave", payload: { data: any }): void;
+  (e: "folder-drag-leave", payload?: { data?: any }): void;
   (e: "folder-drop", payload: { data: any }): void;
 }>();
 
 const treeRef = ref();
 const rawTreeData = ref<any[]>([]);
 const searchKeyword = ref("");
-
 const isSearching = computed(() => searchKeyword.value.trim().length > 0);
 const displayTreeData = computed(() => {
   if (!isSearching.value) {
@@ -362,13 +364,25 @@ async function handleCommand(command: string, data: any) {
   }
 }
 
-function handleFolderDragOver(data: any, evt?: DragEvent) {
-  if (data.id === FOLDER_FILTER.ALL) return; // Prevent drop on All
+function handleFolderDragEnter(data: any, evt?: DragEvent) {
+  if (data.id === FOLDER_FILTER.ALL) return;
   emit("folder-drag-over", { data, event: evt });
 }
 
-function handleFolderDragLeave(data: any) {
-  emit("folder-drag-leave", { data });
+function handleFolderDragOver(data: any, evt?: DragEvent) {
+  if (data.id === FOLDER_FILTER.ALL) return;
+  emit("folder-drag-over", { data, event: evt });
+}
+
+function handleTreeDragLeave(evt?: DragEvent) {
+  const currentTarget = evt?.currentTarget as HTMLElement | null;
+  const relatedTarget = evt?.relatedTarget as Node | null;
+
+  if (currentTarget && relatedTarget && currentTarget.contains(relatedTarget)) {
+    return;
+  }
+
+  emit("folder-drag-leave");
 }
 
 function handleFolderDrop(data: any) {
@@ -428,11 +442,38 @@ watch(displayTreeData, () => {
     width: 100%;
     padding-right: 8px;
     border-radius: 6px;
-    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid transparent;
+    transition:
+      background-color 0.08s ease,
+      box-shadow 0.08s ease,
+      border-color 0.08s ease,
+      transform 0.08s ease;
 
     &.is-drop-hover {
-      background-color: var(--el-color-primary-light-9);
-      box-shadow: 0 0 0 2px var(--el-color-primary-light-7);
+      background:
+        linear-gradient(90deg, var(--el-color-primary-light-8), var(--el-color-primary-light-9));
+      border-color: var(--el-color-primary);
+      box-shadow:
+        0 0 0 2px var(--el-color-primary-light-5),
+        0 10px 24px rgba(64, 158, 255, 0.16);
+      transform: translateX(2px);
+
+      .sticker-folder-node-content {
+        .folder-icon {
+          transform: scale(1.08);
+          filter: drop-shadow(0 2px 4px rgba(64, 158, 255, 0.24));
+        }
+
+        .sticker-folder-node-text {
+          color: var(--el-color-primary-dark-2);
+          font-weight: 700;
+        }
+
+        .sticker-folder-node-count {
+          color: var(--el-color-primary-dark-2);
+          font-weight: 600;
+        }
+      }
     }
 
     .sticker-folder-node-content {
@@ -511,6 +552,12 @@ watch(displayTreeData, () => {
           opacity: 0.7;
         }
       }
+    }
+  }
+
+  &.is-dragging-over-folders {
+    .sticker-folder-node {
+      transition: none;
     }
   }
 

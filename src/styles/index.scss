@@ -95,31 +95,6 @@
   background-color: var(--el-color-primary-light-9) !important;
 }
 
-/* 拖拽提示气泡（通用） */
-.drag-hint-bubble {
-  position: fixed;
-  z-index: 100000000000000000 !important;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: var(--el-color-primary);
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid var(--el-color-primary-light-7);
-  border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.drag-hint-icon {
-  display: flex;
-  align-items: center;
-  font-size: 14px;
-}
-
-
 .el-image-viewer__wrapper {
     z-index: 99999999999999999 !important;
 }
