@@ -13,6 +13,9 @@
             </p>
           </div>
           <div class="flex shrink-0 items-center gap-2">
+            <el-button size="small" @click="toolDialogVisible = true">
+              查看工具（{{ tools.length }}）
+            </el-button>
             <el-button size="small" :icon="Refresh" @click="loadTools" :loading="toolsLoading">
               刷新工具
             </el-button>
@@ -46,30 +49,7 @@
         </div>
       </el-card>
 
-      <div class="grid gap-3 2xl:grid-cols-[20rem_22rem_minmax(0,1fr)] xl:grid-cols-[18rem_20rem_minmax(0,1fr)]">
-        <el-card shadow="never" class="rounded-lg">
-          <template #header>
-            <div class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--el-text-color-primary)]">
-              <span>工具清单</span>
-              <span class="text-xs font-normal text-[var(--el-text-color-placeholder)]">{{ tools.length }} 个</span>
-            </div>
-          </template>
-
-          <el-empty v-if="!toolsLoading && !tools.length" description="暂无工具" :image-size="60" />
-
-          <div v-else v-loading="toolsLoading" class="space-y-2">
-            <div
-              v-for="tool in tools"
-              :key="tool.name"
-              class="rounded-md border border-[var(--el-border-color-light)] bg-white p-3"
-            >
-              <div class="truncate text-sm font-medium text-[var(--el-text-color-primary)]">{{ tool.name }}</div>
-              <div class="mt-1 text-xs leading-5 text-[var(--el-text-color-secondary)]">{{ tool.description }}</div>
-              <pre class="mt-2 overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-2 text-[11px] leading-5 text-white">{{ formatJson(tool.inputSchema) }}</pre>
-            </div>
-          </div>
-        </el-card>
-
+      <div class="grid gap-3 xl:grid-cols-[22rem_minmax(0,1fr)]">
         <el-card shadow="never" class="rounded-lg">
           <template #header>
             <div class="text-sm font-medium text-[var(--el-text-color-primary)]">执行计划</div>
@@ -82,23 +62,23 @@
               {{ result.reply || '执行完成' }}
             </div>
 
-            <div class="grid gap-2 rounded-md border border-[var(--el-border-color-light)] p-3">
-              <div class="grid grid-cols-[56px_minmax(0,1fr)] gap-2">
-                <span class="text-[var(--el-text-color-placeholder)]">工具</span>
-                <span class="break-all text-[var(--el-text-color-primary)]">{{ result.plan?.tool || '-' }}</span>
+            <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs text-[var(--el-text-color-placeholder)]">plans</span>
+                <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.plans?.length || 0 }} 步</span>
               </div>
-              <div class="grid grid-cols-[56px_minmax(0,1fr)] gap-2">
-                <span class="text-[var(--el-text-color-placeholder)]">置信度</span>
-                <span class="text-[var(--el-text-color-primary)]">{{ formatConfidence(result.plan?.confidence) }}</span>
-              </div>
-              <div class="grid grid-cols-[56px_minmax(0,1fr)] gap-2">
-                <span class="text-[var(--el-text-color-placeholder)]">原因</span>
-                <span class="leading-5 text-[var(--el-text-color-primary)]">{{ result.plan?.reason || '-' }}</span>
-              </div>
-              <div class="grid gap-1">
-                <span class="text-[var(--el-text-color-placeholder)]">入参</span>
-                <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-2 text-[11px] leading-5 text-white">{{ formatJson(result.plan?.input || {}) }}</pre>
-              </div>
+              <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(result.plans) }}</pre>
+            </div>
+
+            <div class="rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-[11px] leading-5 text-[var(--el-text-color-secondary)]">
+              <div>备注1：</div>
+              <div>`plans`：本次自然语言请求拆解后的执行步骤列表。</div>
+              <div>`stepId`：步骤唯一标识，用于和执行结果一一对应。</div>
+              <div>`tool`：本次准备调用的工具名。</div>
+              <div>`confidence`：本次工具判断的置信度，范围通常为 0 到 1。</div>
+              <div>`reason`：为什么会选择这个工具。</div>
+              <div>`message`：补充说明，通常在无法执行或需要提示时返回。</div>
+              <div>`input`：最终传给工具的参数对象。</div>
             </div>
           </div>
         </el-card>
@@ -106,50 +86,56 @@
         <el-card shadow="never" class="rounded-lg">
           <template #header>
             <div class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--el-text-color-primary)]">
-              <span>素材结果</span>
-              <span class="text-xs font-normal text-[var(--el-text-color-placeholder)]">{{ result?.toolResult?.count || 0 }} 条</span>
+              <span>执行结果</span>
+              <span class="text-xs font-normal text-[var(--el-text-color-placeholder)]">
+                {{ result?.toolResults?.length || 0 }} 次调用
+              </span>
             </div>
           </template>
 
-          <el-empty
-            v-if="!result?.toolResult?.items?.length"
-            :description="result ? '当前没有返回素材库图片' : '执行后展示素材结果'"
-            :image-size="60"
-          />
+          <el-empty v-if="!result" description="执行后展示原始结果" :image-size="60" />
 
-          <div v-else class="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
-            <div
-              v-for="item in result.toolResult.items"
-              :key="item.id"
-              class="overflow-hidden rounded-md border border-[var(--el-border-color-light)] bg-white"
-            >
-              <el-image
-                :src="item.imageUrl"
-                :preview-src-list="[item.imageUrl]"
-                :preview-teleported="true"
-                fit="cover"
-                class="block h-40 w-full bg-[var(--el-fill-color)]"
-              />
-              <div class="space-y-2 p-3">
-                <div class="line-clamp-1 text-sm font-medium text-[var(--el-text-color-primary)]">{{ item.title }}</div>
-                <div class="text-[11px] text-[var(--el-text-color-secondary)]">
-                  {{ item.sourceLabel }}<span v-if="item.sourcePlatform"> / {{ item.sourcePlatform }}</span>
-                </div>
-                <div class="line-clamp-2 min-h-[36px] text-xs leading-5 text-[var(--el-text-color-regular)]">
-                  {{ item.description || '暂无描述' }}
-                </div>
-                <div class="text-[11px] text-[var(--el-text-color-placeholder)]">
-                  {{ item.suffix || '-' }}<span v-if="item.createdAt"> / {{ item.createdAt }}</span>
-                </div>
-                <div class="flex items-center gap-3 text-xs">
-                  <el-link type="primary" :href="item.imageUrl" target="_blank">打开图片</el-link>
-                  <el-link v-if="item.originUrl" :href="item.originUrl" target="_blank">原始地址</el-link>
-                </div>
+          <div v-else class="space-y-3">
+            <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs text-[var(--el-text-color-placeholder)]">toolResults</span>
+                <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.toolResults?.length || 0 }} 条</span>
               </div>
+              <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(result.toolResults) }}</pre>
+            </div>
+
+            <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
+              <span class="text-xs text-[var(--el-text-color-placeholder)]">完整响应</span>
+              <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(result) }}</pre>
             </div>
           </div>
         </el-card>
       </div>
+
+      <el-dialog
+        v-model="toolDialogVisible"
+        title="工具清单"
+        fullscreen
+        destroy-on-close
+      >
+        <div v-loading="toolsLoading" class="min-h-[240px]">
+          <el-empty v-if="!toolsLoading && !tools.length" description="暂无工具" :image-size="60" />
+
+          <div v-else class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <div
+              v-for="tool in tools"
+              :key="tool.name"
+              class="rounded-lg border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-4"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="truncate text-sm font-medium text-[var(--el-text-color-primary)]">{{ tool.name }}</div>
+              </div>
+              <div class="mt-2 text-xs leading-5 text-[var(--el-text-color-secondary)]">{{ tool.description }}</div>
+              <pre class="mt-3 overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(tool.inputSchema) }}</pre>
+            </div>
+          </div>
+        </div>
+      </el-dialog>
     </div>
   </ContentWrap>
 </template>
@@ -163,16 +149,38 @@ import { AgentApi, type AgentExecuteResponse, type AgentToolDefinition } from '@
 const instruction = ref('帮我找三个素材库图片')
 const executing = ref(false)
 const toolsLoading = ref(false)
+const toolDialogVisible = ref(false)
 const tools = ref<AgentToolDefinition[]>([])
 const result = ref<AgentExecuteResponse | null>(null)
 
 const formatJson = (value: unknown) => JSON.stringify(value ?? {}, null, 2)
 
+const normalizeToolsResponse = (payload: any) => {
+  if (payload && Array.isArray(payload.tools)) {
+    return payload
+  }
+  if (payload?.data && Array.isArray(payload.data.tools)) {
+    return payload.data
+  }
+  return { success: false, tools: [] }
+}
+
+const normalizeExecuteResponse = (payload: any): AgentExecuteResponse | null => {
+  if (payload && typeof payload === 'object' && Array.isArray(payload.plans)) {
+    return payload as AgentExecuteResponse
+  }
+  if (payload?.data && typeof payload.data === 'object' && Array.isArray(payload.data.plans)) {
+    return payload.data as AgentExecuteResponse
+  }
+  return null
+}
+
 const loadTools = async () => {
   toolsLoading.value = true
   try {
-    const response = await AgentApi.getTools()
-    tools.value = Array.isArray(response?.tools) ? response.tools : []
+    const payload = await AgentApi.getTools()
+    const response = normalizeToolsResponse(payload)
+    tools.value = Array.isArray(response.tools) ? response.tools : []
   } catch (error: any) {
     console.error('获取 Agent 工具清单失败:', error)
     ElMessage.error(error?.message || '获取工具清单失败')
@@ -190,9 +198,10 @@ const executeInstruction = async () => {
 
   executing.value = true
   try {
-    const response = await AgentApi.executeInstruction(normalizedInstruction, {
+    const payload = await AgentApi.executeInstruction(normalizedInstruction, {
       scene: 'admin-web'
     })
+    const response = normalizeExecuteResponse(payload)
     result.value = response
 
     if (!response?.success) {
@@ -200,25 +209,19 @@ const executeInstruction = async () => {
       return
     }
 
-    if (response.toolResult?.count) {
-      ElMessage.success(`已返回 ${response.toolResult.count} 条素材结果`)
+    if (response.toolResults?.length) {
+      const count = response.toolResults.length
+      ElMessage.success(`已返回 ${count} 次工具执行结果`)
       return
     }
 
-    ElMessage.warning(response.reply || '未返回素材结果')
+    ElMessage.warning(response.reply || '未返回工具结果')
   } catch (error: any) {
     console.error('执行 Agent 指令失败:', error)
     ElMessage.error(error?.message || '执行失败')
   } finally {
     executing.value = false
   }
-}
-
-const formatConfidence = (confidence?: number) => {
-  if (typeof confidence !== 'number' || Number.isNaN(confidence)) {
-    return '-'
-  }
-  return `${Math.round(confidence * 100)}%`
 }
 
 onMounted(() => {

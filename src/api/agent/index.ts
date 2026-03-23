@@ -1,12 +1,5 @@
 ﻿import request from '@/config/axios'
 
-export interface ApiEnvelope<T> {
-  data: T
-  code: number
-  message: string
-  status: boolean
-}
-
 export interface AgentToolDefinition {
   name: string
   description: string
@@ -30,6 +23,7 @@ export interface AgentAssetResultItem {
 }
 
 export interface AgentExecutionPlan {
+  stepId?: string
   tool: string
   confidence: number
   reason: string
@@ -37,15 +31,23 @@ export interface AgentExecutionPlan {
   input?: Record<string, any>
 }
 
+export interface AgentToolExecutionResult {
+  stepId: string
+  tool: string
+  success: boolean
+  reason?: string
+  input?: Record<string, any>
+  data: Record<string, any> | null
+  error?: string
+}
+
 export interface AgentExecuteResponse {
   success: boolean
-  plan: AgentExecutionPlan
+  status?: string
+  executable?: boolean
+  plans: AgentExecutionPlan[]
   reply: string
-  toolResult: null | {
-    items: AgentAssetResultItem[]
-    count: number
-    query: string
-  }
+  toolResults: AgentToolExecutionResult[]
 }
 
 export interface AgentToolsResponse {
@@ -56,40 +58,33 @@ export interface AgentToolsResponse {
 export interface AgentExecuteToolResponse {
   success: boolean
   tool: string
-  toolResult: null | {
-    items: AgentAssetResultItem[]
-    count: number
-    query: string
-  }
+  toolResult: Record<string, any> | null
 }
 
 export const AgentApi = {
   executeInstruction: async (instruction: string, context?: Record<string, any>) => {
-    const response = await request.post<ApiEnvelope<AgentExecuteResponse>>({
+    return request.post<AgentExecuteResponse>({
       url: '/agent/execute',
       data: {
         instruction,
         context
       }
     })
-    return response.data
   },
 
   getTools: async () => {
-    const response = await request.get<ApiEnvelope<AgentToolsResponse>>({
+    return request.get<AgentToolsResponse>({
       url: '/agent/tools'
     })
-    return response.data
   },
 
   executeTool: async (tool: string, input: Record<string, any>) => {
-    const response = await request.post<ApiEnvelope<AgentExecuteToolResponse>>({
+    return request.post<AgentExecuteToolResponse>({
       url: '/agent/tools/execute',
       data: {
         tool,
         input
       }
     })
-    return response.data
   }
 }
