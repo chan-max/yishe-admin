@@ -4,6 +4,11 @@ export interface AgentToolDefinition {
   name: string
   description: string
   inputSchema: Record<string, any>
+  category?: string
+  method?: string
+  route?: string
+  usage?: string
+  examples?: string[]
 }
 
 export interface AgentAssetResultItem {

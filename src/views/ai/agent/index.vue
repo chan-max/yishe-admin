@@ -118,6 +118,9 @@
         fullscreen
         destroy-on-close
       >
+        <div class="mb-4 rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-xs leading-5 text-[var(--el-text-color-secondary)]">
+          工具的“使用方式”会尽量转成自然语言示例。后端接口的 Swagger 摘要和描述写得越清楚，这里的提示通常也会越准确。
+        </div>
         <div v-loading="toolsLoading" class="min-h-[240px]">
           <el-empty v-if="!toolsLoading && !tools.length" description="暂无工具" :image-size="60" />
 
@@ -127,10 +130,39 @@
               :key="tool.name"
               class="rounded-lg border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-4"
             >
-              <div class="flex items-center justify-between gap-3">
-                <div class="truncate text-sm font-medium text-[var(--el-text-color-primary)]">{{ tool.name }}</div>
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-medium text-[var(--el-text-color-primary)]">{{ tool.name }}</div>
+                  <div class="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[var(--el-text-color-placeholder)]">
+                    <span v-if="tool.category">{{ tool.category }}</span>
+                    <span v-if="tool.method">{{ tool.method }}</span>
+                    <span v-if="tool.route" class="truncate">{{ tool.route }}</span>
+                  </div>
+                </div>
               </div>
               <div class="mt-2 text-xs leading-5 text-[var(--el-text-color-secondary)]">{{ tool.description }}</div>
+              <div
+                v-if="tool.usage"
+                class="mt-3 rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color)] p-3 text-[11px] leading-5 text-[var(--el-text-color-regular)]"
+              >
+                <div class="font-medium text-[var(--el-text-color-primary)]">使用方式</div>
+                <div class="mt-1">{{ tool.usage }}</div>
+              </div>
+              <div
+                v-if="tool.examples?.length"
+                class="mt-3 rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color)] p-3 text-[11px] leading-5 text-[var(--el-text-color-regular)]"
+              >
+                <div class="font-medium text-[var(--el-text-color-primary)]">自然语言示例</div>
+                <div class="mt-2 space-y-2">
+                  <div
+                    v-for="(example, index) in tool.examples"
+                    :key="`${tool.name}-example-${index}`"
+                    class="rounded-md bg-[var(--el-fill-color-light)] px-2 py-1.5 text-[var(--el-text-color-regular)]"
+                  >
+                    {{ index + 1 }}. {{ example }}
+                  </div>
+                </div>
+              </div>
               <pre class="mt-3 overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(tool.inputSchema) }}</pre>
             </div>
           </div>
