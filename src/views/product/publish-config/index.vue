@@ -186,6 +186,26 @@ const appendImageUrlValidation = computed(() => {
   }
 })
 
+function normalizePublishConfigData(platform: string, value: Record<string, any> = {}) {
+  const normalized = {
+    ...getPlatformDefaultData(platform),
+    ...(value || {})
+  }
+
+  const platformConfig = getPlatformConfig(platform)
+  if (platformConfig?.fields?.length) {
+    platformConfig.fields.forEach((field) => {
+      if (field.type === 'url-list' && !Array.isArray(normalized[field.key])) {
+        normalized[field.key] = normalized[field.key]
+          ? [String(normalized[field.key])]
+          : []
+      }
+    })
+  }
+
+  return normalized
+}
+
 function ensureUrlListField(fieldKey: string) {
   const currentValue = platformConfigData.value?.[fieldKey]
   if (!Array.isArray(currentValue)) {
@@ -213,15 +233,11 @@ function getUrlListItemError(fieldKey: string, index: number) {
   return invalidItem ? '仅支持 http/https URL' : ''
 }
 
-
 // 监听平台变化，更新配置字段
 watch(() => form.platform, (newPlatform) => {
   if (newPlatform) {
     currentPlatformConfig.value = getPlatformConfig(newPlatform)
-    // 如果是新增，初始化默认值
-    if (!form.id) {
-      platformConfigData.value = getPlatformDefaultData(newPlatform)
-    }
+    platformConfigData.value = normalizePublishConfigData(newPlatform, platformConfigData.value)
   } else {
     currentPlatformConfig.value = null
     platformConfigData.value = {}
@@ -274,8 +290,10 @@ const handleEdit = (row: any) => {
   
   // 加载平台配置数据
   currentPlatformConfig.value = getPlatformConfig(row.platform)
-  platformConfigData.value = formatConfigForEdit(row.platform, row.configData || {})
-  
+  platformConfigData.value = normalizePublishConfigData(
+    row.platform,
+    formatConfigForEdit(row.platform, row.configData || {})
+  )
   dialogVisible.value = true
 }
 
@@ -290,6 +308,11 @@ const submitForm = async () => {
     const validation = validatePlatformConfig(form.platform, platformConfigData.value)
     if (!validation.valid) {
       ElMessage.error(validation.errors.join('；'))
+      return
+    }
+
+    if (appendImageUrlValidation.value.hasError) {
+      ElMessage.error('附加图片地址校验未通过，请检查 http/https URL')
       return
     }
 
@@ -509,7 +532,7 @@ onMounted(() => {
                           {{ field.tooltip }}
                         </div>
                         <div v-if="field.key === 'appendImageUrls'" class="publish-config-field-note">
-                          一个输入框对应一个地址，生成发布任务时会追加到商品图片后面。
+                          一个输入框对应一个地址，生成发布任务时会追加到套图图片后面。
                         </div>
                       </div>
 

@@ -6,6 +6,7 @@ export const stickerPsdSetApi = {
   batchCreate: (data: any) => request.post({ url: '/sticker-psd-set/batch', data }),
   generateProduct: (data: { id: string; promptId?: number | null }) =>
     request.post({ url: '/sticker-psd-set/generate-product', data }),
+  getPublishTasks: (id: string) => request.get({ url: `/sticker-psd-set/publish-tasks/${id}` }),
   update: (id: string, data: any) => request.patch({ url: `/sticker-psd-set/${id}`, data }),
   updateStatus: (id: string, data: { status: string; statusMessage?: string }) =>
     request.post({ url: `/sticker-psd-set/${id}/status`, data }),

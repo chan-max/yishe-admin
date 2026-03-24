@@ -33,7 +33,7 @@ export const deletePublishConfigApi = (id: string) => {
 
 // 创建发布任务（服务端自动生成标题并写入任务数据）
 export const createPublishTaskApi = (data: {
-  productId: string
+  psdSetId: string
   platform: string
   publishConfigId: string
   publishOptions?: any

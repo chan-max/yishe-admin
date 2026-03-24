@@ -2197,8 +2197,7 @@ const psdSetAutomationActions = ref([
     description: '套图制作完成后自动创建商品，并进入商品生成流程。',
     enabled: false,
     params: {
-      promptId: null as number | null,
-      publishConfigIds: [] as string[]
+      promptId: null as number | null
     },
     fields: [
       {
@@ -2206,12 +2205,23 @@ const psdSetAutomationActions = ref([
         label: 'AI 提示词',
         component: 'select-single',
         placeholder: '可选：选择生成商品名称、描述、关键词时使用的 AI 提示词'
-      },
+      }
+    ]
+  },
+  {
+    key: 'create_publish_task_from_config',
+    label: '自动生成发布任务',
+    description: '套图制作完成后，直接按选中的发布配置创建发布任务。',
+    enabled: false,
+    params: {
+      publishConfigIds: [] as string[]
+    },
+    fields: [
       {
         key: 'publishConfigIds',
         label: '发布配置',
         component: 'select-multiple',
-        placeholder: '可选：选择生成商品后立即创建的发布任务配置'
+        placeholder: '选择一个或多个发布配置'
       }
     ]
   }
@@ -3111,13 +3121,10 @@ async function loadPublishConfigsForPsdAutomation() {
   psdSetAutomationPublishConfigsLoading.value = true
   try {
     const res = await getPublishConfigListApi()
-    if (Array.isArray(res)) {
-      psdSetAutomationPublishConfigs.value = res
-    } else if (Array.isArray((res as any)?.list)) {
-      psdSetAutomationPublishConfigs.value = (res as any).list
-    } else {
-      psdSetAutomationPublishConfigs.value = []
-    }
+    const list = Array.isArray(res)
+      ? res
+      : (Array.isArray((res as any)?.list) ? (res as any).list : [])
+    psdSetAutomationPublishConfigs.value = list.filter((item: any) => item?.isActive !== false)
   } catch (error) {
     console.error('加载发布配置失败:', error)
     ElMessage.error('加载发布配置失败')

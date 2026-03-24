@@ -73,9 +73,6 @@
             批量删除
           </el-button>
           <!-- 批量发布/下架 -->
-          <el-button type="primary" :disabled="!selectedRows.length" @click="batchPublishToPlatforms" :icon="Share">
-            批量发布到平台
-          </el-button>
           <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Check">
             批量标记发布
           </el-button>
@@ -188,18 +185,6 @@
                       <VideoPlay />
                     </el-icon>
                     <span>{{ generatingVideoId === row.id ? '视频生成中...' : '生成视频' }}</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="publish-to-queue">
-                    <el-icon>
-                      <Share />
-                    </el-icon>
-                    <span>发布到平台（队列）</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="view-publish-tasks">
-                    <el-icon>
-                      <View />
-                    </el-icon>
-                    <span>查看发布详情</span>
                   </el-dropdown-item>
                   <el-dropdown-item v-if="row.psdSetId" command="copy-images-from-psdset">
                     <el-icon>
@@ -1274,134 +1259,6 @@
         </template>
       </el-dialog>
 
-      <!-- 发布详情对话框 -->
-      <el-dialog v-model="publishTasksVisible"
-        :title="`发布详情 - ${currentProductForTasks?.name || currentProductForTasks?.id || ''}`" width="80%"
-        :close-on-click-modal="true" align-center :destroy-on-close="true">
-        <div v-loading="publishTasksLoading" class="publish-tasks-container">
-          <div v-if="publishTasks.length > 0" class="flex justify-end mb-3">
-            <el-select v-model="publishTasksSortType" style="width: 220px">
-              <el-option
-                v-for="item in publishTaskSortOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </el-select>
-          </div>
-          <div v-if="publishTasks.length === 0 && !publishTasksLoading" class="empty-state text-center py-8">
-            <el-empty description="暂无发布任务" />
-          </div>
-          <vxe-grid v-else :data="sortedPublishTasks" :columns="publishTasksColumns" border stripe size="small"
-            :show-header="true" :show-overflow="true" height="500" class="publish-tasks-grid">
-            <template #platformSlot="{ row }">
-              {{ formatPlatformName(row.platform) }}
-            </template>
-            <template #statusSlot="{ row }">
-              <el-tag :type="formatTaskStatus(row.status).type" size="small">
-                {{ formatTaskStatus(row.status).label }}
-              </el-tag>
-            </template>
-            <template #executionStatusSlot="{ row }">
-              <el-tag v-if="row.status === 'waiting'" type="warning" size="small">
-                等待中
-              </el-tag>
-              <el-tag v-else-if="row.status === 'pending'" type="success" size="small">
-                可执行
-              </el-tag>
-              <span v-else class="text-gray-400 text-sm">-</span>
-            </template>
-            <template #attemptsSlot="{ row }">
-              {{ row.attempts || 0 }} / {{ row.maxAttempts || 3 }}
-            </template>
-            <template #createdAtSlot="{ row }">
-              {{ formatTimestamp(row.createdAt) }}
-            </template>
-            <template #updatedAtSlot="{ row }">
-              {{ formatTimestamp(row.updatedAt) }}
-            </template>
-            <template #processedAtSlot="{ row }">
-              {{ row.processedAt ? formatTimestamp(row.processedAt) : '-' }}
-            </template>
-            <template #errorSlot="{ row }">
-              <span v-if="row.error" class="text-red-500">{{ row.error }}</span>
-              <span v-else class="text-gray-400">-</span>
-            </template>
-            <template #operationSlot="{ row }">
-              <el-button type="primary" link size="small" @click="handlePreviewPublishTaskData(row)">
-                查看发布数据
-              </el-button>
-            </template>
-          </vxe-grid>
-        </div>
-        <template #footer>
-          <el-button @click="publishTasksVisible = false">关闭</el-button>
-        </template>
-      </el-dialog>
-
-      <el-dialog v-model="publishTaskPreviewVisible" title="发布数据预览" width="60%" :close-on-click-modal="true">
-        <div class="mb-3 text-xs text-[#E6A23C] bg-[#fdf6ec] px-3 py-2 rounded">
-          这里展示的是客户端调用发布端接口时的请求体预览，当前不做资源本地化替换，仅用于查看参数结构。
-        </div>
-        <pre class="source-info-json">{{ JSON.stringify(currentPublishTaskPreviewData, null, 2) }}</pre>
-        <template #footer>
-          <el-button @click="publishTaskPreviewVisible = false">关闭</el-button>
-        </template>
-      </el-dialog>
-
-      <!-- 发布平台选择对话框 (vxe-grid 优化版) -->
-      <el-dialog v-model="publishPlatformDialogVisible" title="选择发布配置" width="100%" :fullscreen="true" :close-on-click-modal="true"
-        @close="publishPlatformDialogClose" align-center>
-        <div class="platform-select-container flex flex-col gap-4">
-          <div class="flex items-center justify-between gap-4">
-            <div class="text-sm text-gray-600">
-              当前将为
-              <el-tag type="primary" effect="plain" class="mx-1">{{ currentPublishProducts.length }}</el-tag>
-              个商品创建发布任务
-            </div>
-            <div v-if="currentPublishProducts.length === 1" class="text-sm text-gray-500 truncate max-w-[50%]">
-              {{ currentPublishProducts[0]?.name || currentPublishProducts[0]?.id }}
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-2 flex-1">
-              <el-input v-model="publishConfigSearchText" placeholder="搜索配置名称或平台..." clearable
-                @input="publishConfigCurrentPage = 1" style="width: 300px" />
-              <div class="text-xs text-gray-500">
-                支持多选配置并行发布到不同平台
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <el-tag v-if="publishQueueSelectedConfigIds.length" type="primary" effect="dark" round>
-                已选 {{ publishQueueSelectedConfigIds.length }} 项
-              </el-tag>
-            </div>
-          </div>
-
-          <div class="common-table">
-            <vxe-grid v-bind="publishConfigGridOptions" :data="publishConfigDataSource"
-              @checkbox-change="handlePublishConfigCheckboxChange" @checkbox-all="handlePublishConfigCheckboxAllChange">
-            </vxe-grid>
-          </div>
-
-          <div class="flex justify-end pt-2">
-            <el-pagination v-model:current-page="publishConfigCurrentPage" v-model:page-size="publishConfigPageSize"
-              :total="filteredPublishConfigs.length" :page-sizes="[10, 20, 50, 100]"
-              layout="total, sizes, prev, pager, next" size="small" background />
-          </div>
-        </div>
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <el-button @click="publishPlatformDialogVisible = false">取消</el-button>
-            <el-button type="primary" :loading="publishConfirmLoading"
-              :disabled="publishQueueSelectedConfigIds.length === 0" @click="confirmPublishToPlatforms">
-              确认发布任务 ({{ currentPublishProducts.length }} x {{ publishQueueSelectedConfigIds.length }})
-            </el-button>
-          </div>
-        </template>
-      </el-dialog>
-
       </ContentWrap>
       </div>
   </div>
@@ -1451,7 +1308,6 @@ import {
   updatePublishStatus,
   deleteProduct,
   generateProductCode,
-  getProductPublishTasks,
   batchMoveProducts,
   aiGenerateProductInfo
 } from "@/api/product";
@@ -1464,7 +1320,6 @@ import request from "@/config/axios";
 import VideoGenDialog from './components/VideoGenDialog.vue';
 import { PRODUCT_CATEGORIES } from '@/config/product-categories'
 import { getPreviewImageUrl } from '@/utils/image'
-import { getPublishConfigListApi, createPublishTaskApi } from '@/api/product/publishConfig'
 import FolderTree from '@/components/material/FolderTree.vue'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder'
@@ -1827,84 +1682,6 @@ const publishForm = ref<PublishForm>({
   tiktok: null,
   youtube: null
 });
-
-// 发布配置选择相关状态
-const publishConfigSearchText = ref('');
-const publishConfigCurrentPage = ref(1);
-const publishConfigPageSize = ref(10);
-const availablePublishConfigs = ref<any[]>([]);
-const publishQueueSelectedConfigIds = ref<string[]>([]);
-const publishConfirmLoading = ref(false);
-const publishPlatformDialogVisible = ref(false);
-const currentPublishProduct = ref<any>(null);
-const currentPublishProducts = ref<any[]>([]);
-
-const filteredPublishConfigs = computed(() => {
-  const text = publishConfigSearchText.value.toLowerCase().trim();
-  let filtered = availablePublishConfigs.value;
-  if (text) {
-    filtered = filtered.filter(c =>
-      c.name?.toLowerCase().includes(text) ||
-      formatPlatformName(c.platform).toLowerCase().includes(text)
-    );
-  }
-  return filtered;
-});
-
-const publishConfigDataSource = computed(() => {
-  const start = (publishConfigCurrentPage.value - 1) * publishConfigPageSize.value;
-  const end = start + publishConfigPageSize.value;
-  return filteredPublishConfigs.value.slice(start, end);
-});
-
-const publishConfigGridOptions = computed(() => ({
-  ...commonGridOptions,
-  height: 480,
-  loading: false,
-  rowConfig: { isHover: true, keyField: 'id' },
-  columnConfig: { resizable: true },
-  checkboxConfig: {
-    checkRowKeys: publishQueueSelectedConfigIds.value,
-    highlight: true,
-    trigger: 'row' as const
-  },
-  columns: [
-    { type: 'checkbox' as any, width: 60, align: 'center' as any },
-    {
-      field: 'platform',
-      title: '平台',
-      width: 140,
-      formatter: ({ cellValue }: any) => formatPlatformName(cellValue)
-    },
-    { field: 'name', title: '配置名称', minWidth: 180, showOverflow: true },
-    { field: 'description', title: '备注说明', minWidth: 220, showOverflow: true }
-  ]
-}));
-
-// 处理配置选择变更
-function handlePublishConfigCheckboxChange({ checked, row }) {
-  if (checked) {
-    if (!publishQueueSelectedConfigIds.value.includes(row.id)) {
-      publishQueueSelectedConfigIds.value.push(row.id);
-    }
-  } else {
-    publishQueueSelectedConfigIds.value = publishQueueSelectedConfigIds.value.filter(id => id !== row.id);
-  }
-}
-
-function handlePublishConfigCheckboxAllChange({ checked, records }) {
-  // 只操作当前页的数据
-  const currentPageIds = publishConfigDataSource.value.map(r => r.id);
-  if (checked) {
-    currentPageIds.forEach(id => {
-      if (!publishQueueSelectedConfigIds.value.includes(id)) {
-        publishQueueSelectedConfigIds.value.push(id);
-      }
-    });
-  } else {
-    publishQueueSelectedConfigIds.value = publishQueueSelectedConfigIds.value.filter(id => !currentPageIds.includes(id));
-  }
-}
 
 // 监听平台选择变化
 // watch(selectedPlatforms, async (newPlatforms) => {
@@ -2542,14 +2319,6 @@ function publishDialogClose() {
   currentPublishRow.value = {};
 }
 
-function publishPlatformDialogClose() {
-  publishQueueSelectedConfigIds.value = [];
-  publishConfigSearchText.value = '';
-  publishConfigCurrentPage.value = 1;
-  currentPublishProduct.value = null;
-  currentPublishProducts.value = [];
-}
-
 // 处理内容输入，自适应textarea高度
 function handleContentInput(platform: string) {
   // Element Plus的autosize属性会自动处理高度调整
@@ -2797,12 +2566,6 @@ function handleOperationCommand(command: string, row: any) {
     case 'generate-video':
       handleGenerateVideo(row);
       break;
-    case 'publish-to-queue':
-      handlePublishToQueue(row);
-      break;
-    case 'view-publish-tasks':
-      handleViewPublishTasks(row);
-      break;
     default:
       console.warn('未知的操作命令:', command);
   }
@@ -2822,41 +2585,6 @@ async function batchPublish(rows?: any[]) {
   } catch (e) {
     ElMessage.error('批量发布失败，请重试');
   }
-}
-
-async function openPublishPlatformDialog(rows: any[]) {
-  const list = (rows || []).filter(item => item?.id);
-  if (list.length === 0) {
-    return ElMessage.warning('请先选择要发布的商品');
-  }
-
-  currentPublishProducts.value = list;
-  currentPublishProduct.value = list[0] || null;
-  publishQueueSelectedConfigIds.value = [];
-  publishConfigSearchText.value = '';
-  publishConfigCurrentPage.value = 1;
-
-  try {
-    const res = await getPublishConfigListApi();
-    if (Array.isArray(res)) {
-      availablePublishConfigs.value = res;
-    } else if (res && res.list) {
-      availablePublishConfigs.value = res.list;
-    } else {
-      availablePublishConfigs.value = [];
-    }
-  } catch (e) {
-    console.error(e);
-    ElMessage.error('获取发布配置失败');
-    return;
-  }
-
-  publishPlatformDialogVisible.value = true;
-}
-
-async function batchPublishToPlatforms(rows?: any[]) {
-  const list = rows && rows.length ? rows : selectedRows.value;
-  await openPublishPlatformDialog(list || []);
 }
 
 // 批量下架
@@ -3326,224 +3054,6 @@ function formatPlatformName(platform: string) {
 // 任务类型命名：{action}-{object}-{platform}，便于任务队列按平台查询
 function getPublishTaskType(platform: string) {
   return `publish-product-${platform}`;
-}
-
-// 发布到平台队列
-async function handlePublishToQueue(row: any) {
-  if (!row?.id) {
-    return ElMessage.warning('商品ID不存在');
-  }
-  await openPublishPlatformDialog([row]);
-}
-
-// 确认发布到选中的平台
-async function confirmPublishToPlatforms() {
-  if (!currentPublishProducts.value.length) {
-    return ElMessage.warning('商品不存在');
-  }
-
-  if (publishQueueSelectedConfigIds.value.length === 0) {
-    return ElMessage.warning('请至少选择一个发布配置');
-  }
-
-  const configIds = publishQueueSelectedConfigIds.value;
-  publishConfirmLoading.value = true;
-
-  try {
-    const tasks = currentPublishProducts.value.flatMap(row => {
-      return configIds.map(configId => {
-        const config = availablePublishConfigs.value.find(c => c.id === configId);
-        if (!config) return null;
-
-        return {
-          productId: row.id,
-          platform: config.platform,
-          publishConfigId: config.id,
-          publishOptions: config.configData || {},
-          description: `发布商品"${row.name || row.id}"到${config.name} (${formatPlatformName(config.platform)})`,
-          metadata: {
-            platform: config.platform,
-            productId: row.id,
-            productName: row.name,
-            publishConfigId: config.id,
-            configName: config.name
-          }
-        };
-      });
-    }).filter(Boolean);
-
-    // 批量创建任务（使用 allSettled，避免单个失败导致整体中断）
-    const settledResults = await Promise.allSettled(
-      tasks.map(task => task && createPublishTaskApi(task as any))
-    );
-
-    const successCount = settledResults.filter((item: any) => {
-      if (item.status !== 'fulfilled') return false;
-      const r = item.value;
-      // createPublishTaskApi 正常返回 messageId（兼容不同响应结构）
-      return !!(r?.messageId || r?.id || r?.data?.messageId || r?.data?.id);
-    }).length;
-
-    const totalCount = tasks.length;
-    const failedCount = Math.max(totalCount - successCount, 0);
-
-    publishPlatformDialogVisible.value = false;
-    currentPublishProducts.value = [];
-    currentPublishProduct.value = null;
-
-    if (successCount === totalCount) {
-      ElMessage.success(`成功创建 ${successCount}/${totalCount} 个发布任务，已添加到发布队列`);
-    } else if (successCount > 0) {
-      ElMessage.warning(`部分创建成功：${successCount}/${totalCount} 个发布任务，失败 ${failedCount} 个`);
-    } else {
-      ElMessage.error(`发布任务创建失败：0/${totalCount}`);
-    }
-  } catch (error: any) {
-    console.error('创建发布任务失败:', error);
-    ElMessage.error(error?.message || '创建发布任务失败');
-  } finally {
-    publishConfirmLoading.value = false;
-  }
-}
-
-// 查看发布详情
-const publishTasksVisible = ref(false);
-const publishTasks = ref<any[]>([]);
-const currentProductForTasks = ref<any>(null);
-const publishTasksLoading = ref(false);
-const publishTasksSortType = ref('created_desc');
-const publishTaskSortOptions = [
-  { label: '创建时间: 最新在前', value: 'created_desc' },
-  { label: '创建时间: 最早在前', value: 'created_asc' },
-  { label: '更新时间: 最新在前', value: 'updated_desc' },
-  { label: '更新时间: 最早在前', value: 'updated_asc' },
-  { label: '完成时间: 最新在前', value: 'processed_desc' },
-  { label: '完成时间: 最早在前', value: 'processed_asc' },
-];
-
-function normalizePublishTaskTime(value: any): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === 'string' && value.trim()) {
-    const normalized = value.includes('T') ? value : value.replace(' ', 'T');
-    const ts = new Date(normalized).getTime();
-    return Number.isFinite(ts) ? ts : 0;
-  }
-  return 0;
-}
-
-const sortedPublishTasks = computed(() => {
-  const list = [...publishTasks.value];
-  const getTime = (row: any, field: 'created' | 'updated' | 'processed') => {
-    if (field === 'created') {
-      return normalizePublishTaskTime(row?.createdAtTs ?? row?.createdAt);
-    }
-    if (field === 'updated') {
-      return normalizePublishTaskTime(row?.updatedAtTs ?? row?.updatedAt);
-    }
-    return normalizePublishTaskTime(row?.processedAtTs ?? row?.processedAt);
-  };
-
-  return list.sort((a, b) => {
-    switch (publishTasksSortType.value) {
-      case 'created_asc':
-        return getTime(a, 'created') - getTime(b, 'created');
-      case 'updated_desc':
-        return getTime(b, 'updated') - getTime(a, 'updated');
-      case 'updated_asc':
-        return getTime(a, 'updated') - getTime(b, 'updated');
-      case 'processed_desc':
-        return getTime(b, 'processed') - getTime(a, 'processed');
-      case 'processed_asc':
-        return getTime(a, 'processed') - getTime(b, 'processed');
-      case 'created_desc':
-      default:
-        return getTime(b, 'created') - getTime(a, 'created');
-    }
-  });
-});
-
-// 发布任务列表列配置
-const publishTasksColumns = [
-  { field: 'platform', title: '平台', width: 120, slots: { default: 'platformSlot' } },
-  { field: 'status', title: '状态', width: 120, slots: { default: 'statusSlot' } },
-  { field: 'executionStatus', title: '可执行状态', width: 120, slots: { default: 'executionStatusSlot' } },
-  { field: 'description', title: '描述', minWidth: 200, showOverflow: true },
-  { field: 'attempts', title: '重试次数', width: 120, slots: { default: 'attemptsSlot' } },
-  { field: 'createdAt', title: '创建时间', width: 180, slots: { default: 'createdAtSlot' } },
-  { field: 'updatedAt', title: '更新时间', width: 180, slots: { default: 'updatedAtSlot' } },
-  { field: 'processedAt', title: '完成时间', width: 180, slots: { default: 'processedAtSlot' } },
-  { field: 'error', title: '错误信息', minWidth: 200, showOverflow: true, slots: { default: 'errorSlot' } },
-  { field: 'operation', title: '操作', width: 120, fixed: 'right', slots: { default: 'operationSlot' } },
-];
-
-async function handleViewPublishTasks(row: any) {
-  if (!row?.id) {
-    return ElMessage.warning('商品ID不存在');
-  }
-
-  currentProductForTasks.value = row;
-  publishTasksSortType.value = 'created_desc';
-  publishTasksVisible.value = true;
-  publishTasksLoading.value = true;
-
-  try {
-    const res = await getProductPublishTasks(row.id);
-    publishTasks.value = Array.isArray(res) ? res : [];
-  } catch (error: any) {
-    console.error('获取发布任务列表失败:', error);
-    ElMessage.error(error?.message || '获取发布任务列表失败');
-    publishTasks.value = [];
-  } finally {
-    publishTasksLoading.value = false;
-  }
-}
-
-// 格式化任务状态
-function formatTaskStatus(status: string) {
-  const statusMap: Record<string, { label: string; type: string }> = {
-    pending: { label: '待处理', type: 'info' },
-    waiting: { label: '等待中', type: 'warning' },
-    processing: { label: '处理中', type: 'warning' },
-    completed: { label: '已完成', type: 'success' },
-    failed: { label: '失败', type: 'danger' },
-  };
-  return statusMap[status] || { label: status, type: 'info' };
-}
-
-const publishTaskPreviewVisible = ref(false);
-const currentPublishTaskPreviewData = ref<any>({});
-
-function buildPublishTaskRequestPreview(task: any) {
-  const data = task?.data || {};
-  const platform = data?.publishData?.platform || data?.meta?.platform || task?.platform || task?.type?.replace('publish-product-', '') || '';
-  const rawPublishData = data?.publishData && typeof data.publishData === 'object'
-    ? data.publishData
-    : {};
-  const fallbackRequestData = rawPublishData?.post || rawPublishData?.assets || rawPublishData?.options
-    ? {
-        platform,
-        title: rawPublishData?.post?.title || '',
-        description: rawPublishData?.post?.description || undefined,
-        content: rawPublishData?.post?.content || undefined,
-        tags: Array.isArray(rawPublishData?.post?.tags) ? rawPublishData.post.tags : undefined,
-        imageSources: Array.isArray(rawPublishData?.assets?.images) ? rawPublishData.assets.images : undefined,
-        videoSource: Array.isArray(rawPublishData?.assets?.videos) ? rawPublishData.assets.videos?.[0] : undefined,
-        ...(rawPublishData?.options || {}),
-      }
-    : { ...rawPublishData, platform };
-
-  return {
-    ...fallbackRequestData,
-    platforms: platform ? [platform] : [],
-    platform,
-  };
-}
-
-function handlePreviewPublishTaskData(task: any) {
-  currentPublishTaskPreviewData.value = buildPublishTaskRequestPreview(task);
-  publishTaskPreviewVisible.value = true;
 }
 
 </script>
