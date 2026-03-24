@@ -39,6 +39,18 @@
           <span>{{ formatDate(row.createTime) }}</span>
         </template>
 
+        <template #productsSlot="{ row }">
+          <div class="vendor-products-summary">
+            <template v-if="row.products?.length">
+              <div class="vendor-products-summary__count">{{ buildProductSummary(row.products).countText }}</div>
+              <div class="vendor-products-summary__names">
+                {{ buildProductSummary(row.products).previewText }}
+              </div>
+            </template>
+            <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
+          </div>
+        </template>
+
         <template #operationSlot="{ row }">
           <div class="flex justify-end">
             <el-dropdown
@@ -74,6 +86,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { VendorProductItem } from '@/api/vendor'
 import { commonGridOptions } from '@/common/table'
 import { batchDeleteVendor, deleteVendor, getVendorList } from '@/api/vendor'
 import VendorDialog from './components/VendorDialog.vue'
@@ -86,6 +99,14 @@ const selectedIds = ref<number[]>([])
 
 const updateSelectedIds = (records: any[]) => {
   selectedIds.value = (records || []).map((item) => Number(item.id)).filter((id) => Number.isInteger(id) && id > 0)
+}
+
+const buildProductSummary = (products: VendorProductItem[] = []) => {
+  const productNames = Array.from(new Set(products.map((item) => String(item?.name || '').trim()).filter(Boolean)))
+  return {
+    countText: `${productNames.length} 个商品 / ${products.length} 个型号`,
+    previewText: productNames.slice(0, 3).join('、') + (productNames.length > 3 ? '...' : '')
+  }
 }
 
 const gridOptions = ref({
@@ -102,6 +123,7 @@ const gridOptions = ref({
     { title: '厂家名称', field: 'name', minWidth: 180 },
     { title: '联系人', field: 'contactName', width: 120 },
     { title: '联系电话', field: 'contactPhone', width: 140 },
+    { title: '商品概览', field: 'products', minWidth: 240, slots: { default: 'productsSlot' } },
     { title: '图片', field: 'images', width: 180, slots: { default: 'imagesSlot' } },
     { title: '地址', field: 'address', minWidth: 220, showOverflow: 'tooltip' },
     { title: '描述', field: 'description', minWidth: 240, showOverflow: 'tooltip' },
@@ -167,3 +189,17 @@ onMounted(() => {
   getList()
 })
 </script>
+
+<style scoped lang="scss">
+.vendor-products-summary__count {
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+}
+
+.vendor-products-summary__names {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
+}
+</style>

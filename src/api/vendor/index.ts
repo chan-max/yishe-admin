@@ -8,8 +8,16 @@ export interface Vendor {
   contactPhone?: string
   address?: string
   images?: string[]
+  products?: VendorProductItem[]
   createTime?: string
   updateTime?: string
+}
+
+export interface VendorProductItem {
+  name: string
+  model?: string
+  size?: string
+  price?: number | null
 }
 
 export const getVendorList = () => request.get({ url: '/operations/vendor' })
