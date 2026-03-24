@@ -298,7 +298,12 @@ const doudianHandler: PlatformHandler = {
 
   validateConfig(configData) {
     const errors: string[] = []
+    const copyId = typeof configData?.copyId === 'string' ? configData.copyId.trim() : ''
     const rawValue = configData?.appendImageUrls
+
+    if (copyId && !/^\d+$/.test(copyId)) {
+      errors.push('复制模板 ID 必须是数字')
+    }
 
     if (typeof rawValue === 'string' && rawValue.trim()) {
       const lines = rawValue
@@ -330,6 +335,9 @@ const doudianHandler: PlatformHandler = {
   formatConfigForSubmit(configData) {
     const formatted = { ...configData }
 
+    if (formatted.copyId !== undefined && formatted.copyId !== null) {
+      formatted.copyId = String(formatted.copyId).trim()
+    }
     if (formatted.price !== undefined && formatted.price !== null && formatted.price !== '') {
       formatted.price = Number(formatted.price)
     }
@@ -343,6 +351,9 @@ const doudianHandler: PlatformHandler = {
 
   formatConfigForEdit(configData) {
     const formatted = { ...configData }
+    if (formatted.copyId !== undefined && formatted.copyId !== null) {
+      formatted.copyId = String(formatted.copyId).trim()
+    }
     const urls = normalizeHttpUrlList(formatted.appendImageUrls)
     formatted.appendImageUrls = urls
     return formatted
@@ -350,7 +361,7 @@ const doudianHandler: PlatformHandler = {
 
   getHints() {
     return [
-      '抖店已接入基础骨架支持',
+      '支持配置抖店模板 copyId，发布端会优先进入 create?copyid=... 页面',
       '当前先支持标题、描述、图片和少量可选参数透传',
       '支持附加图片，会在生成发布任务时追加到商品图片后面',
       '类目、SKU、物流模板等详细字段后续再补充'

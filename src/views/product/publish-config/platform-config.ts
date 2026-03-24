@@ -290,6 +290,14 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     titleMaxLength: 60,
     fields: [
       {
+        key: 'copyId',
+        label: '复制模板 ID',
+        type: 'input',
+        placeholder: '请输入抖店 create?copyid=... 中的 copyid',
+        span: 24,
+        tooltip: '发布端会基于这个 copyId 打开抖店模板创建页'
+      },
+      {
         key: 'appendImageUrls',
         label: '附加图片',
         type: 'url-list',
