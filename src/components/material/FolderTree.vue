@@ -54,10 +54,6 @@
                   <span v-else>{{ segment.text }}</span>
                 </template>
               </span>
-              <span v-if="showCount && data.id !== FOLDER_FILTER.NOT_GROUP && !data.isAll" class="sticker-folder-node-count">({{
-                data.stickerCount
-                ||
-                0 }})</span>
             </div>
 
             <div v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'" class="sticker-folder-node-actions">
@@ -467,11 +463,6 @@ watch(displayTreeData, () => {
         .sticker-folder-node-text {
           color: var(--el-color-primary-dark-2);
           font-weight: 700;
-        }
-
-        .sticker-folder-node-count {
-          color: var(--el-color-primary-dark-2);
-          font-weight: 600;
         }
       }
     }
