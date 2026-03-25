@@ -24,6 +24,7 @@ import {
   formatConfigForEdit,
   executePlatformBeforeSubmit
 } from './platform-handlers'
+import { getVendorList, type Vendor } from '@/api/vendor'
 
 const loading = ref(false)
 const tableData = ref([])
@@ -89,6 +90,22 @@ const getList = async () => {
   }
 }
 
+const loadVendorOptions = async () => {
+  try {
+    const res = await getVendorList()
+    const list = Array.isArray(res) ? res : (Array.isArray((res as any)?.list) ? (res as any).list : [])
+    vendorOptions.value = list
+      .map((item: Vendor) => ({
+        label: `${item.name}${item.code ? ` (${item.code})` : ''}`,
+        value: Number(item.id)
+      }))
+      .filter((item) => Number.isFinite(item.value))
+  } catch (err) {
+    console.error(err)
+    vendorOptions.value = []
+  }
+}
+
 const handleSearch = () => {
   queryParams.page = 1
   getList()
@@ -138,6 +155,7 @@ const submitLoading = ref(false)
 // 动态平台配置
 const currentPlatformConfig = ref<PlatformConfig | null>(null)
 const platformConfigData = ref<Record<string, any>>({})
+const vendorOptions = ref<Array<{ label: string; value: number }>>([])
 
 const form = reactive({
   id: undefined,
@@ -383,6 +401,7 @@ const handleDelete = (row: any) => {
 
 onMounted(() => {
   getList()
+  loadVendorOptions()
 })
 </script>
 
@@ -543,19 +562,26 @@ onMounted(() => {
                         style="width: 100%;"
                       />
 
-                      <el-select
-                        v-else-if="field.type === 'select'"
-                        v-model="platformConfigData[field.key]"
+                      <template v-else-if="field.type === 'select'">
+                        <el-select
+                          v-model="platformConfigData[field.key]"
                           :placeholder="field.placeholder || '请选择'"
-                        style="width: 100%;"
-                      >
-                        <el-option
-                          v-for="option in field.options"
-                          :key="option.value"
-                          :label="option.label"
-                          :value="option.value"
-                        />
-                      </el-select>
+                          style="width: 100%;"
+                        >
+                          <el-option
+                            v-for="option in (field.key === 'vendorId' ? vendorOptions : field.options)"
+                            :key="option.value"
+                            :label="option.label"
+                            :value="option.value"
+                          />
+                        </el-select>
+                        <div
+                          v-if="field.key === 'vendorId' && field.tooltip"
+                          class="publish-config-field-tip"
+                        >
+                          {{ field.tooltip }}
+                        </div>
+                      </template>
 
                       <div v-else-if="field.type === 'switch'" class="publish-config-switch">
                         <el-switch v-model="platformConfigData[field.key]" />
