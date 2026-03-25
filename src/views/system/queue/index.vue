@@ -207,27 +207,53 @@
     </el-dialog>
 
     <!-- 查看数据对话框 -->
-    <el-dialog v-model="dataDialogVisible" title="任务数据" fullscreen :center="false" align-center>
-      <div v-loading="dataDialogLoading" style="height: calc(100vh - 140px)">
-        <JsonEditorVue v-model="currentTaskData" readOnly style="height: 100%" />
+    <el-dialog v-model="dataDialogVisible" title="????" fullscreen :center="false" align-center>
+      <div v-loading="dataDialogLoading" class="queue-json-viewer-shell">
+        <div class="queue-json-panel queue-json-panel--preview">
+          <div class="queue-json-panel__header">
+            <span class="queue-json-panel__title">JSON ??</span>
+          </div>
+          <div class="queue-json-panel__body queue-json-panel__body--viewer">
+            <vue-json-pretty :data="currentTaskData" :deep="3" show-length show-icon />
+          </div>
+        </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dataDialogVisible = false">关闭</el-button>
+          <el-button @click="dataDialogVisible = false">??</el-button>
         </div>
       </template>
     </el-dialog>
 
-    <!-- 更新数据对话框 -->
-    <el-dialog v-model="dataUpdateDialogVisible" title="更新数据" fullscreen :center="false" align-center
+    <!-- ??????? -->
+    <el-dialog v-model="dataUpdateDialogVisible" title="????" fullscreen :center="false" align-center
       @close="resetDataUpdateForm">
-      <div style="height: calc(100vh - 140px)">
-        <JsonEditorVue v-model="dataUpdateFormData.dataObj" style="height: 100%" />
+      <div class="queue-json-editor-layout">
+        <div class="queue-json-panel queue-json-panel--preview">
+          <div class="queue-json-panel__header">
+            <span class="queue-json-panel__title">????</span>
+            <span class="queue-json-panel__desc">??????????????</span>
+          </div>
+          <div class="queue-json-panel__body queue-json-panel__body--viewer">
+            <vue-json-pretty :data="parsedUpdateData" :deep="3" show-length show-icon />
+          </div>
+        </div>
+        <div class="queue-json-panel queue-json-panel--editor">
+          <div class="queue-json-panel__header">
+            <span class="queue-json-panel__title">JSON ??</span>
+            <span class="queue-json-panel__desc">????? JSON ???</span>
+          </div>
+          <div class="queue-json-panel__body queue-json-panel__body--editor">
+            <el-input v-model="dataUpdateFormData.dataStr" type="textarea" class="queue-json-textarea"
+              :input-style="{ height: '100%', resize: 'none', fontFamily: 'Monaco, Menlo, Consolas, monospace' }"
+              placeholder='?????? JSON ????????' />
+          </div>
+        </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dataUpdateDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleDataUpdateSubmit">确认</el-button>
+          <el-button @click="dataUpdateDialogVisible = false">??</el-button>
+          <el-button type="primary" @click="handleDataUpdateSubmit">??</el-button>
         </div>
       </template>
     </el-dialog>
@@ -235,7 +261,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, watchEffect, onMounted, watch } from 'vue'
+import { ref, reactive, watchEffect, onMounted, watch, computed } from 'vue'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -261,7 +287,8 @@ import Pagination from '@/components/Pagination/index.vue'
 import { useUserStore } from '@/store/modules/user'
 import FormItem from '@/components/Erp/formItem.vue'
 import { TASK_TYPE_OPTIONS } from '@/config/task-types'
-import JsonEditorVue from 'json-editor-vue'
+import VueJsonPretty from 'vue-json-pretty'
+import 'vue-json-pretty/lib/styles.css'
 
 const userStore = useUserStore()
 
@@ -468,6 +495,15 @@ const dataUpdateFormData = reactive({
   dataObj: {} as any,
 })
 const currentDataUpdateRow = ref<QueueMessage | null>(null)
+
+const parsedUpdateData = computed(() => {
+  if (!dataUpdateFormData.dataStr.trim()) return {}
+  try {
+    return JSON.parse(dataUpdateFormData.dataStr)
+  } catch (e) {
+    return { error: 'Invalid JSON format (解析异常...)' }
+  }
+})
 
 // 获取状态类型
 function getStatusType(status: QueueMessage['status']) {
@@ -884,14 +920,12 @@ function handleUpdateData(row: QueueMessage) {
 
 // 提交数据更新
 async function handleDataUpdateSubmit() {
-  let data: any = dataUpdateFormData.dataObj
-  if (typeof data === 'string') {
-    try {
-      data = JSON.parse(data)
-    } catch (e) {
-      ElMessage.error('请输入有效的JSON格式')
-      return
-    }
+  let data: any
+  try {
+    data = JSON.parse(dataUpdateFormData.dataStr)
+  } catch (e) {
+    ElMessage.error('请输入有效的JSON格式')
+    return
   }
 
   try {
@@ -970,7 +1004,7 @@ function resetDataUpdateForm() {
   }, 50)
 }
 
-// 监听任务类型变化，保存到 localStorage
+// ???????????? localStorage
 watch(() => queryParams.type, (newType) => {
   if (newType && newType.trim()) {
     localStorage.setItem('queue_last_type', newType.trim())
@@ -979,13 +1013,12 @@ watch(() => queryParams.type, (newType) => {
   }
 })
 
-// 初始化
+// ???
 onMounted(() => {
   getList()
   refreshStats()
 })
 </script>
-
 <style lang="less">
 .table-operation-column {
   gap: 8px;
@@ -999,4 +1032,135 @@ onMounted(() => {
   font-size: 12px;
   line-height: 1.6;
 }
+
+.queue-json-viewer-shell,
+.queue-json-editor-layout {
+  height: calc(100vh - 140px);
+}
+
+.queue-json-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 42%);
+  gap: 20px;
+}
+
+.queue-json-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid #d7dee8;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.queue-json-panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e6ebf2;
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.queue-json-panel__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.queue-json-panel__desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.queue-json-panel__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.queue-json-panel__body--viewer {
+  overflow: auto;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.queue-json-panel__body--editor {
+  padding: 14px;
+  background: #ffffff;
+}
+
+.queue-json-textarea {
+  height: 100%;
+}
+
+.queue-json-textarea :deep(.el-textarea__inner) {
+  height: 100%;
+  border: 0;
+  box-shadow: none;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.queue-json-panel :deep(.vjs-tree) {
+  font-family: Monaco, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.queue-json-panel :deep(.vjs-tree-node) {
+  margin: 1px 0;
+  padding: 2px 8px 2px 6px;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.queue-json-panel :deep(.vjs-tree-node:hover),
+.queue-json-panel :deep(.vjs-tree-node.is-highlight) {
+  background: #eef4ff;
+  box-shadow: inset 0 0 0 1px #d8e5ff;
+  border-radius: 8px;
+}
+
+.queue-json-panel :deep(.vjs-tree-node .vjs-tree-node-actions),
+.queue-json-panel :deep(.vjs-tree-node:hover .vjs-tree-node-actions),
+.queue-json-panel :deep(.vjs-tree-node.is-highlight .vjs-tree-node-actions) {
+  background: #eef4ff;
+  border-radius: 8px;
+}
+
+.queue-json-panel :deep(.vjs-tree-brackets:hover),
+.queue-json-panel :deep(.vjs-carets:hover),
+.queue-json-panel :deep(.vjs-tree-node-actions-item:hover) {
+  color: #2563eb;
+}
+
+.queue-json-panel :deep(.vjs-key) {
+  color: #334155;
+  font-weight: 600;
+}
+
+.queue-json-panel :deep(.vjs-value-string) {
+  color: #047857;
+}
+
+.queue-json-panel :deep(.vjs-value-number),
+.queue-json-panel :deep(.vjs-value-boolean) {
+  color: #1d4ed8;
+}
+
+.queue-json-panel :deep(.vjs-value-null),
+.queue-json-panel :deep(.vjs-value-undefined) {
+  color: #9333ea;
+}
+
+ @media (max-width: 960px) {
+  .queue-json-editor-layout {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+
