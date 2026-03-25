@@ -101,24 +101,19 @@
           <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
             <el-button type="primary" link size="small">
               操作
-              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              <el-icon class="el-icon--right">
+                <ArrowDown />
+              </el-icon>
             </el-button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item
-                  v-if="String(row.type || '').startsWith('publish-product-')"
-                  :command="'regenerate'"
-                  :disabled="row.status === 'processing'"
-                >
+                <el-dropdown-item v-if="String(row.type || '').startsWith('publish-product-')" :command="'regenerate'"
+                  :disabled="row.status === 'processing'">
                   重新生成
                 </el-dropdown-item>
                 <el-dropdown-item :command="'updateData'">更新数据</el-dropdown-item>
                 <el-dropdown-item :command="'editStatus'">标记状态</el-dropdown-item>
-                <el-dropdown-item
-                  v-if="userStore.user?.isAdmin"
-                  :command="'delete'"
-                  divided
-                >
+                <el-dropdown-item v-if="userStore.user?.isAdmin" :command="'delete'" divided>
                   删除
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -207,11 +202,11 @@
     </el-dialog>
 
     <!-- 查看数据对话框 -->
-    <el-dialog v-model="dataDialogVisible" title="????" fullscreen :center="false" align-center>
+    <el-dialog v-model="dataDialogVisible" title="任务数据" fullscreen :center="false" align-center>
       <div v-loading="dataDialogLoading" class="queue-json-viewer-shell">
         <div class="queue-json-panel queue-json-panel--preview">
           <div class="queue-json-panel__header">
-            <span class="queue-json-panel__title">JSON ??</span>
+            <span class="queue-json-panel__title">JSON 预览</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--viewer">
             <vue-json-pretty :data="currentTaskData" :deep="3" show-length show-icon />
@@ -220,19 +215,19 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dataDialogVisible = false">??</el-button>
+          <el-button @click="dataDialogVisible = false">关闭</el-button>
         </div>
       </template>
     </el-dialog>
 
-    <!-- ??????? -->
-    <el-dialog v-model="dataUpdateDialogVisible" title="????" fullscreen :center="false" align-center
+    <!-- 更新数据对话框 -->
+    <el-dialog v-model="dataUpdateDialogVisible" title="更新数据" fullscreen :center="false" align-center
       @close="resetDataUpdateForm">
       <div class="queue-json-editor-layout">
         <div class="queue-json-panel queue-json-panel--preview">
           <div class="queue-json-panel__header">
-            <span class="queue-json-panel__title">????</span>
-            <span class="queue-json-panel__desc">??????????????</span>
+            <span class="queue-json-panel__title">实时预览</span>
+            <span class="queue-json-panel__desc">左侧只读，随右侧输入同步变化</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--viewer">
             <vue-json-pretty :data="parsedUpdateData" :deep="3" show-length show-icon />
@@ -240,20 +235,20 @@
         </div>
         <div class="queue-json-panel queue-json-panel--editor">
           <div class="queue-json-panel__header">
-            <span class="queue-json-panel__title">JSON ??</span>
-            <span class="queue-json-panel__desc">????? JSON ???</span>
+            <span class="queue-json-panel__title">JSON 编辑</span>
+            <span class="queue-json-panel__desc">请输入完整 JSON 字符串</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--editor">
             <el-input v-model="dataUpdateFormData.dataStr" type="textarea" class="queue-json-textarea"
               :input-style="{ height: '100%', resize: 'none', fontFamily: 'Monaco, Menlo, Consolas, monospace' }"
-              placeholder='?????? JSON ????????' />
+              placeholder='请输入完整的 JSON 字符串格式的数据' />
           </div>
         </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dataUpdateDialogVisible = false">??</el-button>
-          <el-button type="primary" @click="handleDataUpdateSubmit">??</el-button>
+          <el-button @click="dataUpdateDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleDataUpdateSubmit">确认</el-button>
         </div>
       </template>
     </el-dialog>
@@ -1004,7 +999,7 @@ function resetDataUpdateForm() {
   }, 50)
 }
 
-// ???????????? localStorage
+// 监听任务类型变化，保存到 localStorage
 watch(() => queryParams.type, (newType) => {
   if (newType && newType.trim()) {
     localStorage.setItem('queue_last_type', newType.trim())
@@ -1013,7 +1008,7 @@ watch(() => queryParams.type, (newType) => {
   }
 })
 
-// ???
+// 初始化
 onMounted(() => {
   getList()
   refreshStats()
@@ -1038,6 +1033,16 @@ onMounted(() => {
   height: calc(100vh - 140px);
 }
 
+.queue-json-viewer-shell {
+  padding: 6px;
+  border-radius: 16px;
+}
+
+.queue-json-editor-layout {
+  padding: 6px;
+  border-radius: 16px;
+}
+
 .queue-json-editor-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 42%);
@@ -1048,10 +1053,10 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid #d7dee8;
+  border: 1px solid #1e293b;
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
   overflow: hidden;
 }
 
@@ -1061,19 +1066,19 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 18px;
-  border-bottom: 1px solid #e6ebf2;
-  background: rgba(248, 250, 252, 0.96);
+  border-bottom: 1px solid #1e293b;
+  background: rgba(15, 23, 42, 0.96);
 }
 
 .queue-json-panel__title {
   font-size: 14px;
   font-weight: 700;
-  color: #1f2937;
+  color: #e2e8f0;
 }
 
 .queue-json-panel__desc {
   font-size: 12px;
-  color: #6b7280;
+  color: #94a3b8;
 }
 
 .queue-json-panel__body {
@@ -1084,83 +1089,142 @@ onMounted(() => {
 .queue-json-panel__body--viewer {
   overflow: auto;
   padding: 14px;
-  background: #fbfcfe;
+  background: #020617;
 }
 
 .queue-json-panel__body--editor {
   padding: 14px;
-  background: #ffffff;
+  background: #020617;
+}
+
+.queue-json-dialog :deep(.el-dialog),
+.queue-json-dialog :deep(.el-dialog__header),
+.queue-json-dialog :deep(.el-dialog__body),
+.queue-json-dialog :deep(.el-dialog__footer),
+:deep(.el-dialog.is-fullscreen),
+:deep(.el-dialog.is-fullscreen .el-dialog__header),
+:deep(.el-dialog.is-fullscreen .el-dialog__body),
+:deep(.el-dialog.is-fullscreen .el-dialog__footer) {
+  background: #020617;
+  color: #e2e8f0;
+}
+
+.queue-json-dialog :deep(.el-dialog__body),
+:deep(.el-dialog.is-fullscreen .el-dialog__body) {
+  padding: 18px 20px 12px;
+}
+
+.queue-json-dialog :deep(.el-dialog__footer),
+:deep(.el-dialog.is-fullscreen .el-dialog__footer) {
+  border-top: 1px solid rgba(51, 65, 85, 0.9);
 }
 
 .queue-json-textarea {
   height: 100%;
 }
 
+.queue-json-textarea :deep(.el-textarea) {
+  height: 100%;
+}
+
+.queue-json-textarea :deep(.el-textarea__wrapper) {
+  height: 100%;
+  padding: 0;
+  background: #020617;
+  box-shadow: inset 0 0 0 1px #334155;
+}
+
 .queue-json-textarea :deep(.el-textarea__inner) {
   height: 100%;
   border: 0;
   box-shadow: none;
-  background: #f8fafc;
-  color: #0f172a;
+  background: #020617;
+  color: #e2e8f0;
+  caret-color: #38bdf8;
   font-size: 13px;
   line-height: 1.7;
 }
 
-.queue-json-panel :deep(.vjs-tree) {
+.queue-json-textarea :deep(.el-textarea__inner::placeholder) {
+  color: #64748b;
+}
+
+.queue-json-textarea :deep(.el-textarea__inner:focus) {
+  box-shadow: inset 0 0 0 1px #38bdf8;
+}
+
+.queue-json-panel :deep(.vjs-tree),
+.queue-json-panel :deep(.vjs-tree.is-virtual),
+.queue-json-panel :deep(.vjs-tree-list),
+.queue-json-panel :deep(.vjs-tree-list-holder),
+.queue-json-panel :deep(.vjs-tree-list-holder-inner),
+.queue-json-panel :deep(.vjs-tree-list-holder-inner > div) {
   font-family: Monaco, Menlo, Consolas, monospace;
   font-size: 13px;
-  color: #1f2937;
+  color: #e2e8f0;
+  background: #020617;
+}
+
+.queue-json-panel :deep(.vjs-tree) {
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: inset 0 0 0 1px #1e293b;
 }
 
 .queue-json-panel :deep(.vjs-tree-node) {
   margin: 1px 0;
   padding: 2px 8px 2px 6px;
+  background: transparent;
   transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.queue-json-panel :deep(.vjs-tree-node-content),
+.queue-json-panel :deep(.vjs-tree-node-content-box) {
+  background: transparent;
 }
 
 .queue-json-panel :deep(.vjs-tree-node:hover),
 .queue-json-panel :deep(.vjs-tree-node.is-highlight) {
-  background: #eef4ff;
-  box-shadow: inset 0 0 0 1px #d8e5ff;
+  background: #0f172a;
+  box-shadow: inset 0 0 0 1px #334155;
   border-radius: 8px;
 }
 
 .queue-json-panel :deep(.vjs-tree-node .vjs-tree-node-actions),
 .queue-json-panel :deep(.vjs-tree-node:hover .vjs-tree-node-actions),
 .queue-json-panel :deep(.vjs-tree-node.is-highlight .vjs-tree-node-actions) {
-  background: #eef4ff;
+  background: #111827;
   border-radius: 8px;
 }
 
 .queue-json-panel :deep(.vjs-tree-brackets:hover),
 .queue-json-panel :deep(.vjs-carets:hover),
 .queue-json-panel :deep(.vjs-tree-node-actions-item:hover) {
-  color: #2563eb;
+  color: #38bdf8;
 }
 
 .queue-json-panel :deep(.vjs-key) {
-  color: #334155;
+  color: #93c5fd;
   font-weight: 600;
 }
 
 .queue-json-panel :deep(.vjs-value-string) {
-  color: #047857;
+  color: #34d399;
 }
 
 .queue-json-panel :deep(.vjs-value-number),
 .queue-json-panel :deep(.vjs-value-boolean) {
-  color: #1d4ed8;
+  color: #fbbf24;
 }
 
 .queue-json-panel :deep(.vjs-value-null),
 .queue-json-panel :deep(.vjs-value-undefined) {
-  color: #9333ea;
+  color: #c084fc;
 }
 
- @media (max-width: 960px) {
+@media (max-width: 960px) {
   .queue-json-editor-layout {
     grid-template-columns: 1fr;
   }
 }
 </style>
-
