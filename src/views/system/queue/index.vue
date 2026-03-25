@@ -207,9 +207,9 @@
     </el-dialog>
 
     <!-- 查看数据对话框 -->
-    <el-dialog v-model="dataDialogVisible" title="任务数据" width="600px" :center="false" align-center>
-      <div v-loading="dataDialogLoading">
-        <pre class="data-preview">{{ JSON.stringify(currentTaskData, null, 2) }}</pre>
+    <el-dialog v-model="dataDialogVisible" title="任务数据" fullscreen :center="false" align-center>
+      <div v-loading="dataDialogLoading" style="height: calc(100vh - 140px)">
+        <JsonEditorVue v-model="currentTaskData" readOnly style="height: 100%" />
       </div>
       <template #footer>
         <div class="dialog-footer">
@@ -219,14 +219,11 @@
     </el-dialog>
 
     <!-- 更新数据对话框 -->
-    <el-dialog v-model="dataUpdateDialogVisible" title="更新数据" width="600px" :center="false" align-center
+    <el-dialog v-model="dataUpdateDialogVisible" title="更新数据" fullscreen :center="false" align-center
       @close="resetDataUpdateForm">
-      <el-form ref="dataUpdateFormRef" :model="dataUpdateFormData" label-width="100px">
-        <el-form-item label="数据" prop="dataStr">
-          <el-input v-model="dataUpdateFormData.dataStr" type="textarea" :rows="10"
-            placeholder='请输入JSON格式的数据，例如：{"key": "value"}' />
-        </el-form-item>
-      </el-form>
+      <div style="height: calc(100vh - 140px)">
+        <JsonEditorVue v-model="dataUpdateFormData.dataObj" style="height: 100%" />
+      </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dataUpdateDialogVisible = false">取消</el-button>
@@ -264,6 +261,7 @@ import Pagination from '@/components/Pagination/index.vue'
 import { useUserStore } from '@/store/modules/user'
 import FormItem from '@/components/Erp/formItem.vue'
 import { TASK_TYPE_OPTIONS } from '@/config/task-types'
+import JsonEditorVue from 'json-editor-vue'
 
 const userStore = useUserStore()
 
@@ -467,6 +465,7 @@ const dataUpdateFormData = reactive({
   queue: '',
   messageId: '',
   dataStr: '',
+  dataObj: {} as any,
 })
 const currentDataUpdateRow = ref<QueueMessage | null>(null)
 
@@ -874,23 +873,25 @@ function handleUpdateData(row: QueueMessage) {
   dataUpdateFormData.queue = row.queue
   dataUpdateFormData.messageId = row.id
   dataUpdateFormData.dataStr = dataStrValue
+  try {
+    dataUpdateFormData.dataObj = typeof row.data === 'string' ? JSON.parse(row.data) : (row.data || {})
+  } catch (e) {
+    dataUpdateFormData.dataObj = {}
+  }
 
   dataUpdateDialogVisible.value = true
 }
 
 // 提交数据更新
 async function handleDataUpdateSubmit() {
-  if (!dataUpdateFormData.dataStr || !dataUpdateFormData.dataStr.trim()) {
-    ElMessage.warning('请输入数据')
-    return
-  }
-
-  let data: any
-  try {
-    data = JSON.parse(dataUpdateFormData.dataStr)
-  } catch (e) {
-    ElMessage.error('请输入有效的JSON格式')
-    return
+  let data: any = dataUpdateFormData.dataObj
+  if (typeof data === 'string') {
+    try {
+      data = JSON.parse(data)
+    } catch (e) {
+      ElMessage.error('请输入有效的JSON格式')
+      return
+    }
   }
 
   try {
