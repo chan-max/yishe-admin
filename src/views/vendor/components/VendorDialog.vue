@@ -19,6 +19,15 @@
         <div class="vendor-form__section-title">基础信息</div>
         <el-row :gutter="20">
           <el-col :xs="24" :md="12">
+            <el-form-item label="厂家编码">
+              <el-input
+                :model-value="formData.code || ''"
+                :placeholder="formData.id ? '暂无厂家编码' : '创建后由后台自动生成'"
+                disabled
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :md="12">
             <el-form-item label="厂家名称" prop="name">
               <el-input v-model="formData.name" placeholder="请输入厂家名称" />
             </el-form-item>
@@ -249,6 +258,7 @@ const flattenProducts = (products: ProductFormItem[]): VendorProductItem[] =>
 
 const formData = reactive({
   id: undefined as number | undefined,
+  code: '',
   name: '',
   description: '',
   contactName: '',
@@ -284,6 +294,7 @@ const buildExistingFileList = (images: string[]) =>
 const resetForm = () => {
   revokeLocalPreviewUrls()
   formData.id = undefined
+  formData.code = ''
   formData.name = ''
   formData.description = ''
   formData.contactName = ''

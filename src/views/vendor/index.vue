@@ -120,6 +120,7 @@ const gridOptions = ref({
   columns: [
     { type: 'checkbox', width: 48 },
     { title: 'ID', field: 'id', width: 80 },
+    { title: '厂家编码', field: 'code', width: 140 },
     { title: '厂家名称', field: 'name', minWidth: 180 },
     { title: '联系人', field: 'contactName', width: 120 },
     { title: '联系电话', field: 'contactPhone', width: 140 },
