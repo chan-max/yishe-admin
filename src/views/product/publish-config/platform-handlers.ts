@@ -375,7 +375,7 @@ const doudianHandler: PlatformHandler = {
   getHints() {
     return [
       '支持配置抖店模板 copyId，发布端会优先进入 create?copyid=... 页面',
-      '支持绑定厂家，生成商家编码时会按“素材码-厂家码”拼接',
+      '支持绑定厂家，生成 productCode 时会按“素材码-厂家码”拼接',
       '当前先支持标题、描述、图片和少量可选参数透传',
       '支持附加图片，会在生成发布任务时追加到商品图片后面',
       '类目、SKU、物流模板等详细字段后续再补充'

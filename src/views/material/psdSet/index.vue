@@ -863,6 +863,16 @@
             <span v-if="row.error" class="publish-task-error">{{ row.error }}</span>
             <span v-else class="text-gray-400">-</span>
           </template>
+          <template #taskActionSlot="{ row }">
+            <el-button
+              link
+              type="primary"
+              :disabled="publishTasksLoading || row.status === 'processing'"
+              @click="handleRegeneratePublishTask(row)"
+            >
+              重新生成发布数据
+            </el-button>
+          </template>
         </vxe-grid>
       </div>
       <template #footer>
@@ -899,7 +909,7 @@ import { commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
 import { getPromptList } from "@/api/prompt";
-import { getPublishConfigListApi, createPublishTaskApi } from "@/api/product/publishConfig";
+import { getPublishConfigListApi, createPublishTaskApi, regeneratePublishTaskApi } from "@/api/product/publishConfig";
 import request from "@/config/axios";
 import { isLocalConnected } from "@/stores/connectionStatus";
 import { websocketClient } from "@/services/websocketClient";
@@ -935,6 +945,7 @@ const publishConfigPageSize = ref(10);
 const publishTasksVisible = ref(false);
 const publishTasksLoading = ref(false);
 const publishTasks = ref<any[]>([]);
+const currentPublishTasksPsdSetId = ref<string>("");
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
@@ -1057,6 +1068,12 @@ const publishTasksGridOptions = computed(() => ({
       minWidth: 260,
       showOverflow: true,
       slots: { default: "taskErrorSlot" },
+    },
+    {
+      title: "操作",
+      width: 170,
+      fixed: "right",
+      slots: { default: "taskActionSlot" },
     },
   ],
 }));
@@ -1982,6 +1999,7 @@ async function handleViewPublishTasks(row: any) {
     return ElMessage.warning("缺少ID，无法查看发布任务");
   }
 
+  currentPublishTasksPsdSetId.value = String(row.id);
   publishTasksVisible.value = true;
   publishTasksLoading.value = true;
   publishTasks.value = [];
@@ -1998,6 +2016,51 @@ async function handleViewPublishTasks(row: any) {
     ElMessage.error(error?.message || "获取发布任务失败");
     publishTasksVisible.value = false;
   } finally {
+    publishTasksLoading.value = false;
+  }
+}
+
+async function reloadCurrentPublishTasks() {
+  if (!currentPublishTasksPsdSetId.value) {
+    return;
+  }
+  publishTasksLoading.value = true;
+  try {
+    const res = await stickerPsdSetApi.getPublishTasks(currentPublishTasksPsdSetId.value);
+    publishTasks.value = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+        ? (res as any).data
+        : [];
+  } finally {
+    publishTasksLoading.value = false;
+  }
+}
+
+async function handleRegeneratePublishTask(row: any) {
+  const taskId = String(row?.id || "").trim();
+  if (!taskId) {
+    return ElMessage.warning("缺少任务ID，无法重新生成");
+  }
+
+  await ElMessageBox.confirm(
+    "将基于当前套图信息和发布配置，重新生成这条任务的发布数据。是否继续？",
+    "重新生成发布数据",
+    {
+      type: "warning",
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+    },
+  );
+
+  publishTasksLoading.value = true;
+  try {
+    await regeneratePublishTaskApi(taskId);
+    ElMessage.success("已触发重新生成");
+    await reloadCurrentPublishTasks();
+  } catch (error: any) {
+    console.error("重新生成发布数据失败:", error);
+    ElMessage.error(error?.message || "重新生成发布数据失败");
     publishTasksLoading.value = false;
   }
 }

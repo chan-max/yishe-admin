@@ -303,7 +303,7 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
         type: 'select',
         placeholder: '请选择厂家',
         span: 24,
-        tooltip: '用于生成商家编码，格式为：素材码-厂家码'
+        tooltip: '用于生成 productCode，格式为：素材码-厂家码'
       },
       {
         key: 'appendImageUrls',

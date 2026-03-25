@@ -98,17 +98,32 @@
         </template>
 
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="info" link size="small" @click="handleUpdateData(row)">
-              更新数据
+          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
+            <el-button type="primary" link size="small">
+              操作
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              标记状态
-            </el-button>
-            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
-          </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item
+                  v-if="String(row.type || '').startsWith('publish-product-')"
+                  :command="'regenerate'"
+                  :disabled="row.status === 'processing'"
+                >
+                  重新生成
+                </el-dropdown-item>
+                <el-dropdown-item :command="'updateData'">更新数据</el-dropdown-item>
+                <el-dropdown-item :command="'editStatus'">标记状态</el-dropdown-item>
+                <el-dropdown-item
+                  v-if="userStore.user?.isAdmin"
+                  :command="'delete'"
+                  divided
+                >
+                  删除
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
       </vxe-grid>
     </div>
@@ -231,6 +246,7 @@ import {
   Search,
   Delete,
   Plus,
+  ArrowDown,
 } from '@element-plus/icons-vue'
 import {
   getTaskList,
@@ -243,10 +259,13 @@ import {
   type QueueMessage,
   type QueueStats,
 } from '@/api/system/queue'
+import { regeneratePublishTaskApi } from '@/api/product/publishConfig'
 import Pagination from '@/components/Pagination/index.vue'
 import { useUserStore } from '@/store/modules/user'
 import FormItem from '@/components/Erp/formItem.vue'
 import { TASK_TYPE_OPTIONS } from '@/config/task-types'
+
+const userStore = useUserStore()
 
 // 查询条件
 const queryParams = reactive({
@@ -695,7 +714,6 @@ async function handleViewData(row: QueueMessage) {
 
 // 删除任务
 function handleDelete(row?: QueueMessage) {
-  const userStore = useUserStore()
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning('无权限：仅管理员可执行删除操作')
   }
@@ -885,6 +903,58 @@ async function handleDataUpdateSubmit() {
     ElMessage.error(error?.message || '更新数据失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function handleRegeneratePublishTask(row: QueueMessage) {
+  const taskId = String(row?.id || '').trim()
+  if (!taskId) {
+    ElMessage.warning('缺少任务ID')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      '将基于当前套图信息和发布配置重新生成这条任务的发布数据，是否继续？',
+      '重新生成发布数据',
+      {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      }
+    )
+
+    loading.value = true
+    await regeneratePublishTaskApi(taskId)
+    ElMessage.success('已触发重新生成')
+    await getList()
+    await refreshStats()
+  } catch (error: any) {
+    if (error === 'cancel') {
+      return
+    }
+    ElMessage.error(error?.message || '重新生成发布数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleOperationCommand(command: string, row: QueueMessage) {
+  switch (command) {
+    case 'regenerate':
+      await handleRegeneratePublishTask(row)
+      break
+    case 'updateData':
+      handleUpdateData(row)
+      break
+    case 'editStatus':
+      handleEdit(row)
+      break
+    case 'delete':
+      handleDelete(row)
+      break
+    default:
+      break
   }
 }
 

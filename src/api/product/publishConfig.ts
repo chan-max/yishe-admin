@@ -42,3 +42,10 @@ export const createPublishTaskApi = (data: {
 }) => {
   return request.post({ url: '/publish-config/create-publish-task', data })
 }
+
+export const regeneratePublishTaskApi = (taskId: string) => {
+  return request.post({
+    url: '/publish-config/regenerate-publish-task',
+    data: { taskId }
+  })
+}
