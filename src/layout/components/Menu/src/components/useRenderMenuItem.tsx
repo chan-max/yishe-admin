@@ -9,7 +9,7 @@ const { renderMenuTitle } = useRenderMenuTitle()
 export const useRenderMenuItem = () =>
   // allRouters: AppRouteRecordRaw[] = [],
   {
-    const renderMenuItem = (routers: AppRouteRecordRaw[], parentPath = '/') => {
+    const renderMenuItem = (routers: AppRouteRecordRaw[], parentPath = '/', level = 0) => {
       return routers
         .filter((v) => !v.meta?.hidden)
         .map((v) => {
@@ -23,20 +23,21 @@ export const useRenderMenuItem = () =>
             !meta?.alwaysShow
           ) {
             return (
-              <ElMenuItem
-                index={onlyOneChild ? pathResolve(fullPath, onlyOneChild.path) : fullPath}
-              >
+              <ElMenuItem class={['v-menu__item', `v-menu__item--level-${level}`]} index={onlyOneChild ? pathResolve(fullPath, onlyOneChild.path) : fullPath}>
                 {{
-                  default: () => renderMenuTitle(onlyOneChild ? onlyOneChild?.meta : meta)
+                  default: () => renderMenuTitle(onlyOneChild ? onlyOneChild?.meta : meta, level)
                 }}
               </ElMenuItem>
             )
           } else {
             return (
-              <ElSubMenu index={fullPath}>
+              <ElSubMenu
+                class={['v-menu__sub', `v-menu__sub--level-${level}`]}
+                index={fullPath}
+              >
                 {{
-                  title: () => renderMenuTitle(meta),
-                  default: () => renderMenuItem(v.children!, fullPath)
+                  title: () => renderMenuTitle(meta, level),
+                  default: () => renderMenuItem(v.children!, fullPath, level + 1)
                 }}
               </ElSubMenu>
             )

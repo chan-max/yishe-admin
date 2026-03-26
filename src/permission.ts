@@ -1,5 +1,4 @@
 import router from './router'
-import type { RouteRecordRaw } from 'vue-router'
 import { isRelogin } from '@/config/axios/service'
 import { getAccessToken } from '@/utils/auth'
 import { useTitle } from '@/hooks/web/useTitle'
@@ -12,6 +11,14 @@ import { usePermissionStoreWithOut } from '@/store/modules/permission'
 const { start, done } = useNProgress()
 
 const { loadStart, loadDone } = usePageLoading()
+
+const hasAdminAccess = (to: any, isAdmin: boolean) => {
+  if (isAdmin) {
+    return true
+  }
+
+  return !to.matched.some((record) => record.meta?.requiresAdmin)
+}
 
 const parseURL = (
   url: string | null | undefined
@@ -75,11 +82,11 @@ router.beforeEach(async (to, from, next) => {
         isRelogin.show = true
         await userStore.setUserInfoAction()
         isRelogin.show = false
-        // 后端过滤菜单
         await permissionStore.generateRoutes()
-        permissionStore.getAddRouters.forEach((route) => {
-          router.addRoute(route as unknown as RouteRecordRaw) // 动态添加可访问路由表
-        })
+        if (!hasAdminAccess(to, !!userStore.getUser?.isAdmin)) {
+          next('/403')
+          return
+        }
         const redirectPath = from.query.redirect || to.path
         // 修复跳转时不带参数的问题
         const redirect = decodeURIComponent(redirectPath as string)
@@ -87,6 +94,10 @@ router.beforeEach(async (to, from, next) => {
         const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect, query }
         next(nextData)
       } else {
+        if (!hasAdminAccess(to, !!userStore.getUser?.isAdmin)) {
+          next('/403')
+          return
+        }
         // 用户已经登录，检查并启动 WebSocket 连接（如果还未连接）
         // 只有在用户已登录且用户信息已设置的情况下才连接
         const { startWebSocketConnection } = await import('@/stores/connectionStatus')

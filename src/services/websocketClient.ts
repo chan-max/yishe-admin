@@ -112,8 +112,6 @@ const clientInfo = reactive<ClientInfoPayload>({
 
 export type WebsocketEvents = {
   log: { level: 'info' | 'warn' | 'error'; message: string }
-  toast: { color: string; icon: string; message: string }
-  adminMessage: { data: any; timestamp: string }
   myClientStatus: { hasClient: boolean }
   'start-psd-set-production-response': { success: boolean; message?: string; sentTo?: number; totalClients?: number }
   'production-status': { status: string; message: string; psdSetId?: string }

@@ -3,21 +3,24 @@ import { Icon } from '@/components/Icon'
 import { useI18n } from '@/hooks/web/useI18n'
 
 export const useRenderMenuTitle = () => {
-  const renderMenuTitle = (meta: RouteMeta) => {
-    const { t } = useI18n()
-    const { title = 'Please set title', icon } = meta
+  const { t } = useI18n()
 
-    return icon ? (
-      <>
-        <Icon icon={meta.icon}></Icon>
+  const renderMenuTitle = (meta: RouteMeta, level = 0) => {
+    const { title = 'Please set title' } = meta
+
+    return meta.icon ? (
+      <div class={['v-menu__label', `v-menu__label--level-${level}`]}>
+        <Icon class="v-menu__icon" icon={meta.icon}></Icon>
         <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap">
           {t(title as string)}
         </span>
-      </>
+      </div>
     ) : (
-      <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap">
-        {t(title as string)}
-      </span>
+      <div class={['v-menu__label', `v-menu__label--level-${level}`]}>
+        <span class="v-menu__title overflow-hidden overflow-ellipsis whitespace-nowrap">
+          {t(title as string)}
+        </span>
+      </div>
     )
   }
 

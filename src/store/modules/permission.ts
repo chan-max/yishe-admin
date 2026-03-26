@@ -2,44 +2,79 @@ import { defineStore } from 'pinia'
 import { store } from '@/store'
 import { cloneDeep } from 'lodash-es'
 import remainingRouter from '@/router/modules/remaining'
-import { viewsRouter } from '@/router/modules/views'
-import { flatMultiLevelRoutes } from '@/utils/routerHelper'
-import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import { useUserStore } from '@/store/modules/user'
+import { pathResolve } from '@/utils/routerHelper'
+import { isUrl } from '@/utils/is'
 
-const { wsCache } = useCache()
-
-// 过滤需要管理员权限的路由
-function filterAdminRoutes(routes: AppRouteRecordRaw[], isAdmin: boolean): AppRouteRecordRaw[] {
-  if (isAdmin) {
-    return routes // 管理员可以看到所有路由
-  }
-
-  // 非管理员：仅隐藏“系统管理”相关路由（路径以 /system 开头 或 显式标记 meta.system）
+function filterRoutesByAdmin(routes: AppRouteRecordRaw[], isAdmin: boolean): AppRouteRecordRaw[] {
   return routes
     .map((route) => {
-      const path = route.path || ''
-      const isSystemRoute = path.startsWith('/system') || route.meta?.system === true
-
-      if (isSystemRoute) {
+      if (!isAdmin && route.meta?.requiresAdmin) {
         return null
       }
 
-      // 递归过滤子路由
-      if (route.children && route.children.length > 0) {
-        const filteredChildren = filterAdminRoutes(route.children, isAdmin)
-        if (filteredChildren.length === 0) {
-          return null
-        }
-        return {
-          ...route,
-          children: filteredChildren
-        }
+      if (!route.children?.length) {
+        return route
       }
 
-      return route
+      const children = filterRoutesByAdmin(route.children, isAdmin)
+      if (!children.length && !route.component) {
+        return null
+      }
+
+      return {
+        ...route,
+        children
+      }
     })
     .filter(Boolean) as AppRouteRecordRaw[]
+}
+
+function getDefaultRoutes(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
+  return routes.filter((route) => !route.meta?.hidden)
+}
+
+function getVisibleChildren(children: AppRouteRecordRaw[] = []) {
+  return children.filter((child) => !child.meta?.hidden)
+}
+
+function flattenChildrenToSecondLevel(
+  children: AppRouteRecordRaw[],
+  topLevelPath: string,
+  parentPath = topLevelPath
+): AppRouteRecordRaw[] {
+  return children.flatMap((child) => {
+    const currentPath = isUrl(child.path) ? child.path : pathResolve(parentPath, child.path)
+    const visibleChildren = getVisibleChildren(child.children)
+
+    if (!visibleChildren.length) {
+      const childPath = isUrl(currentPath) ? currentPath : currentPath.replace(`${topLevelPath}/`, '')
+      return [
+        {
+          ...child,
+          path: childPath,
+          children: undefined
+        }
+      ]
+    }
+
+    return flattenChildrenToSecondLevel(visibleChildren, topLevelPath, currentPath)
+  })
+}
+
+function flattenMenusToTwoLevels(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
+  return routes.map((route) => {
+    const visibleChildren = getVisibleChildren(route.children)
+
+    if (!visibleChildren.length) {
+      return route
+    }
+
+    return {
+      ...route,
+      children: flattenChildrenToSecondLevel(visibleChildren, route.path)
+    }
+  })
 }
 
 export interface PermissionState {
@@ -59,38 +94,21 @@ export const usePermissionStore = defineStore('permission', {
       return this.routers
     },
     getAddRouters(): AppRouteRecordRaw[] {
-      return flatMultiLevelRoutes(cloneDeep(this.addRouters))
+      return this.addRouters
     },
     getMenuTabRouters(): AppRouteRecordRaw[] {
       return this.menuTabRouters
     }
   },
   actions: {
-    async generateRoutes(): Promise<unknown> {
-      return new Promise<void>(async (resolve) => {
-        // 获取用户信息，判断是否为管理员
-        const userStore = useUserStore(store)
-        const isAdmin = userStore.user?.isAdmin || false
-        
-        // 过滤需要管理员权限的路由
-        const filteredRemainingRouter = filterAdminRoutes(cloneDeep(remainingRouter), isAdmin)
-        
-        // 使用固定路由配置
-        this.addRouters = viewsRouter.concat([
-          {
-            path: '/:path(.*)*',
-            component: () => import('@/views/Error/404.vue'),
-            name: '404Page',
-            meta: {
-              hidden: true,
-              breadcrumb: false
-            }
-          }
-        ])
-        // 渲染菜单的所有路由，remainingRouter 包含基础路由（如首页、登录页等）
-        this.routers = cloneDeep(filteredRemainingRouter.concat(viewsRouter))
-        resolve()
-      })
+    async generateRoutes(): Promise<void> {
+      const userStore = useUserStore(store)
+      const isAdmin = userStore.user?.isAdmin || false
+      const accessRoutes = filterRoutesByAdmin(cloneDeep(remainingRouter), isAdmin)
+      const routers = flattenMenusToTwoLevels(accessRoutes)
+
+      this.routers = routers
+      this.addRouters = getDefaultRoutes(routers)
     },
     setMenuTabRouters(routers: AppRouteRecordRaw[]): void {
       this.menuTabRouters = routers

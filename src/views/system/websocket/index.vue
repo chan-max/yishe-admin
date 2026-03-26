@@ -1,78 +1,6 @@
 <template>
   <div class="flex flex-col gap-4 p-4">
     <ContentWrap>
-      <div class="ws-test-card">
-        <div class="ws-test-card__header">
-          <div class="ws-test-card__status">
-            <span>当前状态：</span>
-            <el-tag :type="statusTag.type">
-              {{ statusTag.text }}
-            </el-tag>
-          </div>
-          <div class="ws-test-card__actions">
-            <el-button v-admin-only text type="primary" @click="clearLogs" :disabled="logList.length === 0">
-              清空日志
-            </el-button>
-            <el-button text type="primary" @click="testCardCollapsed = !testCardCollapsed">
-              <Icon :icon="testCardCollapsed ? 'ep:arrow-down' : 'ep:arrow-up'" class="mr-5px" />
-              {{ testCardCollapsed ? '展开' : '折叠' }}
-            </el-button>
-          </div>
-        </div>
-
-        <el-collapse-transition>
-          <div v-show="!testCardCollapsed" class="ws-test-card__content">
-            <el-form class="ws-test-form" label-position="top">
-          <el-form-item label="测试地址">
-            <el-input v-model="wsUrl" placeholder="例如：wss://your-host/ws" :disabled="isConnected" />
-          </el-form-item>
-          <div class="ws-test-form__buttons">
-            <el-button type="primary" @click="connectWebsocket" :loading="isConnecting" :disabled="isConnected">
-              <Icon icon="ep:connection" class="mr-5px" /> 测试连接
-            </el-button>
-            <el-button @click="disconnectWebsocket" :disabled="!canDisconnect">
-              <Icon icon="ep:close-bold" class="mr-5px" /> 断开连接
-            </el-button>
-            <el-button type="warning" @click="sendPing" :disabled="!isConnected">
-              <Icon icon="ep:notification" class="mr-5px" /> 测试 Ping
-            </el-button>
-          </div>
-
-          <el-form-item label="测试消息">
-            <el-input
-              v-model="testPayload"
-              type="textarea"
-              :rows="3"
-              placeholder='请输入要发送的消息，如 {"type":"ping"}'
-            />
-          </el-form-item>
-          <div class="ws-test-form__buttons">
-            <el-button type="success" @click="handleSendTestMessage" :disabled="!isConnected">
-              <Icon icon="ep:position" class="mr-5px" /> 发送测试消息
-            </el-button>
-          </div>
-        </el-form>
-
-        <div class="ws-test-card__log">
-          <div class="ws-test-card__log-title">
-            <span>实时日志</span>
-            <span class="ws-test-card__log-subtitle">用于确认 WebSocket 是否收发正常</span>
-          </div>
-          <el-scrollbar class="ws-test-card__log-list">
-            <div v-if="logList.length === 0" class="ws-test-card__log-empty">暂无日志</div>
-            <div v-else>
-              <div v-for="(item, index) in logList" :key="index" class="ws-test-card__log-item">
-                {{ item }}
-              </div>
-            </div>
-          </el-scrollbar>
-        </div>
-          </div>
-        </el-collapse-transition>
-      </div>
-    </ContentWrap>
-
-    <ContentWrap>
       <div class="flex flex-wrap items-start justify-between gap-3 py-3">
         <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
           <el-button type="primary" @click="fetchConnections" :loading="loading">
@@ -295,13 +223,11 @@
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
-import { io, Socket } from 'socket.io-client'
 import { useMessage } from '@/hooks/web/useMessage'
-import { formatDate, formatPast } from '@/utils/formatTime'
+import { formatPast } from '@/utils/formatTime'
 import { useWindowSize } from '@vueuse/core'
 import { commonGridOptions } from '@/common/table'
 import * as WebsocketApi from '@/api/system/websocket'
-import { useUserStore } from '@/store/modules/user'
 import type {
   WebsocketConnectionVO,
   WebsocketClientInfo,
@@ -355,7 +281,6 @@ const loading = ref(false)
 const autoRefresh = ref(false)
 const refreshTimer = ref<number | null>(null)
 const refreshInterval = 10_000
-const testCardCollapsed = ref(true)
 
 // 发送消息对话框
 const sendMessageDialogVisible = ref(false)
@@ -846,193 +771,6 @@ const ensureUserInfoForTokens = (rows: WebsocketConnectionRow[]) => {
   })
 }
 
-const getDefaultWsUrl = () => {
-  const explicitUrl = import.meta.env.VITE_WS_URL as string | undefined
-  if (explicitUrl) {
-    return explicitUrl
-  }
-
-  const baseUrl = (import.meta.env.VITE_BASE_URL as string | undefined) ?? ''
-  if (baseUrl) {
-    const normalizedBase = baseUrl.replace(/\/$/, '')
-    const sanitizedBase = normalizedBase.replace(/\/api$/i, '')
-    return `${sanitizedBase.replace(/^http/i, 'ws')}/ws`
-  }
-
-  if (typeof window === 'undefined') {
-    return ''
-  }
-
-  const { protocol, host } = window.location
-  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${wsProtocol}//${host}/ws`
-}
-
-const wsUrl = ref(getDefaultWsUrl())
-const testPayload = ref('{"type":"ping"}')
-const logList = ref<string[]>([])
-const maxLogLength = 100
-
-type WsStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
-const wsStatus = ref<WsStatus>('disconnected')
-let socketClient: Socket | null = null
-
-const isConnected = computed(() => wsStatus.value === 'connected')
-const isConnecting = computed(() => wsStatus.value === 'connecting')
-const canDisconnect = computed(() => wsStatus.value === 'connected' || wsStatus.value === 'connecting')
-
-const statusTag = computed(() => {
-  switch (wsStatus.value) {
-    case 'connected':
-      return { text: '已连接', type: 'success' as const }
-    case 'connecting':
-      return { text: '连接中', type: 'warning' as const }
-    case 'error':
-      return { text: '连接异常', type: 'danger' as const }
-    default:
-      return { text: '未连接', type: 'info' as const }
-  }
-})
-
-const pushLog = (label: string, detail: string) => {
-  const timestamp = formatDate(new Date(), 'HH:mm:ss')
-  logList.value.unshift(`[${timestamp}] [${label}] ${detail}`)
-  if (logList.value.length > maxLogLength) {
-    logList.value.length = maxLogLength
-  }
-}
-
-const userStore = useUserStore()
-
-const clearLogs = () => {
-  if (!userStore.user?.isAdmin) {
-    message.warning('仅管理员可清空日志')
-    return
-  }
-  logList.value = []
-}
-
-const registerSocketListeners = (client: Socket) => {
-  client.on('connect', () => {
-    wsStatus.value = 'connected'
-    pushLog('CONNECT', `连接已建立 (id: ${client.id})`)
-    message.success('WebSocket 已连接')
-    fetchConnections()
-  })
-
-  client.on('disconnect', (reason) => {
-    pushLog('DISCONNECT', `连接关闭，原因：${reason}`)
-    if (wsStatus.value !== 'error') {
-      wsStatus.value = 'disconnected'
-    }
-    fetchConnections()
-  })
-
-  client.on('connect_error', (error) => {
-    wsStatus.value = 'error'
-    pushLog('CONNECT_ERROR', error.message ?? '连接失败')
-    message.error(error.message ?? 'WebSocket 连接失败')
-  })
-
-  client.on('pong', (data) => {
-    pushLog('PONG', stringifyData(data))
-  })
-
-  client.on('test-message-ack', (data) => {
-    pushLog('ACK', stringifyData(data))
-  })
-
-  client.onAny((event, ...args) => {
-    if (event === 'pong' || event === 'test-message-ack') {
-      return
-    }
-    pushLog(`EVENT:${event}`, stringifyData(args.length > 1 ? args : args[0]))
-  })
-}
-
-const connectWebsocket = () => {
-  if (!wsUrl.value) {
-    message.warning('请先填写 WebSocket 地址')
-    return
-  }
-
-  if (socketClient) {
-    socketClient.removeAllListeners()
-    socketClient.disconnect()
-    socketClient = null
-  }
-
-  try {
-    wsStatus.value = 'connecting'
-    const client = io(wsUrl.value, {
-      transports: ['websocket'],
-      reconnection: false,
-      timeout: 10_000,
-      withCredentials: true
-    })
-    socketClient = client
-    registerSocketListeners(client)
-  } catch (error: any) {
-    wsStatus.value = 'error'
-    pushLog('ERROR', error?.message ?? '创建 WebSocket 失败')
-    message.error(error?.message ?? '创建 WebSocket 失败')
-  }
-}
-
-const disconnectWebsocket = () => {
-  if (socketClient) {
-    pushLog('INFO', '手动关闭连接')
-    socketClient.disconnect()
-    socketClient.removeAllListeners()
-    socketClient = null
-    wsStatus.value = 'disconnected'
-  }
-}
-
-const safeSend = (payload: string, silent = false) => {
-  if (!socketClient || wsStatus.value !== 'connected') {
-    message.warning('请先建立 WebSocket 连接')
-    return false
-  }
-  try {
-    let data: any = payload
-    try {
-      data = JSON.parse(payload)
-    } catch {
-      data = payload
-    }
-    socketClient.emit('test-message', data)
-    pushLog('EMIT', stringifyData(data))
-    if (!silent) {
-      message.success('消息已发送')
-    }
-    return true
-  } catch (error: any) {
-    pushLog('ERROR', error?.message ?? '发送消息失败')
-    message.error(error?.message ?? '发送消息失败')
-    return false
-  }
-}
-
-const handleSendTestMessage = () => {
-  const payload = testPayload.value.trim()
-  if (!payload) {
-    message.warning('请输入要发送的消息')
-    return
-  }
-  safeSend(payload)
-}
-
-const sendPing = () => {
-  if (!socketClient || wsStatus.value !== 'connected') {
-    message.warning('请先建立 WebSocket 连接')
-    return
-  }
-  socketClient.emit('ping')
-  pushLog('PING', '已发送 Ping')
-  message.success('已发送 Ping 消息')
-}
-
 const clearTimer = () => {
   if (refreshTimer.value !== null) {
     window.clearInterval(refreshTimer.value)
@@ -1155,109 +893,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearTimer()
-  disconnectWebsocket()
 })
-
-const stringifyData = (value: unknown) => {
-  if (value === undefined) {
-    return 'undefined'
-  }
-  if (typeof value === 'string') {
-    return value
-  }
-  try {
-    return JSON.stringify(value)
-  } catch {
-    return String(value)
-  }
-}
 </script>
 
 <style scoped>
-.ws-test-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.ws-test-card__header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0;
-}
-
-.ws-test-card__content {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-}
-
-.ws-test-card__status span:first-child {
-  margin-right: 8px;
-  color: var(--el-text-color-regular);
-}
-
-.ws-test-form {
-  flex: 1 1 360px;
-  max-width: 560px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.ws-test-form__buttons {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.ws-test-card__log {
-  flex: 1 1 320px;
-  min-width: 280px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ws-test-card__log-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.ws-test-card__log-subtitle {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.ws-test-card__log-list {
-  height: 220px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  padding: 12px;
-  background: var(--el-fill-color-lighter);
-}
-
-.ws-test-card__log-empty {
-  text-align: center;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.ws-test-card__log-item {
-  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
-  font-size: 12px;
-  line-height: 18px;
-  padding: 2px 0;
-  border-bottom: 1px dashed var(--el-border-color-extra-light);
-}
-
-.ws-test-card__log-item:last-child {
-  border-bottom: none;
-}
 
 .admin-connection-id {
   font-size: 11px;
@@ -1268,16 +907,6 @@ const stringifyData = (value: unknown) => {
 .common-table {
   border-radius: 8px;
   overflow: hidden;
-}
-
-@media screen and (max-width: 960px) {
-  .ws-test-card {
-    flex-direction: column;
-  }
-
-  .ws-test-card__log-list {
-    height: 180px;
-  }
 }
 
 /* 操控弹窗样式 */
