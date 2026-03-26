@@ -92,9 +92,14 @@
         </template>
 
         <template #dataDefaultSlot="{ row }">
-          <el-button type="primary" link size="small" @click="handleViewData(row)">
-            查看数据
-          </el-button>
+          <div class="flex items-center gap-2">
+            <el-button type="primary" link size="small" @click="handleViewData(row)">
+              查看数据
+            </el-button>
+            <el-button type="primary" link size="small" @click="handleViewRuntimeLogs(row)">
+              运行日志
+            </el-button>
+          </div>
         </template>
 
         <template #operationDefaultSlot="{ row }">
@@ -209,13 +214,40 @@
             <span class="queue-json-panel__title">JSON 预览</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--viewer">
-            <vue-json-pretty :data="currentTaskData" :deep="3" show-length show-icon />
+            <pre class="queue-json-raw">{{ formatRawJson(currentTaskData) }}</pre>
           </div>
         </div>
       </div>
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="dataDialogVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="runtimeLogDialogVisible" title="运行日志" fullscreen :center="false" align-center class="queue-runtime-dialog">
+      <div class="queue-runtime-shell">
+        <div class="queue-runtime-toolbar">
+          <div class="queue-runtime-toolbar__meta">
+            <span>平台：{{ currentTaskRuntime?.platform || '-' }}</span>
+            <span>日志数：{{ currentTaskLogs.length }}</span>
+          </div>
+        </div>
+        <div v-if="currentTaskLogs.length" class="queue-runtime-console">
+          <div v-for="(log, index) in currentTaskLogs" :key="log.id || `${log.timestamp}-${index}`" class="queue-runtime-console__line" :data-level="String(log.level || 'info').toLowerCase()">
+            <span class="queue-runtime-console__time">{{ formatLogTimestamp(log.time || log.timestamp) }}</span>
+            <span class="queue-runtime-console__level" :data-level="String(log.level || 'info').toLowerCase()">
+              {{ String(log.level || 'info').toUpperCase() }}
+            </span>
+            <span class="queue-runtime-console__message">{{ log.message || '-' }}</span>
+            <pre v-if="hasLogData(log)" class="queue-runtime-console__data">{{ formatLogData(log.data) }}</pre>
+          </div>
+        </div>
+        <el-empty v-else description="暂无匹配日志" :image-size="72" />
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -230,7 +262,7 @@
             <span class="queue-json-panel__desc">左侧只读，随右侧输入同步变化</span>
           </div>
           <div class="queue-json-panel__body queue-json-panel__body--viewer">
-            <vue-json-pretty :data="parsedUpdateData" :deep="3" show-length show-icon />
+            <pre class="queue-json-raw">{{ formatRawJson(parsedUpdateData) }}</pre>
           </div>
         </div>
         <div class="queue-json-panel queue-json-panel--editor">
@@ -282,8 +314,6 @@ import Pagination from '@/components/Pagination/index.vue'
 import { useUserStore } from '@/store/modules/user'
 import FormItem from '@/components/Erp/formItem.vue'
 import { TASK_TYPE_OPTIONS } from '@/config/task-types'
-import VueJsonPretty from 'vue-json-pretty'
-import 'vue-json-pretty/lib/styles.css'
 
 const userStore = useUserStore()
 
@@ -366,7 +396,7 @@ const gridOptions = ref({
     {
       title: '任务数据',
       field: 'data',
-      width: 120,
+      minWidth: 170,
       slots: {
         default: 'dataDefaultSlot'
       }
@@ -479,6 +509,13 @@ const statusFormRules = {
 const dataDialogVisible = ref(false)
 const dataDialogLoading = ref(false)
 const currentTaskData = ref<any>({})
+const runtimeLogDialogVisible = ref(false)
+
+const currentTaskRuntime = computed(() => extractTaskRuntime(currentTaskData.value))
+const currentTaskLogs = computed(() => {
+  const logs = currentTaskRuntime.value?.logs
+  return Array.isArray(logs) ? logs : []
+})
 
 // 更新数据对话框
 const dataUpdateDialogVisible = ref(false)
@@ -539,6 +576,80 @@ function parseMaybeJson(value: any) {
     return JSON.parse(value)
   } catch (error) {
     return value
+  }
+}
+
+function extractTaskRuntime(data: any) {
+  if (!data || typeof data !== 'object') {
+    return null
+  }
+
+  if (data.taskLogs && typeof data.taskLogs === 'object') {
+    return data.taskLogs
+  }
+
+  if (data.taskRuntime && typeof data.taskRuntime === 'object') {
+    return data.taskRuntime
+  }
+
+  const legacyRuntime = data.executionRuntime
+  if (!legacyRuntime || typeof legacyRuntime !== 'object') {
+    return null
+  }
+
+  if (Array.isArray(legacyRuntime.logs)) {
+    return legacyRuntime
+  }
+
+  const firstPlatformKey = Object.keys(legacyRuntime)[0]
+  if (!firstPlatformKey) {
+    return null
+  }
+
+  const firstPlatformRuntime = legacyRuntime[firstPlatformKey]
+  if (!firstPlatformRuntime || typeof firstPlatformRuntime !== 'object') {
+    return null
+  }
+
+  return {
+    platform: firstPlatformRuntime.platform || firstPlatformKey,
+    logs: Array.isArray(firstPlatformRuntime.logs) ? firstPlatformRuntime.logs : [],
+  }
+}
+
+function getLogLevelTagType(level?: string) {
+  const normalizedLevel = String(level || 'info').toLowerCase()
+  if (normalizedLevel === 'error') return 'danger'
+  if (normalizedLevel === 'warn' || normalizedLevel === 'warning') return 'warning'
+  return 'info'
+}
+
+function formatLogTimestamp(value: any) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return String(value)
+  }
+  return date.toLocaleString()
+}
+
+function hasLogData(log: any) {
+  return log?.data !== undefined && log?.data !== null && !(Array.isArray(log.data) && log.data.length === 0)
+}
+
+function formatLogData(value: any) {
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch (error) {
+    return String(value)
+  }
+}
+
+function formatRawJson(value: any) {
+  try {
+    return JSON.stringify(value ?? {}, null, 2)
+  } catch (error) {
+    return String(value ?? '')
   }
 }
 
@@ -736,6 +847,25 @@ async function handleViewData(row: QueueMessage) {
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {}
     ElMessage.warning('任务详情获取失败，已显示列表中的数据快照')
+  } finally {
+    dataDialogLoading.value = false
+  }
+}
+
+async function handleViewRuntimeLogs(row: QueueMessage) {
+  runtimeLogDialogVisible.value = true
+  dataDialogLoading.value = true
+  currentTaskData.value = {}
+
+  try {
+    const res = await getTaskDetail(row.queue || row.type, row.id)
+    const responseData = res?.data && typeof res.data === 'object' ? res.data : res
+    const message = responseData?.data ?? responseData
+    const taskData = parseMaybeJson(message?.data)
+    currentTaskData.value = taskData ?? parseMaybeJson(row?.data) ?? row?.data ?? {}
+  } catch (error) {
+    currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {}
+    ElMessage.warning('运行日志获取失败，已显示列表中的数据快照')
   } finally {
     dataDialogLoading.value = false
   }
@@ -1035,12 +1165,10 @@ onMounted(() => {
 
 .queue-json-viewer-shell {
   padding: 6px;
-  border-radius: 16px;
 }
 
 .queue-json-editor-layout {
   padding: 6px;
-  border-radius: 16px;
 }
 
 .queue-json-editor-layout {
@@ -1053,10 +1181,8 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border: 1px solid #1e293b;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
-  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -1066,19 +1192,16 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 18px;
-  border-bottom: 1px solid #1e293b;
-  background: rgba(15, 23, 42, 0.96);
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .queue-json-panel__title {
   font-size: 14px;
   font-weight: 700;
-  color: #e2e8f0;
 }
 
 .queue-json-panel__desc {
   font-size: 12px;
-  color: #94a3b8;
 }
 
 .queue-json-panel__body {
@@ -1089,34 +1212,120 @@ onMounted(() => {
 .queue-json-panel__body--viewer {
   overflow: auto;
   padding: 14px;
-  background: #020617;
+}
+
+.queue-json-raw {
+  margin: 0;
+  min-height: 100%;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .queue-json-panel__body--editor {
   padding: 14px;
-  background: #020617;
 }
 
-.queue-json-dialog :deep(.el-dialog),
-.queue-json-dialog :deep(.el-dialog__header),
-.queue-json-dialog :deep(.el-dialog__body),
-.queue-json-dialog :deep(.el-dialog__footer),
-:deep(.el-dialog.is-fullscreen),
-:deep(.el-dialog.is-fullscreen .el-dialog__header),
-:deep(.el-dialog.is-fullscreen .el-dialog__body),
-:deep(.el-dialog.is-fullscreen .el-dialog__footer) {
-  background: #020617;
-  color: #e2e8f0;
+.queue-runtime-dialog :deep(.el-dialog__body) {
+  padding-top: 10px;
 }
 
-.queue-json-dialog :deep(.el-dialog__body),
-:deep(.el-dialog.is-fullscreen .el-dialog__body) {
-  padding: 18px 20px 12px;
+.queue-runtime-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: calc(100vh - 150px);
+  min-height: 0;
 }
 
-.queue-json-dialog :deep(.el-dialog__footer),
-:deep(.el-dialog.is-fullscreen .el-dialog__footer) {
-  border-top: 1px solid rgba(51, 65, 85, 0.9);
+.queue-runtime-toolbar {
+  display: flex;
+  align-items: center;
+}
+
+.queue-runtime-toolbar__meta {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.queue-runtime-console {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.queue-runtime-console__line + .queue-runtime-console__line {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--el-border-color-light);
+}
+
+.queue-runtime-console__line[data-level='warn'],
+.queue-runtime-console__line[data-level='warning'] {
+  border-left: 4px solid #c27803;
+  padding-left: 10px;
+}
+
+.queue-runtime-console__line[data-level='error'] {
+  border-left: 4px solid #c45656;
+  padding-left: 10px;
+}
+
+.queue-runtime-console__time {
+  margin-right: 10px;
+  color: var(--el-text-color-secondary);
+}
+
+.queue-runtime-console__level {
+  display: inline-block;
+  min-width: 56px;
+  margin-right: 10px;
+  font-weight: 700;
+}
+
+.queue-runtime-console__level[data-level='info'] {
+  color: #1d4ed8;
+}
+
+.queue-runtime-console__level[data-level='warn'],
+.queue-runtime-console__level[data-level='warning'] {
+  color: #b45309;
+}
+
+.queue-runtime-console__level[data-level='error'] {
+  color: #b91c1c;
+}
+
+.queue-runtime-console__line[data-level='warn'] .queue-runtime-console__message,
+.queue-runtime-console__line[data-level='warning'] .queue-runtime-console__message {
+  color: #92400e;
+}
+
+.queue-runtime-console__line[data-level='error'] .queue-runtime-console__message {
+  color: #991b1b;
+}
+
+.queue-runtime-console__message {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.queue-runtime-console__data {
+  margin: 8px 0 0 66px;
+  padding: 8px 10px;
+  overflow: auto;
+  line-height: 1.6;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
 }
 
 .queue-json-textarea {
@@ -1130,101 +1339,27 @@ onMounted(() => {
 .queue-json-textarea :deep(.el-textarea__wrapper) {
   height: 100%;
   padding: 0;
-  background: #020617;
-  box-shadow: inset 0 0 0 1px #334155;
 }
 
 .queue-json-textarea :deep(.el-textarea__inner) {
   height: 100%;
   border: 0;
   box-shadow: none;
-  background: #020617;
-  color: #e2e8f0;
-  caret-color: #38bdf8;
   font-size: 13px;
   line-height: 1.7;
 }
 
 .queue-json-textarea :deep(.el-textarea__inner::placeholder) {
-  color: #64748b;
-}
-
-.queue-json-textarea :deep(.el-textarea__inner:focus) {
-  box-shadow: inset 0 0 0 1px #38bdf8;
-}
-
-.queue-json-panel :deep(.vjs-tree),
-.queue-json-panel :deep(.vjs-tree.is-virtual),
-.queue-json-panel :deep(.vjs-tree-list),
-.queue-json-panel :deep(.vjs-tree-list-holder),
-.queue-json-panel :deep(.vjs-tree-list-holder-inner),
-.queue-json-panel :deep(.vjs-tree-list-holder-inner > div) {
-  font-family: Monaco, Menlo, Consolas, monospace;
-  font-size: 13px;
-  color: #e2e8f0;
-  background: #020617;
-}
-
-.queue-json-panel :deep(.vjs-tree) {
-  border-radius: 10px;
-  padding: 8px;
-  box-shadow: inset 0 0 0 1px #1e293b;
-}
-
-.queue-json-panel :deep(.vjs-tree-node) {
-  margin: 1px 0;
-  padding: 2px 8px 2px 6px;
-  background: transparent;
-  transition: background-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.queue-json-panel :deep(.vjs-tree-node-content),
-.queue-json-panel :deep(.vjs-tree-node-content-box) {
-  background: transparent;
-}
-
-.queue-json-panel :deep(.vjs-tree-node:hover),
-.queue-json-panel :deep(.vjs-tree-node.is-highlight) {
-  background: #0f172a;
-  box-shadow: inset 0 0 0 1px #334155;
-  border-radius: 8px;
-}
-
-.queue-json-panel :deep(.vjs-tree-node .vjs-tree-node-actions),
-.queue-json-panel :deep(.vjs-tree-node:hover .vjs-tree-node-actions),
-.queue-json-panel :deep(.vjs-tree-node.is-highlight .vjs-tree-node-actions) {
-  background: #111827;
-  border-radius: 8px;
-}
-
-.queue-json-panel :deep(.vjs-tree-brackets:hover),
-.queue-json-panel :deep(.vjs-carets:hover),
-.queue-json-panel :deep(.vjs-tree-node-actions-item:hover) {
-  color: #38bdf8;
-}
-
-.queue-json-panel :deep(.vjs-key) {
-  color: #93c5fd;
-  font-weight: 600;
-}
-
-.queue-json-panel :deep(.vjs-value-string) {
-  color: #34d399;
-}
-
-.queue-json-panel :deep(.vjs-value-number),
-.queue-json-panel :deep(.vjs-value-boolean) {
-  color: #fbbf24;
-}
-
-.queue-json-panel :deep(.vjs-value-null),
-.queue-json-panel :deep(.vjs-value-undefined) {
-  color: #c084fc;
+  color: inherit;
 }
 
 @media (max-width: 960px) {
   .queue-json-editor-layout {
     grid-template-columns: 1fr;
+  }
+
+  .queue-runtime-shell {
+    height: calc(100vh - 132px);
   }
 }
 </style>

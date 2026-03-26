@@ -175,7 +175,7 @@ import { useWindowSize } from '@vueuse/core'
 import { formatTimestamp } from '@/common/date'
 import { commonGridOptions } from '@/common/table'
 import { batchDeleteStickerStoryScript, deleteStickerStoryScript, getMaterialList, getStickerStoryScriptPage } from '@/api/material'
-import { getPreviewImageUrl } from '@/utils/image'
+import { getFastPreviewImageUrl } from '@/utils/image'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import FormItem from '@/components/Erp/formItem.vue'
 import Pagination from '@/components/Pagination/index.vue'
@@ -256,7 +256,7 @@ function getMaterialPreview(row: any, scene: 'list' | 'detail' = 'list') {
   const material = getRelatedMaterial(row)
   if (!material?.url) return ''
   const width = scene === 'detail' ? 420 : 240
-  return getPreviewImageUrl(material.url, { width, quality: 80, format: 'webp' })
+  return getFastPreviewImageUrl(material.url, { width })
 }
 
 function isMaterialHydrating(row: any) {

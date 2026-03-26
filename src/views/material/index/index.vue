@@ -342,7 +342,7 @@
               :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }">
               <div class="thumb-image-wrapper">
                 <img
-                  :src="getPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150, quality: 80, format: 'webp' })"
+                  :src="getFastPreviewImageUrl((dataSource.find(i => String(i.id) === String(id)) || {}).url, { width: 150 })"
                   class="thumb-img" alt="素材预览" loading="lazy" />
                 <div v-if="isMaterialFormatInvalid(id)" class="thumb-format-badge">
                   <el-icon>
@@ -459,7 +459,7 @@
                     :class="{ 'is-checked': selectedPsdTemplateIds.includes(String(tpl.id)) }">
                     <div class="template-content-wrapper" @click="togglePsdTemplate(tpl.id)">
                       <img v-if="tpl.thumbnail || tpl.preview || tpl.image"
-                        :src="getPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200, quality: 80, format: 'webp' })"
+                        :src="getFastPreviewImageUrl(tpl.thumbnail || tpl.preview || tpl.image, { width: 200 })"
                         :alt="tpl.name || '模板缩略图'" class="template-thumbnail" loading="lazy"
                         @error="handleTemplateImageError" />
                       <div class="template-info">
@@ -704,7 +704,7 @@
                   <div class="config-image-label">模板配置图</div>
                   <div class="config-image-wrapper">
                     <img v-if="template.thumbnail"
-                      :src="getPreviewImageUrl(template.thumbnail, { width: 200, quality: 80, format: 'webp' })"
+                      :src="getFastPreviewImageUrl(template.thumbnail, { width: 200 })"
                       :alt="template.name" class="config-image" />
                     <span v-else class="config-image-placeholder">无缩略图</span>
                   </div>
@@ -834,7 +834,7 @@
               <div class="flex flex-col items-center justify-center p-2">
                 <div class="preview-image-wrapper">
                   <img v-if="row._imageLoaded" :key="`preview-${row.id}-${row.url}`"
-                    :src="getPreviewImageUrl(row.url, { width: 200, quality: 80, format: 'webp' })"
+                    :src="getFastPreviewImageUrl(row.url, { width: 200 })"
                     :alt="row.name || '素材图片'" class="preview-image" loading="lazy"
                     @click="openImagePreview(row.url, row.name)" />
                   <img v-else :key="`preview-loading-${row.id}-${row.url}`"
@@ -1718,7 +1718,7 @@ import { getDesignModelList } from '@/api/designModel'
 import request from '@/config/axios'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
-import { getPreviewImageUrl } from '@/utils/image'
+import { getFastPreviewImageUrl, getPreviewImageUrl } from '@/utils/image'
 import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio, getSizeShapeUiConfig } from './sizeShapeConfig'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
@@ -2981,7 +2981,7 @@ function openTemplateDetail(template: any) {
 function getMaterialImageUrl(materialId: string | number): string {
   const material = dataSource.value.find(item => String(item.id) === String(materialId))
   if (!material || !material.url) return ''
-  return getPreviewImageUrl(material.url, { width: 200, quality: 80, format: 'webp' })
+  return getFastPreviewImageUrl(material.url, { width: 200 })
 }
 
 // 获取与配置项匹配的素材ID
