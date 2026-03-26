@@ -207,7 +207,7 @@
     </el-dialog>
 
     <!-- 查看数据对话框 -->
-    <el-dialog v-model="dataDialogVisible" title="任务数据" fullscreen :center="false" align-center>
+    <el-dialog v-model="dataDialogVisible" title="任务数据" fullscreen :center="false" align-center class="queue-json-dialog">
       <div v-loading="dataDialogLoading" class="queue-json-viewer-shell">
         <div class="queue-json-panel queue-json-panel--preview">
           <div class="queue-json-panel__header">
@@ -1160,7 +1160,8 @@ onMounted(() => {
 
 .queue-json-viewer-shell,
 .queue-json-editor-layout {
-  height: calc(100vh - 140px);
+  height: 100%;
+  min-height: 0;
 }
 
 .queue-json-viewer-shell {
@@ -1210,6 +1211,7 @@ onMounted(() => {
 }
 
 .queue-json-panel__body--viewer {
+  min-height: 0;
   overflow: auto;
   padding: 14px;
 }
@@ -1351,6 +1353,16 @@ onMounted(() => {
 
 .queue-json-textarea :deep(.el-textarea__inner::placeholder) {
   color: inherit;
+}
+
+.queue-json-dialog :deep(.el-dialog__body) {
+  height: calc(100vh - 120px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.queue-json-dialog :deep(.el-dialog__footer) {
+  flex-shrink: 0;
 }
 
 @media (max-width: 960px) {
