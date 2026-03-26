@@ -389,31 +389,55 @@ const doudianHandler: PlatformHandler = {
 const kuaishouShopHandler: PlatformHandler = {
   platform: 'kuaishou_shop',
 
-  validateConfig(_configData) {
+  validateConfig(configData) {
+    const errors: string[] = []
+    const sameId = typeof configData?.sameId === 'string' ? configData.sameId.trim() : ''
+    const vendorId = configData?.vendorId
+
+    if (sameId && !/^\d+$/.test(sameId)) {
+      errors.push('模板 sameId 必须是数字')
+    }
+    if (vendorId !== undefined && vendorId !== null && vendorId !== '' && !Number.isFinite(Number(vendorId))) {
+      errors.push('绑定厂家无效')
+    }
+
     return {
-      valid: true,
-      errors: []
+      valid: errors.length === 0,
+      errors
     }
   },
 
   formatConfigForSubmit(configData) {
     const formatted = { ...configData }
 
-    if (formatted.price !== undefined && formatted.price !== null && formatted.price !== '') {
-      formatted.price = Number(formatted.price)
+    if (formatted.sameId !== undefined && formatted.sameId !== null) {
+      formatted.sameId = String(formatted.sameId).trim()
     }
-    if (formatted.stock !== undefined && formatted.stock !== null && formatted.stock !== '') {
-      formatted.stock = Number(formatted.stock)
+    if (formatted.vendorId !== undefined && formatted.vendorId !== null && formatted.vendorId !== '') {
+      formatted.vendorId = Number(formatted.vendorId)
+    } else {
+      formatted.vendorId = undefined
     }
 
     return formatted
   },
 
+  formatConfigForEdit(configData) {
+    const formatted = { ...configData }
+    if (formatted.sameId !== undefined && formatted.sameId !== null) {
+      formatted.sameId = String(formatted.sameId).trim()
+    }
+    if (formatted.vendorId !== undefined && formatted.vendorId !== null && formatted.vendorId !== '') {
+      formatted.vendorId = Number(formatted.vendorId)
+    }
+    return formatted
+  },
+
   getHints() {
     return [
-      '快手小店已接入基础骨架支持',
-      '当前先支持标题、描述、图片和少量可选参数透传',
-      '类目、SKU、物流模板等详细字段后续再补充'
+      '支持配置快手小店模板 sameId，发布端会优先进入 add?sameId=... 页面',
+      '支持绑定厂家，生成 productCode 时会按“素材码-厂家码”拼接',
+      '当前先支持标题、描述、图片和少量可选参数透传'
     ]
   }
 }

@@ -326,58 +326,20 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     titleMaxLength: 60,
     fields: [
       {
-        key: 'draftOnly',
-        label: '仅保存草稿',
-        type: 'switch',
-        defaultValue: true,
-        span: 8,
-        tooltip: '基础支持阶段默认建议仅保存草稿，不直接点击最终发布'
-      },
-      {
-        key: 'price',
-        label: '商品价格',
-        type: 'number',
-        placeholder: '可选，后续完善价格映射',
-        span: 8
-      },
-      {
-        key: 'stock',
-        label: '库存',
-        type: 'number',
-        placeholder: '可选，后续完善库存映射',
-        span: 8
-      },
-      {
-        key: 'categoryId',
-        label: '类目ID',
+        key: 'sameId',
+        label: '模板 sameId',
         type: 'input',
-        placeholder: '可选，后续补充类目映射',
-        span: 12
+        placeholder: '请输入快手小店 add?sameId=... 中的 sameId',
+        span: 24,
+        tooltip: '发布端会基于这个 sameId 打开快手小店模板创建页'
       },
       {
-        key: 'shopId',
-        label: '店铺ID',
-        type: 'input',
-        placeholder: '可选，快手小店店铺标识',
-        span: 12
-      },
-      {
-        key: 'deliveryTemplate',
-        label: '运费模板',
-        type: 'input',
-        placeholder: '可选，后续补充模板映射',
-        span: 12
-      },
-      {
-        key: 'productType',
-        label: '商品类型',
+        key: 'vendorId',
+        label: '绑定厂家',
         type: 'select',
-        options: [
-          { label: '普通商品', value: 'normal' },
-          { label: '预售商品', value: 'presale' }
-        ],
-        defaultValue: 'normal',
-        span: 12
+        placeholder: '请选择厂家',
+        span: 24,
+        tooltip: '用于生成 productCode，格式为：素材码-厂家码'
       }
     ]
   },
