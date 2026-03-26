@@ -204,6 +204,18 @@ const appendImageUrlValidation = computed(() => {
   }
 })
 
+const platformImageLimitTip = computed(() => {
+  if (form.platform === 'doudian') {
+    return '抖店商品图最多 5 个'
+  }
+
+  if (form.platform === 'kuaishou_shop') {
+    return '快手小店商品图最多 9 个'
+  }
+
+  return ''
+})
+
 function normalizePublishConfigData(platform: string, value: Record<string, any> = {}) {
   const normalized = {
     ...getPlatformDefaultData(platform),
@@ -498,6 +510,9 @@ onMounted(() => {
                   <span>{{ currentPlatformConfig.description }}</span>
                   <span>图片：{{ currentPlatformConfig.supportImage ? '支持' : '不支持' }}</span>
                   <span>视频：{{ currentPlatformConfig.supportVideo ? '支持' : '不支持' }}</span>
+                </div>
+                <div v-if="platformImageLimitTip" class="publish-config-field-note publish-config-platform__notice">
+                  {{ platformImageLimitTip }}
                 </div>
 
                 <el-row v-if="currentPlatformConfig.fields.length > 0" :gutter="18">
