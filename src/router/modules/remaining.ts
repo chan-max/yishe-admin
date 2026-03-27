@@ -554,15 +554,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
         children: [
           {
-            path: "message-push",
-            component: () => import("@/views/message-push/index.vue"),
-            name: "MessagePushIndex",
-            meta: {
-              title: "消息推送",
-              requiresAdmin: true,
-            },
-          },
-          {
             path: "common-url",
             component: () => import("@/views/material/commonUrl/index.vue"),
             name: "CommonUrlIndex",
@@ -597,6 +588,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           alwaysShow: true,
         },
         children: [
+          {
+            path: "message-push",
+            component: () => import("@/views/message-push/index.vue"),
+            name: "MessagePushIndex",
+            meta: {
+              title: "消息推送",
+              requiresAdmin: true,
+            },
+          },
           {
             path: "user",
             component: () => import("@/views/system/user/index.vue"),
