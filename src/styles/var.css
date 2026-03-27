@@ -1,35 +1,37 @@
 :root {
   --login-bg-color: #000000;
 
-  --left-menu-max-width: 200px;
+  --left-menu-max-width: 280px;
 
   --left-menu-min-width: 64px;
 
-  --left-menu-bg-color: #001529;
+  --left-menu-bg-color: #101217;
 
-  --left-menu-bg-light-color: #0f2438;
+  --left-menu-bg-light-color: #181c24;
 
-  --left-menu-bg-active-color: var(--el-color-primary);
+  --left-menu-bg-active-color: #1c2330;
 
-  --left-menu-text-color: #bfcbd9;
+  --left-menu-text-color: #b9c0cc;
 
-  --left-menu-text-active-color: #fff;
+  --left-menu-text-active-color: #8cbcff;
 
-  --left-menu-collapse-bg-active-color: var(--el-color-primary);
+  --left-menu-collapse-bg-active-color: #1c2330;
+
+  --left-menu-border-color: #343b48;
   /* left menu end */
 
   /* logo start */
   --logo-height: 42px;
 
-  --logo-title-text-color: #fff;
+  --logo-title-text-color: #f3f4f6;
   /* logo end */
 
   /* header start */
-  --top-header-bg-color: '#fff';
+  --top-header-bg-color: #141821;
 
-  --top-header-text-color: 'inherit';
+  --top-header-text-color: #d8dde6;
 
-  --top-header-hover-color: #f6f6f6;
+  --top-header-hover-color: #1d2330;
 
   --top-tool-height: 50px;
 
@@ -48,7 +50,7 @@
 
   --app-content-padding: 20px;
 
-  --app-content-bg-color: #fff;
+  --app-content-bg-color: #0d1015;
 
   --app-footer-height: 50px;
 

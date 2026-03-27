@@ -1,14 +1,6 @@
-<!--
- * @Author: chan-max jackieontheway666@gmail.com
- * @Date: 2025-04-01 07:04:47
- * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-11-13 06:22:44
- * @FilePath: /yishe-admin/src/layout/components/ToolHeader.vue
- * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koroFileHeader/wiki/%E9%85%8D%E7%BD%AE
--->
 <script lang="tsx">
-import { computed, defineComponent, ref, onMounted, onUnmounted } from 'vue'
-import { Collapse } from '@/layout/components/Collapse'
+import { computed, defineComponent } from 'vue'
+import { Icon } from '@/components/Icon'
 import { UserInfo } from '@/layout/components/UserInfo'
 import { Screenfull } from '@/layout/components/Screenfull'
 import { Breadcrumb } from '@/layout/components/Breadcrumb'
@@ -22,60 +14,42 @@ export default defineComponent({
     const { getPrefixCls, variables } = useDesign()
     const prefixCls = getPrefixCls('tool-header')
     const appStore = useAppStore()
-
-    // 面包屑
     const breadcrumb = computed(() => appStore.getBreadcrumb)
-
-    // 折叠图标
-    const hamburger = computed(() => appStore.getHamburger)
-
-    // 全屏图标
     const screenfull = computed(() => appStore.getScreenfull)
-
-    // 布局
-    const layout = computed(() => appStore.getLayout)
-
-    // 新增响应式屏幕宽度判断
-    const isWideScreen = ref(true)
-    function updateScreen() {
-      isWideScreen.value = window.innerWidth >= 768
-    }
-
-    onMounted(() => {
-      updateScreen()
-      window.addEventListener('resize', updateScreen)
-    })
-
-    onUnmounted(() => {
-      window.removeEventListener('resize', updateScreen)
-    })
+    const mobile = computed(() => appStore.getMobile)
+    const openMobileMenu = inject<() => void>('openMobileMenu', () => {})
 
     return () => (
-      <div
+      <header
         id={`${variables.namespace}-tool-header`}
         class={[
           prefixCls,
-          'h-[var(--top-tool-height)] relative px-[var(--top-tool-p-x)] flex items-center justify-between',
-          'dark:bg-[var(--el-bg-color)]'
+          'h-[var(--top-tool-height)] px-12px md:px-16px flex items-center justify-between'
         ]}
       >
-        {layout.value !== 'top' ? (
-          <div class="h-full flex items-center">
-            {hamburger.value && layout.value !== 'cutMenu' ? (
-              <Collapse class="custom-hover" color="var(--top-header-text-color)"></Collapse>
-            ) : undefined}
-            {breadcrumb.value ? <Breadcrumb class="lt-md:hidden"></Breadcrumb> : undefined}
-          </div>
-        ) : undefined}
-        <div class="h-full flex items-center">
-          <div class="client-status-wrapper"><ClientStatus /></div>
-          {screenfull.value ? (
-            <Screenfull class="custom-hover" color="var(--top-header-text-color)"></Screenfull>
+        <div class="flex h-full min-w-0 items-center gap-8px md:gap-12px">
+          {mobile.value ? (
+            <button
+              type="button"
+              class="flex h-34px w-34px items-center justify-center rounded-8px border border-[var(--left-menu-border-color)] bg-[var(--top-header-hover-color)] text-[var(--top-header-text-color)]"
+              onClick={openMobileMenu}
+            >
+              <Icon icon="ep:menu" />
+            </button>
           ) : undefined}
-
-          <UserInfo></UserInfo>
+          {breadcrumb.value ? <Breadcrumb class="min-w-0 lt-md:hidden" /> : undefined}
         </div>
-      </div>
+
+        <div class="flex h-full items-center gap-2px md:gap-6px">
+          <div class="client-status-wrapper">
+            <ClientStatus />
+          </div>
+          {screenfull.value ? (
+            <Screenfull class="custom-hover" color="var(--top-header-text-color)" />
+          ) : undefined}
+          <UserInfo />
+        </div>
+      </header>
     )
   }
 })
@@ -85,10 +59,10 @@ export default defineComponent({
 $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} {
-  transition: left var(--transition-time-02);
+  color: var(--top-header-text-color);
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1024px) {
   .client-status-wrapper {
     display: none !important;
   }

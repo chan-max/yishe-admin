@@ -1,15 +1,10 @@
 <script lang="ts" setup>
 import { useTagsViewStore } from '@/store/modules/tagsView'
 import { useAppStore } from '@/store/modules/app'
-import { Footer } from '@/layout/components/Footer'
 
 defineOptions({ name: 'AppView' })
 
 const appStore = useAppStore()
-
-const layout = computed(() => appStore.getLayout)
-
-const fixedHeader = computed(() => appStore.getFixedHeader)
 
 const footer = computed(() => appStore.getFooter)
 
@@ -18,8 +13,6 @@ const tagsViewStore = useTagsViewStore()
 const getCaches = computed((): string[] => {
   return tagsViewStore.getCachedViews
 })
-
-const tagsView = computed(() => appStore.getTagsView)
 
 //region 无感刷新
 const routerAlive = ref(true)

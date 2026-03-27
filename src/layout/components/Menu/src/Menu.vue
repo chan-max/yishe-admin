@@ -1,126 +1,155 @@
 <script lang="tsx">
-import { PropType } from 'vue'
-import { ElMenu, ElScrollbar } from 'element-plus'
-import { useAppStore } from '@/store/modules/app'
-import { usePermissionStore } from '@/store/modules/permission'
-import { useRenderMenuItem } from './components/useRenderMenuItem'
-import { isUrl } from '@/utils/is'
+import { Icon } from '@/components/Icon'
 import { useDesign } from '@/hooks/web/useDesign'
-import { LayoutType } from '@/types/layout'
+import { usePermissionStore } from '@/store/modules/permission'
+import { isUrl } from '@/utils/is'
+import { pathResolve } from '@/utils/routerHelper'
 
 const { getPrefixCls } = useDesign()
-
 const prefixCls = getPrefixCls('menu')
 
 export default defineComponent({
-  // eslint-disable-next-line vue/no-reserved-component-names
   name: 'Menu',
-  props: {
-    menuSelect: {
-      type: Function as PropType<(index: string) => void>,
-      default: undefined
-    }
-  },
-  setup(props) {
-    const appStore = useAppStore()
-
-    const layout = computed(() => appStore.getLayout)
-
-    const { push, currentRoute } = useRouter()
-
+  setup() {
     const permissionStore = usePermissionStore()
+    const { push, currentRoute } = useRouter()
+    const closeMobileMenu = inject<() => void>('closeMobileMenu', () => {})
 
-    const menuMode = computed((): 'vertical' | 'horizontal' => {
-      // 竖
-      const vertical: LayoutType[] = ['classic', 'topLeft', 'cutMenu']
+    const routers = computed(() => permissionStore.getRouters.filter((route) => !route.meta?.hidden))
+    const activeMenu = computed(() => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path)
+    const expandedMenus = ref<Record<string, boolean>>({})
 
-      if (vertical.includes(unref(layout))) {
-        return 'vertical'
+    const getRoutePath = (route: AppRouteRecordRaw, parentPath = '/') => {
+      return isUrl(route.path) ? route.path : pathResolve(parentPath, route.path)
+    }
+
+    const getVisibleChildren = (route: AppRouteRecordRaw) => {
+      return (route.children ?? []).filter((child) => !child.meta?.hidden)
+    }
+
+    const hasActiveChild = (route: AppRouteRecordRaw) => {
+      const routePath = getRoutePath(route)
+      return getVisibleChildren(route).some((child) => getRoutePath(child, routePath) === activeMenu.value)
+    }
+
+    const isRouteActive = (route: AppRouteRecordRaw) => {
+      return getRoutePath(route) === activeMenu.value || hasActiveChild(route)
+    }
+
+    const selectMenu = (path: string) => {
+      if (isUrl(path)) {
+        window.open(path)
       } else {
-        return 'horizontal'
+        push(path)
       }
-    })
+      closeMobileMenu()
+    }
 
-    const routers = computed(() =>
-      unref(layout) === 'cutMenu' ? permissionStore.getMenuTabRouters : permissionStore.getRouters
+    const toggleSection = (routePath: string) => {
+      expandedMenus.value = {
+        ...expandedMenus.value,
+        [routePath]: !expandedMenus.value[routePath]
+      }
+    }
+
+    watch(
+      routers,
+      (value) => {
+        const nextExpanded: Record<string, boolean> = {}
+        value.forEach((route) => {
+          const routePath = getRoutePath(route)
+          nextExpanded[routePath] =
+            expandedMenus.value[routePath] ?? getVisibleChildren(route).length > 0
+        })
+        expandedMenus.value = nextExpanded
+      },
+      { immediate: true, deep: true }
     )
 
-    const collapse = computed(() => appStore.getCollapse)
-
-    const uniqueOpened = computed(() => appStore.getUniqueOpened)
-
-    const activeMenu = computed(() => {
-      const { meta, path } = unref(currentRoute)
-      // if set path, the sidebar will highlight the path you set
-      if (meta.activeMenu) {
-        return meta.activeMenu as string
-      }
-      return path
-    })
-
-    const menuSelect = (index: string) => {
-      if (props.menuSelect) {
-        props.menuSelect(index)
-      }
-      // 自定义事件
-      if (isUrl(index)) {
-        window.open(index)
-      } else {
-        push(index)
-      }
-    }
-
-    const renderMenuWrap = () => {
-      if (unref(layout) === 'top') {
-        return renderMenu()
-      } else {
-        return <ElScrollbar>{renderMenu()}</ElScrollbar>
-      }
-    }
-
-    const renderMenu = () => {
-      return (
-        <ElMenu
-          defaultActive={unref(activeMenu)}
-          mode={unref(menuMode)}
-          collapse={
-            unref(layout) === 'top' || unref(layout) === 'cutMenu' ? false : unref(collapse)
-          }
-          uniqueOpened={unref(layout) === 'top' ? false : unref(uniqueOpened)}
-          backgroundColor="var(--left-menu-bg-color)"
-          textColor="var(--left-menu-text-color)"
-          activeTextColor="var(--left-menu-text-active-color)"
-          popperClass={
-            unref(menuMode) === 'vertical'
-              ? `${prefixCls}-popper--vertical`
-              : `${prefixCls}-popper--horizontal`
-          }
-          onSelect={menuSelect}
-        >
-          {{
-            default: () => {
-              const { renderMenuItem } = useRenderMenuItem(unref(menuMode))
-              return renderMenuItem(unref(routers))
-            }
-          }}
-        </ElMenu>
-      )
-    }
-
     return () => (
-      <div
-        id={prefixCls}
-        class={[
-          `${prefixCls} ${prefixCls}__${unref(menuMode)}`,
-          'h-[100%] overflow-hidden flex-col bg-[var(--left-menu-bg-color)]',
-          {
-            'w-[var(--left-menu-min-width)]': unref(collapse) && unref(layout) !== 'cutMenu',
-            'w-[var(--left-menu-max-width)]': !unref(collapse) && unref(layout) !== 'cutMenu'
-          }
-        ]}
-      >
-        {renderMenuWrap()}
-      </div>
+      <nav id={prefixCls} class={`${prefixCls} h-full`}>
+        <div class={`${prefixCls}__panel`}>
+          {routers.value.map((route) => {
+            const routePath = getRoutePath(route)
+            const children = getVisibleChildren(route)
+            const sectionActive = isRouteActive(route)
+            const expanded = expandedMenus.value[routePath]
+
+            if (!children.length) {
+              return (
+                <button
+                  type="button"
+                  key={routePath}
+                  class={[
+                    `${prefixCls}__section`,
+                    `${prefixCls}__section--leaf`,
+                    { [`${prefixCls}__section--active`]: sectionActive }
+                  ]}
+                  onClick={() => selectMenu(routePath)}
+                >
+                  <div class={`${prefixCls}__section-head`}>
+                    <div class={`${prefixCls}__section-label`}>
+                      {route.meta?.icon ? (
+                        <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
+                      ) : undefined}
+                      <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
+                    </div>
+                  </div>
+                </button>
+              )
+            }
+
+            return (
+              <section
+                key={routePath}
+                class={[
+                  `${prefixCls}__section`,
+                  { [`${prefixCls}__section--active`]: sectionActive }
+                ]}
+              >
+                <button
+                  type="button"
+                  class={`${prefixCls}__section-head`}
+                  onClick={() => toggleSection(routePath)}
+                >
+                  <div class={`${prefixCls}__section-label`}>
+                    {route.meta?.icon ? (
+                      <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
+                    ) : undefined}
+                    <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
+                  </div>
+                  <Icon
+                    class={`${prefixCls}__section-arrow`}
+                    icon={expanded ? 'ep:arrow-up' : 'ep:arrow-down'}
+                  />
+                </button>
+
+                {expanded ? (
+                  <div class={`${prefixCls}__links`}>
+                    {children.map((child) => {
+                      const childPath = getRoutePath(child, routePath)
+                      return (
+                        <button
+                          type="button"
+                          key={childPath}
+                          title={String(child.meta?.title ?? '')}
+                          class={[
+                            `${prefixCls}__link`,
+                            { [`${prefixCls}__link--active`]: childPath === activeMenu.value }
+                          ]}
+                          onClick={() => selectMenu(childPath)}
+                        >
+                          <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : undefined}
+              </section>
+            )
+          })}
+        </div>
+      </nav>
     )
   }
 })
@@ -130,142 +159,155 @@ export default defineComponent({
 $prefix-cls: #{$namespace}-menu;
 
 .#{$prefix-cls} {
-  position: relative;
-  transition: width var(--transition-time-02);
+  height: 100%;
+  border-right: 1px solid var(--left-menu-border-color, #2f3542);
+  background: linear-gradient(180deg, #101217 0%, #161922 100%);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(143, 154, 173, 0.45) transparent;
 
-  :deep(.#{$elNamespace}-menu) {
-    width: 100% !important;
-    border-right: none;
-
-    // 设置选中时子标题的颜色
-    .is-active {
-      & > .#{$elNamespace}-sub-menu__title {
-        color: var(--left-menu-text-active-color) !important;
-      }
-    }
-
-    // 设置子菜单悬停的高亮和背景色
-    .#{$elNamespace}-sub-menu__title,
-    .#{$elNamespace}-menu-item {
-      &:hover {
-        color: var(--left-menu-text-active-color) !important;
-        background-color: var(--left-menu-bg-color) !important;
-      }
-    }
-
-    // 设置选中时的高亮背景和高亮颜色
-    .#{$elNamespace}-menu-item.is-active {
-      color: var(--left-menu-text-active-color) !important;
-      background-color: var(--left-menu-bg-active-color) !important;
-
-      &:hover {
-        background-color: var(--left-menu-bg-active-color) !important;
-      }
-    }
-
-    .#{$elNamespace}-menu-item.is-active {
-      position: relative;
-    }
-
-    // 设置子菜单的背景颜色
-    .#{$elNamespace}-menu {
-      .#{$elNamespace}-sub-menu__title,
-      .#{$elNamespace}-menu-item:not(.is-active) {
-        background-color: var(--left-menu-bg-light-color) !important;
-      }
-    }
+  &::-webkit-scrollbar {
+    width: 4px;
   }
 
-  // 折叠时的最小宽度
-  :deep(.#{$elNamespace}-menu--collapse) {
-    width: var(--left-menu-min-width);
-
-    & > .is-active,
-    & > .is-active > .#{$elNamespace}-sub-menu__title {
-      position: relative;
-      background-color: var(--left-menu-collapse-bg-active-color) !important;
-    }
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
 
-  // 折叠动画的时候，就需要把文字给隐藏掉
-  :deep(.horizontal-collapse-transition) {
-    // transition: 0s width ease-in-out, 0s padding-left ease-in-out, 0s padding-right ease-in-out !important;
-    .#{$prefix-cls}__title {
-      display: none;
-    }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(143, 154, 173, 0.45);
   }
 
-  // 垂直菜单
-  &__vertical {
-    :deep(.#{$elNamespace}-menu--vertical) {
-      &:not(.#{$elNamespace}-menu--collapse) .#{$elNamespace}-sub-menu__title,
-      .#{$elNamespace}-menu-item {
-        padding-right: 0;
-      }
-    }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(143, 154, 173, 0.7);
   }
 
-  // 水平菜单
-  &__horizontal {
-    height: calc(var(--top-tool-height)) !important;
-
-    :deep(.#{$elNamespace}-menu--horizontal) {
-      height: calc(var(--top-tool-height));
-      border-bottom: none;
-      // 重新设置底部高亮颜色
-      & > .#{$elNamespace}-sub-menu.is-active {
-        .#{$elNamespace}-sub-menu__title {
-          border-bottom-color: var(--el-color-primary) !important;
-        }
-      }
-
-      .#{$elNamespace}-menu-item.is-active {
-        position: relative;
-
-        &::after {
-          display: none !important;
-        }
-      }
-
-      .#{$prefix-cls}__title {
-        /* stylelint-disable-next-line */
-        max-height: calc(var(--top-tool-height) - 2px) !important;
-        /* stylelint-disable-next-line */
-        line-height: calc(var(--top-tool-height) - 2px);
-      }
-    }
-  }
-}
-</style>
-
-<style lang="scss">
-$prefix-cls: #{$namespace}-menu-popper;
-
-.#{$prefix-cls}--vertical,
-.#{$prefix-cls}--horizontal {
-  // 设置选中时子标题的颜色
-  .is-active {
-    & > .el-sub-menu__title {
-      color: var(--left-menu-text-active-color) !important;
-    }
+  &__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 100%;
+    padding: 8px 7px 18px;
   }
 
-  // 设置子菜单悬停的高亮和背景色
-  .el-sub-menu__title,
-  .el-menu-item {
-    &:hover {
-      color: var(--left-menu-text-active-color) !important;
-      background-color: var(--left-menu-bg-color) !important;
-    }
+  &__section {
+    width: 100%;
+    padding: 5px 0 7px;
+    border-bottom: 1px solid #222834;
   }
 
-  // 设置选中时的高亮背景
-  .el-menu-item.is-active {
-    position: relative;
-    background-color: var(--left-menu-bg-active-color) !important;
+  &__section--leaf {
+    display: block;
+    padding-bottom: 3px;
+    background: transparent;
+  }
 
-    &:hover {
-      background-color: var(--left-menu-bg-active-color) !important;
+  &__section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 5px 7px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: background-color var(--transition-time-02), color var(--transition-time-02);
+  }
+
+  &__section-head:hover {
+    background: #191e27;
+  }
+
+  &__section-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  &__section-icon {
+    flex: none;
+    font-size: 13px;
+    color: #8e97a7;
+  }
+
+  &__section-title {
+    overflow: hidden;
+    color: #f3f4f6;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__section-arrow {
+    flex: none;
+    font-size: 11px;
+    color: #7f8796;
+  }
+
+  &__section--active > .#{$prefix-cls}__section-head {
+    background: #171c26;
+  }
+
+  &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-icon,
+  &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-title {
+    color: #7db0ff;
+  }
+
+  &__links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 7px;
+    padding: 7px 4px 0 26px;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 5px 7px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #d1d5db;
+    cursor: pointer;
+    text-align: left;
+    transition:
+      background-color var(--transition-time-02),
+      border-color var(--transition-time-02),
+      color var(--transition-time-02);
+  }
+
+  &__link:hover {
+    background: #171c24;
+    border-color: #2f3745;
+    color: #ffffff;
+  }
+
+  &__link--active {
+    background: #1c2330;
+    border-color: #314159;
+    color: #8cbcff;
+  }
+
+  &__link-text {
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1024px) {
+    &__links {
+      grid-template-columns: 1fr;
+      padding-left: 26px;
     }
   }
 }

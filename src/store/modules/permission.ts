@@ -6,6 +6,34 @@ import { useUserStore } from '@/store/modules/user'
 import { pathResolve } from '@/utils/routerHelper'
 import { isUrl } from '@/utils/is'
 
+function getRouteOrder(route: AppRouteRecordRaw): number {
+  const order = route.meta?.order
+  return typeof order === 'number' ? order : Number.MAX_SAFE_INTEGER
+}
+
+function sortRoutes(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
+  return [...routes]
+    .sort((a, b) => {
+      const orderDiff = getRouteOrder(a) - getRouteOrder(b)
+      if (orderDiff !== 0) {
+        return orderDiff
+      }
+
+      const titleA = String(a.meta?.title ?? '')
+      const titleB = String(b.meta?.title ?? '')
+      const titleDiff = titleA.localeCompare(titleB, 'zh-CN')
+      if (titleDiff !== 0) {
+        return titleDiff
+      }
+
+      return a.path.localeCompare(b.path, 'en')
+    })
+    .map((route) => ({
+      ...route,
+      children: route.children ? sortRoutes(route.children) : route.children
+    }))
+}
+
 function filterRoutesByAdmin(routes: AppRouteRecordRaw[], isAdmin: boolean): AppRouteRecordRaw[] {
   return routes
     .map((route) => {
@@ -31,7 +59,7 @@ function filterRoutesByAdmin(routes: AppRouteRecordRaw[], isAdmin: boolean): App
 }
 
 function getDefaultRoutes(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
-  return routes.filter((route) => !route.meta?.hidden)
+  return sortRoutes(routes.filter((route) => !route.meta?.hidden))
 }
 
 function getVisibleChildren(children: AppRouteRecordRaw[] = []) {
@@ -63,7 +91,7 @@ function flattenChildrenToSecondLevel(
 }
 
 function flattenMenusToTwoLevels(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
-  return routes.map((route) => {
+  return sortRoutes(routes).map((route) => {
     const visibleChildren = getVisibleChildren(route.children)
 
     if (!visibleChildren.length) {
@@ -72,7 +100,7 @@ function flattenMenusToTwoLevels(routes: AppRouteRecordRaw[]): AppRouteRecordRaw
 
     return {
       ...route,
-      children: flattenChildrenToSecondLevel(visibleChildren, route.path)
+      children: sortRoutes(flattenChildrenToSecondLevel(visibleChildren, route.path))
     }
   })
 }

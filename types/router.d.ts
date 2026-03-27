@@ -41,6 +41,7 @@ declare module 'vue-router' {
     title?: string
     titleSuffix?: string
     icon?: string
+    order?: number
     noCache?: boolean
     breadcrumb?: boolean
     affix?: boolean
