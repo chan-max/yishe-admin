@@ -6,19 +6,8 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__summary">
               <div class="resource-toolbar__title">店铺资源管理</div>
-              <div class="resource-toolbar__description">
-                统一维护店铺 Logo、轮播图和描述信息，作为前台展示与商品投放的基础资源。
-              </div>
             </div>
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__meta-item">
-                <span class="resource-toolbar__meta-label">店铺数量</span>
-                <span class="resource-toolbar__meta-value">{{ list.length }}</span>
-              </div>
-              <div class="resource-toolbar__meta-item">
-                <span class="resource-toolbar__meta-label">已选中</span>
-                <span class="resource-toolbar__meta-value">{{ selectedIds.length }}</span>
-              </div>
               <div class="resource-toolbar__actions">
                 <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
                   批量删除

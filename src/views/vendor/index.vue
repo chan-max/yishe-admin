@@ -6,19 +6,8 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__summary">
               <div class="resource-toolbar__title">厂家资源管理</div>
-              <div class="resource-toolbar__description">
-                统一维护厂家基础信息、商品关联和图片资料，便于后续商品与供应链协作复用。
-              </div>
             </div>
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__meta-item">
-                <span class="resource-toolbar__meta-label">厂家数量</span>
-                <span class="resource-toolbar__meta-value">{{ list.length }}</span>
-              </div>
-              <div class="resource-toolbar__meta-item">
-                <span class="resource-toolbar__meta-label">已选中</span>
-                <span class="resource-toolbar__meta-value">{{ selectedIds.length }}</span>
-              </div>
               <div class="resource-toolbar__actions">
                 <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
                   批量删除
