@@ -498,6 +498,40 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
+.ops-tabs :deep(.el-tabs__header) {
+  margin: 0 0 12px;
+}
+
+.ops-tabs :deep(.el-tabs__nav-wrap::after) {
+  background-color: var(--el-border-color-lighter);
+}
+
+.ops-tabs :deep(.el-tabs__nav) {
+  gap: 0;
+}
+
+.ops-tabs :deep(.el-tabs__item) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 128px;
+  height: 40px;
+  padding: 0 18px;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+  background: transparent;
+}
+
+.ops-tabs :deep(.el-tabs__item.is-active) {
+  color: var(--el-text-color-primary);
+  background: transparent;
+}
+
+.ops-tabs :deep(.el-tabs__active-bar) {
+  height: 2px;
+  border-radius: 999px;
+}
+
 .tab-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);

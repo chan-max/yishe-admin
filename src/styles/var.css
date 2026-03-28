@@ -51,10 +51,10 @@ html.light {
   --tags-view-item-color: #5b677b;
   --tags-view-item-hover-bg: #ffffff;
   --tags-view-item-hover-color: #243041;
-  --tags-view-item-active-bg: linear-gradient(135deg, rgba(45, 107, 255, 0.14), rgba(94, 234, 212, 0.08));
+  --tags-view-item-active-bg: transparent;
   --tags-view-item-active-border-color: rgba(45, 107, 255, 0.34);
   --tags-view-item-active-color: #1d4ed8;
-  --tags-view-item-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --tags-view-item-shadow: none;
 
   --tab-menu-max-width: 80px;
   --tab-menu-min-width: 30px;
@@ -140,12 +140,12 @@ html.dark {
   --tags-view-item-color: rgba(255, 255, 255, 0.6);
   --tags-view-item-hover-bg: rgba(255, 255, 255, 0.04);
   --tags-view-item-hover-color: rgba(255, 255, 255, 0.92);
-  --tags-view-item-active-bg: linear-gradient(135deg, rgba(125, 176, 255, 0.14), rgba(72, 187, 120, 0.06));
+  --tags-view-item-active-bg: transparent;
   --tags-view-item-active-border-color: rgba(125, 176, 255, 0.28);
   --tags-view-item-active-color: #d6e6ff;
   --tags-view-item-shadow: none;
 
-  --app-content-bg-color: #0d1015;
+  --app-content-bg-color: #141414;
   --app-content-surface-color: #141922;
   --app-content-surface-muted-color: #11151d;
   --app-content-border-color: rgba(255, 255, 255, 0.08);

@@ -524,7 +524,9 @@ $prefix-cls: #{$namespace}-tags-view;
     top: 0;
     display: flex;
     height: 100%;
-    padding-right: 16px;
+    align-items: center;
+    justify-content: center;
+    padding-right: 0;
     margin-left: 0;
     font-size: 11px;
     font-weight: 400;
@@ -571,23 +573,30 @@ $prefix-cls: #{$namespace}-tags-view;
   }
 
   &__item--label {
+    display: flex;
+    width: 100%;
     min-width: 0;
-    padding: 0 20px 0 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
     line-height: 1;
+    text-align: center;
   }
 
   &__item.is-active {
     color: var(--tags-view-item-active-color);
-    background: var(--tags-view-item-active-bg);
+    background: transparent;
     border-right-color: var(--tags-view-item-active-border-color);
-    box-shadow: var(--tags-view-item-shadow);
+    box-shadow: none;
   }
 
   &__item--title {
     position: relative;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     max-width: 100%;
+    text-align: center;
   }
 
   &__item.is-active .#{$prefix-cls}__item--title::after {
@@ -605,12 +614,12 @@ $prefix-cls: #{$namespace}-tags-view;
   &__item--immerse {
     top: 0;
     height: 100%;
-    padding-right: 16px;
+    padding-right: 0;
     margin: 0;
     border: none !important;
 
     .#{$prefix-cls}__item--label {
-      padding-left: 10px;
+      padding: 0 24px;
     }
 
     .#{$prefix-cls}__item--close {
@@ -641,7 +650,7 @@ $prefix-cls: #{$namespace}-tags-view;
 
     &__item.is-active {
       color: var(--tags-view-item-active-color);
-      background: var(--tags-view-item-active-bg);
+      background: transparent;
     }
 
     &__item--immerse:not(.is-active) {
