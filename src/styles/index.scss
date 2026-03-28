@@ -99,50 +99,138 @@
     z-index: 99999999999999999 !important;
 }
 
-/* 移动端防缩放防滑动 */
+/* 移动端全局兜底：限制横向溢出，同时避免过度干预输入与滚动交互 */
 @media only screen and (max-width: 768px) {
   html, body {
-    /* 防止页面整体左右滑动 */
     overflow-x: hidden;
-    /* 防止页面被拖拽 */
-    overscroll-behavior: none;
-    /* 防止双击缩放 */
-    touch-action: manipulation;
-    /* 防止选择文本时的拖拽 */
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    /* 防止长按菜单 */
+    overscroll-behavior-x: none;
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
-  
-  /* 确保根容器不会超出视口 */
-  #app {
-    width: 100vw;
-    max-width: 100vw;
-    overflow-x: hidden;
-    /* 防止弹性滚动 */
-    overscroll-behavior: none;
-    /* 防止缩放手势 */
+
+  body {
     touch-action: pan-y;
   }
-  
-  /* 防止所有元素被缩放 */
-  * {
-    /* 防止双击缩放 */
+
+  #app {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  button,
+  [role='button'],
+  .el-button,
+  .el-pagination,
+  .el-dropdown,
+  .el-message-box,
+  .el-dialog,
+  .el-drawer {
     touch-action: manipulation;
   }
-  
-  /* 对于需要滚动的元素，只允许垂直滚动 */
+
+  input,
+  textarea,
+  select,
+  [contenteditable='true'],
+  .el-input__inner,
+  .el-textarea__inner {
+    -webkit-user-select: text;
+    user-select: text;
+    touch-action: manipulation;
+  }
+
   .scrollable {
     touch-action: pan-y;
   }
-  
-  /* 对于表格等可能需要水平滚动的元素 */
-  .vxe-table, .el-table {
+
+  .vxe-table,
+  .el-table,
+  .common-table,
+  .el-scrollbar {
     touch-action: pan-x pan-y;
+  }
+}
+
+.el-dialog {
+  max-width: min(100vw - 32px, 100%);
+}
+
+.el-dialog__header,
+.el-dialog__body,
+.el-dialog__footer {
+  box-sizing: border-box;
+}
+
+.dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dialog-footer > * {
+  margin-left: 0 !important;
+}
+
+@media only screen and (max-width: 768px) {
+  .el-dialog:not(.is-fullscreen) {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
+
+  .el-dialog.is-fullscreen {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+  }
+
+  .el-dialog__header {
+    padding: 14px 16px !important;
+  }
+
+  .el-dialog__body {
+    padding: 12px 16px !important;
+  }
+
+  .el-dialog__footer {
+    padding: 12px 16px 16px !important;
+  }
+
+  .el-dialog .el-form-item__content,
+  .el-drawer .el-form-item__content {
+    min-width: 0;
+  }
+
+  .dialog-footer {
+    width: 100%;
+  }
+}
+
+@media only screen and (max-width: 480px) {
+  .el-dialog:not(.is-fullscreen) {
+    width: calc(100vw - 16px) !important;
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+
+  .el-dialog__header {
+    padding: 12px 14px !important;
+  }
+
+  .el-dialog__body {
+    padding: 10px 14px !important;
+  }
+
+  .el-dialog__footer {
+    padding: 10px 14px 14px !important;
+  }
+
+  .dialog-footer > * {
+    flex: 1 1 100%;
   }
 }
 

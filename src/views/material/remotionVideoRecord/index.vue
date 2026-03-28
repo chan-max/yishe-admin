@@ -804,6 +804,7 @@ onBeforeUnmount(() => {
 
 .remotion-record-page__status-bar {
   display: flex;
+  width: 100%;
   min-height: 40px;
   align-items: flex-start;
   gap: 10px;
@@ -946,6 +947,11 @@ onBeforeUnmount(() => {
 }
 .confirm-meta {
   margin-bottom: 12px;
+}
+
+.detail-section > div {
+  word-break: break-word;
+  line-height: 1.6;
 }
 
 .template-input-schema {
@@ -1144,6 +1150,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1280px) {
+  .remotion-record-page__status-content {
+    max-width: none;
+  }
+
   .remotion-create-layout {
     grid-template-columns: 1fr;
     height: auto;
@@ -1152,6 +1162,132 @@ onBeforeUnmount(() => {
   .remotion-detail-layout {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(360px, 50vh) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .remotion-record-page__status-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .remotion-record-page__status-content {
+    max-width: none;
+  }
+
+  .cell-video-player,
+  .cell-video-wrapper {
+    width: 140px;
+    height: 79px;
+  }
+}
+
+@media (max-width: 768px) {
+  :deep(.remotion-record-page .list-page-search-form__row) {
+    row-gap: 0;
+  }
+
+  :deep(.remotion-record-page .list-page-search-form__actions) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  :deep(.remotion-record-page .list-page-search-form__actions .el-button) {
+    width: 100%;
+    margin: 0;
+  }
+
+  .remotion-record-page__status-text,
+  .remotion-record-page__status-detail {
+    white-space: nowrap;
+  }
+
+  .common-table {
+    overflow-x: auto;
+  }
+
+  .remotion-create-layout {
+    gap: 12px;
+  }
+
+  :deep(.remotion-create-layout > .el-card),
+  :deep(.remotion-detail-layout > .el-card),
+  :deep(.remotion-detail-side > .el-card) {
+    border-radius: 10px;
+  }
+
+  :deep(.remotion-create-dialog .el-dialog__body),
+  :deep(.remotion-detail-dialog .el-dialog__body) {
+    overflow: auto;
+    padding: 12px;
+  }
+
+  .remotion-detail-layout {
+    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 12px;
+  }
+
+  .remotion-detail-side {
+    grid-template-rows: auto;
+    gap: 12px;
+  }
+
+  .remotion-video-preview {
+    min-height: 220px;
+    padding: 8px;
+  }
+
+  .template-summary-meta {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .template-meta-raw pre,
+  .remotion-preview-panel pre,
+  .detail-json-panel pre {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.remotion-record-page .list-page-search-form__actions) {
+    grid-template-columns: 1fr;
+  }
+
+  .remotion-record-page__status-bar {
+    min-height: 0;
+  }
+
+  .cell-video-player,
+  .cell-video-wrapper {
+    width: 120px;
+    height: 68px;
+  }
+
+  .record-title-main,
+  .record-template-main {
+    font-size: 13px;
+  }
+
+  .record-id,
+  .record-template-id,
+  .table-time-text {
+    font-size: 11px;
+  }
+
+  .remotion-video-preview {
+    min-height: 180px;
+  }
+
+  .template-summary,
+  .template-input-schema {
+    padding: 10px;
   }
 }
 </style>

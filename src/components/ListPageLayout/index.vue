@@ -53,6 +53,7 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
   flex-direction: column;
   gap: 18px;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .list-page-layout__filter,
@@ -73,6 +74,7 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
   width: var(--list-page-sidebar-width);
   flex: 0 0 var(--list-page-sidebar-width);
   min-height: 0;
+  min-width: 0;
 }
 
 .list-page-layout__main {
@@ -112,12 +114,23 @@ const hasSidebar = computed(() => Boolean(slots.sidebar));
 
 @media (max-width: 768px) {
   .list-page-layout {
-    padding: 14px;
-    gap: 14px;
+    padding: 12px;
+    gap: 12px;
   }
 
   .list-page-layout__main {
-    gap: 14px;
+    gap: 12px;
+  }
+
+  .list-page-layout__pagination {
+    justify-content: stretch;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-page-layout {
+    padding: 10px;
+    gap: 10px;
   }
 }
 </style>

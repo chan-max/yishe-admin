@@ -61,9 +61,11 @@
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-admin-only command="delete" divided>
-                            <span>删除</span>
-                          </el-dropdown-item>
+                          <template v-if="userStore.user?.isAdmin">
+                            <el-dropdown-item command="delete" divided>
+                              <span>删除</span>
+                            </el-dropdown-item>
+                          </template>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -178,6 +180,8 @@ const queryParams = reactive({
   name: "",
   search: "",
 });
+
+const userStore = useUserStore();
 
 const gridRef = ref();
 

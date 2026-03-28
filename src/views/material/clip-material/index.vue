@@ -181,9 +181,10 @@
       <template #sidebar>
         <div class="list-page-panel list-page-panel--flat list-page-sidebar clip-material-sidebar">
           <div class="list-page-sidebar__body clip-material-sidebar__body">
-            <div v-show="!folderTreeCollapsed" class="h-full">
+            <div v-show="!folderTreeCollapsed" class="clip-material-sidebar__tree">
               <FolderTree
                 v-model="selectedFolderId"
+                width="100%"
                 :folder-category="FOLDER_CATEGORY"
                 :show-count="false"
                 :drag-state="dragState"
@@ -940,26 +941,27 @@ function handleOperationCommand(command: string, row: any) {
 }
 </script>
 
-<style lang="less">
-.clip-material-page {
+<style lang="less" scoped>
+:deep(.clip-material-page) {
   gap: 10px;
   padding: 8px 0 0;
 }
 
-.clip-material-page .list-page-layout__main {
+:deep(.clip-material-page .list-page-layout__body),
+:deep(.clip-material-page .list-page-layout__main) {
   gap: 10px;
 }
 
-.clip-material-page .list-page-filter--flat {
+:deep(.clip-material-page .list-page-filter--flat) {
   gap: 10px;
   padding-bottom: 10px;
 }
 
-.clip-material-page .list-page-table-panel__pagination--flat {
+:deep(.clip-material-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
 }
 
-.clip-material-upload-dialog {
+:deep(.clip-material-upload-dialog) {
   .el-dialog__body {
     height: calc(100% - 40px);
   }
@@ -971,25 +973,31 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 .clip-material-sidebar__body {
-  padding-right: 18px;
+  min-height: 0;
+  padding: 0;
+}
+
+.clip-material-sidebar__tree {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .clip-material-sidebar__toggle {
   position: absolute;
   top: 50%;
-  right: -14px;
+  right: 0;
   z-index: 5;
-  display: flex;
-  height: 52px;
-  width: 28px;
+  display: inline-flex;
+  height: 56px;
+  width: 20px;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 0;
-  border-radius: 0 12px 12px 0;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
   background: var(--list-page-surface-bg);
-  color: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.68);
   transform: translateY(-50%);
   cursor: pointer;
   transition:
@@ -1004,15 +1012,19 @@ function handleOperationCommand(command: string, row: any) {
 
 @media (max-width: 1024px) {
   .clip-material-sidebar__body {
-    padding-right: 12px;
+    padding: 0;
   }
 
   .clip-material-sidebar__toggle {
     top: auto;
-    right: 14px;
-    bottom: 14px;
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 0;
+    border-radius: 0;
     transform: none;
   }
 }

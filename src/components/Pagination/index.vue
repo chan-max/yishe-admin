@@ -86,3 +86,34 @@ const handleCurrentChange = (val) => {
   emit('pagination', { page: val, limit: pageSize.value })
 }
 </script>
+<style scoped lang="scss">
+:deep(.el-pagination) {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  row-gap: 8px;
+}
+
+@media (max-width: 768px) {
+  :deep(.el-pagination) {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  :deep(.el-pagination) {
+    width: 100%;
+    gap: 6px 8px;
+  }
+
+  :deep(.el-pagination .btn-prev),
+  :deep(.el-pagination .btn-next),
+  :deep(.el-pagination .el-pager li) {
+    min-width: 28px;
+  }
+
+  :deep(.el-pagination__sizes),
+  :deep(.el-pagination__jump) {
+    margin-left: 0 !important;
+  }
+}
+</style>

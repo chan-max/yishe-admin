@@ -88,7 +88,7 @@
 
 .list-page-search-form :deep(.el-form-item__label) {
   padding: 0 0 2px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.62);
   line-height: 1.2;
@@ -125,7 +125,7 @@
 .list-page-search-form :deep(.el-textarea__inner),
 .list-page-search-form :deep(.el-range-input),
 .list-page-search-form :deep(.el-range-separator) {
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .list-page-search-form :deep(.el-col) {
@@ -328,6 +328,7 @@
 
 .common-table {
   width: 100%;
+  min-width: 0;
 }
 
 .common-table .vxe-table,
@@ -985,7 +986,15 @@
 
   .list-page-search-form__actions {
     width: 100%;
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    gap: 8px;
+  }
+
+  .list-page-search-form__actions > * {
+    width: 100%;
+    margin: 0 !important;
   }
 
   .list-page-filter__fields--grid {
@@ -1015,6 +1024,17 @@
 
   .common-table {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .common-table .vxe-table,
+  .common-table .vxe-grid {
+    min-width: 720px;
+  }
+
+  .operation-trigger-button {
+    min-height: 28px;
+    font-size: 13px !important;
   }
 
   .op-menu {
@@ -1038,5 +1058,41 @@
   .operation-menu-compact :deep(.el-dropdown-menu__item) {
     padding: 10px 12px;
     font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .list-page-filter {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .list-page-search-form__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .list-page-search-form :deep(.el-form-item__label) {
+    font-size: 11px;
+  }
+
+  .list-page-search-form :deep(.el-input__inner),
+  .list-page-search-form :deep(.el-select__placeholder),
+  .list-page-search-form :deep(.el-textarea__inner),
+  .list-page-search-form :deep(.el-range-input),
+  .list-page-search-form :deep(.el-range-separator) {
+    font-size: 11px;
+  }
+
+  .list-page-table-panel__body {
+    padding: 10px 10px 0;
+  }
+
+  .list-page-table-panel__pagination {
+    padding: 10px;
+  }
+
+  .common-table .vxe-table,
+  .common-table .vxe-grid {
+    min-width: 640px;
   }
 }

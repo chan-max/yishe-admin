@@ -133,4 +133,18 @@ $prefix-cls: #{$namespace}-content-wrap;
     justify-content: flex-start;
   }
 }
+
+@media (max-width: 480px) {
+  .#{$prefix-cls} {
+    border-radius: 14px;
+
+    :deep(.el-card__header) {
+      padding: 14px 12px;
+    }
+  }
+
+  .content-wrap__title {
+    font-size: 14px;
+  }
+}
 </style>

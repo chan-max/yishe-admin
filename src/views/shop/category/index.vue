@@ -1,57 +1,85 @@
 <template>
-  <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <!-- 导出按钮 -->
-      <div style="flex: 1"></div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="shop-category-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+                <el-form-item label="按名称搜索">
+                  <el-input
+                    v-model="queryParams.categoryName"
+                    clearable
+                    placeholder="请输入名称"
+                    @change="(val) => {
+                      if (!val) {
+                        getList()
+                      }
+                    }"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+                <el-form-item label="排序方式">
+                  <el-select v-model="queryParams.sortingFields" @change="getList">
+                    <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button type="primary" @click="getList" :icon="Search">搜索</el-button>
+              <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
+              <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)">批量删除</el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-      <form-item label="按名称搜索">
-        <el-input v-model="queryParams.categoryName" clearable placeholder="请输入名称" style="width: 160px" @change="(val) => {
-          if (!val) {
-            getList()
-          }
-        }"></el-input>
-      </form-item>
-      <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
-
-      <form-item label="排序方式">
-        <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
-          <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </form-item>
-
-      <div class="shrink-0">
-        <!-- 修改按钮 -->
-        <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus"> 新增 </el-button>
-        <!-- 删除按钮 -->
-        <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)"> 批量删除 </el-button>
-      </div>
-    </div>
-
-    <!-- 表格展示 -->
-    <div class="common-table">
-      <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange">
-        <template #operationDefaultSlot="{ row }">
-          <div class="flex justify-end">
-            <el-dropdown class="operation-dropdown" placement="bottom-end">
-              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-              <template #dropdown>
-                <el-dropdown-menu class="operation-menu-compact">
-                  <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                  <el-dropdown-item v-admin-only divided @click="handleDelete(row)">删除</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
+                <template #operationDefaultSlot="{ row }">
+                  <div class="flex justify-start">
+                    <el-dropdown class="operation-dropdown" placement="bottom-end">
+                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                          <template v-if="userStore.user?.isAdmin">
+                            <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                          </template>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
           </div>
-        </template>
-      </vxe-grid>
-    </div>
+        </div>
+      </template>
 
-    <!-- 分页 -->
-    <div class="py-4 flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
-        @pagination="getList" />
-    </div>
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
+  </ContentWrap>
 
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="600px" @cancel="dialogClose" align-center>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
@@ -69,11 +97,10 @@
         <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -82,6 +109,8 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { ShopCategoryApi } from "@/api/shop/category"; // 实际接口导入
 import { Search, Plus, Delete } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
 
 // 查询条件
 const queryParams = reactive({
@@ -91,6 +120,8 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue(),
 });
 
+
+const userStore = useUserStore();
 
 const gridOptions = ref({
   ...commonGridOptions,
@@ -154,7 +185,6 @@ function resetQuery() {
 }
 
 function handleDelete(row?) {
-  const userStore = useUserStore()
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning('无权限：仅管理员可执行删除操作')
   }
@@ -260,4 +290,22 @@ const submitForm = async () => {
 };
 </script>
 
-<style lang="less"></style>
+<style lang="less" scoped>
+:deep(.shop-category-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.shop-category-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.shop-category-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.shop-category-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+</style>
