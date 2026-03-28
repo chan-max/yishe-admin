@@ -1,128 +1,67 @@
 <template>
-  <div class="list-page-layout">
-    <!-- 过滤表单区域 -->
-    <div class="filter-section">
-      <CollapsibleFilterForm>
-          <template #collapsed>
-            <form-item label="按内容搜索">
-              <el-input
-                v-model="queryParams.search"
-                placeholder="请输入句子内容关键词"
-                class="w-50"
-                clearable
-                @change="
-                  (val) => {
-                    if (!val) getList();
-                  }
-                "
-              />
-            </form-item>
-            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-            <form-item label="发布状态">
-              <el-select
-                v-model="queryParams.isPublish"
-                placeholder="请选择状态"
-                class="w-30"
-                clearable
-                @change="getList"
+  <ContentWrap :plain="true">
+    <ListPageLayout class="sentence-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+                <el-form-item label="句子内容">
+                  <el-input
+                    v-model="queryParams.search"
+                    size="small"
+                    placeholder="请输入句子内容关键词"
+                    clearable
+                    @change="(val) => { if (!val) getList(); }"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
+                <el-form-item label="发布状态">
+                  <el-select
+                    v-model="queryParams.isPublish"
+                    size="small"
+                    placeholder="请选择状态"
+                    clearable
+                    @change="getList"
+                  >
+                    <el-option label="全部" :value="null" />
+                    <el-option label="已发布" :value="true" />
+                    <el-option label="未发布" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">
+                添加句子
+              </el-button>
+              <el-button v-if="isAdmin" size="small" type="warning" @click="handleBatchPublish" :disabled="!ids.length">
+                批量发布({{ ids.length }})
+              </el-button>
+              <el-button v-if="isAdmin" size="small" type="info" @click="handleBatchUnpublish" :disabled="!ids.length">
+                批量下架({{ ids.length }})
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="danger"
+                :icon="Delete"
+                @click="handleDelete(null)"
+                :disabled="!ids.length"
               >
-                <el-option label="全部" :value="null" />
-                <el-option label="已发布" :value="true" />
-                <el-option label="未发布" :value="false" />
-              </el-select>
-            </form-item>
-            <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
-              添加句子
-            </el-button>
-            <el-button
-              v-if="isAdmin"
-              type="warning"
-              @click="handleBatchPublish"
-              :disabled="!ids.length"
-            >
-              批量发布({{ ids.length }})
-            </el-button>
-            <el-button
-              v-if="isAdmin"
-              type="info"
-              @click="handleBatchUnpublish"
-              :disabled="!ids.length"
-            >
-              批量下架({{ ids.length }})
-            </el-button>
-            <el-button
-              v-if="isAdmin"
-              type="danger"
-              :icon="Delete"
-              @click="handleDelete(null)"
-              :disabled="!ids.length"
-            >
-              批量删除
-            </el-button>
-          </template>
-          <template #expanded>
-            <form-item label="按内容搜索">
-              <el-input
-                v-model="queryParams.search"
-                placeholder="请输入句子内容关键词"
-                class="w-50"
-                clearable
-                @change="
-                  (val) => {
-                    if (!val) getList();
-                  }
-                "
-              />
-            </form-item>
-            <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-            <form-item label="发布状态">
-              <el-select
-                v-model="queryParams.isPublish"
-                placeholder="请选择状态"
-                class="w-30"
-                clearable
-                @change="getList"
-              >
-                <el-option label="全部" :value="null" />
-                <el-option label="已发布" :value="true" />
-                <el-option label="未发布" :value="false" />
-              </el-select>
-            </form-item>
-            <el-button v-if="isAdmin" type="primary" :icon="Plus" @click="handleAdd">
-              添加句子
-            </el-button>
-            <el-button
-              v-if="isAdmin"
-              type="warning"
-              @click="handleBatchPublish"
-              :disabled="!ids.length"
-            >
-              批量发布({{ ids.length }})
-            </el-button>
-            <el-button
-              v-if="isAdmin"
-              type="info"
-              @click="handleBatchUnpublish"
-              :disabled="!ids.length"
-            >
-              批量下架({{ ids.length }})
-            </el-button>
-            <el-button
-              v-if="isAdmin"
-              type="danger"
-              :icon="Delete"
-              @click="handleDelete(null)"
-              :disabled="!ids.length"
-            >
-              批量删除
-            </el-button>
-          </template>
-        </CollapsibleFilterForm>
-    </div>
+                批量删除
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-    <!-- 表格区域 -->
-    <div class="table-section">
-        <div class="common-table">
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
       <vxe-grid
         v-bind="gridOptions"
         :data="dataSource"
@@ -208,19 +147,22 @@
           <span>{{ formatDateTime(row.updatedAt) }}</span>
         </template>
       </vxe-grid>
+            </div>
+          </div>
         </div>
-    </div>
+      </template>
 
-    <!-- 分页区域 -->
-    <div class="pagination-section">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
-  </div>
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
 
     <!-- AI分析句子弹窗 -->
     <el-dialog
@@ -317,6 +259,7 @@
         >
       </template>
     </el-dialog>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
@@ -341,9 +284,9 @@ import {
   aiAnalyzeSentence,
 } from "@/api/sentence";
 import { commonGridOptions } from "@/common/table";
-import FormItem from "@/components/Erp/formItem.vue";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
-import CollapsibleFilterForm from "@/components/CollapsibleFilterForm/index.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import { useUserStore } from "@/store/modules/user";
 import { computed } from "vue";
@@ -731,34 +674,22 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
-/* 列表页面布局样式 */
-.list-page-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  padding: 1rem;
+:deep(.sentence-page) {
+  gap: 10px;
+  padding: 8px 0 0;
 }
 
-.filter-section {
-  margin: 0;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
+:deep(.sentence-page .list-page-layout__main) {
+  gap: 10px;
 }
 
-.filter-section > *:first-child {
-  margin-top: 0;
+:deep(.sentence-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
 }
 
-.table-section {
-  flex: 1;
-  min-height: 0;
-}
-
-.pagination-section {
-  padding: 1rem 0;
-  display: flex;
-  justify-content: flex-end;
-  flex-shrink: 0;
+:deep(.sentence-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
 }
 
 /* 句子内容样式优化 */
@@ -801,65 +732,4 @@ const submitForm = async () => {
 }
 
 /* 操作列样式优化 */
-.operation-dropdown {
-  margin-right: 8px;
-
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .el-icon {
-      margin-right: 4px;
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-}
-
-.operation-menu-compact {
-  min-width: 140px !important;
-  padding: 4px 0 !important;
-
-  .el-dropdown-menu__item {
-    padding: 8px 16px !important;
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    height: auto !important;
-    min-height: 32px !important;
-
-    .el-icon {
-      font-size: 14px !important;
-      width: 14px !important;
-      height: 14px !important;
-      margin-right: 6px !important;
-    }
-
-    span {
-      font-size: 13px !important;
-    }
-
-    &:hover {
-      background-color: var(--el-fill-color-light) !important;
-    }
-  }
-
-  .el-dropdown-menu__item--divided {
-    margin-top: 4px !important;
-    border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 8px !important;
-  }
-}
-
-.table-operation-column {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
 </style>

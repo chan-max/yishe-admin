@@ -1,55 +1,123 @@
 <template>
-  <div class="list-page-layout">
-    <!-- 过滤表单区域 -->
-    <div v-if="$slots.filter" class="filter-section">
+  <div class="list-page-layout" :class="{ 'has-sidebar': hasSidebar }">
+    <div v-if="$slots.filter" class="list-page-layout__filter">
       <slot name="filter"></slot>
     </div>
 
-    <!-- 表格区域 -->
-    <div class="table-section">
-      <slot name="table"></slot>
-    </div>
+    <div class="list-page-layout__body">
+      <aside
+        v-if="hasSidebar"
+        class="list-page-layout__sidebar"
+        :style="{ '--list-page-sidebar-width': props.sidebarWidth }"
+      >
+        <slot name="sidebar"></slot>
+      </aside>
 
-    <!-- 分页区域 -->
-    <div v-if="$slots.pagination" class="pagination-section">
-      <slot name="pagination"></slot>
+      <section class="list-page-layout__main">
+        <div class="list-page-layout__table">
+          <slot name="table"></slot>
+        </div>
+
+        <div v-if="$slots.pagination" class="list-page-layout__pagination">
+          <slot name="pagination"></slot>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, useSlots } from "vue";
+
 defineOptions({
-  name: 'ListPageLayout'
-})
+  name: "ListPageLayout",
+});
+
+const props = withDefaults(
+  defineProps<{
+    sidebarWidth?: string;
+  }>(),
+  {
+    sidebarWidth: "280px",
+  },
+);
+
+const slots = useSlots();
+const hasSidebar = computed(() => Boolean(slots.sidebar));
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .list-page-layout {
   display: flex;
+  min-height: 0;
   flex-direction: column;
-  height: 100%;
-  padding: 1rem; /* 统一的页面内边距 */
+  gap: 18px;
+  padding: 20px;
 }
 
-.filter-section {
-  margin: 0;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
+.list-page-layout__filter,
+.list-page-layout__sidebar,
+.list-page-layout__table,
+.list-page-layout__pagination {
+  min-width: 0;
 }
 
-.filter-section > *:first-child {
-  margin-top: 0;
+.list-page-layout__body {
+  display: flex;
+  min-height: 0;
+  gap: 18px;
+  align-items: stretch;
 }
 
-.table-section {
-  flex: 1;
+.list-page-layout__sidebar {
+  width: var(--list-page-sidebar-width);
+  flex: 0 0 var(--list-page-sidebar-width);
   min-height: 0;
 }
 
-.pagination-section {
-  padding: 1rem 0;
+.list-page-layout__main {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.list-page-layout__table {
+  min-height: 0;
+  flex: 1;
+}
+
+.list-page-layout__pagination {
   display: flex;
   justify-content: flex-end;
-  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .list-page-layout {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .list-page-layout.has-sidebar .list-page-layout__body {
+    flex-direction: column;
+  }
+
+  .list-page-layout__sidebar {
+    width: 100%;
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .list-page-layout {
+    padding: 14px;
+    gap: 14px;
+  }
+
+  .list-page-layout__main {
+    gap: 14px;
+  }
 }
 </style>

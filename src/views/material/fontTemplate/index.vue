@@ -1,43 +1,67 @@
 <template>
-  <div>
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <!-- 搜索输入框 -->
-      <div class="flex items-center gap-2">
-        <el-input v-model="queryParams.searchKeyword" placeholder="搜索字体名称、描述、关键字" style="width: 300px;" clearable
-          @keyup.enter="handleSearch" @clear="handleSearch">
-          <template #prefix>
-            <el-icon>
-              <Search />
-            </el-icon>
-          </template>
-        </el-input>
-        <el-button type="primary" @click="handleSearch" :icon="Search">
-          搜索
-        </el-button>
-        <el-button @click="handleReset">
-          重置
-        </el-button>
-      </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="font-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="10" :lg="8">
+                <el-form-item label="搜索">
+                  <el-input
+                    v-model="queryParams.searchKeyword"
+                    size="small"
+                    placeholder="搜索字体名称、描述、关键字"
+                    clearable
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  >
+                    <template #prefix>
+                      <el-icon><Search /></el-icon>
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="时间范围">
+                  <DateRangePicker
+                    @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
+              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button v-if="isAdmin" size="small" type="primary" @click="handleAdd" :icon="Plus">
+                新增字体
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="success"
+                @click="handleBatchAiGenerate"
+                :disabled="!ids.length"
+                :loading="batchAiLoading"
+              >
+                批量AI补全 ({{ ids.length }})
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="danger"
+                @click="handleBatchDelete"
+                :disabled="!ids.length"
+                :loading="batchDeleteLoading"
+              >
+                批量删除 ({{ ids.length }})
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-      <!-- 日期范围选择器 -->
-      <form-item class="date-range-picker">
-        <DateRangePicker
-          @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
-      </form-item>
-      <el-button v-if="isAdmin" type="primary" @click="handleAdd" :icon="Plus">
-        新增字体
-      </el-button>
-      <div v-if="isAdmin" class="flex shrink-0 gap-2">
-        <el-button type="success" @click="handleBatchAiGenerate" :disabled="!ids.length" :loading="batchAiLoading">
-          批量AI补全 ({{ ids.length }})
-        </el-button>
-        <el-button type="danger" @click="handleBatchDelete" :disabled="!ids.length" :loading="batchDeleteLoading">
-          批量删除 ({{ ids.length }})
-        </el-button>
-      </div>
-    </div>
-
-    <div class="flex relative overflow-visible">
+      <template #sidebar>
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar font-template-sidebar">
       <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
         <div class="h-full overflow-hidden">
           <div class="h-full w-[280px]">
@@ -55,8 +79,13 @@
           </el-icon>
         </div>
       </div>
+        </div>
+      </template>
 
-      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
         <div class="common-table">
           <vxe-grid class="font-template-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading"
@@ -163,14 +192,18 @@
             </template>
           </vxe-grid>
         </div>
+            </div>
+          </div>
+        </div>
+      </template>
 
-        <!-- 分页 -->
-        <div class=" flex justify-end">
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
           <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
             @pagination="getList" />
         </div>
-      </div>
-    </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="700px" @close="dialogClose" align-center>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
@@ -497,7 +530,7 @@
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -540,6 +573,9 @@ import { downloadFileByElement } from "@/common/download";
 import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
 import PsdPreview from '@/components/PsdPreview/index.vue'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
+import Pagination from '@/components/Pagination/index.vue'
 import { fontTemplateApi } from "@/api/fontTemplate";
 import { ImagePreview } from '@/components/ImagePreview';
 import { htmlToPngFile } from '@/utils/htmlToPng';
@@ -1577,6 +1613,28 @@ function closeImagePreview() {
 </script>
 
 <style scoped>
+.font-template-page {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+.font-template-page .list-page-layout__main {
+  gap: 10px;
+}
+
+.font-template-page .list-page-filter--flat {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.font-template-page .list-page-table-panel__pagination--flat {
+  padding-top: 10px;
+}
+
+.font-template-sidebar {
+  min-height: 100%;
+}
+
 .pb-4.flex,
 .search-bar {
   gap: 16px;

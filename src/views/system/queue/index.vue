@@ -1,80 +1,126 @@
 <template>
-  <div>
-    <!-- 搜索栏 -->
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <form-item label="任务ID">
-        <el-input v-model="queryParams.id" placeholder="留空则查询所有ID" style="width: 200px" clearable
-          @keyup.enter="getList" />
-      </form-item>
-      <form-item label="任务类型">
-        <el-select v-model="queryParams.type" placeholder="请选择任务类型" style="width: 200px" clearable
-          @keyup.enter="getList">
-          <el-option v-for="opt in TASK_TYPE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
-        </el-select>
-      </form-item>
-      <form-item label="任务状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" style="width: 160px" clearable>
-          <el-option label="待处理" value="pending" />
-          <el-option label="处理中" value="processing" />
-          <el-option label="已完成" value="completed" />
-          <el-option label="失败" value="failed" />
-        </el-select>
-      </form-item>
-      <form-item label="时间排序">
-        <el-select v-model="queryParams.sortType" style="width: 180px" @change="handleSortTypeChange">
-          <el-option label="创建时间倒序" value="createdAt_DESC" />
-          <el-option label="创建时间正序" value="createdAt_ASC" />
-          <el-option label="更新时间倒序" value="updatedAt_DESC" />
-          <el-option label="更新时间正序" value="updatedAt_ASC" />
-          <el-option label="完成时间倒序" value="processedAt_DESC" />
-          <el-option label="完成时间正序" value="processedAt_ASC" />
-        </el-select>
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增任务 </el-button>
-      <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
-        批量删除
-      </el-button>
-    </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="queue-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form
+            :model="queryParams"
+            label-position="top"
+            class="list-page-search-form"
+          >
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+                <el-form-item label="任务 ID">
+                  <el-input
+                    v-model="queryParams.id"
+                    size="small"
+                    clearable
+                    placeholder="留空则查询全部"
+                    @keyup.enter="getList"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+                <el-form-item label="任务类型">
+                  <el-select
+                    v-model="queryParams.type"
+                    size="small"
+                    clearable
+                    placeholder="全部类型"
+                    @change="getList"
+                    @clear="handleTypeClear"
+                  >
+                    <el-option
+                      v-for="opt in TASK_TYPE_OPTIONS"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+                <el-form-item label="任务状态">
+                  <el-select
+                    v-model="queryParams.status"
+                    size="small"
+                    clearable
+                    placeholder="全部状态"
+                    @change="getList"
+                  >
+                    <el-option label="待处理" value="pending" />
+                    <el-option label="处理中" value="processing" />
+                    <el-option label="已完成" value="completed" />
+                    <el-option label="失败" value="failed" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="7" :xl="8">
+                <el-form-item label="时间排序">
+                  <el-select
+                    v-model="queryParams.sortType"
+                    size="small"
+                    placeholder="请选择排序"
+                    @change="handleSortTypeChange"
+                  >
+                    <el-option label="创建时间倒序" value="createdAt_DESC" />
+                    <el-option label="创建时间正序" value="createdAt_ASC" />
+                    <el-option label="更新时间倒序" value="updatedAt_DESC" />
+                    <el-option label="更新时间正序" value="updatedAt_ASC" />
+                    <el-option label="完成时间倒序" value="processedAt_DESC" />
+                    <el-option label="完成时间正序" value="processedAt_ASC" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增任务</el-button>
+              <el-button
+                v-admin-only
+                size="small"
+                type="danger"
+                :icon="Delete"
+                :disabled="!ids.length"
+                @click="handleDelete(null)"
+              >
+                批量删除
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-    <!-- 统计信息卡片 -->
-    <div class="mb-4 grid grid-cols-5 gap-4">
-      <el-card shadow="hover">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-blue-600">{{ stats.pending }}</div>
-          <div class="text-sm text-gray-500 mt-1">待处理</div>
-        </div>
-      </el-card>
-      <el-card shadow="hover">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-orange-600">{{ stats.processing }}</div>
-          <div class="text-sm text-gray-500 mt-1">处理中</div>
-        </div>
-      </el-card>
-      <el-card shadow="hover">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-green-600">{{ stats.completed }}</div>
-          <div class="text-sm text-gray-500 mt-1">已完成</div>
-        </div>
-      </el-card>
-      <el-card shadow="hover">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-red-600">{{ stats.failed }}</div>
-          <div class="text-sm text-gray-500 mt-1">失败</div>
-        </div>
-      </el-card>
-      <el-card shadow="hover">
-        <div class="text-center">
-          <div class="text-2xl font-bold text-gray-600">{{ stats.total }}</div>
-          <div class="text-sm text-gray-500 mt-1">总计</div>
-        </div>
-      </el-card>
-    </div>
+      <template #table>
+        <div class="queue-page__main">
+          <div class="queue-page__stats">
+            <div class="queue-stat-card">
+              <span class="queue-stat-card__label">待处理</span>
+              <span class="queue-stat-card__value queue-stat-card__value--pending">{{ stats.pending }}</span>
+            </div>
+            <div class="queue-stat-card">
+              <span class="queue-stat-card__label">处理中</span>
+              <span class="queue-stat-card__value queue-stat-card__value--processing">{{ stats.processing }}</span>
+            </div>
+            <div class="queue-stat-card">
+              <span class="queue-stat-card__label">已完成</span>
+              <span class="queue-stat-card__value queue-stat-card__value--completed">{{ stats.completed }}</span>
+            </div>
+            <div class="queue-stat-card">
+              <span class="queue-stat-card__label">失败</span>
+              <span class="queue-stat-card__value queue-stat-card__value--failed">{{ stats.failed }}</span>
+            </div>
+            <div class="queue-stat-card">
+              <span class="queue-stat-card__label">总计</span>
+              <span class="queue-stat-card__value">{{ stats.total }}</span>
+            </div>
+          </div>
 
-    <!-- 表格展示 -->
-    <div class="common-table">
-      <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange">
+          <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+            <div class="list-page-table-panel__body">
+              <div class="common-table">
+                <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
+                  @checkbox-all="checkboxAllChange">
         <template #statusDefaultSlot="{ row }">
           <el-tag :type="getStatusType(row.status)">
             {{ getStatusText(row.status) }}
@@ -125,14 +171,26 @@
             </template>
           </el-dropdown>
         </template>
-      </vxe-grid>
-    </div>
+                </vxe-grid>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
 
-    <!-- 分页 -->
-    <div class="py-4 flex justify-end">
-      <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
-        @pagination="getList" />
-    </div>
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
 
     <!-- 新增任务对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="700px" :center="false" align-center
@@ -284,7 +342,7 @@
         </div>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -310,9 +368,10 @@ import {
   type QueueStats,
 } from '@/api/system/queue'
 import { regeneratePublishTaskApi } from '@/api/product/publishConfig'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import Pagination from '@/components/Pagination/index.vue'
 import { useUserStore } from '@/store/modules/user'
-import FormItem from '@/components/Erp/formItem.vue'
 import { TASK_TYPE_OPTIONS } from '@/config/task-types'
 
 const userStore = useUserStore()
@@ -1145,6 +1204,74 @@ onMounted(() => {
 })
 </script>
 <style lang="less">
+.queue-page {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+.queue-page .list-page-layout__main {
+  gap: 10px;
+}
+
+.queue-page .list-page-filter--flat {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.queue-page .list-page-table-panel__pagination--flat {
+  padding-top: 10px;
+}
+
+.queue-page__main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.queue-page__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.queue-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.queue-stat-card__label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.56);
+  line-height: 1.2;
+}
+
+.queue-stat-card__value {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.1;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.queue-stat-card__value--pending {
+  color: #d8b36a;
+}
+
+.queue-stat-card__value--processing {
+  color: #67a4ff;
+}
+
+.queue-stat-card__value--completed {
+  color: #6cc28b;
+}
+
+.queue-stat-card__value--failed {
+  color: #ef6b73;
+}
+
 .table-operation-column {
   gap: 8px;
 }
@@ -1366,12 +1493,22 @@ onMounted(() => {
 }
 
 @media (max-width: 960px) {
+  .queue-page__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .queue-json-editor-layout {
     grid-template-columns: 1fr;
   }
 
   .queue-runtime-shell {
     height: calc(100vh - 132px);
+  }
+}
+
+@media (max-width: 640px) {
+  .queue-page__stats {
+    grid-template-columns: 1fr;
   }
 }
 </style>

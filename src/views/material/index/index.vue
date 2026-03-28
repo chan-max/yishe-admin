@@ -1,9 +1,9 @@
 ﻿<template>
   <div>
     <!-- PC端显示搜索栏，移动端使用筛选对话框 -->
-    <div v-show="!isMobile" class="search-bar">
+    <div v-show="!isMobile" class="search-bar list-page-filter list-page-filter--flat material-index-filter">
       <!-- 搜索表单容器 -->
-      <div class="search-form-container">
+      <div class="search-form-container material-index-search-form">
         <!-- AI 提示词搜索 -->
         <div class="search-field search-field-wide">
           <label class="search-label">提示词</label>
@@ -1167,7 +1167,7 @@
         </div>
 
         <!-- 分页 -->
-        <div class="flex justify-end" style="margin-bottom: 24px; margin-top: 16px;">
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat material-index-pagination">
           <pagination v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize" :total="total"
             @pagination="getList" />
         </div>
@@ -6563,6 +6563,19 @@ h1 {
 </style>
 
 <style lang="less" scoped>
+.material-index-filter {
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.material-index-search-form {
+  width: 100%;
+}
+
+.material-index-pagination {
+  margin-top: 12px;
+}
+
 .batch-detail-config-content {
   display: flex;
   flex-direction: column;

@@ -8,7 +8,8 @@ import {
   updatePublishConfigApi,
   deletePublishConfigApi
 } from '@/api/product/publishConfig'
-import { ContentWrap } from '@/components/ContentWrap'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { formatTime } from '@/utils'
 import { commonGridOptions } from "@/common/table"
 import { useWindowSize } from "@vueuse/core"
@@ -418,36 +419,49 @@ onMounted(() => {
 </script>
 
 <template>
-  <ContentWrap>
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-         <!-- Search logic could be improved with backend support -->
-        <el-button type="primary" @click="handleSearch">刷新</el-button>
-              <el-button v-admin-only
-                type="danger" 
-                :disabled="selectedIds.length === 0"
-                @click="handleBatchDelete"
-              >
-                批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
-              </el-button>
-      </div>
-      <div>
-        <el-button type="primary" @click="handleAdd">新增配置</el-button>
-      </div>
-    </div>
-
-    <vxe-grid
-      v-bind="gridOptions"
-      :data="tableData"
-      :loading="loading"
-      @checkbox-change="handleSelectionChange"
-      @checkbox-all="handleSelectionChange"
-    >
-      <template #action="{ row }">
-        <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-        <el-button v-admin-only link type="danger" @click="handleDelete(row)">删除</el-button>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="publish-config-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <div class="list-page-search-form__actions">
+            <el-button size="small" type="primary" @click="handleSearch">刷新</el-button>
+            <el-button
+              v-admin-only
+              size="small"
+              type="danger"
+              :disabled="selectedIds.length === 0"
+              @click="handleBatchDelete"
+            >
+              批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
+            </el-button>
+            <el-button size="small" type="primary" @click="handleAdd">新增配置</el-button>
+          </div>
+        </div>
       </template>
-    </vxe-grid>
+
+      <template #table>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="tableData"
+                :loading="loading"
+                @checkbox-change="handleSelectionChange"
+                @checkbox-all="handleSelectionChange"
+              >
+                <template #action="{ row }">
+                  <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+                  <el-button v-admin-only link type="danger" @click="handleDelete(row)">删除</el-button>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog :title="dialogTitle" v-model="dialogVisible" :fullscreen="true" class="publish-config-dialog">
       <div class="publish-config-dialog__body">
@@ -709,6 +723,19 @@ onMounted(() => {
 
 
 <style scoped lang="less">
+:deep(.publish-config-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.publish-config-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.publish-config-page .list-page-filter--flat) {
+  padding-bottom: 10px;
+}
+
 .publish-config-dialog {
   :deep(.el-dialog) {
     height: 100vh;

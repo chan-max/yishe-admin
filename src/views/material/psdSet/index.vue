@@ -1,6 +1,6 @@
 <template>
-  <ContentWrap class="psd-set-page">
-    <div class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar">
+  <ContentWrap :plain="true" class="psd-set-page">
+    <div class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar list-page-filter list-page-filter--flat">
       <div style="flex: 1"></div>
       <form-item label="ID">
         <el-input
@@ -110,7 +110,7 @@
       </div>
     </div>
 
-    <div class="common-table">
+    <div class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
       <vxe-grid
         v-bind="gridOptions"
         :data="dataSource"
@@ -880,7 +880,7 @@
       </template>
     </el-dialog>
 
-    <div class="pagination-container">
+    <div class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
       <pagination
         :total="total"
         v-model:page="queryParams.currentPage"
@@ -2286,6 +2286,19 @@ getList();
 </script>
 
 <style scoped>
+.psd-set-page {
+  padding-top: 8px;
+}
+
+.psd-set-page :deep(.list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.psd-set-page :deep(.list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+
 .search-bar :deep(.el-form-item) {
   margin-bottom: 0;
 }

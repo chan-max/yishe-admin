@@ -1,23 +1,23 @@
 :root {
-  --login-bg-color: #000000;
+  --login-bg-color: #141414;
 
   --left-menu-max-width: 280px;
 
   --left-menu-min-width: 64px;
 
-  --left-menu-bg-color: #101217;
+  --left-menu-bg-color: #141414;
 
-  --left-menu-bg-light-color: #181c24;
+  --left-menu-bg-light-color: #181818;
 
-  --left-menu-bg-active-color: #1c2330;
+  --left-menu-bg-active-color: #1d1d1d;
 
   --left-menu-text-color: #b9c0cc;
 
   --left-menu-text-active-color: #8cbcff;
 
-  --left-menu-collapse-bg-active-color: #1c2330;
+  --left-menu-collapse-bg-active-color: #1d1d1d;
 
-  --left-menu-border-color: #343b48;
+  --left-menu-border-color: #3a3a3a;
   /* left menu end */
 
   /* logo start */
@@ -27,11 +27,11 @@
   /* logo end */
 
   /* header start */
-  --top-header-bg-color: #141821;
+  --top-header-bg-color: #141414;
 
   --top-header-text-color: #d8dde6;
 
-  --top-header-hover-color: #1d2330;
+  --top-header-hover-color: #1d1d1d;
 
   --top-tool-height: 50px;
 

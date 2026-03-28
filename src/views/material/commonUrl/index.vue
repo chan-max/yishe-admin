@@ -1,27 +1,36 @@
 <template>
-  <div>
-    <div class="py-4 flex justify-between gap-4 items-center">
-      <div style="flex: 1"></div>
-      <div class="shrink-0">
-        <el-button type="primary" :icon="Plus" @click="handleAdd"> 新增 </el-button>
-        <el-button 
-          type="danger" 
-          :icon="Delete" 
-          @click="handleDelete(null)"
-          :disabled="!ids.length"
+  <ContentWrap :plain="true">
+    <ListPageLayout class="common-url-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <div class="list-page-search-form__actions">
+            <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
+            <el-button
+              size="small"
+              type="danger"
+              :icon="Delete"
+              :disabled="!ids.length"
+              @click="handleDelete(null)"
+            >
+              批量删除 ({{ ids.length }})
+            </el-button>
+          </div>
+        </div>
+      </template>
+
+      <template #table>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
         >
-          批量删除 ({{ ids.length }})
-        </el-button>
-      </div>
-    </div>
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
         <template #operationDefaultSlot="{ row }">
           <div class="flex table-operation-column">
             <el-button type="primary" link size="small" @click="handleEdit(row)">
@@ -84,21 +93,31 @@
           <span>{{ row.user?.name || '-' }}</span>
         </template>
         <template #createTimeSlot="{ row }">
-          <span>{{ formatDateTime(row.createTime) }}</span>
+          <span class="table-time-text">{{ formatDateTime(row.createTime) }}</span>
         </template>
         <template #updateTimeSlot="{ row }">
-          <span>{{ formatDateTime(row.updateTime) }}</span>
+          <span class="table-time-text">{{ formatDateTime(row.updateTime) }}</span>
         </template>
-      </vxe-grid>
-    </div>
-    <div class="py-4 flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
+
     <el-dialog
       :title="dialogTitle"
       v-model="dialogVisible"
@@ -196,7 +215,7 @@
         <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
@@ -204,8 +223,11 @@ import { ref, reactive, onMounted, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Plus } from '@element-plus/icons-vue'
 import { getCommonUrlList, createCommonUrl, updateCommonUrl, deleteCommonUrl } from '@/api/commonUrl'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
+import Pagination from '@/components/Pagination/index.vue'
 
 const queryParams = reactive({
   currentPage: 1,
@@ -228,9 +250,9 @@ const gridOptions = ref({
     { title: '状态', field: 'isActive', width: 80, slots: { default: 'statusSlot' } },
     { title: '排序', field: 'sort', width: 80 },
     { title: '创建用户', field: 'user', width: 120, slots: { default: 'userSlot' } },
-    { title: '创建时间', field: 'createTime', width: 160, slots: { default: 'createTimeSlot' } },
-    { title: '更新时间', field: 'updateTime', width: 160, slots: { default: 'updateTimeSlot' } },
-    { title: '操作', fixed: 'right', width: 120, slots: { default: 'operationDefaultSlot' } }
+    { ...buildTimeColumn('创建时间', 'createTime', 160), slots: { default: 'createTimeSlot' } },
+    { ...buildTimeColumn('更新时间', 'updateTime', 160), slots: { default: 'updateTimeSlot' } },
+    buildOperationColumn('operationDefaultSlot')
   ]
 })
 
@@ -498,6 +520,23 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+:deep(.common-url-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.common-url-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.common-url-page .list-page-filter--flat) {
+  padding-bottom: 10px;
+}
+
+:deep(.common-url-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+
 .text-wrap {
   white-space: normal;
   line-height: 1.5;
@@ -513,16 +552,16 @@ const submitForm = async () => {
 .keyword-tag {
   margin: 2px;
   font-size: 12px;
-  border-radius: 12px;
-  background-color: #f0f9ff;
-  border-color: #0ea5e9;
-  color: #0369a1;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .keyword-tag:hover {
-  background-color: #e0f2fe;
-  border-color: #0284c7;
-  color: #0c4a6e;
+  background-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .form-tip {

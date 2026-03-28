@@ -1,48 +1,78 @@
 <template>
-  <ContentWrap>
-    <div class="flex flex-wrap items-center justify-between gap-3 py-3">
-      <div class="flex flex-wrap items-center gap-3">
-        <form-item label="关键词">
-          <el-input
-            v-model="queryParams.keyword"
-            placeholder="标题"
-            class="w-60"
-            clearable
-            @keyup.enter="getList"
-            @change="handleKeywordChange"
-          />
-        </form-item>
-        <form-item label="状态">
-          <el-select
-            v-model="queryParams.status"
-            class="w-36 min-w-[144px]"
-            clearable
-            placeholder="全部状态"
-            @change="getList"
+  <ContentWrap :plain="true">
+    <ListPageLayout class="remotion-record-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form
+            :model="queryParams"
+            label-position="top"
+            class="list-page-search-form"
           >
-            <el-option label="处理中" value="processing" />
-            <el-option label="成功" value="success" />
-            <el-option label="失败" value="failed" />
-          </el-select>
-        </form-item>
-        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        <el-button type="danger" :icon="Delete" @click="handleBatchDelete">批量删除({{ selectedRows.length }})</el-button>
-      </div>
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+                <el-form-item label="关键词">
+                  <el-input
+                    v-model="queryParams.keyword"
+                    size="small"
+                    clearable
+                    placeholder="标题"
+                    @keyup.enter="getList"
+                    @change="handleKeywordChange"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+                <el-form-item label="状态">
+                  <el-select
+                    v-model="queryParams.status"
+                    size="small"
+                    clearable
+                    placeholder="全部状态"
+                    @change="getList"
+                  >
+                    <el-option label="处理中" value="processing" />
+                    <el-option label="成功" value="success" />
+                    <el-option label="失败" value="failed" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="24" :md="8" :lg="13" :xl="14">
+                <el-form-item label="服务状态">
+                  <div class="remotion-record-page__status-bar">
+                    <el-tag :type="remotionStatusTagType" size="small">
+                      Remotion 服务 {{ remotionStatusLabel }}
+                    </el-tag>
+                    <span
+                      class="remotion-record-page__status-text"
+                      :title="remotionStatus.message || remotionStatus.baseUrl"
+                    >
+                      {{ remotionStatus.message || remotionStatus.baseUrl || '-' }}
+                    </span>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="danger" :icon="Delete" @click="handleBatchDelete">
+                批量删除({{ selectedRows.length }})
+              </el-button>
+              <el-button size="small" @click="checkRemotionHealth" :loading="remotionStatus.loading">
+                刷新状态
+              </el-button>
+              <el-button size="small" type="primary" @click="openCreateDialog()">新增</el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-      <div class="flex flex-wrap items-center gap-2">
-        <el-tag :type="remotionStatusTagType" size="small">
-          Remotion 服务 {{ remotionStatusLabel }}
-        </el-tag>
-        <span class="max-w-[320px] truncate text-xs text-[var(--el-text-color-secondary)]" :title="remotionStatus.message">
-          {{ remotionStatus.message || remotionStatus.baseUrl }}
-        </span>
-        <el-button size="small" @click="checkRemotionHealth" :loading="remotionStatus.loading">刷新状态</el-button>
-        <el-button type="primary" plain @click="openCreateDialog()">新增</el-button>
-      </div>
-    </div>
-
-    <div class="common-table">
-        <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
+      <template #table>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
           <template #titleSlot="{ row }">
             <div class="record-title-cell">
               <div class="record-title-text">
@@ -83,7 +113,7 @@
             </div>
           </template>
           <template #createTimeSlot="{ row }">
-            <span>{{ formatTimestamp(row.createTime) }}</span>
+            <span class="table-time-text">{{ formatTimestamp(row.createTime) }}</span>
           </template>
           <template #operationDefaultSlot="{ row }">
             <div class="flex items-center">
@@ -107,17 +137,25 @@
               </el-dropdown>
             </div>
           </template>
-        </vxe-grid>
-    </div>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
 
-    <div class="flex justify-end py-4">
-      <Pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
   </ContentWrap>
 
   <el-dialog v-model="createVisible" title="新增视频制作" fullscreen destroy-on-close class="remotion-create-dialog">
@@ -243,7 +281,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown, Delete, Search, View } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { formatTimestamp } from '@/common/date'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
 import {
   deleteRemotionVideoRecord,
   batchDeleteRemotionVideoRecord,
@@ -254,7 +292,7 @@ import {
   getRemotionVideoRecordPage,
 } from '@/api/remotion-video-record'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
-import FormItem from '@/components/Erp/formItem.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import Pagination from '@/components/Pagination/index.vue'
 
 const { height } = useWindowSize()
@@ -331,8 +369,8 @@ const gridOptions = computed(() => ({
     { title: '标题', field: 'title', minWidth: 260, slots: { default: 'titleSlot' } },
     { title: '模板', field: 'templateName', minWidth: 220, slots: { default: 'templateSlot' } },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
-    { title: '创建时间', field: 'createTime', width: 180, slots: { default: 'createTimeSlot' } },
-    { title: '操作', field: 'operation', width: 120, fixed: 'right', slots: { default: 'operationDefaultSlot' } },
+    { ...buildTimeColumn('创建时间', 'createTime', 180), slots: { default: 'createTimeSlot' } },
+    buildOperationColumn('operationDefaultSlot'),
   ],
 }))
 
@@ -674,6 +712,42 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+:deep(.remotion-record-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.remotion-record-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.remotion-record-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.remotion-record-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+
+.remotion-record-page__status-bar {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 10px;
+}
+
+.remotion-record-page__status-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .record-title-cell,
 .record-template-cell,
 .record-video-cell,

@@ -5,20 +5,12 @@ import { useRouter } from 'vue-router'
 import { usePermissionStore } from '@/store/modules/permission'
 import { filterBreadcrumb } from './helper'
 import { filter, treeToList } from '@/utils/tree'
-import type { RouteLocationNormalizedLoaded, RouteMeta } from 'vue-router'
-
-import { Icon } from '@/components/Icon'
-import { useAppStore } from '@/store/modules/app'
+import type { RouteLocationNormalizedLoaded } from 'vue-router'
 import { useDesign } from '@/hooks/web/useDesign'
 
 const { getPrefixCls } = useDesign()
 
 const prefixCls = getPrefixCls('breadcrumb')
-
-const appStore = useAppStore()
-
-// 面包屑图标
-const breadcrumbIcon = computed(() => appStore.getBreadcrumbIcon)
 
 export default defineComponent({
   name: 'Breadcrumb',
@@ -48,17 +40,9 @@ export default defineComponent({
       const breadcrumbList = treeToList<AppRouteRecordRaw[]>(unref(levelList))
       return breadcrumbList.map((v) => {
         const disabled = !v.redirect || v.redirect === 'noredirect'
-        const meta = v.meta as RouteMeta
         return (
           <ElBreadcrumbItem to={{ path: disabled ? '' : v.path }} key={v.name}>
-            {meta?.icon && breadcrumbIcon.value ? (
-              <div class="flex items-center">
-                <Icon icon={meta.icon} class="mr-[2px]" svgClass="inline-block"></Icon>
-                {t(v?.meta?.title)}
-              </div>
-            ) : (
-              t(v?.meta?.title)
-            )}
+            <span class={`${prefixCls}__label`}>{t(v?.meta?.title)}</span>
           </ElBreadcrumbItem>
         )
       })
@@ -78,7 +62,7 @@ export default defineComponent({
     )
 
     return () => (
-      <ElBreadcrumb separator="/" class={`${prefixCls} flex items-center h-full ml-[10px]`}>
+      <ElBreadcrumb separator="/" class={`${prefixCls} flex items-center h-full ml-[4px]`}>
         <TransitionGroup appear enter-active-class="animate__animated animate__fadeInRight">
           {renderBreadcrumb()}
         </TransitionGroup>
@@ -92,15 +76,35 @@ export default defineComponent({
 $prefix-cls: #{$elNamespace}-breadcrumb;
 
 .#{$prefix-cls} {
+  font-size: 11px;
+
+  &__label {
+    display: inline-flex;
+    align-items: center;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :deep(.#{$prefix-cls}__separator) {
+    margin: 0 6px;
+    color: rgba(255, 255, 255, 0.24);
+    font-size: 10px;
+  }
+
   :deep(.#{$prefix-cls}__item) {
     display: flex;
+
     .#{$prefix-cls}__inner {
       display: flex;
       align-items: center;
-      color: var(--top-header-text-color);
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 11px;
+      font-weight: 400;
 
       &:hover {
-        color: var(--el-color-primary);
+        color: rgba(255, 255, 255, 0.72);
       }
     }
   }
@@ -119,10 +123,12 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
     .#{$prefix-cls}__inner {
       display: flex;
       align-items: center;
-      color: var(--el-text-color-placeholder);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 11px;
+      font-weight: 500;
 
       &:hover {
-        color: var(--el-text-color-placeholder);
+        color: rgba(255, 255, 255, 0.88);
       }
     }
   }

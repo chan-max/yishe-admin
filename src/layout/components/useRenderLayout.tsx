@@ -2,7 +2,6 @@ import { computed, type Ref } from 'vue'
 import { ElScrollbar } from 'element-plus'
 import { Menu } from '@/layout/components/Menu'
 import { TagsView } from '@/layout/components/TagsView'
-import { Logo } from '@/layout/components/Logo'
 import AppView from './AppView.vue'
 import ToolHeader from './ToolHeader.vue'
 import { useAppStore } from '@/store/modules/app'
@@ -14,7 +13,6 @@ const appStore = useAppStore()
 
 const pageLoading = computed(() => appStore.getPageLoading)
 const tagsView = computed(() => appStore.getTagsView)
-const logo = computed(() => appStore.logo)
 const fixedHeader = computed(() => appStore.getFixedHeader)
 const mobile = computed(() => appStore.getMobile)
 
@@ -38,7 +36,7 @@ export const useRenderLayout = ({ mobileMenuOpen, closeMobileMenu }: RenderLayou
           class={[
             'absolute top-0 left-0 h-full border-r border-[var(--left-menu-border-color)] bg-[var(--left-menu-bg-color)]',
             {
-              'z-[30] shadow-[inset_-1px_0_0_rgba(255,255,255,0.04),8px_0_24px_rgba(0,0,0,0.18)]':
+              'z-[30] shadow-[inset_-1px_0_0_rgba(255,255,255,0.05),1px_0_0_rgba(255,255,255,0.1),10px_0_28px_rgba(0,0,0,0.22)]':
                 !mobile.value,
               'z-[1401]':
                 mobile.value,
@@ -50,10 +48,7 @@ export const useRenderLayout = ({ mobileMenuOpen, closeMobileMenu }: RenderLayou
             }
           ]}
         >
-          {logo.value ? (
-            <Logo class="relative w-full border-b border-[var(--left-menu-border-color)]" />
-          ) : undefined}
-          <Menu class={[{ '!h-[calc(100%-var(--logo-height)-12px)]': logo.value }]} />
+          <Menu />
         </aside>
 
         <main

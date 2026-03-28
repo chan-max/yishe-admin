@@ -2,8 +2,10 @@
 import { Icon } from '@/components/Icon'
 import { useDesign } from '@/hooks/web/useDesign'
 import { usePermissionStore } from '@/store/modules/permission'
+import { useAppStore } from '@/store/modules/app'
 import { isUrl } from '@/utils/is'
 import { pathResolve } from '@/utils/routerHelper'
+import { Logo } from '@/layout/components/Logo'
 
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('menu')
@@ -11,9 +13,11 @@ const prefixCls = getPrefixCls('menu')
 export default defineComponent({
   name: 'Menu',
   setup() {
+    const appStore = useAppStore()
     const permissionStore = usePermissionStore()
     const { push, currentRoute } = useRouter()
     const closeMobileMenu = inject<() => void>('closeMobileMenu', () => {})
+    const logo = computed(() => appStore.logo)
 
     const routers = computed(() => permissionStore.getRouters.filter((route) => !route.meta?.hidden))
     const activeMenu = computed(() => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path)
@@ -69,6 +73,12 @@ export default defineComponent({
     return () => (
       <nav id={prefixCls} class={`${prefixCls} h-full`}>
         <div class={`${prefixCls}__panel`}>
+          {logo.value ? (
+            <div class={`${prefixCls}__logo`}>
+              <Logo class={`${prefixCls}__logo-inner`} />
+            </div>
+          ) : undefined}
+
           {routers.value.map((route) => {
             const routePath = getRoutePath(route)
             const children = getVisibleChildren(route)
@@ -161,7 +171,7 @@ $prefix-cls: #{$namespace}-menu;
 .#{$prefix-cls} {
   height: 100%;
   border-right: 1px solid var(--left-menu-border-color, #2f3542);
-  background: linear-gradient(180deg, #101217 0%, #161922 100%);
+  background: var(--left-menu-bg-color, #141414);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: rgba(143, 154, 173, 0.45) transparent;
@@ -191,10 +201,22 @@ $prefix-cls: #{$namespace}-menu;
     padding: 8px 7px 18px;
   }
 
+  &__logo {
+    position: relative;
+    padding: 0 0 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  &__logo-inner {
+    width: 100%;
+    border: 0 !important;
+  }
+
   &__section {
     width: 100%;
     padding: 5px 0 7px;
-    border-bottom: 1px solid #222834;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   &__section--leaf {
@@ -218,7 +240,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__section-head:hover {
-    background: #191e27;
+    background: #1a1a1a;
   }
 
   &__section-label {
@@ -251,7 +273,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__section--active > .#{$prefix-cls}__section-head {
-    background: #171c26;
+    background: #1a1a1a;
   }
 
   &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-icon,
@@ -284,14 +306,14 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__link:hover {
-    background: #171c24;
-    border-color: #2f3745;
+    background: #1a1a1a;
+    border-color: rgba(255, 255, 255, 0.1);
     color: #ffffff;
   }
 
   &__link--active {
-    background: #1c2330;
-    border-color: #314159;
+    background: #1d1d1d;
+    border-color: rgba(255, 255, 255, 0.12);
     color: #8cbcff;
   }
 

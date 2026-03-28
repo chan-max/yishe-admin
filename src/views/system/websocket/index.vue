@@ -1,31 +1,35 @@
 <template>
-  <div class="flex flex-col gap-4 p-4">
-    <ContentWrap>
-      <div class="flex flex-wrap items-start justify-between gap-3 py-3">
-        <div class="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-          <el-button type="primary" @click="fetchConnections" :loading="loading">
-            <Icon icon="ep:refresh" class="mr-5px" /> 刷新
-          </el-button>
-          <el-switch v-model="autoRefresh" active-text="自动刷新" />
-          <span class="text-sm text-[var(--el-text-color-secondary)]">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="websocket-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <div class="list-page-search-form__actions">
+            <el-button size="small" type="primary" @click="fetchConnections" :loading="loading">
+              <Icon icon="ep:refresh" class="mr-5px" /> 刷新
+            </el-button>
+            <el-switch v-model="autoRefresh" active-text="自动刷新" />
+            <span class="text-sm text-[var(--el-text-color-secondary)]">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
+            <el-tag :type="adminWsStatusTag.type" size="small">
+              管理后台: {{ adminWsStatusTag.text }}
+            </el-tag>
+            <span v-if="adminConnectionId" class="admin-connection-id">ID: {{ adminConnectionId }}</span>
+          </div>
         </div>
-        <div class="flex shrink-0 items-center gap-1.5">
-          <el-tag :type="adminWsStatusTag.type" size="small">
-            管理后台: {{ adminWsStatusTag.text }}
-          </el-tag>
-          <span v-if="adminConnectionId" class="admin-connection-id">ID: {{ adminConnectionId }}</span>
-        </div>
-      </div>
+      </template>
+
+      <template #table>
 
       <el-empty v-if="!loading && connections.length === 0" description="暂无连接" />
 
-      <div v-else class="common-table">
-        <vxe-grid
-          v-bind="gridOptions"
-          :data="connections"
-          :loading="loading"
-          ref="gridRef"
-        >
+      <div v-else class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div class="list-page-table-panel__body">
+          <div class="common-table">
+            <vxe-grid
+              v-bind="gridOptions"
+              :data="connections"
+              :loading="loading"
+              ref="gridRef"
+            >
           <template #duration_default="{ row }">
             {{ formatPast(row.connectedAt) }}
           </template>
@@ -70,9 +74,12 @@
               </template>
             </el-dropdown>
           </template>
-        </vxe-grid>
+            </vxe-grid>
+          </div>
+        </div>
       </div>
-    </ContentWrap>
+      </template>
+    </ListPageLayout>
 
     <!-- 操控全屏弹窗 -->
     <el-dialog
@@ -217,7 +224,7 @@
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script lang="ts" setup>
@@ -227,6 +234,8 @@ import { useMessage } from '@/hooks/web/useMessage'
 import { formatPast } from '@/utils/formatTime'
 import { useWindowSize } from '@vueuse/core'
 import { commonGridOptions } from '@/common/table'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import * as WebsocketApi from '@/api/system/websocket'
 import type {
   WebsocketConnectionVO,
@@ -897,6 +906,19 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+:deep(.websocket-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.websocket-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.websocket-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
 
 .admin-connection-id {
   font-size: 11px;

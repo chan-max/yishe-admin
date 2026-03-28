@@ -1,77 +1,95 @@
 <template>
-  <div>
-    <div class="search-form-container">
-      <form-item label="ID搜索">
-        <el-input v-model="queryParams.id" clearable placeholder="请输入模板ID" style="width: 200px"
-          @keyup.enter="getList"></el-input>
-      </form-item>
-      <form-item label="搜索">
-        <el-input v-model="queryParams.searchKeyword" clearable placeholder="请输入名称、关键词或描述" style="width: 200px"
-          @keyup.enter="getList"></el-input>
-      </form-item>
-      <form-item label="排序方式">
-        <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
-          <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
-      </form-item>
-      <form-item label="是否可用">
-        <el-select v-model="queryParams.enabled" style="width: 140px" clearable placeholder="全部" @change="getList">
-          <el-option label="可用" :value="true" />
-          <el-option label="不可用" :value="false" />
-        </el-select>
-      </form-item>
-      <form-item label="适合尺寸">
-        <el-select
-          v-model="queryParams.suitableSizesArray"
-          style="width: 280px"
-          clearable
-          multiple
-          collapse-tags
-          collapse-tags-tooltip
-          placeholder="请选择适合尺寸"
-          popper-class="psd-size-select-dropdown"
-          @change="handleQuerySuitableSizesChange"
-        >
-          <el-option
-            v-for="config in sizeConfigs"
-            :key="config.key"
-            :label="getFullLabel(config)"
-            :value="config.key"
-          />
-        </el-select>
-      </form-item>
-      <form-item label="抠图支持">
-        <el-select
-          v-model="queryParams.cutoutModesArray"
-          style="width: 220px"
-          clearable
-          multiple
-          collapse-tags
-          collapse-tags-tooltip
-          placeholder="请选择抠图支持"
-          popper-class="psd-size-select-dropdown"
-          @change="handleQueryCutoutModesChange"
-        >
-          <el-option
-            v-for="item in cutoutModeOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </form-item>
-      <div class="search-actions">
-        <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
-        <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
-          新增
-        </el-button>
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)">
-          批量删除
-        </el-button>
-      </div>
-    </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="psd-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="ID搜索">
+                  <el-input v-model="queryParams.id" size="small" clearable placeholder="请输入模板ID" @keyup.enter="getList" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="搜索">
+                  <el-input v-model="queryParams.searchKeyword" size="small" clearable placeholder="请输入名称、关键词或描述" @keyup.enter="getList" />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="排序方式">
+                  <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
+                    <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="是否可用">
+                  <el-select v-model="queryParams.enabled" size="small" clearable placeholder="全部" @change="getList">
+                    <el-option label="可用" :value="true" />
+                    <el-option label="不可用" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="12" :lg="5">
+                <el-form-item label="适合尺寸">
+                  <el-select
+                    v-model="queryParams.suitableSizesArray"
+                    size="small"
+                    clearable
+                    multiple
+                    collapse-tags
+                    collapse-tags-tooltip
+                    placeholder="请选择适合尺寸"
+                    popper-class="psd-size-select-dropdown"
+                    @change="handleQuerySuitableSizesChange"
+                  >
+                    <el-option
+                      v-for="config in sizeConfigs"
+                      :key="config.key"
+                      :label="getFullLabel(config)"
+                      :value="config.key"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="12" :lg="5">
+                <el-form-item label="抠图支持">
+                  <el-select
+                    v-model="queryParams.cutoutModesArray"
+                    size="small"
+                    clearable
+                    multiple
+                    collapse-tags
+                    collapse-tags-tooltip
+                    placeholder="请选择抠图支持"
+                    popper-class="psd-size-select-dropdown"
+                    @change="handleQueryCutoutModesChange"
+                  >
+                    <el-option
+                      v-for="item in cutoutModeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" @click="getList" :icon="Search">搜索</el-button>
+              <el-button size="small" type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
+                新增
+              </el-button>
+              <el-button size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+                批量删除
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-    <div class="flex relative overflow-visible">
+      <template #sidebar>
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar psd-template-sidebar">
       <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
         <div class="h-full overflow-hidden">
           <div class="h-full w-[280px]">
@@ -89,8 +107,13 @@
           </el-icon>
         </div>
       </div>
+        </div>
+      </template>
 
-      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
         <!-- 表格展示 -->
         <div class="common-table">
           <vxe-grid class="psd-template-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading"
@@ -245,14 +268,18 @@
             </template>
           </vxe-grid>
         </div>
+            </div>
+          </div>
+        </div>
+      </template>
 
-        <!-- 分页 -->
-        <div class="py-4 flex justify-end">
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
           <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
             @pagination="getList" />
         </div>
-      </div>
-    </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog
       :title="dialogTitle"
@@ -554,7 +581,7 @@
       </template>
     </el-dialog>
 
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -590,6 +617,9 @@ import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
 import { uploadToCOS } from "@/api/cos";
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
+import Pagination from '@/components/Pagination/index.vue'
 import { getPreviewImageUrl } from "@/utils/image";
 import { downloadFileByElement } from "@/common/download";
 import {
@@ -1632,6 +1662,28 @@ function removeSuitableSize(sizeKey: string) {
 </script>
 
 <style lang="less" scoped>
+.psd-template-page {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+.psd-template-page .list-page-layout__main {
+  gap: 10px;
+}
+
+.psd-template-page .list-page-filter--flat {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.psd-template-page .list-page-table-panel__pagination--flat {
+  padding-top: 10px;
+}
+
+.psd-template-sidebar {
+  min-height: 100%;
+}
+
 .search-form-container {
   padding: 12px 16px;
   display: flex;

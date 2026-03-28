@@ -1,164 +1,184 @@
 <template>
-  <ContentWrap>
-    <div class="flex flex-col gap-4 py-3 xl:flex-row xl:items-end xl:justify-between">
-      <div class="flex flex-1 flex-wrap items-end gap-3">
-        <FormItem label="按名称搜索" class="min-w-[240px] flex-1 xl:max-w-[320px]">
-          <el-input
-            v-model="queryParams.search"
-            placeholder="请输入调度名称"
-            clearable
-            class="w-full min-w-[240px]"
-            @keyup.enter="getList"
-            @change="
-              (val) => {
-                if (!val) getList();
-              }
-            "
-          />
-        </FormItem>
-        <FormItem label="运行环境" class="min-w-[160px]">
-          <el-select
-            v-model="queryParams.runtimeEnv"
-            clearable
-            class="w-full min-w-[160px]"
-            @change="getList"
-          >
-            <el-option label="开发环境" value="development" />
-            <el-option label="生产环境" value="production" />
-          </el-select>
-        </FormItem>
-        <FormItem label="代码脚本" class="min-w-[240px] flex-1 xl:max-w-[320px]">
-          <el-select
-            v-model="queryParams.scriptId"
-            filterable
-            clearable
-            class="w-full min-w-[240px]"
-            placeholder="请选择代码脚本"
-            @change="handleScriptFilterChange"
-          >
-            <el-option
-              v-for="script in scriptOptions"
-              :key="script.id"
-              :label="`${script.name} (#${script.id})`"
-              :value="script.id"
-            />
-          </el-select>
-        </FormItem>
-        <FormItem label="启用状态" class="min-w-[144px]">
-          <el-select
-            v-model="queryParams.isEnabled"
-            clearable
-            class="w-full min-w-[144px]"
-            @change="getList"
-          >
-            <el-option label="启用" :value="true" />
-            <el-option label="停用" :value="false" />
-          </el-select>
-        </FormItem>
-        <div class="flex flex-wrap items-center gap-3">
-          <el-button class="!ml-0" type="primary" :icon="Search" @click="getList">搜索</el-button>
-          <el-button
-            class="!ml-0"
-            type="danger"
-            plain
-            :disabled="!ids.length"
-            @click="handleDelete()"
-          >
-            批量删除 ({{ ids.length }})
-          </el-button>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="code-script-schedule-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+                <el-form-item label="调度名称">
+                  <el-input
+                    v-model="queryParams.search"
+                    size="small"
+                    placeholder="请输入调度名称"
+                    clearable
+                    @keyup.enter="getList"
+                    @change="(val) => { if (!val) getList(); }"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+                <el-form-item label="运行环境">
+                  <el-select v-model="queryParams.runtimeEnv" size="small" clearable @change="getList">
+                    <el-option label="开发环境" value="development" />
+                    <el-option label="生产环境" value="production" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+                <el-form-item label="代码脚本">
+                  <el-select
+                    v-model="queryParams.scriptId"
+                    size="small"
+                    filterable
+                    clearable
+                    placeholder="请选择代码脚本"
+                    @change="handleScriptFilterChange"
+                  >
+                    <el-option
+                      v-for="script in scriptOptions"
+                      :key="script.id"
+                      :label="`${script.name} (#${script.id})`"
+                      :value="script.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
+                <el-form-item label="启用状态">
+                  <el-select v-model="queryParams.isEnabled" size="small" clearable @change="getList">
+                    <el-option label="启用" :value="true" />
+                    <el-option label="停用" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" class="!ml-0" type="primary" :icon="Search" @click="getList">
+                搜索
+              </el-button>
+              <el-button
+                size="small"
+                class="!ml-0"
+                type="danger"
+                plain
+                :disabled="!ids.length"
+                @click="handleDelete()"
+              >
+                批量删除 ({{ ids.length }})
+              </el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增调度</el-button>
+            </div>
+          </el-form>
         </div>
-      </div>
-      <div class="flex justify-start xl:justify-end">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">新增调度</el-button>
-      </div>
-    </div>
+      </template>
 
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
-        <template #scriptSlot="{ row }">
-          <div class="flex flex-col">
-            <span>{{ row.scriptName || `脚本#${row.scriptId}` }}</span>
-            <span class="text-xs text-[var(--el-text-color-secondary)]">ID {{ row.scriptId }}</span>
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
+                <template #scriptSlot="{ row }">
+                  <div class="flex flex-col">
+                    <span>{{ row.scriptName || `脚本#${row.scriptId}` }}</span>
+                    <span class="text-xs text-[var(--el-text-color-secondary)]"
+                      >ID {{ row.scriptId }}</span
+                    >
+                  </div>
+                </template>
+                <template #envSlot="{ row }">
+                  <el-tag
+                    size="small"
+                    :type="row.runtimeEnv === 'production' ? 'danger' : 'success'"
+                  >
+                    {{ formatRuntimeEnv(row.runtimeEnv) }}
+                  </el-tag>
+                </template>
+                <template #triggerSlot="{ row }">
+                  <div class="flex flex-col">
+                    <span>{{ row.triggerType === "cron" ? "固定时间" : "间隔执行" }}</span>
+                    <span class="text-xs text-[var(--el-text-color-secondary)]">{{
+                      formatTrigger(row)
+                    }}</span>
+                  </div>
+                </template>
+                <template #enabledSlot="{ row }">
+                  <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
+                    {{ row.isEnabled ? "启用" : "停用" }}
+                  </el-tag>
+                </template>
+                <template #lastStatusSlot="{ row }">
+                  <el-tag
+                    v-if="row.lastStatus"
+                    :type="getExecutionStatusType(row.lastStatus)"
+                    size="small"
+                    effect="plain"
+                  >
+                    {{ row.lastStatus }}
+                  </el-tag>
+                  <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
+                </template>
+                <template #nextRunAtSlot="{ row }">
+                  <span>{{ formatScheduleDateTime(row.nextRunAt) }}</span>
+                </template>
+                <template #operationSlot="{ row }">
+                  <el-dropdown
+                    trigger="click"
+                    @command="(command) => handleOperationCommand(command, row)"
+                    class="operation-dropdown"
+                  >
+                    <el-button type="primary" link size="small" class="operation-trigger-button">
+                      操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu class="operation-menu-compact">
+                        <el-dropdown-item command="run">立即执行</el-dropdown-item>
+                        <el-dropdown-item command="toggle">{{
+                          row.isEnabled ? "停用" : "启用"
+                        }}</el-dropdown-item>
+                        <el-dropdown-item command="records">执行记录</el-dropdown-item>
+                        <el-dropdown-item command="edit">编辑</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </template>
+              </vxe-grid>
+            </div>
           </div>
-        </template>
-        <template #envSlot="{ row }">
-          <el-tag size="small" :type="row.runtimeEnv === 'production' ? 'danger' : 'success'">
-            {{ formatRuntimeEnv(row.runtimeEnv) }}
-          </el-tag>
-        </template>
-        <template #triggerSlot="{ row }">
-          <div class="flex flex-col">
-            <span>{{ row.triggerType === "cron" ? "固定时间" : "间隔执行" }}</span>
-            <span class="text-xs text-[var(--el-text-color-secondary)]">{{
-              formatTrigger(row)
-            }}</span>
-          </div>
-        </template>
-        <template #enabledSlot="{ row }">
-          <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
-            {{ row.isEnabled ? "启用" : "停用" }}
-          </el-tag>
-        </template>
-        <template #lastStatusSlot="{ row }">
-          <el-tag
-            v-if="row.lastStatus"
-            :type="getExecutionStatusType(row.lastStatus)"
-            size="small"
-            effect="plain"
-          >
-            {{ row.lastStatus }}
-          </el-tag>
-          <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
-        </template>
-        <template #nextRunAtSlot="{ row }">
-          <span>{{ formatScheduleDateTime(row.nextRunAt) }}</span>
-        </template>
-        <template #operationSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
-            <el-button type="primary" link size="small">
-              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="run">立即执行</el-dropdown-item>
-                <el-dropdown-item command="toggle">{{
-                  row.isEnabled ? "停用" : "启用"
-                }}</el-dropdown-item>
-                <el-dropdown-item command="records">执行记录</el-dropdown-item>
-                <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </template>
-      </vxe-grid>
-    </div>
+        </div>
+      </template>
 
-    <div class="flex justify-end py-4">
-      <Pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <Pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
   </ContentWrap>
 
-  <el-dialog
-    :title="dialogTitle"
-    v-model="dialogVisible"
-    fullscreen
-    align-center
-    destroy-on-close
-  >
-    <div class="mx-auto grid h-[calc(100vh-120px)] max-w-[1440px] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" class="grid min-h-0 gap-4">
+  <el-dialog :title="dialogTitle" v-model="dialogVisible" fullscreen align-center destroy-on-close>
+    <div
+      class="mx-auto grid h-[calc(100vh-120px)] max-w-[1440px] grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_420px]"
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="110px"
+        class="grid min-h-0 gap-4"
+      >
         <div class="grid gap-4 lg:grid-cols-2">
           <div class="rounded border border-solid border-[var(--el-border-color-light)] p-4">
             <div class="mb-3 text-sm font-600">基础信息</div>
@@ -171,7 +191,12 @@
               />
             </el-form-item>
             <el-form-item label="代码脚本" prop="scriptId" class="mb-4">
-              <el-select v-model="form.scriptId" filterable class="w-full" placeholder="请选择代码脚本">
+              <el-select
+                v-model="form.scriptId"
+                filterable
+                class="w-full"
+                placeholder="请选择代码脚本"
+              >
                 <el-option
                   v-for="script in scriptOptions"
                   :key="script.id"
@@ -199,11 +224,21 @@
                 <el-radio label="interval">间隔执行</el-radio>
               </el-radio-group>
             </el-form-item>
-            <el-form-item v-if="form.triggerType === 'cron'" label="Cron 表达式" prop="cronExpr" class="mb-4">
+            <el-form-item
+              v-if="form.triggerType === 'cron'"
+              label="Cron 表达式"
+              prop="cronExpr"
+              class="mb-4"
+            >
               <el-input v-model="form.cronExpr" placeholder="例如：0 9 * * *" />
             </el-form-item>
             <el-form-item v-else label="间隔分钟" prop="intervalMinutes" class="mb-4">
-              <el-input-number v-model="form.intervalMinutes" :min="1" :max="1440" class="w-full!" />
+              <el-input-number
+                v-model="form.intervalMinutes"
+                :min="1"
+                :max="1440"
+                class="w-full!"
+              />
             </el-form-item>
             <el-form-item label="超时覆盖(ms)" prop="timeoutMsOverride" class="mb-0">
               <el-input-number
@@ -230,7 +265,9 @@
       </el-form>
 
       <div class="grid min-h-0 gap-4">
-        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4">
+        <div
+          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4"
+        >
           <div class="mb-3 text-sm font-600">Cron 快捷模板</div>
           <div class="flex flex-wrap gap-2">
             <el-button
@@ -244,11 +281,15 @@
           </div>
         </div>
 
-        <div class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4">
+        <div
+          class="rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-4"
+        >
           <div class="mb-3 text-sm font-600">Cron 参考</div>
           <div class="space-y-2 text-xs leading-6 text-[var(--el-text-color-secondary)]">
             <div v-for="item in cronTemplates" :key="`${item.expr}-desc`">
-              {{ item.label }}: <span class="font-mono text-[var(--el-text-color-primary)]">{{ item.expr }}</span> {{ item.desc }}
+              {{ item.label }}:
+              <span class="font-mono text-[var(--el-text-color-primary)]">{{ item.expr }}</span>
+              {{ item.desc }}
             </div>
           </div>
         </div>
@@ -342,7 +383,9 @@
         <span>脚本执行ID：{{ executionDetail.codeScriptRunId || "-" }}</span>
         <span>沙盒运行ID：{{ executionDetail.sandboxRunId || "-" }}</span>
       </div>
-      <div class="grid h-[72vh] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
+      <div
+        class="grid h-[72vh] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]"
+      >
         <div
           class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
         >
@@ -351,9 +394,7 @@
             formatJson(executionDetail.runResult)
           }}</pre>
         </div>
-        <div
-          class="grid h-full min-h-0 gap-3 grid-rows-2"
-        >
+        <div class="grid h-full min-h-0 gap-3 grid-rows-2">
           <div
             class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
           >
@@ -366,7 +407,9 @@
             class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
           >
             <div class="mb-2 text-sm font-600">日志</div>
-            <div class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all rounded bg-[#0f172a] p-3 font-mono text-xs leading-6 text-slate-200">
+            <div
+            class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all rounded bg-[var(--list-page-base-bg)] p-3 font-mono text-xs leading-6 text-slate-200"
+            >
               <div
                 v-for="(line, index) in formattedExecutionLogLines"
                 :key="`${index}-${line.text}`"
@@ -389,9 +432,8 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowDown, Plus, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { commonGridOptions } from "@/common/table";
-import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
-import FormItem from "@/components/Erp/formItem.vue";
 import Pagination from "@/components/Pagination/index.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { formatDate } from "@/utils/formatTime";
 import { getCodeScriptList } from "@/api/codeScript";
 import {
@@ -515,7 +557,13 @@ const gridOptions = ref({
     { title: "触发方式", field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
     { title: "启用状态", field: "isEnabled", width: 100, slots: { default: "enabledSlot" } },
     { title: "执行状态", field: "lastStatus", width: 110, slots: { default: "lastStatusSlot" } },
-    { title: "下次执行", field: "nextRunAt", width: 170, showOverflow: true, slots: { default: "nextRunAtSlot" } },
+    {
+      title: "下次执行",
+      field: "nextRunAt",
+      width: 170,
+      showOverflow: true,
+      slots: { default: "nextRunAtSlot" },
+    },
     { title: "操作", width: 110, fixed: "right" as const, slots: { default: "operationSlot" } },
   ],
 } as any);
@@ -530,8 +578,20 @@ const executionGridOptions = ref({
     { title: "记录ID", field: "id", width: 90 },
     { title: "状态", field: "status", width: 100, slots: { default: "executionStatusSlot" } },
     { title: "触发来源", field: "triggerSource", width: 100 },
-    { title: "计划执行时间", field: "scheduledAt", width: 170, showOverflow: true, slots: { default: "scheduledAtSlot" } },
-    { title: "开始时间", field: "startedAt", width: 170, showOverflow: true, slots: { default: "startedAtSlot" } },
+    {
+      title: "计划执行时间",
+      field: "scheduledAt",
+      width: 170,
+      showOverflow: true,
+      slots: { default: "scheduledAtSlot" },
+    },
+    {
+      title: "开始时间",
+      field: "startedAt",
+      width: 170,
+      showOverflow: true,
+      slots: { default: "startedAtSlot" },
+    },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
     { title: "操作", width: 100, slots: { default: "executionOperationSlot" } },
@@ -924,13 +984,9 @@ async function handleDeleteExecution(row?: any) {
     return;
   }
 
-  await ElMessageBox.confirm(
-    `确认删除选中的 ${deleteIds.length} 条执行记录吗？`,
-    "删除提示",
-    {
-      type: "warning",
-    },
-  );
+  await ElMessageBox.confirm(`确认删除选中的 ${deleteIds.length} 条执行记录吗？`, "删除提示", {
+    type: "warning",
+  });
 
   try {
     await deleteCodeScriptScheduleExecution({ ids: deleteIds });
@@ -984,3 +1040,23 @@ onMounted(async () => {
   await Promise.all([getScriptOptions(), getList()]);
 });
 </script>
+
+<style scoped>
+:deep(.code-script-schedule-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.code-script-schedule-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.code-script-schedule-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.code-script-schedule-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+</style>

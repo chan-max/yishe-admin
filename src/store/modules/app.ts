@@ -52,7 +52,7 @@ export const useAppStore = defineStore('app', {
       breadcrumbIcon: true, // 面包屑图标
       collapse: false, // 折叠菜单
       uniqueOpened: true, // 是否只保持一个子菜单的展开
-      hamburger: true, // 折叠图标
+      hamburger: false, // 折叠图标
       screenfull: true, // 全屏图标
       search: true, // 搜索图标
       size: true, // 尺寸图标
@@ -63,7 +63,7 @@ export const useAppStore = defineStore('app', {
       tagsViewIcon: true, // 是否显示标签图标
       logo: true, // logo
       fixedHeader: true, // 固定toolheader
-      footer: true, // 显示页脚
+      footer: false, // 显示页脚
       greyMode: false, // 是否开始灰色模式，用于特殊悼念日
       fixedMenu: wsCache.get('fixedMenu') || false, // 是否固定菜单
 
@@ -74,15 +74,15 @@ export const useAppStore = defineStore('app', {
         // 主题色
         elColorPrimary: '#5b8cff',
         // 左侧菜单边框颜色
-        leftMenuBorderColor: '#2a2e37',
+        leftMenuBorderColor: '#202020',
         // 左侧菜单背景颜色
-        leftMenuBgColor: '#101217',
+        leftMenuBgColor: '#141414',
         // 左侧菜单浅色背景颜色
-        leftMenuBgLightColor: '#181c24',
+        leftMenuBgLightColor: '#181818',
         // 左侧菜单选中背景颜色
-        leftMenuBgActiveColor: '#1c2330',
+        leftMenuBgActiveColor: '#1d1d1d',
         // 左侧菜单收起选中背景颜色
-        leftMenuCollapseBgActiveColor: '#1c2330',
+        leftMenuCollapseBgActiveColor: '#1d1d1d',
         // 左侧菜单字体颜色
         leftMenuTextColor: '#b9c0cc',
         // 左侧菜单选中字体颜色
@@ -92,13 +92,13 @@ export const useAppStore = defineStore('app', {
         // logo边框颜色
         logoBorderColor: 'inherit',
         // 头部背景颜色
-        topHeaderBgColor: '#141821',
+        topHeaderBgColor: '#141414',
         // 头部字体颜色
         topHeaderTextColor: '#d8dde6',
         // 头部悬停颜色
-        topHeaderHoverColor: '#1d2330',
+        topHeaderHoverColor: '#1d1d1d',
         // 头部边框颜色
-        topToolBorderColor: '#eee'
+        topToolBorderColor: '#202020'
       }
     }
   },

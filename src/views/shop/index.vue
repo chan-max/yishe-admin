@@ -1,22 +1,28 @@
 <template>
-  <ContentWrap>
-    <div class="flex items-center justify-between gap-3 py-3">
-      <div class="flex items-center gap-3">
-        <el-button type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
-          批量删除 ({{ selectedIds.length }})
-        </el-button>
-      </div>
-      <el-button type="primary" @click="openDialog()">新增店铺</el-button>
-    </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="shop-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <div class="list-page-search-form__actions">
+            <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
+              批量删除 ({{ selectedIds.length }})
+            </el-button>
+            <el-button size="small" type="primary" @click="openDialog()">新增店铺</el-button>
+          </div>
+        </div>
+      </template>
 
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="list"
-        :loading="loading"
-        @checkbox-change="handleCheckboxChange"
-        @checkbox-all="handleCheckboxAll"
-      >
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="list"
+                :loading="loading"
+                @checkbox-change="handleCheckboxChange"
+                @checkbox-all="handleCheckboxAll"
+              >
         <template #logoSlot="{ row }">
           <div class="flex items-center">
             <el-image
@@ -59,8 +65,12 @@
             <el-button link type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
           </div>
         </template>
-      </vxe-grid>
-    </div>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
+    </ListPageLayout>
 
     <ShopDialog ref="dialogRef" @success="getList" />
   </ContentWrap>
@@ -73,6 +83,7 @@ import { commonGridOptions } from '@/common/table'
 import { batchDeleteShop, deleteShop, getShopList } from '@/api/shop'
 import ShopDialog from './components/ShopDialog.vue'
 import { formatDate } from '@/utils/formatTime'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 
 const loading = ref(false)
 const list = ref<any[]>([])
@@ -149,3 +160,19 @@ onMounted(() => {
   getList()
 })
 </script>
+
+<style scoped>
+:deep(.shop-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.shop-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.shop-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+</style>

@@ -27,7 +27,7 @@ export default defineComponent({
           'h-[var(--top-tool-height)] px-12px md:px-16px flex items-center justify-between'
         ]}
       >
-        <div class="flex h-full min-w-0 items-center gap-8px md:gap-12px">
+        <div class="flex h-full min-w-0 items-center gap-6px md:gap-8px">
           {mobile.value ? (
             <button
               type="button"

@@ -1,6 +1,6 @@
 ﻿<template>
-  <ContentWrap>
-    <div class="space-y-3">
+  <ContentWrap :plain="true">
+    <div class="agent-console-page space-y-3">
       <el-card shadow="never" class="rounded-lg">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div class="min-w-0 space-y-1">
@@ -260,3 +260,20 @@ onMounted(() => {
   loadTools()
 })
 </script>
+
+<style scoped>
+.agent-console-page {
+  padding: 8px 0 0;
+}
+
+.agent-console-page :deep(.el-card) {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
+}
+
+.agent-console-page :deep(.el-card__header) {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+</style>

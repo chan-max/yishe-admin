@@ -1,9 +1,9 @@
 <template>
   <div class="flex flex-col gap-3 overflow-visible h-full">
     <!-- 上方：搜索条件 -->
-    <ContentWrap class="flex-shrink-0">
+    <ContentWrap class="flex-shrink-0 product-page__filter-wrap">
       <!-- 折叠状态：显示常用搜索和操作 -->
-      <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
+      <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end list-page-filter list-page-filter--flat product-page__filter">
         <div style="flex: 1"></div>
         <form-item label="按ID搜索">
           <el-input v-model="queryParams.id" clearable placeholder="输入ID" style="width: 160px"
@@ -35,7 +35,7 @@
       </div>
 
       <!-- 展开状态：显示全部搜索功能 -->
-      <div v-show="!actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end">
+      <div v-show="!actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end list-page-filter list-page-filter--flat product-page__filter">
         <div style="flex: 1"></div>
         <form-item label="按ID搜索">
           <el-input v-model="queryParams.id" clearable placeholder="输入ID" style="width: 160px"
@@ -108,7 +108,7 @@
           </el-icon>
         </div>
       </div>
-      <ContentWrap class="flex-1 min-w-0">
+      <ContentWrap class="flex-1 min-w-0 product-page__table-wrap">
         <!-- 表格展示 -->
         <div class="common-table">
         <vxe-grid class="product-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
@@ -410,7 +410,7 @@
         </div>
 
         <!-- 分页 -->
-        <div class="py-4 flex justify-end">
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat product-page__pagination">
           <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
             @pagination="getList" />
         </div>
@@ -3059,6 +3059,23 @@ function getPublishTaskType(platform: string) {
 </script>
 
 <style lang="less">
+.product-page__filter-wrap {
+  background: transparent;
+}
+
+.product-page__filter {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.product-page__table-wrap {
+  background: transparent;
+}
+
+.product-page__pagination {
+  padding-top: 10px;
+}
+
 .custom-carousel {
   position: relative;
   padding: 0 20px;

@@ -1,55 +1,61 @@
 <template>
-  <ContentWrap>
-    <div class="flex items-center justify-between gap-3 py-3">
-      <div class="flex items-center gap-3">
-        <form-item label="按名称搜索">
-          <el-input
-            v-model="queryParams.search"
-            placeholder="请输入脚本名称"
-            clearable
-            class="w-60"
-            @keyup.enter="getList"
-            @change="
-              (val) => {
-                if (!val) getList();
-              }
-            "
-          />
-        </form-item>
-        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        <el-button type="danger" plain :disabled="!ids.length" @click="handleDelete(null)">
-          批量删除 ({{ ids.length }})
-        </el-button>
-      </div>
-      <div class="flex items-center gap-2">
-        <el-tag
-          :type="sandboxStatus.available ? 'success' : sandboxStatus.checked ? 'danger' : 'warning'"
-          size="small"
-        >
-          沙盒服务
-          {{ sandboxStatus.available ? "可用" : sandboxStatus.checked ? "不可用" : "检测中" }}
-        </el-tag>
-        <span
-          class="max-w-[280px] truncate text-xs text-[var(--el-text-color-secondary)]"
-          :title="sandboxStatus.message"
-        >
-          {{ sandboxStatus.message || sandboxStatus.baseUrl }}
-        </span>
-        <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading"
-          >刷新状态</el-button
-        >
-        <el-button type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
-      </div>
-    </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="code-script-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+                <el-form-item label="脚本名称">
+                  <el-input
+                    v-model="queryParams.search"
+                    size="small"
+                    placeholder="请输入脚本名称"
+                    clearable
+                    @keyup.enter="getList"
+                    @change="(val) => { if (!val) getList(); }"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-tag
+                :type="sandboxStatus.available ? 'success' : sandboxStatus.checked ? 'danger' : 'warning'"
+                size="small"
+              >
+                沙盒服务
+                {{ sandboxStatus.available ? "可用" : sandboxStatus.checked ? "不可用" : "检测中" }}
+              </el-tag>
+              <span
+                class="max-w-[280px] truncate text-xs text-[var(--el-text-color-secondary)]"
+                :title="sandboxStatus.message"
+              >
+                {{ sandboxStatus.message || sandboxStatus.baseUrl }}
+              </span>
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="danger" plain :disabled="!ids.length" @click="handleDelete(null)">
+                批量删除 ({{ ids.length }})
+              </el-button>
+              <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading">
+                刷新状态
+              </el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
         <template #statusSlot="{ row }">
           <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
             {{ row.isEnabled ? "启用" : "停用" }}
@@ -92,17 +98,23 @@
             </el-dropdown>
           </div>
         </template>
-      </vxe-grid>
-    </div>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
 
-    <div class="flex justify-end py-4">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
   </ContentWrap>
 
   <el-dialog
@@ -128,7 +140,7 @@
           <el-form :model="form" :rules="rules" ref="formRef" label-width="0" class="h-full">
             <el-form-item prop="code" class="mb-0 h-full">
               <div
-                class="h-full min-h-0 w-full overflow-hidden rounded border border-solid border-[var(--el-border-color-light)] bg-[#0f172a]"
+                class="h-full min-h-0 w-full overflow-hidden rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--list-page-base-bg)]"
               >
                 <div ref="editorHostRef" class="h-full min-h-0 w-full"></div>
               </div>
@@ -398,8 +410,8 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowDown, Search, Plus } from "@element-plus/icons-vue";
 import { commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
-import FormItem from "@/components/Erp/formItem.vue";
 import Pagination from "@/components/Pagination/index.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import { EditorState } from "@codemirror/state";
 import {
@@ -1073,3 +1085,23 @@ onBeforeUnmount(() => {
   stopSandboxHealthPolling();
 });
 </script>
+
+<style scoped>
+:deep(.code-script-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.code-script-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.code-script-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.code-script-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+</style>

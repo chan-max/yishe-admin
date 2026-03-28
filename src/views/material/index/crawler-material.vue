@@ -1,97 +1,107 @@
 <template>
-  <div>
-    <!-- PC端显示原有搜索栏，移动端只显示筛选按钮 -->
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
-      <div style="flex: 1"></div>
-      <form-item label="按名称搜索">
-        <el-input
-          v-model="queryParams.imageName"
-          placeholder="请输入图片名称"
-          style="width: 160px"
-          clearable
-          @change="
-            (val) => {
-              if (!val) getList();
-            }
-          "
-        />
-      </form-item>
-      <form-item label="ID精确查询">
-        <el-input
-          v-model="queryParams.id"
-          placeholder="请输入ID"
-          style="width: 120px"
-          clearable
-          @change="
-            (val) => {
-              if (!val) getList();
-            }
-          "
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList"> 搜索 </el-button>
-      <form-item label="排序">
-        <el-select
-          v-model="queryParams.sortingFields"
-          placeholder="请选择排序方式"
-          style="width: 140px"
-          @change="getList"
-        >
-          <el-option label="创建时间倒序" value="createTime DESC" />
-          <el-option label="创建时间正序" value="createTime ASC" />
-        </el-select>
-      </form-item>
-      <form-item label="后缀">
-        <el-select
-          v-model="queryParams.suffix"
-          placeholder="请选择后缀"
-          style="width: 120px"
-          clearable
-          @change="getList"
-        >
-          <el-option label="全部" value="" />
-          <el-option label="jpg" value="jpg" />
-          <el-option label="jpeg" value="jpeg" />
-          <el-option label="png" value="png" />
-          <el-option label="gif" value="gif" />
-          <el-option label="webp" value="webp" />
-          <el-option label="svg" value="svg" />
-          <el-option label="bmp" value="bmp" />
-          <el-option label="tiff" value="tiff" />
-        </el-select>
-      </form-item>
-      <form-item class="date-range-picker">
-        <DateRangePicker
-          @change="
-            (val) => {
-              queryParams.startTime = val.start;
-              queryParams.endTime = val.end;
-              getList();
-            }
-          "
-        />
-      </form-item>
-      <div class="flex shrink-0">
-        <el-button
-          v-if="isAdmin"
-          type="success"
-          :icon="Upload"
-          @click="handleBatchImport"
-          :loading="importLoading"
-          :disabled="!canBatchImport"
-          :title="!ids.length ? '请选择要入库的数据' : ''"
-          >批量入库({{ ids.length }})</el-button
-        >
-        <el-button type="default" @click="handleMultiDownload"
-          >下载 ({{ ids.length }})</el-button
-        >
-        <el-button v-if="isAdmin" type="danger" :icon="Delete" @click="handleDelete(null)"
-          >批量删除({{ ids.length }})</el-button
-        >
-      </div>
-    </div>
-    <div class="flex gap-4">
-      <div class="content-container" :style="{ width: '100%' }">
+  <ContentWrap :plain="true">
+    <ListPageLayout class="crawler-material-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="按名称搜索">
+                  <el-input
+                    v-model="queryParams.imageName"
+                    size="small"
+                    placeholder="请输入图片名称"
+                    clearable
+                    @change="(val) => { if (!val) getList(); }"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="ID精确查询">
+                  <el-input
+                    v-model="queryParams.id"
+                    size="small"
+                    placeholder="请输入ID"
+                    clearable
+                    @change="(val) => { if (!val) getList(); }"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="排序">
+                  <el-select
+                    v-model="queryParams.sortingFields"
+                    size="small"
+                    placeholder="请选择排序方式"
+                    @change="getList"
+                  >
+                    <el-option label="创建时间倒序" value="createTime DESC" />
+                    <el-option label="创建时间正序" value="createTime ASC" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="后缀">
+                  <el-select
+                    v-model="queryParams.suffix"
+                    size="small"
+                    placeholder="请选择后缀"
+                    clearable
+                    @change="getList"
+                  >
+                    <el-option label="全部" value="" />
+                    <el-option label="jpg" value="jpg" />
+                    <el-option label="jpeg" value="jpeg" />
+                    <el-option label="png" value="png" />
+                    <el-option label="gif" value="gif" />
+                    <el-option label="webp" value="webp" />
+                    <el-option label="svg" value="svg" />
+                    <el-option label="bmp" value="bmp" />
+                    <el-option label="tiff" value="tiff" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="时间范围">
+                  <DateRangePicker
+                    @change="
+                      (val) => {
+                        queryParams.startTime = val.start;
+                        queryParams.endTime = val.end;
+                        getList();
+                      }
+                    "
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="success"
+                :icon="Upload"
+                @click="handleBatchImport"
+                :loading="importLoading"
+                :disabled="!canBatchImport"
+                :title="!ids.length ? '请选择要入库的数据' : ''"
+              >
+                批量入库({{ ids.length }})
+              </el-button>
+              <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+                批量删除({{ ids.length }})
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
+
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="content-container" :style="{ width: '100%' }">
         <div class="common-table">
           <vxe-grid
             ref="gridRef"
@@ -206,7 +216,13 @@
             </template>
           </vxe-grid>
         </div>
-        <div class="flex justify-end">
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
           <pagination
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
@@ -214,8 +230,8 @@
             @pagination="getList"
           />
         </div>
-      </div>
-    </div>
+      </template>
+    </ListPageLayout>
     <el-dialog
       v-model="editDialogVisible"
       title="编辑素材信息"
@@ -324,7 +340,7 @@
         >
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 <script setup lang="tsx">
 import { ref, reactive, watchEffect, computed } from "vue";
@@ -343,6 +359,10 @@ import {
 import { useWindowSize } from "@vueuse/core";
 import { downloadImage } from "@/common/download";
 import { useUserStore } from "@/store/modules/user";
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
+import Pagination from '@/components/Pagination/index.vue'
+import DateRangePicker from '@/components/DateRangePicker.vue'
 
 const userStore = useUserStore();
 
@@ -725,6 +745,24 @@ function handleOperationCommand(command: string, row: any) {
 getList();
 </script>
 <style scoped>
+.crawler-material-page {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+.crawler-material-page .list-page-layout__main {
+  gap: 10px;
+}
+
+.crawler-material-page .list-page-filter--flat {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+.crawler-material-page .list-page-table-panel__pagination--flat {
+  padding-top: 10px;
+}
+
 /* PC端优化 */
 .pb-4.flex,
 .search-bar {

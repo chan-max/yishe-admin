@@ -1,32 +1,35 @@
 <template>
-  <div class="tts-page">
-    <div class="list-page-layout">
-      <div class="filter-section">
-        <div class="search-bar">
-          <div class="search-form-container">
-            <div class="search-field search-field-wide">
-              <label class="search-label">搜索</label>
-              <el-input v-model="queryParams.search" placeholder="文案 / 返回URL" clearable @keyup.enter="getList"
-                @clear="getList" />
+  <ContentWrap :plain="true">
+    <ListPageLayout class="tts-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="搜索">
+                  <el-input v-model="queryParams.search" size="small" placeholder="文案 / 返回URL" clearable @keyup.enter="getList"
+                    @clear="getList" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" @click="getList">搜索</el-button>
+              <el-button size="small" type="danger" :icon="Delete" :disabled="selectedRows.length === 0"
+                @click="handleBatchDelete">
+                批量删除({{ selectedRows.length }})
+              </el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
             </div>
-            <div class="search-field search-field-actions">
-              <label class="search-label"></label>
-              <div class="search-actions">
-                <el-button type="primary" @click="getList">搜索</el-button>
-                <el-button type="danger" :icon="Delete" :disabled="selectedRows.length === 0"
-                  @click="handleBatchDelete">
-                  批量删除({{ selectedRows.length }})
-                </el-button>
-                <el-button type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
-              </div>
-            </div>
-          </div>
+          </el-form>
         </div>
-      </div>
+      </template>
 
-      <div class="content-container">
-        <div class="table-section">
-          <div class="common-table">
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="content-container">
+              <div class="table-section">
+                <div class="common-table">
             <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange"
               @checkbox-all="handleCheckboxAll">
               <template #textSlot="{ row }">
@@ -74,30 +77,35 @@
                 </el-dropdown>
               </template>
             </vxe-grid>
+                </div>
+              </div>
+
+              <!-- 字幕预览弹窗组件 -->
+              <SubtitlePreview v-model="previewDialogVisible" :row="previewRow" />
+
+              <!-- 字幕元数据弹窗 -->
+              <el-dialog v-model="metadataDialogVisible" title="字幕元数据" width="800px" :destroy-on-close="true">
+                <div class="metadata-container">
+                  <pre class="metadata-pre">{{ JSON.stringify(metadataContent, null, 2) }}</pre>
+                </div>
+                <template #footer>
+                  <el-button type="primary" @click="copyMetadata">复制 JSON</el-button>
+                  <el-button @click="metadataDialogVisible = false">关闭</el-button>
+                </template>
+              </el-dialog>
+            </div>
           </div>
         </div>
+      </template>
 
-        <!-- 字幕预览弹窗组件 -->
-        <SubtitlePreview v-model="previewDialogVisible" :row="previewRow" />
-
-        <!-- 字幕元数据弹窗 -->
-        <el-dialog v-model="metadataDialogVisible" title="字幕元数据" width="800px" :destroy-on-close="true">
-          <div class="metadata-container">
-            <pre class="metadata-pre">{{ JSON.stringify(metadataContent, null, 2) }}</pre>
-          </div>
-          <template #footer>
-            <el-button type="primary" @click="copyMetadata">复制 JSON</el-button>
-            <el-button @click="metadataDialogVisible = false">关闭</el-button>
-          </template>
-        </el-dialog>
-
-        <div class="pagination-section">
-          <pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat pagination-section">
+          <Pagination :total="total" v-model:page="queryParams.page" v-model:limit="queryParams.pageSize"
             @pagination="getList" />
         </div>
-      </div>
-    </div>
+      </template>
 
+    </ListPageLayout>
     <el-dialog v-model="dialogVisible" :title="dialogTitle" fullscreen class="tts-create-dialog"
       :destroy-on-close="true">
       <div class="tts-create-body">
@@ -366,7 +374,7 @@
           @click="submitForm">创建并生成</el-button>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
@@ -385,6 +393,9 @@ import {
 import { getClipMaterialList } from '@/api/clip-material'
 import { commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
+import Pagination from '@/components/Pagination/index.vue'
 import SubtitlePreview from './SubtitlePreview.vue'
 
 const formatDuration = (val: any) => {
@@ -973,8 +984,8 @@ onMounted(() => {
 <style scoped>
 .tts-page {
   height: 100%;
-  padding: 10px;
-  background-color: var(--el-bg-color);
+  padding: 8px 0 0;
+  background-color: transparent;
 }
 
 .list-page-layout {
@@ -990,6 +1001,15 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.tts-page :deep(.list-page-layout__main) {
+  gap: 10px;
+}
+
+.tts-page :deep(.list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
 .table-section {
   flex: 1;
   min-height: 0;
@@ -999,8 +1019,8 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   flex-shrink: 0;
-  margin-top: 16px;
-  margin-bottom: 24px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .content-container {

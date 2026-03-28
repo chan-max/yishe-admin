@@ -4,6 +4,7 @@ import { ref, reactive, onMounted, computed, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productCategoryApi } from '@/api/product-category'
 import { ContentWrap } from '@/components/ContentWrap'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { formatTime } from '@/utils'
 import { commonGridOptions } from "@/common/table"
@@ -166,44 +167,64 @@ onMounted(() => {
 </script>
 
 <template>
-  <ContentWrap>
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <el-input
-          v-model="queryParams.searchText"
-          placeholder="搜索名称/特点/描述"
-          style="width: 250px"
-          clearable
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="resetQuery">重置</el-button>
-      </div>
-      <div>
-        <el-button type="primary" @click="handleAdd">新增种类</el-button>
-      </div>
-    </div>
-
-    <vxe-grid
-      v-bind="gridOptions"
-      :data="tableData"
-      :loading="loading"
-    >
-      <template #action="{ row }">
-        <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-        <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="product-category-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+                <el-form-item label="关键词">
+                  <el-input
+                    v-model="queryParams.searchText"
+                    size="small"
+                    placeholder="搜索名称/特点/描述"
+                    clearable
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" @click="handleSearch">搜索</el-button>
+              <el-button size="small" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="primary" @click="handleAdd">新增种类</el-button>
+            </div>
+          </el-form>
+        </div>
       </template>
-    </vxe-grid>
 
-    <div class="mt-4 flex justify-end">
-        <pagination
-        v-model:page="queryParams.page"
-        v-model:limit="queryParams.pageSize"
-        :total="total"
-        @pagination="getList"
-        />
-    </div>
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="tableData"
+                :loading="loading"
+              >
+                <template #action="{ row }">
+                  <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+                  <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination
+            v-model:page="queryParams.page"
+            v-model:limit="queryParams.pageSize"
+            :total="total"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog :title="dialogTitle" v-model="dialogVisible" width="60%">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
@@ -241,3 +262,23 @@ onMounted(() => {
     </el-dialog>
   </ContentWrap>
 </template>
+
+<style scoped>
+:deep(.product-category-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.product-category-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.product-category-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.product-category-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+</style>

@@ -1,47 +1,58 @@
 <template>
-  <ContentWrap>
-    <div class="flex items-center justify-between gap-3 py-3">
-      <div class="flex flex-wrap items-center gap-3">
-        <form-item label="搜索提示词">
-          <el-input
-            v-model="queryParams.search"
-            clearable
-            placeholder="请输入提示词内容"
-            class="min-w-[220px]"
-            @keyup.enter="getList"
-            @clear="getList"
-          />
-        </form-item>
-        <form-item label="图片尺寸">
-          <el-select v-model="queryParams.size" clearable placeholder="全部" class="min-w-[180px]">
-            <el-option
-              v-for="item in sizeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </form-item>
-        <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-        <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
-      </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="tti-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="搜索提示词">
+                  <el-input
+                    v-model="queryParams.search"
+                    size="small"
+                    clearable
+                    placeholder="请输入提示词内容"
+                    @keyup.enter="getList"
+                    @clear="getList"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="图片尺寸">
+                  <el-select v-model="queryParams.size" size="small" clearable placeholder="全部">
+                    <el-option
+                      v-for="item in sizeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" :icon="Refresh" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
+                批量删除{{ selectedIds.length ? `(${selectedIds.length})` : "" }}
+              </el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">创建生成</el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-      <div class="flex items-center gap-2">
-        <el-button type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
-          批量删除{{ selectedIds.length ? `(${selectedIds.length})` : "" }}
-        </el-button>
-        <el-button type="primary" :icon="Plus" @click="handleAdd">创建生成</el-button>
-      </div>
-    </div>
-
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
         <template #imageSlot="{ row }">
           <el-image
             v-if="row.url || row.resultUrl"
@@ -102,17 +113,23 @@
             <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
           </div>
         </template>
-      </vxe-grid>
-    </div>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
 
-    <div class="flex justify-end py-4">
-      <Pagination
-        :total="total"
-        v-model:page="queryParams.page"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <Pagination
+            :total="total"
+            v-model:page="queryParams.page"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog
       v-model="dialogVisible"
@@ -254,6 +271,8 @@ import { getPromptList } from "@/api/prompt";
 import { commonGridOptions } from "@/common/table";
 import { useWindowSize } from "@vueuse/core";
 import Pagination from "@/components/Pagination/index.vue";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { formatTimestamp } from "@/common/date";
 
 const sizeOptions = [
@@ -508,3 +527,23 @@ onMounted(() => {
   getList();
 });
 </script>
+
+<style scoped>
+:deep(.tti-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.tti-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.tti-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.tti-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+</style>
