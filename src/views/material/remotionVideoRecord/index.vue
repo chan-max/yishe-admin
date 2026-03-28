@@ -42,12 +42,21 @@
                     <el-tag :type="remotionStatusTagType" size="small">
                       Remotion 服务 {{ remotionStatusLabel }}
                     </el-tag>
-                    <span
-                      class="remotion-record-page__status-text"
-                      :title="remotionStatus.message || remotionStatus.baseUrl"
-                    >
-                      {{ remotionStatus.message || remotionStatus.baseUrl || '-' }}
-                    </span>
+                    <div class="remotion-record-page__status-content">
+                      <span
+                        class="remotion-record-page__status-text"
+                        :title="remotionStatusSummary"
+                      >
+                        {{ remotionStatusSummary }}
+                      </span>
+                      <span
+                        v-if="remotionStatusDetail"
+                        class="remotion-record-page__status-detail"
+                        :title="remotionStatusDetail"
+                      >
+                        {{ remotionStatusDetail }}
+                      </span>
+                    </div>
                   </div>
                 </el-form-item>
               </el-col>
@@ -312,13 +321,34 @@ const remotionStatus = reactive({
 let remotionHealthTimer: number | null = null
 
 const remotionStatusLabel = computed(() => {
+  if (!remotionStatus.checked) return '未检测'
   if (remotionStatus.loading && !remotionStatus.checked) return '检测中'
   return remotionStatus.available ? '可用' : '不可用'
 })
 
 const remotionStatusTagType = computed(() => {
-  if (remotionStatus.loading && !remotionStatus.checked) return 'warning'
+  if (!remotionStatus.checked || remotionStatus.loading) return 'warning'
   return remotionStatus.available ? 'success' : 'danger'
+})
+
+const remotionStatusSummary = computed(() => {
+  if (!remotionStatus.checked) return '未检测'
+  if (remotionStatus.loading && !remotionStatus.timestamp) return '检测中'
+  if (remotionStatus.available) {
+    return '服务可用'
+  }
+  return remotionStatus.message || '服务异常'
+})
+
+const remotionStatusDetail = computed(() => {
+  const parts: string[] = []
+  if (remotionStatus.baseUrl) {
+    parts.push(remotionStatus.baseUrl)
+  }
+  if (remotionStatus.timestamp) {
+    parts.push(formatHealthTime(remotionStatus.timestamp))
+  }
+  return parts.join(' | ')
 })
 
 const queryParams = reactive({
@@ -464,7 +494,7 @@ async function loadTemplates() {
     templateOptions.value = Array.isArray(result) ? result : []
   } catch (error: any) {
     templateOptions.value = []
-    ElMessage.error(error?.message || '获取 Remotion 模板失败')
+    ElMessage.error(getRemotionErrorMessage(error, '获取 Remotion 模板失败'))
   }
 }
 
@@ -475,12 +505,12 @@ async function checkRemotionHealth() {
     remotionStatus.checked = true
     remotionStatus.available = !!result?.available
     remotionStatus.baseUrl = result?.baseUrl || ''
-    remotionStatus.message = result?.message || ''
+    remotionStatus.message = normalizeHealthMessage(result?.message, remotionStatus.available)
     remotionStatus.timestamp = result?.timestamp || ''
   } catch (error: any) {
     remotionStatus.available = false
     remotionStatus.baseUrl = remotionStatus.baseUrl || '未知地址'
-    remotionStatus.message = error?.message || 'Remotion 服务检测失败'
+    remotionStatus.message = getRemotionErrorMessage(error, 'Remotion 服务检测失败')
     remotionStatus.timestamp = new Date().toISOString()
   } finally {
     remotionStatus.checked = true
@@ -573,10 +603,55 @@ async function submitGenerate() {
     createVisible.value = false
     await getList()
   } catch (error: any) {
-    ElMessage.error(error?.message || '视频生成失败')
+    ElMessage.error(getRemotionErrorMessage(error, '视频生成失败'))
   } finally {
     submitLoading.value = false
   }
+}
+
+function formatHealthTime(value: string) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+}
+
+function normalizeHealthMessage(message: string, available: boolean) {
+  const normalized = String(message || '').trim()
+  if (!normalized) {
+    return available ? '服务健康检查通过' : '服务健康检查未通过'
+  }
+  return normalized
+}
+
+function getRemotionErrorMessage(error: any, fallback: string) {
+  const raw = String(error?.message || error || '').trim()
+  const lower = raw.toLowerCase()
+
+  if (!raw) return fallback
+  if (lower.includes('connection refused') || lower.includes('econnrefused')) {
+    return '服务未启动'
+  }
+  if (lower.includes('network error')) {
+    return '网络异常'
+  }
+  if (lower.includes('timeout')) {
+    return '请求超时'
+  }
+  if (lower.includes('not found')) {
+    return '接口不存在'
+  }
+  if (lower.includes('remotion')) {
+    return 'Remotion 服务异常'
+  }
+  return raw || fallback
 }
 
 async function getList() {
@@ -729,14 +804,36 @@ onBeforeUnmount(() => {
 
 .remotion-record-page__status-bar {
   display: flex;
-  min-height: 32px;
-  align-items: center;
+  min-height: 40px;
+  align-items: flex-start;
   gap: 10px;
 }
 
-.remotion-record-page__status-text {
+.remotion-record-page__status-content {
+  display: flex;
   min-width: 0;
   flex: 1;
+  max-width: 360px;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.remotion-record-page__status-text {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  line-height: 1.5;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remotion-record-page__status-detail {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   color: var(--el-text-color-secondary);
   font-size: 12px;
