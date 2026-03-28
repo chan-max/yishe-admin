@@ -3,7 +3,7 @@
     <div class="ops-header">
       <div>
         <div class="ops-header__title">PS 控制台</div>
-        <div class="ops-header__desc">在同一页面内区分本地调试和客户端桥接操作。</div>
+        <div class="ops-header__desc">统一查看本地 PS 与客户端连接状态，并执行基础检测。</div>
       </div>
       <div class="ops-header__actions">
         <div class="inline-status-group">
@@ -33,7 +33,6 @@
                 <div class="ops-panel__sub"><code>localhost:1595</code></div>
               </div>
               <div class="ops-panel__actions">
-                <el-button @click="openLocalPsUi">打开页面</el-button>
                 <el-button @click="refreshLocalDebug">健康检测</el-button>
               </div>
             </div>
@@ -53,46 +52,14 @@
                 <span class="compact-info__label">说明</span>
                 <span class="compact-info__value">{{ localDebugRuntime.message || localDebugRuntime.lastError || '-' }}</span>
               </div>
-            </div>
-
-            <div class="ops-form-block">
-              <div class="ops-form-block__title">PSD 分析</div>
-              <el-form label-position="top" class="ops-form">
-                <el-form-item label="PSD 路径">
-                  <el-input v-model="localAnalyzePsdPath" placeholder="例如 D:\\demo\\a.psd" />
-                </el-form-item>
-                <el-form-item>
-                  <el-button
-                    type="primary"
-                    :disabled="!localAnalyzePsdPath.trim()"
-                    @click="handleLocalAnalyzePsd"
-                  >
-                    执行分析
-                  </el-button>
-                </el-form-item>
-              </el-form>
-            </div>
-
-            <div class="ops-form-block">
-              <div class="ops-form-block__title">单次调试请求</div>
-              <el-form label-position="top" class="ops-form">
-                <el-form-item label="请求 JSON">
-                  <el-input
-                    v-model="localDebugProcessRequest"
-                    type="textarea"
-                    :rows="8"
-                    placeholder='{"psd_path":"D:\\demo\\a.psd","smart_objects":[],"export_dir":"D:\\demo\\out"}'
-                  />
-                </el-form-item>
-                <el-form-item>
-                  <el-button type="primary" @click="handleLocalDebugProcess">执行调试</el-button>
-                </el-form-item>
-              </el-form>
-            </div>
-
-            <div class="ops-form-block">
-              <div class="ops-form-block__title">最近结果</div>
-              <el-input :model-value="localResultText" type="textarea" :rows="12" readonly />
+              <div class="compact-info__item">
+                <span class="compact-info__label">最近检测</span>
+                <span class="compact-info__value">{{ formatDateSafe(localDebugRuntime.lastCheckedAt) }}</span>
+              </div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">诊断信息</span>
+                <span class="compact-info__value">{{ localDebugRuntime.diagnostics || '-' }}</span>
+              </div>
             </div>
           </section>
         </div>
@@ -140,9 +107,9 @@
           <section class="ops-main">
             <div class="ops-panel">
               <div class="ops-panel__head">
-                <div>
-                  <div class="ops-panel__title">客户端连接执行通道</div>
-                  <div class="ops-panel__sub">正式任务执行入口</div>
+              <div>
+                  <div class="ops-panel__title">客户端连接状态</div>
+                  <div class="ops-panel__sub">查看节点可用性、服务状态与自动制作运行情况。</div>
                 </div>
                 <div class="ops-panel__actions" v-if="selectedClient">
                   <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
@@ -169,31 +136,76 @@
                 </div>
 
                 <div class="ops-form-block">
-                  <div class="ops-form-block__title">套图执行</div>
-                  <el-form label-position="top" class="ops-form">
-                    <el-form-item label="套图 ID">
-                      <el-input v-model="bridgePsdSetId" placeholder="输入 psdSetId" />
-                    </el-form-item>
-                    <el-form-item>
+                  <div class="automation-toolbar">
+                    <div class="automation-toolbar__main">
+                      <div>
+                        <div class="ops-form-block__title">自动制作</div>
+                        <div class="ops-panel__sub">控制客户端套图自动制作开关，并查看当前处理状态。</div>
+                      </div>
+                      <el-tag :type="selectedPsAutomationEnabled ? 'success' : 'info'" effect="dark">
+                        {{ selectedPsAutomationEnabled ? '已开启' : '已关闭' }}
+                      </el-tag>
+                    </div>
+                    <div class="automation-toolbar__actions">
                       <el-button
-                        type="primary"
-                        :disabled="!bridgePsdSetId.trim()"
-                        @click="handleBridgeProcessPsdSet"
+                        type="success"
+                        plain
+                        :disabled="selectedPsAutomation?.enabled === true"
+                        @click="handlePsAutomationToggle(true)"
                       >
-                        通过桥接节点执行
+                        开启
                       </el-button>
-                    </el-form-item>
-                  </el-form>
-                </div>
-
-                <div class="ops-form-block">
-                  <div class="ops-form-block__title">最近结果</div>
-                  <div class="result-meta" v-if="lastBridgeCommandResult">
-                    <span>命令：{{ lastBridgeCommandResult.action }}</span>
-                    <span>结果：{{ lastBridgeCommandResult.success ? '成功' : '失败' }}</span>
-                    <span>时间：{{ lastBridgeCommandResult.finishedAt ? formatPast(new Date(lastBridgeCommandResult.finishedAt)) : '-' }}</span>
+                      <el-button
+                        type="danger"
+                        plain
+                        :disabled="selectedPsAutomation?.enabled === false"
+                        @click="handlePsAutomationToggle(false)"
+                      >
+                        关闭
+                      </el-button>
+                    </div>
                   </div>
-                  <el-input :model-value="bridgeResultText" type="textarea" :rows="12" readonly />
+
+                  <div class="compact-info compact-info--grid">
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">运行状态</span>
+                      <span class="compact-info__value">
+                        <el-tag :type="selectedPsAutomation?.running ? 'warning' : 'info'" effect="plain">
+                          {{ selectedPsAutomation?.running ? '执行中' : '空闲' }}
+                        </el-tag>
+                      </span>
+                    </div>
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">待处理数</span>
+                      <span class="compact-info__value">{{ selectedPsAutomation?.queueCount ?? 0 }}</span>
+                    </div>
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">当前套图 ID</span>
+                      <span class="compact-info__value">{{ selectedPsAutomation?.currentPsSetId || '-' }}</span>
+                    </div>
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">当前套图</span>
+                      <span class="compact-info__value">{{ selectedPsAutomation?.currentPsSetName || '-' }}</span>
+                    </div>
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">进度</span>
+                      <span class="compact-info__value">
+                        {{ typeof selectedPsAutomation?.progress === 'number' ? `${selectedPsAutomation.progress}%` : '-' }}
+                      </span>
+                    </div>
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">最近心跳</span>
+                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.lastHeartbeatAt || undefined) }}</span>
+                    </div>
+                    <div class="compact-info__item">
+                      <span class="compact-info__label">最后更新</span>
+                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.updatedAt || undefined) }}</span>
+                    </div>
+                    <div class="compact-info__item compact-info__item--full">
+                      <span class="compact-info__label">错误信息</span>
+                      <span class="compact-info__value">{{ selectedPsAutomation?.lastError || '-' }}</span>
+                    </div>
+                  </div>
                 </div>
               </template>
 
@@ -208,11 +220,14 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
 import { formatDate, formatPast } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
 import localPhotoshopApi from '@/api/client/photoshop'
-import { websocketClient, type ServiceCommandResultEvent, type ServiceRuntimeEvent } from '@/services/websocketClient'
+import {
+  websocketClient,
+  type PsAutomationStatusEvent,
+  type ServiceRuntimeEvent
+} from '@/services/websocketClient'
 import type { WebsocketConnectionVO } from '@/api/system/websocket'
 
 defineOptions({ name: 'PsConsolePanel' })
@@ -221,11 +236,6 @@ const clients = ref<WebsocketConnectionVO[]>([])
 const loading = ref(false)
 const activeTab = ref('local')
 const selectedClientId = ref('')
-const bridgePsdSetId = ref('')
-const localAnalyzePsdPath = ref('')
-const localDebugProcessRequest = ref('')
-const lastBridgeCommandResult = ref<ServiceCommandResultEvent | null>(null)
-const lastLocalResult = ref<any>(null)
 
 const localDebugRuntime = reactive({
   connected: false,
@@ -279,6 +289,8 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
 }
 
 const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
+const selectedPsAutomation = computed(() => selectedClient.value?.clientInfo?.psAutomation || null)
+const selectedPsAutomationEnabled = computed(() => !!selectedPsAutomation.value?.enabled)
 
 const formatDateSafe = (value?: string) => {
   if (!value) return '-'
@@ -362,20 +374,6 @@ const bridgeServiceStatus = computed(() => {
   }
 })
 
-const localResultText = computed(() => {
-  if (!lastLocalResult.value) {
-    return '暂无结果'
-  }
-  return JSON.stringify(lastLocalResult.value, null, 2)
-})
-
-const bridgeResultText = computed(() => {
-  if (!lastBridgeCommandResult.value) {
-    return '暂无结果'
-  }
-  return JSON.stringify(lastBridgeCommandResult.value, null, 2)
-})
-
 watch(
   psClients,
   (list) => {
@@ -433,11 +431,7 @@ const handleServiceRuntime = (_event: ServiceRuntimeEvent) => {
   void refreshClients()
 }
 
-const handleServiceCommandResult = (event: ServiceCommandResultEvent) => {
-  if (event.service !== 'photoshop') {
-    return
-  }
-  lastBridgeCommandResult.value = event
+const handlePsAutomationStatus = (_event: PsAutomationStatusEvent) => {
   void refreshClients()
 }
 
@@ -450,88 +444,26 @@ const handleBridgeCommand = async (
   await ClientControlService.sendServiceCommand(clientId, 'photoshop', action, payload, mode)
 }
 
-const handleBridgeProcessPsdSet = async () => {
-  if (!selectedClient.value || !bridgePsdSetId.value.trim()) {
-    ElMessage.warning('请选择客户端并输入套图 ID')
+const handlePsAutomationToggle = async (enabled: boolean) => {
+  if (!selectedClient.value) {
     return
   }
 
-  await handleBridgeCommand(selectedClient.value.id, 'processPsdSet', {
-    psdSetId: bridgePsdSetId.value.trim()
-  })
-}
-
-const handleLocalAnalyzePsd = async () => {
-  if (!localAnalyzePsdPath.value.trim()) {
-    ElMessage.warning('请输入 PSD 路径')
-    return
+  const success = await ClientControlService.setPsAutomationEnabled(selectedClient.value.id, enabled)
+  if (success) {
+    await refreshClients()
   }
-
-  try {
-    const result = await localPhotoshopApi.analyzePsd(localAnalyzePsdPath.value.trim())
-    lastLocalResult.value = {
-      action: 'analyzePsd',
-      success: true,
-      finishedAt: new Date().toISOString(),
-      data: result
-    }
-    await refreshLocalDebug()
-  } catch (error: any) {
-    lastLocalResult.value = {
-      action: 'analyzePsd',
-      success: false,
-      finishedAt: new Date().toISOString(),
-      error: error?.message || 'PSD 分析失败'
-    }
-    ElMessage.error(error?.message || 'PSD 分析失败')
-    await refreshLocalDebug()
-  }
-}
-
-const handleLocalDebugProcess = async () => {
-  if (!localDebugProcessRequest.value.trim()) {
-    ElMessage.warning('请输入调试请求 JSON')
-    return
-  }
-
-  try {
-    const parsed = JSON.parse(localDebugProcessRequest.value)
-    const result = await localPhotoshopApi.processPsd(parsed)
-    lastLocalResult.value = {
-      action: 'processPsd',
-      success: !!result.success,
-      finishedAt: new Date().toISOString(),
-      data: result
-    }
-    if (!result.success) {
-      ElMessage.error(result.message || '本机调试执行失败')
-    }
-    await refreshLocalDebug()
-  } catch (error: any) {
-    lastLocalResult.value = {
-      action: 'processPsd',
-      success: false,
-      finishedAt: new Date().toISOString(),
-      error: error?.message || '调试请求执行失败'
-    }
-    ElMessage.error(error?.message || '调试请求执行失败')
-    await refreshLocalDebug()
-  }
-}
-
-const openLocalPsUi = () => {
-  window.open('http://localhost:1595/ui', '_blank')
 }
 
 onMounted(() => {
   websocketClient.events.on('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.on('serviceCommandResult', handleServiceCommandResult)
+  websocketClient.events.on('psAutomationStatus', handlePsAutomationStatus)
   void Promise.all([refreshClients(), refreshLocalDebug()])
 })
 
 onUnmounted(() => {
   websocketClient.events.off('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.off('serviceCommandResult', handleServiceCommandResult)
+  websocketClient.events.off('psAutomationStatus', handlePsAutomationStatus)
 })
 </script>
 
@@ -652,11 +584,20 @@ onUnmounted(() => {
   background: var(--el-fill-color-light);
 }
 
+.compact-info--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .compact-info__item {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
+}
+
+.compact-info__item--full {
+  grid-column: 1 / -1;
 }
 
 .compact-info__label {
@@ -717,6 +658,38 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
+.automation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+}
+
+.automation-toolbar__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.automation-toolbar__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.ops-panel__head--minor {
+  padding-bottom: 0;
+  border-bottom: 0;
+  margin-bottom: 10px;
+}
+
 .ops-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -773,30 +746,6 @@ onUnmounted(() => {
   margin-bottom: 10px;
 }
 
-.ops-form :deep(.el-form-item) {
-  margin-bottom: 14px;
-}
-
-.inline-chip {
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 8px;
-  margin: 0 6px 6px 0;
-  border: 1px solid var(--el-border-color);
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-}
-
-.result-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 10px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
 @media (max-width: 1280px) {
   .ops-columns {
     grid-template-columns: 1fr 1fr;
@@ -805,7 +754,8 @@ onUnmounted(() => {
 
 @media (max-width: 1024px) {
   .tab-layout,
-  .ops-columns {
+  .ops-columns,
+  .compact-info--grid {
     grid-template-columns: 1fr;
   }
 
@@ -816,9 +766,15 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .ops-header,
-  .ops-panel__head {
+  .ops-panel__head,
+  .automation-toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .automation-toolbar__main {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 </style>

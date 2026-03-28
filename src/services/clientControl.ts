@@ -136,6 +136,42 @@ export class ClientControlService {
       return false
     }
   }
+
+  static async setPsAutomationEnabled(clientId: string, enabled: boolean, silent: boolean = false): Promise<boolean> {
+    try {
+      const myClients = await this.getMyClients()
+      const targetClient = myClients.find((client) => client.id === clientId)
+
+      if (!targetClient) {
+        if (!silent) {
+          ElMessage.error('无法操作该客户端：不属于当前用户或连接不存在')
+        }
+        return false
+      }
+
+      const response = enabled
+        ? await WebsocketApi.enablePsAutomation(clientId)
+        : await WebsocketApi.disablePsAutomation(clientId)
+
+      if (response.success) {
+        if (!silent) {
+          ElMessage.success(enabled ? '已发送开启自动制作命令' : '已发送关闭自动制作命令')
+        }
+        return true
+      }
+
+      if (!silent) {
+        ElMessage.error(response.message || '自动制作命令发送失败')
+      }
+      return false
+    } catch (error: any) {
+      console.error('[ClientControlService] 设置自动制作状态失败:', error)
+      if (!silent) {
+        ElMessage.error(error?.message || '设置自动制作状态失败')
+      }
+      return false
+    }
+  }
   
   /**
    * 检查连接是否属于当前用户
@@ -156,4 +192,3 @@ export class ClientControlService {
     return myClients.length
   }
 }
-

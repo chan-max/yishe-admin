@@ -81,6 +81,17 @@ export interface WebsocketClientInfo {
     source?: string
   }
   user?: TokenUserInfo | null
+  psAutomation?: {
+    enabled?: boolean
+    running?: boolean
+    queueCount?: number
+    currentPsSetId?: string | null
+    currentPsSetName?: string | null
+    progress?: number | null
+    lastError?: string | null
+    lastHeartbeatAt?: string | null
+    updatedAt?: string | null
+  }
 }
 
 export interface WebsocketConnectionVO {
@@ -193,5 +204,35 @@ export const getUserInfoByToken = (token: string) => {
   return request.post<{ success: boolean; data: TokenUserInfo | null; message?: string }>({
     url: '/websocket/token-user',
     data: { token }
+  })
+}
+
+export interface PsAutomationStatusVO {
+  clientId: string
+  machineCode?: string | null
+  connectedAt?: string
+  psAutomation?: WebsocketClientInfo['psAutomation'] | null
+}
+
+export const getMyPsAutomationStatus = () => {
+  return request.get<PsAutomationStatusVO[]>({ url: '/websocket/ps-automation/status' })
+}
+
+export const enablePsAutomation = (clientId: string) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/ps-automation/${clientId}/enable`
+  })
+}
+
+export const disablePsAutomation = (clientId: string) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/ps-automation/${clientId}/disable`
+  })
+}
+
+export const togglePsAutomation = (clientId: string, enabled?: boolean) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/ps-automation/${clientId}/toggle`,
+    data: typeof enabled === 'boolean' ? { enabled } : undefined
   })
 }

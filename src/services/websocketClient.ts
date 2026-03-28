@@ -90,6 +90,19 @@ export interface ServiceCommandResultEvent {
   finishedAt?: string
 }
 
+export interface PsAutomationStatusEvent {
+  clientId: string
+  enabled?: boolean
+  running?: boolean
+  queueCount?: number
+  currentPsSetId?: string | null
+  currentPsSetName?: string | null
+  progress?: number | null
+  lastError?: string | null
+  lastHeartbeatAt?: string | null
+  updatedAt?: string | null
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: 'idle',
@@ -136,6 +149,7 @@ export type WebsocketEvents = {
   'production-status': { status: string; message: string; psdSetId?: string }
   serviceRuntime: ServiceRuntimeEvent
   serviceCommandResult: ServiceCommandResultEvent
+  psAutomationStatus: PsAutomationStatusEvent
 }
 
 const emitter = mitt<WebsocketEvents>()
@@ -331,6 +345,10 @@ function bindSocketEvents(currentSocket: Socket) {
   currentSocket.on('service-command-result', (data: ServiceCommandResultEvent) => {
     emitter.emit('serviceCommandResult', data)
   })
+
+  currentSocket.on('ps-automation-status', (data: PsAutomationStatusEvent) => {
+    emitter.emit('psAutomationStatus', data)
+  })
 }
 
 // 检查当前用户的客户端连接状态（通过 WebSocket）
@@ -439,4 +457,3 @@ export const websocketClient = {
   sendMessage,
   events: emitter
 }
-
