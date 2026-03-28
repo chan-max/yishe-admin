@@ -3,25 +3,25 @@
     v-model="visible"
     fullscreen
     append-to-body
-    class="ps-console-dialog"
-    :modal-class="'ps-console-dialog__mask'"
+    class="client-connections-dialog"
+    :modal-class="'client-connections-dialog__mask'"
     :z-index="5000"
     :close-on-click-modal="false"
     destroy-on-close
   >
     <template #header>
-      <span>PS 控制台</span>
+      <span>客户端连接</span>
     </template>
 
-    <PsConsolePanel />
+    <ClientControl />
   </el-dialog>
 </template>
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import PsConsolePanel from '@/components/PsConsolePanel/index.vue'
+import ClientControl from '@/components/ClientControl/index.vue'
 
-defineOptions({ name: 'PsConsoleDialog' })
+defineOptions({ name: 'ClientConnectionsDialog' })
 
 const props = defineProps<{
   modelValue: boolean
@@ -38,19 +38,19 @@ const visible = computed({
 </script>
 
 <style scoped lang="scss">
-:global(.ps-console-dialog__mask) {
+:global(.client-connections-dialog__mask) {
   z-index: 4999 !important;
 }
 
-:deep(.ps-console-dialog .el-overlay-dialog) {
+:deep(.client-connections-dialog .el-overlay-dialog) {
   z-index: 5000 !important;
 }
 
-:deep(.ps-console-dialog .el-dialog) {
+:deep(.client-connections-dialog .el-dialog) {
   margin: 0;
 }
 
-:deep(.ps-console-dialog .el-dialog__body) {
+:deep(.client-connections-dialog .el-dialog__body) {
   height: calc(100vh - 54px);
   overflow: auto;
 }

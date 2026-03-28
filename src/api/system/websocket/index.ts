@@ -97,6 +97,7 @@ export interface WebsocketConnectionVO {
   username?: string
   nickname?: string
   email?: string
+  tokenUser?: TokenUserInfo | null
 }
 
 export const getWebsocketConnections = () => {
@@ -194,4 +195,3 @@ export const getUserInfoByToken = (token: string) => {
     data: { token }
   })
 }
-

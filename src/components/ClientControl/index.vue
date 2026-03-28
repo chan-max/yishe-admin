@@ -15,31 +15,113 @@
 
       <div v-else class="client-list">
         <div v-for="client in clients" :key="client.id" class="client-item">
-          <div class="client-info">
-            <div class="client-id">
-              <Icon icon="ep:connection" class="mr-4px" />
-              <span class="label">连接 ID：</span>
-              <span class="value">{{ client.id }}</span>
+          <div class="client-item__top">
+            <div class="client-info">
+              <div class="client-title-row">
+                <div class="client-title">{{ getClientTitle(client) }}</div>
+                <el-tag v-if="client.clientSource" size="small" type="info">
+                  {{ client.clientSource }}
+                </el-tag>
+              </div>
+              <div class="client-id">
+                <Icon icon="ep:connection" class="mr-4px" />
+                <span class="label">连接 ID：</span>
+                <span class="value">{{ client.id }}</span>
+              </div>
+              <div class="client-meta">
+                <span class="meta-item" v-if="client.namespace">
+                  <Icon icon="ep:folder-opened" class="mr-4px" />
+                  {{ client.namespace }}
+                </span>
+                <span class="meta-item" v-if="client.ip">
+                  <Icon icon="ep:location" class="mr-4px" />
+                  {{ client.ip }}
+                </span>
+                <span class="meta-item" v-if="client.connectedAt">
+                  <Icon icon="ep:clock" class="mr-4px" />
+                  {{ formatPast(new Date(client.connectedAt)) }}
+                </span>
+              </div>
             </div>
-            <div class="client-meta">
-              <el-tag v-if="client.clientSource" size="small" type="info">
-                {{ client.clientSource }}
-              </el-tag>
-              <span class="meta-item" v-if="client.ip">
-                <Icon icon="ep:location" class="mr-4px" />
-                {{ client.ip }}
-              </span>
-              <span class="meta-item" v-if="client.connectedAt">
-                <Icon icon="ep:clock" class="mr-4px" />
-                {{ formatPast(new Date(client.connectedAt)) }}
-              </span>
+            <div class="client-actions">
+              <el-button text @click="toggleExpand(client.id)">
+                {{ expandedIds.includes(client.id) ? '收起详情' : '查看详情' }}
+              </el-button>
+              <el-button type="primary" size="small" @click="handleSendMessage(client)">
+                <Icon icon="ep:message" class="mr-4px" />
+                发送消息
+              </el-button>
             </div>
           </div>
-          <div class="client-actions">
-            <el-button type="primary" size="small" @click="handleSendMessage(client)">
-              <Icon icon="ep:message" class="mr-4px" />
-              发送消息
-            </el-button>
+
+          <div v-if="expandedIds.includes(client.id)" class="client-details">
+            <div class="detail-grid">
+              <div class="detail-card">
+                <div class="detail-card__title">连接概览</div>
+                <div class="detail-row"><span class="detail-key">连接 ID</span><span class="detail-value detail-value--mono">{{ client.id }}</span></div>
+                <div class="detail-row"><span class="detail-key">命名空间</span><span class="detail-value">{{ client.namespace || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">连接来源</span><span class="detail-value">{{ client.clientSource || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">连接时间</span><span class="detail-value">{{ formatDateSafe(client.connectedAt) }}</span></div>
+                <div class="detail-row"><span class="detail-key">持续时长</span><span class="detail-value">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">IP</span><span class="detail-value">{{ client.ip || client.clientInfo?.location?.ip || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">User-Agent</span><span class="detail-value detail-value--break">{{ client.userAgent || client.clientInfo?.userAgent || '-' }}</span></div>
+              </div>
+
+              <div class="detail-card">
+                <div class="detail-card__title">设备环境</div>
+                <div class="detail-row"><span class="detail-key">机器码</span><span class="detail-value">{{ client.clientInfo?.machine?.code || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">平台</span><span class="detail-value">{{ client.clientInfo?.platform?.os || client.clientInfo?.platform || client.clientInfo?.machine?.platform || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">浏览器</span><span class="detail-value">{{ formatBrowser(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">操作系统</span><span class="detail-value">{{ formatOs(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">语言</span><span class="detail-value">{{ client.clientInfo?.language || client.clientInfo?.uiLanguage || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">时区</span><span class="detail-value">{{ client.clientInfo?.timeZone || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">硬件</span><span class="detail-value">{{ formatDevice(client) }}</span></div>
+              </div>
+
+              <div class="detail-card">
+                <div class="detail-card__title">应用信息</div>
+                <div class="detail-row"><span class="detail-key">客户端 ID</span><span class="detail-value detail-value--mono">{{ client.clientInfo?.clientId || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">来源标识</span><span class="detail-value">{{ client.clientInfo?.source || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">扩展名称</span><span class="detail-value">{{ client.clientInfo?.extension?.name || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">扩展版本</span><span class="detail-value">{{ client.clientInfo?.extension?.version || client.clientInfo?.appVersion || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">Manifest</span><span class="detail-value">{{ client.clientInfo?.extension?.manifestVersion || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">上报时间</span><span class="detail-value">{{ formatDateSafe(client.clientInfo?.timestamp) }}</span></div>
+              </div>
+
+              <div class="detail-card">
+                <div class="detail-card__title">账号信息</div>
+                <div class="detail-row"><span class="detail-key">姓名</span><span class="detail-value">{{ currentUserName(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">账号</span><span class="detail-value">{{ currentUserAccount(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">邮箱</span><span class="detail-value">{{ currentUserEmail(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">手机号</span><span class="detail-value">{{ currentUserPhone(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">公司</span><span class="detail-value">{{ currentUserCompany(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">用户 ID</span><span class="detail-value">{{ currentUserId(client) }}</span></div>
+              </div>
+
+              <div class="detail-card detail-card--full">
+                <div class="detail-card__title">地理与网络</div>
+                <div class="detail-row"><span class="detail-key">地区</span><span class="detail-value">{{ formatLocation(client) }}</span></div>
+                <div class="detail-row"><span class="detail-key">网络组织</span><span class="detail-value">{{ client.clientInfo?.location?.org || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">定位时区</span><span class="detail-value">{{ client.clientInfo?.location?.timeZone || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">定位来源</span><span class="detail-value">{{ client.clientInfo?.location?.source || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">定位时间</span><span class="detail-value">{{ formatDateSafe(client.clientInfo?.location?.fetchedAt) }}</span></div>
+              </div>
+
+              <div class="detail-card detail-card--full">
+                <div class="detail-card__title">服务状态</div>
+                <pre class="detail-json">{{ stringifyPretty(client.clientInfo?.services) }}</pre>
+              </div>
+
+              <div class="detail-card detail-card--full">
+                <div class="detail-card__title">握手参数</div>
+                <pre class="detail-json">{{ stringifyPretty(client.query) }}</pre>
+              </div>
+
+              <div class="detail-card detail-card--full">
+                <div class="detail-card__title">客户端原始上报</div>
+                <pre class="detail-json">{{ stringifyPretty(client.clientInfo) }}</pre>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -78,23 +160,114 @@
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { formatPast } from '@/utils/formatTime'
+import { formatDate, formatPast } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
-import type { WebsocketConnectionVO } from '@/api/system/websocket'
+import type { TokenUserInfo, WebsocketConnectionVO } from '@/api/system/websocket'
 
 defineOptions({ name: 'ClientControl' })
 
 const clients = ref<WebsocketConnectionVO[]>([])
 const loading = ref(false)
+const expandedIds = ref<string[]>([])
 const sendMessageDialogVisible = ref(false)
 const currentClient = ref<WebsocketConnectionVO | null>(null)
 const messageContent = ref('')
 const sending = ref(false)
 
+const formatDateSafe = (value?: string) => {
+  if (!value) return '-'
+  try {
+    return formatDate(new Date(value))
+  } catch {
+    return value
+  }
+}
+
+const stringifyPretty = (value: unknown) => {
+  if (!value) return '-'
+  try {
+    return JSON.stringify(value, null, 2)
+  } catch {
+    return String(value)
+  }
+}
+
+const getTokenUser = (client: WebsocketConnectionVO): TokenUserInfo | null | undefined => {
+  return client.tokenUser || client.clientInfo?.user
+}
+
+const currentUserName = (client: WebsocketConnectionVO) =>
+  getTokenUser(client)?.name || getTokenUser(client)?.nickname || client.nickname || '-'
+
+const currentUserAccount = (client: WebsocketConnectionVO) =>
+  getTokenUser(client)?.account || client.username || '-'
+
+const currentUserEmail = (client: WebsocketConnectionVO) =>
+  getTokenUser(client)?.email || client.email || '-'
+
+const currentUserPhone = (client: WebsocketConnectionVO) =>
+  getTokenUser(client)?.phone || '-'
+
+const currentUserCompany = (client: WebsocketConnectionVO) =>
+  getTokenUser(client)?.company?.name || '-'
+
+const currentUserId = (client: WebsocketConnectionVO) =>
+  String(getTokenUser(client)?.id || client.userId || '-')
+
+const getClientTitle = (client: WebsocketConnectionVO) =>
+  client.clientInfo?.machine?.code ||
+  client.clientInfo?.clientId ||
+  client.clientInfo?.extension?.name ||
+  client.id
+
+const formatBrowser = (client: WebsocketConnectionVO) => {
+  const browser = client.clientInfo?.browser
+  if (!browser?.name) return '-'
+  return `${browser.name}${browser.version ? ` ${browser.version}` : ''}`
+}
+
+const formatOs = (client: WebsocketConnectionVO) => {
+  const os = client.clientInfo?.os
+  if (!os?.name) return '-'
+  return `${os.name}${os.version ? ` ${os.version}` : ''}`
+}
+
+const formatDevice = (client: WebsocketConnectionVO) => {
+  const parts: string[] = []
+  if (client.clientInfo?.device?.hardwareConcurrency) {
+    parts.push(`${client.clientInfo.device.hardwareConcurrency} 核`)
+  }
+  if (client.clientInfo?.device?.memory) {
+    parts.push(`${client.clientInfo.device.memory} GB`)
+  }
+  if (client.clientInfo?.platform?.arch) {
+    parts.push(client.clientInfo.platform.arch)
+  }
+  return parts.length ? parts.join(' / ') : '-'
+}
+
+const formatLocation = (client: WebsocketConnectionVO) => {
+  const fields = [
+    client.clientInfo?.location?.city,
+    client.clientInfo?.location?.region,
+    client.clientInfo?.location?.country
+  ].filter(Boolean)
+  return fields.length ? fields.join(' / ') : '-'
+}
+
+const toggleExpand = (id: string) => {
+  if (expandedIds.value.includes(id)) {
+    expandedIds.value = expandedIds.value.filter((item) => item !== id)
+    return
+  }
+  expandedIds.value = [...expandedIds.value, id]
+}
+
 const refreshClients = async () => {
   loading.value = true
   try {
     clients.value = await ClientControlService.getMyClients()
+    expandedIds.value = expandedIds.value.filter((id) => clients.value.some((client) => client.id === id))
     if (clients.value.length === 0) {
       ElMessage.info('当前没有已连接的客户端')
     }
@@ -160,11 +333,11 @@ onMounted(() => {
 
   .client-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 12px;
     padding: 12px;
     border: 1px solid var(--el-border-color);
-    border-radius: 4px;
+    border-radius: 8px;
     transition: all 0.3s;
 
     &:hover {
@@ -173,8 +346,29 @@ onMounted(() => {
     }
   }
 
+  .client-item__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+  }
+
   .client-info {
     flex: 1;
+    min-width: 0;
+  }
+
+  .client-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .client-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
   }
 
   .client-id {
@@ -191,12 +385,14 @@ onMounted(() => {
     .value {
       font-family: monospace;
       color: var(--el-color-primary);
+      word-break: break-all;
     }
   }
 
   .client-meta {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
@@ -208,8 +404,94 @@ onMounted(() => {
   }
 
   .client-actions {
-    margin-left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .client-details {
+    width: 100%;
+  }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .detail-card {
+    padding: 12px;
+    background: var(--el-fill-color-light);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 8px;
+  }
+
+  .detail-card--full {
+    grid-column: 1 / -1;
+  }
+
+  .detail-card__title {
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .detail-row {
+    display: flex;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--el-border-color-lighter);
+  }
+
+  .detail-row:last-child {
+    border-bottom: none;
+  }
+
+  .detail-key {
+    width: 88px;
+    flex-shrink: 0;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
+
+  .detail-value {
+    flex: 1;
+    font-size: 12px;
+    color: var(--el-text-color-primary);
+    word-break: break-word;
+  }
+
+  .detail-value--mono {
+    font-family: Monaco, Menlo, monospace;
+  }
+
+  .detail-value--break {
+    word-break: break-all;
+  }
+
+  .detail-json {
+    margin: 0;
+    padding: 10px;
+    background: var(--el-bg-color);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 6px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--el-text-color-regular);
+  }
+
+  @media (max-width: 960px) {
+    .client-item__top {
+      flex-direction: column;
+    }
+
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>
-
