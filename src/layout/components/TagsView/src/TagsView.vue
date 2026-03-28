@@ -265,13 +265,15 @@ watch(
   >
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool ${prefixCls}__tool--first`"
-      class="h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+      class="h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
       @click="move(-200)"
     >
       <Icon
         :hover-color="isDark ? '#fff' : 'var(--el-color-black)'"
         color="var(--el-text-color-placeholder)"
-        icon="ep:d-arrow-left"
+        icon="ep:arrow-left"
+        width="12"
+        height="12"
       />
     </span>
     <div class="flex-1 overflow-hidden">
@@ -355,10 +357,12 @@ watch(
                   :class="`h-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
                   @click="navigate"
                 >
-                  {{
-                    t(item?.meta?.title as string) +
-                    (item?.meta?.titleSuffix ? ` (${item?.meta?.titleSuffix})` : '')
-                  }}
+                  <span :class="`${prefixCls}__item--title`">
+                    {{
+                      t(item?.meta?.title as string) +
+                      (item?.meta?.titleSuffix ? ` (${item?.meta?.titleSuffix})` : '')
+                    }}
+                  </span>
                   <Icon
                     :class="`${prefixCls}__item--close`"
                     :size="11"
@@ -375,24 +379,28 @@ watch(
     </div>
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-      class="h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+      class="h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
       @click="move(200)"
     >
       <Icon
         :hover-color="isDark ? '#fff' : 'var(--el-color-black)'"
         color="var(--el-text-color-placeholder)"
-        icon="ep:d-arrow-right"
+        icon="ep:arrow-right"
+        width="12"
+        height="12"
       />
     </span>
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-      class="h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+      class="h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
       @click="refreshSelectedTag(selectedTag)"
     >
       <Icon
         :hover-color="isDark ? '#fff' : 'var(--el-color-black)'"
         color="var(--el-text-color-placeholder)"
-        icon="ep:refresh-right"
+        icon="ep:refresh"
+        width="12"
+        height="12"
       />
     </span>
     <ContextMenu
@@ -451,12 +459,14 @@ watch(
     >
       <span
         :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-        class="block h-[var(--tags-view-height)] w-[var(--tags-view-height)] flex cursor-pointer items-center justify-center"
+        class="block h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
       >
         <Icon
           :hover-color="isDark ? '#fff' : 'var(--el-color-black)'"
           color="var(--el-text-color-placeholder)"
-          icon="ep:menu"
+          icon="ep:more-filled"
+          width="12"
+          height="12"
         />
       </span>
     </ContextMenu>
@@ -477,7 +487,7 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__tool {
     position: relative;
-    color: rgba(255, 255, 255, 0.52);
+    color: rgba(255, 255, 255, 0.44);
     transition:
       color 0.2s ease,
       background-color 0.2s ease;
@@ -488,13 +498,13 @@ $prefix-cls: #{$namespace}-tags-view;
       left: 0;
       width: 100%;
       height: 100%;
-      border-left: 1px solid rgba(255, 255, 255, 0.06);
+      border-left: 1px solid rgba(255, 255, 255, 0.04);
       content: '';
     }
 
     &:hover {
-      color: rgba(255, 255, 255, 0.78);
-      background: rgba(255, 255, 255, 0.018);
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.01);
     }
 
     &--first {
@@ -504,7 +514,7 @@ $prefix-cls: #{$namespace}-tags-view;
         left: 0;
         width: 100%;
         height: 100%;
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        border-right: 1px solid rgba(255, 255, 255, 0.04);
         border-left: none;
         content: '';
       }
@@ -516,26 +526,27 @@ $prefix-cls: #{$namespace}-tags-view;
     top: 0;
     display: flex;
     height: 100%;
-    padding-right: 18px;
+    padding-right: 16px;
     margin-left: 0;
     font-size: 11px;
     font-weight: 400;
-    color: rgba(255, 255, 255, 0.58);
+    color: rgba(255, 255, 255, 0.52);
     cursor: pointer;
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: 0;
     box-sizing: border-box;
     transition:
       color 0.2s ease,
-      background-color 0.2s ease;
+      background-color 0.2s ease,
+      border-color 0.2s ease;
 
     &--close {
       position: absolute;
       top: 50%;
       right: 6px;
       display: flex;
-      width: 14px;
-      height: 14px;
+      width: 13px;
+      height: 13px;
       align-items: center;
       justify-content: center;
       color: inherit;
@@ -548,8 +559,8 @@ $prefix-cls: #{$namespace}-tags-view;
     }
 
     &:not(.#{$prefix-cls}__item--affix):hover {
-      color: rgba(255, 255, 255, 0.8);
-      background: rgba(255, 255, 255, 0.018);
+      color: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.01);
 
       .#{$prefix-cls}__item--close {
         opacity: 1;
@@ -563,19 +574,40 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item--label {
     min-width: 0;
-    padding: 0 22px 0 10px;
+    padding: 0 20px 0 10px;
     line-height: 1;
   }
 
   &__item.is-active {
-    color: rgba(255, 255, 255, 0.96);
-    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.92);
+    background: transparent;
+    border-right-color: rgba(255, 255, 255, 0.04);
+    box-shadow: none;
+  }
+
+  &__item--title {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+  }
+
+  &__item.is-active .#{$prefix-cls}__item--title::after {
+    position: absolute;
+    bottom: -11px;
+    left: 50%;
+    width: 30px;
+    height: 3px;
+    border-radius: 999px;
+    background: var(--el-color-primary);
+    content: '';
+    transform: translateX(-50%);
   }
 
   &__item--immerse {
     top: 0;
     height: 100%;
-    padding-right: 18px;
+    padding-right: 16px;
     margin: 0;
     border: none !important;
 
@@ -610,8 +642,8 @@ $prefix-cls: #{$namespace}-tags-view;
     }
 
     &__item.is-active {
-      color: rgba(255, 255, 255, 0.96);
-      background: rgba(255, 255, 255, 0.03);
+      color: rgba(255, 255, 255, 0.92);
+      background: transparent;
     }
 
     &__item--immerse:not(.is-active) {

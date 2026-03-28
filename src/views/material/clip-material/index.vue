@@ -296,13 +296,11 @@
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex items-center">
                     <el-dropdown
-                      trigger="click"
-                      @command="(command) => handleOperationCommand(command, row)"
                       class="operation-dropdown"
+                      placement="bottom-end"
+                      @command="(command) => handleOperationCommand(String(command), row)"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                      </el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item v-if="isAdmin" command="edit">
@@ -456,7 +454,6 @@ import { ElButton, ElNotification, ElMessage, ElMessageBox } from "element-plus"
 import {
   Delete,
   Search,
-  ArrowDown,
   Edit,
   Download,
   VideoPlay,
@@ -565,8 +562,9 @@ const gridOptions = ref({
     {
       title: "操作",
       fixed: "right",
-      width: "auto",
+      width: 132,
       field: "operation",
+      className: "table-operation-cell",
       slots: { default: "operationDefaultSlot" },
     },
   ],

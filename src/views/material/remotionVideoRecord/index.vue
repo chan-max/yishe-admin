@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="remotion-record-page">
       <template #filter>
@@ -116,22 +116,19 @@
             <span class="table-time-text">{{ formatTimestamp(row.createTime) }}</span>
           </template>
           <template #operationDefaultSlot="{ row }">
-            <div class="flex items-center">
-              <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" size="small">
-                <el-button type="primary" link size="small">
-                  操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
+            <div class="flex justify-start">
+              <el-dropdown
+                trigger="click"
+                placement="bottom-end"
+                @command="(command) => handleOperationCommand(command, row)"
+                class="operation-dropdown"
+              >
+                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                 <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="detail">
-                      <el-icon><View /></el-icon>
-                      <span>查看详情</span>
-                    </el-dropdown-item>
+                  <el-dropdown-menu class="operation-menu-compact">
+                    <el-dropdown-item command="detail">查看详情</el-dropdown-item>
                     <!-- 再次生成已移除 -->
-                    <el-dropdown-item command="delete" divided>
-                      <el-icon><Delete /></el-icon>
-                      <span>删除</span>
-                    </el-dropdown-item>
+                    <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -278,7 +275,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown, Delete, Search, View } from '@element-plus/icons-vue'
+import { Delete, Search, View } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { formatTimestamp } from '@/common/date'
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
@@ -1061,3 +1058,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+

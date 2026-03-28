@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="code-script-schedule-page">
       <template #filter>
@@ -130,12 +130,10 @@
                 <template #operationSlot="{ row }">
                   <el-dropdown
                     trigger="click"
-                    @command="(command) => handleOperationCommand(command, row)"
+                    @command="(command) => handleOperationCommand(String(command), row)"
                     class="operation-dropdown"
                   >
-                    <el-button type="primary" link size="small" class="operation-trigger-button">
-                      操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                    </el-button>
+                    <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                     <template #dropdown>
                       <el-dropdown-menu class="operation-menu-compact">
                         <el-dropdown-item command="run">立即执行</el-dropdown-item>
@@ -345,13 +343,12 @@
           <template #executionOperationSlot="{ row }">
             <el-dropdown
               trigger="click"
-              @command="(command) => handleExecutionOperationCommand(command, row)"
+              @command="(command) => handleExecutionOperationCommand(String(command), row)"
+              class="operation-dropdown"
             >
-              <el-button type="primary" link size="small">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="detail">详情</el-dropdown-item>
                   <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
                 </el-dropdown-menu>
@@ -429,7 +426,7 @@
 import { computed, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { ArrowDown, Plus, Search } from "@element-plus/icons-vue";
+import { Plus, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { commonGridOptions } from "@/common/table";
 import Pagination from "@/components/Pagination/index.vue";
@@ -564,7 +561,7 @@ const gridOptions = ref({
       showOverflow: true,
       slots: { default: "nextRunAtSlot" },
     },
-    { title: "操作", width: 110, fixed: "right" as const, slots: { default: "operationSlot" } },
+    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "operationSlot" } },
   ],
 } as any);
 
@@ -594,7 +591,7 @@ const executionGridOptions = ref({
     },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
-    { title: "操作", width: 100, slots: { default: "executionOperationSlot" } },
+    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "executionOperationSlot" } },
   ],
 } as any);
 
@@ -1060,3 +1057,4 @@ onMounted(async () => {
   padding-top: 10px;
 }
 </style>
+

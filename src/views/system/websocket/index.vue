@@ -77,26 +77,25 @@
             {{ formatQuery(row.query) }}
           </template>
           <template #operation_default="{ row }">
-            <el-dropdown
-              trigger="click"
-              class="operation-dropdown"
-              @command="(command) => handleOperationCommand(command, row)"
-            >
-              <el-button type="primary" link size="small" class="operation-trigger-button">
-                操作
-                <Icon icon="ep:arrow-down" class="ml-5px" />
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu class="operation-menu-compact">
-                  <el-dropdown-item command="send-message">
-                    <span>发送消息</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="control" divided>
-                    <span>操控</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <div class="flex justify-start">
+              <el-dropdown
+                class="operation-dropdown"
+                placement="bottom-end"
+                @command="(command) => handleOperationCommand(command, row)"
+              >
+                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                <template #dropdown>
+                  <el-dropdown-menu class="operation-menu-compact">
+                    <el-dropdown-item command="send-message">
+                      <span>发送消息</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="control" divided>
+                      <span>操控</span>
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
             </vxe-grid>
           </div>
@@ -180,23 +179,22 @@
               <span v-else class="text-gray-400">未设置</span>
                 </template>
             <template #operation_default="{ row }">
-              <el-dropdown
-                trigger="click"
-                class="operation-dropdown"
-                @command="(command) => handleFunctionOperation(command, row)"
-              >
-                <el-button type="primary" link size="small" class="operation-trigger-button">
-                  操作
-                  <Icon icon="ep:arrow-down" class="ml-5px" />
-                </el-button>
-                <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item command="open">
-                      <span>打开配置</span>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              <div class="flex justify-start">
+                <el-dropdown
+                  class="operation-dropdown"
+                  placement="bottom-end"
+                  @command="(command) => handleFunctionOperation(command, row)"
+                >
+                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu class="operation-menu-compact">
+                      <el-dropdown-item command="open">
+                        <span>打开配置</span>
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </template>
           </vxe-grid>
 
@@ -418,8 +416,8 @@ const functionGridOptions = ref<VxeGridProps<any>>({
     {
       title: '操作',
       fixed: 'right' as const,
-      width: 120,
-      align: 'center',
+      width: 132,
+      className: 'table-operation-cell',
       slots: { default: 'operation_default' }
     }
   ]
@@ -513,8 +511,8 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
     {
       title: '操作',
       fixed: 'right' as const,
-      width: 120,
-      align: 'center',
+      width: 132,
+      className: 'table-operation-cell',
       slots: { default: 'operation_default' }
     }
   ]

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="product-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
@@ -96,13 +96,12 @@
           </template>
 
           <template #operationDefaultSlot="{ row }">
-            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
-              class="operation-dropdown" size="small">
-              <el-button type="primary" link size="small">
-                操作<el-icon class="el-icon--right">
-                  <ArrowDown />
-                </el-icon>
-              </el-button>
+            <el-dropdown
+              class="operation-dropdown"
+              placement="bottom-end"
+              @command="(command) => handleOperationCommand(String(command), row)"
+            >
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <!-- 基础操作 -->
@@ -182,21 +181,20 @@
           </template>
 
           <template #urlDefaultSlot="{ row }">
-            <div class="flex items-start gap-2">
-              <div class="flex flex-col items-center w-40">
+            <div class="table-preview-stack">
                 <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="100px"
                   indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
-                  class="w-full custom-carousel table-preview-carousel">
+                  class="custom-carousel table-preview-carousel">
                   <el-carousel-item v-for="(url, index) in row.images" :key="index">
                     <el-image :src="url" :preview-src-list="row.images" :initial-index="index"
                       :preview-teleported="true" :hide-on-click-modal="false" :preview-class="'custom-image-preview'"
                       class="w-full h-full object-contain rounded cursor-pointer" fit="contain" />
-                    <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                    <div class="table-preview-badge">
                       {{ (index as any) + 1 }}/{{ row.images.length }}
                     </div>
                   </el-carousel-item>
                 </el-carousel>
-                <span v-else class="text-[var(--el-text-color-secondary)]">暂无图片</span>
+                <span v-else class="table-preview-placeholder">暂无图片</span>
 
                 <el-tooltip
                   v-if="row.images && row.images.length > 0"
@@ -207,40 +205,39 @@
                     type="primary"
                     link
                     size="small"
-                    class="!text-[11px] !px-0 !h-auto mt-1"
+                    class="table-preview-action"
                     @click.stop="handleDownloadRowImages(row)"
                   >
                     全部下载
                   </el-button>
                 </el-tooltip>
-              </div>
             </div>
           </template>
 
           <template #videoDefaultSlot="{ row }">
-            <div class="flex items-center gap-2">
+            <div class="table-preview-stack">
               <el-carousel v-if="row.videos && row.videos.length > 0" :interval="3000" height="100px"
                 indicator-position="none" :arrow="row.videos.length > 1 ? 'always' : 'never'"
-                class="w-40 custom-carousel table-preview-carousel">
+                class="custom-carousel table-preview-carousel">
                 <el-carousel-item v-for="(url, index) in row.videos" :key="index">
                   <div class="relative cursor-pointer w-full h-full flex items-center justify-center bg-black rounded"
                     @click="handleVideoPreview(row.videos, index as any, row)">
                     <video :src="url" class="max-h-[100px] w-auto h-auto object-contain rounded" muted
                       preload="metadata" />
-                    <div class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl">
+                    <div class="table-preview-badge">
                       {{ (index as any) + 1 }}/{{ row.videos.length }}
                     </div>
                   </div>
                 </el-carousel-item>
               </el-carousel>
-              <span v-else class="text-[var(--el-text-color-secondary)]">暂无视频</span>
+              <span v-else class="table-preview-placeholder">暂无视频</span>
             </div>
           </template>
 
           <template #idSlot="{ row }">
-            <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
-              <span class="text-sm">{{ row.id }}</span>
-              <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="table-cell-copyable" @click="copyId(row.id)">
+              <span class="table-cell-id">{{ row.id }}</span>
+              <el-icon>
                 <DocumentCopy />
               </el-icon>
             </div>
@@ -250,94 +247,120 @@
             <el-tag v-if="row.code" type="info" size="small">
               {{ row.code }}
             </el-tag>
-            <span v-else class="text-gray-400 text-xs">未生成</span>
+            <span v-else class="table-cell-empty">未生成</span>
           </template>
 
           <template #nameSlot="{ row }">
-            <div class="flex flex-col gap-1">
-              <div v-if="row.name" class="flex items-center gap-2 group cursor-pointer"
-                @click.stop="copyText(row.name, '商品名称')">
-                <span class="text-sm">{{ row.name }}</span>
-                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="table-copy-stack">
+              <div
+                class="table-copy-row"
+                :class="{ 'table-copy-row--empty': !row.name }"
+                @click.stop="row.name && copyText(row.name, '商品名称')"
+              >
+                <span class="table-copy-label">中：</span>
+                <span class="table-copy-text">{{ row.name || '未设置' }}</span>
+                <el-icon v-if="row.name" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="row.enName" class="flex items-center gap-2 group cursor-pointer"
-                @click.stop="copyText(row.enName, '英文名称')">
-                <span class="text-sm">{{ row.enName }}</span>
-                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                class="table-copy-row"
+                :class="{ 'table-copy-row--empty': !row.enName }"
+                @click.stop="row.enName && copyText(row.enName, '英文名称')"
+              >
+                <span class="table-copy-label">En:</span>
+                <span class="table-copy-text">{{ row.enName || '未设置' }}</span>
+                <el-icon v-if="row.enName" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="!row.name && !row.enName" class="text-sm text-gray-400">未设置</div>
             </div>
           </template>
 
           <template #descriptionSlot="{ row }">
-            <div class="flex flex-col gap-1">
-              <div v-if="row.description" class="flex items-center gap-2 group cursor-pointer"
-                @click.stop="copyText(row.description, '商品描述')">
-                <span class="text-sm">{{ row.description }}</span>
-                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="table-copy-stack">
+              <div
+                class="table-copy-row table-copy-row--multiline"
+                :class="{ 'table-copy-row--empty': !row.description }"
+                @click.stop="row.description && copyText(row.description, '商品描述')"
+              >
+                <span class="table-copy-label">中：</span>
+                <span class="table-copy-text">{{ row.description || '未设置' }}</span>
+                <el-icon v-if="row.description" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="row.enDescription" class="flex items-center gap-2 group cursor-pointer"
-                @click.stop="copyText(row.enDescription, '英文描述')">
-                <span class="text-sm">{{ row.enDescription }}</span>
-                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                class="table-copy-row table-copy-row--multiline"
+                :class="{ 'table-copy-row--empty': !row.enDescription }"
+                @click.stop="row.enDescription && copyText(row.enDescription, '英文描述')"
+              >
+                <span class="table-copy-label">En:</span>
+                <span class="table-copy-text">{{ row.enDescription || '未设置' }}</span>
+                <el-icon v-if="row.enDescription" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="!row.description && !row.enDescription" class="text-sm text-gray-400">未设置</div>
             </div>
           </template>
 
           <template #keywordsSlot="{ row }">
-            <div class="flex flex-col gap-1">
-              <div v-if="row.keywords" class="flex items-center gap-2 group cursor-pointer"
-                @click.stop="copyText(row.keywords, '关键词')">
-                <span class="text-sm">{{ row.keywords }}</span>
-                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="table-copy-stack">
+              <div
+                class="table-copy-row table-copy-row--multiline"
+                :class="{ 'table-copy-row--empty': !row.keywords }"
+                @click.stop="row.keywords && copyText(row.keywords, '关键词')"
+              >
+                <span class="table-copy-label">中：</span>
+                <span class="table-copy-text">{{ row.keywords || '未设置' }}</span>
+                <el-icon v-if="row.keywords" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="row.enKeywords" class="flex items-center gap-2 group cursor-pointer"
-                @click.stop="copyText(row.enKeywords, '英文关键词')">
-                <span class="text-sm">{{ row.enKeywords }}</span>
-                <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div
+                class="table-copy-row table-copy-row--multiline"
+                :class="{ 'table-copy-row--empty': !row.enKeywords }"
+                @click.stop="row.enKeywords && copyText(row.enKeywords, '英文关键词')"
+              >
+                <span class="table-copy-label">En:</span>
+                <span class="table-copy-text">{{ row.enKeywords || '未设置' }}</span>
+                <el-icon v-if="row.enKeywords" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="!row.keywords && !row.enKeywords" class="text-sm text-gray-400">未设置</div>
             </div>
           </template>
 
           <template #searchKeywordsSlot="{ row }">
-            <div class="flex flex-col gap-1">
-              <div v-if="row.searchKeywords" class="flex items-start gap-2 group cursor-pointer"
-                @click.stop="copyText(row.searchKeywords, '搜索关键字')">
-                <span class="text-sm line-clamp-2 flex-1">{{ row.searchKeywords }}</span>
-                <el-icon
-                  class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+            <div class="table-copy-stack">
+              <div
+                class="table-copy-row table-copy-row--multiline"
+                :class="{ 'table-copy-row--empty': !row.searchKeywords }"
+                @click.stop="row.searchKeywords && copyText(row.searchKeywords, '搜索关键字')"
+              >
+                <span class="table-copy-label">中：</span>
+                <span class="table-copy-text">{{ row.searchKeywords || '未设置' }}</span>
+                <el-icon v-if="row.searchKeywords" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="row.enSearchKeywords" class="flex items-start gap-2 group cursor-pointer"
-                @click.stop="copyText(row.enSearchKeywords, '英文搜索关键字')">
-                <span class="text-sm line-clamp-2 flex-1">{{ row.enSearchKeywords }}</span>
-                <el-icon
-                  class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
+              <div
+                class="table-copy-row table-copy-row--multiline"
+                :class="{ 'table-copy-row--empty': !row.enSearchKeywords }"
+                @click.stop="row.enSearchKeywords && copyText(row.enSearchKeywords, '英文搜索关键字')"
+              >
+                <span class="table-copy-label">En:</span>
+                <span class="table-copy-text">{{ row.enSearchKeywords || '未设置' }}</span>
+                <el-icon v-if="row.enSearchKeywords" class="table-copy-icon">
                   <DocumentCopy />
                 </el-icon>
               </div>
-              <div v-if="!row.searchKeywords && !row.enSearchKeywords" class="text-sm text-gray-400">未设置</div>
             </div>
           </template>
 
           <template #typeSlot="{ row }">
-            <span v-if="row.type">{{ row.type }}</span>
-            <span v-else class="text-gray-400 text-xs">未设置</span>
+            <span v-if="row.type" class="table-cell-text">{{ row.type }}</span>
+            <span v-else class="table-cell-empty">未设置</span>
           </template>
 
           <template #publishStatusSlot="{ row }">
@@ -818,7 +841,7 @@
                 { field: 'description', title: '描述', minWidth: 120 },
                 { field: 'keywords', title: '关键词', minWidth: 100 },
                 { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'customModelOperationSlot' } }
+                { title: '操作', field: 'operation', width: 132, className: 'table-operation-cell', slots: { default: 'customModelOperationSlot' } }
               ]">
               <template #customModelThumbnailSlot="{ row }">
                 <div class="flex items-center justify-center p-2">
@@ -855,7 +878,7 @@
                 { field: 'keywords', title: '关键词', minWidth: 100 },
                 { field: 'suffix', title: '后缀', width: 80 },
                 { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 'auto', slots: { default: 'stickerOperationSlot' } }
+                { title: '操作', field: 'operation', width: 132, className: 'table-operation-cell', slots: { default: 'stickerOperationSlot' } }
               ]">
               <template #stickerImageSlot="{ row }">
                 <div class="flex items-center justify-center p-2">
@@ -1257,7 +1280,6 @@ import {
   Delete,
   Picture,
   Box,
-  ArrowDown,
   ArrowLeft,
   ArrowRight,
   Edit,
@@ -1438,6 +1460,7 @@ const gridColumns = computed(() => {
       title: "创建时间",
       field: "createTime",
       width: 150,
+      className: "table-time-cell",
       showOverflow: true,
       formatter: (e) => {
         return formatTimestamp(e.cellValue);
@@ -1447,6 +1470,7 @@ const gridColumns = computed(() => {
       title: "修改时间",
       field: "updateTime",
       width: 150,
+      className: "table-time-cell",
       showOverflow: true,
       formatter: (e) => {
         return formatTimestamp(e.cellValue);
@@ -1456,7 +1480,8 @@ const gridColumns = computed(() => {
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: "auto",
+      width: 132,
+      className: "table-operation-cell",
       slots: {
         default: "operationDefaultSlot",
       },
@@ -3286,18 +3311,6 @@ function getPublishTaskType(platform: string) {
 
 .empty-state {
   color: var(--el-text-color-placeholder);
-}
-
-/* 操作dropdown样式已移至公共样式文件 list-page-common.css */
-/* 保留特定颜色样式 */
-.operation-dropdown {
-  .text-orange-500 {
-    color: #f97316;
-  }
-
-  .text-green-500 {
-    color: #22c55e;
-  }
 }
 
 .video-preview-container {

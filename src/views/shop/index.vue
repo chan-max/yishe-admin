@@ -78,15 +78,13 @@
         </template>
 
         <template #operationSlot="{ row }">
-          <div class="flex justify-end">
+          <div class="flex justify-start">
             <el-dropdown
-              trigger="click"
               class="operation-dropdown"
-              @command="(command) => handleOperationCommand(command, row)"
+              placement="bottom-end"
+              @command="(command) => handleOperationCommand(String(command), row)"
             >
-              <el-button type="primary" link size="small" class="operation-trigger-button">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="edit">
@@ -113,7 +111,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
 import { batchDeleteShop, deleteShop, getShopList } from '@/api/shop'

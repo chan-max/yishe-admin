@@ -32,13 +32,16 @@
       <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
         @checkbox-all="checkboxAllChange">
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="primary" link size="small" @click="handleEdit(row)">
-              编辑
-            </el-button>
-            <el-button v-admin-only type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
+          <div class="flex justify-end">
+            <el-dropdown class="operation-dropdown" placement="bottom-end">
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                  <el-dropdown-item v-admin-only divided @click="handleDelete(row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </template>
       </vxe-grid>
@@ -118,7 +121,8 @@ const gridOptions = ref({
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: "auto",
+      width: 132,
+      className: "table-operation-cell",
       slots: {
         default: "operationDefaultSlot",
       },

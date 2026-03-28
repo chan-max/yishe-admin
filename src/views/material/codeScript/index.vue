@@ -73,11 +73,9 @@
               trigger="click"
               @command="(command) => handleOperationCommand(command, row)"
             >
-              <el-button type="primary" link size="small">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="run">
                     <span>执行</span>
                   </el-dropdown-item>
@@ -373,11 +371,9 @@
                 trigger="click"
                 @command="(command) => handleRunOperationCommand(command, row)"
               >
-                <el-button type="primary" link size="small">
-                  操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
+                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                 <template #dropdown>
-                  <el-dropdown-menu>
+                  <el-dropdown-menu class="operation-menu-compact">
                     <el-dropdown-item command="detail">
                       <span>详情</span>
                     </el-dropdown-item>
@@ -407,7 +403,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { ArrowDown, Search, Plus } from "@element-plus/icons-vue";
+import { Search, Plus } from "@element-plus/icons-vue";
 import { commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
@@ -479,7 +475,8 @@ const gridOptions = ref({
       title: "操作",
       field: "operation",
       fixed: "right" as const,
-      width: 100,
+      width: 132,
+      className: "table-operation-cell",
       slots: { default: "operationSlot" },
     },
   ],
@@ -498,7 +495,7 @@ const runGridOptions = ref({
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "创建时间", field: "createdAt", width: 170, showOverflow: true },
-    { title: "操作", width: 100, slots: { default: "runOperationSlot" } },
+    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "runOperationSlot" } },
   ],
 } as any);
 

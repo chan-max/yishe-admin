@@ -879,7 +879,7 @@
               </div>
             </template>
             <template #previewDefaultSlot="{ row }">
-              <div class="flex flex-col items-center justify-center p-2">
+              <div class="table-preview-stack">
                 <div class="preview-image-wrapper">
                   <img v-if="row._imageLoaded" :key="`preview-${row.id}-${row.url}`"
                     :src="getFastPreviewImageUrl(row.url, { width: 200 })"
@@ -892,22 +892,22 @@
                     @click="openImagePreview(row.url, row.name)" />
                   <div v-if="!row._imageLoaded" class="preview-loading">加载中...</div>
                 </div>
-                <div class="text-xs text-gray-500 mt-1 text-center">
+                <div class="table-meta-stack">
                   <template v-if="row.resolutionWidth && row.resolutionHeight">
-                    <div>
+                    <div class="table-meta-line">
                       {{ row.resolutionWidth }} × {{ row.resolutionHeight }}
                     </div>
-                    <div v-if="row.aspectRatio" style="color:#999; margin-top:2px; font-size: 11px;">
+                    <div v-if="row.aspectRatio" class="table-meta-line">
                       宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
                     </div>
-                    <div v-if="row.shapeLabel" style="color:#999; margin-top:2px; font-size: 11px;">
+                    <div v-if="row.shapeLabel" class="table-meta-line">
                       类型：{{ row.shapeLabel }}
                     </div>
                   </template>
                   <template v-else>
-                    -
+                    <span class="table-cell-empty">-</span>
                   </template>
-                  <div v-if="row.suffix" style="color:#409EFF; margin-top:2px; font-size: 11px; font-weight: 600;">
+                  <div v-if="row.suffix" class="table-meta-line">
                     格式：{{ row.suffix.toUpperCase() }}
                   </div>
                 </div>
@@ -915,8 +915,8 @@
             </template>
 
             <template #nameBilingualSlot="{ row }">
-              <div class="bilingual-cell">
-                <div class="bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.name }"
+              <div class="table-bilingual-cell">
+                <div class="table-bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.name }"
                   @click.stop="handleCopyText(row.name, '中文名称')" role="button">
                   <span class="bilingual-cell__label">中：</span>
                   <el-tooltip :content="row.name || '-'" placement="top" :disabled="!(row.name && row.name.length > 0)"
@@ -927,7 +927,7 @@
                     <DocumentCopy />
                   </el-icon>
                 </div>
-                <div class="bilingual-cell__item bilingual-cell__item--en"
+                <div class="table-bilingual-cell__item"
                   :class="{ 'bilingual-cell__item--empty': !row.nameEn }"
                   @click.stop="handleCopyText(row.nameEn, '英文名称')" role="button">
                   <span class="bilingual-cell__label">En:</span>
@@ -943,8 +943,8 @@
             </template>
 
             <template #descriptionBilingualSlot="{ row }">
-              <div class="bilingual-cell">
-                <div class="bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.description }"
+              <div class="table-bilingual-cell">
+                <div class="table-bilingual-cell__item bilingual-cell__item--multiline" :class="{ 'bilingual-cell__item--empty': !row.description }"
                   @click.stop="handleCopyText(row.description, '中文描述')" role="button">
                   <span class="bilingual-cell__label">中：</span>
                   <el-tooltip :content="row.description || '-'" placement="top"
@@ -955,7 +955,7 @@
                     <DocumentCopy />
                   </el-icon>
                 </div>
-                <div class="bilingual-cell__item bilingual-cell__item--en"
+                <div class="table-bilingual-cell__item bilingual-cell__item--multiline"
                   :class="{ 'bilingual-cell__item--empty': !row.descriptionEn }"
                   @click.stop="handleCopyText(row.descriptionEn, '英文描述')" role="button">
                   <span class="bilingual-cell__label">En:</span>
@@ -971,8 +971,8 @@
             </template>
 
             <template #keywordsBilingualSlot="{ row }">
-              <div class="bilingual-cell">
-                <div class="bilingual-cell__item" :class="{ 'bilingual-cell__item--empty': !row.keywords }"
+              <div class="table-bilingual-cell">
+                <div class="table-bilingual-cell__item bilingual-cell__item--multiline" :class="{ 'bilingual-cell__item--empty': !row.keywords }"
                   @click.stop="handleCopyText(row.keywords, '中文关键词')" role="button">
                   <span class="bilingual-cell__label">中：</span>
                   <el-tooltip :content="row.keywords || '-'" placement="top"
@@ -983,7 +983,7 @@
                     <DocumentCopy />
                   </el-icon>
                 </div>
-                <div class="bilingual-cell__item bilingual-cell__item--en"
+                <div class="table-bilingual-cell__item bilingual-cell__item--multiline"
                   :class="{ 'bilingual-cell__item--empty': !row.keywordsEn }"
                   @click.stop="handleCopyText(row.keywordsEn, '英文关键词')" role="button">
                   <span class="bilingual-cell__label">En:</span>
@@ -999,21 +999,23 @@
             </template>
 
             <template #resolutionSlot="{ row }">
-              <div v-if="row.resolutionWidth && row.resolutionHeight" class="text-xs">
-                <div>
+              <div v-if="row.resolutionWidth && row.resolutionHeight" class="table-meta-stack">
+                <div class="table-cell-text">
                   {{ row.resolutionWidth }} × {{ row.resolutionHeight }}
                 </div>
-                <div v-if="row.aspectRatio" style="color:#999; margin-top:2px; font-size: 11px;">
+                <div v-if="row.aspectRatio" class="table-meta-line">
                   宽高比：{{ Number(row.aspectRatio).toFixed(2) }}
                 </div>
               </div>
-              <span v-else>-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
             <template #originWebSlot="{ row }">
-              <span>{{ row.originWeb || '-' }}</span>
+              <span v-if="row.originWeb" class="table-cell-text">{{ row.originWeb }}</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
             <template #sizeSlot="{ row }">
-              <span>{{ row.size ? (row.size / 1024).toFixed(1) + ' KB' : '-' }}</span>
+              <span v-if="row.size" class="table-cell-text table-time-cell">{{ (row.size / 1024).toFixed(1) + ' KB' }}</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #isCustomSlot="{ row }">
@@ -1035,28 +1037,27 @@
             </template>
 
             <template #fileSizeSlot="{ row }">
-              <span v-if="row.fileSize">
+              <span v-if="row.fileSize" class="table-cell-text table-time-cell">
                 {{ formatFileSize(row.fileSize) }}
               </span>
-              <span v-else style="color: #999;">-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #suitableForSlot="{ row }">
-              <div v-if="row.suitableFor"
-                style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; line-height: 1.5;">
+              <div v-if="row.suitableFor" class="table-tag-list">
                 <el-tag v-for="(item, index) in (row.suitableFor || '').split(',').slice(0, 2)" :key="index"
-                  size="small" type="info" style="margin: 0; flex-shrink: 0;">
+                  size="small" type="info">
                   {{ item.trim() }}
                 </el-tag>
                 <el-tooltip v-if="(row.suitableFor || '').split(',').length > 2"
                   :content="(row.suitableFor || '').split(',').map(item => item.trim()).join('、')" placement="top"
                   effect="dark" :show-after="200">
-                  <el-tag size="small" type="info" style="margin: 0; cursor: pointer; flex-shrink: 0;">
+                  <el-tag size="small" type="info">
                     +{{ (row.suitableFor || '').split(',').length - 2 }}
                   </el-tag>
                 </el-tooltip>
               </div>
-              <span v-else style="color: #999;">-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #similaritySlot="{ row }">
@@ -1064,61 +1065,54 @@
                 :type="row.similarity >= 90 ? 'success' : row.similarity >= 70 ? 'warning' : 'info'" size="small">
                 {{ row.similarity.toFixed(1) }}%
               </el-tag>
-              <span v-else>-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #colorPaletteSlot="{ row }">
-              <div v-if="row.colorPalette"
-                style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center; max-height: 60px; overflow: hidden;">
-                <div v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)" :key="index" :style="{
-                  width: '18px',
-                  height: '18px',
-                  backgroundColor: color.trim(),
-                  border: '1px solid #ddd',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  flexShrink: 0
-                }" :title="color.trim()" />
+              <div v-if="row.colorPalette" class="table-color-palette">
+                <div
+                  v-for="(color, index) in row.colorPalette.split(',').slice(0, 10)"
+                  :key="index"
+                  class="table-color-swatch"
+                  :style="{ backgroundColor: color.trim() }"
+                  :title="color.trim()"
+                />
               </div>
-              <span v-else style="color: #999;">-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #originUrlSlot="{ row }">
               <el-link v-if="row.originUrl" :href="row.originUrl" target="_blank" type="primary" :underline="false"
-                style="font-size: 12px;">
+                class="table-cell-link">
                 {{ row.originUrl.length > 50 ? row.originUrl.substring(0, 50) + '...' : row.originUrl }}
               </el-link>
-              <span v-else style="color: #999; font-size: 12px;">-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #sourceSlot="{ row }">
               <el-link v-if="row.source && /^https?:\/\//i.test(row.source)" :href="row.source" target="_blank"
-                type="primary" :underline="false" style="font-size: 12px;">
+                type="primary" :underline="false" class="table-cell-link">
                 {{ row.source.length > 50 ? row.source.substring(0, 50) + '...' : row.source }}
               </el-link>
-              <span v-else-if="row.source" style="font-size: 12px;">{{ row.source.length > 50 ? row.source.substring(0,
+              <span v-else-if="row.source" class="table-cell-text table-cell-text--secondary">{{ row.source.length > 50 ? row.source.substring(0,
                 50) + '...' : row.source }}</span>
-              <span v-else style="color: #999; font-size: 12px;">-</span>
+              <span v-else class="table-cell-empty">-</span>
             </template>
 
             <template #folderSlot="{ row }">
-              <el-tag v-if="row.folder" type="info" size="small" style="font-size: 12px;">
-                <el-icon style="margin-right: 4px;">
+              <el-tag v-if="row.folder" type="info" size="small">
+                <el-icon class="mr-4px">
                   <Folder />
                 </el-icon>
                 {{ row.folder }}
               </el-tag>
-              <span v-else style="color: #999; font-size: 12px;">根目录</span>
+              <span v-else class="table-cell-empty">根目录</span>
             </template>
 
             <template #operationDefaultSlot="{ row }">
               <div class="flex items-center gap-1">
-                <el-dropdown trigger="click" class="operation-dropdown">
-                  <el-button type="primary" link size="small">
-                    操作<el-icon class="el-icon--right">
-                      <ArrowDown />
-                    </el-icon>
-                  </el-button>
+                <el-dropdown class="operation-dropdown" placement="bottom-end">
+                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                   <template #dropdown>
                     <div class="op-menu">
                       <!-- 内容相关（仅管理员） -->
@@ -1751,7 +1745,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowDown, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, Files, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, Files, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -2044,6 +2038,7 @@ const gridOptions = computed(() => {
       title: '创建时间',
       field: 'createTime',
       width: 150,
+      className: 'table-time-cell',
       ellipsis: true,
       formatter: (e) => {
         return formatTimestamp(e.cellValue)
@@ -2053,6 +2048,7 @@ const gridOptions = computed(() => {
       title: '修改时间',
       field: 'updateTime',
       width: 150,
+      className: 'table-time-cell',
       ellipsis: true,
       formatter: (e) => {
         return formatTimestamp(e.cellValue)
@@ -2063,8 +2059,9 @@ const gridOptions = computed(() => {
   const operationColumn = {
     title: '操作',
     fixed: 'right' as const,
-    width: 'auto',
+    width: 132,
     field: 'operation',
+    className: 'table-operation-cell',
     slots: { default: 'operationDefaultSlot' }
   }
 
@@ -5636,193 +5633,6 @@ h1 {
   }
 }
 </style>
-<style scoped>
-.op-menu {
-  min-width: 120px;
-  padding: 1px 0;
-  position: relative;
-  overflow: visible !important;
-  /* 确保菜单本身允许溢出 */
-}
-
-/* 一级菜单项 */
-.op-menu-item {
-  position: relative;
-  padding: 4px 8px;
-  font-size: 11px;
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  overflow: visible !important;
-  /* 确保菜单项允许溢出 */
-}
-
-.op-menu-item:hover {
-  background: var(--el-fill-color-light);
-}
-
-.op-menu-item.danger {
-  color: var(--el-color-danger);
-}
-
-.op-menu-item.danger:hover {
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-}
-
-/* 箭头图标 - 放在文字左边 */
-.op-menu-arrow {
-  font-size: 10px;
-  color: var(--el-text-color-secondary);
-  transition: transform 0.2s;
-  flex-shrink: 0;
-  width: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* 没有子菜单的占位，保持对齐 */
-.op-menu-arrow-placeholder {
-  width: 12px;
-  flex-shrink: 0;
-}
-
-.op-menu-label {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
-
-/* 子菜单 */
-.op-submenu {
-  position: fixed;
-  /* 使用 fixed 定位，避免被父容器裁剪 */
-  min-width: 120px;
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 2px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  padding: 1px 0;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-5px);
-  transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
-  z-index: 9999;
-  /* 提高 z-index 确保在最上层 */
-  white-space: nowrap;
-  pointer-events: none;
-  /* 初始禁用交互，hover 时启用 */
-  margin: 0;
-  /* 初始位置，会被 JS 动态设置 */
-  left: 0;
-  top: 0;
-}
-
-/* 子菜单显示时保持可见（即使鼠标移开一点） */
-.op-submenu:hover {
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
-
-.op-menu-item.has-submenu:hover .op-submenu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(0);
-  pointer-events: auto;
-  /* hover 时启用交互 */
-}
-
-/* 子菜单项 */
-.op-submenu-item {
-  padding: 4px 10px;
-  font-size: 11px;
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-
-.op-submenu-item:hover {
-  background: var(--el-fill-color-light);
-}
-
-/* 分隔线 */
-.op-divider {
-  height: 1px;
-  background: var(--el-border-color-lighter);
-  margin: 3px 8px;
-}
-
-/* 针对操作按钮的优化 */
-.operation-dropdown :deep(.el-dropdown__list) {
-  padding: 0;
-  overflow: visible !important;
-}
-
-/* 确保下拉菜单容器允许溢出显示子菜单 */
-.operation-dropdown {
-  position: relative;
-}
-
-/* 修复 Element Plus Dropdown 的 overflow 限制 */
-.operation-dropdown :deep(.el-popper) {
-  overflow: visible !important;
-}
-
-.operation-dropdown :deep(.el-popper__arrow) {
-  display: none;
-}
-
-/* 确保 popper 容器和内部都允许溢出 */
-.operation-dropdown :deep(.el-popper),
-.operation-dropdown :deep(.el-dropdown-menu),
-.operation-dropdown :deep(.el-dropdown-menu__item) {
-  overflow: visible !important;
-  overflow-x: visible !important;
-  overflow-y: visible !important;
-}
-
-/* 移动端优化 */
-@media (max-width: 768px) {
-  .op-menu {
-    min-width: 140px;
-  }
-
-  .op-menu-item {
-    padding: 10px 12px;
-    font-size: 14px;
-  }
-
-  .op-submenu {
-    min-width: 140px;
-  }
-
-  .op-submenu-item {
-    padding: 10px 14px;
-    font-size: 14px;
-  }
-}
-
-/* 处理右侧屏幕边界情况 */
-@media (min-width: 769px) {
-
-  /* 通过JS动态调整，CSS无法完美处理，但可以设置备用方案 */
-  .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu,
-  .op-menu-item.has-submenu:nth-last-child(-n+2):hover .op-submenu {
-    left: auto;
-    right: 100%;
-    margin-left: 0;
-    margin-right: 4px;
-  }
-}
-</style>
-
 <style>
 .el-popper.is-pure {
   overflow: visible !important;

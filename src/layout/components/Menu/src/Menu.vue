@@ -200,14 +200,17 @@ $prefix-cls: #{$namespace}-menu;
     flex-direction: column;
     gap: 2px;
     min-height: 100%;
-    padding: 8px 7px 18px;
+    padding: 0 7px 18px;
   }
 
   &__logo {
-    position: relative;
-    padding: 0 0 10px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 8px 0 10px;
     margin-bottom: 4px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--left-menu-bg-color, #141414);
   }
 
   &__logo-inner {

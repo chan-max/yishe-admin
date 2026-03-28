@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
@@ -24,10 +24,12 @@
         @checkbox-all="checkboxAllChange"
       >
         <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)" class="operation-dropdown">
-            <el-button type="primary" link size="small">
-              操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-            </el-button>
+          <el-dropdown
+            class="operation-dropdown"
+            placement="bottom-end"
+            @command="(command) => handleOperationCommand(String(command), row)"
+          >
+            <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
             <template #dropdown>
               <el-dropdown-menu class="operation-menu-compact">
                 <el-dropdown-item command="edit">
@@ -171,7 +173,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, More, ArrowDown, Edit, MagicStick } from '@element-plus/icons-vue'
+import { Delete, More, Edit, MagicStick } from '@element-plus/icons-vue'
 import { getProductModelPage, updateProductModel, deleteProductModel } from '@/api/productModel'
 import { commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
@@ -195,7 +197,7 @@ const gridOptions = ref({
     { title: '链接次数', field: 'link_count', width: 100 },
     { title: '创建时间', field: 'createTime', width: 160, slots: { default: 'createTimeSlot' } },
     { title: '更新时间', field: 'updateTime', width: 160, slots: { default: 'updateTimeSlot' } },
-    { title: '操作', fixed: 'right', width: 'auto', slots: { default: 'operationDefaultSlot' } }
+    { title: '操作', fixed: 'right', width: 132, className: 'table-operation-cell', slots: { default: 'operationDefaultSlot' } }
   ]
 })
 
@@ -453,57 +455,5 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 /* 操作dropdown样式 */
-.operation-dropdown {
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    .el-icon {
-      margin-right: 4px;
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-    
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-}
 
-.operation-menu-compact {
-  min-width: 140px !important;
-  padding: 4px 0 !important;
-  
-  .el-dropdown-menu__item {
-    padding: 8px 16px !important;
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    height: auto !important;
-    min-height: 32px !important;
-    
-    .el-icon {
-      font-size: 14px !important;
-      width: 14px !important;
-      height: 14px !important;
-      margin-right: 6px !important;
-    }
-    
-    span {
-      font-size: 13px !important;
-    }
-    
-    &:hover {
-      background-color: var(--el-fill-color-light) !important;
-    }
-  }
-  
-  .el-dropdown-menu__item--divided {
-    margin-top: 4px !important;
-    border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 8px !important;
-  }
-}
 </style> 

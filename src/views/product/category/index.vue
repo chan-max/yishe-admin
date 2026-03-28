@@ -47,7 +47,8 @@ const gridOptions = computed(() => ({
     },
     { 
       title: '操作', 
-      width: 150, 
+      width: 132, 
+      className: 'table-operation-cell',
       fixed: 'right',
       slots: { default: 'action' } 
     }
@@ -205,8 +206,15 @@ onMounted(() => {
                 :loading="loading"
               >
                 <template #action="{ row }">
-                  <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
-                  <el-button link type="danger" @click="handleDelete(row)">删除</el-button>
+                  <el-dropdown class="operation-dropdown" placement="bottom-end">
+                    <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu class="operation-menu-compact">
+                        <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                        <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                 </template>
               </vxe-grid>
             </div>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true" class="psd-set-page">
     <ListPageLayout class="psd-set-page__layout">
       <template #filter>
@@ -67,9 +67,6 @@
               <el-dropdown trigger="click" :disabled="!selectedIds.length">
                 <el-button size="small" :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
                   批量改状态 ({{ selectedIds.length }})
-                  <el-icon class="el-icon--right">
-                    <ArrowDown />
-                  </el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
@@ -117,9 +114,9 @@
         @checkbox-all="onSelectionChange"
       >
         <template #idSlot="{ row }">
-          <div class="flex items-center gap-2 cursor-pointer group" @click="copyId(row.id)">
-            <span class="text-sm">{{ row.id }}</span>
-            <el-icon class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div class="table-cell-copyable" @click="copyId(row.id)">
+            <span class="table-cell-id">{{ row.id }}</span>
+            <el-icon>
               <DocumentCopy />
             </el-icon>
           </div>
@@ -144,15 +141,14 @@
           </el-tag>
         </template>
         <template #imagesSlot="{ row }">
-          <div class="flex items-start">
-            <div class="flex flex-col items-center w-40">
+          <div class="table-preview-stack">
               <el-carousel
                 v-if="row.images && row.images.length > 0"
                 :interval="3000"
                 height="100px"
                 indicator-position="none"
                 :arrow="row.images.length > 1 ? 'always' : 'never'"
-                class="w-full custom-carousel table-preview-carousel"
+                class="custom-carousel table-preview-carousel"
               >
                 <el-carousel-item v-for="(url, index) in row.images" :key="index">
                   <el-image
@@ -166,15 +162,13 @@
                     class="w-full h-full object-contain rounded cursor-pointer"
                     fit="contain"
                   />
-                  <div
-                    class="absolute bottom-0 right-0 bg-black bg-opacity-50 text-white text-xs px-1 rounded-tl"
-                  >
+                  <div class="table-preview-badge">
                     {{ Number(index) + 1 }}/{{ row.images.length }}
                   </div>
                 </el-carousel-item>
               </el-carousel>
 
-              <span v-else class="text-gray-400 text-xs">无</span>
+              <span v-else class="table-preview-placeholder">无</span>
 
               <el-tooltip
                 v-if="row.images && row.images.length > 0"
@@ -185,13 +179,12 @@
                   type="primary"
                   link
                   size="small"
-                  class="!text-[11px] !px-0 !h-auto mt-1"
+                  class="table-preview-action"
                   @click.stop="handleDownloadPsdSetImages(row)"
                 >
                   全部下载
                 </el-button>
               </el-tooltip>
-            </div>
           </div>
         </template>
         <template #configSlot="{ row }">
@@ -202,21 +195,17 @@
               size="small"
               effect="plain"
               class="cursor-pointer"
-              @click="() => handleViewConfig(row)"
+                @click="() => handleViewConfig(row)"
             >
               已配置
             </el-tag>
-            <span v-else class="text-gray-400 text-xs">未配置</span>
+            <span v-else class="table-cell-empty">未配置</span>
           </div>
         </template>
         <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
         <template #operationSlot="{ row }">
-          <el-dropdown trigger="click" class="operation-dropdown">
-            <el-button type="primary" link size="small">
-              操作<el-icon class="el-icon--right">
-                <ArrowDown />
-              </el-icon>
-            </el-button>
+          <el-dropdown class="operation-dropdown" placement="bottom-end">
+            <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
             <template #dropdown>
               <div class="op-menu">
                 <div class="op-menu-item" @click="() => handleViewDetail(row)">
@@ -903,7 +892,6 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import {
   Search,
-  ArrowDown,
   DocumentCopy,
   WarningFilled,
   CircleCheck,
@@ -1075,8 +1063,9 @@ const publishTasksGridOptions = computed(() => ({
     },
     {
       title: "操作",
-      width: 170,
+      width: 132,
       fixed: "right",
+      className: "table-operation-cell",
       slots: { default: "taskActionSlot" },
     },
   ],
@@ -1335,7 +1324,7 @@ function getColumns() {
   ];
 
   const operationColumn = [
-    { title: "操作", width: 80, fixed: "right" as const, slots: { default: "operationSlot" } },
+    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "operationSlot" } },
   ];
 
   return [...baseColumns, ...operationColumn];
@@ -2708,91 +2697,6 @@ getList();
 }
 
 /* 操作下拉菜单样式 */
-.operation-dropdown {
-  position: relative;
-}
-
-.op-menu {
-  min-width: 120px;
-  padding: 2px 0;
-  background: var(--el-bg-color);
-  border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.op-menu-item {
-  position: relative;
-  padding: 4px 12px;
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.op-menu-item:hover:not(.is-disabled) {
-  background: var(--el-fill-color-light);
-}
-
-.op-menu-item.is-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.op-menu-item.danger {
-  color: var(--el-color-danger);
-}
-
-.op-menu-item.danger:hover:not(.is-disabled) {
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-}
-
-.op-menu-label {
-  flex: 1;
-}
-
-.op-menu-tip {
-  font-size: 11px;
-  color: var(--el-text-color-placeholder);
-  margin-left: 6px;
-}
-
-.op-menu-section {
-  padding: 2px 0;
-}
-
-.op-menu-section-title {
-  padding: 4px 12px;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  font-weight: 500;
-}
-
-.op-divider {
-  height: 1px;
-  background: var(--el-border-color-lighter);
-  margin: 2px 0;
-}
-
-/* 修复 Element Plus Dropdown 的样式 */
-.operation-dropdown :deep(.el-popper) {
-  padding: 0;
-}
-
-.operation-dropdown :deep(.el-dropdown-menu) {
-  padding: 0;
-  border: none;
-  background: transparent;
-}
-
-.operation-dropdown :deep(.el-dropdown-menu__item) {
-  padding: 0;
-  height: auto;
-}
-
 /* 轮播样式 */
 .custom-carousel {
   position: relative;

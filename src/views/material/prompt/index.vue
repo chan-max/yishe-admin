@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="prompt-page">
       <template #filter>
@@ -50,25 +50,18 @@
           @checkbox-all="checkboxAllChange"
         >
           <template #operationDefaultSlot="{ row }">
-            <div class="flex items-center">
+            <div class="flex justify-start">
               <el-dropdown
                 trigger="click"
+                placement="bottom-end"
                 @command="(command) => handleOperationCommand(command, row)"
                 class="operation-dropdown"
               >
-                <el-button type="primary" link size="small">
-                  操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </el-button>
+                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item v-if="isAdmin" command="edit">
-                      <el-icon><Edit /></el-icon>
-                      <span>编辑</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item v-if="isAdmin" command="delete" divided>
-                      <el-icon><Delete /></el-icon>
-                      <span>删除</span>
-                    </el-dropdown-item>
+                    <el-dropdown-item v-if="isAdmin" command="edit">编辑</el-dropdown-item>
+                    <el-dropdown-item v-if="isAdmin" command="delete" divided>删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -202,7 +195,6 @@ import {
   Search,
   Delete,
   Plus,
-  ArrowDown,
   Edit,
 } from "@element-plus/icons-vue";
 import {
@@ -276,10 +268,7 @@ const gridOptions = ref({
       slots: { default: "updatedAtSlot" },
     },
     {
-      title: "操作",
-      fixed: "right" as const,
-      width: 100,
-      slots: { default: "operationDefaultSlot" },
+      title: "操作", fixed: "right" as const, width: 132, className: "table-operation-cell", slots: { default: "operationDefaultSlot" },
     },
   ],
 } as any);

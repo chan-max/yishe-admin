@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="crawler-material-page">
       <template #filter>
@@ -138,8 +138,8 @@
                   @command="(command) => handleOperationCommand(command, row)"
                   class="operation-dropdown"
                 >
-                  <el-button type="primary" link size="small">
-                    操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  <el-button type="primary" link size="small" class="operation-trigger-button">
+                    操作
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu class="operation-menu-compact">
@@ -352,7 +352,6 @@ import {
   Delete,
   Search,
   Upload,
-  ArrowDown,
   Edit,
   Download,
 } from "@element-plus/icons-vue";
@@ -432,8 +431,9 @@ const gridOptions = computed(() => {
   const operationColumn = {
     title: "操作",
     fixed: "right",
-    width: "auto",
+    width: 132,
     field: "operation",
+    className: "table-operation-cell",
     slots: { default: "operationDefaultSlot" },
   }
 
@@ -818,82 +818,5 @@ getList();
 }
 
 /* 操作dropdown样式 */
-.operation-dropdown {
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
 
-    .el-icon {
-      margin-right: 4px;
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-}
-
-.operation-menu-compact {
-  min-width: 140px !important;
-  padding: 4px 0 !important;
-
-  .el-dropdown-menu__item {
-    padding: 8px 16px !important;
-    font-size: 13px !important;
-    line-height: 1.5 !important;
-    height: auto !important;
-    min-height: 32px !important;
-
-    .el-icon {
-      font-size: 14px !important;
-      width: 14px !important;
-      height: 14px !important;
-      margin-right: 6px !important;
-    }
-
-    span {
-      font-size: 13px !important;
-    }
-
-    &:hover {
-      background-color: var(--el-fill-color-light) !important;
-    }
-  }
-
-  .el-dropdown-menu__item--divided {
-    margin-top: 4px !important;
-    border-top: 1px solid var(--el-border-color-lighter) !important;
-    padding-top: 8px !important;
-  }
-
-  .el-dropdown-menu__item.text-red-500 {
-    color: var(--el-color-danger) !important;
-
-    .el-icon {
-      color: var(--el-color-danger) !important;
-    }
-
-    span {
-      color: var(--el-color-danger) !important;
-    }
-
-    &:hover {
-      color: var(--el-color-danger) !important;
-      background-color: var(--el-color-danger-light-9) !important;
-
-      .el-icon {
-        color: var(--el-color-danger) !important;
-      }
-
-      span {
-        color: var(--el-color-danger) !important;
-      }
-    }
-  }
-}
 </style>

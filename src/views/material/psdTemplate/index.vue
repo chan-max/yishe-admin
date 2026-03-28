@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="psd-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
@@ -238,15 +238,10 @@
             </template>
 
             <template #operationDefaultSlot="{ row }">
-              <el-dropdown trigger="click">
-                <el-button type="primary" link size="small">
-                  操作
-                  <el-icon class="el-icon--right">
-                    <ArrowDown />
-                  </el-icon>
-                </el-button>
+              <el-dropdown trigger="click" class="operation-dropdown">
+                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                 <template #dropdown>
-                  <el-dropdown-menu>
+                  <el-dropdown-menu class="operation-menu-compact">
                     <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
                     <el-dropdown-item @click="handleToggleEnabled(row)">
                       {{ row.enabled ? '设为不可用' : '设为可用' }}
@@ -602,7 +597,6 @@ import {
   Edit,
   CirclePlusFilled,
   CirclePlus,
-  ArrowDown,
   InfoFilled,
   RefreshLeft,
   Folder,
@@ -796,7 +790,8 @@ const gridOptions = ref<VxeGridProps<any>>({
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: 80,
+      width: 132,
+      className: "table-operation-cell",
       slots: {
         default: "operationDefaultSlot",
       },
@@ -2240,3 +2235,4 @@ function removeSuitableSize(sizeKey: string) {
   }
 }
 </style>
+

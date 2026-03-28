@@ -2,7 +2,7 @@
 import { formatTimestamp } from "@/common/date";
 
 export const TABLE_TIME_COLUMN_WIDTH = 168;
-export const TABLE_OPERATION_COLUMN_WIDTH = 120;
+export const TABLE_OPERATION_COLUMN_WIDTH = 132;
 
 export const formatTableDateTime = (value: unknown) => {
   if (!value) return "-";
@@ -34,6 +34,7 @@ export const buildOperationColumn = (
   fixed: "right" as const,
   width,
   className: "table-operation-cell",
+  headerClassName: "table-operation-header-cell",
   slots: {
     default: slotName,
   },
@@ -43,6 +44,8 @@ export const buildOperationColumn = (
 export const commonGridOptions = {
   size: "mini" as const,
   border: "inner" as const,
+  headerCellClassName: "common-table__header-cell",
+  cellClassName: "common-table__body-cell",
   columnConfig: {
     resizable: true,
   },

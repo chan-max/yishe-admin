@@ -76,9 +76,7 @@
               @command="(command) => handleOperationCommand(command, row)"
               class="operation-dropdown"
             >
-              <el-button type="primary" link size="small">
-                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-              </el-button>
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item v-if="isAdmin" command="edit">
@@ -270,7 +268,6 @@ import {
   Delete,
   Plus,
   MagicStick,
-  ArrowDown,
   Edit,
   Upload,
   Download,
@@ -352,7 +349,8 @@ const gridOptions = ref({
     {
       title: "操作",
       fixed: "right" as const,
-      width: 100,
+      width: 132,
+      className: "table-operation-cell",
       slots: { default: "operationDefaultSlot" },
     },
   ],

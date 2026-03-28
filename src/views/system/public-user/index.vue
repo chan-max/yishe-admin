@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="public-user-page">
       <template #filter>
@@ -70,16 +70,13 @@
                 </template>
 
                 <template #operationDefaultSlot="{ row }">
-                  <div class="flex justify-end">
+                  <div class="flex justify-start">
                     <el-dropdown
                       trigger="click"
                       @command="(command) => handleOperationCommand(command, row)"
                       class="operation-dropdown"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
-                        <el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                      </el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
@@ -236,7 +233,7 @@ import { formatTimestamp } from "@/common/date";
 import { useWindowSize } from "@vueuse/core";
 import { defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Search, Delete, Refresh, Plus, User, ArrowDown } from "@element-plus/icons-vue";
+import { Search, Delete, Refresh, Plus, User } from "@element-plus/icons-vue";
 import {
   getPublicUserList,
   createPublicUser,

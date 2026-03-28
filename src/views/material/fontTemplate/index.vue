@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="font-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
@@ -131,11 +131,7 @@
               <div class="flex items-center">
                 <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)"
                   class="operation-dropdown">
-                  <el-button type="primary" link size="small">
-                    操作<el-icon class="el-icon--right">
-                      <ArrowDown />
-                    </el-icon>
-                  </el-button>
+                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                   <template #dropdown>
                     <el-dropdown-menu class="operation-menu-compact">
                       <el-dropdown-item v-if="isAdmin" command="edit">
@@ -552,7 +548,6 @@ import {
   CirclePlusFilled,
   CirclePlus,
   Loading,
-  ArrowDown,
   View,
   Picture,
   Download,
@@ -744,7 +739,8 @@ const gridOptions = ref({
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: "auto",
+      width: 132,
+      className: "table-operation-cell",
       slots: {
         default: "operationDefaultSlot",
       },
@@ -1683,26 +1679,6 @@ function closeImagePreview() {
   }
 }
 
-.operation-dropdown {
-  .el-dropdown-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .el-icon {
-      margin-right: 4px;
-      font-size: 14px;
-      width: 14px;
-      height: 14px;
-    }
-
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-}
-
 /* 操作dropdown样式已移至公共样式文件 list-page-common.css */
 
 /* 自定义表单项样式 */
@@ -1872,10 +1848,6 @@ function closeImagePreview() {
   color: #303133;
 }
 
-.operation-dropdown {
-  margin-right: 8px;
-}
-
 .language-tag {
   display: inline-flex;
   align-items: center;
@@ -1931,3 +1903,4 @@ function closeImagePreview() {
 }
 
 </style>
+

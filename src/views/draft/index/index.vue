@@ -95,13 +95,20 @@
         </template>
 
         <template #operationDefaultSlot="{ row }">
-          <div class="flex table-operation-column">
-            <el-button type="success" link size="small" @click="handleDownload(row)">
-              下载
-            </el-button>
-            <el-button type="danger" link size="small" @click="handleDelete(row)">
-              删除
-            </el-button>
+          <div class="flex justify-end">
+            <el-dropdown
+              class="operation-dropdown"
+              placement="bottom-end"
+              @command="(command) => handleOperationCommand(command, row)"
+            >
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item command="download">下载</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </template>
 
@@ -257,8 +264,9 @@ const gridOptions = ref({
     {
       title: '操作',
       fixed: 'right',
-      width: 'auto',
+      width: 132,
       field: 'operation',
+      className: 'table-operation-cell',
       slots: {
         default: 'operationDefaultSlot'
       }
@@ -369,6 +377,17 @@ function handleDownload(row) {
   downloadFileByElement(row.url, row.name)
 }
 
+function handleOperationCommand(command, row) {
+  switch (command) {
+    case 'download':
+      handleDownload(row)
+      break
+    case 'delete':
+      handleDelete(row)
+      break
+  }
+}
+
 // 播放视频
 function handleVideoPlay(row) {
   // 在当前页面显示视频
@@ -424,10 +443,6 @@ getList()
 </script>
 
 <style lang="less">
-.table-operation-column {
-  gap: 8px;
-}
-
 .model-relation-detail {
   .model-info {
     .model-name {

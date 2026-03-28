@@ -335,10 +335,150 @@
   --vxe-ui-font-size-default: 12px;
 }
 
+.common-table :deep(.common-table__header-cell) {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.common-table :deep(.common-table__body-cell) {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.common-table :deep(.vxe-header--column) {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.68);
+  letter-spacing: 0.02em;
+}
+
+.common-table :deep(.vxe-body--column) {
+  vertical-align: middle;
+}
+
 .table-operation-column {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.table-cell-text {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--el-text-color-primary);
+  word-break: break-word;
+}
+
+.table-cell-text--secondary {
+  color: var(--el-text-color-regular);
+}
+
+.table-cell-text--muted,
+.table-cell-empty {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
+}
+
+.table-cell-id {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--el-text-color-primary);
+}
+
+.table-cell-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.table-cell-copyable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.table-cell-copyable .el-icon {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.table-cell-copyable:hover .el-icon {
+  opacity: 1;
+}
+
+.table-copy-stack,
+.table-bilingual-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.table-copy-row,
+.table-bilingual-cell__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.table-copy-row--empty,
+.table-bilingual-cell__item--empty {
+  cursor: default;
+}
+
+.table-copy-label,
+.table-bilingual-cell__label {
+  flex: none;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.table-copy-text,
+.table-bilingual-cell__content {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  word-break: break-word;
+}
+
+.table-copy-row--multiline .table-copy-text,
+.table-bilingual-cell__item--multiline .table-bilingual-cell__content {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.table-copy-row--empty .table-copy-text,
+.table-bilingual-cell__item--empty .table-bilingual-cell__content {
+  color: var(--el-text-color-secondary);
+}
+
+.table-copy-icon,
+.table-bilingual-cell__icon {
+  flex: none;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.table-copy-row:hover .table-copy-icon,
+.table-bilingual-cell__item:hover .table-bilingual-cell__icon {
+  opacity: 1;
 }
 
 .table-time-cell {
@@ -357,6 +497,51 @@
 
 .common-table .table-operation-cell {
   white-space: nowrap;
+}
+
+.common-table :deep(.table-operation-header-cell),
+.common-table :deep(.vxe-header--column.table-operation-cell) {
+  text-align: left !important;
+}
+
+.common-table :deep(.table-operation-header-cell .vxe-cell),
+.common-table :deep(.table-operation-header-cell .vxe-cell--wrapper),
+.common-table :deep(.table-operation-header-cell .vxe-cell--title),
+.common-table :deep(.vxe-header--column.table-operation-cell .vxe-cell),
+.common-table :deep(.vxe-header--column.table-operation-cell .vxe-cell--wrapper),
+.common-table :deep(.vxe-header--column.table-operation-cell .vxe-cell--title) {
+  display: flex;
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.common-table :deep(.table-operation-cell .vxe-cell),
+.common-table :deep(.table-operation-cell .vxe-cell--wrapper),
+.common-table :deep(.table-operation-cell .vxe-cell--label) {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.common-table :deep(.table-operation-cell .flex),
+.common-table :deep(.table-operation-cell .flex.justify-end),
+.common-table :deep(.table-operation-cell .flex.items-center) {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start !important;
+}
+
+.common-table :deep(.table-operation-cell .operation-dropdown) {
+  display: inline-flex;
+  width: 100%;
+  justify-content: flex-start !important;
+}
+
+.common-table :deep(.table-operation-cell .operation-trigger-button) {
+  justify-content: flex-start !important;
+  text-align: left !important;
 }
 
 .table-media-cell {
@@ -407,6 +592,40 @@
   max-width: 160px;
 }
 
+.table-preview-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 160px;
+  max-width: 100%;
+}
+
+.table-preview-placeholder {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.table-preview-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 1px 6px;
+  border-top-left-radius: 6px;
+  background: rgba(0, 0, 0, 0.58);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-preview-action {
+  padding: 0 !important;
+  min-height: auto !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+
 .table-preview-carousel :deep(.el-carousel__container) {
   height: 100px !important;
 }
@@ -426,6 +645,46 @@
   font-size: 12px;
   line-height: 1.45;
   color: var(--el-text-color-secondary);
+}
+
+.table-tag--muted {
+  color: var(--el-text-color-secondary);
+}
+
+.table-meta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.table-meta-line {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
+}
+
+.table-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.table-color-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.table-color-swatch {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
 }
 
 .form-section {
@@ -465,6 +724,10 @@
 /* 操作列下拉菜单样式 */
 .operation-dropdown {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  max-width: 100%;
 }
 
 .operation-dropdown :deep(.el-dropdown__list) {
@@ -490,7 +753,7 @@
 
 /* 操作菜单样式 */
 .op-menu {
-  min-width: 120px;
+  min-width: 132px;
   padding: 1px 0;
   position: relative;
   overflow: visible !important;
@@ -498,14 +761,15 @@
 
 .op-menu-item {
   position: relative;
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: 7px 14px;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--el-text-color-regular);
   cursor: pointer;
   transition: background-color 0.2s;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
   overflow: visible !important;
 }
 
@@ -520,6 +784,15 @@
 .op-menu-item.danger:hover {
   background: var(--el-color-danger-light-9);
   color: var(--el-color-danger);
+}
+
+.op-menu-item.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.op-menu-item.is-disabled:hover {
+  background: transparent;
 }
 
 .op-menu-arrow {
@@ -542,6 +815,24 @@
   flex: 1;
   display: flex;
   align-items: center;
+  min-width: 0;
+}
+
+.op-menu-tip {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+}
+
+.op-menu-section {
+  padding: 2px 0;
+}
+
+.op-menu-section-title {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
 }
 
 .op-submenu {
@@ -622,11 +913,7 @@
 }
 
 .operation-menu-compact :deep(.el-dropdown-menu__item .el-icon) {
-  font-size: 13px;
-  margin-right: 3px;
-  width: 13px;
-  height: 13px;
-  flex-shrink: 0;
+  display: none !important;
 }
 
 .operation-menu-compact :deep(.el-dropdown-menu__item span) {
@@ -652,25 +939,24 @@
 }
 
 .operation-dropdown :deep(.el-dropdown-menu__item .el-icon) {
-  margin-right: 4px;
-  font-size: 14px;
-  width: 14px;
-  height: 14px;
+  display: none !important;
 }
 
 .operation-dropdown :deep(.el-dropdown-menu__item span) {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .operation-trigger-button {
   padding: 0 !important;
-  font-size: 11px !important;
-  font-weight: 600;
+  font-size: 12px !important;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--el-color-primary) !important;
 }
 
 .operation-trigger-button .el-icon {
-  font-size: 11px;
+  display: none !important;
 }
 
 .common-table .table-operation-trigger,

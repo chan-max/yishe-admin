@@ -109,8 +109,15 @@
         </template>
 
         <template #operationSlot="{ row }">
-          <div class="flex items-center">
-            <el-button type="danger" link size="small" @click="handleDelete(row)">删除</el-button>
+          <div class="flex justify-start">
+            <el-dropdown class="operation-dropdown" placement="bottom-end">
+              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </template>
               </vxe-grid>
@@ -329,7 +336,7 @@ const gridOptions = reactive({
       width: 160,
       formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-")
     },
-    { title: "操作", width: 80, slots: { default: "operationSlot" }, fixed: "right" }
+    { title: "操作", width: 132, className: "table-operation-cell", slots: { default: "operationSlot" }, fixed: "right" }
   ] as any[]
 });
 

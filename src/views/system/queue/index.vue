@@ -149,15 +149,14 @@
         </template>
 
         <template #operationDefaultSlot="{ row }">
-          <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
-            <el-button type="primary" link size="small">
-              操作
-              <el-icon class="el-icon--right">
-                <ArrowDown />
-              </el-icon>
-            </el-button>
+          <el-dropdown
+            class="operation-dropdown"
+            placement="bottom-end"
+            @command="(command) => handleOperationCommand(String(command), row)"
+          >
+            <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
             <template #dropdown>
-              <el-dropdown-menu>
+              <el-dropdown-menu class="operation-menu-compact">
                 <el-dropdown-item v-if="String(row.type || '').startsWith('publish-product-')" :command="'regenerate'"
                   :disabled="row.status === 'processing'">
                   重新生成
@@ -354,7 +353,6 @@ import {
   Search,
   Delete,
   Plus,
-  ArrowDown,
 } from '@element-plus/icons-vue'
 import {
   getTaskList,
@@ -490,7 +488,8 @@ const gridOptions = ref({
     {
       title: '操作',
       fixed: 'right',
-      width: 'auto',
+      width: 132,
+      className: 'table-operation-cell',
       field: 'operation',
       slots: {
         default: 'operationDefaultSlot'
@@ -1270,10 +1269,6 @@ onMounted(() => {
 
 .queue-stat-card__value--failed {
   color: #ef6b73;
-}
-
-.table-operation-column {
-  gap: 8px;
 }
 
 .data-preview {

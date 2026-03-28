@@ -336,7 +336,8 @@ const gridOptions = ref({
       title: "操作",
       fixed: "right",
       showOverflow: false,
-      width: "auto",
+      width: 132,
+      className: "table-operation-cell",
       slots: {
         default: "operationDefaultSlot",
       },

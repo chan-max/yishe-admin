@@ -61,17 +61,18 @@
                 <span v-else>-</span>
               </template>
               <template #operationSlot="{ row }">
-                <el-dropdown trigger="click" @command="(cmd) => handleOperation(row, cmd)">
-                  <el-button type="primary" link size="small">
-                    操作
-                    <i class="mdi mdi-chevron-down" style="margin-left: 4px" />
-                  </el-button>
+                <el-dropdown
+                  class="operation-dropdown"
+                  placement="bottom-end"
+                  @command="(cmd) => handleOperation(row, String(cmd))"
+                >
+                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                   <template #dropdown>
-                    <el-dropdown-menu>
-                            <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
-                            <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
-                            <el-dropdown-item command="copyParams">复制参数</el-dropdown-item>
-                            <el-dropdown-item command="delete">删除</el-dropdown-item>
+                    <el-dropdown-menu class="operation-menu-compact">
+                      <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
+                      <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
+                      <el-dropdown-item command="copyParams">复制参数</el-dropdown-item>
+                      <el-dropdown-item command="delete">删除</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -391,7 +392,7 @@ import {
   deleteCustomVoice
 } from '@/api/ai/tts'
 import { getClipMaterialList } from '@/api/clip-material'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
@@ -528,7 +529,7 @@ const gridOptions = ref<any>({
     { title: '试听', field: 'preview', width: 320, slots: { default: 'previewSlot' } },
     { title: '时长(秒)', field: 'duration', width: 96, formatter: ({ cellValue }) => formatDuration(cellValue) },
     { title: '创建时间', field: 'createTime', width: 170 },
-    { title: '操作', fixed: 'right', width: 90, slots: { default: 'operationSlot' } }
+    buildOperationColumn('operationSlot')
   ]
 })
 
