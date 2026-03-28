@@ -176,7 +176,7 @@ $prefix-cls: #{$namespace}-menu;
   overflow-x: hidden;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(143, 154, 173, 0.45) transparent;
+  scrollbar-color: var(--app-scrollbar-thumb-color) transparent;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -188,11 +188,11 @@ $prefix-cls: #{$namespace}-menu;
 
   &::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(143, 154, 173, 0.45);
+    background: var(--app-scrollbar-thumb-color);
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: rgba(143, 154, 173, 0.7);
+    background: var(--app-scrollbar-thumb-hover-color);
   }
 
   &__panel {
@@ -209,7 +209,7 @@ $prefix-cls: #{$namespace}-menu;
     z-index: 2;
     padding: 8px 0 10px;
     margin-bottom: 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--left-menu-divider-color);
     background: var(--left-menu-bg-color, #141414);
   }
 
@@ -221,7 +221,7 @@ $prefix-cls: #{$namespace}-menu;
   &__section {
     width: 100%;
     padding: 5px 0 7px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--left-menu-divider-color);
   }
 
   &__section--leaf {
@@ -245,7 +245,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__section-head:hover {
-    background: #1a1a1a;
+    background: var(--left-menu-hover-color);
   }
 
   &__section-label {
@@ -259,14 +259,14 @@ $prefix-cls: #{$namespace}-menu;
   &__section-icon {
     flex: none;
     font-size: 13px;
-    color: #8e97a7;
+    color: var(--left-menu-icon-color);
   }
 
   &__section-title {
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    color: #f3f4f6;
+    color: var(--left-menu-title-color);
     font-size: 13px;
     font-weight: 600;
     line-height: 1.15;
@@ -277,16 +277,16 @@ $prefix-cls: #{$namespace}-menu;
   &__section-arrow {
     flex: none;
     font-size: 11px;
-    color: #7f8796;
+    color: var(--left-menu-arrow-color);
   }
 
   &__section--active > .#{$prefix-cls}__section-head {
-    background: #1a1a1a;
+    background: var(--left-menu-hover-color);
   }
 
   &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-icon,
   &__section--active > .#{$prefix-cls}__section-head .#{$prefix-cls}__section-title {
-    color: #7db0ff;
+    color: var(--left-menu-text-active-color);
   }
 
   &__links {
@@ -307,7 +307,7 @@ $prefix-cls: #{$namespace}-menu;
     border-left: 2px solid transparent;
     border-radius: 0 5px 5px 0;
     background: transparent;
-    color: rgba(255, 255, 255, 0.56);
+    color: var(--left-menu-link-text-color);
     cursor: pointer;
     text-align: left;
     transition:
@@ -318,16 +318,16 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__link:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-left-color: rgba(125, 176, 255, 0.28);
-    color: rgba(255, 255, 255, 0.88);
+    background: var(--left-menu-link-hover-bg);
+    border-left-color: var(--left-menu-link-active-border-color);
+    color: var(--left-menu-link-hover-color);
     transform: translateX(1px);
   }
 
   &__link--active {
-    background: rgba(125, 176, 255, 0.06);
-    border-left-color: #7db0ff;
-    color: #9fc6ff;
+    background: var(--left-menu-link-active-bg);
+    border-left-color: var(--left-menu-link-active-border-color);
+    color: var(--left-menu-link-active-color);
   }
 
   &__link-text {

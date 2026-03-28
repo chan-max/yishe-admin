@@ -1,13 +1,24 @@
 /* 列表页面公共样式 */
 
-:root {
+:root,
+html.light {
+  --list-page-base-bg: var(--app-content-bg-color);
+  --list-page-surface-bg: var(--app-content-surface-color);
+  --list-page-surface-bg-soft: var(--app-content-surface-muted-color);
+  --list-page-panel-bg: var(--list-page-surface-bg);
+  --list-page-panel-border: var(--app-content-border-color);
+  --list-page-panel-shadow: var(--app-content-shadow);
+  --list-page-panel-radius: 16px;
+  --list-page-muted-text: rgba(36, 48, 65, 0.55);
+}
+
+html.dark {
   --list-page-base-bg: #101215;
   --list-page-surface-bg: #16191e;
   --list-page-surface-bg-soft: #1b1f25;
   --list-page-panel-bg: var(--list-page-surface-bg);
   --list-page-panel-border: rgba(255, 255, 255, 0.08);
   --list-page-panel-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
-  --list-page-panel-radius: 16px;
   --list-page-muted-text: rgba(255, 255, 255, 0.55);
 }
 
@@ -26,7 +37,7 @@
   gap: 10px;
   padding: 0 0 12px;
   border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--list-page-panel-border);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -90,7 +101,7 @@
   padding: 0 0 2px;
   font-size: 12px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--list-page-muted-text);
   line-height: 1.2;
   letter-spacing: 0.02em;
 }
@@ -246,13 +257,59 @@
   min-height: 100%;
   flex-direction: column;
   overflow: hidden;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-right: 1px solid var(--list-page-panel-border);
 }
 
 .list-page-sidebar__body {
   min-height: 0;
   flex: 1;
   padding: 12px;
+}
+
+.folder-sidebar-shell {
+  position: relative;
+  min-height: 100%;
+}
+
+.folder-sidebar-body {
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+}
+
+.folder-sidebar-tree {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.folder-sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  z-index: 5;
+  display: inline-flex;
+  width: 22px;
+  height: 58px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--app-content-border-color);
+  border-right: 0;
+  border-radius: 10px 0 0 10px;
+  background: var(--folder-tree-toggle-bg);
+  box-shadow: var(--folder-tree-toggle-shadow);
+  color: var(--folder-tree-toggle-color);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.folder-sidebar-toggle:hover {
+  background: var(--folder-tree-toggle-hover-bg);
+  color: var(--folder-tree-toggle-hover-color);
 }
 
 .list-page-table-panel {
@@ -275,18 +332,18 @@
   display: flex;
   justify-content: flex-end;
   padding: 12px 16px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--list-page-panel-border);
 }
 
 .list-page-table-panel__pagination--flat {
   padding: 14px 0 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--list-page-panel-border);
 }
 
 .list-page-dialog-section {
   margin-bottom: 14px;
   padding: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--list-page-panel-border);
   border-radius: 14px;
   background: var(--list-page-surface-bg-soft);
 }
@@ -349,7 +406,7 @@
 .common-table :deep(.vxe-header--column) {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--el-text-color-regular);
   letter-spacing: 0.02em;
 }
 
@@ -563,7 +620,7 @@
   overflow: hidden;
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--app-content-surface-muted-color);
 }
 
 .table-thumb--sm {
@@ -684,7 +741,7 @@
   width: 16px;
   height: 16px;
   flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--list-page-panel-border);
   border-radius: 4px;
 }
 
@@ -840,7 +897,7 @@
   position: fixed;
   min-width: 120px;
   background: var(--list-page-surface-bg);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--list-page-panel-border);
   border-radius: 10px;
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.24);
   padding: 1px 0;
@@ -882,12 +939,12 @@
 }
 
 .op-submenu-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--el-fill-color-light);
 }
 
 .op-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--list-page-panel-border);
   margin: 3px 8px;
 }
 
@@ -895,7 +952,7 @@
 .operation-menu-compact {
   min-width: 132px !important;
   padding: 3px 0 !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--list-page-panel-border) !important;
   border-radius: 10px !important;
   background: var(--list-page-surface-bg) !important;
   box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28) !important;
@@ -1058,6 +1115,24 @@
   .operation-menu-compact :deep(.el-dropdown-menu__item) {
     padding: 10px 12px;
     font-size: 14px;
+  }
+
+  .folder-sidebar-toggle {
+    top: auto;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    border-right: 1px solid var(--app-content-border-color);
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0 0 10px 10px;
+    transform: none;
+  }
+
+  .folder-sidebar-body {
+    padding-bottom: 30px;
   }
 }
 

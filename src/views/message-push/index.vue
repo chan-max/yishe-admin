@@ -173,6 +173,15 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+:deep(.message-push-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.message-push-page .list-page-layout__main) {
+  gap: 10px;
+}
+
 .message-push-url {
   font-size: 12px;
   line-height: 1.5;
@@ -181,6 +190,11 @@ onMounted(() => {
 }
 
 :deep(.message-push-page .list-page-filter--flat) {
-  padding-bottom: 12px;
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.message-push-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
 }
 </style>

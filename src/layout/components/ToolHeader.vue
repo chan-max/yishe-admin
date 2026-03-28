@@ -1,9 +1,10 @@
 <script lang="tsx">
-import { computed, defineComponent } from 'vue'
+import { computed, defineComponent, inject } from 'vue'
 import { Icon } from '@/components/Icon'
 import { UserInfo } from '@/layout/components/UserInfo'
 import { Screenfull } from '@/layout/components/Screenfull'
 import { Breadcrumb } from '@/layout/components/Breadcrumb'
+import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
 import ClientStatus from '@/layout/components/ClientStatus.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
@@ -43,6 +44,9 @@ export default defineComponent({
         <div class="flex h-full items-center gap-2px md:gap-6px">
           <div class="client-status-wrapper">
             <ClientStatus />
+          </div>
+          <div class="custom-hover flex h-34px items-center rounded-999px px-6px">
+            <ThemeSwitch />
           </div>
           {screenfull.value ? (
             <Screenfull class="custom-hover" color="var(--top-header-text-color)" />

@@ -179,9 +179,9 @@
       </template>
 
       <template #sidebar>
-        <div class="list-page-panel list-page-panel--flat list-page-sidebar clip-material-sidebar">
-          <div class="list-page-sidebar__body clip-material-sidebar__body">
-            <div v-show="!folderTreeCollapsed" class="clip-material-sidebar__tree">
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar clip-material-sidebar folder-sidebar-shell">
+          <div class="list-page-sidebar__body clip-material-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="clip-material-sidebar__tree folder-sidebar-tree">
               <FolderTree
                 v-model="selectedFolderId"
                 width="100%"
@@ -197,7 +197,7 @@
           </div>
           <button
             type="button"
-            class="clip-material-sidebar__toggle"
+            class="clip-material-sidebar__toggle folder-sidebar-toggle"
             @click="folderTreeCollapsed = !folderTreeCollapsed"
           >
             <el-icon :size="14">
@@ -983,49 +983,9 @@ function handleOperationCommand(command: string, row: any) {
   overflow: hidden;
 }
 
-.clip-material-sidebar__toggle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  z-index: 5;
-  display: inline-flex;
-  height: 56px;
-  width: 20px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0;
-  background: var(--list-page-surface-bg);
-  color: rgba(255, 255, 255, 0.68);
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition:
-    color 0.2s ease,
-    background 0.2s ease;
-}
-
-.clip-material-sidebar__toggle:hover {
-  background: var(--list-page-surface-bg-soft);
-  color: #fff;
-}
-
 @media (max-width: 1024px) {
   .clip-material-sidebar__body {
     padding: 0;
-  }
-
-  .clip-material-sidebar__toggle {
-    top: auto;
-    right: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 28px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: 0;
-    border-radius: 0;
-    transform: none;
   }
 }
 </style>

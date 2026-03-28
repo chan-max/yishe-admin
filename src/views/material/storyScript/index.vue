@@ -620,6 +620,17 @@ onMounted(() => {
   overflow: hidden;
 }
 
+:deep(.story-detail-dialog.el-dialog.is-fullscreen) {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+}
+
+:deep(.story-detail-dialog.el-dialog.is-fullscreen .el-dialog__header) {
+  padding: 16px 20px 12px;
+}
+
 :deep(.story-detail-card .el-card__header) {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);

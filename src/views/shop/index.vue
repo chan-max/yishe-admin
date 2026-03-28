@@ -259,9 +259,9 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--app-content-surface-muted-color);
 }
 
 .resource-toolbar__meta-label {

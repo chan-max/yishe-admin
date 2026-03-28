@@ -54,9 +54,9 @@
       </template>
 
       <template #sidebar>
-        <div class="list-page-panel list-page-panel--flat list-page-sidebar product-page__sidebar">
-          <div class="list-page-sidebar__body product-page__sidebar-body">
-            <div v-show="!folderTreeCollapsed" class="product-page__sidebar-tree">
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar product-page__sidebar folder-sidebar-shell">
+          <div class="list-page-sidebar__body product-page__sidebar-body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="product-page__sidebar-tree folder-sidebar-tree">
               <FolderTree
                 v-model="queryParams.folderId"
                 folder-category="product"
@@ -71,7 +71,7 @@
               />
             </div>
           </div>
-          <button type="button" class="product-page__sidebar-toggle" @click="folderTreeCollapsed = !folderTreeCollapsed">
+          <button type="button" class="product-page__sidebar-toggle folder-sidebar-toggle" @click="folderTreeCollapsed = !folderTreeCollapsed">
             <el-icon :size="14">
               <DArrowRight v-if="folderTreeCollapsed" />
               <DArrowLeft v-else />
@@ -3093,29 +3093,6 @@ function getPublishTaskType(platform: string) {
   overflow: hidden;
 }
 
-.product-page__sidebar-toggle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  display: inline-flex;
-  width: 20px;
-  height: 56px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  background: #16191e;
-  color: rgba(255, 255, 255, 0.68);
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease;
-}
-
-.product-page__sidebar-toggle:hover {
-  color: #fff;
-  background: #1b1f25;
-}
-
 .product-page__table-wrap {
   background: transparent;
 }
@@ -3134,18 +3111,6 @@ function getPublishTaskType(platform: string) {
 }
 
 @media (max-width: 1024px) {
-  .product-page__sidebar-toggle {
-    top: auto;
-    right: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 28px;
-    transform: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: 0;
-  }
-
   .product-page__sidebar-body {
     padding-bottom: 28px;
   }

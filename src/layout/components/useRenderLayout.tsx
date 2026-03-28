@@ -27,17 +27,17 @@ export const useRenderLayout = ({ mobileMenuOpen, closeMobileMenu }: RenderLayou
       <>
         {mobile.value && mobileMenuOpen.value ? (
           <div
-            class="absolute inset-0 z-[1400] bg-[rgba(0,0,0,0.45)] backdrop-blur-[2px]"
+            class="absolute inset-0 z-[1400] bg-[var(--app-overlay-color)] backdrop-blur-[2px]"
             onClick={closeMobileMenu}
           />
         ) : undefined}
 
         <aside
-          class={[
-            'absolute top-0 left-0 h-full border-r border-[var(--left-menu-border-color)] bg-[var(--left-menu-bg-color)]',
-            {
-              'z-[30] shadow-[inset_-1px_0_0_rgba(255,255,255,0.05),1px_0_0_rgba(255,255,255,0.1),10px_0_28px_rgba(0,0,0,0.22)]':
-                !mobile.value,
+            class={[
+              'absolute top-0 left-0 h-full border-r border-[var(--left-menu-border-color)] bg-[var(--left-menu-bg-color)]',
+              {
+                'z-[30] shadow-[var(--left-menu-shadow)]':
+                  !mobile.value,
               'z-[1401]':
                 mobile.value,
               'w-[var(--left-menu-max-width)]': !mobile.value,
@@ -54,7 +54,7 @@ export const useRenderLayout = ({ mobileMenuOpen, closeMobileMenu }: RenderLayou
         <main
           class={[
             `${prefixCls}-content`,
-            'absolute top-0 h-full border-l border-[rgba(255,255,255,0.03)]',
+            'absolute top-0 h-full border-l border-[var(--app-content-border-color)]',
             {
               'left-[var(--left-menu-max-width)] w-[calc(100%-var(--left-menu-max-width))]':
                 !mobile.value,
@@ -83,7 +83,7 @@ export const useRenderLayout = ({ mobileMenuOpen, closeMobileMenu }: RenderLayou
             >
               <ToolHeader
                 class={[
-                  'bg-[var(--top-header-bg-color)] border-b border-[var(--left-menu-border-color)]',
+                  'bg-[var(--top-header-bg-color)] border-b border-[var(--top-tool-border-color)] shadow-[var(--top-header-shadow)]',
                   {
                     'layout-border__bottom': !tagsView.value
                   }

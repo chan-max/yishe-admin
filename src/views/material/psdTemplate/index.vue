@@ -89,24 +89,32 @@
       </template>
 
       <template #sidebar>
-        <div class="list-page-panel list-page-panel--flat list-page-sidebar psd-template-sidebar">
-      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
-        <div class="h-full overflow-hidden">
-          <div class="h-full w-[280px]">
-            <FolderTree v-model="selectedFolderId" :folder-category="FOLDER_CATEGORY" :show-count="false"
-              :drag-state="dragState" @change="handleFolderChange" @folder-drag-over="handleFolderDragOver"
-              @folder-drag-leave="handleFolderDragLeave" @folder-drop="handleFolderDrop" />
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar psd-template-sidebar folder-sidebar-shell">
+          <div class="list-page-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="folder-sidebar-tree">
+              <FolderTree
+                v-model="selectedFolderId"
+                width="100%"
+                :folder-category="FOLDER_CATEGORY"
+                :show-count="false"
+                :drag-state="dragState"
+                @change="handleFolderChange"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
+              />
+            </div>
           </div>
-        </div>
-        <div
-          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
-          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
-          <el-icon :size="14">
-            <DArrowRight v-if="folderTreeCollapsed" />
-            <DArrowLeft v-else />
-          </el-icon>
-        </div>
-      </div>
+          <button
+            type="button"
+            class="folder-sidebar-toggle"
+            @click="folderTreeCollapsed = !folderTreeCollapsed"
+          >
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
         </div>
       </template>
 
@@ -2226,4 +2234,3 @@ function removeSuitableSize(sizeKey: string) {
   }
 }
 </style>
-

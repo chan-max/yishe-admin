@@ -839,9 +839,9 @@
       </template>
 
       <template #sidebar>
-        <div class="list-page-panel list-page-panel--flat list-page-sidebar material-index-sidebar">
-          <div class="list-page-sidebar__body material-index-sidebar__body">
-            <div v-show="!folderTreeCollapsed" class="material-index-sidebar__tree">
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar material-index-sidebar folder-sidebar-shell">
+          <div class="list-page-sidebar__body material-index-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="material-index-sidebar__tree folder-sidebar-tree">
               <FolderTree
                 v-model="selectedStickerFolderId"
                 width="100%"
@@ -855,7 +855,7 @@
               />
             </div>
           </div>
-          <button type="button" class="material-index-sidebar__toggle" @click="folderTreeCollapsed = !folderTreeCollapsed">
+          <button type="button" class="material-index-sidebar__toggle folder-sidebar-toggle" @click="folderTreeCollapsed = !folderTreeCollapsed">
             <el-icon :size="14">
               <DArrowRight v-if="folderTreeCollapsed" />
               <DArrowLeft v-else />
@@ -6482,29 +6482,6 @@ h1 {
   overflow: hidden;
 }
 
-.material-index-sidebar__toggle {
-  position: absolute;
-  top: 50%;
-  right: 0;
-  display: inline-flex;
-  width: 20px;
-  height: 56px;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
-  background: #16191e;
-  color: rgba(255, 255, 255, 0.68);
-  transform: translateY(-50%);
-  cursor: pointer;
-  transition: color 0.2s ease, background-color 0.2s ease;
-}
-
-.material-index-sidebar__toggle:hover {
-  color: #fff;
-  background: #1b1f25;
-}
-
 .material-index-table-panel__body {
   padding: 0;
   overflow: hidden;
@@ -6515,18 +6492,6 @@ h1 {
 }
 
 @media (max-width: 1024px) {
-  .material-index-sidebar__toggle {
-    top: auto;
-    right: auto;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 28px;
-    transform: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-left: 0;
-  }
-
   .material-index-sidebar__body {
     padding-bottom: 28px;
   }

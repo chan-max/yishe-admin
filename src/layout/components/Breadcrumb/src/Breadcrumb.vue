@@ -89,7 +89,7 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
 
   :deep(.#{$prefix-cls}__separator) {
     margin: 0 6px;
-    color: rgba(255, 255, 255, 0.24);
+    color: var(--top-header-breadcrumb-muted-color);
     font-size: 10px;
   }
 
@@ -99,12 +99,12 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
     .#{$prefix-cls}__inner {
       display: flex;
       align-items: center;
-      color: rgba(255, 255, 255, 0.52);
+      color: var(--top-header-breadcrumb-color);
       font-size: 11px;
       font-weight: 400;
 
       &:hover {
-        color: rgba(255, 255, 255, 0.72);
+        color: var(--top-header-text-color);
       }
     }
   }
@@ -123,12 +123,12 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
     .#{$prefix-cls}__inner {
       display: flex;
       align-items: center;
-      color: rgba(255, 255, 255, 0.88);
+      color: var(--top-header-breadcrumb-active-color);
       font-size: 11px;
       font-weight: 500;
 
       &:hover {
-        color: rgba(255, 255, 255, 0.88);
+        color: var(--top-header-breadcrumb-active-color);
       }
     }
   }

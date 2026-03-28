@@ -71,14 +71,14 @@ const toggleClick = () => {
   <div
     :class="[
       prefixCls,
-      'bg-[var(--el-color-white)] dark:bg-[var(--el-bg-color)] dark:border-[var(--el-border-color)] dark:border-1px'
+      'bg-[var(--app-content-surface-color)] border-[var(--app-content-border-color)] border-1px'
     ]"
   >
     <div
       v-if="title"
       :class="[
         `${prefixCls}-header`,
-        'h-50px flex justify-between items-center b-b-1 border-solid border-[var(--el-border-color)] px-10px cursor-pointer dark:border-[var(--el-border-color)]'
+        'h-50px flex justify-between items-center b-b-1 border-solid border-[var(--app-content-border-color)] px-10px cursor-pointer bg-[var(--app-content-surface-muted-color)]'
       ]"
       @click="toggleClick"
     >

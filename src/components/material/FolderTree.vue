@@ -401,33 +401,48 @@ watch(displayTreeData, () => {
 /* 文件夹树样式（复用 material/index 的样式） */
 .sticker-folder-tree-container {
   .sticker-folder-tree-header {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
 
   .sticker-folder-tree-search {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
   }
 
   .sticker-folder-tree {
-    --el-tree-node-content-height: 36px;
+    --el-tree-node-content-height: var(--folder-tree-node-height);
 
     :deep(.el-tree-node__content) {
-      height: 36px;
-      /* padding-left: 8px !important; // 移除强制左内边距，以免破坏层级缩进 */
+      height: var(--folder-tree-node-height);
+      margin-bottom: 2px;
+      border-radius: var(--folder-tree-node-radius);
+      transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease;
 
       &:hover {
-        background-color: var(--el-fill-color-light);
+        background-color: var(--folder-tree-node-hover-bg);
       }
     }
 
     :deep(.el-tree-node.is-current > .el-tree-node__content) {
-      background-color: var(--el-color-primary-light-9);
-      color: var(--el-color-primary);
+      background-color: var(--folder-tree-node-active-bg);
+      color: var(--folder-tree-node-active-color);
       font-weight: 500;
+      box-shadow: inset 0 0 0 1px var(--folder-tree-node-active-border-color);
     }
 
     :deep(.el-tree-node__expand-icon) {
-      color: var(--el-text-color-regular);
+      margin-right: 2px;
+      color: var(--el-text-color-secondary);
+      font-size: 12px;
+      transition:
+        color 0.18s ease,
+        transform 0.18s ease;
+    }
+
+    :deep(.el-tree-node__expand-icon:hover) {
+      color: var(--folder-tree-node-active-color);
     }
   }
 
@@ -437,17 +452,17 @@ watch(displayTreeData, () => {
     justify-content: space-between;
     width: 100%;
     padding-right: 8px;
-    border-radius: 6px;
+    border-radius: var(--folder-tree-node-radius);
     border: 1px solid transparent;
     transition:
-      background-color 0.08s ease,
-      box-shadow 0.08s ease,
-      border-color 0.08s ease,
-      transform 0.08s ease;
+      background-color 0.18s ease,
+      box-shadow 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease;
 
     &.is-drop-hover {
       background:
-        linear-gradient(90deg, var(--el-color-primary-light-8), var(--el-color-primary-light-9));
+        linear-gradient(90deg, var(--el-color-primary-light-8), var(--folder-tree-node-active-bg));
       border-color: var(--el-color-primary);
       box-shadow:
         0 0 0 2px var(--el-color-primary-light-5),
@@ -474,8 +489,8 @@ watch(displayTreeData, () => {
       min-width: 0;
 
       .folder-icon {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         margin-right: 6px;
         flex-shrink: 0;
       }
@@ -486,12 +501,8 @@ watch(displayTreeData, () => {
         text-overflow: ellipsis;
         white-space: nowrap;
         font-size: 13px;
+        color: var(--el-text-color-primary);
         cursor: pointer;
-        transform-origin: left center;
-
-        &:hover {
-          transform: scale(1.05);
-        }
 
         .sticker-folder-node-highlight {
           color: var(--el-color-danger);
@@ -504,8 +515,8 @@ watch(displayTreeData, () => {
 
       .sticker-folder-node-count {
         font-size: 11px;
-        color: var(--el-color-primary);
-        font-weight: 300;
+        color: var(--el-text-color-secondary);
+        font-weight: 500;
         margin-left: 6px;
       }
     }
@@ -513,20 +524,25 @@ watch(displayTreeData, () => {
     .sticker-folder-node-actions {
       display: flex;
       align-items: center;
-      padding-right: 4px;
+      padding-right: 2px;
       margin-left: 12px;
 
       .sticker-folder-action-icon {
         font-size: 14px;
         cursor: pointer;
-        opacity: 0.4;
-        transition: opacity 0.2s, color 0.2s;
-        color: var(--el-text-color-regular);
-        padding: 2px;
+        opacity: 0.54;
+        transition:
+          opacity 0.2s,
+          color 0.2s,
+          background-color 0.2s;
+        color: var(--el-text-color-secondary);
+        padding: 4px;
+        border-radius: 6px;
 
         &:hover {
           opacity: 1;
           color: var(--el-color-primary);
+          background: var(--folder-tree-node-hover-bg);
         }
       }
 

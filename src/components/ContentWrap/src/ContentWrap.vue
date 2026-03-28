@@ -47,17 +47,17 @@ $prefix-cls: #{$namespace}-content-wrap;
 
 .#{$prefix-cls} {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 18px;
-  background: var(--list-page-surface-bg, #16191e);
+  background: var(--app-content-surface-color);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 16px 36px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 var(--app-content-highlight-color),
+    var(--app-content-shadow);
 
   :deep(.el-card__header) {
     padding: 18px 22px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: var(--list-page-surface-bg-soft, #1b1f25);
+    border-bottom: 1px solid var(--app-content-border-color);
+    background: var(--app-content-surface-muted-color);
   }
 
   :deep(.el-card__body) {
@@ -99,12 +99,12 @@ $prefix-cls: #{$namespace}-content-wrap;
 .content-wrap__title {
   font-size: 15px;
   font-weight: 700;
-  color: #f5f7fa;
+  color: var(--el-text-color-primary);
   letter-spacing: 0.01em;
 }
 
 .content-wrap__tooltip {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--el-text-color-secondary);
 }
 
 .content-wrap__header-extra {

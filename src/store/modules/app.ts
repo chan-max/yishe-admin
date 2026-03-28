@@ -9,6 +9,40 @@ import { ThemeTypes } from '@/types/theme'
 
 const { wsCache } = useCache()
 
+const DARK_THEME: ThemeTypes = {
+  elColorPrimary: '#5b8cff',
+  leftMenuBorderColor: '#202020',
+  leftMenuBgColor: '#141414',
+  leftMenuBgLightColor: '#181818',
+  leftMenuBgActiveColor: '#1d1d1d',
+  leftMenuCollapseBgActiveColor: '#1d1d1d',
+  leftMenuTextColor: '#b9c0cc',
+  leftMenuTextActiveColor: '#8cbcff',
+  logoTitleTextColor: '#f3f4f6',
+  logoBorderColor: 'inherit',
+  topHeaderBgColor: '#141414',
+  topHeaderTextColor: '#d8dde6',
+  topHeaderHoverColor: '#1d1d1d',
+  topToolBorderColor: '#202020'
+}
+
+const LIGHT_THEME: ThemeTypes = {
+  elColorPrimary: '#2d6bff',
+  leftMenuBorderColor: '#d9e1ec',
+  leftMenuBgColor: '#f7f9fc',
+  leftMenuBgLightColor: '#ffffff',
+  leftMenuBgActiveColor: '#edf4ff',
+  leftMenuCollapseBgActiveColor: '#edf4ff',
+  leftMenuTextColor: '#566277',
+  leftMenuTextActiveColor: '#2d6bff',
+  logoTitleTextColor: '#162033',
+  logoBorderColor: 'inherit',
+  topHeaderBgColor: 'rgba(255, 255, 255, 0.9)',
+  topHeaderTextColor: '#243041',
+  topHeaderHoverColor: '#eef3f9',
+  topToolBorderColor: '#d9e1ec'
+}
+
 interface AppState {
   breadcrumb: boolean
   breadcrumbIcon: boolean
@@ -70,36 +104,7 @@ export const useAppStore = defineStore('app', {
       layout: wsCache.get(CACHE_KEY.LAYOUT) || 'classic', // layout布局
       isDark: wsCache.get(CACHE_KEY.IS_DARK) || false, // 是否是暗黑模式
       currentSize: wsCache.get('default') || 'small', // 组件尺寸
-      theme: wsCache.get(CACHE_KEY.THEME) || {
-        // 主题色
-        elColorPrimary: '#5b8cff',
-        // 左侧菜单边框颜色
-        leftMenuBorderColor: '#202020',
-        // 左侧菜单背景颜色
-        leftMenuBgColor: '#141414',
-        // 左侧菜单浅色背景颜色
-        leftMenuBgLightColor: '#181818',
-        // 左侧菜单选中背景颜色
-        leftMenuBgActiveColor: '#1d1d1d',
-        // 左侧菜单收起选中背景颜色
-        leftMenuCollapseBgActiveColor: '#1d1d1d',
-        // 左侧菜单字体颜色
-        leftMenuTextColor: '#b9c0cc',
-        // 左侧菜单选中字体颜色
-        leftMenuTextActiveColor: '#8cbcff',
-        // logo字体颜色
-        logoTitleTextColor: '#f3f4f6',
-        // logo边框颜色
-        logoBorderColor: 'inherit',
-        // 头部背景颜色
-        topHeaderBgColor: '#141414',
-        // 头部字体颜色
-        topHeaderTextColor: '#d8dde6',
-        // 头部悬停颜色
-        topHeaderHoverColor: '#1d1d1d',
-        // 头部边框颜色
-        topToolBorderColor: '#202020'
-      }
+      theme: wsCache.get(CACHE_KEY.THEME) || DARK_THEME
     }
   },
   getters: {
@@ -247,17 +252,18 @@ export const useAppStore = defineStore('app', {
       this.title = title
     },
     setIsDark(isDark: boolean) {
-      const htmlElement = document.documentElement;
+      const htmlElement = document.documentElement
       this.isDark = isDark
       if (this.isDark) {
         document.documentElement.classList.add('dark')
         document.documentElement.classList.remove('light')
-        htmlElement.dataset.vxeUiTheme = 'dark';
+        htmlElement.dataset.vxeUiTheme = 'dark'
       } else {
         document.documentElement.classList.add('light')
         document.documentElement.classList.remove('dark')
-        htmlElement.dataset.vxeUiTheme = 'light';
+        htmlElement.dataset.vxeUiTheme = 'light'
       }
+      this.setCssVarTheme()
       wsCache.set(CACHE_KEY.IS_DARK, this.isDark)
     },
     setCurrentSize(currentSize: ElementPlusSize) {
@@ -272,8 +278,12 @@ export const useAppStore = defineStore('app', {
       wsCache.set(CACHE_KEY.THEME, this.theme)
     },
     setCssVarTheme() {
-      for (const key in this.theme) {
-        setCssVar(`--${humpToUnderline(key)}`, this.theme[key])
+      const currentTheme = this.isDark
+        ? { ...DARK_THEME, ...this.theme }
+        : { ...LIGHT_THEME, ...(this.theme?.elColorPrimary ? { elColorPrimary: this.theme.elColorPrimary } : {}) }
+
+      for (const key in currentTheme) {
+        setCssVar(`--${humpToUnderline(key)}`, currentTheme[key])
       }
     },
     setFooter(footer: boolean) {

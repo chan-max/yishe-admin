@@ -67,7 +67,7 @@
                 <span class="text-xs text-[var(--el-text-color-placeholder)]">plans</span>
                 <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.plans?.length || 0 }} 步</span>
               </div>
-              <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(result.plans) }}</pre>
+              <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result.plans) }}</pre>
             </div>
 
             <div class="rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-[11px] leading-5 text-[var(--el-text-color-secondary)]">
@@ -101,12 +101,12 @@
                 <span class="text-xs text-[var(--el-text-color-placeholder)]">toolResults</span>
                 <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.toolResults?.length || 0 }} 条</span>
               </div>
-              <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(result.toolResults) }}</pre>
+              <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result.toolResults) }}</pre>
             </div>
 
             <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
               <span class="text-xs text-[var(--el-text-color-placeholder)]">完整响应</span>
-              <pre class="overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(result) }}</pre>
+              <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result) }}</pre>
             </div>
           </div>
         </el-card>
@@ -163,7 +163,7 @@
                   </div>
                 </div>
               </div>
-              <pre class="mt-3 overflow-auto rounded-md bg-[var(--el-fill-color-dark)] p-3 text-[11px] leading-5 text-white">{{ formatJson(tool.inputSchema) }}</pre>
+              <pre class="agent-console-json mt-3 overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(tool.inputSchema) }}</pre>
             </div>
           </div>
         </div>
@@ -267,13 +267,20 @@ onMounted(() => {
 }
 
 .agent-console-page :deep(.el-card) {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0;
-  background: rgba(255, 255, 255, 0.02);
-  box-shadow: none;
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 14px;
+  background: var(--app-content-surface-color);
+  box-shadow: var(--app-content-shadow);
 }
 
 .agent-console-page :deep(.el-card__header) {
-  border-bottom-color: rgba(255, 255, 255, 0.08);
+  border-bottom-color: var(--app-content-border-color);
+  background: var(--app-content-surface-muted-color);
+}
+
+.agent-console-json {
+  border: 1px solid var(--app-content-border-color);
+  background: var(--app-content-surface-muted-color);
+  color: var(--el-text-color-primary);
 }
 </style>

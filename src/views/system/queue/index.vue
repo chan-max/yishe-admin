@@ -1229,13 +1229,15 @@ onMounted(() => {
   flex-direction: column;
   gap: 6px;
   padding: 12px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 12px;
+  background: var(--app-content-surface-muted-color);
+  box-shadow: var(--app-content-shadow);
 }
 
 .queue-stat-card__label {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.56);
+  color: var(--el-text-color-secondary);
   line-height: 1.2;
 }
 
@@ -1243,7 +1245,7 @@ onMounted(() => {
   font-size: 22px;
   font-weight: 600;
   line-height: 1.1;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--el-text-color-primary);
 }
 
 .queue-stat-card__value--pending {
