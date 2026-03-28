@@ -1,97 +1,133 @@
 ﻿<template>
-  <div>
-    <!-- PC端显示搜索栏，移动端使用筛选对话框 -->
-    <div v-show="!isMobile" class="search-bar list-page-filter list-page-filter--flat material-index-filter">
-      <!-- 搜索表单容器 -->
-      <div class="search-form-container material-index-search-form">
-        <!-- AI 提示词搜索 -->
-        <div class="search-field search-field-wide">
-          <label class="search-label">提示词</label>
-          <el-input v-model="queryParams.searchPrompt" placeholder="AI提示词" clearable
-            @change="(val) => { if (!val) getList() }" @keyup.enter="getList" />
-        </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="material-index-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
+      <template #filter>
+        <div v-if="!isMobile" class="list-page-filter list-page-filter--flat material-index-filter">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form material-index-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+                <el-form-item label="提示词">
+                  <el-input
+                    v-model="queryParams.searchPrompt"
+                    size="small"
+                    placeholder="AI提示词"
+                    clearable
+                    @change="(val) => { if (!val) getList() }"
+                    @keyup.enter="getList"
+                  />
+                </el-form-item>
+              </el-col>
 
-        <!-- 搜索 -->
-        <div class="search-field search-field-wide">
-          <label class="search-label">搜索</label>
-          <el-input v-model="queryParams.searchText" placeholder="名称、描述、关键词" clearable
-            @change="(val) => { if (!val) getList() }" @keyup.enter="getList" />
-        </div>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+                <el-form-item label="搜索">
+                  <el-input
+                    v-model="queryParams.searchText"
+                    size="small"
+                    placeholder="名称、描述、关键词"
+                    clearable
+                    @change="(val) => { if (!val) getList() }"
+                    @keyup.enter="getList"
+                  />
+                </el-form-item>
+              </el-col>
 
-        <!-- 搜索模式 -->
-        <div class="search-field">
-          <label class="search-label">模式</label>
-          <el-select v-model="queryParams.searchMode" placeholder="模式" @change="getList">
-            <el-option label="AND" value="AND" />
-            <el-option label="OR" value="OR" />
-          </el-select>
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
+                <el-form-item label="模式">
+                  <el-select v-model="queryParams.searchMode" size="small" placeholder="模式" @change="getList">
+                    <el-option label="AND" value="AND" />
+                    <el-option label="OR" value="OR" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- 排序 -->
-        <div class="search-field">
-          <label class="search-label">排序</label>
-          <el-select v-model="queryParams.sortingFields" placeholder="排序" @change="getList">
-            <el-option label="创建时间倒序" value="createTime DESC" />
-            <el-option label="创建时间正序" value="createTime ASC" />
-          </el-select>
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
+                <el-form-item label="排序">
+                  <el-select v-model="queryParams.sortingFields" size="small" placeholder="排序" @change="getList">
+                    <el-option label="创建时间倒序" value="createTime DESC" />
+                    <el-option label="创建时间正序" value="createTime ASC" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- 后缀 -->
-        <div class="search-field">
-          <label class="search-label">后缀</label>
-          <el-select v-model="queryParams.suffix" placeholder="后缀" multiple clearable @change="getList">
-            <el-option label="jpg" value="jpg" />
-            <el-option label="jpeg" value="jpeg" />
-            <el-option label="png" value="png" />
-            <el-option label="gif" value="gif" />
-            <el-option label="webp" value="webp" />
-            <el-option label="svg" value="svg" />
-            <el-option label="bmp" value="bmp" />
-            <el-option label="tiff" value="tiff" />
-          </el-select>
-        </div>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5" :xl="4">
+                <el-form-item label="后缀">
+                  <el-select
+                    v-model="queryParams.suffix"
+                    size="small"
+                    placeholder="后缀"
+                    multiple
+                    clearable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    @change="getList"
+                  >
+                    <el-option label="jpg" value="jpg" />
+                    <el-option label="jpeg" value="jpeg" />
+                    <el-option label="png" value="png" />
+                    <el-option label="gif" value="gif" />
+                    <el-option label="webp" value="webp" />
+                    <el-option label="svg" value="svg" />
+                    <el-option label="bmp" value="bmp" />
+                    <el-option label="tiff" value="tiff" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- ID -->
-        <div class="search-field">
-          <label class="search-label">ID</label>
-          <el-input v-model="queryParams.id" placeholder="ID" clearable @change="(val) => { if (!val) getList() }" />
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="2">
+                <el-form-item label="ID">
+                  <el-input
+                    v-model="queryParams.id"
+                    size="small"
+                    placeholder="ID"
+                    clearable
+                    @change="(val) => { if (!val) getList() }"
+                  />
+                </el-form-item>
+              </el-col>
 
-        <!-- 自定义 -->
-        <div class="search-field">
-          <label class="search-label">自定义</label>
-          <el-select v-model="queryParams.isCustom" placeholder="自定义" clearable @change="getList">
-            <el-option label="全部" value="" />
-            <el-option label="是" :value="true" />
-            <el-option label="否" :value="false" />
-          </el-select>
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
+                <el-form-item label="自定义">
+                  <el-select v-model="queryParams.isCustom" size="small" placeholder="自定义" clearable @change="getList">
+                    <el-option label="全部" value="" />
+                    <el-option label="是" :value="true" />
+                    <el-option label="否" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- 侵权 -->
-        <div class="search-field">
-          <label class="search-label">侵权</label>
-          <el-select v-model="queryParams.isInfringement" placeholder="侵权" clearable @change="getList">
-            <el-option label="全部" value="" />
-            <el-option label="侵权" :value="true" />
-            <el-option label="非侵权" :value="false" />
-          </el-select>
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
+                <el-form-item label="侵权">
+                  <el-select v-model="queryParams.isInfringement" size="small" placeholder="侵权" clearable @change="getList">
+                    <el-option label="全部" value="" />
+                    <el-option label="侵权" :value="true" />
+                    <el-option label="非侵权" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- 抠图 -->
-        <div class="search-field">
-          <label class="search-label">抠图</label>
-          <el-select v-model="queryParams.isCutout" placeholder="抠图" clearable @change="getList">
-            <el-option label="全部" value="" />
-            <el-option label="是" :value="true" />
-            <el-option label="否" :value="false" />
-          </el-select>
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3" :xl="3">
+                <el-form-item label="抠图">
+                  <el-select v-model="queryParams.isCutout" size="small" placeholder="抠图" clearable @change="getList">
+                    <el-option label="全部" value="" />
+                    <el-option label="是" :value="true" />
+                    <el-option label="否" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- 尺寸 -->
-        <div class="search-field">
-          <label class="search-label">尺寸</label>
-          <el-select v-model="queryParams.sizeShape" placeholder="尺寸形状" clearable multiple @change="getList"
-            :teleported="false">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="7" :xl="6">
+                <el-form-item label="尺寸">
+                  <el-select
+                    v-model="queryParams.sizeShape"
+                    size="small"
+                    placeholder="尺寸形状"
+                    clearable
+                    multiple
+                    collapse-tags
+                    collapse-tags-tooltip
+                    @change="getList"
+                    :teleported="false"
+                  >
             <el-option-group label="正方形">
               <el-option 
                 v-for="config in sizeShapeGroups.square" 
@@ -143,61 +179,72 @@
                 </div>
               </el-option>
             </el-option-group>
-          </el-select>
-        </div>
+                  </el-select>
+                </el-form-item>
+              </el-col>
 
-        <!-- 随机 -->
-        <div class="search-field search-field-narrow">
-          <label class="search-label">随机</label>
-          <el-switch v-model="queryParams.random" size="small" @change="getList" />
-        </div>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="2" :xl="2">
+                <el-form-item label="随机">
+                  <div class="material-index-search-form__switch">
+                    <el-switch v-model="queryParams.random" size="small" @change="getList" />
+                  </div>
+                </el-form-item>
+              </el-col>
 
-        <!-- 时间 -->
-        <div class="search-field search-field-time">
-          <label class="search-label">时间</label>
-          <DateRangePicker
-            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }" />
-        </div>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5" :xl="5">
+                <el-form-item label="时间">
+                  <DateRangePicker
+                    @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; getList() }"
+                  />
+                </el-form-item>
+              </el-col>
 
-        <!-- 相似搜索 -->
-        <div class="search-field search-field-similar">
-          <label class="search-label">相似</label>
-          <div class="phash-form-row">
-            <!-- 上半部分：相似输入与相似相关按钮 -->
-            <div class="phash-top-row">
-              <el-input v-model="queryParams.phash" placeholder="输入 phash 或图片地址" clearable
-                @blur="onPhashInputBlur" />
-              <div class="phash-mode">
-                <el-check-tag :checked="queryParams.phashMode === 'range'"
-                  @change="() => queryParams.phashMode = 'range'">相似匹配</el-check-tag>
-                <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
-                  <el-check-tag :checked="queryParams.phashMode === 'exact'" type="primary"
-                    @change="() => queryParams.phashMode = 'exact'">精确匹配</el-check-tag>
-                </el-tooltip>
-              </div>
-              <div class="phash-top-actions">
-                <el-button type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
-                <el-button @click="clearPhashSearch">清空</el-button>
-              </div>
+              <el-col class="list-page-search-form__col--full" :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+                <el-form-item label="相似搜索">
+                  <div class="material-index-phash">
+                    <div class="material-index-phash__row">
+                      <el-input
+                        v-model="queryParams.phash"
+                        size="small"
+                        placeholder="输入 phash 或图片地址"
+                        clearable
+                        @blur="onPhashInputBlur"
+                      />
+                      <div class="material-index-phash__modes">
+                        <el-check-tag :checked="queryParams.phashMode === 'range'" @change="() => queryParams.phashMode = 'range'">
+                          相似匹配
+                        </el-check-tag>
+                        <el-tooltip content="只找 phash 完全一致，速度最快，需已有 phash。" placement="top">
+                          <el-check-tag :checked="queryParams.phashMode === 'exact'" @change="() => queryParams.phashMode = 'exact'">
+                            精确匹配
+                          </el-check-tag>
+                        </el-tooltip>
+                      </div>
+                      <div class="material-index-phash__actions">
+                        <el-button size="small" type="primary" @click="handlePhashSearch">搜索相似图片</el-button>
+                        <el-button size="small" @click="clearPhashSearch">清空</el-button>
+                      </div>
+                    </div>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions material-index-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
+              <el-button v-if="isAdmin" size="small" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
+              <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" size="small" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
+              <el-button v-if="isAdmin" size="small" @click="() => openPsdSetDialog(true)">多图套图({{ ids.length }})</el-button>
+              <el-button v-admin-only size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+                批量删除({{ ids.length }})
+              </el-button>
             </div>
-
-            <!-- 下半部分：操作按钮组（不与相似输入同一行） -->
-            <div class="phash-actions">
-              <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
-              <el-button v-if="isAdmin" type="info" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
-              <el-button type="default" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" type="primary" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" type="success" @click="() => openPsdSetDialog(true)">多图片制作套图({{ ids.length }})</el-button>
-              <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)">批量删除({{ ids.length }})</el-button>
-            </div>
-          </div>
+          </el-form>
         </div>
-      </div>
-    </div>
-    <div v-if="isMobile" class="flex pb-4 justify-end">
-      <el-button type="primary" icon="el-icon-filter" @click="filterDialogVisible = true">筛选</el-button>
-    </div>
+        <div v-else class="material-index-mobile-filter">
+          <el-button size="small" type="primary" @click="filterDialogVisible = true">筛选</el-button>
+        </div>
     <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
       <el-form :model="queryParams" label-width="80px">
         <el-form-item label="提示词">
@@ -327,7 +374,6 @@
         <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
       </template>
     </el-dialog>
-
     <!-- PC 顶部筛选栅格布局样式 -->
     <!--（放在这里是为了避免全局影响，保持只作用于本页） -->
 
@@ -790,36 +836,38 @@
       </template>
     </el-dialog>
 
-    <div class="flex overflow-visible" style="overflow: hidden;">
-      <!-- 文件夹树 -->
-      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
-        <div class="h-full overflow-hidden">
-          <div class="h-full w-[280px]">
-            <FolderTree
-              v-model="selectedStickerFolderId"
-              width="100%"
-              :folder-category="FOLDER_CATEGORY"
-              :drag-state="dragState"
-              @change="handleStickerFolderChange"
-              @reloaded="loadStickerFolderTree"
-              @folder-drag-over="handleFolderDragOver"
-              @folder-drag-leave="handleFolderDragLeave"
-              @folder-drop="handleFolderDrop"
-            />
-          </div>
-        </div>
-        <div
-          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-gray-600 hover:text-primary transition-colors"
-          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
-          <el-icon :size="14">
-            <DArrowRight v-if="folderTreeCollapsed" />
-            <DArrowLeft v-else />
-          </el-icon>
-        </div>
-      </div>
+      </template>
 
-      <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
-        <div class="common-table">
+      <template #sidebar>
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar material-index-sidebar">
+          <div class="list-page-sidebar__body material-index-sidebar__body">
+            <div v-show="!folderTreeCollapsed" class="material-index-sidebar__tree">
+              <FolderTree
+                v-model="selectedStickerFolderId"
+                width="100%"
+                :folder-category="FOLDER_CATEGORY"
+                :drag-state="dragState"
+                @change="handleStickerFolderChange"
+                @reloaded="loadStickerFolderTree"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
+              />
+            </div>
+          </div>
+          <button type="button" class="material-index-sidebar__toggle" @click="folderTreeCollapsed = !folderTreeCollapsed">
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
+        </div>
+      </template>
+
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body material-index-table-panel__body">
+            <div class="common-table">
           <vxe-grid class="material-dnd-grid dnd-text-selectable" ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading"
             :row-class-name="materialRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #dragHandleSlot>
@@ -1163,16 +1211,19 @@
                   style="color:#409EFF;font-size:18px;" />
               </div>
             </template>
-          </vxe-grid>
+            </vxe-grid>
+            </div>
+          </div>
         </div>
+      </template>
 
-        <!-- 分页 -->
+      <template #pagination>
         <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat material-index-pagination">
           <pagination v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize" :total="total"
             @pagination="getList" />
         </div>
-      </div>
-    </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog v-model="uploadModalVisible" title="素材上传" width="100%" style="height: 100%" align-center :footer="false"
       :destroy-on-close="true" class="material-upload-dialog" @close="uploadModalClose">
@@ -1644,7 +1695,7 @@
     <!-- 图片预览弹窗 -->
     <ImagePreview :visible="imagePreviewVisible" :image-url="currentImageUrl" @close="closeImagePreview" />
 
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -1723,6 +1774,7 @@ import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio, getSizeShapeUiCon
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
 import FolderTree from '@/components/material/FolderTree.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { FOLDER_FILTER } from '@/constants/folder'
 
 const userStore = useUserStore()
@@ -6568,12 +6620,113 @@ h1 {
   padding-top: 8px;
 }
 
+.material-index-page {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
 .material-index-search-form {
   width: 100%;
 }
 
+.material-index-search-form__actions {
+  justify-content: flex-start;
+}
+
+.material-index-search-form__switch {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+}
+
+.material-index-mobile-filter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.material-index-phash__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.material-index-phash__row > :first-child {
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.material-index-phash__modes,
+.material-index-phash__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.material-index-sidebar {
+  position: relative;
+  min-height: 100%;
+}
+
+.material-index-sidebar__body {
+  padding: 0;
+}
+
+.material-index-sidebar__tree {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.material-index-sidebar__toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  width: 20px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: #16191e;
+  color: rgba(255, 255, 255, 0.68);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.material-index-sidebar__toggle:hover {
+  color: #fff;
+  background: #1b1f25;
+}
+
+.material-index-table-panel__body {
+  padding: 0;
+  overflow: hidden;
+}
+
 .material-index-pagination {
-  margin-top: 12px;
+  margin-top: 0;
+}
+
+@media (max-width: 1024px) {
+  .material-index-sidebar__toggle {
+    top: auto;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    transform: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 0;
+  }
+
+  .material-index-sidebar__body {
+    padding-bottom: 28px;
+  }
 }
 
 .batch-detail-config-content {

@@ -2,6 +2,7 @@
   <div class="enhanced-time-range-picker">
     <el-date-picker
       v-model="internalValue"
+      size="small"
       type="datetimerange"
       :shortcuts="shortcuts"
       range-separator="至"
@@ -185,25 +186,29 @@ watch(() => props.modelValue, (newVal) => {
 </script>
 
 <style scoped>
-.enhanced-time-range-picker {
-  max-width: 480px;
+.enhanced-time-range-picker{
+  display: flex;
+  width: 100%;
+  min-width: 0;
 }
 
-.time-info {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #f5f7fa;
-  border-radius: 4px;
+.enhanced-time-range-picker :deep(.el-date-editor) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
-.time-info p {
-  margin: 5px 0;
-  font-size: 14px;
-  color: #606266;
+.enhanced-time-range-picker :deep(.el-date-editor.el-input__wrapper) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.warning-text {
-  color: #e6a23c;
-  font-weight: bold;
+.enhanced-time-range-picker :deep(.el-range-input) {
+  min-width: 0;
+}
+
+.enhanced-time-range-picker :deep(.el-range-separator) {
+  flex: 0 0 auto;
 }
 </style>

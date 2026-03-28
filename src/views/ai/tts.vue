@@ -5,7 +5,7 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
                 <el-form-item label="搜索">
                   <el-input v-model="queryParams.search" size="small" placeholder="文案 / 返回URL" clearable @keyup.enter="getList"
                     @clear="getList" />

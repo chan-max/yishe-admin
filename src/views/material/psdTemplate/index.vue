@@ -5,24 +5,24 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="ID搜索">
                   <el-input v-model="queryParams.id" size="small" clearable placeholder="请输入模板ID" @keyup.enter="getList" />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="搜索">
                   <el-input v-model="queryParams.searchKeyword" size="small" clearable placeholder="请输入名称、关键词或描述" @keyup.enter="getList" />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="排序方式">
                   <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
                     <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="3">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
                 <el-form-item label="是否可用">
                   <el-select v-model="queryParams.enabled" size="small" clearable placeholder="全部" @change="getList">
                     <el-option label="可用" :value="true" />
@@ -30,7 +30,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="12" :lg="5">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5">
                 <el-form-item label="适合尺寸">
                   <el-select
                     v-model="queryParams.suitableSizesArray"
@@ -52,7 +52,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="12" :lg="5">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5">
                 <el-form-item label="抠图支持">
                   <el-select
                     v-model="queryParams.cutoutModesArray"

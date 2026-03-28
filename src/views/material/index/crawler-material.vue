@@ -5,7 +5,7 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="按名称搜索">
                   <el-input
                     v-model="queryParams.imageName"
@@ -16,7 +16,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="3">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
                 <el-form-item label="ID精确查询">
                   <el-input
                     v-model="queryParams.id"
@@ -27,7 +27,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="排序">
                   <el-select
                     v-model="queryParams.sortingFields"
@@ -40,7 +40,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="4">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="后缀">
                   <el-select
                     v-model="queryParams.suffix"
@@ -61,7 +61,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="时间范围">
                   <DateRangePicker
                     @change="

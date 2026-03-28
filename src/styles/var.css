@@ -52,6 +52,14 @@
 
   --app-content-bg-color: #0d1015;
 
+  --app-form-label-size: 11px;
+  --app-form-label-weight: 500;
+  --app-form-label-color: rgba(255, 255, 255, 0.66);
+  --app-form-label-spacing: 0.02em;
+  --app-form-item-margin: 12px;
+  --app-form-item-top-margin: 10px;
+  --app-form-label-top-gap: 4px;
+
   --app-footer-height: 50px;
 
   --transition-time-02: 0.2s;
@@ -73,4 +81,28 @@ body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+.el-form .el-form-item {
+  margin-bottom: var(--app-form-item-margin);
+}
+
+.el-form--label-top .el-form-item {
+  margin-bottom: var(--app-form-item-top-margin);
+}
+
+.el-form .el-form-item__label {
+  font-size: var(--app-form-label-size);
+  font-weight: var(--app-form-label-weight);
+  letter-spacing: var(--app-form-label-spacing);
+  color: var(--app-form-label-color);
+  line-height: 1.25;
+}
+
+.el-form--label-top .el-form-item__label {
+  padding-bottom: var(--app-form-label-top-gap);
+}
+
+.el-form .el-form-item__content {
+  line-height: normal;
 }

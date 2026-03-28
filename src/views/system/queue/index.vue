@@ -9,7 +9,7 @@
             class="list-page-search-form"
           >
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
                 <el-form-item label="任务 ID">
                   <el-input
                     v-model="queryParams.id"
@@ -20,7 +20,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
                 <el-form-item label="任务类型">
                   <el-select
                     v-model="queryParams.type"
@@ -39,7 +39,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
                 <el-form-item label="任务状态">
                   <el-select
                     v-model="queryParams.status"
@@ -55,7 +55,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="7" :xl="8">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="7" :xl="8">
                 <el-form-item label="时间排序">
                   <el-select
                     v-model="queryParams.sortType"

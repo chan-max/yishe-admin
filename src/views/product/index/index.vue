@@ -1,116 +1,89 @@
 <template>
-  <div class="flex flex-col gap-3 overflow-visible h-full">
-    <!-- 上方：搜索条件 -->
-    <ContentWrap class="flex-shrink-0 product-page__filter-wrap">
-      <!-- 折叠状态：显示常用搜索和操作 -->
-      <div v-show="actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end list-page-filter list-page-filter--flat product-page__filter">
-        <div style="flex: 1"></div>
-        <form-item label="按ID搜索">
-          <el-input v-model="queryParams.id" clearable placeholder="输入ID" style="width: 160px"
-            @keyup.enter="handleSearch" @clear="handleSearch" />
-        </form-item>
-        <form-item label="按产品代码">
-          <el-input v-model="queryParams.code" clearable placeholder="输入产品代码" style="width: 160px"
-            @keyup.enter="handleSearch" @clear="handleSearch" />
-        </form-item>
-        <form-item label="搜索">
-          <el-input v-model="queryParams.searchText" clearable placeholder="请输入搜索内容" style="width: 160px"
-            @keyup.enter="handleSearch" @clear="handleSearch" />
-        </form-item>
-        <form-item label="随机顺序">
-          <el-switch v-model="queryParams.random" active-text="" inactive-text="" size="small" @change="handleSearch" />
-        </form-item>
-        <form-item label="显示关联信息">
-          <el-switch v-model="showRelations" active-text="" inactive-text="" size="small"
-            @change="handleShowRelationsChange" />
-        </form-item>
-        <form-item class="date-range-picker">
-          <DateRangePicker
-            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }" />
-        </form-item>
-        <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
-        <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-          展开筛选
-        </el-button>
-      </div>
-
-      <!-- 展开状态：显示全部搜索功能 -->
-      <div v-show="!actionsCollapsed" class="py-4 flex flex-wrap items-center gap-3 justify-end list-page-filter list-page-filter--flat product-page__filter">
-        <div style="flex: 1"></div>
-        <form-item label="按ID搜索">
-          <el-input v-model="queryParams.id" clearable placeholder="输入ID" style="width: 160px"
-            @keyup.enter="handleSearch" @clear="handleSearch" />
-        </form-item>
-        <form-item label="按产品代码">
-          <el-input v-model="queryParams.code" clearable placeholder="输入产品代码" style="width: 160px"
-            @keyup.enter="handleSearch" @clear="handleSearch" />
-        </form-item>
-        <form-item label="搜索">
-          <el-input v-model="queryParams.searchText" clearable placeholder="请输入搜索内容" style="width: 160px"
-            @keyup.enter="handleSearch" @clear="handleSearch" />
-        </form-item>
-        <form-item label="随机顺序">
-          <el-switch v-model="queryParams.random" active-text="" inactive-text="" size="small" @change="handleSearch" />
-        </form-item>
-        <form-item label="显示关联信息">
-          <el-switch v-model="showRelations" active-text="" inactive-text="" size="small"
-            @change="handleShowRelationsChange" />
-        </form-item>
-        <form-item class="date-range-picker">
-          <DateRangePicker
-            @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }" />
-        </form-item>
-        <el-button type="primary" @click="handleSearch" :icon="Search"> 搜索 </el-button>
-
-        <!-- 操作按钮（自适应换行，尽量靠右） -->
-        <div class="shrink-0 ml-auto flex gap-2">
-          <!-- 修改按钮 -->
-          <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
-            新增
-          </el-button>
-          <!-- 删除按钮 -->
-          <el-button v-admin-only type="danger" :icon="Delete" @click="handleDelete(null)">
-            批量删除
-          </el-button>
-          <!-- 批量发布/下架 -->
-          <el-button type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Check">
-            批量标记发布
-          </el-button>
-          <el-button type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">
-            批量下架
-          </el-button>
-          <el-button type="info" :icon="Grid" @click="actionsCollapsed = !actionsCollapsed">
-            收起筛选
-          </el-button>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="product-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat product-page__filter">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="按ID搜索">
+                  <el-input v-model="queryParams.id" size="small" clearable placeholder="输入ID" @keyup.enter="handleSearch" @clear="handleSearch" />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="按产品代码">
+                  <el-input v-model="queryParams.code" size="small" clearable placeholder="输入产品代码" @keyup.enter="handleSearch" @clear="handleSearch" />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="搜索">
+                  <el-input v-model="queryParams.searchText" size="small" clearable placeholder="请输入搜索内容" @keyup.enter="handleSearch" @clear="handleSearch" />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="5">
+                <el-form-item label="时间范围">
+                  <DateRangePicker
+                    @change="(val) => { queryParams.startTime = val.start; queryParams.endTime = val.end; handleSearch() }"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="随机顺序">
+                  <div class="product-page__switch">
+                    <el-switch v-model="queryParams.random" size="small" @change="handleSearch" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="显示关联">
+                  <div class="product-page__switch">
+                    <el-switch v-model="showRelations" size="small" @change="handleShowRelationsChange" />
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions product-page__actions">
+              <el-button size="small" type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
+              <el-button size="small" type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
+              <el-button v-admin-only size="small" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除</el-button>
+              <el-button size="small" type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Check">批量标记发布</el-button>
+              <el-button size="small" type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">批量下架</el-button>
+            </div>
+          </el-form>
         </div>
-      </div>
-    </ContentWrap>
+      </template>
 
-    <!-- 下方：左侧分类文件夹，右侧表格 -->
-    <div class="flex gap-3 overflow-visible flex-1 min-h-0">
-      <div class="relative flex-shrink-0 z-[200] !overflow-visible" :class="folderTreeCollapsed ? 'w-0' : 'w-[280px]'">
-        <div class="h-full overflow-hidden">
-          <div class="h-full w-[280px]">
-            <ContentWrap class="!p-0 h-full">
-              <FolderTree v-model="queryParams.folderId" folder-category="product" width="100%" :show-border="false"
-                class="h-full" :drag-state="dragState" @change="handleFolderChange"
-                @folder-drag-over="handleFolderDragOver" @folder-drag-leave="handleFolderDragLeave"
-                @folder-drop="handleFolderDrop" />
-            </ContentWrap>
+      <template #sidebar>
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar product-page__sidebar">
+          <div class="list-page-sidebar__body product-page__sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="product-page__sidebar-tree">
+              <FolderTree
+                v-model="queryParams.folderId"
+                folder-category="product"
+                width="100%"
+                :show-border="false"
+                class="h-full"
+                :drag-state="dragState"
+                @change="handleFolderChange"
+                @folder-drag-over="handleFolderDragOver"
+                @folder-drag-leave="handleFolderDragLeave"
+                @folder-drop="handleFolderDrop"
+              />
+            </div>
           </div>
+          <button type="button" class="product-page__sidebar-toggle" @click="folderTreeCollapsed = !folderTreeCollapsed">
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
         </div>
-        <div
-          class="absolute top-1/2 -right-4 w-8 h-16 bg-white border border-gray-200 rounded-r flex items-center justify-center cursor-pointer shadow-md z-[999] hover:bg-gray-50 text-[var(--el-text-color-primary)] hover:text-primary transition-colors"
-          @click="folderTreeCollapsed = !folderTreeCollapsed" style="transform: translateY(-50%)">
-          <el-icon :size="14">
-            <DArrowRight v-if="folderTreeCollapsed" />
-            <DArrowLeft v-else />
-          </el-icon>
-        </div>
-      </div>
-      <ContentWrap class="flex-1 min-w-0 product-page__table-wrap">
-        <!-- 表格展示 -->
-        <div class="common-table">
+      </template>
+
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat product-page__table-wrap">
+          <div class="list-page-table-panel__body product-page__table-body">
+            <div class="common-table">
         <vxe-grid class="product-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="checkboxChange"
           @checkbox-all="checkboxAllChange">
 
@@ -213,7 +186,7 @@
               <div class="flex flex-col items-center w-40">
                 <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="100px"
                   indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
-                  class="w-full custom-carousel">
+                  class="w-full custom-carousel table-preview-carousel">
                   <el-carousel-item v-for="(url, index) in row.images" :key="index">
                     <el-image :src="url" :preview-src-list="row.images" :initial-index="index"
                       :preview-teleported="true" :hide-on-click-modal="false" :preview-class="'custom-image-preview'"
@@ -248,7 +221,7 @@
             <div class="flex items-center gap-2">
               <el-carousel v-if="row.videos && row.videos.length > 0" :interval="3000" height="100px"
                 indicator-position="none" :arrow="row.videos.length > 1 ? 'always' : 'never'"
-                class="w-40 custom-carousel">
+                class="w-40 custom-carousel table-preview-carousel">
                 <el-carousel-item v-for="(url, index) in row.videos" :key="index">
                   <div class="relative cursor-pointer w-full h-full flex items-center justify-center bg-black rounded"
                     @click="handleVideoPreview(row.videos, index as any, row)">
@@ -407,15 +380,20 @@
 
           <!-- 旧的关联列模板已移除，统一使用 relationsSlot -->
         </vxe-grid>
+            </div>
+          </div>
         </div>
+      </template>
 
-        <!-- 分页 -->
+      <template #pagination>
         <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat product-page__pagination">
           <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
             @pagination="getList" />
         </div>
+      </template>
+    </ListPageLayout>
 
-        <el-dialog :title="dialogTitle" v-model="dialogVisible" width="100%" :fullscreen="true" @close="dialogClose"
+      <el-dialog :title="dialogTitle" v-model="dialogVisible" width="100%" :fullscreen="true" @close="dialogClose"
         align-center>
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
           <el-row :gutter="20">
@@ -1259,9 +1237,7 @@
         </template>
       </el-dialog>
 
-      </ContentWrap>
-      </div>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="tsx">
@@ -1321,6 +1297,8 @@ import VideoGenDialog from './components/VideoGenDialog.vue';
 import { PRODUCT_CATEGORIES } from '@/config/product-categories'
 import { getPreviewImageUrl } from '@/utils/image'
 import FolderTree from '@/components/material/FolderTree.vue'
+import DateRangePicker from '@/components/DateRangePicker.vue'
+import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder'
 
@@ -3059,8 +3037,14 @@ function getPublishTaskType(platform: string) {
 </script>
 
 <style lang="less">
-.product-page__filter-wrap {
-  background: transparent;
+.product-page.list-page-layout {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+.product-page .list-page-layout__body,
+.product-page .list-page-layout__main {
+  gap: 10px;
 }
 
 .product-page__filter {
@@ -3068,12 +3052,87 @@ function getPublishTaskType(platform: string) {
   padding-bottom: 10px;
 }
 
+.product-page__actions {
+  justify-content: flex-start;
+}
+
+.product-page__switch {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+}
+
+.product-page__sidebar {
+  position: relative;
+  min-height: 100%;
+}
+
+.product-page__sidebar-body {
+  padding: 0;
+}
+
+.product-page__sidebar-tree {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.product-page__sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  display: inline-flex;
+  width: 20px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  background: #16191e;
+  color: rgba(255, 255, 255, 0.68);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.product-page__sidebar-toggle:hover {
+  color: #fff;
+  background: #1b1f25;
+}
+
 .product-page__table-wrap {
   background: transparent;
 }
 
+.product-page__table-body {
+  padding: 0;
+  overflow: hidden;
+}
+
 .product-page__pagination {
+  padding-top: 0;
+}
+
+.product-page .list-page-table-panel__pagination--flat {
   padding-top: 10px;
+}
+
+@media (max-width: 1024px) {
+  .product-page__sidebar-toggle {
+    top: auto;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    transform: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 0;
+  }
+
+  .product-page__sidebar-body {
+    padding-bottom: 28px;
+  }
 }
 
 .custom-carousel {

@@ -3,11 +3,29 @@
     <ListPageLayout class="shop-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-search-form__actions">
-            <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
-              批量删除 ({{ selectedIds.length }})
-            </el-button>
-            <el-button size="small" type="primary" @click="openDialog()">新增店铺</el-button>
+          <div class="resource-toolbar">
+            <div class="resource-toolbar__summary">
+              <div class="resource-toolbar__title">店铺资源管理</div>
+              <div class="resource-toolbar__description">
+                统一维护店铺 Logo、轮播图和描述信息，作为前台展示与商品投放的基础资源。
+              </div>
+            </div>
+            <div class="resource-toolbar__meta">
+              <div class="resource-toolbar__meta-item">
+                <span class="resource-toolbar__meta-label">店铺数量</span>
+                <span class="resource-toolbar__meta-value">{{ list.length }}</span>
+              </div>
+              <div class="resource-toolbar__meta-item">
+                <span class="resource-toolbar__meta-label">已选中</span>
+                <span class="resource-toolbar__meta-value">{{ selectedIds.length }}</span>
+              </div>
+              <div class="resource-toolbar__actions">
+                <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
+                  批量删除
+                </el-button>
+                <el-button size="small" type="primary" @click="openDialog()">新增店铺</el-button>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -31,7 +49,7 @@
               fit="contain"
               :preview-src-list="[row.logo]"
               preview-teleported
-              class="h-12 w-12 rounded border border-solid border-[var(--el-border-color-light)] bg-black/5 p-1"
+              class="table-thumb table-thumb--md table-thumb--contain"
             />
             <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
           </div>
@@ -47,22 +65,39 @@
                 fit="cover"
                 :preview-src-list="row.carousel"
                 preview-teleported
-                class="h-10 w-10 rounded border border-solid border-[var(--el-border-color-light)]"
+                class="table-thumb table-thumb--sm"
               />
-              <span v-if="row.carousel.length > 3" class="text-xs text-[var(--el-text-color-secondary)]">+{{ row.carousel.length - 3 }}</span>
+              <span v-if="row.carousel.length > 3" class="table-thumb-count">+{{ row.carousel.length - 3 }}</span>
             </template>
             <span v-else class="text-xs text-[var(--el-text-color-secondary)]">-</span>
           </div>
         </template>
 
         <template #createTimeSlot="{ row }">
-          <span>{{ formatDate(row.createTime) }}</span>
+          <span class="table-time-text">{{ formatDate(row.createTime) }}</span>
         </template>
 
         <template #operationSlot="{ row }">
-          <div class="flex items-center justify-end gap-3">
-            <el-button link type="primary" size="small" @click="openDialog(row.id)">编辑</el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row.id)">删除</el-button>
+          <div class="flex justify-end">
+            <el-dropdown
+              trigger="click"
+              class="operation-dropdown"
+              @command="(command) => handleOperationCommand(command, row)"
+            >
+              <el-button type="primary" link size="small" class="operation-trigger-button">
+                操作<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item command="edit">
+                    <span>编辑</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item command="delete" divided>
+                    <span>删除</span>
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </div>
         </template>
               </vxe-grid>
@@ -78,8 +113,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
 import { batchDeleteShop, deleteShop, getShopList } from '@/api/shop'
 import ShopDialog from './components/ShopDialog.vue'
 import { formatDate } from '@/utils/formatTime'
@@ -109,8 +145,8 @@ const gridOptions = ref({
     { title: 'Logo', field: 'logo', width: 100, slots: { default: 'logoSlot' } },
     { title: '轮播图', field: 'carousel', width: 180, slots: { default: 'carouselSlot' } },
     { title: '描述', field: 'description', minWidth: 240, showOverflow: 'tooltip' },
-    { title: '创建时间', field: 'createTime', width: 180, slots: { default: 'createTimeSlot' } },
-    { title: '操作', field: 'operation', width: 160, fixed: 'right', slots: { default: 'operationSlot' } }
+    { ...buildTimeColumn('创建时间', 'createTime', 180), slots: { default: 'createTimeSlot' } },
+    buildOperationColumn('operationSlot')
   ]
 })
 
@@ -127,6 +163,16 @@ const getList = async () => {
 
 const openDialog = (id?: number) => {
   dialogRef.value?.open(id)
+}
+
+const handleOperationCommand = (command: string, row: any) => {
+  if (command === 'edit') {
+    openDialog(row.id)
+    return
+  }
+  if (command === 'delete') {
+    handleDelete(row.id)
+  }
 }
 
 const handleCheckboxChange = ({ records }: any) => {
@@ -172,7 +218,92 @@ onMounted(() => {
 }
 
 :deep(.shop-page .list-page-filter--flat) {
-  gap: 10px;
   padding-bottom: 10px;
+}
+
+.resource-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.resource-toolbar__summary {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.resource-toolbar__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--el-text-color-primary);
+}
+
+.resource-toolbar__description {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.resource-toolbar__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.resource-toolbar__meta-item {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.resource-toolbar__meta-label {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.resource-toolbar__meta-value {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+}
+
+.resource-toolbar__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .resource-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resource-toolbar__meta {
+    justify-content: flex-start;
+  }
+
+  .resource-toolbar__meta-item,
+  .resource-toolbar__actions {
+    width: 100%;
+  }
+
+  .resource-toolbar__actions :deep(.el-button) {
+    flex: 1 1 auto;
+  }
 }
 </style>

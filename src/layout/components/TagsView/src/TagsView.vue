@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, unref, watch } from 'vue'
+import { computed, nextTick, ref, unref, watch } from 'vue'
 import type { RouteLocationNormalizedLoaded, RouterLinkProps } from 'vue-router'
 import { useRouter } from 'vue-router'
 import { usePermissionStore } from '@/store/modules/permission'
@@ -44,8 +44,6 @@ const setSelectTag = tagsViewStore.setSelectedTag
 const appStore = useAppStore()
 
 const tagsViewImmerse = computed(() => appStore.getTagsViewImmerse)
-
-const tagsViewIcon = computed(() => appStore.getTagsViewIcon)
 
 const isDark = computed(() => appStore.getIsDark)
 
@@ -245,16 +243,6 @@ const move = (to: number) => {
   start()
 }
 
-const canShowIcon = (item: RouteLocationNormalizedLoaded) => {
-  if (
-    (item?.matched?.[1]?.meta?.icon && unref(tagsViewIcon)) ||
-    (item?.meta?.affix && unref(tagsViewIcon) && item?.meta?.icon)
-  ) {
-    return true
-  }
-  return false
-}
-
 onBeforeMount(() => {
   initTags()
   addTags()
@@ -273,7 +261,7 @@ watch(
   <div
     :id="prefixCls"
     :class="prefixCls"
-    class="relative w-full flex bg-[#fff] dark:bg-[var(--el-bg-color)]"
+    class="relative w-full flex border-b border-[rgba(255,255,255,0.08)] bg-[var(--top-header-bg-color)]"
   >
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool ${prefixCls}__tool--first`"
@@ -296,8 +284,6 @@ watch(
             :class="[
               `${prefixCls}__item`,
               tagsViewImmerse ? `${prefixCls}__item--immerse` : '',
-              tagsViewIcon ? `${prefixCls}__item--icon` : '',
-              tagsViewImmerse && tagsViewIcon ? `${prefixCls}__item--immerse--icon` : '',
               item?.meta?.affix ? `${prefixCls}__item--affix` : '',
               {
                 'is-active': isActive(item)
@@ -366,29 +352,17 @@ watch(
             <div>
               <router-link :ref="tagLinksRefs.set" v-slot="{ navigate }" :to="{ ...item }" custom>
                 <div
-                  :class="`h-full flex items-center justify-center whitespace-nowrap pl-15px ${prefixCls}__item--label`"
+                  :class="`h-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
                   @click="navigate"
                 >
-                  <Icon
-                    v-if="
-                      tagsViewIcon &&
-                      (item?.meta?.icon ||
-                        (item?.matched &&
-                          item.matched[0] &&
-                          item.matched[item.matched.length - 1].meta?.icon))
-                    "
-                    :icon="item?.meta?.icon || item.matched[item.matched.length - 1].meta.icon"
-                    :size="12"
-                    class="mr-5px"
-                  />
                   {{
                     t(item?.meta?.title as string) +
                     (item?.meta?.titleSuffix ? ` (${item?.meta?.titleSuffix})` : '')
                   }}
                   <Icon
                     :class="`${prefixCls}__item--close`"
-                    :size="12"
-                    color="#333"
+                    :size="11"
+                    color="currentColor"
                     icon="ep:close"
                     @click.prevent.stop="closeSelectedTag(item)"
                   />
@@ -497,8 +471,16 @@ $prefix-cls: #{$namespace}-tags-view;
     height: 100%;
   }
 
+  :deep(.#{$elNamespace}-scrollbar__bar.is-horizontal) {
+    display: none;
+  }
+
   &__tool {
     position: relative;
+    color: rgba(255, 255, 255, 0.52);
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
 
     &::before {
       position: absolute;
@@ -506,8 +488,13 @@ $prefix-cls: #{$namespace}-tags-view;
       left: 0;
       width: 100%;
       height: 100%;
-      border-left: 1px solid var(--el-border-color);
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
       content: '';
+    }
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.78);
+      background: rgba(255, 255, 255, 0.018);
     }
 
     &--first {
@@ -517,7 +504,7 @@ $prefix-cls: #{$namespace}-tags-view;
         left: 0;
         width: 100%;
         height: 100%;
-        border-right: 1px solid var(--el-border-color);
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
         border-left: none;
         content: '';
       }
@@ -526,85 +513,84 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item {
     position: relative;
-    top: 3px;
-    height: calc(100% - 6px);
-    padding-right: 15px;
-    margin-left: 4px;
-    font-size: 12px;
+    top: 0;
+    display: flex;
+    height: 100%;
+    padding-right: 18px;
+    margin-left: 0;
+    font-size: 11px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.58);
     cursor: pointer;
-    border: 1px solid #d9d9d9;
-    border-radius: 2px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0;
     box-sizing: border-box;
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
 
     &--close {
       position: absolute;
       top: 50%;
-      right: 5px;
-      display: none;
+      right: 6px;
+      display: flex;
+      width: 14px;
+      height: 14px;
+      align-items: center;
+      justify-content: center;
+      color: inherit;
+      opacity: 0;
+      border-radius: 999px;
       transform: translate(0, -50%);
+      transition:
+        opacity 0.18s ease,
+        background-color 0.18s ease;
     }
 
     &:not(.#{$prefix-cls}__item--affix):hover {
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.018);
+
       .#{$prefix-cls}__item--close {
-        display: block;
+        opacity: 1;
+      }
+
+      .#{$prefix-cls}__item--close:hover {
+        background: rgba(255, 255, 255, 0.08);
       }
     }
   }
 
-  &__item--icon {
-    padding-right: 20px;
-  }
-
-  &__item:not(.is-active) {
-    &:hover {
-      color: var(--el-color-primary);
-    }
+  &__item--label {
+    min-width: 0;
+    padding: 0 22px 0 10px;
+    line-height: 1;
   }
 
   &__item.is-active {
-    color: var(--el-color-white);
-    background-color: var(--el-color-primary);
-    border: 1px solid var(--el-color-primary);
-
-    .#{$prefix-cls}__item--close {
-      :deep(span) {
-        color: var(--el-color-white) !important;
-      }
-    }
+    color: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.03);
   }
 
   &__item--immerse {
-    top: 2px;
-    height: calc(100% - 3px);
-    padding-right: 35px;
-    margin: 0 -10px;
+    top: 0;
+    height: 100%;
+    padding-right: 18px;
+    margin: 0;
     border: none !important;
-    -webkit-mask-box-image: url("data:image/svg+xml,%3Csvg width='68' height='34' viewBox='0 0 68 34' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill-rule='evenodd' clip-rule='evenodd' d='m27,0c-7.99582,0 -11.95105,0.00205 -12,12l0,6c0,8.284 -0.48549,16.49691 -8.76949,16.49691l54.37857,-0.11145c-8.284,0 -8.60908,-8.10146 -8.60908,-16.38546l0,-6c0.11145,-12.08445 -4.38441,-12 -12,-12l-13,0z' fill='%23409eff'/%3E%3C/svg%3E")
-      12 27 15;
 
     .#{$prefix-cls}__item--label {
-      padding-left: 35px;
+      padding-left: 10px;
     }
 
     .#{$prefix-cls}__item--close {
-      right: 20px;
+      right: 6px;
     }
-  }
-
-  &__item--immerse--icon {
-    padding-right: 35px;
   }
 
   &__item--immerse:not(.is-active) {
     &:hover {
-      color: var(--el-color-white);
-      background-color: var(--el-color-primary);
-
-      .#{$prefix-cls}__item--close {
-        :deep(span) {
-          color: var(--el-color-white) !important;
-        }
-      }
+      color: rgba(255, 255, 255, 0.9);
     }
   }
 }
@@ -620,30 +606,17 @@ $prefix-cls: #{$namespace}-tags-view;
     }
 
     &__item {
-      border: 1px solid var(--el-border-color);
-    }
-
-    &__item:not(.is-active) {
-      &:hover {
-        color: var(--el-color-primary);
-      }
+      border-right-color: rgba(255, 255, 255, 0.06);
     }
 
     &__item.is-active {
-      color: var(--el-color-white);
-      background-color: var(--el-color-primary);
-      border: 1px solid var(--el-color-primary);
-
-      .#{$prefix-cls}__item--close {
-        :deep(span) {
-          color: var(--el-color-white) !important;
-        }
-      }
+      color: rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.03);
     }
 
     &__item--immerse:not(.is-active) {
       &:hover {
-        color: var(--el-color-white);
+        color: rgba(255, 255, 255, 0.9);
       }
     }
   }

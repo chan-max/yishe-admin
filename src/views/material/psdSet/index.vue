@@ -1,117 +1,115 @@
 <template>
   <ContentWrap :plain="true" class="psd-set-page">
-    <div class="flex pb-4 flex-wrap justify-end gap-4 items-center search-bar list-page-filter list-page-filter--flat">
-      <div style="flex: 1"></div>
-      <form-item label="ID">
-        <el-input
-          v-model="queryParams.id"
-          placeholder="套图ID"
-          style="width: 200px"
-          clearable
-          @change="handleIdChange"
-        />
-      </form-item>
-      <form-item label="关键词">
-        <el-input
-          v-model="queryParams.keyword"
-          placeholder="名称/描述/关键词"
-          style="width: 200px"
-          clearable
-          @change="handleKeywordChange"
-        />
-      </form-item>
-      <form-item label="状态">
-        <el-select
-          v-model="queryParams.status"
-          placeholder="全部状态"
-          style="width: 160px"
-          clearable
-          @change="getList"
-        >
-          <el-option
-            v-for="item in statusOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </form-item>
-      <form-item label="排序方式">
-        <el-select v-model="queryParams.sortingFields" style="width: 160px" @change="getList">
-          <el-option
-            v-for="item in sortTypeOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </form-item>
-      <form-item label="创建时间">
-        <el-date-picker
-          v-model="dateRange"
-          type="datetimerange"
-          range-separator="至"
-          start-placeholder="开始时间"
-          end-placeholder="结束时间"
-          format="YYYY-MM-DD HH:mm:ss"
-          value-format="YYYY-MM-DD HH:mm:ss"
-          style="width: 360px"
-          :shortcuts="dateShortcuts"
-          @change="handleDateRangeChange"
-        />
-      </form-item>
-      <el-button type="primary" :icon="Search" @click="getList">搜索</el-button>
-      <div class="flex items-center" style="margin-left: auto">
-        <el-dropdown trigger="click" :disabled="!selectedIds.length" style="margin-right: 8px">
-          <el-button plain :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
-            批量改状态 ({{ selectedIds.length }})
-            <el-icon class="el-icon--right">
-              <ArrowDown />
-            </el-icon>
-          </el-button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">
-                待制作
-              </el-dropdown-item>
-              <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">
-                制作中
-              </el-dropdown-item>
-              <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">
-                已完成
-              </el-dropdown-item>
-              <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">
-                失败
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <el-button
-          type="success"
-          plain
-          :disabled="!selectedIds.length"
-          :loading="batchGeneratingProducts"
-          @click="handleBatchGenerateProduct"
-        >
-          生成产品 ({{ selectedIds.length }})
-        </el-button>
-        <el-button
-          type="primary"
-          plain
-          :disabled="!selectedIds.length"
-          :loading="publishConfigSubmitting"
-          @click="handleBatchCreatePublishTask"
-        >
-          生成发布任务 ({{ selectedIds.length }})
-        </el-button>
-        <el-button type="danger" plain @click="handleBatchDelete" :disabled="!selectedIds.length">
-          批量删除 ({{ selectedIds.length }})
-        </el-button>
-      </div>
-    </div>
+    <ListPageLayout class="psd-set-page__layout">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat psd-set-page__filter">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="ID">
+                  <el-input v-model="queryParams.id" size="small" placeholder="套图ID" clearable @change="handleIdChange" />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="关键词">
+                  <el-input
+                    v-model="queryParams.keyword"
+                    size="small"
+                    placeholder="名称 / 描述 / 关键词"
+                    clearable
+                    @change="handleKeywordChange"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="状态">
+                  <el-select v-model="queryParams.status" size="small" placeholder="全部状态" clearable @change="getList">
+                    <el-option
+                      v-for="item in statusOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="排序方式">
+                  <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
+                    <el-option
+                      v-for="item in sortTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="7">
+                <el-form-item label="创建时间">
+                  <el-date-picker
+                    v-model="dateRange"
+                    size="small"
+                    type="datetimerange"
+                    range-separator="至"
+                    start-placeholder="开始时间"
+                    end-placeholder="结束时间"
+                    format="YYYY-MM-DD HH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
+                    :shortcuts="dateShortcuts"
+                    @change="handleDateRangeChange"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions psd-set-page__actions">
+              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-dropdown trigger="click" :disabled="!selectedIds.length">
+                <el-button size="small" :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
+                  批量改状态 ({{ selectedIds.length }})
+                  <el-icon class="el-icon--right">
+                    <ArrowDown />
+                  </el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu class="operation-menu-compact">
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">待制作</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">制作中</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">已完成</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">失败</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+              <el-button
+                size="small"
+                type="success"
+                :disabled="!selectedIds.length"
+                :loading="batchGeneratingProducts"
+                @click="handleBatchGenerateProduct"
+              >
+                生成产品 ({{ selectedIds.length }})
+              </el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :disabled="!selectedIds.length"
+                :loading="publishConfigSubmitting"
+                @click="handleBatchCreatePublishTask"
+              >
+                生成发布任务 ({{ selectedIds.length }})
+              </el-button>
+              <el-button size="small" type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">
+                批量删除 ({{ selectedIds.length }})
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </template>
 
-    <div class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
-      <vxe-grid
+      <template #table>
+        <div class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body psd-set-page__table-body">
+            <vxe-grid
         v-bind="gridOptions"
         :data="dataSource"
         :loading="loading"
@@ -154,7 +152,7 @@
                 height="100px"
                 indicator-position="none"
                 :arrow="row.images.length > 1 ? 'always' : 'never'"
-                class="w-full custom-carousel"
+                class="w-full custom-carousel table-preview-carousel"
               >
                 <el-carousel-item v-for="(url, index) in row.images" :key="index">
                   <el-image
@@ -290,8 +288,22 @@
             </template>
           </el-dropdown>
         </template>
-      </vxe-grid>
-    </div>
+            </vxe-grid>
+          </div>
+        </div>
+      </template>
+
+      <template #pagination>
+        <div class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog
       v-model="detailDialogVisible"
@@ -880,15 +892,6 @@
       </template>
     </el-dialog>
 
-    <div class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
-
     <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
   </ContentWrap>
 </template>
@@ -896,6 +899,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
 import { ContentWrap } from "@/components/ContentWrap";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
 import {
   Search,
@@ -2290,6 +2294,27 @@ getList();
   padding-top: 8px;
 }
 
+.psd-set-page__layout {
+  gap: 10px;
+  padding: 0;
+}
+
+.psd-set-page__layout :deep(.list-page-layout__main) {
+  gap: 10px;
+}
+
+.psd-set-page__filter {
+  gap: 10px;
+}
+
+.psd-set-page__actions {
+  justify-content: flex-start;
+}
+
+.psd-set-page__table-body {
+  padding: 0;
+}
+
 .psd-set-page :deep(.list-page-filter--flat) {
   gap: 10px;
   padding-bottom: 10px;
@@ -2297,10 +2322,6 @@ getList();
 
 .psd-set-page :deep(.list-page-table-panel__pagination--flat) {
   padding-top: 10px;
-}
-
-.search-bar :deep(.el-form-item) {
-  margin-bottom: 0;
 }
 
 .status-message {

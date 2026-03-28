@@ -3,16 +3,38 @@
     <ListPageLayout class="websocket-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-search-form__actions">
-            <el-button size="small" type="primary" @click="fetchConnections" :loading="loading">
-              <Icon icon="ep:refresh" class="mr-5px" /> 刷新
-            </el-button>
-            <el-switch v-model="autoRefresh" active-text="自动刷新" />
-            <span class="text-sm text-[var(--el-text-color-secondary)]">当前展示为 WebSocket 网关 `/ws` 的实时连接</span>
-            <el-tag :type="adminWsStatusTag.type" size="small">
-              管理后台: {{ adminWsStatusTag.text }}
-            </el-tag>
-            <span v-if="adminConnectionId" class="admin-connection-id">ID: {{ adminConnectionId }}</span>
+          <div class="websocket-toolbar">
+            <div class="websocket-toolbar__summary">
+              <div class="websocket-toolbar__title">实时连接监控</div>
+              <div class="websocket-toolbar__description">
+                当前展示为 WebSocket 网关 `/ws` 的实时连接，用于查看在线客户端、来源与连接状态。
+              </div>
+            </div>
+
+            <div class="websocket-toolbar__meta">
+              <div class="websocket-toolbar__meta-item">
+                <span class="websocket-toolbar__meta-label">后台状态</span>
+                <el-tag :type="adminWsStatusTag.type" size="small">
+                  {{ adminWsStatusTag.text }}
+                </el-tag>
+              </div>
+
+              <div class="websocket-toolbar__meta-item" v-if="adminConnectionId">
+                <span class="websocket-toolbar__meta-label">连接 ID</span>
+                <span class="admin-connection-id">{{ adminConnectionId }}</span>
+              </div>
+
+              <div class="websocket-toolbar__meta-item websocket-toolbar__meta-item--switch">
+                <span class="websocket-toolbar__meta-label">自动刷新</span>
+                <el-switch v-model="autoRefresh" />
+              </div>
+
+              <div class="websocket-toolbar__actions">
+                <el-button size="small" type="primary" @click="fetchConnections" :loading="loading">
+                  <Icon icon="ep:refresh" class="mr-5px" /> 刷新列表
+                </el-button>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -55,20 +77,22 @@
             {{ formatQuery(row.query) }}
           </template>
           <template #operation_default="{ row }">
-            <el-dropdown trigger="click" @command="(command) => handleOperationCommand(command, row)">
-              <el-button type="primary" link size="small">
+            <el-dropdown
+              trigger="click"
+              class="operation-dropdown"
+              @command="(command) => handleOperationCommand(command, row)"
+            >
+              <el-button type="primary" link size="small" class="operation-trigger-button">
                 操作
                 <Icon icon="ep:arrow-down" class="ml-5px" />
               </el-button>
               <template #dropdown>
-                <el-dropdown-menu>
+                <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="send-message">
-                    <Icon icon="ep:message" class="mr-5px" />
-                    发送消息
+                    <span>发送消息</span>
                   </el-dropdown-item>
                   <el-dropdown-item command="control" divided>
-                    <Icon icon="ep:setting" class="mr-5px" />
-                    操控
+                    <span>操控</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -156,16 +180,19 @@
               <span v-else class="text-gray-400">未设置</span>
                 </template>
             <template #operation_default="{ row }">
-              <el-dropdown trigger="click" @command="(command) => handleFunctionOperation(command, row)">
-                <el-button type="primary" link size="small">
+              <el-dropdown
+                trigger="click"
+                class="operation-dropdown"
+                @command="(command) => handleFunctionOperation(command, row)"
+              >
+                <el-button type="primary" link size="small" class="operation-trigger-button">
                   操作
                   <Icon icon="ep:arrow-down" class="ml-5px" />
                 </el-button>
                 <template #dropdown>
-                  <el-dropdown-menu>
+                  <el-dropdown-menu class="operation-menu-compact">
                     <el-dropdown-item command="open">
-                      <Icon icon="ep:setting" class="mr-5px" />
-                      打开配置
+                      <span>打开配置</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -916,13 +943,75 @@ onBeforeUnmount(() => {
 }
 
 :deep(.websocket-page .list-page-filter--flat) {
-  gap: 10px;
   padding-bottom: 10px;
+}
+
+.websocket-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.websocket-toolbar__summary {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.websocket-toolbar__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--el-text-color-primary);
+}
+
+.websocket-toolbar__description {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.websocket-toolbar__meta {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.websocket-toolbar__meta-item {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.websocket-toolbar__meta-item--switch {
+  padding-right: 6px;
+}
+
+.websocket-toolbar__meta-label {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.websocket-toolbar__actions {
+  display: inline-flex;
+  align-items: center;
 }
 
 .admin-connection-id {
   font-size: 11px;
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-primary);
   font-family: 'Monaco', 'Menlo', monospace;
 }
 
@@ -995,6 +1084,26 @@ onBeforeUnmount(() => {
   .meta-item {
     display: flex;
     align-items: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .websocket-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .websocket-toolbar__meta {
+    justify-content: flex-start;
+  }
+
+  .websocket-toolbar__meta-item,
+  .websocket-toolbar__actions {
+    width: 100%;
+  }
+
+  .websocket-toolbar__actions :deep(.el-button) {
+    width: 100%;
   }
 }
 

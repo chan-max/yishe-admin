@@ -74,22 +74,12 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
-        path: "tools",
-        redirect: "/home/tools/index",
-        name: "Tools",
+        path: "tools/index",
+        component: () => import("@/views/Home/Tools/Index.vue"),
+        name: "ToolsIndex",
         meta: {
-          title: "工具集合",
+          title: "工具列表",
         },
-        children: [
-          {
-            path: "index",
-            component: () => import("@/views/Home/Tools/Index.vue"),
-            name: "ToolsIndex",
-            meta: {
-              title: "工具列表",
-            },
-          },
-        ],
       },
       {
         path: "statistics",
@@ -146,7 +136,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/resource",
     component: Layout,
     name: "Resource",
-    redirect: "/resource/material-center/material",
+    redirect: "/resource/material",
     meta: {
       hidden: false,
       title: "资源中心",
@@ -158,115 +148,82 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: "material-center",
-        redirect: "/resource/material-center/material",
-        name: "ResourceMaterialCenter",
+        path: "crawler-material",
+        component: () => import("@/views/material/index/crawler-material.vue"),
+        name: "CrawlerMaterial",
         meta: {
-          title: "素材中心",
-          alwaysShow: true,
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "爬图素材",
         },
-        children: [
-          {
-            path: "crawler-material",
-            component: () => import("@/views/material/index/crawler-material.vue"),
-            name: "CrawlerMaterial",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "爬图素材",
-            },
-          },
-          {
-            path: "material",
-            component: () => import("@/views/material/index/index.vue"),
-            name: "Material",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "图片素材",
-            },
-          },
-          {
-            path: "clip-material",
-            component: () => import("@/views/material/clip-material/index.vue"),
-            name: "ClipMaterial",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "媒体剪辑素材",
-            },
-          },
-        ],
       },
       {
-        path: "asset-library",
-        redirect: "/resource/asset-library/font",
-        name: "ResourceAssetLibrary",
+        path: "material",
+        component: () => import("@/views/material/index/index.vue"),
+        name: "Material",
         meta: {
-          title: "模板与资产",
-          alwaysShow: true,
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "图片素材",
         },
-        children: [
-          {
-            path: "font",
-            component: () => import("@/views/material/fontTemplate/index.vue"),
-            name: "Font",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "字体",
-            },
-          },
-          {
-            path: "psd",
-            component: () => import("@/views/material/psdTemplate/index.vue"),
-            name: "Psd",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "PSD模板",
-            },
-          },
-        ],
       },
       {
-        path: "content-assets",
-        redirect: "/resource/content-assets/story-script",
-        name: "ResourceContentAssets",
+        path: "clip-material",
+        component: () => import("@/views/material/clip-material/index.vue"),
+        name: "ClipMaterial",
         meta: {
-          title: "文案资产",
-          alwaysShow: true,
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "媒体剪辑素材",
         },
-        children: [
-          {
-            path: "story-script",
-            component: () => import("@/views/material/storyScript/index.vue"),
-            name: "StoryScript",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "故事脚本",
-              requiresAdmin: true,
-            },
-          },
-          {
-            path: "sentence",
-            component: () => import("@/views/material/sentence/index.vue"),
-            name: "Sentence",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "句子管理",
-            },
-          },
-        ],
+      },
+      {
+        path: "font",
+        component: () => import("@/views/material/fontTemplate/index.vue"),
+        name: "Font",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "字体",
+        },
+      },
+      {
+        path: "psd",
+        component: () => import("@/views/material/psdTemplate/index.vue"),
+        name: "Psd",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "PSD模板",
+        },
+      },
+      {
+        path: "story-script",
+        component: () => import("@/views/material/storyScript/index.vue"),
+        name: "StoryScript",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "故事脚本",
+          requiresAdmin: true,
+        },
+      },
+      {
+        path: "sentence",
+        component: () => import("@/views/material/sentence/index.vue"),
+        name: "Sentence",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "句子管理",
+        },
       },
     ],
   },
@@ -274,7 +231,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/content",
     component: Layout,
     name: "Content",
-    redirect: "/content/automation/code-script",
+    redirect: "/content/code-script",
     meta: {
       title: "内容与自动化",
       icon: "ep:files",
@@ -284,51 +241,40 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: "automation",
-        redirect: "/content/automation/code-script",
-        name: "ContentAutomation",
+        path: "code-script",
+        component: () => import("@/views/material/codeScript/index.vue"),
+        name: "CodeScript",
         meta: {
-          title: "自动化生产",
-          alwaysShow: true,
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "代码脚本",
+          requiresAdmin: true,
         },
-        children: [
-          {
-            path: "code-script",
-            component: () => import("@/views/material/codeScript/index.vue"),
-            name: "CodeScript",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "代码脚本",
-              requiresAdmin: true,
-            },
-          },
-          {
-            path: "code-script-schedule",
-            component: () => import("@/views/material/codeScriptSchedule/index.vue"),
-            name: "CodeScriptSchedule",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "脚本调度",
-              requiresAdmin: true,
-            },
-          },
-          {
-            path: "remotion-video-record",
-            component: () => import("@/views/material/remotionVideoRecord/index.vue"),
-            name: "RemotionVideoRecord",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "视频生成(remotion)",
-              requiresAdmin: true,
-            },
-          },
-        ],
+      },
+      {
+        path: "code-script-schedule",
+        component: () => import("@/views/material/codeScriptSchedule/index.vue"),
+        name: "CodeScriptSchedule",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "脚本调度",
+          requiresAdmin: true,
+        },
+      },
+      {
+        path: "remotion-video-record",
+        component: () => import("@/views/material/remotionVideoRecord/index.vue"),
+        name: "RemotionVideoRecord",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "视频生成(remotion)",
+          requiresAdmin: true,
+        },
       },
     ],
   },
@@ -336,7 +282,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/ai",
     component: Layout,
     name: "AiService",
-    redirect: "/ai/generation/tti",
+    redirect: "/ai/tti",
     meta: {
       title: "AI创作",
       icon: "ep:cpu",
@@ -345,63 +291,41 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: "generation",
-        redirect: "/ai/generation/tti",
-        name: "AiGeneration",
+        path: "tti",
+        component: () => import("@/views/ai/tti.vue"),
+        name: "AiTti",
         meta: {
-          title: "生成能力",
-          alwaysShow: true,
+          title: "AI文字生成图片",
         },
-        children: [
-          {
-            path: "tti",
-            component: () => import("@/views/ai/tti.vue"),
-            name: "AiTti",
-            meta: {
-              title: "AI文字生成图片",
-            },
-          },
-          {
-            path: "tts",
-            component: () => import("@/views/ai/tts.vue"),
-            name: "AiTts",
-            meta: {
-              title: "AI文字转语音",
-            },
-          },
-          {
-            path: "agent",
-            component: () => import("@/views/ai/agent/index.vue"),
-            name: "AiAgentConsole",
-            meta: {
-              title: "Agent 控制台",
-              requiresAdmin: true,
-            },
-          },
-        ],
       },
       {
-        path: "assets",
-        redirect: "/ai/assets/prompt",
-        name: "AiAssets",
+        path: "tts",
+        component: () => import("@/views/ai/tts.vue"),
+        name: "AiTts",
         meta: {
-          title: "提示词与配置",
-          alwaysShow: true,
+          title: "AI文字转语音",
         },
-        children: [
-          {
-            path: "prompt",
-            component: () => import("@/views/material/prompt/index.vue"),
-            name: "Prompt",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "AI提示词管理",
-              requiresAdmin: true,
-            },
-          },
-        ],
+      },
+      {
+        path: "agent",
+        component: () => import("@/views/ai/agent/index.vue"),
+        name: "AiAgentConsole",
+        meta: {
+          title: "Agent 控制台",
+          requiresAdmin: true,
+        },
+      },
+      {
+        path: "prompt",
+        component: () => import("@/views/material/prompt/index.vue"),
+        name: "Prompt",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "AI提示词管理",
+          requiresAdmin: true,
+        },
       },
     ],
   },
@@ -409,7 +333,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/product",
     component: Layout,
     name: "Product",
-    redirect: "/product/catalog/index",
+    redirect: "/product/index",
     meta: {
       title: "商品与发布",
       icon: "ep:goods",
@@ -419,89 +343,56 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: "catalog",
-        redirect: "/product/catalog/index",
-        name: "ProductCatalog",
+        path: "category",
+        component: () => import("@/views/product/category/index.vue"),
+        name: "ProductCategory",
         meta: {
-          title: "商品基础",
-          alwaysShow: true,
+          title: "商品种类",
         },
-        children: [
-          {
-            path: "category",
-            component: () => import("@/views/product/category/index.vue"),
-            name: "ProductCategory",
-            meta: {
-              title: "商品种类",
-            },
-          },
-          {
-            path: "index",
-            component: () => import("@/views/product/index/index.vue"),
-            name: "ProductIndex",
-            meta: {
-              title: "商品",
-            },
-          },
-          {
-            path: "psd-set",
-            component: () => import("@/views/material/psdSet/index.vue"),
-            name: "PsdSet",
-            meta: {
-              canTo: true,
-              hidden: false,
-              noTagsView: false,
-              title: "套图",
-              requiresAdmin: true,
-            },
-          },
-        ],
       },
       {
-        path: "collaboration",
-        redirect: "/product/collaboration/design-request",
-        name: "ProductCollaboration",
+        path: "index",
+        component: () => import("@/views/product/index/index.vue"),
+        name: "ProductIndex",
         meta: {
-          title: "设计与供应",
-          alwaysShow: true,
+          title: "商品",
         },
-        children: [
-          {
-            path: "design-request",
-            component: () => import("@/views/material/designRequest/index.vue"),
-            name: "DesignRequest",
-            meta: {
-              title: "设计请求",
-            },
-          },
-        ],
       },
       {
-        path: "publishing",
-        redirect: "/product/publishing/publish-config",
-        name: "ProductPublishing",
+        path: "psd-set",
+        component: () => import("@/views/material/psdSet/index.vue"),
+        name: "PsdSet",
         meta: {
-          title: "发布中心",
-          alwaysShow: true,
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "套图",
+          requiresAdmin: true,
         },
-        children: [
-          {
-            path: "publish-config",
-            component: () => import("@/views/product/publish-config/index.vue"),
-            name: "PublishConfig",
-            meta: {
-              title: "发布配置",
-            },
-          },
-          {
-            path: "queue",
-            component: () => import("@/views/system/queue/index.vue"),
-            name: "SystemQueue",
-            meta: {
-              title: "平台发布任务",
-            },
-          },
-        ],
+      },
+      {
+        path: "design-request",
+        component: () => import("@/views/material/designRequest/index.vue"),
+        name: "DesignRequest",
+        meta: {
+          title: "设计请求",
+        },
+      },
+      {
+        path: "publish-config",
+        component: () => import("@/views/product/publish-config/index.vue"),
+        name: "PublishConfig",
+        meta: {
+          title: "发布配置",
+        },
+      },
+      {
+        path: "queue",
+        component: () => import("@/views/system/queue/index.vue"),
+        name: "SystemQueue",
+        meta: {
+          title: "平台发布任务",
+        },
       },
     ],
   },
@@ -509,7 +400,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/operation",
     component: Layout,
     name: "Operation",
-    redirect: "/operation/shop/index",
+    redirect: "/operation/shop",
     meta: {
       title: "运营支持",
       icon: "ep:shop",
@@ -519,50 +410,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "shop",
-        redirect: "/operation/shop/index",
-        name: "OperationShop",
+        component: () => import("@/views/shop/index.vue"),
+        name: "ShopIndex",
         meta: {
-          title: "渠道与店铺",
-          alwaysShow: true,
+          title: "店铺列表",
         },
-        children: [
-          {
-            path: "index",
-            component: () => import("@/views/shop/index.vue"),
-            name: "ShopIndex",
-            meta: {
-              title: "店铺列表",
-            },
-          },
-          {
-            path: "vendor",
-            component: () => import("@/views/vendor/index.vue"),
-            name: "VendorIndex",
-            meta: {
-              title: "厂家管理",
-            },
-          },
-        ],
       },
       {
-        path: "tools",
-        redirect: "/operation/tools/common-url",
-        name: "OperationTools",
+        path: "vendor",
+        component: () => import("@/views/vendor/index.vue"),
+        name: "VendorIndex",
         meta: {
-          title: "运营工具",
-          alwaysShow: true,
+          title: "厂家管理",
         },
-        children: [
-          {
-            path: "common-url",
-            component: () => import("@/views/material/commonUrl/index.vue"),
-            name: "CommonUrlIndex",
-            meta: {
-              title: "网址管理",
-              requiresAdmin: true,
-            },
-          },
-        ],
+      },
+      {
+        path: "common-url",
+        component: () => import("@/views/material/commonUrl/index.vue"),
+        name: "CommonUrlIndex",
+        meta: {
+          title: "网址管理",
+          requiresAdmin: true,
+        },
       },
     ],
   },
@@ -570,7 +439,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/system",
     component: Layout,
     name: "System",
-    redirect: "/system/account/user",
+    redirect: "/system/user",
     meta: {
       title: "系统管理",
       icon: "ep:setting",
@@ -580,173 +449,178 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: "account",
-        redirect: "/system/account/user",
-        name: "SystemAccount",
+        path: "message-push",
+        component: () => import("@/views/message-push/index.vue"),
+        name: "MessagePushIndex",
         meta: {
-          title: "组织与账号",
-          alwaysShow: true,
+          title: "消息推送",
+          requiresAdmin: true,
         },
-        children: [
-          {
-            path: "message-push",
-            component: () => import("@/views/message-push/index.vue"),
-            name: "MessagePushIndex",
-            meta: {
-              title: "消息推送",
-              requiresAdmin: true,
-            },
-          },
-          {
-            path: "user",
-            component: () => import("@/views/system/user/index.vue"),
-            name: "User",
-            meta: {
-              title: "用户管理",
-            },
-          },
-          {
-            path: "company",
-            component: () => import("@/views/system/company/index.vue"),
-            name: "Company",
-            meta: {
-              title: "公司管理",
-            },
-          },
-          {
-            path: "public-user",
-            component: () => import("@/views/system/public-user/index.vue"),
-            name: "PublicUser",
-            meta: {
-              title: "开放用户管理",
-            },
-          },
-        ],
       },
       {
-        path: "ops",
-        redirect: "/system/ops/websocket",
-        name: "SystemOps",
+        path: "user",
+        component: () => import("@/views/system/user/index.vue"),
+        name: "User",
         meta: {
-          title: "连接与审计",
-          alwaysShow: true,
+          title: "用户管理",
         },
-        children: [
-          {
-            path: "websocket",
-            component: () => import("@/views/system/websocket/index.vue"),
-            name: "SystemWebsocketConnections",
-            meta: {
-              title: "远程连接",
-              requiresAdmin: true,
-            },
-          },
-          {
-            path: "operatelog",
-            component: () => import("@/views/system/operatelog/index.vue"),
-            name: "SystemOperateLog",
-            meta: {
-              title: "操作日志",
-            },
-          },
-        ],
+      },
+      {
+        path: "company",
+        component: () => import("@/views/system/company/index.vue"),
+        name: "Company",
+        meta: {
+          title: "公司管理",
+        },
+      },
+      {
+        path: "public-user",
+        component: () => import("@/views/system/public-user/index.vue"),
+        name: "PublicUser",
+        meta: {
+          title: "开放用户管理",
+        },
+      },
+      {
+        path: "websocket",
+        component: () => import("@/views/system/websocket/index.vue"),
+        name: "SystemWebsocketConnections",
+        meta: {
+          title: "远程连接",
+          requiresAdmin: true,
+        },
+      },
+      {
+        path: "operatelog",
+        component: () => import("@/views/system/operatelog/index.vue"),
+        name: "SystemOperateLog",
+        meta: {
+          title: "操作日志",
+        },
       },
     ],
   },
   {
-    path: "/resource/crawler-material",
-    redirect: "/resource/material-center/crawler-material",
-    name: "ResourceCrawlerMaterialCompat",
+    path: "/resource/material-center/crawler-material",
+    redirect: "/resource/crawler-material",
+    name: "ResourceMaterialCenterCrawlerCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/material",
-    redirect: "/resource/material-center/material",
-    name: "ResourceMaterialCompat",
+    path: "/resource/material-center/material",
+    redirect: "/resource/material",
+    name: "ResourceMaterialCenterMaterialCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/clip-material",
-    redirect: "/resource/material-center/clip-material",
-    name: "ResourceClipMaterialCompat",
+    path: "/resource/material-center/clip-material",
+    redirect: "/resource/clip-material",
+    name: "ResourceMaterialCenterClipCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/font",
-    redirect: "/resource/asset-library/font",
-    name: "ResourceFontCompat",
+    path: "/resource/asset-library/font",
+    redirect: "/resource/font",
+    name: "ResourceAssetLibraryFontCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/psd",
-    redirect: "/resource/asset-library/psd",
-    name: "ResourcePsdCompat",
+    path: "/resource/asset-library/psd",
+    redirect: "/resource/psd",
+    name: "ResourceAssetLibraryPsdCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/sentence",
-    redirect: "/resource/content-assets/sentence",
-    name: "ResourceSentenceCompat",
+    path: "/resource/content-assets/sentence",
+    redirect: "/resource/sentence",
+    name: "ResourceContentAssetsSentenceCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/story-script",
-    redirect: "/resource/content-assets/story-script",
-    name: "ResourceStoryScriptCompat",
+    path: "/resource/content-assets/story-script",
+    redirect: "/resource/story-script",
+    name: "ResourceContentAssetsStoryScriptCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/prompt",
-    redirect: "/ai/assets/prompt",
-    name: "ResourcePromptCompat",
+    path: "/ai/assets/prompt",
+    redirect: "/ai/prompt",
+    name: "AiAssetsPromptCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/code-script",
-    redirect: "/content/automation/code-script",
-    name: "ResourceCodeScriptCompat",
+    path: "/content/automation/code-script",
+    redirect: "/content/code-script",
+    name: "ContentAutomationCodeScriptCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/code-script-schedule",
-    redirect: "/content/automation/code-script-schedule",
-    name: "ResourceCodeScriptScheduleCompat",
+    path: "/content/automation/code-script-schedule",
+    redirect: "/content/code-script-schedule",
+    name: "ContentAutomationCodeScriptScheduleCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/resource/remotion-video-record",
-    redirect: "/content/automation/remotion-video-record",
-    name: "ResourceRemotionVideoRecordCompat",
+    path: "/content/automation/remotion-video-record",
+    redirect: "/content/remotion-video-record",
+    name: "ContentAutomationRemotionVideoRecordCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/ai/generation/tti",
+    redirect: "/ai/tti",
+    name: "AiGenerationTtiCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/ai/generation/tts",
+    redirect: "/ai/tts",
+    name: "AiGenerationTtsCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/ai/generation/agent",
+    redirect: "/ai/agent",
+    name: "AiGenerationAgentCompat",
     meta: {
       hidden: true,
       noTagsView: true,
@@ -754,7 +628,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/shop",
-    redirect: "/operation/shop/index",
+    redirect: "/operation/shop",
     name: "ShopCompat",
     meta: {
       hidden: true,
@@ -763,7 +637,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/shop/index",
-    redirect: "/operation/shop/index",
+    redirect: "/operation/shop",
     name: "ShopIndexCompat",
     meta: {
       hidden: true,
@@ -772,7 +646,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/shop/vendor",
-    redirect: "/operation/shop/vendor",
+    redirect: "/operation/vendor",
     name: "ShopVendorCompat",
     meta: {
       hidden: true,
@@ -781,7 +655,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/product/collaboration/vendor",
-    redirect: "/operation/shop/vendor",
+    redirect: "/operation/vendor",
     name: "ProductCollaborationVendorCompat",
     meta: {
       hidden: true,
@@ -790,7 +664,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/common-url",
-    redirect: "/operation/tools/common-url",
+    redirect: "/operation/common-url",
     name: "CommonUrlCompat",
     meta: {
       hidden: true,
@@ -799,7 +673,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/common-url/index",
-    redirect: "/operation/tools/common-url",
+    redirect: "/operation/common-url",
     name: "CommonUrlIndexCompat",
     meta: {
       hidden: true,
@@ -807,27 +681,27 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
   },
   {
-    path: "/product/category",
-    redirect: "/product/catalog/category",
-    name: "ProductCategoryCompat",
+    path: "/product/catalog/category",
+    redirect: "/product/category",
+    name: "ProductCatalogCategoryCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/product/index",
-    redirect: "/product/catalog/index",
-    name: "ProductIndexCompat",
+    path: "/product/catalog/index",
+    redirect: "/product/index",
+    name: "ProductCatalogIndexCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/product/psd-set",
-    redirect: "/product/catalog/psd-set",
-    name: "ProductPsdSetCompat",
+    path: "/product/catalog/psd-set",
+    redirect: "/product/psd-set",
+    name: "ProductCatalogPsdSetCompat",
     meta: {
       hidden: true,
       noTagsView: true,
@@ -835,7 +709,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/product/designRequest",
-    redirect: "/product/collaboration/design-request",
+    redirect: "/product/design-request",
     name: "ProductDesignRequestCompat",
     meta: {
       hidden: true,
@@ -843,63 +717,126 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
   },
   {
-    path: "/product/publish-config",
-    redirect: "/product/publishing/publish-config",
-    name: "ProductPublishConfigCompat",
+    path: "/product/collaboration/design-request",
+    redirect: "/product/design-request",
+    name: "ProductCollaborationDesignRequestCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/product/queue",
-    redirect: "/product/publishing/queue",
-    name: "ProductQueueCompat",
+    path: "/product/publishing/publish-config",
+    redirect: "/product/publish-config",
+    name: "ProductPublishingPublishConfigCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/system/user",
-    redirect: "/system/account/user",
-    name: "SystemUserCompat",
+    path: "/product/publishing/queue",
+    redirect: "/product/queue",
+    name: "ProductPublishingQueueCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/system/company",
-    redirect: "/system/account/company",
-    name: "SystemCompanyCompat",
+    path: "/operation/shop/index",
+    redirect: "/operation/shop",
+    name: "OperationShopIndexCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/system/public-user",
-    redirect: "/system/account/public-user",
-    name: "SystemPublicUserCompat",
+    path: "/operation/shop/vendor",
+    redirect: "/operation/vendor",
+    name: "OperationShopVendorCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/system/websocket",
-    redirect: "/system/ops/websocket",
-    name: "SystemWebsocketCompat",
+    path: "/operation/tools/common-url",
+    redirect: "/operation/common-url",
+    name: "OperationToolsCommonUrlCompat",
     meta: {
       hidden: true,
       noTagsView: true,
     },
   },
   {
-    path: "/system/operatelog",
-    redirect: "/system/ops/operatelog",
-    name: "SystemOperateLogCompat",
+    path: "/system/organization/message-push",
+    redirect: "/system/message-push",
+    name: "SystemOrganizationMessagePushCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/organization/user",
+    redirect: "/system/user",
+    name: "SystemOrganizationUserCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/organization/company",
+    redirect: "/system/company",
+    name: "SystemOrganizationCompanyCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/organization/public-user",
+    redirect: "/system/public-user",
+    name: "SystemOrganizationPublicUserCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/audit/websocket",
+    redirect: "/system/websocket",
+    name: "SystemAuditWebsocketCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/audit/operatelog",
+    redirect: "/system/operatelog",
+    name: "SystemAuditOperatelogCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/account/:pathMatch(.*)*",
+    redirect: (to) => `/system/${String(to.params.pathMatch || "")}`,
+    name: "SystemAccountCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/ops/:pathMatch(.*)*",
+    redirect: (to) => `/system/${String(to.params.pathMatch || "")}`,
+    name: "SystemOpsCompat",
     meta: {
       hidden: true,
       noTagsView: true,

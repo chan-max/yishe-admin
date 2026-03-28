@@ -5,7 +5,7 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
                 <el-form-item label="调度名称">
                   <el-input
                     v-model="queryParams.search"
@@ -17,7 +17,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
                 <el-form-item label="运行环境">
                   <el-select v-model="queryParams.runtimeEnv" size="small" clearable @change="getList">
                     <el-option label="开发环境" value="development" />
@@ -25,7 +25,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
                 <el-form-item label="代码脚本">
                   <el-select
                     v-model="queryParams.scriptId"
@@ -44,7 +44,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4" :xl="3">
                 <el-form-item label="启用状态">
                   <el-select v-model="queryParams.isEnabled" size="small" clearable @change="getList">
                     <el-option label="启用" :value="true" />

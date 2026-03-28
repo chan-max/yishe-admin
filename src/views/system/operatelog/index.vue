@@ -5,7 +5,7 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
                 <el-form-item label="用户名">
                   <el-input
                     v-model="queryParams.userName"
@@ -16,7 +16,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
                 <el-form-item label="操作内容">
                   <el-input
                     v-model="queryParams.action"

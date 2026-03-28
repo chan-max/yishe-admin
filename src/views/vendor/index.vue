@@ -3,11 +3,29 @@
     <ListPageLayout class="vendor-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-search-form__actions">
-            <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
-              批量删除 ({{ selectedIds.length }})
-            </el-button>
-            <el-button size="small" type="primary" @click="openDialog()">新增厂家</el-button>
+          <div class="resource-toolbar">
+            <div class="resource-toolbar__summary">
+              <div class="resource-toolbar__title">厂家资源管理</div>
+              <div class="resource-toolbar__description">
+                统一维护厂家基础信息、商品关联和图片资料，便于后续商品与供应链协作复用。
+              </div>
+            </div>
+            <div class="resource-toolbar__meta">
+              <div class="resource-toolbar__meta-item">
+                <span class="resource-toolbar__meta-label">厂家数量</span>
+                <span class="resource-toolbar__meta-value">{{ list.length }}</span>
+              </div>
+              <div class="resource-toolbar__meta-item">
+                <span class="resource-toolbar__meta-label">已选中</span>
+                <span class="resource-toolbar__meta-value">{{ selectedIds.length }}</span>
+              </div>
+              <div class="resource-toolbar__actions">
+                <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
+                  批量删除
+                </el-button>
+                <el-button size="small" type="primary" @click="openDialog()">新增厂家</el-button>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -33,11 +51,11 @@
                         fit="cover"
                         :preview-src-list="row.images"
                         preview-teleported
-                        class="h-10 w-10 rounded border border-solid border-[var(--el-border-color-light)]"
+                        class="table-thumb table-thumb--sm"
                       />
                       <span
                         v-if="row.images.length > 3"
-                        class="text-xs text-[var(--el-text-color-secondary)]"
+                        class="table-thumb-count"
                         >+{{ row.images.length - 3 }}</span
                       >
                     </template>
@@ -217,6 +235,107 @@ onMounted(() => {
   getList();
 });
 </script>
+
+<style scoped>
+:deep(.vendor-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.vendor-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.vendor-page .list-page-filter--flat) {
+  padding-bottom: 10px;
+}
+
+.resource-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.resource-toolbar__summary {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.resource-toolbar__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--el-text-color-primary);
+}
+
+.resource-toolbar__description {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.resource-toolbar__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.resource-toolbar__meta-item {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.resource-toolbar__meta-label {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.resource-toolbar__meta-value {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+}
+
+.resource-toolbar__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .resource-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resource-toolbar__meta {
+    justify-content: flex-start;
+  }
+
+  .resource-toolbar__meta-item,
+  .resource-toolbar__actions {
+    width: 100%;
+  }
+
+  .resource-toolbar__actions :deep(.el-button) {
+    flex: 1 1 auto;
+  }
+}
+</style>
 
 <style scoped lang="scss">
 :deep(.vendor-page) {

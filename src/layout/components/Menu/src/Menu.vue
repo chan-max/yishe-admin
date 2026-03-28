@@ -172,7 +172,9 @@ $prefix-cls: #{$namespace}-menu;
   height: 100%;
   border-right: 1px solid var(--left-menu-border-color, #2f3542);
   background: var(--left-menu-bg-color, #141414);
-  overflow-y: auto;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: rgba(143, 154, 173, 0.45) transparent;
 
@@ -247,6 +249,7 @@ $prefix-cls: #{$namespace}-menu;
     display: flex;
     align-items: center;
     gap: 7px;
+    flex: 1;
     min-width: 0;
   }
 
@@ -257,6 +260,8 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__section-title {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     color: #f3f4f6;
     font-size: 13px;
@@ -284,40 +289,48 @@ $prefix-cls: #{$namespace}-menu;
   &__links {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px 7px;
-    padding: 7px 4px 0 26px;
+    gap: 4px 6px;
+    padding: 7px 2px 0 24px;
   }
 
   &__link {
     display: flex;
     align-items: center;
-    min-height: 28px;
-    padding: 5px 7px;
-    border: 1px solid transparent;
-    border-radius: 7px;
+    width: 100%;
+    min-height: 26px;
+    min-width: 0;
+    padding: 4px 7px;
+    border: 0;
+    border-left: 2px solid transparent;
+    border-radius: 0 5px 5px 0;
     background: transparent;
-    color: #d1d5db;
+    color: rgba(255, 255, 255, 0.56);
     cursor: pointer;
     text-align: left;
     transition:
       background-color var(--transition-time-02),
       border-color var(--transition-time-02),
-      color var(--transition-time-02);
+      color var(--transition-time-02),
+      transform var(--transition-time-02);
   }
 
   &__link:hover {
-    background: #1a1a1a;
-    border-color: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    background: rgba(255, 255, 255, 0.03);
+    border-left-color: rgba(125, 176, 255, 0.28);
+    color: rgba(255, 255, 255, 0.88);
+    transform: translateX(1px);
   }
 
   &__link--active {
-    background: #1d1d1d;
-    border-color: rgba(255, 255, 255, 0.12);
-    color: #8cbcff;
+    background: rgba(125, 176, 255, 0.06);
+    border-left-color: #7db0ff;
+    color: #9fc6ff;
   }
 
   &__link-text {
+    display: block;
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     font-size: 11px;
     font-weight: 500;

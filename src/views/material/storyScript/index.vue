@@ -9,7 +9,7 @@
             class="list-page-search-form"
           >
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
                 <el-form-item label="关键词">
                   <el-input
                     v-model="queryParams.keyword"
@@ -21,7 +21,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
                 <el-form-item label="场景">
                   <el-select
                     v-model="queryParams.sceneType"
@@ -36,7 +36,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="8" :xl="8">
                 <el-form-item label="素材ID">
                   <el-input
                     v-model="queryParams.stickerId"
