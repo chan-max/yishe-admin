@@ -16,7 +16,7 @@ import {
   startConnectionChecks,
   clearConnectionChecks
 } from '@/stores/connectionStatus'
-import ClientControlDialog from '@/components/ClientControlDialog/index.vue'
+import PsConsoleDialog from '@/components/PsConsoleDialog/index.vue'
 
 export default defineComponent({
   name: 'ClientStatus',
@@ -68,7 +68,7 @@ export default defineComponent({
       <div class="flex items-center ">
         {/* 本地客户端状态 */}
         <ElTooltip
-          content={isLocalConnected.value ? '点击查看客户端操作' : '点击启动客户端'}
+          content={isLocalConnected.value ? '点击打开 PS 控制台' : '点击启动客户端'}
           placement="bottom"
         >
           <div class="custom-hover flex items-center" style={{ cursor: 'pointer' }} onClick={() => {
@@ -105,8 +105,8 @@ export default defineComponent({
           </div>
         </ElTooltip>
 
-        {/* 客户端操作弹窗 */}
-        <ClientControlDialog
+        {/* PS 控制台弹窗 */}
+        <PsConsoleDialog
           modelValue={clientDialogVisible.value}
           onUpdate:modelValue={(val: boolean) => {
             clientDialogVisible.value = val

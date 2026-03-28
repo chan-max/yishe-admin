@@ -482,6 +482,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "ps-console",
+        component: () => import("@/views/system/ps-console/index.vue"),
+        name: "SystemPsConsole",
+        meta: {
+          title: "PS 控制台",
+        },
+      },
+      {
         path: "websocket",
         component: () => import("@/views/system/websocket/index.vue"),
         name: "SystemWebsocketConnections",

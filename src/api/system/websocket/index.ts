@@ -29,10 +29,16 @@ export interface WebsocketClientInfo {
     connected?: boolean
     available?: boolean
     status?: 'connected' | 'disconnected' | 'error' | 'unknown'
+    state?: 'idle' | 'busy' | 'offline' | 'error'
+    busy?: boolean
     message?: string
     version?: string
     endpoint?: string
     lastCheckedAt?: string
+    currentTaskId?: string | null
+    lastError?: string | null
+    debugAvailable?: boolean
+    supportedCommands?: string[]
   }>
   timestamp?: string
   extension?: {
@@ -103,6 +109,21 @@ export const getMyWebsocketConnections = () => {
 
 export const sendMessageToConnection = (connectionId: string, data: any, event?: string) => {
   return request.post({ url: '/websocket/send-message', data: { id: connectionId, event, data } })
+}
+
+export interface ServiceCommandDTO {
+  clientId: string
+  service: string
+  action: string
+  mode?: 'production' | 'debug' | 'maintenance'
+  payload?: any
+}
+
+export const sendServiceCommand = (data: ServiceCommandDTO) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: '/websocket/service-command',
+    data
+  })
 }
 
 // 定时任务相关接口

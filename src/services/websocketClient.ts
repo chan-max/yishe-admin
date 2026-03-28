@@ -71,6 +71,25 @@ interface ClientInfoPayload {
   }
 }
 
+export interface ServiceRuntimeEvent {
+  clientId: string
+  service: string
+  runtime: Record<string, any>
+  reportedAt?: string
+}
+
+export interface ServiceCommandResultEvent {
+  clientId: string
+  commandId: string
+  service: string
+  action: string
+  success: boolean
+  message?: string
+  data?: any
+  error?: string | null
+  finishedAt?: string
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: 'idle',
@@ -115,6 +134,8 @@ export type WebsocketEvents = {
   myClientStatus: { hasClient: boolean }
   'start-psd-set-production-response': { success: boolean; message?: string; sentTo?: number; totalClients?: number }
   'production-status': { status: string; message: string; psdSetId?: string }
+  serviceRuntime: ServiceRuntimeEvent
+  serviceCommandResult: ServiceCommandResultEvent
 }
 
 const emitter = mitt<WebsocketEvents>()
@@ -301,6 +322,14 @@ function bindSocketEvents(currentSocket: Socket) {
   // 监听制作状态消息（客户端正在制作中时返回的消息）
   currentSocket.on('production-status', (data: { status: string; message: string; psdSetId?: string }) => {
     emitter.emit('production-status', data)
+  })
+
+  currentSocket.on('service-runtime', (data: ServiceRuntimeEvent) => {
+    emitter.emit('serviceRuntime', data)
+  })
+
+  currentSocket.on('service-command-result', (data: ServiceCommandResultEvent) => {
+    emitter.emit('serviceCommandResult', data)
   })
 }
 

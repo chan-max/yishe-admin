@@ -1,4 +1,3 @@
-import { useUserStore } from '@/store/modules/user'
 import * as WebsocketApi from '@/api/system/websocket'
 import type { WebsocketConnectionVO } from '@/api/system/websocket'
 import { ElMessage } from 'element-plus'
@@ -89,6 +88,53 @@ export class ClientControlService {
    */
   static async sendTextMessage(connectionId: string, text: string): Promise<boolean> {
     return this.sendMessage(connectionId, { message: text, type: 'text' })
+  }
+
+  static async sendServiceCommand(
+    clientId: string,
+    service: string,
+    action: string,
+    payload?: any,
+    mode: 'production' | 'debug' | 'maintenance' = 'production',
+    silent: boolean = false
+  ): Promise<boolean> {
+    try {
+      const myClients = await this.getMyClients()
+      const targetClient = myClients.find((client) => client.id === clientId)
+
+      if (!targetClient) {
+        if (!silent) {
+          ElMessage.error('无法操作该客户端：不属于当前用户或连接不存在')
+        }
+        return false
+      }
+
+      const response = await WebsocketApi.sendServiceCommand({
+        clientId,
+        service,
+        action,
+        mode,
+        payload
+      })
+
+      if (response.success) {
+        if (!silent) {
+          ElMessage.success('服务命令已发送')
+        }
+        return true
+      }
+
+      if (!silent) {
+        ElMessage.error(response.message || '服务命令发送失败')
+      }
+      return false
+    } catch (error: any) {
+      console.error('[ClientControlService] 发送服务命令失败:', error)
+      if (!silent) {
+        ElMessage.error(error?.message || '发送服务命令失败')
+      }
+      return false
+    }
   }
   
   /**
