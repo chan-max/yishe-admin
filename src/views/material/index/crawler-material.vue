@@ -345,7 +345,7 @@
 <script setup lang="tsx">
 import { ref, reactive, watchEffect, computed } from "vue";
 import { CrawlerMaterialApi } from "@/api/crawler-material";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { ElNotification, ElMessage, ElMessageBox } from "element-plus";
 import {
@@ -428,14 +428,7 @@ const gridOptions = computed(() => {
     },
   ]
 
-  const operationColumn = {
-    title: "操作",
-    fixed: "right",
-    width: 132,
-    field: "operation",
-    className: "table-operation-cell",
-    slots: { default: "operationDefaultSlot" },
-  }
+  const operationColumn = buildOperationColumn("operationDefaultSlot", 80)
 
   return {
     ...commonGridOptions,

@@ -428,7 +428,7 @@ import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { formatDate } from "@/utils/formatTime";
@@ -561,7 +561,7 @@ const gridOptions = ref({
       showOverflow: true,
       slots: { default: "nextRunAtSlot" },
     },
-    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "operationSlot" } },
+    buildOperationColumn("operationSlot"),
   ],
 } as any);
 
@@ -591,7 +591,7 @@ const executionGridOptions = ref({
     },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
-    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "executionOperationSlot" } },
+    buildOperationColumn("executionOperationSlot"),
   ],
 } as any);
 

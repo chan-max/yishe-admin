@@ -581,7 +581,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, computed, onMounted, onUnmounted, watchEffect, nextTick } from "vue";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
@@ -669,7 +669,6 @@ const gridOptions = ref<VxeGridProps<any>>({
       }
     },
     { type: "checkbox", width: 50, showOverflow: true },
-
     {
       title: "缩略图",
       field: "thumbnail",
@@ -719,7 +718,7 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "psdInfoSlot",
       },
     },
-        { title: "ID", field: "id", width: 140, showOverflow: true },
+    { title: "ID", field: "id", width: 140, showOverflow: true },
     {
       title: "本地路径",
       field: "windowsLocalPath",
@@ -766,8 +765,7 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "enabledSlot",
       },
     },
-
-    { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true }, // 该类目下已经发布的商品数量
+    { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
       title: "创建时间",
       field: "createTime",
@@ -786,16 +784,9 @@ const gridOptions = ref<VxeGridProps<any>>({
         return formatTimestamp(e.cellValue);
       },
     },
-    {
-      title: "操作",
-      fixed: "right",
+    buildOperationColumn("operationDefaultSlot", 132, {
       showOverflow: false,
-      width: 132,
-      className: "table-operation-cell",
-      slots: {
-        default: "operationDefaultSlot",
-      },
-    },
+    }),
   ],
 } as VxeGridProps<any>);
 

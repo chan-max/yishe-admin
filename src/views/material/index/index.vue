@@ -1732,7 +1732,7 @@ import {
 import { uploadToCOS } from '@/api/cos'
 import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import CryptoJS from 'crypto-js'
 import Sortable from 'sortablejs'
@@ -2056,14 +2056,7 @@ const gridOptions = computed(() => {
     },
   ]
 
-  const operationColumn = {
-    title: '操作',
-    fixed: 'right' as const,
-    width: 132,
-    field: 'operation',
-    className: 'table-operation-cell',
-    slots: { default: 'operationDefaultSlot' }
-  }
+  const operationColumn = buildOperationColumn('operationDefaultSlot')
 
   return {
     ...commonGridOptions,

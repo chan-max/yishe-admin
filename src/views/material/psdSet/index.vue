@@ -897,7 +897,7 @@ import {
   CircleCheck,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
 import { getPromptList } from "@/api/prompt";
@@ -1061,13 +1061,7 @@ const publishTasksGridOptions = computed(() => ({
       showOverflow: true,
       slots: { default: "taskErrorSlot" },
     },
-    {
-      title: "操作",
-      width: 132,
-      fixed: "right",
-      className: "table-operation-cell",
-      slots: { default: "taskActionSlot" },
-    },
+    buildOperationColumn("taskActionSlot"),
   ],
 }));
 
@@ -1324,7 +1318,7 @@ function getColumns() {
   ];
 
   const operationColumn = [
-    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "operationSlot" } },
+    buildOperationColumn("operationSlot"),
   ];
 
   return [...baseColumns, ...operationColumn];

@@ -172,7 +172,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, watchEffect, computed } from 'vue'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import { useWindowSize } from '@vueuse/core'
 import { defaultSortingValue } from '@/common/sort'
@@ -261,16 +261,7 @@ const gridOptions = ref({
         return formatTimestamp(e.cellValue)
       },
     },
-    {
-      title: '操作',
-      fixed: 'right',
-      width: 132,
-      field: 'operation',
-      className: 'table-operation-cell',
-      slots: {
-        default: 'operationDefaultSlot'
-      }
-    }
+    buildOperationColumn('operationDefaultSlot')
   ]
 })
 

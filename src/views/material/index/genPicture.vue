@@ -147,7 +147,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
@@ -332,16 +332,9 @@ const gridOptions = ref({
     { title: "套图模板", field: "psdTemplateName", minWidth: 100, showOverflow: true },
     { title: "标题模板", field: "titleTemplateName", minWidth: 100, showOverflow: true },
     { title: "发布模板名称", field: "publishTemplateName", minWidth: 100, showOverflow: true },
-    {
-      title: "操作",
-      fixed: "right",
+    buildOperationColumn("operationDefaultSlot", 132, {
       showOverflow: false,
-      width: 132,
-      className: "table-operation-cell",
-      slots: {
-        default: "operationDefaultSlot",
-      },
-    },
+    }),
   ],
 });
 

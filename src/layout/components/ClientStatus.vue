@@ -11,37 +11,21 @@ import { ElTooltip } from 'element-plus'
 import {
   isLocalConnected,
   isRemoteConnected,
+  myClients,
+  refreshMyClients,
   startConnectionChecks,
   clearConnectionChecks
 } from '@/stores/connectionStatus'
-import { useUserStore } from '@/store/modules/user'
 import ClientControlDialog from '@/components/ClientControlDialog/index.vue'
-import { ClientControlService } from '@/services/clientControl'
 
 export default defineComponent({
   name: 'ClientStatus',
   setup() {
-    const userStore = useUserStore()
     let timers: { localTimer: number, remoteTimer: number } | null = null
     const clientLoading = ref(false)
     const clientDialogVisible = ref(false)
-    const clientCount = ref(0)
+    const clientCount = computed(() => myClients.value.length)
     let clientCountTimer: number | null = null
-
-    // 获取客户端连接数
-    const refreshClientCount = async () => {
-      if (!isLocalConnected.value) {
-        clientCount.value = 0
-        return
-      }
-      try {
-        const clients = await ClientControlService.getMyClients()
-        clientCount.value = clients.length
-      } catch (error) {
-        console.error('获取客户端连接数失败:', error)
-        clientCount.value = 0
-      }
-    }
 
     // 启动客户端
     function openClient() {
@@ -63,9 +47,10 @@ export default defineComponent({
       };
 
       // 初始化客户端连接数
-      refreshClientCount()
-      // 定期刷新客户端连接数
-      clientCountTimer = window.setInterval(refreshClientCount, 3000)
+      void refreshMyClients()
+      clientCountTimer = window.setInterval(() => {
+        void refreshMyClients()
+      }, 3000)
     })
 
     onUnmounted(() => {
@@ -107,7 +92,7 @@ export default defineComponent({
               style={{ color: isLocalConnected.value ? '#67C23A' : '#F56C6C' }}
             >
               {isLocalConnected.value
-                ? `客户端已链接${clientCount.value > 0 ? ` (${clientCount.value})` : ''}`
+                ? `客户端已连接 (${clientCount.value})`
                 : '客户端未启动'}
               {clientLoading.value && (
                 <svg class="animate-spin ml-1" width="12" height="12" viewBox="0 0 50 50">
@@ -127,7 +112,7 @@ export default defineComponent({
             clientDialogVisible.value = val
             // 弹窗关闭时刷新连接数
             if (!val) {
-              refreshClientCount()
+              void refreshMyClients()
             }
           }}
         />

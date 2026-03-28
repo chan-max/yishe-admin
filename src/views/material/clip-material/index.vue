@@ -438,7 +438,7 @@ import {
   batchMoveClipMaterial,
 } from "@/api/clip-material";
 
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 
 import { useDebounceFn, useLocalStorage, useWindowSize } from "@vueuse/core";
@@ -539,7 +539,6 @@ const gridOptions = ref({
     { title: "后缀", field: "suffix", width: 80 },
     { title: "分类", field: "category", width: 100, slots: { default: "categorySlot" } },
     { title: "标签", field: "tags", minWidth: 150, slots: { default: "tagsSlot" } },
-
     { title: "ID", field: "id", width: 80 },
     {
       title: "创建时间",
@@ -559,14 +558,7 @@ const gridOptions = ref({
         return formatTimestamp(e.cellValue);
       },
     },
-    {
-      title: "操作",
-      fixed: "right",
-      width: 132,
-      field: "operation",
-      className: "table-operation-cell",
-      slots: { default: "operationDefaultSlot" },
-    },
+    buildOperationColumn("operationDefaultSlot"),
   ],
 });
 

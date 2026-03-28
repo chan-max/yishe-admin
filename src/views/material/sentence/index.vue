@@ -88,22 +88,18 @@
                     <span>AI分析</span>
                     <el-icon v-if="aiTableLoading?.[row?.id]" class="is-loading ml-1"><Loading /></el-icon>
                   </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="isAdmin"
-                    command="publish"
-                    v-show="!row.isPublish"
-                  >
-                    <el-icon><Upload /></el-icon>
-                    <span>发布</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item
-                    v-if="isAdmin"
-                    command="unpublish"
-                    v-show="row.isPublish"
-                  >
-                    <el-icon><Download /></el-icon>
-                    <span>下架</span>
-                  </el-dropdown-item>
+                  <template v-if="isAdmin && !row.isPublish">
+                    <el-dropdown-item command="publish">
+                      <el-icon><Upload /></el-icon>
+                      <span>发布</span>
+                    </el-dropdown-item>
+                  </template>
+                  <template v-if="isAdmin && row.isPublish">
+                    <el-dropdown-item command="unpublish">
+                      <el-icon><Download /></el-icon>
+                      <span>下架</span>
+                    </el-dropdown-item>
+                  </template>
                   <el-dropdown-item v-if="isAdmin" command="delete" divided>
                     <el-icon><Delete /></el-icon>
                     <span>删除</span>
@@ -280,7 +276,7 @@ import {
   deleteSentence,
   aiAnalyzeSentence,
 } from "@/api/sentence";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -346,13 +342,7 @@ const gridOptions = ref({
       width: 160,
       slots: { default: "updatedAtSlot" },
     },
-    {
-      title: "操作",
-      fixed: "right" as const,
-      width: 132,
-      className: "table-operation-cell",
-      slots: { default: "operationDefaultSlot" },
-    },
+    buildOperationColumn("operationDefaultSlot"),
   ],
 } as any);
 

@@ -346,7 +346,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, watchEffect, onMounted, watch, computed } from 'vue'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -485,16 +485,7 @@ const gridOptions = ref({
         return e.cellValue || '-'
       },
     },
-    {
-      title: '操作',
-      fixed: 'right',
-      width: 132,
-      className: 'table-operation-cell',
-      field: 'operation',
-      slots: {
-        default: 'operationDefaultSlot'
-      }
-    }
+    buildOperationColumn('operationDefaultSlot')
   ]
 })
 

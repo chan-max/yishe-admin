@@ -275,7 +275,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { Plus, Search, Refresh, Delete, Loading, MagicStick } from "@element-plus/icons-vue";
 import { getTtiRecordPage, createTtiRecord, deleteTtiRecord, batchDeleteTtiRecord } from "@/api/ai/tti";
 import { getPromptList } from "@/api/prompt";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { useWindowSize } from "@vueuse/core";
 import Pagination from "@/components/Pagination/index.vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -336,7 +336,7 @@ const gridOptions = reactive({
       width: 160,
       formatter: ({ cellValue }: any) => (cellValue ? formatTimestamp(cellValue) : "-")
     },
-    { title: "操作", width: 132, className: "table-operation-cell", slots: { default: "operationSlot" }, fixed: "right" }
+    buildOperationColumn("operationSlot")
   ] as any[]
 });
 

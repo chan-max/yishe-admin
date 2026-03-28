@@ -7,7 +7,7 @@ import { ContentWrap } from '@/components/ContentWrap'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { useI18n } from '@/hooks/web/useI18n'
 import { formatTime } from '@/utils'
-import { commonGridOptions } from "@/common/table"
+import { buildOperationColumn, commonGridOptions } from "@/common/table"
 import { useWindowSize } from "@vueuse/core"
 
 const { t } = useI18n()
@@ -45,13 +45,7 @@ const gridOptions = computed(() => ({
       width: 160,
       formatter: ({ cellValue }) => formatTime(cellValue, 'yyyy-MM-dd HH:mm')
     },
-    { 
-      title: '操作', 
-      width: 132, 
-      className: 'table-operation-cell',
-      fixed: 'right',
-      slots: { default: 'action' } 
-    }
+    buildOperationColumn('action')
   ]
 }))
 

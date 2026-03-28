@@ -841,7 +841,7 @@
                 { field: 'description', title: '描述', minWidth: 120 },
                 { field: 'keywords', title: '关键词', minWidth: 100 },
                 { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'customModelUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 132, className: 'table-operation-cell', slots: { default: 'customModelOperationSlot' } }
+                buildOperationColumn('customModelOperationSlot')
               ]">
               <template #customModelThumbnailSlot="{ row }">
                 <div class="flex items-center justify-center p-2">
@@ -878,7 +878,7 @@
                 { field: 'keywords', title: '关键词', minWidth: 100 },
                 { field: 'suffix', title: '后缀', width: 80 },
                 { field: 'updateTime', title: '更新时间', minWidth: 120, slots: { default: 'stickerUpdateTimeSlot' } },
-                { title: '操作', field: 'operation', width: 132, className: 'table-operation-cell', slots: { default: 'stickerOperationSlot' } }
+                buildOperationColumn('stickerOperationSlot')
               ]">
               <template #stickerImageSlot="{ row }">
                 <div class="flex items-center justify-center p-2">
@@ -1265,7 +1265,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, computed, watchEffect, nextTick } from "vue";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 const userStore = useUserStore()
@@ -1476,16 +1476,7 @@ const gridColumns = computed(() => {
         return formatTimestamp(e.cellValue);
       },
     },
-    {
-      title: "操作",
-      fixed: "right",
-      showOverflow: false,
-      width: 132,
-      className: "table-operation-cell",
-      slots: {
-        default: "operationDefaultSlot",
-      },
-    },
+    buildOperationColumn("operationDefaultSlot"),
   );
   return columns;
 });

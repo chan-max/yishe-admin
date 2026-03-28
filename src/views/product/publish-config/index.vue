@@ -11,7 +11,7 @@ import {
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { formatTime } from '@/utils'
-import { commonGridOptions } from "@/common/table"
+import { buildOperationColumn, commonGridOptions } from "@/common/table"
 import { useWindowSize } from "@vueuse/core"
 import { 
   getAllPlatforms, 
@@ -27,6 +27,7 @@ import {
 } from './platform-handlers'
 import { getVendorList, type Vendor } from '@/api/vendor'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
@@ -58,13 +59,7 @@ const gridOptions = computed(() => ({
       width: 160,
       formatter: ({ cellValue }) => formatTime(cellValue, 'yyyy-MM-dd HH:mm')
     },
-    {
-      title: '操作',
-      width: 132,
-      className: 'table-operation-cell',
-      fixed: 'right' as const,
-      slots: { default: 'action' }
-    }
+    buildOperationColumn('action')
   ]
 }))
 
@@ -118,7 +113,6 @@ const handleSelectionChange = (e: any) => {
 }
 
 const handleBatchDelete = () => {
-  const userStore = useUserStore()
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning('无权限：仅管理员可执行删除操作')
   }
@@ -394,7 +388,6 @@ const submitForm = async () => {
 }
 
 const handleDelete = (row: any) => {
-  const userStore = useUserStore()
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning('无权限：仅管理员可执行删除操作')
   }
@@ -427,7 +420,7 @@ onMounted(() => {
           <div class="list-page-search-form__actions">
             <el-button size="small" type="primary" @click="handleSearch">刷新</el-button>
             <el-button
-              v-admin-only
+              v-if="userStore.user?.isAdmin"
               size="small"
               type="danger"
               :disabled="selectedIds.length === 0"
@@ -459,7 +452,9 @@ onMounted(() => {
                     <template #dropdown>
                       <el-dropdown-menu class="operation-menu-compact">
                         <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                        <el-dropdown-item v-admin-only divided @click="handleDelete(row)">删除</el-dropdown-item>
+                        <template v-if="userStore.user?.isAdmin">
+                          <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                        </template>
                       </el-dropdown-menu>
                     </template>
                   </el-dropdown>

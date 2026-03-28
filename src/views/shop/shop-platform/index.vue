@@ -70,7 +70,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions,defaultSortingValue} from "@/common/sort";
@@ -91,38 +91,9 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    { title: "ID", field: "id", width: 140, showOverflow: true },
-    { title: "平台名称", field: "platformName", minWidth: 160, showOverflow: true },
-    { title: "创建人", field: "operatorName", width: 160, showOverflow: true },
-    
-    {
-      title: "创建时间",
-      field: "createTime",
-      width: 150,
-      showOverflow: true,
-      formatter: (e) => {
-        return formatTimestamp(e.cellValue);
-      },
-    },
-    {
-      title: "修改时间",
-      field: "updateTime",
-      width: 150,
-      showOverflow: true,
-      formatter: (e) => {
-        return formatTimestamp(e.cellValue);
-      },
-    },
-    {
-      title: "操作",
-      fixed: "right",
+    buildOperationColumn("operationDefaultSlot", 132, {
       showOverflow: false,
-      width: 132,
-      className: "table-operation-cell",
-      slots: {
-        default: "operationDefaultSlot",
-      },
-    },
+    }),
   ],
 });
 

@@ -175,7 +175,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, More, Edit, MagicStick } from '@element-plus/icons-vue'
 import { getProductModelPage, updateProductModel, deleteProductModel } from '@/api/productModel'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import request from '@/config/axios'
 
 const queryParams = reactive({
@@ -197,7 +197,7 @@ const gridOptions = ref({
     { title: '链接次数', field: 'link_count', width: 100 },
     { title: '创建时间', field: 'createTime', width: 160, slots: { default: 'createTimeSlot' } },
     { title: '更新时间', field: 'updateTime', width: 160, slots: { default: 'updateTimeSlot' } },
-    { title: '操作', fixed: 'right', width: 132, className: 'table-operation-cell', slots: { default: 'operationDefaultSlot' } }
+    buildOperationColumn('operationDefaultSlot')
   ]
 })
 

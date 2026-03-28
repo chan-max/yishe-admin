@@ -531,7 +531,7 @@
 
 <script setup lang="tsx">
 import { ref, reactive, computed, onMounted, onUnmounted, watchEffect, nextTick } from "vue";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
@@ -697,15 +697,6 @@ const gridOptions = ref({
         default: "thumbnailDefaultSlot"
       }
     },
-    // { title: "ID", field: "id", width: 140, showOverflow: true },
-    // { 
-    //   title: "文件地址", 
-    //   field: "url", 
-    //   width: 360,
-    //   slots: {
-    //     default: "urlDefaultSlot"
-    //   }
-    // },
     { title: "字体名称", field: "name", width: 240, showOverflow: true },
     { title: "描述", field: "description", minWidth: 200, showOverflow: true },
     { title: "关键字", field: "keywords", minWidth: 160, showOverflow: true },
@@ -735,16 +726,7 @@ const gridOptions = ref({
         return formatTimestamp(e.cellValue);
       },
     },
-    {
-      title: "操作",
-      fixed: "right",
-      showOverflow: false,
-      width: 132,
-      className: "table-operation-cell",
-      slots: {
-        default: "operationDefaultSlot",
-      },
-    },
+    buildOperationColumn("operationDefaultSlot"),
   ],
   maxHeight: 400
 });

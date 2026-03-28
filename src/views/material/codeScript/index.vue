@@ -404,7 +404,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, w
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Plus } from "@element-plus/icons-vue";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -471,14 +471,7 @@ const gridOptions = ref({
     { title: "超时(ms)", field: "timeoutMs", width: 100 },
     { title: "状态", field: "isEnabled", width: 90, slots: { default: "statusSlot" } },
     { title: "更新时间", field: "updatedAt", width: 170, showOverflow: true },
-    {
-      title: "操作",
-      field: "operation",
-      fixed: "right" as const,
-      width: 132,
-      className: "table-operation-cell",
-      slots: { default: "operationSlot" },
-    },
+    buildOperationColumn("operationSlot"),
   ],
 } as any);
 
@@ -495,7 +488,7 @@ const runGridOptions = ref({
     { title: "沙盒ID", field: "sandboxRunId", minWidth: 180, showOverflow: true },
     { title: "耗时(ms)", field: "durationMs", width: 100 },
     { title: "创建时间", field: "createdAt", width: 170, showOverflow: true },
-    { title: "操作", width: 132, fixed: "right" as const, className: "table-operation-cell", slots: { default: "runOperationSlot" } },
+    buildOperationColumn("runOperationSlot"),
   ],
 } as any);
 

@@ -1,28 +1,22 @@
-/*
- * @Author: chan-max jackieontheway666@gmail.com
- * @Date: 2025-07-09 19:04:50
- * @LastEditors: chan-max jackieontheway666@gmail.com
- * @LastEditTime: 2025-07-16 20:30:58
- * @FilePath: /yishe-admin/src/stores/connectionStatus.ts
- * @Description: 管理与本地客户端和远程服务的连接状态
- */
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { websocketClient } from '@/services/websocketClient'
 import { getAccessToken } from '@/utils/auth'
 import { isClientAuthorized as checkClientAuthApi } from '@/api/user'
+import { getMyWebsocketConnections, type WebsocketConnectionVO } from '@/api/system/websocket'
 
-// 本地客户端连接状态
-export const isLocalConnected = ref(false)
-export const setLocalConnected = (val: boolean) => {
-  isLocalConnected.value = val
+export const myClients = ref<WebsocketConnectionVO[]>([])
+export const clientRefreshLoading = ref(false)
+export const lastClientRefreshAt = ref<string | null>(null)
+
+export const isLocalConnected = computed(() => myClients.value.length > 0)
+
+export const setMyClients = (clients: WebsocketConnectionVO[]) => {
+  myClients.value = clients
+  lastClientRefreshAt.value = new Date().toISOString()
 }
 
-// 远程服务连接状态（通过 WebSocket 连接状态判断）
-export const isRemoteConnected = computed(() => {
-  return websocketClient.state.status === 'connected'
-})
+export const isRemoteConnected = computed(() => websocketClient.state.status === 'connected')
 
-// 客户端授权状态
 export const isClientAuthorized = ref(false)
 export const setClientAuthorized = (val: boolean) => {
   isClientAuthorized.value = val
@@ -37,38 +31,50 @@ export const checkClientAuthorized = async () => {
   }
 }
 
-// 检查客户端连接状态
-let checkClientConnectionTimer: ReturnType<typeof setInterval> | null = null
-
-// 通过 WebSocket 检查客户端连接状态
-export const checkClientConnection = () => {
+export const refreshMyClients = async () => {
   if (websocketClient.state.status !== 'connected') {
-    setLocalConnected(false)
-    return
+    setMyClients([])
+    return []
   }
-  websocketClient.checkMyClientStatus()
+
+  clientRefreshLoading.value = true
+  try {
+    const response = await getMyWebsocketConnections()
+    const clients = Array.isArray(response)
+      ? response
+      : response && typeof response === 'object' && Array.isArray((response as any).data)
+        ? (response as any).data
+        : []
+    setMyClients(clients)
+    return clients
+  } catch (error) {
+    setMyClients([])
+    return []
+  } finally {
+    clientRefreshLoading.value = false
+  }
 }
 
-// 启动客户端连接状态检查
+let checkClientConnectionTimer: ReturnType<typeof setInterval> | null = null
+let statusWatcher: ReturnType<typeof setInterval> | null = null
+
 const startClientConnectionCheck = () => {
   if (checkClientConnectionTimer) {
     clearInterval(checkClientConnectionTimer)
   }
-  checkClientConnection()
-  checkClientConnectionTimer = setInterval(checkClientConnection, 5000)
+  void refreshMyClients()
+  checkClientConnectionTimer = setInterval(() => {
+    void refreshMyClients()
+  }, 5000)
 }
 
-// 停止客户端连接状态检查
 const stopClientConnectionCheck = () => {
   if (checkClientConnectionTimer) {
     clearInterval(checkClientConnectionTimer)
     checkClientConnectionTimer = null
   }
-  setLocalConnected(false)
+  setMyClients([])
 }
-
-// 监听 WebSocket 状态变化
-let statusWatcher: ReturnType<typeof setInterval> | null = null
 
 const watchWebSocketStatus = () => {
   if (statusWatcher) {
@@ -81,9 +87,9 @@ const watchWebSocketStatus = () => {
       if (!checkClientConnectionTimer) {
         startClientConnectionCheck()
       }
-    } else {
-      stopClientConnectionCheck()
+      return
     }
+    stopClientConnectionCheck()
   }, 1000)
 
   if (websocketClient.state.status === 'connected') {
@@ -93,36 +99,28 @@ const watchWebSocketStatus = () => {
   }
 }
 
-// 启动 WebSocket 连接
 export const startWebSocketConnection = () => {
   const token = getAccessToken()
   if (!token) {
-    console.warn('[ws] 无 token，跳过 WebSocket 连接')
     return
   }
 
   if (websocketClient.state.status === 'idle' || websocketClient.state.status === 'disconnected') {
-    console.log('[ws] 启动 WebSocket 连接...')
     websocketClient.connect()
   }
-
-  websocketClient.events.on('myClientStatus', ({ hasClient }) => {
-    setLocalConnected(hasClient)
-  })
 
   watchWebSocketStatus()
 }
 
-// 启动所有连接检查
 export const startConnectionChecks = () => {
+  startWebSocketConnection()
   return {
     localTimer: 0,
     remoteTimer: 0
   }
 }
 
-// 清理所有定时器
-export const clearConnectionChecks = (timers: { localTimer: number, remoteTimer: number }) => {
+export const clearConnectionChecks = (_timers: { localTimer: number; remoteTimer: number }) => {
   stopClientConnectionCheck()
   if (statusWatcher) {
     clearInterval(statusWatcher)

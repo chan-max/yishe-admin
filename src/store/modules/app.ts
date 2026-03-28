@@ -43,7 +43,7 @@ export const useAppStore = defineStore('app', {
   state: (): AppState => {
     return {
       userInfo: 'userInfo', // 登录信息存储字段-建议每个项目换一个字段，避免与其他项目冲突
-      sizeMap: ['default', 'large', 'small'],
+      sizeMap: ['small', 'default', 'large'],
       mobile: false, // 是否是移动端
       title: import.meta.env.VITE_APP_TITLE, // 标题
       pageLoading: false, // 路由跳转loading
@@ -69,7 +69,7 @@ export const useAppStore = defineStore('app', {
 
       layout: wsCache.get(CACHE_KEY.LAYOUT) || 'classic', // layout布局
       isDark: wsCache.get(CACHE_KEY.IS_DARK) || false, // 是否是暗黑模式
-      currentSize: wsCache.get('default') || 'default', // 组件尺寸
+      currentSize: wsCache.get('default') || 'small', // 组件尺寸
       theme: wsCache.get(CACHE_KEY.THEME) || {
         // 主题色
         elColorPrimary: '#5b8cff',

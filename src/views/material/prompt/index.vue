@@ -203,7 +203,7 @@ import {
   updatePrompt,
   deletePrompt,
 } from "@/api/prompt";
-import { commonGridOptions } from "@/common/table";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -267,9 +267,7 @@ const gridOptions = ref({
       width: 160,
       slots: { default: "updatedAtSlot" },
     },
-    {
-      title: "操作", fixed: "right" as const, width: 132, className: "table-operation-cell", slots: { default: "operationDefaultSlot" },
-    },
+    buildOperationColumn("operationDefaultSlot"),
   ],
 } as any);
 

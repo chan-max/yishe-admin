@@ -258,7 +258,7 @@ import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
 import { useMessage } from '@/hooks/web/useMessage'
 import { formatDate, formatPast } from '@/utils/formatTime'
 import { useWindowSize } from '@vueuse/core'
-import { commonGridOptions } from '@/common/table'
+import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import * as WebsocketApi from '@/api/system/websocket'
@@ -413,13 +413,7 @@ const functionGridOptions = ref<VxeGridProps<any>>({
       align: 'center',
       slots: { default: 'schedule_default' }
     },
-    {
-      title: '操作',
-      fixed: 'right' as const,
-      width: 132,
-      className: 'table-operation-cell',
-      slots: { default: 'operation_default' }
-    }
+    buildOperationColumn('operation_default')
   ]
 })
 
@@ -508,13 +502,7 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
       showOverflow: 'tooltip',
       slots: { default: 'query_default' }
     },
-    {
-      title: '操作',
-      fixed: 'right' as const,
-      width: 132,
-      className: 'table-operation-cell',
-      slots: { default: 'operation_default' }
-    }
+    buildOperationColumn('operation_default')
   ]
 })
 

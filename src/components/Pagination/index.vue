@@ -1,15 +1,14 @@
 <!-- 基于 ruoyi-vue3 的 Pagination 重构，核心是简化无用的属性，并使用 ts 重写 -->
 <template>
   <el-pagination
-    size="small"
     v-show="total > 0"
     v-model:current-page="currentPage"
     v-model:page-size="pageSize"
+    :size="paginationSize"
     :background="true"
     :page-sizes="[10, 20, 30, 50, 100]"
     :pager-count="pagerCount"
     :total="total"
-    :small="isSmall"
     class="float-right mb-15px mt-15px"
     layout="total, sizes, prev, pager, next, jumper"
     @size-change="handleSizeChange"
@@ -17,7 +16,7 @@
   />
 </template>
 <script lang="ts" setup>
-import { computed, watchEffect } from 'vue'
+import { computed } from 'vue'
 import { useAppStore } from '@/store/modules/app'
 
 defineOptions({ name: 'Pagination' })
@@ -25,9 +24,10 @@ defineOptions({ name: 'Pagination' })
 // 此处解决了当全局size为small的时候分页组件样式太大的问题
 const appStore = useAppStore()
 const layoutCurrentSize = computed(() => appStore.currentSize)
-const isSmall = ref<boolean>(layoutCurrentSize.value === 'small')
-watchEffect(() => {
-  isSmall.value = layoutCurrentSize.value === 'small'
+const paginationSize = computed(() => {
+  if (layoutCurrentSize.value === 'large') return 'large'
+  if (layoutCurrentSize.value === 'small') return 'small'
+  return 'default'
 })
 
 const props = defineProps({

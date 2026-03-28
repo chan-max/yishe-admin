@@ -1,13 +1,18 @@
 <template>
   <el-dialog
     v-model="visible"
-    width="800px"
-    align-center
+    fullscreen
+    append-to-body
+    class="client-control-dialog"
+    :modal-class="'client-control-dialog__mask'"
+    :z-index="5000"
     :close-on-click-modal="false"
+    destroy-on-close
   >
     <template #header>
       <span>客户端操作 ({{ clients.length }})</span>
     </template>
+
     <div v-loading="loading">
       <el-empty v-if="!loading && clients.length === 0" description="暂无客户端连接" />
 
@@ -19,19 +24,23 @@
         >
           <div class="client-header">
             <div class="flex items-center gap-2">
-              <div
-                class="status-dot"
-                :class="isClientAvailable(client) ? 'bg-green-500' : 'bg-gray-400'"
-              ></div>
+              <div class="status-dot"></div>
               <span class="client-title">客户端 {{ index + 1 }}</span>
               <el-tag v-if="client.clientSource" size="small" type="info" class="ml-2">
                 {{ client.clientSource }}
+              </el-tag>
+              <el-tag v-if="client.clientInfo?.appVersion" size="small" class="ml-2">
+                {{ client.clientInfo?.appVersion }}
               </el-tag>
             </div>
           </div>
 
           <div class="client-content">
             <div class="client-info">
+              <div class="client-field">
+                <span class="field-label">机器码</span>
+                <span class="field-value">{{ client.clientInfo?.machine?.code || '--' }}</span>
+              </div>
               <div class="client-field">
                 <span class="field-label">连接 ID</span>
                 <span class="field-value font-mono">{{ client.id }}</span>
@@ -44,13 +53,28 @@
                 <span class="field-label">连接时间</span>
                 <span class="field-value">{{ formatPast(new Date(client.connectedAt)) }}</span>
               </div>
+              <div class="client-field client-services">
+                <span class="field-label">服务</span>
+                <div class="service-list">
+                  <template v-if="getClientServices(client).length">
+                    <el-tag
+                      v-for="service in getClientServices(client)"
+                      :key="service.key"
+                      size="small"
+                      :type="service.tagType"
+                    >
+                      {{ service.label }} · {{ service.text }}
+                    </el-tag>
+                  </template>
+                  <span v-else class="field-value">未上报</span>
+                </div>
+              </div>
             </div>
             <div class="client-actions">
               <el-button
                 type="primary"
                 size="small"
                 @click="handleSendMessage(client)"
-                :disabled="!isClientAvailable(client)"
               >
                 <Icon icon="ep:message" class="mr-1" />
                 发送消息
@@ -61,12 +85,12 @@
       </div>
     </div>
 
-    <!-- 发送消息对话框 -->
     <el-dialog
       v-model="sendMessageDialogVisible"
       title="发送消息"
       width="500px"
       append-to-body
+      :z-index="5100"
     >
       <el-form label-width="80px">
         <el-form-item label="连接 ID">
@@ -96,7 +120,6 @@ import { ref, watch, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { formatPast } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
-import { isLocalConnected } from '@/stores/connectionStatus'
 import type { WebsocketConnectionVO } from '@/api/system/websocket'
 
 defineOptions({ name: 'ClientControlDialog' })
@@ -121,16 +144,37 @@ const currentClient = ref<WebsocketConnectionVO | null>(null)
 const messageContent = ref('')
 const sending = ref(false)
 
-// 判断客户端是否可用（参考 header 中的状态检测方式）
-const isClientAvailable = (_client: WebsocketConnectionVO): boolean => {
-  // 直接使用 header 中的连接状态
-  return isLocalConnected.value
+const getClientServices = (client: WebsocketConnectionVO) => {
+  return Object.entries(client.clientInfo?.services || {}).map(([key, service]) => {
+    const available = !!service.available
+    const connected = !!service.connected
+    const status = service.status || 'unknown'
+
+    let tagType: 'success' | 'warning' | 'danger' | 'info' = 'info'
+    let text = '未就绪'
+    if (available) {
+      tagType = 'success'
+      text = '可用'
+    } else if (status === 'error') {
+      tagType = 'danger'
+      text = '异常'
+    } else if (connected) {
+      tagType = 'warning'
+      text = '已连接'
+    }
+
+    return {
+      key,
+      label: service.label || key,
+      text,
+      tagType
+    }
+  })
 }
 
-// 监听弹窗打开，自动刷新列表
 watch(visible, (newVal) => {
   if (newVal) {
-    refreshClients()
+    void refreshClients()
   }
 })
 
@@ -165,7 +209,7 @@ const handleConfirmSendMessage = async () => {
       currentClient.value.id,
       messageContent.value.trim()
     )
-    
+
     if (success) {
       sendMessageDialogVisible.value = false
       messageContent.value = ''
@@ -179,11 +223,28 @@ const handleConfirmSendMessage = async () => {
 </script>
 
 <style scoped lang="scss">
+:global(.client-control-dialog__mask) {
+  z-index: 4999 !important;
+}
+
+:deep(.client-control-dialog .el-overlay-dialog) {
+  z-index: 5000 !important;
+}
+
+:deep(.client-control-dialog .el-dialog) {
+  margin: 0;
+}
+
+:deep(.client-control-dialog .el-dialog__body) {
+  height: calc(100vh - 54px);
+  overflow: auto;
+}
+
 .client-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 600px;
+  max-height: 100%;
   overflow-y: auto;
   padding-right: 4px;
 
@@ -229,6 +290,7 @@ const handleConfirmSendMessage = async () => {
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  background-color: #67c23a;
 }
 
 .client-title {
@@ -248,6 +310,7 @@ const handleConfirmSendMessage = async () => {
   display: flex;
   gap: 24px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .client-field {
@@ -255,6 +318,10 @@ const handleConfirmSendMessage = async () => {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+.client-services {
+  min-width: 220px;
 }
 
 .field-label {
@@ -269,6 +336,12 @@ const handleConfirmSendMessage = async () => {
 
 .client-actions {
   flex-shrink: 0;
+}
+
+.service-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .mr-1 {

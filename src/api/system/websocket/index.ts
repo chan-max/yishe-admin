@@ -16,11 +16,24 @@ export interface TokenUserInfo {
 
 export interface WebsocketClientInfo {
   clientId?: string
+  source?: string
+  appVersion?: string
   machine?: {
     code?: string
     platform?: string
     createdAt?: string
   }
+  services?: Record<string, {
+    key?: string
+    label?: string
+    connected?: boolean
+    available?: boolean
+    status?: 'connected' | 'disconnected' | 'error' | 'unknown'
+    message?: string
+    version?: string
+    endpoint?: string
+    lastCheckedAt?: string
+  }>
   timestamp?: string
   extension?: {
     name?: string
