@@ -3,69 +3,34 @@
     <div class="ops-header">
       <div>
         <div class="ops-header__title">PS 控制台</div>
-        <div class="ops-header__desc">本机直连用于调试，客户端桥接用于正式执行与自动轮询。</div>
+        <div class="ops-header__desc">在同一页面内区分本地调试和客户端桥接操作。</div>
       </div>
       <div class="ops-header__actions">
+        <div class="inline-status-group">
+          <div class="inline-status" :class="`is-${localDebugServiceStatus.level}`">
+            <span class="inline-status__dot" />
+            <span class="inline-status__label">本地 PS</span>
+            <span class="inline-status__text">{{ localDebugServiceStatus.text }}</span>
+          </div>
+          <div class="inline-status" :class="`is-${bridgeServiceStatus.level}`">
+            <span class="inline-status__dot" />
+            <span class="inline-status__label">客户端连接</span>
+            <span class="inline-status__text">{{ bridgeServiceStatus.text }}</span>
+          </div>
+        </div>
         <el-button @click="refreshLocalDebug">刷新本机直连</el-button>
         <el-button type="primary" @click="refreshClients">刷新桥接节点</el-button>
       </div>
     </div>
 
-    <div class="ops-strip">
-      <div class="ops-metric">
-        <span class="ops-metric__label">本机直连</span>
-        <span class="ops-metric__value">{{ localDebugStatusText }}</span>
-      </div>
-      <div class="ops-metric">
-        <span class="ops-metric__label">桥接节点数</span>
-        <span class="ops-metric__value">{{ psClients.length }}</span>
-      </div>
-      <div class="ops-metric">
-        <span class="ops-metric__label">当前节点</span>
-        <span class="ops-metric__value">{{ selectedClient?.clientInfo?.machine?.code || '-' }}</span>
-      </div>
-      <div class="ops-metric">
-        <span class="ops-metric__label">当前桥接状态</span>
-        <span class="ops-metric__value">{{ selectedPsBridgeService?.text || '-' }}</span>
-      </div>
-    </div>
-
-    <div class="ops-layout">
-      <aside class="ops-sidebar">
-        <div class="ops-panel ops-panel--sidebar">
-          <div class="ops-panel__title">桥接节点</div>
-          <div class="ops-panel__sub">当前账号下可用于正式任务的客户端</div>
-
-          <el-empty
-            v-if="!loading && psClients.length === 0"
-            description="暂无可识别的 PS 桥接节点"
-          />
-
-          <div v-else class="node-list">
-            <button
-              v-for="client in psClients"
-              :key="client.id"
-              type="button"
-              class="node-item"
-              :class="{ 'is-active': selectedClientId === client.id }"
-              @click="selectedClientId = client.id"
-            >
-              <div class="node-item__name">{{ client.clientInfo?.machine?.code || client.id }}</div>
-              <div class="node-item__meta">{{ getPsBridgeService(client)?.text || '未上报' }}</div>
-              <div class="node-item__meta">{{ client.clientInfo?.appVersion || '未知版本' }}</div>
-              <div class="node-item__meta">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</div>
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      <section class="ops-main">
-        <div class="ops-columns">
-          <div class="ops-panel">
+    <el-tabs v-model="activeTab" class="ops-tabs">
+      <el-tab-pane label="本地 PS" name="local">
+        <div class="tab-layout tab-layout--single">
+          <section class="ops-panel">
             <div class="ops-panel__head">
               <div>
                 <div class="ops-panel__title">本机直连调试通道</div>
-                <div class="ops-panel__sub"><code>localhost:1595</code>，仅用于当前电脑调试</div>
+                <div class="ops-panel__sub"><code>localhost:1595</code></div>
               </div>
               <div class="ops-panel__actions">
                 <el-button @click="openLocalPsUi">打开页面</el-button>
@@ -73,30 +38,20 @@
               </div>
             </div>
 
-            <div class="kv-table">
-              <div class="kv-row">
-                <div class="kv-key">访问地址</div>
-                <div class="kv-value">http://localhost:1595</div>
+            <div class="compact-info">
+              <div class="compact-info__item">
+                <span class="compact-info__label">状态</span>
+                <span class="compact-info__value">
+                  <el-tag :type="localDebugServiceStatus.tagType" effect="dark">{{ localDebugServiceStatus.text }}</el-tag>
+                </span>
               </div>
-              <div class="kv-row">
-                <div class="kv-key">通道状态</div>
-                <div class="kv-value">{{ localDebugStatusText }}</div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">版本</span>
+                <span class="compact-info__value">{{ localDebugRuntime.version || '-' }}</span>
               </div>
-              <div class="kv-row">
-                <div class="kv-key">版本</div>
-                <div class="kv-value">{{ localDebugRuntime.version || '-' }}</div>
-              </div>
-              <div class="kv-row">
-                <div class="kv-key">Photoshop 可用</div>
-                <div class="kv-value">{{ localDebugRuntime.isAvailable ? '可用' : '不可用' }}</div>
-              </div>
-              <div class="kv-row kv-row--block">
-                <div class="kv-key">说明</div>
-                <div class="kv-value">{{ localDebugRuntime.message || '-' }}</div>
-              </div>
-              <div class="kv-row kv-row--block">
-                <div class="kv-key">诊断信息</div>
-                <div class="kv-value">{{ localDebugRuntime.diagnostics || '-' }}</div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">说明</span>
+                <span class="compact-info__value">{{ localDebugRuntime.message || localDebugRuntime.lastError || '-' }}</span>
               </div>
             </div>
 
@@ -139,102 +94,122 @@
               <div class="ops-form-block__title">最近结果</div>
               <el-input :model-value="localResultText" type="textarea" :rows="12" readonly />
             </div>
-          </div>
+          </section>
+        </div>
+      </el-tab-pane>
 
-          <div class="ops-panel">
-            <div class="ops-panel__head">
-              <div>
-                <div class="ops-panel__title">客户端桥接执行通道</div>
-                <div class="ops-panel__sub">用于正式任务、接口数据处理、自动轮询</div>
-              </div>
-              <div class="ops-panel__actions" v-if="selectedClient">
-                <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
-                <el-button @click="handleBridgeCommand(selectedClient.id, 'health', {}, 'maintenance')">检测服务</el-button>
+      <el-tab-pane label="客户端连接" name="bridge">
+        <div class="tab-layout">
+          <aside class="ops-sidebar">
+            <div class="ops-panel ops-panel--sidebar">
+              <div class="ops-panel__title">连接节点</div>
+              <div class="ops-panel__sub">当前账号下可用于正式任务的客户端</div>
+
+              <el-empty
+                v-if="!loading && psClients.length === 0"
+                description="暂无可识别的 PS 桥接节点"
+              />
+
+              <div v-else class="node-list">
+                <button
+                  v-for="client in psClients"
+                  :key="client.id"
+                  type="button"
+                  class="node-item"
+                  :class="{ 'is-active': selectedClientId === client.id }"
+                  @click="selectedClientId = client.id"
+                >
+                  <div class="node-item__name-row">
+                    <div class="node-item__name">{{ client.clientInfo?.machine?.code || client.id }}</div>
+                    <el-tag
+                      v-if="getPsBridgeService(client)"
+                      size="small"
+                      :type="getPsBridgeService(client)?.tagType || 'info'"
+                    >
+                      {{ getPsBridgeService(client)?.text }}
+                    </el-tag>
+                  </div>
+                  <div class="node-item__meta">{{ getPsBridgeService(client)?.message || '未上报 Photoshop 服务详情' }}</div>
+                  <div class="node-item__meta">{{ client.clientInfo?.appVersion || '未知版本' }}</div>
+                  <div class="node-item__meta">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</div>
+                </button>
               </div>
             </div>
+          </aside>
 
-            <template v-if="selectedClient">
-              <div class="kv-table">
-                <div class="kv-row">
-                  <div class="kv-key">客户端</div>
-                  <div class="kv-value">{{ selectedClient.clientInfo?.machine?.code || selectedClient.id }}</div>
+          <section class="ops-main">
+            <div class="ops-panel">
+              <div class="ops-panel__head">
+                <div>
+                  <div class="ops-panel__title">客户端连接执行通道</div>
+                  <div class="ops-panel__sub">正式任务执行入口</div>
                 </div>
-                <div class="kv-row">
-                  <div class="kv-key">桥接状态</div>
-                  <div class="kv-value">{{ selectedPsBridgeService?.text || '-' }}</div>
+                <div class="ops-panel__actions" v-if="selectedClient">
+                  <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
+                  <el-button @click="handleBridgeCommand(selectedClient.id, 'health', {}, 'maintenance')">检测服务</el-button>
                 </div>
-                <div class="kv-row">
-                  <div class="kv-key">运行态</div>
-                  <div class="kv-value">{{ selectedPsBridgeService?.state || '-' }}</div>
-                </div>
-                <div class="kv-row">
-                  <div class="kv-key">当前任务</div>
-                  <div class="kv-value">{{ selectedPsBridgeService?.currentTaskId || '-' }}</div>
-                </div>
-                <div class="kv-row kv-row--block">
-                  <div class="kv-key">状态说明</div>
-                  <div class="kv-value">{{ selectedPsBridgeService?.message || '-' }}</div>
-                </div>
-                <div class="kv-row kv-row--block">
-                  <div class="kv-key">支持命令</div>
-                  <div class="kv-value">
-                    <span v-for="command in selectedPsBridgeService?.supportedCommands || []" :key="command" class="inline-chip">
-                      {{ command }}
+              </div>
+
+              <template v-if="selectedClient">
+                <div class="compact-info">
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">客户端</span>
+                    <span class="compact-info__value">{{ selectedClient.clientInfo?.machine?.code || selectedClient.id }}</span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">状态</span>
+                    <span class="compact-info__value">
+                      <el-tag :type="bridgeServiceStatus.tagType" effect="dark">{{ bridgeServiceStatus.text }}</el-tag>
                     </span>
                   </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">说明</span>
+                    <span class="compact-info__value">{{ selectedPsBridgeService?.message || '-' }}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div class="ops-form-block">
-                <div class="ops-form-block__title">套图执行</div>
-                <el-form label-position="top" class="ops-form">
-                  <el-form-item label="套图 ID">
-                    <el-input v-model="bridgePsdSetId" placeholder="输入 psdSetId" />
-                  </el-form-item>
-                  <el-form-item>
-                    <el-button
-                      type="primary"
-                      :disabled="!bridgePsdSetId.trim()"
-                      @click="handleBridgeProcessPsdSet"
-                    >
-                      通过桥接节点执行
-                    </el-button>
-                  </el-form-item>
-                </el-form>
-              </div>
-
-              <div class="ops-form-block">
-                <div class="ops-form-block__title">运行规则</div>
-                <div class="rule-list">
-                  <div>本机直连可用，不代表桥接节点在线。</div>
-                  <div>桥接节点在线，不代表当前电脑能访问 `localhost:1595`。</div>
-                  <div>正式任务与自动轮询，应以桥接执行通道为准。</div>
+                <div class="ops-form-block">
+                  <div class="ops-form-block__title">套图执行</div>
+                  <el-form label-position="top" class="ops-form">
+                    <el-form-item label="套图 ID">
+                      <el-input v-model="bridgePsdSetId" placeholder="输入 psdSetId" />
+                    </el-form-item>
+                    <el-form-item>
+                      <el-button
+                        type="primary"
+                        :disabled="!bridgePsdSetId.trim()"
+                        @click="handleBridgeProcessPsdSet"
+                      >
+                        通过桥接节点执行
+                      </el-button>
+                    </el-form-item>
+                  </el-form>
                 </div>
-              </div>
 
-              <div class="ops-form-block">
-                <div class="ops-form-block__title">最近结果</div>
-                <div class="result-meta" v-if="lastBridgeCommandResult">
-                  <span>命令：{{ lastBridgeCommandResult.action }}</span>
-                  <span>结果：{{ lastBridgeCommandResult.success ? '成功' : '失败' }}</span>
-                  <span>时间：{{ lastBridgeCommandResult.finishedAt ? formatPast(new Date(lastBridgeCommandResult.finishedAt)) : '-' }}</span>
+                <div class="ops-form-block">
+                  <div class="ops-form-block__title">最近结果</div>
+                  <div class="result-meta" v-if="lastBridgeCommandResult">
+                    <span>命令：{{ lastBridgeCommandResult.action }}</span>
+                    <span>结果：{{ lastBridgeCommandResult.success ? '成功' : '失败' }}</span>
+                    <span>时间：{{ lastBridgeCommandResult.finishedAt ? formatPast(new Date(lastBridgeCommandResult.finishedAt)) : '-' }}</span>
+                  </div>
+                  <el-input :model-value="bridgeResultText" type="textarea" :rows="12" readonly />
                 </div>
-                <el-input :model-value="bridgeResultText" type="textarea" :rows="12" readonly />
-              </div>
-            </template>
+              </template>
 
-            <el-empty v-else description="请选择一个桥接节点" />
-          </div>
+              <el-empty v-else description="请选择一个桥接节点" />
+            </div>
+          </section>
         </div>
-      </section>
-    </div>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { formatPast } from '@/utils/formatTime'
+import { formatDate, formatPast } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
 import localPhotoshopApi from '@/api/client/photoshop'
 import { websocketClient, type ServiceCommandResultEvent, type ServiceRuntimeEvent } from '@/services/websocketClient'
@@ -244,6 +219,7 @@ defineOptions({ name: 'PsConsolePanel' })
 
 const clients = ref<WebsocketConnectionVO[]>([])
 const loading = ref(false)
+const activeTab = ref('local')
 const selectedClientId = ref('')
 const bridgePsdSetId = ref('')
 const localAnalyzePsdPath = ref('')
@@ -304,6 +280,15 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
 
 const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
 
+const formatDateSafe = (value?: string) => {
+  if (!value) return '-'
+  try {
+    return formatDate(new Date(value))
+  } catch {
+    return value
+  }
+}
+
 const localDebugStatusText = computed(() => {
   if (localDebugRuntime.connected && localDebugRuntime.isAvailable) {
     return '可调试'
@@ -312,6 +297,69 @@ const localDebugStatusText = computed(() => {
     return '已连通，但 Photoshop 不可执行'
   }
   return localDebugRuntime.lastError || '不可用'
+})
+
+const localDebugServiceStatus = computed(() => {
+  if (localDebugRuntime.connected && localDebugRuntime.isAvailable) {
+    return {
+      level: 'success',
+      tagType: 'success' as const,
+      text: '可用',
+      summary: '本地 yishe-ps 服务和 Photoshop 都已就绪，可以直接做调试分析和执行。'
+    }
+  }
+
+  if (localDebugRuntime.connected) {
+    return {
+      level: 'warning',
+      tagType: 'warning' as const,
+      text: '服务在线，PS 不可用',
+      summary: localDebugRuntime.message || '本地调试服务已连通，但 Photoshop 当前未处于可执行状态。'
+    }
+  }
+
+  return {
+    level: 'danger',
+    tagType: 'danger' as const,
+    text: '不可用',
+    summary: localDebugRuntime.lastError || '无法访问本地调试服务，请检查 yishe-ps 是否启动。'
+  }
+})
+
+const bridgeServiceStatus = computed(() => {
+  if (!psClients.value.length) {
+    return {
+      level: 'danger',
+      tagType: 'danger' as const,
+      text: '无可用节点',
+      summary: '当前账号下没有识别到带 Photoshop 服务上报的客户端桥接节点。'
+    }
+  }
+
+  if (selectedPsBridgeService.value?.available) {
+    return {
+      level: 'success',
+      tagType: 'success' as const,
+      text: '可用',
+      summary: '当前选中的客户端桥接节点可直接执行 Photoshop 任务。'
+    }
+  }
+
+  if (selectedPsBridgeService.value?.connected) {
+    return {
+      level: 'warning',
+      tagType: 'warning' as const,
+      text: '在线待命',
+      summary: selectedPsBridgeService.value?.message || '桥接节点已在线，但 Photoshop 服务尚未达到可执行状态。'
+    }
+  }
+
+  return {
+    level: 'danger',
+    tagType: 'danger' as const,
+    text: '不可用',
+    summary: selectedPsBridgeService.value?.message || '已选客户端未上报可用的 Photoshop 桥接服务。'
+  }
 })
 
 const localResultText = computed(() => {
@@ -337,6 +385,9 @@ watch(
     }
     if (!selectedClientId.value || !list.some((item) => item.id === selectedClientId.value)) {
       selectedClientId.value = list[0].id
+    }
+    if (list.length > 0 && activeTab.value !== 'bridge') {
+      activeTab.value = 'bridge'
     }
   },
   { immediate: true }
@@ -515,41 +566,109 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
-.ops-strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  border: 1px solid var(--el-border-color);
-}
-
-.ops-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-right: 1px solid var(--el-border-color-lighter);
-  min-width: 0;
-}
-
-.ops-metric:last-child {
-  border-right: 0;
-}
-
-.ops-metric__label {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.ops-metric__value {
-  font-size: 14px;
-  font-weight: 600;
-  word-break: break-word;
-}
-
-.ops-layout {
+.tab-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
+}
+
+.tab-layout--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inline-status-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.inline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  background: var(--el-bg-color);
+  font-size: 12px;
+}
+
+.inline-status.is-success {
+  border-color: rgb(103 194 58 / 28%);
+  color: #67c23a;
+}
+
+.inline-status.is-warning {
+  border-color: rgb(230 162 60 / 28%);
+  color: #e6a23c;
+}
+
+.inline-status.is-danger {
+  border-color: rgb(245 108 108 / 28%);
+  color: #f56c6c;
+}
+
+.inline-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--el-text-color-secondary);
+}
+
+.inline-status.is-success .inline-status__dot {
+  background: #67c23a;
+  box-shadow: 0 0 6px rgb(103 194 58 / 40%);
+}
+
+.inline-status.is-warning .inline-status__dot {
+  background: #e6a23c;
+  box-shadow: 0 0 6px rgb(230 162 60 / 40%);
+}
+
+.inline-status.is-danger .inline-status__dot {
+  background: #f56c6c;
+  box-shadow: 0 0 6px rgb(245 108 108 / 40%);
+}
+
+.inline-status__label {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.inline-status__text {
+  font-weight: 600;
+}
+
+.compact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+}
+
+.compact-info__item {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.compact-info__label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.compact-info__value {
+  font-size: 13px;
+  color: var(--el-text-color-primary);
+  line-height: 1.6;
+  word-break: break-word;
 }
 
 .ops-sidebar,
@@ -630,42 +749,18 @@ onUnmounted(() => {
   word-break: break-all;
 }
 
+.node-item__name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .node-item__meta {
   font-size: 12px;
   color: var(--el-text-color-secondary);
   line-height: 1.6;
-}
-
-.kv-table {
-  border-top: 1px solid var(--el-border-color-lighter);
-  border-left: 1px solid var(--el-border-color-lighter);
-}
-
-.kv-row {
-  display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
-}
-
-.kv-row--block {
-  align-items: start;
-}
-
-.kv-key,
-.kv-value {
-  padding: 10px 12px;
-  border-right: 1px solid var(--el-border-color-lighter);
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.kv-key {
-  color: var(--el-text-color-regular);
-}
-
-.kv-value {
-  word-break: break-word;
-  white-space: pre-wrap;
 }
 
 .ops-form-block {
@@ -693,15 +788,6 @@ onUnmounted(() => {
   color: var(--el-text-color-regular);
 }
 
-.rule-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--el-text-color-regular);
-}
-
 .result-meta {
   display: flex;
   flex-wrap: wrap;
@@ -712,26 +798,15 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1280px) {
-  .ops-strip,
   .ops-columns {
     grid-template-columns: 1fr 1fr;
   }
 }
 
 @media (max-width: 1024px) {
-  .ops-layout,
-  .ops-columns,
-  .ops-strip {
+  .tab-layout,
+  .ops-columns {
     grid-template-columns: 1fr;
-  }
-
-  .ops-metric {
-    border-right: 0;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-  }
-
-  .ops-metric:last-child {
-    border-bottom: 0;
   }
 
   .ops-panel--sidebar {
@@ -744,10 +819,6 @@ onUnmounted(() => {
   .ops-panel__head {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .kv-row {
-    grid-template-columns: 1fr;
   }
 }
 </style>
