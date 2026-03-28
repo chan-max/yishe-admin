@@ -231,7 +231,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
 import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
 import { useMessage } from '@/hooks/web/useMessage'
-import { formatPast } from '@/utils/formatTime'
+import { formatDate, formatPast } from '@/utils/formatTime'
 import { useWindowSize } from '@vueuse/core'
 import { commonGridOptions } from '@/common/table'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
@@ -1073,4 +1073,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-

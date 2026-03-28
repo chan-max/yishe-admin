@@ -589,6 +589,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
         children: [
           {
+            path: "message-push",
+            component: () => import("@/views/message-push/index.vue"),
+            name: "MessagePushIndex",
+            meta: {
+              title: "消息推送",
+              requiresAdmin: true,
+            },
+          },
+          {
             path: "user",
             component: () => import("@/views/system/user/index.vue"),
             name: "User",
