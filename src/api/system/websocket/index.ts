@@ -39,6 +39,7 @@ export interface WebsocketClientInfo {
     lastError?: string | null
     debugAvailable?: boolean
     supportedCommands?: string[]
+    details?: Record<string, any>
   }>
   timestamp?: string
   extension?: {

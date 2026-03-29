@@ -279,6 +279,39 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ],
   },
   {
+    path: "/external",
+    component: Layout,
+    name: "ExternalFeature",
+    redirect: "/external/browser-automation",
+    meta: {
+      title: "外部功能",
+      icon: "ep:connection",
+      order: 4,
+      alwaysShow: true,
+      requiresAdmin: true,
+    },
+    children: [
+      {
+        path: "browser-automation",
+        component: () => import("@/views/external/browser-automation/index.vue"),
+        name: "ExternalBrowserAutomation",
+        meta: {
+          title: "浏览器自动化",
+          requiresAdmin: true,
+        },
+      },
+      {
+        path: "ps-automation",
+        component: () => import("@/views/system/ps-console/index.vue"),
+        name: "ExternalPsAutomation",
+        meta: {
+          title: "PS 自动化",
+          requiresAdmin: true,
+        },
+      },
+    ],
+  },
+  {
     path: "/ai",
     component: Layout,
     name: "AiService",
@@ -479,14 +512,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "PublicUser",
         meta: {
           title: "开放用户管理",
-        },
-      },
-      {
-        path: "ps-console",
-        component: () => import("@/views/system/ps-console/index.vue"),
-        name: "SystemPsConsole",
-        meta: {
-          title: "PS 控制台",
         },
       },
       {

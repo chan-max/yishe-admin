@@ -3,7 +3,6 @@
     <div class="ops-header">
       <div>
         <div class="ops-header__title">PS 控制台</div>
-        <div class="ops-header__desc">统一查看本地 PS 与客户端连接状态，并执行基础检测。</div>
       </div>
       <div class="ops-header__actions">
         <div class="inline-status-group">
@@ -30,7 +29,7 @@
             <div class="ops-panel__head">
               <div>
                 <div class="ops-panel__title">本机直连调试通道</div>
-                <div class="ops-panel__sub"><code>localhost:1595</code></div>
+                <div class="ops-panel__sub ops-panel__sub--mono">localhost:1595</div>
               </div>
               <div class="ops-panel__actions">
                 <el-button @click="refreshLocalDebug">健康检测</el-button>
@@ -41,7 +40,10 @@
               <div class="compact-info__item">
                 <span class="compact-info__label">状态</span>
                 <span class="compact-info__value">
-                  <el-tag :type="localDebugServiceStatus.tagType" effect="dark">{{ localDebugServiceStatus.text }}</el-tag>
+                  <span class="status-chip" :class="`is-${localDebugServiceStatus.level}`">
+                    <span class="status-chip__dot" />
+                    <span>{{ localDebugServiceStatus.text }}</span>
+                  </span>
                 </span>
               </div>
               <div class="compact-info__item">
@@ -70,7 +72,6 @@
           <aside class="ops-sidebar">
             <div class="ops-panel ops-panel--sidebar">
               <div class="ops-panel__title">连接节点</div>
-              <div class="ops-panel__sub">当前账号下可用于正式任务的客户端</div>
 
               <el-empty
                 v-if="!loading && psClients.length === 0"
@@ -87,18 +88,19 @@
                   @click="selectedClientId = client.id"
                 >
                   <div class="node-item__name-row">
-                    <div class="node-item__name">{{ client.clientInfo?.machine?.code || client.id }}</div>
-                    <el-tag
-                      v-if="getPsBridgeService(client)"
-                      size="small"
-                      :type="getPsBridgeService(client)?.tagType || 'info'"
-                    >
-                      {{ getPsBridgeService(client)?.text }}
-                    </el-tag>
+                    <div class="node-item__name-wrap">
+                      <span class="status-chip" :class="`is-${resolvePsServiceLevel(getPsBridgeService(client))}`">
+                        <span class="status-chip__dot" />
+                        <span>{{ getPsBridgeService(client)?.text || '未就绪' }}</span>
+                      </span>
+                      <div class="node-item__name">{{ client.clientInfo?.machine?.code || client.id }}</div>
+                    </div>
+                    <div class="node-item__time">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</div>
                   </div>
-                  <div class="node-item__meta">{{ getPsBridgeService(client)?.message || '未上报 Photoshop 服务详情' }}</div>
-                  <div class="node-item__meta">{{ client.clientInfo?.appVersion || '未知版本' }}</div>
-                  <div class="node-item__meta">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</div>
+                  <div class="node-item__meta-row">
+                    <div class="node-item__meta">{{ client.clientInfo?.appVersion || '未知版本' }}</div>
+                    <div class="node-item__meta">{{ client.clientInfo?.machine?.platform || '未知平台' }}</div>
+                  </div>
                 </button>
               </div>
             </div>
@@ -109,7 +111,6 @@
               <div class="ops-panel__head">
               <div>
                   <div class="ops-panel__title">客户端连接状态</div>
-                  <div class="ops-panel__sub">查看节点可用性、服务状态与自动制作运行情况。</div>
                 </div>
                 <div class="ops-panel__actions" v-if="selectedClient">
                   <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
@@ -126,7 +127,10 @@
                   <div class="compact-info__item">
                     <span class="compact-info__label">状态</span>
                     <span class="compact-info__value">
-                      <el-tag :type="bridgeServiceStatus.tagType" effect="dark">{{ bridgeServiceStatus.text }}</el-tag>
+                      <span class="status-chip" :class="`is-${bridgeServiceStatus.level}`">
+                        <span class="status-chip__dot" />
+                        <span>{{ bridgeServiceStatus.text }}</span>
+                      </span>
                     </span>
                   </div>
                   <div class="compact-info__item">
@@ -140,11 +144,11 @@
                     <div class="automation-toolbar__main">
                       <div>
                         <div class="ops-form-block__title">自动制作</div>
-                        <div class="ops-panel__sub">控制客户端套图自动制作开关，并查看当前处理状态。</div>
                       </div>
-                      <el-tag :type="selectedPsAutomationEnabled ? 'success' : 'info'" effect="dark">
-                        {{ selectedPsAutomationEnabled ? '已开启' : '已关闭' }}
-                      </el-tag>
+                      <span class="status-chip" :class="selectedPsAutomationEnabled ? 'is-success' : 'is-info'">
+                        <span class="status-chip__dot" />
+                        <span>{{ selectedPsAutomationEnabled ? '已开启' : '已关闭' }}</span>
+                      </span>
                     </div>
                     <div class="automation-toolbar__actions">
                       <el-button
@@ -170,9 +174,10 @@
                     <div class="compact-info__item">
                       <span class="compact-info__label">运行状态</span>
                       <span class="compact-info__value">
-                        <el-tag :type="selectedPsAutomation?.running ? 'warning' : 'info'" effect="plain">
-                          {{ selectedPsAutomation?.running ? '执行中' : '空闲' }}
-                        </el-tag>
+                        <span class="status-chip" :class="selectedPsAutomation?.running ? 'is-warning' : 'is-info'">
+                          <span class="status-chip__dot" />
+                          <span>{{ selectedPsAutomation?.running ? '执行中' : '空闲' }}</span>
+                        </span>
                       </span>
                     </div>
                     <div class="compact-info__item">
@@ -291,6 +296,13 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
 const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
 const selectedPsAutomation = computed(() => selectedClient.value?.clientInfo?.psAutomation || null)
 const selectedPsAutomationEnabled = computed(() => !!selectedPsAutomation.value?.enabled)
+const resolvePsServiceLevel = (service: ReturnType<typeof getPsBridgeService> | null) => {
+  if (!service) return 'info'
+  if (service.available) return 'success'
+  if (service.connected) return 'warning'
+  if (service.status === 'error') return 'danger'
+  return 'info'
+}
 
 const formatDateSafe = (value?: string) => {
   if (!value) return '-'
@@ -471,7 +483,7 @@ onUnmounted(() => {
 .ps-console {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .ops-header {
@@ -482,14 +494,8 @@ onUnmounted(() => {
 }
 
 .ops-header__title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
-}
-
-.ops-header__desc {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
 }
 
 .ops-header__actions {
@@ -499,7 +505,7 @@ onUnmounted(() => {
 }
 
 .ops-tabs :deep(.el-tabs__header) {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 
 .ops-tabs :deep(.el-tabs__nav-wrap::after) {
@@ -515,8 +521,8 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   min-width: 128px;
-  height: 40px;
-  padding: 0 18px;
+  height: 34px;
+  padding: 0 14px;
   text-align: center;
   color: var(--el-text-color-secondary);
   background: transparent;
@@ -535,7 +541,7 @@ onUnmounted(() => {
 .tab-layout {
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
-  gap: 12px;
+  gap: 10px;
   align-items: start;
 }
 
@@ -547,19 +553,23 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .inline-status {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 10px;
+  height: 26px;
+  padding: 0 8px;
   border: 1px solid var(--el-border-color);
   border-radius: 999px;
   background: var(--el-bg-color);
-  font-size: 12px;
+  font-size: 11px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .inline-status.is-success {
@@ -586,33 +596,41 @@ onUnmounted(() => {
 
 .inline-status.is-success .inline-status__dot {
   background: #67c23a;
-  box-shadow: 0 0 6px rgb(103 194 58 / 40%);
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 34%);
+  animation: status-breath-success 1.8s infinite ease-in-out;
 }
 
 .inline-status.is-warning .inline-status__dot {
   background: #e6a23c;
-  box-shadow: 0 0 6px rgb(230 162 60 / 40%);
+  box-shadow: 0 0 0 0 rgb(230 162 60 / 34%);
+  animation: status-breath-warning 1.8s infinite ease-in-out;
 }
 
 .inline-status.is-danger .inline-status__dot {
   background: #f56c6c;
-  box-shadow: 0 0 6px rgb(245 108 108 / 40%);
+  box-shadow: 0 0 0 0 rgb(245 108 108 / 34%);
+  animation: status-breath-danger 1.8s infinite ease-in-out;
 }
 
 .inline-status__label {
   font-weight: 600;
   color: var(--el-text-color-primary);
+  flex-shrink: 0;
 }
 
 .inline-status__text {
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .compact-info {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 10px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-fill-color-light);
@@ -625,8 +643,8 @@ onUnmounted(() => {
 
 .compact-info__item {
   display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
   align-items: start;
 }
 
@@ -635,14 +653,14 @@ onUnmounted(() => {
 }
 
 .compact-info__label {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--el-text-color-secondary);
 }
 
 .compact-info__value {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-text-color-primary);
-  line-height: 1.6;
+  line-height: 1.45;
   word-break: break-word;
 }
 
@@ -662,28 +680,32 @@ onUnmounted(() => {
 
 .ops-panel,
 .ops-panel--sidebar {
-  padding: 14px;
+  padding: 10px;
 }
 
 .ops-panel__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 12px;
+  gap: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .ops-panel__title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .ops-panel__sub {
-  margin-top: 4px;
-  font-size: 12px;
+  margin-top: 2px;
+  font-size: 11px;
   color: var(--el-text-color-secondary);
+}
+
+.ops-panel__sub--mono {
+  font-family: Monaco, Menlo, Consolas, monospace;
 }
 
 .ops-panel__actions {
@@ -696,9 +718,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-  padding: 12px 14px;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-fill-color-light);
@@ -733,27 +755,35 @@ onUnmounted(() => {
 .node-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .node-item {
   text-align: left;
   border: 1px solid var(--el-border-color);
-  padding: 10px 12px;
+  padding: 8px 10px;
   cursor: pointer;
+  border-radius: 10px;
 }
 
 .node-item.is-active {
-  outline: 1px solid var(--el-border-color-dark);
-  outline-offset: 0;
+  border-color: var(--el-color-primary);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
 }
 
 .node-item__name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 6px;
   word-break: break-all;
+}
+
+.node-item__name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
 }
 
 .node-item__name-row {
@@ -764,20 +794,119 @@ onUnmounted(() => {
   margin-bottom: 6px;
 }
 
-.node-item__meta {
-  font-size: 12px;
+.node-item__time {
+  font-size: 11px;
   color: var(--el-text-color-secondary);
-  line-height: 1.6;
+  flex-shrink: 0;
+}
+
+.node-item__name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-item__meta-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.node-item__meta {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
 }
 
 .ops-form-block {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .ops-form-block__title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.status-chip > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #909399;
+}
+
+.status-chip.is-success {
+  color: #67c23a;
+}
+
+.status-chip.is-warning {
+  color: #e6a23c;
+}
+
+.status-chip.is-danger {
+  color: #f56c6c;
+}
+
+.status-chip.is-info {
+  color: #909399;
+}
+
+.status-chip.is-success .status-chip__dot {
+  background: #67c23a;
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 34%);
+  animation: status-breath-success 1.8s infinite ease-in-out;
+}
+
+.status-chip.is-warning .status-chip__dot {
+  background: #e6a23c;
+  box-shadow: 0 0 0 0 rgb(230 162 60 / 34%);
+  animation: status-breath-warning 1.8s infinite ease-in-out;
+}
+
+.status-chip.is-danger .status-chip__dot {
+  background: #f56c6c;
+  box-shadow: 0 0 0 0 rgb(245 108 108 / 34%);
+  animation: status-breath-danger 1.8s infinite ease-in-out;
+}
+
+@keyframes status-breath-success {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(103 194 58 / 16%); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgb(103 194 58 / 0%); transform: scale(1.04); }
+}
+
+@keyframes status-breath-warning {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(230 162 60 / 16%); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgb(230 162 60 / 0%); transform: scale(1.04); }
+}
+
+@keyframes status-breath-danger {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(245 108 108 / 16%); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgb(245 108 108 / 0%); transform: scale(1.04); }
 }
 
 @media (max-width: 1280px) {
