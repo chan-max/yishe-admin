@@ -103,6 +103,29 @@ export interface PsAutomationStatusEvent {
   updatedAt?: string | null
 }
 
+export interface GlobalNotificationEvent {
+  id: string
+  title: string
+  message: string
+  level: 'info' | 'success' | 'warning' | 'error'
+  category: 'system' | 'task' | 'sync' | 'client' | 'queue' | 'message' | 'custom'
+  source: string
+  sticky: boolean
+  durationMs?: number | null
+  progress?: number | null
+  status?: 'pending' | 'running' | 'success' | 'warning' | 'error' | 'done'
+  actions?: Array<{
+    key: string
+    label: string
+    type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+    route?: string
+    url?: string
+  }>
+  metadata?: Record<string, any>
+  createdAt?: string
+  updatedAt?: string
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: 'idle',
@@ -150,6 +173,7 @@ export type WebsocketEvents = {
   serviceRuntime: ServiceRuntimeEvent
   serviceCommandResult: ServiceCommandResultEvent
   psAutomationStatus: PsAutomationStatusEvent
+  globalNotification: GlobalNotificationEvent
 }
 
 const emitter = mitt<WebsocketEvents>()
@@ -348,6 +372,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on('ps-automation-status', (data: PsAutomationStatusEvent) => {
     emitter.emit('psAutomationStatus', data)
+  })
+
+  currentSocket.on('global-notification', (data: GlobalNotificationEvent) => {
+    emitter.emit('globalNotification', data)
   })
 }
 

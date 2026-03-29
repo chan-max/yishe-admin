@@ -6,6 +6,8 @@ import { Screenfull } from '@/layout/components/Screenfull'
 import { Breadcrumb } from '@/layout/components/Breadcrumb'
 import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
 import ClientStatus from '@/layout/components/ClientStatus.vue'
+import GlobalNotificationCenter from '@/layout/components/GlobalNotificationCenter.vue'
+import GlobalNotificationToastStack from '@/layout/components/GlobalNotificationToastStack.vue'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 
@@ -42,6 +44,8 @@ export default defineComponent({
         </div>
 
         <div class="flex h-full items-center gap-2px md:gap-6px">
+          <GlobalNotificationToastStack />
+          <GlobalNotificationCenter />
           <div class="client-status-wrapper">
             <ClientStatus />
           </div>

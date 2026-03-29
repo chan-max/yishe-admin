@@ -641,18 +641,18 @@ async function confirmBatchImport() {
       uploaderId: String(userStore.user.id),
     });
 
-    if (result.success.length > 0) {
-      ElNotification.success(`成功入库 ${result.success.length} 个素材`);
-    }
-    if (result.failed.length > 0) {
-      ElNotification.warning(`入库失败 ${result.failed.length} 个素材`);
-    }
+    ElNotification.success({
+      title: "已提交入库任务",
+      message: result.message || `已提交 ${importIds.value.length} 个素材，正在后台入库`,
+      duration: 3200,
+    });
+
     // 关闭对话框
     importConfirmDialogVisible.value = false;
     // 清空选择
     clearSelection();
     importIds.value = [];
-    // 刷新列表（入库成功后立即刷新）
+    // 刷新一次列表，让用户尽快看到最新状态；最终结果走全局通知
     getList();
   } catch (error) {
     ElNotification.error("入库失败：" + error.message);

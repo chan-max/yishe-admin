@@ -236,3 +236,23 @@ export const togglePsAutomation = (clientId: string, enabled?: boolean) => {
     data: typeof enabled === 'boolean' ? { enabled } : undefined
   })
 }
+
+export interface SendGlobalNotificationDTO {
+  title: string
+  message: string
+  level?: 'info' | 'success' | 'warning' | 'error'
+  category?: 'system' | 'task' | 'sync' | 'client' | 'queue' | 'message' | 'custom'
+  source?: string
+  sticky?: boolean
+  durationMs?: number | null
+  progress?: number | null
+  status?: 'pending' | 'running' | 'success' | 'warning' | 'error' | 'done'
+  metadata?: Record<string, any>
+}
+
+export const sendGlobalNotification = (data: SendGlobalNotificationDTO) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: '/websocket/notifications/send',
+    data
+  })
+}

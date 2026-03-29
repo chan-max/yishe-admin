@@ -25,6 +25,14 @@ export interface CrawlerMaterialVO {
   isOwnResource?: boolean
 }
 
+export interface CrawlerMaterialImportTaskResponse {
+  accepted: boolean
+  taskId: string
+  total: number
+  message: string
+  status: 'pending' | 'running'
+}
+
 // 爬图素材 API
 export const CrawlerMaterialApi = {
   // 分页获取爬图素材
@@ -49,6 +57,6 @@ export const CrawlerMaterialApi = {
 
   // 批量入库到贴纸
   batchImportToSticker: async (data: { ids: string[], uploaderId?: string }) => {
-    return await request.post({ url: `/crawler/material/import-to-sticker`, data })
+    return await request.post<CrawlerMaterialImportTaskResponse>({ url: `/crawler/material/import-to-sticker`, data })
   }
-} 
+}
