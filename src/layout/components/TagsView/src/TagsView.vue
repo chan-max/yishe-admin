@@ -259,7 +259,7 @@ watch(
   <div
     :id="prefixCls"
     :class="prefixCls"
-    class="relative w-full flex border-b border-[var(--tags-view-border-color)] bg-[var(--top-header-bg-color)]"
+    class="relative w-full flex border-b border-[color:color-mix(in_srgb,var(--tags-view-border-color)_32%,transparent_68%)] bg-[var(--top-header-bg-color)]"
   >
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool ${prefixCls}__tool--first`"
@@ -496,7 +496,7 @@ $prefix-cls: #{$namespace}-tags-view;
       left: 0;
       width: 100%;
       height: 100%;
-      border-left: 1px solid var(--tags-view-border-color);
+      border-left: 1px solid color-mix(in srgb, var(--tags-view-border-color) 42%, transparent 58%);
       content: '';
     }
 
@@ -512,7 +512,7 @@ $prefix-cls: #{$namespace}-tags-view;
         left: 0;
         width: 100%;
         height: 100%;
-        border-right: 1px solid var(--tags-view-border-color);
+        border-right: 1px solid color-mix(in srgb, var(--tags-view-border-color) 42%, transparent 58%);
         border-left: none;
         content: '';
       }
@@ -601,12 +601,12 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item.is-active .#{$prefix-cls}__item--title::after {
     position: absolute;
-    bottom: -11px;
+    bottom: -10px;
     left: 50%;
-    width: 30px;
-    height: 3px;
+    width: 24px;
+    height: 2px;
     border-radius: 999px;
-    background: var(--el-color-primary);
+    background: color-mix(in srgb, var(--el-color-primary) 68%, transparent 32%);
     content: '';
     transform: translateX(-50%);
   }

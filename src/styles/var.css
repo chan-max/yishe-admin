@@ -42,17 +42,17 @@ html.light {
   --top-header-breadcrumb-active-color: rgba(22, 32, 51, 0.92);
 
   --tags-view-height: 35px;
-  --tags-view-border-color: rgba(116, 134, 160, 0.18);
+  --tags-view-border-color: rgba(116, 134, 160, 0.1);
   --tags-view-tool-color: rgba(36, 48, 65, 0.46);
   --tags-view-tool-hover-color: rgba(36, 48, 65, 0.8);
   --tags-view-tool-hover-bg: rgba(45, 107, 255, 0.05);
   --tags-view-item-bg: rgba(255, 255, 255, 0.72);
-  --tags-view-item-border-color: rgba(148, 163, 184, 0.18);
+  --tags-view-item-border-color: rgba(148, 163, 184, 0.1);
   --tags-view-item-color: #5b677b;
   --tags-view-item-hover-bg: #ffffff;
   --tags-view-item-hover-color: #243041;
   --tags-view-item-active-bg: transparent;
-  --tags-view-item-active-border-color: rgba(45, 107, 255, 0.34);
+  --tags-view-item-active-border-color: rgba(45, 107, 255, 0.18);
   --tags-view-item-active-color: #1d4ed8;
   --tags-view-item-shadow: none;
 
@@ -131,17 +131,17 @@ html.dark {
   --top-header-breadcrumb-muted-color: rgba(255, 255, 255, 0.24);
   --top-header-breadcrumb-active-color: rgba(255, 255, 255, 0.88);
 
-  --tags-view-border-color: rgba(255, 255, 255, 0.08);
+  --tags-view-border-color: rgba(255, 255, 255, 0.04);
   --tags-view-tool-color: rgba(255, 255, 255, 0.44);
   --tags-view-tool-hover-color: rgba(255, 255, 255, 0.7);
   --tags-view-tool-hover-bg: rgba(255, 255, 255, 0.01);
   --tags-view-item-bg: rgba(255, 255, 255, 0.02);
-  --tags-view-item-border-color: rgba(255, 255, 255, 0.04);
+  --tags-view-item-border-color: rgba(255, 255, 255, 0.025);
   --tags-view-item-color: rgba(255, 255, 255, 0.6);
   --tags-view-item-hover-bg: rgba(255, 255, 255, 0.04);
   --tags-view-item-hover-color: rgba(255, 255, 255, 0.92);
   --tags-view-item-active-bg: transparent;
-  --tags-view-item-active-border-color: rgba(125, 176, 255, 0.28);
+  --tags-view-item-active-border-color: rgba(125, 176, 255, 0.14);
   --tags-view-item-active-color: #d6e6ff;
   --tags-view-item-shadow: none;
 
