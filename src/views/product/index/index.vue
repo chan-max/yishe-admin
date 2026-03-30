@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="product-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
@@ -117,7 +117,7 @@
                     </el-icon>
                     <span>编辑</span>
                   </el-dropdown-item>
-                  <el-dropdown-item v-if="userStore.user?.isAdmin" command="delete">
+                  <el-dropdown-item v-if="userStore.user?.isAdmin" command="delete" class="operation-menu-item--danger">
                     <el-icon>
                       <Delete />
                     </el-icon>

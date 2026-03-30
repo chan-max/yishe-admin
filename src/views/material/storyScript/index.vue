@@ -131,7 +131,7 @@
                             <el-icon><View /></el-icon>
                             <span>查看详情</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="delete" divided>
+                          <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                             <el-icon><Delete /></el-icon>
                             <span>删除</span>
                           </el-dropdown-item>

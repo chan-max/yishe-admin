@@ -105,7 +105,7 @@
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="download">下载</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>

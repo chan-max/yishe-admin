@@ -163,7 +163,7 @@
                 </el-dropdown-item>
                 <el-dropdown-item :command="'updateData'">更新数据</el-dropdown-item>
                 <el-dropdown-item :command="'editStatus'">标记状态</el-dropdown-item>
-                <el-dropdown-item v-if="userStore.user?.isAdmin" :command="'delete'" divided>
+                <el-dropdown-item v-if="userStore.user?.isAdmin" :command="'delete'" divided class="operation-menu-item--danger">
                   删除
                 </el-dropdown-item>
               </el-dropdown-menu>

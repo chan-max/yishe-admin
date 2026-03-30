@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <div class="pb-4 flex flex-wrap justify-start gap-4 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
@@ -40,7 +40,7 @@
                   <el-icon><MagicStick /></el-icon>
                   <span>AI生成内容</span>
                 </el-dropdown-item>
-                <el-dropdown-item command="delete" divided>
+                <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                   <el-icon><Delete /></el-icon>
                   <span>删除</span>
                 </el-dropdown-item>

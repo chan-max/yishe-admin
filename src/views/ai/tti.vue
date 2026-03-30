@@ -114,7 +114,7 @@
               <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
-                  <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                  <el-dropdown-item divided @click="handleDelete(row)" class="operation-menu-item--danger">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>

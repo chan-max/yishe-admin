@@ -2,7 +2,7 @@
 import { formatTimestamp } from "@/common/date";
 
 export const TABLE_TIME_COLUMN_WIDTH = 168;
-export const TABLE_OPERATION_COLUMN_WIDTH = 80;
+export const TABLE_OPERATION_COLUMN_WIDTH = 96;
 
 export const formatTableDateTime = (value: unknown) => {
   if (!value) return "-";

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="crawler-material-page">
       <template #filter>
@@ -162,8 +162,7 @@
                         v-if="isAdmin"
                         command="delete"
                         divided
-                        class="text-red-500"
-                      >
+                        class="operation-menu-item--danger">
                         <el-icon><Delete /></el-icon>
                         <span>删除</span>
                       </el-dropdown-item>
@@ -428,7 +427,7 @@ const gridOptions = computed(() => {
     },
   ]
 
-  const operationColumn = buildOperationColumn("operationDefaultSlot", 80)
+  const operationColumn = buildOperationColumn("operationDefaultSlot")
 
   return {
     ...commonGridOptions,

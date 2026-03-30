@@ -88,7 +88,7 @@
                   <el-dropdown-item command="records">
                     <span>记录</span>
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>
+                  <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                     <span>删除</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
@@ -377,7 +377,7 @@
                     <el-dropdown-item command="detail">
                       <span>详情</span>
                     </el-dropdown-item>
-                    <el-dropdown-item command="delete" divided>
+                    <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                       <span>删除</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>

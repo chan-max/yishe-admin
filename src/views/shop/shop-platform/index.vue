@@ -39,7 +39,7 @@
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                          <el-dropdown-item divided @click="handleDelete(row)">删除</el-dropdown-item>
+                          <el-dropdown-item divided @click="handleDelete(row)" class="operation-menu-item--danger">删除</el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -107,7 +107,7 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
-    buildOperationColumn("operationDefaultSlot", 132, {
+    buildOperationColumn("operationDefaultSlot", undefined, {
       showOverflow: false,
     }),
   ],

@@ -1017,23 +1017,25 @@ html.dark {
 
 /* Element Plus Dropdown 统一样式 */
 .operation-menu-compact {
-  min-width: 132px !important;
-  padding: 3px 0 !important;
+  min-width: 148px !important;
+  padding: 4px 0 !important;
   border: 1px solid var(--list-page-panel-border) !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   background: var(--list-page-surface-bg) !important;
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28) !important;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.18) !important;
 }
 
 .operation-menu-compact :deep(.el-dropdown-menu__item) {
-  padding: 7px 14px !important;
+  margin: 0 6px !important;
+  padding: 8px 12px !important;
   font-size: 12px !important;
   line-height: 1.45 !important;
   height: auto !important;
-  min-height: 30px !important;
+  min-height: 32px !important;
   display: flex;
   align-items: center;
   gap: 7px;
+  border-radius: 8px;
   color: var(--el-text-color-regular);
 }
 
@@ -1054,6 +1056,26 @@ html.dark {
   margin-top: 4px !important;
   border-top: 1px solid var(--el-border-color-lighter) !important;
   padding-top: 8px !important;
+}
+
+.operation-menu-compact :deep(.el-dropdown-menu__item.operation-menu-item--danger),
+.operation-menu-compact :deep(.el-dropdown-menu__item.dropdown-item-danger),
+.operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger),
+.operation-dropdown :deep(.el-dropdown-menu__item.dropdown-item-danger) {
+  color: var(--el-color-danger) !important;
+}
+
+.operation-menu-compact :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
+.operation-menu-compact :deep(.el-dropdown-menu__item.dropdown-item-danger:hover),
+.operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
+.operation-dropdown :deep(.el-dropdown-menu__item.dropdown-item-danger:hover) {
+  background: var(--el-color-danger-light-9) !important;
+  color: var(--el-color-danger) !important;
+}
+
+.operation-menu-compact :deep(.el-dropdown-menu__item.operation-menu-item--danger.is-disabled),
+.operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger.is-disabled) {
+  color: var(--el-text-color-placeholder) !important;
 }
 
 /* 操作dropdown统一样式（用于直接嵌套在operation-dropdown中的菜单项） */
@@ -1078,6 +1100,16 @@ html.dark {
   font-weight: 500;
   line-height: 1;
   color: var(--el-color-primary) !important;
+}
+
+.operation-trigger-button:hover,
+.operation-dropdown .el-button.operation-trigger-button:hover {
+  color: var(--el-color-primary) !important;
+}
+
+.operation-trigger-button:focus-visible,
+.operation-dropdown .el-button.operation-trigger-button:focus-visible {
+  outline: none;
 }
 
 .operation-trigger-button .el-icon {

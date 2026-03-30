@@ -88,11 +88,11 @@
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="resetPassword">
+                          <el-dropdown-item command="resetPassword" class="operation-menu-item--danger">
                             <span>重置密码</span>
                           </el-dropdown-item>
                           <template v-if="userStore.user?.isAdmin">
-                            <el-dropdown-item command="delete" divided>
+                            <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                               <span>删除</span>
                             </el-dropdown-item>
                           </template>

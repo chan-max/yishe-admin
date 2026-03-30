@@ -72,7 +72,7 @@
                       <el-dropdown-item command="preview">预览字幕</el-dropdown-item>
                       <el-dropdown-item command="metadata">查看字幕元数据</el-dropdown-item>
                       <el-dropdown-item command="copyParams">复制参数</el-dropdown-item>
-                      <el-dropdown-item command="delete">删除</el-dropdown-item>
+                      <el-dropdown-item command="delete" class="operation-menu-item--danger">删除</el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>

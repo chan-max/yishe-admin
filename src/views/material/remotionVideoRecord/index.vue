@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="remotion-record-page">
       <template #filter>
@@ -137,7 +137,7 @@
                   <el-dropdown-menu class="operation-menu-compact">
                     <el-dropdown-item command="detail">查看详情</el-dropdown-item>
                     <!-- 再次生成已移除 -->
-                    <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                    <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="psd-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
@@ -792,7 +792,7 @@ const gridOptions = ref<VxeGridProps<any>>({
         return formatTimestamp(e.cellValue);
       },
     },
-    buildOperationColumn("operationDefaultSlot", 132, {
+    buildOperationColumn("operationDefaultSlot", undefined, {
       showOverflow: false,
     }),
   ],

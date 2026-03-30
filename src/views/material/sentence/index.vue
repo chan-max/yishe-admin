@@ -101,7 +101,7 @@
                       <span>下架</span>
                     </el-dropdown-item>
                   </template>
-                  <el-dropdown-item v-if="isAdmin" command="delete" divided>
+                  <el-dropdown-item v-if="isAdmin" command="delete" divided class="operation-menu-item--danger">
                     <el-icon><Delete /></el-icon>
                     <span>删除</span>
                   </el-dropdown-item>

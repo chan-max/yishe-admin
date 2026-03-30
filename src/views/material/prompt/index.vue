@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="prompt-page">
       <template #filter>
@@ -62,7 +62,7 @@
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
                     <el-dropdown-item v-if="isAdmin" command="edit">编辑</el-dropdown-item>
-                    <el-dropdown-item v-if="isAdmin" command="delete" divided>删除</el-dropdown-item>
+                    <el-dropdown-item v-if="isAdmin" command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>

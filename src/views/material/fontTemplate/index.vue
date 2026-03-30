@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="font-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
       <template #filter>
@@ -172,7 +172,7 @@
                         </el-icon>
                         <span>AI生成内容</span>
                       </el-dropdown-item>
-                      <el-dropdown-item v-if="isAdmin" command="delete" divided>
+                      <el-dropdown-item v-if="isAdmin" command="delete" divided class="operation-menu-item--danger">
                         <el-icon>
                           <Delete />
                         </el-icon>

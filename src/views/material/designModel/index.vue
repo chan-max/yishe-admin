@@ -122,7 +122,7 @@
                     </el-icon>
                     <span>标记为已归档</span>
                   </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided :disabled="deleteLoading[row.id]">
+                  <el-dropdown-item command="delete" divided :disabled="deleteLoading[row.id]" class="operation-menu-item--danger">
                     <el-icon>
                       <Delete />
                     </el-icon>

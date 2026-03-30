@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ContentWrap :plain="true">
     <ListPageLayout class="code-script-schedule-page">
       <template #filter>
@@ -142,7 +142,7 @@
                         }}</el-dropdown-item>
                         <el-dropdown-item command="records">执行记录</el-dropdown-item>
                         <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                        <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                        <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
                   </el-dropdown>
@@ -350,7 +350,7 @@
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item command="detail">详情</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>

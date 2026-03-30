@@ -332,7 +332,7 @@ const gridOptions = ref({
     { title: "套图模板", field: "psdTemplateName", minWidth: 100, showOverflow: true },
     { title: "标题模板", field: "titleTemplateName", minWidth: 100, showOverflow: true },
     { title: "发布模板名称", field: "publishTemplateName", minWidth: 100, showOverflow: true },
-    buildOperationColumn("operationDefaultSlot", 132, {
+    buildOperationColumn("operationDefaultSlot", undefined, {
       showOverflow: false,
     }),
   ],

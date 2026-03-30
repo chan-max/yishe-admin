@@ -62,7 +62,7 @@
                             <span>编辑</span>
                           </el-dropdown-item>
                           <template v-if="userStore.user?.isAdmin">
-                            <el-dropdown-item command="delete" divided>
+                            <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                               <span>删除</span>
                             </el-dropdown-item>
                           </template>
