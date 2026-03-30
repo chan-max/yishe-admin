@@ -29,8 +29,8 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-              <el-button size="small" :icon="Refresh" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
+              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
               <el-button
                 size="small"
                 v-admin-only

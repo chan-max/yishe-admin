@@ -29,6 +29,7 @@ import { getVendorList, type Vendor } from '@/api/vendor'
 
 const userStore = useUserStore()
 const loading = ref(false)
+const deleteLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const selectedIds = ref<(string | number)[]>([])
@@ -127,17 +128,17 @@ const handleBatchDelete = () => {
     type: 'warning'
   }).then(async () => {
     try {
-      loading.value = true
+      deleteLoading.value = true
       // 并发删除所有选中的配置
       await Promise.all(selectedIds.value.map(id => deletePublishConfigApi(String(id))))
       ElMessage.success(`成功删除 ${selectedIds.value.length} 个配置`)
       selectedIds.value = []
-      getList()
+      await getList()
     } catch (err) {
       console.error(err)
       ElMessage.error('批量删除失败')
     } finally {
-      loading.value = false
+      deleteLoading.value = false
     }
   })
 }
@@ -397,11 +398,14 @@ const handleDelete = (row: any) => {
     type: 'warning'
   }).then(async () => {
     try {
+      deleteLoading.value = true
       await deletePublishConfigApi(row.id)
       ElMessage.success('删除成功')
-      getList()
+      await getList()
     } catch (err) {
       console.error(err)
+    } finally {
+      deleteLoading.value = false
     }
   })
 }
@@ -418,17 +422,18 @@ onMounted(() => {
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-search-form__actions">
-            <el-button size="small" type="primary" @click="handleSearch">刷新</el-button>
+            <el-button size="small" type="primary" :loading="loading" @click="handleSearch">刷新</el-button>
             <el-button
               v-if="userStore.user?.isAdmin"
               size="small"
               type="danger"
+              :loading="deleteLoading"
               :disabled="selectedIds.length === 0"
               @click="handleBatchDelete"
             >
               批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
             </el-button>
-            <el-button size="small" type="primary" @click="handleAdd">新增配置</el-button>
+            <el-button size="small" type="primary" :disabled="loading || deleteLoading" @click="handleAdd">新增配置</el-button>
           </div>
         </div>
       </template>

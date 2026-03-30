@@ -17,11 +17,11 @@
         <form-item label="只看母版">
           <el-switch v-model="queryParams.isTemplate" :active-value="true" :inactive-value="false" @change="getList" />
         </form-item>
-        <el-button type="primary" @click="getList" :icon="Search"> 搜索 </el-button>
+        <el-button type="primary" @click="getList" :icon="Search" :loading="loading"> 搜索 </el-button>
       </div>
       <div class="shrink-0">
         <!-- 删除按钮 -->
-        <el-button type="danger" :icon="Delete" @click="handleDelete(null)" :disabled="!ids.length">
+        <el-button type="danger" :icon="Delete" :loading="batchDeleteLoading" @click="handleDelete(null)" :disabled="!ids.length">
           批量删除({{ ids.length }})
         </el-button>
       </div>
@@ -596,6 +596,7 @@ const templateLoading = ref({})
 const publicLoading = ref({})
 const aiGenerateLoading = ref({})
 const deleteLoading = ref({})
+const batchDeleteLoading = computed(() => Object.values(deleteLoading.value || {}).some(Boolean))
 const copyInfoDialogVisible = ref(false)
 const currentCopyModel = ref(null)
 const copyAllLoading = ref(false)
@@ -777,6 +778,9 @@ function handleDelete(row?) {
     return ElMessage.warning('请选择要删除的数据')
   } else {
     delIds = [...ids.value]
+    delIds.forEach((id) => {
+      deleteLoading.value[id] = true
+    })
   }
 
   ElMessageBox.confirm(`确认删除选中的${delIds.length}条数据吗`, '删除提示', {
@@ -793,15 +797,15 @@ function handleDelete(row?) {
       } catch (error) {
         ElMessage.error('删除失败')
       } finally {
-        if (row) {
-          deleteLoading.value[row.id] = false
-        }
+        delIds.forEach((id) => {
+          deleteLoading.value[id] = false
+        })
       }
     })
     .catch(() => {
-      if (row) {
-        deleteLoading.value[row.id] = false
-      }
+      delIds.forEach((id) => {
+        deleteLoading.value[id] = false
+      })
     })
 }
 

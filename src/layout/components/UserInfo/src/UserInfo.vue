@@ -226,13 +226,13 @@ const toDocument = () => {
   right: -2px;
   width: 16px;
   height: 16px;
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  border: 2px solid #ffffff;
+  background: #f6c453;
+  border: 2px solid var(--app-content-surface-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.4);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.24);
   z-index: 10;
   animation: adminPulse 2s ease-in-out infinite;
 }
@@ -250,13 +250,13 @@ const toDocument = () => {
   right: -2px;
   width: 16px;
   height: 16px;
-  background: linear-gradient(135deg, #10b981, #34d399);
-  border: 2px solid #ffffff;
+  background: #34c784;
+  border: 2px solid var(--app-content-surface-color);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
   z-index: 10;
 }
 
@@ -301,8 +301,9 @@ const toDocument = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+  padding: 14px;
+  background: var(--app-content-surface-muted-color);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 12px;
   margin-bottom: 4px;
 }
@@ -313,8 +314,8 @@ const toDocument = () => {
 }
 
 .user-main-avatar {
-  border: 3px solid rgba(99, 102, 241, 0.2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid var(--app-content-border-color);
+  box-shadow: none;
 }
 
 .user-badge {
@@ -327,12 +328,12 @@ const toDocument = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border: 2px solid white;
+  box-shadow: none;
+  border: 2px solid var(--app-content-surface-color);
 }
 
 .admin-badge {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: #f59e0b;
 }
 
 .admin-badge .icon {
@@ -358,7 +359,7 @@ const toDocument = () => {
 
 .user-company {
   font-size: 13px;
-  color: rgba(99, 102, 241, 0.8);
+  color: var(--el-text-color-secondary);
   margin-bottom: 6px;
   white-space: nowrap;
   overflow: hidden;
@@ -388,7 +389,7 @@ const toDocument = () => {
 /* 分隔线 */
 .menu-divider {
   height: 1px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--app-content-border-color);
   margin: 4px 0;
 }
 
@@ -404,7 +405,7 @@ const toDocument = () => {
 }
 
 .menu-item:hover {
-  background: rgba(99, 102, 241, 0.08);
+  background: var(--app-content-surface-muted-color);
 }
 
 .menu-item .icon {

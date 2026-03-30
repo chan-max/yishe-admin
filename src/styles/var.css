@@ -30,7 +30,7 @@ html.light {
   --logo-height: 42px;
   --logo-title-text-color: #162033;
 
-  --top-header-bg-color: rgba(255, 255, 255, 0.9);
+  --top-header-bg-color: rgba(255, 255, 255, 0.92);
   --top-header-text-color: #243041;
   --top-header-hover-color: #eef3f9;
   --top-tool-border-color: #d9e1ec;
@@ -60,12 +60,12 @@ html.light {
   --tab-menu-min-width: 30px;
   --tab-menu-collapse-height: 36px;
 
-  --app-content-padding: 20px;
-  --app-content-bg-color: #eef3f8;
+  --app-content-padding: 16px;
+  --app-content-bg-color: #eef2f6;
   --app-content-surface-color: #ffffff;
-  --app-content-surface-muted-color: #f7f9fc;
+  --app-content-surface-muted-color: #f6f8fb;
   --app-content-border-color: rgba(148, 163, 184, 0.22);
-  --app-content-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  --app-content-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
   --app-content-highlight-color: rgba(255, 255, 255, 0.45);
   --app-overlay-color: rgba(15, 23, 42, 0.16);
   --app-scrollbar-thumb-color: rgba(125, 138, 159, 0.46);
@@ -97,35 +97,35 @@ html.light {
 html.dark {
   color-scheme: dark;
 
-  --login-bg-color: #141414;
+  --login-bg-color: #101010;
 
-  --left-menu-bg-color: #141414;
-  --left-menu-bg-light-color: #181818;
-  --left-menu-bg-active-color: #1d1d1d;
+  --left-menu-bg-color: #101010;
+  --left-menu-bg-light-color: #141414;
+  --left-menu-bg-active-color: #181818;
   --left-menu-text-color: #b9c0cc;
   --left-menu-text-active-color: #8cbcff;
-  --left-menu-collapse-bg-active-color: #1d1d1d;
-  --left-menu-border-color: #3a3a3a;
+  --left-menu-collapse-bg-active-color: #181818;
+  --left-menu-border-color: #242424;
   --left-menu-divider-color: rgba(255, 255, 255, 0.08);
-  --left-menu-hover-color: #1a1a1a;
+  --left-menu-hover-color: #171717;
   --left-menu-icon-color: #8e97a7;
   --left-menu-title-color: #f3f4f6;
   --left-menu-arrow-color: #7f8796;
   --left-menu-link-text-color: rgba(255, 255, 255, 0.56);
   --left-menu-link-hover-color: rgba(255, 255, 255, 0.88);
-  --left-menu-link-hover-bg: rgba(255, 255, 255, 0.03);
-  --left-menu-link-active-bg: rgba(125, 176, 255, 0.06);
-  --left-menu-link-active-border-color: #7db0ff;
-  --left-menu-link-active-color: #9fc6ff;
+  --left-menu-link-hover-bg: rgba(255, 255, 255, 0.035);
+  --left-menu-link-active-bg: rgba(140, 188, 255, 0.08);
+  --left-menu-link-active-border-color: #8cbcff;
+  --left-menu-link-active-color: #b7d4ff;
   --left-menu-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 1px 0 0 rgba(255, 255, 255, 0.1),
     10px 0 28px rgba(0, 0, 0, 0.22);
 
   --logo-title-text-color: #f3f4f6;
 
-  --top-header-bg-color: #141414;
+  --top-header-bg-color: rgba(16, 16, 16, 0.94);
   --top-header-text-color: #d8dde6;
-  --top-header-hover-color: #1d1d1d;
-  --top-tool-border-color: #202020;
+  --top-header-hover-color: #181818;
+  --top-tool-border-color: #242424;
   --top-header-shadow: none;
   --top-header-breadcrumb-color: rgba(255, 255, 255, 0.52);
   --top-header-breadcrumb-muted-color: rgba(255, 255, 255, 0.24);
@@ -135,34 +135,34 @@ html.dark {
   --tags-view-tool-color: rgba(255, 255, 255, 0.44);
   --tags-view-tool-hover-color: rgba(255, 255, 255, 0.7);
   --tags-view-tool-hover-bg: rgba(255, 255, 255, 0.01);
-  --tags-view-item-bg: rgba(255, 255, 255, 0.02);
-  --tags-view-item-border-color: rgba(255, 255, 255, 0.025);
+  --tags-view-item-bg: rgba(255, 255, 255, 0.018);
+  --tags-view-item-border-color: rgba(255, 255, 255, 0.03);
   --tags-view-item-color: rgba(255, 255, 255, 0.6);
-  --tags-view-item-hover-bg: rgba(255, 255, 255, 0.04);
+  --tags-view-item-hover-bg: rgba(255, 255, 255, 0.035);
   --tags-view-item-hover-color: rgba(255, 255, 255, 0.92);
   --tags-view-item-active-bg: transparent;
   --tags-view-item-active-border-color: rgba(125, 176, 255, 0.14);
   --tags-view-item-active-color: #d6e6ff;
   --tags-view-item-shadow: none;
 
-  --app-content-bg-color: #141414;
-  --app-content-surface-color: #141922;
-  --app-content-surface-muted-color: #11151d;
+  --app-content-bg-color: #0e0e0f;
+  --app-content-surface-color: #151515;
+  --app-content-surface-muted-color: #1b1b1c;
   --app-content-border-color: rgba(255, 255, 255, 0.08);
-  --app-content-shadow: 0 16px 40px rgba(0, 0, 0, 0.26);
-  --app-content-highlight-color: rgba(255, 255, 255, 0.04);
+  --app-content-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
+  --app-content-highlight-color: rgba(255, 255, 255, 0.03);
   --app-overlay-color: rgba(0, 0, 0, 0.45);
   --app-scrollbar-thumb-color: rgba(143, 154, 173, 0.45);
   --app-scrollbar-thumb-hover-color: rgba(143, 154, 173, 0.7);
-  --folder-tree-node-hover-bg: rgba(255, 255, 255, 0.04);
+  --folder-tree-node-hover-bg: rgba(255, 255, 255, 0.035);
   --folder-tree-node-active-bg: rgba(125, 176, 255, 0.12);
   --folder-tree-node-active-border-color: rgba(125, 176, 255, 0.22);
   --folder-tree-node-active-color: #d6e6ff;
-  --folder-tree-toggle-bg: #171b24;
-  --folder-tree-toggle-hover-bg: #1d2330;
+  --folder-tree-toggle-bg: #1a1a1a;
+  --folder-tree-toggle-hover-bg: #212121;
   --folder-tree-toggle-color: rgba(255, 255, 255, 0.64);
   --folder-tree-toggle-hover-color: #ffffff;
-  --folder-tree-toggle-shadow: 0 10px 24px rgba(0, 0, 0, 0.24);
+  --folder-tree-toggle-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 
   --app-form-label-color: rgba(255, 255, 255, 0.66);
 }

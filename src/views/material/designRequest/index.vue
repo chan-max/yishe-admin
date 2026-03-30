@@ -5,7 +5,7 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-search-form__actions">
             <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-            <el-button size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+            <el-button size="small" type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">
               批量删除
             </el-button>
           </div>
@@ -172,6 +172,7 @@ const dataSource = ref([])
 const loading = ref(false)
 const ids = ref([])
 const total = ref(0)
+const deleteLoading = ref(false)
 const formRef = ref()
 const dialogTitle = ref('')
 const dialogVisible = ref(false)
@@ -284,6 +285,7 @@ function handleDelete(row?) {
   )
     .then(async () => {
       try {
+        deleteLoading.value = true
         for (const id of delIds) {
           await deleteDesignRequest(id)
         }
@@ -292,6 +294,8 @@ function handleDelete(row?) {
       } catch (error) {
         console.error('删除失败:', error)
         ElMessage.error('删除失败')
+      } finally {
+        deleteLoading.value = false
       }
     })
     .catch(() => {})

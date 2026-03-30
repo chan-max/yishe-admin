@@ -6,9 +6,8 @@
           <div class="browser-automation-toolbar__title">浏览器自动化</div>
         </div>
         <div class="browser-automation-toolbar__actions">
-          <el-button size="small" @click="loadClients">刷新节点</el-button>
+          <el-button @click="loadClients">刷新节点</el-button>
           <el-button
-            size="small"
             type="primary"
             :disabled="!selectedClientId"
             :loading="actionLoading.checkStatus"
@@ -97,14 +96,14 @@
             <div class="browser-panel__section">
               <div class="browser-panel__section-title">操作</div>
               <div class="action-row">
-                <el-button type="primary" size="small" :loading="actionLoading.connect" @click="handleConnect">
+                <el-button type="primary" :loading="actionLoading.connect" @click="handleConnect">
                   连接浏览器
                 </el-button>
-                <el-button size="small" :loading="actionLoading.close" @click="handleClose">关闭浏览器</el-button>
-                <el-button size="small" type="danger" plain :loading="actionLoading.forceClose" @click="handleForceClose">
+                <el-button :loading="actionLoading.close" @click="handleClose">关闭浏览器</el-button>
+                <el-button type="danger" plain :loading="actionLoading.forceClose" @click="handleForceClose">
                   强制关闭
                 </el-button>
-                <el-button size="small" :loading="actionLoading.pages" @click="handleFetchPages">获取页面列表</el-button>
+                <el-button :loading="actionLoading.pages" @click="handleFetchPages">获取页面列表</el-button>
               </div>
             </div>
 

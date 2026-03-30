@@ -33,14 +33,14 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">
                 添加句子
               </el-button>
-              <el-button v-if="isAdmin" size="small" type="warning" @click="handleBatchPublish" :disabled="!ids.length">
+              <el-button v-if="isAdmin" size="small" type="warning" :loading="batchActionLoading" @click="handleBatchPublish" :disabled="!ids.length">
                 批量发布({{ ids.length }})
               </el-button>
-              <el-button v-if="isAdmin" size="small" type="info" @click="handleBatchUnpublish" :disabled="!ids.length">
+              <el-button v-if="isAdmin" size="small" type="info" :loading="batchActionLoading" @click="handleBatchUnpublish" :disabled="!ids.length">
                 批量下架({{ ids.length }})
               </el-button>
               <el-button
@@ -48,6 +48,7 @@
                 size="small"
                 type="danger"
                 :icon="Delete"
+                :loading="deleteLoading"
                 @click="handleDelete(null)"
                 :disabled="!ids.length"
               >
@@ -367,6 +368,8 @@ const form = ref({
   isPublish: false,
 });
 const submitLoading = ref(false);
+const deleteLoading = ref(false);
+const batchActionLoading = ref(false);
 const editId = ref<string | null>(null);
 
 // AI分析相关
@@ -464,14 +467,17 @@ function handleDelete(row?) {
   })
     .then(async () => {
       try {
+        deleteLoading.value = true;
         for (const id of delIds) {
           await deleteSentence(id);
         }
         ElMessage.success("删除成功");
-        getList();
+        await getList();
       } catch (error) {
         console.error("删除失败:", error);
         ElMessage.error("删除失败");
+      } finally {
+        deleteLoading.value = false;
       }
     })
     .catch(() => {});
@@ -560,13 +566,16 @@ async function handleBatchPublish() {
   }
 
   try {
+    batchActionLoading.value = true;
     const promises = ids.value.map((id) => updateSentence(id, { isPublish: true }));
     await Promise.all(promises);
     ElMessage.success(`成功发布 ${ids.value.length} 个句子`);
     ids.value = [];
-    getList();
+    await getList();
   } catch (e) {
     ElMessage.error("批量发布失败");
+  } finally {
+    batchActionLoading.value = false;
   }
 }
 
@@ -577,13 +586,16 @@ async function handleBatchUnpublish() {
   }
 
   try {
+    batchActionLoading.value = true;
     const promises = ids.value.map((id) => updateSentence(id, { isPublish: false }));
     await Promise.all(promises);
     ElMessage.success(`成功下架 ${ids.value.length} 个句子`);
     ids.value = [];
-    getList();
+    await getList();
   } catch (e) {
     ElMessage.error("批量下架失败");
+  } finally {
+    batchActionLoading.value = false;
   }
 }
 
@@ -707,10 +719,6 @@ const submitForm = async () => {
     width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box;
-  }
-
-  .common-table {
-    overflow-x: auto;
   }
 
   .sentence-content {

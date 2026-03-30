@@ -8,7 +8,7 @@
               统一维护飞书、企业微信机器人 webhook，并提供开放发送接口。
             </div>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="openDialog()">新增渠道</el-button>
+              <el-button size="small" type="primary" :disabled="loading || deleteLoading" @click="openDialog()">新增渠道</el-button>
             </div>
           </div>
         </div>
@@ -89,6 +89,7 @@ import MessagePushDialog from './components/MessagePushDialog.vue'
 import MessagePushTestDialog from './components/MessagePushTestDialog.vue'
 
 const loading = ref(false)
+const deleteLoading = ref(false)
 const list = ref<MessagePushConfig[]>([])
 const dialogRef = ref()
 const testDialogRef = ref()
@@ -161,10 +162,13 @@ const handleDelete = async (id: number) => {
     await ElMessageBox.confirm('确认删除该推送渠道吗？删除后开放 API 将无法再通过该编码发送。', '提示', {
       type: 'warning'
     })
+    deleteLoading.value = true
     await deleteMessagePush(id)
     ElMessage.success('删除成功')
     await getList()
-  } catch {}
+  } catch {} finally {
+    deleteLoading.value = false
+  }
 }
 
 onMounted(() => {

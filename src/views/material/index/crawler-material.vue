@@ -76,7 +76,7 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button
                 v-if="isAdmin"
                 size="small"
@@ -90,7 +90,7 @@
                 批量入库({{ ids.length }})
               </el-button>
               <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
-              <el-button v-if="isAdmin" size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+              <el-button v-if="isAdmin" size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleDelete(null)">
                 批量删除({{ ids.length }})
               </el-button>
             </div>
@@ -804,9 +804,6 @@ getList();
   }
   .content-container {
     padding: 0 4px !important;
-  }
-  .common-table {
-    overflow-x: auto;
   }
 }
 

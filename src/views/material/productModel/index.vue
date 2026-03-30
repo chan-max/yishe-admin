@@ -449,9 +449,6 @@ function handleOperationCommand(command: string, row: any) {
   .content-container {
     padding: 0 4px !important;
   }
-  .common-table {
-    overflow-x: auto;
-  }
 }
 
 /* 操作dropdown样式 */

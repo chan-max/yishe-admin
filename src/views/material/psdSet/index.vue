@@ -63,7 +63,7 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions psd-set-page__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-dropdown trigger="click" :disabled="!selectedIds.length">
                 <el-button size="small" :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
                   批量改状态 ({{ selectedIds.length }})
@@ -95,7 +95,7 @@
               >
                 生成发布任务 ({{ selectedIds.length }})
               </el-button>
-              <el-button size="small" type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length">
+              <el-button size="small" type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length || loading">
                 批量删除 ({{ selectedIds.length }})
               </el-button>
             </div>

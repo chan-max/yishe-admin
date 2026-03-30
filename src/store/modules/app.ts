@@ -11,19 +11,19 @@ const { wsCache } = useCache()
 
 const DARK_THEME: ThemeTypes = {
   elColorPrimary: '#5b8cff',
-  leftMenuBorderColor: '#202020',
-  leftMenuBgColor: '#141414',
-  leftMenuBgLightColor: '#181818',
-  leftMenuBgActiveColor: '#1d1d1d',
-  leftMenuCollapseBgActiveColor: '#1d1d1d',
+  leftMenuBorderColor: '#242424',
+  leftMenuBgColor: '#101010',
+  leftMenuBgLightColor: '#141414',
+  leftMenuBgActiveColor: '#181818',
+  leftMenuCollapseBgActiveColor: '#181818',
   leftMenuTextColor: '#b9c0cc',
   leftMenuTextActiveColor: '#8cbcff',
   logoTitleTextColor: '#f3f4f6',
   logoBorderColor: 'inherit',
-  topHeaderBgColor: '#141414',
+  topHeaderBgColor: 'rgba(16, 16, 16, 0.94)',
   topHeaderTextColor: '#d8dde6',
-  topHeaderHoverColor: '#1d1d1d',
-  topToolBorderColor: '#202020'
+  topHeaderHoverColor: '#181818',
+  topToolBorderColor: '#242424'
 }
 
 const LIGHT_THEME: ThemeTypes = {
@@ -103,7 +103,7 @@ export const useAppStore = defineStore('app', {
 
       layout: wsCache.get(CACHE_KEY.LAYOUT) || 'classic', // layout布局
       isDark: wsCache.get(CACHE_KEY.IS_DARK) || false, // 是否是暗黑模式
-      currentSize: wsCache.get('default') || 'small', // 组件尺寸
+      currentSize: wsCache.get('currentSize') || 'small', // 组件尺寸
       theme: wsCache.get(CACHE_KEY.THEME) || DARK_THEME
     }
   },

@@ -32,8 +32,8 @@
               >
                 {{ sandboxStatus.message || sandboxStatus.baseUrl }}
               </span>
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button size="small" type="danger" plain :disabled="!ids.length" @click="handleDelete(null)">
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button size="small" type="danger" plain :disabled="!ids.length || loading" @click="handleDelete(null)">
                 批量删除 ({{ ids.length }})
               </el-button>
               <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading">

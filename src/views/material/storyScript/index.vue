@@ -50,13 +50,14 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="handleSearch">
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">
                 搜索
               </el-button>
               <el-button
                 size="small"
                 type="danger"
                 :icon="Delete"
+                :loading="deleteLoading"
                 :disabled="selectedIds.length === 0"
                 @click="handleBatchDelete"
               >
@@ -252,6 +253,7 @@ const currentRow = ref<any>(null);
 const materialMap = ref<Record<string, any>>({});
 const selectedIds = ref<string[]>([]);
 const materialLoadingIds = ref<string[]>([]);
+const deleteLoading = ref(false);
 
 const queryParams = reactive({
   currentPage: 1,
@@ -403,6 +405,7 @@ async function handleDelete(row: any) {
     await ElMessageBox.confirm(`确认删除脚本「${row.title || row.id}」吗？`, "删除确认", {
       type: "warning",
     });
+    deleteLoading.value = true;
     await deleteStickerStoryScript(row.id);
     ElMessage.success("删除成功");
     if (dataSource.value.length === 1 && queryParams.currentPage > 1) {
@@ -413,6 +416,8 @@ async function handleDelete(row: any) {
     if (error !== "cancel") {
       ElMessage.error(error?.message || "删除故事脚本失败");
     }
+  } finally {
+    deleteLoading.value = false;
   }
 }
 
@@ -428,6 +433,7 @@ async function handleBatchDelete() {
       "批量删除",
       { type: "warning" },
     );
+    deleteLoading.value = true;
     await batchDeleteStickerStoryScript(selectedIds.value);
     ElMessage.success("批量删除成功");
     if (dataSource.value.length === selectedIds.value.length && queryParams.currentPage > 1) {
@@ -439,6 +445,8 @@ async function handleBatchDelete() {
     if (error !== "cancel") {
       ElMessage.error(error?.message || "批量删除故事脚本失败");
     }
+  } finally {
+    deleteLoading.value = false;
   }
 }
 
@@ -463,9 +471,9 @@ onMounted(() => {
   height: 84px;
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--app-content-border-color);
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--list-page-surface-bg-soft);
 }
 
 :deep(.story-script-page) {
@@ -505,9 +513,9 @@ onMounted(() => {
   border-radius: inherit;
   background: linear-gradient(
     110deg,
-    rgba(255, 255, 255, 0.08) 25%,
-    rgba(255, 255, 255, 0.16) 37%,
-    rgba(255, 255, 255, 0.08) 63%
+    color-mix(in srgb, var(--app-content-surface-muted-color) 88%, white) 25%,
+    color-mix(in srgb, var(--app-content-surface-muted-color) 72%, white) 37%,
+    color-mix(in srgb, var(--app-content-surface-muted-color) 88%, white) 63%
   );
   background-size: 400% 100%;
   animation: story-material-shimmer 1.4s ease infinite;
@@ -534,7 +542,7 @@ onMounted(() => {
 
 .story-detail-card {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--app-content-border-color);
   border-radius: 12px;
   background: var(--list-page-surface-bg);
   box-shadow: none;
@@ -557,7 +565,7 @@ onMounted(() => {
   height: 180px;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--app-content-border-color);
   background: var(--list-page-surface-bg-soft);
   flex-shrink: 0;
 }

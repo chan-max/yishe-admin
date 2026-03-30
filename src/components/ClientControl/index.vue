@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <span>我的客户端</span>
-          <el-button type="primary" size="small" @click="refreshClients" :loading="loading">
+          <el-button type="primary" @click="refreshClients" :loading="loading">
             <Icon icon="ep:refresh" class="mr-5px" />
             刷新
           </el-button>
@@ -19,7 +19,7 @@
             <div class="client-info">
               <div class="client-title-row">
                 <div class="client-title">{{ getClientTitle(client) }}</div>
-                <el-tag v-if="client.clientSource" size="small" type="info">
+                <el-tag v-if="client.clientSource" type="info">
                   {{ client.clientSource }}
                 </el-tag>
               </div>
@@ -47,7 +47,7 @@
               <el-button text @click="toggleExpand(client.id)">
                 {{ expandedIds.includes(client.id) ? '收起详情' : '查看详情' }}
               </el-button>
-              <el-button type="primary" size="small" @click="handleSendMessage(client)">
+              <el-button type="primary" @click="handleSendMessage(client)">
                 <Icon icon="ep:message" class="mr-4px" />
                 发送消息
               </el-button>

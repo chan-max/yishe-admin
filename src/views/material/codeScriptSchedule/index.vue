@@ -54,7 +54,7 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" class="!ml-0" type="primary" :icon="Search" @click="getList">
+              <el-button size="small" class="!ml-0" type="primary" :icon="Search" :loading="loading" @click="getList">
                 搜索
               </el-button>
               <el-button
@@ -62,7 +62,7 @@
                 class="!ml-0"
                 type="danger"
                 plain
-                :disabled="!ids.length"
+                :disabled="!ids.length || loading"
                 @click="handleDelete()"
               >
                 批量删除 ({{ ids.length }})
@@ -1057,4 +1057,3 @@ onMounted(async () => {
   padding-top: 10px;
 }
 </style>
-

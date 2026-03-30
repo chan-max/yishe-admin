@@ -500,12 +500,12 @@ defineExpose({ open })
 }
 
 .vendor-form__section {
-  padding: 20px 20px 8px;
-  margin-bottom: 18px;
-  background: var(--el-fill-color-blank);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 0.04);
+  padding: 18px 18px 8px;
+  margin-bottom: 16px;
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 .vendor-form__section-title {
@@ -553,10 +553,10 @@ defineExpose({ open })
 }
 
 .vendor-product-card {
-  padding: 18px;
-  border: 1px solid var(--el-border-color-lighter);
+  padding: 16px;
+  border: 1px solid var(--app-content-border-color);
   border-radius: 12px;
-  background: var(--el-bg-color-page);
+  background: var(--app-content-surface-muted-color);
 }
 
 .vendor-product-card__header {
@@ -583,7 +583,8 @@ defineExpose({ open })
 .vendor-product-card__variant {
   padding: 14px 14px 0;
   border-radius: 10px;
-  background: var(--el-fill-color-light);
+  background: var(--app-content-surface-color);
+  border: 1px solid var(--app-content-border-color);
 }
 
 .vendor-product-card__variant-action {

@@ -43,9 +43,9 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions product-page__actions">
-              <el-button size="small" type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
+              <el-button size="small" type="primary" @click="handleSearch" :icon="Search" :loading="loading">搜索</el-button>
               <el-button size="small" type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
-              <el-button v-admin-only size="small" type="danger" :icon="Delete" @click="handleDelete(null)">批量删除</el-button>
+              <el-button v-admin-only size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleDelete(null)">批量删除</el-button>
               <el-button size="small" type="success" :disabled="!selectedRows.length" @click="batchPublish" :icon="Check">批量标记发布</el-button>
               <el-button size="small" type="warning" :disabled="!selectedRows.length" @click="batchUnpublish" :icon="Refresh">批量下架</el-button>
             </div>

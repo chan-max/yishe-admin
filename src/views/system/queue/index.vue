@@ -74,7 +74,7 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增任务</el-button>
               <el-button
                 v-admin-only
@@ -93,7 +93,7 @@
 
       <template #table>
         <div class="queue-page__main">
-          <div class="queue-page__stats">
+          <div class="queue-page__stats queue-stats-grid">
             <div class="queue-stat-card">
               <span class="queue-stat-card__label">待处理</span>
               <span class="queue-stat-card__value queue-stat-card__value--pending">{{ stats.pending }}</span>
@@ -226,8 +226,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -257,8 +257,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="statusDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleStatusSubmit">确定</el-button>
+          <el-button :disabled="statusSubmitLoading" @click="statusDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="statusSubmitLoading" @click="handleStatusSubmit">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -336,8 +336,8 @@
       </div>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="dataUpdateDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleDataUpdateSubmit">确认</el-button>
+          <el-button :disabled="dataUpdateSubmitting" @click="dataUpdateDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="dataUpdateSubmitting" @click="handleDataUpdateSubmit">确认</el-button>
         </div>
       </template>
     </el-dialog>
@@ -499,6 +499,10 @@ const dataSource = ref<QueueMessage[]>([])
 const loading = ref(false)
 const ids = ref<string[]>([])
 const total = ref(0)
+const submitLoading = ref(false)
+const statusSubmitLoading = ref(false)
+const dataUpdateSubmitting = ref(false)
+const deleteLoading = ref(false)
 
 
 // 对话框相关
@@ -923,6 +927,7 @@ async function handleViewRuntimeLogs(row: QueueMessage) {
 
 // 删除任务
 function handleDelete(row?: QueueMessage) {
+  if (deleteLoading.value) return
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning('无权限：仅管理员可执行删除操作')
   }
@@ -942,6 +947,7 @@ function handleDelete(row?: QueueMessage) {
   })
     .then(async () => {
       try {
+        deleteLoading.value = true
         for (const id of delIds) {
           const task = dataSource.value.find(t => t.id === id)
           if (task) {
@@ -949,10 +955,12 @@ function handleDelete(row?: QueueMessage) {
           }
         }
         ElMessage.success('删除成功')
-        getList()
-        refreshStats()
+        await getList()
+        await refreshStats()
       } catch (error) {
         ElMessage.error('删除失败')
+      } finally {
+        deleteLoading.value = false
       }
     })
     .catch(() => { })
@@ -960,7 +968,9 @@ function handleDelete(row?: QueueMessage) {
 
 // 提交表单
 async function handleSubmit() {
+  if (submitLoading.value) return
   try {
+    submitLoading.value = true
     await formRef.value.validate()
 
     // 检查任务类型
@@ -976,8 +986,6 @@ async function handleSubmit() {
       ElMessage.error('任务数据格式错误，请输入有效的JSON')
       return
     }
-
-    loading.value = true
 
     // 只传递任务类型，后端会自动使用 type 作为 queue
     const createRes = await createTask({
@@ -1019,13 +1027,15 @@ async function handleSubmit() {
     console.error('创建任务失败:', error)
     ElMessage.error(error?.message || '创建任务失败')
   } finally {
-    loading.value = false
+    submitLoading.value = false
   }
 }
 
 // 提交状态修改
 async function handleStatusSubmit() {
+  if (statusSubmitLoading.value) return
   try {
+    statusSubmitLoading.value = true
     await statusFormRef.value.validate()
 
     // 如果新状态和当前状态相同，直接返回
@@ -1046,10 +1056,12 @@ async function handleStatusSubmit() {
 
     ElMessage.success('状态修改成功')
     statusDialogVisible.value = false
-    getList()
-    refreshStats()
+    await getList()
+    await refreshStats()
   } catch (error: any) {
     ElMessage.error(error?.message || '操作失败')
+  } finally {
+    statusSubmitLoading.value = false
   }
 }
 
@@ -1094,6 +1106,7 @@ function handleUpdateData(row: QueueMessage) {
 
 // 提交数据更新
 async function handleDataUpdateSubmit() {
+  if (dataUpdateSubmitting.value) return
   let data: any
   try {
     data = JSON.parse(dataUpdateFormData.dataStr)
@@ -1103,7 +1116,7 @@ async function handleDataUpdateSubmit() {
   }
 
   try {
-    loading.value = true
+    dataUpdateSubmitting.value = true
     await updateTaskData(dataUpdateFormData.queue, dataUpdateFormData.messageId, data)
     ElMessage.success('数据已更新')
     dataUpdateDialogVisible.value = false
@@ -1111,7 +1124,7 @@ async function handleDataUpdateSubmit() {
   } catch (error: any) {
     ElMessage.error(error?.message || '更新数据失败')
   } finally {
-    loading.value = false
+    dataUpdateSubmitting.value = false
   }
 }
 
@@ -1216,52 +1229,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.queue-page__stats {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.queue-stat-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 12px;
-  background: var(--app-content-surface-muted-color);
-  box-shadow: var(--app-content-shadow);
-}
-
-.queue-stat-card__label {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.2;
-}
-
-.queue-stat-card__value {
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.1;
-  color: var(--el-text-color-primary);
-}
-
-.queue-stat-card__value--pending {
-  color: #d8b36a;
-}
-
-.queue-stat-card__value--processing {
-  color: #67a4ff;
-}
-
-.queue-stat-card__value--completed {
-  color: #6cc28b;
-}
-
-.queue-stat-card__value--failed {
-  color: #ef6b73;
 }
 
 .data-preview {
@@ -1481,22 +1448,12 @@ onMounted(() => {
 }
 
 @media (max-width: 960px) {
-  .queue-page__stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .queue-json-editor-layout {
     grid-template-columns: 1fr;
   }
 
   .queue-runtime-shell {
     height: calc(100vh - 132px);
-  }
-}
-
-@media (max-width: 640px) {
-  .queue-page__stats {
-    grid-template-columns: 1fr;
   }
 }
 </style>

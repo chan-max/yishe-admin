@@ -13,7 +13,7 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :loading="loading" @click="getList">搜索</el-button>
               <el-button size="small" type="danger" :icon="Delete" :disabled="selectedRows.length === 0"
                 @click="handleBatchDelete">
                 批量删除({{ selectedRows.length }})
@@ -1026,10 +1026,6 @@ onMounted(() => {
 
 .content-container {
   padding: 0;
-}
-
-.common-table {
-  overflow-x: auto;
 }
 
 .search-bar {

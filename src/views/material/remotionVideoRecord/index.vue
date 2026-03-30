@@ -62,8 +62,8 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button size="small" type="danger" :icon="Delete" @click="handleBatchDelete">
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleBatchDelete">
                 批量删除({{ selectedRows.length }})
               </el-button>
               <el-button size="small" @click="checkRemotionHealth" :loading="remotionStatus.loading">
@@ -1205,10 +1205,6 @@ onBeforeUnmount(() => {
     white-space: nowrap;
   }
 
-  .common-table {
-    overflow-x: auto;
-  }
-
   .remotion-create-layout {
     gap: 12px;
   }
@@ -1291,5 +1287,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
-

@@ -19,7 +19,7 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">
                 添加提示词
               </el-button>
@@ -28,6 +28,7 @@
                 size="small"
                 type="danger"
                 :icon="Delete"
+                :loading="deleteLoading"
                 @click="handleDelete(null)"
                 :disabled="!ids.length"
               >
@@ -291,6 +292,7 @@ const form = ref({
   tags: "",
 });
 const submitLoading = ref(false);
+const deleteLoading = ref(false);
 const editId = ref<string | null>(null);
 
 // 格式化日期时间
@@ -385,14 +387,17 @@ function handleDelete(row?) {
   })
     .then(async () => {
       try {
+        deleteLoading.value = true;
         for (const id of delIds) {
           await deletePrompt(id);
         }
         ElMessage.success("删除成功");
-        getList();
+        await getList();
       } catch (error) {
         console.error("删除失败:", error);
         ElMessage.error("删除失败");
+      } finally {
+        deleteLoading.value = false;
       }
     })
     .catch(() => {});
@@ -529,10 +534,6 @@ const submitForm = async () => {
     width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box;
-  }
-
-  .common-table {
-    overflow-x: auto;
   }
 
   .prompt-content {

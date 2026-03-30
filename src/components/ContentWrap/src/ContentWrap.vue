@@ -48,14 +48,12 @@ $prefix-cls: #{$namespace}-content-wrap;
 .#{$prefix-cls} {
   overflow: hidden;
   border: 1px solid var(--app-content-border-color);
-  border-radius: 18px;
+  border-radius: 16px;
   background: var(--app-content-surface-color);
-  box-shadow:
-    inset 0 1px 0 var(--app-content-highlight-color),
-    var(--app-content-shadow);
+  box-shadow: var(--app-content-shadow);
 
   :deep(.el-card__header) {
-    padding: 18px 22px;
+    padding: 16px 18px;
     border-bottom: 1px solid var(--app-content-border-color);
     background: var(--app-content-surface-muted-color);
   }
@@ -116,10 +114,10 @@ $prefix-cls: #{$namespace}-content-wrap;
 
 @media (max-width: 768px) {
   .#{$prefix-cls} {
-    border-radius: 16px;
+    border-radius: 14px;
 
     :deep(.el-card__header) {
-      padding: 16px;
+      padding: 14px 16px;
     }
   }
 
@@ -136,10 +134,10 @@ $prefix-cls: #{$namespace}-content-wrap;
 
 @media (max-width: 480px) {
   .#{$prefix-cls} {
-    border-radius: 14px;
+    border-radius: 12px;
 
     :deep(.el-card__header) {
-      padding: 14px 12px;
+      padding: 12px 14px;
     }
   }
 

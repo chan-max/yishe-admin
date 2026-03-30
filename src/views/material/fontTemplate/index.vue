@@ -30,8 +30,8 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch" :icon="Search">搜索</el-button>
-              <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="handleSearch" :icon="Search" :loading="loading">搜索</el-button>
+              <el-button size="small" :disabled="loading" @click="handleReset">重置</el-button>
               <el-button v-if="isAdmin" size="small" type="primary" @click="handleAdd" :icon="Plus">
                 新增字体
               </el-button>
@@ -1664,9 +1664,6 @@ function closeImagePreview() {
     padding: 0 4px !important;
   }
 
-  .common-table {
-    overflow-x: auto;
-  }
 }
 
 /* 操作dropdown样式已移至公共样式文件 list-page-common.css */

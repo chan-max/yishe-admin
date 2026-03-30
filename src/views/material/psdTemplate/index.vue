@@ -76,11 +76,11 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="getList" :icon="Search">搜索</el-button>
+              <el-button size="small" type="primary" @click="getList" :icon="Search" :loading="loading">搜索</el-button>
               <el-button size="small" type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
                 新增
               </el-button>
-              <el-button size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+              <el-button size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleDelete(null)">
                 批量删除
               </el-button>
             </div>

@@ -31,12 +31,12 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
-              <el-button size="small" :icon="Refresh" @click="resetQuery">重置</el-button>
-              <el-button size="small" type="danger" :icon="Delete" :disabled="!selectedIds.length" @click="handleBatchDelete">
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button size="small" :icon="Refresh" :disabled="loading || deleteLoading" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="danger" :icon="Delete" :loading="deleteLoading" :disabled="!selectedIds.length" @click="handleBatchDelete">
                 批量删除{{ selectedIds.length ? `(${selectedIds.length})` : "" }}
               </el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">创建生成</el-button>
+              <el-button size="small" type="primary" :icon="Plus" :disabled="loading || deleteLoading" @click="handleAdd">创建生成</el-button>
             </div>
           </el-form>
         </div>
@@ -299,6 +299,7 @@ const currentStyleLabelMap: Record<string, string> = {
 
 const loading = ref(false);
 const submitLoading = ref(false);
+const deleteLoading = ref(false);
 const dialogVisible = ref(false);
 const total = ref(0);
 const dataSource = ref<any[]>([]);
@@ -453,10 +454,13 @@ const handleDelete = async (row: any) => {
       confirmButtonText: "确定",
       cancelButtonText: "取消"
     });
+    deleteLoading.value = true;
     await deleteTtiRecord(row.id);
     ElMessage.success("删除成功");
-    getList();
-  } catch {}
+    await getList();
+  } catch {} finally {
+    deleteLoading.value = false;
+  }
 };
 
 const loadPromptOptions = async () => {
@@ -500,13 +504,13 @@ const handleBatchDelete = async () => {
       confirmButtonText: "确定",
       cancelButtonText: "取消"
     });
-    loading.value = true;
+    deleteLoading.value = true;
     await batchDeleteTtiRecord(selectedIds.value);
     ElMessage.success("批量删除完成");
-    getList();
+    await getList();
   } catch {
   } finally {
-    loading.value = false;
+    deleteLoading.value = false;
   }
 };
 

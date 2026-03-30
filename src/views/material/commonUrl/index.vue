@@ -10,6 +10,7 @@
               type="danger"
               :icon="Delete"
               :disabled="!ids.length"
+              :loading="deleteLoading"
               @click="handleDelete(null)"
             >
               批量删除 ({{ ids.length }})
@@ -38,7 +39,7 @@
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
                   <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                  <el-dropdown-item divided :disabled="loading" @click="handleDelete(row)">删除</el-dropdown-item>
+                  <el-dropdown-item divided :disabled="loading || deleteLoading" @click="handleDelete(row)">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -263,6 +264,7 @@ const dataSource = ref([])
 const loading = ref(false)
 const ids = ref([])
 const total = ref(0)
+const deleteLoading = ref(false)
 const formRef = ref()
 const dialogTitle = ref('')
 const dialogVisible = ref(false)
@@ -412,7 +414,7 @@ function handleDelete(row?) {
   )
     .then(async () => {
       try {
-        loading.value = true
+        deleteLoading.value = true
         // 批量删除
         const deletePromises = delIds.map(id => deleteCommonUrl(id))
         await Promise.all(deletePromises)
@@ -436,7 +438,7 @@ function handleDelete(row?) {
         }
         ElMessage.error(errorMessage)
       } finally {
-        loading.value = false
+        deleteLoading.value = false
       }
     })
     .catch(() => {})

@@ -230,13 +230,13 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions material-index-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button size="small" type="primary" @click="() => { uploadModalVisible = true }">上传</el-button>
               <el-button v-if="isAdmin" size="small" @click="() => { urlUploadModalVisible = true }">URL上传</el-button>
               <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
               <el-button v-if="isAdmin" size="small" @click="() => openPsdSetDialog(false)">制作PS套图({{ ids.length }})</el-button>
               <el-button v-if="isAdmin" size="small" @click="() => openPsdSetDialog(true)">多图套图({{ ids.length }})</el-button>
-              <el-button v-admin-only size="small" type="danger" :icon="Delete" @click="handleDelete(null)">
+              <el-button v-admin-only size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleDelete(null)">
                 批量删除({{ ids.length }})
               </el-button>
             </div>
@@ -5248,9 +5248,6 @@ const delayUpdateList = useDebounceFn(() => {
     padding: 0 4px !important;
   }
 
-  .common-table {
-    overflow-x: auto;
-  }
 }
 
 .table-header {

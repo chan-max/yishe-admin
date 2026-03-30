@@ -18,8 +18,8 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-              <el-button size="small" :icon="Refresh" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
+              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
               <el-button
                 size="small"
@@ -152,8 +152,8 @@
       <div
         class="flex justify-end gap-3 border-t border-solid border-[var(--el-border-color-lighter)] pt-4"
       >
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="submitLoading" @click="handleSubmit">确定</el-button>
       </div>
     </template>
   </el-dialog>
@@ -224,6 +224,8 @@ const dataSource = ref([]);
 const loading = ref(false);
 const ids = ref([]);
 const total = ref(0);
+const submitLoading = ref(false);
+const deleteLoading = ref(false);
 
 // 对话框相关
 const dialogVisible = ref(false);
@@ -319,6 +321,7 @@ function handleEdit(row) {
 
 // 删除公司
 function handleDelete(row?) {
+  if (deleteLoading.value) return
   const userStore = useUserStore();
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning("无权限：仅管理员可执行删除操作");
@@ -339,13 +342,16 @@ function handleDelete(row?) {
   })
     .then(async () => {
       try {
+        deleteLoading.value = true
         for (const id of delIds) {
           await deleteCompany(id);
         }
         ElMessage.success("删除成功");
-        getList();
+        await getList();
       } catch (error) {
         ElMessage.error("删除失败");
+      } finally {
+        deleteLoading.value = false
       }
     })
     .catch(() => {});
@@ -353,7 +359,9 @@ function handleDelete(row?) {
 
 // 提交表单
 async function handleSubmit() {
+  if (submitLoading.value) return
   try {
+    submitLoading.value = true
     await formRef.value.validate();
 
     if (formData.id) {
@@ -367,9 +375,11 @@ async function handleSubmit() {
     }
 
     dialogVisible.value = false;
-    getList();
+    await getList();
   } catch (error) {
     ElMessage.error("操作失败");
+  } finally {
+    submitLoading.value = false
   }
 }
 

@@ -13,6 +13,8 @@ import { useWindowSize } from "@vueuse/core"
 const { t } = useI18n()
 
 const loading = ref(false)
+const submitLoading = ref(false)
+const deleteLoading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const queryParams = reactive({
@@ -115,23 +117,23 @@ const handleEdit = (row: any) => {
 
 const submitForm = async () => {
   if (!formRef.value) return
-  await formRef.value.validate(async (valid: boolean) => {
-    if (valid) {
-      try {
-        if (form.id) {
-          await productCategoryApi.update(form)
-          ElMessage.success('更新成功')
-        } else {
-          await productCategoryApi.add(form)
-          ElMessage.success('创建成功')
-        }
-        dialogVisible.value = false
-        getList()
-      } catch (err) {
-        console.error(err)
-      }
+  try {
+    submitLoading.value = true
+    await formRef.value.validate()
+    if (form.id) {
+      await productCategoryApi.update(form)
+      ElMessage.success('更新成功')
+    } else {
+      await productCategoryApi.add(form)
+      ElMessage.success('创建成功')
     }
-  })
+    dialogVisible.value = false
+    getList()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    submitLoading.value = false
+  }
 }
 
 import { useUserStore } from '@/store/modules/user'
@@ -147,11 +149,14 @@ const handleDelete = (row: any) => {
     type: 'warning'
   }).then(async () => {
       try {
+        deleteLoading.value = true
         await productCategoryApi.delete(row.id)
         ElMessage.success('删除成功')
         getList()
       } catch (err) {
         console.error(err)
+      } finally {
+        deleteLoading.value = false
       }
   })
 }
@@ -182,8 +187,8 @@ onMounted(() => {
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="handleSearch">搜索</el-button>
-              <el-button size="small" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="primary" :loading="loading" @click="handleSearch">搜索</el-button>
+              <el-button size="small" :disabled="loading" @click="resetQuery">重置</el-button>
               <el-button size="small" type="primary" @click="handleAdd">新增种类</el-button>
             </div>
           </el-form>
@@ -257,8 +262,8 @@ onMounted(() => {
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm">确定</el-button>
+          <el-button :disabled="submitLoading" @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="submitForm">确定</el-button>
         </span>
       </template>
     </el-dialog>

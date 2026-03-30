@@ -31,13 +31,13 @@
         <el-option label="WEBM" value="webm" />
         <el-option label="MP4" value="mp4" />
       </el-select>
-      <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
-      <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
+      <el-button type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
+      <el-button :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
       <el-button
         type="danger"
         :icon="Delete"
         @click="handleDelete(null)"
-        :disabled="!ids.length"
+        :disabled="!ids.length || loading"
       >
         批量删除
       </el-button>

@@ -80,11 +80,11 @@ const levelLabelMap = {
   max-width: min(560px, calc(100vw - 36px));
   padding: 6px 8px;
   border-left: 4px solid;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-  border-right: 1px solid rgba(255, 255, 255, 0.18);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   pointer-events: auto;
   transition:
     background-color 300ms ease-in-out,
@@ -95,8 +95,8 @@ const levelLabelMap = {
 }
 
 .uiverse-toast:hover {
-  transform: scale(1.05);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+  transform: translateY(1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
 }
 
 .uiverse-toast__icon {

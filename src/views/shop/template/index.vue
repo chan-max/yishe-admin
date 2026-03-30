@@ -15,7 +15,7 @@
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
-              <el-button type="danger" :icon="Delete" @click="handleDelete(null)">批量删除</el-button>
+              <el-button type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">批量删除</el-button>
             </div>
           </el-form>
         </div>
@@ -196,6 +196,7 @@ const dialogVisible = ref(false);
 const isEdit = ref(true);
 const currentRow = ref({});
 const submitLoading = ref(false);
+const deleteLoading = ref(false);
 
 const detailDialogVisible = ref(false)
 
@@ -257,7 +258,7 @@ function resetQuery() {
   getList();
 }
 
-function handleDelete(row?) {
+async function handleDelete(row?) {
   let delIds: any = null;
   if (row) {
     delIds = [row.id];
@@ -267,23 +268,24 @@ function handleDelete(row?) {
     delIds = [...ids.value];
   }
 
-  ElMessageBox.confirm(
-    "确认删除该数据吗",
-    '删除提示',
-    {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'error',
-    }
-  )
-    .then(async () => {
-      console.log("执行删除");
-      await deleteProductTemplate({ ids: delIds });
-      ElMessage.success("删除成功");
-      getList();
-    })
-    .catch(() => {
-    })
+  try {
+    await ElMessageBox.confirm(
+      "确认删除该数据吗",
+      '删除提示',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'error',
+      }
+    )
+    deleteLoading.value = true
+    await deleteProductTemplate({ ids: delIds });
+    ElMessage.success("删除成功");
+    await getList();
+  } catch (error) {
+  } finally {
+    deleteLoading.value = false
+  }
 }
 
 
@@ -342,12 +344,9 @@ function checkboxAllChange(e) {
 }
 
 const submitForm = async () => {
-  submitLoading.value = true;
-  await formRef.value.validate().finally(() => {
-    submitLoading.value = false;
-  });
-
   try {
+    submitLoading.value = true;
+    await formRef.value?.validate()
     if (isEdit.value) {
       await updateProductTemplate({
         ...form.value,
@@ -365,9 +364,10 @@ const submitForm = async () => {
   } catch (e) {
   } finally {
     submitLoading.value = false;
-    dialogVisible.value = false;
   }
-  getList();
+  if (!dialogVisible.value) {
+    getList();
+  }
 };
 
 

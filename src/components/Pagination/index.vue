@@ -4,7 +4,6 @@
     v-show="total > 0"
     v-model:current-page="currentPage"
     v-model:page-size="pageSize"
-    :size="paginationSize"
     :background="true"
     :page-sizes="[10, 20, 30, 50, 100]"
     :pager-count="pagerCount"
@@ -16,19 +15,7 @@
   />
 </template>
 <script lang="ts" setup>
-import { computed } from 'vue'
-import { useAppStore } from '@/store/modules/app'
-
 defineOptions({ name: 'Pagination' })
-
-// 此处解决了当全局size为small的时候分页组件样式太大的问题
-const appStore = useAppStore()
-const layoutCurrentSize = computed(() => appStore.currentSize)
-const paginationSize = computed(() => {
-  if (layoutCurrentSize.value === 'large') return 'large'
-  if (layoutCurrentSize.value === 'small') return 'small'
-  return 'default'
-})
 
 const props = defineProps({
   // 总条目数

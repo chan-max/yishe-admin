@@ -13,12 +13,12 @@ html.light {
 }
 
 html.dark {
-  --list-page-base-bg: #101215;
-  --list-page-surface-bg: #16191e;
-  --list-page-surface-bg-soft: #1b1f25;
+  --list-page-base-bg: #0f0f10;
+  --list-page-surface-bg: #151515;
+  --list-page-surface-bg-soft: #1b1b1c;
   --list-page-panel-bg: var(--list-page-surface-bg);
   --list-page-panel-border: rgba(255, 255, 255, 0.08);
-  --list-page-panel-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
+  --list-page-panel-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
   --list-page-muted-text: rgba(255, 255, 255, 0.55);
 }
 
@@ -26,7 +26,7 @@ html.dark {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   border: 1px solid var(--list-page-panel-border);
   border-radius: var(--list-page-panel-radius);
   background: var(--list-page-panel-bg);
@@ -368,6 +368,72 @@ html.dark {
   border-radius: 999px;
   background: var(--el-color-primary);
   vertical-align: -1px;
+}
+
+.resource-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+
+.resource-toolbar__summary {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.resource-toolbar__title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--el-text-color-primary);
+}
+
+.resource-toolbar__description {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.resource-toolbar__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.resource-toolbar__meta-item {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 8px;
+  background: var(--app-content-surface-muted-color);
+}
+
+.resource-toolbar__meta-label {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.resource-toolbar__meta-value {
+  font-size: 12px;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+}
+
+.resource-toolbar__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .search-bar {
@@ -1023,6 +1089,62 @@ html.dark {
   font-size: 12px !important;
 }
 
+.queue-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.queue-page__stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.queue-stat-card {
+  display: flex;
+  min-height: 74px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--list-page-panel-border);
+  border-radius: 14px;
+  background: var(--list-page-panel-bg);
+  box-shadow: var(--list-page-panel-shadow);
+}
+
+.queue-stat-card__label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--el-text-color-secondary);
+  letter-spacing: 0.02em;
+}
+
+.queue-stat-card__value {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--el-text-color-primary);
+}
+
+.queue-stat-card__value--pending {
+  color: var(--el-color-info);
+}
+
+.queue-stat-card__value--processing {
+  color: var(--el-color-warning);
+}
+
+.queue-stat-card__value--completed {
+  color: var(--el-color-success);
+}
+
+.queue-stat-card__value--failed {
+  color: var(--el-color-danger);
+}
+
 /* 响应式样式 */
 @media (max-width: 768px) {
   .list-page-filter {
@@ -1058,6 +1180,24 @@ html.dark {
     grid-template-columns: 1fr;
   }
 
+  .resource-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .resource-toolbar__meta {
+    justify-content: flex-start;
+  }
+
+  .resource-toolbar__meta-item,
+  .resource-toolbar__actions {
+    width: 100%;
+  }
+
+  .resource-toolbar__actions :deep(.el-button) {
+    flex: 1 1 auto;
+  }
+
   .list-page-table-panel__body {
     padding: 12px 12px 0;
   }
@@ -1068,6 +1208,10 @@ html.dark {
 
   .list-page-dialog-section {
     padding: 14px;
+  }
+
+  .queue-page__stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .search-bar {
@@ -1169,5 +1313,9 @@ html.dark {
   .common-table .vxe-table,
   .common-table .vxe-grid {
     min-width: 640px;
+  }
+
+  .queue-page__stats {
+    grid-template-columns: 1fr;
   }
 }
