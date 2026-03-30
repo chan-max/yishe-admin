@@ -155,7 +155,12 @@ import {
   type BrowserAutomationServiceStatus
 } from '@/api/external/browserAutomation'
 import { buildTimeColumn, commonGridOptions } from '@/common/table'
-import { websocketClient, type ServiceCommandResultEvent, type ServiceRuntimeEvent } from '@/services/websocketClient'
+import {
+  websocketClient,
+  type ClientConnectionChangedEvent,
+  type ServiceCommandResultEvent,
+  type ServiceRuntimeEvent
+} from '@/services/websocketClient'
 import { formatDate } from '@/utils/formatTime'
 
 defineOptions({ name: 'ExternalBrowserAutomation' })
@@ -174,6 +179,7 @@ const actionLoading = reactive({
 })
 
 const pendingCommandIds = reactive<Record<string, string>>({})
+let clientsRefreshTimer: ReturnType<typeof window.setInterval> | null = null
 
 const gridOptions = {
   ...commonGridOptions,
@@ -194,6 +200,22 @@ const gridOptions = {
 const selectedClient = computed(() => clients.value.find((item) => item.clientId === selectedClientId.value) || null)
 const selectedService = computed<BrowserAutomationServiceStatus | null>(() => selectedClient.value?.uploader || null)
 const selectedDetails = computed<Record<string, any>>(() => selectedService.value?.details || {})
+
+const applyClientSnapshot = (snapshot: BrowserAutomationClientVO) => {
+  const index = clients.value.findIndex((item) => item.clientId === snapshot.clientId)
+  if (index >= 0) {
+    clients.value.splice(index, 1, {
+      ...clients.value[index],
+      ...snapshot
+    })
+    return
+  }
+
+  clients.value.unshift(snapshot)
+  if (!selectedClientId.value) {
+    selectedClientId.value = snapshot.clientId
+  }
+}
 
 const resolveClientChannelText = (client?: BrowserAutomationClientVO | null) => {
   if (!client?.clientId) return '离线'
@@ -253,8 +275,11 @@ const syncClientStatus = async (clientId: string) => {
   }
 }
 
-const loadClients = async () => {
-  loading.value = true
+const loadClients = async (options?: { silent?: boolean }) => {
+  const silent = !!options?.silent
+  if (!silent) {
+    loading.value = true
+  }
   try {
     const data = await getBrowserAutomationClients()
     clients.value = Array.isArray(data) ? data : []
@@ -262,7 +287,9 @@ const loadClients = async () => {
       selectedClientId.value = clients.value[0]?.clientId || ''
     }
   } finally {
-    loading.value = false
+    if (!silent) {
+      loading.value = false
+    }
   }
 }
 
@@ -343,7 +370,10 @@ const handleFetchPages = async () => {
 const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
   if (event.service !== 'uploader') return
   const index = clients.value.findIndex((item) => item.clientId === event.clientId)
-  if (index < 0) return
+  if (index < 0) {
+    void loadClients({ silent: true })
+    return
+  }
   clients.value.splice(index, 1, {
     ...clients.value[index],
     uploader: {
@@ -359,6 +389,25 @@ const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
         }))
       : pageList.value
   }
+}
+
+const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
+  const snapshot = event.client as BrowserAutomationClientVO | undefined
+  if (!snapshot?.clientId) return
+
+  if (event.action === 'removed') {
+    const index = clients.value.findIndex((item) => item.clientId === snapshot.clientId)
+    if (index >= 0) {
+      clients.value.splice(index, 1)
+    }
+    if (selectedClientId.value === snapshot.clientId) {
+      selectedClientId.value = clients.value[0]?.clientId || ''
+      pageList.value = []
+    }
+    return
+  }
+
+  applyClientSnapshot(snapshot)
 }
 
 const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
@@ -406,11 +455,20 @@ onMounted(async () => {
   await loadClients()
   websocketClient.events.on('serviceRuntime', handleServiceRuntime)
   websocketClient.events.on('serviceCommandResult', handleServiceCommandResult)
+  websocketClient.events.on('clientConnectionChanged', handleClientConnectionChanged)
+  clientsRefreshTimer = window.setInterval(() => {
+    void loadClients({ silent: true })
+  }, 10000)
 })
 
 onUnmounted(() => {
   websocketClient.events.off('serviceRuntime', handleServiceRuntime)
   websocketClient.events.off('serviceCommandResult', handleServiceCommandResult)
+  websocketClient.events.off('clientConnectionChanged', handleClientConnectionChanged)
+  if (clientsRefreshTimer) {
+    window.clearInterval(clientsRefreshTimer)
+    clientsRefreshTimer = null
+  }
 })
 </script>
 

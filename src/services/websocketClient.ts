@@ -126,6 +126,20 @@ export interface GlobalNotificationEvent {
   updatedAt?: string
 }
 
+export interface ClientConnectionChangedEvent {
+  action: 'connected' | 'updated' | 'removed'
+  client: {
+    clientId: string
+    connectedAt?: string
+    appVersion?: string | null
+    machine?: Record<string, any> | null
+    location?: Record<string, any> | null
+    uploader?: Record<string, any> | null
+    psAutomation?: Record<string, any> | null
+  }
+  reportedAt?: string
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: 'idle',
@@ -172,6 +186,7 @@ export type WebsocketEvents = {
   'production-status': { status: string; message: string; psdSetId?: string }
   serviceRuntime: ServiceRuntimeEvent
   serviceCommandResult: ServiceCommandResultEvent
+  clientConnectionChanged: ClientConnectionChangedEvent
   psAutomationStatus: PsAutomationStatusEvent
   globalNotification: GlobalNotificationEvent
 }
@@ -368,6 +383,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on('service-command-result', (data: ServiceCommandResultEvent) => {
     emitter.emit('serviceCommandResult', data)
+  })
+
+  currentSocket.on('client-connection-changed', (data: ClientConnectionChangedEvent) => {
+    emitter.emit('clientConnectionChanged', data)
   })
 
   currentSocket.on('ps-automation-status', (data: PsAutomationStatusEvent) => {
