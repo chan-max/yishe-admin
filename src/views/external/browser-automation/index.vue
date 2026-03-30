@@ -36,9 +36,9 @@
               >
                 <div class="node-item__top">
                   <div class="node-item__name-wrap">
-                    <span class="status-pill" :class="`is-${resolveStatusLevel(client.uploader)}`">
+                    <span class="status-pill" :class="`is-${resolveClientChannelLevel(client)}`">
                       <span class="status-pill__dot" />
-                      <span>{{ resolveStatusText(client.uploader) }}</span>
+                      <span>{{ resolveClientChannelText(client) }}</span>
                     </span>
                     <span class="node-item__name">{{ client.machine?.code || client.clientId }}</span>
                   </div>
@@ -48,6 +48,10 @@
                   <span class="node-item__meta">{{ client.appVersion || '未知版本' }}</span>
                   <span class="node-item__meta">{{ client.location?.ip || client.location?.city || '未知位置' }}</span>
                 </div>
+                <div class="node-item__meta-row node-item__meta-row--status">
+                  <span class="node-item__meta">服务 {{ resolveServiceProcessText(client.uploader) }}</span>
+                  <span class="node-item__meta">浏览器 {{ resolveBrowserStatusText(client.uploader) }}</span>
+                </div>
               </button>
             </div>
           </div>
@@ -56,18 +60,27 @@
         <section class="browser-automation-main">
           <div class="browser-panel" v-if="selectedClient">
             <div class="status-overview status-overview--compact">
-              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveStatusLevel(selectedService)}`">
-                <span class="status-card__label">服务</span>
+              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveClientChannelLevel(selectedClient)}`">
+                <span class="status-card__label">客户端通道</span>
                 <span class="status-card__value status-card__value--status">
-                  <span class="status-breath" :class="`is-${resolveStatusLevel(selectedService)}`" />
-                  {{ resolveStatusText(selectedService) }}
+                  <span class="status-breath" :class="`is-${resolveClientChannelLevel(selectedClient)}`" />
+                  {{ resolveClientChannelText(selectedClient) }}
+                </span>
+                <span class="status-card__hint">当前账号已连接，可向该客户端下发命令</span>
+              </div>
+              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveServiceProcessLevel(selectedService)}`">
+                <span class="status-card__label">自动化服务</span>
+                <span class="status-card__value status-card__value--status">
+                  <span class="status-breath" :class="`is-${resolveServiceProcessLevel(selectedService)}`" />
+                  {{ resolveServiceProcessText(selectedService) }}
                 </span>
                 <span class="status-card__hint">{{ selectedService?.message || '-' }}</span>
               </div>
-              <div class="status-card status-card--compact">
-                <span class="status-card__label">浏览器</span>
-                <span class="status-card__value">
-                  {{ selectedDetails.browserConnected ? '已连接' : (selectedDetails.hasInstance ? '实例未就绪' : '未启动') }}
+              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveBrowserStatusLevel(selectedService)}`">
+                <span class="status-card__label">浏览器实例</span>
+                <span class="status-card__value status-card__value--status">
+                  <span class="status-breath" :class="`is-${resolveBrowserStatusLevel(selectedService)}`" />
+                  {{ resolveBrowserStatusText(selectedService) }}
                 </span>
                 <span class="status-card__hint">页面数 {{ selectedDetails.pageCount ?? 0 }}</span>
               </div>
@@ -182,27 +195,44 @@ const selectedClient = computed(() => clients.value.find((item) => item.clientId
 const selectedService = computed<BrowserAutomationServiceStatus | null>(() => selectedClient.value?.uploader || null)
 const selectedDetails = computed<Record<string, any>>(() => selectedService.value?.details || {})
 
-const resolveStatusText = (service?: BrowserAutomationServiceStatus | null) => {
-  if (!service) return '未知'
-  if (service.available) return '可用'
-  if (service.connected) return '在线'
-  if (service.status === 'error') return '异常'
-  return '离线'
+const resolveClientChannelText = (client?: BrowserAutomationClientVO | null) => {
+  if (!client?.clientId) return '离线'
+  return '可调用'
 }
 
-const resolveTagType = (service?: BrowserAutomationServiceStatus | null) => {
+const resolveClientChannelLevel = (client?: BrowserAutomationClientVO | null) => {
+  if (!client?.clientId) return 'info'
+  return 'success'
+}
+
+const resolveServiceProcessText = (service?: BrowserAutomationServiceStatus | null) => {
+  if (!service) return '未知'
+  if (service.connected) return '已启动'
+  if (service.status === 'error') return '异常'
+  return '未启动'
+}
+
+const resolveServiceProcessLevel = (service?: BrowserAutomationServiceStatus | null) => {
   if (!service) return 'info'
-  if (service.available) return 'success'
-  if (service.connected) return 'warning'
+  if (service.connected) return 'success'
   if (service.status === 'error') return 'danger'
   return 'info'
 }
 
-const resolveStatusLevel = (service?: BrowserAutomationServiceStatus | null) => {
-  if (!service) return 'info'
-  if (service.available) return 'success'
-  if (service.connected) return 'warning'
-  if (service.status === 'error') return 'danger'
+const resolveBrowserStatusText = (service?: BrowserAutomationServiceStatus | null) => {
+  const details = service?.details || {}
+  if (details.browserConnected) return '已连接'
+  if (details.hasInstance) return '实例未就绪'
+  if (service?.connected) return '未连接'
+  if (service?.status === 'error') return '异常'
+  return '未启动'
+}
+
+const resolveBrowserStatusLevel = (service?: BrowserAutomationServiceStatus | null) => {
+  const details = service?.details || {}
+  if (details.browserConnected) return 'success'
+  if (details.hasInstance || service?.connected) return 'warning'
+  if (service?.status === 'error') return 'danger'
   return 'info'
 }
 
