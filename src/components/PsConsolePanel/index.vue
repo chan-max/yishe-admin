@@ -414,17 +414,14 @@ const refreshClients = async () => {
 
 const refreshLocalDebug = async () => {
   try {
-    const [health, status] = await Promise.all([
-      localPhotoshopApi.checkHealth(),
-      localPhotoshopApi.checkPhotoshopStatus(false)
-    ])
+    const status = await localPhotoshopApi.checkPhotoshopStatus(false)
 
     localDebugRuntime.connected = true
     localDebugRuntime.isAvailable = !!(status.is_available && status.is_running)
-    localDebugRuntime.version = health.version || status.connection_test?.version || ''
+    localDebugRuntime.version = status.connection_test?.version || ''
     localDebugRuntime.message = localDebugRuntime.isAvailable
-      ? 'yishe-ps 与 Photoshop 可用于本机调试'
-      : 'yishe-ps 已连通，但 Photoshop 当前不可执行'
+      ? 'photoshopStatus 检测通过，Photoshop 可用于本机调试'
+      : 'photoshopStatus 已返回，但 Photoshop 当前不可执行'
     localDebugRuntime.diagnostics = status.diagnostics || ''
     localDebugRuntime.lastCheckedAt = new Date().toISOString()
     localDebugRuntime.lastError = ''

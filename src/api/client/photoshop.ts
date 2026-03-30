@@ -13,6 +13,17 @@ const psApiClient = axios.create({
 psApiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (!error.response) {
+      const isSecureOrigin =
+        typeof window !== 'undefined' && window.location?.protocol === 'https:'
+
+      const networkMessage = isSecureOrigin
+        ? '无法从当前安全页面访问本机 localhost:1595，可能是浏览器拦截了本地网络请求或 yishe-ps 尚未放行预检'
+        : '无法连接 localhost:1595'
+
+      return Promise.reject(new Error(networkMessage))
+    }
+
     const errorMessage =
       error.response?.data?.detail?.message ||
       error.response?.data?.detail?.error ||
