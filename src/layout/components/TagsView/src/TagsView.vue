@@ -584,10 +584,14 @@ $prefix-cls: #{$namespace}-tags-view;
   }
 
   &__item.is-active {
-    color: var(--tags-view-item-active-color);
-    background: transparent;
+    color: var(--el-color-primary);
+    background: none;
     border-right-color: var(--tags-view-item-active-border-color);
     box-shadow: none;
+  }
+
+  &__item.is-active .#{$prefix-cls}__item--title {
+    color: var(--el-color-primary);
   }
 
   &__item--title {
@@ -606,7 +610,7 @@ $prefix-cls: #{$namespace}-tags-view;
     width: 24px;
     height: 2px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--el-color-primary) 68%, transparent 32%);
+    background: var(--el-color-primary);
     content: '';
     transform: translateX(-50%);
   }
@@ -649,8 +653,8 @@ $prefix-cls: #{$namespace}-tags-view;
     }
 
     &__item.is-active {
-      color: var(--tags-view-item-active-color);
-      background: transparent;
+      color: var(--el-color-primary);
+      background: none;
     }
 
     &__item--immerse:not(.is-active) {

@@ -8,10 +8,10 @@ html.light {
   --left-menu-min-width: 64px;
   --left-menu-bg-color: #f7f9fc;
   --left-menu-bg-light-color: #ffffff;
-  --left-menu-bg-active-color: #edf4ff;
+  --left-menu-bg-active-color: var(--el-color-primary-light-9);
   --left-menu-text-color: #566277;
-  --left-menu-text-active-color: #2d6bff;
-  --left-menu-collapse-bg-active-color: #edf4ff;
+  --left-menu-text-active-color: var(--el-color-primary);
+  --left-menu-collapse-bg-active-color: var(--el-color-primary-light-9);
   --left-menu-border-color: #d9e1ec;
   --left-menu-divider-color: rgba(110, 129, 158, 0.16);
   --left-menu-hover-color: #eef3fa;
@@ -20,10 +20,10 @@ html.light {
   --left-menu-arrow-color: #8090a6;
   --left-menu-link-text-color: #5b677b;
   --left-menu-link-hover-color: #21304b;
-  --left-menu-link-hover-bg: rgba(45, 107, 255, 0.06);
-  --left-menu-link-active-bg: rgba(45, 107, 255, 0.1);
-  --left-menu-link-active-border-color: #2d6bff;
-  --left-menu-link-active-color: #1d4ed8;
+  --left-menu-link-hover-bg: var(--el-color-primary-light-9);
+  --left-menu-link-active-bg: var(--el-color-primary-light-8);
+  --left-menu-link-active-border-color: var(--el-color-primary);
+  --left-menu-link-active-color: var(--el-color-primary);
   --left-menu-shadow: inset -1px 0 0 rgba(148, 163, 184, 0.08), 1px 0 0 rgba(148, 163, 184, 0.12),
     12px 0 28px rgba(15, 23, 42, 0.05);
 
@@ -101,10 +101,10 @@ html.dark {
 
   --left-menu-bg-color: #101010;
   --left-menu-bg-light-color: #141414;
-  --left-menu-bg-active-color: #181818;
+  --left-menu-bg-active-color: color-mix(in srgb, var(--el-color-primary) 14%, #181818 86%);
   --left-menu-text-color: #b9c0cc;
-  --left-menu-text-active-color: #8cbcff;
-  --left-menu-collapse-bg-active-color: #181818;
+  --left-menu-text-active-color: var(--el-color-primary);
+  --left-menu-collapse-bg-active-color: color-mix(in srgb, var(--el-color-primary) 14%, #181818 86%);
   --left-menu-border-color: #242424;
   --left-menu-divider-color: rgba(255, 255, 255, 0.08);
   --left-menu-hover-color: #171717;
@@ -114,9 +114,9 @@ html.dark {
   --left-menu-link-text-color: rgba(255, 255, 255, 0.56);
   --left-menu-link-hover-color: rgba(255, 255, 255, 0.88);
   --left-menu-link-hover-bg: rgba(255, 255, 255, 0.035);
-  --left-menu-link-active-bg: rgba(140, 188, 255, 0.08);
-  --left-menu-link-active-border-color: #8cbcff;
-  --left-menu-link-active-color: #b7d4ff;
+  --left-menu-link-active-bg: color-mix(in srgb, var(--el-color-primary) 16%, transparent 84%);
+  --left-menu-link-active-border-color: var(--el-color-primary);
+  --left-menu-link-active-color: var(--el-color-primary);
   --left-menu-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 1px 0 0 rgba(255, 255, 255, 0.1),
     10px 0 28px rgba(0, 0, 0, 0.22);
 
