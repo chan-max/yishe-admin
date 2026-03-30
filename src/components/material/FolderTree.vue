@@ -400,12 +400,21 @@ watch(displayTreeData, () => {
 <style lang="less" scoped>
 /* 文件夹树样式（复用 material/index 的样式） */
 .sticker-folder-tree-container {
+  padding-top: 4px;
+
   .sticker-folder-tree-header {
     margin-bottom: 10px;
+    padding-inline: 4px;
   }
 
   .sticker-folder-tree-search {
     margin-bottom: 10px;
+    padding-inline: 4px;
+  }
+
+  .sticker-folder-tree-drag-surface {
+    padding-inline: 4px;
+    padding-bottom: 6px;
   }
 
   .sticker-folder-tree {
@@ -446,7 +455,7 @@ watch(displayTreeData, () => {
     }
   }
 
-  .sticker-folder-node {
+.sticker-folder-node {
     display: flex;
     align-items: center;
     justify-content: space-between;

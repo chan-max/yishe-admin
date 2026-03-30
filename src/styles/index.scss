@@ -304,6 +304,19 @@ html.light .vxe-table {
   margin-left: 0 !important;
 }
 
+/* 搜索区与批量操作区统一左对齐 */
+.list-page-filter__actions,
+.list-page-search-form__actions,
+.search-bar,
+.search-field-actions,
+.search-actions,
+.material-index-search-form__actions,
+.product-page__actions,
+.psd-set-page__actions {
+  justify-content: flex-start !important;
+  margin-left: 0 !important;
+}
+
 @media only screen and (max-width: 768px) {
   .el-dialog:not(.is-fullscreen) {
     width: calc(100vw - 24px) !important;

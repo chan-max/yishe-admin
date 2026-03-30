@@ -57,6 +57,7 @@
               <el-button size="small" class="!ml-0" type="primary" :icon="Search" :loading="loading" @click="getList">
                 搜索
               </el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增调度</el-button>
               <el-button
                 size="small"
                 class="!ml-0"
@@ -67,7 +68,6 @@
               >
                 批量删除 ({{ ids.length }})
               </el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增调度</el-button>
             </div>
           </el-form>
         </div>

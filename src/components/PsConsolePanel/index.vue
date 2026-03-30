@@ -486,7 +486,8 @@ onUnmounted(() => {
 .ops-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -499,6 +500,7 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .ops-tabs :deep(.el-tabs__header) {
@@ -683,7 +685,8 @@ onUnmounted(() => {
 .ops-panel__head {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
@@ -709,12 +712,14 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .automation-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 8px;
   padding: 10px;
@@ -735,6 +740,7 @@ onUnmounted(() => {
   gap: 8px;
   flex-wrap: wrap;
   flex-shrink: 0;
+  justify-content: flex-start;
 }
 
 .ops-panel__head--minor {
@@ -934,7 +940,8 @@ onUnmounted(() => {
 
   .automation-toolbar__main {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 </style>

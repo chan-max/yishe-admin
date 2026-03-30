@@ -33,10 +33,10 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button size="small" :icon="Refresh" :disabled="loading || deleteLoading" @click="resetQuery">重置</el-button>
+              <el-button size="small" type="primary" :icon="Plus" :disabled="loading || deleteLoading" @click="handleAdd">创建生成</el-button>
               <el-button size="small" type="danger" :icon="Delete" :loading="deleteLoading" :disabled="!selectedIds.length" @click="handleBatchDelete">
                 批量删除{{ selectedIds.length ? `(${selectedIds.length})` : "" }}
               </el-button>
-              <el-button size="small" type="primary" :icon="Plus" :disabled="loading || deleteLoading" @click="handleAdd">创建生成</el-button>
             </div>
           </el-form>
         </div>

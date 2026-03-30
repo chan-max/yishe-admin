@@ -408,9 +408,9 @@ onUnmounted(() => {
   display: flex;
   gap: 8px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-shrink: 0;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .browser-automation-layout {

@@ -14,11 +14,11 @@
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" :loading="loading" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
               <el-button size="small" type="danger" :icon="Delete" :disabled="selectedRows.length === 0"
                 @click="handleBatchDelete">
                 批量删除({{ selectedRows.length }})
               </el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">创建</el-button>
             </div>
           </el-form>
         </div>
@@ -1058,7 +1058,7 @@ onMounted(() => {
 
   .search-field-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: flex-start;
     align-items: center;
     width: 100%;
   }
@@ -1096,7 +1096,7 @@ onMounted(() => {
   .search-actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     column-gap: 6px;
     row-gap: 6px;
     align-items: center;

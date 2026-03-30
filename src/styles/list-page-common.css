@@ -47,7 +47,7 @@ html.dark {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 14px;
 }
 
@@ -68,7 +68,7 @@ html.dark {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 10px;
 }
 
@@ -88,7 +88,7 @@ html.dark {
 .list-page-search-form__actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
   padding-top: 0;
 }
@@ -256,7 +256,7 @@ html.dark {
   display: flex;
   min-height: 100%;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   border-right: 1px solid var(--list-page-panel-border);
 }
 
@@ -275,12 +275,13 @@ html.dark {
   min-height: 0;
   height: 100%;
   padding: 0;
+  overflow: visible;
 }
 
 .folder-sidebar-tree {
   min-height: 0;
   height: 100%;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .folder-sidebar-toggle {
@@ -401,7 +402,7 @@ html.dark {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 10px;
 }
 
@@ -439,7 +440,7 @@ html.dark {
 .search-bar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start !important;
   gap: 1rem;
   align-items: center;
   margin: 0;

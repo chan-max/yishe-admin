@@ -33,13 +33,13 @@
                 {{ sandboxStatus.message || sandboxStatus.baseUrl }}
               </span>
               <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
               <el-button size="small" type="danger" plain :disabled="!ids.length || loading" @click="handleDelete(null)">
                 批量删除 ({{ ids.length }})
               </el-button>
               <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading">
                 刷新状态
               </el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
             </div>
           </el-form>
         </div>

@@ -4,15 +4,12 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__summary">
-              <div class="resource-toolbar__title">厂家资源管理</div>
-            </div>
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__actions">
+                <el-button size="small" type="primary" @click="openDialog()">新增厂家</el-button>
                 <el-button size="small" type="danger" plain :disabled="!selectedIds.length" @click="handleBatchDelete">
                   批量删除
                 </el-button>
-                <el-button size="small" type="primary" @click="openDialog()">新增厂家</el-button>
               </div>
             </div>
           </div>
@@ -227,6 +224,14 @@ onMounted(() => {
 :deep(.vendor-page) {
   gap: 10px;
   padding: 8px 0 0;
+}
+
+:deep(.vendor-page .resource-toolbar) {
+  justify-content: flex-start;
+}
+
+:deep(.vendor-page .resource-toolbar__meta) {
+  flex: 0 1 auto;
 }
 
 :deep(.vendor-page .list-page-layout__main) {

@@ -964,7 +964,7 @@ onBeforeUnmount(() => {
   flex: 0 1 auto;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 10px;
 }
 

@@ -6441,7 +6441,7 @@ h1 {
 
 .material-index-mobile-filter {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .material-index-phash__row {

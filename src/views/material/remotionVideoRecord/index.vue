@@ -63,13 +63,13 @@
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button size="small" type="primary" @click="openCreateDialog()">新增</el-button>
               <el-button size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleBatchDelete">
                 批量删除({{ selectedRows.length }})
               </el-button>
               <el-button size="small" @click="checkRemotionHealth" :loading="remotionStatus.loading">
                 刷新状态
               </el-button>
-              <el-button size="small" type="primary" @click="openCreateDialog()">新增</el-button>
             </div>
           </el-form>
         </div>

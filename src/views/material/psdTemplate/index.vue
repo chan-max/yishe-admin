@@ -1698,7 +1698,7 @@ function removeSuitableSize(sizeKey: string) {
     display: flex;
     gap: 12px;
     align-items: center;
-    margin-left: auto;
+    margin-left: 0;
     flex-shrink: 0;
 
     .el-button {
@@ -1733,7 +1733,7 @@ function removeSuitableSize(sizeKey: string) {
     .search-actions {
       margin-left: 0;
       width: 100%;
-      justify-content: flex-end;
+      justify-content: flex-start;
       gap: 8px;
     }
   }

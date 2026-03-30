@@ -40,39 +40,39 @@ html.dark {
 
 :root,
 html.light {
-  --ep-cover-feedback-success-bg: #ecfdf3;
-  --ep-cover-feedback-success-border: #b7efcf;
+  --ep-cover-feedback-success-bg: #dcfce7;
+  --ep-cover-feedback-success-border: #86efac;
   --ep-cover-feedback-success-accent: #22c55e;
   --ep-cover-feedback-success-text: #166534;
-  --ep-cover-feedback-info-bg: #eef6ff;
-  --ep-cover-feedback-info-border: #bfdbfe;
+  --ep-cover-feedback-info-bg: #dbeafe;
+  --ep-cover-feedback-info-border: #93c5fd;
   --ep-cover-feedback-info-accent: #3b82f6;
   --ep-cover-feedback-info-text: #1d4ed8;
-  --ep-cover-feedback-warning-bg: #fff7e8;
-  --ep-cover-feedback-warning-border: #f7d9a3;
+  --ep-cover-feedback-warning-bg: #fef3c7;
+  --ep-cover-feedback-warning-border: #fcd34d;
   --ep-cover-feedback-warning-accent: #f59e0b;
   --ep-cover-feedback-warning-text: #b45309;
-  --ep-cover-feedback-error-bg: #fff1f2;
-  --ep-cover-feedback-error-border: #fecdd3;
+  --ep-cover-feedback-error-bg: #ffe4e6;
+  --ep-cover-feedback-error-border: #fda4af;
   --ep-cover-feedback-error-accent: #ef4444;
   --ep-cover-feedback-error-text: #be123c;
 }
 
 html.dark {
-  --ep-cover-feedback-success-bg: rgba(34, 197, 94, 0.14);
-  --ep-cover-feedback-success-border: rgba(34, 197, 94, 0.22);
+  --ep-cover-feedback-success-bg: rgba(34, 197, 94, 0.22);
+  --ep-cover-feedback-success-border: rgba(74, 222, 128, 0.38);
   --ep-cover-feedback-success-accent: #4ade80;
   --ep-cover-feedback-success-text: #dcfce7;
-  --ep-cover-feedback-info-bg: rgba(59, 130, 246, 0.14);
-  --ep-cover-feedback-info-border: rgba(59, 130, 246, 0.24);
+  --ep-cover-feedback-info-bg: rgba(59, 130, 246, 0.22);
+  --ep-cover-feedback-info-border: rgba(96, 165, 250, 0.4);
   --ep-cover-feedback-info-accent: #60a5fa;
   --ep-cover-feedback-info-text: #dbeafe;
-  --ep-cover-feedback-warning-bg: rgba(245, 158, 11, 0.14);
-  --ep-cover-feedback-warning-border: rgba(245, 158, 11, 0.24);
+  --ep-cover-feedback-warning-bg: rgba(245, 158, 11, 0.22);
+  --ep-cover-feedback-warning-border: rgba(251, 191, 36, 0.4);
   --ep-cover-feedback-warning-accent: #fbbf24;
   --ep-cover-feedback-warning-text: #fef3c7;
-  --ep-cover-feedback-error-bg: rgba(239, 68, 68, 0.14);
-  --ep-cover-feedback-error-border: rgba(239, 68, 68, 0.24);
+  --ep-cover-feedback-error-bg: rgba(239, 68, 68, 0.22);
+  --ep-cover-feedback-error-border: rgba(248, 113, 113, 0.4);
   --ep-cover-feedback-error-accent: #f87171;
   --ep-cover-feedback-error-text: #ffe4e6;
 }
@@ -571,6 +571,7 @@ html.dark {
   gap: 10px;
   background: var(--app-content-surface-color);
   color: var(--el-text-color-primary);
+  backdrop-filter: blur(10px);
   transition:
     opacity var(--ep-cover-motion-fast),
     transform var(--ep-cover-motion-base),

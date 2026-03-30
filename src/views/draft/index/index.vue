@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="pb-4 flex flex-wrap justify-end gap-4 items-center search-bar">
+    <div class="pb-4 flex flex-wrap justify-start gap-4 items-center search-bar">
       <!-- 这里放所有搜索/过滤表单项和按钮，结构与crawler-material.vue一致，参数不变 -->
       <!-- 示例：
       <form-item label="按名称搜索">

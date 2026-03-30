@@ -423,6 +423,7 @@ onMounted(() => {
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-search-form__actions">
             <el-button size="small" type="primary" :loading="loading" @click="handleSearch">刷新</el-button>
+            <el-button size="small" type="primary" :disabled="loading || deleteLoading" @click="handleAdd">新增配置</el-button>
             <el-button
               v-if="userStore.user?.isAdmin"
               size="small"
@@ -433,7 +434,6 @@ onMounted(() => {
             >
               批量删除 <span v-if="selectedIds.length > 0">({{ selectedIds.length }})</span>
             </el-button>
-            <el-button size="small" type="primary" :disabled="loading || deleteLoading" @click="handleAdd">新增配置</el-button>
           </div>
         </div>
       </template>

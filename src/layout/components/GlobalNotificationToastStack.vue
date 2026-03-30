@@ -243,8 +243,8 @@ const levelLabelMap = {
 }
 
 :global(html.dark) .uiverse-toast.is-error {
-  background: #ef4444;
-  border-left-color: #b91c1c;
+  background: #000;
+  border-left-color: #444;
   color: #ffffff;
 }
 
@@ -253,7 +253,7 @@ const levelLabelMap = {
 }
 
 :global(html.dark) .uiverse-toast.is-error:hover {
-  background: #dc2626;
+  background: #000;
 }
 
 .global-toast-enter-active,
