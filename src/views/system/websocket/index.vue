@@ -5,9 +5,9 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="websocket-toolbar">
             <div class="websocket-toolbar__summary">
-              <div class="websocket-toolbar__title">实时连接监控</div>
+              <div class="websocket-toolbar__title">远程连接</div>
               <div class="websocket-toolbar__description">
-                当前展示为 WebSocket 网关 `/ws` 的实时连接，用于查看在线客户端、来源与连接状态。
+                当前展示为所有实时 WebSocket 连接，并对客户端额外合并节点持久化信息，可查看在线连接与离线客户端节点。
               </div>
             </div>
 
@@ -81,6 +81,7 @@
               <el-dropdown
                 class="operation-dropdown"
                 placement="bottom-end"
+                :disabled="!row.isOnline"
                 @command="(command) => handleOperationCommand(command, row)"
               >
                 <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
@@ -91,6 +92,9 @@
                     </el-dropdown-item>
                     <el-dropdown-item command="control" divided>
                       <span>操控</span>
+                    </el-dropdown-item>
+                    <el-dropdown-item command="disconnect" divided class="operation-menu-item--danger">
+                      <span>强制断开</span>
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -132,6 +136,10 @@
                 <span class="meta-item" v-if="currentConnection?.namespace">
                   <Icon icon="ep:folder" class="mr-4px" />
                   {{ currentConnection.namespace }}
+                </span>
+                <span class="meta-item">
+                  <Icon icon="ep:connection" class="mr-4px" />
+                  {{ currentConnection?.isOnline ? '在线' : '离线' }}
                 </span>
               </div>
             </div>
@@ -429,8 +437,15 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
   columns: [
     { type: 'seq', width: 60, title: '序号', align: 'center' },
     {
+      field: 'isOnline',
+      title: '在线状态',
+      width: 100,
+      align: 'center',
+      formatter: ({ row }) => ((row as WebsocketConnectionRow).isOnline ? '在线' : '离线')
+    },
+    {
       field: 'id',
-      title: '连接 ID',
+      title: '客户端 ID',
       minWidth: 240,
       showOverflow: 'tooltip'
     },
@@ -803,7 +818,7 @@ const clearTimer = () => {
 const fetchConnections = async () => {
   loading.value = true
   try {
-    const response = await WebsocketApi.getWebsocketConnections()
+    const response = await WebsocketApi.getWebsocketConnectionViews()
     // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
     let list: WebsocketConnectionVO[] = []
     if (Array.isArray(response)) {
@@ -822,7 +837,7 @@ const fetchConnections = async () => {
     applyCachedUserInfo(connections.value)
     ensureUserInfoForTokens(connections.value)
   } catch (error: any) {
-    message.error(error?.message ?? '获取 WebSocket 连接失败')
+    message.error(error?.message ?? '获取远程连接列表失败')
   } finally {
     loading.value = false
   }
@@ -833,10 +848,16 @@ const handleOperationCommand = (command: string, row: WebsocketConnectionRow) =>
     handleSendMessage(row)
   } else if (command === 'control') {
     handleControl(row)
+  } else if (command === 'disconnect') {
+    handleDisconnect(row)
   }
 }
 
 const handleControl = async (row: WebsocketConnectionRow) => {
+  if (!row.isOnline) {
+    message.warning('离线节点暂时无法操控')
+    return
+  }
   currentConnection.value = row
   controlDialogVisible.value = true
   // 加载定时任务信息
@@ -844,10 +865,35 @@ const handleControl = async (row: WebsocketConnectionRow) => {
 }
 
 const handleSendMessage = (row: WebsocketConnectionRow) => {
+  if (!row.isOnline) {
+    message.warning('离线节点暂时无法发送消息')
+    return
+  }
   currentConnection.value = row
   messageContent.value = ''
   messageEvent.value = 'admin-message'
   sendMessageDialogVisible.value = true
+}
+
+const handleDisconnect = async (row: WebsocketConnectionRow) => {
+  if (!row.isOnline) {
+    message.warning('离线节点无需断开')
+    return
+  }
+
+  await message.confirm(`确认强制断开连接 ${row.id} 吗？客户端如果开启自动重连，稍后可能会重新连回。`, '强制断开')
+
+  try {
+    const response = await WebsocketApi.disconnectWebsocketConnection(row.id)
+    if (response.success) {
+      message.success(response.message || '连接已强制断开')
+      await fetchConnections()
+      return
+    }
+    message.error(response.message || '连接断开失败')
+  } catch (error: any) {
+    message.error(error?.response?.data?.message || error?.message || '连接断开失败')
+  }
 }
 
 const handleFunctionOperation = (command: string, row: any) => {

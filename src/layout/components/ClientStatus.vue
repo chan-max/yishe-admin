@@ -7,16 +7,18 @@
 -->
 <script lang="tsx">
 import { defineComponent, onMounted, onUnmounted, ref, computed } from 'vue'
-import { ElTooltip } from 'element-plus'
+import { ElTooltip, ElMessage } from 'element-plus'
 import {
   isLocalConnected,
   isRemoteConnected,
   myClients,
   refreshMyClients,
   startConnectionChecks,
-  clearConnectionChecks
+  clearConnectionChecks,
+  startWebSocketConnection
 } from '@/stores/connectionStatus'
 import ClientConnectionsDialog from '@/components/ClientConnectionsDialog/index.vue'
+import { websocketClient } from '@/services/websocketClient'
 
 export default defineComponent({
   name: 'ClientStatus',
@@ -35,6 +37,22 @@ export default defineComponent({
       setTimeout(() => {
         clientLoading.value = false
       }, 2000)
+    }
+
+    function reconnectRemote() {
+      if (isRemoteConnected.value) {
+        return
+      }
+
+      const status = websocketClient.state.status
+      if (status === 'connecting' || status === 'reconnecting') {
+        ElMessage.info('远程连接正在恢复中')
+        return
+      }
+
+      websocketClient.reconnect()
+      startWebSocketConnection()
+      ElMessage.success('已发起远程重连')
     }
 
     onMounted(() => {
@@ -117,10 +135,18 @@ export default defineComponent({
         />
         {/* 远程服务状态 */}
         <ElTooltip
-          content={isRemoteConnected.value ? '远程服务已连接' : '远程服务未连接'}
+          content={isRemoteConnected.value ? '远程服务已连接' : '点击重新连接远程服务'}
           placement="bottom"
         >
-          <div class="custom-hover flex items-center gap-1">
+          <div
+            class="custom-hover flex items-center gap-1"
+            style={{ cursor: isRemoteConnected.value ? 'default' : 'pointer' }}
+            onClick={() => {
+              if (!isRemoteConnected.value) {
+                reconnectRemote()
+              }
+            }}
+          >
             <div
               class="w-2 h-2 rounded-full mr-1"
               style={{

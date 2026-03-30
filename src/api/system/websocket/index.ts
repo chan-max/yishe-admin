@@ -98,7 +98,7 @@ export interface WebsocketClientInfo {
 export interface WebsocketConnectionVO {
   id: string
   namespace: string
-  connectedAt: string
+  connectedAt: string | null
   ip?: string
   userAgent?: string
   query?: Record<string, string | string[]>
@@ -110,6 +110,10 @@ export interface WebsocketConnectionVO {
   nickname?: string
   email?: string
   tokenUser?: TokenUserInfo | null
+  isOnline?: boolean
+  lastOnlineAt?: string | null
+  lastOfflineAt?: string | null
+  nodeStatus?: string | null
 }
 
 export const getWebsocketConnections = () => {
@@ -120,8 +124,22 @@ export const getMyWebsocketConnections = () => {
   return request.post<WebsocketConnectionVO[]>({ url: '/websocket/my-connections' })
 }
 
+export const getWebsocketConnectionViews = () => {
+  return request.post<WebsocketConnectionVO[]>({ url: '/websocket/connections-view' })
+}
+
+export const getMyWebsocketConnectionViews = () => {
+  return request.post<WebsocketConnectionVO[]>({ url: '/websocket/my-connections-view' })
+}
+
 export const sendMessageToConnection = (connectionId: string, data: any, event?: string) => {
   return request.post({ url: '/websocket/send-message', data: { id: connectionId, event, data } })
+}
+
+export const disconnectWebsocketConnection = (clientId: string) => {
+  return request.post<{ success: boolean; message: string; data?: { clientId: string } }>({
+    url: `/websocket/disconnect/${clientId}`
+  })
 }
 
 export interface ServiceCommandDTO {
