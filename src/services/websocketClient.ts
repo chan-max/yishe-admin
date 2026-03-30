@@ -74,6 +74,7 @@ interface ClientInfoPayload {
 export interface ServiceRuntimeEvent {
   clientId: string
   service: string
+  pluginKey?: string
   runtime: Record<string, any>
   reportedAt?: string
 }
@@ -82,6 +83,7 @@ export interface ServiceCommandResultEvent {
   clientId: string
   commandId: string
   service: string
+  pluginKey?: string
   action: string
   success: boolean
   message?: string
@@ -134,6 +136,7 @@ export interface ClientConnectionChangedEvent {
     appVersion?: string | null
     machine?: Record<string, any> | null
     location?: Record<string, any> | null
+    services?: Record<string, any> | null
     uploader?: Record<string, any> | null
     psAutomation?: Record<string, any> | null
   }

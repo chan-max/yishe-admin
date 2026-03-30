@@ -1,11 +1,19 @@
 <script lang="tsx">
 import { Icon } from '@/components/Icon'
+import { ElTooltip } from 'element-plus'
 import { useDesign } from '@/hooks/web/useDesign'
 import { usePermissionStore } from '@/store/modules/permission'
 import { useAppStore } from '@/store/modules/app'
+import type { WebsocketConnectionVO } from '@/api/system/websocket'
+import { getMyWebsocketConnectionViews } from '@/api/system/websocket'
 import { isUrl } from '@/utils/is'
 import { pathResolve } from '@/utils/routerHelper'
 import { Logo } from '@/layout/components/Logo'
+import {
+  websocketClient,
+  type ClientConnectionChangedEvent,
+  type ServiceRuntimeEvent
+} from '@/services/websocketClient'
 
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('menu')
@@ -22,6 +30,208 @@ export default defineComponent({
     const routers = computed(() => permissionStore.getRouters.filter((route) => !route.meta?.hidden))
     const activeMenu = computed(() => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path)
     const expandedMenus = ref<Record<string, boolean>>({})
+    const clientSnapshots = ref<Record<string, WebsocketConnectionVO>>({})
+
+    const normalizePluginKey = (value?: string | null) => {
+      const normalized = String(value || '').trim()
+      if (!normalized) {
+        return ''
+      }
+
+      const aliasMap: Record<string, string> = {
+        uploader: 'browser-automation',
+        photoshop: 'ps-automation',
+        browser: 'browser-automation'
+      }
+
+      return aliasMap[normalized] || normalized
+    }
+
+    const menuStatusRouteMap: Record<string, string> = {
+      '/external/browser-automation': 'browser-automation',
+      '/external/ps-automation': 'ps-automation'
+    }
+
+    const pluginStatusMap = computed<Record<string, 'available' | 'degraded' | 'offline'>>(() => {
+      const summary: Record<string, 'available' | 'degraded' | 'offline'> = {}
+      const snapshots = Object.values(clientSnapshots.value)
+
+      Object.values(menuStatusRouteMap).forEach((pluginKey) => {
+        let hasConnected = false
+        let hasAvailable = false
+
+        snapshots.forEach((snapshot) => {
+          const services = snapshot.clientInfo?.services || {}
+          const runtime =
+            services[pluginKey] ||
+            services[pluginKey === 'browser-automation' ? 'uploader' : pluginKey === 'ps-automation' ? 'photoshop' : pluginKey]
+
+          if (!runtime) {
+            return
+          }
+
+          if (runtime.connected) {
+            hasConnected = true
+          }
+
+          if (runtime.available) {
+            hasAvailable = true
+          }
+        })
+
+        summary[pluginKey] = hasAvailable ? 'available' : hasConnected ? 'degraded' : 'offline'
+      })
+
+      return summary
+    })
+
+    const routeStatusMap = computed<Record<string, 'available' | 'degraded' | 'offline'>>(() => {
+      const result: Record<string, 'available' | 'degraded' | 'offline'> = {}
+      Object.entries(menuStatusRouteMap).forEach(([routePath, pluginKey]) => {
+        result[routePath] = pluginStatusMap.value[pluginKey] || 'offline'
+      })
+      return result
+    })
+
+    const syncSnapshotsFromList = (list: WebsocketConnectionVO[]) => {
+      const next: Record<string, WebsocketConnectionVO> = {}
+      list.forEach((item) => {
+        if (!item.id) return
+        next[item.id] = item
+      })
+      clientSnapshots.value = next
+    }
+
+    const fetchClientSnapshots = async () => {
+      try {
+        const response = await getMyWebsocketConnectionViews()
+        const list = Array.isArray(response) ? response : []
+        syncSnapshotsFromList(list)
+      } catch {
+        // ignore menu status bootstrap failures
+      }
+    }
+
+    const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
+      const pluginKey = normalizePluginKey(event.pluginKey || event.service)
+      if (!pluginKey || !event.clientId) {
+        return
+      }
+
+      const previous = clientSnapshots.value[event.clientId]
+      clientSnapshots.value = {
+        ...clientSnapshots.value,
+        [event.clientId]: {
+          ...(previous || {
+            id: event.clientId,
+            namespace: '/ws',
+            connectedAt: event.reportedAt || null,
+            isOnline: true,
+            nodeStatus: 'online'
+          }),
+          clientInfo: {
+            ...(previous?.clientInfo || {}),
+            services: {
+              ...(previous?.clientInfo?.services || {}),
+              [pluginKey]: {
+                ...(previous?.clientInfo?.services?.[pluginKey] || {}),
+                ...(event.runtime || {})
+              }
+            }
+          }
+        } as WebsocketConnectionVO
+      }
+    }
+
+    const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
+      const clientId = event.client?.clientId
+      if (!clientId) {
+        return
+      }
+
+      if (event.action === 'removed') {
+        const previous = clientSnapshots.value[clientId]
+        if (!previous) {
+          return
+        }
+
+        clientSnapshots.value = {
+          ...clientSnapshots.value,
+          [clientId]: {
+            ...previous,
+            isOnline: false,
+            nodeStatus: 'offline'
+          }
+        }
+        return
+      }
+
+      const previous = clientSnapshots.value[clientId]
+      clientSnapshots.value = {
+        ...clientSnapshots.value,
+        [clientId]: {
+          ...(previous || {
+            id: clientId,
+            namespace: '/ws',
+            connectedAt: event.client.connectedAt || event.reportedAt || null
+          }),
+          connectedAt: event.client.connectedAt || previous?.connectedAt || null,
+          isOnline: true,
+          nodeStatus: 'online',
+          clientInfo: {
+            ...(previous?.clientInfo || {}),
+            appVersion: event.client.appVersion ?? previous?.clientInfo?.appVersion,
+            machine: event.client.machine ?? previous?.clientInfo?.machine,
+            location: event.client.location ?? previous?.clientInfo?.location,
+            services: {
+              ...(previous?.clientInfo?.services || {}),
+              ...(event.client.services || {})
+            },
+            psAutomation: event.client.psAutomation ?? previous?.clientInfo?.psAutomation
+          }
+        } as WebsocketConnectionVO
+      }
+    }
+
+    const renderStatusDot = (routePath: string) => {
+      const status = routeStatusMap.value[routePath]
+      if (!status) {
+        return undefined
+      }
+
+      const titleMap: Record<string, Record<'available' | 'degraded' | 'offline', string>> = {
+        '/external/browser-automation': {
+          available: '浏览器自动化可用',
+          degraded: '浏览器自动化已连接，但当前不可执行',
+          offline: '浏览器自动化不可用'
+        },
+        '/external/ps-automation': {
+          available: '套图制作可调用',
+          degraded: 'PS 自动化已连接，但当前不可执行',
+          offline: 'PS 自动化不可用'
+        }
+      }
+
+      const title = titleMap[routePath]?.[status]
+
+      return (
+        <ElTooltip
+          content={title || '当前不可用'}
+          placement="right"
+          effect="light"
+          showAfter={120}
+          teleported={false}
+          transition=""
+        >
+          <span
+            class={[
+              `${prefixCls}__status-dot`,
+              `${prefixCls}__status-dot--${status}`
+            ]}
+          />
+        </ElTooltip>
+      )
+    }
 
     const getRoutePath = (route: AppRouteRecordRaw, parentPath = '/') => {
       return isUrl(route.path) ? route.path : pathResolve(parentPath, route.path)
@@ -69,6 +279,17 @@ export default defineComponent({
       },
       { immediate: true, deep: true }
     )
+
+    onMounted(() => {
+      void fetchClientSnapshots()
+      websocketClient.events.on('serviceRuntime', handleServiceRuntime)
+      websocketClient.events.on('clientConnectionChanged', handleClientConnectionChanged)
+    })
+
+    onUnmounted(() => {
+      websocketClient.events.off('serviceRuntime', handleServiceRuntime)
+      websocketClient.events.off('clientConnectionChanged', handleClientConnectionChanged)
+    })
 
     return () => (
       <nav id={prefixCls} class={`${prefixCls} h-full`}>
@@ -150,6 +371,7 @@ export default defineComponent({
                           onClick={() => selectMenu(childPath)}
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
+                          {renderStatusDot(childPath)}
                         </button>
                       )
                     })}
@@ -340,6 +562,27 @@ $prefix-cls: #{$namespace}-menu;
     line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__status-dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: var(--el-text-color-placeholder);
+  }
+
+  &__status-dot--available {
+    background: var(--el-color-success);
+  }
+
+  &__status-dot--degraded {
+    background: var(--el-color-warning);
+  }
+
+  &__status-dot--offline {
+    background: var(--el-text-color-placeholder);
   }
 
   @media (max-width: 1024px) {

@@ -25,6 +25,7 @@ export interface WebsocketClientInfo {
   }
   services?: Record<string, {
     key?: string
+    pluginKey?: string
     label?: string
     connected?: boolean
     available?: boolean
@@ -143,9 +144,18 @@ export const disconnectWebsocketConnection = (clientId: string) => {
 }
 
 export interface ServiceCommandDTO {
-  clientId: string
-  service: string
-  action: string
+  clientId?: string
+  service?: string
+  pluginKey?: string
+  action?: string
+  target?: {
+    clientId?: string
+    pluginKey?: string
+  }
+  command?: {
+    name?: string
+    payload?: any
+  }
   mode?: 'production' | 'debug' | 'maintenance'
   payload?: any
 }
