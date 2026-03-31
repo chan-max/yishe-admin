@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { store } from '@/store'
 import { cloneDeep } from 'lodash-es'
 import remainingRouter from '@/router/modules/remaining'
+import { hasRouteMenuAccess } from '@/router/access-control'
 import { useUserStore } from '@/store/modules/user'
 import { pathResolve } from '@/utils/routerHelper'
 import { isUrl } from '@/utils/is'
@@ -34,10 +35,10 @@ function sortRoutes(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
     }))
 }
 
-function filterRoutesByAdmin(routes: AppRouteRecordRaw[], isAdmin: boolean): AppRouteRecordRaw[] {
+function filterRoutesByAccess(routes: AppRouteRecordRaw[], user: any): AppRouteRecordRaw[] {
   return routes
     .map((route) => {
-      if (!isAdmin && route.meta?.requiresAdmin) {
+      if (!hasRouteMenuAccess(route, user)) {
         return null
       }
 
@@ -45,7 +46,7 @@ function filterRoutesByAdmin(routes: AppRouteRecordRaw[], isAdmin: boolean): App
         return route
       }
 
-      const children = filterRoutesByAdmin(route.children, isAdmin)
+      const children = filterRoutesByAccess(route.children, user)
       if (!children.length && !route.component) {
         return null
       }
@@ -131,8 +132,7 @@ export const usePermissionStore = defineStore('permission', {
   actions: {
     async generateRoutes(): Promise<void> {
       const userStore = useUserStore(store)
-      const isAdmin = userStore.user?.isAdmin || false
-      const accessRoutes = filterRoutesByAdmin(cloneDeep(remainingRouter), isAdmin)
+      const accessRoutes = filterRoutesByAccess(cloneDeep(remainingRouter), userStore.user)
       const routers = flattenMenusToTwoLevels(accessRoutes)
 
       this.routers = routers

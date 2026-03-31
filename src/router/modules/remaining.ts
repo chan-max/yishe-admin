@@ -1,4 +1,5 @@
 import { Layout } from "@/utils/routerHelper";
+import { ROUTE_MENU_KEY_MAP } from "@/constants/access-control";
 
 const { t } = useI18n();
 /**
@@ -284,7 +285,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "ExternalFeature",
     redirect: "/external/browser-automation",
     meta: {
-      title: "外部功能",
+      title: "客户端功能",
       icon: "ep:connection",
       order: 4,
       alwaysShow: true,
@@ -450,6 +451,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
       alwaysShow: true,
     },
     children: [
+      {
+        path: "link-navigation",
+        component: () => import("@/views/operation/link-navigation/index.vue"),
+        name: "OperationLinkNavigation",
+        meta: {
+          title: "链接导航",
+        },
+      },
       {
         path: "shop",
         component: () => import("@/views/shop/index.vue"),
@@ -896,4 +905,20 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
 ];
 
-export default remainingRouter;
+function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
+  return routes.map((route) => {
+    const menuKey = route.name ? ROUTE_MENU_KEY_MAP[String(route.name)] : "";
+    return {
+      ...route,
+      meta: menuKey
+        ? {
+          ...(route.meta || {}),
+          menuKey,
+        }
+        : route.meta,
+      children: route.children ? attachMenuKeys(route.children) : route.children,
+    };
+  });
+}
+
+export default attachMenuKeys(remainingRouter);

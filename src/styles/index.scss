@@ -293,6 +293,14 @@ html.light .vxe-table {
   box-sizing: border-box;
 }
 
+.el-dialog .el-form:not(.el-form--label-top) .el-form-item__label,
+.el-drawer .el-form:not(.el-form--label-top) .el-form-item__label {
+  display: inline-flex;
+  min-height: var(--el-component-size);
+  align-items: center;
+  line-height: normal;
+}
+
 .dialog-footer {
   display: flex;
   flex-wrap: wrap;

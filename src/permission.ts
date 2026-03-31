@@ -7,17 +7,14 @@ import { usePageLoading } from '@/hooks/web/usePageLoading'
 import { useDictStoreWithOut } from '@/store/modules/dict'
 import { useUserStoreWithOut } from '@/store/modules/user'
 import { usePermissionStoreWithOut } from '@/store/modules/permission'
+import { hasRouteMenuAccess } from '@/router/access-control'
 
 const { start, done } = useNProgress()
 
 const { loadStart, loadDone } = usePageLoading()
 
-const hasAdminAccess = (to: any, isAdmin: boolean) => {
-  if (isAdmin) {
-    return true
-  }
-
-  return !to.matched.some((record) => record.meta?.requiresAdmin)
+const hasPageAccess = (to: any, user: any) => {
+  return to.matched.every((record) => hasRouteMenuAccess(record, user))
 }
 
 const parseURL = (
@@ -83,7 +80,7 @@ router.beforeEach(async (to, from, next) => {
         await userStore.setUserInfoAction()
         isRelogin.show = false
         await permissionStore.generateRoutes()
-        if (!hasAdminAccess(to, !!userStore.getUser?.isAdmin)) {
+        if (!hasPageAccess(to, userStore.getUser)) {
           next('/403')
           return
         }
@@ -94,7 +91,7 @@ router.beforeEach(async (to, from, next) => {
         const nextData = to.path === redirect ? { ...to, replace: true } : { path: redirect, query }
         next(nextData)
       } else {
-        if (!hasAdminAccess(to, !!userStore.getUser?.isAdmin)) {
+        if (!hasPageAccess(to, userStore.getUser)) {
           next('/403')
           return
         }

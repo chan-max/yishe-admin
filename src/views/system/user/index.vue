@@ -88,6 +88,9 @@
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
+                          <el-dropdown-item command="access">
+                            <span>分配权限</span>
+                          </el-dropdown-item>
                           <el-dropdown-item command="resetPassword" class="operation-menu-item--danger">
                             <span>重置密码</span>
                           </el-dropdown-item>
@@ -317,6 +320,13 @@
       </div>
     </template>
   </el-dialog>
+
+  <UserAccessDialog
+    v-model="accessDialogVisible"
+    :user-id="accessTarget.id"
+    :user-name="accessTarget.name"
+    @success="handleAccessSaved"
+  />
 </template>
 
 <script setup lang="tsx">
@@ -332,6 +342,16 @@ import { useUserStore } from "@/store/modules/user";
 import { getCompanyList } from "@/api/company";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import UserAccessDialog from "./UserAccessDialog.vue";
+
+function getErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.msg ||
+    error?.message ||
+    fallback
+  );
+}
 
 // 查询条件
 const queryParams = reactive({
@@ -477,6 +497,11 @@ const passwordDialogVisible = ref(false);
 const passwordFormRef = ref();
 const currentUserId = ref("");
 const passwordSubmitLoading = ref(false);
+const accessDialogVisible = ref(false);
+const accessTarget = reactive({
+  id: "",
+  name: "",
+});
 const passwordFormData = reactive({
   newPassword: "",
   confirmPassword: "",
@@ -577,10 +602,27 @@ function handleOperationCommand(command, row) {
     case "resetPassword":
       handleResetPassword(row);
       break;
+    case "access":
+      handleAssignAccess(row);
+      break;
     case "delete":
       handleDelete(row);
       break;
   }
+}
+
+function handleAssignAccess(row) {
+  if (!userStore.user?.isAdmin) {
+    ElMessage.warning("仅管理员可分配权限");
+    return;
+  }
+  accessTarget.id = String(row.id || "");
+  accessTarget.name = row.name || row.account || "";
+  accessDialogVisible.value = true;
+}
+
+function handleAccessSaved() {
+  getList();
 }
 
 // 删除用户
@@ -649,7 +691,7 @@ async function handleSubmit() {
     dialogVisible.value = false;
     await getList();
   } catch (error) {
-    ElMessage.error("操作失败");
+    ElMessage.error(getErrorMessage(error, "操作失败"));
   } finally {
     submitLoading.value = false
   }

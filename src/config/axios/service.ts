@@ -3,16 +3,99 @@ import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestCo
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import qs from 'qs'
 import { config } from '@/config/axios/config'
-import { getAccessToken, getRefreshToken, getTenantId, removeToken, setToken } from '@/utils/auth'
+import { getAccessToken, getTenantId, removeToken } from '@/utils/auth'
 import errorCode from './errorCode'
-import { store } from '@/store'
 import { useUserStoreWithOut } from '@/store/modules/user'
 
-import { resetRouter } from '@/router'
 import { deleteUserCache } from '@/hooks/web/useCache'
 
 const tenantEnable = import.meta.env.VITE_APP_TENANT_ENABLE
 const { result_code, base_url, request_timeout } = config
+
+const ownershipExcludedKeywords = ['/login', '/refresh-token', '/page', '/list', '/delete', '/remove']
+const ownershipWriteKeywords = [
+  '/create',
+  '/publish-config',
+  '/design-request',
+  '/common-url',
+  '/product',
+  '/product-model',
+  '/ai/tti-record',
+  '/ai/tts-record',
+  '/ai/tts/custom-voice',
+  '/remotion-video-record',
+  '/sticker-psd-set',
+  '/sticker/story-script',
+  '/sticker/create',
+  '/sticker/update',
+  '/sticker/copy',
+  '/sticker/sticker-folder/create',
+  '/psd-template/create',
+  '/font-template/create',
+  '/custom-model/create',
+  '/clip-material/create',
+  '/draft/create',
+  '/crawler/material/add',
+  '/crawler/material/update'
+]
+const ownershipLegacyKeywords = [
+  '/sticker',
+  '/psd-template',
+  '/font-template',
+  '/custom-model',
+  '/clip-material',
+  '/draft',
+  '/sticker-psd-set',
+  '/crawler/material'
+]
+
+const isPlainObject = (value: unknown): value is Record<string, any> => {
+  return Object.prototype.toString.call(value) === '[object Object]'
+}
+
+const shouldInjectOwnership = (url = '', method = '') => {
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`
+  const upperMethod = method.toUpperCase()
+  if (!['POST', 'PUT', 'PATCH'].includes(upperMethod)) {
+    return false
+  }
+  if (ownershipExcludedKeywords.some((keyword) => normalizedUrl.includes(keyword))) {
+    return false
+  }
+  return ownershipWriteKeywords.some((keyword) => normalizedUrl.includes(keyword))
+}
+
+const shouldInjectUploaderId = (url = '') => {
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`
+  return ownershipLegacyKeywords.some((keyword) => normalizedUrl.includes(keyword))
+}
+
+const applyOwnershipToPayload = (payload: unknown, userId: string, includeUploaderId: boolean) => {
+  if (payload instanceof FormData) {
+    if (!payload.get('userId')) {
+      payload.append('userId', userId)
+    }
+    if (includeUploaderId && !payload.get('uploaderId')) {
+      payload.append('uploaderId', userId)
+    }
+    return payload
+  }
+
+  if (!isPlainObject(payload)) {
+    return payload
+  }
+
+  if (payload.userId === undefined || payload.userId === null || payload.userId === '') {
+    payload.userId = userId
+  }
+  if (
+    includeUploaderId &&
+    (payload.uploaderId === undefined || payload.uploaderId === null || payload.uploaderId === '')
+  ) {
+    payload.uploaderId = userId
+  }
+  return payload
+}
 
 // 需要忽略的提示。忽略后，自动 Promise.reject('error')
 const ignoreMsgs = [
@@ -22,10 +105,6 @@ const ignoreMsgs = [
 // 是否显示重新登录
 export const isRelogin = { show: false }
 // Axios 无感知刷新令牌，参考 https://www.dashingdog.cn/article/11 与 https://segmentfault.com/a/1190000020210980 实现
-// 请求队列
-let requestList: any[] = []
-// 是否正在刷新中
-let isRefreshToken = false
 // 请求白名单，无须token的接口
 const whiteList: string[] = ['/login', '/refresh-token']
 
@@ -44,7 +123,8 @@ const service: AxiosInstance = axios.create({
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // 是否需要设置 token
-    let isToken = (config!.headers || {}).isToken === false
+    const requestHeaders = config.headers as any
+    let isToken = requestHeaders?.isToken === false
     const isLoginEndpoint = config.url && config.url.indexOf('/auth/login') > -1
     
     // 登录接口特殊处理：如果有 token，也带上 token（后端会检查是否有效）
@@ -67,13 +147,22 @@ service.interceptors.request.use(
       const tenantId = getTenantId()
       if (tenantId) config.headers['tenant-id'] = tenantId
     }
+
+    const url = config.url || ''
+    const userStore = useUserStoreWithOut()
+    const currentUserId = userStore.user?.id ? String(userStore.user.id) : ''
+    if (currentUserId && shouldInjectOwnership(url, config.method || '')) {
+      config.data = applyOwnershipToPayload(
+        config.data,
+        currentUserId,
+        shouldInjectUploaderId(url)
+      )
+    }
     
     const method = config.method?.toUpperCase()
     // 全局拦截：阻止非管理员发起“删除/移除”类操作（额外以 URL 关键字检测）
     try {
-      const userStore = useUserStoreWithOut(store)
       const isAdmin = !!userStore.user?.isAdmin
-      const url = config.url || ''
       const isDeleteLike = (config.method && config.method.toLowerCase() === 'delete') || /\/delete|\/remove|\/del|\/destroy|\/trash|\/batchDelete/i.test(url)
       if (!isAdmin && isDeleteLike) {
         ElMessage.warning('无权限：删除/移除操作仅限管理员')
@@ -200,10 +289,6 @@ service.interceptors.response.use(
   }
 )
 
-const refreshToken = async () => {
-  axios.defaults.headers.common['tenant-id'] = getTenantId()
-  return await axios.post(base_url + '/system/auth/refresh-token?refreshToken=' + getRefreshToken())
-}
 const handleAuthorized = () => {
   const { t } = useI18n()
   if (!isRelogin.show) {

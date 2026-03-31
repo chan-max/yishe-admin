@@ -86,3 +86,17 @@ export function updateUserSetting(data: { key?: string; data?: any; setting?: Re
     data
   })
 }
+
+export function getUserAccessSetting(data: { userId: string }) {
+  return request.post({
+    url: '/user/getAccessSetting',
+    data
+  })
+}
+
+export function updateUserAccessSetting(data: { userId: string; accessControl: Record<string, any> }) {
+  return request.post({
+    url: '/user/updateAccessSetting',
+    data
+  })
+}
