@@ -95,6 +95,7 @@ export interface ServiceCommandResultEvent {
 export interface PsAutomationStatusEvent {
   clientId: string
   enabled?: boolean
+  autoDispatchEnabled?: boolean
   running?: boolean
   queueCount?: number
   currentPsSetId?: string | null
@@ -185,8 +186,15 @@ const clientInfo = reactive<ClientInfoPayload>({
 export type WebsocketEvents = {
   log: { level: 'info' | 'warn' | 'error'; message: string }
   myClientStatus: { hasClient: boolean }
-  'start-psd-set-production-response': { success: boolean; message?: string; sentTo?: number; totalClients?: number }
-  'production-status': { status: string; message: string; psdSetId?: string }
+  'start-psd-set-production-response': {
+    success: boolean
+    message?: string
+    sentTo?: number
+    totalClients?: number
+    psdSetId?: string
+    data?: Record<string, any>
+  }
+  'production-status': { status: string; message: string; psdSetId?: string; progress?: number; total?: number }
   serviceRuntime: ServiceRuntimeEvent
   serviceCommandResult: ServiceCommandResultEvent
   clientConnectionChanged: ClientConnectionChangedEvent

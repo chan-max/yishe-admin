@@ -71,4 +71,18 @@ export function updateUserPassword(data: any) {
     url: '/user/updatePass',
     data
   })
-} 
+}
+
+export function getUserSetting(data?: { key?: string }) {
+  return request.post({
+    url: '/user/getSetting',
+    data: data || {}
+  })
+}
+
+export function updateUserSetting(data: { key?: string; data?: any; setting?: Record<string, any> }) {
+  return request.post({
+    url: '/user/updateSetting',
+    data
+  })
+}

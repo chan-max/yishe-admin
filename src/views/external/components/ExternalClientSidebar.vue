@@ -41,7 +41,7 @@
 <script setup lang="ts">
 export interface ClientNodeBadge {
   text: string
-  tone: 'success' | 'warning' | 'muted'
+  tone: 'success' | 'warning' | 'muted' | 'info' | 'danger'
 }
 
 export interface ClientNodeItem {
@@ -205,6 +205,18 @@ const emptyText = props.emptyText
   border-color: var(--el-color-warning-light-5);
   background: var(--el-color-warning-light-9);
   color: var(--el-color-warning);
+}
+
+.external-sidebar__badge.is-info {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.external-sidebar__badge.is-danger {
+  border-color: var(--el-color-danger-light-5);
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
 }
 
 @media (max-width: 1200px) {

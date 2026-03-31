@@ -98,6 +98,28 @@
               <el-button size="small" type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length || loading">
                 批量删除 ({{ selectedIds.length }})
               </el-button>
+              <div class="psd-set-page__auto-dispatch">
+                <div class="psd-set-page__auto-dispatch-main">
+                  <div class="psd-set-page__auto-dispatch-title">自动调度</div>
+                  <div class="psd-set-page__auto-dispatch-subtitle">
+                    开启后，服务端会自动为当前账号调度空闲客户端执行套图制作。
+                  </div>
+                </div>
+                <div class="psd-set-page__auto-dispatch-side">
+                  <span class="psd-set-page__auto-dispatch-status" :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
+                    <span class="psd-set-page__auto-dispatch-dot" />
+                    <span>{{ userAutoSchedulingEnabled ? "已开启" : "已关闭" }}</span>
+                  </span>
+                  <el-button
+                    size="small"
+                    :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
+                    :loading="userAutoSchedulingLoading"
+                    @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)"
+                  >
+                    {{ userAutoSchedulingEnabled ? "关闭自动调度" : "开启自动调度" }}
+                  </el-button>
+                </div>
+              </div>
             </div>
           </el-form>
         </div>
@@ -136,9 +158,11 @@
           </div>
         </template>
         <template #statusSlot="{ row }">
-          <el-tag :type="statusTagType(row.status)" effect="plain" size="small">
-            {{ statusLabel(row.status) }}
-          </el-tag>
+          <div class="status-cell">
+            <el-tag :type="statusTagType(row.status)" effect="plain" size="small">
+              {{ statusLabel(row.status) }}
+            </el-tag>
+          </div>
         </template>
         <template #imagesSlot="{ row }">
           <div class="table-preview-stack">
@@ -369,6 +393,34 @@
                 <span class="info-label">自动动作数</span>
                 <span class="info-value">{{ detailAutomationCount }}</span>
               </div>
+              <div class="psd-set-detail-summary__item">
+                <span class="info-label">调度状态</span>
+                <span class="info-value">
+                  <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
+                    {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
+                  </el-tag>
+                </span>
+              </div>
+              <div class="psd-set-detail-summary__item">
+                <span class="info-label">执行节点</span>
+                <span class="info-value">{{ getSchedulerAssignedLabel(detailData) }}</span>
+              </div>
+              <div class="psd-set-detail-summary__item">
+                <span class="info-label">当前步骤</span>
+                <span class="info-value">{{ detailData?.schedulerMeta?.currentStep || "-" }}</span>
+              </div>
+              <div class="psd-set-detail-summary__item">
+                <span class="info-label">执行进度</span>
+                <span class="info-value">{{ formatSchedulerProgress(detailData?.schedulerMeta?.progress) }}</span>
+              </div>
+              <div class="psd-set-detail-summary__item">
+                <span class="info-label">最近心跳</span>
+                <span class="info-value">{{ formatTimestamp(detailData?.schedulerMeta?.lastHeartbeatAt) }}</span>
+              </div>
+              <div class="psd-set-detail-summary__item">
+                <span class="info-label">最后错误</span>
+                <span class="info-value">{{ detailData?.schedulerMeta?.lastError || "-" }}</span>
+              </div>
             </div>
             <div class="psd-set-detail-text-grid">
               <div class="psd-set-detail-text-card">
@@ -552,6 +604,16 @@
               <pre class="config-preview">{{ detailMetaFormatted }}</pre>
             </div>
             <span v-else class="text-gray-400 text-sm">无元信息</span>
+          </section>
+
+          <section class="psd-set-detail-panel">
+            <div class="detail-header">
+              <span class="detail-label">调度信息</span>
+            </div>
+            <div v-if="detailSchedulerMetaFormatted" class="config-preview-container">
+              <pre class="config-preview">{{ detailSchedulerMetaFormatted }}</pre>
+            </div>
+            <span v-else class="text-gray-400 text-sm">无调度信息</span>
           </section>
         </aside>
       </div>
@@ -881,6 +943,95 @@
       </template>
     </el-dialog>
 
+    <el-dialog
+      v-model="productionDispatchDialogVisible"
+      width="920px"
+      title="开始制作"
+      append-to-body
+      destroy-on-close
+      class="production-dispatch-dialog"
+      @open="handleOpenProductionDispatchDialog"
+      @closed="handleCloseProductionDispatchDialog"
+    >
+      <div class="production-dispatch-dialog__body">
+        <ExternalClientSidebar
+          class="production-dispatch-dialog__sidebar"
+          :items="dispatchClientItems"
+          :loading="productionDispatchLoading"
+          :selected-client-id="selectedDispatchClientId"
+          section-title="客户端节点"
+          empty-text="暂无在线 PS 节点"
+          @select="handleSelectDispatchClient"
+        />
+
+        <div class="production-dispatch-dialog__main">
+          <div class="production-dispatch-dialog__summary">
+            <div class="production-dispatch-dialog__title">
+              {{ productionDispatchRow?.name || "当前套图" }}
+            </div>
+            <div class="production-dispatch-dialog__subtitle">
+              请选择一个客户端节点执行当前套图制作。
+            </div>
+          </div>
+
+          <div class="production-dispatch-dialog__panel">
+            <template v-if="selectedDispatchClient">
+              <div class="production-dispatch-dialog__panel-title">客户端信息</div>
+              <div class="production-dispatch-dialog__info">
+                <div class="production-dispatch-dialog__info-item">
+                  <span class="label">节点</span>
+                  <span class="value">{{ getClientDisplayName(selectedDispatchClient) }}</span>
+                </div>
+                <div class="production-dispatch-dialog__info-item">
+                  <span class="label">连接状态</span>
+                  <span class="value">{{ selectedDispatchClient.isOnline ? "在线" : "离线" }}</span>
+                </div>
+                <div class="production-dispatch-dialog__info-item">
+                  <span class="label">应用版本</span>
+                  <span class="value">{{ selectedDispatchClient.clientInfo?.appVersion || "-" }}</span>
+                </div>
+                <div class="production-dispatch-dialog__info-item">
+                  <span class="label">运行平台</span>
+                  <span class="value">{{ selectedDispatchClient.clientInfo?.machine?.platform || "-" }}</span>
+                </div>
+                <div class="production-dispatch-dialog__info-item">
+                  <span class="label">PS 服务</span>
+                  <span class="value">{{ getDispatchClientRuntimeText(selectedDispatchClient) }}</span>
+                </div>
+                <div class="production-dispatch-dialog__info-item">
+                  <span class="label">当前任务</span>
+                  <span class="value">{{ getDispatchClientCurrentTaskText(selectedDispatchClient) }}</span>
+                </div>
+                <div class="production-dispatch-dialog__info-item production-dispatch-dialog__info-item--full">
+                  <span class="label">说明</span>
+                  <span class="value">{{ getDispatchClientHintText(selectedDispatchClient) }}</span>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="production-dispatch-dialog__panel-title">请选择客户端</div>
+              <div class="production-dispatch-dialog__empty">
+                左侧会显示当前可手动执行套图制作的客户端节点，点击后即可开始制作。
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="production-dispatch-dialog__footer">
+          <el-button @click="productionDispatchDialogVisible = false">取消</el-button>
+          <el-button
+            type="primary"
+            :loading="startingProductionId === productionDispatchRow?.id"
+            :disabled="!selectedDispatchClientId"
+            @click="handleConfirmStartProduction"
+          >
+            开始制作
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
   </ContentWrap>
 </template>
@@ -905,9 +1056,13 @@ import { getPublishConfigListApi, createPublishTaskApi, regeneratePublishTaskApi
 import request from "@/config/axios";
 import { isLocalConnected } from "@/stores/connectionStatus";
 import { websocketClient } from "@/services/websocketClient";
+import { useClientNodeState } from "@/services/clientNodeState";
+import { ClientControlService } from "@/services/clientControl";
+import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
 import { downloadImageEnhanced } from "@/common/download";
+import ExternalClientSidebar, { type ClientNodeItem } from "@/views/external/components/ExternalClientSidebar.vue";
 
 const loading = ref(false);
 const dataSource = ref<any[]>([]);
@@ -917,6 +1072,11 @@ const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
 const batchUpdatingStatus = ref(false);
 const startingProductionId = ref<string>("");
+const productionDispatchDialogVisible = ref(false);
+const productionDispatchLoading = ref(false);
+const productionDispatchRow = ref<any>(null);
+const selectedDispatchClientId = ref("");
+const userAutoSchedulingLoading = ref(false);
 const generateProductDialogVisible = ref(false);
 const generateProductDialogLoading = ref(false);
 const generateProductSubmitting = ref(false);
@@ -941,6 +1101,12 @@ const currentPublishTasksPsdSetId = ref<string>("");
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
+const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState();
+const {
+  userAutoSchedulingEnabled,
+  refreshUserAutoScheduling,
+  setUserAutoSchedulingEnabled,
+} = usePsdSetRuntimeState();
 
 const publishPlatformNameMap: Record<string, string> = {
   douyin: "抖音",
@@ -1271,6 +1437,18 @@ const detailMetaFormatted = computed(() => {
   }
 });
 
+const detailSchedulerMetaFormatted = computed(() => {
+  const schedulerMeta = detailData.value?.schedulerMeta;
+  if (!schedulerMeta) return "";
+  try {
+    const parsed =
+      typeof schedulerMeta === "string" ? JSON.parse(schedulerMeta) : schedulerMeta;
+    return JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    return String(schedulerMeta);
+  }
+});
+
 function getColumns() {
   const baseColumns = [
     { type: "checkbox", width: 50, fixed: "left" as const },
@@ -1424,6 +1602,199 @@ async function handleDownloadPsdSetImages(row: any) {
 function statusLabel(status: string) {
   const item = statusOptions.find((s) => s.value === status);
   return item ? item.label : status || "-";
+}
+
+function schedulerStatusLabel(status?: string) {
+  const map: Record<string, string> = {
+    pending: "待调度",
+    assigned: "已分配",
+    running: "执行中",
+    completed: "已完成",
+    failed: "失败",
+    timeout: "超时",
+  };
+  return map[String(status || "").trim()] || "待调度";
+}
+
+function schedulerStatusTagType(status?: string) {
+  switch (status) {
+    case "completed":
+      return "success";
+    case "running":
+      return "warning";
+    case "assigned":
+      return "info";
+    case "failed":
+    case "timeout":
+      return "danger";
+    default:
+      return "info";
+  }
+}
+
+function formatSchedulerProgress(progress?: number | null) {
+  return typeof progress === "number" ? `${progress}%` : "-";
+}
+
+function getSchedulerAssignedLabel(row: any) {
+  const meta = row?.schedulerMeta;
+  if (!meta || typeof meta !== "object") return "-";
+  return meta.assignedMachineCode || meta.assignedClientId || "-";
+}
+
+function getSchedulerSummary(row: any) {
+  const meta = row?.schedulerMeta;
+  if (!meta || typeof meta !== "object") return "";
+  if (meta.status !== "assigned" && meta.status !== "running") return "";
+
+  const parts = [
+    schedulerStatusLabel(meta.status),
+    meta.assignedMachineCode || meta.assignedClientId || "",
+    typeof meta.progress === "number" ? `${meta.progress}%` : "",
+  ].filter(Boolean);
+
+  return parts.join(" · ");
+}
+
+function getClientPhotoshopService(client: any) {
+  return client?.clientInfo?.services?.["ps-automation"] || client?.clientInfo?.services?.photoshop || null;
+}
+
+function getClientDisplayName(client: any) {
+  return client?.clientInfo?.machine?.code || client?.id || "-";
+}
+
+function isDispatchClientBusy(client: any) {
+  const psAutomation = client?.clientInfo?.psAutomation;
+  const service = getClientPhotoshopService(client);
+  return !!(
+    psAutomation?.running ||
+    psAutomation?.currentPsSetId ||
+    service?.busy ||
+    service?.state === "busy"
+  );
+}
+
+function isDispatchClientExecutable(client: any) {
+  const service = getClientPhotoshopService(client);
+  if (!client?.isOnline || !service) return false;
+  if (isDispatchClientBusy(client)) return false;
+  return !!(service.available || service.connected);
+}
+
+function isDispatchClientVisible(client: any) {
+  const service = getClientPhotoshopService(client);
+  return !!(client?.isOnline && service);
+}
+
+function getDispatchClientRuntimeText(client: any) {
+  const service = getClientPhotoshopService(client);
+  if (!service) return "未上报";
+  if (service.available) return "可执行";
+  if (service.connected) return "任务进行中";
+  if (service.status === "error") return "异常";
+  return "未就绪";
+}
+
+function getDispatchClientCurrentTaskText(client: any) {
+  const psAutomation = client?.clientInfo?.psAutomation;
+  return psAutomation?.currentPsSetName || psAutomation?.currentPsSetId || "-";
+}
+
+function getDispatchClientHintText(client: any) {
+  const service = getClientPhotoshopService(client);
+  if (!client?.isOnline) return "客户端离线，不能执行制作。";
+  if (!service) return "客户端未上报 PS 服务。";
+  if (isDispatchClientBusy(client)) return "该客户端当前正在处理其他套图任务。";
+  if (service.available) return "当前节点可直接执行套图制作。";
+  if (service.connected) return service.message || "客户端在线，但 Photoshop 还未进入可执行状态。";
+  return service.message || "当前节点尚未准备好执行制作。";
+}
+
+const dispatchVisibleClients = computed(() =>
+  clientNodes.value.filter((client) => isDispatchClientVisible(client))
+);
+
+const dispatchableClients = computed(() =>
+  dispatchVisibleClients.value.filter((client) => isDispatchClientExecutable(client))
+);
+
+const dispatchClientItems = computed<ClientNodeItem[]>(() =>
+  dispatchVisibleClients.value.map((client) => {
+    const service = getClientPhotoshopService(client);
+    const executable = isDispatchClientExecutable(client);
+    const busy = isDispatchClientBusy(client);
+    return {
+      connectionId: client.id,
+      name: getClientDisplayName(client),
+      time: formatTimestamp(client.connectedAt),
+      metaLeft: client.clientInfo?.appVersion || "未知版本",
+      metaRight: client.clientInfo?.machine?.platform || "未知平台",
+      badges: [
+        { text: "在线", tone: "success" },
+        {
+          text: service?.available ? "可执行" : service?.connected ? "任务进行中" : "未就绪",
+          tone: executable ? "success" : service?.connected ? "warning" : "muted",
+        },
+        ...(busy ? [{ text: "执行中", tone: "warning" as const }] : []),
+      ],
+    };
+  }),
+);
+
+const selectedDispatchClient = computed(() =>
+  dispatchVisibleClients.value.find((item) => item.id === selectedDispatchClientId.value) || null,
+);
+
+async function openProductionDispatchDialog(row: any) {
+  productionDispatchRow.value = row;
+  selectedDispatchClientId.value = "";
+  productionDispatchDialogVisible.value = true;
+  await refreshClientNodes();
+  if (dispatchableClients.value.length === 1) {
+    selectedDispatchClientId.value = dispatchableClients.value[0].id;
+  }
+}
+
+async function handleOpenProductionDispatchDialog() {
+  productionDispatchLoading.value = true;
+  try {
+    await refreshClientNodes();
+    if (!selectedDispatchClientId.value && dispatchableClients.value.length === 1) {
+      selectedDispatchClientId.value = dispatchableClients.value[0].id;
+    }
+  } finally {
+    productionDispatchLoading.value = false;
+  }
+}
+
+function handleCloseProductionDispatchDialog() {
+  productionDispatchLoading.value = false;
+  productionDispatchRow.value = null;
+  selectedDispatchClientId.value = "";
+}
+
+function handleSelectDispatchClient(clientId: string) {
+  selectedDispatchClientId.value = clientId;
+}
+
+async function refreshUserAutoSchedulingSetting() {
+  await refreshUserAutoScheduling();
+}
+
+async function handleToggleUserAutoScheduling(enabled: boolean) {
+  userAutoSchedulingLoading.value = true;
+  try {
+    const result = await ClientControlService.setPsAutomationUserAutoScheduling(enabled);
+    if (result.success) {
+      setUserAutoSchedulingEnabled(enabled);
+      if (enabled) {
+        await getList();
+      }
+    }
+  } finally {
+    userAutoSchedulingLoading.value = false;
+  }
 }
 
 function statusTagType(status: string) {
@@ -2149,9 +2520,30 @@ async function handleStartProduction(row: any) {
     return ElMessage.warning("WebSocket未连接，请稍后重试");
   }
 
+  await openProductionDispatchDialog(row);
+}
+
+async function handleConfirmStartProduction() {
+  const row = productionDispatchRow.value;
+  if (!row?.id) {
+    return ElMessage.warning("缺少ID，无法开始制作");
+  }
+
+  if (!selectedDispatchClientId.value) {
+    return ElMessage.warning("请选择一个客户端节点");
+  }
+
+  if (!selectedDispatchClient.value) {
+    return ElMessage.warning("所选客户端不存在，请刷新后重试");
+  }
+
+  if (!isDispatchClientExecutable(selectedDispatchClient.value)) {
+    return ElMessage.warning(getDispatchClientHintText(selectedDispatchClient.value));
+  }
+
   try {
     await ElMessageBox.confirm(
-      `确认开始制作该套图吗？制作请求将发送到您的客户端。`,
+      `确认由客户端 ${getClientDisplayName(selectedDispatchClient.value)} 开始制作该套图吗？`,
       "开始制作确认",
       {
         confirmButtonText: "确定",
@@ -2165,38 +2557,18 @@ async function handleStartProduction(row: any) {
 
   try {
     startingProductionId.value = row.id;
+    const response = await stickerPsdSetApi.dispatch(row.id, {
+      clientId: selectedDispatchClientId.value,
+    });
+    startingProductionId.value = "";
+    productionDispatchDialogVisible.value = false;
 
-    // 通过WebSocket发送制作请求
-    websocketClient.sendMessage("start-psd-set-production", { psdSetId: row.id });
-
-    // 监听响应
-    const responseHandler = (data: { success: boolean; message?: string }) => {
-      console.log("[psd-set] 收到制作响应:", data);
-      websocketClient.events.off("start-psd-set-production-response", responseHandler);
-      startingProductionId.value = "";
-
-      if (data.success) {
-        ElMessage.success(data.message || "制作请求已发送到客户端");
-        // 不在这里乐观更新为「制作中」，改由客户端上报 production-status 时再更新
-      } else {
-        // 如果失败，显示警告消息（比如正在制作中）
-        const message = data.message || "开始制作失败";
-        console.log("[psd-set] 显示警告消息:", message);
-        ElMessage.warning(message);
-      }
-    };
-
-    // 先监听事件，再发送请求
-    websocketClient.events.on("start-psd-set-production-response", responseHandler);
-
-    // 设置超时，如果5秒内没有响应，显示错误
-    setTimeout(() => {
-      if (startingProductionId.value === row.id) {
-        websocketClient.events.off("start-psd-set-production-response", responseHandler);
-        startingProductionId.value = "";
-        ElMessage.warning("请求超时，请检查网络连接");
-      }
-    }, 5000);
+    if (response?.success) {
+      ElMessage.success(response.message || "制作任务已调度");
+      getList();
+    } else {
+      ElMessage.warning(response?.message || "开始制作失败");
+    }
   } catch (error: any) {
     console.error("开始制作失败:", error);
     ElMessage.error(error?.message || "开始制作失败，请检查客户端连接状态");
@@ -2261,6 +2633,7 @@ onMounted(() => {
   // 添加全局监听器
   websocketClient.events.on("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.on("production-status", productionStatusHandler);
+  void refreshUserAutoSchedulingSetting();
 });
 
 onUnmounted(() => {
@@ -2292,6 +2665,86 @@ getList();
 
 .psd-set-page__actions {
   justify-content: flex-start;
+  align-items: center;
+}
+
+.psd-set-page__auto-dispatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-height: 40px;
+  padding: 10px 12px;
+  margin-right: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-fill-color-light);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.psd-set-page__auto-dispatch-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.psd-set-page__auto-dispatch-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-page__auto-dispatch-subtitle {
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-set-page__auto-dispatch-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.psd-set-page__auto-dispatch-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  background: var(--el-bg-color);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-set-page__auto-dispatch-status.is-success {
+  border-color: rgb(103 194 58 / 24%);
+  color: #67c23a;
+}
+
+.psd-set-page__auto-dispatch-status.is-info {
+  border-color: rgb(144 147 153 / 24%);
+  color: #909399;
+}
+
+.psd-set-page__auto-dispatch-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.psd-set-page__auto-dispatch-status.is-success .psd-set-page__auto-dispatch-dot {
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 32%);
+  animation: status-breath-success 1.8s infinite ease-in-out;
 }
 
 .psd-set-page__table-body {
@@ -2311,6 +2764,14 @@ getList();
   font-size: 12px;
   color: #999;
   margin-top: 4px;
+}
+
+.status-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  width: 100%;
 }
 
 .pagination-container {
@@ -3071,7 +3532,104 @@ getList();
   color: var(--el-color-danger);
 }
 
+.production-dispatch-dialog__body {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 360px;
+}
+
+.production-dispatch-dialog__sidebar,
+.production-dispatch-dialog__main {
+  min-width: 0;
+}
+
+.production-dispatch-dialog__main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.production-dispatch-dialog__summary,
+.production-dispatch-dialog__panel {
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+}
+
+.production-dispatch-dialog__title,
+.production-dispatch-dialog__panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.production-dispatch-dialog__subtitle,
+.production-dispatch-dialog__empty {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.production-dispatch-dialog__selection {
+  margin-top: 10px;
+}
+
+.production-dispatch-dialog__info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin-top: 12px;
+}
+
+.production-dispatch-dialog__info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.production-dispatch-dialog__info-item--full {
+  grid-column: 1 / -1;
+}
+
+.production-dispatch-dialog__info-item .label {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.production-dispatch-dialog__info-item .value {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  word-break: break-word;
+}
+
+.production-dispatch-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
 @media (max-width: 768px) {
+  .psd-set-page__auto-dispatch {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .psd-set-page__auto-dispatch-side {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .production-dispatch-dialog__body,
+  .production-dispatch-dialog__info {
+    grid-template-columns: 1fr;
+  }
+
   .publish-task-list-dialog :deep(.el-dialog__body) {
     height: auto;
     min-height: calc(100vh - 78px);

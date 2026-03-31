@@ -85,6 +85,7 @@ export interface WebsocketClientInfo {
   user?: TokenUserInfo | null
   psAutomation?: {
     enabled?: boolean
+    autoDispatchEnabled?: boolean
     running?: boolean
     queueCount?: number
     currentPsSetId?: string | null
@@ -240,6 +241,7 @@ export interface PsAutomationStatusVO {
   clientId: string
   machineCode?: string | null
   connectedAt?: string
+  isOnline?: boolean
   psAutomation?: WebsocketClientInfo['psAutomation'] | null
 }
 
@@ -263,6 +265,19 @@ export const togglePsAutomation = (clientId: string, enabled?: boolean) => {
   return request.post<{ success: boolean; message: string; data?: any }>({
     url: `/websocket/ps-automation/${clientId}/toggle`,
     data: typeof enabled === 'boolean' ? { enabled } : undefined
+  })
+}
+
+export const togglePsAutomationAutoDispatch = (clientId: string, enabled: boolean) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/ps-automation/${clientId}/auto-dispatch`,
+    data: { enabled }
+  })
+}
+
+export const triggerPsdSetAutoDispatch = () => {
+  return request.post<{ success: boolean; dispatched: boolean; reason?: string; message?: string; data?: any }>({
+    url: '/websocket/psd-set/auto-dispatch/trigger'
   })
 }
 

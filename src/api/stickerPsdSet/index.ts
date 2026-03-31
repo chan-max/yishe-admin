@@ -10,6 +10,10 @@ export const stickerPsdSetApi = {
   update: (id: string, data: any) => request.patch({ url: `/sticker-psd-set/${id}`, data }),
   updateStatus: (id: string, data: { status: string; statusMessage?: string }) =>
     request.post({ url: `/sticker-psd-set/${id}/status`, data }),
+  dispatch: (id: string, data?: { clientId?: string }) =>
+    request.post({ url: `/sticker-psd-set/${id}/dispatch`, data }),
+  retry: (id: string, data?: { clientId?: string }) =>
+    request.post({ url: `/sticker-psd-set/${id}/retry`, data }),
   remove: (id: string) => request.delete({ url: `/sticker-psd-set/${id}` }),
   removeBatch: (ids: string[]) => request.post({ url: `/sticker-psd-set/delete-batch`, data: { ids } }),
   // 根据ID查询贴纸详情

@@ -52,7 +52,8 @@
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">说明</span>
-                <span class="compact-info__value">{{ localDebugRuntime.message || localDebugRuntime.lastError || '-' }}</span>
+                <span class="compact-info__value">{{ localDebugRuntime.message || localDebugRuntime.lastError || '-'
+                  }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">最近检测</span>
@@ -69,25 +70,20 @@
 
       <el-tab-pane label="客户端节点" name="bridge">
         <div class="tab-layout">
-          <ExternalClientSidebar
-            class="ops-sidebar"
-            :items="clientNodeItems"
-            :loading="loading"
-            :selected-client-id="selectedClientId"
-            section-title="客户端节点"
-            empty-text="暂无可用客户端"
-            @select="selectedClientId = $event"
-          />
+          <ExternalClientSidebar class="ops-sidebar" :items="clientNodeItems" :loading="loading"
+            :selected-client-id="selectedClientId" section-title="客户端节点" empty-text="暂无可用客户端"
+            @select="selectedClientId = $event" />
 
           <section class="ops-main">
             <div class="ops-panel">
               <div class="ops-panel__head">
-              <div>
+                <div>
                   <div class="ops-panel__title">客户端状态</div>
                 </div>
                 <div class="ops-panel__actions" v-if="selectedClient">
                   <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
-                  <el-button @click="handleBridgeCommand(selectedClient.id, 'health', {}, 'maintenance')">检测服务</el-button>
+                  <el-button
+                    @click="handleBridgeCommand(selectedClient.id, 'health', {}, 'maintenance')">检测服务</el-button>
                 </div>
               </div>
 
@@ -95,7 +91,8 @@
                 <div class="compact-info">
                   <div class="compact-info__item">
                     <span class="compact-info__label">客户端</span>
-                    <span class="compact-info__value">{{ selectedClient.clientInfo?.machine?.code || selectedClient.id }}</span>
+                    <span class="compact-info__value">{{ selectedClient.clientInfo?.machine?.code || selectedClient.id
+                      }}</span>
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">状态</span>
@@ -113,36 +110,6 @@
                 </div>
 
                 <div class="ops-form-block">
-                  <div class="automation-toolbar">
-                    <div class="automation-toolbar__main">
-                      <div>
-                        <div class="ops-form-block__title">自动制作</div>
-                      </div>
-                      <span class="status-chip" :class="selectedPsAutomationEnabled ? 'is-success' : 'is-info'">
-                        <span class="status-chip__dot" />
-                        <span>{{ selectedPsAutomationEnabled ? '已开启' : '已关闭' }}</span>
-                      </span>
-                    </div>
-                    <div class="automation-toolbar__actions">
-                      <el-button
-                        type="success"
-                        plain
-                        :disabled="selectedPsAutomation?.enabled === true"
-                        @click="handlePsAutomationToggle(true)"
-                      >
-                        开启
-                      </el-button>
-                      <el-button
-                        type="danger"
-                        plain
-                        :disabled="selectedPsAutomation?.enabled === false"
-                        @click="handlePsAutomationToggle(false)"
-                      >
-                        关闭
-                      </el-button>
-                    </div>
-                  </div>
-
                   <div class="compact-info compact-info--grid">
                     <div class="compact-info__item">
                       <span class="compact-info__label">运行状态</span>
@@ -168,16 +135,19 @@
                     <div class="compact-info__item">
                       <span class="compact-info__label">进度</span>
                       <span class="compact-info__value">
-                        {{ typeof selectedPsAutomation?.progress === 'number' ? `${selectedPsAutomation.progress}%` : '-' }}
+                        {{ typeof selectedPsAutomation?.progress === 'number' ? `${selectedPsAutomation.progress}%` :
+                        '-' }}
                       </span>
                     </div>
                     <div class="compact-info__item">
                       <span class="compact-info__label">最近心跳</span>
-                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.lastHeartbeatAt || undefined) }}</span>
+                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.lastHeartbeatAt ||
+                        undefined) }}</span>
                     </div>
                     <div class="compact-info__item">
                       <span class="compact-info__label">最后更新</span>
-                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.updatedAt || undefined) }}</span>
+                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.updatedAt || undefined)
+                        }}</span>
                     </div>
                     <div class="compact-info__item compact-info__item--full">
                       <span class="compact-info__label">错误信息</span>
@@ -198,7 +168,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { formatDate, formatPast } from '@/utils/formatTime'
+import { formatDate } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
 import localPhotoshopApi from '@/api/client/photoshop'
 import ExternalClientSidebar, {
@@ -210,12 +180,11 @@ import {
   type PsAutomationStatusEvent,
   type ServiceRuntimeEvent
 } from '@/services/websocketClient'
-import type { WebsocketConnectionVO } from '@/api/system/websocket'
+import { useClientNodeState } from '@/services/clientNodeState'
 
 defineOptions({ name: 'PsConsolePanel' })
 
-const clients = ref<WebsocketConnectionVO[]>([])
-const loading = ref(false)
+const { clients, loading, refresh: refreshClientNodes } = useClientNodeState()
 const activeTab = ref('local')
 const selectedClientId = ref('')
 
@@ -229,8 +198,11 @@ const localDebugRuntime = reactive({
   lastError: ''
 })
 
+const getPhotoshopService = (client: any) =>
+  client.clientInfo?.services?.['ps-automation'] || client.clientInfo?.services?.photoshop || null
+
 const psClients = computed(() =>
-  clients.value.filter((client) => !!client.clientInfo?.services?.photoshop)
+  clients.value.filter((client) => !!getPhotoshopService(client))
 )
 
 const selectedClient = computed(() => {
@@ -240,8 +212,8 @@ const selectedClient = computed(() => {
   return psClients.value.find((client) => client.id === selectedClientId.value) || psClients.value[0]
 })
 
-const getPsBridgeService = (client: WebsocketConnectionVO) => {
-  const service = client.clientInfo?.services?.photoshop
+const getPsBridgeService = (client: any) => {
+  const service = getPhotoshopService(client)
   if (!service) {
     return null
   }
@@ -260,7 +232,7 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
     text = '异常'
   } else if (connected) {
     tagType = 'warning'
-    text = '在线待命'
+    text = '任务进行中'
   }
 
   return {
@@ -272,7 +244,6 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
 
 const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
 const selectedPsAutomation = computed(() => selectedClient.value?.clientInfo?.psAutomation || null)
-const selectedPsAutomationEnabled = computed(() => !!selectedPsAutomation.value?.enabled)
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   psClients.value.map((client) => {
     const service = getPsBridgeService(client)
@@ -283,9 +254,9 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
     if (service?.available) {
       badges.push({ text: '可用', tone: 'success' })
     } else if (service?.connected) {
-      badges.push({ text: '在线待命', tone: 'warning' })
+      badges.push({ text: '任务进行中', tone: 'warning' })
     } else if (service?.status === 'error') {
-      badges.push({ text: '异常', tone: 'warning' })
+      badges.push({ text: '异常', tone: 'danger' })
     } else {
       badges.push({ text: '未就绪', tone: 'muted' })
     }
@@ -367,7 +338,7 @@ const bridgeServiceStatus = computed(() => {
     return {
       level: 'warning',
       tagType: 'warning' as const,
-      text: '在线待命',
+      text: '任务进行中',
       summary: selectedPsBridgeService.value?.message || '客户端节点已在线，但 Photoshop 服务尚未达到可执行状态。'
     }
   }
@@ -398,12 +369,7 @@ watch(
 )
 
 const refreshClients = async () => {
-  loading.value = true
-  try {
-    clients.value = await ClientControlService.getMyClients()
-  } finally {
-    loading.value = false
-  }
+  await refreshClientNodes()
 }
 
 const refreshLocalDebug = async () => {
@@ -446,18 +412,6 @@ const handleBridgeCommand = async (
 ) => {
   await ClientControlService.sendServiceCommand(clientId, 'photoshop', action, payload, mode)
 }
-
-const handlePsAutomationToggle = async (enabled: boolean) => {
-  if (!selectedClient.value) {
-    return
-  }
-
-  const success = await ClientControlService.setPsAutomationEnabled(selectedClient.value.id, enabled)
-  if (success) {
-    await refreshClients()
-  }
-}
-
 onMounted(() => {
   websocketClient.events.on('serviceRuntime', handleServiceRuntime)
   websocketClient.events.on('psAutomationStatus', handlePsAutomationStatus)
@@ -495,6 +449,7 @@ onUnmounted(() => {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-start;
+  align-items: center;
 }
 
 .ops-tabs :deep(.el-tabs__header) {
@@ -571,8 +526,8 @@ onUnmounted(() => {
 }
 
 .inline-status.is-warning {
-  border-color: rgb(230 162 60 / 28%);
-  color: #e6a23c;
+  border-color: rgb(249 115 22 / 28%);
+  color: #f97316;
 }
 
 .inline-status.is-danger {
@@ -594,8 +549,8 @@ onUnmounted(() => {
 }
 
 .inline-status.is-warning .inline-status__dot {
-  background: #e6a23c;
-  box-shadow: 0 0 0 0 rgb(230 162 60 / 34%);
+  background: #f97316;
+  box-shadow: 0 0 0 0 rgb(249 115 22 / 34%);
   animation: status-breath-warning 1.8s infinite ease-in-out;
 }
 
@@ -784,7 +739,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.status-chip > span:last-child {
+.status-chip>span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -802,7 +757,7 @@ onUnmounted(() => {
 }
 
 .status-chip.is-warning {
-  color: #e6a23c;
+  color: #f97316;
 }
 
 .status-chip.is-danger {
@@ -820,8 +775,8 @@ onUnmounted(() => {
 }
 
 .status-chip.is-warning .status-chip__dot {
-  background: #e6a23c;
-  box-shadow: 0 0 0 0 rgb(230 162 60 / 34%);
+  background: #f97316;
+  box-shadow: 0 0 0 0 rgb(249 115 22 / 34%);
   animation: status-breath-warning 1.8s infinite ease-in-out;
 }
 
@@ -832,18 +787,45 @@ onUnmounted(() => {
 }
 
 @keyframes status-breath-success {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(103 194 58 / 16%); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgb(103 194 58 / 0%); transform: scale(1.04); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(103 194 58 / 16%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgb(103 194 58 / 0%);
+    transform: scale(1.04);
+  }
 }
 
 @keyframes status-breath-warning {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(230 162 60 / 16%); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgb(230 162 60 / 0%); transform: scale(1.04); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(249 115 22 / 16%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgb(249 115 22 / 0%);
+    transform: scale(1.04);
+  }
 }
 
 @keyframes status-breath-danger {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(245 108 108 / 16%); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgb(245 108 108 / 0%); transform: scale(1.04); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(245 108 108 / 16%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgb(245 108 108 / 0%);
+    transform: scale(1.04);
+  }
 }
 
 @media (max-width: 1280px) {
@@ -853,6 +835,7 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1024px) {
+
   .tab-layout,
   .ops-columns,
   .compact-info--grid {
@@ -865,6 +848,7 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+
   .ops-header,
   .ops-panel__head,
   .automation-toolbar {

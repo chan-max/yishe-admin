@@ -1,5 +1,6 @@
 import * as WebsocketApi from '@/api/system/websocket'
 import type { WebsocketConnectionVO } from '@/api/system/websocket'
+import { getUserSetting, updateUserSetting } from '@/api/user'
 import { ElMessage } from 'element-plus'
 
 /**
@@ -13,8 +14,7 @@ export class ClientControlService {
    */
   static async getMyClients(): Promise<WebsocketConnectionVO[]> {
     try {
-      // 直接调用服务端提供的个人连接接口，更安全
-      const response = await WebsocketApi.getMyWebsocketConnections()
+      const response = await WebsocketApi.getMyWebsocketConnectionViews()
       // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
       if (Array.isArray(response)) {
         return response
@@ -170,6 +170,110 @@ export class ClientControlService {
         ElMessage.error(error?.message || '设置自动制作状态失败')
       }
       return false
+    }
+  }
+
+  static async setPsAutomationAutoDispatchEnabled(
+    clientId: string,
+    enabled: boolean,
+    silent: boolean = false
+  ): Promise<boolean> {
+    try {
+      const myClients = await this.getMyClients()
+      const targetClient = myClients.find((client) => client.id === clientId)
+
+      if (!targetClient) {
+        if (!silent) {
+          ElMessage.error('无法操作该客户端：不属于当前用户或节点不存在')
+        }
+        return false
+      }
+
+      const response = await WebsocketApi.togglePsAutomationAutoDispatch(clientId, enabled)
+      if (response.success) {
+        if (!silent) {
+          ElMessage.success(enabled ? '已开启节点自动调度' : '已关闭节点自动调度')
+        }
+        return true
+      }
+
+      if (!silent) {
+        ElMessage.error(response.message || '节点自动调度更新失败')
+      }
+      return false
+    } catch (error: any) {
+      console.error('[ClientControlService] 设置节点自动调度失败:', error)
+      if (!silent) {
+        ElMessage.error(error?.message || '设置节点自动调度失败')
+      }
+      return false
+    }
+  }
+
+  static async getPsAutomationUserSetting(): Promise<{ autoSchedulingEnabled: boolean }> {
+    try {
+      const response: any = await getUserSetting({ key: 'psAutomation' })
+      const data = response?.data || response || {}
+      return {
+        autoSchedulingEnabled: !!data?.autoSchedulingEnabled
+      }
+    } catch (error: any) {
+      console.error('[ClientControlService] 获取用户调度设置失败:', error)
+      return { autoSchedulingEnabled: false }
+    }
+  }
+
+  static async setPsAutomationUserAutoScheduling(
+    enabled: boolean,
+    silent: boolean = false
+  ): Promise<{ success: boolean; dispatched?: boolean; reason?: string; message?: string }> {
+    try {
+      await updateUserSetting({
+        key: 'psAutomation',
+        data: {
+          autoSchedulingEnabled: enabled
+        }
+      })
+
+      let triggerResult:
+        | { success: boolean; dispatched: boolean; reason?: string; message?: string }
+        | undefined
+
+      if (enabled) {
+        const response = await WebsocketApi.triggerPsdSetAutoDispatch()
+        triggerResult = {
+          success: !!response?.success,
+          dispatched: !!response?.dispatched,
+          reason: response?.reason,
+          message: response?.message
+        }
+      }
+
+      if (!silent) {
+        if (!enabled) {
+          ElMessage.success('已关闭服务端自动调度')
+        } else if (triggerResult?.dispatched) {
+          ElMessage.success(triggerResult.message || '已开启自动调度，并开始制作待处理套图')
+        } else {
+          ElMessage.success(triggerResult?.message || '已开启服务端自动调度')
+        }
+      }
+      return {
+        success: true,
+        dispatched: triggerResult?.dispatched,
+        reason: triggerResult?.reason,
+        message: triggerResult?.message
+      }
+    } catch (error: any) {
+      console.error('[ClientControlService] 设置用户调度开关失败:', error)
+      if (!silent) {
+        ElMessage.error(error?.message || '设置服务端自动调度失败')
+      }
+      return {
+        success: false,
+        dispatched: false,
+        message: error?.message || '设置服务端自动调度失败'
+      }
     }
   }
   

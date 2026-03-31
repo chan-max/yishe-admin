@@ -379,7 +379,7 @@
 
     <el-dialog v-model="psdSetDialogVisible" title="制作PS套图" width="100%" style="height: 100%" align-center
       :destroy-on-close="true" class="psd-set-dialog" @close="resetPsdSetState">
-      <div class="psd-set-body" style="height: calc(100vh - 160px); display: flex; gap: 16px;">
+      <div class="psd-set-body" style="height: calc(100vh - 188px); display: flex; gap: 16px;">
         <div class="psd-set-materials"
           style="width: 480px; flex-shrink: 0; display: flex; flex-direction: column; border-right: 1px solid var(--el-border-color-lighter); padding-right: 16px;">
           <div class="section-title">已选择素材 ({{ ids.length }})</div>
@@ -580,17 +580,17 @@
                 <InfoFilled />
               </el-icon>
               <div class="psd-set-info-content">
-                <div>
+                <span class="psd-set-info-chip">
                   {{ psdSetMergeSticker
                     ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
                     : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务` }}
-                </div>
-                <div class="psd-set-formats-tip">
+                </span>
+                <span class="psd-set-info-chip psd-set-info-chip--subtle">
                   允许的图片格式：{{ allowedFormatsForSelectedTemplates.join('、') }}
-                </div>
-                <div class="psd-set-formats-tip">
+                </span>
+                <span class="psd-set-info-chip psd-set-info-chip--subtle">
                   自动化动作：{{ enabledPsdSetAutomationCount ? enabledPsdSetAutomationKeys.join('、') : '未启用' }}
-                </div>
+                </span>
               </div>
             </div>
 
@@ -4591,37 +4591,55 @@ const delayUpdateList = useDebounceFn(() => {
 .psd-set-footer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 4px;
 }
 
 .psd-set-footer-main {
   display: flex;
   align-items: center;
-  gap: 36px;
+  gap: 12px;
   width: 100%;
   flex-wrap: wrap;
 }
 
 .psd-set-info {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
   color: var(--el-color-info);
-  font-size: 13px;
-  min-width: 260px;
+  font-size: 12px;
+  min-width: 240px;
 }
 
 .psd-set-info :deep(.el-icon) {
-  font-size: 16px;
-  margin-top: 2px;
+  font-size: 14px;
+  margin-top: 0;
   flex-shrink: 0;
 }
 
 .psd-set-info-content {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   flex: 1;
+}
+
+.psd-set-info-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--el-color-info-light-9);
+  color: var(--el-color-info-dark-2);
+  line-height: 1.35;
+  font-size: 12px;
+}
+
+.psd-set-info-chip--subtle {
+  background: var(--el-fill-color-lighter);
+  color: var(--el-text-color-secondary);
 }
 
 .psd-set-automation-dialog-body {
@@ -4681,16 +4699,6 @@ const delayUpdateList = useDebounceFn(() => {
   font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
   font-size: 12px;
   color: var(--el-text-color-secondary);
-}
-
-.psd-set-formats-tip {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-  margin-top: 2px;
-  padding: 4px 8px;
-  background: var(--el-fill-color-lighter);
-  border-radius: 4px;
-  border-left: 2px solid var(--el-color-warning);
 }
 
 .footer-actions {
@@ -5791,9 +5799,9 @@ h1 {
 .psd-set-dialog :deep(.el-dialog__body) {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   min-height: 520px;
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 188px);
   overflow: hidden;
 }
 
@@ -6127,7 +6135,7 @@ h1 {
 .psd-set-footer {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 /* PSD模板详情弹窗样式 */

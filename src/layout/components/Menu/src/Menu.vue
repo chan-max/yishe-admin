@@ -9,9 +9,11 @@ import { getMyWebsocketConnectionViews } from '@/api/system/websocket'
 import { isUrl } from '@/utils/is'
 import { pathResolve } from '@/utils/routerHelper'
 import { Logo } from '@/layout/components/Logo'
+import { usePsdSetRuntimeState } from '@/services/psdSetRuntimeState'
 import {
   websocketClient,
   type ClientConnectionChangedEvent,
+  type PsAutomationStatusEvent,
   type ServiceRuntimeEvent
 } from '@/services/websocketClient'
 
@@ -31,6 +33,12 @@ export default defineComponent({
     const activeMenu = computed(() => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path)
     const expandedMenus = ref<Record<string, boolean>>({})
     const clientSnapshots = ref<Record<string, WebsocketConnectionVO>>({})
+    const {
+      userAutoSchedulingEnabled,
+      isAnyPsdSetProcessing,
+      refresh: refreshPsdSetRuntime,
+      setUserAutoSchedulingEnabled
+    } = usePsdSetRuntimeState()
 
     const normalizePluginKey = (value?: string | null) => {
       const normalized = String(value || '').trim()
@@ -110,6 +118,12 @@ export default defineComponent({
         syncSnapshotsFromList(list)
       } catch {
         // ignore menu status bootstrap failures
+      }
+    }
+
+    const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
+      if (typeof event?.autoSchedulingEnabled === 'boolean') {
+        setUserAutoSchedulingEnabled(event.autoSchedulingEnabled)
       }
     }
 
@@ -239,6 +253,34 @@ export default defineComponent({
       )
     }
 
+    const isPsdSetRoute = (routePath: string) => routePath === '/product/psd-set'
+
+    const renderPsdSetAutoDot = (routePath: string) => {
+      if (!isPsdSetRoute(routePath)) {
+        return undefined
+      }
+
+      return (
+        <ElTooltip
+          content={userAutoSchedulingEnabled.value ? '自动处理已开启' : '自动处理未开启'}
+          placement="right"
+          effect="light"
+          showAfter={120}
+          teleported={false}
+          transition=""
+        >
+          <span
+            class={[
+              `${prefixCls}__psd-status-dot`,
+              userAutoSchedulingEnabled.value
+                ? `${prefixCls}__psd-status-dot--enabled`
+                : `${prefixCls}__psd-status-dot--muted`
+            ]}
+          />
+        </ElTooltip>
+      )
+    }
+
     const getRoutePath = (route: AppRouteRecordRaw, parentPath = '/') => {
       return isUrl(route.path) ? route.path : pathResolve(parentPath, route.path)
     }
@@ -288,13 +330,16 @@ export default defineComponent({
 
     onMounted(() => {
       void fetchClientSnapshots()
+      void refreshPsdSetRuntime()
       websocketClient.events.on('serviceRuntime', handleServiceRuntime)
       websocketClient.events.on('clientConnectionChanged', handleClientConnectionChanged)
+      websocketClient.events.on('psAutomationStatus', handlePsAutomationStatus)
     })
 
     onUnmounted(() => {
       websocketClient.events.off('serviceRuntime', handleServiceRuntime)
       websocketClient.events.off('clientConnectionChanged', handleClientConnectionChanged)
+      websocketClient.events.off('psAutomationStatus', handlePsAutomationStatus)
     })
 
     return () => (
@@ -372,12 +417,16 @@ export default defineComponent({
                           title={String(child.meta?.title ?? '')}
                           class={[
                             `${prefixCls}__link`,
-                            { [`${prefixCls}__link--active`]: childPath === activeMenu.value }
+                            {
+                              [`${prefixCls}__link--active`]: childPath === activeMenu.value,
+                              [`${prefixCls}__link--psd-running`]:
+                                isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value
+                            }
                           ]}
                           onClick={() => selectMenu(childPath)}
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
-                          {renderStatusDot(childPath)}
+                          {renderPsdSetAutoDot(childPath) || renderStatusDot(childPath)}
                         </button>
                       )
                     })}
@@ -570,6 +619,66 @@ $prefix-cls: #{$namespace}-menu;
     white-space: nowrap;
   }
 
+  &__psd-status-dot {
+    flex: none;
+    position: relative;
+    width: 7px;
+    height: 7px;
+    margin-left: 8px;
+    border-radius: 999px;
+    background: rgb(148 163 184 / 88%);
+    box-shadow: 0 0 0 1px rgb(148 163 184 / 14%);
+  }
+
+  &__psd-status-dot::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    content: '';
+    opacity: 0;
+    transform: scale(1);
+  }
+
+  &__psd-status-dot--enabled {
+    background: #34d399;
+    box-shadow:
+      0 0 0 1px rgb(52 211 153 / 22%),
+      0 0 9px rgb(52 211 153 / 28%);
+    animation: status-dot-breathe-available 2.2s ease-in-out infinite;
+  }
+
+  &__psd-status-dot--enabled::after {
+    background: rgb(52 211 153 / 26%);
+    animation: status-dot-wave-available 2.2s ease-out infinite;
+  }
+
+  &__psd-status-dot--running {
+    background: #f97316;
+    box-shadow:
+      0 0 0 1px rgb(249 115 22 / 24%),
+      0 0 10px rgb(249 115 22 / 38%);
+    animation: status-dot-breathe-running 1.9s ease-in-out infinite;
+  }
+
+  &__psd-status-dot--running::after {
+    background: rgb(249 115 22 / 24%);
+    animation: status-dot-wave-running 1.9s ease-out infinite;
+  }
+
+  &__psd-status-dot--muted {
+    background: rgb(148 163 184 / 88%);
+    box-shadow: 0 0 0 1px rgb(148 163 184 / 12%);
+  }
+
+  &__link--psd-running {
+    border-left-color: rgb(250 204 21 / 72%);
+    background: rgb(250 204 21 / 18%);
+    box-shadow:
+      inset 0 0 0 1px rgb(250 204 21 / 20%),
+      inset 2px 0 0 rgb(250 204 21 / 58%);
+    animation: psd-link-amber-breathe 2.2s ease-in-out infinite;
+  }
+
   &__status-dot {
     flex: none;
     position: relative;
@@ -720,6 +829,52 @@ $prefix-cls: #{$namespace}-menu;
     box-shadow:
       0 0 0 1px rgb(148 163 184 / 14%),
       0 0 10px rgb(148 163 184 / 16%);
+  }
+}
+
+@keyframes status-dot-breathe-running {
+  0%,
+  100% {
+    transform: scale(0.96);
+    box-shadow:
+      0 0 0 1px rgb(249 115 22 / 18%),
+      0 0 8px rgb(249 115 22 / 22%),
+      0 0 14px rgb(249 115 22 / 10%);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 0 1px rgb(249 115 22 / 28%),
+      0 0 14px rgb(249 115 22 / 42%),
+      0 0 22px rgb(249 115 22 / 18%);
+  }
+}
+
+@keyframes status-dot-wave-running {
+  0% {
+    opacity: 0.36;
+    transform: scale(1);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(2.5);
+  }
+}
+
+@keyframes psd-link-amber-breathe {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgb(250 204 21 / 14%),
+      inset 2px 0 0 rgb(250 204 21 / 44%);
+    background: rgb(250 204 21 / 14%);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgb(250 204 21 / 28%),
+      inset 2px 0 0 rgb(250 204 21 / 72%);
+    background: rgb(250 204 21 / 22%);
   }
 }
 </style>
