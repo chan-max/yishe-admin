@@ -343,7 +343,7 @@ const uploadFile = async (file) => {
       width,
       height,
       aspectRatio,
-      uploaderId: userStore.user?.id,
+      userId: userStore.user?.id,
       useAiGenerate: useAiGenerate.value // 是否使用AI生成补全内容
     })
     file.status = 'success'

@@ -191,6 +191,12 @@ const gridOptions = ref({
     { title: '模型名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     { title: '模型描述', field: 'description', minWidth: 300, slots: { default: 'descriptionSlot' } },
     { title: '关键词', field: 'keywords', minWidth: 200, slots: { default: 'keywordsSlot' } },
+    {
+      title: '上传者',
+      field: 'uploader',
+      width: 140,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-'
+    },
     { title: '引用次数', field: 'ref_count', width: 100 },
     { title: '点赞次数', field: 'like_count', width: 100 },
     { title: '收藏次数', field: 'save_count', width: 100 },

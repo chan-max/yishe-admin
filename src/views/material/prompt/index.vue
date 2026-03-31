@@ -257,6 +257,12 @@ const gridOptions = ref({
       slots: { default: "tagsSlot" },
     },
     {
+      title: "上传者",
+      field: "uploader",
+      width: 140,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
+    {
       title: "创建时间",
       field: "createdAt",
       width: 160,

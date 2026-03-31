@@ -6,6 +6,7 @@ import { config } from '@/config/axios/config'
 import { getAccessToken, getTenantId, removeToken } from '@/utils/auth'
 import errorCode from './errorCode'
 import { useUserStoreWithOut } from '@/store/modules/user'
+import { useDataScopeStoreWithOut } from '@/store/modules/dataScope'
 
 import { deleteUserCache } from '@/hooks/web/useCache'
 
@@ -38,17 +39,6 @@ const ownershipWriteKeywords = [
   '/crawler/material/add',
   '/crawler/material/update'
 ]
-const ownershipLegacyKeywords = [
-  '/sticker',
-  '/psd-template',
-  '/font-template',
-  '/custom-model',
-  '/clip-material',
-  '/draft',
-  '/sticker-psd-set',
-  '/crawler/material'
-]
-
 const isPlainObject = (value: unknown): value is Record<string, any> => {
   return Object.prototype.toString.call(value) === '[object Object]'
 }
@@ -65,18 +55,10 @@ const shouldInjectOwnership = (url = '', method = '') => {
   return ownershipWriteKeywords.some((keyword) => normalizedUrl.includes(keyword))
 }
 
-const shouldInjectUploaderId = (url = '') => {
-  const normalizedUrl = url.startsWith('/') ? url : `/${url}`
-  return ownershipLegacyKeywords.some((keyword) => normalizedUrl.includes(keyword))
-}
-
-const applyOwnershipToPayload = (payload: unknown, userId: string, includeUploaderId: boolean) => {
+const applyOwnershipToPayload = (payload: unknown, userId: string) => {
   if (payload instanceof FormData) {
     if (!payload.get('userId')) {
       payload.append('userId', userId)
-    }
-    if (includeUploaderId && !payload.get('uploaderId')) {
-      payload.append('uploaderId', userId)
     }
     return payload
   }
@@ -87,12 +69,6 @@ const applyOwnershipToPayload = (payload: unknown, userId: string, includeUpload
 
   if (payload.userId === undefined || payload.userId === null || payload.userId === '') {
     payload.userId = userId
-  }
-  if (
-    includeUploaderId &&
-    (payload.uploaderId === undefined || payload.uploaderId === null || payload.uploaderId === '')
-  ) {
-    payload.uploaderId = userId
   }
   return payload
 }
@@ -151,18 +127,28 @@ service.interceptors.request.use(
     const url = config.url || ''
     const userStore = useUserStoreWithOut()
     const currentUserId = userStore.user?.id ? String(userStore.user.id) : ''
+    const isAdmin = !!userStore.user?.isAdmin
+    if (isAdmin) {
+      const dataScopeStore = useDataScopeStoreWithOut()
+      const { mode, userId } = dataScopeStore.headerPayload
+      config.headers['x-data-scope-mode'] = mode
+      if (mode === 'user' && userId) {
+        config.headers['x-data-scope-user-id'] = userId
+      } else {
+        delete config.headers['x-data-scope-user-id']
+      }
+    } else {
+      delete config.headers['x-data-scope-mode']
+      delete config.headers['x-data-scope-user-id']
+    }
+
     if (currentUserId && shouldInjectOwnership(url, config.method || '')) {
-      config.data = applyOwnershipToPayload(
-        config.data,
-        currentUserId,
-        shouldInjectUploaderId(url)
-      )
+      config.data = applyOwnershipToPayload(config.data, currentUserId)
     }
     
     const method = config.method?.toUpperCase()
     // 全局拦截：阻止非管理员发起“删除/移除”类操作（额外以 URL 关键字检测）
     try {
-      const isAdmin = !!userStore.user?.isAdmin
       const isDeleteLike = (config.method && config.method.toLowerCase() === 'delete') || /\/delete|\/remove|\/del|\/destroy|\/trash|\/batchDelete/i.test(url)
       if (!isAdmin && isDeleteLike) {
         ElMessage.warning('无权限：删除/移除操作仅限管理员')

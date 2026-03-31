@@ -343,7 +343,7 @@ async function uploadSingleFile(fileItem: any) {
       tags: fileItem.tags,
       url: cosResult.url,
       isPublic: true,
-      uploaderId: userStore.userInfo?.id
+      userId: userStore.userInfo?.id
     }
 
     const result = await createClipMaterial(materialData)

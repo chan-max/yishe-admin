@@ -16,6 +16,8 @@ import * as CryptoJS from 'crypto-js'
 let _cos = null
 let _cosConfig = null
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 // 解密函数（使用 AES-256-CBC）
 const decryptConfig = (encryptedString: string) => {
   const SECRET_KEY = '1s';
@@ -43,31 +45,50 @@ const decryptConfig = (encryptedString: string) => {
   }
 }
 
+const extractEncryptedConfig = (payload: any): string => {
+  if (typeof payload === 'string') {
+    return payload
+  }
+  if (payload && typeof payload.data === 'string') {
+    return payload.data
+  }
+  throw new Error('COS配置响应格式无效')
+}
+
 // 初始化COS配置，只在项目启动时调用一次
 export const initCOS = async () => {
   if (_cos) {
     return _cos
   }
 
-  try {
-    const res = await request.post({
-      url: '/getBasicConfig'
-    })
+  let lastError: any = null
 
-    // 解密配置（后端直接返回加密字符串，经过拦截器后 res.data 就是字符串）
-    _cosConfig = decryptConfig(res)
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const res = await request.post({
+        url: '/getBasicConfig'
+      })
 
-    _cos = new COS({
-      SecretId: _cosConfig.SecretId,
-      SecretKey: _cosConfig.SecretKey,
-      Bucket: _cosConfig.Bucket,
-      Region: _cosConfig.Region
-    } as any)
+      const encryptedConfig = extractEncryptedConfig(res)
+      _cosConfig = decryptConfig(encryptedConfig)
 
-    return _cos
-  } catch (error) {
-    throw error
+      _cos = new COS({
+        SecretId: _cosConfig.SecretId,
+        SecretKey: _cosConfig.SecretKey,
+        Bucket: _cosConfig.Bucket,
+        Region: _cosConfig.Region
+      } as any)
+
+      return _cos
+    } catch (error: any) {
+      lastError = error
+      if (attempt < 3) {
+        await sleep(500 * attempt)
+      }
+    }
   }
+
+  throw lastError
 }
 
 export const getCOS = () => {

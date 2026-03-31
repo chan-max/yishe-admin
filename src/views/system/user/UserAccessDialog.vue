@@ -25,31 +25,6 @@
               </el-checkbox-group>
             </div>
           </div>
-
-          <div class="access-dialog__section">
-            <div class="access-dialog__title">数据范围</div>
-            <el-radio-group v-model="form.dataScope.mode">
-              <el-radio label="self">仅自己</el-radio>
-              <el-radio label="specificUsers">指定用户</el-radio>
-              <el-radio label="all">全部用户</el-radio>
-            </el-radio-group>
-            <el-select
-              v-if="form.dataScope.mode === 'specificUsers'"
-              v-model="form.dataScope.userIds"
-              class="access-dialog__user-select"
-              multiple
-              filterable
-              clearable
-              placeholder="请选择可查看的数据所属用户"
-            >
-              <el-option
-                v-for="item in userOptions"
-                :key="item.id"
-                :label="item.label"
-                :value="item.id"
-              />
-            </el-select>
-          </div>
         </div>
       </template>
     </el-skeleton>
@@ -66,7 +41,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
-import { getUserAccessSetting, getUserList, updateUserAccessSetting } from "@/api/user";
+import { getUserAccessSetting, updateUserAccessSetting } from "@/api/user";
 import { MENU_ACCESS_GROUPS } from "@/constants/access-control";
 
 const props = defineProps<{
@@ -87,30 +62,12 @@ const dialogVisible = computed({
 
 const loading = ref(false);
 const submitLoading = ref(false);
-const userOptions = ref<{ id: string; label: string }[]>([]);
 const form = reactive({
-  menuKeys: [] as string[],
-  dataScope: {
-    mode: "self",
-    userIds: [] as string[]
-  }
+  menuKeys: [] as string[]
 });
 
 function resetForm() {
   form.menuKeys = [];
-  form.dataScope.mode = "self";
-  form.dataScope.userIds = [];
-}
-
-async function loadUserOptions() {
-  const res = await getUserList({
-    currentPage: 1,
-    pageSize: 1000
-  });
-  userOptions.value = (res.list || []).map((item: any) => ({
-    id: String(item.id),
-    label: `${item.name || item.account} (${item.account})`
-  }));
 }
 
 async function handleOpen() {
@@ -121,15 +78,8 @@ async function handleOpen() {
   loading.value = true;
   resetForm();
   try {
-    const [accessControl] = await Promise.all([
-      getUserAccessSetting({ userId: props.userId }),
-      loadUserOptions()
-    ]);
+    const accessControl = await getUserAccessSetting({ userId: props.userId });
     form.menuKeys = Array.isArray(accessControl?.menuKeys) ? accessControl.menuKeys : [];
-    form.dataScope.mode = accessControl?.dataScope?.mode || "self";
-    form.dataScope.userIds = Array.isArray(accessControl?.dataScope?.userIds)
-      ? accessControl.dataScope.userIds.map((item: any) => String(item))
-      : [];
   } catch (error) {
     ElMessage.error("加载权限配置失败");
   } finally {
@@ -144,19 +94,10 @@ async function handleSubmit() {
 
   submitLoading.value = true;
   try {
-    const uniqueUserIds = Array.from(new Set([
-      String(props.userId),
-      ...form.dataScope.userIds.map((item) => String(item))
-    ].filter(Boolean)));
-
     await updateUserAccessSetting({
       userId: props.userId,
       accessControl: {
-        menuKeys: form.menuKeys,
-        dataScope: {
-          mode: form.dataScope.mode,
-          userIds: form.dataScope.mode === "specificUsers" ? uniqueUserIds : []
-        }
+        menuKeys: form.menuKeys
       }
     });
     ElMessage.success("权限配置已保存");
@@ -202,10 +143,6 @@ async function handleSubmit() {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.access-dialog__user-select {
-  width: 100%;
 }
 
 .access-dialog__footer {

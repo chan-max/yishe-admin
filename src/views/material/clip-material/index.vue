@@ -540,6 +540,12 @@ const gridOptions = ref({
     { title: "后缀", field: "suffix", width: 80 },
     { title: "分类", field: "category", width: 100, slots: { default: "categorySlot" } },
     { title: "标签", field: "tags", minWidth: 150, slots: { default: "tagsSlot" } },
+    {
+      title: "上传者",
+      field: "uploader",
+      width: 140,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
     { title: "ID", field: "id", width: 80 },
     {
       title: "创建时间",

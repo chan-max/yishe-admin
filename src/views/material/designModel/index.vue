@@ -140,7 +140,7 @@
         </template>
 
         <template #uploaderSlot="{ row }">
-          <span>{{ row.uploader?.nickname || row.uploader?.name || row.uploaderId || '' }}</span>
+          <span>{{ row.uploader?.nickname || row.uploader?.name || row.userId || '' }}</span>
         </template>
         <template #phashSlot="{ row }">
           <div class="phash-display">

@@ -396,6 +396,12 @@ const gridOptions = computed(() => ({
     { title: '标题', field: 'title', minWidth: 260, slots: { default: 'titleSlot' } },
     { title: '模板', field: 'templateName', minWidth: 220, slots: { default: 'templateSlot' } },
     { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
+    {
+      title: '上传者',
+      field: 'uploader',
+      width: 140,
+      formatter: ({ row }: any) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-',
+    },
     { ...buildTimeColumn('创建时间', 'createTime', 180), slots: { default: 'createTimeSlot' } },
     buildOperationColumn('operationDefaultSlot'),
   ],
