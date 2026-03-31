@@ -98,3 +98,63 @@ export const fetchBrowserAutomationPages = (clientId: string) => {
     url: `/external/browser-automation/${clientId}/pages`
   })
 }
+
+export const executeBrowserAutomationDebug = (clientId: string, data: Record<string, any>) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/debug`,
+    data
+  })
+}
+
+export const openBrowserAutomationPlatform = (clientId: string, data: { platform: string }) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/open-platform`,
+    data
+  })
+}
+
+export const openBrowserAutomationLink = (clientId: string, data: { url: string }) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/open-link`,
+    data
+  })
+}
+
+export const queryBrowserAutomationTasks = (clientId: string, data?: Record<string, any>) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/tasks/query`,
+    data
+  })
+}
+
+export const getBrowserAutomationTaskDetail = (clientId: string, taskId: string) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/tasks/${encodeURIComponent(taskId)}/detail`
+  })
+}
+
+export const getBrowserAutomationTaskLogs = (clientId: string, taskId: string) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/tasks/${encodeURIComponent(taskId)}/logs`
+  })
+}
+
+export const getBrowserAutomationPlatforms = (clientId: string) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/platforms`
+  })
+}
+
+export const getBrowserAutomationLoginStatus = (clientId: string, data?: { refresh?: boolean }) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/login-status`,
+    data
+  })
+}
+
+export const publishByBrowserAutomation = (clientId: string, data: Record<string, any>) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/publish`,
+    data
+  })
+}

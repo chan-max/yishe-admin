@@ -309,6 +309,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           requiresAdmin: true,
         },
       },
+      {
+        path: "google-art",
+        component: () => import("@/views/external/google-art/index.vue"),
+        name: "ExternalGoogleArt",
+        meta: {
+          title: "Google Art",
+          requiresAdmin: true,
+        },
+      },
     ],
   },
   {

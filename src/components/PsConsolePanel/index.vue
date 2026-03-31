@@ -2,7 +2,7 @@
   <div class="ps-console" v-loading="loading">
     <div class="ops-header">
       <div>
-        <div class="ops-header__title">PS 控制台</div>
+        <div class="ops-header__title">PS 自动化控制台</div>
       </div>
       <div class="ops-header__actions">
         <div class="inline-status-group">
@@ -13,12 +13,12 @@
           </div>
           <div class="inline-status" :class="`is-${bridgeServiceStatus.level}`">
             <span class="inline-status__dot" />
-            <span class="inline-status__label">客户端连接</span>
+            <span class="inline-status__label">客户端节点</span>
             <span class="inline-status__text">{{ bridgeServiceStatus.text }}</span>
           </div>
         </div>
         <el-button @click="refreshLocalDebug">刷新本机直连</el-button>
-        <el-button type="primary" @click="refreshClients">刷新桥接节点</el-button>
+        <el-button type="primary" @click="refreshClients">刷新节点</el-button>
       </div>
     </div>
 
@@ -67,50 +67,23 @@
         </div>
       </el-tab-pane>
 
-      <el-tab-pane label="客户端连接" name="bridge">
+      <el-tab-pane label="客户端节点" name="bridge">
         <div class="tab-layout">
-          <aside class="ops-sidebar">
-            <div class="ops-panel ops-panel--sidebar">
-              <div class="ops-panel__title">连接节点</div>
-
-              <el-empty
-                v-if="!loading && psClients.length === 0"
-                description="暂无可识别的 PS 桥接节点"
-              />
-
-              <div v-else class="node-list">
-                <button
-                  v-for="client in psClients"
-                  :key="client.id"
-                  type="button"
-                  class="node-item"
-                  :class="{ 'is-active': selectedClientId === client.id }"
-                  @click="selectedClientId = client.id"
-                >
-                  <div class="node-item__name-row">
-                    <div class="node-item__name-wrap">
-                      <span class="status-chip" :class="`is-${resolvePsServiceLevel(getPsBridgeService(client))}`">
-                        <span class="status-chip__dot" />
-                        <span>{{ getPsBridgeService(client)?.text || '未就绪' }}</span>
-                      </span>
-                      <div class="node-item__name">{{ client.clientInfo?.machine?.code || client.id }}</div>
-                    </div>
-                    <div class="node-item__time">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</div>
-                  </div>
-                  <div class="node-item__meta-row">
-                    <div class="node-item__meta">{{ client.clientInfo?.appVersion || '未知版本' }}</div>
-                    <div class="node-item__meta">{{ client.clientInfo?.machine?.platform || '未知平台' }}</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </aside>
+          <ExternalClientSidebar
+            class="ops-sidebar"
+            :items="clientNodeItems"
+            :loading="loading"
+            :selected-client-id="selectedClientId"
+            section-title="客户端节点"
+            empty-text="暂无可用客户端"
+            @select="selectedClientId = $event"
+          />
 
           <section class="ops-main">
             <div class="ops-panel">
               <div class="ops-panel__head">
               <div>
-                  <div class="ops-panel__title">客户端连接状态</div>
+                  <div class="ops-panel__title">客户端状态</div>
                 </div>
                 <div class="ops-panel__actions" v-if="selectedClient">
                   <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
@@ -214,7 +187,7 @@
                 </div>
               </template>
 
-              <el-empty v-else description="请选择一个桥接节点" />
+              <el-empty v-else description="请选择客户端节点" />
             </div>
           </section>
         </div>
@@ -228,6 +201,10 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { formatDate, formatPast } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
 import localPhotoshopApi from '@/api/client/photoshop'
+import ExternalClientSidebar, {
+  type ClientNodeBadge,
+  type ClientNodeItem
+} from '@/views/external/components/ExternalClientSidebar.vue'
 import {
   websocketClient,
   type PsAutomationStatusEvent,
@@ -277,13 +254,13 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
   let text = '未就绪'
   if (available) {
     tagType = 'success'
-    text = '桥接可执行'
+    text = '可用'
   } else if (status === 'error') {
     tagType = 'danger'
-    text = '桥接异常'
+    text = '异常'
   } else if (connected) {
     tagType = 'warning'
-    text = '桥接在线'
+    text = '在线待命'
   }
 
   return {
@@ -296,13 +273,40 @@ const getPsBridgeService = (client: WebsocketConnectionVO) => {
 const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
 const selectedPsAutomation = computed(() => selectedClient.value?.clientInfo?.psAutomation || null)
 const selectedPsAutomationEnabled = computed(() => !!selectedPsAutomation.value?.enabled)
-const resolvePsServiceLevel = (service: ReturnType<typeof getPsBridgeService> | null) => {
-  if (!service) return 'info'
-  if (service.available) return 'success'
-  if (service.connected) return 'warning'
-  if (service.status === 'error') return 'danger'
-  return 'info'
-}
+const clientNodeItems = computed<ClientNodeItem[]>(() =>
+  psClients.value.map((client) => {
+    const service = getPsBridgeService(client)
+    const badges: ClientNodeBadge[] = [
+      { text: client.isOnline ? '在线' : '离线', tone: client.isOnline ? 'success' : 'muted' }
+    ]
+
+    if (service?.available) {
+      badges.push({ text: '可用', tone: 'success' })
+    } else if (service?.connected) {
+      badges.push({ text: '在线待命', tone: 'warning' })
+    } else if (service?.status === 'error') {
+      badges.push({ text: '异常', tone: 'warning' })
+    } else {
+      badges.push({ text: '未就绪', tone: 'muted' })
+    }
+
+    if (client.clientInfo?.psAutomation?.enabled) {
+      badges.push({
+        text: client.clientInfo.psAutomation.running ? '自动制作执行中' : '自动制作已开启',
+        tone: client.clientInfo.psAutomation.running ? 'warning' : 'success'
+      })
+    }
+
+    return {
+      connectionId: client.id,
+      name: client.clientInfo?.machine?.code || client.id,
+      time: formatDateSafe(client.connectedAt || undefined),
+      metaLeft: client.clientInfo?.appVersion || '未知版本',
+      metaRight: client.clientInfo?.machine?.platform || '未知平台',
+      badges
+    }
+  })
+)
 
 const formatDateSafe = (value?: string) => {
   if (!value) return '-'
@@ -312,16 +316,6 @@ const formatDateSafe = (value?: string) => {
     return value
   }
 }
-
-const localDebugStatusText = computed(() => {
-  if (localDebugRuntime.connected && localDebugRuntime.isAvailable) {
-    return '可调试'
-  }
-  if (localDebugRuntime.connected) {
-    return '已连通，但 Photoshop 不可执行'
-  }
-  return localDebugRuntime.lastError || '不可用'
-})
 
 const localDebugServiceStatus = computed(() => {
   if (localDebugRuntime.connected && localDebugRuntime.isAvailable) {
@@ -356,7 +350,7 @@ const bridgeServiceStatus = computed(() => {
       level: 'danger',
       tagType: 'danger' as const,
       text: '无可用节点',
-      summary: '当前账号下没有识别到带 Photoshop 服务上报的客户端桥接节点。'
+      summary: '当前账号下没有识别到带 Photoshop 服务上报的客户端节点。'
     }
   }
 
@@ -365,7 +359,7 @@ const bridgeServiceStatus = computed(() => {
       level: 'success',
       tagType: 'success' as const,
       text: '可用',
-      summary: '当前选中的客户端桥接节点可直接执行 Photoshop 任务。'
+      summary: '当前选中的客户端节点可直接执行 Photoshop 任务。'
     }
   }
 
@@ -374,7 +368,7 @@ const bridgeServiceStatus = computed(() => {
       level: 'warning',
       tagType: 'warning' as const,
       text: '在线待命',
-      summary: selectedPsBridgeService.value?.message || '桥接节点已在线，但 Photoshop 服务尚未达到可执行状态。'
+      summary: selectedPsBridgeService.value?.message || '客户端节点已在线，但 Photoshop 服务尚未达到可执行状态。'
     }
   }
 
@@ -382,7 +376,7 @@ const bridgeServiceStatus = computed(() => {
     level: 'danger',
     tagType: 'danger' as const,
     text: '不可用',
-    summary: selectedPsBridgeService.value?.message || '已选客户端未上报可用的 Photoshop 桥接服务。'
+    summary: selectedPsBridgeService.value?.message || '已选客户端未上报可用的 Photoshop 服务。'
   }
 })
 
@@ -480,19 +474,19 @@ onUnmounted(() => {
 .ps-console {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .ops-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .ops-header__title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -504,7 +498,7 @@ onUnmounted(() => {
 }
 
 .ops-tabs :deep(.el-tabs__header) {
-  margin: 0 0 8px;
+  margin: 0 0 12px;
 }
 
 .ops-tabs :deep(.el-tabs__nav-wrap::after) {
@@ -539,8 +533,8 @@ onUnmounted(() => {
 
 .tab-layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 12px;
   align-items: start;
 }
 
@@ -629,9 +623,9 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--el-fill-color-light);
 }
 
@@ -668,33 +662,41 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-.ops-panel {
-  border: 1px solid var(--el-border-color);
+.ops-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.ops-panel--sidebar {
-  position: sticky;
-  top: 0;
+.ops-panel {
+  border: 1px solid var(--el-border-color);
+  border-radius: 12px;
+  background: var(--el-bg-color);
 }
 
 .ops-panel,
-.ops-panel--sidebar {
-  padding: 10px;
+.ops-sidebar:deep(.external-sidebar) {
+  padding: 12px;
+}
+
+.ops-sidebar:deep(.external-sidebar) {
+  position: sticky;
+  top: 0;
 }
 
 .ops-panel__head {
   display: flex;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .ops-panel__title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -718,13 +720,13 @@ onUnmounted(() => {
 .automation-toolbar {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 8px;
-  padding: 10px;
+  margin-bottom: 12px;
+  padding: 12px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--el-fill-color-light);
 }
 
@@ -755,80 +757,12 @@ onUnmounted(() => {
   gap: 12px;
 }
 
-.node-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.node-item {
-  text-align: left;
-  border: 1px solid var(--el-border-color);
-  padding: 8px 10px;
-  cursor: pointer;
-  border-radius: 10px;
-}
-
-.node-item.is-active {
-  border-color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
-}
-
-.node-item__name {
-  font-size: 12px;
-  font-weight: 600;
-  word-break: break-all;
-}
-
-.node-item__name-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-}
-
-.node-item__name-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-.node-item__time {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  flex-shrink: 0;
-}
-
-.node-item__name {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.node-item__meta-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.node-item__meta {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.4;
-}
-
 .ops-form-block {
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .ops-form-block__title {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -925,7 +859,7 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .ops-panel--sidebar {
+  .ops-sidebar:deep(.external-sidebar) {
     position: static;
   }
 }
@@ -936,6 +870,10 @@ onUnmounted(() => {
   .automation-toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .ops-header__actions {
+    width: 100%;
   }
 
   .automation-toolbar__main {

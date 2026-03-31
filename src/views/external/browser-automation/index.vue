@@ -1,140 +1,175 @@
 <template>
   <ContentWrap :plain="true">
-    <div class="browser-automation-page">
-      <div class="browser-automation-toolbar">
-        <div>
-          <div class="browser-automation-toolbar__title">浏览器自动化</div>
-        </div>
-        <div class="browser-automation-toolbar__actions">
+    <div class="page">
+      <div class="topbar">
+        <div class="title">浏览器自动化控制台</div>
+        <div class="actions">
           <el-button @click="loadClients">刷新节点</el-button>
-          <el-button
-            type="primary"
-            :disabled="!selectedClientId"
-            :loading="actionLoading.checkStatus"
-            @click="handleCheckStatus"
-          >
-            刷新状态
-          </el-button>
+          <el-button type="primary" :disabled="!selectedClientId" :loading="loadingMap.checkStatus" @click="sendSimple('checkStatus')">刷新状态</el-button>
         </div>
       </div>
 
-      <div class="browser-automation-layout" v-loading="loading">
-        <aside class="browser-automation-sidebar">
-          <div class="browser-panel">
-            <div class="browser-panel__title">在线节点</div>
+      <div class="layout" v-loading="loading">
+        <ExternalClientSidebar
+          :items="clientNodeItems"
+          :loading="loading"
+          :selected-client-id="selectedClientId"
+          section-title="客户端节点"
+          empty-text="暂无可用客户端"
+          @select="selectedClientId = $event"
+        />
 
-            <el-empty v-if="!clients.length && !loading" description="暂无可用客户端" />
+        <section v-if="selectedClient" class="main">
+          <div class="summary">
+            <div class="card item"><div class="label">自动化服务</div><div class="value">{{ serviceText(selectedService) }}</div></div>
+            <div class="card item"><div class="label">浏览器实例</div><div class="value">{{ browserText(selectedService) }}</div></div>
+            <div class="card item"><div class="label">页面数</div><div class="value">{{ selectedDetails.pageCount ?? 0 }}</div></div>
+            <div class="card item"><div class="label">最近检测</div><div class="value">{{ dateText(selectedService?.lastCheckedAt) }}</div></div>
+          </div>
 
-            <div v-else class="node-list">
-              <button
-                v-for="client in clients"
-                :key="client.clientId"
-                type="button"
-                class="node-item"
-                :class="{ 'is-active': client.clientId === selectedClientId }"
-                @click="selectedClientId = client.clientId"
-              >
-                <div class="node-item__top">
-                  <div class="node-item__name-wrap">
-                    <span class="status-pill" :class="`is-${resolveClientChannelLevel(client)}`">
-                      <span class="status-pill__dot" />
-                      <span>{{ resolveClientChannelText(client) }}</span>
-                    </span>
-                    <span class="node-item__name">{{ client.machine?.code || client.clientId }}</span>
+          <el-tabs v-model="activeTab">
+            <el-tab-pane label="连接" name="browser">
+              <div class="grid">
+                <div class="card panel">
+                  <div class="section-title">浏览器控制</div>
+                  <div class="row">
+                    <el-input-number v-model="browserForm.port" :min="1" :max="65535" controls-position="right" />
+                    <el-switch v-model="browserForm.headless" active-text="无头" inactive-text="普通" />
                   </div>
-                  <span class="node-item__time">{{ formatDateSafe(client.connectedAt) }}</span>
+                  <div class="row wrap">
+                    <el-button type="primary" :loading="loadingMap.connect" @click="sendConnect">连接</el-button>
+                    <el-button :loading="loadingMap.close" @click="sendSimple('close')">关闭</el-button>
+                    <el-button type="danger" :loading="loadingMap.forceClose" @click="sendForceClose">强制关闭</el-button>
+                    <el-button :loading="loadingMap.pages" @click="sendSimple('pages')">获取页面</el-button>
+                  </div>
                 </div>
-                <div class="node-item__meta-row">
-                  <span class="node-item__meta">{{ client.appVersion || '未知版本' }}</span>
-                  <span class="node-item__meta">{{ client.location?.ip || client.location?.city || '未知位置' }}</span>
+                <div class="card panel">
+                  <div class="section-title">快速打开</div>
+                  <div class="row">
+                    <el-select v-model="openForm.platform" placeholder="选择平台" clearable>
+                      <el-option v-for="item in platforms" :key="item" :label="item" :value="item" />
+                    </el-select>
+                    <el-button :loading="loadingMap.openPlatform" @click="sendOpenPlatform">打开平台页</el-button>
+                  </div>
+                  <div class="row">
+                    <el-input v-model="openForm.url" placeholder="https://..." />
+                    <el-button :loading="loadingMap.openLink" @click="sendOpenLink">打开链接</el-button>
+                  </div>
                 </div>
-                <div class="node-item__meta-row node-item__meta-row--status">
-                  <span class="node-item__meta">服务 {{ resolveServiceProcessText(client.uploader) }}</span>
-                  <span class="node-item__meta">浏览器 {{ resolveBrowserStatusText(client.uploader) }}</span>
+              </div>
+              <div class="card panel">
+                <div class="section-title">页面列表</div>
+                <el-table :data="pageList" border stripe>
+                  <el-table-column prop="index" label="#" width="60" />
+                  <el-table-column prop="title" label="标题" min-width="220" show-overflow-tooltip />
+                  <el-table-column prop="url" label="链接" min-width="320" show-overflow-tooltip />
+                </el-table>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane label="调试" name="debug">
+              <div class="grid">
+                <div class="card panel">
+                  <div class="section-title">快速操作</div>
+                  <div class="stack">
+                    <el-input-number v-model="debugForm.pageIndex" :min="0" controls-position="right" />
+                    <el-input v-model="debugForm.url" placeholder="URL" />
+                    <el-input v-model="debugForm.selector" placeholder="Selector" />
+                    <el-input v-model="debugForm.text" placeholder="Text" />
+                    <el-input v-model="debugForm.key" placeholder="Key" />
+                    <el-input-number v-model="debugForm.ms" :min="1" controls-position="right" />
+                    <el-input-number v-model="debugForm.timeout" :min="1000" controls-position="right" />
+                  </div>
+                  <div class="action-grid">
+                    <el-button v-for="item in debugActions" :key="item" :loading="loadingMap.debug" @click="sendDebug(item)">{{ item }}</el-button>
+                  </div>
                 </div>
-              </button>
-            </div>
-          </div>
-        </aside>
+                <div class="card panel">
+                  <div class="section-title">脚本</div>
+                  <el-input v-model="debugForm.expression" type="textarea" :rows="14" placeholder="页面内 JS 或 Playwright 脚本" />
+                  <div class="row">
+                    <el-button :loading="loadingMap.debug" @click="sendDebug('eval')">执行页面内 JS</el-button>
+                    <el-button :loading="loadingMap.debug" @click="sendDebug('playwright')">执行 Playwright</el-button>
+                  </div>
+                </div>
+              </div>
+              <div class="card panel">
+                <div class="section-title">结果</div>
+                <pre class="result">{{ debugResult || '暂无结果' }}</pre>
+              </div>
+            </el-tab-pane>
 
-        <section class="browser-automation-main">
-          <div class="browser-panel" v-if="selectedClient">
-            <div class="status-overview status-overview--compact">
-              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveClientChannelLevel(selectedClient)}`">
-                <span class="status-card__label">客户端通道</span>
-                <span class="status-card__value status-card__value--status">
-                  <span class="status-breath" :class="`is-${resolveClientChannelLevel(selectedClient)}`" />
-                  {{ resolveClientChannelText(selectedClient) }}
-                </span>
-                <span class="status-card__hint">当前账号已连接，可向该客户端下发命令</span>
+            <el-tab-pane label="任务中心" name="tasks">
+              <div class="card panel">
+                <div class="row wrap">
+                  <el-select v-model="taskFilters.status" clearable placeholder="状态"><el-option label="queued" value="queued" /><el-option label="running" value="running" /><el-option label="success" value="success" /><el-option label="failed" value="failed" /></el-select>
+                  <el-input v-model="taskFilters.kind" placeholder="任务类型" />
+                  <el-input v-model="taskFilters.platform" placeholder="平台" />
+                  <el-input v-model="taskFilters.sourceId" placeholder="来源 ID" />
+                  <el-button type="primary" :loading="loadingMap.tasks" @click="sendTasks">查询任务</el-button>
+                </div>
+                <el-table :data="taskList" border stripe>
+                  <el-table-column prop="status" label="状态" width="100" />
+                  <el-table-column prop="kind" label="类型" width="120" />
+                  <el-table-column prop="action" label="动作" width="120" />
+                  <el-table-column label="平台" min-width="140"><template #default="{ row }">{{ row.platform || (row.platforms || []).join(', ') || '-' }}</template></el-table-column>
+                  <el-table-column prop="step" label="步骤" min-width="140" />
+                  <el-table-column prop="id" label="任务 ID" min-width="240" show-overflow-tooltip />
+                  <el-table-column label="操作" width="150">
+                    <template #default="{ row }">
+                      <el-button link type="primary" @click="sendTaskDetail(row.id)">详情</el-button>
+                      <el-button link type="primary" @click="sendTaskLogs(row.id)">日志</el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
               </div>
-              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveServiceProcessLevel(selectedService)}`">
-                <span class="status-card__label">自动化服务</span>
-                <span class="status-card__value status-card__value--status">
-                  <span class="status-breath" :class="`is-${resolveServiceProcessLevel(selectedService)}`" />
-                  {{ resolveServiceProcessText(selectedService) }}
-                </span>
-                <span class="status-card__hint">{{ selectedService?.message || '-' }}</span>
-              </div>
-              <div class="status-card status-card--compact status-card--emphasis" :class="`is-${resolveBrowserStatusLevel(selectedService)}`">
-                <span class="status-card__label">浏览器实例</span>
-                <span class="status-card__value status-card__value--status">
-                  <span class="status-breath" :class="`is-${resolveBrowserStatusLevel(selectedService)}`" />
-                  {{ resolveBrowserStatusText(selectedService) }}
-                </span>
-                <span class="status-card__hint">页面数 {{ selectedDetails.pageCount ?? 0 }}</span>
-              </div>
-              <div class="status-card status-card--compact">
-                <span class="status-card__label">节点</span>
-                <span class="status-card__value">{{ selectedClient.machine?.code || selectedClient.clientId }}</span>
-                <span class="status-card__hint">{{ selectedClient.location?.ip || selectedClient.location?.city || '未知位置' }}</span>
-              </div>
-              <div class="status-card status-card--compact">
-                <span class="status-card__label">检测</span>
-                <span class="status-card__value">{{ formatDateSafe(selectedService?.lastCheckedAt) }}</span>
-                <span class="status-card__hint">{{ selectedService?.version || '未知版本' }}</span>
-              </div>
-              <div class="status-card status-card--compact">
-                <span class="status-card__label">端点</span>
-                <span class="status-card__value status-card__value--mono">{{ selectedService?.endpoint || '-' }}</span>
-                <span class="status-card__hint">{{ selectedDetails.connection?.mode || '默认模式' }}</span>
-              </div>
-              <div class="status-card status-card--compact">
-                <span class="status-card__label">活动</span>
-                <span class="status-card__value">{{ formatDateSafe(selectedDetails.lastActivity) }}</span>
-                <span class="status-card__hint">{{ selectedDetails.connection?.profileDir || '未上报 profile 信息' }}</span>
-              </div>
-            </div>
+            </el-tab-pane>
 
-            <div class="browser-panel__section">
-              <div class="browser-panel__section-title">操作</div>
-              <div class="action-row">
-                <el-button type="primary" :loading="actionLoading.connect" @click="handleConnect">
-                  连接浏览器
-                </el-button>
-                <el-button :loading="actionLoading.close" @click="handleClose">关闭浏览器</el-button>
-                <el-button type="danger" plain :loading="actionLoading.forceClose" @click="handleForceClose">
-                  强制关闭
-                </el-button>
-                <el-button :loading="actionLoading.pages" @click="handleFetchPages">获取页面列表</el-button>
+            <el-tab-pane label="发布" name="publish">
+              <div class="grid">
+                <div class="card panel">
+                  <div class="section-title">远程发布</div>
+                  <el-checkbox-group v-model="publishForm.platforms" class="row wrap">
+                    <el-checkbox v-for="item in platforms" :key="item" :label="item">{{ item }}</el-checkbox>
+                  </el-checkbox-group>
+                  <div class="stack">
+                    <el-input v-model="publishForm.filePath" placeholder="本机文件绝对路径" />
+                    <el-input v-model="publishForm.title" placeholder="标题" />
+                    <el-input v-model="publishForm.tags" placeholder="标签，空格或逗号分隔" />
+                    <el-switch v-model="publishForm.scheduled" active-text="定时发布" inactive-text="立即发布" />
+                    <el-date-picker v-if="publishForm.scheduled" v-model="publishForm.scheduleTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" />
+                    <el-input v-model="publishForm.productLink" placeholder="抖音商品链接" />
+                    <el-input v-model="publishForm.productTitle" placeholder="抖音商品短标题" />
+                  </div>
+                  <div class="row wrap">
+                    <el-button type="primary" :loading="loadingMap.publish" @click="sendPublish">执行发布</el-button>
+                    <el-button :loading="loadingMap.platforms" @click="sendSimple('platforms')">刷新平台能力</el-button>
+                    <el-button :loading="loadingMap.loginStatus" @click="sendLoginStatus">刷新登录状态</el-button>
+                  </div>
+                </div>
+                <div class="card panel">
+                  <div class="section-title">登录状态</div>
+                  <el-empty v-if="!loginEntries.length" description="暂无登录状态" />
+                  <div v-else class="stack">
+                    <div v-for="item in loginEntries" :key="item.platform" class="login-item">
+                      <span>{{ item.platform }}</span>
+                      <el-tag size="small" :type="item.loggedIn ? 'success' : 'info'">{{ item.loggedIn ? '已登录' : '未登录' }}</el-tag>
+                      <span class="muted">{{ item.message || '-' }}</span>
+                    </div>
+                  </div>
+                  <div class="section-title">最近返回</div>
+                  <pre class="result">{{ publishResult || '暂无结果' }}</pre>
+                </div>
               </div>
-            </div>
-
-            <div class="browser-panel__section">
-              <div class="browser-panel__section-head">
-                <div class="browser-panel__section-title">页面列表</div>
-              </div>
-              <div class="common-table">
-                <vxe-grid v-bind="gridOptions" :data="pageList" :loading="actionLoading.pages" />
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="browser-panel browser-panel--empty">
-            <el-empty description="请选择一个在线客户端" />
-          </div>
+            </el-tab-pane>
+          </el-tabs>
         </section>
+
+        <section v-else class="main-empty card"><el-empty description="请选择客户端节点" /></section>
       </div>
+
+      <el-dialog v-model="detailVisible" title="任务详情" width="900px"><pre class="result">{{ detailText }}</pre></el-dialog>
+      <el-dialog v-model="logsVisible" title="任务日志" width="900px"><pre class="result">{{ logsText }}</pre></el-dialog>
     </div>
   </ContentWrap>
 </template>
@@ -144,669 +179,389 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   checkBrowserAutomationStatus,
-  type BrowserAutomationCommandResponse,
   closeBrowserAutomation,
   connectBrowserAutomation,
+  executeBrowserAutomationDebug,
   fetchBrowserAutomationPages,
   forceCloseBrowserAutomation,
   getBrowserAutomationClients,
-  getBrowserAutomationStatus,
+  getBrowserAutomationLoginStatus,
+  getBrowserAutomationPlatforms,
+  getBrowserAutomationTaskDetail,
+  getBrowserAutomationTaskLogs,
+  openBrowserAutomationLink,
+  openBrowserAutomationPlatform,
+  publishByBrowserAutomation,
+  queryBrowserAutomationTasks,
   type BrowserAutomationClientVO,
+  type BrowserAutomationCommandResponse,
   type BrowserAutomationServiceStatus
 } from '@/api/external/browserAutomation'
-import { buildTimeColumn, commonGridOptions } from '@/common/table'
-import {
-  websocketClient,
-  type ClientConnectionChangedEvent,
-  type ServiceCommandResultEvent,
-  type ServiceRuntimeEvent
-} from '@/services/websocketClient'
+import { websocketClient, type ClientConnectionChangedEvent, type ServiceCommandResultEvent, type ServiceRuntimeEvent } from '@/services/websocketClient'
 import { formatDate } from '@/utils/formatTime'
+import ExternalClientSidebar, { type ClientNodeBadge, type ClientNodeItem } from '../components/ExternalClientSidebar.vue'
 
 defineOptions({ name: 'ExternalBrowserAutomation' })
 
 const loading = ref(false)
 const clients = ref<BrowserAutomationClientVO[]>([])
 const selectedClientId = ref('')
+const activeTab = ref('browser')
 const pageList = ref<Record<string, any>[]>([])
+const taskList = ref<Record<string, any>[]>([])
+const platforms = ref(['douyin', 'kuaishou', 'xiaohongshu', 'weibo'])
+const loginStatus = ref<Record<string, any>>({})
+const debugResult = ref('')
+const publishResult = ref('')
+const detailText = ref('')
+const logsText = ref('')
+const detailVisible = ref(false)
+const logsVisible = ref(false)
+let timer: ReturnType<typeof window.setInterval> | null = null
 
-const actionLoading = reactive({
-  connect: false,
-  close: false,
-  forceClose: false,
-  checkStatus: false,
-  pages: false
+const loadingMap = reactive<Record<string, boolean>>({
+  checkStatus: false, connect: false, close: false, forceClose: false, pages: false,
+  debug: false, tasks: false, taskDetail: false, taskLogs: false, publish: false,
+  platforms: false, loginStatus: false, openPlatform: false, openLink: false
 })
+const pending = reactive<Record<string, string>>({})
 
-const pendingCommandIds = reactive<Record<string, string>>({})
-let clientsRefreshTimer: ReturnType<typeof window.setInterval> | null = null
-
-const gridOptions = {
-  ...commonGridOptions,
-  columns: [
-    { title: '标题', field: 'title', minWidth: 220, showOverflow: 'tooltip' },
-    { title: '链接', field: 'url', minWidth: 360, showOverflow: 'tooltip' },
-    { title: '类型', field: 'type', width: 120 },
-    {
-      title: '当前页',
-      field: 'isActive',
-      width: 90,
-      formatter: ({ cellValue }: { cellValue: boolean }) => (cellValue ? '是' : '否')
-    },
-    buildTimeColumn('采集时间', 'fetchedAt')
-  ]
-}
+const browserForm = reactive({ port: 9222, headless: false })
+const openForm = reactive({ platform: '', url: '' })
+const debugForm = reactive({ pageIndex: 0, url: '', selector: '', text: '', key: '', expression: '', ms: 1000, timeout: 30000 })
+const taskFilters = reactive({ status: '', kind: '', platform: '', sourceId: '' })
+const publishForm = reactive({ platforms: [] as string[], filePath: '', title: '', tags: '', scheduled: false, scheduleTime: '', productLink: '', productTitle: '' })
+const debugActions = ['newPage', 'goto', 'bringToFront', 'reload', 'closePage', 'click', 'fill', 'type', 'press', 'text', 'html', 'count', 'wait', 'screenshot']
 
 const selectedClient = computed(() => clients.value.find((item) => item.clientId === selectedClientId.value) || null)
 const selectedService = computed<BrowserAutomationServiceStatus | null>(() => selectedClient.value?.uploader || null)
-const selectedDetails = computed<Record<string, any>>(() => selectedService.value?.details || {})
+const selectedDetails = computed(() => selectedService.value?.details || {})
+const loginEntries = computed(() => Object.entries(loginStatus.value || {}).map(([platform, info]: [string, any]) => ({ platform, loggedIn: !!info?.isLoggedIn, message: String(info?.message || '') })))
+const toneFromLevelClass = (value: string): ClientNodeBadge['tone'] =>
+  value === 'is-success' ? 'success' : value === 'is-warning' ? 'warning' : 'muted'
+const clientNodeItems = computed<ClientNodeItem[]>(() =>
+  clients.value.map((client) => ({
+    connectionId: client.clientId,
+    name: client.machine?.code || client.clientId,
+    time: dateText(client.connectedAt),
+    metaLeft: client.appVersion || '未知版本',
+    metaRight: client.location?.ip || client.location?.city || '未知位置',
+    badges: [
+      { text: client.isOnline ? '在线' : '离线', tone: client.isOnline ? 'success' : 'muted' },
+      { text: serviceText(client.uploader), tone: toneFromLevelClass(selectedServiceTone(client.uploader)) },
+      { text: browserText(client.uploader), tone: toneFromLevelClass(browserTone(client.uploader)) }
+    ]
+  }))
+)
 
-const applyClientSnapshot = (snapshot: BrowserAutomationClientVO) => {
-  const index = clients.value.findIndex((item) => item.clientId === snapshot.clientId)
-  if (index >= 0) {
-    clients.value.splice(index, 1, {
-      ...clients.value[index],
-      ...snapshot
-    })
-    return
-  }
-
-  clients.value.unshift(snapshot)
-  if (!selectedClientId.value) {
-    selectedClientId.value = snapshot.clientId
-  }
-}
-
-const resolveClientChannelText = (client?: BrowserAutomationClientVO | null) => {
-  if (!client?.clientId) return '离线'
-  return '可调用'
-}
-
-const resolveClientChannelLevel = (client?: BrowserAutomationClientVO | null) => {
-  if (!client?.clientId) return 'info'
-  return 'success'
-}
-
-const resolveServiceProcessText = (service?: BrowserAutomationServiceStatus | null) => {
-  if (!service) return '未知'
-  if (service.connected) return '已启动'
-  if (service.status === 'error') return '异常'
-  return '未启动'
-}
-
-const resolveServiceProcessLevel = (service?: BrowserAutomationServiceStatus | null) => {
-  if (!service) return 'info'
-  if (service.connected) return 'success'
-  if (service.status === 'error') return 'danger'
-  return 'info'
-}
-
-const resolveBrowserStatusText = (service?: BrowserAutomationServiceStatus | null) => {
+const dateText = (value?: string | null) => (value ? formatDate(value, 'YYYY-MM-DD HH:mm:ss') : '-')
+const serviceText = (service?: BrowserAutomationServiceStatus | null) => !service ? '未知' : service.connected ? '已启动' : service.status === 'error' ? '异常' : '未启动'
+const browserText = (service?: BrowserAutomationServiceStatus | null) => {
   const details = service?.details || {}
   if (details.browserConnected) return '已连接'
   if (details.hasInstance) return '实例未就绪'
   if (service?.connected) return '未连接'
-  if (service?.status === 'error') return '异常'
-  return '未启动'
+  return service?.status === 'error' ? '异常' : '未启动'
 }
-
-const resolveBrowserStatusLevel = (service?: BrowserAutomationServiceStatus | null) => {
+const selectedServiceTone = (service?: BrowserAutomationServiceStatus | null) => service?.available ? 'is-success' : service?.connected ? 'is-warning' : 'is-muted'
+const browserTone = (service?: BrowserAutomationServiceStatus | null) => {
   const details = service?.details || {}
-  if (details.browserConnected) return 'success'
-  if (details.hasInstance || service?.connected) return 'warning'
-  if (service?.status === 'error') return 'danger'
-  return 'info'
+  if (details.browserConnected) return 'is-success'
+  if (details.hasInstance || service?.connected) return 'is-warning'
+  return 'is-muted'
+}
+const jsonText = (value: any) => { try { return JSON.stringify(value ?? null, null, 2) } catch { return String(value) } }
+
+const applyClient = (snapshot: BrowserAutomationClientVO) => {
+  const index = clients.value.findIndex((item) => item.clientId === snapshot.clientId)
+  if (index >= 0) clients.value.splice(index, 1, { ...clients.value[index], ...snapshot })
+  else clients.value.unshift(snapshot)
+  if (!selectedClientId.value) selectedClientId.value = snapshot.clientId
 }
 
-const formatDateSafe = (value?: string | null) => {
-  if (!value) return '-'
-  return formatDate(value, 'YYYY-MM-DD HH:mm:ss')
-}
+const finish = (action?: string) => { if (action && action in loadingMap) loadingMap[action] = false }
 
-const syncClientStatus = async (clientId: string) => {
-  const response = await getBrowserAutomationStatus(clientId)
-  const snapshot = response?.data
-  if (!snapshot) return
-  const index = clients.value.findIndex((item) => item.clientId === clientId)
-  if (index >= 0) {
-    clients.value.splice(index, 1, snapshot)
-  } else {
-    clients.value.unshift(snapshot)
-  }
-}
-
-const loadClients = async (options?: { silent?: boolean }) => {
-  const silent = !!options?.silent
-  if (!silent) {
-    loading.value = true
-  }
-  try {
-    const data = await getBrowserAutomationClients()
-    clients.value = Array.isArray(data) ? data : []
-    if (!selectedClientId.value || !clients.value.some((item) => item.clientId === selectedClientId.value)) {
-      selectedClientId.value = clients.value[0]?.clientId || ''
-    }
-  } finally {
-    if (!silent) {
-      loading.value = false
-    }
-  }
-}
-
-const notifyCommandSent = (message: string) => {
-  ElMessage.success(message)
-}
-
-const finishActionLoading = (action: string) => {
-  if (action === 'connect') actionLoading.connect = false
-  if (action === 'close') actionLoading.close = false
-  if (action === 'forceClose') actionLoading.forceClose = false
-  if (action === 'checkStatus') actionLoading.checkStatus = false
-  if (action === 'getPages') actionLoading.pages = false
-}
-
-const sendCommand = async (
-  action: string,
-  requestor: () => Promise<BrowserAutomationCommandResponse>,
-  options?: { sentMessage?: string }
-) => {
+const dispatch = async (action: string, requestor: () => Promise<BrowserAutomationCommandResponse>, okText: string) => {
+  loadingMap[action] = true
   const response = await requestor()
   if (!response?.success) {
-    finishActionLoading(action)
+    finish(action)
     ElMessage.error(response?.message || '命令发送失败')
     return
   }
-  const commandId = response?.data?.commandId
-  if (commandId) {
-    pendingCommandIds[commandId] = action
-  } else {
-    finishActionLoading(action)
+  const commandId = response.data?.commandId
+  if (!commandId) {
+    finish(action)
+    return
   }
-  if (options?.sentMessage) {
-    notifyCommandSent(options.sentMessage)
+  pending[commandId] = action
+  ElMessage.success(okText)
+}
+
+const loadClients = async (silent = false) => {
+  if (!silent) loading.value = true
+  try {
+    const data = await getBrowserAutomationClients()
+    clients.value = Array.isArray(data) ? data : []
+    if (!selectedClientId.value || !clients.value.some((item) => item.clientId === selectedClientId.value)) selectedClientId.value = clients.value[0]?.clientId || ''
+  } finally {
+    if (!silent) loading.value = false
   }
 }
 
-const handleCheckStatus = async () => {
+const sendSimple = async (kind: 'checkStatus' | 'close' | 'pages' | 'platforms') => {
   if (!selectedClientId.value) return
-  actionLoading.checkStatus = true
-  await sendCommand('checkStatus', () => checkBrowserAutomationStatus(selectedClientId.value), {
-    sentMessage: '状态刷新命令已发送'
-  })
+  if (kind === 'checkStatus') return dispatch('checkStatus', () => checkBrowserAutomationStatus(selectedClientId.value), '状态刷新命令已发送')
+  if (kind === 'close') return dispatch('close', () => closeBrowserAutomation(selectedClientId.value), '关闭命令已发送')
+  if (kind === 'pages') return dispatch('pages', () => fetchBrowserAutomationPages(selectedClientId.value), '获取页面命令已发送')
+  return dispatch('platforms', () => getBrowserAutomationPlatforms(selectedClientId.value), '平台能力查询命令已发送')
 }
 
-const handleConnect = async () => {
-  if (!selectedClientId.value) return
-  actionLoading.connect = true
-  await sendCommand('connect', () => connectBrowserAutomation(selectedClientId.value), {
-    sentMessage: '浏览器连接命令已发送'
-  })
+const sendConnect = async () => selectedClientId.value && dispatch('connect', () => connectBrowserAutomation(selectedClientId.value, browserForm), '连接命令已发送')
+const sendForceClose = async () => selectedClientId.value && dispatch('forceClose', () => forceCloseBrowserAutomation(selectedClientId.value, { port: browserForm.port }), '强制关闭命令已发送')
+const sendOpenPlatform = async () => selectedClientId.value && openForm.platform && dispatch('openPlatform', () => openBrowserAutomationPlatform(selectedClientId.value, { platform: openForm.platform }), '打开平台页命令已发送')
+const sendOpenLink = async () => selectedClientId.value && openForm.url.trim() && dispatch('openLink', () => openBrowserAutomationLink(selectedClientId.value, { url: openForm.url.trim() }), '打开链接命令已发送')
+const sendDebug = async (action: string) => selectedClientId.value && dispatch('debug', () => executeBrowserAutomationDebug(selectedClientId.value, { action, ...debugForm }), '调试命令已发送')
+const sendTasks = async () => selectedClientId.value && dispatch('tasks', () => queryBrowserAutomationTasks(selectedClientId.value, taskFilters), '任务查询命令已发送')
+const sendTaskDetail = async (taskId: string) => selectedClientId.value && dispatch('taskDetail', () => getBrowserAutomationTaskDetail(selectedClientId.value, taskId), '任务详情命令已发送')
+const sendTaskLogs = async (taskId: string) => selectedClientId.value && dispatch('taskLogs', () => getBrowserAutomationTaskLogs(selectedClientId.value, taskId), '任务日志命令已发送')
+const sendLoginStatus = async () => selectedClientId.value && dispatch('loginStatus', () => getBrowserAutomationLoginStatus(selectedClientId.value, { refresh: true }), '登录状态查询命令已发送')
+const sendPublish = async () => {
+  if (!selectedClientId.value || !publishForm.platforms.length || !publishForm.filePath.trim() || !publishForm.title.trim()) return ElMessage.warning('请先填写完整发布信息')
+  const tags = publishForm.tags.split(/[\s,，]+/).map((item) => item.trim()).filter(Boolean)
+  return dispatch('publish', () => publishByBrowserAutomation(selectedClientId.value, {
+    platforms: publishForm.platforms,
+    action: 'publish',
+    filePath: publishForm.filePath.trim(),
+    title: publishForm.title.trim(),
+    tags,
+    scheduled: publishForm.scheduled,
+    scheduleTime: publishForm.scheduled && publishForm.scheduleTime ? new Date(publishForm.scheduleTime).toISOString() : undefined,
+    platformSettings: { douyin: { productLink: publishForm.productLink, productTitle: publishForm.productTitle } }
+  }), '发布命令已发送')
 }
 
-const handleClose = async () => {
-  if (!selectedClientId.value) return
-  actionLoading.close = true
-  await sendCommand('close', () => closeBrowserAutomation(selectedClientId.value), {
-    sentMessage: '浏览器关闭命令已发送'
-  })
-}
-
-const handleForceClose = async () => {
-  if (!selectedClientId.value) return
-  actionLoading.forceClose = true
-  await sendCommand('forceClose', () => forceCloseBrowserAutomation(selectedClientId.value), {
-    sentMessage: '强制关闭命令已发送'
-  })
-}
-
-const handleFetchPages = async () => {
-  if (!selectedClientId.value) return
-  actionLoading.pages = true
-  await sendCommand('getPages', () => fetchBrowserAutomationPages(selectedClientId.value), {
-    sentMessage: '页面列表获取命令已发送'
-  })
-}
-
-const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
+const onRuntime = (event: ServiceRuntimeEvent) => {
   if (event.service !== 'uploader') return
   const index = clients.value.findIndex((item) => item.clientId === event.clientId)
-  if (index < 0) {
-    void loadClients({ silent: true })
-    return
-  }
-  clients.value.splice(index, 1, {
-    ...clients.value[index],
-    uploader: {
-      ...(clients.value[index].uploader || {}),
-      ...(event.runtime || {})
-    }
-  })
-  if (event.clientId === selectedClientId.value) {
-    pageList.value = Array.isArray(event.runtime?.details?.pages)
-      ? event.runtime.details.pages.map((item: Record<string, any>) => ({
-          ...item,
-          fetchedAt: new Date().toISOString()
-        }))
-      : pageList.value
-  }
+  if (index >= 0) clients.value.splice(index, 1, { ...clients.value[index], uploader: { ...(clients.value[index].uploader || {}), ...(event.runtime || {}) } })
 }
 
-const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
+const onClientChanged = (event: ClientConnectionChangedEvent) => {
   const snapshot = event.client as BrowserAutomationClientVO | undefined
   if (!snapshot?.clientId) return
-
   if (event.action === 'removed') {
-    const index = clients.value.findIndex((item) => item.clientId === snapshot.clientId)
-    if (index >= 0) {
-      clients.value.splice(index, 1)
-    }
-    if (selectedClientId.value === snapshot.clientId) {
-      selectedClientId.value = clients.value[0]?.clientId || ''
-      pageList.value = []
-    }
+    clients.value = clients.value.filter((item) => item.clientId !== snapshot.clientId)
+    if (selectedClientId.value === snapshot.clientId) selectedClientId.value = clients.value[0]?.clientId || ''
     return
   }
-
-  applyClientSnapshot(snapshot)
+  applyClient(snapshot)
 }
 
-const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
+const onCommand = async (event: ServiceCommandResultEvent) => {
   if (event.service !== 'uploader') return
-  const pendingAction = pendingCommandIds[event.commandId]
-  if (pendingAction) {
-    finishActionLoading(pendingAction)
-    delete pendingCommandIds[event.commandId]
+  const action = pending[event.commandId]
+  delete pending[event.commandId]
+  finish(action)
+  const data = event.data || {}
+  if (event.clientId === selectedClientId.value) {
+    if (Array.isArray(data.pages)) pageList.value = data.pages
+    if (action === 'debug') debugResult.value = jsonText(data)
+    if (action === 'tasks') taskList.value = Array.isArray(data.items) ? data.items : []
+    if (action === 'taskDetail') { detailText.value = jsonText(data.task || null); detailVisible.value = true }
+    if (action === 'taskLogs') { logsText.value = jsonText(data.logs || []); logsVisible.value = true }
+    if (action === 'platforms' && Array.isArray(data.platforms) && data.platforms.length) platforms.value = data.platforms
+    if (action === 'loginStatus') loginStatus.value = data || {}
+    if (action === 'publish') publishResult.value = jsonText(data)
   }
-
-  if (event.clientId) {
-    await syncClientStatus(event.clientId)
-  }
-
-  if (event.success) {
-    if (event.message) {
-      ElMessage.success(event.message)
-    }
-  } else {
-    ElMessage.error(event.message || '浏览器自动化命令执行失败')
-  }
-
-  if (event.action === 'getPages' && event.success) {
-    const pages = Array.isArray(event.data?.pages) ? event.data.pages : []
-    pageList.value = pages.map((item: Record<string, any>) => ({
-      ...item,
-      fetchedAt: new Date().toISOString()
-    }))
-  }
+  ;(event.success ? ElMessage.success : ElMessage.error)(event.message || event.error || (event.success ? '执行成功' : '执行失败'))
+  await loadClients(true)
 }
 
-watch(selectedClientId, async (value) => {
-  pageList.value = []
-  if (!value) return
-  await syncClientStatus(value)
-  pageList.value = Array.isArray(selectedDetails.value.pages)
-    ? selectedDetails.value.pages.map((item: Record<string, any>) => ({
-        ...item,
-        fetchedAt: new Date().toISOString()
-      }))
-    : []
-})
+watch(selectedClientId, () => { pageList.value = Array.isArray(selectedDetails.value.pages) ? selectedDetails.value.pages : [] })
 
 onMounted(async () => {
   await loadClients()
-  websocketClient.events.on('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.on('serviceCommandResult', handleServiceCommandResult)
-  websocketClient.events.on('clientConnectionChanged', handleClientConnectionChanged)
-  clientsRefreshTimer = window.setInterval(() => {
-    void loadClients({ silent: true })
-  }, 10000)
+  websocketClient.events.on('serviceRuntime', onRuntime)
+  websocketClient.events.on('serviceCommandResult', onCommand)
+  websocketClient.events.on('clientConnectionChanged', onClientChanged)
+  timer = window.setInterval(() => void loadClients(true), 10000)
 })
 
 onUnmounted(() => {
-  websocketClient.events.off('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.off('serviceCommandResult', handleServiceCommandResult)
-  websocketClient.events.off('clientConnectionChanged', handleClientConnectionChanged)
-  if (clientsRefreshTimer) {
-    window.clearInterval(clientsRefreshTimer)
-    clientsRefreshTimer = null
-  }
+  websocketClient.events.off('serviceRuntime', onRuntime)
+  websocketClient.events.off('serviceCommandResult', onCommand)
+  websocketClient.events.off('clientConnectionChanged', onClientChanged)
+  if (timer) window.clearInterval(timer)
 })
 </script>
 
 <style scoped lang="scss">
-.browser-automation-page {
+.page {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.browser-automation-toolbar {
+.topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.browser-automation-toolbar__title {
-  font-size: 14px;
+.title {
+  font-size: 16px;
   font-weight: 600;
-  color: var(--el-text-color-primary);
 }
 
-.browser-automation-toolbar__actions {
+.actions,
+.row,
+.login-item {
   display: flex;
-  gap: 8px;
   align-items: center;
-  justify-content: flex-start;
-  flex-shrink: 0;
-  margin-left: 0;
+  gap: 8px;
 }
 
-.browser-automation-layout {
+.wrap {
+  flex-wrap: wrap;
+}
+
+.layout {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 12px;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.card {
+  border: 1px solid var(--el-border-color);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+}
+
+.panel,
+.item,
+.main-empty {
+  padding: 12px;
+}
+
+.panel,
+.stack {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-.browser-automation-page :deep(.el-loading-mask) {
-  background-color: rgba(18, 22, 30, 0.18);
-  backdrop-filter: blur(2px);
-}
-
-.browser-automation-page :deep(.el-loading-spinner .circular) {
-  width: 30px;
-  height: 30px;
-}
-
-.browser-automation-page :deep(.el-loading-spinner .path) {
-  stroke-width: 3px;
-}
-
-.browser-panel {
-  border: 1px solid var(--app-card-border, rgba(255, 255, 255, 0.08));
-  border-radius: 12px;
-  background: var(--app-card-bg, var(--el-bg-color));
-  padding: 10px;
-}
-
-.browser-panel--empty {
-  min-height: 520px;
+.main-empty {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 560px;
 }
 
-.browser-panel__title {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.browser-panel__section + .browser-panel__section {
-  margin-top: 10px;
-}
-
-.browser-panel__section-title {
-  font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.browser-panel__section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.summary,
+.grid,
+.action-grid {
+  display: grid;
   gap: 12px;
-  margin-bottom: 8px;
 }
 
-.node-list {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.node-item {
-  width: 100%;
-  border: 1px solid var(--app-card-border, rgba(255, 255, 255, 0.08));
-  border-radius: 10px;
-  padding: 8px 10px;
-  background: transparent;
-  text-align: left;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
+.grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.node-item:hover,
-.node-item.is-active {
-  border-color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary) 8%, transparent);
+.action-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.node-item__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.node-item__name-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  flex: 1;
-}
-
-.node-item__name {
+.label,
+.muted {
   font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.value,
+.section-title {
   font-weight: 600;
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.node-item__time {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  flex-shrink: 0;
-}
-
-.node-item__meta-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-}
-
-.node-item__meta {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
+.value {
+  margin-top: 4px;
+  font-size: 15px;
   line-height: 1.4;
 }
 
-.status-overview {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.status-overview--compact {
-  gap: 6px;
-}
-
-.status-card {
-  border: 1px solid var(--app-card-border, rgba(255, 255, 255, 0.08));
-  border-radius: 10px;
-  padding: 6px 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1px;
-  min-height: 48px;
-}
-
-.status-card--emphasis.is-success {
-  border-color: rgb(103 194 58 / 32%);
-}
-
-.status-card--emphasis.is-warning {
-  border-color: rgb(230 162 60 / 32%);
-}
-
-.status-card--emphasis.is-danger {
-  border-color: rgb(245 108 108 / 32%);
-}
-
-.status-card__label {
-  font-size: 10px;
+.section-title {
+  font-size: 13px;
   line-height: 1.2;
-  color: var(--el-text-color-secondary);
 }
 
-.status-card__value {
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.25;
+.row :deep(.el-input),
+.row :deep(.el-select),
+.row :deep(.el-input-number) {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.status-card__value--status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+.stack :deep(.el-input),
+.stack :deep(.el-input-number),
+.stack :deep(.el-date-editor) {
+  width: 100%;
 }
 
-.status-card__value--mono {
-  font-family: Monaco, Menlo, Consolas, monospace;
-  font-size: 11px;
-}
-
-.status-card__hint {
-  font-size: 10px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.2;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
+.result {
+  margin: 0;
+  padding: 12px;
+  min-height: 180px;
+  max-height: 420px;
+  overflow: auto;
   border: 1px solid var(--el-border-color);
-  max-width: 100%;
-  min-width: 0;
-  flex-shrink: 0;
-  white-space: nowrap;
-  overflow: hidden;
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.status-pill > span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.login-item {
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
-.status-pill__dot,
-.status-breath {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #909399;
-}
-
-.status-pill.is-success,
-.status-breath.is-success {
-  color: #67c23a;
-}
-
-.status-pill.is-warning,
-.status-breath.is-warning {
-  color: #e6a23c;
-}
-
-.status-pill.is-danger,
-.status-breath.is-danger {
-  color: #f56c6c;
-}
-
-.status-pill.is-success .status-pill__dot,
-.status-breath.is-success {
-  background: #67c23a;
-  box-shadow: 0 0 0 0 rgb(103 194 58 / 42%);
-  animation: breath-success 1.8s infinite ease-in-out;
-}
-
-.status-pill.is-warning .status-pill__dot,
-.status-breath.is-warning {
-  background: #e6a23c;
-  box-shadow: 0 0 0 0 rgb(230 162 60 / 42%);
-  animation: breath-warning 1.8s infinite ease-in-out;
-}
-
-.status-pill.is-danger .status-pill__dot,
-.status-breath.is-danger {
-  background: #f56c6c;
-  box-shadow: 0 0 0 0 rgb(245 108 108 / 42%);
-  animation: breath-danger 1.8s infinite ease-in-out;
-}
-
-@keyframes breath-success {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(103 194 58 / 16%); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgb(103 194 58 / 0%); transform: scale(1.04); }
-}
-
-@keyframes breath-warning {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(230 162 60 / 16%); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgb(230 162 60 / 0%); transform: scale(1.04); }
-}
-
-@keyframes breath-danger {
-  0%, 100% { box-shadow: 0 0 0 0 rgb(245 108 108 / 16%); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgb(245 108 108 / 0%); transform: scale(1.04); }
+.login-item:last-child {
+  border-bottom: 0;
 }
 
 @media (max-width: 1200px) {
-  .browser-automation-layout {
+  .layout,
+  .summary,
+  .grid,
+  .action-grid {
     grid-template-columns: 1fr;
-  }
-  .status-overview {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .status-overview {
-    grid-template-columns: 1fr;
-  }
-
-  .browser-automation-toolbar {
+  .topbar {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .browser-automation-toolbar__actions {
-    width: 100%;
-    margin-left: 0;
-    justify-content: flex-start;
+  .actions {
+    flex-wrap: wrap;
   }
 }
 </style>

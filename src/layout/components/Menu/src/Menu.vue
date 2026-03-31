@@ -49,7 +49,8 @@ export default defineComponent({
 
     const menuStatusRouteMap: Record<string, string> = {
       '/external/browser-automation': 'browser-automation',
-      '/external/ps-automation': 'ps-automation'
+      '/external/ps-automation': 'ps-automation',
+      '/external/google-art': 'google-art'
     }
 
     const pluginStatusMap = computed<Record<string, 'available' | 'degraded' | 'offline'>>(() => {
@@ -209,6 +210,11 @@ export default defineComponent({
           available: '套图制作可调用',
           degraded: 'PS 自动化已连接，但当前不可执行',
           offline: 'PS 自动化不可用'
+        },
+        '/external/google-art': {
+          available: 'Google Art 可用',
+          degraded: 'Google Art 已连接，但当前不可执行',
+          offline: 'Google Art 不可用'
         }
       }
 
@@ -566,23 +572,71 @@ $prefix-cls: #{$namespace}-menu;
 
   &__status-dot {
     flex: none;
-    width: 6px;
-    height: 6px;
+    position: relative;
+    width: 8px;
+    height: 8px;
     margin-left: 6px;
     border-radius: 999px;
     background: var(--el-text-color-placeholder);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 10%);
+  }
+
+  &__status-dot::before,
+  &__status-dot::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    content: '';
+  }
+
+  &__status-dot::before {
+    background: inherit;
+    opacity: 0.95;
+  }
+
+  &__status-dot::after {
+    opacity: 0;
+    transform: scale(1);
   }
 
   &__status-dot--available {
-    background: var(--el-color-success);
+    background: #34d399;
+    box-shadow:
+      0 0 0 1px rgb(52 211 153 / 22%),
+      0 0 10px rgb(52 211 153 / 40%),
+      0 0 18px rgb(52 211 153 / 18%);
+    animation: status-dot-breathe-available 2.2s ease-in-out infinite;
+  }
+
+  &__status-dot--available::after {
+    background: rgb(52 211 153 / 30%);
+    animation: status-dot-wave-available 2.2s ease-out infinite;
   }
 
   &__status-dot--degraded {
-    background: var(--el-color-warning);
+    background: #f59e0b;
+    box-shadow:
+      0 0 0 1px rgb(245 158 11 / 22%),
+      0 0 10px rgb(245 158 11 / 34%),
+      0 0 18px rgb(245 158 11 / 14%);
+    animation: status-dot-breathe-degraded 2.6s ease-in-out infinite;
+  }
+
+  &__status-dot--degraded::after {
+    background: rgb(245 158 11 / 24%);
+    animation: status-dot-wave-degraded 2.6s ease-out infinite;
   }
 
   &__status-dot--offline {
-    background: var(--el-text-color-placeholder);
+    background: rgb(148 163 184 / 88%);
+    box-shadow:
+      0 0 0 1px rgb(148 163 184 / 12%),
+      0 0 8px rgb(148 163 184 / 12%);
+  }
+
+  &__link:hover &__status-dot--offline,
+  &__link--active &__status-dot--offline {
+    animation: status-dot-breathe-offline 3s ease-in-out infinite;
   }
 
   @media (max-width: 1024px) {
@@ -590,6 +644,82 @@ $prefix-cls: #{$namespace}-menu;
       grid-template-columns: 1fr;
       padding-left: 26px;
     }
+  }
+}
+
+@keyframes status-dot-breathe-available {
+  0%,
+  100% {
+    transform: scale(0.96);
+    box-shadow:
+      0 0 0 1px rgb(52 211 153 / 20%),
+      0 0 8px rgb(52 211 153 / 28%),
+      0 0 14px rgb(52 211 153 / 12%);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 0 1px rgb(52 211 153 / 28%),
+      0 0 14px rgb(52 211 153 / 48%),
+      0 0 26px rgb(52 211 153 / 24%);
+  }
+}
+
+@keyframes status-dot-wave-available {
+  0% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+@keyframes status-dot-breathe-degraded {
+  0%,
+  100% {
+    transform: scale(0.97);
+    box-shadow:
+      0 0 0 1px rgb(245 158 11 / 18%),
+      0 0 7px rgb(245 158 11 / 22%),
+      0 0 12px rgb(245 158 11 / 10%);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow:
+      0 0 0 1px rgb(245 158 11 / 26%),
+      0 0 12px rgb(245 158 11 / 36%),
+      0 0 20px rgb(245 158 11 / 18%);
+  }
+}
+
+@keyframes status-dot-wave-degraded {
+  0% {
+    opacity: 0.34;
+    transform: scale(1);
+  }
+  75%,
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+@keyframes status-dot-breathe-offline {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 1px rgb(148 163 184 / 10%),
+      0 0 6px rgb(148 163 184 / 10%);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow:
+      0 0 0 1px rgb(148 163 184 / 14%),
+      0 0 10px rgb(148 163 184 / 16%);
   }
 }
 </style>
