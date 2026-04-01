@@ -1995,7 +1995,7 @@ const gridOptions = computed(() => {
       title: '上传者',
       field: 'uploader',
       width: 140,
-      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.uploaderId || '-'
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.userId || '-'
     },
     {
       title: '色系',
@@ -4366,7 +4366,7 @@ const delayUpdateList = useDebounceFn(() => {
         width,
         height,
         aspectRatio,
-        uploaderId: userStore.user?.id,
+        userId: userStore.user?.id,
         useAiGenerate: urlUploadForm.useAiGenerate, // 是否使用AI生成补全内容
         folderId: urlUploadForm.folderId ?? null
       })

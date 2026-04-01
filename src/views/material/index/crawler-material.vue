@@ -405,6 +405,12 @@ const gridOptions = computed(() => {
 
     { title: "来源", field: "source", minWidth: 160 }, // 新增来源列
     {
+      title: "上传者",
+      field: "uploader",
+      width: 140,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
+    {
       title: "原始地址",
       field: "originUrl",
       width: 200,
@@ -637,7 +643,7 @@ async function confirmBatchImport() {
   try {
     const result = await CrawlerMaterialApi.batchImportToSticker({
       ids: importIds.value,
-      uploaderId: String(userStore.user.id),
+      userId: String(userStore.user.id),
     });
 
     ElNotification.success({

@@ -49,7 +49,7 @@
 | suffix | string | 文件扩展名 |
 | category | string | 分类 |
 | tags | string | 标签（逗号分隔） |
-| uploaderId | string | 上传者ID |
+| userId | string | 归属用户ID |
 | isPublic | boolean | 是否公开 |
 | isDeleted | boolean | 是否删除 |
 | createTime | Date | 创建时间 |

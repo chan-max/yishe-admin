@@ -715,7 +715,13 @@ const gridOptions = ref({
       minWidth: 200,
       slots: { default: "languagesSlot" }
     },
-    { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
+    {
+      title: "上传者",
+      field: "uploader",
+      minWidth: 120,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.creatorName || row?.userId || "-",
+    },
     {
       title: "创建时间",
       field: "createTime",
@@ -1142,7 +1148,7 @@ const submitForm = async () => {
         size: form.value.file.size,
         type: form.value.file.name.split(".").pop(),
         file: null,
-        uploaderId: userStore.user?.id
+        userId: userStore.user?.id
       });
       ElMessage.success("添加成功");
       getList();

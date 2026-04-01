@@ -18,7 +18,7 @@ export interface CrawlerMaterialVO {
   name: string
   description: string
   suffix: string
-  uploaderId: string
+  userId?: string
   meta: any
   createTime: Date
   updateTime: Date
@@ -56,7 +56,7 @@ export const CrawlerMaterialApi = {
   },
 
   // 批量入库到贴纸
-  batchImportToSticker: async (data: { ids: string[], uploaderId?: string }) => {
+  batchImportToSticker: async (data: { ids: string[], userId?: string }) => {
     return await request.post<CrawlerMaterialImportTaskResponse>({ url: `/crawler/material/import-to-sticker`, data })
   }
 }

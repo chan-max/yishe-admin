@@ -743,6 +743,13 @@ const gridOptions = ref<VxeGridProps<any>>({
       },
     },
     {
+      title: "上传者",
+      field: "uploader",
+      width: 140,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
+    {
       title: "文件大小",
       field: "size",
       width: 100,
@@ -773,7 +780,6 @@ const gridOptions = ref<VxeGridProps<any>>({
         default: "enabledSlot",
       },
     },
-    { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
     {
       title: "创建时间",
       field: "createTime",
@@ -1205,7 +1211,7 @@ const submitForm = async () => {
         key: key || undefined,
         thumbnail: thumbnail,
         file: null,
-        uploaderId: userStore.user?.id,
+        userId: userStore.user?.id,
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,

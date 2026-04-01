@@ -367,7 +367,7 @@
                 <span class="info-value">{{
                   detailData?.uploader?.account ||
                   detailData?.uploader?.name ||
-                  detailData?.uploaderId ||
+                  detailData?.userId ||
                   "-"
                 }}</span>
               </div>
@@ -1463,7 +1463,7 @@ function getColumns() {
       field: "uploader",
       width: 140,
       formatter: ({ row }) =>
-        row?.uploader?.account || row?.uploader?.name || row?.uploaderId || "-",
+        row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
     { title: "状态说明", field: "statusMessage", width: 320, showOverflow: true },
