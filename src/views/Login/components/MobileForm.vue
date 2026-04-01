@@ -1,20 +1,18 @@
 <template>
   <el-form
     v-show="getShow"
+    v-bind="$attrs"
     ref="formSmsLogin"
     :model="loginData.loginForm"
     :rules="rules"
     class="login-form"
     label-position="top"
     label-width="120px"
-    size="large"
   >
     <el-row style="margin-right: -10px; margin-left: -10px">
       <!-- 租户名 -->
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <LoginFormTitle style="width: 100%" />
-        </el-form-item>
+        <LoginFormTitle style="width: 100%" />
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <el-form-item v-if="loginData.tenantEnable === 'true'" prop="tenantName">
@@ -212,11 +210,20 @@ const signIn = async () => {
     })
 }
 </script>
-
 <style lang="scss" scoped>
 :deep(.anticon) {
   &:hover {
     color: var(--el-color-primary) !important;
+  }
+}
+
+.login-form {
+  :deep(.el-form-item) {
+    margin-bottom: 24px;
+    
+    .el-form-item__content {
+      line-height: normal;
+    }
   }
 }
 

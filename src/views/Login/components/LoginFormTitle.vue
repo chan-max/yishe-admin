@@ -1,5 +1,5 @@
 <template>
-  <h2 class="enter-x mb-3 text-center text-2xl font-bold xl:text-center xl:text-3xl">
+  <h2 class="mb-5 text-center text-xl font-bold xl:text-center xl:text-2xl text-[var(--el-text-color-primary)]">
     {{ getFormTitle }}
   </h2>
 </template>
@@ -24,3 +24,11 @@ const getFormTitle = computed(() => {
   return titleObj[unref(getLoginState)]
 })
 </script>
+
+<style lang="scss" scoped>
+.login-form {
+  :deep(.el-form-item) {
+    margin-bottom: 24px;
+  }
+}
+</style>

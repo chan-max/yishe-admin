@@ -1,31 +1,20 @@
 <template>
   <el-form
     v-show="getShow"
+    v-bind="$attrs"
     ref="formLogin"
     :model="loginData.loginForm"
     :rules="LoginRules"
     class="login-form"
     label-position="top"
     label-width="120px"
-    size="large"
   >
     <el-row style="margin-right: -10px; margin-left: -10px">
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
-        <el-form-item>
-          <LoginFormTitle style="width: 100%" />
-        </el-form-item>
+        <LoginFormTitle style="width: 100%" />
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <!-- 租户功能暂时注释掉 -->
-        <!-- <el-form-item v-if="loginData.tenantEnable === 'true'" prop="tenantName">
-          <el-input
-            v-model="loginData.loginForm.tenantName"
-            :placeholder="t('login.tenantNamePlaceholder')"
-            :prefix-icon="iconHouse"
-            link
-            type="primary"
-          />
-        </el-form-item> -->
       </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <el-form-item prop="account">
@@ -48,34 +37,6 @@
           />
         </el-form-item>
       </el-col>
-      <el-col
-        :span="24"
-        style="
-          padding-right: 10px;
-          padding-left: 10px;
-          margin-top: -20px;
-          margin-bottom: -20px;
-        "
-      >
-        <el-form-item>
-          <el-row justify="space-between" style="width: 100%">
-            <el-col :span="6">
-              <el-checkbox v-model="loginData.loginForm.rememberMe">
-                {{ t("login.remember") }}
-              </el-checkbox>
-            </el-col>
-            <el-col :offset="6" :span="12">
-              <el-link
-                style="float: right"
-                type="primary"
-                @click="handleForgetPassword"
-              >
-                {{ t("login.forgetPassword") }}
-              </el-link>
-            </el-col>
-          </el-row>
-        </el-form-item>
-      </el-col>
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <el-form-item>
           <XButton
@@ -86,6 +47,32 @@
             @click="handleLogin()"
           />
         </el-form-item>
+      </el-col>
+      <el-col
+        :span="24"
+        style="
+          padding-right: 10px;
+          padding-left: 10px;
+          margin-top: -10px;
+        "
+      >
+        <el-row justify="space-between" style="width: 100%">
+          <el-col :span="10">
+            <el-checkbox v-model="loginData.loginForm.rememberMe" size="small">
+              {{ t("login.remember") }}
+            </el-checkbox>
+          </el-col>
+          <el-col :span="12">
+            <el-link
+              style="float: right; font-size: 13px;"
+              type="primary"
+              :underline="false"
+              @click="handleForgetPassword"
+            >
+              {{ t("login.forgetPassword") }}
+            </el-link>
+          </el-col>
+        </el-row>
       </el-col>
       <!-- <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
         <el-form-item>
@@ -178,7 +165,7 @@ import { ElLoading } from "element-plus";
 import LoginFormTitle from "./LoginFormTitle.vue";
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 
-import { useIcon } from "@/hooks/web/useIcon";
+// import { useIcon } from "@/hooks/web/useIcon";
 
 import * as authUtil from "@/utils/auth";
 import { usePermissionStoreWithOut } from "@/store/modules/permission";
@@ -192,12 +179,11 @@ defineOptions({ name: "LoginForm" });
 
 const { t } = useI18n();
 const message = useMessage();
-const iconHouse = useIcon({ icon: "ep:house" });
-const iconAvatar = useIcon({ icon: "ep:avatar" });
-const iconLock = useIcon({ icon: "ep:lock" });
+const iconAvatar = "ep:avatar";
+const iconLock = "ep:lock";
 const formLogin = ref();
 const { validForm } = useFormValid(formLogin);
-const { setLoginState, getLoginState } = useLoginState();
+const { getLoginState } = useLoginState();
 const { currentRoute, push } = useRouter();
 const redirect = ref<string>("");
 const loginLoading = ref(false);
@@ -384,6 +370,12 @@ onMounted(() => {
 :deep(.anticon) {
   &:hover {
     color: var(--el-color-primary) !important;
+  }
+}
+
+.login-form {
+  :deep(.el-form-item) {
+    margin-bottom: 24px; /* 原来是 18px-22px，增加到 24px */
   }
 }
 

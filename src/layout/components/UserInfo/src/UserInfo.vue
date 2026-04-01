@@ -8,46 +8,24 @@ import { useUserStore } from '@/store/modules/user'
 import LockDialog from './components/LockDialog.vue'
 import LockPage from './components/LockPage.vue'
 import { useLockStore } from '@/store/modules/lock'
-import { getDeviceInfo } from '@/utils/device'
 
 defineOptions({ name: 'UserInfo' })
 
 const { t } = useI18n()
-
 const { push, replace } = useRouter()
-
 const userStore = useUserStore()
-
 const tagsViewStore = useTagsViewStore()
-
 const { getPrefixCls } = useDesign()
-
 const prefixCls = getPrefixCls('user-info')
 
 const avatar = computed(() => userStore.user.avatar || avatarImg)
 const userName = computed(() => userStore.user.name || userStore.user.account || 'Admin')
 
-// 公司信息
-const companyName = computed(() => {
-  return userStore.user.company?.name || null
-})
+const companyName = computed(() => userStore.user.company?.name || null)
+const isAdmin = computed(() => userStore.user.isAdmin || false)
+const expireTime = computed(() => userStore.user.expireTime)
+const isForever = computed(() => !expireTime.value)
 
-// 是否为管理员
-const isAdmin = computed(() => {
-  return userStore.user.isAdmin || false
-})
-
-// 过期时间显示
-const expireTime = computed(() => {
-  return userStore.user.expireTime
-})
-
-// 是否永久有效
-const isForever = computed(() => {
-  return !expireTime.value
-})
-
-// 计算剩余时间
 const remainingTime = computed(() => {
   if (!expireTime.value) return '永久有效'
   
@@ -61,18 +39,12 @@ const remainingTime = computed(() => {
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
   
-  if (days > 0) {
-    return `还有 ${days} 天到期`
-  } else if (hours > 0) {
-    return `还有 ${hours} 小时到期`
-  } else if (minutes > 0) {
-    return `还有 ${minutes} 分钟到期`
-  } else {
-    return '即将到期'
-  }
+  if (days > 0) return `还有 ${days} 天到期`
+  if (hours > 0) return `还有 ${hours} 小时到期`
+  if (minutes > 0) return `还有 ${minutes} 分钟到期`
+  return '即将到期'
 })
 
-// 锁定屏幕
 const lockStore = useLockStore()
 const getIsLock = computed(() => lockStore.getLockInfo?.isLock ?? false)
 const dialogVisible = ref<boolean>(false)
@@ -93,91 +65,88 @@ const loginOut = async () => {
   } catch {}
 }
 
-
-// 获取当前设备信息
-const currentDeviceInfo = computed(() => {
-  const deviceInfo = getDeviceInfo()
-  return {
-    type: deviceInfo.userAgent.includes('Mobile') ? '移动设备' : 
-          deviceInfo.userAgent.includes('Tablet') ? '平板设备' : '桌面设备',
-    browser: deviceInfo.userAgent.includes('Chrome') ? 'Chrome' :
-             deviceInfo.userAgent.includes('Firefox') ? 'Firefox' :
-             deviceInfo.userAgent.includes('Safari') ? 'Safari' : '未知浏览器'
-  }
-})
 const toProfile = async () => {
   push('/user/profile')
 }
-const toDocument = () => {
-  window.open('https://doc.iocoder.cn/')
-}
-
-
 </script>
 
 <template>
   <ElDropdown class="custom-hover" :class="prefixCls" trigger="click">
-    <div class=" flex items-center" >
-      <div class="relative">
-        <!-- <div :class="{reddot:!userStore.ws.isOnline,greendot:userStore.ws.isOnline}" class="absolute ws-dot" style="width:8px;height:8px;border-radius: 50%;top:-0px;right:-0px;"></div> -->
-        <ElAvatar style="width: 32px;height:32px;" :src="avatar" alt="" class="rounded-[50%]" />
-        <!-- 身份标签 -->
-        <div 
-          v-if="isAdmin" 
-          class="admin-label"
-          title="管理员"
-        >
-          <Icon icon="ep:crown" />
-        </div>
-        <div 
-          v-else 
-          class="user-label"
-          title="普通用户"
-        >
-          <Icon icon="ep:user" />
-        </div>
+    <div class="flex items-center cursor-pointer px-2 transition-all duration-300 hover:bg-[var(--el-fill-color-light)] rounded-lg py-1.5 mx-1">
+      <div class="relative flex items-center justify-center">
+        <ElAvatar 
+          :size="32" 
+          :src="avatar" 
+          class="border-2 border-[var(--el-border-color-light)] shadow-sm" 
+        />
+        <!-- 身份状态指示 -->
+        <span 
+          class="absolute -bottom-0.5 -right-0.5 w-3 h-3 border-2 border-[var(--top-header-bg-color)] rounded-full z-20"
+          :class="isAdmin ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)]' : 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]'"
+        ></span>
       </div>
-      <div class="pl-[8px] <lg:hidden">
-        <div class="flex items-center gap-2">
-          <span class="font-semibold text-[var(--top-header-text-color)]">{{ userName }}</span>
-        </div>
+      <div class="pl-2.5 <lg:hidden flex flex-col justify-center">
+        <span class="text-13px font-600 text-[var(--top-header-text-color)] leading-tight">{{ userName }}</span>
+        <span class="text-10px font-500 uppercase tracking-tighter opacity-70" :class="isAdmin ? 'text-amber-500' : 'text-[var(--el-text-color-placeholder)]'">
+          {{ isAdmin ? 'Administrator' : 'Standard Member' }}
+        </span>
       </div>
+      <Icon icon="ep:caret-bottom" class="ml-1.5 text-12px opacity-30 transition-transform duration-300" />
     </div>
+    
     <template #dropdown>
       <ElDropdownMenu class="user-dropdown-menu">
-        <!-- 用户信息卡片 -->
-        <div class="user-info-card">
-          <div class="user-avatar-section">
-            <ElAvatar :src="avatar" :size="56" class="user-main-avatar" />
-            <div v-if="isAdmin" class="user-badge admin-badge">
-              <Icon icon="ep:crown" />
+        <!-- 顶部信息卡片 -->
+        <div class="user-card-header">
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <ElAvatar :src="avatar" :size="56" class="ring-4 ring-[var(--el-color-primary-light-9)]" />
+              <div v-if="isAdmin" class="absolute -bottom-1 -right-1 bg-amber-500 p-1 rounded-full shadow-md">
+                <Icon icon="ep:crown" class="text-white text-11px" />
+              </div>
             </div>
-          </div>
-          <div class="user-details">
-            <div class="user-name">{{ userName }}</div>
-            <div v-if="companyName" class="user-company">{{ companyName }}</div>
-            <div class="user-expire" :class="{ 'forever-style': isForever }">
-              <Icon icon="ep:clock" />
-              <span>{{ remainingTime }}</span>
+            <div class="flex flex-col min-w-0">
+              <span class="text-16px font-bold text-[var(--el-text-color-primary)] truncate">{{ userName }}</span>
+              <span v-if="companyName" class="text-12px text-[var(--el-text-color-secondary)] truncate mb-1.5">{{ companyName }}</span>
+              <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--el-fill-color)] text-11px w-fit" :class="{ 'text-emerald-600 dark:text-emerald-400 font-600': isForever }">
+                <Icon icon="ep:clock" class="text-10px" />
+                <span>{{ remainingTime }}</span>
+              </div>
             </div>
           </div>
         </div>
         
-        <!-- 菜单项 -->
-        <div class="menu-divider"></div>
-        <ElDropdownItem class="menu-item" @click="toProfile">
-          <Icon icon="ep:user" />
-          <span>{{ t('common.profile') }}</span>
-        </ElDropdownItem>
-        <ElDropdownItem class="menu-item" @click="lockScreen">
-          <Icon icon="ep:lock" />
-          <span>{{ t('lock.lockScreen') }}</span>
-        </ElDropdownItem>
-        <div class="menu-divider"></div>
-        <ElDropdownItem class="menu-item logout-item" @click="loginOut">
-          <Icon icon="ep:switch-button" />
-          <span>{{ t('common.loginOut') }}</span>
-        </ElDropdownItem>
+        <!-- 操作列表 -->
+        <div class="px-2 pb-2 mt-1">
+          <ElDropdownItem @click="toProfile" class="menu-item-custom">
+            <div class="flex items-center gap-3 w-full">
+              <div class="p-1.5 bg-[var(--el-color-primary-light-9)] rounded-md text-[var(--el-color-primary)]">
+                <Icon icon="ep:user" />
+              </div>
+              <span class="text-14px">{{ t('common.profile') }}</span>
+            </div>
+          </ElDropdownItem>
+          
+          <ElDropdownItem @click="lockScreen" class="menu-item-custom">
+            <div class="flex items-center gap-3 w-full">
+              <div class="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md">
+                <Icon icon="ep:lock" />
+              </div>
+              <span class="text-14px">{{ t('lock.lockScreen') }}</span>
+            </div>
+          </ElDropdownItem>
+          
+          <div class="divider"></div>
+          
+          <ElDropdownItem @click="loginOut" class="menu-item-custom logout-hover">
+            <div class="flex items-center gap-3 w-full text-red-500">
+              <div class="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-md">
+                <Icon icon="ep:switch-button" />
+              </div>
+              <span class="text-14px font-500">{{ t('common.loginOut') }}</span>
+            </div>
+          </ElDropdownItem>
+        </div>
       </ElDropdownMenu>
     </template>
   </ElDropdown>
@@ -192,256 +161,56 @@ const toDocument = () => {
 </template>
 
 <style scoped lang="scss">
-.fade-bottom-enter-active,
-.fade-bottom-leave-active {
-  transition:
-    opacity 0.25s,
-    transform 0.3s;
-}
-
-.fade-bottom-enter-from {
+.fade-bottom-init {
   opacity: 0;
   transform: translateY(-10%);
 }
 
-.fade-bottom-leave-to {
-  opacity: 0;
-  transform: translateY(10%);
-}
-
-.reddot {
-  background-color: red !important; /* 更柔和的红色 */
-  box-shadow: 0 0 10px rgba(255, 111, 97, 0.6);
-}
-
-.greendot {
-  background-color: rgb(0, 255, 110);
-  box-shadow: 0 0 10px rgba(89, 255, 95, 0.6);
-}
-
-/* 管理员标签样式 - 头像右上角 */
-.admin-label {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 16px;
-  height: 16px;
-  background: #f6c453;
-  border: 2px solid var(--app-content-surface-color);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.24);
-  z-index: 10;
-  animation: adminPulse 2s ease-in-out infinite;
-}
-
-.admin-label .icon {
-  color: #d97706;
-  font-size: 8px;
-  font-weight: bold;
-}
-
-/* 普通用户标签样式 - 头像右上角 */
-.user-label {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 16px;
-  height: 16px;
-  background: #34c784;
-  border: 2px solid var(--app-content-surface-color);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
-  z-index: 10;
-}
-
-.user-label .icon {
-  color: #ffffff;
-  font-size: 8px;
-}
-
-/* 管理员脉冲动画 */
-@keyframes adminPulse {
-  0% {
-    transform: scale(1);
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.4);
-  }
-  50% {
-    transform: scale(1.1);
-    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.6);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.4);
-  }
-}
-
-/* 下拉菜单样式 */
 .user-dropdown-menu {
-  padding: 8px !important;
-  min-width: 240px !important;
-}
-
-/* Element Plus 下拉菜单样式覆盖 */
-:deep(.user-dropdown-menu .el-dropdown-menu__item) {
   padding: 0 !important;
-}
-
-:deep(.user-dropdown-menu .el-dropdown-menu__item:hover) {
-  background-color: transparent !important;
-}
-
-/* 用户信息卡片 */
-.user-info-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  background: var(--app-content-surface-muted-color);
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 12px;
-  margin-bottom: 4px;
-}
-
-.user-avatar-section {
-  position: relative;
-  flex-shrink: 0;
-}
-
-.user-main-avatar {
-  border: 2px solid var(--app-content-border-color);
-  box-shadow: none;
-}
-
-.user-badge {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none;
-  border: 2px solid var(--app-content-surface-color);
-}
-
-.admin-badge {
-  background: #f59e0b;
-}
-
-.admin-badge .icon {
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.user-details {
-  flex: 1;
-  min-width: 0;
-}
-
-.user-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: inherit;
-  margin-bottom: 4px;
-  white-space: nowrap;
+  min-width: 260px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--el-border-color-light) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.user-company {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.user-card-header {
+  padding: 20px 16px;
+  background: linear-gradient(135deg, var(--el-fill-color-blank) 0%, var(--el-fill-color-light) 100%);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
-.user-expire {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: inherit;
-  opacity: 0.7;
-}
-
-.user-expire .icon {
-  font-size: 12px;
-}
-
-/* 永久有效样式 */
-.forever-style {
-  color: rgba(34, 197, 94, 0.9) !important;
-  opacity: 1 !important;
-  font-weight: 500;
-}
-
-/* 分隔线 */
-.menu-divider {
-  height: 1px;
-  background: var(--app-content-border-color);
-  margin: 4px 0;
-}
-
-/* 菜单项 */
-.menu-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.menu-item:hover {
-  background: var(--app-content-surface-muted-color);
-}
-
-.menu-item .icon {
-  font-size: 16px;
-  color: inherit;
-  opacity: 0.7;
-}
-
-.menu-item span {
-  font-size: 14px;
-  color: inherit;
-}
-
-/* 登出项 */
-.logout-item .icon,
-.logout-item span {
-  color: #ef4444;
-}
-
-.logout-item:hover {
-  background: rgba(239, 68, 68, 0.08);
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .admin-label,
-  .user-label {
-    width: 14px;
-    height: 14px;
-    top: -1px;
-    right: -1px;
-  }
+.menu-item-custom {
+  margin: 2px 0 !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s ease !important;
   
-  .admin-label .icon,
-  .user-label .icon {
-    font-size: 7px;
+  &:hover {
+    background-color: var(--el-fill-color-light) !important;
+    color: var(--el-color-primary) !important;
+  }
+}
+
+.logout-hover:hover {
+  background-color: var(--el-color-danger-light-9) !important;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--el-border-color-lighter);
+  margin: 6px 8px;
+}
+
+/* 兼容顶部导航文本颜色 */
+:deep(.el-dropdown) {
+  color: inherit;
+  &:hover {
+    .ep-caret-bottom {
+      transform: rotate(180deg);
+      opacity: 0.8;
+    }
   }
 }
 </style>

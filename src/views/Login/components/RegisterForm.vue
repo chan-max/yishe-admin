@@ -1,13 +1,13 @@
 <template>
   <el-form
     v-show="getShow"
+    v-bind="$attrs"
     ref="formLogin"
     :model="registerData.registerForm"
     :rules="registerRules"
     class="login-form"
     label-position="top"
     label-width="120px"
-    size="large"
   >
     <el-row style="margin-right: -10px; margin-left: -10px">
       <el-col :span="24" style="padding-right: 10px; padding-left: 10px">
@@ -32,7 +32,6 @@
           <el-input
             v-model="registerData.registerForm.username"
             :placeholder="t('login.username')"
-            size="large"
             :prefix-icon="iconAvatar"
           />
         </el-form-item>
@@ -261,6 +260,12 @@ onMounted(() => {
 :deep(.anticon) {
   &:hover {
     color: var(--el-color-primary) !important;
+  }
+}
+
+.login-form {
+  :deep(.el-form-item) {
+    margin-bottom: 24px;
   }
 }
 
