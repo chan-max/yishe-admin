@@ -3,7 +3,12 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>我的客户端</span>
+          <div class="card-header__title">
+            <span>我的客户端</span>
+            <span v-if="clients.length" class="card-header__summary">
+              在线 {{ onlineClientCount }} / 断线 {{ offlineClientCount }}
+            </span>
+          </div>
           <el-button type="primary" @click="refreshClients" :loading="loading">
             <Icon icon="ep:refresh" class="mr-5px" />
             刷新
@@ -14,14 +19,31 @@
       <el-empty v-if="!loading && clients.length === 0" description="暂无客户端连接" />
 
       <div v-else class="client-list">
-        <div v-for="client in clients" :key="client.id" class="client-item">
+        <div
+          v-for="client in clients"
+          :key="client.id"
+          :class="['client-item', isClientOnline(client) ? 'client-item--online' : 'client-item--offline']"
+        >
           <div class="client-item__top">
             <div class="client-info">
               <div class="client-title-row">
                 <div class="client-title">{{ getClientTitle(client) }}</div>
+                <el-tag :type="getClientStatusTagType(client)" size="small">
+                  {{ getClientStatusText(client) }}
+                </el-tag>
                 <el-tag v-if="client.clientSource" type="info">
                   {{ client.clientSource }}
                 </el-tag>
+              </div>
+              <div class="client-status-banner">
+                <span
+                  :class="[
+                    'client-status-banner__dot',
+                    isClientOnline(client) ? 'client-status-banner__dot--online' : 'client-status-banner__dot--offline'
+                  ]"
+                />
+                <span class="client-status-banner__label">{{ getClientStatusText(client) }}</span>
+                <span class="client-status-banner__meta">{{ getClientStatusMeta(client) }}</span>
               </div>
               <div class="client-id">
                 <Icon icon="ep:connection" class="mr-4px" />
@@ -41,13 +63,21 @@
                   <Icon icon="ep:clock" class="mr-4px" />
                   {{ formatPast(new Date(client.connectedAt)) }}
                 </span>
+                <span class="meta-item" v-if="client.isOnline && client.lastOnlineAt">
+                  <Icon icon="ep:success-filled" class="mr-4px" />
+                  最近在线 {{ formatDateSafe(client.lastOnlineAt) }}
+                </span>
+                <span class="meta-item" v-else-if="client.lastOfflineAt">
+                  <Icon icon="ep:warning-filled" class="mr-4px" />
+                  断线于 {{ formatDateSafe(client.lastOfflineAt) }}
+                </span>
               </div>
             </div>
             <div class="client-actions">
               <el-button text @click="toggleExpand(client.id)">
                 {{ expandedIds.includes(client.id) ? '收起详情' : '查看详情' }}
               </el-button>
-              <el-button type="primary" @click="handleSendMessage(client)">
+              <el-button type="primary" :disabled="!client.isOnline" @click="handleSendMessage(client)">
                 <Icon icon="ep:message" class="mr-4px" />
                 发送消息
               </el-button>
@@ -58,11 +88,15 @@
             <div class="detail-grid">
               <div class="detail-card">
                 <div class="detail-card__title">连接概览</div>
+                <div class="detail-row"><span class="detail-key">当前状态</span><span class="detail-value">{{ getClientStatusText(client) }}</span></div>
                 <div class="detail-row"><span class="detail-key">连接 ID</span><span class="detail-value detail-value--mono">{{ client.id }}</span></div>
                 <div class="detail-row"><span class="detail-key">命名空间</span><span class="detail-value">{{ client.namespace || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">连接来源</span><span class="detail-value">{{ client.clientSource || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">连接时间</span><span class="detail-value">{{ formatDateSafe(client.connectedAt) }}</span></div>
                 <div class="detail-row"><span class="detail-key">持续时长</span><span class="detail-value">{{ client.connectedAt ? formatPast(new Date(client.connectedAt)) : '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">最近在线</span><span class="detail-value">{{ formatDateSafe(client.lastOnlineAt) }}</span></div>
+                <div class="detail-row"><span class="detail-key">断线时间</span><span class="detail-value">{{ formatDateSafe(client.lastOfflineAt) }}</span></div>
+                <div class="detail-row"><span class="detail-key">节点状态</span><span class="detail-value">{{ client.nodeStatus || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">IP</span><span class="detail-value">{{ client.ip || client.clientInfo?.location?.ip || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">User-Agent</span><span class="detail-value detail-value--break">{{ client.userAgent || client.clientInfo?.userAgent || '-' }}</span></div>
               </div>
@@ -158,7 +192,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { formatDate, formatPast } from '@/utils/formatTime'
 import { ClientControlService } from '@/services/clientControl'
@@ -173,6 +207,10 @@ const sendMessageDialogVisible = ref(false)
 const currentClient = ref<WebsocketConnectionVO | null>(null)
 const messageContent = ref('')
 const sending = ref(false)
+const onlineClientCount = computed(() => clients.value.filter((client) => client.isOnline).length)
+const offlineClientCount = computed(() => clients.value.filter((client) => !client.isOnline).length)
+
+const isClientOnline = (client: WebsocketConnectionVO) => !!client.isOnline
 
 const formatDateSafe = (value?: string) => {
   if (!value) return '-'
@@ -220,6 +258,38 @@ const getClientTitle = (client: WebsocketConnectionVO) =>
   client.clientInfo?.extension?.name ||
   client.id
 
+const getClientStatusText = (client: WebsocketConnectionVO) =>
+  isClientOnline(client) ? '在线' : '断线'
+
+const getClientStatusTagType = (client: WebsocketConnectionVO) =>
+  isClientOnline(client) ? 'success' : 'danger'
+
+const getClientStatusMeta = (client: WebsocketConnectionVO) => {
+  if (isClientOnline(client)) {
+    return client.lastOnlineAt
+      ? `最近在线 ${formatDateSafe(client.lastOnlineAt)}`
+      : '当前连接正常'
+  }
+
+  return client.lastOfflineAt
+    ? `最近断线 ${formatDateSafe(client.lastOfflineAt)}`
+    : '当前未连接'
+}
+
+const sortClients = (items: WebsocketConnectionVO[]) => {
+  return [...items].sort((a, b) => {
+    const aOnline = isClientOnline(a)
+    const bOnline = isClientOnline(b)
+    if (aOnline !== bOnline) {
+      return aOnline ? -1 : 1
+    }
+
+    const aTime = a.lastOnlineAt || a.lastOfflineAt || a.connectedAt || ''
+    const bTime = b.lastOnlineAt || b.lastOfflineAt || b.connectedAt || ''
+    return aTime > bTime ? -1 : 1
+  })
+}
+
 const formatBrowser = (client: WebsocketConnectionVO) => {
   const browser = client.clientInfo?.browser
   if (!browser?.name) return '-'
@@ -266,7 +336,7 @@ const toggleExpand = (id: string) => {
 const refreshClients = async () => {
   loading.value = true
   try {
-    clients.value = await ClientControlService.getMyClients()
+    clients.value = sortClients(await ClientControlService.getMyClients())
     expandedIds.value = expandedIds.value.filter((id) => clients.value.some((client) => client.id === id))
     if (clients.value.length === 0) {
       ElMessage.info('当前没有已连接的客户端')
@@ -279,6 +349,10 @@ const refreshClients = async () => {
 }
 
 const handleSendMessage = (client: WebsocketConnectionVO) => {
+  if (!client.isOnline) {
+    ElMessage.warning('断线客户端暂时无法发送消息')
+    return
+  }
   currentClient.value = client
   messageContent.value = ''
   sendMessageDialogVisible.value = true
@@ -325,6 +399,18 @@ onMounted(() => {
     align-items: center;
   }
 
+  .card-header__title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .card-header__summary {
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+  }
+
   .client-list {
     display: flex;
     flex-direction: column;
@@ -337,6 +423,7 @@ onMounted(() => {
     gap: 12px;
     padding: 12px;
     border: 1px solid var(--el-border-color);
+    border-left-width: 4px;
     border-radius: 8px;
     transition: all 0.3s;
 
@@ -344,6 +431,16 @@ onMounted(() => {
       border-color: var(--el-color-primary);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
+  }
+
+  .client-item--online {
+    border-left-color: var(--el-color-success);
+    background: color-mix(in srgb, var(--el-color-success) 6%, var(--el-bg-color) 94%);
+  }
+
+  .client-item--offline {
+    border-left-color: var(--el-color-danger);
+    background: color-mix(in srgb, var(--el-color-danger) 5%, var(--el-bg-color) 95%);
   }
 
   .client-item__top {
@@ -369,6 +466,44 @@ onMounted(() => {
     font-size: 14px;
     font-weight: 600;
     color: var(--el-text-color-primary);
+  }
+
+  .client-status-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--el-fill-color-light) 88%, transparent 12%);
+    font-size: 12px;
+  }
+
+  .client-status-banner__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .client-status-banner__dot--online {
+    background: var(--el-color-success);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--el-color-success) 40%, transparent 60%);
+  }
+
+  .client-status-banner__dot--offline {
+    background: var(--el-color-danger);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--el-color-danger) 40%, transparent 60%);
+  }
+
+  .client-status-banner__label {
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+  }
+
+  .client-status-banner__meta {
+    color: var(--el-text-color-secondary);
   }
 
   .client-id {

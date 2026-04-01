@@ -7,7 +7,7 @@
             <div class="websocket-toolbar__summary">
               <div class="websocket-toolbar__title">远程连接</div>
               <div class="websocket-toolbar__description">
-                当前展示为所有实时 WebSocket 连接，并对客户端额外合并节点持久化信息，可查看在线连接与离线客户端节点。
+                当前展示为所有实时 WebSocket 连接，并对客户端额外合并节点持久化信息，可查看在线连接与断线客户端节点。
               </div>
             </div>
 
@@ -17,6 +17,13 @@
                 <el-tag :type="adminWsStatusTag.type" size="small">
                   {{ adminWsStatusTag.text }}
                 </el-tag>
+              </div>
+
+              <div class="websocket-toolbar__meta-item">
+                <span class="websocket-toolbar__meta-label">客户端状态</span>
+                <span class="websocket-toolbar__meta-value">
+                  在线 {{ onlineConnectionCount }} / 断线 {{ offlineConnectionCount }}
+                </span>
               </div>
 
               <div class="websocket-toolbar__meta-item" v-if="adminConnectionId">
@@ -52,6 +59,17 @@
               :loading="loading"
               ref="gridRef"
             >
+          <template #status_default="{ row }">
+            <el-tag :type="getConnectionStatusTagType(row)" size="small">
+              {{ getConnectionStatusText(row) }}
+            </el-tag>
+          </template>
+          <template #lastOnlineAt_default="{ row }">
+            {{ formatStatusTime(row.lastOnlineAt || row.connectedAt) }}
+          </template>
+          <template #lastOfflineAt_default="{ row }">
+            {{ formatStatusTime(row.lastOfflineAt) }}
+          </template>
           <template #duration_default="{ row }">
             {{ formatPast(row.connectedAt) }}
           </template>
@@ -139,7 +157,7 @@
                 </span>
                 <span class="meta-item">
                   <Icon icon="ep:connection" class="mr-4px" />
-                  {{ currentConnection?.isOnline ? '在线' : '离线' }}
+                  {{ currentConnection?.isOnline ? '在线' : '断线' }}
                 </span>
               </div>
             </div>
@@ -274,7 +292,6 @@ import type {
   WebsocketConnectionVO,
   WebsocketClientInfo,
   ScheduledTask,
-  SetTaskDTO,
   TokenUserInfo
 } from '@/api/system/websocket'
 import { websocketClient } from '@/services/websocketClient'
@@ -323,6 +340,8 @@ const loading = ref(false)
 const autoRefresh = ref(false)
 const refreshTimer = ref<number | null>(null)
 const refreshInterval = 10_000
+const onlineConnectionCount = computed(() => connections.value.filter((row) => row.isOnline).length)
+const offlineConnectionCount = computed(() => connections.value.filter((row) => !row.isOnline).length)
 
 // 发送消息对话框
 const sendMessageDialogVisible = ref(false)
@@ -439,9 +458,9 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
     {
       field: 'isOnline',
       title: '在线状态',
-      width: 100,
+      width: 110,
       align: 'center',
-      formatter: ({ row }) => ((row as WebsocketConnectionRow).isOnline ? '在线' : '离线')
+      slots: { default: 'status_default' }
     },
     {
       field: 'id',
@@ -484,6 +503,18 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
       formatter: ({ cellValue }) => (cellValue ? formatDate(new Date(cellValue)) : '')
     },
     {
+      field: 'lastOnlineAt',
+      title: '最近在线',
+      minWidth: 180,
+      slots: { default: 'lastOnlineAt_default' }
+    },
+    {
+      field: 'lastOfflineAt',
+      title: '断线时间',
+      minWidth: 180,
+      slots: { default: 'lastOfflineAt_default' }
+    },
+    {
       field: 'duration',
       title: '持续时长',
       minWidth: 140,
@@ -524,6 +555,23 @@ const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
 watchEffect(() => {
   gridOptions.value.maxHeight = height.value - 200
 })
+
+const formatStatusTime = (value?: string | null) => {
+  if (!value) {
+    return '-'
+  }
+
+  try {
+    return formatDate(new Date(value))
+  } catch {
+    return value
+  }
+}
+
+const getConnectionStatusText = (row: WebsocketConnectionRow) => (row.isOnline ? '在线' : '断线')
+
+const getConnectionStatusTagType = (row: WebsocketConnectionRow) =>
+  row.isOnline ? 'success' : 'danger'
 
 const formatQuery = (query?: Record<string, string | string[]>) => {
   if (!query) {
@@ -819,12 +867,13 @@ const fetchConnections = async () => {
   loading.value = true
   try {
     const response = await WebsocketApi.getWebsocketConnectionViews()
+    const responsePayload = response as any
     // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
     let list: WebsocketConnectionVO[] = []
     if (Array.isArray(response)) {
       list = response
-    } else if (response && typeof response === 'object' && Array.isArray(response.data)) {
-      list = response.data
+    } else if (responsePayload && typeof responsePayload === 'object' && Array.isArray(responsePayload.data)) {
+      list = responsePayload.data
     } else {
       console.warn('[fetchConnections] 意外的响应格式:', response)
       list = []
@@ -1033,6 +1082,12 @@ onBeforeUnmount(() => {
   font-size: 11px;
   line-height: 1;
   color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.websocket-toolbar__meta-value {
+  font-size: 11px;
+  color: var(--el-text-color-primary);
   white-space: nowrap;
 }
 

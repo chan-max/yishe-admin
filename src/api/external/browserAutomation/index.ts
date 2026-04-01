@@ -20,7 +20,11 @@ export interface BrowserAutomationServiceStatus {
 
 export interface BrowserAutomationClientVO {
   clientId: string
-  connectedAt?: string
+  isOnline?: boolean
+  nodeStatus?: string | null
+  connectedAt?: string | null
+  lastOnlineAt?: string | null
+  lastOfflineAt?: string | null
   appVersion?: string | null
   machine?: {
     code?: string

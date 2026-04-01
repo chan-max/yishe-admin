@@ -1,34 +1,34 @@
 <script lang="tsx">
-import { computed, defineComponent, inject } from 'vue'
-import { Icon } from '@/components/Icon'
-import { UserInfo } from '@/layout/components/UserInfo'
-import { Screenfull } from '@/layout/components/Screenfull'
-import { Breadcrumb } from '@/layout/components/Breadcrumb'
-import { ThemeSwitch } from '@/layout/components/ThemeSwitch'
-import ClientStatus from '@/layout/components/ClientStatus.vue'
-import AdminDataScopeSwitch from '@/layout/components/AdminDataScopeSwitch.vue'
-import GlobalNotificationCenter from '@/layout/components/GlobalNotificationCenter.vue'
-import GlobalNotificationToastStack from '@/layout/components/GlobalNotificationToastStack.vue'
-import { useAppStore } from '@/store/modules/app'
-import { useDesign } from '@/hooks/web/useDesign'
+import { computed, defineComponent, inject } from "vue";
+import { Icon } from "@/components/Icon";
+import { UserInfo } from "@/layout/components/UserInfo";
+import { Screenfull } from "@/layout/components/Screenfull";
+import { Breadcrumb } from "@/layout/components/Breadcrumb";
+import { ThemeSwitch } from "@/layout/components/ThemeSwitch";
+import ClientStatus from "@/layout/components/ClientStatus.vue";
+import AdminDataScopeSwitch from "@/layout/components/AdminDataScopeSwitch.vue";
+import GlobalNotificationCenter from "@/layout/components/GlobalNotificationCenter.vue";
+import GlobalNotificationToastStack from "@/layout/components/GlobalNotificationToastStack.vue";
+import { useAppStore } from "@/store/modules/app";
+import { useDesign } from "@/hooks/web/useDesign";
 
 export default defineComponent({
-  name: 'ToolHeader',
+  name: "ToolHeader",
   setup() {
-    const { getPrefixCls, variables } = useDesign()
-    const prefixCls = getPrefixCls('tool-header')
-    const appStore = useAppStore()
-    const breadcrumb = computed(() => appStore.getBreadcrumb)
-    const screenfull = computed(() => appStore.getScreenfull)
-    const mobile = computed(() => appStore.getMobile)
-    const openMobileMenu = inject<() => void>('openMobileMenu', () => {})
+    const { getPrefixCls, variables } = useDesign();
+    const prefixCls = getPrefixCls("tool-header");
+    const appStore = useAppStore();
+    const breadcrumb = computed(() => appStore.getBreadcrumb);
+    const screenfull = computed(() => appStore.getScreenfull);
+    const mobile = computed(() => appStore.getMobile);
+    const openMobileMenu = inject<() => void>("openMobileMenu", () => {});
 
     return () => (
       <header
         id={`${variables.namespace}-tool-header`}
         class={[
           prefixCls,
-          'h-[var(--top-tool-height)] pl-12px pr-8px md:pl-16px md:pr-10px flex items-center justify-between'
+          "h-[var(--top-tool-height)] pl-12px pr-8px md:pl-16px md:pr-10px flex items-center justify-between",
         ]}
       >
         <div class="flex h-full min-w-0 items-center gap-6px md:gap-8px">
@@ -60,9 +60,9 @@ export default defineComponent({
           <UserInfo />
         </div>
       </header>
-    )
-  }
-})
+    );
+  },
+});
 </script>
 
 <style lang="scss" scoped>
@@ -74,6 +74,11 @@ $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} :deep(.admin-data-scope) {
   flex-shrink: 1;
+}
+
+.client-status-wrapper {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 @media (max-width: 1024px) {

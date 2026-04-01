@@ -2,13 +2,13 @@ import { computed, ref } from 'vue'
 import { websocketClient } from '@/services/websocketClient'
 import { getAccessToken } from '@/utils/auth'
 import { isClientAuthorized as checkClientAuthApi } from '@/api/user'
-import { getMyWebsocketConnections, type WebsocketConnectionVO } from '@/api/system/websocket'
+import { getMyWebsocketConnectionViews, type WebsocketConnectionVO } from '@/api/system/websocket'
 
 export const myClients = ref<WebsocketConnectionVO[]>([])
 export const clientRefreshLoading = ref(false)
 export const lastClientRefreshAt = ref<string | null>(null)
 
-export const isLocalConnected = computed(() => myClients.value.length > 0)
+export const isLocalConnected = computed(() => myClients.value.some((client) => client.isOnline))
 
 export const setMyClients = (clients: WebsocketConnectionVO[]) => {
   myClients.value = clients
@@ -39,7 +39,7 @@ export const refreshMyClients = async () => {
 
   clientRefreshLoading.value = true
   try {
-    const response = await getMyWebsocketConnections()
+    const response = await getMyWebsocketConnectionViews()
     const clients = Array.isArray(response)
       ? response
       : response && typeof response === 'object' && Array.isArray((response as any).data)

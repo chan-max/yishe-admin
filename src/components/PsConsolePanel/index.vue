@@ -12,28 +12,48 @@
             <span class="inline-status__text">{{ serviceStatus.text }}</span>
           </div>
         </div>
-        <el-button type="primary" :disabled="!selectedClient" @click="operationDialogVisible = true">打开操作面板</el-button>
-        <el-button :disabled="!selectedClient" @click="handleSelectedClientCommand('refreshRuntime')">刷新服务</el-button>
-        <el-button :disabled="!selectedClient" @click="handleSelectedClientCommand('health', {}, 'maintenance')">检测服务</el-button>
+        <el-button type="primary" :disabled="!selectedClient" @click="operationDialogVisible = true"
+          >打开操作面板</el-button
+        >
+        <el-button
+          :disabled="!selectedClient"
+          @click="handleSelectedClientCommand('refreshRuntime')"
+          >刷新服务</el-button
+        >
+        <el-button
+          :disabled="!selectedClient"
+          @click="handleSelectedClientCommand('health', {}, 'maintenance')"
+          >检测服务</el-button
+        >
         <el-button type="primary" @click="refreshClients">刷新节点</el-button>
       </div>
     </div>
 
     <div class="tab-layout">
-      <ExternalClientSidebar class="ops-sidebar" :items="clientNodeItems" :loading="loading"
-        :selected-client-id="selectedClientId" section-title="客户端节点" empty-text="暂无可用客户端"
-        @select="selectedClientId = $event" />
+      <ExternalClientSidebar
+        class="ops-sidebar"
+        :items="clientNodeItems"
+        :loading="loading"
+        :selected-client-id="selectedClientId"
+        section-title="客户端节点"
+        empty-text="暂无可用客户端"
+        @select="selectedClientId = $event"
+      />
 
       <section class="ops-main">
         <div class="ops-panel">
           <div class="ops-panel__head">
             <div>
               <div class="ops-panel__title">节点 PS 服务状态</div>
-              <div class="ops-panel__sub" v-if="selectedClient">{{ selectedClientDisplayName }}</div>
+              <div class="ops-panel__sub" v-if="selectedClient">
+                {{ selectedClientDisplayName }}
+              </div>
             </div>
             <div class="ops-panel__actions" v-if="selectedClient">
               <el-button @click="handleSelectedClientCommand('refreshRuntime')">刷新状态</el-button>
-              <el-button @click="handleSelectedClientCommand('health', {}, 'maintenance')">健康检测</el-button>
+              <el-button @click="handleSelectedClientCommand('health', {}, 'maintenance')"
+                >健康检测</el-button
+              >
             </div>
           </div>
 
@@ -54,35 +74,51 @@
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">运行态</span>
-                <span class="compact-info__value">{{ resolvePsStateText(selectedPsBridgeService?.state) }}</span>
+                <span class="compact-info__value">{{
+                  resolvePsStateText(selectedPsBridgeService?.state)
+                }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">版本</span>
-                <span class="compact-info__value">{{ selectedPsBridgeService?.version || '-' }}</span>
+                <span class="compact-info__value">{{
+                  selectedPsBridgeService?.version || "-"
+                }}</span>
               </div>
               <div class="compact-info__item compact-info__item--full">
                 <span class="compact-info__label">说明</span>
-                <span class="compact-info__value">{{ selectedPsBridgeService?.message || '-' }}</span>
+                <span class="compact-info__value">{{
+                  selectedPsBridgeService?.message || "-"
+                }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">服务地址</span>
-                <span class="compact-info__value">{{ selectedPsBridgeService?.endpoint || '-' }}</span>
+                <span class="compact-info__value">{{
+                  selectedPsBridgeService?.endpoint || "-"
+                }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">当前任务</span>
-                <span class="compact-info__value">{{ selectedPsBridgeService?.currentTaskId || '-' }}</span>
+                <span class="compact-info__value">{{
+                  selectedPsBridgeService?.currentTaskId || "-"
+                }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">最近检测</span>
-                <span class="compact-info__value">{{ formatDateSafe(selectedPsBridgeService?.lastCheckedAt) }}</span>
+                <span class="compact-info__value">{{
+                  formatDateSafe(selectedPsBridgeService?.lastCheckedAt)
+                }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">支持命令</span>
-                <span class="compact-info__value">{{ formatListSafe(selectedPsBridgeService?.supportedCommands) }}</span>
+                <span class="compact-info__value">{{
+                  formatListSafe(selectedPsBridgeService?.supportedCommands)
+                }}</span>
               </div>
               <div class="compact-info__item compact-info__item--full">
                 <span class="compact-info__label">最后错误</span>
-                <span class="compact-info__value">{{ selectedPsBridgeService?.lastError || '-' }}</span>
+                <span class="compact-info__value">{{
+                  selectedPsBridgeService?.lastError || "-"
+                }}</span>
               </div>
             </div>
           </template>
@@ -115,20 +151,69 @@
                 <div class="form-grid">
                   <div class="field-block">
                     <label>启动超时（秒）</label>
-                    <el-input-number v-model="serviceForm.startTimeout" :min="5" :max="120" controls-position="right" />
+                    <el-input-number
+                      v-model="serviceForm.startTimeout"
+                      :min="5"
+                      :max="120"
+                      controls-position="right"
+                    />
                   </div>
                   <div class="field-block">
                     <label>关闭策略</label>
-                    <el-switch v-model="serviceForm.forceStop" active-text="强制关闭" inactive-text="优雅关闭" />
+                    <el-switch
+                      v-model="serviceForm.forceStop"
+                      active-text="强制关闭"
+                      inactive-text="优雅关闭"
+                    />
                   </div>
                 </div>
 
                 <div class="button-row wrap">
-                  <el-button :loading="loadingMap.refreshRuntime" @click="dispatchPsCommand('refreshRuntime')">刷新状态</el-button>
-                  <el-button :loading="loadingMap.health" @click="dispatchPsCommand('health', {}, 'maintenance')">健康检测</el-button>
-                  <el-button type="primary" :loading="loadingMap.startPhotoshop" @click="dispatchPsCommand('startPhotoshop', { timeout: serviceForm.startTimeout }, 'maintenance')">启动 Photoshop</el-button>
-                  <el-button :loading="loadingMap.restartPhotoshop" @click="dispatchPsCommand('restartPhotoshop', { timeout: serviceForm.startTimeout }, 'maintenance')">重启 Photoshop</el-button>
-                  <el-button type="danger" :loading="loadingMap.stopPhotoshop" @click="dispatchPsCommand('stopPhotoshop', { force: serviceForm.forceStop }, 'maintenance')">关闭 Photoshop</el-button>
+                  <el-button
+                    :loading="loadingMap.refreshRuntime"
+                    @click="dispatchPsCommand('refreshRuntime')"
+                    >刷新状态</el-button
+                  >
+                  <el-button
+                    :loading="loadingMap.health"
+                    @click="dispatchPsCommand('health', {}, 'maintenance')"
+                    >健康检测</el-button
+                  >
+                  <el-button
+                    type="primary"
+                    :loading="loadingMap.startPhotoshop"
+                    @click="
+                      dispatchPsCommand(
+                        'startPhotoshop',
+                        { timeout: serviceForm.startTimeout },
+                        'maintenance',
+                      )
+                    "
+                    >启动 Photoshop</el-button
+                  >
+                  <el-button
+                    :loading="loadingMap.restartPhotoshop"
+                    @click="
+                      dispatchPsCommand(
+                        'restartPhotoshop',
+                        { timeout: serviceForm.startTimeout },
+                        'maintenance',
+                      )
+                    "
+                    >重启 Photoshop</el-button
+                  >
+                  <el-button
+                    type="danger"
+                    :loading="loadingMap.stopPhotoshop"
+                    @click="
+                      dispatchPsCommand(
+                        'stopPhotoshop',
+                        { force: serviceForm.forceStop },
+                        'maintenance',
+                      )
+                    "
+                    >关闭 Photoshop</el-button
+                  >
                 </div>
               </div>
 
@@ -152,19 +237,27 @@
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">运行态</span>
-                    <span class="compact-info__value">{{ resolvePsStateText(selectedPsBridgeService?.state) }}</span>
+                    <span class="compact-info__value">{{
+                      resolvePsStateText(selectedPsBridgeService?.state)
+                    }}</span>
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">版本</span>
-                    <span class="compact-info__value">{{ selectedPsBridgeService?.version || '-' }}</span>
+                    <span class="compact-info__value">{{
+                      selectedPsBridgeService?.version || "-"
+                    }}</span>
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">最近检测</span>
-                    <span class="compact-info__value">{{ formatDateSafe(selectedPsBridgeService?.lastCheckedAt) }}</span>
+                    <span class="compact-info__value">{{
+                      formatDateSafe(selectedPsBridgeService?.lastCheckedAt)
+                    }}</span>
                   </div>
                   <div class="compact-info__item compact-info__item--full">
                     <span class="compact-info__label">说明</span>
-                    <span class="compact-info__value">{{ selectedPsBridgeService?.message || '-' }}</span>
+                    <span class="compact-info__value">{{
+                      selectedPsBridgeService?.message || "-"
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -177,7 +270,9 @@
                 <div class="ops-panel__head">
                   <div>
                     <div class="ops-panel__title">分析参数</div>
-                    <div class="ops-panel__sub">分析当前节点可访问的 PSD 文件结构和智能对象信息</div>
+                    <div class="ops-panel__sub">
+                      分析当前节点可访问的 PSD 文件结构和智能对象信息
+                    </div>
                   </div>
                 </div>
 
@@ -188,27 +283,44 @@
                   </div>
 
                   <div class="button-row wrap">
-                    <el-button type="primary" :loading="loadingMap.analyzePsd" @click="handleAnalyzePsd">开始分析</el-button>
-                    <el-button :disabled="!analysisResult" @click="copyJson(analysisResult, '分析结果已复制')">复制 JSON</el-button>
+                    <el-button
+                      type="primary"
+                      :loading="loadingMap.analyzePsd"
+                      @click="handleAnalyzePsd"
+                      >开始分析</el-button
+                    >
+                    <el-button
+                      :disabled="!analysisResult"
+                      @click="copyJson(analysisResult, '分析结果已复制')"
+                      >复制 JSON</el-button
+                    >
                   </div>
                 </div>
 
                 <div class="compact-info compact-info--grid" v-if="analysisResult">
                   <div class="compact-info__item">
                     <span class="compact-info__label">文档尺寸</span>
-                    <span class="compact-info__value">{{ formatDocumentSize(analysisDocumentInfo) }}</span>
+                    <span class="compact-info__value">{{
+                      formatDocumentSize(analysisDocumentInfo)
+                    }}</span>
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">画板数</span>
-                    <span class="compact-info__value">{{ analysisStatistics.artboard_count ?? 0 }}</span>
+                    <span class="compact-info__value">{{
+                      analysisStatistics.artboard_count ?? 0
+                    }}</span>
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">智能对象</span>
-                    <span class="compact-info__value">{{ analysisStatistics.total_smart_objects ?? 0 }}</span>
+                    <span class="compact-info__value">{{
+                      analysisStatistics.total_smart_objects ?? 0
+                    }}</span>
                   </div>
                   <div class="compact-info__item">
                     <span class="compact-info__label">图层数</span>
-                    <span class="compact-info__value">{{ analysisStatistics.total_layers ?? 0 }}</span>
+                    <span class="compact-info__value">{{
+                      analysisStatistics.total_layers ?? 0
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -220,7 +332,9 @@
                     <div class="ops-panel__sub">保留完整 JSON，便于和 yishe-ps 输出对齐</div>
                   </div>
                 </div>
-                <pre class="result">{{ analysisResult ? jsonText(analysisResult) : '暂无分析结果' }}</pre>
+                <pre class="result">{{
+                  analysisResult ? jsonText(analysisResult) : "暂无分析结果"
+                }}</pre>
               </div>
             </div>
           </el-tab-pane>
@@ -238,7 +352,10 @@
                 <div class="form-stack">
                   <div class="field-block">
                     <label>PSD 路径 *</label>
-                    <el-input v-model="processForm.psdPath" placeholder="D:\\templates\\template.psd" />
+                    <el-input
+                      v-model="processForm.psdPath"
+                      placeholder="D:\\templates\\template.psd"
+                    />
                   </div>
                   <div class="field-block">
                     <label>导出目录</label>
@@ -247,11 +364,18 @@
                   <div class="form-grid">
                     <div class="field-block">
                       <label>导出文件名</label>
-                      <el-input v-model="processForm.outputFilename" placeholder="可选，自动加时间戳" />
+                      <el-input
+                        v-model="processForm.outputFilename"
+                        placeholder="可选，自动加时间戳"
+                      />
                     </div>
                     <div class="field-block">
                       <label>verbose</label>
-                      <el-switch v-model="processForm.verbose" active-text="开启" inactive-text="关闭" />
+                      <el-switch
+                        v-model="processForm.verbose"
+                        active-text="开启"
+                        inactive-text="关闭"
+                      />
                     </div>
                   </div>
                   <div class="subsection-head">
@@ -259,15 +383,28 @@
                     <el-button size="small" @click="addSmartObject">添加智能对象</el-button>
                   </div>
                   <div class="smart-object-list">
-                    <div v-for="(item, index) in processForm.smartObjects" :key="`smart-object-${index}`" class="smart-object-card">
+                    <div
+                      v-for="(item, index) in processForm.smartObjects"
+                      :key="`smart-object-${index}`"
+                      class="smart-object-card"
+                    >
                       <div class="smart-object-card__head">
                         <div class="smart-object-card__title">智能对象 #{{ index + 1 }}</div>
-                        <el-button link type="danger" :disabled="processForm.smartObjects.length <= 1" @click="removeSmartObject(index)">删除</el-button>
+                        <el-button
+                          link
+                          type="danger"
+                          :disabled="processForm.smartObjects.length <= 1"
+                          @click="removeSmartObject(index)"
+                          >删除</el-button
+                        >
                       </div>
                       <div class="form-grid">
                         <div class="field-block">
                           <label>智能对象名称</label>
-                          <el-input v-model="item.smartObjectName" placeholder="可选，不指定则按顺序匹配" />
+                          <el-input
+                            v-model="item.smartObjectName"
+                            placeholder="可选，不指定则按顺序匹配"
+                          />
                         </div>
                         <div class="field-block">
                           <label>素材图片路径 *</label>
@@ -286,13 +423,24 @@
                         </div>
                         <div class="field-block">
                           <label>tile_size</label>
-                          <el-input-number v-model="item.tileSize" :min="64" :max="2048" controls-position="right" />
+                          <el-input-number
+                            v-model="item.tileSize"
+                            :min="64"
+                            :max="2048"
+                            controls-position="right"
+                          />
                         </div>
                       </div>
                       <div v-if="item.resizeMode === 'custom'" class="field-block">
                         <label>custom_options</label>
                         <div class="button-row wrap">
-                          <el-button v-for="template in customTemplateOptions" :key="template.key" size="small" @click="applyCustomOptionsTemplate(index, template.key)">{{ template.label }}</el-button>
+                          <el-button
+                            v-for="template in customTemplateOptions"
+                            :key="template.key"
+                            size="small"
+                            @click="applyCustomOptionsTemplate(index, template.key)"
+                            >{{ template.label }}</el-button
+                          >
                         </div>
                         <el-input
                           v-model="item.customOptionsText"
@@ -304,8 +452,15 @@
                     </div>
                   </div>
                   <div class="button-row wrap">
-                    <el-button type="primary" :loading="loadingMap.debugProcess" @click="handleDebugProcess">开始处理</el-button>
-                    <el-button @click="copyText(processPayloadPreview, '处理参数已复制')">复制参数</el-button>
+                    <el-button
+                      type="primary"
+                      :loading="loadingMap.debugProcess"
+                      @click="handleDebugProcess"
+                      >开始处理</el-button
+                    >
+                    <el-button @click="copyText(processPayloadPreview, '处理参数已复制')"
+                      >复制参数</el-button
+                    >
                   </div>
                 </div>
               </div>
@@ -318,7 +473,9 @@
                   </div>
                 </div>
                 <pre class="result">{{ processPayloadPreview }}</pre>
-                <pre class="result result--secondary">{{ processResult ? jsonText(processResult) : '暂无处理结果' }}</pre>
+                <pre class="result result--secondary">{{
+                  processResult ? jsonText(processResult) : "暂无处理结果"
+                }}</pre>
               </div>
             </div>
           </el-tab-pane>
@@ -332,10 +489,16 @@
                     <div class="ops-panel__sub">最近一次 service-command-result 返回值</div>
                   </div>
                   <div class="ops-panel__actions">
-                    <el-button :disabled="!latestCommandResult" @click="copyJson(latestCommandResult, '命令结果已复制')">复制结果</el-button>
+                    <el-button
+                      :disabled="!latestCommandResult"
+                      @click="copyJson(latestCommandResult, '命令结果已复制')"
+                      >复制结果</el-button
+                    >
                   </div>
                 </div>
-                <pre class="result">{{ latestCommandResult ? jsonText(latestCommandResult) : '暂无命令结果' }}</pre>
+                <pre class="result">{{
+                  latestCommandResult ? jsonText(latestCommandResult) : "暂无命令结果"
+                }}</pre>
               </div>
 
               <div class="ops-panel">
@@ -350,7 +513,12 @@
                 </div>
                 <div class="log-list">
                   <div v-if="!commandLogs.length" class="log-empty">暂无调试日志</div>
-                  <div v-for="item in commandLogs" :key="item.id" class="log-item" :class="`is-${item.level}`">
+                  <div
+                    v-for="item in commandLogs"
+                    :key="item.id"
+                    class="log-item"
+                    :class="`is-${item.level}`"
+                  >
                     <div class="log-item__meta">
                       <span>{{ item.time }}</span>
                       <span>{{ resolveActionText(item.action) }}</span>
@@ -369,72 +537,76 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
-import { ElMessage } from 'element-plus'
-import { formatDate } from '@/utils/formatTime'
-import { sendServiceCommand } from '@/api/system/websocket'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
+import { formatDate } from "@/utils/formatTime";
+import { sendServiceCommand } from "@/api/system/websocket";
 import ExternalClientSidebar, {
   type ClientNodeBadge,
-  type ClientNodeItem
-} from '@/views/external/components/ExternalClientSidebar.vue'
+  type ClientNodeItem,
+} from "@/views/external/components/ExternalClientSidebar.vue";
 import {
   websocketClient,
   type ServiceCommandResultEvent,
-  type ServiceRuntimeEvent
-} from '@/services/websocketClient'
-import { useClientNodeState } from '@/services/clientNodeState'
+  type ServiceRuntimeEvent,
+} from "@/services/websocketClient";
+import { usePluginClientNodes } from "@/services/clientNodeState";
 
-defineOptions({ name: 'PsConsolePanel' })
+defineOptions({ name: "PsConsolePanel" });
 
 type PsCommandAction =
-  | 'refreshRuntime'
-  | 'health'
-  | 'startPhotoshop'
-  | 'stopPhotoshop'
-  | 'restartPhotoshop'
-  | 'analyzePsd'
-  | 'debugProcess'
+  | "refreshRuntime"
+  | "health"
+  | "startPhotoshop"
+  | "stopPhotoshop"
+  | "restartPhotoshop"
+  | "analyzePsd"
+  | "debugProcess";
 
-type CommandMode = 'production' | 'debug' | 'maintenance'
+type CommandMode = "production" | "debug" | "maintenance";
 
 interface SmartObjectForm {
-  smartObjectName: string
-  imagePath: string
-  resizeMode: 'contain' | 'cover' | 'stretch' | 'custom'
-  tileSize: number
-  customOptionsText: string
+  smartObjectName: string;
+  imagePath: string;
+  resizeMode: "contain" | "cover" | "stretch" | "custom";
+  tileSize: number;
+  customOptionsText: string;
 }
 
 interface CommandLogItem {
-  id: string
-  time: string
-  action: string
-  level: 'info' | 'success' | 'error'
-  message: string
+  id: string;
+  time: string;
+  action: string;
+  level: "info" | "success" | "error";
+  message: string;
 }
 
 interface ServiceCommandDispatchResponse {
-  success: boolean
-  message?: string
+  success: boolean;
+  message?: string;
   data?: {
-    commandId?: string
-    clientId?: string
-    pluginKey?: string
-    service?: string
-    action?: string
-    payload?: Record<string, any>
-    createdAt?: string
-  }
+    commandId?: string;
+    clientId?: string;
+    pluginKey?: string;
+    service?: string;
+    action?: string;
+    payload?: Record<string, any>;
+    createdAt?: string;
+  };
 }
 
-const { clients, loading, refresh: refreshClientNodes } = useClientNodeState()
-const selectedClientId = ref('')
-const activeTab = ref('service')
-const operationDialogVisible = ref(false)
-const latestCommandResult = ref<ServiceCommandResultEvent | Record<string, any> | null>(null)
-const analysisResult = ref<Record<string, any> | null>(null)
-const processResult = ref<Record<string, any> | null>(null)
-const commandLogs = ref<CommandLogItem[]>([])
+const {
+  clients: psClients,
+  loading,
+  refresh: refreshClientNodes,
+} = usePluginClientNodes("ps-automation");
+const selectedClientId = ref("");
+const activeTab = ref("service");
+const operationDialogVisible = ref(false);
+const latestCommandResult = ref<ServiceCommandResultEvent | Record<string, any> | null>(null);
+const analysisResult = ref<Record<string, any> | null>(null);
+const processResult = ref<Record<string, any> | null>(null);
+const commandLogs = ref<CommandLogItem[]>([]);
 
 const loadingMap = reactive<Record<PsCommandAction, boolean>>({
   refreshRuntime: false,
@@ -443,592 +615,593 @@ const loadingMap = reactive<Record<PsCommandAction, boolean>>({
   stopPhotoshop: false,
   restartPhotoshop: false,
   analyzePsd: false,
-  debugProcess: false
-})
+  debugProcess: false,
+});
 
-const pendingActions = reactive<Record<string, PsCommandAction>>({})
+const pendingActions = reactive<Record<string, PsCommandAction>>({});
 
 const serviceForm = reactive({
   startTimeout: 30,
-  forceStop: false
-})
+  forceStop: false,
+});
 
 const analyzeForm = reactive({
-  psdPath: ''
-})
+  psdPath: "",
+});
 
 const createSmartObject = (): SmartObjectForm => ({
-  smartObjectName: '',
-  imagePath: '',
-  resizeMode: 'contain',
+  smartObjectName: "",
+  imagePath: "",
+  resizeMode: "contain",
   tileSize: 512,
-  customOptionsText: ''
-})
+  customOptionsText: "",
+});
 
 const processForm = reactive({
-  psdPath: '',
-  exportDir: '',
-  outputFilename: '',
+  psdPath: "",
+  exportDir: "",
+  outputFilename: "",
   verbose: true,
-  smartObjects: [createSmartObject()]
-})
+  smartObjects: [createSmartObject()],
+});
 
 const customTemplateOptions = [
-  { key: 'px-contain', label: '像素 contain' },
-  { key: 'px-cover', label: '像素 cover' },
-  { key: 'percent-contain', label: '百分比 contain' },
-  { key: 'percent-cover', label: '百分比 cover' }
-]
+  { key: "px-contain", label: "像素 contain" },
+  { key: "px-cover", label: "像素 cover" },
+  { key: "percent-contain", label: "百分比 contain" },
+  { key: "percent-cover", label: "百分比 cover" },
+];
 
 const customOptionsTemplates: Record<string, Record<string, any>> = {
-  'px-contain': {
-    position: { x: 0, y: 0, unit: 'px' },
-    size: { width: 800, height: 600, unit: 'px' },
-    child_resize_mode: 'contain'
+  "px-contain": {
+    position: { x: 0, y: 0, unit: "px" },
+    size: { width: 800, height: 600, unit: "px" },
+    child_resize_mode: "contain",
   },
-  'px-cover': {
-    position: { x: 0, y: 0, unit: 'px' },
-    size: { width: 800, height: 600, unit: 'px' },
-    child_resize_mode: 'cover'
+  "px-cover": {
+    position: { x: 0, y: 0, unit: "px" },
+    size: { width: 800, height: 600, unit: "px" },
+    child_resize_mode: "cover",
   },
-  'percent-contain': {
-    position: { x: 10, y: 10, unit: '%' },
-    size: { width: 80, height: 80, unit: '%' },
-    child_resize_mode: 'contain'
+  "percent-contain": {
+    position: { x: 10, y: 10, unit: "%" },
+    size: { width: 80, height: 80, unit: "%" },
+    child_resize_mode: "contain",
   },
-  'percent-cover': {
-    position: { x: 10, y: 10, unit: '%' },
-    size: { width: 80, height: 80, unit: '%' },
-    child_resize_mode: 'cover'
-  }
-}
+  "percent-cover": {
+    position: { x: 10, y: 10, unit: "%" },
+    size: { width: 80, height: 80, unit: "%" },
+    child_resize_mode: "cover",
+  },
+};
 
 const getPhotoshopService = (client: any) =>
-  client.clientInfo?.services?.['ps-automation'] || client.clientInfo?.services?.photoshop || null
-
-const psClients = computed(() =>
-  clients.value.filter((client) => {
-    if (!client.isOnline) {
-      return false
-    }
-    return !!getPhotoshopService(client)
-  })
-)
+  client.clientInfo?.services?.["ps-automation"] || client.clientInfo?.services?.photoshop || null;
 
 const selectedClient = computed(() => {
   if (!psClients.value.length) {
-    return null
+    return null;
   }
-  return psClients.value.find((client) => client.id === selectedClientId.value) || psClients.value[0]
-})
-const selectedClientDisplayName = computed(() => selectedClient.value?.clientInfo?.machine?.code || selectedClient.value?.id || '-')
-const operationDialogTitle = computed(() => `PS 服务操作 · ${selectedClientDisplayName.value}`)
+  return (
+    psClients.value.find((client) => client.id === selectedClientId.value) || psClients.value[0]
+  );
+});
+const selectedClientDisplayName = computed(
+  () => selectedClient.value?.clientInfo?.machine?.code || selectedClient.value?.id || "-",
+);
+const operationDialogTitle = computed(() => `PS 服务操作 · ${selectedClientDisplayName.value}`);
 
 const normalizePluginKey = (value?: string | null) => {
-  const normalized = String(value || '').trim()
-  if (!normalized) return ''
-  if (normalized === 'photoshop') return 'ps-automation'
-  return normalized
-}
+  const normalized = String(value || "").trim();
+  if (!normalized) return "";
+  if (normalized === "photoshop") return "ps-automation";
+  return normalized;
+};
 
 const getPsBridgeService = (client: any) => {
-  const service = getPhotoshopService(client)
+  const service = getPhotoshopService(client);
   if (!service) {
-    return null
+    return null;
   }
 
-  const available = !!service.available
-  const connected = !!service.connected
-  const status = service.status || 'unknown'
+  const available = !!service.available;
+  const connected = !!service.connected;
+  const status = service.status || "unknown";
 
-  let text = '未就绪'
+  let text = "未就绪";
   if (available) {
-    text = '可用'
-  } else if (status === 'error') {
-    text = '异常'
+    text = "可用";
+  } else if (status === "error") {
+    text = "异常";
   } else if (connected) {
-    text = '任务进行中'
+    text = "任务进行中";
   }
 
   return {
     ...service,
-    text
-  }
-}
+    text,
+  };
+};
 
-const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
+const selectedPsBridgeService = computed(() =>
+  selectedClient.value ? getPsBridgeService(selectedClient.value) : null,
+);
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   psClients.value.map((client) => {
-    const service = getPsBridgeService(client)
+    const service = getPsBridgeService(client);
     const badges: ClientNodeBadge[] = [
-      { text: client.isOnline ? '在线' : '离线', tone: client.isOnline ? 'success' : 'muted' }
-    ]
+      { text: client.isOnline ? "在线" : "离线", tone: client.isOnline ? "success" : "muted" },
+    ];
 
     if (service?.available) {
-      badges.push({ text: '可用', tone: 'success' })
+      badges.push({ text: "可用", tone: "success" });
     } else if (service?.connected) {
-      badges.push({ text: '任务进行中', tone: 'warning' })
-    } else if (service?.status === 'error') {
-      badges.push({ text: '异常', tone: 'danger' })
+      badges.push({ text: "任务进行中", tone: "warning" });
+    } else if (service?.status === "error") {
+      badges.push({ text: "异常", tone: "danger" });
     } else {
-      badges.push({ text: '未就绪', tone: 'muted' })
+      badges.push({ text: "未就绪", tone: "muted" });
     }
 
     return {
       connectionId: client.id,
       name: client.clientInfo?.machine?.code || client.id,
       time: formatDateSafe(client.connectedAt || undefined),
-      metaLeft: client.clientInfo?.appVersion || '未知版本',
-      metaRight: client.clientInfo?.machine?.platform || '未知平台',
-      badges
-    }
-  })
-)
+      metaLeft: client.clientInfo?.appVersion || "未知版本",
+      metaRight: client.clientInfo?.machine?.platform || "未知平台",
+      badges,
+    };
+  }),
+);
 
-const analysisDocumentInfo = computed<Record<string, any>>(() => analysisResult.value?.document_info || {})
-const analysisStatistics = computed<Record<string, any>>(() => analysisResult.value?.statistics || {})
-const processPayloadPreview = computed(() => jsonText(buildProcessRequest(false)))
+const analysisDocumentInfo = computed<Record<string, any>>(
+  () => analysisResult.value?.document_info || {},
+);
+const analysisStatistics = computed<Record<string, any>>(
+  () => analysisResult.value?.statistics || {},
+);
+const processPayloadPreview = computed(() => jsonText(buildProcessRequest(false)));
 
 const jsonText = (value: any) => {
   try {
-    return JSON.stringify(value ?? null, null, 2)
+    return JSON.stringify(value ?? null, null, 2);
   } catch {
-    return String(value ?? '')
+    return String(value ?? "");
   }
-}
+};
 
 const stripQuotes = (value?: string | null) =>
-  String(value || '')
+  String(value || "")
     .trim()
-    .replace(/^['"]+|['"]+$/g, '')
+    .replace(/^['"]+|['"]+$/g, "");
 
-const normalizeWindowsPath = (value?: string | null) => stripQuotes(value).replace(/\//g, '\\')
+const normalizeWindowsPath = (value?: string | null) => stripQuotes(value).replace(/\//g, "\\");
 
 const formatDateSafe = (value?: string) => {
-  if (!value) return '-'
+  if (!value) return "-";
   try {
-    return formatDate(new Date(value))
+    return formatDate(new Date(value));
   } catch {
-    return value
+    return value;
   }
-}
+};
 
 const formatListSafe = (value?: Array<string | number> | null) => {
   if (!Array.isArray(value) || !value.length) {
-    return '-'
+    return "-";
   }
-  return value.join(', ')
-}
+  return value.join(", ");
+};
 
 const findClientDisplayName = (clientId?: string | null) => {
-  const client = psClients.value.find((item) => item.id === clientId)
-  return client?.clientInfo?.machine?.code || client?.id || clientId || '-'
-}
+  const client = psClients.value.find((item) => item.id === clientId);
+  return client?.clientInfo?.machine?.code || client?.id || clientId || "-";
+};
 
 const resolvePsStateText = (value?: string | null) => {
-  if (!value) return '-'
+  if (!value) return "-";
   const stateMap: Record<string, string> = {
-    idle: '空闲',
-    busy: '执行中',
-    error: '异常',
-    offline: '离线',
-    connected: '已连接'
-  }
-  return stateMap[value] || value
-}
+    idle: "空闲",
+    busy: "执行中",
+    error: "异常",
+    offline: "离线",
+    connected: "已连接",
+  };
+  return stateMap[value] || value;
+};
 
 const formatDocumentSize = (value?: Record<string, any> | null) => {
-  const width = Number(value?.width || 0)
-  const height = Number(value?.height || 0)
+  const width = Number(value?.width || 0);
+  const height = Number(value?.height || 0);
   if (!width || !height) {
-    return '-'
+    return "-";
   }
-  return `${width} x ${height}px`
-}
+  return `${width} x ${height}px`;
+};
 
 const resolveActionText = (value?: string | null) => {
   const actionMap: Record<string, string> = {
-    refreshRuntime: '刷新状态',
-    health: '健康检测',
-    startPhotoshop: '启动 Photoshop',
-    stopPhotoshop: '关闭 Photoshop',
-    restartPhotoshop: '重启 Photoshop',
-    analyzePsd: '分析 PSD',
-    debugProcess: '调试处理'
-  }
-  return actionMap[String(value || '').trim()] || String(value || '-')
-}
+    refreshRuntime: "刷新状态",
+    health: "健康检测",
+    startPhotoshop: "启动 Photoshop",
+    stopPhotoshop: "关闭 Photoshop",
+    restartPhotoshop: "重启 Photoshop",
+    analyzePsd: "分析 PSD",
+    debugProcess: "调试处理",
+  };
+  return actionMap[String(value || "").trim()] || String(value || "-");
+};
 
 const pushCommandLog = (
   action: string,
-  level: CommandLogItem['level'],
+  level: CommandLogItem["level"],
   message: string,
-  clientId?: string | null
+  clientId?: string | null,
 ) => {
-  const prefix = clientId ? `[${findClientDisplayName(clientId)}] ` : ''
+  const prefix = clientId ? `[${findClientDisplayName(clientId)}] ` : "";
   commandLogs.value = [
     {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      time: formatDate(new Date(), 'HH:mm:ss'),
+      time: formatDate(new Date(), "HH:mm:ss"),
       action,
       level,
-      message: `${prefix}${message}`.trim()
+      message: `${prefix}${message}`.trim(),
     },
-    ...commandLogs.value
-  ].slice(0, 80)
-}
+    ...commandLogs.value,
+  ].slice(0, 80);
+};
 
 const clearCommandLogs = () => {
-  commandLogs.value = []
-}
+  commandLogs.value = [];
+};
 
 const serviceStatus = computed(() => {
   if (!psClients.value.length) {
     return {
-      level: 'danger',
-      text: '无可用节点'
-    }
+      level: "danger",
+      text: "无可用节点",
+    };
   }
 
   if (selectedPsBridgeService.value?.available) {
     return {
-      level: 'success',
-      text: '可用'
-    }
+      level: "success",
+      text: "可用",
+    };
   }
 
-  if (selectedPsBridgeService.value?.status === 'error') {
+  if (selectedPsBridgeService.value?.status === "error") {
     return {
-      level: 'danger',
-      text: '异常'
-    }
+      level: "danger",
+      text: "异常",
+    };
   }
 
   if (selectedPsBridgeService.value?.connected) {
     return {
-      level: 'warning',
-      text: '任务进行中'
-    }
+      level: "warning",
+      text: "任务进行中",
+    };
   }
 
   return {
-    level: 'info',
-    text: '未就绪'
-  }
-})
+    level: "info",
+    text: "未就绪",
+  };
+});
 
 const finishAction = (action?: string | null) => {
   if (!action) {
-    return
+    return;
   }
   if (action in loadingMap) {
-    loadingMap[action as PsCommandAction] = false
+    loadingMap[action as PsCommandAction] = false;
   }
-}
+};
 
 const clearPendingState = () => {
   Object.keys(pendingActions).forEach((key) => {
-    delete pendingActions[key]
-  })
-  ;(Object.keys(loadingMap) as PsCommandAction[]).forEach((key) => {
-    loadingMap[key] = false
-  })
-}
+    delete pendingActions[key];
+  });
+  (Object.keys(loadingMap) as PsCommandAction[]).forEach((key) => {
+    loadingMap[key] = false;
+  });
+};
 
 const refreshClients = async () => {
-  await refreshClientNodes()
-}
+  await refreshClientNodes();
+};
 
 watch(
   psClients,
   (list) => {
     if (!list.length) {
-      selectedClientId.value = ''
-      return
+      selectedClientId.value = "";
+      return;
     }
     if (!selectedClientId.value || !list.some((item) => item.id === selectedClientId.value)) {
-      selectedClientId.value = list[0].id
+      selectedClientId.value = list[0].id;
     }
   },
-  { immediate: true }
-)
+  { immediate: true },
+);
 
 watch(selectedClientId, (value, previousValue) => {
   if (!value) {
-    operationDialogVisible.value = false
+    operationDialogVisible.value = false;
   }
   if (value === previousValue) {
-    return
+    return;
   }
-  activeTab.value = 'service'
-  analysisResult.value = null
-  processResult.value = null
-  latestCommandResult.value = null
-  clearCommandLogs()
-  clearPendingState()
-})
+  activeTab.value = "service";
+  analysisResult.value = null;
+  processResult.value = null;
+  latestCommandResult.value = null;
+  clearCommandLogs();
+  clearPendingState();
+});
 
-const copyText = async (text: string, successMessage = '已复制') => {
+const copyText = async (text: string, successMessage = "已复制") => {
   if (!text) {
-    ElMessage.warning('没有可复制的内容')
-    return
+    ElMessage.warning("没有可复制的内容");
+    return;
   }
 
   try {
     if (navigator?.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text)
+      await navigator.clipboard.writeText(text);
     } else {
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textarea)
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
     }
-    ElMessage.success(successMessage)
+    ElMessage.success(successMessage);
   } catch (error: any) {
-    ElMessage.error(error?.message || '复制失败')
+    ElMessage.error(error?.message || "复制失败");
   }
-}
+};
 
-const copyJson = async (value: any, successMessage = 'JSON 已复制') => {
-  await copyText(jsonText(value), successMessage)
-}
+const copyJson = async (value: any, successMessage = "JSON 已复制") => {
+  await copyText(jsonText(value), successMessage);
+};
 
 const dispatchPsCommand = async (
   action: PsCommandAction,
   payload: Record<string, any> = {},
-  mode: CommandMode = 'production'
+  mode: CommandMode = "production",
 ) => {
-  const client = selectedClient.value
+  const client = selectedClient.value;
   if (!client) {
-    ElMessage.warning('请选择客户端节点')
-    return
+    ElMessage.warning("请选择客户端节点");
+    return;
   }
 
   if (loadingMap[action]) {
-    return
+    return;
   }
 
-  loadingMap[action] = true
-  pushCommandLog(action, 'info', `已发送${resolveActionText(action)}命令`, client.id)
+  loadingMap[action] = true;
+  pushCommandLog(action, "info", `已发送${resolveActionText(action)}命令`, client.id);
 
   try {
     const response = (await sendServiceCommand({
       target: {
         clientId: client.id,
-        pluginKey: 'ps-automation'
+        pluginKey: "ps-automation",
       },
       command: {
         name: action,
-        payload
+        payload,
       },
-      mode
-    })) as ServiceCommandDispatchResponse
+      mode,
+    })) as ServiceCommandDispatchResponse;
 
     if (!response?.success) {
-      finishAction(action)
-      const message = response?.message || '命令发送失败'
-      pushCommandLog(action, 'error', message, client.id)
-      ElMessage.error(message)
-      return
+      finishAction(action);
+      const message = response?.message || "命令发送失败";
+      pushCommandLog(action, "error", message, client.id);
+      ElMessage.error(message);
+      return;
     }
 
-    const commandId = response.data?.commandId
+    const commandId = response.data?.commandId;
     if (commandId) {
-      pendingActions[commandId] = action
+      pendingActions[commandId] = action;
     } else {
-      finishAction(action)
+      finishAction(action);
     }
 
-    ElMessage.success(response.message || '命令已发送')
+    ElMessage.success(response.message || "命令已发送");
   } catch (error: any) {
-    finishAction(action)
-    const message = error?.message || '命令发送失败'
-    pushCommandLog(action, 'error', message, client.id)
-    ElMessage.error(message)
+    finishAction(action);
+    const message = error?.message || "命令发送失败";
+    pushCommandLog(action, "error", message, client.id);
+    ElMessage.error(message);
   }
-}
+};
 
 const handleSelectedClientCommand = async (
-  action: 'refreshRuntime' | 'health',
+  action: "refreshRuntime" | "health",
   payload: Record<string, any> = {},
-  mode: CommandMode = 'production'
+  mode: CommandMode = "production",
 ) => {
-  await dispatchPsCommand(action, payload, mode)
-}
+  await dispatchPsCommand(action, payload, mode);
+};
 
 const addSmartObject = () => {
-  processForm.smartObjects.push(createSmartObject())
-}
+  processForm.smartObjects.push(createSmartObject());
+};
 
 const removeSmartObject = (index: number) => {
   if (processForm.smartObjects.length <= 1) {
-    return
+    return;
   }
-  processForm.smartObjects.splice(index, 1)
-}
+  processForm.smartObjects.splice(index, 1);
+};
 
 const applyCustomOptionsTemplate = (index: number, templateKey: string) => {
-  const target = processForm.smartObjects[index]
+  const target = processForm.smartObjects[index];
   if (!target) {
-    return
+    return;
   }
-  target.resizeMode = 'custom'
-  target.customOptionsText = jsonText(customOptionsTemplates[templateKey] || {})
-}
+  target.resizeMode = "custom";
+  target.customOptionsText = jsonText(customOptionsTemplates[templateKey] || {});
+};
 
 const buildProcessRequest = (strict = true) => {
-  const psdPath = normalizeWindowsPath(processForm.psdPath)
+  const psdPath = normalizeWindowsPath(processForm.psdPath);
   if (strict && !psdPath) {
-    throw new Error('请填写 PSD 路径')
+    throw new Error("请填写 PSD 路径");
   }
 
   const smartObjects = processForm.smartObjects.map((item, index) => {
-    const imagePath = normalizeWindowsPath(item.imagePath)
+    const imagePath = normalizeWindowsPath(item.imagePath);
     if (strict && !imagePath) {
-      throw new Error(`智能对象 #${index + 1} 的素材图片路径不能为空`)
+      throw new Error(`智能对象 #${index + 1} 的素材图片路径不能为空`);
     }
 
     const payload: Record<string, any> = {
       image_path: imagePath,
-      resize_mode: item.resizeMode || 'contain',
-      tile_size: Math.max(64, Number(item.tileSize) || 512)
-    }
+      resize_mode: item.resizeMode || "contain",
+      tile_size: Math.max(64, Number(item.tileSize) || 512),
+    };
 
-    const smartObjectName = stripQuotes(item.smartObjectName)
+    const smartObjectName = stripQuotes(item.smartObjectName);
     if (smartObjectName) {
-      payload.smart_object_name = smartObjectName
+      payload.smart_object_name = smartObjectName;
     }
 
-    if (payload.resize_mode === 'custom') {
-      const customOptionsText = item.customOptionsText.trim()
+    if (payload.resize_mode === "custom") {
+      const customOptionsText = item.customOptionsText.trim();
       if (strict && !customOptionsText) {
-        throw new Error(`智能对象 #${index + 1} 使用 custom 模式时必须填写 custom_options`)
+        throw new Error(`智能对象 #${index + 1} 使用 custom 模式时必须填写 custom_options`);
       }
       if (customOptionsText) {
         try {
-          payload.custom_options = JSON.parse(customOptionsText)
+          payload.custom_options = JSON.parse(customOptionsText);
         } catch (error: any) {
           if (strict) {
             throw new Error(
-              `智能对象 #${index + 1} 的 custom_options 不是有效 JSON: ${error?.message || error}`
-            )
+              `智能对象 #${index + 1} 的 custom_options 不是有效 JSON: ${error?.message || error}`,
+            );
           }
         }
       }
     }
 
-    return payload
-  })
+    return payload;
+  });
 
   if (strict && !smartObjects.length) {
-    throw new Error('至少需要配置一个智能对象')
+    throw new Error("至少需要配置一个智能对象");
   }
 
   const request: Record<string, any> = {
     psd_path: psdPath,
     smart_objects: smartObjects,
-    verbose: !!processForm.verbose
-  }
+    verbose: !!processForm.verbose,
+  };
 
-  const exportDir = normalizeWindowsPath(processForm.exportDir)
+  const exportDir = normalizeWindowsPath(processForm.exportDir);
   if (exportDir) {
-    request.export_dir = exportDir
+    request.export_dir = exportDir;
   }
 
-  const outputFilename = stripQuotes(processForm.outputFilename)
+  const outputFilename = stripQuotes(processForm.outputFilename);
   if (outputFilename) {
-    request.output_filename = outputFilename
+    request.output_filename = outputFilename;
   }
 
-  return request
-}
+  return request;
+};
 
 const handleAnalyzePsd = async () => {
-  const psdPath = normalizeWindowsPath(analyzeForm.psdPath)
+  const psdPath = normalizeWindowsPath(analyzeForm.psdPath);
   if (!psdPath) {
-    ElMessage.warning('请填写 PSD 文件路径')
-    return
+    ElMessage.warning("请填写 PSD 文件路径");
+    return;
   }
 
-  analyzeForm.psdPath = psdPath
-  analysisResult.value = null
-  await dispatchPsCommand('analyzePsd', { psdPath }, 'debug')
-}
+  analyzeForm.psdPath = psdPath;
+  analysisResult.value = null;
+  await dispatchPsCommand("analyzePsd", { psdPath }, "debug");
+};
 
 const handleDebugProcess = async () => {
   try {
-    const request = buildProcessRequest(true)
-    processResult.value = null
-    await dispatchPsCommand('debugProcess', { request }, 'debug')
+    const request = buildProcessRequest(true);
+    processResult.value = null;
+    await dispatchPsCommand("debugProcess", { request }, "debug");
   } catch (error: any) {
-    const message = error?.message || '处理参数校验失败'
-    pushCommandLog('debugProcess', 'error', message, selectedClient.value?.id)
-    ElMessage.warning(message)
+    const message = error?.message || "处理参数校验失败";
+    pushCommandLog("debugProcess", "error", message, selectedClient.value?.id);
+    ElMessage.warning(message);
   }
-}
+};
 
 const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
-  if (normalizePluginKey(event.pluginKey || event.service) !== 'ps-automation') {
-    return
+  if (normalizePluginKey(event.pluginKey || event.service) !== "ps-automation") {
+    return;
   }
   if (event.clientId !== selectedClientId.value) {
-    return
+    return;
   }
-}
+};
 
 const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
-  if (normalizePluginKey(event.pluginKey || event.service) !== 'ps-automation') {
-    return
+  if (normalizePluginKey(event.pluginKey || event.service) !== "ps-automation") {
+    return;
   }
 
-  const pendingAction = pendingActions[event.commandId]
-  const isSelectedClient = event.clientId === selectedClientId.value
+  const pendingAction = pendingActions[event.commandId];
+  const isSelectedClient = event.clientId === selectedClientId.value;
 
   if (!pendingAction && !isSelectedClient) {
-    return
+    return;
   }
 
   if (pendingAction) {
-    delete pendingActions[event.commandId]
-    finishAction(pendingAction)
+    delete pendingActions[event.commandId];
+    finishAction(pendingAction);
   }
 
-  const action = pendingAction || event.action || 'refreshRuntime'
-  const message = event.message || event.error || (event.success ? '执行成功' : '执行失败')
+  const action = pendingAction || event.action || "refreshRuntime";
+  const message = event.message || event.error || (event.success ? "执行成功" : "执行失败");
 
-  latestCommandResult.value = event
-  pushCommandLog(action, event.success ? 'success' : 'error', message, event.clientId)
+  latestCommandResult.value = event;
+  pushCommandLog(action, event.success ? "success" : "error", message, event.clientId);
 
-  if (action === 'analyzePsd') {
-    analysisResult.value = event.success && event.data ? event.data : null
+  if (action === "analyzePsd") {
+    analysisResult.value = event.success && event.data ? event.data : null;
   }
 
-  if (action === 'debugProcess') {
+  if (action === "debugProcess") {
     processResult.value = event.data || {
       success: event.success,
       message,
-      error: event.error || null
-    }
+      error: event.error || null,
+    };
   }
 
-  ;(event.success ? ElMessage.success : ElMessage.error)(message)
-  await refreshClients()
-}
+  (event.success ? ElMessage.success : ElMessage.error)(message);
+  await refreshClients();
+};
 
 onMounted(() => {
-  websocketClient.events.on('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.on('serviceCommandResult', handleServiceCommandResult)
-  void refreshClients()
-})
+  websocketClient.events.on("serviceRuntime", handleServiceRuntime);
+  websocketClient.events.on("serviceCommandResult", handleServiceCommandResult);
+  void refreshClients();
+});
 
 onUnmounted(() => {
-  websocketClient.events.off('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.off('serviceCommandResult', handleServiceCommandResult)
-})
+  websocketClient.events.off("serviceRuntime", handleServiceRuntime);
+  websocketClient.events.off("serviceCommandResult", handleServiceCommandResult);
+});
 </script>
 
 <style scoped lang="scss">
@@ -1254,7 +1427,7 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.status-chip>span:last-child {
+.status-chip > span:last-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1501,7 +1674,6 @@ onUnmounted(() => {
 }
 
 @keyframes status-breath-success {
-
   0%,
   100% {
     box-shadow: 0 0 0 0 rgb(103 194 58 / 16%);
@@ -1515,7 +1687,6 @@ onUnmounted(() => {
 }
 
 @keyframes status-breath-warning {
-
   0%,
   100% {
     box-shadow: 0 0 0 0 rgb(249 115 22 / 16%);
@@ -1529,7 +1700,6 @@ onUnmounted(() => {
 }
 
 @keyframes status-breath-danger {
-
   0%,
   100% {
     box-shadow: 0 0 0 0 rgb(245 108 108 / 16%);
@@ -1543,7 +1713,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1024px) {
-
   .tab-layout,
   .compact-info--grid,
   .operation-grid,
@@ -1557,7 +1726,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-
   .ops-header,
   .ops-panel__head,
   .subsection-head,
