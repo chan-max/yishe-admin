@@ -11,6 +11,12 @@ export interface MessagePushConfig {
   secret?: string
   enabled: boolean
   remark?: string
+  userId?: number | null
+  uploader?: {
+    id?: number
+    account?: string
+    name?: string
+  } | null
   createTime?: string
   updateTime?: string
 }

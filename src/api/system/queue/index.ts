@@ -10,12 +10,18 @@ export interface QueueMessage {
   delay?: number
   maxAttempts?: number
   attempts?: number
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'waiting' | 'processing' | 'completed' | 'failed'
   createdAt: string
   updatedAt?: string
   processedAt?: string
   error?: string
   metadata?: Record<string, any>
+  userId?: number | null
+  uploader?: {
+    id?: number
+    account?: string
+    name?: string
+  } | null
 }
 
 export interface QueueStats {
@@ -52,7 +58,7 @@ export const createTaskBatch = (data: { queue: string; tasks: Array<{ type: stri
 // 获取任务列表（根据状态分页查询）
 export const getTaskList = (params: {
   queue?: string  // 队列名称（可选，不传则查询所有队列）
-  status?: 'pending' | 'processing' | 'completed' | 'failed'
+  status?: 'pending' | 'waiting' | 'processing' | 'completed' | 'failed'
   type?: string    // 任务类型（可选，不传则查询所有类型）
   id?: string      // 任务ID（可选，不传则查询所有ID）
   sortField?: 'createdAt' | 'updatedAt' | 'processedAt'
@@ -122,7 +128,7 @@ export const updateTaskData = (queue: string, messageId: string, data: any) => {
 }
 
 // 更新任务状态（使用 type 字段而不是 queue）
-export const updateTaskStatus = (type: string, messageId: string, status: 'pending' | 'processing' | 'completed' | 'failed', error?: string) => {
+export const updateTaskStatus = (type: string, messageId: string, status: 'pending' | 'waiting' | 'processing' | 'completed' | 'failed', error?: string) => {
   return request.post({ url: '/queue/message/status', data: { type, messageId, status, error } })
 }
 

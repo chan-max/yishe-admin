@@ -8,6 +8,7 @@
  */
 import type { App } from 'vue'
 import { Icon } from './Icon'
+import { setupAppLoading } from './AppLoading'
 import formItem from './Erp/formItem.vue'
 import SingleImage from './SingleImage.vue'
 import RemoteSelect from './RemoteSelect/index.vue'
@@ -15,6 +16,7 @@ import DateRangePicker from './DateRangePicker.vue'
 import ImagePreview from './ImagePreview/index.vue'
 
 export const setupGlobCom = (app: App<Element>): void => {
+  setupAppLoading(app)
   app.component('DateRangePicker', DateRangePicker)
   app.component('FormItem', formItem)
   app.component('SingleImage', SingleImage)

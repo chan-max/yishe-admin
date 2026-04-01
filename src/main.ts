@@ -54,6 +54,7 @@ import './permission'
 
 import '@/plugins/tongji' // 百度统计
 import Logger from '@/utils/Logger'
+import { mountBootLoading } from '@/components/AppLoading'
 
 import VueDOMPurifyHTML from 'vue-dompurify-html' // 解决v-html 的安全隐患
 
@@ -72,6 +73,12 @@ import { initCOS } from '@/api/cos'
 
 // import * as vue3videoPlay from 'vue3-video-play' // 引入组件
 // import 'vue3-video-play/dist/style.css' // 引入css
+
+mountBootLoading('#app', {
+  text: '1s design admin',
+  label: '',
+  caption: ''
+})
 
 // 创建实例
 const setupAll = async () => {
@@ -122,7 +129,6 @@ const setupAll = async () => {
   app.use(vPreviewImage)
 
   app.use(VxeUIAll).use(VxeUITable)
-
 
   // 视频播放器
   // app.use(vue3videoPlay)

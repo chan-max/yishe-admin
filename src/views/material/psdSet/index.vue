@@ -1203,11 +1203,18 @@ const publishTasksGridOptions = computed(() => ({
   maxHeight: Math.max(height.value - 260, 360),
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
-  columns: [
-    { field: "id", title: "任务ID", minWidth: 240, showOverflow: true },
-    { field: "platform", title: "平台", width: 120, slots: { default: "taskPlatformSlot" } },
-    { field: "status", title: "状态", width: 120, slots: { default: "taskStatusSlot" } },
-    { field: "description", title: "描述", minWidth: 280, showOverflow: true },
+    columns: [
+      { field: "id", title: "任务ID", minWidth: 240, showOverflow: true },
+      { field: "platform", title: "平台", width: 120, slots: { default: "taskPlatformSlot" } },
+      {
+        field: "uploader",
+        title: "创建人",
+        width: 140,
+        showOverflow: true,
+        formatter: ({ row }: any) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+      },
+      { field: "status", title: "状态", width: 120, slots: { default: "taskStatusSlot" } },
+      { field: "description", title: "描述", minWidth: 280, showOverflow: true },
     {
       field: "createdAt",
       title: "创建时间",

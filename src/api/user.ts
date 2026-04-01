@@ -100,3 +100,24 @@ export function updateUserAccessSetting(data: { userId: string; accessControl: R
     data
   })
 }
+
+export function getOpenApiSetting() {
+  return request.post({
+    url: '/user/getOpenApiSetting',
+    data: {}
+  })
+}
+
+export function updateOpenApiSetting(data: { enabled: boolean }) {
+  return request.post({
+    url: '/user/updateOpenApiSetting',
+    data
+  })
+}
+
+export function generateOpenApiKey() {
+  return request.post({
+    url: '/user/generateOpenApiKey',
+    data: {}
+  })
+}

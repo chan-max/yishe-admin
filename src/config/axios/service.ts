@@ -217,7 +217,12 @@ service.interceptors.response.use(
         return Promise.reject({ code: 401, message: msg, response: response })
       }
       // 其他接口的 401 错误，直接未授权，强制登出并跳转首页
-      return handleAuthorized()
+      return handleAuthorized(msg)
+    } else if (
+      code === 403 &&
+      (String(msg || '').includes('账号已被禁用') || String(msg || '').includes('账号已过期'))
+    ) {
+      return handleAuthorized(msg)
     } else if (code === 500) {
       // 如果后端返回的 500 错误包含明确的服务不可用提示（例如 Remotion 服务未启动），
       // 则优先展示后端提供的具体消息，便于用户定位问题；否则展示通用提示。
@@ -246,7 +251,7 @@ service.interceptors.response.use(
       if (msg === '无效的刷新令牌') {
         // hard coding：忽略这个提示，直接登出
         console.log(msg)
-        return handleAuthorized()
+        return handleAuthorized(msg)
       } else {
         ElNotification.error({ title: msg })
       }
@@ -267,24 +272,35 @@ service.interceptors.response.use(
       message = t('sys.api.apiRequestFailed') + message.substr(message.length - 3)
     }
     // 新增401处理
-    if (error.response && error.response.status === 401) {
-      return handleAuthorized()
+    if (
+      error.response &&
+      (error.response.status === 401 ||
+        (error.response.status === 403 &&
+          (
+            String((error as any)?.response?.data?.message || '').includes('账号已被禁用') ||
+            String((error as any)?.response?.data?.message || '').includes('账号已过期')
+          )))
+    ) {
+      return handleAuthorized(String((error as any)?.response?.data?.message || ''))
     }
     ElMessage.error(message)
     return Promise.reject(error)
   }
 )
 
-const handleAuthorized = () => {
+const handleAuthorized = (reason?: string) => {
   const { t } = useI18n()
+  const dialogMessage = String(reason || '').trim() || t('sys.api.timeoutMessage')
+  const isAccessDeniedMessage =
+    dialogMessage.includes('账号已被禁用') || dialogMessage.includes('账号已过期')
   if (!isRelogin.show) {
     isRelogin.show = true
-    ElMessageBox.confirm(t('sys.api.timeoutMessage'), t('common.confirmTitle'), {
+    ElMessageBox.confirm(dialogMessage, t('common.confirmTitle'), {
       showCancelButton: false,
       closeOnClickModal: false,
       showClose: false,
       closeOnPressEscape: false,
-      confirmButtonText: t('login.relogin'),
+      confirmButtonText: isAccessDeniedMessage ? t('common.ok') : t('login.relogin'),
       type: 'warning'
     }).then(() => {
       // resetRouter() // 重置静态路由表
@@ -295,6 +311,6 @@ const handleAuthorized = () => {
       window.location.href = '/#/login'
     })
   }
-  return Promise.reject(t('sys.api.timeoutMessage'))
+  return Promise.reject(dialogMessage)
 }
 export { service }

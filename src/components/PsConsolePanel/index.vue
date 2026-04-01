@@ -2,201 +2,506 @@
   <div class="ps-console" v-loading="loading">
     <div class="ops-header">
       <div>
-        <div class="ops-header__title">PS 自动化控制台</div>
+        <div class="ops-header__title">PS 服务控制台</div>
       </div>
       <div class="ops-header__actions">
         <div class="inline-status-group">
-          <div class="inline-status" :class="`is-${localDebugServiceStatus.level}`">
+          <div class="inline-status" :class="`is-${serviceStatus.level}`">
             <span class="inline-status__dot" />
-            <span class="inline-status__label">本地 PS</span>
-            <span class="inline-status__text">{{ localDebugServiceStatus.text }}</span>
-          </div>
-          <div class="inline-status" :class="`is-${bridgeServiceStatus.level}`">
-            <span class="inline-status__dot" />
-            <span class="inline-status__label">客户端节点</span>
-            <span class="inline-status__text">{{ bridgeServiceStatus.text }}</span>
+            <span class="inline-status__label">PS 服务</span>
+            <span class="inline-status__text">{{ serviceStatus.text }}</span>
           </div>
         </div>
-        <el-button @click="refreshLocalDebug">刷新本机直连</el-button>
+        <el-button type="primary" :disabled="!selectedClient" @click="operationDialogVisible = true">打开操作面板</el-button>
+        <el-button :disabled="!selectedClient" @click="handleSelectedClientCommand('refreshRuntime')">刷新服务</el-button>
+        <el-button :disabled="!selectedClient" @click="handleSelectedClientCommand('health', {}, 'maintenance')">检测服务</el-button>
         <el-button type="primary" @click="refreshClients">刷新节点</el-button>
       </div>
     </div>
 
-    <el-tabs v-model="activeTab" class="ops-tabs">
-      <el-tab-pane label="本地 PS" name="local">
-        <div class="tab-layout tab-layout--single">
-          <section class="ops-panel">
-            <div class="ops-panel__head">
-              <div>
-                <div class="ops-panel__title">本机直连调试通道</div>
-                <div class="ops-panel__sub ops-panel__sub--mono">localhost:1595</div>
-              </div>
-              <div class="ops-panel__actions">
-                <el-button @click="refreshLocalDebug">健康检测</el-button>
-              </div>
-            </div>
+    <div class="tab-layout">
+      <ExternalClientSidebar class="ops-sidebar" :items="clientNodeItems" :loading="loading"
+        :selected-client-id="selectedClientId" section-title="客户端节点" empty-text="暂无可用客户端"
+        @select="selectedClientId = $event" />
 
-            <div class="compact-info">
+      <section class="ops-main">
+        <div class="ops-panel">
+          <div class="ops-panel__head">
+            <div>
+              <div class="ops-panel__title">节点 PS 服务状态</div>
+              <div class="ops-panel__sub" v-if="selectedClient">{{ selectedClientDisplayName }}</div>
+            </div>
+            <div class="ops-panel__actions" v-if="selectedClient">
+              <el-button @click="handleSelectedClientCommand('refreshRuntime')">刷新状态</el-button>
+              <el-button @click="handleSelectedClientCommand('health', {}, 'maintenance')">健康检测</el-button>
+            </div>
+          </div>
+
+          <template v-if="selectedClient">
+            <div class="compact-info compact-info--grid">
+              <div class="compact-info__item">
+                <span class="compact-info__label">客户端</span>
+                <span class="compact-info__value">{{ selectedClientDisplayName }}</span>
+              </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">状态</span>
                 <span class="compact-info__value">
-                  <span class="status-chip" :class="`is-${localDebugServiceStatus.level}`">
+                  <span class="status-chip" :class="`is-${serviceStatus.level}`">
                     <span class="status-chip__dot" />
-                    <span>{{ localDebugServiceStatus.text }}</span>
+                    <span>{{ serviceStatus.text }}</span>
                   </span>
                 </span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">版本</span>
-                <span class="compact-info__value">{{ localDebugRuntime.version || '-' }}</span>
+                <span class="compact-info__label">运行态</span>
+                <span class="compact-info__value">{{ resolvePsStateText(selectedPsBridgeService?.state) }}</span>
               </div>
               <div class="compact-info__item">
+                <span class="compact-info__label">版本</span>
+                <span class="compact-info__value">{{ selectedPsBridgeService?.version || '-' }}</span>
+              </div>
+              <div class="compact-info__item compact-info__item--full">
                 <span class="compact-info__label">说明</span>
-                <span class="compact-info__value">{{ localDebugRuntime.message || localDebugRuntime.lastError || '-'
-                  }}</span>
+                <span class="compact-info__value">{{ selectedPsBridgeService?.message || '-' }}</span>
+              </div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">服务地址</span>
+                <span class="compact-info__value">{{ selectedPsBridgeService?.endpoint || '-' }}</span>
+              </div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">当前任务</span>
+                <span class="compact-info__value">{{ selectedPsBridgeService?.currentTaskId || '-' }}</span>
               </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">最近检测</span>
-                <span class="compact-info__value">{{ formatDateSafe(localDebugRuntime.lastCheckedAt) }}</span>
+                <span class="compact-info__value">{{ formatDateSafe(selectedPsBridgeService?.lastCheckedAt) }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">诊断信息</span>
-                <span class="compact-info__value">{{ localDebugRuntime.diagnostics || '-' }}</span>
+                <span class="compact-info__label">支持命令</span>
+                <span class="compact-info__value">{{ formatListSafe(selectedPsBridgeService?.supportedCommands) }}</span>
+              </div>
+              <div class="compact-info__item compact-info__item--full">
+                <span class="compact-info__label">最后错误</span>
+                <span class="compact-info__value">{{ selectedPsBridgeService?.lastError || '-' }}</span>
               </div>
             </div>
-          </section>
+          </template>
+
+          <el-empty v-else description="请选择客户端节点" />
         </div>
-      </el-tab-pane>
+      </section>
+    </div>
 
-      <el-tab-pane label="客户端节点" name="bridge">
-        <div class="tab-layout">
-          <ExternalClientSidebar class="ops-sidebar" :items="clientNodeItems" :loading="loading"
-            :selected-client-id="selectedClientId" section-title="客户端节点" empty-text="暂无可用客户端"
-            @select="selectedClientId = $event" />
-
-          <section class="ops-main">
-            <div class="ops-panel">
-              <div class="ops-panel__head">
-                <div>
-                  <div class="ops-panel__title">客户端状态</div>
+    <el-dialog
+      v-model="operationDialogVisible"
+      fullscreen
+      append-to-body
+      :destroy-on-close="false"
+      class="ps-operation-dialog"
+      :title="operationDialogTitle"
+    >
+      <div v-if="selectedClient" class="operation-shell">
+        <el-tabs v-model="activeTab" class="operation-tabs">
+          <el-tab-pane label="服务" name="service">
+            <div class="operation-grid">
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">服务控制</div>
+                    <div class="ops-panel__sub">通过 ws 链路触发当前节点的 Photoshop 服务</div>
+                  </div>
                 </div>
-                <div class="ops-panel__actions" v-if="selectedClient">
-                  <el-button @click="handleBridgeCommand(selectedClient.id, 'refreshRuntime')">刷新状态</el-button>
-                  <el-button
-                    @click="handleBridgeCommand(selectedClient.id, 'health', {}, 'maintenance')">检测服务</el-button>
+
+                <div class="form-grid">
+                  <div class="field-block">
+                    <label>启动超时（秒）</label>
+                    <el-input-number v-model="serviceForm.startTimeout" :min="5" :max="120" controls-position="right" />
+                  </div>
+                  <div class="field-block">
+                    <label>关闭策略</label>
+                    <el-switch v-model="serviceForm.forceStop" active-text="强制关闭" inactive-text="优雅关闭" />
+                  </div>
+                </div>
+
+                <div class="button-row wrap">
+                  <el-button :loading="loadingMap.refreshRuntime" @click="dispatchPsCommand('refreshRuntime')">刷新状态</el-button>
+                  <el-button :loading="loadingMap.health" @click="dispatchPsCommand('health', {}, 'maintenance')">健康检测</el-button>
+                  <el-button type="primary" :loading="loadingMap.startPhotoshop" @click="dispatchPsCommand('startPhotoshop', { timeout: serviceForm.startTimeout }, 'maintenance')">启动 Photoshop</el-button>
+                  <el-button :loading="loadingMap.restartPhotoshop" @click="dispatchPsCommand('restartPhotoshop', { timeout: serviceForm.startTimeout }, 'maintenance')">重启 Photoshop</el-button>
+                  <el-button type="danger" :loading="loadingMap.stopPhotoshop" @click="dispatchPsCommand('stopPhotoshop', { force: serviceForm.forceStop }, 'maintenance')">关闭 Photoshop</el-button>
                 </div>
               </div>
 
-              <template v-if="selectedClient">
-                <div class="compact-info">
-                  <div class="compact-info__item">
-                    <span class="compact-info__label">客户端</span>
-                    <span class="compact-info__value">{{ selectedClient.clientInfo?.machine?.code || selectedClient.id
-                      }}</span>
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">服务详情</div>
+                    <div class="ops-panel__sub">当前节点最新上报的运行状态</div>
                   </div>
+                </div>
+
+                <div class="compact-info compact-info--grid">
                   <div class="compact-info__item">
                     <span class="compact-info__label">状态</span>
                     <span class="compact-info__value">
-                      <span class="status-chip" :class="`is-${bridgeServiceStatus.level}`">
+                      <span class="status-chip" :class="`is-${serviceStatus.level}`">
                         <span class="status-chip__dot" />
-                        <span>{{ bridgeServiceStatus.text }}</span>
+                        <span>{{ serviceStatus.text }}</span>
                       </span>
                     </span>
                   </div>
                   <div class="compact-info__item">
+                    <span class="compact-info__label">运行态</span>
+                    <span class="compact-info__value">{{ resolvePsStateText(selectedPsBridgeService?.state) }}</span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">版本</span>
+                    <span class="compact-info__value">{{ selectedPsBridgeService?.version || '-' }}</span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">最近检测</span>
+                    <span class="compact-info__value">{{ formatDateSafe(selectedPsBridgeService?.lastCheckedAt) }}</span>
+                  </div>
+                  <div class="compact-info__item compact-info__item--full">
                     <span class="compact-info__label">说明</span>
                     <span class="compact-info__value">{{ selectedPsBridgeService?.message || '-' }}</span>
                   </div>
                 </div>
+              </div>
+            </div>
+          </el-tab-pane>
 
-                <div class="ops-form-block">
-                  <div class="compact-info compact-info--grid">
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">运行状态</span>
-                      <span class="compact-info__value">
-                        <span class="status-chip" :class="selectedPsAutomation?.running ? 'is-warning' : 'is-info'">
-                          <span class="status-chip__dot" />
-                          <span>{{ selectedPsAutomation?.running ? '执行中' : '空闲' }}</span>
-                        </span>
-                      </span>
-                    </div>
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">待处理数</span>
-                      <span class="compact-info__value">{{ selectedPsAutomation?.queueCount ?? 0 }}</span>
-                    </div>
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">当前套图 ID</span>
-                      <span class="compact-info__value">{{ selectedPsAutomation?.currentPsSetId || '-' }}</span>
-                    </div>
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">当前套图</span>
-                      <span class="compact-info__value">{{ selectedPsAutomation?.currentPsSetName || '-' }}</span>
-                    </div>
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">进度</span>
-                      <span class="compact-info__value">
-                        {{ typeof selectedPsAutomation?.progress === 'number' ? `${selectedPsAutomation.progress}%` :
-                        '-' }}
-                      </span>
-                    </div>
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">最近心跳</span>
-                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.lastHeartbeatAt ||
-                        undefined) }}</span>
-                    </div>
-                    <div class="compact-info__item">
-                      <span class="compact-info__label">最后更新</span>
-                      <span class="compact-info__value">{{ formatDateSafe(selectedPsAutomation?.updatedAt || undefined)
-                        }}</span>
-                    </div>
-                    <div class="compact-info__item compact-info__item--full">
-                      <span class="compact-info__label">错误信息</span>
-                      <span class="compact-info__value">{{ selectedPsAutomation?.lastError || '-' }}</span>
-                    </div>
+          <el-tab-pane label="PSD 分析" name="analyze">
+            <div class="operation-grid">
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">分析参数</div>
+                    <div class="ops-panel__sub">分析当前节点可访问的 PSD 文件结构和智能对象信息</div>
                   </div>
                 </div>
-              </template>
 
-              <el-empty v-else description="请选择客户端节点" />
+                <div class="form-stack">
+                  <div class="field-block">
+                    <label>PSD 文件路径</label>
+                    <el-input v-model="analyzeForm.psdPath" placeholder="D:\\path\\to\\file.psd" />
+                  </div>
+
+                  <div class="button-row wrap">
+                    <el-button type="primary" :loading="loadingMap.analyzePsd" @click="handleAnalyzePsd">开始分析</el-button>
+                    <el-button :disabled="!analysisResult" @click="copyJson(analysisResult, '分析结果已复制')">复制 JSON</el-button>
+                  </div>
+                </div>
+
+                <div class="compact-info compact-info--grid" v-if="analysisResult">
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">文档尺寸</span>
+                    <span class="compact-info__value">{{ formatDocumentSize(analysisDocumentInfo) }}</span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">画板数</span>
+                    <span class="compact-info__value">{{ analysisStatistics.artboard_count ?? 0 }}</span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">智能对象</span>
+                    <span class="compact-info__value">{{ analysisStatistics.total_smart_objects ?? 0 }}</span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">图层数</span>
+                    <span class="compact-info__value">{{ analysisStatistics.total_layers ?? 0 }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">分析结果</div>
+                    <div class="ops-panel__sub">保留完整 JSON，便于和 yishe-ps 输出对齐</div>
+                  </div>
+                </div>
+                <pre class="result">{{ analysisResult ? jsonText(analysisResult) : '暂无分析结果' }}</pre>
+              </div>
             </div>
-          </section>
-        </div>
-      </el-tab-pane>
-    </el-tabs>
+          </el-tab-pane>
+
+          <el-tab-pane label="调试处理" name="process">
+            <div class="operation-grid">
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">处理参数</div>
+                    <div class="ops-panel__sub">通过 debugProcess 调用当前节点的 /processPsd</div>
+                  </div>
+                </div>
+
+                <div class="form-stack">
+                  <div class="field-block">
+                    <label>PSD 路径 *</label>
+                    <el-input v-model="processForm.psdPath" placeholder="D:\\templates\\template.psd" />
+                  </div>
+                  <div class="field-block">
+                    <label>导出目录</label>
+                    <el-input v-model="processForm.exportDir" placeholder="留空则使用默认 output" />
+                  </div>
+                  <div class="form-grid">
+                    <div class="field-block">
+                      <label>导出文件名</label>
+                      <el-input v-model="processForm.outputFilename" placeholder="可选，自动加时间戳" />
+                    </div>
+                    <div class="field-block">
+                      <label>verbose</label>
+                      <el-switch v-model="processForm.verbose" active-text="开启" inactive-text="关闭" />
+                    </div>
+                  </div>
+                  <div class="subsection-head">
+                    <div class="subsection-title">智能对象配置</div>
+                    <el-button size="small" @click="addSmartObject">添加智能对象</el-button>
+                  </div>
+                  <div class="smart-object-list">
+                    <div v-for="(item, index) in processForm.smartObjects" :key="`smart-object-${index}`" class="smart-object-card">
+                      <div class="smart-object-card__head">
+                        <div class="smart-object-card__title">智能对象 #{{ index + 1 }}</div>
+                        <el-button link type="danger" :disabled="processForm.smartObjects.length <= 1" @click="removeSmartObject(index)">删除</el-button>
+                      </div>
+                      <div class="form-grid">
+                        <div class="field-block">
+                          <label>智能对象名称</label>
+                          <el-input v-model="item.smartObjectName" placeholder="可选，不指定则按顺序匹配" />
+                        </div>
+                        <div class="field-block">
+                          <label>素材图片路径 *</label>
+                          <el-input v-model="item.imagePath" placeholder="D:\\images\\image.jpg" />
+                        </div>
+                      </div>
+                      <div class="form-grid">
+                        <div class="field-block">
+                          <label>缩放模式</label>
+                          <el-select v-model="item.resizeMode">
+                            <el-option label="contain" value="contain" />
+                            <el-option label="cover" value="cover" />
+                            <el-option label="stretch" value="stretch" />
+                            <el-option label="custom" value="custom" />
+                          </el-select>
+                        </div>
+                        <div class="field-block">
+                          <label>tile_size</label>
+                          <el-input-number v-model="item.tileSize" :min="64" :max="2048" controls-position="right" />
+                        </div>
+                      </div>
+                      <div v-if="item.resizeMode === 'custom'" class="field-block">
+                        <label>custom_options</label>
+                        <div class="button-row wrap">
+                          <el-button v-for="template in customTemplateOptions" :key="template.key" size="small" @click="applyCustomOptionsTemplate(index, template.key)">{{ template.label }}</el-button>
+                        </div>
+                        <el-input
+                          v-model="item.customOptionsText"
+                          type="textarea"
+                          :rows="7"
+                          placeholder='{\"position\":{\"x\":0,\"y\":0,\"unit\":\"px\"},\"size\":{\"width\":800,\"height\":600,\"unit\":\"px\"},\"child_resize_mode\":\"contain\"}'
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="button-row wrap">
+                    <el-button type="primary" :loading="loadingMap.debugProcess" @click="handleDebugProcess">开始处理</el-button>
+                    <el-button @click="copyText(processPayloadPreview, '处理参数已复制')">复制参数</el-button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">后端参数与结果</div>
+                    <div class="ops-panel__sub">同时查看 processPsd 请求体和返回结果</div>
+                  </div>
+                </div>
+                <pre class="result">{{ processPayloadPreview }}</pre>
+                <pre class="result result--secondary">{{ processResult ? jsonText(processResult) : '暂无处理结果' }}</pre>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="日志" name="logs">
+            <div class="operation-grid">
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">最新命令结果</div>
+                    <div class="ops-panel__sub">最近一次 service-command-result 返回值</div>
+                  </div>
+                  <div class="ops-panel__actions">
+                    <el-button :disabled="!latestCommandResult" @click="copyJson(latestCommandResult, '命令结果已复制')">复制结果</el-button>
+                  </div>
+                </div>
+                <pre class="result">{{ latestCommandResult ? jsonText(latestCommandResult) : '暂无命令结果' }}</pre>
+              </div>
+
+              <div class="ops-panel">
+                <div class="ops-panel__head">
+                  <div>
+                    <div class="ops-panel__title">调试日志</div>
+                    <div class="ops-panel__sub">记录命令发送、回包和错误信息</div>
+                  </div>
+                  <div class="ops-panel__actions">
+                    <el-button @click="clearCommandLogs">清空日志</el-button>
+                  </div>
+                </div>
+                <div class="log-list">
+                  <div v-if="!commandLogs.length" class="log-empty">暂无调试日志</div>
+                  <div v-for="item in commandLogs" :key="item.id" class="log-item" :class="`is-${item.level}`">
+                    <div class="log-item__meta">
+                      <span>{{ item.time }}</span>
+                      <span>{{ resolveActionText(item.action) }}</span>
+                    </div>
+                    <div class="log-item__message">{{ item.message }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+      <el-empty v-else description="请选择客户端节点" />
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import { formatDate } from '@/utils/formatTime'
-import { ClientControlService } from '@/services/clientControl'
-import localPhotoshopApi from '@/api/client/photoshop'
+import { sendServiceCommand } from '@/api/system/websocket'
 import ExternalClientSidebar, {
   type ClientNodeBadge,
   type ClientNodeItem
 } from '@/views/external/components/ExternalClientSidebar.vue'
 import {
   websocketClient,
-  type PsAutomationStatusEvent,
+  type ServiceCommandResultEvent,
   type ServiceRuntimeEvent
 } from '@/services/websocketClient'
 import { useClientNodeState } from '@/services/clientNodeState'
 
 defineOptions({ name: 'PsConsolePanel' })
 
-const { clients, loading, refresh: refreshClientNodes } = useClientNodeState()
-const activeTab = ref('local')
-const selectedClientId = ref('')
+type PsCommandAction =
+  | 'refreshRuntime'
+  | 'health'
+  | 'startPhotoshop'
+  | 'stopPhotoshop'
+  | 'restartPhotoshop'
+  | 'analyzePsd'
+  | 'debugProcess'
 
-const localDebugRuntime = reactive({
-  connected: false,
-  isAvailable: false,
-  version: '',
-  message: '',
-  diagnostics: '',
-  lastCheckedAt: '',
-  lastError: ''
+type CommandMode = 'production' | 'debug' | 'maintenance'
+
+interface SmartObjectForm {
+  smartObjectName: string
+  imagePath: string
+  resizeMode: 'contain' | 'cover' | 'stretch' | 'custom'
+  tileSize: number
+  customOptionsText: string
+}
+
+interface CommandLogItem {
+  id: string
+  time: string
+  action: string
+  level: 'info' | 'success' | 'error'
+  message: string
+}
+
+interface ServiceCommandDispatchResponse {
+  success: boolean
+  message?: string
+  data?: {
+    commandId?: string
+    clientId?: string
+    pluginKey?: string
+    service?: string
+    action?: string
+    payload?: Record<string, any>
+    createdAt?: string
+  }
+}
+
+const { clients, loading, refresh: refreshClientNodes } = useClientNodeState()
+const selectedClientId = ref('')
+const activeTab = ref('service')
+const operationDialogVisible = ref(false)
+const latestCommandResult = ref<ServiceCommandResultEvent | Record<string, any> | null>(null)
+const analysisResult = ref<Record<string, any> | null>(null)
+const processResult = ref<Record<string, any> | null>(null)
+const commandLogs = ref<CommandLogItem[]>([])
+
+const loadingMap = reactive<Record<PsCommandAction, boolean>>({
+  refreshRuntime: false,
+  health: false,
+  startPhotoshop: false,
+  stopPhotoshop: false,
+  restartPhotoshop: false,
+  analyzePsd: false,
+  debugProcess: false
 })
+
+const pendingActions = reactive<Record<string, PsCommandAction>>({})
+
+const serviceForm = reactive({
+  startTimeout: 30,
+  forceStop: false
+})
+
+const analyzeForm = reactive({
+  psdPath: ''
+})
+
+const createSmartObject = (): SmartObjectForm => ({
+  smartObjectName: '',
+  imagePath: '',
+  resizeMode: 'contain',
+  tileSize: 512,
+  customOptionsText: ''
+})
+
+const processForm = reactive({
+  psdPath: '',
+  exportDir: '',
+  outputFilename: '',
+  verbose: true,
+  smartObjects: [createSmartObject()]
+})
+
+const customTemplateOptions = [
+  { key: 'px-contain', label: '像素 contain' },
+  { key: 'px-cover', label: '像素 cover' },
+  { key: 'percent-contain', label: '百分比 contain' },
+  { key: 'percent-cover', label: '百分比 cover' }
+]
+
+const customOptionsTemplates: Record<string, Record<string, any>> = {
+  'px-contain': {
+    position: { x: 0, y: 0, unit: 'px' },
+    size: { width: 800, height: 600, unit: 'px' },
+    child_resize_mode: 'contain'
+  },
+  'px-cover': {
+    position: { x: 0, y: 0, unit: 'px' },
+    size: { width: 800, height: 600, unit: 'px' },
+    child_resize_mode: 'cover'
+  },
+  'percent-contain': {
+    position: { x: 10, y: 10, unit: '%' },
+    size: { width: 80, height: 80, unit: '%' },
+    child_resize_mode: 'contain'
+  },
+  'percent-cover': {
+    position: { x: 10, y: 10, unit: '%' },
+    size: { width: 80, height: 80, unit: '%' },
+    child_resize_mode: 'cover'
+  }
+}
 
 const getPhotoshopService = (client: any) =>
   client.clientInfo?.services?.['ps-automation'] || client.clientInfo?.services?.photoshop || null
@@ -206,11 +511,7 @@ const psClients = computed(() =>
     if (!client.isOnline) {
       return false
     }
-    const service = getPhotoshopService(client)
-    if (!service) {
-      return false
-    }
-    return !!(service.available || service.connected || service.status === 'error')
+    return !!getPhotoshopService(client)
   })
 )
 
@@ -220,6 +521,15 @@ const selectedClient = computed(() => {
   }
   return psClients.value.find((client) => client.id === selectedClientId.value) || psClients.value[0]
 })
+const selectedClientDisplayName = computed(() => selectedClient.value?.clientInfo?.machine?.code || selectedClient.value?.id || '-')
+const operationDialogTitle = computed(() => `PS 服务操作 · ${selectedClientDisplayName.value}`)
+
+const normalizePluginKey = (value?: string | null) => {
+  const normalized = String(value || '').trim()
+  if (!normalized) return ''
+  if (normalized === 'photoshop') return 'ps-automation'
+  return normalized
+}
 
 const getPsBridgeService = (client: any) => {
   const service = getPhotoshopService(client)
@@ -231,28 +541,22 @@ const getPsBridgeService = (client: any) => {
   const connected = !!service.connected
   const status = service.status || 'unknown'
 
-  let tagType: 'success' | 'warning' | 'danger' | 'info' = 'info'
   let text = '未就绪'
   if (available) {
-    tagType = 'success'
     text = '可用'
   } else if (status === 'error') {
-    tagType = 'danger'
     text = '异常'
   } else if (connected) {
-    tagType = 'warning'
     text = '任务进行中'
   }
 
   return {
     ...service,
-    tagType,
     text
   }
 }
 
 const selectedPsBridgeService = computed(() => (selectedClient.value ? getPsBridgeService(selectedClient.value) : null))
-const selectedPsAutomation = computed(() => selectedClient.value?.clientInfo?.psAutomation || null)
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   psClients.value.map((client) => {
     const service = getPsBridgeService(client)
@@ -270,13 +574,6 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
       badges.push({ text: '未就绪', tone: 'muted' })
     }
 
-    if (client.clientInfo?.psAutomation?.enabled) {
-      badges.push({
-        text: client.clientInfo.psAutomation.running ? '自动制作执行中' : '自动制作已开启',
-        tone: client.clientInfo.psAutomation.running ? 'warning' : 'success'
-      })
-    }
-
     return {
       connectionId: client.id,
       name: client.clientInfo?.machine?.code || client.id,
@@ -288,6 +585,25 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
   })
 )
 
+const analysisDocumentInfo = computed<Record<string, any>>(() => analysisResult.value?.document_info || {})
+const analysisStatistics = computed<Record<string, any>>(() => analysisResult.value?.statistics || {})
+const processPayloadPreview = computed(() => jsonText(buildProcessRequest(false)))
+
+const jsonText = (value: any) => {
+  try {
+    return JSON.stringify(value ?? null, null, 2)
+  } catch {
+    return String(value ?? '')
+  }
+}
+
+const stripQuotes = (value?: string | null) =>
+  String(value || '')
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '')
+
+const normalizeWindowsPath = (value?: string | null) => stripQuotes(value).replace(/\//g, '\\')
+
 const formatDateSafe = (value?: string) => {
   if (!value) return '-'
   try {
@@ -297,68 +613,131 @@ const formatDateSafe = (value?: string) => {
   }
 }
 
-const localDebugServiceStatus = computed(() => {
-  if (localDebugRuntime.connected && localDebugRuntime.isAvailable) {
-    return {
-      level: 'success',
-      tagType: 'success' as const,
-      text: '可用',
-      summary: '本地 yishe-ps 服务和 Photoshop 都已就绪，可以直接做调试分析和执行。'
-    }
+const formatListSafe = (value?: Array<string | number> | null) => {
+  if (!Array.isArray(value) || !value.length) {
+    return '-'
   }
+  return value.join(', ')
+}
 
-  if (localDebugRuntime.connected) {
-    return {
-      level: 'warning',
-      tagType: 'warning' as const,
-      text: '服务在线，PS 不可用',
-      summary: localDebugRuntime.message || '本地调试服务已连通，但 Photoshop 当前未处于可执行状态。'
-    }
+const findClientDisplayName = (clientId?: string | null) => {
+  const client = psClients.value.find((item) => item.id === clientId)
+  return client?.clientInfo?.machine?.code || client?.id || clientId || '-'
+}
+
+const resolvePsStateText = (value?: string | null) => {
+  if (!value) return '-'
+  const stateMap: Record<string, string> = {
+    idle: '空闲',
+    busy: '执行中',
+    error: '异常',
+    offline: '离线',
+    connected: '已连接'
   }
+  return stateMap[value] || value
+}
 
-  return {
-    level: 'danger',
-    tagType: 'danger' as const,
-    text: '不可用',
-    summary: localDebugRuntime.lastError || '无法访问本地调试服务，请检查 yishe-ps 是否启动。'
+const formatDocumentSize = (value?: Record<string, any> | null) => {
+  const width = Number(value?.width || 0)
+  const height = Number(value?.height || 0)
+  if (!width || !height) {
+    return '-'
   }
-})
+  return `${width} x ${height}px`
+}
 
-const bridgeServiceStatus = computed(() => {
+const resolveActionText = (value?: string | null) => {
+  const actionMap: Record<string, string> = {
+    refreshRuntime: '刷新状态',
+    health: '健康检测',
+    startPhotoshop: '启动 Photoshop',
+    stopPhotoshop: '关闭 Photoshop',
+    restartPhotoshop: '重启 Photoshop',
+    analyzePsd: '分析 PSD',
+    debugProcess: '调试处理'
+  }
+  return actionMap[String(value || '').trim()] || String(value || '-')
+}
+
+const pushCommandLog = (
+  action: string,
+  level: CommandLogItem['level'],
+  message: string,
+  clientId?: string | null
+) => {
+  const prefix = clientId ? `[${findClientDisplayName(clientId)}] ` : ''
+  commandLogs.value = [
+    {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      time: formatDate(new Date(), 'HH:mm:ss'),
+      action,
+      level,
+      message: `${prefix}${message}`.trim()
+    },
+    ...commandLogs.value
+  ].slice(0, 80)
+}
+
+const clearCommandLogs = () => {
+  commandLogs.value = []
+}
+
+const serviceStatus = computed(() => {
   if (!psClients.value.length) {
     return {
       level: 'danger',
-      tagType: 'danger' as const,
-      text: '无可用节点',
-      summary: '当前账号下没有识别到带 Photoshop 服务上报的客户端节点。'
+      text: '无可用节点'
     }
   }
 
   if (selectedPsBridgeService.value?.available) {
     return {
       level: 'success',
-      tagType: 'success' as const,
-      text: '可用',
-      summary: '当前选中的客户端节点可直接执行 Photoshop 任务。'
+      text: '可用'
+    }
+  }
+
+  if (selectedPsBridgeService.value?.status === 'error') {
+    return {
+      level: 'danger',
+      text: '异常'
     }
   }
 
   if (selectedPsBridgeService.value?.connected) {
     return {
       level: 'warning',
-      tagType: 'warning' as const,
-      text: '任务进行中',
-      summary: selectedPsBridgeService.value?.message || '客户端节点已在线，但 Photoshop 服务尚未达到可执行状态。'
+      text: '任务进行中'
     }
   }
 
   return {
-    level: 'danger',
-    tagType: 'danger' as const,
-    text: '不可用',
-    summary: selectedPsBridgeService.value?.message || '已选客户端未上报可用的 Photoshop 服务。'
+    level: 'info',
+    text: '未就绪'
   }
 })
+
+const finishAction = (action?: string | null) => {
+  if (!action) {
+    return
+  }
+  if (action in loadingMap) {
+    loadingMap[action as PsCommandAction] = false
+  }
+}
+
+const clearPendingState = () => {
+  Object.keys(pendingActions).forEach((key) => {
+    delete pendingActions[key]
+  })
+  ;(Object.keys(loadingMap) as PsCommandAction[]).forEach((key) => {
+    loadingMap[key] = false
+  })
+}
+
+const refreshClients = async () => {
+  await refreshClientNodes()
+}
 
 watch(
   psClients,
@@ -370,66 +749,285 @@ watch(
     if (!selectedClientId.value || !list.some((item) => item.id === selectedClientId.value)) {
       selectedClientId.value = list[0].id
     }
-    if (list.length > 0 && activeTab.value !== 'bridge') {
-      activeTab.value = 'bridge'
-    }
   },
   { immediate: true }
 )
 
-const refreshClients = async () => {
-  await refreshClientNodes()
-}
+watch(selectedClientId, (value, previousValue) => {
+  if (!value) {
+    operationDialogVisible.value = false
+  }
+  if (value === previousValue) {
+    return
+  }
+  activeTab.value = 'service'
+  analysisResult.value = null
+  processResult.value = null
+  latestCommandResult.value = null
+  clearCommandLogs()
+  clearPendingState()
+})
 
-const refreshLocalDebug = async () => {
+const copyText = async (text: string, successMessage = '已复制') => {
+  if (!text) {
+    ElMessage.warning('没有可复制的内容')
+    return
+  }
+
   try {
-    const status = await localPhotoshopApi.checkPhotoshopStatus(false)
-
-    localDebugRuntime.connected = true
-    localDebugRuntime.isAvailable = !!(status.is_available && status.is_running)
-    localDebugRuntime.version = status.connection_test?.version || ''
-    localDebugRuntime.message = localDebugRuntime.isAvailable
-      ? 'photoshopStatus 检测通过，Photoshop 可用于本机调试'
-      : 'photoshopStatus 已返回，但 Photoshop 当前不可执行'
-    localDebugRuntime.diagnostics = status.diagnostics || ''
-    localDebugRuntime.lastCheckedAt = new Date().toISOString()
-    localDebugRuntime.lastError = ''
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text)
+    } else {
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+    ElMessage.success(successMessage)
   } catch (error: any) {
-    localDebugRuntime.connected = false
-    localDebugRuntime.isAvailable = false
-    localDebugRuntime.version = ''
-    localDebugRuntime.message = ''
-    localDebugRuntime.diagnostics = ''
-    localDebugRuntime.lastCheckedAt = new Date().toISOString()
-    localDebugRuntime.lastError = error?.message || '无法连接 localhost:1595'
+    ElMessage.error(error?.message || '复制失败')
   }
 }
 
-const handleServiceRuntime = (_event: ServiceRuntimeEvent) => {
-  void refreshClients()
+const copyJson = async (value: any, successMessage = 'JSON 已复制') => {
+  await copyText(jsonText(value), successMessage)
 }
 
-const handlePsAutomationStatus = (_event: PsAutomationStatusEvent) => {
-  void refreshClients()
-}
-
-const handleBridgeCommand = async (
-  clientId: string,
-  action: string,
+const dispatchPsCommand = async (
+  action: PsCommandAction,
   payload: Record<string, any> = {},
-  mode: 'production' | 'debug' | 'maintenance' = 'production'
+  mode: CommandMode = 'production'
 ) => {
-  await ClientControlService.sendServiceCommand(clientId, 'photoshop', action, payload, mode)
+  const client = selectedClient.value
+  if (!client) {
+    ElMessage.warning('请选择客户端节点')
+    return
+  }
+
+  if (loadingMap[action]) {
+    return
+  }
+
+  loadingMap[action] = true
+  pushCommandLog(action, 'info', `已发送${resolveActionText(action)}命令`, client.id)
+
+  try {
+    const response = (await sendServiceCommand({
+      target: {
+        clientId: client.id,
+        pluginKey: 'ps-automation'
+      },
+      command: {
+        name: action,
+        payload
+      },
+      mode
+    })) as ServiceCommandDispatchResponse
+
+    if (!response?.success) {
+      finishAction(action)
+      const message = response?.message || '命令发送失败'
+      pushCommandLog(action, 'error', message, client.id)
+      ElMessage.error(message)
+      return
+    }
+
+    const commandId = response.data?.commandId
+    if (commandId) {
+      pendingActions[commandId] = action
+    } else {
+      finishAction(action)
+    }
+
+    ElMessage.success(response.message || '命令已发送')
+  } catch (error: any) {
+    finishAction(action)
+    const message = error?.message || '命令发送失败'
+    pushCommandLog(action, 'error', message, client.id)
+    ElMessage.error(message)
+  }
 }
+
+const handleSelectedClientCommand = async (
+  action: 'refreshRuntime' | 'health',
+  payload: Record<string, any> = {},
+  mode: CommandMode = 'production'
+) => {
+  await dispatchPsCommand(action, payload, mode)
+}
+
+const addSmartObject = () => {
+  processForm.smartObjects.push(createSmartObject())
+}
+
+const removeSmartObject = (index: number) => {
+  if (processForm.smartObjects.length <= 1) {
+    return
+  }
+  processForm.smartObjects.splice(index, 1)
+}
+
+const applyCustomOptionsTemplate = (index: number, templateKey: string) => {
+  const target = processForm.smartObjects[index]
+  if (!target) {
+    return
+  }
+  target.resizeMode = 'custom'
+  target.customOptionsText = jsonText(customOptionsTemplates[templateKey] || {})
+}
+
+const buildProcessRequest = (strict = true) => {
+  const psdPath = normalizeWindowsPath(processForm.psdPath)
+  if (strict && !psdPath) {
+    throw new Error('请填写 PSD 路径')
+  }
+
+  const smartObjects = processForm.smartObjects.map((item, index) => {
+    const imagePath = normalizeWindowsPath(item.imagePath)
+    if (strict && !imagePath) {
+      throw new Error(`智能对象 #${index + 1} 的素材图片路径不能为空`)
+    }
+
+    const payload: Record<string, any> = {
+      image_path: imagePath,
+      resize_mode: item.resizeMode || 'contain',
+      tile_size: Math.max(64, Number(item.tileSize) || 512)
+    }
+
+    const smartObjectName = stripQuotes(item.smartObjectName)
+    if (smartObjectName) {
+      payload.smart_object_name = smartObjectName
+    }
+
+    if (payload.resize_mode === 'custom') {
+      const customOptionsText = item.customOptionsText.trim()
+      if (strict && !customOptionsText) {
+        throw new Error(`智能对象 #${index + 1} 使用 custom 模式时必须填写 custom_options`)
+      }
+      if (customOptionsText) {
+        try {
+          payload.custom_options = JSON.parse(customOptionsText)
+        } catch (error: any) {
+          if (strict) {
+            throw new Error(
+              `智能对象 #${index + 1} 的 custom_options 不是有效 JSON: ${error?.message || error}`
+            )
+          }
+        }
+      }
+    }
+
+    return payload
+  })
+
+  if (strict && !smartObjects.length) {
+    throw new Error('至少需要配置一个智能对象')
+  }
+
+  const request: Record<string, any> = {
+    psd_path: psdPath,
+    smart_objects: smartObjects,
+    verbose: !!processForm.verbose
+  }
+
+  const exportDir = normalizeWindowsPath(processForm.exportDir)
+  if (exportDir) {
+    request.export_dir = exportDir
+  }
+
+  const outputFilename = stripQuotes(processForm.outputFilename)
+  if (outputFilename) {
+    request.output_filename = outputFilename
+  }
+
+  return request
+}
+
+const handleAnalyzePsd = async () => {
+  const psdPath = normalizeWindowsPath(analyzeForm.psdPath)
+  if (!psdPath) {
+    ElMessage.warning('请填写 PSD 文件路径')
+    return
+  }
+
+  analyzeForm.psdPath = psdPath
+  analysisResult.value = null
+  await dispatchPsCommand('analyzePsd', { psdPath }, 'debug')
+}
+
+const handleDebugProcess = async () => {
+  try {
+    const request = buildProcessRequest(true)
+    processResult.value = null
+    await dispatchPsCommand('debugProcess', { request }, 'debug')
+  } catch (error: any) {
+    const message = error?.message || '处理参数校验失败'
+    pushCommandLog('debugProcess', 'error', message, selectedClient.value?.id)
+    ElMessage.warning(message)
+  }
+}
+
+const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
+  if (normalizePluginKey(event.pluginKey || event.service) !== 'ps-automation') {
+    return
+  }
+  if (event.clientId !== selectedClientId.value) {
+    return
+  }
+}
+
+const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
+  if (normalizePluginKey(event.pluginKey || event.service) !== 'ps-automation') {
+    return
+  }
+
+  const pendingAction = pendingActions[event.commandId]
+  const isSelectedClient = event.clientId === selectedClientId.value
+
+  if (!pendingAction && !isSelectedClient) {
+    return
+  }
+
+  if (pendingAction) {
+    delete pendingActions[event.commandId]
+    finishAction(pendingAction)
+  }
+
+  const action = pendingAction || event.action || 'refreshRuntime'
+  const message = event.message || event.error || (event.success ? '执行成功' : '执行失败')
+
+  latestCommandResult.value = event
+  pushCommandLog(action, event.success ? 'success' : 'error', message, event.clientId)
+
+  if (action === 'analyzePsd') {
+    analysisResult.value = event.success && event.data ? event.data : null
+  }
+
+  if (action === 'debugProcess') {
+    processResult.value = event.data || {
+      success: event.success,
+      message,
+      error: event.error || null
+    }
+  }
+
+  ;(event.success ? ElMessage.success : ElMessage.error)(message)
+  await refreshClients()
+}
+
 onMounted(() => {
   websocketClient.events.on('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.on('psAutomationStatus', handlePsAutomationStatus)
-  void Promise.all([refreshClients(), refreshLocalDebug()])
+  websocketClient.events.on('serviceCommandResult', handleServiceCommandResult)
+  void refreshClients()
 })
 
 onUnmounted(() => {
   websocketClient.events.off('serviceRuntime', handleServiceRuntime)
-  websocketClient.events.off('psAutomationStatus', handlePsAutomationStatus)
+  websocketClient.events.off('serviceCommandResult', handleServiceCommandResult)
 })
 </script>
 
@@ -461,49 +1059,11 @@ onUnmounted(() => {
   align-items: center;
 }
 
-.ops-tabs :deep(.el-tabs__header) {
-  margin: 0 0 12px;
-}
-
-.ops-tabs :deep(.el-tabs__nav-wrap::after) {
-  background-color: var(--el-border-color-lighter);
-}
-
-.ops-tabs :deep(.el-tabs__nav) {
-  gap: 0;
-}
-
-.ops-tabs :deep(.el-tabs__item) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 128px;
-  height: 34px;
-  padding: 0 14px;
-  text-align: center;
-  color: var(--el-text-color-secondary);
-  background: transparent;
-}
-
-.ops-tabs :deep(.el-tabs__item.is-active) {
-  color: var(--el-text-color-primary);
-  background: transparent;
-}
-
-.ops-tabs :deep(.el-tabs__active-bar) {
-  height: 2px;
-  border-radius: 999px;
-}
-
 .tab-layout {
   display: grid;
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
-}
-
-.tab-layout--single {
-  grid-template-columns: minmax(0, 1fr);
 }
 
 .inline-status-group {
@@ -670,65 +1230,11 @@ onUnmounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-.ops-panel__sub--mono {
-  font-family: Monaco, Menlo, Consolas, monospace;
-}
-
 .ops-panel__actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-start;
-}
-
-.automation-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-}
-
-.automation-toolbar__main {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.automation-toolbar__actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  justify-content: flex-start;
-}
-
-.ops-panel__head--minor {
-  padding-bottom: 0;
-  border-bottom: 0;
-  margin-bottom: 10px;
-}
-
-.ops-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.ops-form-block {
-  margin-top: 12px;
-}
-
-.ops-form-block__title {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 6px;
 }
 
 .status-chip {
@@ -795,6 +1301,205 @@ onUnmounted(() => {
   animation: status-breath-danger 1.8s infinite ease-in-out;
 }
 
+.ps-operation-dialog :deep(.el-dialog__header) {
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.ps-operation-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  background: var(--el-bg-color-page);
+}
+
+.operation-shell {
+  height: calc(100vh - 64px);
+  min-height: 0;
+  padding: 16px 20px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.operation-tabs {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.operation-tabs:deep(.el-tabs__header) {
+  margin: 0 0 12px;
+}
+
+.operation-tabs:deep(.el-tabs__content) {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.operation-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-block label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.4;
+}
+
+.field-block :deep(.el-input),
+.field-block :deep(.el-input-number),
+.field-block :deep(.el-select) {
+  width: 100%;
+}
+
+.button-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.button-row.wrap {
+  flex-wrap: wrap;
+}
+
+.subsection-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.subsection-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.smart-object-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.smart-object-card {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+
+.smart-object-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.smart-object-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.result {
+  margin: 0;
+  padding: 12px;
+  min-height: 220px;
+  max-height: calc(100vh - 280px);
+  overflow: auto;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+.result--secondary {
+  margin-top: 12px;
+  min-height: 160px;
+}
+
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 220px;
+  max-height: calc(100vh - 280px);
+  overflow: auto;
+}
+
+.log-empty {
+  padding: 32px 16px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+  background: var(--el-bg-color);
+}
+
+.log-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+
+.log-item.is-success {
+  border-color: rgb(103 194 58 / 26%);
+}
+
+.log-item.is-error {
+  border-color: rgb(245 108 108 / 26%);
+}
+
+.log-item__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.log-item__message {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 @keyframes status-breath-success {
 
   0%,
@@ -837,17 +1542,12 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 1280px) {
-  .ops-columns {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 @media (max-width: 1024px) {
 
   .tab-layout,
-  .ops-columns,
-  .compact-info--grid {
+  .compact-info--grid,
+  .operation-grid,
+  .form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -860,19 +1560,20 @@ onUnmounted(() => {
 
   .ops-header,
   .ops-panel__head,
-  .automation-toolbar {
+  .subsection-head,
+  .smart-object-card__head,
+  .log-item__meta {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .ops-header__actions {
+  .ops-header__actions,
+  .button-row {
     width: 100%;
   }
 
-  .automation-toolbar__main {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
+  .operation-shell {
+    padding: 12px;
   }
 }
 </style>

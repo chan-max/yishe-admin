@@ -49,6 +49,7 @@
                     @change="getList"
                   >
                     <el-option label="待处理" value="pending" />
+                    <el-option label="等待中" value="waiting" />
                     <el-option label="处理中" value="processing" />
                     <el-option label="已完成" value="completed" />
                     <el-option label="失败" value="failed" />
@@ -246,6 +247,7 @@
         <el-form-item label="新状态" prop="newStatus">
           <el-select v-model="statusFormData.newStatus" placeholder="请选择新状态" style="width: 100%">
             <el-option label="待处理" value="pending" />
+            <el-option label="等待中" value="waiting" />
             <el-option label="处理中" value="processing" />
             <el-option label="已完成" value="completed" />
             <el-option label="失败" value="failed" />
@@ -378,7 +380,7 @@ const userStore = useUserStore()
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  status: undefined as 'pending' | 'processing' | 'completed' | 'failed' | undefined,
+  status: undefined as 'pending' | 'waiting' | 'processing' | 'completed' | 'failed' | undefined,
   type: '', // 任务类型，默认为空（留空则查询所有类型）
   id: '', // 任务ID，默认为空（留空则查询所有ID）
   sortType: 'createdAt_DESC',
@@ -407,6 +409,13 @@ const gridOptions = ref({
     { type: 'checkbox', width: 50, ellipsis: true, reserve: true },
     { title: '任务ID', field: 'id', minWidth: 200, showOverflow: true },
     { title: '任务类型', field: 'type', width: 240 },
+    {
+      title: '创建人',
+      field: 'uploader',
+      width: 140,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-'
+    },
     {
       title: '任务描述',
       field: 'description',
@@ -594,6 +603,7 @@ const parsedUpdateData = computed(() => {
 function getStatusType(status: QueueMessage['status']) {
   const map = {
     pending: 'info',
+    waiting: 'warning',
     processing: 'warning',
     completed: 'success',
     failed: 'danger',
@@ -605,6 +615,7 @@ function getStatusType(status: QueueMessage['status']) {
 function getStatusText(status: QueueMessage['status']) {
   const map = {
     pending: '待处理',
+    waiting: '等待中',
     processing: '处理中',
     completed: '已完成',
     failed: '失败',

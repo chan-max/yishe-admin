@@ -105,6 +105,13 @@ const gridOptions = ref({
     { title: 'ID', field: 'id', width: 80 },
     { title: '渠道名称', field: 'name', minWidth: 160 },
     { title: '渠道编码', field: 'code', minWidth: 160 },
+    {
+      title: '创建人',
+      field: 'uploader',
+      width: 140,
+      showOverflow: 'tooltip',
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-'
+    },
     { title: '平台', field: 'platform', width: 120, slots: { default: 'platformSlot' } },
     { title: '状态', field: 'enabled', width: 100, slots: { default: 'enabledSlot' } },
     { title: 'Webhook', field: 'webhookUrl', minWidth: 360, slots: { default: 'webhookSlot' } },

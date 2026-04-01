@@ -197,6 +197,13 @@ const gridOptions = ref({
   columns: [
     { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     { title: "公司名称", field: "name", minWidth: 180, className: "font-bold" },
+    {
+      title: "创建人",
+      field: "uploader",
+      width: 140,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
     { title: "邀请码", field: "inviteCode", width: 150 },
     { title: "公司描述", field: "description", minWidth: 200, showOverflow: true },
     {

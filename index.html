@@ -22,76 +22,24 @@
       content="一款专为服装设计行业打造的开源免费管理系统，集成时尚设计、品牌管理、生产供应链与电商功能于一体，助力服装企业高效运营。"
     />
     <title>%VITE_APP_TITLE%</title>
+    <style>
+      html,
+      body,
+      #app {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        overflow: hidden;
+        background: #f5f5f0;
+        color: #111111;
+      }
+    </style>
   </head>
   <body>
-    <div id="app">
-      <style>
-        .app-loading {
-          display: flex;
-          width: 100%;
-          height: 100%;
-          justify-content: center;
-          align-items: center;
-          flex-direction: column;
-          background: #1a1a1a;
-        }
-
-        .app-loading .app-loading-wrap {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          display: flex;
-          -webkit-transform: translate3d(-50%, -50%, 0);
-          transform: translate3d(-50%, -50%, 0);
-          justify-content: center;
-          align-items: center;
-          flex-direction: column;
-        }
-
-        .app-loading .app-loading-title {
-          margin-bottom: 30px;
-          font-size: 20px;
-          font-weight: bold;
-          text-align: center;
-        }
-
-        .app-loading .app-loading-logo {
-          width: 100px;
-          margin: 0 auto 15px auto;
-        }
-
-        .loader {
-          width: fit-content;
-          font-weight: bold;
-          font-family: monospace;
-          color: #ffffff;
-          text-shadow: 
-            0 0 0 rgb(255 0 0), 
-            0 0 0 rgb(0 255 0), 
-            0 0 0 rgb(0 0 255);
-          font-size: 30px;
-          animation: l32 1s infinite cubic-bezier(0.5,-2000,0.5,2000);
-        }
-
-        .loader:before {
-          content:"1s.design Admin";
-        }
-
-        @keyframes l32{
-          25%,100% {
-            text-shadow: 
-              0.03px -0.01px 0.01px rgb(255 0 0), 
-              0.02px  0.02px 0     rgb(0 255 0), 
-              -0.02px  0.02px 0     rgb(0 0 255);
-          }
-        }
-      </style>
-      <div class="app-loading">
-        <div class="app-loading-wrap">
-          <div class="loader"></div>
-        </div>
-      </div>
-    </div>
+    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

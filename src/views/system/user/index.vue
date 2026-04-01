@@ -64,8 +64,8 @@
                 </template>
 
                 <template #statusDefaultSlot="{ row }">
-                  <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-                    {{ row.status === "active" ? "正常" : "禁用" }}
+                  <el-tag :type="resolveUserState(row).type">
+                    {{ resolveUserState(row).label }}
                   </el-tag>
                 </template>
 
@@ -213,7 +213,7 @@
             <el-form-item label="用户状态" prop="status">
               <el-select v-model="formData.status" placeholder="请选择状态" class="!w-full">
                 <el-option label="正常" value="active" />
-                <el-option label="禁用" value="inactive" />
+                <el-option label="禁用（封号）" value="inactive" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -351,6 +351,19 @@ function getErrorMessage(error: any, fallback: string) {
     error?.message ||
     fallback
   );
+}
+
+function resolveUserState(row: any) {
+  const normalizedStatus = String(row?.status || '').trim() || 'active'
+  const expireTime = row?.expireTime ? new Date(row.expireTime).getTime() : 0
+  const expired = Number.isFinite(expireTime) && expireTime > 0 && expireTime <= Date.now()
+  if (normalizedStatus !== 'active') {
+    return { label: '禁用', type: 'danger' as const }
+  }
+  if (expired) {
+    return { label: '已过期', type: 'warning' as const }
+  }
+  return { label: '正常', type: 'success' as const }
 }
 
 // 查询条件

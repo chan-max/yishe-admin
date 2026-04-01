@@ -549,6 +549,13 @@ const gridOptions = ref({
     { type: "checkbox", width: 48, reserve: true },
     { title: "ID", field: "id", width: 80 },
     { title: "调度名称", field: "name", minWidth: 180, showOverflow: true },
+    {
+      title: "创建人",
+      field: "uploader",
+      width: 140,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
     { title: "关联脚本", field: "scriptName", minWidth: 180, slots: { default: "scriptSlot" } },
     { title: "运行环境", field: "runtimeEnv", width: 110, slots: { default: "envSlot" } },
     { title: "触发方式", field: "triggerType", minWidth: 180, slots: { default: "triggerSlot" } },
@@ -573,6 +580,13 @@ const executionGridOptions = ref({
   columns: [
     { type: "checkbox", width: 48, reserve: true },
     { title: "记录ID", field: "id", width: 90 },
+    {
+      title: "创建人",
+      field: "uploader",
+      width: 140,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
     { title: "状态", field: "status", width: 100, slots: { default: "executionStatusSlot" } },
     { title: "触发来源", field: "triggerSource", width: 100 },
     {

@@ -27,7 +27,28 @@
             <div class="card item"><div class="label">最近检测</div><div class="value">{{ dateText(selectedService?.lastCheckedAt) }}</div></div>
           </div>
 
-          <el-tabs v-model="activeTab">
+          <div class="card panel console-entry">
+            <div class="console-entry__content">
+              <div class="section-title">集中操作台</div>
+              <div class="muted">将连接控制、链接调试和任务中心统一收口到全屏面板中，方便集中管理当前节点。</div>
+            </div>
+            <el-button type="primary" :disabled="!selectedClientId" @click="operationDialogVisible = true">打开操作面板</el-button>
+          </div>
+        </section>
+
+        <section v-else class="main-empty card"><el-empty description="请选择客户端节点" /></section>
+      </div>
+
+      <el-dialog
+        v-model="operationDialogVisible"
+        fullscreen
+        append-to-body
+        :destroy-on-close="false"
+        class="browser-automation-dialog"
+        :title="operationDialogTitle"
+      >
+        <div class="operation-shell">
+          <el-tabs v-model="activeTab" class="operation-tabs">
             <el-tab-pane label="连接" name="browser">
               <div class="grid">
                 <div class="card panel">
@@ -126,10 +147,8 @@
               </div>
             </el-tab-pane>
           </el-tabs>
-        </section>
-
-        <section v-else class="main-empty card"><el-empty description="请选择客户端节点" /></section>
-      </div>
+        </div>
+      </el-dialog>
 
       <el-dialog v-model="detailVisible" title="任务详情" width="900px"><pre class="result">{{ detailText }}</pre></el-dialog>
       <el-dialog v-model="logsVisible" title="任务日志" width="900px"><pre class="result">{{ logsText }}</pre></el-dialog>
@@ -175,6 +194,7 @@ const detailText = ref('')
 const logsText = ref('')
 const detailVisible = ref(false)
 const logsVisible = ref(false)
+const operationDialogVisible = ref(false)
 let timer: ReturnType<typeof window.setInterval> | null = null
 
 const loadingMap = reactive<Record<string, boolean>>({
@@ -190,6 +210,8 @@ const taskFilters = reactive({ status: '', kind: '', platform: '', sourceId: '' 
 const debugActions = ['newPage', 'goto', 'bringToFront', 'reload', 'closePage', 'click', 'fill', 'type', 'press', 'text', 'html', 'count', 'wait', 'screenshot']
 
 const selectedClient = computed(() => clients.value.find((item) => item.clientId === selectedClientId.value) || null)
+const selectedClientName = computed(() => selectedClient.value?.machine?.code || selectedClient.value?.clientId || '未选择节点')
+const operationDialogTitle = computed(() => `浏览器自动化操作 · ${selectedClientName.value}`)
 const selectedService = computed<BrowserAutomationServiceStatus | null>(() => selectedClient.value?.uploader || null)
 const selectedDetails = computed(() => selectedService.value?.details || {})
 const serviceEnabled = computed(() => Boolean(selectedClient.value?.isOnline && selectedService.value?.connected))
@@ -315,7 +337,10 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
   await loadClients(true)
 }
 
-watch(selectedClientId, () => { pageList.value = Array.isArray(selectedDetails.value.pages) ? selectedDetails.value.pages : [] })
+watch(selectedClientId, (value) => {
+  pageList.value = Array.isArray(selectedDetails.value.pages) ? selectedDetails.value.pages : []
+  if (!value) operationDialogVisible.value = false
+})
 
 onMounted(async () => {
   await loadClients()
@@ -374,6 +399,19 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+}
+
+.console-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.console-entry__content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .card {
@@ -471,6 +509,16 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
+.operation-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.browser-automation-dialog :deep(.el-dialog__body) {
+  padding-top: 12px;
+}
+
 @media (max-width: 1200px) {
   .layout,
   .summary,
@@ -482,6 +530,11 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .console-entry {
     flex-direction: column;
     align-items: stretch;
   }

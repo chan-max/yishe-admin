@@ -9,6 +9,7 @@
 
     <div class="personal-settings-page__content">
       <BasicInfo />
+      <OpenApiSetting />
       <section class="settings-panel settings-panel--main">
         <div class="settings-panel__title">{{ t('profile.info.resetPwd') }}</div>
         <ResetPwd />
@@ -17,7 +18,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-import { BasicInfo, ResetPwd } from './components'
+import { BasicInfo, OpenApiSetting, ResetPwd } from './components'
 
 const { t } = useI18n()
 defineOptions({ name: 'PersonalSettingsPage' })
