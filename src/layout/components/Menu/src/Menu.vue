@@ -4,18 +4,12 @@ import { ElTooltip } from 'element-plus'
 import { useDesign } from '@/hooks/web/useDesign'
 import { usePermissionStore } from '@/store/modules/permission'
 import { useAppStore } from '@/store/modules/app'
-import type { WebsocketConnectionVO } from '@/api/system/websocket'
-import { getMyWebsocketConnectionViews } from '@/api/system/websocket'
 import { isUrl } from '@/utils/is'
 import { pathResolve } from '@/utils/routerHelper'
 import { Logo } from '@/layout/components/Logo'
 import { usePsdSetRuntimeState } from '@/services/psdSetRuntimeState'
-import {
-  websocketClient,
-  type ClientConnectionChangedEvent,
-  type PsAutomationStatusEvent,
-  type ServiceRuntimeEvent
-} from '@/services/websocketClient'
+import { useClientNodeStore } from '@/store/modules/clientNode'
+import { type PsAutomationStatusEvent, websocketClient } from '@/services/websocketClient'
 
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('menu')
@@ -32,28 +26,14 @@ export default defineComponent({
     const routers = computed(() => permissionStore.getRouters.filter((route) => !route.meta?.hidden))
     const activeMenu = computed(() => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path)
     const expandedMenus = ref<Record<string, boolean>>({})
-    const clientSnapshots = ref<Record<string, WebsocketConnectionVO>>({})
     const {
       userAutoSchedulingEnabled,
       isAnyPsdSetProcessing,
       refresh: refreshPsdSetRuntime,
       setUserAutoSchedulingEnabled
     } = usePsdSetRuntimeState()
-
-    const normalizePluginKey = (value?: string | null) => {
-      const normalized = String(value || '').trim()
-      if (!normalized) {
-        return ''
-      }
-
-      const aliasMap: Record<string, string> = {
-        uploader: 'browser-automation',
-        photoshop: 'ps-automation',
-        browser: 'browser-automation'
-      }
-
-      return aliasMap[normalized] || normalized
-    }
+    const clientNodeStore = useClientNodeStore()
+    clientNodeStore.ensureInitialized()
 
     const menuStatusRouteMap: Record<string, string> = {
       '/external/browser-automation': 'browser-automation',
@@ -61,150 +41,17 @@ export default defineComponent({
       '/external/google-art': 'google-art'
     }
 
-    const pluginStatusMap = computed<Record<string, 'available' | 'degraded' | 'offline'>>(() => {
-      const summary: Record<string, 'available' | 'degraded' | 'offline'> = {}
-      const snapshots = Object.values(clientSnapshots.value)
-
-      Object.values(menuStatusRouteMap).forEach((pluginKey) => {
-        let hasConnected = false
-        let hasAvailable = false
-
-        snapshots.forEach((snapshot) => {
-          const services = snapshot.clientInfo?.services || {}
-          const runtime =
-            services[pluginKey] ||
-            services[pluginKey === 'browser-automation' ? 'uploader' : pluginKey === 'ps-automation' ? 'photoshop' : pluginKey]
-
-          if (!runtime) {
-            return
-          }
-
-          if (runtime.connected) {
-            hasConnected = true
-          }
-
-          if (runtime.available) {
-            hasAvailable = true
-          }
-        })
-
-        summary[pluginKey] = hasAvailable ? 'available' : hasConnected ? 'degraded' : 'offline'
-      })
-
-      return summary
-    })
-
     const routeStatusMap = computed<Record<string, 'available' | 'degraded' | 'offline'>>(() => {
       const result: Record<string, 'available' | 'degraded' | 'offline'> = {}
       Object.entries(menuStatusRouteMap).forEach(([routePath, pluginKey]) => {
-        result[routePath] = pluginStatusMap.value[pluginKey] || 'offline'
+        result[routePath] = clientNodeStore.pluginStatusMap[pluginKey as keyof typeof clientNodeStore.pluginStatusMap] || 'offline'
       })
       return result
     })
 
-    const syncSnapshotsFromList = (list: WebsocketConnectionVO[]) => {
-      const next: Record<string, WebsocketConnectionVO> = {}
-      list.forEach((item) => {
-        if (!item.id) return
-        next[item.id] = item
-      })
-      clientSnapshots.value = next
-    }
-
-    const fetchClientSnapshots = async () => {
-      try {
-        const response = await getMyWebsocketConnectionViews()
-        const list = Array.isArray(response) ? response : []
-        syncSnapshotsFromList(list)
-      } catch {
-        // ignore menu status bootstrap failures
-      }
-    }
-
     const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
       if (typeof event?.autoSchedulingEnabled === 'boolean') {
         setUserAutoSchedulingEnabled(event.autoSchedulingEnabled)
-      }
-    }
-
-    const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
-      const pluginKey = normalizePluginKey(event.pluginKey || event.service)
-      if (!pluginKey || !event.clientId) {
-        return
-      }
-
-      const previous = clientSnapshots.value[event.clientId]
-      clientSnapshots.value = {
-        ...clientSnapshots.value,
-        [event.clientId]: {
-          ...(previous || {
-            id: event.clientId,
-            namespace: '/ws',
-            connectedAt: event.reportedAt || null,
-            isOnline: true,
-            nodeStatus: 'online'
-          }),
-          clientInfo: {
-            ...(previous?.clientInfo || {}),
-            services: {
-              ...(previous?.clientInfo?.services || {}),
-              [pluginKey]: {
-                ...(previous?.clientInfo?.services?.[pluginKey] || {}),
-                ...(event.runtime || {})
-              }
-            }
-          }
-        } as WebsocketConnectionVO
-      }
-    }
-
-    const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
-      const clientId = event.client?.clientId
-      if (!clientId) {
-        return
-      }
-
-      if (event.action === 'removed') {
-        const previous = clientSnapshots.value[clientId]
-        if (!previous) {
-          return
-        }
-
-        clientSnapshots.value = {
-          ...clientSnapshots.value,
-          [clientId]: {
-            ...previous,
-            isOnline: false,
-            nodeStatus: 'offline'
-          }
-        }
-        return
-      }
-
-      const previous = clientSnapshots.value[clientId]
-      clientSnapshots.value = {
-        ...clientSnapshots.value,
-        [clientId]: {
-          ...(previous || {
-            id: clientId,
-            namespace: '/ws',
-            connectedAt: event.client.connectedAt || event.reportedAt || null
-          }),
-          connectedAt: event.client.connectedAt || previous?.connectedAt || null,
-          isOnline: true,
-          nodeStatus: 'online',
-          clientInfo: {
-            ...(previous?.clientInfo || {}),
-            appVersion: event.client.appVersion ?? previous?.clientInfo?.appVersion,
-            machine: event.client.machine ?? previous?.clientInfo?.machine,
-            location: event.client.location ?? previous?.clientInfo?.location,
-            services: {
-              ...(previous?.clientInfo?.services || {}),
-              ...(event.client.services || {})
-            },
-            psAutomation: event.client.psAutomation ?? previous?.clientInfo?.psAutomation
-          }
-        } as WebsocketConnectionVO
       }
     }
 
@@ -329,16 +176,11 @@ export default defineComponent({
     )
 
     onMounted(() => {
-      void fetchClientSnapshots()
       void refreshPsdSetRuntime()
-      websocketClient.events.on('serviceRuntime', handleServiceRuntime)
-      websocketClient.events.on('clientConnectionChanged', handleClientConnectionChanged)
       websocketClient.events.on('psAutomationStatus', handlePsAutomationStatus)
     })
 
     onUnmounted(() => {
-      websocketClient.events.off('serviceRuntime', handleServiceRuntime)
-      websocketClient.events.off('clientConnectionChanged', handleClientConnectionChanged)
       websocketClient.events.off('psAutomationStatus', handlePsAutomationStatus)
     })
 
@@ -504,16 +346,25 @@ $prefix-cls: #{$namespace}-menu;
   &__section--leaf {
     display: block;
     padding-bottom: 3px;
+    border: none;
     background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    box-shadow: none;
   }
 
   &__section-head {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    outline: none;
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
     padding: 5px 7px;
-    border: none;
     border-radius: 9px;
     background: transparent;
     cursor: pointer;
@@ -523,6 +374,20 @@ $prefix-cls: #{$namespace}-menu;
 
   &__section-head:hover {
     background: var(--left-menu-hover-color);
+  }
+
+  &__section-head::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+  }
+
+  &__section-head:focus {
+    outline: none;
+  }
+
+  &__section-head:focus-visible {
+    outline: 2px solid rgb(64 158 255 / 32%);
+    outline-offset: 1px;
   }
 
   &__section-label {
@@ -574,6 +439,8 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__link {
+    appearance: none;
+    -webkit-appearance: none;
     display: flex;
     align-items: center;
     width: 100%;
@@ -584,6 +451,8 @@ $prefix-cls: #{$namespace}-menu;
     border-left: 2px solid transparent;
     border-radius: 0 5px 5px 0;
     background: transparent;
+    outline: none;
+    box-shadow: none;
     color: var(--left-menu-link-text-color);
     cursor: pointer;
     text-align: left;
@@ -599,6 +468,20 @@ $prefix-cls: #{$namespace}-menu;
     border-left-color: var(--left-menu-link-active-border-color);
     color: var(--left-menu-link-hover-color);
     transform: translateX(1px);
+  }
+
+  &__link::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+  }
+
+  &__link:focus {
+    outline: none;
+  }
+
+  &__link:focus-visible {
+    outline: 2px solid rgb(64 158 255 / 28%);
+    outline-offset: 1px;
   }
 
   &__link--active {

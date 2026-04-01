@@ -1,65 +1,82 @@
 <template>
-  <div class="flex">
-    <el-card class="user w-1/3" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span>{{ t('profile.user.title') }}</span>
-        </div>
-      </template>
-      <ProfileUser />
-    </el-card>
-    <el-card class="user ml-3 w-2/3" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span>{{ t('profile.info.title') }}</span>
-        </div>
-      </template>
+  <div class="personal-settings-page">
+    <div class="personal-settings-page__header">
       <div>
-        <el-tabs v-model="activeName" class="profile-tabs" style="height: 400px" tab-position="top">
-          <el-tab-pane :label="t('profile.info.basicInfo')" name="basicInfo">
-            <BasicInfo />
-          </el-tab-pane>
-          <el-tab-pane :label="t('profile.info.resetPwd')" name="resetPwd">
-            <ResetPwd />
-          </el-tab-pane>
-          <el-tab-pane :label="t('profile.info.userSocial')" name="userSocial">
-            <UserSocial v-model:activeName="activeName" />
-          </el-tab-pane>
-        </el-tabs>
+        <h1 class="personal-settings-page__title">{{ t('common.profile') }}</h1>
+        <p class="personal-settings-page__desc">{{ t('profile.page.desc') }}</p>
       </div>
-    </el-card>
+    </div>
+
+    <div class="personal-settings-page__content">
+      <BasicInfo />
+      <section class="settings-panel settings-panel--main">
+        <div class="settings-panel__title">{{ t('profile.info.resetPwd') }}</div>
+        <ResetPwd />
+      </section>
+    </div>
   </div>
 </template>
 <script lang="ts" setup>
-import { BasicInfo, ProfileUser, ResetPwd, UserSocial } from './components'
+import { BasicInfo, ResetPwd } from './components'
 
 const { t } = useI18n()
-defineOptions({ name: 'Profile' })
-const activeName = ref('basicInfo')
+defineOptions({ name: 'PersonalSettingsPage' })
 </script>
-<style scoped>
-.user {
-  max-height: 960px;
-  padding: 15px 20px 20px;
-}
-
-.card-header {
+<style scoped lang="scss">
+.personal-settings-page {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  gap: 16px;
 }
 
-:deep(.el-card .el-card__header, .el-card .el-card__body) {
-  padding: 15px !important;
+.personal-settings-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 4px 2px;
 }
 
-.profile-tabs > .el-tabs__content {
-  padding: 32px;
+.personal-settings-page__title {
+  margin: 0;
+  font-size: 24px;
   font-weight: 600;
-  color: #6b778c;
+  line-height: 1.2;
+  color: var(--el-text-color-primary);
 }
 
-.el-tabs--left .el-tabs__content {
-  height: 100%;
+.personal-settings-page__desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.personal-settings-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-panel {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+}
+
+.settings-panel--main {
+  padding: 18px;
+}
+
+.settings-panel__title {
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+@media (max-width: 960px) {
+  .settings-panel--main {
+    padding: 16px;
+  }
 }
 </style>

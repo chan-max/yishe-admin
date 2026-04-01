@@ -46,8 +46,8 @@
             {{ row.description || '-' }}
           </div>
         </template>
-        <template #userSlot="{ row }">
-          <span>{{ row.user?.name || '-' }}</span>
+        <template #uploaderSlot="{ row }">
+          <span>{{ row.uploader?.account || row.uploader?.name || row.userId || '-' }}</span>
         </template>
         <template #phoneNumberSlot="{ row }">
           <span>{{ row.phoneNumber || '-' }}</span>
@@ -159,7 +159,7 @@ const gridOptions = ref({
     { title: 'ID', field: 'id', width: 80 },
     { title: '请求名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     { title: '详细描述', field: 'description', minWidth: 300, slots: { default: 'descriptionSlot' } },
-    { title: '请求用户', field: 'user', width: 120, slots: { default: 'userSlot' } },
+    { title: '上传者', field: 'uploader', width: 120, slots: { default: 'uploaderSlot' } },
     { title: '联系电话', field: 'phoneNumber', width: 120, slots: { default: 'phoneNumberSlot' } },
     { title: '联系邮箱', field: 'email', width: 150, slots: { default: 'emailSlot' } },
     { ...buildTimeColumn('创建时间', 'createTime', 160), slots: { default: 'createTimeSlot' } },

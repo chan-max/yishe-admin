@@ -89,7 +89,13 @@ export async function getGoogleArtClients() {
   const list = await getMyWebsocketConnectionViews()
   return (Array.isArray(list) ? list : [])
     .map(mapConnectionToGoogleArtClient)
-    .filter((item) => !!item.googleArt || !!item.isOnline)
+    .filter((item) => {
+      if (!item.isOnline || !item.googleArt) {
+        return false
+      }
+      const service = item.googleArt
+      return !!(service.available || service.connected || service.status === 'error')
+    })
 }
 
 function sendGoogleArtCommand(clientId: string, commandName: string, payload?: Record<string, any>) {

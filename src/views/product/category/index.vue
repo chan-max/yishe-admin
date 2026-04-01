@@ -41,6 +41,12 @@ const gridOptions = computed(() => ({
     { field: 'podAdvantages', title: 'POD优点', minWidth: 200, showOverflow: true },
     { field: 'designGuidelines', title: '设计准则', minWidth: 200, showOverflow: true },
     { field: 'description', title: '基础信息', minWidth: 200, showOverflow: true },
+    {
+      field: 'uploader',
+      title: '创建者',
+      minWidth: 120,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-'
+    },
     { 
       field: 'createTime', 
       title: '创建时间', 

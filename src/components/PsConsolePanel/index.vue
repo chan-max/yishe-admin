@@ -202,7 +202,16 @@ const getPhotoshopService = (client: any) =>
   client.clientInfo?.services?.['ps-automation'] || client.clientInfo?.services?.photoshop || null
 
 const psClients = computed(() =>
-  clients.value.filter((client) => !!getPhotoshopService(client))
+  clients.value.filter((client) => {
+    if (!client.isOnline) {
+      return false
+    }
+    const service = getPhotoshopService(client)
+    if (!service) {
+      return false
+    }
+    return !!(service.available || service.connected || service.status === 'error')
+  })
 )
 
 const selectedClient = computed(() => {

@@ -75,6 +75,12 @@ export const MENU_ACCESS_GROUPS = [
       { key: "system.websocket", label: "WebSocket连接" },
       { key: "system.operatelog", label: "操作日志" }
     ]
+  },
+  {
+    label: "个人账户",
+    options: [
+      { key: "personal.settings", label: "个人设置" }
+    ]
   }
 ] as const;
 
@@ -115,5 +121,6 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   Company: "system.company",
   PublicUser: "system.public-user",
   SystemWebsocketConnections: "system.websocket",
-  SystemOperateLog: "system.operatelog"
+  SystemOperateLog: "system.operatelog",
+  PersonalSettings: "personal.settings"
 };

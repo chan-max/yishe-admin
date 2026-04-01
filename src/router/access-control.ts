@@ -22,10 +22,33 @@ function readConfiguredMenuKeys(setting: any) {
   };
 }
 
+const ALWAYS_ALLOW_ROUTE_NAMES = new Set([
+  "Root",
+  "Redirect",
+  "Home",
+  "Index",
+  "Login",
+  "NoAccess",
+  "NoFound",
+  "Error",
+  "Personal",
+  "PersonalSettings",
+  "UserProfileCompat",
+]);
+
 export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
   const { configured, keys } = readConfiguredMenuKeys(user?.setting);
   const isAdmin = !!user?.isAdmin;
+  const routeName = String(route.name || "").trim();
   const menuKey = String(route.meta?.menuKey || "").trim();
+
+  if (ALWAYS_ALLOW_ROUTE_NAMES.has(routeName)) {
+    return true;
+  }
+
+  if (route.meta?.hidden && route.meta?.noTagsView && !menuKey) {
+    return false;
+  }
 
   if (menuKey) {
     if (configured) {
@@ -34,11 +57,12 @@ export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
     if (isAdmin) {
       return true;
     }
+    return menuKey === "personal.settings";
   }
 
   if (!isAdmin && route.meta?.requiresAdmin) {
     return false;
   }
 
-  return true;
+  return Array.isArray(route.children) && route.children.length > 0;
 }

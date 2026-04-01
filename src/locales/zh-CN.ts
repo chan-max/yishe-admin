@@ -8,7 +8,7 @@ export default {
     required: '该项为必填项',
     loginOut: '退出系统',
     document: '项目文档',
-    profile: '个人中心',
+    profile: '个人设置',
     reminder: '温馨提示',
     loginOutMessage: '是否退出本系统？',
     back: '返回',
@@ -406,6 +406,9 @@ export default {
     }
   },
   profile: {
+    page: {
+      desc: '管理你的头像、基础资料、登录密码和社交绑定。'
+    },
     user: {
       title: '个人信息',
       username: '用户名称',
@@ -421,7 +424,7 @@ export default {
       createTime: '创建日期'
     },
     info: {
-      title: '基本信息',
+      title: '设置项',
       basicInfo: '基本资料',
       resetPwd: '修改密码',
       userSocial: '社交信息'

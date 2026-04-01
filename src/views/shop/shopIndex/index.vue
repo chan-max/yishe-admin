@@ -69,6 +69,10 @@
                     </el-dropdown>
                   </div>
                 </template>
+
+                <template #uploaderSlot="{ row }">
+                  <span>{{ row?.uploader?.account || row?.uploader?.name || row?.userId || '-' }}</span>
+                </template>
               </vxe-grid>
             </div>
           </div>
@@ -164,6 +168,7 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { type: "checkbox", width: 50, showOverflow: true },
+    { title: "创建者", field: "uploader", minWidth: 120, slots: { default: "uploaderSlot" } },
     buildOperationColumn("operationDefaultSlot", undefined, {
       showOverflow: false,
     }),

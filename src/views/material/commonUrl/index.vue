@@ -87,8 +87,8 @@
             {{ row.isActive ? '启用' : '禁用' }}
           </el-tag>
         </template>
-        <template #userSlot="{ row }">
-          <span>{{ row.user?.name || '-' }}</span>
+        <template #uploaderSlot="{ row }">
+          <span>{{ row.uploader?.account || row.uploader?.name || row.userId || '-' }}</span>
         </template>
         <template #createTimeSlot="{ row }">
           <span class="table-time-text">{{ formatDateTime(row.createTime) }}</span>
@@ -247,7 +247,7 @@ const gridOptions = ref({
     { title: '分类', field: 'category', width: 120, slots: { default: 'categorySlot' } },
     { title: '状态', field: 'isActive', width: 80, slots: { default: 'statusSlot' } },
     { title: '排序', field: 'sort', width: 80 },
-    { title: '创建用户', field: 'user', width: 120, slots: { default: 'userSlot' } },
+    { title: '上传者', field: 'uploader', width: 120, slots: { default: 'uploaderSlot' } },
     { ...buildTimeColumn('创建时间', 'createTime', 160), slots: { default: 'createTimeSlot' } },
     { ...buildTimeColumn('更新时间', 'updateTime', 160), slots: { default: 'updateTimeSlot' } },
     buildOperationColumn('operationDefaultSlot')

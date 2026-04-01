@@ -33,27 +33,28 @@
                 <div class="card panel">
                   <div class="section-title">浏览器控制</div>
                   <div class="row">
-                    <el-input-number v-model="browserForm.port" :min="1" :max="65535" controls-position="right" />
-                    <el-switch v-model="browserForm.headless" active-text="无头" inactive-text="普通" />
+                    <el-input-number v-model="browserForm.port" :min="1" :max="65535" controls-position="right" :disabled="!serviceEnabled" />
+                    <el-switch v-model="browserForm.headless" active-text="无头" inactive-text="普通" :disabled="!serviceEnabled" />
                   </div>
                   <div class="row wrap">
-                    <el-button type="primary" :loading="loadingMap.connect" @click="sendConnect">连接</el-button>
-                    <el-button :loading="loadingMap.close" @click="sendSimple('close')">关闭</el-button>
-                    <el-button type="danger" :loading="loadingMap.forceClose" @click="sendForceClose">强制关闭</el-button>
-                    <el-button :loading="loadingMap.pages" @click="sendSimple('pages')">获取页面</el-button>
+                    <el-button type="primary" :disabled="!serviceEnabled" :loading="loadingMap.connect" @click="sendConnect">连接</el-button>
+                    <el-button :disabled="!serviceEnabled" :loading="loadingMap.close" @click="sendSimple('close')">关闭</el-button>
+                    <el-button type="danger" :disabled="!serviceEnabled" :loading="loadingMap.forceClose" @click="sendForceClose">强制关闭</el-button>
+                    <el-button :disabled="!serviceEnabled" :loading="loadingMap.pages" @click="sendSimple('pages')">获取页面</el-button>
                   </div>
+                  <div v-if="!serviceEnabled" class="muted">自动化服务未启动，当前节点不可执行相关操作。</div>
                 </div>
                 <div class="card panel">
                   <div class="section-title">快速打开</div>
                   <div class="row">
-                    <el-select v-model="openForm.platform" placeholder="选择平台" clearable>
+                    <el-select v-model="openForm.platform" placeholder="选择平台" clearable :disabled="!serviceEnabled">
                       <el-option v-for="item in platforms" :key="item" :label="item" :value="item" />
                     </el-select>
-                    <el-button :loading="loadingMap.openPlatform" @click="sendOpenPlatform">打开平台页</el-button>
+                    <el-button :disabled="!serviceEnabled" :loading="loadingMap.openPlatform" @click="sendOpenPlatform">打开平台页</el-button>
                   </div>
                   <div class="row">
-                    <el-input v-model="openForm.url" placeholder="https://..." />
-                    <el-button :loading="loadingMap.openLink" @click="sendOpenLink">打开链接</el-button>
+                    <el-input v-model="openForm.url" placeholder="https://..." :disabled="!serviceEnabled" />
+                    <el-button :disabled="!serviceEnabled" :loading="loadingMap.openLink" @click="sendOpenLink">打开链接</el-button>
                   </div>
                 </div>
               </div>
@@ -72,24 +73,24 @@
                 <div class="card panel">
                   <div class="section-title">快速操作</div>
                   <div class="stack">
-                    <el-input-number v-model="debugForm.pageIndex" :min="0" controls-position="right" />
-                    <el-input v-model="debugForm.url" placeholder="URL" />
-                    <el-input v-model="debugForm.selector" placeholder="Selector" />
-                    <el-input v-model="debugForm.text" placeholder="Text" />
-                    <el-input v-model="debugForm.key" placeholder="Key" />
-                    <el-input-number v-model="debugForm.ms" :min="1" controls-position="right" />
-                    <el-input-number v-model="debugForm.timeout" :min="1000" controls-position="right" />
+                    <el-input-number v-model="debugForm.pageIndex" :min="0" controls-position="right" :disabled="!serviceEnabled" />
+                    <el-input v-model="debugForm.url" placeholder="URL" :disabled="!serviceEnabled" />
+                    <el-input v-model="debugForm.selector" placeholder="Selector" :disabled="!serviceEnabled" />
+                    <el-input v-model="debugForm.text" placeholder="Text" :disabled="!serviceEnabled" />
+                    <el-input v-model="debugForm.key" placeholder="Key" :disabled="!serviceEnabled" />
+                    <el-input-number v-model="debugForm.ms" :min="1" controls-position="right" :disabled="!serviceEnabled" />
+                    <el-input-number v-model="debugForm.timeout" :min="1000" controls-position="right" :disabled="!serviceEnabled" />
                   </div>
                   <div class="action-grid">
-                    <el-button v-for="item in debugActions" :key="item" :loading="loadingMap.debug" @click="sendDebug(item)">{{ item }}</el-button>
+                    <el-button v-for="item in debugActions" :key="item" :disabled="!serviceEnabled" :loading="loadingMap.debug" @click="sendDebug(item)">{{ item }}</el-button>
                   </div>
                 </div>
                 <div class="card panel">
                   <div class="section-title">脚本</div>
-                  <el-input v-model="debugForm.expression" type="textarea" :rows="14" placeholder="页面内 JS 或 Playwright 脚本" />
+                  <el-input v-model="debugForm.expression" type="textarea" :rows="14" placeholder="页面内 JS 或 Playwright 脚本" :disabled="!serviceEnabled" />
                   <div class="row">
-                    <el-button :loading="loadingMap.debug" @click="sendDebug('eval')">执行页面内 JS</el-button>
-                    <el-button :loading="loadingMap.debug" @click="sendDebug('playwright')">执行 Playwright</el-button>
+                    <el-button :disabled="!serviceEnabled" :loading="loadingMap.debug" @click="sendDebug('eval')">执行页面内 JS</el-button>
+                    <el-button :disabled="!serviceEnabled" :loading="loadingMap.debug" @click="sendDebug('playwright')">执行 Playwright</el-button>
                   </div>
                 </div>
               </div>
@@ -102,11 +103,11 @@
             <el-tab-pane label="任务中心" name="tasks">
               <div class="card panel">
                 <div class="row wrap">
-                  <el-select v-model="taskFilters.status" clearable placeholder="状态"><el-option label="queued" value="queued" /><el-option label="running" value="running" /><el-option label="success" value="success" /><el-option label="failed" value="failed" /></el-select>
-                  <el-input v-model="taskFilters.kind" placeholder="任务类型" />
-                  <el-input v-model="taskFilters.platform" placeholder="平台" />
-                  <el-input v-model="taskFilters.sourceId" placeholder="来源 ID" />
-                  <el-button type="primary" :loading="loadingMap.tasks" @click="sendTasks">查询任务</el-button>
+                  <el-select v-model="taskFilters.status" clearable placeholder="状态" :disabled="!serviceEnabled"><el-option label="queued" value="queued" /><el-option label="running" value="running" /><el-option label="success" value="success" /><el-option label="failed" value="failed" /></el-select>
+                  <el-input v-model="taskFilters.kind" placeholder="任务类型" :disabled="!serviceEnabled" />
+                  <el-input v-model="taskFilters.platform" placeholder="平台" :disabled="!serviceEnabled" />
+                  <el-input v-model="taskFilters.sourceId" placeholder="来源 ID" :disabled="!serviceEnabled" />
+                  <el-button type="primary" :disabled="!serviceEnabled" :loading="loadingMap.tasks" @click="sendTasks">查询任务</el-button>
                 </div>
                 <el-table :data="taskList" border stripe>
                   <el-table-column prop="status" label="状态" width="100" />
@@ -117,49 +118,11 @@
                   <el-table-column prop="id" label="任务 ID" min-width="240" show-overflow-tooltip />
                   <el-table-column label="操作" width="150">
                     <template #default="{ row }">
-                      <el-button link type="primary" @click="sendTaskDetail(row.id)">详情</el-button>
-                      <el-button link type="primary" @click="sendTaskLogs(row.id)">日志</el-button>
+                      <el-button link type="primary" :disabled="!serviceEnabled" @click="sendTaskDetail(row.id)">详情</el-button>
+                      <el-button link type="primary" :disabled="!serviceEnabled" @click="sendTaskLogs(row.id)">日志</el-button>
                     </template>
                   </el-table-column>
                 </el-table>
-              </div>
-            </el-tab-pane>
-
-            <el-tab-pane label="发布" name="publish">
-              <div class="grid">
-                <div class="card panel">
-                  <div class="section-title">远程发布</div>
-                  <el-checkbox-group v-model="publishForm.platforms" class="row wrap">
-                    <el-checkbox v-for="item in platforms" :key="item" :label="item">{{ item }}</el-checkbox>
-                  </el-checkbox-group>
-                  <div class="stack">
-                    <el-input v-model="publishForm.filePath" placeholder="本机文件绝对路径" />
-                    <el-input v-model="publishForm.title" placeholder="标题" />
-                    <el-input v-model="publishForm.tags" placeholder="标签，空格或逗号分隔" />
-                    <el-switch v-model="publishForm.scheduled" active-text="定时发布" inactive-text="立即发布" />
-                    <el-date-picker v-if="publishForm.scheduled" v-model="publishForm.scheduleTime" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" />
-                    <el-input v-model="publishForm.productLink" placeholder="抖音商品链接" />
-                    <el-input v-model="publishForm.productTitle" placeholder="抖音商品短标题" />
-                  </div>
-                  <div class="row wrap">
-                    <el-button type="primary" :loading="loadingMap.publish" @click="sendPublish">执行发布</el-button>
-                    <el-button :loading="loadingMap.platforms" @click="sendSimple('platforms')">刷新平台能力</el-button>
-                    <el-button :loading="loadingMap.loginStatus" @click="sendLoginStatus">刷新登录状态</el-button>
-                  </div>
-                </div>
-                <div class="card panel">
-                  <div class="section-title">登录状态</div>
-                  <el-empty v-if="!loginEntries.length" description="暂无登录状态" />
-                  <div v-else class="stack">
-                    <div v-for="item in loginEntries" :key="item.platform" class="login-item">
-                      <span>{{ item.platform }}</span>
-                      <el-tag size="small" :type="item.loggedIn ? 'success' : 'info'">{{ item.loggedIn ? '已登录' : '未登录' }}</el-tag>
-                      <span class="muted">{{ item.message || '-' }}</span>
-                    </div>
-                  </div>
-                  <div class="section-title">最近返回</div>
-                  <pre class="result">{{ publishResult || '暂无结果' }}</pre>
-                </div>
               </div>
             </el-tab-pane>
           </el-tabs>
@@ -185,13 +148,10 @@ import {
   fetchBrowserAutomationPages,
   forceCloseBrowserAutomation,
   getBrowserAutomationClients,
-  getBrowserAutomationLoginStatus,
-  getBrowserAutomationPlatforms,
   getBrowserAutomationTaskDetail,
   getBrowserAutomationTaskLogs,
   openBrowserAutomationLink,
   openBrowserAutomationPlatform,
-  publishByBrowserAutomation,
   queryBrowserAutomationTasks,
   type BrowserAutomationClientVO,
   type BrowserAutomationCommandResponse,
@@ -210,9 +170,7 @@ const activeTab = ref('browser')
 const pageList = ref<Record<string, any>[]>([])
 const taskList = ref<Record<string, any>[]>([])
 const platforms = ref(['douyin', 'kuaishou', 'xiaohongshu', 'weibo'])
-const loginStatus = ref<Record<string, any>>({})
 const debugResult = ref('')
-const publishResult = ref('')
 const detailText = ref('')
 const logsText = ref('')
 const detailVisible = ref(false)
@@ -221,8 +179,7 @@ let timer: ReturnType<typeof window.setInterval> | null = null
 
 const loadingMap = reactive<Record<string, boolean>>({
   checkStatus: false, connect: false, close: false, forceClose: false, pages: false,
-  debug: false, tasks: false, taskDetail: false, taskLogs: false, publish: false,
-  platforms: false, loginStatus: false, openPlatform: false, openLink: false
+  debug: false, tasks: false, taskDetail: false, taskLogs: false, openPlatform: false, openLink: false
 })
 const pending = reactive<Record<string, string>>({})
 
@@ -230,13 +187,12 @@ const browserForm = reactive({ port: 9222, headless: false })
 const openForm = reactive({ platform: '', url: '' })
 const debugForm = reactive({ pageIndex: 0, url: '', selector: '', text: '', key: '', expression: '', ms: 1000, timeout: 30000 })
 const taskFilters = reactive({ status: '', kind: '', platform: '', sourceId: '' })
-const publishForm = reactive({ platforms: [] as string[], filePath: '', title: '', tags: '', scheduled: false, scheduleTime: '', productLink: '', productTitle: '' })
 const debugActions = ['newPage', 'goto', 'bringToFront', 'reload', 'closePage', 'click', 'fill', 'type', 'press', 'text', 'html', 'count', 'wait', 'screenshot']
 
 const selectedClient = computed(() => clients.value.find((item) => item.clientId === selectedClientId.value) || null)
 const selectedService = computed<BrowserAutomationServiceStatus | null>(() => selectedClient.value?.uploader || null)
 const selectedDetails = computed(() => selectedService.value?.details || {})
-const loginEntries = computed(() => Object.entries(loginStatus.value || {}).map(([platform, info]: [string, any]) => ({ platform, loggedIn: !!info?.isLoggedIn, message: String(info?.message || '') })))
+const serviceEnabled = computed(() => Boolean(selectedClient.value?.isOnline && selectedService.value?.connected))
 const toneFromLevelClass = (value: string): ClientNodeBadge['tone'] =>
   value === 'is-success' ? 'success' : value === 'is-warning' ? 'warning' : 'muted'
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
@@ -309,12 +265,11 @@ const loadClients = async (silent = false) => {
   }
 }
 
-const sendSimple = async (kind: 'checkStatus' | 'close' | 'pages' | 'platforms') => {
+const sendSimple = async (kind: 'checkStatus' | 'close' | 'pages') => {
   if (!selectedClientId.value) return
   if (kind === 'checkStatus') return dispatch('checkStatus', () => checkBrowserAutomationStatus(selectedClientId.value), '状态刷新命令已发送')
   if (kind === 'close') return dispatch('close', () => closeBrowserAutomation(selectedClientId.value), '关闭命令已发送')
-  if (kind === 'pages') return dispatch('pages', () => fetchBrowserAutomationPages(selectedClientId.value), '获取页面命令已发送')
-  return dispatch('platforms', () => getBrowserAutomationPlatforms(selectedClientId.value), '平台能力查询命令已发送')
+  return dispatch('pages', () => fetchBrowserAutomationPages(selectedClientId.value), '获取页面命令已发送')
 }
 
 const sendConnect = async () => selectedClientId.value && dispatch('connect', () => connectBrowserAutomation(selectedClientId.value, browserForm), '连接命令已发送')
@@ -325,21 +280,6 @@ const sendDebug = async (action: string) => selectedClientId.value && dispatch('
 const sendTasks = async () => selectedClientId.value && dispatch('tasks', () => queryBrowserAutomationTasks(selectedClientId.value, taskFilters), '任务查询命令已发送')
 const sendTaskDetail = async (taskId: string) => selectedClientId.value && dispatch('taskDetail', () => getBrowserAutomationTaskDetail(selectedClientId.value, taskId), '任务详情命令已发送')
 const sendTaskLogs = async (taskId: string) => selectedClientId.value && dispatch('taskLogs', () => getBrowserAutomationTaskLogs(selectedClientId.value, taskId), '任务日志命令已发送')
-const sendLoginStatus = async () => selectedClientId.value && dispatch('loginStatus', () => getBrowserAutomationLoginStatus(selectedClientId.value, { refresh: true }), '登录状态查询命令已发送')
-const sendPublish = async () => {
-  if (!selectedClientId.value || !publishForm.platforms.length || !publishForm.filePath.trim() || !publishForm.title.trim()) return ElMessage.warning('请先填写完整发布信息')
-  const tags = publishForm.tags.split(/[\s,，]+/).map((item) => item.trim()).filter(Boolean)
-  return dispatch('publish', () => publishByBrowserAutomation(selectedClientId.value, {
-    platforms: publishForm.platforms,
-    action: 'publish',
-    filePath: publishForm.filePath.trim(),
-    title: publishForm.title.trim(),
-    tags,
-    scheduled: publishForm.scheduled,
-    scheduleTime: publishForm.scheduled && publishForm.scheduleTime ? new Date(publishForm.scheduleTime).toISOString() : undefined,
-    platformSettings: { douyin: { productLink: publishForm.productLink, productTitle: publishForm.productTitle } }
-  }), '发布命令已发送')
-}
 
 const onRuntime = (event: ServiceRuntimeEvent) => {
   if (event.service !== 'uploader') return
@@ -370,9 +310,6 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
     if (action === 'tasks') taskList.value = Array.isArray(data.items) ? data.items : []
     if (action === 'taskDetail') { detailText.value = jsonText(data.task || null); detailVisible.value = true }
     if (action === 'taskLogs') { logsText.value = jsonText(data.logs || []); logsVisible.value = true }
-    if (action === 'platforms' && Array.isArray(data.platforms) && data.platforms.length) platforms.value = data.platforms
-    if (action === 'loginStatus') loginStatus.value = data || {}
-    if (action === 'publish') publishResult.value = jsonText(data)
   }
   ;(event.success ? ElMessage.success : ElMessage.error)(event.message || event.error || (event.success ? '执行成功' : '执行失败'))
   await loadClients(true)
@@ -416,8 +353,7 @@ onUnmounted(() => {
 }
 
 .actions,
-.row,
-.login-item {
+.row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -533,16 +469,6 @@ onUnmounted(() => {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.login-item {
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.login-item:last-child {
-  border-bottom: 0;
 }
 
 @media (max-width: 1200px) {

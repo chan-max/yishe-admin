@@ -53,6 +53,10 @@
                   <span class="table-time-text">{{ formatDate(row.createTime) }}</span>
                 </template>
 
+                <template #uploaderSlot="{ row }">
+                  <span>{{ row?.uploader?.account || row?.uploader?.name || row?.userId || '-' }}</span>
+                </template>
+
                 <template #productsSlot="{ row }">
                   <div class="vendor-products-summary">
                     <template v-if="row.products?.length">
@@ -151,6 +155,7 @@ const gridOptions = ref({
     { title: "图片", field: "images", width: 180, slots: { default: "imagesSlot" } },
     { title: "地址", field: "address", minWidth: 220, showOverflow: "tooltip" },
     { title: "描述", field: "description", minWidth: 240, showOverflow: "tooltip" },
+    { title: "创建者", field: "uploader", width: 120, slots: { default: "uploaderSlot" } },
     { ...buildTimeColumn("创建时间", "createTime", 180), slots: { default: "createTimeSlot" } },
     buildOperationColumn("operationSlot"),
   ],

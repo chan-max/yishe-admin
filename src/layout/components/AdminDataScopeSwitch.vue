@@ -120,28 +120,33 @@ onMounted(() => {
 .admin-data-scope {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding: 0 4px;
+  max-width: 100%;
+  padding: 0 2px;
 }
 
 .admin-data-scope__label {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 600;
   color: color-mix(in srgb, var(--top-header-text-color) 66%, transparent 34%);
   white-space: nowrap;
 }
 
 .admin-data-scope__select {
-  width: 170px;
+  width: 144px;
+  min-width: 0;
 }
 
 .admin-data-scope :deep(.el-select__wrapper) {
-  min-height: 34px;
+  min-height: 30px;
+  padding: 0 10px;
   border-radius: 999px;
   background: var(--top-header-hover-color);
   box-shadow: none;
 }
 
+.admin-data-scope :deep(.el-select__selected-item),
 .admin-data-scope :deep(.el-select__selection) {
   font-size: 12px;
 }
@@ -152,7 +157,22 @@ onMounted(() => {
   }
 
   .admin-data-scope__select {
-    width: 128px;
+    width: 118px;
+  }
+
+  .admin-data-scope :deep(.el-select__wrapper) {
+    min-height: 28px;
+    padding: 0 8px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-data-scope {
+    padding: 0;
+  }
+
+  .admin-data-scope__select {
+    width: 104px;
   }
 }
 </style>

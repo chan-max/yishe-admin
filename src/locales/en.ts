@@ -8,7 +8,7 @@ export default {
     required: 'This is required',
     loginOut: 'Login out',
     document: 'Document',
-    profile: 'User Center',
+    profile: 'Personal Settings',
     reminder: 'Reminder',
     loginOutMessage: 'Exit the system?',
     back: 'Back',
@@ -412,6 +412,9 @@ export default {
     }
   },
   profile: {
+    page: {
+      desc: 'Manage your avatar, basic profile, password, and social connections.'
+    },
     user: {
       title: 'Personal Information',
       username: 'User Name',
@@ -427,7 +430,7 @@ export default {
       createTime: 'Created Date'
     },
     info: {
-      title: 'Basic Information',
+      title: 'Settings',
       basicInfo: 'Basic Information',
       resetPwd: 'Reset Password',
       userSocial: 'Social Information'

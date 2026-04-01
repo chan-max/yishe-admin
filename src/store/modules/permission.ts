@@ -42,12 +42,16 @@ function filterRoutesByAccess(routes: AppRouteRecordRaw[], user: any): AppRouteR
         return null
       }
 
-      if (!route.children?.length) {
+      const hasChildren = Array.isArray(route.children) && route.children.length > 0
+
+      if (!hasChildren) {
         return route
       }
 
       const children = filterRoutesByAccess(route.children, user)
-      if (!children.length && !route.component) {
+
+      // 父级菜单没有任何可访问子项时，整组直接隐藏
+      if (!children.length) {
         return null
       }
 

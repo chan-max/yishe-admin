@@ -117,6 +117,9 @@
                 <template #createTimeSlot="{ row }">
                   <span class="table-time-text">{{ formatTimestamp(row.createTime) }}</span>
                 </template>
+                <template #uploaderSlot="{ row }">
+                  <span>{{ row?.uploader?.account || row?.uploader?.name || row?.userId || "-" }}</span>
+                </template>
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex justify-start">
                     <el-dropdown
@@ -289,6 +292,7 @@ const gridOptions = computed(() => ({
     { title: "标题", field: "title", minWidth: 220, showOverflow: true },
     { title: "正文", field: "content", minWidth: 360, slots: { default: "contentSlot" } },
     { title: "标签", field: "hashtags", minWidth: 220, slots: { default: "hashtagsSlot" } },
+    { title: "上传者", field: "uploader", width: 140, slots: { default: "uploaderSlot" } },
     { ...buildTimeColumn("创建时间", "createTime", 180), slots: { default: "createTimeSlot" } },
     buildOperationColumn("operationDefaultSlot"),
   ],

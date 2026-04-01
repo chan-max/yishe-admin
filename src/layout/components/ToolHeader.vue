@@ -28,7 +28,7 @@ export default defineComponent({
         id={`${variables.namespace}-tool-header`}
         class={[
           prefixCls,
-          'h-[var(--top-tool-height)] px-12px md:px-16px flex items-center justify-between'
+          'h-[var(--top-tool-height)] pl-12px pr-8px md:pl-16px md:pr-10px flex items-center justify-between'
         ]}
       >
         <div class="flex h-full min-w-0 items-center gap-6px md:gap-8px">
@@ -44,7 +44,7 @@ export default defineComponent({
           {breadcrumb.value ? <Breadcrumb class="min-w-0 lt-md:hidden" /> : undefined}
         </div>
 
-        <div class="flex h-full items-center gap-2px md:gap-6px">
+        <div class="tool-header-right flex h-full min-w-0 items-center justify-end gap-2px md:gap-4px">
           <GlobalNotificationToastStack />
           <AdminDataScopeSwitch />
           <GlobalNotificationCenter />
@@ -72,9 +72,24 @@ $prefix-cls: #{$namespace}-tool-header;
   color: var(--top-header-text-color);
 }
 
+.#{$prefix-cls} :deep(.admin-data-scope) {
+  flex-shrink: 1;
+}
+
 @media (max-width: 1024px) {
   .client-status-wrapper {
     display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .#{$prefix-cls} {
+    padding-left: 10px;
+    padding-right: 6px;
+  }
+
+  .tool-header-right {
+    gap: 2px;
   }
 }
 </style>

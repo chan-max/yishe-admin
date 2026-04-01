@@ -55,6 +55,12 @@ const gridOptions = computed(() => ({
     { field: 'platform', title: '平台', minWidth: 100 },
     { field: 'description', title: '描述', minWidth: 200, showOverflow: true },
     {
+      field: 'uploader',
+      title: '创建者',
+      minWidth: 120,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.creator || row?.userId || '-'
+    },
+    {
       field: 'createTime',
       title: '创建时间',
       width: 160,

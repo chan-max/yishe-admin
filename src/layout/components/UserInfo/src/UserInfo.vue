@@ -66,13 +66,13 @@ const loginOut = async () => {
 }
 
 const toProfile = async () => {
-  push('/user/profile')
+  push('/personal/settings')
 }
 </script>
 
 <template>
   <ElDropdown class="custom-hover" :class="prefixCls" trigger="click">
-    <div class="flex items-center cursor-pointer px-2 transition-all duration-300 hover:bg-[var(--el-fill-color-light)] rounded-lg py-1.5 mx-1">
+    <div class="user-trigger flex items-center cursor-pointer rounded-lg px-1.5 py-1 transition-all duration-300 hover:bg-[var(--el-fill-color-light)]">
       <div class="relative flex items-center justify-center">
         <ElAvatar 
           :size="32" 
@@ -96,20 +96,17 @@ const toProfile = async () => {
     
     <template #dropdown>
       <ElDropdownMenu class="user-dropdown-menu">
-        <!-- 顶部信息卡片 -->
         <div class="user-card-header">
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3">
             <div class="relative">
-              <ElAvatar :src="avatar" :size="56" class="ring-4 ring-[var(--el-color-primary-light-9)]" />
-              <div v-if="isAdmin" class="absolute -bottom-1 -right-1 bg-amber-500 p-1 rounded-full shadow-md">
-                <Icon icon="ep:crown" class="text-white text-11px" />
-              </div>
+              <ElAvatar :src="avatar" :size="42" class="user-card-avatar" />
+              <div v-if="isAdmin" class="user-admin-dot"></div>
             </div>
             <div class="flex flex-col min-w-0">
-              <span class="text-16px font-bold text-[var(--el-text-color-primary)] truncate">{{ userName }}</span>
-              <span v-if="companyName" class="text-12px text-[var(--el-text-color-secondary)] truncate mb-1.5">{{ companyName }}</span>
-              <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--el-fill-color)] text-11px w-fit" :class="{ 'text-emerald-600 dark:text-emerald-400 font-600': isForever }">
-                <Icon icon="ep:clock" class="text-10px" />
+              <span class="user-card-name">{{ userName }}</span>
+              <span v-if="companyName" class="user-card-company">{{ companyName }}</span>
+              <div class="user-card-status" :class="{ 'user-card-status--forever': isForever }">
+                <Icon icon="ep:clock" class="text-9px opacity-75" />
                 <span>{{ remainingTime }}</span>
               </div>
             </div>
@@ -120,19 +117,19 @@ const toProfile = async () => {
         <div class="px-2 pb-2 mt-1">
           <ElDropdownItem @click="toProfile" class="menu-item-custom">
             <div class="flex items-center gap-3 w-full">
-              <div class="p-1.5 bg-[var(--el-color-primary-light-9)] rounded-md text-[var(--el-color-primary)]">
-                <Icon icon="ep:user" />
+              <div class="menu-item-icon">
+                <Icon icon="ep:user" class="text-[13px]" />
               </div>
-              <span class="text-14px">{{ t('common.profile') }}</span>
+              <span class="menu-item-text">{{ t('common.profile') }}</span>
             </div>
           </ElDropdownItem>
           
           <ElDropdownItem @click="lockScreen" class="menu-item-custom">
             <div class="flex items-center gap-3 w-full">
-              <div class="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-md">
-                <Icon icon="ep:lock" />
+              <div class="menu-item-icon">
+                <Icon icon="ep:lock" class="text-[13px]" />
               </div>
-              <span class="text-14px">{{ t('lock.lockScreen') }}</span>
+              <span class="menu-item-text">{{ t('lock.lockScreen') }}</span>
             </div>
           </ElDropdownItem>
           
@@ -140,10 +137,10 @@ const toProfile = async () => {
           
           <ElDropdownItem @click="loginOut" class="menu-item-custom logout-hover">
             <div class="flex items-center gap-3 w-full text-red-500">
-              <div class="p-1.5 bg-red-50 dark:bg-red-900/20 rounded-md">
-                <Icon icon="ep:switch-button" />
+              <div class="menu-item-icon menu-item-icon--danger">
+                <Icon icon="ep:switch-button" class="text-[13px]" />
               </div>
-              <span class="text-14px font-500">{{ t('common.loginOut') }}</span>
+              <span class="menu-item-text font-500">{{ t('common.loginOut') }}</span>
             </div>
           </ElDropdownItem>
         </div>
@@ -166,40 +163,125 @@ const toProfile = async () => {
   transform: translateY(-10%);
 }
 
+.user-trigger {
+  margin-inline: 0;
+}
+
 .user-dropdown-menu {
   padding: 0 !important;
-  min-width: 260px !important;
-  border-radius: 12px !important;
+  min-width: 236px !important;
+  border-radius: 10px !important;
   border: 1px solid var(--el-border-color-light) !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
   overflow: hidden;
 }
 
 .user-card-header {
-  padding: 20px 16px;
-  background: linear-gradient(135deg, var(--el-fill-color-blank) 0%, var(--el-fill-color-light) 100%);
+  padding: 14px;
+  background: var(--el-fill-color-light);
   border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.user-card-avatar {
+  border: 1px solid var(--el-border-color-light);
+}
+
+.user-admin-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #f59e0b;
+}
+
+.user-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-card-company {
+  margin: 3px 0 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--el-text-color-secondary);
+}
+
+.user-card-status {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
+  background: var(--el-bg-color);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--el-text-color-secondary);
+}
+
+.user-card-status--forever {
+  color: #059669;
+  border-color: #ccebdc;
+  background: #f2fbf6;
 }
 
 .menu-item-custom {
   margin: 2px 0 !important;
-  padding: 8px 12px !important;
+  padding: 7px 10px !important;
+  border: 1px solid transparent !important;
   border-radius: 8px !important;
   transition: all 0.2s ease !important;
   
   &:hover {
-    background-color: var(--el-fill-color-light) !important;
+    background: var(--el-fill-color-light) !important;
+    border-color: var(--el-border-color-lighter) !important;
     color: var(--el-color-primary) !important;
   }
 }
 
+.menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+}
+
+.menu-item-icon--danger {
+  background: var(--el-color-danger-light-9);
+  color: var(--el-color-danger);
+}
+
+.menu-item-text {
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--el-text-color-primary);
+}
+
 .logout-hover:hover {
-  background-color: var(--el-color-danger-light-9) !important;
+  background: var(--el-color-danger-light-9) !important;
+  border-color: #fecaca !important;
 }
 
 .divider {
   height: 1px;
-  background-color: var(--el-border-color-lighter);
+  background: var(--el-border-color-lighter);
   margin: 6px 8px;
 }
 
@@ -211,6 +293,12 @@ const toProfile = async () => {
       transform: rotate(180deg);
       opacity: 0.8;
     }
+  }
+}
+
+@media (max-width: 768px) {
+  .user-trigger {
+    padding-inline: 4px;
   }
 }
 </style>

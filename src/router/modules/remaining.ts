@@ -487,6 +487,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ],
   },
   {
+    path: "/personal",
+    component: Layout,
+    name: "Personal",
+    redirect: "/personal/settings",
+    meta: {
+      title: "个人设置",
+      icon: "ep:user-filled",
+      order: 7,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: "settings",
+        component: () => import("@/views/Profile/Index.vue"),
+        name: "PersonalSettings",
+        meta: {
+          title: "个人设置",
+        },
+      },
+    ],
+  },
+  {
     path: "/system",
     component: Layout,
     name: "System",
@@ -494,7 +516,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     meta: {
       title: "系统管理",
       icon: "ep:setting",
-      order: 7,
+      order: 8,
       alwaysShow: true,
       requiresAdmin: true,
     },
@@ -550,6 +572,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
     ],
+  },
+  {
+    path: "/user/profile",
+    redirect: "/personal/settings",
+    name: "UserProfileCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
   },
   {
     path: "/resource/material-center/crawler-material",

@@ -1091,7 +1091,7 @@
                 </div>
                 <div class="product-info-item">
                   <div class="product-info-label">创建人</div>
-                  <div class="product-info-value">{{ productDetail.creatorName || '未设置' }}</div>
+                  <div class="product-info-value">{{ productDetail?.uploader?.account || productDetail?.uploader?.name || productDetail?.userId || '未设置' }}</div>
                 </div>
                 <div class="product-info-item">
                   <div class="product-info-label">创建时间</div>
@@ -1455,7 +1455,13 @@ const gridColumns = computed(() => {
       align: 'center',
       slots: { default: 'publishStatusSlot' }
     },
-    { title: "创建人", field: "creatorName", minWidth: 100, showOverflow: true },
+    {
+      title: "创建人",
+      field: "uploader",
+      minWidth: 100,
+      showOverflow: true,
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-',
+    },
     {
       title: "创建时间",
       field: "createTime",
