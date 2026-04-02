@@ -13,8 +13,24 @@ import { deleteUserCache } from '@/hooks/web/useCache'
 const tenantEnable = import.meta.env.VITE_APP_TENANT_ENABLE
 const { result_code, base_url, request_timeout } = config
 
-const ownershipExcludedKeywords = ['/login', '/refresh-token', '/page', '/list', '/delete', '/remove']
-const ownershipWriteKeywords = [
+export type OwnershipInjectionMode = 'auto' | 'force' | 'skip'
+
+type OwnershipAwareRequestConfig = InternalAxiosRequestConfig & {
+  ownership?: OwnershipInjectionMode
+}
+
+const legacyOwnershipExcludedKeywords = ['/login', '/refresh-token', '/page', '/list', '/delete', '/remove']
+const authLikeOwnershipExcludedPatterns = [
+  /^\/auth(\/|$)/i,
+  /^\/api\/auth(\/|$)/i,
+  /^\/open(\/|$)/i,
+  /\/captcha(\/|$)/i
+]
+
+// 这是兼容历史接口的兜底列表。更推荐的新方式是：
+// 1. 后端在 service 中统一用 DataAccessScopeService.resolveRequestedUserId(user) 决定 owner
+// 2. 如果某个旧接口仍然依赖前端补 userId，请在调用处使用 request.postOwned / putOwned / patchOwned
+const legacyOwnershipWriteKeywords = [
   '/create',
   '/publish-config',
   '/design-request',
@@ -43,16 +59,46 @@ const isPlainObject = (value: unknown): value is Record<string, any> => {
   return Object.prototype.toString.call(value) === '[object Object]'
 }
 
-const shouldInjectOwnership = (url = '', method = '') => {
-  const normalizedUrl = url.startsWith('/') ? url : `/${url}`
-  const upperMethod = method.toUpperCase()
+const normalizeUrlPath = (url = '') => {
+  const [path = ''] = url.split('?')
+  const normalizedUrl = path.startsWith('/') ? path : `/${path}`
+  return normalizedUrl.replace(/\/{2,}/g, '/')
+}
+
+const canCarryOwnership = (payload: unknown) => payload instanceof FormData || isPlainObject(payload)
+
+const shouldInjectOwnership = (
+  config: OwnershipAwareRequestConfig,
+  currentUserId: string
+) => {
+  if (!currentUserId || !canCarryOwnership(config.data)) {
+    return false
+  }
+
+  const mode = config.ownership || 'auto'
+  if (mode === 'skip') {
+    return false
+  }
+
+  const normalizedUrl = normalizeUrlPath(config.url || '')
+  if (authLikeOwnershipExcludedPatterns.some((pattern) => pattern.test(normalizedUrl))) {
+    return false
+  }
+
+  const upperMethod = String(config.method || '').toUpperCase()
   if (!['POST', 'PUT', 'PATCH'].includes(upperMethod)) {
     return false
   }
-  if (ownershipExcludedKeywords.some((keyword) => normalizedUrl.includes(keyword))) {
+
+  if (mode === 'force') {
+    return true
+  }
+
+  if (legacyOwnershipExcludedKeywords.some((keyword) => normalizedUrl.includes(keyword))) {
     return false
   }
-  return ownershipWriteKeywords.some((keyword) => normalizedUrl.includes(keyword))
+
+  return legacyOwnershipWriteKeywords.some((keyword) => normalizedUrl.includes(keyword))
 }
 
 const applyOwnershipToPayload = (payload: unknown, userId: string) => {
@@ -98,6 +144,7 @@ const service: AxiosInstance = axios.create({
 // request拦截器
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    const ownershipConfig = config as OwnershipAwareRequestConfig
     // 是否需要设置 token
     const requestHeaders = config.headers as any
     let isToken = requestHeaders?.isToken === false
@@ -142,7 +189,7 @@ service.interceptors.request.use(
       delete config.headers['x-data-scope-user-id']
     }
 
-    if (currentUserId && shouldInjectOwnership(url, config.method || '')) {
+    if (shouldInjectOwnership(ownershipConfig, currentUserId)) {
       config.data = applyOwnershipToPayload(config.data, currentUserId)
     }
     

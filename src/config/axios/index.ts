@@ -51,8 +51,16 @@ export default {
     const res = await request({ method: 'PUT', ...option })
     return res.data as unknown as T
   },
+  putOwned: async <T = any>(option: any) => {
+    const res = await request({ method: 'PUT', ownership: 'force', ...option })
+    return res.data as unknown as T
+  },
   patch: async <T = any>(option: any) => {
     const res = await request({ method: 'PATCH', ...option })
+    return res.data as unknown as T
+  },
+  patchOwned: async <T = any>(option: any) => {
+    const res = await request({ method: 'PATCH', ownership: 'force', ...option })
     return res.data as unknown as T
   },
   download: async <T = any>(option: any) => {
@@ -62,6 +70,18 @@ export default {
   upload: async <T = any>(option: any) => {
     option.headersType = 'multipart/form-data'
     const res = await request({ method: 'POST', ...option })
+    return res as unknown as Promise<T>
+  },
+  postOwned: async <T = any>(option: any) => {
+    const res = await request({ method: 'POST', ownership: 'force', ...option })
+    if (res instanceof Blob || res instanceof ArrayBuffer) {
+      return res as unknown as T
+    }
+    return res.data as unknown as T
+  },
+  uploadOwned: async <T = any>(option: any) => {
+    option.headersType = 'multipart/form-data'
+    const res = await request({ method: 'POST', ownership: 'force', ...option })
     return res as unknown as Promise<T>
   }
 }
