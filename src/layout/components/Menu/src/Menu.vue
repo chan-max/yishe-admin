@@ -11,6 +11,13 @@ import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
 import {
+  ensureServiceHealthInitialized,
+  isServiceHealthKey,
+  resolveServiceHealthTone,
+  resolveServiceHealthTooltip,
+  serviceHealthStates,
+} from "@/services/serviceHealthState";
+import {
   getClientServiceRuntime,
   type ClientPluginKey,
   useClientNodeStore,
@@ -151,6 +158,31 @@ export default defineComponent({
       );
     };
 
+    const renderServiceHealthDot = (route: AppRouteRecordRaw) => {
+      const statusKey = route.meta?.serviceStatusKey;
+      if (!isServiceHealthKey(statusKey)) {
+        return undefined;
+      }
+
+      ensureServiceHealthInitialized(statusKey);
+      const snapshot = serviceHealthStates[statusKey];
+      const tone = resolveServiceHealthTone(snapshot);
+      const title = resolveServiceHealthTooltip(snapshot);
+
+      return (
+        <ElTooltip
+          content={title}
+          placement="right"
+          effect="light"
+          showAfter={120}
+          teleported={false}
+          transition=""
+        >
+          <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--${tone}`]} />
+        </ElTooltip>
+      );
+    };
+
     const isPsdSetRoute = (routePath: string) => routePath === "/product/psd-set";
     const shouldUseRunningLinkHighlight = (routePath: string) => routePath === "/product/queue";
 
@@ -273,6 +305,7 @@ export default defineComponent({
                       ) : undefined}
                       <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
                     </div>
+                    {renderServiceHealthDot(route)}
                   </div>
                 </button>
               );
@@ -326,7 +359,9 @@ export default defineComponent({
                           onClick={() => selectMenu(childPath)}
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
-                          {renderPsdSetAutoDot(childPath) || renderStatusDot(childPath)}
+                          {renderPsdSetAutoDot(childPath) ||
+                            renderServiceHealthDot(child) ||
+                            renderStatusDot(childPath)}
                         </button>
                       );
                     })}

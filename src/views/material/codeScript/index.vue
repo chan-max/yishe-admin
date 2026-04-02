@@ -5,7 +5,14 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+                :xl="5"
+              >
                 <el-form-item label="脚本名称">
                   <el-input
                     v-model="queryParams.search"
@@ -13,7 +20,11 @@
                     placeholder="请输入脚本名称"
                     clearable
                     @keyup.enter="getList"
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
@@ -34,9 +45,24 @@
               >
                 {{ sandboxStatusMeta }}
               </span>
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
-              <el-button size="small" type="danger" plain :disabled="!ids.length || loading" @click="handleDelete(null)">
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="getList"
+                >搜索</el-button
+              >
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
+                >新增脚本</el-button
+              >
+              <el-button
+                size="small"
+                type="danger"
+                plain
+                :disabled="!ids.length || loading"
+                @click="handleDelete(null)"
+              >
                 批量删除 ({{ ids.length }})
               </el-button>
               <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading">
@@ -48,7 +74,9 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
@@ -58,46 +86,56 @@
                 @checkbox-change="checkboxChange"
                 @checkbox-all="checkboxAllChange"
               >
-        <template #statusSlot="{ row }">
-          <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
-            {{ row.isEnabled ? "启用" : "停用" }}
-          </el-tag>
-        </template>
-        <template #tagsSlot="{ row }">
-          <div class="flex flex-wrap items-center gap-1">
-            <el-tag v-for="tag in getTagsArray(row.tags)" :key="tag" size="small">{{ tag }}</el-tag>
-            <span v-if="!row.tags" class="text-xs text-[var(--el-text-color-secondary)]">-</span>
-          </div>
-        </template>
-        <template #operationSlot="{ row }">
-          <div class="flex items-center">
-            <el-dropdown
-              trigger="click"
-              @command="(command) => handleOperationCommand(command, row)"
-            >
-              <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-              <template #dropdown>
-                <el-dropdown-menu class="operation-menu-compact">
-                  <el-dropdown-item command="run">
-                    <span>执行</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="schedule">
-                    <span>调度</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="edit">
-                    <span>编辑</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="records">
-                    <span>记录</span>
-                  </el-dropdown-item>
-                  <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
-                    <span>删除</span>
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
-        </template>
+                <template #statusSlot="{ row }">
+                  <el-tag :type="row.isEnabled ? 'success' : 'info'" size="small">
+                    {{ row.isEnabled ? "启用" : "停用" }}
+                  </el-tag>
+                </template>
+                <template #tagsSlot="{ row }">
+                  <div class="flex flex-wrap items-center gap-1">
+                    <el-tag v-for="tag in getTagsArray(row.tags)" :key="tag" size="small">{{
+                      tag
+                    }}</el-tag>
+                    <span v-if="!row.tags" class="text-xs text-[var(--el-text-color-secondary)]"
+                      >-</span
+                    >
+                  </div>
+                </template>
+                <template #operationSlot="{ row }">
+                  <div class="flex items-center">
+                    <el-dropdown
+                      trigger="click"
+                      @command="(command) => handleOperationCommand(command, row)"
+                    >
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="run">
+                            <span>执行</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="schedule">
+                            <span>调度</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="edit">
+                            <span>编辑</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="records">
+                            <span>记录</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
+                            <span>删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </template>
               </vxe-grid>
             </div>
           </div>
@@ -105,7 +143,9 @@
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
           <pagination
             :total="total"
             v-model:page="queryParams.currentPage"
@@ -286,9 +326,7 @@
             <el-tag :type="getRunStatusType(runDetail.status)" size="small">{{
               runDetail.status || "-"
             }}</el-tag>
-            <span class="run-detail-dialog__status-text">
-              当前脚本执行状态与运行上下文
-            </span>
+            <span class="run-detail-dialog__status-text"> 当前脚本执行状态与运行上下文 </span>
           </div>
           <div class="run-detail-dialog__meta-grid">
             <div class="run-detail-dialog__meta-item">
@@ -326,16 +364,12 @@
       <div class="run-detail-dialog__content">
         <div class="run-detail-panel">
           <div class="run-detail-panel__title">结果</div>
-          <pre class="run-detail-panel__pre">{{
-            formatJson(runDetail.runResult)
-          }}</pre>
+          <pre class="run-detail-panel__pre">{{ formatJson(runDetail.runResult) }}</pre>
         </div>
         <div class="run-detail-side">
           <div class="run-detail-panel">
             <div class="run-detail-panel__title">参数</div>
-            <pre class="run-detail-panel__pre">{{
-              formatJson(runDetail.params)
-            }}</pre>
+            <pre class="run-detail-panel__pre">{{ formatJson(runDetail.params) }}</pre>
           </div>
           <div class="run-detail-panel">
             <div class="run-detail-panel__title">日志</div>
@@ -349,10 +383,7 @@
                   <span class="mr-2 text-[10px] uppercase opacity-70">[{{ item.level }}]</span>
                   <span class="whitespace-pre-wrap break-all">{{ item.message }}</span>
                 </div>
-                <div
-                  v-if="!runDetailLogItems.length"
-                  class="text-[var(--el-text-color-secondary)]"
-                >
+                <div v-if="!runDetailLogItems.length" class="text-[var(--el-text-color-secondary)]">
                   暂无日志
                 </div>
               </div>
@@ -402,7 +433,9 @@
                 trigger="click"
                 @command="(command) => handleRunOperationCommand(command, row)"
               >
-                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                <el-button type="primary" link size="small" class="operation-trigger-button"
+                  >操作</el-button
+                >
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
                     <el-dropdown-item v-if="isRunCancellable(row)" command="cancel">
@@ -434,7 +467,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Plus } from "@element-plus/icons-vue";
@@ -468,7 +510,6 @@ import {
   createCodeScript,
   deleteCodeScript,
   deleteCodeScriptRun,
-  getCodeScriptSandboxHealth,
   getCodeScript,
   getCodeScriptList,
   getCodeScriptRun,
@@ -476,6 +517,13 @@ import {
   runCodeScript,
   updateCodeScript,
 } from "@/api/codeScript";
+import {
+  refreshServiceHealth,
+  resolveServiceHealthText,
+  resolveServiceHealthTone,
+  resolveServiceHealthTooltip,
+  useServiceHealthState,
+} from "@/services/serviceHealthState";
 
 const { height } = useWindowSize();
 const router = useRouter();
@@ -550,37 +598,22 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const ids = ref<number[]>([]);
 const total = ref(0);
-const sandboxStatus = reactive({
-  loading: false,
-  checked: false,
-  available: false,
-  baseUrl: "",
-  message: "",
-  timestamp: "",
-});
-let sandboxHealthTimer: number | null = null;
+const sandboxStatus = useServiceHealthState("sandbox");
 
-const sandboxStatusTone = computed(() => {
-  if (sandboxStatus.loading && !sandboxStatus.checked) {
-    return "warning";
-  }
-  if (sandboxStatus.available) {
-    return "success";
-  }
-  if (sandboxStatus.checked) {
-    return "danger";
-  }
-  return "warning";
-});
+const sandboxStatusTone = computed(() =>
+  resolveServiceHealthTone(sandboxStatus) === "available"
+    ? "success"
+    : resolveServiceHealthTone(sandboxStatus) === "offline"
+      ? "danger"
+      : "warning",
+);
 
 const sandboxStatusText = computed(() => {
-  if (sandboxStatus.loading && !sandboxStatus.checked) {
-    return "检测中";
-  }
-  return sandboxStatus.available ? "可用" : sandboxStatus.checked ? "不可用" : "检测中";
+  const text = resolveServiceHealthText(sandboxStatus);
+  return text === "未检测" ? "检测中" : text;
 });
 
-const sandboxStatusMeta = computed(() => sandboxStatus.message || sandboxStatus.baseUrl || "等待检测");
+const sandboxStatusMeta = computed(() => resolveServiceHealthTooltip(sandboxStatus));
 
 const runLoading = ref(false);
 const runDataSource = ref<any[]>([]);
@@ -722,35 +755,7 @@ async function getList() {
 }
 
 async function checkSandboxHealth() {
-  sandboxStatus.loading = true;
-  try {
-    const res = await getCodeScriptSandboxHealth();
-    sandboxStatus.checked = true;
-    sandboxStatus.available = !!res?.available;
-    sandboxStatus.baseUrl = res?.baseUrl || "";
-    sandboxStatus.message = res?.message || "";
-    sandboxStatus.timestamp = res?.timestamp || "";
-  } catch (error: any) {
-    sandboxStatus.checked = true;
-    sandboxStatus.available = false;
-    sandboxStatus.message = error?.message || "沙盒服务检测失败";
-  } finally {
-    sandboxStatus.loading = false;
-  }
-}
-
-function startSandboxHealthPolling() {
-  stopSandboxHealthPolling();
-  sandboxHealthTimer = window.setInterval(() => {
-    checkSandboxHealth();
-  }, 30000);
-}
-
-function stopSandboxHealthPolling() {
-  if (sandboxHealthTimer !== null) {
-    window.clearInterval(sandboxHealthTimer);
-    sandboxHealthTimer = null;
-  }
+  await refreshServiceHealth("sandbox");
 }
 
 async function getRunList() {
@@ -1174,12 +1179,10 @@ async function openRunDetail(row) {
 
 onMounted(async () => {
   await Promise.all([getList(), checkSandboxHealth()]);
-  startSandboxHealthPolling();
 });
 
 onBeforeUnmount(() => {
   destroyEditor();
-  stopSandboxHealthPolling();
 });
 </script>
 
@@ -1288,7 +1291,11 @@ onBeforeUnmount(() => {
   gap: 16px;
   border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgb(from var(--el-fill-color-lighter) r g b / 96%), rgb(from var(--el-fill-color) r g b / 78%));
+  background: linear-gradient(
+    180deg,
+    rgb(from var(--el-fill-color-lighter) r g b / 96%),
+    rgb(from var(--el-fill-color) r g b / 78%)
+  );
   padding: 18px;
 }
 

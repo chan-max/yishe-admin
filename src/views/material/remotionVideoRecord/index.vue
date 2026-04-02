@@ -3,13 +3,16 @@
     <ListPageLayout class="remotion-record-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <el-form
-            :model="queryParams"
-            label-position="top"
-            class="list-page-search-form"
-          >
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="6" :xl="6">
+              <el-col
+                class="list-page-search-form__col--base"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+                :xl="6"
+              >
                 <el-form-item label="关键词">
                   <el-input
                     v-model="queryParams.keyword"
@@ -21,7 +24,14 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <el-col
+                class="list-page-search-form__col--narrow"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="5"
+                :xl="4"
+              >
                 <el-form-item label="状态">
                   <el-select
                     v-model="queryParams.status"
@@ -36,7 +46,14 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="24" :md="8" :lg="13" :xl="14">
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="24"
+                :md="8"
+                :lg="13"
+                :xl="14"
+              >
                 <el-form-item label="服务状态">
                   <div class="remotion-record-page__status-bar">
                     <el-tag :type="remotionStatusTagType" size="small">
@@ -62,12 +79,29 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="getList"
+                >搜索</el-button
+              >
               <el-button size="small" type="primary" @click="openCreateDialog()">新增</el-button>
-              <el-button size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleBatchDelete">
+              <el-button
+                size="small"
+                type="danger"
+                :icon="Delete"
+                :disabled="loading"
+                @click="handleBatchDelete"
+              >
                 批量删除({{ selectedRows.length }})
               </el-button>
-              <el-button size="small" @click="checkRemotionHealth" :loading="remotionStatus.loading">
+              <el-button
+                size="small"
+                @click="checkRemotionHealth"
+                :loading="remotionStatus.loading"
+              >
                 刷新状态
               </el-button>
             </div>
@@ -81,68 +115,90 @@
         >
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
-          <template #titleSlot="{ row }">
-            <div class="record-title-cell">
-              <div class="record-title-text">
-                <span class="record-title-main">{{ row.title || '-' }}</span>
-                <span class="record-id">ID: {{ row.id }}</span>
-              </div>
-            </div>
-          </template>
-          <template #templateSlot="{ row }">
-            <div class="record-template-cell">
-              <div class="record-template-name">
-                <span class="record-template-main">{{ row.templateName || row.templateId }}</span>
-                <span class="record-template-id">{{ row.templateId }}</span>
-              </div>
-            </div>
-          </template>
-          <template #statusSlot="{ row }">
-            <el-tag :type="getStatusTagType(row.status)" effect="plain">{{ getStatusLabel(row.status) }}</el-tag>
-          </template>
-          <template #videoSlot="{ row }">
-            <div class="record-video-cell">
-              <div class="cell-video-wrapper">
-                <video
-                  v-if="row.url"
-                  :id="'thumb-' + row.id"
-                  :src="row.url"
-                  preload="none"
-                  class="cell-video-player"
-                  muted
-                  playsinline
-                  :controls="false"
-                ></video>
-                <div v-if="row.url" class="cell-play-overlay" aria-hidden="true" @click.stop="previewVideo(row)">
-                  <span class="cell-play-icon"></span>
-                </div>
-                <span v-if="!row.url" class="text-xs opacity-60">-</span>
-              </div>
-            </div>
-          </template>
-          <template #createTimeSlot="{ row }">
-            <span class="table-time-text">{{ formatTimestamp(row.createTime) }}</span>
-          </template>
-          <template #operationDefaultSlot="{ row }">
-            <div class="flex justify-start">
-              <el-dropdown
-                trigger="click"
-                placement="bottom-end"
-                @command="(command) => handleOperationCommand(command, row)"
-                class="operation-dropdown"
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="handleCheckboxChange"
+                @checkbox-all="handleCheckboxAll"
               >
-                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-                <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item command="detail">查看详情</el-dropdown-item>
-                    <!-- 再次生成已移除 -->
-                    <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
-                  </el-dropdown-menu>
+                <template #titleSlot="{ row }">
+                  <div class="record-title-cell">
+                    <div class="record-title-text">
+                      <span class="record-title-main">{{ row.title || "-" }}</span>
+                      <span class="record-id">ID: {{ row.id }}</span>
+                    </div>
+                  </div>
                 </template>
-              </el-dropdown>
-            </div>
-          </template>
+                <template #templateSlot="{ row }">
+                  <div class="record-template-cell">
+                    <div class="record-template-name">
+                      <span class="record-template-main">{{
+                        row.templateName || row.templateId
+                      }}</span>
+                      <span class="record-template-id">{{ row.templateId }}</span>
+                    </div>
+                  </div>
+                </template>
+                <template #statusSlot="{ row }">
+                  <el-tag :type="getStatusTagType(row.status)" effect="plain">{{
+                    getStatusLabel(row.status)
+                  }}</el-tag>
+                </template>
+                <template #videoSlot="{ row }">
+                  <div class="record-video-cell">
+                    <div class="cell-video-wrapper">
+                      <video
+                        v-if="row.url"
+                        :id="'thumb-' + row.id"
+                        :src="row.url"
+                        preload="none"
+                        class="cell-video-player"
+                        muted
+                        playsinline
+                        :controls="false"
+                      ></video>
+                      <div
+                        v-if="row.url"
+                        class="cell-play-overlay"
+                        aria-hidden="true"
+                        @click.stop="previewVideo(row)"
+                      >
+                        <span class="cell-play-icon"></span>
+                      </div>
+                      <span v-if="!row.url" class="text-xs opacity-60">-</span>
+                    </div>
+                  </div>
+                </template>
+                <template #createTimeSlot="{ row }">
+                  <span class="table-time-text">{{ formatTimestamp(row.createTime) }}</span>
+                </template>
+                <template #operationDefaultSlot="{ row }">
+                  <div class="flex justify-start">
+                    <el-dropdown
+                      trigger="click"
+                      placement="bottom-end"
+                      @command="(command) => handleOperationCommand(command, row)"
+                      class="operation-dropdown"
+                    >
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="detail">查看详情</el-dropdown-item>
+                          <!-- 再次生成已移除 -->
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                            >删除</el-dropdown-item
+                          >
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </template>
               </vxe-grid>
             </div>
           </div>
@@ -164,14 +220,23 @@
     </ListPageLayout>
   </ContentWrap>
 
-  <el-dialog v-model="createVisible" title="新增视频制作" fullscreen destroy-on-close class="remotion-create-dialog">
+  <el-dialog
+    v-model="createVisible"
+    title="新增视频制作"
+    fullscreen
+    destroy-on-close
+    class="remotion-create-dialog"
+  >
     <div class="remotion-create-layout">
-
       <el-card shadow="never">
         <template #header>第 1 步 · 选择模板</template>
         <div class="template-info-panel">
           <div v-if="templateOverviewStats.length" class="template-library-overview">
-            <div v-for="stat in templateOverviewStats" :key="stat.label" class="template-overview-card">
+            <div
+              v-for="stat in templateOverviewStats"
+              :key="stat.label"
+              class="template-overview-card"
+            >
               <span class="template-overview-card__label">{{ stat.label }}</span>
               <strong class="template-overview-card__value">{{ stat.value }}</strong>
             </div>
@@ -233,7 +298,7 @@
                       <div class="template-select-option">
                         <span class="template-select-option__name">{{ item.name }}</span>
                         <span class="template-select-option__meta">
-                          {{ item.category || '未分类' }} / {{ item.durationLabel || '-' }}
+                          {{ item.category || "未分类" }} / {{ item.durationLabel || "-" }}
                         </span>
                       </div>
                     </el-option>
@@ -248,11 +313,15 @@
 
           <div v-if="selectedTemplate" class="template-summary">
             <div class="template-summary-name">{{ selectedTemplate.name }}</div>
-            <div class="template-summary-desc">{{ selectedTemplate.description || '暂无模板说明' }}</div>
+            <div class="template-summary-desc">
+              {{ selectedTemplate.description || "暂无模板说明" }}
+            </div>
             <div class="template-summary-meta">
               <span v-if="selectedTemplate.category">{{ selectedTemplate.category }}</span>
               <span v-if="selectedTemplate.style">{{ selectedTemplate.style }}</span>
-              <span v-if="selectedTemplate.durationLabel">{{ selectedTemplate.durationLabel }}</span>
+              <span v-if="selectedTemplate.durationLabel">{{
+                selectedTemplate.durationLabel
+              }}</span>
               <span>{{ selectedTemplate.width }} x {{ selectedTemplate.height }}</span>
               <span>{{ selectedTemplate.fps }}fps</span>
               <span>{{ selectedTemplate.durationInFrames }}帧</span>
@@ -261,16 +330,28 @@
               <div class="schema-title">使用场景</div>
               <div class="template-use-case">{{ selectedTemplate.useCase }}</div>
             </div>
-            <div v-if="selectedTemplate.tags && selectedTemplate.tags.length" class="template-detail-block">
+            <div
+              v-if="selectedTemplate.tags && selectedTemplate.tags.length"
+              class="template-detail-block"
+            >
               <div class="schema-title">风格标签</div>
               <div class="template-tag-list">
-                <span v-for="tag in selectedTemplate.tags" :key="tag" class="template-tag">{{ tag }}</span>
+                <span v-for="tag in selectedTemplate.tags" :key="tag" class="template-tag">{{
+                  tag
+                }}</span>
               </div>
             </div>
-            <div v-if="selectedTemplate.scenes && selectedTemplate.scenes.length" class="template-detail-block">
+            <div
+              v-if="selectedTemplate.scenes && selectedTemplate.scenes.length"
+              class="template-detail-block"
+            >
               <div class="schema-title">视频结构</div>
               <div class="schema-list">
-                <div v-for="scene in selectedTemplate.scenes" :key="scene.title + scene.summary" class="schema-field">
+                <div
+                  v-for="scene in selectedTemplate.scenes"
+                  :key="scene.title + scene.summary"
+                  class="schema-field"
+                >
                   <div class="schema-field-head">
                     <strong class="schema-label">{{ scene.title }}</strong>
                   </div>
@@ -278,10 +359,19 @@
                 </div>
               </div>
             </div>
-            <div v-if="selectedTemplate.animationHighlights && selectedTemplate.animationHighlights.length" class="template-detail-block">
+            <div
+              v-if="
+                selectedTemplate.animationHighlights && selectedTemplate.animationHighlights.length
+              "
+              class="template-detail-block"
+            >
               <div class="schema-title">核心动效</div>
               <div class="schema-list">
-                <div v-for="highlight in selectedTemplate.animationHighlights" :key="highlight" class="schema-field">
+                <div
+                  v-for="highlight in selectedTemplate.animationHighlights"
+                  :key="highlight"
+                  class="schema-field"
+                >
                   <div class="schema-desc">{{ highlight }}</div>
                 </div>
               </div>
@@ -298,17 +388,26 @@
                 <pre>{{ formatJson(selectedTemplateDebugMeta) }}</pre>
               </div>
             </div>
-            <div v-if="selectedTemplate.inputSchema && selectedTemplate.inputSchema.length" class="template-input-schema">
+            <div
+              v-if="selectedTemplate.inputSchema && selectedTemplate.inputSchema.length"
+              class="template-input-schema"
+            >
               <div class="schema-title">参数说明</div>
               <div class="schema-list">
-                <div v-for="field in selectedTemplate.inputSchema" :key="field.key" class="schema-field">
+                <div
+                  v-for="field in selectedTemplate.inputSchema"
+                  :key="field.key"
+                  class="schema-field"
+                >
                   <div class="schema-field-head">
                     <strong class="schema-label">{{ field.label || field.key }}</strong>
                     <span class="schema-key">{{ field.key }}</span>
                     <span v-if="field.required" class="schema-required">必填</span>
                   </div>
-                  <div class="schema-desc">{{ field.description || '-' }}</div>
-                  <div v-if="field.example !== undefined" class="schema-example">示例：<code>{{ field.example }}</code></div>
+                  <div class="schema-desc">{{ field.description || "-" }}</div>
+                  <div v-if="field.example !== undefined" class="schema-example">
+                    示例：<code>{{ field.example }}</code>
+                  </div>
                 </div>
               </div>
             </div>
@@ -338,31 +437,52 @@
         <template #header>第 3 步 · 确认制作</template>
         <div class="remotion-preview-panel">
           <div class="confirm-meta">
-            <div v-if="selectedTemplate?.assetSummary" class="template-asset-summary">{{ selectedTemplate.assetSummary }}</div>
+            <div v-if="selectedTemplate?.assetSummary" class="template-asset-summary">
+              {{ selectedTemplate.assetSummary }}
+            </div>
             <el-form label-position="top" class="space-y-1">
               <el-form-item label="记录标题">
                 <el-input v-model="form.title" placeholder="用于后台记录展示" />
               </el-form-item>
               <el-form-item label="等待时长(ms)">
-                <el-input-number v-model="form.timeoutMs" :min="1000" :max="900000" :step="1000" class="w-full" />
+                <el-input-number
+                  v-model="form.timeoutMs"
+                  :min="1000"
+                  :max="900000"
+                  :step="1000"
+                  class="w-full"
+                />
               </el-form-item>
             </el-form>
           </div>
           <pre>{{ form.inputPropsJson }}</pre>
           <div class="remotion-create-actions mt-4 flex flex-col gap-3">
-            <el-button type="primary" :loading="submitLoading" @click="submitGenerate">开始制作</el-button>
+            <el-button type="primary" :loading="submitLoading" @click="submitGenerate"
+              >开始制作</el-button
+            >
           </div>
         </div>
       </el-card>
     </div>
   </el-dialog>
 
-  <el-dialog v-model="detailVisible" title="视频生成详情" fullscreen destroy-on-close class="remotion-detail-dialog">
+  <el-dialog
+    v-model="detailVisible"
+    title="视频生成详情"
+    fullscreen
+    destroy-on-close
+    class="remotion-detail-dialog"
+  >
     <div v-if="currentRow" class="remotion-detail-layout">
       <el-card shadow="never">
         <template #header>结果预览</template>
         <div class="remotion-video-preview">
-          <video v-if="currentRow.url" :src="currentRow.url" controls class="remotion-video-player"></video>
+          <video
+            v-if="currentRow.url"
+            :src="currentRow.url"
+            controls
+            class="remotion-video-player"
+          ></video>
           <el-empty v-else description="当前记录暂无视频结果" :image-size="96" />
         </div>
       </el-card>
@@ -370,13 +490,17 @@
         <el-card shadow="never">
           <template #header>基础信息</template>
           <div class="detail-section">
-            <div><strong>标题：</strong>{{ currentRow.title || '-' }}</div>
+            <div><strong>标题：</strong>{{ currentRow.title || "-" }}</div>
             <div><strong>模板：</strong>{{ currentRow.templateName || currentRow.templateId }}</div>
             <div><strong>状态：</strong>{{ getStatusLabel(currentRow.status) }}</div>
             <div><strong>创建时间：</strong>{{ formatTimestamp(currentRow.createTime) }}</div>
             <div v-if="currentRow.url"><strong>COS地址：</strong>{{ currentRow.url }}</div>
-            <div v-if="currentRow.remotionVideoUrl"><strong>Remotion地址：</strong>{{ currentRow.remotionVideoUrl }}</div>
-            <div v-if="currentRow.errorMessage"><strong>失败信息：</strong>{{ currentRow.errorMessage }}</div>
+            <div v-if="currentRow.remotionVideoUrl">
+              <strong>Remotion地址：</strong>{{ currentRow.remotionVideoUrl }}
+            </div>
+            <div v-if="currentRow.errorMessage">
+              <strong>失败信息：</strong>{{ currentRow.errorMessage }}
+            </div>
           </div>
         </el-card>
         <el-card shadow="never">
@@ -391,132 +515,123 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Search } from '@element-plus/icons-vue'
-import { useWindowSize } from '@vueuse/core'
-import { formatTimestamp } from '@/common/date'
-import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
+import { computed, onMounted, reactive, ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { Delete, Search } from "@element-plus/icons-vue";
+import { useWindowSize } from "@vueuse/core";
+import { formatTimestamp } from "@/common/date";
+import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import {
   deleteRemotionVideoRecord,
   batchDeleteRemotionVideoRecord,
   generateRemotionVideoRecord,
-  getRemotionVideoHealth,
   getRemotionTemplateList,
   getRemotionVideoRecordDetail,
   getRemotionVideoRecordPage,
-} from '@/api/remotion-video-record'
-import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
-import ListPageLayout from '@/components/ListPageLayout/index.vue'
-import Pagination from '@/components/Pagination/index.vue'
+} from "@/api/remotion-video-record";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import Pagination from "@/components/Pagination/index.vue";
+import { refreshServiceHealth, useServiceHealthState } from "@/services/serviceHealthState";
 
-const { height } = useWindowSize()
-const loading = ref(false)
-const total = ref(0)
-const dataSource = ref<any[]>([])
-const templateOptions = ref<any[]>([])
+const { height } = useWindowSize();
+const loading = ref(false);
+const total = ref(0);
+const dataSource = ref<any[]>([]);
+const templateOptions = ref<any[]>([]);
 const templateFilters = reactive({
-  category: '',
-  durationLabel: '',
-})
-const createVisible = ref(false)
-const detailVisible = ref(false)
-const submitLoading = ref(false)
-const currentRow = ref<any>(null)
-const remotionStatus = reactive({
-  loading: false,
-  checked: false,
-  available: false,
-  baseUrl: '',
-  message: '',
-  timestamp: '',
-})
-let remotionHealthTimer: number | null = null
+  category: "",
+  durationLabel: "",
+});
+const createVisible = ref(false);
+const detailVisible = ref(false);
+const submitLoading = ref(false);
+const currentRow = ref<any>(null);
+const remotionStatus = useServiceHealthState("remotion");
 
 const remotionStatusLabel = computed(() => {
-  if (!remotionStatus.checked) return '未检测'
-  if (remotionStatus.loading && !remotionStatus.checked) return '检测中'
-  return remotionStatus.available ? '可用' : '不可用'
-})
+  if (remotionStatus.loading && !remotionStatus.checked) return "检测中";
+  if (!remotionStatus.checked) return "未检测";
+  return remotionStatus.available ? "可用" : "不可用";
+});
 
 const remotionStatusTagType = computed(() => {
-  if (!remotionStatus.checked || remotionStatus.loading) return 'warning'
-  return remotionStatus.available ? 'success' : 'danger'
-})
+  if (remotionStatus.loading && !remotionStatus.checked) return "warning";
+  if (!remotionStatus.checked) return "info";
+  return remotionStatus.available ? "success" : "danger";
+});
 
 const remotionStatusSummary = computed(() => {
-  if (!remotionStatus.checked) return '未检测'
-  if (remotionStatus.loading && !remotionStatus.timestamp) return '检测中'
+  if (remotionStatus.loading && !remotionStatus.checked) return "检测中";
+  if (!remotionStatus.checked) return "未检测";
   if (remotionStatus.available) {
-    return '服务可用'
+    return remotionStatus.message || "服务可用";
   }
-  return remotionStatus.message || '服务异常'
-})
+  return remotionStatus.message || "服务异常";
+});
 
 const remotionStatusDetail = computed(() => {
-  const parts: string[] = []
+  const parts: string[] = [];
   if (remotionStatus.baseUrl) {
-    parts.push(remotionStatus.baseUrl)
+    parts.push(remotionStatus.baseUrl);
   }
   if (remotionStatus.timestamp) {
-    parts.push(formatHealthTime(remotionStatus.timestamp))
+    parts.push(formatHealthTime(remotionStatus.timestamp));
   }
-  return parts.join(' | ')
-})
+  return parts.join(" | ");
+});
 
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  keyword: '',
-  status: '',
-})
+  keyword: "",
+  status: "",
+});
 
 const form = reactive({
-  templateId: '',
-  title: '',
+  templateId: "",
+  title: "",
   timeoutMs: 300000,
   inputProps: {} as Record<string, any>,
   // Raw JSON string editor for flexible, complex params
-  inputPropsJson: '{}',
-})
+  inputPropsJson: "{}",
+});
 
-const selectedTemplate = computed(() => templateOptions.value.find((item) => item.id === form.templateId) || null)
+const selectedTemplate = computed(
+  () => templateOptions.value.find((item) => item.id === form.templateId) || null,
+);
 const templateCategoryOptions = computed(() =>
   Array.from(
     new Set(
-      templateOptions.value
-        .map((item) => String(item?.category || '').trim())
-        .filter(Boolean)
-    )
-  )
-)
+      templateOptions.value.map((item) => String(item?.category || "").trim()).filter(Boolean),
+    ),
+  ),
+);
 const templateDurationOptions = computed(() =>
   Array.from(
     new Set(
-      templateOptions.value
-        .map((item) => String(item?.durationLabel || '').trim())
-        .filter(Boolean)
-    )
-  )
-)
+      templateOptions.value.map((item) => String(item?.durationLabel || "").trim()).filter(Boolean),
+    ),
+  ),
+);
 const filteredTemplateOptions = computed(() =>
   templateOptions.value.filter((item) => {
     if (templateFilters.category && item.category !== templateFilters.category) {
-      return false
+      return false;
     }
     if (templateFilters.durationLabel && item.durationLabel !== templateFilters.durationLabel) {
-      return false
+      return false;
     }
-    return true
-  })
-)
+    return true;
+  }),
+);
 const templateOverviewStats = computed(() => [
-  { label: '模板总数', value: templateOptions.value.length },
-  { label: '当前结果', value: filteredTemplateOptions.value.length },
-  { label: '内容分类', value: templateCategoryOptions.value.length },
-])
+  { label: "模板总数", value: templateOptions.value.length },
+  { label: "当前结果", value: filteredTemplateOptions.value.length },
+  { label: "内容分类", value: templateCategoryOptions.value.length },
+]);
 const selectedTemplateDebugMeta = computed(() => {
-  if (!selectedTemplate.value) return null
+  if (!selectedTemplate.value) return null;
   return {
     id: selectedTemplate.value.id,
     compositionId: selectedTemplate.value.compositionId,
@@ -529,226 +644,203 @@ const selectedTemplateDebugMeta = computed(() => {
     editableFields: selectedTemplate.value.editableFields,
     assetSummary: selectedTemplate.value.assetSummary,
     tags: selectedTemplate.value.tags,
-  }
-})
+  };
+});
 
 const gridOptions = computed(() => ({
   ...commonGridOptions,
   maxHeight: Math.max(height.value - 250, 420),
-  rowConfig: { keyField: 'id' },
+  rowConfig: { keyField: "id" },
   columns: [
-    { type: 'checkbox', width: 50 },
-    { title: '视频', field: 'url', minWidth: 200, slots: { default: 'videoSlot' } },
-    { title: '标题', field: 'title', minWidth: 260, slots: { default: 'titleSlot' } },
-    { title: '模板', field: 'templateName', minWidth: 220, slots: { default: 'templateSlot' } },
-    { title: '状态', field: 'status', width: 120, slots: { default: 'statusSlot' } },
+    { type: "checkbox", width: 50 },
+    { title: "视频", field: "url", minWidth: 200, slots: { default: "videoSlot" } },
+    { title: "标题", field: "title", minWidth: 260, slots: { default: "titleSlot" } },
+    { title: "模板", field: "templateName", minWidth: 220, slots: { default: "templateSlot" } },
+    { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
     {
-      title: '上传者',
-      field: 'uploader',
+      title: "上传者",
+      field: "uploader",
       width: 140,
-      formatter: ({ row }: any) => row?.uploader?.account || row?.uploader?.name || row?.userId || '-',
+      formatter: ({ row }: any) =>
+        row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { ...buildTimeColumn('创建时间', 'createTime', 180), slots: { default: 'createTimeSlot' } },
-    buildOperationColumn('operationDefaultSlot'),
+    { ...buildTimeColumn("创建时间", "createTime", 180), slots: { default: "createTimeSlot" } },
+    buildOperationColumn("operationDefaultSlot"),
   ],
-}))
+}));
 
 function handleKeywordChange(val: string) {
-  if (!val) getList()
+  if (!val) getList();
 }
 
 // 多选状态
-const selectedRows = ref<any[]>([])
+const selectedRows = ref<any[]>([]);
 
 // 多选change事件
 function handleCheckboxChange({ records }: any) {
-  selectedRows.value = records || []
+  selectedRows.value = records || [];
 }
 
 // 全选change事件
 function handleCheckboxAll({ records }: any) {
-  selectedRows.value = records || []
+  selectedRows.value = records || [];
 }
 
 // 批量删除
 async function handleBatchDelete() {
   if (!selectedRows.value || selectedRows.value.length === 0) {
-    ElMessage.warning('请选择要删除的记录')
-    return
+    ElMessage.warning("请选择要删除的记录");
+    return;
   }
 
   try {
-    await ElMessageBox.confirm(`确认删除选中的 ${selectedRows.value.length} 条记录吗？`, '批量删除确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      `确认删除选中的 ${selectedRows.value.length} 条记录吗？`,
+      "批量删除确认",
+      {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
 
-    loading.value = true
-    const ids = selectedRows.value.map((r: any) => r.id)
-    const res: any = await batchDeleteRemotionVideoRecord(ids)
-    const payload = res?.data ?? res
+    loading.value = true;
+    const ids = selectedRows.value.map((r: any) => r.id);
+    const res: any = await batchDeleteRemotionVideoRecord(ids);
+    const payload = res?.data ?? res;
     if (payload && payload.failed && payload.failed.length) {
-      ElMessage.warning(`部分删除失败：${payload.failed.length} 条`) 
+      ElMessage.warning(`部分删除失败：${payload.failed.length} 条`);
     } else {
-      ElMessage.success(`成功删除 ${payload.successIds?.length || ids.length} 条记录`)
+      ElMessage.success(`成功删除 ${payload.successIds?.length || ids.length} 条记录`);
     }
-    selectedRows.value = []
-    await getList()
+    selectedRows.value = [];
+    await getList();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '批量删除失败')
+    if (error !== "cancel") {
+      ElMessage.error(error?.message || "批量删除失败");
     }
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function getStatusLabel(status?: string) {
   const map: Record<string, string> = {
-    pending: '待处理',
-    processing: '处理中',
-    success: '成功',
-    failed: '失败',
-  }
-  return map[status || ''] || status || '-'
+    pending: "待处理",
+    processing: "处理中",
+    success: "成功",
+    failed: "失败",
+  };
+  return map[status || ""] || status || "-";
 }
 
 function getStatusTagType(status?: string) {
-  if (status === 'success') return 'success'
-  if (status === 'failed') return 'danger'
-  if (status === 'processing') return 'warning'
-  return 'info'
+  if (status === "success") return "success";
+  if (status === "failed") return "danger";
+  if (status === "processing") return "warning";
+  return "info";
 }
 
 function formatJson(value: any) {
   try {
-    return JSON.stringify(value || {}, null, 2)
+    return JSON.stringify(value || {}, null, 2);
   } catch {
-    return '{}'
+    return "{}";
   }
 }
 
 async function loadTemplates() {
   try {
-    const result: any = await getRemotionTemplateList()
-    templateOptions.value = Array.isArray(result) ? result : []
+    const result: any = await getRemotionTemplateList();
+    templateOptions.value = Array.isArray(result) ? result : [];
   } catch (error: any) {
-    templateOptions.value = []
-    ElMessage.error(getRemotionErrorMessage(error, '获取 Remotion 模板失败'))
+    templateOptions.value = [];
+    ElMessage.error(getRemotionErrorMessage(error, "获取 Remotion 模板失败"));
   }
 }
 
 async function checkRemotionHealth() {
-  remotionStatus.loading = true
-  try {
-    const result: any = await getRemotionVideoHealth()
-    remotionStatus.checked = true
-    remotionStatus.available = !!result?.available
-    remotionStatus.baseUrl = result?.baseUrl || ''
-    remotionStatus.message = normalizeHealthMessage(result?.message, remotionStatus.available)
-    remotionStatus.timestamp = result?.timestamp || ''
-  } catch (error: any) {
-    remotionStatus.available = false
-    remotionStatus.baseUrl = remotionStatus.baseUrl || '未知地址'
-    remotionStatus.message = getRemotionErrorMessage(error, 'Remotion 服务检测失败')
-    remotionStatus.timestamp = new Date().toISOString()
-  } finally {
-    remotionStatus.checked = true
-    remotionStatus.loading = false
-  }
-}
-
-function startRemotionHealthPolling() {
-  stopRemotionHealthPolling()
-  remotionHealthTimer = window.setInterval(() => {
-    checkRemotionHealth()
-  }, 30000)
-}
-
-function stopRemotionHealthPolling() {
-  if (remotionHealthTimer !== null) {
-    window.clearInterval(remotionHealthTimer)
-    remotionHealthTimer = null
-  }
+  await refreshServiceHealth("remotion");
 }
 
 function resetTemplateFilters() {
-  templateFilters.category = ''
-  templateFilters.durationLabel = ''
+  templateFilters.category = "";
+  templateFilters.durationLabel = "";
 }
 
 function resetForm() {
-  resetTemplateFilters()
-  form.templateId = ''
-  form.title = ''
-  form.timeoutMs = 300000
-  form.inputProps = {}
-  form.inputPropsJson = '{}'
+  resetTemplateFilters();
+  form.templateId = "";
+  form.title = "";
+  form.timeoutMs = 300000;
+  form.inputProps = {};
+  form.inputPropsJson = "{}";
 }
 
 function handleTemplateFilterChange() {
-  if (!form.templateId) return
-  const stillVisible = filteredTemplateOptions.value.some((item) => item.id === form.templateId)
+  if (!form.templateId) return;
+  const stillVisible = filteredTemplateOptions.value.some((item) => item.id === form.templateId);
   if (!stillVisible) {
-    form.templateId = ''
-    form.inputProps = {}
-    form.inputPropsJson = '{}'
+    form.templateId = "";
+    form.inputProps = {};
+    form.inputPropsJson = "{}";
   }
 }
 
 function handleTemplateChange() {
-  form.inputProps = selectedTemplate.value?.defaultInputProps ? { ...selectedTemplate.value.defaultInputProps } : {}
+  form.inputProps = selectedTemplate.value?.defaultInputProps
+    ? { ...selectedTemplate.value.defaultInputProps }
+    : {};
   try {
     form.inputPropsJson = selectedTemplate.value?.defaultInputProps
       ? JSON.stringify(selectedTemplate.value.defaultInputProps, null, 2)
-      : '{}'
+      : "{}";
   } catch {
-    form.inputPropsJson = '{}'
+    form.inputPropsJson = "{}";
   }
   if (!form.title) {
-    form.title = selectedTemplate.value?.name || ''
+    form.title = selectedTemplate.value?.name || "";
   }
 }
 
 function openCreateDialog(row?: any) {
-  createVisible.value = true
+  createVisible.value = true;
 
   if (!row) {
-    resetForm()
-    return
+    resetForm();
+    return;
   }
 
-  resetTemplateFilters()
-  form.templateId = row.templateId || ''
-  form.title = row.title || ''
-  form.timeoutMs = 300000
-  form.inputProps = row.inputProps ? JSON.parse(JSON.stringify(row.inputProps)) : {}
+  resetTemplateFilters();
+  form.templateId = row.templateId || "";
+  form.title = row.title || "";
+  form.timeoutMs = 300000;
+  form.inputProps = row.inputProps ? JSON.parse(JSON.stringify(row.inputProps)) : {};
   try {
-    form.inputPropsJson = row.inputProps ? JSON.stringify(row.inputProps, null, 2) : '{}'
+    form.inputPropsJson = row.inputProps ? JSON.stringify(row.inputProps, null, 2) : "{}";
   } catch {
-    form.inputPropsJson = '{}'
+    form.inputPropsJson = "{}";
   }
 }
 
 async function submitGenerate() {
   if (!form.templateId) {
-    ElMessage.warning('请先选择模板')
-    return
+    ElMessage.warning("请先选择模板");
+    return;
   }
-  submitLoading.value = true
+  submitLoading.value = true;
   try {
-    let inputPropsToSend: Record<string, any> = {}
+    let inputPropsToSend: Record<string, any> = {};
     if (form.inputPropsJson && String(form.inputPropsJson).trim()) {
       try {
-        inputPropsToSend = JSON.parse(form.inputPropsJson)
+        inputPropsToSend = JSON.parse(form.inputPropsJson);
       } catch (e) {
-        ElMessage.error('参数 JSON 格式不正确')
-        submitLoading.value = false
-        return
+        ElMessage.error("参数 JSON 格式不正确");
+        submitLoading.value = false;
+        return;
       }
     } else {
-      inputPropsToSend = form.inputProps || {}
+      inputPropsToSend = form.inputProps || {};
     }
 
     await generateRemotionVideoRecord({
@@ -756,118 +848,110 @@ async function submitGenerate() {
       title: form.title || undefined,
       timeoutMs: Number(form.timeoutMs || 300000),
       inputProps: inputPropsToSend,
-    })
-    ElMessage.success('视频生成成功')
-    createVisible.value = false
-    await getList()
+    });
+    ElMessage.success("视频生成成功");
+    createVisible.value = false;
+    await getList();
   } catch (error: any) {
-    ElMessage.error(getRemotionErrorMessage(error, '视频生成失败'))
+    ElMessage.error(getRemotionErrorMessage(error, "视频生成失败"));
   } finally {
-    submitLoading.value = false
+    submitLoading.value = false;
   }
 }
 
 function formatHealthTime(value: string) {
-  if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
-}
-
-function normalizeHealthMessage(message: string, available: boolean) {
-  const normalized = String(message || '').trim()
-  if (!normalized) {
-    return available ? '服务健康检查通过' : '服务健康检查未通过'
-  }
-  return normalized
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 function getRemotionErrorMessage(error: any, fallback: string) {
-  const raw = String(error?.message || error || '').trim()
-  const lower = raw.toLowerCase()
+  const raw = String(error?.message || error || "").trim();
+  const lower = raw.toLowerCase();
 
-  if (!raw) return fallback
-  if (lower.includes('connection refused') || lower.includes('econnrefused')) {
-    return '服务未启动'
+  if (!raw) return fallback;
+  if (lower.includes("connection refused") || lower.includes("econnrefused")) {
+    return "服务未启动";
   }
-  if (lower.includes('network error')) {
-    return '网络异常'
+  if (lower.includes("network error")) {
+    return "网络异常";
   }
-  if (lower.includes('timeout')) {
-    return '请求超时'
+  if (lower.includes("timeout")) {
+    return "请求超时";
   }
-  if (lower.includes('not found')) {
-    return '接口不存在'
+  if (lower.includes("not found")) {
+    return "接口不存在";
   }
-  if (lower.includes('remotion')) {
-    return 'Remotion 服务异常'
+  if (lower.includes("remotion")) {
+    return "Remotion 服务异常";
   }
-  return raw || fallback
+  return raw || fallback;
 }
 
 async function getList() {
-  loading.value = true
+  loading.value = true;
   try {
-    const result: any = await getRemotionVideoRecordPage({ ...queryParams })
-    dataSource.value = result?.list || result?.records || []
-    total.value = result?.total || 0
+    const result: any = await getRemotionVideoRecordPage({ ...queryParams });
+    dataSource.value = result?.list || result?.records || [];
+    total.value = result?.total || 0;
   } catch (error: any) {
-    dataSource.value = []
-    total.value = 0
-    ElMessage.error(error?.message || '获取视频生成记录失败')
+    dataSource.value = [];
+    total.value = 0;
+    ElMessage.error(error?.message || "获取视频生成记录失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 async function openDetail(row: any) {
-  const result: any = await getRemotionVideoRecordDetail(row.id)
-  currentRow.value = result
-  detailVisible.value = true
+  const result: any = await getRemotionVideoRecordDetail(row.id);
+  currentRow.value = result;
+  detailVisible.value = true;
 }
 
 function previewVideo(row: any) {
-  if (!row?.url) return
+  if (!row?.url) return;
 
-  const el = document.getElementById(`thumb-${row.id}`) as HTMLVideoElement | null
+  const el = document.getElementById(`thumb-${row.id}`) as HTMLVideoElement | null;
   if (!el) {
     // fallback: 在新标签打开
-    window.open(row.url, '_blank')
-    return
+    window.open(row.url, "_blank");
+    return;
   }
 
   try {
     // 在全屏前开启控件，尝试播放，然后进入全屏
-    el.controls = true
-    const p = el.play()
-    if (p && typeof p.then === 'function') p.catch(() => {})
+    el.controls = true;
+    const p = el.play();
+    if (p && typeof p.then === "function") p.catch(() => {});
 
     // 隐藏覆盖层，避免覆盖原生控件
     try {
-      const overlay = el.parentElement?.querySelector('.cell-play-overlay') as HTMLElement | null
-      if (overlay) overlay.style.display = 'none'
+      const overlay = el.parentElement?.querySelector(".cell-play-overlay") as HTMLElement | null;
+      if (overlay) overlay.style.display = "none";
     } catch {}
 
     // 标准全屏 API
     if (el.requestFullscreen) {
-      el.requestFullscreen().catch(() => {})
+      el.requestFullscreen().catch(() => {});
     } else {
       // iOS Safari 回退方法（非标准）
-      const anyEl: any = el
+      const anyEl: any = el;
       if (anyEl.webkitEnterFullscreen) {
         try {
-          anyEl.webkitEnterFullscreen()
+          anyEl.webkitEnterFullscreen();
         } catch {}
       } else {
         // 最后回退为在新标签打开
-        window.open(row.url, '_blank')
+        window.open(row.url, "_blank");
       }
     }
 
@@ -875,64 +959,68 @@ function previewVideo(row: any) {
     const onFullChange = () => {
       try {
         if (document.fullscreenElement !== el) {
-          el.controls = false
-          const overlay = el.parentElement?.querySelector('.cell-play-overlay') as HTMLElement | null
-          if (overlay) overlay.style.display = ''
-          document.removeEventListener('fullscreenchange', onFullChange)
+          el.controls = false;
+          const overlay = el.parentElement?.querySelector(
+            ".cell-play-overlay",
+          ) as HTMLElement | null;
+          if (overlay) overlay.style.display = "";
+          document.removeEventListener("fullscreenchange", onFullChange);
         }
       } catch {}
-    }
-    document.addEventListener('fullscreenchange', onFullChange)
+    };
+    document.addEventListener("fullscreenchange", onFullChange);
 
     // iOS 退出事件回退
     try {
-      el.addEventListener('webkitendfullscreen', () => {
-        try {
-          el.controls = false
-          const overlay = el.parentElement?.querySelector('.cell-play-overlay') as HTMLElement | null
-          if (overlay) overlay.style.display = ''
-        } catch {}
-      }, { once: true })
+      el.addEventListener(
+        "webkitendfullscreen",
+        () => {
+          try {
+            el.controls = false;
+            const overlay = el.parentElement?.querySelector(
+              ".cell-play-overlay",
+            ) as HTMLElement | null;
+            if (overlay) overlay.style.display = "";
+          } catch {}
+        },
+        { once: true },
+      );
     } catch {}
-
   } catch (err) {
-    window.open(row.url, '_blank')
+    window.open(row.url, "_blank");
   }
 }
 
 async function handleDelete(row: any) {
   try {
-    await ElMessageBox.confirm(`确认删除记录「${row.title || row.id}」吗？`, '删除确认', { type: 'warning' })
-    await deleteRemotionVideoRecord(row.id)
-    ElMessage.success('删除成功')
-    await getList()
+    await ElMessageBox.confirm(`确认删除记录「${row.title || row.id}」吗？`, "删除确认", {
+      type: "warning",
+    });
+    await deleteRemotionVideoRecord(row.id);
+    ElMessage.success("删除成功");
+    await getList();
   } catch (error: any) {
-    if (error !== 'cancel') {
-      ElMessage.error(error?.message || '删除视频记录失败')
+    if (error !== "cancel") {
+      ElMessage.error(error?.message || "删除视频记录失败");
     }
   }
 }
 
 function handleOperationCommand(command: string, row: any) {
-  if (command === 'detail') {
-    openDetail(row)
-    return
+  if (command === "detail") {
+    openDetail(row);
+    return;
   }
   // 'regenerate' action removed
-  if (command === 'delete') {
-    handleDelete(row)
+  if (command === "delete") {
+    handleDelete(row);
   }
 }
 
 onMounted(async () => {
-  resetForm()
-  await Promise.allSettled([loadTemplates(), getList(), checkRemotionHealth()])
-  startRemotionHealthPolling()
-})
-
-onBeforeUnmount(() => {
-  stopRemotionHealthPolling()
-})
+  resetForm();
+  await Promise.allSettled([loadTemplates(), getList(), checkRemotionHealth()]);
+});
 </script>
 
 <style scoped>
@@ -1187,7 +1275,7 @@ onBeforeUnmount(() => {
   margin-top: 12px;
   padding: 10px;
   border-radius: 8px;
-  background: rgba(250,250,250,0.02);
+  background: rgba(250, 250, 250, 0.02);
   border: 1px dashed var(--el-border-color-light);
 }
 .schema-title {
@@ -1225,7 +1313,7 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-secondary);
 }
 .schema-example code {
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -1240,7 +1328,7 @@ onBeforeUnmount(() => {
   overflow: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  background: rgba(0,0,0,0.03);
+  background: rgba(0, 0, 0, 0.03);
   padding: 10px;
   border-radius: 6px;
   border: 1px solid var(--el-border-color-light);
@@ -1323,7 +1411,7 @@ onBeforeUnmount(() => {
   border-radius: 6px;
 }
 
-  .cell-play-overlay {
+.cell-play-overlay {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -1331,7 +1419,7 @@ onBeforeUnmount(() => {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1349,10 +1437,12 @@ onBeforeUnmount(() => {
 }
 
 .cell-video-wrapper:hover .cell-play-overlay {
-  background: rgba(0,0,0,0.65);
+  background: rgba(0, 0, 0, 0.65);
 }
 
-.cell-video-wrapper { cursor: pointer; }
+.cell-video-wrapper {
+  cursor: pointer;
+}
 
 .remotion-detail-grid {
   min-height: 0;

@@ -251,6 +251,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noTagsView: false,
           title: "代码脚本",
           requiresAdmin: true,
+          serviceStatusKey: "sandbox",
         },
       },
       {
@@ -275,6 +276,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           noTagsView: false,
           title: "视频生成(remotion)",
           requiresAdmin: true,
+          serviceStatusKey: "remotion",
         },
       },
     ],
