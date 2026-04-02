@@ -45,6 +45,26 @@
             </div>
           </div>
 
+          <div class="card panel supported-task-panel" v-loading="capabilityLoading">
+            <div class="supported-task-panel__head">
+              <div>
+                <div class="section-title">支持任务类型</div>
+                <div class="muted">仅显示当前已接入浏览器自动化执行链路的任务类型。</div>
+              </div>
+            </div>
+            <div v-if="supportedTaskTypeItems.length" class="supported-task-list">
+              <span
+                v-for="item in supportedTaskTypeItems"
+                :key="item.taskType"
+                class="supported-task-chip"
+              >
+                <span class="supported-task-chip__label">{{ item.label }}</span>
+                <span class="supported-task-chip__key">{{ item.taskType }}</span>
+              </span>
+            </div>
+            <div v-else class="muted">当前还没有可展示的任务类型。</div>
+          </div>
+
           <div class="card panel console-entry">
             <div class="console-entry__content">
               <div class="section-title">集中操作台</div>
@@ -275,6 +295,52 @@
               </div>
               <div class="card panel">
                 <div class="section-title">结果</div>
+                <div
+                  v-if="debugFeedback"
+                  class="debug-feedback"
+                  :data-success="debugFeedback.success"
+                >
+                  <div class="debug-feedback__header">
+                    <el-tag
+                      :type="debugFeedback.success ? 'success' : 'danger'"
+                      size="small"
+                      effect="plain"
+                    >
+                      {{ debugFeedback.success ? "成功" : "失败" }}
+                    </el-tag>
+                    <span class="debug-feedback__message">{{ debugFeedback.message }}</span>
+                  </div>
+                  <div
+                    v-if="
+                      debugFeedback.step || debugFeedback.code || debugFeedback.pageIndex !== null
+                    "
+                    class="debug-feedback__meta"
+                  >
+                    <span v-if="debugFeedback.step">步骤：{{ debugFeedback.step }}</span>
+                    <span v-if="debugFeedback.code">代码：{{ debugFeedback.code }}</span>
+                    <span v-if="debugFeedback.pageIndex !== null"
+                      >页面：#{{ debugFeedback.pageIndex }}</span
+                    >
+                  </div>
+                  <div
+                    v-if="debugFeedback.selector || debugFeedback.url"
+                    class="debug-feedback__meta"
+                  >
+                    <span v-if="debugFeedback.selector"
+                      >Selector：{{ debugFeedback.selector }}</span
+                    >
+                    <span v-if="debugFeedback.url">URL：{{ debugFeedback.url }}</span>
+                  </div>
+                  <div v-if="debugFeedback.suggestion" class="debug-feedback__hint">
+                    建议：{{ debugFeedback.suggestion }}
+                  </div>
+                  <div
+                    v-if="debugFeedback.detail && debugFeedback.detail !== debugFeedback.message"
+                    class="debug-feedback__detail"
+                  >
+                    原始信息：{{ debugFeedback.detail }}
+                  </div>
+                </div>
                 <pre class="result">{{ debugResult || "暂无结果" }}</pre>
               </div>
             </el-tab-pane>
@@ -367,15 +433,18 @@ import {
   executeBrowserAutomationDebug,
   fetchBrowserAutomationPages,
   forceCloseBrowserAutomation,
+  getBrowserAutomationCapabilities,
   getBrowserAutomationTaskDetail,
   getBrowserAutomationTaskLogs,
   openBrowserAutomationLink,
   queryBrowserAutomationTasks,
+  type BrowserAutomationCapabilityCatalogResponse,
   type BrowserAutomationClientVO,
   type BrowserAutomationCommandResponse,
   type BrowserAutomationServiceStatus,
 } from "@/api/external/browserAutomation";
 import {
+  extractBrowserAutomationSupportedTaskTypes,
   getBrowserAutomationBrowserText,
   getBrowserAutomationBrowserTone,
   getBrowserAutomationServiceText,
@@ -390,6 +459,26 @@ import ExternalClientSidebar, {
 
 defineOptions({ name: "ExternalBrowserAutomation" });
 
+interface BrowserDebugFeedback {
+  success: boolean;
+  action: string | null;
+  message: string;
+  detail: string | null;
+  step: string | null;
+  code: string | null;
+  suggestion: string | null;
+  pageIndex: number | null;
+  selector: string | null;
+  url: string | null;
+  timeout: boolean;
+  updatedAt: string | null;
+}
+
+interface BrowserSupportedTaskTypeItem {
+  taskType: string;
+  label: string;
+}
+
 const {
   clients: rawClients,
   loading,
@@ -401,11 +490,14 @@ const activeTab = ref("browser");
 const pageList = ref<Record<string, any>[]>([]);
 const taskList = ref<Record<string, any>[]>([]);
 const debugResult = ref("");
+const debugFeedback = ref<BrowserDebugFeedback | null>(null);
 const detailText = ref("");
 const logsText = ref("");
 const detailVisible = ref(false);
 const logsVisible = ref(false);
 const operationDialogVisible = ref(false);
+const capabilityLoading = ref(false);
+const capabilityCatalog = ref<BrowserAutomationCapabilityCatalogResponse["data"] | null>(null);
 
 const loadingMap = reactive<Record<string, boolean>>({
   checkStatus: false,
@@ -482,6 +574,47 @@ const selectedDetails = computed(() => selectedService.value?.details || {});
 const serviceEnabled = computed(() =>
   Boolean(selectedClient.value?.isOnline && selectedService.value?.connected),
 );
+const capabilityLabelMap = computed(() => {
+  const items = capabilityCatalog.value?.declaredCapabilities || [];
+  return new Map(items.map((item) => [item.taskType, item.label]));
+});
+const supportedTaskTypeItems = computed<BrowserSupportedTaskTypeItem[]>(() => {
+  const normalized = new Map<string, string>();
+  const runtimeCapabilities = Array.isArray(selectedDetails.value?.capabilities)
+    ? selectedDetails.value.capabilities
+    : [];
+
+  runtimeCapabilities.forEach((item: any) => {
+    const taskType = String(item?.taskType || "").trim();
+    if (!taskType) {
+      return;
+    }
+    normalized.set(
+      taskType,
+      String(item?.label || capabilityLabelMap.value.get(taskType) || taskType),
+    );
+  });
+
+  if (!normalized.size) {
+    extractBrowserAutomationSupportedTaskTypes(selectedService.value).forEach((taskType) => {
+      normalized.set(taskType, capabilityLabelMap.value.get(taskType) || taskType);
+    });
+  }
+
+  if (!normalized.size) {
+    (capabilityCatalog.value?.declaredCapabilities || []).forEach((item) => {
+      const taskType = String(item?.taskType || "").trim();
+      if (!taskType) {
+        return;
+      }
+      normalized.set(taskType, String(item?.label || taskType));
+    });
+  }
+
+  return Array.from(normalized.entries())
+    .map(([taskType, label]) => ({ taskType, label }))
+    .sort((left, right) => left.label.localeCompare(right.label, "zh-CN"));
+});
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   clients.value.map((client) => ({
     connectionId: client.clientId,
@@ -524,6 +657,108 @@ const jsonText = (value: any) => {
     return String(value);
   }
 };
+const toNullableText = (value: any) => {
+  const normalized = String(value || "").trim();
+  return normalized || null;
+};
+const normalizeCapabilityCatalogPayload = (response: any) => {
+  const payload =
+    response?.data && typeof response.data === "object" && !Array.isArray(response.data)
+      ? response.data
+      : response;
+
+  if (payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+    return payload.data as BrowserAutomationCapabilityCatalogResponse["data"];
+  }
+
+  return payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    Array.isArray(payload.declaredCapabilities)
+    ? (payload as BrowserAutomationCapabilityCatalogResponse["data"])
+    : null;
+};
+const getCommandErrorDetail = (event: ServiceCommandResultEvent) => {
+  if (
+    event.errorDetail &&
+    typeof event.errorDetail === "object" &&
+    !Array.isArray(event.errorDetail)
+  ) {
+    return event.errorDetail as Record<string, any>;
+  }
+
+  const dataDetail = event.data?.errorDetail;
+  if (dataDetail && typeof dataDetail === "object" && !Array.isArray(dataDetail)) {
+    return dataDetail as Record<string, any>;
+  }
+
+  return null;
+};
+const buildDebugFeedback = (event: ServiceCommandResultEvent, action?: string) => {
+  const errorDetail = getCommandErrorDetail(event);
+  const pageIndexValue =
+    typeof errorDetail?.pageIndex === "number"
+      ? errorDetail.pageIndex
+      : typeof event.data?.pageIndex === "number"
+        ? event.data.pageIndex
+        : null;
+
+  return {
+    success: !!event.success,
+    action: toNullableText(action || event.action),
+    message:
+      toNullableText(errorDetail?.userMessage) ||
+      toNullableText(event.message) ||
+      toNullableText(event.error) ||
+      (event.success ? "执行成功" : "执行失败"),
+    detail:
+      toNullableText(errorDetail?.rawMessage) ||
+      (event.success ? null : toNullableText(event.error || event.message)),
+    step: toNullableText(errorDetail?.step),
+    code: toNullableText(errorDetail?.code),
+    suggestion: toNullableText(errorDetail?.suggestion),
+    pageIndex: pageIndexValue,
+    selector: toNullableText(errorDetail?.selector),
+    url: toNullableText(errorDetail?.url || event.data?.url),
+    timeout: errorDetail?.timeout === true,
+    updatedAt: toNullableText(event.finishedAt),
+  } satisfies BrowserDebugFeedback;
+};
+const buildDebugResultText = (feedback: BrowserDebugFeedback, data: Record<string, any>) => {
+  if (feedback.action === "pages") {
+    return jsonText({
+      action: feedback.action,
+      success: feedback.success,
+      message: feedback.message,
+      step: feedback.step,
+      code: feedback.code,
+      suggestion: feedback.suggestion,
+      pageCount: Array.isArray(data?.pages) ? data.pages.length : 0,
+      pages: Array.isArray(data?.pages) ? data.pages : [],
+      runtime: data?.runtime || null,
+      updatedAt: feedback.updatedAt,
+    });
+  }
+
+  return jsonText({
+    action: feedback.action,
+    success: feedback.success,
+    message: feedback.message,
+    step: feedback.step,
+    code: feedback.code,
+    suggestion: feedback.suggestion,
+    pageIndex: feedback.pageIndex,
+    selector: feedback.selector,
+    url: feedback.url,
+    timeout: feedback.timeout,
+    result: data || null,
+    updatedAt: feedback.updatedAt,
+  });
+};
+const resetDebugOutput = () => {
+  debugFeedback.value = null;
+  debugResult.value = "";
+};
 const normalizePageOption = (page: Record<string, any>, fallbackIndex: number) => {
   const rawIndex =
     typeof page?.index === "number"
@@ -539,6 +774,11 @@ const normalizePageOption = (page: Record<string, any>, fallbackIndex: number) =
     index: rawIndex,
     title,
     url,
+    isActive:
+      page?.isActive === true ||
+      page?.active === true ||
+      page?.current === true ||
+      page?.selected === true,
     optionKey: `${rawIndex}-${title}-${url}`,
     optionLabel: `#${rawIndex} ${title}${url ? ` · ${url}` : ""}`,
   };
@@ -629,12 +869,27 @@ const loadClients = async () => {
   syncSelectedPages();
 };
 
+const loadCapabilityCatalog = async () => {
+  capabilityLoading.value = true;
+  try {
+    const response = await getBrowserAutomationCapabilities();
+    capabilityCatalog.value = normalizeCapabilityCatalogPayload(response);
+  } catch (error) {
+    console.warn("[browser-automation] 加载能力目录失败", error);
+  } finally {
+    capabilityLoading.value = false;
+  }
+};
+
 const handleRefreshClients = async () => {
-  await loadClients();
+  await Promise.all([loadClients(), loadCapabilityCatalog()]);
 };
 
 const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
   if (!selectedClientId.value) return;
+  if (kind === "pages") {
+    resetDebugOutput();
+  }
   if (kind === "checkStatus")
     return dispatch(
       "checkStatus",
@@ -678,11 +933,12 @@ const sendOpenLink = async () =>
   );
 const sendDebug = async (action: string) =>
   selectedClientId.value &&
+  (resetDebugOutput(),
   dispatch(
     "debug",
     () => executeBrowserAutomationDebug(selectedClientId.value, { action, ...debugForm }),
     "调试命令已发送",
-  );
+  ));
 const sendTasks = async () =>
   selectedClientId.value &&
   dispatch(
@@ -712,9 +968,13 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
   delete pending[event.commandId];
   finish(action);
   const data = event.data || {};
+  const feedback = buildDebugFeedback(event, action);
   if (event.clientId === selectedClientId.value) {
     if (Array.isArray(data.pages)) pageList.value = data.pages;
-    if (action === "debug") debugResult.value = jsonText(data);
+    if (action === "debug" || action === "pages") {
+      debugFeedback.value = feedback;
+      debugResult.value = buildDebugResultText(feedback, data);
+    }
     if (action === "tasks") taskList.value = Array.isArray(data.items) ? data.items : [];
     if (action === "taskDetail") {
       detailText.value = jsonText(data.task || null);
@@ -725,9 +985,7 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
       logsVisible.value = true;
     }
   }
-  (event.success ? ElMessage.success : ElMessage.error)(
-    event.message || event.error || (event.success ? "执行成功" : "执行失败"),
-  );
+  (event.success ? ElMessage.success : ElMessage.error)(feedback.message);
   await loadClients();
 };
 
@@ -749,6 +1007,7 @@ watch(
 watch(selectedClientId, (value) => {
   syncSelectedPages();
   syncDebugPageIndex();
+  resetDebugOutput();
   if (!value) operationDialogVisible.value = false;
 });
 
@@ -768,7 +1027,7 @@ watch([operationDialogVisible, activeTab, serviceEnabled], ([visible, tab, enabl
 });
 
 onMounted(async () => {
-  await loadClients();
+  await Promise.all([loadClients(), loadCapabilityCatalog()]);
   websocketClient.events.on("serviceCommandResult", onCommand);
 });
 
@@ -826,6 +1085,53 @@ onUnmounted(() => {
   align-items: flex-start;
   justify-content: flex-start;
   gap: 16px;
+}
+
+.supported-task-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.supported-task-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.supported-task-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.supported-task-chip {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 180px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  background: var(--el-fill-color-lighter);
+}
+
+.supported-task-chip__label {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.supported-task-chip__key {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+  font-family: Consolas, Monaco, "Courier New", monospace;
+  word-break: break-all;
 }
 
 .console-entry__content {
@@ -918,6 +1224,45 @@ onUnmounted(() => {
 .stack :deep(.el-input-number),
 .stack :deep(.el-date-editor) {
   width: 100%;
+}
+
+.debug-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+
+.debug-feedback[data-success="false"] {
+  border-color: var(--el-color-danger-light-5);
+  background: var(--el-color-danger-light-9);
+}
+
+.debug-feedback__header,
+.debug-feedback__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.debug-feedback__message {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.debug-feedback__meta,
+.debug-feedback__detail,
+.debug-feedback__hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  word-break: break-word;
 }
 
 .result {

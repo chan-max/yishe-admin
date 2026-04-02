@@ -287,6 +287,24 @@ export const triggerPsdSetAutoDispatch = () => {
   })
 }
 
+export interface AutoDispatchSchedulerRuntime {
+  online: boolean
+  timerActive: boolean
+  running: boolean
+  dispatchIntervalMs: number
+  timeoutMs: number
+  lastCycleStartedAt?: string | null
+  lastCycleFinishedAt?: string | null
+  lastHeartbeatAt?: string | null
+  lastError?: string | null
+}
+
+export const getPsdSetAutoDispatchRuntime = () => {
+  return request.get<AutoDispatchSchedulerRuntime>({
+    url: '/websocket/psd-set/auto-dispatch/runtime'
+  })
+}
+
 export const startPublishTaskDispatch = (taskId: string, data?: DispatchPublishTaskDTO) => {
   return request.post<{ success: boolean; message: string; data?: any }>({
     url: `/websocket/publish-tasks/${taskId}/start`,
@@ -297,6 +315,12 @@ export const startPublishTaskDispatch = (taskId: string, data?: DispatchPublishT
 export const triggerPublishTaskAutoDispatch = () => {
   return request.post<{ success: boolean; dispatched: boolean; reason?: string; message?: string; data?: any }>({
     url: '/websocket/publish-tasks/auto-dispatch/trigger'
+  })
+}
+
+export const getPublishTaskAutoDispatchRuntime = () => {
+  return request.get<AutoDispatchSchedulerRuntime>({
+    url: '/websocket/publish-tasks/auto-dispatch/runtime'
   })
 }
 

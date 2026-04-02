@@ -8,6 +8,7 @@ import { isUrl } from "@/utils/is";
 import { pathResolve } from "@/utils/routerHelper";
 import { Logo } from "@/layout/components/Logo";
 import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
+import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
 import {
   getClientServiceRuntime,
@@ -41,6 +42,12 @@ export default defineComponent({
       refresh: refreshPsdSetRuntime,
       setUserAutoSchedulingEnabled,
     } = usePsdSetRuntimeState();
+    const {
+      isAnyPublishTaskRunning,
+      menuStatusTone: publishTaskMenuStatusTone,
+      tooltipText: publishTaskTooltipText,
+      refresh: refreshPublishTaskRuntime,
+    } = usePublishTaskRuntimeState();
     const clientNodeStore = useClientNodeStore();
     clientNodeStore.ensureInitialized();
 
@@ -58,6 +65,7 @@ export default defineComponent({
             pluginKey as keyof typeof clientNodeStore.pluginStatusMap
           ] || "offline";
       });
+      result["/product/queue"] = publishTaskMenuStatusTone.value;
       return result;
     });
 
@@ -71,6 +79,7 @@ export default defineComponent({
           return isClientServiceRuntimeBusy(serviceRuntime);
         });
       });
+      result["/product/queue"] = isAnyPublishTaskRunning.value;
 
       return result;
     });
@@ -109,9 +118,19 @@ export default defineComponent({
           degraded: "Google Art 已连接，但当前不可执行",
           offline: "Google Art 不可用",
         },
+        "/product/queue": {
+          available: "发布任务可执行",
+          degraded: "发布任务可执行",
+          offline: "发布任务暂不可执行",
+        },
       };
 
-      const title = running ? "当前有任务正在执行" : titleMap[routePath]?.[status];
+      const title =
+        routePath === "/product/queue"
+          ? publishTaskTooltipText.value
+          : running
+            ? "当前有任务正在执行"
+            : titleMap[routePath]?.[status];
 
       return (
         <ElTooltip
@@ -133,6 +152,7 @@ export default defineComponent({
     };
 
     const isPsdSetRoute = (routePath: string) => routePath === "/product/psd-set";
+    const shouldUseRunningLinkHighlight = (routePath: string) => routePath === "/product/queue";
 
     const renderPsdSetAutoDot = (routePath: string) => {
       if (!isPsdSetRoute(routePath)) {
@@ -211,6 +231,7 @@ export default defineComponent({
 
     onMounted(() => {
       void refreshPsdSetRuntime();
+      void refreshPublishTaskRuntime();
       websocketClient.events.on("psAutomationStatus", handlePsAutomationStatus);
     });
 
@@ -298,7 +319,8 @@ export default defineComponent({
                               [`${prefixCls}__link--psd-running`]:
                                 isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
                               [`${prefixCls}__link--service-running`]:
-                                !isPsdSetRoute(childPath) && !!routeRunningMap.value[childPath],
+                                shouldUseRunningLinkHighlight(childPath) &&
+                                !!routeRunningMap.value[childPath],
                             },
                           ]}
                           onClick={() => selectMenu(childPath)}
@@ -877,6 +899,46 @@ $prefix-cls: #{$namespace}-menu;
   .#{$prefix-cls}__status-dot,
   .#{$prefix-cls}__psd-status-dot {
     transform: scale(1.08);
+  }
+}
+
+@media (max-width: 767px) {
+  .#{$prefix-cls}__panel {
+    gap: 4px;
+    padding: 0 8px 18px;
+  }
+
+  .#{$prefix-cls}__logo {
+    padding: 8px 0 10px;
+    margin-bottom: 2px;
+  }
+
+  .#{$prefix-cls}__section {
+    padding: 5px 0 7px;
+  }
+
+  .#{$prefix-cls}__section-head {
+    padding: 7px 8px;
+    border-radius: 10px;
+  }
+
+  .#{$prefix-cls}__section-title {
+    font-size: 12px;
+  }
+
+  .#{$prefix-cls}__links {
+    gap: 5px;
+    padding: 8px 2px 0 20px;
+  }
+
+  .#{$prefix-cls}__link {
+    min-height: 30px;
+    padding: 5px 8px;
+    border-radius: 0 7px 7px 0;
+  }
+
+  .#{$prefix-cls}__link-text {
+    font-size: 11px;
   }
 }
 </style>

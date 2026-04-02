@@ -170,24 +170,133 @@
       <el-card shadow="never">
         <template #header>第 1 步 · 选择模板</template>
         <div class="template-info-panel">
-            <el-form label-position="top" class="space-y-1">
-            <el-form-item label="模板">
-              <el-select v-model="form.templateId" class="w-full" filterable placeholder="请选择模板" @change="handleTemplateChange">
-                <el-option v-for="item in templateOptions" :key="item.id" :label="item.name" :value="item.id" />
-              </el-select>
-            </el-form-item>
+          <div v-if="templateOverviewStats.length" class="template-library-overview">
+            <div v-for="stat in templateOverviewStats" :key="stat.label" class="template-overview-card">
+              <span class="template-overview-card__label">{{ stat.label }}</span>
+              <strong class="template-overview-card__value">{{ stat.value }}</strong>
+            </div>
+          </div>
+
+          <el-form label-position="top" class="space-y-1">
+            <el-row :gutter="12">
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="内容分类">
+                  <el-select
+                    v-model="templateFilters.category"
+                    class="w-full"
+                    clearable
+                    placeholder="全部分类"
+                    @change="handleTemplateFilterChange"
+                  >
+                    <el-option
+                      v-for="item in templateCategoryOptions"
+                      :key="item"
+                      :label="item"
+                      :value="item"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :lg="6">
+                <el-form-item label="时长类型">
+                  <el-select
+                    v-model="templateFilters.durationLabel"
+                    class="w-full"
+                    clearable
+                    placeholder="全部时长"
+                    @change="handleTemplateFilterChange"
+                  >
+                    <el-option
+                      v-for="item in templateDurationOptions"
+                      :key="item"
+                      :label="item"
+                      :value="item"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="24" :lg="12">
+                <el-form-item label="模板">
+                  <el-select
+                    v-model="form.templateId"
+                    class="w-full"
+                    filterable
+                    placeholder="请选择模板"
+                    @change="handleTemplateChange"
+                  >
+                    <el-option
+                      v-for="item in filteredTemplateOptions"
+                      :key="item.id"
+                      :label="item.name"
+                      :value="item.id"
+                    >
+                      <div class="template-select-option">
+                        <span class="template-select-option__name">{{ item.name }}</span>
+                        <span class="template-select-option__meta">
+                          {{ item.category || '未分类' }} / {{ item.durationLabel || '-' }}
+                        </span>
+                      </div>
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="template-filter-summary">
+              当前展示 {{ filteredTemplateOptions.length }} / {{ templateOptions.length }} 个模板
+            </div>
           </el-form>
 
           <div v-if="selectedTemplate" class="template-summary">
             <div class="template-summary-name">{{ selectedTemplate.name }}</div>
             <div class="template-summary-desc">{{ selectedTemplate.description || '暂无模板说明' }}</div>
             <div class="template-summary-meta">
+              <span v-if="selectedTemplate.category">{{ selectedTemplate.category }}</span>
+              <span v-if="selectedTemplate.style">{{ selectedTemplate.style }}</span>
+              <span v-if="selectedTemplate.durationLabel">{{ selectedTemplate.durationLabel }}</span>
               <span>{{ selectedTemplate.width }} x {{ selectedTemplate.height }}</span>
               <span>{{ selectedTemplate.fps }}fps</span>
               <span>{{ selectedTemplate.durationInFrames }}帧</span>
             </div>
-            <div class="template-meta-raw">
-              <pre>{{ formatJson(selectedTemplate) }}</pre>
+            <div v-if="selectedTemplate.useCase" class="template-detail-block">
+              <div class="schema-title">使用场景</div>
+              <div class="template-use-case">{{ selectedTemplate.useCase }}</div>
+            </div>
+            <div v-if="selectedTemplate.tags && selectedTemplate.tags.length" class="template-detail-block">
+              <div class="schema-title">风格标签</div>
+              <div class="template-tag-list">
+                <span v-for="tag in selectedTemplate.tags" :key="tag" class="template-tag">{{ tag }}</span>
+              </div>
+            </div>
+            <div v-if="selectedTemplate.scenes && selectedTemplate.scenes.length" class="template-detail-block">
+              <div class="schema-title">视频结构</div>
+              <div class="schema-list">
+                <div v-for="scene in selectedTemplate.scenes" :key="scene.title + scene.summary" class="schema-field">
+                  <div class="schema-field-head">
+                    <strong class="schema-label">{{ scene.title }}</strong>
+                  </div>
+                  <div class="schema-desc">{{ scene.summary }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-if="selectedTemplate.animationHighlights && selectedTemplate.animationHighlights.length" class="template-detail-block">
+              <div class="schema-title">核心动效</div>
+              <div class="schema-list">
+                <div v-for="highlight in selectedTemplate.animationHighlights" :key="highlight" class="schema-field">
+                  <div class="schema-desc">{{ highlight }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-if="selectedTemplate.example" class="template-detail-block">
+              <div class="schema-title">示例数据</div>
+              <div class="template-meta-raw">
+                <pre>{{ formatJson(selectedTemplate.example) }}</pre>
+              </div>
+            </div>
+            <div v-if="selectedTemplateDebugMeta" class="template-detail-block">
+              <div class="schema-title">调试元数据</div>
+              <div class="template-meta-raw">
+                <pre>{{ formatJson(selectedTemplateDebugMeta) }}</pre>
+              </div>
             </div>
             <div v-if="selectedTemplate.inputSchema && selectedTemplate.inputSchema.length" class="template-input-schema">
               <div class="schema-title">参数说明</div>
@@ -284,7 +393,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Search, View } from '@element-plus/icons-vue'
+import { Delete, Search } from '@element-plus/icons-vue'
 import { useWindowSize } from '@vueuse/core'
 import { formatTimestamp } from '@/common/date'
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
@@ -306,6 +415,10 @@ const loading = ref(false)
 const total = ref(0)
 const dataSource = ref<any[]>([])
 const templateOptions = ref<any[]>([])
+const templateFilters = reactive({
+  category: '',
+  durationLabel: '',
+})
 const createVisible = ref(false)
 const detailVisible = ref(false)
 const submitLoading = ref(false)
@@ -368,22 +481,55 @@ const form = reactive({
 })
 
 const selectedTemplate = computed(() => templateOptions.value.find((item) => item.id === form.templateId) || null)
-const formattedInputProps = computed(() => formatJson(form.inputProps))
-const templateFields = computed(() => {
-  const template = selectedTemplate.value
-  if (!template) return []
-  if (Array.isArray(template.assets) && template.assets.length) {
-    return template.assets.map((item: any) => ({
-      key: item.key,
-      label: item.label || item.key,
-      type: item.type || inferFieldType(item.key, template.defaultInputProps?.[item.key]),
-    }))
+const templateCategoryOptions = computed(() =>
+  Array.from(
+    new Set(
+      templateOptions.value
+        .map((item) => String(item?.category || '').trim())
+        .filter(Boolean)
+    )
+  )
+)
+const templateDurationOptions = computed(() =>
+  Array.from(
+    new Set(
+      templateOptions.value
+        .map((item) => String(item?.durationLabel || '').trim())
+        .filter(Boolean)
+    )
+  )
+)
+const filteredTemplateOptions = computed(() =>
+  templateOptions.value.filter((item) => {
+    if (templateFilters.category && item.category !== templateFilters.category) {
+      return false
+    }
+    if (templateFilters.durationLabel && item.durationLabel !== templateFilters.durationLabel) {
+      return false
+    }
+    return true
+  })
+)
+const templateOverviewStats = computed(() => [
+  { label: '模板总数', value: templateOptions.value.length },
+  { label: '当前结果', value: filteredTemplateOptions.value.length },
+  { label: '内容分类', value: templateCategoryOptions.value.length },
+])
+const selectedTemplateDebugMeta = computed(() => {
+  if (!selectedTemplate.value) return null
+  return {
+    id: selectedTemplate.value.id,
+    compositionId: selectedTemplate.value.compositionId,
+    category: selectedTemplate.value.category,
+    style: selectedTemplate.value.style,
+    durationLabel: selectedTemplate.value.durationLabel,
+    resolution: `${selectedTemplate.value.width} x ${selectedTemplate.value.height}`,
+    fps: selectedTemplate.value.fps,
+    durationInFrames: selectedTemplate.value.durationInFrames,
+    editableFields: selectedTemplate.value.editableFields,
+    assetSummary: selectedTemplate.value.assetSummary,
+    tags: selectedTemplate.value.tags,
   }
-  return (template.editableFields || []).map((key: string) => ({
-    key,
-    label: key,
-    type: inferFieldType(key, template.defaultInputProps?.[key]),
-  }))
 })
 
 const gridOptions = computed(() => ({
@@ -458,17 +604,6 @@ async function handleBatchDelete() {
   }
 }
 
-function inferFieldType(key: string, value: any) {
-  if (typeof value === 'number') return 'number'
-  if (/fontSize|width|height|duration|fps|size/i.test(key)) return 'number'
-  return 'text'
-}
-
-function isTextareaField(field: { key: string; type: string }) {
-  if (field.type !== 'text') return false
-  return /text|content|subtitle|description|slogan|caption/i.test(field.key)
-}
-
 function getStatusLabel(status?: string) {
   const map: Record<string, string> = {
     pending: '待处理',
@@ -538,12 +673,28 @@ function stopRemotionHealthPolling() {
   }
 }
 
+function resetTemplateFilters() {
+  templateFilters.category = ''
+  templateFilters.durationLabel = ''
+}
+
 function resetForm() {
+  resetTemplateFilters()
   form.templateId = ''
   form.title = ''
   form.timeoutMs = 300000
   form.inputProps = {}
   form.inputPropsJson = '{}'
+}
+
+function handleTemplateFilterChange() {
+  if (!form.templateId) return
+  const stillVisible = filteredTemplateOptions.value.some((item) => item.id === form.templateId)
+  if (!stillVisible) {
+    form.templateId = ''
+    form.inputProps = {}
+    form.inputPropsJson = '{}'
+  }
 }
 
 function handleTemplateChange() {
@@ -568,6 +719,7 @@ function openCreateDialog(row?: any) {
     return
   }
 
+  resetTemplateFilters()
   form.templateId = row.templateId || ''
   form.title = row.title || ''
   form.timeoutMs = 300000
@@ -746,12 +898,6 @@ function previewVideo(row: any) {
   } catch (err) {
     window.open(row.url, '_blank')
   }
-}
-
-async function copyLink(text: string, label: string) {
-  if (!text) return
-  await navigator.clipboard.writeText(text)
-  ElMessage.success(`${label}已复制`)
 }
 
 async function handleDelete(row: any) {
@@ -936,11 +1082,88 @@ onBeforeUnmount(() => {
   margin-top: 12px;
 }
 
+.template-library-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.template-overview-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.02));
+  border: 1px solid rgba(64, 158, 255, 0.16);
+}
+
+.template-overview-card__label {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.template-overview-card__value {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+}
+
+.template-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.template-select-option__name {
+  color: var(--el-text-color-primary);
+}
+
+.template-select-option__meta {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.template-filter-summary {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
 .template-summary-meta {
   margin-top: 8px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px 12px;
+}
+
+.template-detail-block {
+  margin-top: 12px;
+}
+
+.template-use-case {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--el-text-color-regular);
+}
+
+.template-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.template-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(64, 158, 255, 0.08);
+  border: 1px solid rgba(64, 158, 255, 0.14);
+  color: var(--el-color-primary);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .template-meta-form {
@@ -1190,6 +1413,10 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 768px) {
+  .template-library-overview {
+    grid-template-columns: 1fr;
+  }
+
   :deep(.remotion-record-page .list-page-search-form__row) {
     row-gap: 0;
   }

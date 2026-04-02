@@ -127,34 +127,26 @@
 
       <template #table>
         <div class="queue-page__main">
-          <div class="queue-page__stats queue-stats-grid">
-            <div class="queue-stat-card">
-              <span class="queue-stat-card__label">待处理</span>
-              <span class="queue-stat-card__value queue-stat-card__value--pending">{{
-                stats.pending
-              }}</span>
+          <div class="queue-page__stats-bar">
+            <div class="queue-stats-pill queue-stats-pill--pending">
+              <span class="queue-stats-pill__label">待处理</span>
+              <span class="queue-stats-pill__value">{{ stats.pending }}</span>
             </div>
-            <div class="queue-stat-card">
-              <span class="queue-stat-card__label">处理中</span>
-              <span class="queue-stat-card__value queue-stat-card__value--processing">{{
-                stats.processing
-              }}</span>
+            <div class="queue-stats-pill queue-stats-pill--processing">
+              <span class="queue-stats-pill__label">处理中</span>
+              <span class="queue-stats-pill__value">{{ stats.processing }}</span>
             </div>
-            <div class="queue-stat-card">
-              <span class="queue-stat-card__label">已完成</span>
-              <span class="queue-stat-card__value queue-stat-card__value--completed">{{
-                stats.completed
-              }}</span>
+            <div class="queue-stats-pill queue-stats-pill--completed">
+              <span class="queue-stats-pill__label">已完成</span>
+              <span class="queue-stats-pill__value">{{ stats.completed }}</span>
             </div>
-            <div class="queue-stat-card">
-              <span class="queue-stat-card__label">失败</span>
-              <span class="queue-stat-card__value queue-stat-card__value--failed">{{
-                stats.failed
-              }}</span>
+            <div class="queue-stats-pill queue-stats-pill--failed">
+              <span class="queue-stats-pill__label">失败</span>
+              <span class="queue-stats-pill__value">{{ stats.failed }}</span>
             </div>
-            <div class="queue-stat-card">
-              <span class="queue-stat-card__label">总计</span>
-              <span class="queue-stat-card__value">{{ stats.total }}</span>
+            <div class="queue-stats-pill">
+              <span class="queue-stats-pill__label">总计</span>
+              <span class="queue-stats-pill__value">{{ stats.total }}</span>
             </div>
           </div>
 
@@ -163,28 +155,40 @@
             class="queue-dispatch-panel list-page-panel list-page-panel--flat"
           >
             <div class="queue-dispatch-panel__summary">
-              <div class="queue-dispatch-panel__copy">
-                <div class="queue-dispatch-panel__title">发布任务调度中心</div>
+              <div class="queue-dispatch-panel__main">
+                <div class="queue-dispatch-panel__title">发布任务调度</div>
                 <div class="queue-dispatch-panel__desc">
-                  由 admin
-                  直接调度浏览器自动化节点执行发布任务，支持手动开始、节点参与控制与服务端自动执行。
+                  保留自动执行和手动触发。支持的任务类型请到浏览器自动化模块查看。
+                </div>
+                <div
+                  class="queue-dispatch-panel__runtime"
+                  :class="`is-${publishTaskSchedulerIndicator.tone}`"
+                >
+                  <span class="queue-dispatch-panel__runtime-dot" />
+                  <span>{{ publishTaskSchedulerIndicator.text }}</span>
+                  <span v-if="publishTaskSchedulerMeta" class="queue-dispatch-panel__runtime-meta">
+                    {{ publishTaskSchedulerMeta }}
+                  </span>
                 </div>
               </div>
-              <div class="queue-dispatch-panel__actions">
-                <div class="queue-dispatch-panel__switch">
-                  <span class="queue-dispatch-panel__switch-label">
-                    自动执行 {{ publishTaskAutoDispatchEnabled ? "已开启" : "已关闭" }}
-                  </span>
-                  <el-switch
-                    :model-value="publishTaskAutoDispatchEnabled"
-                    :loading="publishTaskAutoDispatchLoading"
-                    inline-prompt
-                    active-text="开"
-                    inactive-text="关"
-                    @change="handleTogglePublishAutoDispatch"
-                  />
-                </div>
+              <div class="queue-dispatch-panel__side">
+                <span
+                  class="queue-dispatch-panel__status"
+                  :class="publishTaskAutoDispatchStatusClass"
+                >
+                  <span class="queue-dispatch-panel__status-dot" />
+                  <span>{{ publishTaskAutoDispatchStatusText }}</span>
+                </span>
                 <el-button
+                  size="small"
+                  :type="publishTaskAutoDispatchEnabled ? 'danger' : 'success'"
+                  :loading="publishTaskAutoDispatchLoading"
+                  @click="handleTogglePublishAutoDispatch(!publishTaskAutoDispatchEnabled)"
+                >
+                  {{ publishTaskAutoDispatchEnabled ? "关闭自动执行" : "开启自动执行" }}
+                </el-button>
+                <el-button
+                  size="small"
                   type="primary"
                   plain
                   :loading="publishTaskAutoDispatchLoading"
@@ -192,118 +196,6 @@
                 >
                   立即触发自动调度
                 </el-button>
-              </div>
-            </div>
-
-            <div class="queue-dispatch-panel__meta">
-              <el-tag type="success" effect="plain"
-                >在线节点 {{ onlineBrowserAutomationClients.length }}</el-tag
-              >
-              <el-tag type="primary" effect="plain"
-                >可执行节点 {{ availableBrowserAutomationClients.length }}</el-tag
-              >
-              <el-tag type="warning" effect="plain"
-                >执行中节点 {{ busyBrowserAutomationClients.length }}</el-tag
-              >
-              <el-tag type="info" effect="plain"
-                >支持任务类型 {{ publishCapabilityTagMap.size }}</el-tag
-              >
-            </div>
-
-            <div class="queue-dispatch-panel__client-grid">
-              <div
-                v-for="client in browserAutomationClients"
-                :key="client.id"
-                class="queue-client-card"
-                :class="{
-                  'is-offline': !client.isOnline,
-                  'is-running': isBrowserAutomationClientBusy(client),
-                  'is-ready': isBrowserAutomationClientAvailable(client),
-                }"
-              >
-                <div class="queue-client-card__header">
-                  <div>
-                    <div class="queue-client-card__title">{{ formatClientNodeName(client) }}</div>
-                    <div class="queue-client-card__sub">
-                      {{
-                        client.clientInfo?.location?.city ||
-                        client.clientInfo?.location?.country ||
-                        "未定位"
-                      }}
-                    </div>
-                  </div>
-                  <el-tag
-                    :type="
-                      client.isOnline
-                        ? isBrowserAutomationClientAvailable(client)
-                          ? 'success'
-                          : 'warning'
-                        : 'info'
-                    "
-                    size="small"
-                    effect="plain"
-                  >
-                    {{
-                      client.isOnline
-                        ? isBrowserAutomationClientBusy(client)
-                          ? "执行中"
-                          : isBrowserAutomationClientAvailable(client)
-                            ? "可执行"
-                            : "在线"
-                        : "离线"
-                    }}
-                  </el-tag>
-                </div>
-
-                <div class="queue-client-card__body">
-                  <div class="queue-client-card__line">
-                    <span>自动执行接单</span>
-                    <el-switch
-                      :model-value="
-                        getBrowserAutomationRuntime(client)?.autoDispatchEnabled !== false
-                      "
-                      :loading="browserAutomationDispatchToggleClientId === client.id"
-                      inline-prompt
-                      active-text="开"
-                      inactive-text="关"
-                      @change="
-                        (enabled) => handleToggleClientAutoDispatch(client, enabled === true)
-                      "
-                    />
-                  </div>
-                  <div class="queue-client-card__line">
-                    <span>当前任务</span>
-                    <span class="queue-client-card__value">
-                      {{ getBrowserAutomationCurrentTaskText(getBrowserAutomationRuntime(client)) }}
-                    </span>
-                  </div>
-                  <div class="queue-client-card__hint">
-                    {{ getBrowserAutomationRuntimeHint(getBrowserAutomationRuntime(client)) }}
-                  </div>
-                  <div class="queue-client-card__capabilities">
-                    <el-tag
-                      v-for="taskType in extractBrowserAutomationSupportedTaskTypes(
-                        getBrowserAutomationRuntime(client),
-                      )"
-                      :key="`${client.id}-${taskType}`"
-                      size="small"
-                      effect="plain"
-                      type="info"
-                    >
-                      {{ taskTypeLabel(taskType) }}
-                    </el-tag>
-                    <span
-                      v-if="
-                        extractBrowserAutomationSupportedTaskTypes(
-                          getBrowserAutomationRuntime(client),
-                        ).length === 0
-                      "
-                      class="queue-client-card__empty"
-                    >
-                      暂未上报任务能力
-                    </span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -327,15 +219,21 @@
                   </template>
 
                   <template #executionStatusDefaultSlot="{ row }">
-                    <el-tag
-                      v-if="getExecutionStatusInfo(row).type"
-                      :type="getExecutionStatusInfo(row).type"
-                      size="small"
-                      effect="plain"
+                    <el-tooltip
+                      :disabled="!getExecutionStatusInfo(row).reason"
+                      :content="getExecutionStatusInfo(row).reason || ''"
+                      placement="top"
                     >
-                      {{ getExecutionStatusInfo(row).text }}
-                    </el-tag>
-                    <span v-else class="text-gray-400 text-sm">-</span>
+                      <el-tag
+                        v-if="getExecutionStatusInfo(row).type"
+                        :type="getExecutionStatusInfo(row).type"
+                        size="small"
+                        effect="plain"
+                      >
+                        {{ getExecutionStatusInfo(row).text }}
+                      </el-tag>
+                      <span v-else class="text-gray-400 text-sm">-</span>
+                    </el-tooltip>
                   </template>
 
                   <template #dataDefaultSlot="{ row }">
@@ -355,43 +253,68 @@
                   </template>
 
                   <template #operationDefaultSlot="{ row }">
-                    <el-dropdown
-                      class="operation-dropdown"
-                      placement="bottom-end"
-                      @command="(command) => handleOperationCommand(String(command), row)"
-                    >
-                      <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
+                    <div class="queue-operation-cell">
+                      <el-dropdown
+                        class="operation-dropdown"
+                        placement="bottom-end"
+                        @command="(command) => handleOperationCommand(String(command), row)"
                       >
-                      <template #dropdown>
-                        <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item
-                            v-if="isPublishTaskRow(row)"
-                            :command="'startExecution'"
-                            :disabled="row.status === 'waiting' || row.status === 'processing'"
-                          >
-                            开始执行
-                          </el-dropdown-item>
-                          <el-dropdown-item
-                            v-if="String(row.type || '').startsWith('publish-product-')"
-                            :command="'regenerate'"
-                            :disabled="row.status === 'processing'"
-                          >
-                            重新生成
-                          </el-dropdown-item>
-                          <el-dropdown-item :command="'updateData'">更新数据</el-dropdown-item>
-                          <el-dropdown-item :command="'editStatus'">标记状态</el-dropdown-item>
-                          <el-dropdown-item
-                            v-if="userStore.user?.isAdmin"
-                            :command="'delete'"
-                            divided
-                            class="operation-menu-item--danger"
-                          >
-                            删除
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
+                        <el-button
+                          type="primary"
+                          link
+                          size="small"
+                          class="operation-trigger-button"
+                        >
+                          操作
+                        </el-button>
+                        <template #dropdown>
+                          <el-dropdown-menu class="operation-menu-compact">
+                            <el-dropdown-item
+                              v-if="isPublishTaskRow(row)"
+                              :command="'startExecution'"
+                              :disabled="!canStartPublishExecution(row)"
+                            >
+                              开始执行
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              v-if="String(row.type || '').startsWith('publish-product-')"
+                              :command="'regenerate'"
+                              :disabled="row.status === 'processing'"
+                            >
+                              重新生成
+                            </el-dropdown-item>
+                            <el-dropdown-item :command="'updateData'">更新数据</el-dropdown-item>
+                            <el-dropdown-item :command="'editStatus'">标记状态</el-dropdown-item>
+                            <el-dropdown-item
+                              v-if="isPublishTaskRow(row)"
+                              :command="'markExecutable'"
+                            >
+                              标记可执行
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              v-if="isPublishTaskRow(row)"
+                              :command="'markBlocked'"
+                            >
+                              阻止执行
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              v-if="isPublishTaskRow(row)"
+                              :command="'restoreExecutionAuto'"
+                            >
+                              恢复自动判断
+                            </el-dropdown-item>
+                            <el-dropdown-item
+                              v-if="userStore.user?.isAdmin"
+                              :command="'delete'"
+                              divided
+                              class="operation-menu-item--danger"
+                            >
+                              删除
+                            </el-dropdown-item>
+                          </el-dropdown-menu>
+                        </template>
+                      </el-dropdown>
+                    </div>
                   </template>
                 </vxe-grid>
               </div>
@@ -588,9 +511,18 @@
     >
       <div class="queue-runtime-shell">
         <div class="queue-runtime-toolbar">
+          <div class="queue-runtime-toolbar__title">运行日志流</div>
           <div class="queue-runtime-toolbar__meta">
-            <span>平台：{{ currentTaskRuntime?.platform || "-" }}</span>
-            <span>日志数：{{ currentTaskLogs.length }}</span>
+            <div class="queue-runtime-toolbar__item">
+              <span class="queue-runtime-toolbar__label">平台</span>
+              <span class="queue-runtime-toolbar__value">{{
+                currentTaskRuntime?.platform || "-"
+              }}</span>
+            </div>
+            <div class="queue-runtime-toolbar__item">
+              <span class="queue-runtime-toolbar__label">日志数</span>
+              <span class="queue-runtime-toolbar__value">{{ currentTaskLogs.length }}</span>
+            </div>
           </div>
         </div>
         <div v-if="currentTaskLogs.length" class="queue-runtime-console">
@@ -598,21 +530,30 @@
             v-for="(log, index) in currentTaskLogs"
             :key="log.id || `${log.timestamp}-${index}`"
             class="queue-runtime-console__line"
-            :data-level="String(log.level || 'info').toLowerCase()"
+            :data-level="normalizeLogLevel(log.level)"
           >
-            <span class="queue-runtime-console__time">{{
-              formatLogTimestamp(log.time || log.timestamp)
-            }}</span>
-            <span
-              class="queue-runtime-console__level"
-              :data-level="String(log.level || 'info').toLowerCase()"
-            >
-              {{ String(log.level || "info").toUpperCase() }}
-            </span>
-            <span class="queue-runtime-console__message">{{ log.message || "-" }}</span>
-            <pre v-if="hasLogData(log)" class="queue-runtime-console__data">{{
-              formatLogData(log.data)
-            }}</pre>
+            <div class="queue-runtime-console__main">
+              <div class="queue-runtime-console__meta">
+                <span class="queue-runtime-console__tone-dot" />
+                <span class="queue-runtime-console__time">{{
+                  formatLogTimestamp(log.time || log.timestamp)
+                }}</span>
+              </div>
+              <div class="queue-runtime-console__content">
+                <div class="queue-runtime-console__message">{{ log.message || "-" }}</div>
+                <div v-if="hasLogData(log)" class="queue-runtime-console__actions">
+                  <el-button
+                    type="primary"
+                    link
+                    size="small"
+                    class="queue-runtime-console__detail-trigger"
+                    @click="openRuntimeLogData(log, index)"
+                  >
+                    查看详细数据
+                  </el-button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <el-empty v-else description="暂无匹配日志" :image-size="72" />
@@ -620,6 +561,35 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="runtimeLogDataDialogVisible"
+      width="860px"
+      :center="false"
+      align-center
+      class="queue-runtime-data-dialog"
+    >
+      <template #header>
+        <div class="queue-runtime-data-dialog__header">
+          <div class="queue-runtime-data-dialog__title">日志详细数据</div>
+          <div class="queue-runtime-data-dialog__meta">
+            <span>{{ runtimeLogDataDialogMeta.time || "-" }}</span>
+            <span>{{ runtimeLogDataDialogMeta.level }}</span>
+          </div>
+          <div class="queue-runtime-data-dialog__message">
+            {{ runtimeLogDataDialogMeta.message || "-" }}
+          </div>
+        </div>
+      </template>
+      <div class="queue-runtime-data-dialog__body">
+        <pre class="queue-runtime-data-dialog__raw">{{ runtimeLogDataDialogText }}</pre>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="runtimeLogDataDialogVisible = false">关闭</el-button>
         </div>
       </template>
     </el-dialog>
@@ -694,54 +664,38 @@
               taskTypeLabel(dispatchTargetTask?.type)
             }}</el-tag>
           </div>
+          <div class="publish-dispatch-dialog__hint">
+            可直接看到当前浏览器自动化节点是否可执行，以及不可执行原因。
+          </div>
         </div>
 
-        <div class="publish-dispatch-dialog__client-list">
+        <div v-if="dispatchClientCandidates.length" class="publish-dispatch-dialog__client-list">
           <button
-            v-for="client in browserAutomationClients"
-            :key="client.id"
+            v-for="item in dispatchClientCandidates"
+            :key="item.client.id"
             type="button"
             class="publish-dispatch-client"
             :class="{
-              'is-selected': selectedDispatchClientId === client.id,
-              'is-disabled': !getClientTaskTypeState(client, dispatchTargetTask?.type).enabled,
+              'is-selected': selectedDispatchClientId === item.client.id,
+              'is-disabled': !item.state.enabled,
             }"
-            :disabled="!getClientTaskTypeState(client, dispatchTargetTask?.type).enabled"
-            @click="selectedDispatchClientId = client.id"
+            :disabled="!item.state.enabled"
+            @click="item.state.enabled && (selectedDispatchClientId = item.client.id)"
           >
             <div class="publish-dispatch-client__header">
-              <span class="publish-dispatch-client__title">{{ formatClientNodeName(client) }}</span>
-              <el-tag
-                :type="
-                  getClientTaskTypeState(client, dispatchTargetTask?.type).enabled
-                    ? 'success'
-                    : 'info'
-                "
-                size="small"
-                effect="plain"
-              >
-                {{
-                  getClientTaskTypeState(client, dispatchTargetTask?.type).enabled
-                    ? "可执行"
-                    : "不可用"
-                }}
+              <span class="publish-dispatch-client__title">{{
+                formatClientNodeName(item.client)
+              }}</span>
+              <el-tag :type="item.state.tagType" size="small" effect="plain">
+                {{ item.state.tagText }}
               </el-tag>
             </div>
             <div class="publish-dispatch-client__desc">
-              {{ getClientTaskTypeState(client, dispatchTargetTask?.type).text }}
-            </div>
-            <div class="publish-dispatch-client__capabilities">
-              <span
-                v-for="taskType in extractBrowserAutomationSupportedTaskTypes(
-                  getBrowserAutomationRuntime(client),
-                ).slice(0, 6)"
-                :key="`${client.id}-${taskType}`"
-              >
-                {{ taskTypeLabel(taskType) }}
-              </span>
+              {{ item.state.text }}
             </div>
           </button>
         </div>
+        <el-empty v-else description="当前没有浏览器自动化节点" :image-size="72" />
       </div>
       <template #footer>
         <div class="dialog-footer">
@@ -777,15 +731,17 @@ import {
   getTaskDetail,
   getQueueStats,
   updateTaskData,
+  updateTaskExecutionReadiness,
   updateTaskStatus,
   type QueueMessage,
   type QueueStats,
 } from "@/api/system/queue";
 import { regeneratePublishTaskApi } from "@/api/product/publishConfig";
 import {
+  getPublishTaskAutoDispatchRuntime,
   startPublishTaskDispatch,
-  toggleBrowserAutomationAutoDispatch,
   triggerPublishTaskAutoDispatch,
+  type AutoDispatchSchedulerRuntime,
 } from "@/api/system/websocket";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -795,20 +751,36 @@ import { TASK_TYPE_OPTIONS } from "@/config/task-types";
 import { usePluginClientNodes } from "@/services/clientNodeState";
 import { getUserSetting, updateUserSetting } from "@/api/user";
 import {
-  extractBrowserAutomationSupportedTaskTypes,
-  getBrowserAutomationCurrentTaskText,
   getBrowserAutomationRuntimeHint,
-  isBrowserAutomationClientAvailable as isBrowserAutomationClientAvailableByRuntime,
   isBrowserAutomationRuntimeBusy as isBrowserAutomationRuntimeBusyByRuntime,
   supportsBrowserAutomationTaskType,
 } from "@/services/browserAutomationRuntime";
-import { websocketClient, type PublishTaskRuntimeEvent } from "@/services/websocketClient";
+import {
+  normalizeAutoDispatchSchedulerRuntime,
+  resolveAutoDispatchSchedulerIndicator,
+  resolveAutoDispatchSchedulerMeta,
+} from "@/services/autoDispatchSchedulerRuntime";
+import { resolveTaskExecutionReadinessIndicator } from "@/services/taskExecutionReadiness";
+import {
+  websocketClient,
+  type PublishTaskRuntimeEvent,
+  type ServiceCommandResultEvent,
+} from "@/services/websocketClient";
 
 type QueueTagType = "success" | "warning" | "info" | "primary" | "danger";
 
 interface ExecutionStatusInfo {
   text: string;
   type?: QueueTagType;
+  reason?: string | null;
+  ready?: boolean;
+}
+
+interface DispatchClientState {
+  enabled: boolean;
+  text: string;
+  tagType: QueueTagType;
+  tagText: string;
 }
 
 const userStore = useUserStore();
@@ -831,6 +803,7 @@ const queryParams = reactive({
 const stats = ref<QueueStats>({
   queue: "",
   pending: 0,
+  waiting: 0,
   processing: 0,
   delayed: 0,
   completed: 0,
@@ -943,10 +916,6 @@ const gridOptions = ref({
 
 const { height } = useWindowSize();
 
-watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 400;
-});
-
 const dataSource = ref<QueueMessage[]>([]);
 const loading = ref(false);
 const ids = ref<string[]>([]);
@@ -957,11 +926,14 @@ const dataUpdateSubmitting = ref(false);
 const deleteLoading = ref(false);
 const publishTaskAutoDispatchEnabled = ref(false);
 const publishTaskAutoDispatchLoading = ref(false);
-const browserAutomationDispatchToggleClientId = ref("");
+const publishTaskSchedulerRuntime = ref<AutoDispatchSchedulerRuntime | null>(null);
+const executionReadinessSubmittingId = ref("");
 const publishDispatchDialogVisible = ref(false);
 const publishDispatchSubmitting = ref(false);
 const dispatchTargetTask = ref<QueueMessage | null>(null);
 const selectedDispatchClientId = ref("");
+let publishTaskSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
+let publishTaskRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 对话框相关
 const dialogVisible = ref(false);
@@ -1016,6 +988,13 @@ const dataDialogLoading = ref(false);
 const currentTaskData = ref<any>({});
 const currentTaskId = ref<string>("");
 const runtimeLogDialogVisible = ref(false);
+const runtimeLogDataDialogVisible = ref(false);
+const runtimeLogDataDialogText = ref("");
+const runtimeLogDataDialogMeta = reactive({
+  time: "",
+  level: "",
+  message: "",
+});
 
 const currentTaskRuntime = computed(() => extractTaskRuntime(currentTaskData.value));
 const currentTaskLogs = computed(() => {
@@ -1051,30 +1030,49 @@ const showPublishDispatchPanel = computed(() => {
   );
 });
 
-const onlineBrowserAutomationClients = computed(() =>
-  browserAutomationClients.value.filter((client) => !!client?.isOnline),
+const publishTaskRunningCount = computed(
+  () => Number(stats.value.waiting || 0) + Number(stats.value.processing || 0),
 );
 
-const availableBrowserAutomationClients = computed(() =>
-  browserAutomationClients.value.filter((client) => isBrowserAutomationClientAvailable(client)),
+const publishTaskAutoDispatchStatusText = computed(() => {
+  if (publishTaskRunningCount.value > 0) {
+    return `执行中 ${publishTaskRunningCount.value} 条`;
+  }
+
+  return publishTaskAutoDispatchEnabled.value ? "已开启" : "已关闭";
+});
+
+const publishTaskAutoDispatchStatusClass = computed(() => ({
+  "is-success": publishTaskAutoDispatchEnabled.value && publishTaskRunningCount.value === 0,
+  "is-warning": publishTaskRunningCount.value > 0,
+  "is-info": !publishTaskAutoDispatchEnabled.value && publishTaskRunningCount.value === 0,
+}));
+
+const publishTaskSchedulerIndicator = computed(() =>
+  resolveAutoDispatchSchedulerIndicator(publishTaskSchedulerRuntime.value),
 );
 
-const busyBrowserAutomationClients = computed(() =>
-  browserAutomationClients.value.filter((client) => isBrowserAutomationClientBusy(client)),
+const publishTaskSchedulerMeta = computed(() =>
+  resolveAutoDispatchSchedulerMeta(publishTaskSchedulerRuntime.value),
 );
 
-const publishCapabilityTagMap = computed(() => {
-  const map = new Map<string, string>();
-  browserAutomationClients.value.forEach((client: any) => {
-    const runtime = getBrowserAutomationRuntime(client);
-    const supportedTaskTypes = extractBrowserAutomationSupportedTaskTypes(runtime);
-    supportedTaskTypes.forEach((taskType) => {
-      if (!map.has(taskType)) {
-        map.set(taskType, taskTypeLabel(taskType));
-      }
-    });
-  });
-  return map;
+const dispatchClientCandidates = computed(() => {
+  const taskType = dispatchTargetTask.value?.type;
+  if (!taskType) return [];
+
+  return browserAutomationClients.value
+    .map((client) => ({
+      client,
+      state: getClientTaskTypeState(client, taskType),
+    }));
+});
+
+const dispatchSelectableClients = computed(() =>
+  dispatchClientCandidates.value.filter((item) => item.state.enabled),
+);
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - (showPublishDispatchPanel.value ? 320 : 292);
 });
 
 function isPublishTaskRow(row?: QueueMessage | null) {
@@ -1111,16 +1109,22 @@ function isBrowserAutomationClientBusy(client: any) {
   return isBrowserAutomationRuntimeBusyByRuntime(getBrowserAutomationRuntime(client));
 }
 
-function isBrowserAutomationClientAvailable(client: any) {
-  return isBrowserAutomationClientAvailableByRuntime(client, getBrowserAutomationRuntime(client));
-}
-
 function getClientTaskTypeState(client: any, taskType?: string) {
   if (!taskType) {
-    return { enabled: false, text: "任务类型未知" };
+    return {
+      enabled: false,
+      text: "任务类型未知",
+      tagType: "info" as QueueTagType,
+      tagText: "未知",
+    } satisfies DispatchClientState;
   }
   if (!client?.isOnline) {
-    return { enabled: false, text: "客户端离线" };
+    return {
+      enabled: false,
+      text: "客户端离线",
+      tagType: "info" as QueueTagType,
+      tagText: "离线",
+    } satisfies DispatchClientState;
   }
   const runtime = getBrowserAutomationRuntime(client);
   const runtimeHint = getBrowserAutomationRuntimeHint(runtime);
@@ -1128,18 +1132,32 @@ function getClientTaskTypeState(client: any, taskType?: string) {
     return {
       enabled: false,
       text: runtimeHint ? `自动化服务不可用，${runtimeHint}` : "自动化服务不可用",
-    };
+      tagType: "warning" as QueueTagType,
+      tagText: "未就绪",
+    } satisfies DispatchClientState;
   }
   if (!supportsTaskType(client, taskType)) {
-    return { enabled: false, text: "当前节点不支持该任务类型" };
+    return {
+      enabled: false,
+      text: "当前节点不支持该任务类型",
+      tagType: "warning" as QueueTagType,
+      tagText: "不支持",
+    } satisfies DispatchClientState;
   }
   if (isBrowserAutomationClientBusy(client)) {
     return {
       enabled: false,
       text: runtimeHint ? `节点当前忙碌中，${runtimeHint}` : "节点当前忙碌中",
-    };
+      tagType: "warning" as QueueTagType,
+      tagText: "忙碌",
+    } satisfies DispatchClientState;
   }
-  return { enabled: true, text: "可立即执行" };
+  return {
+    enabled: true,
+    text: "可立即执行",
+    tagType: "success" as QueueTagType,
+    tagText: "可执行",
+  } satisfies DispatchClientState;
 }
 
 // 获取状态类型
@@ -1167,52 +1185,24 @@ function getStatusText(status: QueueMessage["status"]) {
 }
 
 function getExecutionStatusInfo(row: QueueMessage): ExecutionStatusInfo {
-  let info: ExecutionStatusInfo;
+  const indicator = resolveTaskExecutionReadinessIndicator(row);
+  return {
+    text: indicator.text,
+    type: indicator.type,
+    reason: indicator.reason || null,
+    ready: indicator.ready,
+  };
+}
 
+function canStartPublishExecution(row: QueueMessage) {
+  const executionStatus = getExecutionStatusInfo(row);
   if (!isPublishTaskRow(row)) {
-    if (row.status === "waiting") {
-      info = { text: "等待中", type: "warning" };
-      return info;
-    }
-    if (row.status === "pending") {
-      info = { text: "可执行", type: "success" };
-      return info;
-    }
-    return { text: "-" };
+    return false;
   }
-
-  const dispatchMeta = getPublishDispatchMeta(row);
-  const assignedClientText =
-    dispatchMeta.assignedMachineCode || dispatchMeta.assignedClientId || "";
-
-  if (row.status === "waiting") {
-    return { text: "准备中", type: "warning" };
+  if (row.status === "waiting" || row.status === "processing") {
+    return false;
   }
-  if (dispatchMeta.status === "assigned") {
-    return { text: assignedClientText ? `已分配 · ${assignedClientText}` : "已分配", type: "info" };
-  }
-  if (dispatchMeta.status === "running" || row.status === "processing") {
-    const progressText =
-      typeof dispatchMeta.progress === "number" ? ` ${Math.round(dispatchMeta.progress)}%` : "";
-    return {
-      text: `执行中${progressText}`,
-      type: "warning",
-    };
-  }
-  if (dispatchMeta.status === "completed" || row.status === "completed") {
-    return { text: "已执行", type: "success" };
-  }
-  if (
-    dispatchMeta.status === "failed" ||
-    dispatchMeta.status === "timeout" ||
-    row.status === "failed"
-  ) {
-    return { text: "失败，可重试", type: "danger" };
-  }
-  if (row.status === "pending") {
-    return { text: "待调度", type: "success" };
-  }
-  return { text: "-" };
+  return !!executionStatus.ready;
 }
 
 function parseMaybeJson(value: any) {
@@ -1282,6 +1272,18 @@ function formatLogTimestamp(value: any) {
   return date.toLocaleString();
 }
 
+function normalizeLogLevel(level: any) {
+  const normalized = String(level || "info")
+    .trim()
+    .toLowerCase();
+
+  if (["error", "danger"].includes(normalized)) return "error";
+  if (["warn", "warning"].includes(normalized)) return "warning";
+  if (["success", "ok", "done", "completed"].includes(normalized)) return "success";
+  if (["debug", "trace"].includes(normalized)) return "debug";
+  return "info";
+}
+
 function hasLogData(log: any) {
   return (
     log?.data !== undefined &&
@@ -1296,6 +1298,14 @@ function formatLogData(value: any) {
   } catch (error) {
     return String(value);
   }
+}
+
+function openRuntimeLogData(log: any, index: number) {
+  runtimeLogDataDialogMeta.time = formatLogTimestamp(log?.time || log?.timestamp);
+  runtimeLogDataDialogMeta.level = String(log?.level || "info").toUpperCase();
+  runtimeLogDataDialogMeta.message = String(log?.message || `日志 #${index + 1}`);
+  runtimeLogDataDialogText.value = formatLogData(log?.data);
+  runtimeLogDataDialogVisible.value = true;
 }
 
 function formatRawJson(value: any) {
@@ -1426,6 +1436,7 @@ async function refreshStats() {
       stats.value = {
         queue: statsData.queue || queryParams.type?.trim() || "*",
         pending: Number(statsData.pending) || 0,
+        waiting: Number(statsData.waiting) || 0,
         processing: Number(statsData.processing) || 0,
         delayed: Number(statsData.delayed) || 0,
         completed: Number(statsData.completed) || 0,
@@ -1454,6 +1465,7 @@ function handleTypeClear() {
   stats.value = {
     queue: "",
     pending: 0,
+    waiting: 0,
     processing: 0,
     delayed: 0,
     completed: 0,
@@ -1526,10 +1538,14 @@ async function handleViewRuntimeLogs(row: QueueMessage) {
 }
 
 function openPublishDispatchDialog(row: QueueMessage) {
+  const executionStatus = getExecutionStatusInfo(row);
+  if (!executionStatus.ready) {
+    ElMessage.warning(executionStatus.reason || "当前任务尚未满足执行条件");
+    return;
+  }
+
   dispatchTargetTask.value = row;
-  const preferredClient = browserAutomationClients.value.find(
-    (client) => getClientTaskTypeState(client, row.type).enabled,
-  );
+  const preferredClient = dispatchSelectableClients.value[0]?.client;
   selectedDispatchClientId.value = preferredClient?.id || "";
   publishDispatchDialogVisible.value = true;
 }
@@ -1540,6 +1556,17 @@ async function handleConfirmPublishDispatch() {
   }
   if (!selectedDispatchClientId.value) {
     ElMessage.warning("请选择一个可执行客户端");
+    return;
+  }
+
+  const selectedClient = browserAutomationClients.value.find(
+    (client) => client.id === selectedDispatchClientId.value,
+  );
+  if (
+    !selectedClient ||
+    !getClientTaskTypeState(selectedClient, dispatchTargetTask.value.type).enabled
+  ) {
+    ElMessage.warning("当前选中的节点已不可执行，请重新选择");
     return;
   }
 
@@ -1568,6 +1595,15 @@ async function loadPublishTaskAutoDispatchSetting() {
   }
 }
 
+async function loadPublishTaskSchedulerRuntime() {
+  try {
+    const response = await getPublishTaskAutoDispatchRuntime();
+    publishTaskSchedulerRuntime.value = normalizeAutoDispatchSchedulerRuntime(response);
+  } catch {
+    publishTaskSchedulerRuntime.value = null;
+  }
+}
+
 async function handleTogglePublishAutoDispatch(enabled: boolean) {
   publishTaskAutoDispatchLoading.value = true;
   try {
@@ -1585,6 +1621,7 @@ async function handleTogglePublishAutoDispatch(enabled: boolean) {
     } else {
       ElMessage.success("已关闭自动执行");
     }
+    await loadPublishTaskSchedulerRuntime();
   } catch (error: any) {
     ElMessage.error(error?.message || "更新自动执行开关失败");
   } finally {
@@ -1597,7 +1634,12 @@ async function handleTriggerPublishTaskAutoDispatch() {
   try {
     const response = await triggerPublishTaskAutoDispatch();
     ElMessage.success(response?.message || "已触发自动调度");
-    await Promise.all([getList(), refreshStats(), refreshBrowserAutomationClients()]);
+    await Promise.all([
+      getList(),
+      refreshStats(),
+      refreshBrowserAutomationClients(),
+      loadPublishTaskSchedulerRuntime(),
+    ]);
   } catch (error: any) {
     ElMessage.error(error?.message || "触发自动调度失败");
   } finally {
@@ -1605,21 +1647,35 @@ async function handleTriggerPublishTaskAutoDispatch() {
   }
 }
 
-async function handleToggleClientAutoDispatch(client: any, enabled: boolean) {
-  browserAutomationDispatchToggleClientId.value = client.id;
-  try {
-    await toggleBrowserAutomationAutoDispatch(client.id, enabled);
-    ElMessage.success(enabled ? "节点已允许自动接单" : "节点已暂停自动接单");
-    await refreshBrowserAutomationClients();
-  } catch (error: any) {
-    ElMessage.error(error?.message || "更新节点自动执行状态失败");
-  } finally {
-    browserAutomationDispatchToggleClientId.value = "";
+function schedulePublishTaskListRefresh() {
+  if (publishTaskRuntimeReloadTimer) {
+    clearTimeout(publishTaskRuntimeReloadTimer);
   }
+
+  publishTaskRuntimeReloadTimer = setTimeout(() => {
+    publishTaskRuntimeReloadTimer = null;
+    void Promise.all([getList(), refreshStats()]);
+  }, 260);
+}
+
+function findQueueTaskIndexById(taskId: unknown) {
+  const normalizedTaskId = String(taskId || "").trim();
+  if (!normalizedTaskId) {
+    return -1;
+  }
+
+  return dataSource.value.findIndex(
+    (item) => String(item?.id || "").trim() === normalizedTaskId,
+  );
 }
 
 function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
-  const taskIndex = dataSource.value.findIndex((item) => item.id === event.taskId);
+  const normalizedTaskId = String(event?.taskId || "").trim();
+  if (!normalizedTaskId) {
+    return;
+  }
+
+  const taskIndex = findQueueTaskIndexById(normalizedTaskId);
   if (taskIndex >= 0) {
     const row = dataSource.value[taskIndex];
     const currentDispatchMeta: any = getPublishDispatchMeta(row);
@@ -1673,11 +1729,11 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
     dataSource.value.splice(taskIndex, 1, nextRow);
   }
 
-  if (dispatchTargetTask.value?.id === event.taskId && event.status === "running") {
+  if (String(dispatchTargetTask.value?.id || "").trim() === normalizedTaskId && event.status === "running") {
     publishDispatchDialogVisible.value = false;
   }
 
-  if (currentTaskId.value === event.taskId && event.runtime) {
+  if (String(currentTaskId.value || "").trim() === normalizedTaskId && event.runtime) {
     currentTaskData.value = {
       ...normalizeTaskDataRecord(currentTaskData.value),
       taskLogs: event.runtime,
@@ -1685,8 +1741,48 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
   }
 
   if (event.status === "completed" || event.status === "failed" || event.status === "pending") {
-    void refreshStats();
+    schedulePublishTaskListRefresh();
   }
+}
+
+function applyPublishTaskCommandResultEvent(event: ServiceCommandResultEvent) {
+  if (String(event?.action || "").trim() !== "executePublishTask") {
+    return;
+  }
+
+  const taskId = String(event?.data?.taskId || "").trim();
+  if (!taskId) {
+    return;
+  }
+
+  if (event.success) {
+    const taskIndex = findQueueTaskIndexById(taskId);
+    if (taskIndex >= 0) {
+      const row = dataSource.value[taskIndex];
+      const currentDispatchMeta: any = getPublishDispatchMeta(row);
+      dataSource.value.splice(taskIndex, 1, {
+        ...row,
+        status: "completed",
+        error: undefined,
+        updatedAt: event.finishedAt || row.updatedAt,
+        metadata: {
+          ...(row.metadata || {}),
+          publishDispatch: {
+            ...currentDispatchMeta,
+            status: "completed",
+            assignedClientId: event.clientId || currentDispatchMeta.assignedClientId || null,
+            currentStep: event.message || "执行完成",
+            progress: 100,
+            lastHeartbeatAt: event.finishedAt || new Date().toISOString(),
+            finishedAt: event.finishedAt || new Date().toISOString(),
+            lastError: null,
+          },
+        },
+      });
+    }
+  }
+
+  schedulePublishTaskListRefresh();
 }
 
 // 删除任务
@@ -1921,10 +2017,80 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
   }
 }
 
+async function handleUpdateExecutionReadiness(
+  row: QueueMessage,
+  mode: "ready" | "blocked" | "auto",
+) {
+  const taskType = String(row?.type || "").trim();
+  const taskId = String(row?.id || "").trim();
+  if (!taskType || !taskId) {
+    ElMessage.warning("缺少任务标识");
+    return;
+  }
+  if (executionReadinessSubmittingId.value === taskId) {
+    return;
+  }
+
+  const actionText =
+    mode === "ready"
+      ? "手动标记为可执行"
+      : mode === "blocked"
+        ? "手动阻止执行"
+        : "恢复自动判断";
+
+  try {
+    await ElMessageBox.confirm(
+      mode === "ready"
+        ? "确认将这条任务手动标记为可执行吗？后续自动调度会把它视为已满足执行条件。"
+        : mode === "blocked"
+          ? "确认手动阻止这条任务执行吗？后续自动调度和手动开始都会被拦截。"
+          : "确认恢复为系统自动判断可执行状态吗？",
+      actionText,
+      {
+        type: mode === "blocked" ? "warning" : "info",
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+      },
+    );
+
+    executionReadinessSubmittingId.value = taskId;
+    const response = await updateTaskExecutionReadiness(
+      taskType,
+      taskId,
+      mode,
+      mode === "ready"
+        ? "管理员手动标记为可执行"
+        : mode === "blocked"
+          ? "管理员手动阻止任务执行"
+          : undefined,
+    );
+    ElMessage.success(response?.message || `${actionText}成功`);
+    await Promise.all([getList(), refreshStats()]);
+  } catch (error: any) {
+    if (error === "cancel" || error === "close") {
+      return;
+    }
+    ElMessage.error(error?.message || `${actionText}失败`);
+  } finally {
+    if (executionReadinessSubmittingId.value === taskId) {
+      executionReadinessSubmittingId.value = "";
+    }
+  }
+}
+
 async function handleOperationCommand(command: string, row: QueueMessage) {
   switch (command) {
     case "startExecution":
       openPublishDispatchDialog(row);
+      break;
+    case "markExecutable":
+      await handleUpdateExecutionReadiness(row, "ready");
+      break;
+    case "markBlocked":
+      await handleUpdateExecutionReadiness(row, "blocked");
+      break;
+    case "restoreExecutionAuto":
+      await handleUpdateExecutionReadiness(row, "auto");
       break;
     case "regenerate":
       await handleRegeneratePublishTask(row);
@@ -1973,12 +2139,26 @@ onMounted(() => {
     refreshStats(),
     refreshBrowserAutomationClients(),
     loadPublishTaskAutoDispatchSetting(),
+    loadPublishTaskSchedulerRuntime(),
   ]);
+  publishTaskSchedulerRuntimeTimer = setInterval(() => {
+    void loadPublishTaskSchedulerRuntime();
+  }, 10000);
   websocketClient.events.on("publishTaskRuntime", applyPublishTaskRuntimeEvent);
+  websocketClient.events.on("serviceCommandResult", applyPublishTaskCommandResultEvent);
 });
 
 onUnmounted(() => {
+  if (publishTaskSchedulerRuntimeTimer) {
+    clearInterval(publishTaskSchedulerRuntimeTimer);
+    publishTaskSchedulerRuntimeTimer = null;
+  }
+  if (publishTaskRuntimeReloadTimer) {
+    clearTimeout(publishTaskRuntimeReloadTimer);
+    publishTaskRuntimeReloadTimer = null;
+  }
   websocketClient.events.off("publishTaskRuntime", applyPublishTaskRuntimeEvent);
+  websocketClient.events.off("serviceCommandResult", applyPublishTaskCommandResultEvent);
 });
 </script>
 <style lang="less">
@@ -2006,151 +2186,222 @@ onUnmounted(() => {
   gap: 10px;
 }
 
+.queue-page__stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.queue-stats-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+}
+
+.queue-stats-pill__label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.queue-stats-pill__value {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+}
+
+.queue-stats-pill--pending .queue-stats-pill__value {
+  color: var(--el-color-info);
+}
+
+.queue-stats-pill--processing .queue-stats-pill__value {
+  color: var(--el-color-warning);
+}
+
+.queue-stats-pill--completed .queue-stats-pill__value {
+  color: var(--el-color-success);
+}
+
+.queue-stats-pill--failed .queue-stats-pill__value {
+  color: var(--el-color-danger);
+}
+
 .queue-dispatch-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px 18px;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-fill-color-light);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
 .queue-dispatch-panel__summary {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
+  flex-wrap: wrap;
+  min-height: 40px;
+  width: 100%;
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--el-border-color-lighter) 88%, transparent 12%);
+  background: transparent;
+}
+
+.queue-dispatch-panel__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .queue-dispatch-panel__title {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1.3;
+  color: var(--el-text-color-primary);
 }
 
 .queue-dispatch-panel__desc {
-  margin-top: 6px;
-  max-width: 760px;
+  max-width: 420px;
   color: var(--el-text-color-secondary);
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
-.queue-dispatch-panel__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.queue-dispatch-panel__switch {
+.queue-dispatch-panel__runtime {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 50%, transparent 50%);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent 28%);
-}
-
-.queue-dispatch-panel__switch-label {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.queue-dispatch-panel__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.queue-dispatch-panel__client-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-
-.queue-client-card {
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 46%, transparent 54%);
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--el-bg-color) 92%, transparent 8%);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.queue-client-card.is-ready {
-  border-color: color-mix(in srgb, var(--el-color-success) 34%, transparent 66%);
-}
-
-.queue-client-card.is-running {
-  border-color: color-mix(in srgb, #14b8a6 44%, transparent 56%);
-  box-shadow:
-    0 10px 28px rgba(20, 184, 166, 0.12),
-    inset 0 0 0 1px rgba(20, 184, 166, 0.08);
-}
-
-.queue-client-card.is-offline {
-  opacity: 0.76;
-}
-
-.queue-client-card__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 16px 0;
-}
-
-.queue-client-card__title {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.queue-client-card__sub {
+  gap: 6px;
   margin-top: 4px;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.queue-client-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px 16px;
-}
-
-.queue-client-card__line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 13px;
-}
-
-.queue-client-card__value {
-  color: var(--el-text-color-secondary);
-  text-align: right;
-}
-
-.queue-client-card__hint {
-  margin-top: -2px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.queue-client-card__capabilities {
-  display: flex;
+  font-size: 11px;
+  line-height: 1.4;
   flex-wrap: wrap;
-  gap: 6px;
 }
 
-.queue-client-card__empty {
+.queue-dispatch-panel__runtime.is-success {
+  color: #67c23a;
+}
+
+.queue-dispatch-panel__runtime.is-warning {
+  color: #f97316;
+}
+
+.queue-dispatch-panel__runtime.is-danger {
+  color: #f56c6c;
+}
+
+.queue-dispatch-panel__runtime.is-info {
+  color: #909399;
+}
+
+.queue-dispatch-panel__runtime-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.queue-dispatch-panel__runtime.is-success .queue-dispatch-panel__runtime-dot {
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 24%);
+  animation: queue-status-breath-success 1.8s infinite ease-in-out;
+}
+
+.queue-dispatch-panel__runtime.is-warning .queue-dispatch-panel__runtime-dot {
+  box-shadow: 0 0 0 0 rgb(249 115 22 / 22%);
+  animation: queue-status-breath-warning 1.8s infinite ease-in-out;
+}
+
+.queue-dispatch-panel__runtime-meta {
   color: var(--el-text-color-placeholder);
+}
+
+.queue-dispatch-panel__side {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.queue-dispatch-panel__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  background: var(--el-bg-color);
   font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-secondary);
+}
+
+.queue-dispatch-panel__status.is-success {
+  border-color: rgb(103 194 58 / 24%);
+  color: #67c23a;
+}
+
+.queue-dispatch-panel__status.is-info {
+  border-color: rgb(144 147 153 / 24%);
+  color: #909399;
+}
+
+.queue-dispatch-panel__status.is-warning {
+  border-color: rgb(249 115 22 / 24%);
+  color: #f97316;
+}
+
+.queue-dispatch-panel__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.queue-dispatch-panel__status.is-success .queue-dispatch-panel__status-dot {
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 32%);
+  animation: queue-status-breath-success 1.8s infinite ease-in-out;
+}
+
+.queue-dispatch-panel__status.is-warning .queue-dispatch-panel__status-dot {
+  box-shadow: 0 0 0 0 rgb(249 115 22 / 28%);
+  animation: queue-status-breath-warning 1.8s infinite ease-in-out;
+}
+
+.queue-operation-cell {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.queue-page :deep(.table-operation-cell .vxe-cell),
+.queue-page :deep(.table-operation-cell .vxe-cell--wrapper),
+.queue-page :deep(.table-operation-cell .vxe-cell--label) {
+  min-height: 100%;
+}
+
+.queue-page :deep(.table-operation-cell .queue-operation-cell),
+.queue-page :deep(.table-operation-cell .operation-dropdown),
+.queue-page :deep(.table-operation-cell .operation-trigger-button) {
+  display: inline-flex;
+  align-items: center;
+}
+
+.queue-page :deep(.table-operation-cell .operation-trigger-button) {
+  min-height: 28px;
 }
 
 .publish-dispatch-dialog__body {
@@ -2174,6 +2425,12 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.publish-dispatch-dialog__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .publish-dispatch-dialog__client-list {
@@ -2229,21 +2486,6 @@ onUnmounted(() => {
   color: var(--el-text-color-secondary);
   font-size: 13px;
   line-height: 1.6;
-}
-
-.publish-dispatch-client__capabilities {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 12px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.publish-dispatch-client__capabilities span {
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 72%, transparent 28%);
 }
 
 .queue-page :deep(.queue-row--running) {
@@ -2345,6 +2587,9 @@ onUnmounted(() => {
 
 .queue-runtime-dialog :deep(.el-dialog__body) {
   padding-top: 10px;
+  background:
+    radial-gradient(circle at top left, rgb(59 130 246 / 8%), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #f3f6fb 100%);
 }
 
 .queue-runtime-shell {
@@ -2358,89 +2603,254 @@ onUnmounted(() => {
 .queue-runtime-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 2px 0;
+}
+
+.queue-runtime-toolbar__title {
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .queue-runtime-toolbar__meta {
   display: flex;
-  gap: 14px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.queue-runtime-toolbar__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgb(148 163 184 / 14%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 72%) 0%, rgb(241 245 249 / 92%) 100%);
+  box-shadow: 0 4px 10px rgb(15 23 42 / 4%);
+}
+
+.queue-runtime-toolbar__label {
+  color: #6b7280;
   font-size: 12px;
+  font-weight: 600;
+}
+
+.queue-runtime-toolbar__value {
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 700;
+  font-family:
+    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .queue-runtime-console {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 12px 14px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  font-family: Consolas, Monaco, "Courier New", monospace;
-  font-size: 12px;
-  line-height: 1.7;
+  padding: 12px;
+  border: 1px solid rgb(15 23 42 / 12%);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgb(15 23 42 / 98%) 0%, rgb(17 24 39 / 99%) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 4%),
+    0 18px 48px rgb(15 23 42 / 16%);
 }
 
 .queue-runtime-console__line + .queue-runtime-console__line {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--el-border-color-light);
+  margin-top: 8px;
 }
 
-.queue-runtime-console__line[data-level="warn"],
-.queue-runtime-console__line[data-level="warning"] {
-  border-left: 4px solid #c27803;
-  padding-left: 10px;
+.queue-runtime-console__line {
+  position: relative;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgb(15 23 42 / 52%) 0%, rgb(15 23 42 / 68%) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 2%),
+    0 4px 10px rgb(2 6 23 / 16%);
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.queue-runtime-console__line[data-level="error"] {
-  border-left: 4px solid #c45656;
-  padding-left: 10px;
+.queue-runtime-console__line:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3%),
+    0 8px 16px rgb(2 6 23 / 20%);
+}
+
+.queue-runtime-console__main {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.queue-runtime-console__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.queue-runtime-console__tone-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #3b82f6;
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 16%);
+}
+
+.queue-runtime-console__line[data-level="success"] .queue-runtime-console__tone-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 14%);
+}
+
+.queue-runtime-console__line[data-level="warn"] .queue-runtime-console__tone-dot,
+.queue-runtime-console__line[data-level="warning"] .queue-runtime-console__tone-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
+}
+
+.queue-runtime-console__line[data-level="error"] .queue-runtime-console__tone-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 14%);
+}
+
+.queue-runtime-console__line[data-level="debug"] .queue-runtime-console__tone-dot {
+  background: #94a3b8;
+  box-shadow: 0 0 0 3px rgb(148 163 184 / 14%);
 }
 
 .queue-runtime-console__time {
-  margin-right: 10px;
-  color: var(--el-text-color-secondary);
+  color: inherit;
+  font-family:
+    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.01em;
 }
 
-.queue-runtime-console__level {
-  display: inline-block;
-  min-width: 56px;
-  margin-right: 10px;
-  font-weight: 700;
-}
-
-.queue-runtime-console__level[data-level="info"] {
-  color: #1d4ed8;
-}
-
-.queue-runtime-console__level[data-level="warn"],
-.queue-runtime-console__level[data-level="warning"] {
-  color: #b45309;
-}
-
-.queue-runtime-console__level[data-level="error"] {
-  color: #b91c1c;
-}
-
-.queue-runtime-console__line[data-level="warn"] .queue-runtime-console__message,
-.queue-runtime-console__line[data-level="warning"] .queue-runtime-console__message {
-  color: #92400e;
-}
-
-.queue-runtime-console__line[data-level="error"] .queue-runtime-console__message {
-  color: #991b1b;
+.queue-runtime-console__content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .queue-runtime-console__message {
+  flex: 1;
+  min-width: 0;
+  color: #e5edf7;
+  font-size: 13px;
+  line-height: 1.55;
+  font-family:
+    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.queue-runtime-console__data {
-  margin: 8px 0 0 66px;
-  padding: 8px 10px;
-  overflow: auto;
+.queue-runtime-console__line[data-level="warn"] .queue-runtime-console__message,
+.queue-runtime-console__line[data-level="warning"] .queue-runtime-console__message {
+  color: #fde68a;
+}
+
+.queue-runtime-console__line[data-level="error"] .queue-runtime-console__message {
+  color: #fecaca;
+}
+
+.queue-runtime-console__line[data-level="success"] .queue-runtime-console__message {
+  color: #dcfce7;
+}
+
+.queue-runtime-console__actions {
+  flex: 0 0 auto;
+  padding-top: 1px;
+}
+
+.queue-runtime-console__detail-trigger {
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 3%);
+  color: #a5d8ff;
+  font-size: 12px;
+  line-height: 1;
+  border: 1px solid rgb(148 163 184 / 12%);
+}
+
+.queue-runtime-console__detail-trigger:hover {
+  color: #d7ecff;
+  background: rgb(59 130 246 / 8%);
+  border-color: rgb(59 130 246 / 18%);
+}
+
+.queue-runtime-console__detail-trigger:focus-visible {
+  outline: 2px solid rgb(59 130 246 / 30%);
+  outline-offset: 1px;
+}
+
+.queue-runtime-data-dialog__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.queue-runtime-data-dialog__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.queue-runtime-data-dialog__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.queue-runtime-data-dialog__message {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
   line-height: 1.6;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
+}
+
+.queue-runtime-data-dialog__body {
+  max-height: min(60vh, 720px);
+  overflow: auto;
+  padding: 6px 2px 2px;
+}
+
+.queue-runtime-data-dialog__raw {
+  margin: 0;
+  padding: 14px 16px;
+  overflow: auto;
+  border: 1px solid rgb(15 23 42 / 12%);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  color: #e5edf7;
+  font-family:
+    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 3%),
+    0 12px 26px rgb(15 23 42 / 10%);
 }
 
 .queue-json-textarea {
@@ -2479,15 +2889,21 @@ onUnmounted(() => {
 }
 
 @media (max-width: 960px) {
-  .queue-dispatch-panel {
-    padding: 14px;
+  .queue-page__stats-bar {
+    gap: 6px;
+  }
+
+  .queue-stats-pill {
+    min-height: 32px;
+    padding: 0 10px;
   }
 
   .queue-dispatch-panel__summary {
-    flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
   }
 
-  .queue-dispatch-panel__actions {
+  .queue-dispatch-panel__side {
     width: 100%;
     justify-content: flex-start;
   }
@@ -2499,6 +2915,24 @@ onUnmounted(() => {
   .queue-runtime-shell {
     height: calc(100vh - 132px);
   }
+
+  .queue-runtime-toolbar {
+    align-items: flex-start;
+  }
+
+  .queue-runtime-toolbar__meta {
+    width: 100%;
+    gap: 10px;
+  }
+
+  .queue-runtime-console__content {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .queue-runtime-console__actions {
+    padding-top: 0;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1180px) {
@@ -2506,8 +2940,8 @@ onUnmounted(() => {
     gap: 12px;
   }
 
-  .queue-page .queue-stats-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+  .queue-page__stats-bar {
+    gap: 10px;
   }
 
   .queue-page .list-page-search-form__actions .el-button,
@@ -2516,34 +2950,19 @@ onUnmounted(() => {
     padding: 0 18px;
   }
 
-  .queue-dispatch-panel {
-    gap: 16px;
-    padding: 18px;
-  }
-
   .queue-dispatch-panel__summary,
-  .queue-dispatch-panel__actions {
+  .queue-dispatch-panel__side {
     gap: 14px;
   }
 
-  .queue-dispatch-panel__client-grid,
   .publish-dispatch-dialog__client-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .queue-client-card__line :deep(.el-switch),
-  .queue-dispatch-panel__switch :deep(.el-switch) {
-    --el-switch-height: 28px;
-    --el-switch-width: 54px;
-  }
-
-  .publish-dispatch-client,
-  .queue-client-card {
+  .publish-dispatch-client {
     border-radius: 18px;
   }
 
-  .queue-client-card__header,
-  .queue-client-card__body,
   .publish-dispatch-client {
     padding-left: 18px;
     padding-right: 18px;
@@ -2551,11 +2970,41 @@ onUnmounted(() => {
 
   .queue-runtime-console {
     padding: 14px 16px;
-    font-size: 13px;
+  }
+
+  .queue-runtime-toolbar__item {
+    min-height: 36px;
+    padding: 0 12px;
   }
 
   .publish-dispatch-dialog :deep(.el-dialog__body) {
     padding: 18px 20px;
+  }
+}
+
+@keyframes queue-status-breath-success {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(103 194 58 / 16%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgb(103 194 58 / 0%);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes queue-status-breath-warning {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(249 115 22 / 16%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px rgb(249 115 22 / 0%);
+    transform: scale(1.04);
   }
 }
 </style>

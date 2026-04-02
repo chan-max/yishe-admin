@@ -64,11 +64,29 @@
                 <span class="compact-info__value">{{ selectedClientDisplayName }}</span>
               </div>
               <div class="compact-info__item">
-                <span class="compact-info__label">状态</span>
+                <span class="compact-info__label">整体</span>
                 <span class="compact-info__value">
                   <span class="status-chip" :class="`is-${serviceStatus.level}`">
                     <span class="status-chip__dot" />
                     <span>{{ serviceStatus.text }}</span>
+                  </span>
+                </span>
+              </div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">服务状态</span>
+                <span class="compact-info__value">
+                  <span class="status-chip" :class="`is-${selectedPsServiceConnectionStatus.tone}`">
+                    <span class="status-chip__dot" />
+                    <span>{{ selectedPsServiceConnectionStatus.text }}</span>
+                  </span>
+                </span>
+              </div>
+              <div class="compact-info__item">
+                <span class="compact-info__label">Photoshop</span>
+                <span class="compact-info__value">
+                  <span class="status-chip" :class="`is-${selectedPsApplicationStatus.tone}`">
+                    <span class="status-chip__dot" />
+                    <span>{{ selectedPsApplicationStatus.text }}</span>
                   </span>
                 </span>
               </div>
@@ -139,7 +157,7 @@
       <div v-if="selectedClient" class="operation-shell">
         <el-tabs v-model="activeTab" class="operation-tabs">
           <el-tab-pane label="服务" name="service">
-            <div class="operation-grid">
+            <div class="operation-grid operation-grid--service">
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
@@ -148,7 +166,7 @@
                   </div>
                 </div>
 
-                <div class="form-grid">
+                <div class="form-grid form-grid--service">
                   <div class="field-block">
                     <label>启动超时（秒）</label>
                     <el-input-number
@@ -158,7 +176,7 @@
                       controls-position="right"
                     />
                   </div>
-                  <div class="field-block">
+                  <div class="field-block field-block--switch">
                     <label>关闭策略</label>
                     <el-switch
                       v-model="serviceForm.forceStop"
@@ -168,7 +186,7 @@
                   </div>
                 </div>
 
-                <div class="button-row wrap">
+                <div class="button-row button-row--service-grid">
                   <el-button
                     :loading="loadingMap.refreshRuntime"
                     @click="dispatchPsCommand('refreshRuntime')"
@@ -227,11 +245,29 @@
 
                 <div class="compact-info compact-info--grid">
                   <div class="compact-info__item">
-                    <span class="compact-info__label">状态</span>
+                    <span class="compact-info__label">整体</span>
                     <span class="compact-info__value">
                       <span class="status-chip" :class="`is-${serviceStatus.level}`">
                         <span class="status-chip__dot" />
                         <span>{{ serviceStatus.text }}</span>
+                      </span>
+                    </span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">服务状态</span>
+                    <span class="compact-info__value">
+                      <span class="status-chip" :class="`is-${selectedPsServiceConnectionStatus.tone}`">
+                        <span class="status-chip__dot" />
+                        <span>{{ selectedPsServiceConnectionStatus.text }}</span>
+                      </span>
+                    </span>
+                  </div>
+                  <div class="compact-info__item">
+                    <span class="compact-info__label">Photoshop</span>
+                    <span class="compact-info__value">
+                      <span class="status-chip" :class="`is-${selectedPsApplicationStatus.tone}`">
+                        <span class="status-chip__dot" />
+                        <span>{{ selectedPsApplicationStatus.text }}</span>
                       </span>
                     </span>
                   </div>
@@ -678,6 +714,93 @@ const customOptionsTemplates: Record<string, Record<string, any>> = {
 const getPhotoshopService = (client: any) =>
   client.clientInfo?.services?.["ps-automation"] || client.clientInfo?.services?.photoshop || null;
 
+const isPsServiceBusy = (client: any, service?: any) => {
+  const runtime = service || getPhotoshopService(client);
+  const psAutomation = client?.clientInfo?.psAutomation || {};
+  return !!(
+    psAutomation?.running ||
+    psAutomation?.currentPsSetId ||
+    psAutomation?.currentPsSetName ||
+    runtime?.busy ||
+    runtime?.state === "busy" ||
+    runtime?.currentTaskId
+  );
+};
+
+const hasPsServiceError = (service?: any) =>
+  !!(service?.status === "error" || service?.state === "error");
+
+const resolvePsRuntimeDisplay = (service?: any) => {
+  if (!service) {
+    return {
+      summary: { text: "未上报", tone: "info" as ClientNodeBadge["tone"] },
+      service: { text: "未上报", tone: "info" as ClientNodeBadge["tone"] },
+      application: { text: "-", tone: "info" as ClientNodeBadge["tone"] },
+      hasError: false,
+    };
+  }
+
+  const details = service?.details || {};
+  const connected = !!service.connected;
+  const available = !!service.available;
+  const busy = !!service.busy;
+  const hasError = hasPsServiceError(service);
+  const photoshopRunning = !!(
+    details?.photoshopRunning ?? (available || busy)
+  );
+  const photoshopStatus = String(
+    details?.photoshopStatus ||
+      (busy
+        ? "busy"
+        : available
+          ? "ready"
+          : photoshopRunning
+            ? "starting"
+            : connected
+              ? "stopped"
+              : "unknown"),
+  );
+
+  const serviceStatus = hasError
+    ? { text: "服务异常", tone: "danger" as ClientNodeBadge["tone"] }
+    : connected
+      ? { text: "服务在线", tone: "success" as ClientNodeBadge["tone"] }
+      : service?.status === "disconnected" || service?.state === "offline"
+        ? { text: "服务未启动", tone: "info" as ClientNodeBadge["tone"] }
+        : { text: "未就绪", tone: "info" as ClientNodeBadge["tone"] };
+
+  const applicationStatus = busy
+    ? { text: "执行中", tone: "warning" as ClientNodeBadge["tone"] }
+    : available || photoshopStatus === "ready"
+      ? { text: "可用", tone: "success" as ClientNodeBadge["tone"] }
+      : connected && (photoshopStatus === "starting" || photoshopRunning)
+        ? { text: "启动中", tone: "warning" as ClientNodeBadge["tone"] }
+        : connected
+          ? { text: "未启动", tone: "info" as ClientNodeBadge["tone"] }
+          : { text: "不可用", tone: "info" as ClientNodeBadge["tone"] };
+
+  const summary = busy
+    ? { text: "执行中", tone: "warning" as ClientNodeBadge["tone"] }
+    : available
+      ? { text: "可用", tone: "success" as ClientNodeBadge["tone"] }
+      : hasError
+        ? { text: "服务异常", tone: "danger" as ClientNodeBadge["tone"] }
+        : connected && applicationStatus.text === "启动中"
+          ? { text: "等待就绪", tone: "warning" as ClientNodeBadge["tone"] }
+          : connected
+            ? { text: "服务在线", tone: "info" as ClientNodeBadge["tone"] }
+            : service?.status === "disconnected" || service?.state === "offline"
+              ? { text: "服务未启动", tone: "info" as ClientNodeBadge["tone"] }
+              : { text: "未就绪", tone: "info" as ClientNodeBadge["tone"] };
+
+  return {
+    summary,
+    service: serviceStatus,
+    application: applicationStatus,
+    hasError,
+  };
+};
+
 const selectedClient = computed(() => {
   if (!psClients.value.length) {
     return null;
@@ -704,22 +827,20 @@ const getPsBridgeService = (client: any) => {
     return null;
   }
 
-  const available = !!service.available;
-  const connected = !!service.connected;
-  const status = service.status || "unknown";
-
-  let text = "未就绪";
-  if (available) {
-    text = "可用";
-  } else if (status === "error") {
-    text = "异常";
-  } else if (connected) {
-    text = "任务进行中";
-  }
+  const busy = isPsServiceBusy(client, service);
+  const display = resolvePsRuntimeDisplay({
+    ...service,
+    busy,
+  });
 
   return {
     ...service,
-    text,
+    busy,
+    hasError: display.hasError,
+    level: display.summary.tone,
+    text: display.summary.text,
+    serviceStatus: display.service,
+    applicationStatus: display.application,
   };
 };
 
@@ -733,12 +854,8 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
       { text: client.isOnline ? "在线" : "离线", tone: client.isOnline ? "success" : "muted" },
     ];
 
-    if (service?.available) {
-      badges.push({ text: "可用", tone: "success" });
-    } else if (service?.connected) {
-      badges.push({ text: "任务进行中", tone: "warning" });
-    } else if (service?.status === "error") {
-      badges.push({ text: "异常", tone: "danger" });
+    if (service) {
+      badges.push({ text: service.text, tone: service.level });
     } else {
       badges.push({ text: "未就绪", tone: "muted" });
     }
@@ -805,7 +922,7 @@ const resolvePsStateText = (value?: string | null) => {
     busy: "执行中",
     error: "异常",
     offline: "离线",
-    connected: "已连接",
+    connected: "服务在线",
   };
   return stateMap[value] || value;
 };
@@ -863,24 +980,10 @@ const serviceStatus = computed(() => {
     };
   }
 
-  if (selectedPsBridgeService.value?.available) {
+  if (selectedPsBridgeService.value) {
     return {
-      level: "success",
-      text: "可用",
-    };
-  }
-
-  if (selectedPsBridgeService.value?.status === "error") {
-    return {
-      level: "danger",
-      text: "异常",
-    };
-  }
-
-  if (selectedPsBridgeService.value?.connected) {
-    return {
-      level: "warning",
-      text: "任务进行中",
+      level: selectedPsBridgeService.value.level,
+      text: selectedPsBridgeService.value.text,
     };
   }
 
@@ -889,6 +992,22 @@ const serviceStatus = computed(() => {
     text: "未就绪",
   };
 });
+
+const selectedPsServiceConnectionStatus = computed(
+  () =>
+    selectedPsBridgeService.value?.serviceStatus || {
+      text: "未上报",
+      tone: "info" as ClientNodeBadge["tone"],
+    },
+);
+
+const selectedPsApplicationStatus = computed(
+  () =>
+    selectedPsBridgeService.value?.applicationStatus || {
+      text: "-",
+      tone: "info" as ClientNodeBadge["tone"],
+    },
+);
 
 const finishAction = (action?: string | null) => {
   if (!action) {
@@ -1410,6 +1529,11 @@ onUnmounted(() => {
   justify-content: flex-start;
 }
 
+.ops-panel__actions :deep(.el-button),
+.button-row :deep(.el-button) {
+  margin-left: 0;
+}
+
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -1479,9 +1603,17 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
+.ps-operation-dialog :deep(.el-dialog) {
+  display: flex;
+  flex-direction: column;
+}
+
 .ps-operation-dialog :deep(.el-dialog__body) {
   padding: 0;
   background: var(--el-bg-color-page);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .operation-shell {
@@ -1491,6 +1623,7 @@ onUnmounted(() => {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .operation-tabs {
@@ -1498,14 +1631,18 @@ onUnmounted(() => {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .operation-tabs:deep(.el-tabs__header) {
+  order: 0;
+  flex: 0 0 auto;
   margin: 0 0 12px;
 }
 
 .operation-tabs:deep(.el-tabs__content) {
-  flex: 1;
+  order: 1;
+  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
 }
@@ -1517,10 +1654,21 @@ onUnmounted(() => {
   align-items: start;
 }
 
+.operation-grid--service {
+  grid-template-columns: minmax(420px, 560px) minmax(320px, 1fr);
+  gap: 16px;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.form-grid--service {
+  grid-template-columns: minmax(0, 170px) minmax(0, 1fr);
+  gap: 14px 16px;
+  margin-bottom: 14px;
 }
 
 .form-stack {
@@ -1542,6 +1690,23 @@ onUnmounted(() => {
   line-height: 1.4;
 }
 
+.field-block--switch {
+  align-self: end;
+}
+
+.field-block--switch :deep(.el-switch) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 40px;
+}
+
+.field-block--switch :deep(.el-switch__label) {
+  white-space: normal;
+  line-height: 1.35;
+}
+
 .field-block :deep(.el-input),
 .field-block :deep(.el-input-number),
 .field-block :deep(.el-select) {
@@ -1556,6 +1721,18 @@ onUnmounted(() => {
 
 .button-row.wrap {
   flex-wrap: wrap;
+}
+
+.button-row--service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.button-row--service-grid :deep(.el-button) {
+  width: 100%;
+  min-height: 36px;
+  justify-content: center;
 }
 
 .subsection-head {
@@ -1725,6 +1902,16 @@ onUnmounted(() => {
   }
 }
 
+@media (max-width: 1280px) {
+  .operation-grid--service {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid--service {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .ops-header,
   .ops-panel__head,
@@ -1738,6 +1925,10 @@ onUnmounted(() => {
   .ops-header__actions,
   .button-row {
     width: 100%;
+  }
+
+  .button-row--service-grid {
+    grid-template-columns: 1fr;
   }
 
   .operation-shell {

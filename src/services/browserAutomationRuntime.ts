@@ -13,6 +13,18 @@ export type BrowserAutomationRuntimeLike =
 
 export type BrowserAutomationRuntimeTone = "success" | "warning" | "muted";
 
+export const BROWSER_AUTOMATION_EXECUTABLE_TASK_TYPES = [
+  "publish-product-douyin",
+  "publish-product-youtube",
+  "publish-product-xianyu",
+  "publish-product-tiktok",
+  "publish-product-kuaishou",
+  "publish-product-doudian",
+  "publish-product-kuaishou_shop",
+  "publish-product-xiaohongshu",
+  "publish-product-weibo",
+] as const;
+
 export function getBrowserAutomationRuntimeSafe(
   runtime?: BrowserAutomationRuntimeLike,
 ): Record<string, any> {
@@ -34,6 +46,7 @@ export function extractBrowserAutomationSupportedTaskTypes(
     ...(Array.isArray(safeRuntime.details?.capabilities)
       ? safeRuntime.details.capabilities.map((item: any) => item?.taskType)
       : []),
+    ...BROWSER_AUTOMATION_EXECUTABLE_TASK_TYPES,
   ]
     .map((item) => String(item || "").trim())
     .filter(Boolean);

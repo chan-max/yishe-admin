@@ -5,6 +5,7 @@ html.light {
   --login-bg-color: #f3f7fd;
 
   --left-menu-max-width: 280px;
+  --left-menu-mobile-max-width: 232px;
   --left-menu-min-width: 64px;
   --left-menu-bg-color: #f7f9fc;
   --left-menu-bg-light-color: #ffffff;
@@ -24,7 +25,8 @@ html.light {
   --left-menu-link-active-bg: var(--el-color-primary-light-8);
   --left-menu-link-active-border-color: var(--el-color-primary);
   --left-menu-link-active-color: var(--el-color-primary);
-  --left-menu-shadow: inset -1px 0 0 rgba(148, 163, 184, 0.08), 1px 0 0 rgba(148, 163, 184, 0.12),
+  --left-menu-shadow:
+    inset -1px 0 0 rgba(148, 163, 184, 0.08), 1px 0 0 rgba(148, 163, 184, 0.12),
     12px 0 28px rgba(15, 23, 42, 0.05);
 
   --logo-height: 42px;
@@ -88,10 +90,19 @@ html.light {
   --app-form-label-spacing: 0.02em;
   --app-form-item-margin: 12px;
   --app-form-item-top-margin: 10px;
+  --app-form-item-error-space: 16px;
   --app-form-label-top-gap: 4px;
 
   --app-footer-height: 50px;
   --transition-time-02: 0.2s;
+}
+
+@media only screen and (max-width: 480px) {
+  :root,
+  html.light,
+  html.dark {
+    --left-menu-mobile-max-width: 216px;
+  }
 }
 
 html.dark {
@@ -101,10 +112,18 @@ html.dark {
 
   --left-menu-bg-color: #101010;
   --left-menu-bg-light-color: #141414;
-  --left-menu-bg-active-color: color-mix(in srgb, var(--el-color-primary) 14%, #181818 86%);
+  --left-menu-bg-active-color: color-mix(
+    in srgb,
+    var(--el-color-primary) 14%,
+    #181818 86%
+  );
   --left-menu-text-color: #b9c0cc;
   --left-menu-text-active-color: var(--el-color-primary);
-  --left-menu-collapse-bg-active-color: color-mix(in srgb, var(--el-color-primary) 14%, #181818 86%);
+  --left-menu-collapse-bg-active-color: color-mix(
+    in srgb,
+    var(--el-color-primary) 14%,
+    #181818 86%
+  );
   --left-menu-border-color: #242424;
   --left-menu-divider-color: rgba(255, 255, 255, 0.08);
   --left-menu-hover-color: #171717;
@@ -114,10 +133,15 @@ html.dark {
   --left-menu-link-text-color: rgba(255, 255, 255, 0.56);
   --left-menu-link-hover-color: rgba(255, 255, 255, 0.88);
   --left-menu-link-hover-bg: rgba(255, 255, 255, 0.035);
-  --left-menu-link-active-bg: color-mix(in srgb, var(--el-color-primary) 16%, transparent 84%);
+  --left-menu-link-active-bg: color-mix(
+    in srgb,
+    var(--el-color-primary) 16%,
+    transparent 84%
+  );
   --left-menu-link-active-border-color: var(--el-color-primary);
   --left-menu-link-active-color: var(--el-color-primary);
-  --left-menu-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 1px 0 0 rgba(255, 255, 255, 0.1),
+  --left-menu-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.05), 1px 0 0 rgba(255, 255, 255, 0.1),
     10px 0 28px rgba(0, 0, 0, 0.22);
 
   --logo-title-text-color: #f3f4f6;
@@ -185,22 +209,45 @@ body {
   margin-bottom: var(--app-form-item-margin);
 }
 
+.el-form .el-form-item.is-error {
+  margin-bottom: calc(
+    var(--app-form-item-margin) + var(--app-form-item-error-space)
+  );
+}
+
 .el-form--label-top .el-form-item {
   margin-bottom: var(--app-form-item-top-margin);
 }
 
 .el-form .el-form-item__label {
+  min-height: var(--el-component-size, var(--ep-cover-control-height, 32px));
+  align-items: center;
   font-size: var(--app-form-label-size);
   font-weight: var(--app-form-label-weight);
   letter-spacing: var(--app-form-label-spacing);
   color: var(--app-form-label-color);
-  line-height: 1.25;
+  line-height: 1.4;
 }
 
 .el-form--label-top .el-form-item__label {
+  min-height: auto;
+  align-items: flex-start;
   padding-bottom: var(--app-form-label-top-gap);
 }
 
 .el-form .el-form-item__content {
+  min-height: var(--el-component-size, var(--ep-cover-control-height, 32px));
   line-height: normal;
+}
+
+.el-form--label-top .el-form-item__content {
+  min-height: 0;
+}
+
+.el-form .el-form-item__error {
+  max-width: 100%;
+  padding-top: 4px;
+  line-height: 1.4;
+  white-space: normal;
+  word-break: break-word;
 }

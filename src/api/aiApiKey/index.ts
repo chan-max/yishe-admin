@@ -27,7 +27,7 @@ export const getAiApiKeyDetail = (id: number) =>
 export const createAiApiKey = (data: AiApiKeyConfig) =>
   request.post({ url: "/system/ai-api-key", data });
 
-export const updateAiApiKey = (id: number, data: AiApiKeyConfig) =>
+export const updateAiApiKey = (id: number, data: Partial<AiApiKeyConfig>) =>
   request.patch({ url: `/system/ai-api-key/${id}`, data });
 
 export const deleteAiApiKey = (id: number) => request.delete({ url: `/system/ai-api-key/${id}` });

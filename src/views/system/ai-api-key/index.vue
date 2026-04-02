@@ -35,14 +35,33 @@
                 </template>
 
                 <template #enabledSlot="{ row }">
-                  <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
-                    {{ row.enabled ? "启用" : "停用" }}
-                  </el-tag>
+                  <div class="ai-api-key-enabled">
+                    <el-switch
+                      :model-value="row.enabled"
+                      :loading="statusLoadingId === row.id"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                      @change="(value) => handleToggleEnabled(row, value === true)"
+                    />
+                    <span class="table-meta-text">
+                      {{ row.enabled ? "启用" : "停用" }}
+                    </span>
+                  </div>
                 </template>
 
                 <template #apiKeySlot="{ row }">
                   <div class="ai-api-key-mask">
-                    {{ row.maskedApiKey || maskApiKey(row.apiKey) }}
+                    <span>{{ getDisplayedApiKey(row) }}</span>
+                    <el-button
+                      v-if="row.id"
+                      link
+                      size="small"
+                      :loading="apiKeyLoadingId === row.id"
+                      @click="handleToggleApiKeyVisible(row)"
+                    >
+                      {{ isApiKeyVisible(row) ? "隐藏" : "查看明文" }}
+                    </el-button>
                   </div>
                 </template>
 
@@ -95,16 +114,26 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { reactive, onMounted, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { deleteAiApiKey, getAiApiKeyList, type AiApiKeyConfig } from "@/api/aiApiKey";
+import {
+  deleteAiApiKey,
+  getAiApiKeyDetail,
+  getAiApiKeyList,
+  updateAiApiKey,
+  type AiApiKeyConfig,
+} from "@/api/aiApiKey";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import AiApiKeyDialog from "./components/AiApiKeyDialog.vue";
 
 const loading = ref(false);
 const deleteLoading = ref(false);
+const statusLoadingId = ref<number | null>(null);
+const apiKeyLoadingId = ref<number | null>(null);
 const list = ref<AiApiKeyConfig[]>([]);
 const dialogRef = ref();
+const revealedApiKeyMap = reactive<Record<number, boolean>>({});
+const plainApiKeyMap = reactive<Record<number, string>>({});
 
 const platformLabelMap: Record<string, string> = {
   openai: "OpenAI",
@@ -173,6 +202,18 @@ const maskApiKey = (value?: string) => {
   return `${key.slice(0, 6)}...${key.slice(-4)}`;
 };
 
+const isApiKeyVisible = (row: AiApiKeyConfig) => {
+  if (!row.id) return false;
+  return !!revealedApiKeyMap[row.id];
+};
+
+const getDisplayedApiKey = (row: AiApiKeyConfig) => {
+  if (row.id && revealedApiKeyMap[row.id] && plainApiKeyMap[row.id]) {
+    return plainApiKeyMap[row.id];
+  }
+  return row.maskedApiKey || maskApiKey(row.apiKey);
+};
+
 const isExpired = (expiresAt?: string | null) => {
   if (!expiresAt) return false;
   const timestamp = new Date(expiresAt).getTime();
@@ -190,6 +231,12 @@ const getList = async () => {
   try {
     const data = await getAiApiKeyList();
     list.value = Array.isArray(data) ? data : [];
+    Object.keys(revealedApiKeyMap).forEach((key) => {
+      delete revealedApiKeyMap[Number(key)];
+    });
+    Object.keys(plainApiKeyMap).forEach((key) => {
+      delete plainApiKeyMap[Number(key)];
+    });
   } finally {
     loading.value = false;
   }
@@ -197,6 +244,40 @@ const getList = async () => {
 
 const openDialog = (id?: number) => {
   dialogRef.value?.open(id);
+};
+
+const handleToggleEnabled = async (row: AiApiKeyConfig, enabled: boolean) => {
+  if (!row.id || statusLoadingId.value === row.id) return;
+
+  statusLoadingId.value = row.id;
+  try {
+    await updateAiApiKey(row.id, { enabled });
+    row.enabled = enabled;
+    ElMessage.success(enabled ? "已启用该 Key" : "已停用该 Key");
+  } catch (error: any) {
+    ElMessage.error(error?.message || "更新状态失败");
+  } finally {
+    statusLoadingId.value = null;
+  }
+};
+
+const handleToggleApiKeyVisible = async (row: AiApiKeyConfig) => {
+  if (!row.id) return;
+  if (revealedApiKeyMap[row.id]) {
+    revealedApiKeyMap[row.id] = false;
+    return;
+  }
+
+  apiKeyLoadingId.value = row.id;
+  try {
+    const detail = await getAiApiKeyDetail(row.id);
+    plainApiKeyMap[row.id] = String(detail.apiKey || "").trim();
+    revealedApiKeyMap[row.id] = true;
+  } catch (error: any) {
+    ElMessage.error(error?.message || "获取密钥明文失败");
+  } finally {
+    apiKeyLoadingId.value = null;
+  }
 };
 
 const handleOperationCommand = (command: string, row: AiApiKeyConfig) => {
@@ -244,10 +325,19 @@ onMounted(() => {
 }
 
 .ai-api-key-mask {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   line-height: 1.5;
   color: var(--el-text-color-secondary);
   word-break: break-all;
+}
+
+.ai-api-key-enabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .table-meta-text.is-expired {

@@ -104,6 +104,19 @@
                   <div class="psd-set-page__auto-dispatch-subtitle">
                     开启后，服务端会自动为当前账号调度空闲客户端执行套图制作。
                   </div>
+                  <div
+                    class="psd-set-page__auto-dispatch-runtime"
+                    :class="`is-${psdSetSchedulerIndicator.tone}`"
+                  >
+                    <span class="psd-set-page__auto-dispatch-runtime-dot" />
+                    <span>{{ psdSetSchedulerIndicator.text }}</span>
+                    <span
+                      v-if="psdSetSchedulerMeta"
+                      class="psd-set-page__auto-dispatch-runtime-meta"
+                    >
+                      {{ psdSetSchedulerMeta }}
+                    </span>
+                  </div>
                 </div>
                 <div class="psd-set-page__auto-dispatch-side">
                   <span class="psd-set-page__auto-dispatch-status" :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
@@ -1059,6 +1072,15 @@ import { websocketClient } from "@/services/websocketClient";
 import { useClientNodeState } from "@/services/clientNodeState";
 import { ClientControlService } from "@/services/clientControl";
 import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
+import {
+  getPsdSetAutoDispatchRuntime,
+  type AutoDispatchSchedulerRuntime,
+} from "@/api/system/websocket";
+import {
+  normalizeAutoDispatchSchedulerRuntime,
+  resolveAutoDispatchSchedulerIndicator,
+  resolveAutoDispatchSchedulerMeta,
+} from "@/services/autoDispatchSchedulerRuntime";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
 import { downloadImageEnhanced } from "@/common/download";
@@ -1077,6 +1099,7 @@ const productionDispatchLoading = ref(false);
 const productionDispatchRow = ref<any>(null);
 const selectedDispatchClientId = ref("");
 const userAutoSchedulingLoading = ref(false);
+const psdSetSchedulerRuntime = ref<AutoDispatchSchedulerRuntime | null>(null);
 const generateProductDialogVisible = ref(false);
 const generateProductDialogLoading = ref(false);
 const generateProductSubmitting = ref(false);
@@ -1405,6 +1428,7 @@ const configEditDialogValue = ref("");
 const configEditDialogError = ref("");
 const configEditDialogSaving = ref(false);
 let configValidateTimer: ReturnType<typeof setTimeout> | null = null;
+let psdSetSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 
 // 查看配置对话框相关状态
 const configViewDialogVisible = ref(false);
@@ -1649,20 +1673,6 @@ function getSchedulerAssignedLabel(row: any) {
   return meta.assignedMachineCode || meta.assignedClientId || "-";
 }
 
-function getSchedulerSummary(row: any) {
-  const meta = row?.schedulerMeta;
-  if (!meta || typeof meta !== "object") return "";
-  if (meta.status !== "assigned" && meta.status !== "running") return "";
-
-  const parts = [
-    schedulerStatusLabel(meta.status),
-    meta.assignedMachineCode || meta.assignedClientId || "",
-    typeof meta.progress === "number" ? `${meta.progress}%` : "",
-  ].filter(Boolean);
-
-  return parts.join(" · ");
-}
-
 function getClientPhotoshopService(client: any) {
   return client?.clientInfo?.services?.["ps-automation"] || client?.clientInfo?.services?.photoshop || null;
 }
@@ -1677,9 +1687,16 @@ function isDispatchClientBusy(client: any) {
   return !!(
     psAutomation?.running ||
     psAutomation?.currentPsSetId ||
+    psAutomation?.currentPsSetName ||
     service?.busy ||
-    service?.state === "busy"
+    service?.state === "busy" ||
+    service?.currentTaskId
   );
+}
+
+function hasDispatchClientError(client: any) {
+  const service = getClientPhotoshopService(client);
+  return !!(service?.status === "error" || service?.state === "error");
 }
 
 function isDispatchClientExecutable(client: any) {
@@ -1698,14 +1715,16 @@ function getDispatchClientRuntimeText(client: any) {
   const service = getClientPhotoshopService(client);
   if (!service) return "未上报";
   if (service.available) return "可执行";
-  if (service.connected) return "任务进行中";
-  if (service.status === "error") return "异常";
+  if (isDispatchClientBusy(client)) return "执行中";
+  if (hasDispatchClientError(client)) return "异常";
+  if (service.connected) return "已连接";
   return "未就绪";
 }
 
 function getDispatchClientCurrentTaskText(client: any) {
   const psAutomation = client?.clientInfo?.psAutomation;
-  return psAutomation?.currentPsSetName || psAutomation?.currentPsSetId || "-";
+  const service = getClientPhotoshopService(client);
+  return psAutomation?.currentPsSetName || psAutomation?.currentPsSetId || service?.currentTaskId || "-";
 }
 
 function getDispatchClientHintText(client: any) {
@@ -1740,10 +1759,25 @@ const dispatchClientItems = computed<ClientNodeItem[]>(() =>
       badges: [
         { text: "在线", tone: "success" },
         {
-          text: service?.available ? "可执行" : service?.connected ? "任务进行中" : "未就绪",
-          tone: executable ? "success" : service?.connected ? "warning" : "muted",
+          text: service?.available
+            ? "可执行"
+            : busy
+              ? "执行中"
+              : hasDispatchClientError(client)
+                ? "异常"
+                : service?.connected
+                  ? "已连接"
+                  : "未就绪",
+          tone: executable
+            ? "success"
+            : busy
+              ? "warning"
+              : hasDispatchClientError(client)
+                ? "danger"
+                : service?.connected
+                  ? "info"
+                  : "muted",
         },
-        ...(busy ? [{ text: "执行中", tone: "warning" as const }] : []),
       ],
     };
   }),
@@ -1751,6 +1785,14 @@ const dispatchClientItems = computed<ClientNodeItem[]>(() =>
 
 const selectedDispatchClient = computed(() =>
   dispatchVisibleClients.value.find((item) => item.id === selectedDispatchClientId.value) || null,
+);
+
+const psdSetSchedulerIndicator = computed(() =>
+  resolveAutoDispatchSchedulerIndicator(psdSetSchedulerRuntime.value),
+);
+
+const psdSetSchedulerMeta = computed(() =>
+  resolveAutoDispatchSchedulerMeta(psdSetSchedulerRuntime.value),
 );
 
 async function openProductionDispatchDialog(row: any) {
@@ -1789,6 +1831,15 @@ async function refreshUserAutoSchedulingSetting() {
   await refreshUserAutoScheduling();
 }
 
+async function loadPsdSetSchedulerRuntime() {
+  try {
+    const response = await getPsdSetAutoDispatchRuntime();
+    psdSetSchedulerRuntime.value = normalizeAutoDispatchSchedulerRuntime(response);
+  } catch {
+    psdSetSchedulerRuntime.value = null;
+  }
+}
+
 async function handleToggleUserAutoScheduling(enabled: boolean) {
   userAutoSchedulingLoading.value = true;
   try {
@@ -1798,6 +1849,7 @@ async function handleToggleUserAutoScheduling(enabled: boolean) {
       if (enabled) {
         await getList();
       }
+      await loadPsdSetSchedulerRuntime();
     }
   } finally {
     userAutoSchedulingLoading.value = false;
@@ -2640,13 +2692,20 @@ onMounted(() => {
   // 添加全局监听器
   websocketClient.events.on("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.on("production-status", productionStatusHandler);
-  void refreshUserAutoSchedulingSetting();
+  void Promise.all([refreshUserAutoSchedulingSetting(), loadPsdSetSchedulerRuntime()]);
+  psdSetSchedulerRuntimeTimer = setInterval(() => {
+    void loadPsdSetSchedulerRuntime();
+  }, 10000);
 });
 
 onUnmounted(() => {
   // 清理全局监听器
   websocketClient.events.off("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.off("production-status", productionStatusHandler);
+  if (psdSetSchedulerRuntimeTimer) {
+    clearInterval(psdSetSchedulerRuntimeTimer);
+    psdSetSchedulerRuntimeTimer = null;
+  }
 });
 
 getList();
@@ -2709,6 +2768,55 @@ getList();
   font-size: 12px;
   line-height: 1.45;
   color: var(--el-text-color-secondary);
+}
+
+.psd-set-page__auto-dispatch-runtime {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+  flex-wrap: wrap;
+}
+
+.psd-set-page__auto-dispatch-runtime.is-success {
+  color: #67c23a;
+}
+
+.psd-set-page__auto-dispatch-runtime.is-warning {
+  color: #f97316;
+}
+
+.psd-set-page__auto-dispatch-runtime.is-danger {
+  color: #f56c6c;
+}
+
+.psd-set-page__auto-dispatch-runtime.is-info {
+  color: #909399;
+}
+
+.psd-set-page__auto-dispatch-runtime-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.psd-set-page__auto-dispatch-runtime.is-success .psd-set-page__auto-dispatch-runtime-dot {
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 24%);
+  animation: status-breath-success 1.8s infinite ease-in-out;
+}
+
+.psd-set-page__auto-dispatch-runtime.is-warning .psd-set-page__auto-dispatch-runtime-dot {
+  box-shadow: 0 0 0 0 rgb(249 115 22 / 22%);
+  animation: status-breath-warning 1.8s infinite ease-in-out;
+}
+
+.psd-set-page__auto-dispatch-runtime-meta {
+  color: var(--el-text-color-placeholder);
 }
 
 .psd-set-page__auto-dispatch-side {

@@ -11,16 +11,17 @@
       :model="formData"
       :rules="formRules"
       label-width="110px"
+      class="ai-api-key-form"
       v-loading="formLoading"
     >
       <el-row :gutter="20">
         <el-col :xs="24" :md="12">
-          <el-form-item label="名称" prop="name">
+          <el-form-item label="名称" prop="name" class="ai-api-key-form__control-item">
             <el-input v-model="formData.name" placeholder="例如：OpenAI 主账号 Key" />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
-          <el-form-item label="平台" prop="platform">
+          <el-form-item label="平台" prop="platform" class="ai-api-key-form__control-item">
             <el-select
               v-model="formData.platform"
               class="w-full"
@@ -39,21 +40,21 @@
           </el-form-item>
         </el-col>
         <el-col :span="24">
-          <el-form-item label="API Key" prop="apiKey">
+          <el-form-item label="API Key" prop="apiKey" class="ai-api-key-form__control-item">
             <el-input v-model="formData.apiKey" placeholder="请输入 API 密钥" show-password />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
-          <el-form-item label="启用状态">
+          <el-form-item label="启用状态" class="ai-api-key-form__control-item">
             <el-switch v-model="formData.enabled" />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
-          <el-form-item label="过期时间">
+          <el-form-item label="过期时间" class="ai-api-key-form__control-item">
             <el-date-picker
               v-model="formData.expiresAt"
               type="datetime"
-              class="!w-full"
+              class="ai-api-key-form__date-picker !w-full"
               value-format="YYYY-MM-DD HH:mm:ss"
               placeholder="不填则视为长期有效"
             />
@@ -190,3 +191,32 @@ const submitForm = async () => {
 
 defineExpose({ open });
 </script>
+
+<style scoped lang="scss">
+.ai-api-key-form :deep(.ai-api-key-form__control-item .el-form-item__label) {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: normal;
+}
+
+.ai-api-key-form :deep(.ai-api-key-form__control-item .el-form-item__content) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
+}
+
+.ai-api-key-form :deep(.ai-api-key-form__date-picker.el-date-editor) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+}
+
+.ai-api-key-form :deep(.ai-api-key-form__date-picker .el-input__wrapper) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
+}
+</style>

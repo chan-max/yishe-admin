@@ -89,6 +89,7 @@ export interface ServiceCommandResultEvent {
   message?: string;
   data?: any;
   error?: string | null;
+  errorDetail?: Record<string, any> | null;
   finishedAt?: string;
 }
 
@@ -112,12 +113,14 @@ export interface PublishTaskRuntimeEvent {
   machineCode?: string | null;
   taskId: string;
   taskType?: string;
+  queue?: string;
   status?: string;
   message?: string;
   currentStep?: string | null;
   progress?: number | null;
   runtime?: Record<string, any> | null;
   error?: string | null;
+  errorDetail?: Record<string, any> | null;
   reportedAt?: string;
 }
 

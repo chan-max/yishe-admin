@@ -42,7 +42,7 @@ export const useRenderLayout = ({
               "z-[30] shadow-[var(--left-menu-shadow)]": !mobile.value,
               "z-[1401]": mobile.value,
               "w-[var(--left-menu-max-width)]": !mobile.value,
-              "w-[min(86vw,var(--left-menu-max-width))] shadow-2xl transition-transform duration-200":
+              "w-[min(80vw,var(--left-menu-mobile-max-width,var(--left-menu-max-width)))] shadow-2xl transition-transform duration-200":
                 mobile.value,
               "translate-x-0": !mobile.value || mobileMenuOpen.value,
               "-translate-x-full": mobile.value && !mobileMenuOpen.value,

@@ -29,8 +29,9 @@ export function usePluginClientNodes(
   const { loading } = storeToRefs(store);
 
   const clients = computed(() => store.getPluginClients(pluginKey, options));
-  const getServiceRuntime = (client?: WebsocketConnectionVO | null) =>
-    getClientServiceRuntime(client || undefined, pluginKey);
+  const getServiceRuntime = (
+    client?: Pick<WebsocketConnectionVO, "clientInfo"> | Record<string, any> | null,
+  ) => getClientServiceRuntime(client || undefined, pluginKey);
 
   return {
     clients: readonly(clients),

@@ -13,7 +13,7 @@
         <el-button type="primary" @click="goTo('/external/browser-automation')">
           浏览器自动化
         </el-button>
-        <el-button @click="goTo('/system/queue')">任务中心</el-button>
+        <el-button @click="goTo('/product/queue')">任务中心</el-button>
         <el-button @click="goTo('/system/ai-api-key')">AI API Key</el-button>
       </div>
     </section>
@@ -195,7 +195,7 @@ const shortcuts: ShortcutItem[] = [
     key: "queue",
     title: "任务中心",
     description: "查看发布任务、实时运行状态和执行日志。",
-    route: "/system/queue",
+    route: "/product/queue",
     icon: "ep:data-analysis",
   },
   {

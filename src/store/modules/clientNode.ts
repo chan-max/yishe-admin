@@ -50,7 +50,7 @@ export const normalizeClientPluginKey = (value?: string | null) => {
 };
 
 export const getClientServiceRuntime = (
-  client: WebsocketConnectionVO | undefined,
+  client: Pick<WebsocketConnectionVO, "clientInfo"> | Record<string, any> | undefined | null,
   pluginKey: ClientPluginKey,
 ) => {
   const services = client?.clientInfo?.services || {};

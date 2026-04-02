@@ -1,166 +1,211 @@
-import request from '@/config/axios'
+import request from "@/config/axios";
 
 export interface BrowserAutomationServiceStatus {
-  key?: string
-  label?: string
-  connected?: boolean
-  available?: boolean
-  status?: 'connected' | 'disconnected' | 'error' | 'unknown'
-  state?: 'idle' | 'busy' | 'offline' | 'error'
-  busy?: boolean
-  message?: string
-  version?: string
-  endpoint?: string
-  lastCheckedAt?: string
-  currentTaskId?: string | null
-  lastError?: string | null
-  supportedCommands?: string[]
-  supportedTaskTypes?: string[]
-  autoDispatchEnabled?: boolean
-  details?: Record<string, any>
+  key?: string;
+  label?: string;
+  connected?: boolean;
+  available?: boolean;
+  status?: "connected" | "disconnected" | "error" | "unknown";
+  state?: "idle" | "busy" | "offline" | "error";
+  busy?: boolean;
+  message?: string;
+  version?: string;
+  endpoint?: string;
+  lastCheckedAt?: string;
+  currentTaskId?: string | null;
+  lastError?: string | null;
+  supportedCommands?: string[];
+  supportedTaskTypes?: string[];
+  autoDispatchEnabled?: boolean;
+  details?: Record<string, any>;
 }
 
 export interface BrowserAutomationClientVO {
-  clientId: string
-  isOnline?: boolean
-  nodeStatus?: string | null
-  connectedAt?: string | null
-  lastOnlineAt?: string | null
-  lastOfflineAt?: string | null
-  appVersion?: string | null
+  clientId: string;
+  isOnline?: boolean;
+  nodeStatus?: string | null;
+  connectedAt?: string | null;
+  lastOnlineAt?: string | null;
+  lastOfflineAt?: string | null;
+  appVersion?: string | null;
   machine?: {
-    code?: string
-    platform?: string
-    createdAt?: string
-  } | null
+    code?: string;
+    platform?: string;
+    createdAt?: string;
+  } | null;
   location?: {
-    ip?: string
-    city?: string
-    region?: string
-    country?: string
-    org?: string
-    fetchedAt?: string
-    source?: string
-  } | null
-  uploader?: BrowserAutomationServiceStatus | null
+    ip?: string;
+    city?: string;
+    region?: string;
+    country?: string;
+    org?: string;
+    fetchedAt?: string;
+    source?: string;
+  } | null;
+  uploader?: BrowserAutomationServiceStatus | null;
+}
+
+export interface BrowserAutomationCapabilityItem {
+  taskType: string;
+  label: string;
+}
+
+export interface BrowserAutomationCapabilityClient {
+  clientId: string;
+  isOnline: boolean;
+  available: boolean;
+  connected: boolean;
+  busy: boolean;
+  autoDispatchEnabled: boolean;
+  machineCode?: string | null;
+  location?: string | null;
+  reportedTaskTypes: string[];
+  capabilities: BrowserAutomationCapabilityItem[];
+}
+
+export interface BrowserAutomationCapabilityTaskType {
+  taskType: string;
+  label: string;
+  declared: boolean;
+  onlineClientIds: string[];
+  availableClientIds: string[];
+  autoDispatchClientIds: string[];
+}
+
+export interface BrowserAutomationCapabilityCatalogResponse {
+  success: boolean;
+  data: {
+    declaredCapabilities: BrowserAutomationCapabilityItem[];
+    clients: BrowserAutomationCapabilityClient[];
+    taskTypes: BrowserAutomationCapabilityTaskType[];
+  };
 }
 
 export interface BrowserAutomationCommandResponse {
-  success: boolean
-  message: string
+  success: boolean;
+  message: string;
   data?: {
-    commandId?: string
-    clientId?: string
-    service?: string
-    action?: string
-    payload?: Record<string, any>
-    createdAt?: string
-  }
+    commandId?: string;
+    clientId?: string;
+    service?: string;
+    action?: string;
+    payload?: Record<string, any>;
+    createdAt?: string;
+  };
 }
 
 export interface BrowserAutomationSnapshotResponse {
-  success: boolean
-  data: BrowserAutomationClientVO
+  success: boolean;
+  data: BrowserAutomationClientVO;
 }
 
 export const getBrowserAutomationClients = () => {
-  return request.get<BrowserAutomationClientVO[]>({ url: '/external/browser-automation/clients' })
-}
+  return request.get<BrowserAutomationClientVO[]>({ url: "/external/browser-automation/clients" });
+};
+
+export const getBrowserAutomationCapabilities = () => {
+  return request.get<BrowserAutomationCapabilityCatalogResponse>({
+    url: "/external/browser-automation/capabilities",
+  });
+};
 
 export const getBrowserAutomationStatus = (clientId: string) => {
   return request.get<BrowserAutomationSnapshotResponse>({
-    url: `/external/browser-automation/${clientId}/status`
-  })
-}
+    url: `/external/browser-automation/${clientId}/status`,
+  });
+};
 
 export const checkBrowserAutomationStatus = (clientId: string) => {
   return request.post<BrowserAutomationCommandResponse>({
-    url: `/external/browser-automation/${clientId}/check-status`
-  })
-}
+    url: `/external/browser-automation/${clientId}/check-status`,
+  });
+};
 
-export const connectBrowserAutomation = (clientId: string, data?: { port?: number; headless?: boolean }) => {
+export const connectBrowserAutomation = (
+  clientId: string,
+  data?: { port?: number; headless?: boolean },
+) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/connect`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const closeBrowserAutomation = (clientId: string) => {
   return request.post<BrowserAutomationCommandResponse>({
-    url: `/external/browser-automation/${clientId}/close`
-  })
-}
+    url: `/external/browser-automation/${clientId}/close`,
+  });
+};
 
 export const forceCloseBrowserAutomation = (clientId: string, data?: { port?: number }) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/force-close`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const fetchBrowserAutomationPages = (clientId: string) => {
   return request.get<BrowserAutomationCommandResponse>({
-    url: `/external/browser-automation/${clientId}/pages`
-  })
-}
+    url: `/external/browser-automation/${clientId}/pages`,
+  });
+};
 
 export const executeBrowserAutomationDebug = (clientId: string, data: Record<string, any>) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/debug`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const openBrowserAutomationPlatform = (clientId: string, data: { platform: string }) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/open-platform`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const openBrowserAutomationLink = (clientId: string, data: { url: string }) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/open-link`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const queryBrowserAutomationTasks = (clientId: string, data?: Record<string, any>) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/tasks/query`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const getBrowserAutomationTaskDetail = (clientId: string, taskId: string) => {
   return request.post<BrowserAutomationCommandResponse>({
-    url: `/external/browser-automation/${clientId}/tasks/${encodeURIComponent(taskId)}/detail`
-  })
-}
+    url: `/external/browser-automation/${clientId}/tasks/${encodeURIComponent(taskId)}/detail`,
+  });
+};
 
 export const getBrowserAutomationTaskLogs = (clientId: string, taskId: string) => {
   return request.post<BrowserAutomationCommandResponse>({
-    url: `/external/browser-automation/${clientId}/tasks/${encodeURIComponent(taskId)}/logs`
-  })
-}
+    url: `/external/browser-automation/${clientId}/tasks/${encodeURIComponent(taskId)}/logs`,
+  });
+};
 
 export const getBrowserAutomationPlatforms = (clientId: string) => {
   return request.post<BrowserAutomationCommandResponse>({
-    url: `/external/browser-automation/${clientId}/platforms`
-  })
-}
+    url: `/external/browser-automation/${clientId}/platforms`,
+  });
+};
 
 export const getBrowserAutomationLoginStatus = (clientId: string, data?: { refresh?: boolean }) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/login-status`,
-    data
-  })
-}
+    data,
+  });
+};
 
 export const publishByBrowserAutomation = (clientId: string, data: Record<string, any>) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/publish`,
-    data
-  })
-}
+    data,
+  });
+};
