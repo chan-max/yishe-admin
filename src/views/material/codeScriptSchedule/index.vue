@@ -349,6 +349,7 @@
               <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
               <template #dropdown>
                 <el-dropdown-menu class="operation-menu-compact">
+                  <el-dropdown-item v-if="isExecutionCancellable(row)" command="cancel">取消</el-dropdown-item>
                   <el-dropdown-item command="detail">详情</el-dropdown-item>
                   <el-dropdown-item command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
                 </el-dropdown-menu>
@@ -370,43 +371,73 @@
   </el-dialog>
 
   <el-dialog title="执行详情" v-model="executionDetailVisible" fullscreen align-center>
-    <div class="h-[calc(100vh-120px)] overflow-auto" v-loading="executionDetailLoading">
-      <div class="mb-3 flex flex-wrap items-center gap-3 text-[var(--el-text-color-secondary)]">
-        <el-tag :type="getExecutionStatusType(executionDetail.status)" size="small">{{
-          executionDetail.status || "-"
-        }}</el-tag>
-        <span>调度：{{ executionDetail.scheduleName || "-" }}</span>
-        <span>脚本：{{ executionDetail.scriptName || "-" }}</span>
-        <span>脚本执行ID：{{ executionDetail.codeScriptRunId || "-" }}</span>
-        <span>沙盒运行ID：{{ executionDetail.sandboxRunId || "-" }}</span>
+    <div class="execution-detail-dialog" v-loading="executionDetailLoading">
+      <div class="execution-detail-dialog__summary">
+        <div class="execution-detail-dialog__summary-main">
+          <div class="execution-detail-dialog__status-row">
+            <el-tag :type="getExecutionStatusType(executionDetail.status)" size="small">{{
+              executionDetail.status || "-"
+            }}</el-tag>
+            <span class="execution-detail-dialog__status-text">
+              当前调度执行状态与关联脚本上下文
+            </span>
+          </div>
+          <div class="execution-detail-dialog__meta-grid">
+            <div class="execution-detail-dialog__meta-item">
+              <div class="execution-detail-dialog__meta-label">调度名称</div>
+              <div class="execution-detail-dialog__meta-value">
+                {{ executionDetail.scheduleName || "-" }}
+              </div>
+            </div>
+            <div class="execution-detail-dialog__meta-item">
+              <div class="execution-detail-dialog__meta-label">脚本名称</div>
+              <div class="execution-detail-dialog__meta-value">
+                {{ executionDetail.scriptName || "-" }}
+              </div>
+            </div>
+            <div class="execution-detail-dialog__meta-item">
+              <div class="execution-detail-dialog__meta-label">脚本执行 ID</div>
+              <div class="execution-detail-dialog__meta-value is-mono">
+                {{ executionDetail.codeScriptRunId || "-" }}
+              </div>
+            </div>
+            <div class="execution-detail-dialog__meta-item">
+              <div class="execution-detail-dialog__meta-label">沙盒运行 ID</div>
+              <div class="execution-detail-dialog__meta-value is-mono">
+                {{ executionDetail.sandboxRunId || "-" }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="execution-detail-dialog__summary-actions">
+          <el-button
+            v-if="isExecutionCancellable(executionDetail)"
+            size="small"
+            type="danger"
+            plain
+            @click="handleCancelExecution(executionDetail)"
+          >
+            取消任务
+          </el-button>
+        </div>
       </div>
-      <div
-        class="grid h-[72vh] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]"
-      >
-        <div
-          class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-        >
-          <div class="mb-2 text-sm font-600">执行结果</div>
-          <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+      <div class="execution-detail-dialog__content">
+        <div class="execution-detail-panel">
+          <div class="execution-detail-panel__title">执行结果</div>
+          <pre class="execution-detail-panel__pre">{{
             formatJson(executionDetail.runResult)
           }}</pre>
         </div>
-        <div class="grid h-full min-h-0 gap-3 grid-rows-2">
-          <div
-            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-          >
-            <div class="mb-2 text-sm font-600">参数快照</div>
-            <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+        <div class="execution-detail-side">
+          <div class="execution-detail-panel">
+            <div class="execution-detail-panel__title">参数快照</div>
+            <pre class="execution-detail-panel__pre">{{
               formatJson(executionDetail.paramsSnapshotJson)
             }}</pre>
           </div>
-          <div
-            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-          >
-            <div class="mb-2 text-sm font-600">日志</div>
-            <div
-            class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all rounded bg-[var(--list-page-base-bg)] p-3 font-mono text-xs leading-6 text-slate-200"
-            >
+          <div class="execution-detail-panel">
+            <div class="execution-detail-panel__title">日志</div>
+            <div class="execution-detail-panel__log">
               <div
                 v-for="(line, index) in formattedExecutionLogLines"
                 :key="`${index}-${line.text}`"
@@ -434,6 +465,7 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { formatDate } from "@/utils/formatTime";
 import { getCodeScriptList } from "@/api/codeScript";
 import {
+  cancelCodeScriptScheduleExecution,
   createCodeScriptSchedule,
   deleteCodeScriptScheduleExecution,
   deleteCodeScriptSchedule,
@@ -662,6 +694,11 @@ function getExecutionStatusType(status: string) {
   if (status === "running" || status === "queued") return "warning";
   if (status === "failed" || status === "timed_out" || status === "cancelled") return "danger";
   return "info";
+}
+
+function isExecutionCancellable(row?: any) {
+  const status = String(row?.status || "").toLowerCase();
+  return status === "queued" || status === "running";
 }
 
 function formatJson(value: any) {
@@ -1011,7 +1048,40 @@ async function handleDeleteExecution(row?: any) {
   }
 }
 
+function refreshExecutionDetailIfNeeded(id?: number) {
+  if (!id || !executionDetailVisible.value || executionDetail.id !== id) {
+    return Promise.resolve();
+  }
+  return openExecutionDetail({ id });
+}
+
+async function handleCancelExecution(row: any) {
+  if (!row?.id) return;
+  if (!isExecutionCancellable(row)) {
+    ElMessage.warning("当前任务状态不可取消");
+    return;
+  }
+
+  await ElMessageBox.confirm(`确认取消执行记录 #${row.id} 吗？`, "取消任务", {
+    confirmButtonText: "确认取消",
+    cancelButtonText: "继续执行",
+    type: "warning",
+  });
+
+  try {
+    await cancelCodeScriptScheduleExecution({ id: row.id });
+    ElMessage.success("取消成功");
+    await Promise.all([getList(), getExecutionList(), refreshExecutionDetailIfNeeded(row.id)]);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "取消执行失败");
+  }
+}
+
 async function handleExecutionOperationCommand(command: string, row: any) {
+  if (command === "cancel") {
+    await handleCancelExecution(row);
+    return;
+  }
   if (command === "detail") {
     await openExecutionDetail(row);
     return;
@@ -1069,5 +1139,171 @@ onMounted(async () => {
 
 :deep(.code-script-schedule-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.execution-detail-dialog {
+  height: calc(100vh - 120px);
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.execution-detail-dialog__summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgb(from var(--el-fill-color-lighter) r g b / 96%), rgb(from var(--el-fill-color) r g b / 78%));
+  padding: 18px;
+}
+
+.execution-detail-dialog__summary-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.execution-detail-dialog__summary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.execution-detail-dialog__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.execution-detail-dialog__status-text {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.execution-detail-dialog__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.execution-detail-dialog__meta-item {
+  border-radius: 14px;
+  background: rgb(from var(--el-bg-color) r g b / 76%);
+  padding: 14px 16px;
+  min-height: 76px;
+}
+
+.execution-detail-dialog__meta-label {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--el-text-color-secondary);
+}
+
+.execution-detail-dialog__meta-value {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.execution-detail-dialog__meta-value.is-mono {
+  font-family: var(--el-font-family-monospace, "SFMono-Regular", Consolas, monospace);
+  font-size: 13px;
+}
+
+.execution-detail-dialog__content {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  gap: 14px;
+}
+
+.execution-detail-side {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 14px;
+}
+
+.execution-detail-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
+  background: rgb(from var(--el-fill-color-lighter) r g b / 96%);
+  padding: 16px;
+}
+
+.execution-detail-panel__title {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.execution-detail-panel__pre {
+  margin: 0;
+  flex: 1;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.execution-detail-panel__log {
+  margin: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-radius: 14px;
+  background: var(--list-page-base-bg);
+  padding: 12px 14px;
+  font-family: var(--el-font-family-monospace, "SFMono-Regular", Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.7;
+  color: rgb(226 232 240);
+}
+
+@media (max-width: 1279px) {
+  .execution-detail-dialog__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .execution-detail-side {
+    grid-template-rows: minmax(220px, 0.85fr) minmax(260px, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .execution-detail-dialog {
+    height: calc(100vh - 108px);
+  }
+
+  .execution-detail-dialog__summary {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .execution-detail-dialog__summary-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .execution-detail-dialog__meta-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

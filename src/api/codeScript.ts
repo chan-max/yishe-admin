@@ -66,3 +66,10 @@ export function deleteCodeScriptRun(data) {
     data,
   })
 }
+
+export function cancelCodeScriptRun(data) {
+  return request.post({
+    url: '/code-script/run/cancel',
+    data,
+  })
+}

@@ -67,3 +67,10 @@ export function deleteCodeScriptScheduleExecution(data) {
     data,
   });
 }
+
+export function cancelCodeScriptScheduleExecution(data) {
+  return request.post({
+    url: "/code-script/schedule/execution/cancel",
+    data,
+  });
+}

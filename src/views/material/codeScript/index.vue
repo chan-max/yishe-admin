@@ -19,18 +19,20 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-tag
-                :type="sandboxStatus.available ? 'success' : sandboxStatus.checked ? 'danger' : 'warning'"
-                size="small"
+              <div
+                class="sandbox-inline-status"
+                :class="`is-${sandboxStatusTone}`"
+                :title="sandboxStatusMeta"
               >
-                沙盒服务
-                {{ sandboxStatus.available ? "可用" : sandboxStatus.checked ? "不可用" : "检测中" }}
-              </el-tag>
+                <span class="sandbox-inline-status__dot" />
+                <span class="sandbox-inline-status__label">沙盒服务</span>
+                <span class="sandbox-inline-status__text">{{ sandboxStatusText }}</span>
+              </div>
               <span
-                class="max-w-[280px] truncate text-xs text-[var(--el-text-color-secondary)]"
-                :title="sandboxStatus.message"
+                class="sandbox-inline-meta max-w-[280px] truncate text-xs text-[var(--el-text-color-secondary)]"
+                :title="sandboxStatusMeta"
               >
-                {{ sandboxStatus.message || sandboxStatus.baseUrl }}
+                {{ sandboxStatusMeta }}
               </span>
               <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增脚本</el-button>
@@ -277,38 +279,67 @@
   </el-dialog>
 
   <el-dialog title="执行详情" v-model="runDetailVisible" fullscreen align-center>
-    <div class="h-[calc(100vh-120px)] overflow-auto" v-loading="runDetailLoading">
-      <div class="mb-3 flex flex-wrap items-center gap-3 text-[var(--el-text-color-secondary)]">
-        <el-tag :type="getRunStatusType(runDetail.status)" size="small">{{
-          runDetail.status || "-"
-        }}</el-tag>
-        <span>脚本：{{ runDetail.scriptName || "-" }}</span>
-        <span>沙盒运行ID：{{ runDetail.sandboxRunId || "-" }}</span>
-        <span>耗时：{{ runDetail.durationMs || 0 }} ms</span>
+    <div class="run-detail-dialog" v-loading="runDetailLoading">
+      <div class="run-detail-dialog__summary">
+        <div class="run-detail-dialog__summary-main">
+          <div class="run-detail-dialog__status-row">
+            <el-tag :type="getRunStatusType(runDetail.status)" size="small">{{
+              runDetail.status || "-"
+            }}</el-tag>
+            <span class="run-detail-dialog__status-text">
+              当前脚本执行状态与运行上下文
+            </span>
+          </div>
+          <div class="run-detail-dialog__meta-grid">
+            <div class="run-detail-dialog__meta-item">
+              <div class="run-detail-dialog__meta-label">脚本名称</div>
+              <div class="run-detail-dialog__meta-value">{{ runDetail.scriptName || "-" }}</div>
+            </div>
+            <div class="run-detail-dialog__meta-item">
+              <div class="run-detail-dialog__meta-label">执行耗时</div>
+              <div class="run-detail-dialog__meta-value">{{ runDetail.durationMs || 0 }} ms</div>
+            </div>
+            <div class="run-detail-dialog__meta-item">
+              <div class="run-detail-dialog__meta-label">沙盒运行 ID</div>
+              <div class="run-detail-dialog__meta-value is-mono">
+                {{ runDetail.sandboxRunId || "-" }}
+              </div>
+            </div>
+            <div class="run-detail-dialog__meta-item">
+              <div class="run-detail-dialog__meta-label">记录 ID</div>
+              <div class="run-detail-dialog__meta-value is-mono">{{ runDetail.id || "-" }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="run-detail-dialog__summary-actions">
+          <el-button
+            v-if="isRunCancellable(runDetail)"
+            size="small"
+            type="danger"
+            plain
+            @click="handleCancelRun(runDetail)"
+          >
+            取消任务
+          </el-button>
+        </div>
       </div>
-      <div class="grid h-[78vh] grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
-        <div
-          class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-        >
-          <div class="mb-2 text-sm font-600">结果</div>
-          <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+      <div class="run-detail-dialog__content">
+        <div class="run-detail-panel">
+          <div class="run-detail-panel__title">结果</div>
+          <pre class="run-detail-panel__pre">{{
             formatJson(runDetail.runResult)
           }}</pre>
         </div>
-        <div class="grid h-full min-h-0 gap-3 grid-rows-2">
-          <div
-            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-          >
-            <div class="mb-2 text-sm font-600">参数</div>
-            <pre class="m-0 flex-1 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{{
+        <div class="run-detail-side">
+          <div class="run-detail-panel">
+            <div class="run-detail-panel__title">参数</div>
+            <pre class="run-detail-panel__pre">{{
               formatJson(runDetail.params)
             }}</pre>
           </div>
-          <div
-            class="flex min-h-0 flex-col rounded border border-solid border-[var(--el-border-color-light)] bg-[var(--el-fill-color-lighter)] p-3"
-          >
-            <div class="mb-2 text-sm font-600">日志</div>
-            <div class="flex-1 overflow-auto rounded bg-[var(--el-bg-color)]/80 px-3 py-2">
+          <div class="run-detail-panel">
+            <div class="run-detail-panel__title">日志</div>
+            <div class="run-detail-panel__log">
               <div class="space-y-1 font-mono text-xs leading-6">
                 <div
                   v-for="(item, index) in runDetailLogItems"
@@ -374,6 +405,9 @@
                 <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
+                    <el-dropdown-item v-if="isRunCancellable(row)" command="cancel">
+                      <span>取消</span>
+                    </el-dropdown-item>
                     <el-dropdown-item command="detail">
                       <span>详情</span>
                     </el-dropdown-item>
@@ -430,6 +464,7 @@ import { autocompletion, closeBrackets, closeBracketsKeymap } from "@codemirror/
 import { javascript } from "@codemirror/lang-javascript";
 import { oneDark } from "@codemirror/theme-one-dark";
 import {
+  cancelCodeScriptRun,
   createCodeScript,
   deleteCodeScript,
   deleteCodeScriptRun,
@@ -525,6 +560,28 @@ const sandboxStatus = reactive({
 });
 let sandboxHealthTimer: number | null = null;
 
+const sandboxStatusTone = computed(() => {
+  if (sandboxStatus.loading && !sandboxStatus.checked) {
+    return "warning";
+  }
+  if (sandboxStatus.available) {
+    return "success";
+  }
+  if (sandboxStatus.checked) {
+    return "danger";
+  }
+  return "warning";
+});
+
+const sandboxStatusText = computed(() => {
+  if (sandboxStatus.loading && !sandboxStatus.checked) {
+    return "检测中";
+  }
+  return sandboxStatus.available ? "可用" : sandboxStatus.checked ? "不可用" : "检测中";
+});
+
+const sandboxStatusMeta = computed(() => sandboxStatus.message || sandboxStatus.baseUrl || "等待检测");
+
 const runLoading = ref(false);
 const runDataSource = ref<any[]>([]);
 const runTotal = ref(0);
@@ -598,6 +655,11 @@ function getRunStatusType(status: string) {
   if (status === "running" || status === "queued") return "warning";
   if (status === "failed" || status === "timed_out" || status === "cancelled") return "danger";
   return "info";
+}
+
+function isRunCancellable(row?: any) {
+  const status = String(row?.status || "").toLowerCase();
+  return status === "queued" || status === "running";
 }
 
 function formatJson(value: any) {
@@ -1027,6 +1089,10 @@ function clearRunFilter() {
 }
 
 function handleRunOperationCommand(command: string, row: any) {
+  if (command === "cancel") {
+    handleCancelRun(row);
+    return;
+  }
   if (command === "detail") {
     openRunDetail(row);
     return;
@@ -1034,6 +1100,33 @@ function handleRunOperationCommand(command: string, row: any) {
   if (command === "delete") {
     handleDeleteRun(row);
   }
+}
+
+function refreshRunDetailIfNeeded(id?: number) {
+  if (!id || !runDetailVisible.value || runDetail.id !== id) {
+    return Promise.resolve();
+  }
+  return openRunDetail({ id });
+}
+
+function handleCancelRun(row: any) {
+  if (!row?.id) return;
+  if (!isRunCancellable(row)) {
+    ElMessage.warning("当前任务状态不可取消");
+    return;
+  }
+
+  ElMessageBox.confirm(`确认取消执行记录 #${row.id} 吗？`, "取消任务", {
+    confirmButtonText: "确认取消",
+    cancelButtonText: "继续执行",
+    type: "warning",
+  })
+    .then(async () => {
+      await cancelCodeScriptRun({ id: row.id });
+      ElMessage.success("取消成功");
+      await Promise.all([getRunList(), refreshRunDetailIfNeeded(row.id)]);
+    })
+    .catch(() => {});
 }
 
 function handleDeleteRun(row?: any) {
@@ -1105,7 +1198,276 @@ onBeforeUnmount(() => {
   padding-bottom: 10px;
 }
 
+:deep(.code-script-page .list-page-search-form__actions) {
+  align-items: center;
+}
+
 :deep(.code-script-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.sandbox-inline-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 2px 0 0;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.sandbox-inline-status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--el-text-color-placeholder);
+  flex-shrink: 0;
+}
+
+.sandbox-inline-status__label {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.sandbox-inline-status__text {
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.sandbox-inline-meta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.sandbox-inline-status.is-success .sandbox-inline-status__dot {
+  background: #67c23a;
+  box-shadow: 0 0 0 0 rgb(103 194 58 / 28%);
+  animation: sandbox-status-breathe-success 2s ease-in-out infinite;
+}
+
+.sandbox-inline-status.is-warning .sandbox-inline-status__dot {
+  background: #e6a23c;
+  box-shadow: 0 0 0 0 rgb(230 162 60 / 28%);
+  animation: sandbox-status-breathe-warning 2s ease-in-out infinite;
+}
+
+.sandbox-inline-status.is-danger .sandbox-inline-status__dot {
+  background: #f56c6c;
+  box-shadow: 0 0 0 0 rgb(245 108 108 / 24%);
+  animation: sandbox-status-breathe-danger 2s ease-in-out infinite;
+}
+
+.sandbox-inline-status.is-success .sandbox-inline-status__text {
+  color: #67c23a;
+}
+
+.sandbox-inline-status.is-warning .sandbox-inline-status__text {
+  color: #e6a23c;
+}
+
+.sandbox-inline-status.is-danger .sandbox-inline-status__text {
+  color: #f56c6c;
+}
+
+.run-detail-dialog {
+  height: calc(100vh - 120px);
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.run-detail-dialog__summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgb(from var(--el-fill-color-lighter) r g b / 96%), rgb(from var(--el-fill-color) r g b / 78%));
+  padding: 18px;
+}
+
+.run-detail-dialog__summary-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.run-detail-dialog__summary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.run-detail-dialog__status-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.run-detail-dialog__status-text {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.run-detail-dialog__meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.run-detail-dialog__meta-item {
+  border-radius: 14px;
+  background: rgb(from var(--el-bg-color) r g b / 76%);
+  padding: 14px 16px;
+  min-height: 76px;
+}
+
+.run-detail-dialog__meta-label {
+  font-size: 12px;
+  line-height: 1.3;
+  color: var(--el-text-color-secondary);
+}
+
+.run-detail-dialog__meta-value {
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.run-detail-dialog__meta-value.is-mono {
+  font-family: var(--el-font-family-monospace, "SFMono-Regular", Consolas, monospace);
+  font-size: 13px;
+}
+
+.run-detail-dialog__content {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.7fr);
+  gap: 14px;
+}
+
+.run-detail-side {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 14px;
+}
+
+.run-detail-panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  border: 1px solid rgb(from var(--el-border-color-light) r g b / 72%);
+  background: rgb(from var(--el-fill-color-lighter) r g b / 96%);
+  padding: 16px;
+}
+
+.run-detail-panel__title {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.run-detail-panel__pre {
+  margin: 0;
+  flex: 1;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.run-detail-panel__log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border-radius: 14px;
+  background: rgb(from var(--el-bg-color) r g b / 80%);
+  padding: 12px 14px;
+}
+
+@media (max-width: 1279px) {
+  .run-detail-dialog__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .run-detail-side {
+    grid-template-rows: minmax(220px, 0.85fr) minmax(260px, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .run-detail-dialog {
+    height: calc(100vh - 108px);
+  }
+
+  .run-detail-dialog__summary {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .run-detail-dialog__summary-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .run-detail-dialog__meta-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@keyframes sandbox-status-breathe-success {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(103 194 58 / 12%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgb(103 194 58 / 0%);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes sandbox-status-breathe-warning {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(230 162 60 / 12%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgb(230 162 60 / 0%);
+    transform: scale(1.06);
+  }
+}
+
+@keyframes sandbox-status-breathe-danger {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(245 108 108 / 10%);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgb(245 108 108 / 0%);
+    transform: scale(1.06);
+  }
 }
 </style>
