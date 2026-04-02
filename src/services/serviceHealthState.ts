@@ -273,3 +273,10 @@ export const resolveServiceHealthTooltip = (snapshot: ServiceHealthSnapshot) => 
   }
   return "等待检测";
 };
+
+export const resolveServiceHealthMenuTooltip = (snapshot: ServiceHealthSnapshot) => {
+  if (snapshot.loading && !snapshot.checked) {
+    return "检测中";
+  }
+  return snapshot.available ? "可用" : "不可用";
+};

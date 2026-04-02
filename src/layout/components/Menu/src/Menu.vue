@@ -13,8 +13,8 @@ import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
 import {
   ensureServiceHealthInitialized,
   isServiceHealthKey,
+  resolveServiceHealthMenuTooltip,
   resolveServiceHealthTone,
-  resolveServiceHealthTooltip,
   serviceHealthStates,
 } from "@/services/serviceHealthState";
 import {
@@ -102,6 +102,23 @@ export default defineComponent({
       }
     };
 
+    const renderMenuStatusHint = (dotNode: JSX.Element, title: string) => {
+      return (
+        <ElTooltip
+          content={title}
+          placement="right"
+          effect="light"
+          showAfter={0}
+          hideAfter={0}
+          popperClass={`${prefixCls}__status-tooltip-popper`}
+        >
+          <span class={`${prefixCls}__status-indicator`} aria-label={title}>
+            {dotNode}
+          </span>
+        </ElTooltip>
+      );
+    };
+
     const renderStatusDot = (routePath: string) => {
       const status = routeStatusMap.value[routePath];
       if (!status) {
@@ -139,22 +156,14 @@ export default defineComponent({
             ? "当前有任务正在执行"
             : titleMap[routePath]?.[status];
 
-      return (
-        <ElTooltip
-          content={title || "当前不可用"}
-          placement="right"
-          effect="light"
-          showAfter={120}
-          teleported={false}
-          transition=""
-        >
-          <span
-            class={[
-              `${prefixCls}__status-dot`,
-              running ? `${prefixCls}__status-dot--running` : `${prefixCls}__status-dot--${status}`,
-            ]}
-          />
-        </ElTooltip>
+      return renderMenuStatusHint(
+        <span
+          class={[
+            `${prefixCls}__status-dot`,
+            running ? `${prefixCls}__status-dot--running` : `${prefixCls}__status-dot--${status}`,
+          ]}
+        />,
+        title || "当前不可用",
       );
     };
 
@@ -167,19 +176,11 @@ export default defineComponent({
       ensureServiceHealthInitialized(statusKey);
       const snapshot = serviceHealthStates[statusKey];
       const tone = resolveServiceHealthTone(snapshot);
-      const title = resolveServiceHealthTooltip(snapshot);
+      const title = resolveServiceHealthMenuTooltip(snapshot);
 
-      return (
-        <ElTooltip
-          content={title}
-          placement="right"
-          effect="light"
-          showAfter={120}
-          teleported={false}
-          transition=""
-        >
-          <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--${tone}`]} />
-        </ElTooltip>
+      return renderMenuStatusHint(
+        <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--${tone}`]} />,
+        title,
       );
     };
 
@@ -191,24 +192,16 @@ export default defineComponent({
         return undefined;
       }
 
-      return (
-        <ElTooltip
-          content={userAutoSchedulingEnabled.value ? "自动处理已开启" : "自动处理未开启"}
-          placement="right"
-          effect="light"
-          showAfter={120}
-          teleported={false}
-          transition=""
-        >
-          <span
-            class={[
-              `${prefixCls}__psd-status-dot`,
-              userAutoSchedulingEnabled.value
-                ? `${prefixCls}__psd-status-dot--enabled`
-                : `${prefixCls}__psd-status-dot--muted`,
-            ]}
-          />
-        </ElTooltip>
+      return renderMenuStatusHint(
+        <span
+          class={[
+            `${prefixCls}__psd-status-dot`,
+            userAutoSchedulingEnabled.value
+              ? `${prefixCls}__psd-status-dot--enabled`
+              : `${prefixCls}__psd-status-dot--muted`,
+          ]}
+        />,
+        userAutoSchedulingEnabled.value ? "自动处理已开启" : "自动处理未开启",
       );
     };
 
@@ -595,6 +588,19 @@ $prefix-cls: #{$namespace}-menu;
     line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  &__status-indicator {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+  }
+
+  :global(.#{$prefix-cls}__status-tooltip-popper.el-popper),
+  :global(.#{$prefix-cls}__status-tooltip-popper.el-popper .el-popper__arrow) {
+    animation: none !important;
+    transition: none !important;
   }
 
   &__psd-status-dot {
