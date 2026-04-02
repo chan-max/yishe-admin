@@ -196,6 +196,15 @@ html.light .vxe-table {
     overflow: visible !important;
 }
 
+/* 统一 vxe body cell 内容垂直居中，避免操作列按钮在不同页面出现上偏/下偏 */
+.vxe-table .vxe-body--column .vxe-cell--wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+}
+
 .common-table {
     overflow-x: auto !important;
     overflow-y: visible !important;
