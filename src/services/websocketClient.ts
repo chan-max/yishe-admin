@@ -1,458 +1,494 @@
-import { io, type Socket } from 'socket.io-client'
-import { reactive } from 'vue'
-import mitt from 'mitt'
-import { getAccessToken } from '@/utils/auth'
+import { io, type Socket } from "socket.io-client";
+import { reactive } from "vue";
+import mitt from "mitt";
+import { getAccessToken } from "@/utils/auth";
 
-type WsStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error'
+type WsStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconnected" | "error";
 
-const CLIENT_SOURCE = '管理后台'
-const HEARTBEAT_INTERVAL = 15_000
-const HEARTBEAT_TIMEOUT = 10_000
+const CLIENT_SOURCE = "管理后台";
+const HEARTBEAT_INTERVAL = 15_000;
+const HEARTBEAT_TIMEOUT = 10_000;
 
 // 获取 WebSocket 地址
 const getDefaultWsUrl = () => {
-  const explicitUrl = import.meta.env.VITE_WS_URL as string | undefined
+  const explicitUrl = import.meta.env.VITE_WS_URL as string | undefined;
   if (explicitUrl) {
-    return explicitUrl
+    return explicitUrl;
   }
 
-  const baseUrl = (import.meta.env.VITE_BASE_URL as string | undefined) ?? ''
+  const baseUrl = (import.meta.env.VITE_BASE_URL as string | undefined) ?? "";
   if (baseUrl) {
-    const normalizedBase = baseUrl.replace(/\/$/, '')
-    const sanitizedBase = normalizedBase.replace(/\/api$/i, '')
-    return `${sanitizedBase.replace(/^http/i, 'ws')}/ws`
+    const normalizedBase = baseUrl.replace(/\/$/, "");
+    const sanitizedBase = normalizedBase.replace(/\/api$/i, "");
+    return `${sanitizedBase.replace(/^http/i, "ws")}/ws`;
   }
 
-  if (typeof window === 'undefined') {
-    return ''
+  if (typeof window === "undefined") {
+    return "";
   }
 
-  const { protocol, host } = window.location
-  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${wsProtocol}//${host}/ws`
-}
+  const { protocol, host } = window.location;
+  const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
+  return `${wsProtocol}//${host}/ws`;
+};
 
-const DEFAULT_WS_ENDPOINT = getDefaultWsUrl()
+const DEFAULT_WS_ENDPOINT = getDefaultWsUrl();
 
 interface WsState {
-  endpoint: string
-  status: WsStatus
-  connectedAt: string | null
-  lastPingAt: string | null
-  lastPongAt: string | null
-  lastLatencyMs: number | null
-  lastError: string | null
-  retryCount: number
-  connectionId: string | null
+  endpoint: string;
+  status: WsStatus;
+  connectedAt: string | null;
+  lastPingAt: string | null;
+  lastPongAt: string | null;
+  lastLatencyMs: number | null;
+  lastError: string | null;
+  retryCount: number;
+  connectionId: string | null;
 }
 
 interface ClientInfoPayload {
-  clientId: string
-  source: string
-  platform?: string
-  locale?: string
-  timezone?: string
-  userAgent?: string
+  clientId: string;
+  source: string;
+  platform?: string;
+  locale?: string;
+  timezone?: string;
+  userAgent?: string;
   device?: {
-    memory?: number
-    hardwareConcurrency?: number
-  }
+    memory?: number;
+    hardwareConcurrency?: number;
+  };
   machine?: {
-    code?: string
-    platform?: string
-  }
+    code?: string;
+    platform?: string;
+  };
   location?: {
-    ip?: string
-    city?: string
-    region?: string
-    country?: string
-    org?: string
-    timezone?: string
-  }
+    ip?: string;
+    city?: string;
+    region?: string;
+    country?: string;
+    org?: string;
+    timezone?: string;
+  };
 }
 
 export interface ServiceRuntimeEvent {
-  clientId: string
-  service: string
-  pluginKey?: string
-  runtime: Record<string, any>
-  reportedAt?: string
+  clientId: string;
+  service: string;
+  pluginKey?: string;
+  runtime: Record<string, any>;
+  reportedAt?: string;
 }
 
 export interface ServiceCommandResultEvent {
-  clientId: string
-  commandId: string
-  service: string
-  pluginKey?: string
-  action: string
-  success: boolean
-  message?: string
-  data?: any
-  error?: string | null
-  finishedAt?: string
+  clientId: string;
+  commandId: string;
+  service: string;
+  pluginKey?: string;
+  action: string;
+  success: boolean;
+  message?: string;
+  data?: any;
+  error?: string | null;
+  finishedAt?: string;
 }
 
 export interface PsAutomationStatusEvent {
-  clientId: string
-  enabled?: boolean
-  autoDispatchEnabled?: boolean
-  running?: boolean
-  queueCount?: number
-  currentPsSetId?: string | null
-  currentPsSetName?: string | null
-  progress?: number | null
-  lastError?: string | null
-  lastHeartbeatAt?: string | null
-  updatedAt?: string | null
+  clientId: string;
+  enabled?: boolean;
+  autoDispatchEnabled?: boolean;
+  autoSchedulingEnabled?: boolean;
+  running?: boolean;
+  queueCount?: number;
+  currentPsSetId?: string | null;
+  currentPsSetName?: string | null;
+  progress?: number | null;
+  lastError?: string | null;
+  lastHeartbeatAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface PublishTaskRuntimeEvent {
+  clientId: string;
+  machineCode?: string | null;
+  taskId: string;
+  taskType?: string;
+  status?: string;
+  message?: string;
+  currentStep?: string | null;
+  progress?: number | null;
+  runtime?: Record<string, any> | null;
+  error?: string | null;
+  reportedAt?: string;
 }
 
 export interface GlobalNotificationEvent {
-  id: string
-  title: string
-  message: string
-  level: 'info' | 'success' | 'warning' | 'error'
-  category: 'system' | 'task' | 'sync' | 'client' | 'queue' | 'message' | 'custom'
-  source: string
-  sticky: boolean
-  durationMs?: number | null
-  progress?: number | null
-  status?: 'pending' | 'running' | 'success' | 'warning' | 'error' | 'done'
+  id: string;
+  title: string;
+  message: string;
+  level: "info" | "success" | "warning" | "error";
+  category: "system" | "task" | "sync" | "client" | "queue" | "message" | "custom";
+  source: string;
+  sticky: boolean;
+  durationMs?: number | null;
+  progress?: number | null;
+  status?: "pending" | "running" | "success" | "warning" | "error" | "done";
   actions?: Array<{
-    key: string
-    label: string
-    type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
-    route?: string
-    url?: string
-  }>
-  metadata?: Record<string, any>
-  createdAt?: string
-  updatedAt?: string
+    key: string;
+    label: string;
+    type?: "primary" | "success" | "warning" | "danger" | "info";
+    route?: string;
+    url?: string;
+  }>;
+  metadata?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ClientConnectionChangedEvent {
-  action: 'connected' | 'updated' | 'removed'
+  action: "connected" | "updated" | "removed";
   client: {
-    clientId: string
-    connectedAt?: string
-    appVersion?: string | null
-    machine?: Record<string, any> | null
-    location?: Record<string, any> | null
-    services?: Record<string, any> | null
-    uploader?: Record<string, any> | null
-    psAutomation?: Record<string, any> | null
-  }
-  reportedAt?: string
+    clientId: string;
+    connectedAt?: string;
+    appVersion?: string | null;
+    machine?: Record<string, any> | null;
+    location?: Record<string, any> | null;
+    services?: Record<string, any> | null;
+    uploader?: Record<string, any> | null;
+    psAutomation?: Record<string, any> | null;
+  };
+  reportedAt?: string;
 }
 
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
-  status: 'idle',
+  status: "idle",
   connectedAt: null,
   lastPingAt: null,
   lastPongAt: null,
   lastLatencyMs: null,
   lastError: null,
   retryCount: 0,
-  connectionId: null
-})
+  connectionId: null,
+});
 
 // 生成客户端 ID
 function generateClientId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
   }
-  return `admin_${Math.random().toString(36).slice(2, 12)}${Date.now().toString(36)}`
+  return `admin_${Math.random().toString(36).slice(2, 12)}${Date.now().toString(36)}`;
 }
 
-const clientId = generateClientId()
+const clientId = generateClientId();
 
 const clientInfo = reactive<ClientInfoPayload>({
   clientId,
   source: CLIENT_SOURCE,
-  platform: typeof navigator !== 'undefined' ? navigator.platform : 'unknown',
-  locale: typeof navigator !== 'undefined' ? navigator.language : 'unknown',
+  platform: typeof navigator !== "undefined" ? navigator.platform : "unknown",
+  locale: typeof navigator !== "undefined" ? navigator.language : "unknown",
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-  userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+  userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
   device: {
-    memory: typeof navigator !== 'undefined' ? (navigator as any).deviceMemory : undefined,
-    hardwareConcurrency: typeof navigator !== 'undefined' ? navigator.hardwareConcurrency : undefined
+    memory: typeof navigator !== "undefined" ? (navigator as any).deviceMemory : undefined,
+    hardwareConcurrency:
+      typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined,
   },
   machine: {
     code: `ADMIN-${clientId.slice(-12).toUpperCase()}`,
-    platform: typeof navigator !== 'undefined' ? navigator.platform : undefined
-  }
-})
+    platform: typeof navigator !== "undefined" ? navigator.platform : undefined,
+  },
+});
 
 export type WebsocketEvents = {
-  log: { level: 'info' | 'warn' | 'error'; message: string }
-  myClientStatus: { hasClient: boolean }
-  'start-psd-set-production-response': {
-    success: boolean
-    message?: string
-    sentTo?: number
-    totalClients?: number
-    psdSetId?: string
-    data?: Record<string, any>
-  }
-  'production-status': { status: string; message: string; psdSetId?: string; progress?: number; total?: number }
-  serviceRuntime: ServiceRuntimeEvent
-  serviceCommandResult: ServiceCommandResultEvent
-  clientConnectionChanged: ClientConnectionChangedEvent
-  psAutomationStatus: PsAutomationStatusEvent
-  globalNotification: GlobalNotificationEvent
-}
+  log: { level: "info" | "warn" | "error"; message: string };
+  myClientStatus: { hasClient: boolean };
+  "start-psd-set-production-response": {
+    success: boolean;
+    message?: string;
+    sentTo?: number;
+    totalClients?: number;
+    psdSetId?: string;
+    data?: Record<string, any>;
+  };
+  "production-status": {
+    status: string;
+    message: string;
+    psdSetId?: string;
+    progress?: number;
+    total?: number;
+  };
+  serviceRuntime: ServiceRuntimeEvent;
+  serviceCommandResult: ServiceCommandResultEvent;
+  clientConnectionChanged: ClientConnectionChangedEvent;
+  psAutomationStatus: PsAutomationStatusEvent;
+  publishTaskRuntime: PublishTaskRuntimeEvent;
+  globalNotification: GlobalNotificationEvent;
+};
 
-const emitter = mitt<WebsocketEvents>()
+const emitter = mitt<WebsocketEvents>();
 
-let socket: Socket | null = null
-let heartbeatInterval: ReturnType<typeof setInterval> | null = null
-let heartbeatTimeout: ReturnType<typeof setTimeout> | null = null
-let lastPingTimestamp: number | null = null
-let intentionalDisconnect = false
+let socket: Socket | null = null;
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+let heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
+let lastPingTimestamp: number | null = null;
+let intentionalDisconnect = false;
 
 function updateState(patch: Partial<WsState>) {
-  Object.assign(wsState, patch)
-  emitter.emit('log', { level: 'info', message: `[ws] state updated ${JSON.stringify(patch)}` })
+  Object.assign(wsState, patch);
+  emitter.emit("log", { level: "info", message: `[ws] state updated ${JSON.stringify(patch)}` });
 }
 
 function clearHeartbeatInterval() {
   if (heartbeatInterval) {
-    clearInterval(heartbeatInterval)
-    heartbeatInterval = null
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
   }
 }
 
 function clearHeartbeatTimeout() {
   if (heartbeatTimeout) {
-    clearTimeout(heartbeatTimeout)
-    heartbeatTimeout = null
+    clearTimeout(heartbeatTimeout);
+    heartbeatTimeout = null;
   }
 }
 
 function stopHeartbeat() {
-  clearHeartbeatInterval()
-  clearHeartbeatTimeout()
-  lastPingTimestamp = null
+  clearHeartbeatInterval();
+  clearHeartbeatTimeout();
+  lastPingTimestamp = null;
 }
 
 function scheduleHeartbeatTimeout() {
-  clearHeartbeatTimeout()
+  clearHeartbeatTimeout();
   heartbeatTimeout = setTimeout(() => {
     updateState({
-      status: 'error',
-      lastError: 'Heartbeat timeout'
-    })
-    emitter.emit('log', { level: 'warn', message: '[ws] heartbeat timeout, reconnecting' })
-    reconnect()
-  }, HEARTBEAT_TIMEOUT)
+      status: "error",
+      lastError: "Heartbeat timeout",
+    });
+    emitter.emit("log", { level: "warn", message: "[ws] heartbeat timeout, reconnecting" });
+    reconnect();
+  }, HEARTBEAT_TIMEOUT);
 }
 
 function emitHeartbeat() {
-  if (!socket || !socket.connected) return
-  lastPingTimestamp = Date.now()
+  if (!socket || !socket.connected) return;
+  lastPingTimestamp = Date.now();
   updateState({
-    lastPingAt: new Date(lastPingTimestamp).toISOString()
-  })
-  socket.emit('ping')
-  scheduleHeartbeatTimeout()
+    lastPingAt: new Date(lastPingTimestamp).toISOString(),
+  });
+  socket.emit("ping");
+  scheduleHeartbeatTimeout();
 }
 
 function startHeartbeatLoop() {
-  stopHeartbeat()
-  heartbeatInterval = setInterval(emitHeartbeat, HEARTBEAT_INTERVAL)
-  emitHeartbeat()
+  stopHeartbeat();
+  heartbeatInterval = setInterval(emitHeartbeat, HEARTBEAT_INTERVAL);
+  emitHeartbeat();
 }
 
 function cleanupSocket() {
   if (socket) {
-    socket.removeAllListeners()
-    socket.io.removeAllListeners()
-    socket.disconnect()
-    socket = null
+    socket.removeAllListeners();
+    socket.io.removeAllListeners();
+    socket.disconnect();
+    socket = null;
   }
-  stopHeartbeat()
+  stopHeartbeat();
 }
 
 function buildQuery() {
-  const token = getAccessToken()
+  const token = getAccessToken();
   const payload: Record<string, string> = {
     clientSource: CLIENT_SOURCE,
     clientId: clientId,
-    machineCode: clientInfo.machine?.code || ''
-  }
+    machineCode: clientInfo.machine?.code || "",
+  };
 
   if (token) {
-    payload.token = token
+    payload.token = token;
   }
 
   try {
-    payload.clientInfo = JSON.stringify(clientInfo)
+    payload.clientInfo = JSON.stringify(clientInfo);
   } catch {
     // ignore serialization errors
   }
 
-  return payload
+  return payload;
 }
 
 function bindSocketEvents(currentSocket: Socket) {
-  currentSocket.on('connect', () => {
-    const socketId = currentSocket.id
+  currentSocket.on("connect", () => {
+    const socketId = currentSocket.id;
     updateState({
-      status: 'connected',
+      status: "connected",
       connectedAt: new Date().toISOString(),
       lastError: null,
       retryCount: 0,
-      connectionId: socketId
-    })
-    emitter.emit('log', { level: 'info', message: `[ws] connected (id: ${socketId})` })
-    emitClientInfo()
-    startHeartbeatLoop()
-  })
+      connectionId: socketId,
+    });
+    emitter.emit("log", { level: "info", message: `[ws] connected (id: ${socketId})` });
+    emitClientInfo();
+    startHeartbeatLoop();
+  });
 
-  currentSocket.on('disconnect', (reason) => {
-    emitter.emit('log', { level: 'warn', message: `[ws] disconnected: ${reason}` })
-    stopHeartbeat()
+  currentSocket.on("disconnect", (reason) => {
+    emitter.emit("log", { level: "warn", message: `[ws] disconnected: ${reason}` });
+    stopHeartbeat();
     updateState({
-      status: intentionalDisconnect ? 'disconnected' : 'error',
+      status: intentionalDisconnect ? "disconnected" : "error",
       lastError: reason || null,
       connectedAt: null,
-      connectionId: null
-    })
-  })
+      connectionId: null,
+    });
+  });
 
-  currentSocket.on('pong', () => {
-    clearHeartbeatTimeout()
-    const now = Date.now()
+  currentSocket.on("pong", () => {
+    clearHeartbeatTimeout();
+    const now = Date.now();
     updateState({
-      status: 'connected',
+      status: "connected",
       lastPongAt: new Date(now).toISOString(),
       lastLatencyMs: lastPingTimestamp ? now - lastPingTimestamp : null,
-      lastError: null
-    })
-    lastPingTimestamp = null
-  })
+      lastError: null,
+    });
+    lastPingTimestamp = null;
+  });
 
-  currentSocket.on('connect_error', (error) => {
-    emitter.emit('log', { level: 'error', message: `[ws] connect_error: ${serializeError(error)}` })
+  currentSocket.on("connect_error", (error) => {
+    emitter.emit("log", {
+      level: "error",
+      message: `[ws] connect_error: ${serializeError(error)}`,
+    });
     updateState({
-      status: 'error',
-      lastError: serializeError(error)
-    })
-  })
+      status: "error",
+      lastError: serializeError(error),
+    });
+  });
 
-  currentSocket.on('error', (error) => {
-    emitter.emit('log', { level: 'error', message: `[ws] error: ${serializeError(error)}` })
+  currentSocket.on("error", (error) => {
+    emitter.emit("log", { level: "error", message: `[ws] error: ${serializeError(error)}` });
     updateState({
-      status: 'error',
-      lastError: serializeError(error)
-    })
-  })
+      status: "error",
+      lastError: serializeError(error),
+    });
+  });
 
-  currentSocket.io.on('reconnect_attempt', (attempt) => {
-    emitter.emit('log', { level: 'info', message: `[ws] reconnect attempt #${attempt}` })
+  currentSocket.io.on("reconnect_attempt", (attempt) => {
+    emitter.emit("log", { level: "info", message: `[ws] reconnect attempt #${attempt}` });
     updateState({
-      status: 'reconnecting',
-      retryCount: attempt
-    })
-  })
+      status: "reconnecting",
+      retryCount: attempt,
+    });
+  });
 
-  currentSocket.io.on('reconnect_failed', () => {
-    emitter.emit('log', { level: 'error', message: '[ws] reconnect failed' })
+  currentSocket.io.on("reconnect_failed", () => {
+    emitter.emit("log", { level: "error", message: "[ws] reconnect failed" });
     updateState({
-      status: 'error',
-      lastError: 'Reconnect failed'
-    })
-  })
+      status: "error",
+      lastError: "Reconnect failed",
+    });
+  });
 
-  currentSocket.io.on('reconnect_error', (error) => {
-    emitter.emit('log', { level: 'error', message: `[ws] reconnect_error: ${serializeError(error)}` })
+  currentSocket.io.on("reconnect_error", (error) => {
+    emitter.emit("log", {
+      level: "error",
+      message: `[ws] reconnect_error: ${serializeError(error)}`,
+    });
     updateState({
-      status: 'error',
-      lastError: serializeError(error)
-    })
-  })
+      status: "error",
+      lastError: serializeError(error),
+    });
+  });
 
   // 监听客户端连接状态响应
-  currentSocket.on('my-client-status', (data: { hasClient: boolean }) => {
-    emitter.emit('myClientStatus', { hasClient: data.hasClient })
-  })
+  currentSocket.on("my-client-status", (data: { hasClient: boolean }) => {
+    emitter.emit("myClientStatus", { hasClient: data.hasClient });
+  });
 
   // 监听开始制作套图的响应
-  currentSocket.on('start-psd-set-production-response', (data: any) => {
-    console.log('[ws] 收到 start-psd-set-production-response:', data)
-    emitter.emit('start-psd-set-production-response', data)
-  })
+  currentSocket.on("start-psd-set-production-response", (data: any) => {
+    console.log("[ws] 收到 start-psd-set-production-response:", data);
+    emitter.emit("start-psd-set-production-response", data);
+  });
 
   // 监听制作状态消息（客户端正在制作中时返回的消息）
-  currentSocket.on('production-status', (data: { status: string; message: string; psdSetId?: string }) => {
-    emitter.emit('production-status', data)
-  })
+  currentSocket.on(
+    "production-status",
+    (data: { status: string; message: string; psdSetId?: string }) => {
+      emitter.emit("production-status", data);
+    },
+  );
 
-  currentSocket.on('service-runtime', (data: ServiceRuntimeEvent) => {
-    emitter.emit('serviceRuntime', data)
-  })
+  currentSocket.on("service-runtime", (data: ServiceRuntimeEvent) => {
+    emitter.emit("serviceRuntime", data);
+  });
 
-  currentSocket.on('service-command-result', (data: ServiceCommandResultEvent) => {
-    emitter.emit('serviceCommandResult', data)
-  })
+  currentSocket.on("service-command-result", (data: ServiceCommandResultEvent) => {
+    emitter.emit("serviceCommandResult", data);
+  });
 
-  currentSocket.on('client-connection-changed', (data: ClientConnectionChangedEvent) => {
-    emitter.emit('clientConnectionChanged', data)
-  })
+  currentSocket.on("client-connection-changed", (data: ClientConnectionChangedEvent) => {
+    emitter.emit("clientConnectionChanged", data);
+  });
 
-  currentSocket.on('ps-automation-status', (data: PsAutomationStatusEvent) => {
-    emitter.emit('psAutomationStatus', data)
-  })
+  currentSocket.on("ps-automation-status", (data: PsAutomationStatusEvent) => {
+    emitter.emit("psAutomationStatus", data);
+  });
 
-  currentSocket.on('global-notification', (data: GlobalNotificationEvent) => {
-    emitter.emit('globalNotification', data)
-  })
+  currentSocket.on("publish-task-runtime", (data: PublishTaskRuntimeEvent) => {
+    emitter.emit("publishTaskRuntime", data);
+  });
+
+  currentSocket.on("global-notification", (data: GlobalNotificationEvent) => {
+    emitter.emit("globalNotification", data);
+  });
 }
 
 // 检查当前用户的客户端连接状态（通过 WebSocket）
 export function checkMyClientStatus() {
   if (!socket || !socket.connected) {
-    return false
+    return false;
   }
-  socket.emit('check-my-client')
-  return true
+  socket.emit("check-my-client");
+  return true;
 }
 
 function serializeError(error: unknown) {
-  if (!error) return 'Unknown error'
-  if (typeof error === 'string') return error
-  if (error instanceof Error) return error.message
+  if (!error) return "Unknown error";
+  if (typeof error === "string") return error;
+  if (error instanceof Error) return error.message;
   try {
-    return JSON.stringify(error)
+    return JSON.stringify(error);
   } catch {
-    return String(error)
+    return String(error);
   }
 }
 
 function emitClientInfo() {
-  if (!socket || !socket.connected) return
-  socket.emit('client-info', { ...clientInfo })
+  if (!socket || !socket.connected) return;
+  socket.emit("client-info", { ...clientInfo });
 }
 
 function connect(endpoint?: string) {
-  const targetEndpoint = endpoint || wsState.endpoint || DEFAULT_WS_ENDPOINT
-  wsState.endpoint = targetEndpoint
+  const targetEndpoint = endpoint || wsState.endpoint || DEFAULT_WS_ENDPOINT;
+  wsState.endpoint = targetEndpoint;
 
   if (socket && socket.connected) {
-    return
+    return;
   }
 
-  cleanupSocket()
-  intentionalDisconnect = false
+  cleanupSocket();
+  intentionalDisconnect = false;
 
   updateState({
-    status: 'connecting',
+    status: "connecting",
     lastError: null,
-    retryCount: 0
-  })
+    retryCount: 0,
+  });
 
   socket = io(targetEndpoint, {
-    transports: ['websocket'],
+    transports: ["websocket"],
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
@@ -460,47 +496,47 @@ function connect(endpoint?: string) {
     timeout: 8000,
     query: buildQuery(),
     auth: {
-      token: getAccessToken() || undefined
-    }
-  })
+      token: getAccessToken() || undefined,
+    },
+  });
 
-  bindSocketEvents(socket)
+  bindSocketEvents(socket);
 }
 
 function disconnect() {
-  intentionalDisconnect = true
-  cleanupSocket()
+  intentionalDisconnect = true;
+  cleanupSocket();
   updateState({
-    status: 'disconnected',
+    status: "disconnected",
     lastError: null,
     retryCount: 0,
     connectedAt: null,
-    connectionId: null
-  })
+    connectionId: null,
+  });
 }
 
 function reconnect() {
-  intentionalDisconnect = false
-  cleanupSocket()
-  connect()
+  intentionalDisconnect = false;
+  cleanupSocket();
+  connect();
 }
 
 function setEndpoint(endpoint: string) {
-  wsState.endpoint = endpoint || DEFAULT_WS_ENDPOINT
-  reconnect()
+  wsState.endpoint = endpoint || DEFAULT_WS_ENDPOINT;
+  reconnect();
 }
 
 function updateClientInfo(payload: Partial<ClientInfoPayload>) {
-  Object.assign(clientInfo, payload)
-  emitClientInfo()
+  Object.assign(clientInfo, payload);
+  emitClientInfo();
 }
 
 // 发送消息到服务器
 export function sendMessage(event: string, data: any) {
   if (!socket || !socket.connected) {
-    throw new Error('WebSocket未连接')
+    throw new Error("WebSocket未连接");
   }
-  socket.emit(event, data)
+  socket.emit(event, data);
 }
 
 export const websocketClient = {
@@ -513,5 +549,5 @@ export const websocketClient = {
   updateClientInfo,
   checkMyClientStatus,
   sendMessage,
-  events: emitter
-}
+  events: emitter,
+};

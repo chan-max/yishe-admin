@@ -29,11 +29,11 @@
           <div class="summary">
             <div class="card item">
               <div class="label">自动化服务</div>
-              <div class="value">{{ serviceText(selectedService) }}</div>
+              <div class="value">{{ getBrowserAutomationServiceText(selectedService) }}</div>
             </div>
             <div class="card item">
               <div class="label">浏览器实例</div>
-              <div class="value">{{ browserText(selectedService) }}</div>
+              <div class="value">{{ getBrowserAutomationBrowserText(selectedService) }}</div>
             </div>
             <div class="card item">
               <div class="label">页面数</div>
@@ -76,7 +76,7 @@
       >
         <div class="operation-shell">
           <el-tabs v-model="activeTab" class="operation-tabs">
-            <el-tab-pane label="连接" name="browser">
+            <el-tab-pane label="连接控制" name="browser">
               <div class="grid">
                 <div class="card panel">
                   <div class="section-title">浏览器控制</div>
@@ -128,28 +128,7 @@
                   </div>
                 </div>
                 <div class="card panel">
-                  <div class="section-title">快速打开</div>
-                  <div class="row">
-                    <el-select
-                      v-model="openForm.platform"
-                      placeholder="选择平台"
-                      clearable
-                      :disabled="!serviceEnabled"
-                    >
-                      <el-option
-                        v-for="item in platforms"
-                        :key="item"
-                        :label="item"
-                        :value="item"
-                      />
-                    </el-select>
-                    <el-button
-                      :disabled="!serviceEnabled"
-                      :loading="loadingMap.openPlatform"
-                      @click="sendOpenPlatform"
-                      >打开平台页</el-button
-                    >
-                  </div>
+                  <div class="section-title">链接调试入口</div>
                   <div class="row">
                     <el-input
                       v-model="openForm.url"
@@ -167,7 +146,13 @@
               </div>
               <div class="card panel">
                 <div class="section-title">页面列表</div>
-                <el-table :data="pageList" border stripe>
+                <el-table
+                  :data="pageOptions"
+                  border
+                  stripe
+                  :row-class-name="getPageRowClassName"
+                  @row-click="handlePageRowClick"
+                >
                   <el-table-column prop="index" label="#" width="60" />
                   <el-table-column
                     prop="title"
@@ -176,15 +161,43 @@
                     show-overflow-tooltip
                   />
                   <el-table-column prop="url" label="链接" min-width="320" show-overflow-tooltip />
+                  <el-table-column label="操作" width="140">
+                    <template #default="{ row }">
+                      <el-button link type="primary" @click.stop="selectDebugPage(row)">
+                        {{ debugForm.pageIndex === row.index ? "当前调试页" : "调试此页" }}
+                      </el-button>
+                    </template>
+                  </el-table-column>
                 </el-table>
               </div>
             </el-tab-pane>
 
-            <el-tab-pane label="调试" name="debug">
+            <el-tab-pane label="链接调试" name="debug">
               <div class="grid">
                 <div class="card panel">
                   <div class="section-title">快速操作</div>
                   <div class="stack">
+                    <el-select
+                      v-model="debugForm.pageIndex"
+                      placeholder="选择调试页面"
+                      :disabled="!serviceEnabled || !pageOptions.length"
+                    >
+                      <el-option
+                        v-for="page in pageOptions"
+                        :key="page.optionKey"
+                        :label="page.optionLabel"
+                        :value="page.index"
+                      />
+                    </el-select>
+                    <div class="debug-page-meta">
+                      <div class="debug-page-meta__title">
+                        当前调试页：
+                        <span>{{ selectedDebugPage?.title || "未选择页面" }}</span>
+                      </div>
+                      <div class="debug-page-meta__url">
+                        {{ selectedDebugPage?.url || "请先在页面列表或这里选择一个 tab" }}
+                      </div>
+                    </div>
                     <el-input-number
                       v-model="debugForm.pageIndex"
                       :min="0"
@@ -286,11 +299,6 @@
                     :disabled="!serviceEnabled"
                   />
                   <el-input
-                    v-model="taskFilters.platform"
-                    placeholder="平台"
-                    :disabled="!serviceEnabled"
-                  />
-                  <el-input
                     v-model="taskFilters.sourceId"
                     placeholder="来源 ID"
                     :disabled="!serviceEnabled"
@@ -307,11 +315,6 @@
                   <el-table-column prop="status" label="状态" width="100" />
                   <el-table-column prop="kind" label="类型" width="120" />
                   <el-table-column prop="action" label="动作" width="120" />
-                  <el-table-column label="平台" min-width="140"
-                    ><template #default="{ row }">{{
-                      row.platform || (row.platforms || []).join(", ") || "-"
-                    }}</template></el-table-column
-                  >
                   <el-table-column prop="step" label="步骤" min-width="140" />
                   <el-table-column
                     prop="id"
@@ -340,142 +343,6 @@
                 </el-table>
               </div>
             </el-tab-pane>
-
-            <el-tab-pane label="环境" name="env">
-              <div class="grid">
-                <div class="card panel">
-                  <div class="section-title">平台能力</div>
-                  <div class="row wrap">
-                    <el-button
-                      type="primary"
-                      :disabled="!serviceEnabled"
-                      :loading="loadingMap.platforms"
-                      @click="sendPlatforms"
-                      >刷新平台列表</el-button
-                    >
-                    <el-button
-                      :disabled="!serviceEnabled || !platforms.length"
-                      @click="fillPublishPlatforms"
-                      >填入发布平台</el-button
-                    >
-                  </div>
-                  <div class="tag-list" v-if="platforms.length">
-                    <el-tag v-for="item in platforms" :key="item" effect="light">{{ item }}</el-tag>
-                  </div>
-                  <pre class="result">{{ platformsText }}</pre>
-                </div>
-
-                <div class="card panel">
-                  <div class="section-title">登录状态</div>
-                  <div class="row wrap">
-                    <el-button
-                      type="primary"
-                      :disabled="!serviceEnabled"
-                      :loading="loadingMap.loginStatus"
-                      @click="sendLoginStatus(false)"
-                      >读取状态</el-button
-                    >
-                    <el-button
-                      :disabled="!serviceEnabled"
-                      :loading="loadingMap.loginStatus"
-                      @click="sendLoginStatus(true)"
-                      >强制刷新</el-button
-                    >
-                  </div>
-                  <pre class="result">{{ loginStatusText }}</pre>
-                </div>
-              </div>
-            </el-tab-pane>
-
-            <el-tab-pane label="发布" name="publish">
-              <div class="grid">
-                <div class="card panel">
-                  <div class="section-title">发布参数</div>
-                  <div class="stack">
-                    <el-select
-                      v-model="publishForm.platforms"
-                      multiple
-                      filterable
-                      clearable
-                      collapse-tags
-                      collapse-tags-tooltip
-                      placeholder="选择平台"
-                      :disabled="!serviceEnabled"
-                    >
-                      <el-option
-                        v-for="item in platforms"
-                        :key="item"
-                        :label="item"
-                        :value="item"
-                      />
-                    </el-select>
-                    <el-input
-                      v-model="publishForm.action"
-                      placeholder="动作，默认 publish"
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-input
-                      v-model="publishForm.filePath"
-                      placeholder="文件路径，例如 /Users/.../demo.mp4"
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-input
-                      v-model="publishForm.title"
-                      placeholder="标题"
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-input
-                      v-model="publishForm.tags"
-                      placeholder="标签，使用逗号或空格分隔"
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-switch
-                      v-model="publishForm.scheduled"
-                      active-text="定时发布"
-                      inactive-text="立即发布"
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-input
-                      v-if="publishForm.scheduled"
-                      v-model="publishForm.scheduleTime"
-                      placeholder="定时时间，建议 ISO 字符串"
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-input
-                      v-model="publishForm.platformSettingsText"
-                      type="textarea"
-                      :rows="8"
-                      placeholder='平台参数 JSON，例如 { "douyin": { "productCode": "xxx" } }'
-                      :disabled="!serviceEnabled"
-                    />
-                    <el-input
-                      v-model="publishForm.extraPayloadText"
-                      type="textarea"
-                      :rows="8"
-                      placeholder="额外 payload JSON，可选"
-                      :disabled="!serviceEnabled"
-                    />
-                  </div>
-                  <div class="row wrap">
-                    <el-button
-                      type="primary"
-                      :disabled="!serviceEnabled"
-                      :loading="loadingMap.publish"
-                      @click="sendPublish"
-                      >发送发布命令</el-button
-                    >
-                    <el-button :disabled="!serviceEnabled" @click="fillPublishPlatforms"
-                      >填入全部平台</el-button
-                    >
-                  </div>
-                </div>
-
-                <div class="card panel">
-                  <div class="section-title">发布结果</div>
-                  <pre class="result">{{ publishResultText }}</pre>
-                </div>
-              </div>
-            </el-tab-pane>
           </el-tabs>
         </div>
       </el-dialog>
@@ -500,23 +367,24 @@ import {
   executeBrowserAutomationDebug,
   fetchBrowserAutomationPages,
   forceCloseBrowserAutomation,
-  getBrowserAutomationLoginStatus,
-  getBrowserAutomationPlatforms,
   getBrowserAutomationTaskDetail,
   getBrowserAutomationTaskLogs,
   openBrowserAutomationLink,
-  openBrowserAutomationPlatform,
-  publishByBrowserAutomation,
   queryBrowserAutomationTasks,
   type BrowserAutomationClientVO,
   type BrowserAutomationCommandResponse,
   type BrowserAutomationServiceStatus,
 } from "@/api/external/browserAutomation";
+import {
+  getBrowserAutomationBrowserText,
+  getBrowserAutomationBrowserTone,
+  getBrowserAutomationServiceText,
+  getBrowserAutomationServiceTone,
+} from "@/services/browserAutomationRuntime";
 import { websocketClient, type ServiceCommandResultEvent } from "@/services/websocketClient";
 import { usePluginClientNodes } from "@/services/clientNodeState";
 import { formatDate } from "@/utils/formatTime";
 import ExternalClientSidebar, {
-  type ClientNodeBadge,
   type ClientNodeItem,
 } from "../components/ExternalClientSidebar.vue";
 
@@ -532,10 +400,6 @@ const selectedClientId = ref("");
 const activeTab = ref("browser");
 const pageList = ref<Record<string, any>[]>([]);
 const taskList = ref<Record<string, any>[]>([]);
-const platforms = ref(["douyin", "kuaishou", "xiaohongshu", "weibo"]);
-const platformItems = ref<Record<string, any>[]>([]);
-const loginStatusResult = ref<Record<string, any> | null>(null);
-const publishResult = ref<Record<string, any> | null>(null);
 const debugResult = ref("");
 const detailText = ref("");
 const logsText = ref("");
@@ -553,16 +417,12 @@ const loadingMap = reactive<Record<string, boolean>>({
   tasks: false,
   taskDetail: false,
   taskLogs: false,
-  openPlatform: false,
   openLink: false,
-  platforms: false,
-  loginStatus: false,
-  publish: false,
 });
 const pending = reactive<Record<string, string>>({});
 
 const browserForm = reactive({ port: 9222, headless: false });
-const openForm = reactive({ platform: "", url: "" });
+const openForm = reactive({ url: "" });
 const debugForm = reactive({
   pageIndex: 0,
   url: "",
@@ -573,18 +433,7 @@ const debugForm = reactive({
   ms: 1000,
   timeout: 30000,
 });
-const taskFilters = reactive({ status: "", kind: "", platform: "", sourceId: "" });
-const publishForm = reactive({
-  platforms: [] as string[],
-  action: "publish",
-  filePath: "",
-  title: "",
-  tags: "",
-  scheduled: false,
-  scheduleTime: "",
-  platformSettingsText: "",
-  extraPayloadText: "",
-});
+const taskFilters = reactive({ status: "", kind: "", sourceId: "" });
 const debugActions = [
   "newPage",
   "goto",
@@ -625,7 +474,7 @@ const selectedClient = computed(
 const selectedClientName = computed(
   () => selectedClient.value?.machine?.code || selectedClient.value?.clientId || "未选择节点",
 );
-const operationDialogTitle = computed(() => `浏览器自动化操作 · ${selectedClientName.value}`);
+const operationDialogTitle = computed(() => `集中操作台 · ${selectedClientName.value}`);
 const selectedService = computed<BrowserAutomationServiceStatus | null>(
   () => selectedClient.value?.uploader || null,
 );
@@ -633,23 +482,6 @@ const selectedDetails = computed(() => selectedService.value?.details || {});
 const serviceEnabled = computed(() =>
   Boolean(selectedClient.value?.isOnline && selectedService.value?.connected),
 );
-const platformsText = computed(() => {
-  if (platformItems.value.length || platforms.value.length) {
-    return jsonText({
-      platforms: platforms.value,
-      items: platformItems.value,
-    });
-  }
-  return "暂无平台能力数据";
-});
-const loginStatusText = computed(() =>
-  loginStatusResult.value ? jsonText(loginStatusResult.value) : "暂无登录状态数据",
-);
-const publishResultText = computed(() =>
-  publishResult.value ? jsonText(publishResult.value) : "暂无发布结果",
-);
-const toneFromLevelClass = (value: string): ClientNodeBadge["tone"] =>
-  value === "is-success" ? "success" : value === "is-warning" ? "warning" : "muted";
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   clients.value.map((client) => ({
     connectionId: client.clientId,
@@ -660,12 +492,12 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
     badges: [
       { text: client.isOnline ? "在线" : "离线", tone: client.isOnline ? "success" : "muted" },
       {
-        text: serviceText(client.uploader),
-        tone: toneFromLevelClass(selectedServiceTone(client.uploader)),
+        text: getBrowserAutomationServiceText(client.uploader),
+        tone: getBrowserAutomationServiceTone(client.uploader),
       },
       {
-        text: browserText(client.uploader),
-        tone: toneFromLevelClass(browserTone(client.uploader)),
+        text: getBrowserAutomationBrowserText(client.uploader),
+        tone: getBrowserAutomationBrowserTone(client.uploader),
       },
     ],
   })),
@@ -673,23 +505,6 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
 
 const dateText = (value?: string | null) =>
   value ? formatDate(new Date(value), "YYYY-MM-DD HH:mm:ss") : "-";
-const serviceText = (service?: BrowserAutomationServiceStatus | null) =>
-  !service ? "未知" : service.connected ? "已启动" : service.status === "error" ? "异常" : "未启动";
-const browserText = (service?: BrowserAutomationServiceStatus | null) => {
-  const details = service?.details || {};
-  if (details.browserConnected) return "已连接";
-  if (details.hasInstance) return "实例未就绪";
-  if (service?.connected) return "未连接";
-  return service?.status === "error" ? "异常" : "未启动";
-};
-const selectedServiceTone = (service?: BrowserAutomationServiceStatus | null) =>
-  service?.available ? "is-success" : service?.connected ? "is-warning" : "is-muted";
-const browserTone = (service?: BrowserAutomationServiceStatus | null) => {
-  const details = service?.details || {};
-  if (details.browserConnected) return "is-success";
-  if (details.hasInstance || service?.connected) return "is-warning";
-  return "is-muted";
-};
 const normalizeBrowserAutomationKey = (value?: string | null) => {
   const normalized = String(value || "").trim();
   if (!normalized) return "";
@@ -709,22 +524,67 @@ const jsonText = (value: any) => {
     return String(value);
   }
 };
-const splitTags = (value: string) =>
-  value
-    .split(/[,，\s]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+const normalizePageOption = (page: Record<string, any>, fallbackIndex: number) => {
+  const rawIndex =
+    typeof page?.index === "number"
+      ? page.index
+      : typeof page?.pageIndex === "number"
+        ? page.pageIndex
+        : fallbackIndex;
+  const title = String(page?.title || page?.name || `页面 ${rawIndex}`);
+  const url = String(page?.url || "");
 
-const syncPlatformOptions = (items: string[]) => {
-  const merged = Array.from(new Set([...platforms.value, ...items].filter(Boolean)));
-  platforms.value = merged;
+  return {
+    ...page,
+    index: rawIndex,
+    title,
+    url,
+    optionKey: `${rawIndex}-${title}-${url}`,
+    optionLabel: `#${rawIndex} ${title}${url ? ` · ${url}` : ""}`,
+  };
 };
 const getPagesFromClient = (client?: BrowserAutomationClientVO | null) => {
   const pages = client?.uploader?.details?.pages;
   return Array.isArray(pages) ? pages : [];
 };
+const pageOptions = computed(() =>
+  pageList.value.map((page, index) => normalizePageOption(page, index)),
+);
+const selectedDebugPage = computed(
+  () => pageOptions.value.find((page) => page.index === debugForm.pageIndex) || null,
+);
 const syncSelectedPages = () => {
   pageList.value = getPagesFromClient(selectedClient.value);
+};
+const syncDebugPageIndex = () => {
+  if (!pageOptions.value.length) {
+    debugForm.pageIndex = 0;
+    return;
+  }
+
+  const exists = pageOptions.value.some((page) => page.index === debugForm.pageIndex);
+  if (exists) {
+    return;
+  }
+
+  const preferredPage =
+    pageOptions.value.find((page) => page.isActive) || pageOptions.value[0] || null;
+  if (preferredPage) {
+    debugForm.pageIndex = preferredPage.index;
+  }
+};
+const selectDebugPage = (page: Record<string, any>) => {
+  const normalizedPage = normalizePageOption(page, 0);
+  debugForm.pageIndex = normalizedPage.index;
+  if (activeTab.value !== "debug") {
+    activeTab.value = "debug";
+  }
+};
+const handlePageRowClick = (row: Record<string, any>) => {
+  selectDebugPage(row);
+};
+const getPageRowClassName = ({ row }: { row: Record<string, any> }) => {
+  return row?.index === debugForm.pageIndex ? "page-row-is-active" : "";
 };
 
 const finish = (action?: string) => {
@@ -808,14 +668,6 @@ const sendForceClose = async () =>
     () => forceCloseBrowserAutomation(selectedClientId.value, { port: browserForm.port }),
     "强制关闭命令已发送",
   );
-const sendOpenPlatform = async () =>
-  selectedClientId.value &&
-  openForm.platform &&
-  dispatch(
-    "openPlatform",
-    () => openBrowserAutomationPlatform(selectedClientId.value, { platform: openForm.platform }),
-    "打开平台页命令已发送",
-  );
 const sendOpenLink = async () =>
   selectedClientId.value &&
   openForm.url.trim() &&
@@ -852,71 +704,6 @@ const sendTaskLogs = async (taskId: string) =>
     () => getBrowserAutomationTaskLogs(selectedClientId.value, taskId),
     "任务日志命令已发送",
   );
-const sendPlatforms = async () =>
-  selectedClientId.value &&
-  dispatch(
-    "platforms",
-    () => getBrowserAutomationPlatforms(selectedClientId.value),
-    "平台列表命令已发送",
-  );
-const sendLoginStatus = async (refresh = false) =>
-  selectedClientId.value &&
-  dispatch(
-    "loginStatus",
-    () => getBrowserAutomationLoginStatus(selectedClientId.value, { refresh }),
-    refresh ? "登录状态刷新命令已发送" : "登录状态命令已发送",
-  );
-const fillPublishPlatforms = () => {
-  publishForm.platforms = [...platforms.value];
-};
-const buildPublishPayload = () => {
-  if (!publishForm.platforms.length) {
-    throw new Error("请至少选择一个平台");
-  }
-
-  const payload: Record<string, any> = {
-    platforms: [...publishForm.platforms],
-  };
-
-  if (publishForm.action.trim()) payload.action = publishForm.action.trim();
-  if (publishForm.filePath.trim()) payload.filePath = publishForm.filePath.trim();
-  if (publishForm.title.trim()) payload.title = publishForm.title.trim();
-
-  const tags = splitTags(publishForm.tags);
-  if (tags.length) payload.tags = tags;
-
-  if (publishForm.scheduled) {
-    payload.scheduled = true;
-    if (publishForm.scheduleTime.trim()) {
-      payload.scheduleTime = publishForm.scheduleTime.trim();
-    }
-  }
-
-  const platformSettingsText = publishForm.platformSettingsText.trim();
-  if (platformSettingsText) {
-    payload.platformSettings = JSON.parse(platformSettingsText);
-  }
-
-  const extraPayloadText = publishForm.extraPayloadText.trim();
-  if (extraPayloadText) {
-    Object.assign(payload, JSON.parse(extraPayloadText));
-  }
-
-  return payload;
-};
-const sendPublish = async () => {
-  if (!selectedClientId.value) return;
-  try {
-    const payload = buildPublishPayload();
-    await dispatch(
-      "publish",
-      () => publishByBrowserAutomation(selectedClientId.value, payload),
-      "发布命令已发送",
-    );
-  } catch (error: any) {
-    ElMessage.warning(error?.message || "发布参数校验失败");
-  }
-};
 
 const onCommand = async (event: ServiceCommandResultEvent) => {
   if (normalizeBrowserAutomationKey(event.pluginKey || event.service) !== "browser-automation")
@@ -937,16 +724,6 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
       logsText.value = jsonText(data.logs || []);
       logsVisible.value = true;
     }
-    if (action === "platforms") {
-      platformItems.value = Array.isArray(data.items) ? data.items : [];
-      syncPlatformOptions(Array.isArray(data.platforms) ? data.platforms : []);
-    }
-    if (action === "loginStatus") {
-      loginStatusResult.value = data && typeof data === "object" ? data : { value: data };
-    }
-    if (action === "publish") {
-      publishResult.value = data && typeof data === "object" ? data : { value: data };
-    }
   }
   (event.success ? ElMessage.success : ElMessage.error)(
     event.message || event.error || (event.success ? "执行成功" : "执行失败"),
@@ -964,13 +741,30 @@ watch(
   selectedDetails,
   () => {
     syncSelectedPages();
+    syncDebugPageIndex();
   },
   { deep: true },
 );
 
 watch(selectedClientId, (value) => {
   syncSelectedPages();
+  syncDebugPageIndex();
   if (!value) operationDialogVisible.value = false;
+});
+
+watch(
+  pageOptions,
+  () => {
+    syncDebugPageIndex();
+  },
+  { deep: true, immediate: true },
+);
+
+watch([operationDialogVisible, activeTab, serviceEnabled], ([visible, tab, enabled]) => {
+  if (!visible || !enabled) return;
+  if ((tab === "browser" || tab === "debug") && !pageOptions.value.length && !loadingMap.pages) {
+    void sendSimple("pages");
+  }
 });
 
 onMounted(async () => {
@@ -1028,8 +822,9 @@ onUnmounted(() => {
 
 .console-entry {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
   gap: 16px;
 }
 
@@ -1037,6 +832,12 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.console-entry :deep(.el-button) {
+  align-self: flex-start;
 }
 
 .card {
@@ -1067,8 +868,7 @@ onUnmounted(() => {
 
 .summary,
 .grid,
-.action-grid,
-.tag-list {
+.action-grid {
   display: grid;
   gap: 12px;
 }
@@ -1083,11 +883,6 @@ onUnmounted(() => {
 
 .action-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.tag-list {
-  grid-template-columns: repeat(auto-fill, minmax(120px, max-content));
-  align-items: start;
 }
 
 .label,
@@ -1148,6 +943,37 @@ onUnmounted(() => {
 
 .browser-automation-dialog :deep(.el-dialog__body) {
   padding-top: 12px;
+}
+
+.debug-page-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+
+.debug-page-meta__title {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+
+  span {
+    color: var(--el-text-color-primary);
+    font-weight: 600;
+  }
+}
+
+.debug-page-meta__url {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-primary);
+  word-break: break-all;
+}
+
+.browser-automation-dialog :deep(.page-row-is-active) {
+  --el-table-tr-bg-color: var(--el-color-primary-light-9);
 }
 
 @media (max-width: 1200px) {

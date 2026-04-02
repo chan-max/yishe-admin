@@ -40,6 +40,8 @@ export interface WebsocketClientInfo {
     lastError?: string | null
     debugAvailable?: boolean
     supportedCommands?: string[]
+    supportedTaskTypes?: string[]
+    autoDispatchEnabled?: boolean
     details?: Record<string, any>
   }>
   timestamp?: string
@@ -161,6 +163,10 @@ export interface ServiceCommandDTO {
   payload?: any
 }
 
+export interface DispatchPublishTaskDTO {
+  clientId?: string
+}
+
 export const sendServiceCommand = (data: ServiceCommandDTO) => {
   return request.post<{ success: boolean; message: string; data?: any }>({
     url: '/websocket/service-command',
@@ -278,6 +284,26 @@ export const togglePsAutomationAutoDispatch = (clientId: string, enabled: boolea
 export const triggerPsdSetAutoDispatch = () => {
   return request.post<{ success: boolean; dispatched: boolean; reason?: string; message?: string; data?: any }>({
     url: '/websocket/psd-set/auto-dispatch/trigger'
+  })
+}
+
+export const startPublishTaskDispatch = (taskId: string, data?: DispatchPublishTaskDTO) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/publish-tasks/${taskId}/start`,
+    data
+  })
+}
+
+export const triggerPublishTaskAutoDispatch = () => {
+  return request.post<{ success: boolean; dispatched: boolean; reason?: string; message?: string; data?: any }>({
+    url: '/websocket/publish-tasks/auto-dispatch/trigger'
+  })
+}
+
+export const toggleBrowserAutomationAutoDispatch = (clientId: string, enabled: boolean) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/browser-automation/${clientId}/auto-dispatch`,
+    data: { enabled }
   })
 }
 

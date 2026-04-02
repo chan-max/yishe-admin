@@ -31,7 +31,7 @@ export default defineComponent({
           "h-[var(--top-tool-height)] pl-12px pr-8px md:pl-16px md:pr-10px flex items-center justify-between",
         ]}
       >
-        <div class="flex h-full min-w-0 items-center gap-6px md:gap-8px">
+        <div class="tool-header-left flex h-full min-w-0 items-center gap-6px md:gap-8px">
           {mobile.value ? (
             <button
               type="button"
@@ -41,7 +41,9 @@ export default defineComponent({
               <Icon icon="ep:menu" />
             </button>
           ) : undefined}
-          {breadcrumb.value ? <Breadcrumb class="min-w-0 lt-md:hidden" /> : undefined}
+          {breadcrumb.value ? (
+            <Breadcrumb class="header-breadcrumb min-w-0 lt-md:hidden" />
+          ) : undefined}
         </div>
 
         <div class="tool-header-right flex h-full min-w-0 items-center justify-end gap-2px md:gap-4px">
@@ -76,14 +78,47 @@ $prefix-cls: #{$namespace}-tool-header;
   flex-shrink: 1;
 }
 
+.tool-header-left {
+  overflow: hidden;
+}
+
+.header-breadcrumb {
+  flex-shrink: 1;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
 .client-status-wrapper {
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .client-status-wrapper {
     display: none !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+  .#{$prefix-cls} {
+    min-height: var(--top-tool-height);
+    padding-left: 14px;
+    padding-right: 12px;
+  }
+
+  .tool-header-left,
+  .tool-header-right {
+    gap: 8px;
+  }
+
+  .tool-header-right > * {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+  }
+
+  .header-breadcrumb {
+    max-width: min(42vw, 420px);
   }
 }
 

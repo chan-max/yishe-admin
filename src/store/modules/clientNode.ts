@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { defineStore, storeToRefs } from "pinia";
 import { getMyWebsocketConnectionViews, type WebsocketConnectionVO } from "@/api/system/websocket";
+import { resolveClientServiceSummary } from "@/services/clientServiceRuntime";
 import {
   websocketClient,
   type ClientConnectionChangedEvent,
@@ -100,20 +101,24 @@ export const useClientNodeStore = defineStore("client-node", () => {
 
     (["browser-automation", "ps-automation", "google-art"] as ClientPluginKey[]).forEach(
       (pluginKey) => {
-        let hasRuntime = false;
-        let hasAvailable = false;
+        let pluginSummary: ClientPluginSummary = "offline";
 
         clients.value.forEach((client) => {
           if (!client.isOnline) return;
           const runtime = getClientServiceRuntime(client, pluginKey);
-          if (!runtime) return;
-          hasRuntime = true;
-          if (runtime.available) {
-            hasAvailable = true;
+          const runtimeSummary = resolveClientServiceSummary(runtime);
+
+          if (runtimeSummary === "available") {
+            pluginSummary = "available";
+            return;
+          }
+
+          if (runtimeSummary === "degraded" && pluginSummary !== "available") {
+            pluginSummary = "degraded";
           }
         });
 
-        summary[pluginKey] = hasAvailable ? "available" : hasRuntime ? "degraded" : "offline";
+        summary[pluginKey] = pluginSummary;
       },
     );
 

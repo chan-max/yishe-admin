@@ -522,6 +522,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
+        path: "ai-api-key",
+        component: () => import("@/views/system/ai-api-key/index.vue"),
+        name: "SystemAiApiKeyIndex",
+        meta: {
+          title: "AI API Key",
+          requiresAdmin: true,
+        },
+      },
+      {
         path: "message-push",
         component: () => import("@/views/message-push/index.vue"),
         name: "MessagePushIndex",
@@ -853,6 +862,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
   },
   {
+    path: "/system/organization/ai-api-key",
+    redirect: "/system/ai-api-key",
+    name: "SystemOrganizationAiApiKeyCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
     path: "/system/organization/message-push",
     redirect: "/system/message-push",
     name: "SystemOrganizationMessagePushCompat",
@@ -943,9 +961,9 @@ function attachMenuKeys(routes: AppRouteRecordRaw[]): AppRouteRecordRaw[] {
       ...route,
       meta: menuKey
         ? {
-          ...(route.meta || {}),
-          menuKey,
-        }
+            ...(route.meta || {}),
+            menuKey,
+          }
         : route.meta,
       children: route.children ? attachMenuKeys(route.children) : route.children,
     };

@@ -1,89 +1,121 @@
 <script lang="tsx">
-import { Icon } from '@/components/Icon'
-import { ElTooltip } from 'element-plus'
-import { useDesign } from '@/hooks/web/useDesign'
-import { usePermissionStore } from '@/store/modules/permission'
-import { useAppStore } from '@/store/modules/app'
-import { isUrl } from '@/utils/is'
-import { pathResolve } from '@/utils/routerHelper'
-import { Logo } from '@/layout/components/Logo'
-import { usePsdSetRuntimeState } from '@/services/psdSetRuntimeState'
-import { useClientNodeStore } from '@/store/modules/clientNode'
-import { type PsAutomationStatusEvent, websocketClient } from '@/services/websocketClient'
+import { Icon } from "@/components/Icon";
+import { ElTooltip } from "element-plus";
+import { useDesign } from "@/hooks/web/useDesign";
+import { usePermissionStore } from "@/store/modules/permission";
+import { useAppStore } from "@/store/modules/app";
+import { isUrl } from "@/utils/is";
+import { pathResolve } from "@/utils/routerHelper";
+import { Logo } from "@/layout/components/Logo";
+import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
+import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
+import {
+  getClientServiceRuntime,
+  type ClientPluginKey,
+  useClientNodeStore,
+} from "@/store/modules/clientNode";
+import { type PsAutomationStatusEvent, websocketClient } from "@/services/websocketClient";
 
-const { getPrefixCls } = useDesign()
-const prefixCls = getPrefixCls('menu')
+const { getPrefixCls } = useDesign();
+const prefixCls = getPrefixCls("menu");
 
 export default defineComponent({
-  name: 'Menu',
+  name: "Menu",
   setup() {
-    const appStore = useAppStore()
-    const permissionStore = usePermissionStore()
-    const { push, currentRoute } = useRouter()
-    const closeMobileMenu = inject<() => void>('closeMobileMenu', () => {})
-    const logo = computed(() => appStore.logo)
+    const appStore = useAppStore();
+    const permissionStore = usePermissionStore();
+    const { push, currentRoute } = useRouter();
+    const closeMobileMenu = inject<() => void>("closeMobileMenu", () => {});
+    const logo = computed(() => appStore.logo);
 
-    const routers = computed(() => permissionStore.getRouters.filter((route) => !route.meta?.hidden))
-    const activeMenu = computed(() => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path)
-    const expandedMenus = ref<Record<string, boolean>>({})
+    const routers = computed(() =>
+      permissionStore.getRouters.filter((route) => !route.meta?.hidden),
+    );
+    const activeMenu = computed(
+      () => (currentRoute.value.meta.activeMenu as string) || currentRoute.value.path,
+    );
+    const expandedMenus = ref<Record<string, boolean>>({});
     const {
       userAutoSchedulingEnabled,
       isAnyPsdSetProcessing,
       refresh: refreshPsdSetRuntime,
-      setUserAutoSchedulingEnabled
-    } = usePsdSetRuntimeState()
-    const clientNodeStore = useClientNodeStore()
-    clientNodeStore.ensureInitialized()
+      setUserAutoSchedulingEnabled,
+    } = usePsdSetRuntimeState();
+    const clientNodeStore = useClientNodeStore();
+    clientNodeStore.ensureInitialized();
 
     const menuStatusRouteMap: Record<string, string> = {
-      '/external/browser-automation': 'browser-automation',
-      '/external/ps-automation': 'ps-automation',
-      '/external/google-art': 'google-art'
-    }
+      "/external/browser-automation": "browser-automation",
+      "/external/ps-automation": "ps-automation",
+      "/external/google-art": "google-art",
+    };
 
-    const routeStatusMap = computed<Record<string, 'available' | 'degraded' | 'offline'>>(() => {
-      const result: Record<string, 'available' | 'degraded' | 'offline'> = {}
+    const routeStatusMap = computed<Record<string, "available" | "degraded" | "offline">>(() => {
+      const result: Record<string, "available" | "degraded" | "offline"> = {};
       Object.entries(menuStatusRouteMap).forEach(([routePath, pluginKey]) => {
-        result[routePath] = clientNodeStore.pluginStatusMap[pluginKey as keyof typeof clientNodeStore.pluginStatusMap] || 'offline'
-      })
-      return result
-    })
+        result[routePath] =
+          clientNodeStore.pluginStatusMap[
+            pluginKey as keyof typeof clientNodeStore.pluginStatusMap
+          ] || "offline";
+      });
+      return result;
+    });
+
+    const routeRunningMap = computed<Record<string, boolean>>(() => {
+      const result: Record<string, boolean> = {};
+
+      Object.entries(menuStatusRouteMap).forEach(([routePath, pluginKey]) => {
+        result[routePath] = clientNodeStore.clients.some((client) => {
+          if (!client.isOnline) return false;
+          const serviceRuntime = getClientServiceRuntime(client, pluginKey as ClientPluginKey);
+          return isClientServiceRuntimeBusy(serviceRuntime);
+        });
+      });
+
+      return result;
+    });
 
     const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
-      if (typeof event?.autoSchedulingEnabled === 'boolean') {
-        setUserAutoSchedulingEnabled(event.autoSchedulingEnabled)
+      const autoSchedulingEnabled =
+        typeof event?.autoDispatchEnabled === "boolean"
+          ? event.autoDispatchEnabled
+          : event?.autoSchedulingEnabled;
+
+      if (typeof autoSchedulingEnabled === "boolean") {
+        setUserAutoSchedulingEnabled(autoSchedulingEnabled);
       }
-    }
+    };
 
     const renderStatusDot = (routePath: string) => {
-      const status = routeStatusMap.value[routePath]
+      const status = routeStatusMap.value[routePath];
       if (!status) {
-        return undefined
+        return undefined;
       }
+      const running = routeRunningMap.value[routePath];
 
-      const titleMap: Record<string, Record<'available' | 'degraded' | 'offline', string>> = {
-        '/external/browser-automation': {
-          available: '浏览器自动化可用',
-          degraded: '浏览器自动化已连接，但当前不可执行',
-          offline: '浏览器自动化不可用'
+      const titleMap: Record<string, Record<"available" | "degraded" | "offline", string>> = {
+        "/external/browser-automation": {
+          available: "浏览器自动化可用",
+          degraded: "浏览器自动化已连接，但当前不可执行",
+          offline: "浏览器自动化不可用",
         },
-        '/external/ps-automation': {
-          available: '套图制作可调用',
-          degraded: 'PS 自动化已连接，但当前不可执行',
-          offline: 'PS 自动化不可用'
+        "/external/ps-automation": {
+          available: "套图制作可调用",
+          degraded: "PS 自动化已连接，但当前不可执行",
+          offline: "PS 自动化不可用",
         },
-        '/external/google-art': {
-          available: 'Google Art 可用',
-          degraded: 'Google Art 已连接，但当前不可执行',
-          offline: 'Google Art 不可用'
-        }
-      }
+        "/external/google-art": {
+          available: "Google Art 可用",
+          degraded: "Google Art 已连接，但当前不可执行",
+          offline: "Google Art 不可用",
+        },
+      };
 
-      const title = titleMap[routePath]?.[status]
+      const title = running ? "当前有任务正在执行" : titleMap[routePath]?.[status];
 
       return (
         <ElTooltip
-          content={title || '当前不可用'}
+          content={title || "当前不可用"}
           placement="right"
           effect="light"
           showAfter={120}
@@ -93,23 +125,23 @@ export default defineComponent({
           <span
             class={[
               `${prefixCls}__status-dot`,
-              `${prefixCls}__status-dot--${status}`
+              running ? `${prefixCls}__status-dot--running` : `${prefixCls}__status-dot--${status}`,
             ]}
           />
         </ElTooltip>
-      )
-    }
+      );
+    };
 
-    const isPsdSetRoute = (routePath: string) => routePath === '/product/psd-set'
+    const isPsdSetRoute = (routePath: string) => routePath === "/product/psd-set";
 
     const renderPsdSetAutoDot = (routePath: string) => {
       if (!isPsdSetRoute(routePath)) {
-        return undefined
+        return undefined;
       }
 
       return (
         <ElTooltip
-          content={userAutoSchedulingEnabled.value ? '自动处理已开启' : '自动处理未开启'}
+          content={userAutoSchedulingEnabled.value ? "自动处理已开启" : "自动处理未开启"}
           placement="right"
           effect="light"
           showAfter={120}
@@ -121,68 +153,70 @@ export default defineComponent({
               `${prefixCls}__psd-status-dot`,
               userAutoSchedulingEnabled.value
                 ? `${prefixCls}__psd-status-dot--enabled`
-                : `${prefixCls}__psd-status-dot--muted`
+                : `${prefixCls}__psd-status-dot--muted`,
             ]}
           />
         </ElTooltip>
-      )
-    }
+      );
+    };
 
-    const getRoutePath = (route: AppRouteRecordRaw, parentPath = '/') => {
-      return isUrl(route.path) ? route.path : pathResolve(parentPath, route.path)
-    }
+    const getRoutePath = (route: AppRouteRecordRaw, parentPath = "/") => {
+      return isUrl(route.path) ? route.path : pathResolve(parentPath, route.path);
+    };
 
     const getVisibleChildren = (route: AppRouteRecordRaw) => {
-      return (route.children ?? []).filter((child) => !child.meta?.hidden)
-    }
+      return (route.children ?? []).filter((child) => !child.meta?.hidden);
+    };
 
     const hasActiveChild = (route: AppRouteRecordRaw) => {
-      const routePath = getRoutePath(route)
-      return getVisibleChildren(route).some((child) => getRoutePath(child, routePath) === activeMenu.value)
-    }
+      const routePath = getRoutePath(route);
+      return getVisibleChildren(route).some(
+        (child) => getRoutePath(child, routePath) === activeMenu.value,
+      );
+    };
 
     const isRouteActive = (route: AppRouteRecordRaw) => {
-      return getRoutePath(route) === activeMenu.value || hasActiveChild(route)
-    }
+      return getRoutePath(route) === activeMenu.value || hasActiveChild(route);
+    };
 
     const selectMenu = (path: string) => {
       if (isUrl(path)) {
-        window.open(path)
+        window.open(path);
       } else {
-        push(path)
+        push(path);
       }
-      closeMobileMenu()
-    }
+      closeMobileMenu();
+    };
 
     const toggleSection = (routePath: string) => {
       expandedMenus.value = {
         ...expandedMenus.value,
-        [routePath]: !expandedMenus.value[routePath]
-      }
-    }
+        [routePath]: !expandedMenus.value[routePath],
+      };
+    };
 
     watch(
       routers,
       (value) => {
-        const nextExpanded: Record<string, boolean> = {}
+        const nextExpanded: Record<string, boolean> = {};
         value.forEach((route) => {
-          const routePath = getRoutePath(route)
+          const routePath = getRoutePath(route);
           nextExpanded[routePath] =
-            expandedMenus.value[routePath] ?? getVisibleChildren(route).length > 0
-        })
-        expandedMenus.value = nextExpanded
+            expandedMenus.value[routePath] ?? getVisibleChildren(route).length > 0;
+        });
+        expandedMenus.value = nextExpanded;
       },
-      { immediate: true, deep: true }
-    )
+      { immediate: true, deep: true },
+    );
 
     onMounted(() => {
-      void refreshPsdSetRuntime()
-      websocketClient.events.on('psAutomationStatus', handlePsAutomationStatus)
-    })
+      void refreshPsdSetRuntime();
+      websocketClient.events.on("psAutomationStatus", handlePsAutomationStatus);
+    });
 
     onUnmounted(() => {
-      websocketClient.events.off('psAutomationStatus', handlePsAutomationStatus)
-    })
+      websocketClient.events.off("psAutomationStatus", handlePsAutomationStatus);
+    });
 
     return () => (
       <nav id={prefixCls} class={`${prefixCls} h-full`}>
@@ -194,10 +228,10 @@ export default defineComponent({
           ) : undefined}
 
           {routers.value.map((route) => {
-            const routePath = getRoutePath(route)
-            const children = getVisibleChildren(route)
-            const sectionActive = isRouteActive(route)
-            const expanded = expandedMenus.value[routePath]
+            const routePath = getRoutePath(route);
+            const children = getVisibleChildren(route);
+            const sectionActive = isRouteActive(route);
+            const expanded = expandedMenus.value[routePath];
 
             if (!children.length) {
               return (
@@ -207,7 +241,7 @@ export default defineComponent({
                   class={[
                     `${prefixCls}__section`,
                     `${prefixCls}__section--leaf`,
-                    { [`${prefixCls}__section--active`]: sectionActive }
+                    { [`${prefixCls}__section--active`]: sectionActive },
                   ]}
                   onClick={() => selectMenu(routePath)}
                 >
@@ -220,7 +254,7 @@ export default defineComponent({
                     </div>
                   </div>
                 </button>
-              )
+              );
             }
 
             return (
@@ -228,7 +262,7 @@ export default defineComponent({
                 key={routePath}
                 class={[
                   `${prefixCls}__section`,
-                  { [`${prefixCls}__section--active`]: sectionActive }
+                  { [`${prefixCls}__section--active`]: sectionActive },
                 ]}
               >
                 <button
@@ -244,44 +278,46 @@ export default defineComponent({
                   </div>
                   <Icon
                     class={`${prefixCls}__section-arrow`}
-                    icon={expanded ? 'ep:arrow-up' : 'ep:arrow-down'}
+                    icon={expanded ? "ep:arrow-up" : "ep:arrow-down"}
                   />
                 </button>
 
                 {expanded ? (
                   <div class={`${prefixCls}__links`}>
                     {children.map((child) => {
-                      const childPath = getRoutePath(child, routePath)
+                      const childPath = getRoutePath(child, routePath);
                       return (
                         <button
                           type="button"
                           key={childPath}
-                          title={String(child.meta?.title ?? '')}
+                          title={String(child.meta?.title ?? "")}
                           class={[
                             `${prefixCls}__link`,
                             {
                               [`${prefixCls}__link--active`]: childPath === activeMenu.value,
                               [`${prefixCls}__link--psd-running`]:
-                                isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value
-                            }
+                                isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
+                              [`${prefixCls}__link--service-running`]:
+                                !isPsdSetRoute(childPath) && !!routeRunningMap.value[childPath],
+                            },
                           ]}
                           onClick={() => selectMenu(childPath)}
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
                           {renderPsdSetAutoDot(childPath) || renderStatusDot(childPath)}
                         </button>
-                      )
+                      );
                     })}
                   </div>
                 ) : undefined}
               </section>
-            )
+            );
           })}
         </div>
       </nav>
-    )
-  }
-})
+    );
+  },
+});
 </script>
 
 <style lang="scss" scoped>
@@ -369,7 +405,9 @@ $prefix-cls: #{$namespace}-menu;
     background: transparent;
     cursor: pointer;
     text-align: left;
-    transition: background-color var(--transition-time-02), color var(--transition-time-02);
+    transition:
+      background-color var(--transition-time-02),
+      color var(--transition-time-02);
   }
 
   &__section-head:hover {
@@ -517,7 +555,7 @@ $prefix-cls: #{$namespace}-menu;
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    content: '';
+    content: "";
     opacity: 0;
     transform: scale(1);
   }
@@ -562,6 +600,15 @@ $prefix-cls: #{$namespace}-menu;
     animation: psd-link-amber-breathe 2.2s ease-in-out infinite;
   }
 
+  &__link--service-running {
+    border-left-color: rgb(45 212 191 / 70%);
+    background: rgb(45 212 191 / 14%);
+    box-shadow:
+      inset 0 0 0 1px rgb(45 212 191 / 16%),
+      inset 2px 0 0 rgb(45 212 191 / 52%);
+    animation: service-link-teal-breathe 2.4s ease-in-out infinite;
+  }
+
   &__status-dot {
     flex: none;
     position: relative;
@@ -578,7 +625,7 @@ $prefix-cls: #{$namespace}-menu;
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    content: '';
+    content: "";
   }
 
   &__status-dot::before {
@@ -617,6 +664,20 @@ $prefix-cls: #{$namespace}-menu;
   &__status-dot--degraded::after {
     background: rgb(245 158 11 / 24%);
     animation: status-dot-wave-degraded 2.6s ease-out infinite;
+  }
+
+  &__status-dot--running {
+    background: #14b8a6;
+    box-shadow:
+      0 0 0 1px rgb(20 184 166 / 22%),
+      0 0 12px rgb(20 184 166 / 36%),
+      0 0 20px rgb(20 184 166 / 16%);
+    animation: status-dot-breathe-running 1.9s ease-in-out infinite;
+  }
+
+  &__status-dot--running::after {
+    background: rgb(20 184 166 / 26%);
+    animation: status-dot-wave-running 1.9s ease-out infinite;
   }
 
   &__status-dot--offline {
@@ -758,6 +819,64 @@ $prefix-cls: #{$namespace}-menu;
       inset 0 0 0 1px rgb(250 204 21 / 28%),
       inset 2px 0 0 rgb(250 204 21 / 72%);
     background: rgb(250 204 21 / 22%);
+  }
+}
+
+@keyframes service-link-teal-breathe {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgb(45 212 191 / 12%),
+      inset 2px 0 0 rgb(45 212 191 / 40%);
+    background: rgb(45 212 191 / 12%);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgb(45 212 191 / 24%),
+      inset 2px 0 0 rgb(45 212 191 / 66%);
+    background: rgb(45 212 191 / 18%);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1180px) {
+  .#{$prefix-cls}__panel {
+    gap: 4px;
+    padding: 0 10px 22px;
+  }
+
+  .#{$prefix-cls}__logo {
+    padding: 10px 0 12px;
+  }
+
+  .#{$prefix-cls}__section {
+    padding: 7px 0 9px;
+  }
+
+  .#{$prefix-cls}__section-head {
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .#{$prefix-cls}__links {
+    gap: 6px 8px;
+    padding: 9px 2px 0 28px;
+  }
+
+  .#{$prefix-cls}__link {
+    min-height: 34px;
+    padding: 6px 10px;
+    border-left-width: 3px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .#{$prefix-cls}__link-text {
+    font-size: 12px;
+  }
+
+  .#{$prefix-cls}__status-dot,
+  .#{$prefix-cls}__psd-status-dot {
+    transform: scale(1.08);
   }
 }
 </style>

@@ -15,6 +15,8 @@ export interface BrowserAutomationServiceStatus {
   currentTaskId?: string | null
   lastError?: string | null
   supportedCommands?: string[]
+  supportedTaskTypes?: string[]
+  autoDispatchEnabled?: boolean
   details?: Record<string, any>
 }
 
