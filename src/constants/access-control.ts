@@ -26,6 +26,7 @@ export const MENU_ACCESS_GROUPS = [
       { key: "content.code-script", label: "代码脚本" },
       { key: "content.code-script-schedule", label: "脚本调度" },
       { key: "content.remotion-video-record", label: "视频生成(remotion)" },
+      { key: "content.image-processing-record", label: "图片处理(yishe-images)" },
     ],
   },
   {
@@ -98,6 +99,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   CodeScript: "content.code-script",
   CodeScriptSchedule: "content.code-script-schedule",
   RemotionVideoRecord: "content.remotion-video-record",
+  ImageProcessingRecord: "content.image-processing-record",
   ExternalBrowserAutomation: "external.browser-automation",
   ExternalPsAutomation: "external.ps-automation",
   ExternalGoogleArt: "external.google-art",

@@ -1,8 +1,9 @@
 import { reactive } from "vue";
 import { getCodeScriptSandboxHealth } from "@/api/codeScript";
+import { getImageProcessingHealth } from "@/api/image-processing-record";
 import { getRemotionVideoHealth } from "@/api/remotion-video-record";
 
-export type ServiceHealthKey = "sandbox" | "remotion";
+export type ServiceHealthKey = "sandbox" | "remotion" | "images";
 export type ServiceHealthTone = "available" | "degraded" | "offline";
 
 export interface ServiceHealthSnapshot {
@@ -75,6 +76,37 @@ const normalizeRemotionErrorMessage = (error: any, fallback: string) => {
   return raw;
 };
 
+const normalizeImagesHealthMessage = (message: string, available: boolean) => {
+  const normalized = String(message || "").trim();
+  if (!normalized) {
+    return available ? "服务健康检查通过" : "服务健康检查未通过";
+  }
+  return normalized;
+};
+
+const normalizeImagesErrorMessage = (error: any, fallback: string) => {
+  const raw = String(error?.message || error || "").trim();
+  const lower = raw.toLowerCase();
+
+  if (!raw) return fallback;
+  if (lower.includes("connection refused") || lower.includes("econnrefused")) {
+    return "服务未启动";
+  }
+  if (lower.includes("network error")) {
+    return "网络异常";
+  }
+  if (lower.includes("timeout")) {
+    return "请求超时";
+  }
+  if (lower.includes("not found")) {
+    return "接口不存在";
+  }
+  if (lower.includes("images")) {
+    return "图片处理服务异常";
+  }
+  return raw;
+};
+
 const normalizeStandardSuccess = (payload: any) => ({
   available: !!payload?.available,
   baseUrl: String(payload?.baseUrl || ""),
@@ -115,11 +147,32 @@ const serviceHealthDefinitions: Record<ServiceHealthKey, ServiceHealthDefinition
       timestamp: new Date().toISOString(),
     }),
   },
+  images: {
+    label: "图片处理服务",
+    request: getImageProcessingHealth,
+    mapSuccess: (payload) => {
+      const normalized = normalizeStandardSuccess(payload);
+      return {
+        ...normalized,
+        message: normalizeImagesHealthMessage(
+          String(payload?.message || ""),
+          !!normalized.available,
+        ),
+      };
+    },
+    mapError: (error, current) => ({
+      available: false,
+      baseUrl: current.baseUrl || "未知地址",
+      message: normalizeImagesErrorMessage(error, "图片处理服务检测失败"),
+      timestamp: new Date().toISOString(),
+    }),
+  },
 };
 
 export const serviceHealthStates = reactive<Record<ServiceHealthKey, ServiceHealthSnapshot>>({
   sandbox: createDefaultSnapshot("sandbox", serviceHealthDefinitions.sandbox.label),
   remotion: createDefaultSnapshot("remotion", serviceHealthDefinitions.remotion.label),
+  images: createDefaultSnapshot("images", serviceHealthDefinitions.images.label),
 });
 
 const initializedKeys = new Set<ServiceHealthKey>();

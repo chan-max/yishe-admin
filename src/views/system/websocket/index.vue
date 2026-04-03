@@ -7,7 +7,7 @@
             <div class="websocket-toolbar__summary">
               <div class="websocket-toolbar__title">远程连接</div>
               <div class="websocket-toolbar__description">
-                当前展示为所有实时 WebSocket 连接，并对客户端额外合并节点持久化信息，可查看在线连接与断线客户端节点。
+                {{ activeViewDescription }}
               </div>
             </div>
 
@@ -20,14 +20,22 @@
               </div>
 
               <div class="websocket-toolbar__meta-item">
-                <span class="websocket-toolbar__meta-label">客户端状态</span>
+                <span class="websocket-toolbar__meta-label">客户端节点</span>
                 <span class="websocket-toolbar__meta-value">
-                  在线 {{ onlineConnectionCount }} / 断线 {{ offlineConnectionCount }}
+                  在线 {{ nodeOnlineCount }} / 断线 {{ nodeOfflineCount }}
+                </span>
+              </div>
+
+              <div class="websocket-toolbar__meta-item">
+                <span class="websocket-toolbar__meta-label">运行时连接</span>
+                <span class="websocket-toolbar__meta-value">
+                  插件 {{ runtimeExtensionCount }} / 其他后台 {{ runtimeOtherAdminCount }} / 当前后台
+                  {{ runtimeCurrentAdminCount }} / 客户端 {{ runtimeClientCount }}
                 </span>
               </div>
 
               <div class="websocket-toolbar__meta-item" v-if="adminConnectionId">
-                <span class="websocket-toolbar__meta-label">连接 ID</span>
+                <span class="websocket-toolbar__meta-label">当前连接 ID</span>
                 <span class="admin-connection-id">{{ adminConnectionId }}</span>
               </div>
 
@@ -37,96 +45,120 @@
               </div>
 
               <div class="websocket-toolbar__actions">
-                <el-button size="small" type="primary" @click="fetchConnections" :loading="loading">
+                <el-button size="small" type="primary" @click="refreshConnectionData" :loading="isLoading">
                   <Icon icon="ep:refresh" class="mr-5px" /> 刷新列表
                 </el-button>
               </div>
             </div>
           </div>
+
+          <div class="websocket-view-switch">
+            <el-radio-group v-model="activeView" size="small">
+              <el-radio-button label="runtime">
+                运行时连接
+                <span class="websocket-view-switch__count">{{ runtimeConnections.length }}</span>
+              </el-radio-button>
+              <el-radio-button label="nodes">
+                客户端节点
+                <span class="websocket-view-switch__count">{{ nodeConnections.length }}</span>
+              </el-radio-button>
+            </el-radio-group>
+          </div>
         </div>
       </template>
 
       <template #table>
+        <el-empty v-if="!isLoading && activeRows.length === 0" :description="activeEmptyDescription" />
 
-      <el-empty v-if="!loading && connections.length === 0" description="暂无连接" />
-
-      <div v-else class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
-        <div class="list-page-table-panel__body">
-          <div class="common-table">
-            <vxe-grid
-              v-bind="gridOptions"
-              :data="connections"
-              :loading="loading"
-              ref="gridRef"
-            >
-          <template #status_default="{ row }">
-            <el-tag :type="getConnectionStatusTagType(row)" size="small">
-              {{ getConnectionStatusText(row) }}
-            </el-tag>
-          </template>
-          <template #lastOnlineAt_default="{ row }">
-            {{ formatStatusTime(row.lastOnlineAt || row.connectedAt) }}
-          </template>
-          <template #lastOfflineAt_default="{ row }">
-            {{ formatStatusTime(row.lastOfflineAt) }}
-          </template>
-          <template #duration_default="{ row }">
-            {{ formatPast(row.connectedAt) }}
-          </template>
-          <template #clientSource_default="{ row }">
-            <el-tag v-if="row.clientSource === 'yishe-extension'" type="success" size="small">
-              浏览器插件
-            </el-tag>
-            <el-tag v-else-if="row.clientSource" type="success" size="small">
-              {{ row.clientSource }}
-            </el-tag>
-            <span v-else>-</span>
-          </template>
-          <template #ip_default="{ row }">
-            {{ row.ip || '-' }}
-          </template>
-          <template #ua_default="{ row }">
-            {{ row.userAgent || '-' }}
-          </template>
-          <template #clientInfo_default="{ row }">
-            {{ formatClientInfo(row.clientInfo) }}
-          </template>
-          <template #query_default="{ row }">
-            {{ formatQuery(row.query) }}
-          </template>
-          <template #operation_default="{ row }">
-            <div class="flex justify-start">
-              <el-dropdown
-                class="operation-dropdown"
-                placement="bottom-end"
-                :disabled="!row.isOnline"
-                @command="(command) => handleOperationCommand(command, row)"
-              >
-                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-                <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item command="send-message">
-                      <span>发送消息</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item command="control" divided>
-                      <span>操控</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item command="disconnect" divided class="operation-menu-item--danger">
-                      <span>强制断开</span>
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
+        <div
+          v-else
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid v-bind="activeGridOptions" :data="activeRows" :loading="isLoading" ref="gridRef">
+                <template #status_default="{ row }">
+                  <el-tag :type="getConnectionStatusTagType(row)" size="small">
+                    {{ getConnectionStatusText(row) }}
+                  </el-tag>
                 </template>
-              </el-dropdown>
+
+                <template #lastOnlineAt_default="{ row }">
+                  {{ formatStatusTime(row.lastOnlineAt || row.connectedAt) }}
+                </template>
+
+                <template #lastOfflineAt_default="{ row }">
+                  {{ formatStatusTime(row.lastOfflineAt) }}
+                </template>
+
+                <template #duration_default="{ row }">
+                  {{ formatPast(row.connectedAt || row.lastOnlineAt) }}
+                </template>
+
+                <template #clientSource_default="{ row }">
+                  <div class="websocket-source-tags">
+                    <el-tag :type="getSourceTagType(row)" size="small">
+                      {{ formatSourceLabel(row) }}
+                    </el-tag>
+                    <el-tag v-if="isCurrentAdminConnection(row)" size="small" effect="plain" type="primary">
+                      当前后台
+                    </el-tag>
+                    <el-tag v-else-if="isOtherAdminConnection(row)" size="small" effect="plain">
+                      其他后台
+                    </el-tag>
+                  </div>
+                </template>
+
+                <template #ip_default="{ row }">
+                  {{ row.ip || row.clientInfo?.location?.ip || '-' }}
+                </template>
+
+                <template #ua_default="{ row }">
+                  {{ row.userAgent || row.clientInfo?.userAgent || '-' }}
+                </template>
+
+                <template #clientInfo_default="{ row }">
+                  {{ formatClientInfo(row.clientInfo) }}
+                </template>
+
+                <template #query_default="{ row }">
+                  {{ formatQuery(row.query) }}
+                </template>
+
+                <template #operation_default="{ row }">
+                  <div class="flex justify-start">
+                    <el-dropdown
+                      class="operation-dropdown"
+                      placement="bottom-end"
+                      :disabled="!row.isOnline"
+                      @command="(command) => handleOperationCommand(command, row)"
+                    >
+                      <el-button type="primary" link size="small" class="operation-trigger-button">
+                        操作
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="send-message">
+                            <span>发送消息</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item v-if="canControlConnection(row)" command="control" divided>
+                            <span>操控</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="disconnect" divided class="operation-menu-item--danger">
+                            <span>强制断开</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </template>
+              </vxe-grid>
             </div>
-          </template>
-            </vxe-grid>
           </div>
         </div>
-      </div>
       </template>
     </ListPageLayout>
 
-    <!-- 操控全屏弹窗 -->
     <el-dialog
       v-model="controlDialogVisible"
       title="连接操控"
@@ -140,16 +172,18 @@
             <div class="connection-info-left">
               <div class="connection-id">
                 <span class="label">连接 ID：</span>
-                <span class="value">{{ currentConnection?.id || '-' }}</span>
+                <span class="value">{{ currentConnection?.id || "-" }}</span>
               </div>
               <div class="connection-meta">
                 <span class="meta-item">
                   <Icon icon="ep:location" class="mr-4px" />
-                  {{ currentConnection?.ip || '-' }}
+                  {{ currentConnection?.ip || currentConnection?.clientInfo?.location?.ip || "-" }}
                 </span>
                 <span class="meta-item">
                   <Icon icon="ep:clock" class="mr-4px" />
-                  {{ currentConnection?.connectedAt ? formatPast(currentConnection.connectedAt) : '-' }}
+                  {{
+                    currentConnection?.connectedAt ? formatPast(currentConnection.connectedAt) : "-"
+                  }}
                 </span>
                 <span class="meta-item" v-if="currentConnection?.namespace">
                   <Icon icon="ep:folder" class="mr-4px" />
@@ -157,17 +191,13 @@
                 </span>
                 <span class="meta-item">
                   <Icon icon="ep:connection" class="mr-4px" />
-                  {{ currentConnection?.isOnline ? '在线' : '断线' }}
+                  {{ currentConnection?.isOnline ? "在线" : "断线" }}
                 </span>
               </div>
             </div>
             <div class="connection-info-right">
-                <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
-                <Icon icon="ep:chrome-filled" class="mr-4px" />
-                  浏览器插件
-                </el-tag>
-              <el-tag v-else-if="currentConnection?.clientSource" type="info" size="small">
-                {{ currentConnection.clientSource }}
+              <el-tag :type="getSourceTagType(currentConnection)" size="small">
+                {{ formatSourceLabel(currentConnection) }}
               </el-tag>
               <div class="connection-time" v-if="currentConnection?.connectedAt">
                 {{ formatDate(new Date(currentConnection.connectedAt)) }}
@@ -178,7 +208,7 @@
 
         <div class="control-dialog-body">
           <vxe-grid
-            v-if="currentConnection?.clientSource === 'yishe-extension'"
+            v-if="currentConnection && canControlConnection(currentConnection)"
             v-bind="functionGridOptions"
             :data="functionList"
             class="function-grid"
@@ -188,22 +218,24 @@
                 <Icon :icon="row.icon" />
               </div>
             </template>
+
             <template #schedule_default="{ row }">
               <div v-if="row.schedule" class="schedule-status-cell">
                 <div class="schedule-status-row">
                   <el-tag :type="row.schedule.enabled ? 'success' : 'info'" size="small">
-                    {{ row.schedule.enabled ? '已启用' : '已禁用' }}
+                    {{ row.schedule.enabled ? "已启用" : "已禁用" }}
                   </el-tag>
                   <span class="schedule-info-text">{{ formatSchedule(row.schedule) }}</span>
-                  </div>
+                </div>
                 <div v-if="row.schedule.type" class="schedule-type-text">
                   <el-tag :type="row.schedule.type === 'cron' ? 'primary' : 'success'" size="small" plain>
-                    {{ row.schedule.type === 'cron' ? '固定时间点' : '间隔时间' }}
+                    {{ row.schedule.type === "cron" ? "固定时间点" : "间隔时间" }}
                   </el-tag>
                 </div>
               </div>
               <span v-else class="text-gray-400">未设置</span>
-                </template>
+            </template>
+
             <template #operation_default="{ row }">
               <div class="flex justify-start">
                 <el-dropdown
@@ -211,7 +243,9 @@
                   placement="bottom-end"
                   @command="(command) => handleFunctionOperation(command, row)"
                 >
-                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                  <el-button type="primary" link size="small" class="operation-trigger-button">
+                    操作
+                  </el-button>
                   <template #dropdown>
                     <el-dropdown-menu class="operation-menu-compact">
                       <el-dropdown-item command="open">
@@ -236,9 +270,6 @@
       </template>
     </el-dialog>
 
-
-
-    <!-- 发送消息对话框 -->
     <el-dialog
       v-model="sendMessageDialogVisible"
       title="发送消息"
@@ -251,10 +282,9 @@
           <el-input :value="currentConnection?.id" disabled />
         </el-form-item>
         <el-form-item label="连接类型">
-          <el-tag v-if="currentConnection?.clientSource === 'yishe-extension'" type="success" size="small">
-            浏览器插件
+          <el-tag :type="getSourceTagType(currentConnection)" size="small">
+            {{ formatSourceLabel(currentConnection) }}
           </el-tag>
-          <el-tag v-else  size="small" type="success">{{ currentConnection?.clientSource || '未知' }}</el-tag>
         </el-form-item>
         <el-form-item label="事件名称">
           <el-input v-model="messageEvent" placeholder="默认为 admin-message" />
@@ -279,738 +309,755 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch, watchEffect } from 'vue'
-import type { VxeGridInstance, VxeGridProps } from 'vxe-table'
-import { useMessage } from '@/hooks/web/useMessage'
-import { formatDate, formatPast } from '@/utils/formatTime'
-import { useWindowSize } from '@vueuse/core'
-import { buildOperationColumn, commonGridOptions } from '@/common/table'
-import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
-import ListPageLayout from '@/components/ListPageLayout/index.vue'
-import * as WebsocketApi from '@/api/system/websocket'
-import type {
-  WebsocketConnectionVO,
-  WebsocketClientInfo,
-  ScheduledTask,
-  TokenUserInfo
-} from '@/api/system/websocket'
-import { websocketClient } from '@/services/websocketClient'
+import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from "vue";
+import { useRouter } from "vue-router";
+import type { VxeGridInstance, VxeGridProps } from "vxe-table";
+import { useWindowSize } from "@vueuse/core";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import { useMessage } from "@/hooks/web/useMessage";
+import { formatDate, formatPast } from "@/utils/formatTime";
+import * as WebsocketApi from "@/api/system/websocket";
+import type { ScheduledTask, TokenUserInfo, WebsocketClientInfo, WebsocketConnectionVO } from "@/api/system/websocket";
+import { websocketClient } from "@/services/websocketClient";
 
-defineOptions({ name: 'SystemWebsocketConnections' })
+defineOptions({ name: "SystemWebsocketConnections" });
 
-type WebsocketConnectionRow = WebsocketConnectionVO & {
-  __userLookupStatus?: 'idle' | 'loading' | 'success' | 'error'
-  __userLookupError?: string
+type ConnectionViewMode = "runtime" | "nodes";
+type WebsocketConnectionRow = WebsocketConnectionVO;
+
+interface ExtensionFunctionItem {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  handler: () => void | Promise<void>;
+  scheduleCommand?: string;
+  schedule: ScheduledTask | null;
 }
 
-interface TokenUserCacheEntry {
-  user: TokenUserInfo | null
-  error?: string
-}
+const router = useRouter();
+const message = useMessage();
+const gridRef = ref<VxeGridInstance>();
+const { height } = useWindowSize();
 
-const message = useMessage()
+const activeView = ref<ConnectionViewMode>("runtime");
+const autoRefresh = ref(false);
+const refreshTimer = ref<number | null>(null);
+const refreshInterval = 10_000;
 
-// 管理后台 WebSocket 连接状态
-const adminWsStatus = computed(() => websocketClient.state.status)
-const adminConnectionId = computed(() => websocketClient.state.connectionId)
+const runtimeConnections = ref<WebsocketConnectionRow[]>([]);
+const nodeConnections = ref<WebsocketConnectionRow[]>([]);
+const runtimeLoading = ref(false);
+const nodeLoading = ref(false);
+
+const sendMessageDialogVisible = ref(false);
+const sendMessageDialogLoading = ref(false);
+const controlDialogVisible = ref(false);
+const currentConnection = ref<WebsocketConnectionRow | null>(null);
+const messageContent = ref("");
+const messageEvent = ref("admin-message");
+const functionList = ref<ExtensionFunctionItem[]>([]);
+
+const adminWsStatus = computed(() => websocketClient.state.status);
+const adminConnectionId = computed(() => websocketClient.state.connectionId);
 
 const adminWsStatusTag = computed(() => {
   switch (adminWsStatus.value) {
-    case 'connected':
-      return { text: '已连接', type: 'success' as const, icon: 'ep:success-filled' }
-    case 'connecting':
-      return { text: '连接中', type: 'warning' as const, icon: 'ep:loading' }
-    case 'reconnecting':
-      return { text: '重连中', type: 'warning' as const, icon: 'ep:refresh' }
-    case 'error':
-      return { text: '连接异常', type: 'danger' as const, icon: 'ep:warning-filled' }
-    case 'disconnected':
-      return { text: '已断开', type: 'info' as const, icon: 'ep:close' }
+    case "connected":
+      return { text: "已连接", type: "success" as const };
+    case "connecting":
+      return { text: "连接中", type: "warning" as const };
+    case "reconnecting":
+      return { text: "重连中", type: "warning" as const };
+    case "error":
+      return { text: "连接异常", type: "danger" as const };
+    case "disconnected":
+      return { text: "已断开", type: "info" as const };
     default:
-      return { text: '未连接', type: 'info' as const, icon: 'ep:circle-close' }
+      return { text: "未连接", type: "info" as const };
   }
-})
+});
 
+const activeRows = computed(() =>
+  activeView.value === "runtime" ? runtimeConnections.value : nodeConnections.value,
+);
+const isLoading = computed(() =>
+  activeView.value === "runtime" ? runtimeLoading.value : nodeLoading.value,
+);
 
-const tokenUserCache = reactive<Record<string, TokenUserCacheEntry>>({})
-const tokenLookupInFlight = new Map<string, Promise<void>>()
+const nodeOnlineCount = computed(() => nodeConnections.value.filter((row) => row.isOnline).length);
+const nodeOfflineCount = computed(() => nodeConnections.value.filter((row) => !row.isOnline).length);
 
-const connections = ref<WebsocketConnectionRow[]>([])
-const loading = ref(false)
-const autoRefresh = ref(false)
-const refreshTimer = ref<number | null>(null)
-const refreshInterval = 10_000
-const onlineConnectionCount = computed(() => connections.value.filter((row) => row.isOnline).length)
-const offlineConnectionCount = computed(() => connections.value.filter((row) => !row.isOnline).length)
+const resolveConnectionSourceKey = (row?: Partial<WebsocketConnectionRow> | null) => {
+  const source = String(row?.clientSource || row?.clientInfo?.source || "").trim();
+  if (source === "yishe-extension") return "extension";
+  if (source === "管理后台") return "admin";
+  if (source === "客户端") return "client";
+  return "unknown";
+};
 
-// 发送消息对话框
-const sendMessageDialogVisible = ref(false)
-const sendMessageDialogLoading = ref(false)
-const currentConnection = ref<WebsocketConnectionRow | null>(null)
-const messageContent = ref('')
-const messageEvent = ref('admin-message')
+const isCurrentAdminConnection = (row?: Partial<WebsocketConnectionRow> | null) => {
+  return resolveConnectionSourceKey(row) === "admin" && !!row?.id && row.id === adminConnectionId.value;
+};
 
+const isOtherAdminConnection = (row?: Partial<WebsocketConnectionRow> | null) => {
+  return resolveConnectionSourceKey(row) === "admin" && !isCurrentAdminConnection(row);
+};
 
-const formatSchedule = (task: ScheduledTask) => {
-  if (task.type === 'cron') {
-    return task.schedule
-  } else {
-    const hours = parseFloat(task.schedule)
-    if (hours >= 24) {
-      return `每 ${Math.floor(hours / 24)} 天`
-    } else if (hours >= 1) {
-      return `每 ${hours} 小时`
-    } else {
-      return `每 ${Math.floor(hours * 60)} 分钟`
-    }
+const runtimeExtensionCount = computed(
+  () => runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "extension").length,
+);
+const runtimeClientCount = computed(
+  () => runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "client").length,
+);
+const runtimeCurrentAdminCount = computed(
+  () => runtimeConnections.value.filter((row) => isCurrentAdminConnection(row)).length,
+);
+const runtimeOtherAdminCount = computed(
+  () => runtimeConnections.value.filter((row) => isOtherAdminConnection(row)).length,
+);
+
+const activeViewDescription = computed(() => {
+  if (activeView.value === "runtime") {
+    return "运行时连接只展示当前在线会话，适合查看有哪些浏览器插件、其他管理后台和客户端正在使用系统。";
   }
-}
+  return "客户端节点会合并实时连接和节点持久化记录，适合查看可执行客户端、离线节点和最近在线情况。";
+});
 
-
-// 操控对话框
-const controlDialogVisible = ref(false)
-
-// 功能列表数据
-interface ExtensionFunctionItem {
-  id: string
-  name: string
-  description: string
-  icon: string
-  handler: () => void | Promise<void>
-  scheduleCommand?: string
-  schedule: ScheduledTask | null
-}
-
-const functionList = ref<ExtensionFunctionItem[]>([])
-
-// 加载功能列表中的定时任务信息
-const loadFunctionSchedule = async () => {
-  if (!currentConnection.value) return
-
-  await Promise.all(
-    functionList.value.map(async (func) => {
-      if (!func.scheduleCommand) {
-        func.schedule = null
-        return
-      }
-      try {
-        const response = await WebsocketApi.getScheduleTask(currentConnection.value!.id, func.scheduleCommand)
-        func.schedule = response.data
-      } catch (error) {
-        console.error(`加载定时任务信息失败: ${func.id}`, error)
-        func.schedule = null
-      }
-    })
-  )
-}
-
-// 功能列表表格配置
-const functionGridOptions = ref<VxeGridProps<any>>({
-  ...commonGridOptions,
-  maxHeight: null,
-  rowConfig: {
-    keyField: 'id',
-    isHover: true
-  },
-  columns: [
-    { type: 'seq', width: 60, title: '序号', align: 'center' },
-    {
-      field: 'icon',
-      title: '',
-      width: 80,
-      align: 'center',
-      slots: { default: 'icon_default' }
-    },
-    {
-      field: 'name',
-      title: '功能名称',
-      minWidth: 200,
-      showOverflow: 'tooltip'
-    },
-    {
-      field: 'description',
-      title: '功能描述',
-      minWidth: 250,
-      showOverflow: 'tooltip'
-    },
-    {
-      field: 'schedule',
-      title: '定时任务',
-      minWidth: 200,
-      align: 'center',
-      slots: { default: 'schedule_default' }
-    },
-    buildOperationColumn('operation_default')
-  ]
-})
-
-const gridRef = ref<VxeGridInstance>()
-const { height } = useWindowSize()
-
-const gridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
-  ...commonGridOptions,
-  maxHeight: null,
-  rowConfig: {
-    keyField: 'id'
-  },
-  columns: [
-    { type: 'seq', width: 60, title: '序号', align: 'center' },
-    {
-      field: 'isOnline',
-      title: '在线状态',
-      width: 110,
-      align: 'center',
-      slots: { default: 'status_default' }
-    },
-    {
-      field: 'id',
-      title: '客户端 ID',
-      minWidth: 240,
-      showOverflow: 'tooltip'
-    },
-    {
-      field: 'namespace',
-      title: '命名空间',
-      minWidth: 120,
-      showOverflow: 'tooltip'
-    },
-    {
-      field: 'clientSource',
-      title: '连接类型',
-      width: 120,
-      align: 'center',
-      slots: { default: 'clientSource_default' }
-    },
-    {
-      field: 'user',
-      title: '用户信息',
-      minWidth: 220,
-      showOverflow: 'tooltip',
-      formatter: ({ row }) => formatUserFromConnection(row as WebsocketConnectionRow)
-    },
-    {
-      field: 'token',
-      title: 'Token',
-      minWidth: 260,
-      showOverflow: 'tooltip',
-      formatter: ({ row }) => extractTokenFromRow(row as WebsocketConnectionRow)
-    },
-    {
-      field: 'connectedAt',
-      title: '连接时间',
-      minWidth: 200,
-      ellipsis: true,
-      formatter: ({ cellValue }) => (cellValue ? formatDate(new Date(cellValue)) : '')
-    },
-    {
-      field: 'lastOnlineAt',
-      title: '最近在线',
-      minWidth: 180,
-      slots: { default: 'lastOnlineAt_default' }
-    },
-    {
-      field: 'lastOfflineAt',
-      title: '断线时间',
-      minWidth: 180,
-      slots: { default: 'lastOfflineAt_default' }
-    },
-    {
-      field: 'duration',
-      title: '持续时长',
-      minWidth: 140,
-      slots: { default: 'duration_default' }
-    },
-    {
-      field: 'ip',
-      title: 'IP 地址',
-      minWidth: 160,
-      showOverflow: 'tooltip',
-      slots: { default: 'ip_default' }
-    },
-    {
-      field: 'userAgent',
-      title: 'User-Agent',
-      minWidth: 260,
-      showOverflow: 'tooltip',
-      slots: { default: 'ua_default' }
-    },
-    {
-      field: 'clientInfo',
-      title: '客户端信息',
-      minWidth: 320,
-      showOverflow: 'tooltip',
-      slots: { default: 'clientInfo_default' }
-    },
-    {
-      field: 'query',
-      title: 'Query 参数',
-      minWidth: 260,
-      showOverflow: 'tooltip',
-      slots: { default: 'query_default' }
-    },
-    buildOperationColumn('operation_default')
-  ]
-})
-
-watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 200
-})
+const activeEmptyDescription = computed(() => {
+  return activeView.value === "runtime" ? "暂无在线运行时连接" : "暂无客户端节点";
+});
 
 const formatStatusTime = (value?: string | null) => {
-  if (!value) {
-    return '-'
-  }
-
+  if (!value) return "-";
   try {
-    return formatDate(new Date(value))
+    return formatDate(new Date(value));
   } catch {
-    return value
+    return value;
   }
-}
+};
 
-const getConnectionStatusText = (row: WebsocketConnectionRow) => (row.isOnline ? '在线' : '断线')
-
+const getConnectionStatusText = (row: WebsocketConnectionRow) => (row.isOnline ? "在线" : "断线");
 const getConnectionStatusTagType = (row: WebsocketConnectionRow) =>
-  row.isOnline ? 'success' : 'danger'
+  row.isOnline ? "success" : "danger";
+
+const formatSourceLabel = (row?: Partial<WebsocketConnectionRow> | null) => {
+  switch (resolveConnectionSourceKey(row)) {
+    case "extension":
+      return "浏览器插件";
+    case "admin":
+      return "管理后台";
+    case "client":
+      return "客户端";
+    default:
+      return row?.clientSource || row?.clientInfo?.source || "未知";
+  }
+};
+
+const getSourceTagType = (row?: Partial<WebsocketConnectionRow> | null) => {
+  switch (resolveConnectionSourceKey(row)) {
+    case "extension":
+      return "success";
+    case "admin":
+      return "primary";
+    case "client":
+      return "warning";
+    default:
+      return "info";
+  }
+};
 
 const formatQuery = (query?: Record<string, string | string[]>) => {
-  if (!query) {
-    return '-'
-  }
-
-  const entries = Object.entries(query).filter(([key]) => key !== 'clientInfo')
-
-  if (entries.length === 0) {
-    return '-'
-  }
-
+  if (!query) return "-";
+  const entries = Object.entries(query).filter(([key]) => key !== "clientInfo" && key !== "token");
+  if (!entries.length) return "-";
   return entries
-    .map(([key, value]) => {
-      if (Array.isArray(value)) {
-        return `${key}=${value.join(',')}`
-      }
-      return `${key}=${value}`
-    })
-    .join('；')
-}
-
-const formatClientInfo = (info?: WebsocketClientInfo) => {
-  if (!info) {
-    return '-'
-  }
-
-  const segments: string[] = []
-
-  if (info.clientId) {
-    segments.push(`ID: ${info.clientId}`)
-  }
-
-  if (info.machine?.code) {
-    segments.push(`机器码: ${info.machine.code}`)
-  }
-
-  if (info.browser?.name) {
-    segments.push(`浏览器: ${info.browser.name}${info.browser.version ? ` ${info.browser.version}` : ''}`)
-  }
-
-  if (info.os?.name) {
-    segments.push(`系统: ${info.os.name}${info.os.version ? ` ${info.os.version}` : ''}`)
-  }
-
-  if (info.platform?.arch) {
-    segments.push(`架构: ${info.platform.arch}${info.platform.nacl_arch ? ` / ${info.platform.nacl_arch}` : ''}`)
-  }
-
-  if (info.language) {
-    segments.push(`语言: ${info.language}`)
-  }
-
-  if (info.timeZone) {
-    segments.push(`时区: ${info.timeZone}`)
-  }
-
-  if (info.device?.hardwareConcurrency || info.device?.memory) {
-    const parts: string[] = []
-    if (info.device?.hardwareConcurrency) {
-      parts.push(`${info.device.hardwareConcurrency} 核`)
-    }
-    if (info.device?.memory) {
-      parts.push(`${info.device.memory} GB`)
-    }
-    segments.push(`硬件: ${parts.join(' / ')}`)
-  }
-
-  const locationFields = [info.location?.city, info.location?.region, info.location?.country].filter(Boolean)
-  if (locationFields.length > 0) {
-    segments.push(`位置: ${locationFields.join(' · ')}`)
-  }
-
-  if (info.location?.ip) {
-    segments.push(`IP: ${info.location.ip}`)
-  }
-
-  if (info.location?.org) {
-    segments.push(`网络: ${info.location.org}`)
-  }
-
-  if (segments.length === 0) {
-    return '-'
-  }
-
-  return segments.join(' | ')
-}
-
-const pickTokenString = (value: unknown): string | null => {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const picked = pickTokenString(item)
-      if (picked) {
-        return picked
-      }
-    }
-    return null
-  }
-  if (typeof value === 'string') {
-    const trimmed = value.trim()
-    return trimmed.length > 0 ? trimmed : null
-  }
-  return null
-}
-
-const getTokenFromRow = (row: WebsocketConnectionRow): string | null => {
-  if (!row) {
-    return null
-  }
-  const queryToken = pickTokenString(row.query?.token)
-  if (queryToken) {
-    return queryToken
-  }
-  const infoToken = pickTokenString((row.clientInfo as any)?.auth?.token)
-  if (infoToken) {
-    return infoToken
-  }
-  return null
-}
+    .map(([key, value]) => (Array.isArray(value) ? `${key}=${value.join(",")}` : `${key}=${value}`))
+    .join("；");
+};
 
 const formatUserSummary = (user?: Partial<TokenUserInfo> & { username?: string }) => {
-  if (!user) {
-    return '-'
-  }
+  if (!user) return "-";
 
-  const parts: string[] = []
-  const displayName = user.name || user.nickname || user.account || user.username
+  const parts: string[] = [];
+  const displayName = user.name || user.nickname || user.account || user.username;
   if (displayName) {
-    parts.push(displayName)
+    parts.push(displayName);
   }
-
   if (user.id) {
-    parts.push(`ID: ${user.id}`)
+    parts.push(`ID: ${user.id}`);
   }
-
   if (user.email) {
-    parts.push(user.email)
+    parts.push(user.email);
   }
-
   if (user.company?.name) {
-    parts.push(`公司: ${user.company.name}`)
+    parts.push(`公司: ${user.company.name}`);
   }
-
-  return parts.length ? parts.join(' | ') : '-'
-}
-
-const refreshConnectionsView = () => {
-  connections.value = connections.value.map((item) => item)
-}
+  return parts.length ? parts.join(" | ") : "-";
+};
 
 const formatUserFromConnection = (row: WebsocketConnectionRow) => {
-  if (row.__userLookupStatus === 'loading') {
-    return '查询中...'
-  }
-
-  if (row.__userLookupStatus === 'error') {
-    return row.__userLookupError || '查询失败'
-  }
-
-  const info: any = row.clientInfo || {}
+  const info: any = row.clientInfo || {};
   const user = info.user || {
     id: row.userId,
     account: row.username,
     nickname: row.nickname,
-    email: row.email
+    email: row.email,
+  };
+  return formatUserSummary(user);
+};
+
+const formatClientInfo = (info?: WebsocketClientInfo) => {
+  if (!info) return "-";
+
+  const segments: string[] = [];
+
+  if (info.app?.name) {
+    segments.push(
+      `应用: ${info.app.name}${info.app.version ? ` ${info.app.version}` : ""}${info.app.mode ? ` (${info.app.mode})` : ""}`,
+    );
   }
 
-  return formatUserSummary(user)
-}
+  if (info.extension?.name) {
+    segments.push(
+      `插件: ${info.extension.name}${info.extension.version ? ` ${info.extension.version}` : ""}`,
+    );
+  }
 
-const extractTokenFromRow = (row: WebsocketConnectionRow) => {
-  return getTokenFromRow(row) ?? '-'
-}
+  if (info.clientId) {
+    segments.push(`ID: ${info.clientId}`);
+  }
 
-const applyCachedUserInfo = (rows: WebsocketConnectionRow[]) => {
-  rows.forEach((row) => {
-    const token = getTokenFromRow(row)
-    if (!token) {
-      row.__userLookupStatus = undefined
-      row.__userLookupError = undefined
-      return
+  if (info.machine?.code) {
+    segments.push(`机器码: ${info.machine.code}`);
+  }
+
+  if (info.browser?.name) {
+    segments.push(
+      `浏览器: ${info.browser.name}${info.browser.version ? ` ${info.browser.version}` : ""}`,
+    );
+  }
+
+  if (info.os?.name) {
+    segments.push(`系统: ${info.os.name}${info.os.version ? ` ${info.os.version}` : ""}`);
+  }
+
+  if (info.screen?.width && info.screen?.height) {
+    const ratio = info.screen.pixelRatio ? ` @${info.screen.pixelRatio}` : "";
+    segments.push(`屏幕: ${info.screen.width}x${info.screen.height}${ratio}`);
+  }
+
+  if (info.page?.path) {
+    segments.push(`页面: ${info.page.path}`);
+  }
+
+  if (info.page?.visibilityState) {
+    segments.push(`可见性: ${info.page.visibilityState}`);
+  }
+
+  if (info.platform?.arch) {
+    segments.push(
+      `架构: ${info.platform.arch}${info.platform.nacl_arch ? ` / ${info.platform.nacl_arch}` : ""}`,
+    );
+  }
+
+  if (info.language) {
+    segments.push(`语言: ${info.language}`);
+  }
+
+  if (info.timeZone) {
+    segments.push(`时区: ${info.timeZone}`);
+  }
+
+  if (info.device?.hardwareConcurrency || info.device?.memory || info.device?.touchPoints) {
+    const parts: string[] = [];
+    if (info.device?.hardwareConcurrency) {
+      parts.push(`${info.device.hardwareConcurrency} 核`);
     }
-
-    const cacheEntry = tokenUserCache[token]
-    if (cacheEntry) {
-      if (cacheEntry.user) {
-        row.clientInfo = {
-          ...(row.clientInfo || {}),
-          user: cacheEntry.user
-        } as WebsocketClientInfo
-        row.__userLookupStatus = 'success'
-        row.__userLookupError = undefined
-      } else {
-        row.__userLookupStatus = 'error'
-        row.__userLookupError = cacheEntry.error || '未找到对应的用户'
-      }
-    } else if ((row.clientInfo as any)?.user) {
-      row.__userLookupStatus = 'success'
-      row.__userLookupError = undefined
-    } else {
-      row.__userLookupStatus = undefined
-      row.__userLookupError = undefined
+    if (info.device?.memory) {
+      parts.push(`${info.device.memory} GB`);
     }
-  })
-  refreshConnectionsView()
-}
-
-const markRowsLoadingByToken = (token: string) => {
-  connections.value.forEach((row) => {
-    if (getTokenFromRow(row) === token) {
-      row.__userLookupStatus = 'loading'
-      row.__userLookupError = undefined
+    if (info.device?.touchPoints) {
+      parts.push(`${info.device.touchPoints} 触点`);
     }
-  })
-  refreshConnectionsView()
-}
+    segments.push(`硬件: ${parts.join(" / ")}`);
+  }
 
-const applyLookupResultToRows = (token: string, user: TokenUserInfo | null, errorMessage?: string) => {
-  connections.value.forEach((row) => {
-    if (getTokenFromRow(row) !== token) {
-      return
-    }
-    if (user) {
-      row.clientInfo = {
-        ...(row.clientInfo || {}),
-        user
-      } as WebsocketClientInfo
-      row.__userLookupStatus = 'success'
-      row.__userLookupError = undefined
-    } else {
-      row.__userLookupStatus = 'error'
-      row.__userLookupError = errorMessage || '未找到对应的用户'
-    }
-  })
-  refreshConnectionsView()
-}
+  const locationParts = [info.location?.city, info.location?.region, info.location?.country].filter(Boolean);
+  if (locationParts.length) {
+    segments.push(`位置: ${locationParts.join(" · ")}`);
+  }
 
-const fetchUserInfoForToken = async (token: string) => {
-  markRowsLoadingByToken(token)
+  if (info.location?.ip) {
+    segments.push(`IP: ${info.location.ip}`);
+  }
+
+  if (info.location?.org) {
+    segments.push(`网络: ${info.location.org}`);
+  }
+
+  return segments.length ? segments.join(" | ") : "-";
+};
+
+const resolveListResponse = (response: unknown) => {
+  if (Array.isArray(response)) {
+    return response as WebsocketConnectionVO[];
+  }
+  if (response && typeof response === "object" && Array.isArray((response as any).data)) {
+    return (response as any).data as WebsocketConnectionVO[];
+  }
+  return [];
+};
+
+const compareNodeConnections = (a: WebsocketConnectionRow, b: WebsocketConnectionRow) => {
+  if (!!a.isOnline !== !!b.isOnline) {
+    return a.isOnline ? -1 : 1;
+  }
+  const aTime = a.lastOnlineAt || a.lastOfflineAt || a.connectedAt || "";
+  const bTime = b.lastOnlineAt || b.lastOfflineAt || b.connectedAt || "";
+  if (aTime !== bTime) {
+    return aTime > bTime ? -1 : 1;
+  }
+  return String(a.id || "").localeCompare(String(b.id || ""));
+};
+
+const getRuntimePriority = (row: WebsocketConnectionRow) => {
+  if (resolveConnectionSourceKey(row) === "extension") return 0;
+  if (isOtherAdminConnection(row)) return 1;
+  if (isCurrentAdminConnection(row)) return 2;
+  if (resolveConnectionSourceKey(row) === "client") return 3;
+  return 4;
+};
+
+const compareRuntimeConnections = (a: WebsocketConnectionRow, b: WebsocketConnectionRow) => {
+  const priorityDiff = getRuntimePriority(a) - getRuntimePriority(b);
+  if (priorityDiff !== 0) {
+    return priorityDiff;
+  }
+  const aTime = a.connectedAt || "";
+  const bTime = b.connectedAt || "";
+  return aTime > bTime ? -1 : 1;
+};
+
+const fetchRuntimeConnections = async () => {
+  runtimeLoading.value = true;
   try {
-    const response = await WebsocketApi.getUserInfoByToken(token)
-    if (response.success && response.data) {
-      tokenUserCache[token] = { user: response.data }
-      applyLookupResultToRows(token, response.data)
-    } else {
-      const errorMessage = response.message || '未找到对应的用户'
-      tokenUserCache[token] = { user: null, error: errorMessage }
-      applyLookupResultToRows(token, null, errorMessage)
-    }
+    const response = await WebsocketApi.getRuntimeWebsocketConnectionViews();
+    runtimeConnections.value = resolveListResponse(response)
+      .map((item) => ({
+        ...item,
+        isOnline: item.isOnline !== false,
+        nodeStatus: item.nodeStatus || "online",
+      }))
+      .sort(compareRuntimeConnections);
   } catch (error: any) {
-    const errorMessage = error?.response?.data?.message || error?.message || '查询用户信息失败'
-    tokenUserCache[token] = { user: null, error: errorMessage }
-    applyLookupResultToRows(token, null, errorMessage)
-  }
-}
-
-const ensureUserInfoForTokens = (rows: WebsocketConnectionRow[]) => {
-  const tokens = Array.from(
-    new Set(
-      rows
-        .map((row) => getTokenFromRow(row))
-        .filter((token): token is string => Boolean(token))
-    )
-  )
-
-  tokens.forEach((token) => {
-    const hasUserInfo = rows.some((row) => getTokenFromRow(row) === token && (row.clientInfo as any)?.user)
-    if (hasUserInfo) {
-      return
-    }
-    if (tokenUserCache[token]) {
-      applyCachedUserInfo(rows)
-      return
-    }
-    if (tokenLookupInFlight.has(token)) {
-      return
-    }
-    const task = fetchUserInfoForToken(token).finally(() => {
-      tokenLookupInFlight.delete(token)
-    })
-    tokenLookupInFlight.set(token, task)
-  })
-}
-
-const clearTimer = () => {
-  if (refreshTimer.value !== null) {
-    window.clearInterval(refreshTimer.value)
-    refreshTimer.value = null
-  }
-}
-
-const fetchConnections = async () => {
-  loading.value = true
-  try {
-    const response = await WebsocketApi.getWebsocketConnectionViews()
-    const responsePayload = response as any
-    // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
-    let list: WebsocketConnectionVO[] = []
-    if (Array.isArray(response)) {
-      list = response
-    } else if (responsePayload && typeof responsePayload === 'object' && Array.isArray(responsePayload.data)) {
-      list = responsePayload.data
-    } else {
-      console.warn('[fetchConnections] 意外的响应格式:', response)
-      list = []
-    }
-    connections.value = list.map((item) => ({
-      ...item,
-      __userLookupStatus: undefined,
-      __userLookupError: undefined
-    }))
-    applyCachedUserInfo(connections.value)
-    ensureUserInfoForTokens(connections.value)
-  } catch (error: any) {
-    message.error(error?.message ?? '获取远程连接列表失败')
+    message.error(error?.message ?? "获取运行时连接失败");
   } finally {
-    loading.value = false
+    runtimeLoading.value = false;
   }
-}
+};
+
+const fetchNodeConnections = async () => {
+  nodeLoading.value = true;
+  try {
+    const response = await WebsocketApi.getWebsocketConnectionViews();
+    nodeConnections.value = resolveListResponse(response)
+      .map((item) => ({
+        ...item,
+        isOnline: item.isOnline !== false,
+        nodeStatus: item.nodeStatus || (item.isOnline ? "online" : "offline"),
+      }))
+      .sort(compareNodeConnections);
+  } catch (error: any) {
+    message.error(error?.message ?? "获取客户端节点失败");
+  } finally {
+    nodeLoading.value = false;
+  }
+};
+
+const refreshConnectionData = async () => {
+  await Promise.allSettled([fetchRuntimeConnections(), fetchNodeConnections()]);
+};
+
+const formatSchedule = (task: ScheduledTask) => {
+  if (task.type === "cron") {
+    return task.schedule;
+  }
+  const hours = parseFloat(task.schedule);
+  if (hours >= 24) {
+    return `每 ${Math.floor(hours / 24)} 天`;
+  }
+  if (hours >= 1) {
+    return `每 ${hours} 小时`;
+  }
+  return `每 ${Math.floor(hours * 60)} 分钟`;
+};
+
+const initializeFunctionList = () => {
+  functionList.value = [
+    {
+      id: "browser-automation",
+      name: "浏览器自动化",
+      description: "打开浏览器自动化页面查看当前插件能力与运行时状态。",
+      icon: "ep:monitor",
+      handler: () => router.push("/external/browser-automation"),
+      schedule: null,
+    },
+    {
+      id: "ps-automation",
+      name: "套图制作",
+      description: "打开套图制作页面查看 PS 自动化相关配置与状态。",
+      icon: "ep:picture-filled",
+      handler: () => router.push("/external/ps-automation"),
+      schedule: null,
+    },
+    {
+      id: "google-art",
+      name: "Google Art",
+      description: "打开 Google Art 页面查看当前插件侧的运行能力。",
+      icon: "ep:brush-filled",
+      handler: () => router.push("/external/google-art"),
+      schedule: null,
+    },
+  ];
+};
+
+const loadFunctionSchedule = async () => {
+  if (!currentConnection.value) return;
+
+  await Promise.all(
+    functionList.value.map(async (func) => {
+      if (!func.scheduleCommand) {
+        func.schedule = null;
+        return;
+      }
+      try {
+        const response = await WebsocketApi.getScheduleTask(currentConnection.value!.id, func.scheduleCommand);
+        func.schedule = response.data;
+      } catch {
+        func.schedule = null;
+      }
+    }),
+  );
+};
+
+const canControlConnection = (row?: Partial<WebsocketConnectionRow> | null) => {
+  return resolveConnectionSourceKey(row) === "extension";
+};
 
 const handleOperationCommand = (command: string, row: WebsocketConnectionRow) => {
-  if (command === 'send-message') {
-    handleSendMessage(row)
-  } else if (command === 'control') {
-    handleControl(row)
-  } else if (command === 'disconnect') {
-    handleDisconnect(row)
+  if (command === "send-message") {
+    handleSendMessage(row);
+  } else if (command === "control") {
+    void handleControl(row);
+  } else if (command === "disconnect") {
+    void handleDisconnect(row);
   }
-}
+};
 
 const handleControl = async (row: WebsocketConnectionRow) => {
   if (!row.isOnline) {
-    message.warning('离线节点暂时无法操控')
-    return
+    message.warning("离线连接暂时无法操控");
+    return;
   }
-  currentConnection.value = row
-  controlDialogVisible.value = true
-  // 加载定时任务信息
-  await loadFunctionSchedule()
-}
+  if (!canControlConnection(row)) {
+    message.warning("当前连接类型不支持操控");
+    return;
+  }
+  currentConnection.value = row;
+  controlDialogVisible.value = true;
+  await loadFunctionSchedule();
+};
 
 const handleSendMessage = (row: WebsocketConnectionRow) => {
   if (!row.isOnline) {
-    message.warning('离线节点暂时无法发送消息')
-    return
+    message.warning("离线连接暂时无法发送消息");
+    return;
   }
-  currentConnection.value = row
-  messageContent.value = ''
-  messageEvent.value = 'admin-message'
-  sendMessageDialogVisible.value = true
-}
+  currentConnection.value = row;
+  messageContent.value = "";
+  messageEvent.value = "admin-message";
+  sendMessageDialogVisible.value = true;
+};
 
 const handleDisconnect = async (row: WebsocketConnectionRow) => {
   if (!row.isOnline) {
-    message.warning('离线节点无需断开')
-    return
+    message.warning("离线连接无需断开");
+    return;
   }
 
-  await message.confirm(`确认强制断开连接 ${row.id} 吗？客户端如果开启自动重连，稍后可能会重新连回。`, '强制断开')
+  const confirmText = isCurrentAdminConnection(row)
+    ? `确认断开当前后台连接 ${row.id} 吗？断开后本页面会立即失去实时连接。`
+    : `确认强制断开连接 ${row.id} 吗？客户端如果开启自动重连，稍后可能会重新连回。`;
+
+  await message.confirm(confirmText, "强制断开");
 
   try {
-    const response = await WebsocketApi.disconnectWebsocketConnection(row.id)
+    const response = await WebsocketApi.disconnectWebsocketConnection(row.id);
     if (response.success) {
-      message.success(response.message || '连接已强制断开')
-      await fetchConnections()
-      return
+      message.success(response.message || "连接已强制断开");
+      await refreshConnectionData();
+      return;
     }
-    message.error(response.message || '连接断开失败')
+    message.error(response.message || "连接断开失败");
   } catch (error: any) {
-    message.error(error?.response?.data?.message || error?.message || '连接断开失败')
+    message.error(error?.response?.data?.message || error?.message || "连接断开失败");
   }
-}
+};
 
-const handleFunctionOperation = (command: string, row: any) => {
-  if (command === 'open' && row.handler && typeof row.handler === 'function') {
-    row.handler()
+const handleFunctionOperation = (command: string, row: ExtensionFunctionItem) => {
+  if (command === "open") {
+    void row.handler();
   }
-}
-
+};
 
 const handleConfirmSendMessage = async () => {
   if (!currentConnection.value) {
-    return
+    return;
   }
 
   if (!messageContent.value.trim()) {
-    message.warning('请输入消息内容')
-    return
+    message.warning("请输入消息内容");
+    return;
   }
 
-  sendMessageDialogLoading.value = true
+  sendMessageDialogLoading.value = true;
   try {
-    let data: any = messageContent.value
+    let data: any = messageContent.value;
     try {
-      data = JSON.parse(messageContent.value)
+      data = JSON.parse(messageContent.value);
     } catch {
-      // 如果不是 JSON，就作为普通字符串发送
+      // keep plain text
     }
 
     const response = await WebsocketApi.sendMessageToConnection(
       currentConnection.value.id,
       data,
-      messageEvent.value || undefined
-    )
-    
-    // 检查返回的 success 字段
-    const result = response as any
+      messageEvent.value || undefined,
+    );
+
+    const result = response as any;
     if (result?.success === false || result?.data?.success === false) {
-      const errorMsg = result?.message || result?.data?.message || '消息发送失败'
-      message.error(errorMsg)
-      return
+      const errorMsg = result?.message || result?.data?.message || "消息发送失败";
+      message.error(errorMsg);
+      return;
     }
-    
-    message.success('消息发送成功')
-    sendMessageDialogVisible.value = false
-    messageContent.value = ''
+
+    message.success("消息发送成功");
+    sendMessageDialogVisible.value = false;
+    messageContent.value = "";
   } catch (error: any) {
-    // 处理网络错误或其他异常
-    const errorMsg = error?.response?.data?.message || error?.message || '消息发送失败'
-    message.error(errorMsg)
+    message.error(error?.response?.data?.message || error?.message || "消息发送失败");
   } finally {
-    sendMessageDialogLoading.value = false
+    sendMessageDialogLoading.value = false;
   }
-}
+};
+
+const functionGridOptions = ref<VxeGridProps<any>>({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: {
+    keyField: "id",
+    isHover: true,
+  },
+  columns: [
+    { type: "seq", width: 60, title: "序号", align: "center" },
+    {
+      field: "icon",
+      title: "",
+      width: 80,
+      align: "center",
+      slots: { default: "icon_default" },
+    },
+    {
+      field: "name",
+      title: "功能名称",
+      minWidth: 200,
+      showOverflow: "tooltip",
+    },
+    {
+      field: "description",
+      title: "功能描述",
+      minWidth: 260,
+      showOverflow: "tooltip",
+    },
+    {
+      field: "schedule",
+      title: "定时任务",
+      minWidth: 200,
+      align: "center",
+      slots: { default: "schedule_default" },
+    },
+    buildOperationColumn("operation_default"),
+  ],
+});
+
+const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: {
+    keyField: "id",
+  },
+  columns: [
+    { type: "seq", width: 60, title: "序号", align: "center" },
+    {
+      field: "isOnline",
+      title: "状态",
+      width: 100,
+      align: "center",
+      slots: { default: "status_default" },
+    },
+    {
+      field: "clientSource",
+      title: "连接类型",
+      width: 170,
+      align: "center",
+      slots: { default: "clientSource_default" },
+    },
+    {
+      field: "user",
+      title: "用户信息",
+      minWidth: 220,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => formatUserFromConnection(row as WebsocketConnectionRow),
+    },
+    {
+      field: "id",
+      title: "连接 ID",
+      minWidth: 240,
+      showOverflow: "tooltip",
+    },
+    {
+      field: "connectedAt",
+      title: "连接时间",
+      minWidth: 180,
+      formatter: ({ cellValue }) => (cellValue ? formatDate(new Date(cellValue)) : "-"),
+    },
+    {
+      field: "duration",
+      title: "在线时长",
+      minWidth: 130,
+      slots: { default: "duration_default" },
+    },
+    {
+      field: "ip",
+      title: "IP 地址",
+      minWidth: 160,
+      showOverflow: "tooltip",
+      slots: { default: "ip_default" },
+    },
+    {
+      field: "clientInfo",
+      title: "设备与环境",
+      minWidth: 460,
+      showOverflow: "tooltip",
+      slots: { default: "clientInfo_default" },
+    },
+    {
+      field: "query",
+      title: "附加参数",
+      minWidth: 240,
+      showOverflow: "tooltip",
+      slots: { default: "query_default" },
+    },
+    buildOperationColumn("operation_default"),
+  ],
+});
+
+const nodeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
+  ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: {
+    keyField: "id",
+  },
+  columns: [
+    { type: "seq", width: 60, title: "序号", align: "center" },
+    {
+      field: "isOnline",
+      title: "在线状态",
+      width: 110,
+      align: "center",
+      slots: { default: "status_default" },
+    },
+    {
+      field: "id",
+      title: "节点 ID",
+      minWidth: 240,
+      showOverflow: "tooltip",
+    },
+    {
+      field: "clientSource",
+      title: "来源",
+      width: 170,
+      align: "center",
+      slots: { default: "clientSource_default" },
+    },
+    {
+      field: "user",
+      title: "用户信息",
+      minWidth: 220,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => formatUserFromConnection(row as WebsocketConnectionRow),
+    },
+    {
+      field: "lastOnlineAt",
+      title: "最近在线",
+      minWidth: 180,
+      slots: { default: "lastOnlineAt_default" },
+    },
+    {
+      field: "lastOfflineAt",
+      title: "断线时间",
+      minWidth: 180,
+      slots: { default: "lastOfflineAt_default" },
+    },
+    {
+      field: "clientInfo",
+      title: "设备与环境",
+      minWidth: 420,
+      showOverflow: "tooltip",
+      slots: { default: "clientInfo_default" },
+    },
+    buildOperationColumn("operation_default"),
+  ],
+});
+
+const activeGridOptions = computed(() =>
+  activeView.value === "runtime" ? runtimeGridOptions.value : nodeGridOptions.value,
+);
+
+watchEffect(() => {
+  const maxHeight = height.value - 240;
+  runtimeGridOptions.value.maxHeight = maxHeight;
+  nodeGridOptions.value.maxHeight = maxHeight;
+  functionGridOptions.value.maxHeight = maxHeight;
+});
 
 watch(autoRefresh, (value) => {
-  clearTimer()
-  if (value) {
-    refreshTimer.value = window.setInterval(fetchConnections, refreshInterval)
+  if (refreshTimer.value !== null) {
+    window.clearInterval(refreshTimer.value);
+    refreshTimer.value = null;
   }
-})
+  if (value) {
+    refreshTimer.value = window.setInterval(() => {
+      void refreshConnectionData();
+    }, refreshInterval);
+  }
+});
 
 onMounted(() => {
-  fetchConnections()
-})
+  initializeFunctionList();
+  void refreshConnectionData();
+});
 
 onBeforeUnmount(() => {
-  clearTimer()
-})
+  if (refreshTimer.value !== null) {
+    window.clearInterval(refreshTimer.value);
+    refreshTimer.value = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -1096,10 +1143,21 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 
+.websocket-view-switch {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.websocket-view-switch__count {
+  margin-left: 6px;
+  opacity: 0.8;
+}
+
 .admin-connection-id {
   font-size: 11px;
   color: var(--el-text-color-primary);
-  font-family: 'Monaco', 'Menlo', monospace;
+  font-family: "Monaco", "Menlo", monospace;
 }
 
 .common-table {
@@ -1107,7 +1165,14 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-/* 操控弹窗样式 */
+.websocket-source-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 .control-dialog {
   .el-dialog__body {
     padding: 0;
@@ -1148,15 +1213,15 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  
+
   .label {
     color: var(--el-text-color-secondary);
     font-weight: 500;
   }
-  
+
   .value {
     color: var(--el-text-color-primary);
-    font-family: 'Monaco', 'Menlo', monospace;
+    font-family: "Monaco", "Menlo", monospace;
     font-size: 11px;
   }
 }
@@ -1167,11 +1232,74 @@ onBeforeUnmount(() => {
   gap: 12px;
   font-size: 11px;
   color: var(--el-text-color-regular);
-  
+
   .meta-item {
     display: flex;
     align-items: center;
   }
+}
+
+.connection-info-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.connection-time {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.control-dialog-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: var(--el-bg-color);
+}
+
+.function-grid {
+  height: 100%;
+}
+
+.function-icon-cell {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--el-color-primary-light-9);
+  border-radius: 6px;
+  margin: 0 auto;
+
+  .iconify {
+    font-size: 20px;
+    color: var(--el-color-primary);
+  }
+}
+
+.schedule-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+
+  .schedule-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .schedule-info-text {
+      font-size: 12px;
+      color: var(--el-text-color-regular);
+    }
+  }
+}
+
+.schedule-type-text {
+  display: flex;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {
@@ -1192,80 +1320,18 @@ onBeforeUnmount(() => {
   .websocket-toolbar__actions :deep(.el-button) {
     width: 100%;
   }
-}
 
-.connection-info-right {
+  .websocket-view-switch {
+    width: 100%;
+  }
+
+  .websocket-view-switch :deep(.el-radio-group) {
+    width: 100%;
     display: flex;
-    flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.connection-time {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-
-.control-dialog-body {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  background: var(--el-bg-color);
   }
 
-.function-grid {
-  height: 100%;
-}
-
-.function-icon-cell {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--el-color-primary-light-9);
-  border-radius: 6px;
-  margin: 0 auto;
-  
-  .iconify {
-    font-size: 20px;
-    color: var(--el-color-primary);
-  }
-}
-
-.function-name-cell {
-  font-size: 14px;
-    font-weight: 600;
-  color: var(--el-text-color-primary);
-  }
-
-.function-desc-cell {
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-  line-height: 1.5;
-}
-
-.schedule-status-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-  
-  .schedule-status-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    
-    .schedule-info-text {
-      font-size: 12px;
-      color: var(--el-text-color-primary);
-      font-family: 'Monaco', 'Menlo', monospace;
-    }
-  }
-  
-  .schedule-type-text {
-    font-size: 11px;
+  .websocket-view-switch :deep(.el-radio-button) {
+    flex: 1;
   }
 }
 </style>

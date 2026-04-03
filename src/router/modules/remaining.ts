@@ -279,6 +279,19 @@ const remainingRouter: AppRouteRecordRaw[] = [
           serviceStatusKey: "remotion",
         },
       },
+      {
+        path: "image-processing-record",
+        component: () => import("@/views/material/imageProcessingRecord/index.vue"),
+        name: "ImageProcessingRecord",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "图片处理(yishe-images)",
+          requiresAdmin: true,
+          serviceStatusKey: "images",
+        },
+      },
     ],
   },
   {
@@ -687,6 +700,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/content/automation/remotion-video-record",
     redirect: "/content/remotion-video-record",
     name: "ContentAutomationRemotionVideoRecordCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/content/automation/image-processing-record",
+    redirect: "/content/image-processing-record",
+    name: "ContentAutomationImageProcessingRecordCompat",
     meta: {
       hidden: true,
       noTagsView: true,

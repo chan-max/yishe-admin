@@ -40,6 +40,7 @@
                     placeholder="全部状态"
                     @change="getList"
                   >
+                    <el-option label="待处理" value="pending" />
                     <el-option label="处理中" value="processing" />
                     <el-option label="成功" value="success" />
                     <el-option label="失败" value="failed" />
@@ -251,6 +252,7 @@
                     class="w-full"
                     clearable
                     placeholder="全部分类"
+                    popper-class="remotion-filter-select-dropdown"
                     @change="handleTemplateFilterChange"
                   >
                     <el-option
@@ -269,6 +271,7 @@
                     class="w-full"
                     clearable
                     placeholder="全部时长"
+                    popper-class="remotion-filter-select-dropdown"
                     @change="handleTemplateFilterChange"
                   >
                     <el-option
@@ -287,6 +290,7 @@
                     class="w-full"
                     filterable
                     placeholder="请选择模板"
+                    popper-class="remotion-template-select-dropdown"
                     @change="handleTemplateChange"
                   >
                     <el-option
@@ -419,47 +423,70 @@
       <el-card shadow="never">
         <template #header>第 2 步 · 填写参数（JSON）</template>
         <div class="remotion-form-panel">
-          <el-form label-position="top" class="space-y-1">
-            <el-form-item label="参数 (JSON)">
+          <el-form label-position="top" class="remotion-json-form">
+            <el-form-item label="参数 (JSON)" class="remotion-json-form__item">
               <el-input
                 type="textarea"
                 v-model="form.inputPropsJson"
-                :rows="14"
+                :rows="20"
+                resize="none"
+                class="remotion-json-editor"
                 placeholder='输入 JSON，例如: {"text":"hello","count":3}'
               />
             </el-form-item>
           </el-form>
-          <div class="text-xs opacity-60 mt-2">提示：参数为 JSON 格式，提交时会解析为对象。</div>
+          <div class="remotion-json-hint">提示：参数为 JSON 格式，提交时会解析为对象。</div>
         </div>
       </el-card>
 
       <el-card shadow="never">
         <template #header>第 3 步 · 确认制作</template>
         <div class="remotion-preview-panel">
-          <div class="confirm-meta">
-            <div v-if="selectedTemplate?.assetSummary" class="template-asset-summary">
-              {{ selectedTemplate.assetSummary }}
+          <div class="remotion-preview-scroll">
+            <div class="confirm-meta">
+              <div v-if="selectedTemplate?.assetSummary" class="template-asset-summary">
+                {{ selectedTemplate.assetSummary }}
+              </div>
+              <el-form label-position="top" class="space-y-1">
+                <el-form-item label="记录标题">
+                  <el-input v-model="form.title" placeholder="用于后台记录展示" />
+                </el-form-item>
+                <el-form-item label="任务超时(ms)">
+                  <el-input-number
+                    v-model="form.timeoutMs"
+                    :min="1000"
+                    :max="900000"
+                    :step="1000"
+                    class="w-full"
+                  />
+                </el-form-item>
+              </el-form>
             </div>
-            <el-form label-position="top" class="space-y-1">
-              <el-form-item label="记录标题">
-                <el-input v-model="form.title" placeholder="用于后台记录展示" />
-              </el-form-item>
-              <el-form-item label="等待时长(ms)">
-                <el-input-number
-                  v-model="form.timeoutMs"
-                  :min="1000"
-                  :max="900000"
-                  :step="1000"
-                  class="w-full"
-                />
-              </el-form-item>
-            </el-form>
+            <el-alert
+              v-if="remotionStatus.checked && !remotionStatus.available"
+              type="error"
+              :closable="false"
+              show-icon
+              class="remotion-submit-alert"
+              title="Remotion 服务当前不可用，请先恢复服务后再提交制作任务"
+            />
+            <div class="remotion-submit-pipeline">
+              提交后会先创建记录，再由 Remotion 渲染视频，最后通过 design-server 上传到 COS 并回写结果。
+            </div>
+            <pre>{{ form.inputPropsJson }}</pre>
           </div>
-          <pre>{{ form.inputPropsJson }}</pre>
-          <div class="remotion-create-actions mt-4 flex flex-col gap-3">
-            <el-button type="primary" :loading="submitLoading" @click="submitGenerate"
-              >开始制作</el-button
+          <div class="remotion-create-actions flex flex-col gap-3">
+            <el-button
+              type="primary"
+              :loading="submitLoading"
+              :disabled="!canSubmitGenerate"
+              @click="submitGenerate"
             >
+              开始制作
+            </el-button>
+            <div class="remotion-submit-hint">
+              {{ submitDisabledText || "长视频会在后台继续处理，列表会自动刷新状态。" }}
+            </div>
           </div>
         </div>
       </el-card>
@@ -515,7 +542,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
@@ -548,6 +575,7 @@ const detailVisible = ref(false);
 const submitLoading = ref(false);
 const currentRow = ref<any>(null);
 const remotionStatus = useServiceHealthState("remotion");
+let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
 
 const remotionStatusLabel = computed(() => {
   if (remotionStatus.loading && !remotionStatus.checked) return "检测中";
@@ -645,6 +673,14 @@ const selectedTemplateDebugMeta = computed(() => {
     assetSummary: selectedTemplate.value.assetSummary,
     tags: selectedTemplate.value.tags,
   };
+});
+const canSubmitGenerate = computed(
+  () => !!form.templateId && (!remotionStatus.checked || remotionStatus.available),
+);
+const submitDisabledText = computed(() => {
+  if (!form.templateId) return "请先选择模板";
+  if (remotionStatus.checked && !remotionStatus.available) return "Remotion 服务不可用";
+  return "";
 });
 
 const gridOptions = computed(() => ({
@@ -777,6 +813,26 @@ function resetForm() {
   form.inputPropsJson = "{}";
 }
 
+function stopProcessingPoll() {
+  if (processingPollTimer) {
+    clearTimeout(processingPollTimer);
+    processingPollTimer = null;
+  }
+}
+
+function scheduleProcessingPoll() {
+  stopProcessingPoll();
+  const hasPendingRecord = dataSource.value.some((item) =>
+    ["pending", "processing"].includes(String(item?.status || "")),
+  );
+  if (!hasPendingRecord) {
+    return;
+  }
+  processingPollTimer = setTimeout(() => {
+    void getList();
+  }, 5000);
+}
+
 function handleTemplateFilterChange() {
   if (!form.templateId) return;
   const stillVisible = filteredTemplateOptions.value.some((item) => item.id === form.templateId);
@@ -805,6 +861,7 @@ function handleTemplateChange() {
 
 function openCreateDialog(row?: any) {
   createVisible.value = true;
+  void Promise.allSettled([loadTemplates(), checkRemotionHealth()]);
 
   if (!row) {
     resetForm();
@@ -830,6 +887,12 @@ async function submitGenerate() {
   }
   submitLoading.value = true;
   try {
+    await checkRemotionHealth();
+    if (remotionStatus.checked && !remotionStatus.available) {
+      ElMessage.error("Remotion 服务不可用，请先恢复服务后再提交");
+      return;
+    }
+
     let inputPropsToSend: Record<string, any> = {};
     if (form.inputPropsJson && String(form.inputPropsJson).trim()) {
       try {
@@ -843,13 +906,20 @@ async function submitGenerate() {
       inputPropsToSend = form.inputProps || {};
     }
 
-    await generateRemotionVideoRecord({
+    const result: any = await generateRemotionVideoRecord({
       templateId: form.templateId,
       title: form.title || undefined,
       timeoutMs: Number(form.timeoutMs || 300000),
       inputProps: inputPropsToSend,
     });
-    ElMessage.success("视频生成成功");
+
+    if (result?.status === "failed") {
+      ElMessage.error(result?.errorMessage || "视频制作任务提交失败");
+      await getList();
+      return;
+    }
+
+    ElMessage.success("已提交制作任务，正在后台生成");
     createVisible.value = false;
     await getList();
   } catch (error: any) {
@@ -897,6 +967,7 @@ function getRemotionErrorMessage(error: any, fallback: string) {
 }
 
 async function getList() {
+  stopProcessingPoll();
   loading.value = true;
   try {
     const result: any = await getRemotionVideoRecordPage({ ...queryParams });
@@ -908,6 +979,7 @@ async function getList() {
     ElMessage.error(error?.message || "获取视频生成记录失败");
   } finally {
     loading.value = false;
+    scheduleProcessingPoll();
   }
 }
 
@@ -1021,6 +1093,10 @@ onMounted(async () => {
   resetForm();
   await Promise.allSettled([loadTemplates(), getList(), checkRemotionHealth()]);
 });
+
+onBeforeUnmount(() => {
+  stopProcessingPoll();
+});
 </script>
 
 <style scoped>
@@ -1115,7 +1191,9 @@ onMounted(async () => {
 .detail-section,
 .detail-json-panel {
   height: 100%;
-  overflow: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .remotion-create-layout {
@@ -1138,10 +1216,102 @@ onMounted(async () => {
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.remotion-preview-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.remotion-form-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.remotion-json-form {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.remotion-json-form__item {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-bottom: 0;
+  flex-direction: column;
+}
+
+:deep(.remotion-json-form__item .el-form-item__content) {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.remotion-json-editor {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+:deep(.remotion-json-editor .el-textarea) {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+:deep(.remotion-json-editor .el-textarea__inner) {
+  height: 100%;
+  min-height: 100% !important;
+  line-height: 1.6;
+}
+
+.remotion-json-hint {
+  margin-top: 12px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.remotion-preview-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .remotion-create-actions {
-  margin-top: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.remotion-submit-alert {
+  margin-bottom: 12px;
+}
+
+.remotion-submit-pipeline {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.remotion-submit-hint {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .remotion-create-banner {
@@ -1199,18 +1369,26 @@ onMounted(async () => {
 
 .template-select-option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
 .template-select-option__name {
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--el-text-color-primary);
+  line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .template-select-option__meta {
+  flex: 0 0 auto;
   color: var(--el-text-color-secondary);
   font-size: 12px;
+  line-height: 1.45;
+  white-space: nowrap;
 }
 
 .template-filter-summary {
@@ -1366,8 +1544,24 @@ onMounted(async () => {
 
 .remotion-detail-side {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
   gap: 16px;
+}
+
+.remotion-detail-layout > .el-card,
+.remotion-detail-side > .el-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:deep(.remotion-detail-layout > .el-card .el-card__body),
+:deep(.remotion-detail-side > .el-card .el-card__body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .remotion-video-preview {
@@ -1462,6 +1656,23 @@ onMounted(async () => {
   overflow: auto;
 }
 
+:deep(.remotion-filter-select-dropdown.el-select__popper) {
+  min-width: 240px !important;
+}
+
+:deep(.remotion-template-select-dropdown.el-select__popper) {
+  min-width: 520px !important;
+  max-width: min(720px, calc(100vw - 32px));
+}
+
+:deep(.remotion-template-select-dropdown .el-select-dropdown__item) {
+  height: auto;
+  min-height: 44px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  line-height: 1.4;
+}
+
 :deep(.remotion-create-dialog .el-dialog__body),
 :deep(.remotion-detail-dialog .el-dialog__body) {
   overflow: hidden;
@@ -1532,6 +1743,11 @@ onMounted(async () => {
     gap: 12px;
   }
 
+  .remotion-preview-panel,
+  .remotion-preview-scroll {
+    overflow: visible;
+  }
+
   :deep(.remotion-create-layout > .el-card),
   :deep(.remotion-detail-layout > .el-card),
   :deep(.remotion-detail-side > .el-card) {
@@ -1571,6 +1787,10 @@ onMounted(async () => {
   .detail-json-panel pre {
     font-size: 11px;
     line-height: 1.6;
+  }
+
+  :deep(.remotion-template-select-dropdown.el-select__popper) {
+    min-width: min(520px, calc(100vw - 24px)) !important;
   }
 }
 

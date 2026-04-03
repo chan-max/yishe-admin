@@ -49,6 +49,8 @@
       </div>
     </section>
 
+    <MyRuntimeConnections />
+
     <section class="home-section">
       <div class="home-section__head">
         <div>
@@ -123,6 +125,7 @@
 import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Icon } from "@/components/Icon";
+import MyRuntimeConnections from "./components/MyRuntimeConnections.vue";
 import { getClientServiceRuntime, useClientNodeStoreRefs } from "@/store/modules/clientNode";
 import {
   isClientServiceNodeAvailable,

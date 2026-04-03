@@ -1,6 +1,7 @@
 import { io, type Socket } from "socket.io-client";
 import { reactive } from "vue";
 import mitt from "mitt";
+import type { WebsocketConnectionVO } from "@/api/system/websocket";
 import { getAccessToken } from "@/utils/auth";
 
 type WsStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconnected" | "error";
@@ -49,17 +50,47 @@ interface WsState {
 interface ClientInfoPayload {
   clientId: string;
   source: string;
-  platform?: string;
-  locale?: string;
-  timezone?: string;
+  timestamp?: string;
+  app?: {
+    name?: string;
+    version?: string;
+    mode?: string;
+  };
+  language?: string;
+  uiLanguage?: string;
+  timeZone?: string;
   userAgent?: string;
+  browser?: {
+    name?: string;
+    version?: string;
+  };
+  os?: {
+    name?: string;
+    version?: string;
+  };
   device?: {
     memory?: number;
     hardwareConcurrency?: number;
+    touchPoints?: number;
   };
   machine?: {
     code?: string;
     platform?: string;
+  };
+  screen?: {
+    width?: number;
+    height?: number;
+    availWidth?: number;
+    availHeight?: number;
+    pixelRatio?: number;
+    colorDepth?: number;
+  };
+  page?: {
+    title?: string;
+    href?: string;
+    origin?: string;
+    path?: string;
+    visibilityState?: string;
   };
   location?: {
     ip?: string;
@@ -67,7 +98,7 @@ interface ClientInfoPayload {
     region?: string;
     country?: string;
     org?: string;
-    timezone?: string;
+    timeZone?: string;
   };
 }
 
@@ -162,6 +193,12 @@ export interface ClientConnectionChangedEvent {
   reportedAt?: string;
 }
 
+export interface RuntimeConnectionChangedEvent {
+  action: "connected" | "updated" | "removed";
+  connection: WebsocketConnectionVO;
+  reportedAt?: string;
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: "idle",
@@ -184,22 +221,113 @@ function generateClientId() {
 
 const clientId = generateClientId();
 
+function parseBrowserInfo(userAgent?: string) {
+  const source = userAgent || "";
+  const browserMatchers = [
+    { name: "Edge", regex: /Edg\/([\d.]+)/ },
+    { name: "Chrome", regex: /Chrome\/([\d.]+)/ },
+    { name: "Safari", regex: /Version\/([\d.]+).*Safari/ },
+    { name: "Firefox", regex: /Firefox\/([\d.]+)/ },
+  ];
+
+  for (const matcher of browserMatchers) {
+    const match = source.match(matcher.regex);
+    if (match) {
+      return {
+        name: matcher.name,
+        version: match[1],
+      };
+    }
+  }
+
+  return {
+    name: "Unknown",
+  };
+}
+
+function parseOsInfo(userAgent?: string) {
+  const source = userAgent || "";
+  const osMatchers = [
+    { name: "Windows", regex: /Windows NT ([\d.]+)/ },
+    { name: "macOS", regex: /Mac OS X ([\d_]+)/ },
+    { name: "iOS", regex: /iPhone OS ([\d_]+)/ },
+    { name: "Android", regex: /Android ([\d.]+)/ },
+    { name: "Linux", regex: /Linux/ },
+  ];
+
+  for (const matcher of osMatchers) {
+    const match = source.match(matcher.regex);
+    if (match) {
+      return {
+        name: matcher.name,
+        version: match[1]?.replace(/_/g, "."),
+      };
+    }
+  }
+
+  return {
+    name: "Unknown",
+  };
+}
+
+function buildScreenInfo() {
+  if (typeof window === "undefined" || !window.screen) {
+    return undefined;
+  }
+
+  return {
+    width: window.screen.width,
+    height: window.screen.height,
+    availWidth: window.screen.availWidth,
+    availHeight: window.screen.availHeight,
+    pixelRatio: window.devicePixelRatio,
+    colorDepth: window.screen.colorDepth,
+  };
+}
+
+function buildPageInfo() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return {
+    title: typeof document !== "undefined" ? document.title || undefined : undefined,
+    href: window.location.href,
+    origin: window.location.origin,
+    path: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    visibilityState:
+      typeof document !== "undefined" ? document.visibilityState || undefined : undefined,
+  };
+}
+
 const clientInfo = reactive<ClientInfoPayload>({
   clientId,
   source: CLIENT_SOURCE,
-  platform: typeof navigator !== "undefined" ? navigator.platform : "unknown",
-  locale: typeof navigator !== "undefined" ? navigator.language : "unknown",
-  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  timestamp: new Date().toISOString(),
+  app: {
+    name: "yishe-admin",
+    version: (import.meta.env.VITE_APP_VERSION as string | undefined) || undefined,
+    mode: import.meta.env.MODE,
+  },
+  language: typeof navigator !== "undefined" ? navigator.language : "unknown",
+  uiLanguage: typeof navigator !== "undefined" ? navigator.language : "unknown",
+  timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+  browser:
+    typeof navigator !== "undefined" ? parseBrowserInfo(navigator.userAgent) : { name: "Unknown" },
+  os: typeof navigator !== "undefined" ? parseOsInfo(navigator.userAgent) : { name: "Unknown" },
   device: {
     memory: typeof navigator !== "undefined" ? (navigator as any).deviceMemory : undefined,
     hardwareConcurrency:
       typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined,
+    touchPoints: typeof navigator !== "undefined" ? navigator.maxTouchPoints : undefined,
   },
   machine: {
     code: `ADMIN-${clientId.slice(-12).toUpperCase()}`,
     platform: typeof navigator !== "undefined" ? navigator.platform : undefined,
   },
+  screen: buildScreenInfo(),
+  page: buildPageInfo(),
 });
 
 export type WebsocketEvents = {
@@ -223,6 +351,7 @@ export type WebsocketEvents = {
   serviceRuntime: ServiceRuntimeEvent;
   serviceCommandResult: ServiceCommandResultEvent;
   clientConnectionChanged: ClientConnectionChangedEvent;
+  runtimeConnectionChanged: RuntimeConnectionChangedEvent;
   psAutomationStatus: PsAutomationStatusEvent;
   publishTaskRuntime: PublishTaskRuntimeEvent;
   globalNotification: GlobalNotificationEvent;
@@ -300,25 +429,62 @@ function cleanupSocket() {
 }
 
 function buildQuery() {
-  const token = getAccessToken();
   const payload: Record<string, string> = {
     clientSource: CLIENT_SOURCE,
     clientId: clientId,
     machineCode: clientInfo.machine?.code || "",
   };
 
-  if (token) {
-    payload.token = token;
-  }
-
-  try {
-    payload.clientInfo = JSON.stringify(clientInfo);
-  } catch {
-    // ignore serialization errors
-  }
-
   return payload;
 }
+
+function syncClientInfoSnapshot() {
+  Object.assign(clientInfo, {
+    timestamp: new Date().toISOString(),
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+    browser:
+      typeof navigator !== "undefined"
+        ? parseBrowserInfo(navigator.userAgent)
+        : { name: "Unknown" },
+    os: typeof navigator !== "undefined" ? parseOsInfo(navigator.userAgent) : { name: "Unknown" },
+    screen: buildScreenInfo(),
+    page: buildPageInfo(),
+  });
+}
+
+let clientInfoSyncTimer: ReturnType<typeof setTimeout> | null = null;
+let clientInfoListenersBound = false;
+
+function scheduleClientInfoSync() {
+  if (clientInfoSyncTimer) {
+    clearTimeout(clientInfoSyncTimer);
+  }
+
+  clientInfoSyncTimer = setTimeout(() => {
+    clientInfoSyncTimer = null;
+    syncClientInfoSnapshot();
+    emitClientInfo();
+  }, 120);
+}
+
+function bindClientInfoListeners() {
+  if (clientInfoListenersBound || typeof window === "undefined") {
+    return;
+  }
+
+  clientInfoListenersBound = true;
+
+  window.addEventListener("hashchange", scheduleClientInfoSync);
+  window.addEventListener("popstate", scheduleClientInfoSync);
+  window.addEventListener("resize", scheduleClientInfoSync);
+  window.addEventListener("focus", scheduleClientInfoSync);
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", scheduleClientInfoSync);
+  }
+}
+
+bindClientInfoListeners();
 
 function bindSocketEvents(currentSocket: Socket) {
   currentSocket.on("connect", () => {
@@ -435,6 +601,10 @@ function bindSocketEvents(currentSocket: Socket) {
     emitter.emit("clientConnectionChanged", data);
   });
 
+  currentSocket.on("runtime-connection-changed", (data: RuntimeConnectionChangedEvent) => {
+    emitter.emit("runtimeConnectionChanged", data);
+  });
+
   currentSocket.on("ps-automation-status", (data: PsAutomationStatusEvent) => {
     emitter.emit("psAutomationStatus", data);
   });
@@ -470,7 +640,7 @@ function serializeError(error: unknown) {
 
 function emitClientInfo() {
   if (!socket || !socket.connected) return;
-  socket.emit("client-info", { ...clientInfo });
+  socket.emit("client-info", JSON.parse(JSON.stringify(clientInfo)));
 }
 
 function connect(endpoint?: string) {
@@ -490,6 +660,8 @@ function connect(endpoint?: string) {
     retryCount: 0,
   });
 
+  syncClientInfoSnapshot();
+
   socket = io(targetEndpoint, {
     transports: ["websocket"],
     reconnection: true,
@@ -500,6 +672,7 @@ function connect(endpoint?: string) {
     query: buildQuery(),
     auth: {
       token: getAccessToken() || undefined,
+      clientInfo: JSON.parse(JSON.stringify(clientInfo)),
     },
   });
 
@@ -531,6 +704,7 @@ function setEndpoint(endpoint: string) {
 
 function updateClientInfo(payload: Partial<ClientInfoPayload>) {
   Object.assign(clientInfo, payload);
+  syncClientInfoSnapshot();
   emitClientInfo();
 }
 

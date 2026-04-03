@@ -1180,6 +1180,8 @@
                         <span class="op-menu-label">制作工具</span>
                         <div class="op-submenu" data-submenu="production" @mouseenter="handleSubmenuKeepVisible"
                           @mouseleave="handleSubmenuHide">
+                          <div class="op-submenu-item" @click="() => handleOperationCommand('image-process', row)">图片处理
+                          </div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('image-split', row)">图片裂变
                           </div>
                           <div class="op-submenu-item" @click="() => handleOperationCommand('video-production', row)">
@@ -1758,6 +1760,7 @@ import { getPromptList } from '@/api/prompt'
 import genPicture from './genPicture.vue'
 import { getAccessToken } from '@/utils/auth'
 import { getTenantId } from '@/utils/auth'
+import { buildImageProcessingRouteLocation } from '@/utils/imageProcessingRoute'
 import useListSelect from '@/components/common/userListSelect.vue'
 import { getDesignModelList } from '@/api/designModel'
 import request from '@/config/axios'
@@ -1772,6 +1775,7 @@ import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { FOLDER_FILTER } from '@/constants/folder'
 
 const userStore = useUserStore()
+const router = useRouter()
 const FOLDER_CATEGORY = 'sticker'
 
 // 判断是否为管理员
@@ -3951,6 +3955,31 @@ const delayUpdateList = useDebounceFn(() => {
     }
   }
 
+  function openImageProcessingWorkbench(row: any, taskType: 'process' | 'variations' = 'process') {
+    if (!isAdmin.value) {
+      ElMessage.warning('当前功能仅管理员可用')
+      return
+    }
+
+    const imageUrl = String(row?.url || '').trim()
+    if (!imageUrl) {
+      ElMessage.warning('当前素材缺少可处理的图片地址')
+      return
+    }
+
+    router.push(
+      buildImageProcessingRouteLocation({
+        imageUrl,
+        title: row?.name || row?.nameEn || '',
+        sourceName: row?.name || row?.nameEn || '',
+        sourceModule: 'material',
+        sourceRecordId: row?.id ? String(row.id) : '',
+        taskType,
+        openCreate: true
+      })
+    )
+  }
+
   // 处理dropdown操作命令
   function handleOperationCommand(command: string, row: any) {
     switch (command) {
@@ -3987,8 +4016,11 @@ const delayUpdateList = useDebounceFn(() => {
       case 'view-ps-sets':
         relatedPsdSetDialogRef.value?.open(row);
         break;
+      case 'image-process':
+        openImageProcessingWorkbench(row, 'process');
+        break;
       case 'image-split':
-        ElMessage.info('图片裂变功能开发中...');
+        openImageProcessingWorkbench(row, 'variations');
         break;
       case 'video-production':
         ElMessage.info('视频制作功能开发中...');
