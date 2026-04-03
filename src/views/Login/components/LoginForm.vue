@@ -48,14 +48,7 @@
           />
         </el-form-item>
       </el-col>
-      <el-col
-        :span="24"
-        style="
-          padding-right: 10px;
-          padding-left: 10px;
-          margin-top: -10px;
-        "
-      >
+      <el-col :span="24" style="padding-right: 10px; padding-left: 10px; margin-top: -10px">
         <el-row justify="space-between" style="width: 100%">
           <el-col :span="10">
             <el-checkbox v-model="loginData.loginForm.rememberMe" size="small">
@@ -64,7 +57,7 @@
           </el-col>
           <el-col :span="12">
             <el-link
-              style="float: right; font-size: 13px;"
+              style="float: right; font-size: 13px"
               type="primary"
               :underline="false"
               @click="handleForgetPassword"
@@ -143,20 +136,25 @@
     :close-on-press-escape="true"
   >
     <template #header>
-      <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px">
         <el-icon size="22"><i class="el-icon-lock"></i></el-icon>
-        <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px;">忘记密码？</span>
+        <span style="font-size: 19px; font-weight: bold; letter-spacing: 1px">忘记密码？</span>
       </div>
     </template>
-    <div style="text-align: center; padding: 18px 0 10px 0;">
-      <div style="font-size: 17px; margin-bottom: 10px; font-weight: 500;">请联系管理员重置密码</div>
-      <div style="font-size: 16px; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px;">
+    <div style="text-align: center; padding: 18px 0 10px 0">
+      <div style="font-size: 17px; margin-bottom: 10px; font-weight: 500">请联系管理员重置密码</div>
+      <div style="font-size: 16px; font-weight: bold; margin-bottom: 6px; letter-spacing: 1px">
         <span>TEL</span> & <span>WECHAT</span>：18742539196
       </div>
-      <el-tag type="success" effect="plain" style="margin-top: 4px;">24小时在线</el-tag>
+      <el-tag type="success" effect="plain" style="margin-top: 4px">24小时在线</el-tag>
     </div>
     <template #footer>
-      <el-button type="primary" style="width: 100%; font-size: 16px;" @click="showForgetDialog = false">我知道了</el-button>
+      <el-button
+        type="primary"
+        style="width: 100%; font-size: 16px"
+        @click="showForgetDialog = false"
+        >我知道了</el-button
+      >
     </template>
   </el-dialog>
 </template>
@@ -264,10 +262,11 @@ const handleLogin = async () => {
       return;
     }
 
-    const loginDataLoginForm = { 
+    const loginDataLoginForm = {
       username: loginData.loginForm.account, // 使用正确的字段名
       password: loginData.loginForm.password,
-      deviceInfo: getDeviceInfo() // 添加设备信息
+      terminalType: "admin" as const,
+      deviceInfo: getDeviceInfo(), // 添加设备信息
     };
     const res = await LoginApi.login(loginDataLoginForm);
     if (!res) {
@@ -280,29 +279,29 @@ const handleLogin = async () => {
     });
     if (loginData.loginForm.rememberMe) {
       authUtil.setLoginForm({
-        tenantName: '',
+        tenantName: "",
         username: loginData.loginForm.account,
         password: loginData.loginForm.password,
-        rememberMe: true
+        rememberMe: true,
       });
     } else {
       authUtil.removeLoginForm();
     }
     // 存储token
     setAccessToken(res.token);
-    console.log('🔑 token:', res.token);
+    console.log("🔑 token:", res.token);
 
     // 获取用户信息和权限
     const userStore = useUserStoreWithOut();
     const permissionStore = usePermissionStoreWithOut();
-    
+
     try {
       // 获取用户信息
       await userStore.setUserInfoAction();
       // 生成路由
       await permissionStore.generateRoutes();
-    
-      await push({ path: '/' });
+
+      await push({ path: "/" });
     } catch (error) {
       console.error("获取用户信息或生成路由失败:", error);
       message.error("系统初始化失败，请刷新页面重试");
@@ -358,7 +357,7 @@ watch(
   },
   {
     immediate: true,
-  }
+  },
 );
 onMounted(() => {
   getLoginFormCache();

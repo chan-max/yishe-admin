@@ -440,7 +440,8 @@ const uploadPendingImages = async () => {
     const result = await uploadToCOS({
       file: file.raw as File,
       category: 'vendor',
-      account: userAccount.value
+      account: userAccount.value,
+      userId: (userStore.user as any)?.id || (userStore as any).userInfo?.id
     })
     uploadedUrls.set(file, result.url)
   }

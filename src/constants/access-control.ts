@@ -4,7 +4,7 @@ export const MENU_ACCESS_GROUPS = [
     options: [
       { key: "home.index", label: "首页" },
       { key: "home.hot-search", label: "热搜" },
-      { key: "home.tools", label: "工具列表" },
+      { key: "home.tools", label: "工具" },
       { key: "home.statistics", label: "数据统计" },
     ],
   },

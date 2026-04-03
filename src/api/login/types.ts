@@ -7,40 +7,41 @@
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
 export type UserLoginVO = {
-  username: string
-  password: string
-  socialType?: string
-  socialCode?: string
-  socialState?: string
+  username: string;
+  password: string;
+  terminalType?: "admin" | "client";
+  socialType?: string;
+  socialCode?: string;
+  socialState?: string;
   deviceInfo?: {
-    id: string
-    userAgent: string
-    platform: string
-    language: string
-    screenResolution: string
-    timezone: string
-    timestamp: number
-  }
-}
+    id: string;
+    userAgent: string;
+    platform: string;
+    language: string;
+    screenResolution: string;
+    timezone: string;
+    timestamp: number;
+  };
+};
 
 export type TokenType = {
-  token: string // 访问令牌
-}
+  token: string; // 访问令牌
+};
 
 export type UserVO = {
-  id: number
-  username: string
-  nickname: string
-  deptId: number
-  email: string
-  mobile: string
-  sex: number
-  avatar: string
-  loginIp: string
-  loginDate: string
-}
+  id: number;
+  username: string;
+  nickname: string;
+  deptId: number;
+  email: string;
+  mobile: string;
+  sex: number;
+  avatar: string;
+  loginIp: string;
+  loginDate: string;
+};
 
 export type RegisterVO = {
-  username: string
-  password: string
-}
+  username: string;
+  password: string;
+};

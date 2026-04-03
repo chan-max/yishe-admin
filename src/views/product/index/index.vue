@@ -1823,6 +1823,7 @@ const submitForm = async () => {
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+    const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
     const productId = isEdit.value ? form.value.id : undefined // 编辑时使用产品 ID
     if (pendingFiles.value.length > 0) {
       const uploadPromises = pendingFiles.value.map(async (file) => {
@@ -1831,6 +1832,7 @@ const submitForm = async () => {
             file,
             category: 'product',
             account: userAccount,
+            userId,
             entityId: productId // 编辑时使用产品 ID
           });
           return result.url;
@@ -1856,6 +1858,7 @@ const submitForm = async () => {
             file,
             category: 'product',
             account: userAccount,
+            userId,
             entityId: productId // 编辑时使用产品 ID
           });
           return result.url;

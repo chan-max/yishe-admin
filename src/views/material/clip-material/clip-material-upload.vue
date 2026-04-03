@@ -324,7 +324,9 @@ async function uploadSingleFile(fileItem: any) {
     // 上传到COS
     const cosResult = await uploadToCOS({ 
       file: fileItem.file,
-      key: `clip-material/${new Date().getTime()}_${fileItem.name}.${fileItem.suffix}`
+      category: 'clip-material',
+      account: (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous',
+      userId: (userStore.user as any)?.id || (userStore as any).userInfo?.id
     })
     
     if (!cosResult.url) {

@@ -1093,10 +1093,12 @@ const submitForm = async () => {
       let key = form.value.key;
       if (form.value.file) {
         const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
         const cos = await uploadToCOS({
           file: form.value.file,
           category: 'psd-template',
           account: userAccount,
+          userId,
           entityId: form.value.id, // 编辑时使用现有 ID
           isThumbnail: false
         });
@@ -1108,10 +1110,12 @@ const submitForm = async () => {
       let thumbnail = form.value.thumbnail;
       if (form.value.thumbnailFile) {
         const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
         const thumbnailCos = await uploadToCOS({
           file: form.value.thumbnailFile,
           category: 'psd-template',
           account: userAccount,
+          userId,
           entityId: form.value.id, // 编辑时使用现有 ID
           isThumbnail: true
         });
@@ -1159,11 +1163,13 @@ const submitForm = async () => {
       let url = "";
       let key = "";
       const userAccount = userStore.user?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
       if (form.value.file) {
         const cos = await uploadToCOS({
           file: form.value.file,
           category: 'psd-template',
           account: userAccount,
+          userId,
           // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
           isThumbnail: false
         });
@@ -1178,6 +1184,7 @@ const submitForm = async () => {
           file: form.value.thumbnailFile,
           category: 'psd-template',
           account: userAccount,
+          userId,
           // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
           isThumbnail: true
         });

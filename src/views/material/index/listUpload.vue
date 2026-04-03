@@ -320,11 +320,13 @@ const uploadFile = async (file) => {
     
     // 获取用户账号（使用已定义的 userStore）
     const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+    const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
     
     const cos = await uploadToCOS({
       file: file.raw,
       category: 'sticker', // 素材上传到 sticker 分类
-      account: userAccount
+      account: userAccount,
+      userId
     })
     const { url } = cos
     const width = file.width || 0

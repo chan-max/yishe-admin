@@ -79,7 +79,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/Home/Tools/Index.vue"),
         name: "ToolsIndex",
         meta: {
-          title: "工具列表",
+          title: "工具",
         },
       },
       {

@@ -8,6 +8,7 @@
  */
 
 import { generateUUID } from '@/utils'
+import { buildCOSKey, extractCOSFilename, extractCOSObjectKey } from '@/utils/cosPath'
 import COS from 'cos-js-sdk-v5'
 import { saveAs } from 'file-saver'
 import request from '@/config/axios'
@@ -104,6 +105,7 @@ export const getCOS = () => {
  * @param key 文件在 COS 中的存储路径（可选，如果提供则直接使用）
  * @param category 文件分类（如 sticker, product, psd-template 等，应与实体名称一致）
  * @param account 用户账号（可选，默认从 userStore 获取）
+ * @param userId 用户 ID（可选，默认从登录态获取）
  * @param entityId 实体ID（可选，如 PSD 模板 ID、字体模板 ID 等）
  * @param isThumbnail 是否为缩略图（可选）
  */
@@ -112,6 +114,7 @@ export async function uploadToCOS({
   key,
   category,
   account,
+  userId,
   entityId,
   isThumbnail
 }: {
@@ -119,6 +122,7 @@ export async function uploadToCOS({
   key?: string
   category?: string
   account?: string
+  userId?: string | number
   entityId?: string | number
   isThumbnail?: boolean
 }) {
@@ -145,67 +149,21 @@ export async function uploadToCOS({
   // 如果没有提供 key，且提供了 category，则生成新格式的 key
   let finalKey = key
   if (!finalKey && category) {
-    // 获取用户账号
-    let userAccount = account
-    if (!userAccount) {
-      try {
-        // 尝试从 localStorage 获取用户信息
-        const userInfoStr = localStorage.getItem('USER')
-        if (userInfoStr) {
-          const userInfo = JSON.parse(userInfoStr)
-          userAccount = userInfo?.user?.account || userInfo?.user?.shortName || userInfo?.user?.name || 'anonymous'
-        }
-      } catch {
-      }
-      if (!userAccount) {
-        userAccount = 'anonymous'
-      }
-    }
-    
-    // 清理账号名称
-    userAccount = userAccount.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase().substring(0, 50)
-    // 确保 userAccount 不为空
-    if (!userAccount || userAccount.trim() === '') {
-      userAccount = 'anonymous'
-    }
-    
-    // 生成日期字符串
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    const dateStr = `${year}${month}${day}`
-    
-    // 生成时间戳
-    const timestamp = now.getTime()
-    
-    // 清理文件名
-    const sanitizeFilename = (filename: string) => {
-      if (!filename) return 'file'
-      return filename.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 200)
-    }
-    
-    const sanitizedFilename = sanitizeFilename(file.name || 'file')
-    
-    // 处理 entityId
-    const sanitizedEntityId = entityId 
-      ? String(entityId).replace(/[^a-zA-Z0-9_-]/g, '_')
-      : ''
-    
-    // 处理缩略图文件名
-    const finalFilename = isThumbnail && sanitizedEntityId
-      ? `thumbnail_${timestamp}_${sanitizedFilename}`
-      : `${timestamp}_${sanitizedFilename}`
-    
-    // 生成路径
-    if (sanitizedEntityId) {
-      finalKey = `${category}/${dateStr}/${userAccount}/${sanitizedEntityId}/${finalFilename}`
-    } else {
-      finalKey = `${category}/${dateStr}/${userAccount}/${finalFilename}`
-    }
+    finalKey = buildCOSKey({
+      filename: file.name || 'file',
+      category,
+      account,
+      userId,
+      entityId,
+      isThumbnail,
+    })
   } else if (!finalKey) {
-    // 旧格式（向后兼容）
-    finalKey = new Date().getTime() + '_1s_' + generateUUID()
+    finalKey = buildCOSKey({
+      filename: file.name || generateUUID(),
+      category: 'uncategorized',
+      account,
+      userId,
+    })
   }
   
   try {
@@ -226,14 +184,9 @@ export async function uploadToCOS({
 }
 
 export async function deleteCOSFile(key) {
-  if (key.startsWith('http')) {
-    // 如果是链接则会
-    key = key.substring(key.lastIndexOf('/') + 1)
-  }
-
   return new Promise((resolve, reject) => {
     const cos = getCOS()
-    key = String(key)
+    key = extractCOSObjectKey(String(key))
     cos.deleteObject(
       {
         Bucket: cos.options.Bucket,
@@ -255,20 +208,15 @@ export async function deleteCOSFile(key) {
 export async function copyCOSObject(sourceUrl, targetKey = null) {
   return new Promise((resolve, reject) => {
     const cos = getCOS()
-    
-    // 从URL中提取源对象的key
-    let sourceKey = sourceUrl
-    if (sourceUrl.startsWith('http')) {
-      // 移除域名部分，只保留路径
-      const urlObj = new URL(sourceUrl)
-      sourceKey = urlObj.pathname.substring(1) // 移除开头的斜杠
-    }
-    
-    // 如果没有指定目标key，则生成一个新的
+
+    const sourceKey = extractCOSObjectKey(sourceUrl)
     if (!targetKey) {
-      targetKey = new Date().getTime() + '_1s_' + generateUUID()
+      targetKey = buildCOSKey({
+        filename: extractCOSFilename(sourceKey) || generateUUID(),
+        category: 'copied'
+      })
     }
-    
+
     cos.copyObject(
       {
         Bucket: cos.options.Bucket,
@@ -301,7 +249,7 @@ function removeProtocol(url) {
 }
 
 export function downloadCOSFile(key) {
-  const filename = key.split('_1s_')[1]
+  const filename = extractCOSFilename(key)
   if (!filename) {
     return
   }

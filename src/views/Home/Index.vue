@@ -5,8 +5,8 @@
         <div class="home-hero__eyebrow">统一操作入口</div>
         <div class="home-hero__title">工作台</div>
         <div class="home-hero__desc">
-          将客户端下载和核心操作入口集中到首页，个人连接状态统一收拢到顶部状态入口，方便在 iPad
-          与桌面端快速进入对应模块。
+          将核心操作入口集中到首页，个人连接状态统一收拢到顶部状态入口，方便在 iPad
+          与桌面端快速进入对应模块；客户端下载统一收纳到工具模块中维护。
         </div>
       </div>
 
@@ -16,47 +16,6 @@
         </el-button>
         <el-button @click="goTo('/product/queue')">任务中心</el-button>
         <el-button @click="goTo('/system/ai-api-key')">AI API Key</el-button>
-      </div>
-    </section>
-
-    <section class="home-section">
-      <div class="home-section__head">
-        <div>
-          <div class="home-section__title">客户端下载</div>
-          <div class="home-section__desc">
-            下载链接暂时留空，后续只需要修改页面配置常量即可启用。
-          </div>
-        </div>
-      </div>
-
-      <div class="home-grid home-grid--downloads">
-        <div v-for="item in downloadCards" :key="item.key" class="home-panel home-download-card">
-          <div class="home-download-card__head">
-            <span class="home-download-card__icon">
-              <Icon :icon="item.icon" />
-            </span>
-            <el-tag size="small" effect="plain" :type="item.downloadUrl ? 'success' : 'info'">
-              {{ item.downloadUrl ? "可下载" : "待配置" }}
-            </el-tag>
-          </div>
-
-          <div class="home-download-card__title">{{ item.title }}</div>
-          <div class="home-download-card__platform">{{ item.platform }}</div>
-          <div class="home-download-card__desc">{{ item.description }}</div>
-
-          <div class="home-download-card__actions">
-            <el-button
-              type="primary"
-              :disabled="!item.downloadUrl"
-              @click="handleDownload(item.downloadUrl)"
-            >
-              {{ item.actionText }}
-            </el-button>
-            <span class="home-download-card__hint">
-              {{ item.downloadUrl ? "点击后新窗口打开下载地址" : "下载链接待补充" }}
-            </span>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -91,19 +50,8 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { Icon } from "@/components/Icon";
 
 defineOptions({ name: "HomeIndex" });
-
-interface DownloadCard {
-  key: string;
-  title: string;
-  platform: string;
-  description: string;
-  actionText: string;
-  downloadUrl: string;
-  icon: string;
-}
 
 interface ShortcutItem {
   key: string;
@@ -115,38 +63,14 @@ interface ShortcutItem {
 
 const router = useRouter();
 
-// 下载链接后续只需要在这里补充即可，不需要改模板结构。
-const downloadCards: DownloadCard[] = [
-  {
-    key: "client",
-    title: "客户端",
-    platform: "Windows / macOS",
-    description: "负责与服务端建立长连接，并桥接浏览器自动化与桌面能力。",
-    actionText: "下载客户端",
-    downloadUrl: "",
-    icon: "ep:monitor",
-  },
-  {
-    key: "ps-automation",
-    title: "PS 自动化端",
-    platform: "Windows",
-    description: "负责 Photoshop 桥接能力与相关自动化任务执行。",
-    actionText: "下载 PS 端",
-    downloadUrl: "",
-    icon: "ep:set-up",
-  },
-  {
-    key: "browser-automation",
-    title: "浏览器自动化端",
-    platform: "Windows",
-    description: "作为独立服务承接浏览器自动化执行，与客户端保持清晰解耦。",
-    actionText: "下载自动化端",
-    downloadUrl: "",
-    icon: "ep:connection",
-  },
-];
-
 const shortcuts: ShortcutItem[] = [
+  {
+    key: "tools",
+    title: "工具",
+    description: "集中查看客户端、PS 端和自动化端下载入口。",
+    route: "/home/tools/index",
+    icon: "ep:tools",
+  },
   {
     key: "browser-automation",
     title: "浏览器自动化控制台",
@@ -179,14 +103,6 @@ const shortcuts: ShortcutItem[] = [
 
 function goTo(route: string) {
   router.push(route);
-}
-
-function handleDownload(downloadUrl: string) {
-  if (!downloadUrl) {
-    return;
-  }
-
-  window.open(downloadUrl, "_blank", "noopener");
 }
 </script>
 
@@ -286,10 +202,6 @@ function handleDownload(downloadUrl: string) {
   gap: 14px;
 }
 
-.home-grid--downloads {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .home-grid--shortcuts {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -320,14 +232,6 @@ function handleDownload(downloadUrl: string) {
     0 10px 28px rgba(15, 23, 42, 0.05);
 }
 
-.home-download-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.home-download-card__icon,
 .home-shortcut__icon {
   display: inline-flex;
   align-items: center;
@@ -338,50 +242,6 @@ function handleDownload(downloadUrl: string) {
   background: color-mix(in srgb, var(--el-fill-color-light) 78%, transparent 22%);
   color: var(--el-text-color-primary);
   font-size: 18px;
-}
-
-.home-download-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 18px;
-}
-
-.home-download-card__title {
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.home-download-card__platform {
-  color: var(--el-color-primary);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.home-download-card__desc {
-  min-height: 66px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.75;
-}
-
-.home-download-card__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-top: auto;
-}
-
-.home-download-card__actions :deep(.el-button) {
-  min-height: 42px;
-  padding: 0 18px;
-  border-radius: 14px;
-}
-
-.home-download-card__hint {
-  color: var(--el-text-color-placeholder);
-  font-size: 12px;
 }
 
 .home-shortcut {
@@ -407,19 +267,12 @@ function handleDownload(downloadUrl: string) {
   line-height: 1.7;
 }
 
-@media (max-width: 1180px) {
-  .home-grid--downloads {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (min-width: 768px) and (max-width: 1180px) {
   .home-dashboard {
     gap: 20px;
   }
 
   .home-hero,
-  .home-download-card,
   .home-shortcut {
     border-radius: 24px;
   }
@@ -433,7 +286,6 @@ function handleDownload(downloadUrl: string) {
   }
 
   .home-hero__desc,
-  .home-download-card__desc,
   .home-shortcut__desc {
     font-size: 14px;
   }
@@ -445,7 +297,6 @@ function handleDownload(downloadUrl: string) {
   }
 
   .home-hero,
-  .home-download-card,
   .home-shortcut {
     border-radius: 18px;
   }
@@ -460,7 +311,6 @@ function handleDownload(downloadUrl: string) {
     font-size: 24px;
   }
 
-  .home-grid--downloads,
   .home-grid--shortcuts {
     grid-template-columns: 1fr;
   }

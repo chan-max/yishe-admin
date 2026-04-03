@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { reactive, toRefs, watch } from "vue";
+import { extractCOSFilename } from "@/utils/cosPath";
 import { PreviewState } from "./types";
 import { downloadFile } from "./util";
 
@@ -30,10 +31,7 @@ const state = reactive<PreviewState>({
 });
 
 function getImageName(url) {
-  // 按 '/' 分割字符串
-  const parts = url.split("/");
-  // 返回最后一个部分
-  return parts[parts.length - 1];
+  return extractCOSFilename(url);
 }
 
 // 旋转

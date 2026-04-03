@@ -70,6 +70,7 @@
 import { propTypes } from '@/utils/propTypes'
 import type { UploadInstance, UploadProps, UploadRawFile, UploadUserFile } from 'element-plus'
 import { isString } from '@/utils/is'
+import { extractCOSFilename } from '@/utils/cosPath'
 import { useUpload } from '@/components/UploadFile/src/useUpload'
 import { UploadFile } from 'element-plus/es/components/upload/src/upload'
 
@@ -174,13 +175,13 @@ watch(
     // 情况1：字符串
     if (isString(val)) {
       fileList.value.push(
-        ...val.split(',').map((url) => ({ name: url.substring(url.lastIndexOf('/') + 1), url }))
+        ...val.split(',').map((url) => ({ name: extractCOSFilename(url), url }))
       )
       return
     }
     // 情况2：数组
     fileList.value.push(
-      ...(val as string[]).map((url) => ({ name: url.substring(url.lastIndexOf('/') + 1), url }))
+      ...(val as string[]).map((url) => ({ name: extractCOSFilename(url), url }))
     )
   },
   { immediate: true, deep: true }

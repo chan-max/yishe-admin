@@ -1,5 +1,7 @@
 <template>
-  <h2 class="mb-5 text-center text-xl font-bold xl:text-center xl:text-2xl text-[var(--el-text-color-primary)]">
+  <h2
+    class="mb-4 text-left text-lg font-semibold xl:text-left xl:text-xl text-[var(--el-text-color-primary)]"
+  >
     {{ getFormTitle }}
   </h2>
 </template>

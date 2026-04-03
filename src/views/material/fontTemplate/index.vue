@@ -1124,10 +1124,12 @@ const submitForm = async () => {
       submitLoading.value = true;
 
       const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
       const cos = await uploadToCOS({
         file: form.value.file,
         category: 'font-template',
         account: userAccount,
+        userId,
         // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
         isThumbnail: false
       });
@@ -1423,10 +1425,12 @@ async function submitFrontendGenerateThumbnail() {
 
     // 上传到COS
     const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+    const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
     const cos = await uploadToCOS({
       file,
       category: 'font-template',
       account: userAccount,
+      userId,
       entityId: currentRow.value.id, // 使用当前行的 ID
       isThumbnail: true
     });

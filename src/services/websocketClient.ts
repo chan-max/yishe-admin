@@ -199,6 +199,16 @@ export interface RuntimeConnectionChangedEvent {
   reportedAt?: string;
 }
 
+export interface ImageProcessingRecordChangedEvent {
+  action: "updated";
+  recordId: string;
+  title?: string;
+  taskType?: string;
+  status?: string;
+  errorMessage?: string | null;
+  updatedAt?: string;
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: "idle",
@@ -352,6 +362,7 @@ export type WebsocketEvents = {
   serviceCommandResult: ServiceCommandResultEvent;
   clientConnectionChanged: ClientConnectionChangedEvent;
   runtimeConnectionChanged: RuntimeConnectionChangedEvent;
+  imageProcessingRecordChanged: ImageProcessingRecordChangedEvent;
   psAutomationStatus: PsAutomationStatusEvent;
   publishTaskRuntime: PublishTaskRuntimeEvent;
   globalNotification: GlobalNotificationEvent;
@@ -603,6 +614,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on("runtime-connection-changed", (data: RuntimeConnectionChangedEvent) => {
     emitter.emit("runtimeConnectionChanged", data);
+  });
+
+  currentSocket.on("image-processing-record-changed", (data: ImageProcessingRecordChangedEvent) => {
+    emitter.emit("imageProcessingRecordChanged", data);
   });
 
   currentSocket.on("ps-automation-status", (data: PsAutomationStatusEvent) => {

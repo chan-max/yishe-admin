@@ -4366,10 +4366,12 @@ const delayUpdateList = useDebounceFn(() => {
 
       // 上传到COS
       const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
+      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
       const cos = await uploadToCOS({
         file,
         category: 'sticker', // 素材上传到 sticker 分类
-        account: userAccount
+        account: userAccount,
+        userId
       })
       const { key, url } = cos
 
