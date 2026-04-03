@@ -391,7 +391,7 @@ const gridOptions = computed(() => {
     {
       title: "图片预览",
       field: "url",
-      width: 120,
+      width: 160,
       slots: { default: "previewDefaultSlot" },
     },
     { title: "图片名称", field: "name", minWidth: 180, className: "font-bold" },
