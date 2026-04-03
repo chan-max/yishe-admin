@@ -97,9 +97,18 @@ const downloadCards: DownloadCard[] = [
     title: "浏览器自动化端",
     platform: "Windows",
     description: "作为独立服务承接浏览器自动化执行，与客户端保持清晰解耦。",
-    actionText: "下载自动化端",
-    downloadUrl: "",
+    actionText: "下载 Windows 自动化端",
+    downloadUrl: "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-windows.exe",
     icon: "ep:connection",
+  },
+  {
+    key: "browser-automation-macos",
+    title: "浏览器自动化端",
+    platform: "macOS",
+    description: "作为独立服务承接浏览器自动化执行，与客户端保持清晰解耦。",
+    actionText: "下载 macOS 自动化端",
+    downloadUrl: "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-mac",
+    icon: "mdi:apple",
   },
 ];
 
