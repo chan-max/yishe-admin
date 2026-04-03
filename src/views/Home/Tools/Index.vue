@@ -66,13 +66,22 @@ interface DownloadCard {
 
 const downloadCards: DownloadCard[] = [
   {
-    key: "client",
+    key: "client-windows",
     title: "客户端",
-    platform: "Windows / macOS",
+    platform: "Windows",
     description: "负责与服务端建立长连接，并桥接浏览器自动化与桌面能力。",
-    actionText: "下载客户端",
-    downloadUrl: "",
+    actionText: "下载 Windows 客户端",
+    downloadUrl: "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
     icon: "ep:monitor",
+  },
+  {
+    key: "client-macos",
+    title: "客户端",
+    platform: "macOS",
+    description: "负责与服务端建立长连接，并桥接浏览器自动化与桌面能力。",
+    actionText: "下载 macOS 客户端",
+    downloadUrl: "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
+    icon: "mdi:apple",
   },
   {
     key: "ps-automation",
@@ -80,7 +89,7 @@ const downloadCards: DownloadCard[] = [
     platform: "Windows",
     description: "负责 Photoshop 桥接能力与相关自动化任务执行。",
     actionText: "下载 PS 端",
-    downloadUrl: "https://github.com/1s-design/yishe-ps/releases/download/v0.0.6/yishe-ps-windows.exe",
+    downloadUrl: "https://github.com/1s-design/yishe-ps/releases/latest/download/yishe-ps-windows.exe",
     icon: "ep:set-up",
   },
   {
