@@ -99,12 +99,7 @@
           <vxe-grid class="font-template-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading"
             @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #dragHandleSlot>
-              <div
-                class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary">
-                <el-icon :size="14">
-                  <Rank />
-                </el-icon>
-              </div>
+              <TableRowDragHandle />
             </template>
             <template #thumbnailDefaultSlot="{ row }">
               <div class="flex items-center justify-center p-2">
@@ -545,7 +540,7 @@ import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { ElMessage, ElMessageBox } from "element-plus";
 import FolderTree from "@/components/material/FolderTree.vue";
-import Sortable from "sortablejs";
+import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
 import {
   Search,
@@ -565,7 +560,6 @@ import {
   Folder,
   DArrowLeft,
   DArrowRight,
-  Rank,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 
@@ -895,7 +889,7 @@ async function getList() {
   total.value = res.total;
   ids.value = [];
 
-  // 列表渲染完成后挂载拖拽（使用 SortableJS）
+  // 列表渲染完成后挂载拖拽
   nextTick(setupRowDrag);
 }
 

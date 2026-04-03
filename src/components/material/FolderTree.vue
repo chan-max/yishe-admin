@@ -33,7 +33,6 @@
         <template #default="{ node, data }">
           <div class="sticker-folder-node"
             :class="{ 'is-drop-hover': String(dragState?.overFolderId ?? '') === String(data.id) && dragState?.dragging }"
-            @dragenter.prevent="handleFolderDragEnter(data, $event)"
             @dragover.prevent="handleFolderDragOver(data, $event)"
             @drop.prevent="handleFolderDrop(data)">
             <div class="sticker-folder-node-content">
@@ -49,7 +48,7 @@
               </template>
 
               <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">
-                <template v-for="(segment, index) in getHighlightedSegments(data.name)" :key="`${data.id}-${index}`">
+                <template v-for="segment in getHighlightedSegments(data.name)" :key="`${data.id}-${segment.key}`">
                   <span v-if="segment.matched" class="sticker-folder-node-highlight">{{ segment.text }}</span>
                   <span v-else>{{ segment.text }}</span>
                 </template>
@@ -144,6 +143,7 @@ const emit = defineEmits<{
 const treeRef = ref();
 const rawTreeData = ref<any[]>([]);
 const searchKeyword = ref("");
+const lastDragOverFolderId = ref<string | null>(null);
 const isSearching = computed(() => searchKeyword.value.trim().length > 0);
 const displayTreeData = computed(() => {
   if (!isSearching.value) {
@@ -208,33 +208,42 @@ function collectExpandedKeys(nodes: FolderNode[]) {
 function getHighlightedSegments(name: string) {
   const keyword = searchKeyword.value.trim();
   if (!keyword) {
-    return [{ text: name, matched: false }];
+    return [{ key: "full", text: name, matched: false }];
   }
 
   const lowerName = name.toLowerCase();
   const lowerKeyword = keyword.toLowerCase();
-  const segments: Array<{ text: string; matched: boolean }> = [];
+  const segments: Array<{ key: string; text: string; matched: boolean }> = [];
   let startIndex = 0;
 
   while (startIndex < name.length) {
     const matchIndex = lowerName.indexOf(lowerKeyword, startIndex);
     if (matchIndex === -1) {
-      segments.push({ text: name.slice(startIndex), matched: false });
+      segments.push({
+        key: `text-${startIndex}`,
+        text: name.slice(startIndex),
+        matched: false,
+      });
       break;
     }
 
     if (matchIndex > startIndex) {
-      segments.push({ text: name.slice(startIndex, matchIndex), matched: false });
+      segments.push({
+        key: `text-${startIndex}`,
+        text: name.slice(startIndex, matchIndex),
+        matched: false,
+      });
     }
 
     segments.push({
+      key: `match-${matchIndex}`,
       text: name.slice(matchIndex, matchIndex + keyword.length),
       matched: true,
     });
     startIndex = matchIndex + keyword.length;
   }
 
-  return segments.length > 0 ? segments : [{ text: name, matched: false }];
+  return segments.length > 0 ? segments : [{ key: "full", text: name, matched: false }];
 }
 
 async function loadTree() {
@@ -346,7 +355,7 @@ async function handleCommand(command: string, data: any) {
         }
       );
 
-      await deleteStickerFolder({ id: data.id });
+      await deleteStickerFolder(String(data.id));
       ElMessage.success("删除成功");
       // 如果删除的是当前选中的文件夹，重置选中状态
       if (props.modelValue === data.id) {
@@ -360,13 +369,11 @@ async function handleCommand(command: string, data: any) {
   }
 }
 
-function handleFolderDragEnter(data: any, evt?: DragEvent) {
-  if (data.id === FOLDER_FILTER.ALL) return;
-  emit("folder-drag-over", { data, event: evt });
-}
-
 function handleFolderDragOver(data: any, evt?: DragEvent) {
   if (data.id === FOLDER_FILTER.ALL) return;
+  const folderId = data?.id != null ? String(data.id) : null;
+  if (folderId && lastDragOverFolderId.value === folderId) return;
+  lastDragOverFolderId.value = folderId;
   emit("folder-drag-over", { data, event: evt });
 }
 
@@ -378,10 +385,12 @@ function handleTreeDragLeave(evt?: DragEvent) {
     return;
   }
 
+  lastDragOverFolderId.value = null;
   emit("folder-drag-leave");
 }
 
 function handleFolderDrop(data: any) {
+  lastDragOverFolderId.value = null;
   emit("folder-drop", { data });
 }
 
@@ -395,6 +404,14 @@ watch(displayTreeData, () => {
     treeRef.value?.setCurrentKey(props.modelValue || getDefaultCurrentKey());
   });
 });
+watch(
+  () => props.dragState?.dragging,
+  (dragging) => {
+    if (!dragging) {
+      lastDragOverFolderId.value = null;
+    }
+  }
+);
 </script>
 
 <style lang="less" scoped>
@@ -424,21 +441,16 @@ watch(displayTreeData, () => {
       height: var(--folder-tree-node-height);
       margin-bottom: 2px;
       border-radius: var(--folder-tree-node-radius);
+      background: transparent;
       transition:
-        background-color 0.18s ease,
         color 0.18s ease,
-        border-color 0.18s ease;
-
-      &:hover {
-        background-color: var(--folder-tree-node-hover-bg);
-      }
+        border-color 0.18s ease,
+        background-color 0.18s ease;
+      will-change: color;
     }
 
     :deep(.el-tree-node.is-current > .el-tree-node__content) {
-      background-color: var(--folder-tree-node-active-bg);
-      color: var(--folder-tree-node-active-color);
-      font-weight: 500;
-      box-shadow: inset 0 0 0 1px var(--folder-tree-node-active-border-color);
+      background: transparent;
     }
 
     :deep(.el-tree-node__expand-icon) {
@@ -455,39 +467,138 @@ watch(displayTreeData, () => {
     }
   }
 
-.sticker-folder-node {
+  :deep(.el-tree-node__content:hover .sticker-folder-node) {
+    border-color: var(--folder-tree-node-hover-border-color);
+    box-shadow: var(--folder-tree-node-hover-shadow);
+    color: var(--folder-tree-node-active-color);
+    transform: translateX(2px);
+  }
+
+  :deep(.el-tree-node__content:hover .sticker-folder-node::before) {
+    opacity: 1;
+  }
+
+  :deep(.el-tree-node__content:hover .sticker-folder-node::after) {
+    opacity: 1;
+    transform: translateY(-50%) scaleY(1);
+  }
+
+  :deep(.el-tree-node__content:hover .sticker-folder-node .sticker-folder-node-content) {
+    transform: translateX(1px);
+  }
+
+  :deep(.el-tree-node__content:hover .sticker-folder-node .folder-icon) {
+    transform: translateX(1px) scale(1.04);
+  }
+
+  :deep(.el-tree-node.is-current > .el-tree-node__content .sticker-folder-node) {
+    border-color: var(--folder-tree-node-active-border-color);
+    background: var(--folder-tree-node-active-bg);
+    color: var(--folder-tree-node-active-color);
+    box-shadow: var(--folder-tree-node-active-shadow);
+  }
+
+  :deep(.el-tree-node.is-current > .el-tree-node__content .sticker-folder-node::before) {
+    opacity: 0;
+  }
+
+  :deep(.el-tree-node.is-current > .el-tree-node__content .sticker-folder-node::after) {
+    opacity: 1;
+    transform: translateY(-50%) scaleY(1);
+  }
+
+  :deep(.el-tree-node.is-current > .el-tree-node__content .sticker-folder-node .sticker-folder-node-text) {
+    font-weight: 600;
+  }
+
+  :deep(.el-tree-node.is-current > .el-tree-node__content .sticker-folder-node-actions) {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .sticker-folder-node {
     display: flex;
+    position: relative;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding-right: 8px;
+    min-height: calc(var(--folder-tree-node-height) - 2px);
+    padding-right: 6px;
     border-radius: var(--folder-tree-node-radius);
     border: 1px solid transparent;
+    overflow: hidden;
+    isolation: isolate;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
     transition:
       background-color 0.18s ease,
       box-shadow 0.18s ease,
       border-color 0.18s ease,
-      transform 0.18s ease;
+      transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--folder-tree-node-hover-bg), transparent 86%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 4px;
+      width: 3px;
+      height: 18px;
+      z-index: 1;
+      border-radius: 999px;
+      background: var(--folder-tree-node-accent-color);
+      opacity: 0;
+      transform: translateY(-50%) scaleY(0.42);
+      transition:
+        opacity 0.18s ease,
+        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
 
     &.is-drop-hover {
-      background:
-        linear-gradient(90deg, var(--el-color-primary-light-8), var(--folder-tree-node-active-bg));
-      border-color: var(--el-color-primary);
+      background: var(--folder-tree-node-drop-bg);
+      border-color: var(--folder-tree-node-drop-border-color);
       box-shadow:
-        0 0 0 2px var(--el-color-primary-light-5),
-        0 10px 24px rgba(64, 158, 255, 0.16);
-      transform: translateX(2px);
+        0 0 0 1px var(--folder-tree-node-drop-border-color),
+        var(--folder-tree-node-drop-shadow);
+      transform: translateX(3px);
+
+      &::after {
+        opacity: 1;
+        transform: translateY(-50%) scaleY(1);
+      }
 
       .sticker-folder-node-content {
+        transform: translateX(1px);
+
         .folder-icon {
-          transform: scale(1.08);
-          filter: drop-shadow(0 2px 4px rgba(64, 158, 255, 0.24));
+          transform: translateX(1px) scale(1.06);
         }
 
         .sticker-folder-node-text {
-          color: var(--el-color-primary-dark-2);
-          font-weight: 700;
+          color: var(--folder-tree-node-drop-color);
+          font-weight: 600;
         }
+      }
+
+      .sticker-folder-node-actions {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: auto;
       }
     }
 
@@ -496,12 +607,17 @@ watch(displayTreeData, () => {
       align-items: center;
       flex: 1;
       min-width: 0;
+      padding-left: 8px;
+      transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 
       .folder-icon {
         width: 18px;
         height: 18px;
         margin-right: 6px;
         flex-shrink: 0;
+        transition:
+          transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+          opacity 0.18s ease;
       }
 
       .sticker-folder-node-text {
@@ -512,6 +628,9 @@ watch(displayTreeData, () => {
         font-size: 13px;
         color: var(--el-text-color-primary);
         cursor: pointer;
+        transition:
+          color 0.18s ease,
+          opacity 0.18s ease;
 
         .sticker-folder-node-highlight {
           color: var(--el-color-danger);
@@ -535,23 +654,35 @@ watch(displayTreeData, () => {
       align-items: center;
       padding-right: 2px;
       margin-left: 12px;
+      opacity: 0;
+      transform: translateX(6px) scale(0.94);
+      pointer-events: none;
+      transition:
+        opacity 0.18s ease,
+        transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 
       .sticker-folder-action-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
         font-size: 14px;
         cursor: pointer;
-        opacity: 0.54;
         transition:
-          opacity 0.2s,
-          color 0.2s,
-          background-color 0.2s;
-        color: var(--el-text-color-secondary);
-        padding: 4px;
+          color 0.2s ease,
+          background-color 0.2s ease,
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        color: var(--folder-tree-action-icon-color);
+        background: var(--folder-tree-action-icon-bg);
         border-radius: 6px;
 
         &:hover {
-          opacity: 1;
-          color: var(--el-color-primary);
-          background: var(--folder-tree-node-hover-bg);
+          color: var(--folder-tree-action-icon-hover-color);
+          background: var(--folder-tree-action-icon-hover-bg);
+          transform: translateY(-1px);
+          box-shadow: 0 6px 12px rgba(15, 23, 42, 0.08);
         }
       }
 
@@ -564,16 +695,24 @@ watch(displayTreeData, () => {
 
     &:hover {
       .sticker-folder-node-actions {
-        .sticker-folder-action-icon {
-          opacity: 0.7;
-        }
+        opacity: 1;
+        transform: translateX(0) scale(1);
+        pointer-events: auto;
       }
     }
   }
 
   &.is-dragging-over-folders {
     .sticker-folder-node {
-      transition: none;
+      transition:
+        background-color 0.16s ease,
+        box-shadow 0.16s ease,
+        border-color 0.16s ease,
+        transform 0.16s ease;
+    }
+
+    .sticker-folder-node-content {
+      transition: transform 0.16s ease;
     }
   }
 

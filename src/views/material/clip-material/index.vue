@@ -222,13 +222,7 @@
                 @checkbox-all="checkboxAllChange"
               >
                 <template #dragHandleSlot>
-                  <div
-                    class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary"
-                  >
-                    <el-icon :size="14">
-                      <Rank />
-                    </el-icon>
-                  </div>
+                  <TableRowDragHandle />
                 </template>
 
                 <template #previewDefaultSlot="{ row }">
@@ -448,6 +442,7 @@ import { useUserStore } from "@/store/modules/user";
 import clipMaterialUpload from "./clip-material-upload.vue";
 import VideoPreview from "./VideoPreview.vue";
 import FolderTree from "@/components/material/FolderTree.vue";
+import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 import DateRangePicker from "@/components/DateRangePicker.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -464,7 +459,6 @@ import {
   Headset,
   DArrowLeft,
   DArrowRight,
-  Rank,
 } from "@element-plus/icons-vue";
 import { downloadFileByElement } from "@/common/download";
 import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";

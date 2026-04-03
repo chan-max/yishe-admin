@@ -60,40 +60,112 @@ export function useFolderRowDrag<TItem extends { id?: string | number }>(
   })
 
   const sortableRef = ref<Sortable | null>(null)
+  let boundTbody: HTMLElement | null = null
+  let setupFrameId = 0
+  let hoverFrameId = 0
+  let pendingHoverFolderId: string | null = null
+  let pendingHoverFolderPath = ''
+
+  function cancelSetupFrame() {
+    if (setupFrameId) {
+      window.cancelAnimationFrame(setupFrameId)
+      setupFrameId = 0
+    }
+  }
+
+  function cancelHoverFrame() {
+    if (hoverFrameId) {
+      window.cancelAnimationFrame(hoverFrameId)
+      hoverFrameId = 0
+    }
+  }
+
+  function destroySortable() {
+    sortableRef.value?.destroy()
+    sortableRef.value = null
+    boundTbody = null
+  }
+
+  function clearHoverState() {
+    cancelHoverFrame()
+    pendingHoverFolderId = null
+    pendingHoverFolderPath = ''
+    dragState.overFolderId = null
+    dragState.overFolderPath = ''
+  }
+
+  function clearDragState() {
+    dragState.dragging = false
+    dragState.draggingIds = []
+    clearHoverState()
+  }
+
+  function scheduleHoverState(folderId: string | null, folderPath = '') {
+    pendingHoverFolderId = folderId
+    pendingHoverFolderPath = folderPath
+
+    if (hoverFrameId) {
+      return
+    }
+
+    hoverFrameId = window.requestAnimationFrame(() => {
+      hoverFrameId = 0
+
+      if (!dragState.dragging) {
+        return
+      }
+
+      dragState.overFolderId = pendingHoverFolderId
+      dragState.overFolderPath = pendingHoverFolderPath
+    })
+  }
+
   function setupRowDrag() {
     nextTick(() => {
-      const tbody = document.querySelector(`.${gridClass} .vxe-table--body tbody`) as HTMLElement | null
-      if (!tbody) return
+      cancelSetupFrame()
+      setupFrameId = window.requestAnimationFrame(() => {
+        setupFrameId = 0
 
-      sortableRef.value?.destroy()
-      sortableRef.value = Sortable.create(tbody, {
-        animation: 120,
-        sort: false,
-        ghostClass: 'template-drag-ghost',
-        handle: handleSelector,
-        draggable: '.vxe-body--row',
-        filter: 'input,textarea,button,a,[contenteditable]',
-        preventOnFilter: false,
-        onStart: (evt) => {
-          const row = dataSource.value[evt.oldIndex]
-          const draggingIds =
-            selectedIds.value && selectedIds.value.length
-              ? selectedIds.value.map((id) => String(id))
-              : row && row.id !== undefined
-              ? [String(row.id)]
-              : []
-
-          dragState.draggingIds = draggingIds
-          dragState.dragging = draggingIds.length > 0
-          dragState.overFolderId = null
-          dragState.overFolderPath = ''
-        },
-        onEnd: () => {
-          dragState.dragging = false
-          dragState.draggingIds = []
-          dragState.overFolderId = null
-          dragState.overFolderPath = ''
+        const tbody = document.querySelector(`.${gridClass} .vxe-table--body tbody`) as HTMLElement | null
+        if (!tbody) {
+          destroySortable()
+          return
         }
+
+        if (boundTbody === tbody && sortableRef.value) {
+          return
+        }
+
+        destroySortable()
+        boundTbody = tbody
+        sortableRef.value = Sortable.create(tbody, {
+          animation: 180,
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          sort: false,
+          ghostClass: 'template-drag-ghost',
+          chosenClass: 'template-drag-chosen',
+          dragClass: 'template-drag-dragging',
+          handle: handleSelector,
+          draggable: '.vxe-body--row',
+          filter: 'input,textarea,button,a,[contenteditable]',
+          preventOnFilter: false,
+          onStart: (evt) => {
+            const row = dataSource.value[evt.oldIndex]
+            const draggingIds =
+              selectedIds.value && selectedIds.value.length
+                ? selectedIds.value.map((id) => String(id))
+                : row && row.id !== undefined
+                ? [String(row.id)]
+                : []
+
+            dragState.draggingIds = draggingIds
+            dragState.dragging = draggingIds.length > 0
+            clearHoverState()
+          },
+          onEnd: () => {
+            clearDragState()
+          }
+        })
       })
     })
   }
@@ -116,34 +188,43 @@ export function useFolderRowDrag<TItem extends { id?: string | number }>(
     if (!dragState.dragging) return
     if (!payload || !payload.data) return
     if (payload.data.id === '__all__') return
-    if (dragState.overFolderId !== payload.data.id) {
-      dragState.overFolderId = payload.data.id
-      dragState.overFolderPath = payload.data.path || ''
+
+    const nextFolderId = payload.data.id != null ? String(payload.data.id) : null
+    const nextFolderPath = payload.data.path || ''
+
+    if (
+      dragState.overFolderId === nextFolderId &&
+      dragState.overFolderPath === nextFolderPath &&
+      pendingHoverFolderId === nextFolderId &&
+      pendingHoverFolderPath === nextFolderPath
+    ) {
+      return
     }
+
+    scheduleHoverState(nextFolderId, nextFolderPath)
   }
 
   function handleFolderDragLeave(payloadOrData: { data: any } | any) {
     const payload = normalizeDragPayload(payloadOrData)
     if (!payload || !payload.data) {
-      dragState.overFolderId = null
-      dragState.overFolderPath = ''
+      clearHoverState()
       return
     }
-    if (dragState.overFolderId === payload.data.id) {
-      dragState.overFolderId = null
-      dragState.overFolderPath = ''
+
+    const folderId = payload.data.id != null ? String(payload.data.id) : null
+    if (dragState.overFolderId === folderId || pendingHoverFolderId === folderId) {
+      clearHoverState()
     }
   }
 
   function resetAfterDrop() {
-    dragState.dragging = false
-    dragState.draggingIds = []
-    dragState.overFolderId = null
-    dragState.overFolderPath = ''
+    clearDragState()
   }
 
   onUnmounted(() => {
-    sortableRef.value?.destroy()
+    cancelSetupFrame()
+    cancelHoverFrame()
+    destroySortable()
   })
 
   return {

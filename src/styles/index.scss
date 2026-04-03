@@ -219,6 +219,9 @@ html.light .vxe-table {
 .dnd-text-selectable .vxe-table--body tbody tr {
   cursor: default;
   user-select: text;
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .dnd-text-selectable .vxe-table--body tbody td {
@@ -226,15 +229,45 @@ html.light .vxe-table {
   -webkit-user-drag: auto;
 }
 
+.common-table .table-row-drag-handle {
+  margin-inline: auto;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.common-table .vxe-body--row:hover .table-row-drag-handle,
+.common-table .vxe-body--row.template-drag-chosen .table-row-drag-handle,
+.common-table .vxe-body--row.template-drag-dragging .table-row-drag-handle {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
 /* 拖拽行与幽灵样式（通用） */
 .is-dragging-row {
-  opacity: 0.6 !important;
-  background-color: var(--el-color-primary-light-9) !important;
+  opacity: 1 !important;
+  background-color: var(--table-row-drag-active-bg) !important;
+  box-shadow: inset 0 0 0 1px var(--table-row-drag-active-border-color) !important;
 }
 
 .template-drag-ghost {
-  opacity: 0.4 !important;
-  background-color: var(--el-color-primary-light-9) !important;
+  opacity: 0.82 !important;
+  background-color: var(--table-row-drag-ghost-bg) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--table-row-drag-active-border-color),
+    0 12px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+.template-drag-chosen {
+  background-color: var(--table-row-drag-active-bg) !important;
+  box-shadow:
+    inset 0 0 0 1px var(--table-row-drag-active-border-color),
+    0 8px 18px rgba(45, 107, 255, 0.08) !important;
+}
+
+.template-drag-dragging,
+.template-drag-dragging * {
+  cursor: grabbing !important;
 }
 
 .el-image-viewer__wrapper {

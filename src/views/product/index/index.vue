@@ -88,11 +88,7 @@
           @checkbox-all="checkboxAllChange">
 
           <template #dragHandleSlot>
-            <div class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary">
-              <el-icon :size="14">
-                <Rank />
-              </el-icon>
-            </div>
+            <TableRowDragHandle />
           </template>
 
           <template #operationDefaultSlot="{ row }">
@@ -1294,7 +1290,6 @@ import {
   DocumentCopy,
   Grid,
   Loading,
-  Rank,
   InfoFilled,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
@@ -1319,6 +1314,7 @@ import VideoGenDialog from './components/VideoGenDialog.vue';
 import { PRODUCT_CATEGORIES } from '@/config/product-categories'
 import { getPreviewImageUrl } from '@/utils/image'
 import FolderTree from '@/components/material/FolderTree.vue'
+import TableRowDragHandle from '@/components/TableRowDragHandle/index.vue'
 import DateRangePicker from '@/components/DateRangePicker.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'

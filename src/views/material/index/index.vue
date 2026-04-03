@@ -871,12 +871,7 @@
           <vxe-grid class="material-dnd-grid dnd-text-selectable" ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading"
             :row-class-name="materialRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
             <template #dragHandleSlot>
-              <div
-                class="row-drag-handle flex items-center justify-center cursor-grab text-gray-400 hover:text-primary">
-                <el-icon :size="14">
-                  <Rank />
-                </el-icon>
-              </div>
+              <TableRowDragHandle />
             </template>
             <template #previewDefaultSlot="{ row }">
               <div class="table-preview-stack">
@@ -1737,7 +1732,6 @@ import { stickerPsdSetApi } from '@/api/stickerPsdSet'
 import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import { formatTimestamp } from '@/common/date'
 import CryptoJS from 'crypto-js'
-import Sortable from 'sortablejs'
 
 import { useDebounceFn, useLocalStorage, useSessionStorage, useWindowSize, useMouse } from '@vueuse/core'
 import { sortTypeOptions, defaultSortingValue } from '@/common/sort'
@@ -1747,7 +1741,7 @@ import { useUserStore } from '@/store/modules/user'
 import listUpload from './listUpload.vue'
 
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, Files, DArrowLeft, DArrowRight, Rank } from '@element-plus/icons-vue'
+import { Delete, Plus, Search, TopRight, Upload, Loading, Check, More, InfoFilled, ArrowRight, ArrowLeft, Edit, Download, Picture, MagicStick, Key, Document, Warning, PictureFilled, Grid, DocumentCopy, RefreshLeft, Folder, Files, DArrowLeft, DArrowRight } from '@element-plus/icons-vue'
 import tree from './tree.vue'
 import { materialStatusOptions } from '.'
 import { psdTemplateApi } from '@/api/psdTemplate'
@@ -1771,6 +1765,7 @@ import { SIZE_SHAPE_GROUPS, getFullLabel, getSizeShapeByRatio, getSizeShapeUiCon
 import { useFolderRowDrag } from '@/hooks/useFolderRowDrag'
 import RelatedPsdSetDialog from './RelatedPsdSetDialog.vue'
 import FolderTree from '@/components/material/FolderTree.vue'
+import TableRowDragHandle from '@/components/TableRowDragHandle/index.vue'
 import ListPageLayout from '@/components/ListPageLayout/index.vue'
 import { FOLDER_FILTER } from '@/constants/folder'
 
@@ -2436,7 +2431,7 @@ async function getList() {
     setupImageLoadTimeout(item)
   })
 
-  // 列表渲染完成后挂载拖拽（使用 SortableJS）
+  // 列表渲染完成后挂载拖拽
   nextTick(setupRowDrag)
 }
 

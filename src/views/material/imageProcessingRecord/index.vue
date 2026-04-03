@@ -273,317 +273,717 @@
       class="image-processing-create-dialog"
     >
       <div v-loading="metaLoading" class="image-processing-create-layout">
-        <div class="image-processing-create-banner">
-          <div class="image-processing-create-banner__title">图片处理工作台</div>
+        <div class="image-processing-create-hero">
+          <div class="image-processing-create-hero__content">
+            <div class="image-processing-create-banner__title">图片处理工作台</div>
+            <div class="image-processing-create-hero__desc">
+              与 yishe-images 对齐，仅支持链式处理和图片裂变两种实际能力，不额外扩展不存在的功能。
+            </div>
+          </div>
+          <div class="image-processing-create-hero__status">
+            <el-tag :type="imageStatusTagType" size="small">
+              yishe-images {{ imageStatusLabel }}
+            </el-tag>
+            <span class="image-processing-create-hero__status-text">
+              {{ imageStatusSummary }}
+            </span>
+          </div>
         </div>
 
-        <el-card shadow="never" class="image-processing-panel-card">
-          <template #header>第 1 步 · 选择来源与任务</template>
-          <div class="image-processing-panel-scroll">
-            <el-form label-position="top" class="image-processing-form">
-              <el-form-item label="任务类型">
-                <el-radio-group v-model="form.taskType">
-                  <el-radio-button label="process">图片处理</el-radio-button>
-                  <el-radio-button label="variations">图片裂变</el-radio-button>
-                </el-radio-group>
-              </el-form-item>
+        <el-tabs v-model="form.taskType" class="image-processing-create-mode-tabs">
+          <el-tab-pane label="链式处理" name="process" />
+          <el-tab-pane label="图片裂变" name="variations" />
+        </el-tabs>
 
-              <el-form-item label="任务标题">
-                <el-input
-                  v-model="form.title"
-                  clearable
-                  maxlength="255"
-                  placeholder="可选，留空会自动生成标题"
-                />
-              </el-form-item>
+        <el-card shadow="never" class="image-processing-panel-card image-processing-create-workspace">
+          <div class="image-processing-create-summary">
+            <div
+              v-for="item in createSummaryItems"
+              :key="item.label"
+              class="image-processing-create-summary__item"
+            >
+              <span class="label">{{ item.label }}</span>
+              <span class="value">{{ item.value }}</span>
+            </div>
+          </div>
 
-              <el-form-item label="图片来源">
-                <el-radio-group v-model="form.sourceType" @change="handleSourceTypeChange">
-                  <el-radio-button label="upload">本地上传</el-radio-button>
-                  <el-radio-button label="url">输入地址</el-radio-button>
-                </el-radio-group>
-              </el-form-item>
+          <el-tabs v-model="createStageTab" class="image-processing-stage-tabs">
+            <el-tab-pane label="基础设置" name="source">
+              <div class="image-processing-stage-panel image-processing-stage-panel--source">
+                <div class="image-processing-stage-section">
+                  <div class="image-processing-builder-intro">
+                    <div class="image-processing-builder-intro__title">
+                      先确认源图、标题和处理引擎
+                    </div>
+                    <div class="image-processing-builder-intro__desc">
+                      源图会先由 design-server 归档，再提交给 yishe-images 执行。
+                    </div>
+                  </div>
 
-              <template v-if="form.sourceType === 'upload'">
-                <el-form-item label="上传图片">
-                  <el-upload
-                    ref="sourceUploadRef"
-                    drag
-                    action="#"
-                    accept="image/*"
-                    :auto-upload="false"
-                    :limit="1"
-                    :show-file-list="false"
-                    :on-change="handleSourceFileChange"
-                    :on-exceed="handleSourceFileExceed"
-                  >
-                    <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-                    <div class="el-upload__text">拖拽图片到这里，或点击选择</div>
-                    <template #tip>
-                      <div class="el-upload__tip">支持单张图片上传，服务端会先归档到 COS。</div>
+                  <el-form label-position="top" class="image-processing-form">
+                    <el-form-item label="任务标题">
+                      <el-input
+                        v-model="form.title"
+                        clearable
+                        maxlength="255"
+                        placeholder="可选，留空会自动生成标题"
+                      />
+                    </el-form-item>
+
+                    <el-form-item label="图片来源">
+                      <el-radio-group v-model="form.sourceType" @change="handleSourceTypeChange">
+                        <el-radio-button label="upload">本地上传</el-radio-button>
+                        <el-radio-button label="url">输入地址</el-radio-button>
+                      </el-radio-group>
+                    </el-form-item>
+
+                    <template v-if="form.sourceType === 'upload'">
+                      <el-form-item label="上传图片">
+                        <el-upload
+                          ref="sourceUploadRef"
+                          drag
+                          action="#"
+                          accept="image/*"
+                          :auto-upload="false"
+                          :limit="1"
+                          :show-file-list="false"
+                          :on-change="handleSourceFileChange"
+                          :on-exceed="handleSourceFileExceed"
+                        >
+                          <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+                          <div class="el-upload__text">拖拽图片到这里，或点击选择</div>
+                          <template #tip>
+                            <div class="el-upload__tip">
+                              支持单张图片上传，服务端会先归档到 COS。
+                            </div>
+                          </template>
+                        </el-upload>
+                      </el-form-item>
+                      <div v-if="sourceFileName" class="image-processing-source-file">
+                        已选择：{{ sourceFileName }}
+                      </div>
                     </template>
-                  </el-upload>
-                </el-form-item>
-                <div v-if="sourceFileName" class="image-processing-source-file">
-                  已选择：{{ sourceFileName }}
+
+                    <template v-else>
+                      <el-form-item label="图片地址">
+                        <el-input
+                          v-model="form.imageUrl"
+                          clearable
+                          placeholder="https://example.com/source.png"
+                        />
+                      </el-form-item>
+                      <div class="image-processing-source-tip">
+                        远程图片会先下载并归档到 COS，再提交给 yishe-images 执行。
+                      </div>
+                    </template>
+
+                    <el-form-item label="处理引擎">
+                      <el-select
+                        v-model="form.processorId"
+                        clearable
+                        filterable
+                        placeholder="留空则使用服务默认引擎"
+                        class="image-processing-full-width"
+                      >
+                        <el-option
+                          v-for="processor in processorOptions"
+                          :key="processor.id"
+                          :label="processor.label || processor.id"
+                          :value="processor.id"
+                        >
+                          <div class="image-processing-select-option">
+                            <span>{{ processor.label || processor.id }}</span>
+                            <span>{{ processor.id }}</span>
+                          </div>
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
+                  </el-form>
+                </div>
+
+                <div class="image-processing-stage-section image-processing-stage-section--preview">
+                  <div class="image-processing-preview-card">
+                    <div class="image-processing-preview-card__title">原图预览</div>
+                    <div class="image-processing-preview-card__body">
+                      <img
+                        v-if="createSourcePreview"
+                        :src="createSourcePreview"
+                        alt="source preview"
+                        class="image-processing-preview-card__image"
+                      />
+                      <div v-else class="image-processing-preview-card__empty">等待选择图片</div>
+                    </div>
+                  </div>
+
+                  <div v-if="hasSourceContext" class="image-processing-source-context">
+                    <div class="image-processing-source-context__title">来源链路</div>
+                    <div class="image-processing-source-context__item">
+                      <span class="label">来源模块</span>
+                      <span class="value">{{ form.sourceModule || "-" }}</span>
+                    </div>
+                    <div class="image-processing-source-context__item">
+                      <span class="label">来源记录</span>
+                      <span class="value">{{ form.sourceRecordId || "-" }}</span>
+                    </div>
+                    <div class="image-processing-source-context__item">
+                      <span class="label">来源名称</span>
+                      <span class="value">{{ form.sourceName || "-" }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="image-processing-stage-footer">
+                <el-button type="primary" @click="createStageTab = 'workflow'">
+                  下一步：{{ form.taskType === "process" ? "执行配置" : "裂变预设" }}
+                </el-button>
+              </div>
+            </el-tab-pane>
+
+            <el-tab-pane :label="form.taskType === 'process' ? '执行配置' : '裂变预设'" name="workflow">
+              <template v-if="form.taskType === 'process'">
+                <div class="image-processing-stage-panel image-processing-stage-panel--workflow">
+                  <el-tabs v-model="processWorkspaceTab" class="image-processing-process-tabs">
+                    <el-tab-pane label="已选步骤" name="steps">
+                      <div class="image-processing-builder-intro">
+                        <div class="image-processing-builder-intro__title">
+                          当前处理链会按顺序提交到 yishe-images 的 `/api/process`
+                        </div>
+                        <div class="image-processing-builder-intro__desc">
+                          先从“操作目录”挑选步骤，再回到这里检查顺序和参数。
+                        </div>
+                      </div>
+
+                      <div class="image-processing-panel-toolbar image-processing-panel-toolbar--split">
+                        <div class="image-processing-chain-overview">
+                          <div class="image-processing-chain-overview__item">
+                            当前处理链 {{ currentOperations.length }} 步
+                          </div>
+                          <div class="image-processing-chain-overview__item">
+                            {{ currentOperationsParseError ? "需要修正 JSON" : "提交前会按当前顺序执行" }}
+                          </div>
+                        </div>
+                        <div class="image-processing-panel-toolbar__actions">
+                          <el-button size="small" @click="fillDefaultOperations">恢复示例</el-button>
+                          <el-button
+                            size="small"
+                            :disabled="!currentOperations.length && !currentOperationsParseError"
+                            @click="clearOperationsChain"
+                          >
+                            清空链路
+                          </el-button>
+                          <el-button size="small" @click="switchToAdvancedJson">
+                            高级 JSON
+                          </el-button>
+                        </div>
+                      </div>
+
+                      <el-alert
+                        v-if="currentOperationsParseError"
+                        type="warning"
+                        :closable="false"
+                        class="image-processing-submit-alert"
+                        :title="currentOperationsParseError"
+                      />
+
+                      <div v-else-if="currentOperations.length" class="image-processing-chain-list">
+                        <div
+                          v-for="(operation, index) in currentOperations"
+                          :key="operation.key"
+                          class="image-processing-chain-card"
+                        >
+                          <div class="image-processing-chain-card__header">
+                            <div class="image-processing-chain-card__main">
+                              <span class="image-processing-chain-card__step">
+                                步骤 {{ index + 1 }}
+                              </span>
+                              <div class="image-processing-chain-card__title-wrap">
+                                <div class="image-processing-chain-card__title">
+                                  {{ operation.title }}
+                                </div>
+                                <div class="image-processing-chain-card__meta">
+                                  {{ operation.typeLabel }}
+                                </div>
+                              </div>
+                            </div>
+                            <div class="image-processing-chain-card__actions">
+                              <el-button
+                                link
+                                size="small"
+                                :disabled="index === 0"
+                                @click="moveCurrentOperation(index, -1)"
+                              >
+                                上移
+                              </el-button>
+                              <el-button
+                                link
+                                size="small"
+                                :disabled="index === currentOperations.length - 1"
+                                @click="moveCurrentOperation(index, 1)"
+                              >
+                                下移
+                              </el-button>
+                              <el-button link size="small" @click="removeCurrentOperation(index)">
+                                删除
+                              </el-button>
+                            </div>
+                          </div>
+
+                          <div v-if="operation.description" class="image-processing-chain-card__desc">
+                            {{ operation.description }}
+                          </div>
+
+                          <div class="image-processing-chain-card__tags">
+                            <el-tag size="small" effect="plain">
+                              {{ operation.categoryLabel }}
+                            </el-tag>
+                            <el-tag size="small" effect="plain">
+                              {{ operation.typeLabel }}
+                            </el-tag>
+                            <el-tag
+                              v-if="operation.requiredParams.length"
+                              size="small"
+                              effect="plain"
+                              type="warning"
+                            >
+                              必填：{{ operation.requiredParams.join(" / ") }}
+                            </el-tag>
+                          </div>
+
+                          <div
+                            v-if="operation.paramEntries.length"
+                            class="image-processing-chain-card__params"
+                          >
+                            <div
+                              v-for="param in operation.paramEntries"
+                              :key="`${operation.key}-${param.name}`"
+                              class="image-processing-chain-card__param"
+                            >
+                              <div class="image-processing-chain-card__param-label">
+                                {{ param.name }}
+                              </div>
+                              <div class="image-processing-chain-card__param-value">
+                                {{ param.value }}
+                              </div>
+                            </div>
+                          </div>
+                          <div v-else class="image-processing-chain-card__empty">
+                            这个操作无需额外参数
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        v-else
+                        class="image-processing-empty-state image-processing-empty-state--chain"
+                      >
+                        <div class="image-processing-empty-state__title">还没有处理步骤</div>
+                        <div class="image-processing-empty-state__desc">
+                          切到“操作目录”挑选步骤，或直接使用“恢复示例”快速开始。
+                        </div>
+                        <div class="image-processing-empty-state__actions">
+                          <el-button size="small" @click="processWorkspaceTab = 'catalog'">
+                            前往操作目录
+                          </el-button>
+                        </div>
+                      </div>
+
+                      <div class="image-processing-stage-footer">
+                        <el-button @click="processWorkspaceTab = 'catalog'">操作目录</el-button>
+                        <el-button type="primary" @click="createStageTab = 'preview'">
+                          查看提交预览
+                        </el-button>
+                      </div>
+                    </el-tab-pane>
+
+                    <el-tab-pane label="操作目录" name="catalog">
+                      <div class="image-processing-builder-intro">
+                        <div class="image-processing-builder-intro__title">
+                          操作列表直接来自 yishe-images 元数据
+                        </div>
+                        <div class="image-processing-builder-intro__desc">
+                          按名称、描述或参数快速筛选，再把需要的操作加入当前处理链。
+                        </div>
+                      </div>
+
+                      <div class="image-processing-op-filter">
+                        <el-input
+                          v-model="operationKeyword"
+                          clearable
+                          size="small"
+                          placeholder="搜索操作名称、描述、参数"
+                        />
+                        <el-radio-group
+                          v-model="operationCategoryFilter"
+                          size="small"
+                          class="image-processing-op-filter__categories"
+                        >
+                          <el-radio-button
+                            v-for="option in operationCategoryOptions"
+                            :key="option.value"
+                            :label="option.value"
+                          >
+                            {{ option.label }} ({{ option.count }})
+                          </el-radio-button>
+                        </el-radio-group>
+                      </div>
+
+                      <div class="image-processing-op-toolbar">
+                        <span>匹配到 {{ filteredOperationCount }} 个操作</span>
+                        <span>当前处理链 {{ currentOperations.length }} 步</span>
+                      </div>
+
+                      <div
+                        v-for="group in filteredGroupedOperations"
+                        :key="group.category"
+                        class="image-processing-op-group"
+                      >
+                        <div class="image-processing-op-group__title">
+                          {{ group.label }} <span>({{ group.items.length }})</span>
+                        </div>
+                        <div class="image-processing-op-list">
+                          <div
+                            v-for="operation in group.items"
+                            :key="operation.apiType || operation.type"
+                            class="image-processing-op-card"
+                            :class="{
+                              'is-active': activeCatalogOperationKey === getOperationIdentity(operation),
+                            }"
+                            @click="selectCatalogOperation(operation)"
+                          >
+                            <div class="image-processing-op-card__header">
+                              <div class="image-processing-op-card__title-wrap">
+                                <div class="image-processing-op-card__title">
+                                  {{ operation.description || operation.type || operation.apiType }}
+                                </div>
+                                <div class="image-processing-op-card__api">
+                                  {{ operation.apiType || operation.type }}
+                                </div>
+                              </div>
+                              <el-button
+                                size="small"
+                                type="primary"
+                                @click.stop="appendOperationTemplate(operation)"
+                              >
+                                加入处理链
+                              </el-button>
+                            </div>
+
+                            <div class="image-processing-op-card__badges">
+                              <el-tag size="small" effect="plain">
+                                {{ group.label }}
+                              </el-tag>
+                              <el-tag
+                                v-if="getRequiredParamNames(operation).length"
+                                size="small"
+                                effect="plain"
+                                type="warning"
+                              >
+                                必填 {{ getRequiredParamNames(operation).length }}
+                              </el-tag>
+                              <el-tag
+                                v-if="getOperationUsageCount(operation)"
+                                size="small"
+                                effect="plain"
+                                type="success"
+                              >
+                                已添加 {{ getOperationUsageCount(operation) }} 次
+                              </el-tag>
+                            </div>
+
+                            <div class="image-processing-op-card__meta">
+                              <span>分类：{{ operation.category || "default" }}</span>
+                              <span>必填：{{ getRequiredParamNames(operation).join(" / ") || "-" }}</span>
+                            </div>
+                            <div class="image-processing-op-card__params">
+                              {{ getOperationParamSummary(operation) }}
+                            </div>
+                            <div
+                              v-if="
+                                activeCatalogOperationKey === getOperationIdentity(operation) &&
+                                getOperationParamRows(operation).length
+                              "
+                              class="image-processing-op-card__param-list"
+                            >
+                              <div
+                                v-for="param in getOperationParamRows(operation)"
+                                :key="`${operation.type || operation.apiType}-${param.name}`"
+                                class="image-processing-op-card__param-item"
+                              >
+                                <div class="image-processing-op-card__param-head">
+                                  <span class="name">{{ param.name }}</span>
+                                  <span class="meta">{{ param.meta }}</span>
+                                </div>
+                                <div class="image-processing-op-card__param-desc">
+                                  {{ param.description }}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div v-if="!filteredGroupedOperations.length" class="image-processing-empty-state">
+                        没有匹配的操作，请换个关键词或分类试试
+                      </div>
+
+                      <div class="image-processing-stage-footer">
+                        <el-button @click="processWorkspaceTab = 'steps'">返回已选步骤</el-button>
+                        <el-button type="primary" @click="createStageTab = 'preview'">
+                          查看提交预览
+                        </el-button>
+                      </div>
+                    </el-tab-pane>
+
+                    <el-tab-pane label="高级 JSON" name="json">
+                      <div class="image-processing-builder-intro">
+                        <div class="image-processing-builder-intro__title">
+                          高级模式会直接提交当前 JSON 到 yishe-images
+                        </div>
+                        <div class="image-processing-builder-intro__desc">
+                          适合批量调整参数或直接粘贴处理链。JSON 顶层必须是数组。
+                        </div>
+                      </div>
+
+                      <div class="image-processing-panel-toolbar image-processing-panel-toolbar--split">
+                        <div class="image-processing-chain-overview">
+                          <div class="image-processing-chain-overview__item">
+                            当前解析 {{ currentOperations.length }} 步
+                          </div>
+                          <div class="image-processing-chain-overview__item">
+                            {{ currentOperationsParseError ? "JSON 需要修正" : "提交时按数组顺序执行" }}
+                          </div>
+                        </div>
+                        <div class="image-processing-panel-toolbar__actions">
+                          <el-button size="small" @click="fillDefaultOperations">恢复示例</el-button>
+                          <el-button size="small" @click="formatOperationsJson">
+                            格式化 JSON
+                          </el-button>
+                          <el-button size="small" @click="processWorkspaceTab = 'steps'">
+                            返回步骤
+                          </el-button>
+                        </div>
+                      </div>
+
+                      <div class="image-processing-json-editor">
+                        <el-input
+                          v-model="form.operationsJson"
+                          type="textarea"
+                          resize="none"
+                          placeholder='[{"type":"resize","params":{"width":800,"height":800}}]'
+                        />
+                      </div>
+
+                      <el-alert
+                        v-if="currentOperationsParseError"
+                        type="warning"
+                        :closable="false"
+                        class="image-processing-submit-alert"
+                        :title="currentOperationsParseError"
+                      />
+                      <div v-else class="image-processing-panel-tip">
+                        当前 JSON 已同步为 {{ currentOperations.length }} 个步骤，提交时会按数组顺序执行。
+                      </div>
+
+                      <div class="image-processing-stage-footer">
+                        <el-button @click="processWorkspaceTab = 'catalog'">继续挑选操作</el-button>
+                        <el-button type="primary" @click="createStageTab = 'preview'">
+                          查看提交预览
+                        </el-button>
+                      </div>
+                    </el-tab-pane>
+                  </el-tabs>
                 </div>
               </template>
 
               <template v-else>
-                <el-form-item label="图片地址">
-                  <el-input
-                    v-model="form.imageUrl"
-                    clearable
-                    placeholder="https://example.com/source.png"
-                  />
-                </el-form-item>
-                <div class="image-processing-source-tip">
-                  远程图片会先下载并归档到 COS，再提交给 yishe-images 执行。
+                <div class="image-processing-stage-panel image-processing-stage-panel--variations">
+                  <div class="image-processing-builder-intro">
+                    <div class="image-processing-builder-intro__title">
+                      图片裂变会调用 yishe-images 的 `/api/variations`
+                    </div>
+                    <div class="image-processing-builder-intro__desc">
+                      提交后会对同一张源图执行全部服务端预设，并把每组结果统一归档到 COS。
+                    </div>
+                  </div>
+
+                  <div class="image-processing-chain-overview">
+                    <div class="image-processing-chain-overview__item">
+                      当前共 {{ variations.length }} 组裂变预设
+                    </div>
+                    <div class="image-processing-chain-overview__item">
+                      预设来自 yishe-images，不在此页面新增不存在的功能
+                    </div>
+                  </div>
+
+                  <div v-if="variations.length" class="image-processing-variation-grid">
+                    <div
+                      v-for="variation in variations"
+                      :key="variation.id || variation.name"
+                      class="image-processing-variation-card"
+                    >
+                      <div class="image-processing-variation-card__header">
+                        <div class="image-processing-variation-card__title-wrap">
+                          <div class="image-processing-variation-card__title">
+                            {{ variation.name || `预设 ${variation.id}` }}
+                          </div>
+                          <div class="image-processing-variation-card__desc">
+                            {{ variation.description || "无描述" }}
+                          </div>
+                        </div>
+                        <el-tag size="small" effect="plain">
+                          {{ getVariationOperationCount(variation) }} 步
+                        </el-tag>
+                      </div>
+
+                      <div class="image-processing-variation-card__ops">
+                        <span
+                          v-for="(label, labelIndex) in getVariationOperationLabels(variation)"
+                          :key="`${variation.id || variation.name}-${label}-${labelIndex}`"
+                          class="image-processing-variation-card__op"
+                        >
+                          {{ label }}
+                        </span>
+                        <span
+                          v-if="
+                            getVariationOperationCount(variation) >
+                            getVariationOperationLabels(variation).length
+                          "
+                          class="image-processing-variation-card__op image-processing-variation-card__op--more"
+                        >
+                          +{{
+                            getVariationOperationCount(variation) -
+                            getVariationOperationLabels(variation).length
+                          }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-else
+                    class="image-processing-empty-state image-processing-empty-state--chain"
+                  >
+                    <div class="image-processing-empty-state__title">暂未读取到裂变预设</div>
+                    <div class="image-processing-empty-state__desc">
+                      请先刷新元数据，确认 yishe-images 的裂变配置已返回。
+                    </div>
+                  </div>
+
+                  <div class="image-processing-stage-footer">
+                    <el-button @click="createStageTab = 'source'">返回基础设置</el-button>
+                    <el-button type="primary" @click="createStageTab = 'preview'">
+                      查看提交预览
+                    </el-button>
+                  </div>
                 </div>
               </template>
+            </el-tab-pane>
 
-              <el-form-item label="处理引擎">
-                <el-select
-                  v-model="form.processorId"
-                  clearable
-                  filterable
-                  placeholder="留空则使用服务默认引擎"
-                  class="image-processing-full-width"
-                >
-                  <el-option
-                    v-for="processor in processorOptions"
-                    :key="processor.id"
-                    :label="processor.label || processor.id"
-                    :value="processor.id"
-                  >
-                    <div class="image-processing-select-option">
-                      <span>{{ processor.label || processor.id }}</span>
-                      <span>{{ processor.id }}</span>
+            <el-tab-pane label="提交预览" name="preview">
+              <div class="image-processing-stage-panel image-processing-stage-panel--preview-submit">
+                <div class="image-processing-stage-section">
+                  <div class="image-processing-builder-intro">
+                    <div class="image-processing-builder-intro__title">提交前确认一次执行链路</div>
+                    <div class="image-processing-builder-intro__desc">
+                      design-server 负责归档与记录，yishe-images 负责执行真实处理。
                     </div>
-                  </el-option>
-                </el-select>
-              </el-form-item>
-
-              <div class="image-processing-preview-card">
-                <div class="image-processing-preview-card__title">原图预览</div>
-                <div class="image-processing-preview-card__body">
-                  <img
-                    v-if="createSourcePreview"
-                    :src="createSourcePreview"
-                    alt="source preview"
-                    class="image-processing-preview-card__image"
-                  />
-                  <div v-else class="image-processing-preview-card__empty">等待选择图片</div>
-                </div>
-              </div>
-
-              <div v-if="hasSourceContext" class="image-processing-source-context">
-                <div class="image-processing-source-context__title">来源链路</div>
-                <div class="image-processing-source-context__item">
-                  <span class="label">来源模块</span>
-                  <span class="value">{{ form.sourceModule || "-" }}</span>
-                </div>
-                <div class="image-processing-source-context__item">
-                  <span class="label">来源记录</span>
-                  <span class="value">{{ form.sourceRecordId || "-" }}</span>
-                </div>
-                <div class="image-processing-source-context__item">
-                  <span class="label">来源名称</span>
-                  <span class="value">{{ form.sourceName || "-" }}</span>
-                </div>
-              </div>
-            </el-form>
-          </div>
-        </el-card>
-
-        <el-card shadow="never" class="image-processing-panel-card">
-          <template #header>
-            第 2 步 ·
-            {{ form.taskType === "process" ? "填写链式处理 JSON" : "查看裂变预设" }}
-          </template>
-          <div class="image-processing-panel-scroll image-processing-panel-scroll--column">
-            <template v-if="form.taskType === 'process'">
-              <div class="image-processing-panel-toolbar">
-                <el-button size="small" @click="fillDefaultOperations">恢复示例</el-button>
-                <el-button size="small" @click="formatOperationsJson">格式化 JSON</el-button>
-              </div>
-              <div class="image-processing-json-editor">
-                <el-input
-                  v-model="form.operationsJson"
-                  type="textarea"
-                  :rows="18"
-                  resize="none"
-                  placeholder='请输入 JSON，例如：[{"type":"resize","params":{"width":1080,"height":1080}}]'
-                />
-              </div>
-              <div class="image-processing-panel-tip">
-                `process` 模式直接提交远端操作链；默认示例和操作列表都来自 yishe-images 元数据，经
-                design-server 透传。
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="image-processing-panel-tip">
-                `variations` 模式会调用 yishe-images 当前内置的裂变预设集合，不在前端硬编码执行链。
-              </div>
-              <div class="image-processing-variation-list">
-                <div
-                  v-for="variation in variations"
-                  :key="variation.id || variation.name"
-                  class="image-processing-variation-card"
-                >
-                  <div class="image-processing-variation-card__header">
-                    <span class="image-processing-variation-card__title">
-                      {{ variation.name || "未命名预设" }}
-                    </span>
-                    <el-tag size="small" effect="plain">
-                      {{ variation.operationCount || 0 }} 步
-                    </el-tag>
                   </div>
-                  <div class="image-processing-variation-card__desc">
-                    {{ variation.description || "无描述" }}
-                  </div>
-                  <pre class="image-processing-variation-card__json">{{
-                    formatJson(variation.operations || [])
-                  }}</pre>
-                </div>
-                <div v-if="!variations.length" class="image-processing-empty-state">
-                  暂未获取到裂变预设
-                </div>
-              </div>
-            </template>
-          </div>
-        </el-card>
 
-        <el-card shadow="never" class="image-processing-panel-card">
-          <template #header>
-            第 3 步 ·
-            {{ form.taskType === "process" ? "远端操作目录" : "提交说明" }}
-          </template>
-          <div class="image-processing-panel-scroll image-processing-panel-scroll--column">
-            <template v-if="form.taskType === 'process'">
-              <div class="image-processing-panel-tip">
-                下方列表直接来自 yishe-images 元数据。点击“插入模板”会把默认参数片段追加到当前 JSON
-                中，后续新增操作无需改前端页面逻辑。
-              </div>
-              <div
-                v-for="group in groupedOperations"
-                :key="group.category"
-                class="image-processing-op-group"
-              >
-                <div class="image-processing-op-group__title">
-                  {{ group.label }} <span>({{ group.items.length }})</span>
-                </div>
-                <div class="image-processing-op-list">
-                  <div
-                    v-for="operation in group.items"
-                    :key="operation.apiType || operation.type"
-                    class="image-processing-op-card"
-                  >
-                    <div class="image-processing-op-card__header">
-                      <div class="image-processing-op-card__title">
-                        {{ operation.type || operation.apiType }}
-                      </div>
-                      <el-button
-                        size="small"
-                        type="primary"
-                        link
-                        @click="appendOperationTemplate(operation)"
-                      >
-                        插入模板
-                      </el-button>
-                    </div>
-                    <div class="image-processing-op-card__desc">
-                      {{ operation.description || "无描述" }}
-                    </div>
-                    <div class="image-processing-op-card__meta">
-                      <span>分类：{{ operation.category || "default" }}</span>
-                      <span>必填：{{ getRequiredParamNames(operation).join(" / ") || "-" }}</span>
-                    </div>
-                    <div class="image-processing-op-card__params">
-                      {{ getOperationParamSummary(operation) }}
-                    </div>
+                  <div class="image-processing-submit-summary">
                     <div
-                      v-if="getOperationParamRows(operation).length"
-                      class="image-processing-op-card__param-list"
+                      v-for="item in createPreviewItems"
+                      :key="item.label"
+                      class="image-processing-submit-summary__item"
                     >
-                      <div
-                        v-for="param in getOperationParamRows(operation)"
-                        :key="`${operation.type || operation.apiType}-${param.name}`"
-                        class="image-processing-op-card__param-item"
+                      <span class="label">{{ item.label }}</span>
+                      <span class="value">{{ item.value }}</span>
+                    </div>
+                  </div>
+
+                  <div class="image-processing-request-flow">
+                    <div
+                      v-for="(step, index) in createRequestFlowItems"
+                      :key="step"
+                      class="image-processing-request-flow__item"
+                    >
+                      <span class="image-processing-request-flow__index">{{ index + 1 }}</span>
+                      <span class="image-processing-request-flow__text">{{ step }}</span>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="form.taskType === 'process' && currentOperations.length"
+                    class="image-processing-preview-chain"
+                  >
+                    <div class="image-processing-preview-chain__title">本次处理链</div>
+                    <div class="image-processing-preview-chip-list">
+                      <span
+                        v-for="operation in currentOperations"
+                        :key="operation.key"
+                        class="image-processing-preview-chip"
                       >
-                        <div class="image-processing-op-card__param-head">
-                          <span class="name">{{ param.name }}</span>
-                          <span class="meta">{{ param.meta }}</span>
-                        </div>
-                        <div class="image-processing-op-card__param-desc">
-                          {{ param.description }}
-                        </div>
-                      </div>
+                        {{ operation.title }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div
+                    v-else-if="form.taskType === 'variations' && variationPreviewNames.length"
+                    class="image-processing-preview-chain"
+                  >
+                    <div class="image-processing-preview-chain__title">本次裂变输出</div>
+                    <div class="image-processing-preview-chain__desc">
+                      将对当前源图执行全部 {{ variations.length }} 组服务预设。
+                    </div>
+                    <div class="image-processing-preview-chip-list">
+                      <span
+                        v-for="(name, index) in variationPreviewNames"
+                        :key="`${name}-${index}`"
+                        class="image-processing-preview-chip"
+                      >
+                        {{ name }}
+                      </span>
+                      <span
+                        v-if="variations.length > variationPreviewNames.length"
+                        class="image-processing-preview-chip image-processing-preview-chip--more"
+                      >
+                        +{{ variations.length - variationPreviewNames.length }}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div v-if="!groupedOperations.length" class="image-processing-empty-state">
-                暂未获取到操作目录
-              </div>
-            </template>
 
-            <template v-else>
-              <el-alert
-                type="info"
-                :closable="false"
-                class="image-processing-submit-alert"
-                title="裂变结果会在服务端归档到 COS，并写入执行记录；删除记录时会同步删除归档文件。"
-              />
-              <div class="image-processing-submit-summary">
-                <div class="image-processing-submit-summary__item">
-                  <span class="label">提交模式</span>
-                  <span class="value">{{ getTaskTypeLabel(form.taskType) }}</span>
-                </div>
-                <div class="image-processing-submit-summary__item">
-                  <span class="label">图片来源</span>
-                  <span class="value">
-                    {{ form.sourceType === "upload" ? "本地上传" : "远程地址" }}
-                  </span>
-                </div>
-                <div class="image-processing-submit-summary__item">
-                  <span class="label">处理引擎</span>
-                  <span class="value">{{ selectedProcessorLabel || "服务默认引擎" }}</span>
-                </div>
-                <div class="image-processing-submit-summary__item">
-                  <span class="label">裂变预设</span>
-                  <span class="value">{{ variations.length }} 组</span>
+                <div class="image-processing-stage-section image-processing-stage-section--preview">
+                  <div class="image-processing-request-preview">
+                    <div class="image-processing-request-preview__title">提交预览</div>
+                    <pre class="image-processing-json-block">{{ requestPreviewJson }}</pre>
+                  </div>
                 </div>
               </div>
-            </template>
+            </el-tab-pane>
+          </el-tabs>
 
-            <div class="image-processing-request-preview">
-              <div class="image-processing-request-preview__title">提交预览</div>
-              <pre class="image-processing-json-block">{{ requestPreviewJson }}</pre>
+          <div class="image-processing-create-actions">
+            <el-alert
+              type="success"
+              :closable="false"
+              class="image-processing-submit-alert"
+              title="处理完成后，源图和结果图会归档到 COS；yishe-images 临时文件会在服务端清理。"
+            />
+            <div class="image-processing-submit-hint">
+              {{ createSubmitHint }}
             </div>
-
-            <div class="image-processing-create-actions">
-              <el-alert
-                type="success"
-                :closable="false"
-                class="image-processing-submit-alert"
-                title="处理完成后，源图和结果图会归档到 COS；yishe-images 临时文件会在服务端清理。"
-              />
-              <div class="image-processing-submit-hint">
-                当前模块是独立记录模块，和 remotion 一样走“服务端协调 + COS 存储 + 记录管理”的模式。
-              </div>
-              <div class="image-processing-create-actions__buttons">
-                <el-button @click="createVisible = false">取消</el-button>
-                <el-button
-                  type="primary"
-                  :loading="submitLoading"
-                  :disabled="!canSubmitCreate"
-                  @click="submitCreate"
-                >
-                  立即执行
-                </el-button>
-              </div>
+            <div class="image-processing-create-actions__buttons">
+              <el-button @click="createVisible = false">取消</el-button>
+              <el-button
+                type="primary"
+                :loading="submitLoading"
+                :disabled="!canSubmitCreate"
+                @click="submitCreate"
+              >
+                {{ form.taskType === "variations" ? "执行图片裂变" : "立即执行" }}
+              </el-button>
             </div>
           </div>
         </el-card>
@@ -882,6 +1282,11 @@ const sourceFile = ref<File | null>(null);
 const sourceFileName = ref("");
 const sourceFilePreviewUrl = ref("");
 const lastAppliedPrefillSignature = ref("");
+const createStageTab = ref("source");
+const processWorkspaceTab = ref("steps");
+const operationKeyword = ref("");
+const operationCategoryFilter = ref("all");
+const activeCatalogOperationKey = ref("");
 
 const queryParams = reactive({
   currentPage: 1,
@@ -902,6 +1307,21 @@ const form = reactive({
   sourceRecordId: "",
   sourceName: "",
 });
+
+const categoryLabelMap: Record<string, string> = {
+  all: "全部",
+  basic: "基础操作",
+  effect: "图片效果",
+  filter: "滤镜效果",
+  default: "其他操作",
+};
+
+const categoryOrderMap: Record<string, number> = {
+  basic: 1,
+  effect: 2,
+  filter: 3,
+  default: 9,
+};
 
 const imageStatusLabel = computed(() => {
   if (imagesStatus.loading && !imagesStatus.checked) return "检测中";
@@ -960,16 +1380,191 @@ const hasSourceContext = computed(() => {
   return !!(form.sourceModule || form.sourceRecordId || form.sourceName);
 });
 
-const groupedOperations = computed(() => {
+const createTaskTypeLabel = computed(() => {
+  return form.taskType === "variations" ? "图片裂变" : "链式处理";
+});
+
+const createSourceTypeLabel = computed(() => {
+  return form.sourceType === "upload" ? "本地上传" : "远程地址";
+});
+
+const createSourceContextLabel = computed(() => {
+  return [form.sourceModule, form.sourceRecordId, form.sourceName]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(" / ");
+});
+
+const currentOperationsState = computed(() => {
+  const raw = String(form.operationsJson || "").trim();
+  if (!raw) {
+    return {
+      items: [] as any[],
+      error: "",
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return {
+        items: [] as any[],
+        error: "处理链 JSON 必须是数组",
+      };
+    }
+    return {
+      items: parsed.map((item, index) => buildCurrentOperationViewModel(item, index)),
+      error: "",
+    };
+  } catch (error: any) {
+    return {
+      items: [] as any[],
+      error: `处理链 JSON 解析失败：${error?.message || error}`,
+    };
+  }
+});
+
+const currentOperations = computed(() => currentOperationsState.value.items);
+
+const currentOperationsParseError = computed(() => currentOperationsState.value.error);
+
+const createWorkflowSummaryLabel = computed(() => {
+  if (form.taskType === "variations") {
+    return variations.value.length
+      ? `将执行 ${variations.value.length} 组服务预设`
+      : "暂未读取到裂变预设";
+  }
+  if (currentOperationsParseError.value) {
+    return "处理链 JSON 待修正";
+  }
+  if (currentOperations.value.length) {
+    return `共 ${currentOperations.value.length} 个步骤`;
+  }
+  return "尚未配置处理步骤";
+});
+
+const createSummaryItems = computed(() => {
+  return [
+    { label: "模式", value: createTaskTypeLabel.value },
+    { label: "来源", value: createSourceTypeLabel.value },
+    {
+      label: form.taskType === "process" ? "处理链" : "裂变预设",
+      value: createWorkflowSummaryLabel.value,
+    },
+    { label: "处理引擎", value: selectedProcessorLabel.value || "服务默认引擎" },
+  ];
+});
+
+const createPreviewItems = computed(() => {
+  const items = [
+    { label: "工作模式", value: createTaskTypeLabel.value },
+    { label: "图片来源", value: createSourceTypeLabel.value },
+    { label: "任务标题", value: String(form.title || "").trim() || "自动生成" },
+    {
+      label: form.taskType === "process" ? "处理链" : "裂变预设",
+      value: createWorkflowSummaryLabel.value,
+    },
+    { label: "处理引擎", value: selectedProcessorLabel.value || "服务默认引擎" },
+  ];
+
+  if (createSourceContextLabel.value) {
+    items.push({
+      label: "来源链路",
+      value: createSourceContextLabel.value,
+    });
+  }
+
+  return items;
+});
+
+const createRequestFlowItems = computed(() => buildCreateRequestFlow());
+
+const variationPreviewNames = computed(() => {
+  return variations.value
+    .map((item) => String(item?.name || "").trim())
+    .filter(Boolean)
+    .slice(0, 8);
+});
+
+const operationUsageCountMap = computed(() => {
+  const map = new Map<string, number>();
+
+  currentOperations.value.forEach((item) => {
+    const key = String(item.meta?.apiType || item.meta?.type || item.raw?.type || "").trim();
+    if (!key) return;
+    map.set(key, (map.get(key) || 0) + 1);
+  });
+
+  return map;
+});
+
+const operationCategoryOptions = computed(() => {
+  const counts = new Map<string, number>();
+
+  operations.value.forEach((operation) => {
+    const category = String(operation?.category || "default");
+    counts.set(category, (counts.get(category) || 0) + 1);
+  });
+
+  const options = [
+    {
+      value: "all",
+      label: categoryLabelMap.all,
+      count: operations.value.length,
+    },
+  ];
+
+  Array.from(counts.entries())
+    .sort((a, b) => {
+      const orderDiff = (categoryOrderMap[a[0]] || 99) - (categoryOrderMap[b[0]] || 99);
+      if (orderDiff !== 0) return orderDiff;
+      return a[0].localeCompare(b[0]);
+    })
+    .forEach(([value, count]) => {
+      options.push({
+        value,
+        label: categoryLabelMap[value] || value,
+        count,
+      });
+    });
+
+  return options;
+});
+
+const filteredGroupedOperations = computed(() => {
+  const keyword = String(operationKeyword.value || "").trim().toLowerCase();
+  const categoryFilter = String(operationCategoryFilter.value || "all");
   const groups = new Map<string, any[]>();
 
-  for (const operation of operations.value) {
-    const category = String(operation?.category || "default");
-    if (!groups.has(category)) {
-      groups.set(category, []);
-    }
-    groups.get(category)?.push(operation);
-  }
+  operations.value
+    .filter((operation) => {
+      const category = String(operation?.category || "default");
+      if (categoryFilter !== "all" && category !== categoryFilter) {
+        return false;
+      }
+      if (!keyword) {
+        return true;
+      }
+      return matchesOperationKeyword(operation, keyword);
+    })
+    .sort((a, b) => {
+      const categoryDiff =
+        (categoryOrderMap[String(a?.category || "default")] || 99) -
+        (categoryOrderMap[String(b?.category || "default")] || 99);
+      if (categoryDiff !== 0) {
+        return categoryDiff;
+      }
+      const aLabel = String(a?.description || a?.type || a?.apiType || "");
+      const bLabel = String(b?.description || b?.type || b?.apiType || "");
+      return aLabel.localeCompare(bLabel, "zh-CN");
+    })
+    .forEach((operation) => {
+      const category = String(operation?.category || "default");
+      if (!groups.has(category)) {
+        groups.set(category, []);
+      }
+      groups.get(category)?.push(operation);
+    });
 
   return Array.from(groups.entries()).map(([category, items]) => ({
     category,
@@ -978,14 +1573,27 @@ const groupedOperations = computed(() => {
   }));
 });
 
+const filteredOperationCount = computed(() => {
+  return filteredGroupedOperations.value.reduce((total, group) => total + group.items.length, 0);
+});
+
 const canSubmitCreate = computed(() => {
   if (imagesStatus.checked && !imagesStatus.available) {
     return false;
   }
   if (form.sourceType === "upload") {
-    return !!sourceFile.value;
+    if (!sourceFile.value) {
+      return false;
+    }
+  } else if (!/^https?:\/\//i.test(String(form.imageUrl || "").trim())) {
+    return false;
   }
-  return /^https?:\/\//i.test(String(form.imageUrl || "").trim());
+
+  if (form.taskType === "process") {
+    return !currentOperationsParseError.value && currentOperations.value.length > 0;
+  }
+
+  return variations.value.length > 0;
 });
 
 const detailResultFiles = computed(() => {
@@ -998,6 +1606,29 @@ const detailImportableIndexes = computed(() => {
 
 const requestPreviewJson = computed(() => {
   return formatJson(buildCreateRequestPreview());
+});
+
+const createSubmitHint = computed(() => {
+  if (imagesStatus.checked && !imagesStatus.available) {
+    return "图片处理服务当前不可用，请先恢复 yishe-images 服务。";
+  }
+  if (form.sourceType === "upload" && !sourceFile.value) {
+    return "请先上传一张源图，再继续编排处理链。";
+  }
+  if (form.sourceType === "url" && !/^https?:\/\//i.test(String(form.imageUrl || "").trim())) {
+    return "请先输入有效的图片地址，再继续提交任务。";
+  }
+  if (form.taskType === "process") {
+    if (currentOperationsParseError.value) {
+      return currentOperationsParseError.value;
+    }
+    if (!currentOperations.value.length) {
+      return "请先从操作目录中加入至少一个处理步骤。";
+    }
+  } else if (!variations.value.length) {
+    return "当前尚未读取到裂变预设，请先刷新 yishe-images 元数据。";
+  }
+  return "当前校验已通过，提交后会由 design-server 协调 yishe-images 执行并归档到 COS。";
 });
 
 const gridOptions = computed(() => ({
@@ -1022,11 +1653,6 @@ const gridOptions = computed(() => ({
     buildOperationColumn("operationDefaultSlot"),
   ],
 }));
-
-const categoryLabelMap: Record<string, string> = {
-  basic: "基础操作",
-  effect: "图片效果",
-};
 
 watch(
   () => form.taskType,
@@ -1132,6 +1758,11 @@ function resetForm() {
   form.sourceModule = "";
   form.sourceRecordId = "";
   form.sourceName = "";
+  createStageTab.value = "source";
+  processWorkspaceTab.value = "steps";
+  operationKeyword.value = "";
+  operationCategoryFilter.value = "all";
+  activeCatalogOperationKey.value = "";
   resetSourceUpload();
 }
 
@@ -1161,13 +1792,20 @@ function handleSourceFileExceed() {
 }
 
 function fillDefaultOperations() {
-  syncDefaultOperationsJson({ force: true });
+  syncDefaultOperationsJson({ forceExample: true });
+  createStageTab.value = "workflow";
+  processWorkspaceTab.value = "steps";
+}
+
+function switchToAdvancedJson() {
+  createStageTab.value = "workflow";
+  processWorkspaceTab.value = "json";
 }
 
 function formatOperationsJson() {
   const raw = String(form.operationsJson || "").trim();
   if (!raw) {
-    syncDefaultOperationsJson({ force: true });
+    form.operationsJson = EMPTY_OPERATIONS_JSON;
     return;
   }
 
@@ -1181,6 +1819,53 @@ function formatOperationsJson() {
   } catch (error: any) {
     ElMessage.error(`JSON 格式错误：${error?.message || error}`);
   }
+}
+
+function normalizeOperationLookupKey(value?: string) {
+  let key = String(value || "").trim();
+  if (!key) {
+    return "";
+  }
+
+  if (key === "shape-crop") {
+    key = "shapeCrop";
+  }
+  if (key.startsWith("effects-")) {
+    key = key.slice("effects-".length);
+  }
+  if (key.startsWith("effect-")) {
+    key = key.slice("effect-".length);
+  }
+  if (key.startsWith("filter_")) {
+    key = key.replace(/^filter_/, "filter-");
+  }
+
+  return key;
+}
+
+function getOperationIdentity(operation: any) {
+  return String(operation?.apiType || operation?.type || "").trim();
+}
+
+function resolveOperationMetaByType(type?: string) {
+  const normalized = normalizeOperationLookupKey(type);
+  if (!normalized) {
+    return null;
+  }
+
+  return (
+    operations.value.find((operation) => {
+      const candidates = [
+        operation?.apiType,
+        operation?.type,
+        ...(Array.isArray(operation?.aliases) ? operation.aliases : []),
+      ]
+        .map((item) => normalizeOperationLookupKey(item))
+        .filter(Boolean);
+
+      return candidates.includes(normalized);
+    }) || null
+  );
 }
 
 function getRequiredParamNames(operation: any) {
@@ -1246,6 +1931,42 @@ function formatOperationParamValue(value: unknown) {
   return String(value);
 }
 
+function getCurrentOperationParamEntries(operation: any) {
+  const params =
+    operation?.params && typeof operation.params === "object" && !Array.isArray(operation.params)
+      ? operation.params
+      : {};
+
+  return Object.entries(params).map(([name, value]) => ({
+    name,
+    value: formatOperationParamValue(value),
+  }));
+}
+
+function buildCurrentOperationViewModel(operation: any, index: number) {
+  const meta = resolveOperationMetaByType(operation?.type);
+  const title =
+    String(meta?.description || meta?.type || operation?.type || `步骤 ${index + 1}`).trim() ||
+    `步骤 ${index + 1}`;
+
+  return {
+    key: `${index}-${String(operation?.type || meta?.apiType || meta?.type || "unknown")}`,
+    raw: operation,
+    meta,
+    title,
+    description:
+      meta?.description && meta.description !== title
+        ? meta.description
+        : meta
+          ? `由 yishe-images 提供的 ${categoryLabelMap[String(meta.category || "default")] || "远端操作"}`
+          : "这个操作来自当前 JSON，暂未匹配到 yishe-images 元数据。",
+    typeLabel: String(meta?.apiType || operation?.type || "-"),
+    categoryLabel: categoryLabelMap[String(meta?.category || "default")] || "其他操作",
+    requiredParams: Array.isArray(meta?.requiredParams) ? meta.requiredParams : [],
+    paramEntries: getCurrentOperationParamEntries(operation),
+  };
+}
+
 function getOperationParamRows(operation: any) {
   const params = operation?.params || {};
   return Object.entries(params as Record<string, any>).map(([name, definition]) => {
@@ -1273,6 +1994,25 @@ function getOperationParamRows(operation: any) {
   });
 }
 
+function getVariationOperationCount(variation: any) {
+  if (Array.isArray(variation?.operations)) {
+    return variation.operations.length;
+  }
+  const count = Number(variation?.operationCount);
+  return Number.isFinite(count) ? count : 0;
+}
+
+function getVariationOperationLabels(variation: any) {
+  const operationsList = Array.isArray(variation?.operations) ? variation.operations : [];
+  return operationsList
+    .slice(0, 4)
+    .map((operation: any) => {
+      const meta = resolveOperationMetaByType(operation?.type);
+      return String(meta?.description || meta?.apiType || operation?.type || "").trim();
+    })
+    .filter(Boolean);
+}
+
 function buildOperationTemplate(operation: any) {
   const template: Record<string, any> = {
     type: operation?.apiType || operation?.type,
@@ -1294,35 +2034,30 @@ function buildOperationTemplate(operation: any) {
   return template;
 }
 
-function isEmptyOperationTemplateJson(value?: string) {
-  const raw = String(value || "").trim();
-  if (!raw) {
-    return true;
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length === 0;
-  } catch {
-    return false;
-  }
-}
-
 function resolveDefaultOperationsJson() {
-  const firstOperation = operations.value[0];
-  if (!firstOperation) {
+  const exampleOperation =
+    ["resize", "crop", "effects-grayscale", "grayscale"]
+      .map((type) => resolveOperationMetaByType(type))
+      .find(Boolean) || operations.value[0];
+
+  if (!exampleOperation) {
     return EMPTY_OPERATIONS_JSON;
   }
-  return JSON.stringify([buildOperationTemplate(firstOperation)], null, 2);
+  return JSON.stringify([buildOperationTemplate(exampleOperation)], null, 2);
 }
 
-function syncDefaultOperationsJson(options: { force?: boolean } = {}) {
+function syncDefaultOperationsJson(options: { forceExample?: boolean } = {}) {
   if (form.taskType !== "process") {
     return;
   }
 
-  if (options.force || isEmptyOperationTemplateJson(form.operationsJson)) {
+  if (options.forceExample) {
     form.operationsJson = resolveDefaultOperationsJson();
+    return;
+  }
+
+  if (!String(form.operationsJson || "").trim()) {
+    form.operationsJson = EMPTY_OPERATIONS_JSON;
   }
 }
 
@@ -1349,7 +2084,7 @@ function applyRoutePrefill() {
   form.sourceModule = prefill.sourceModule || "";
   form.sourceRecordId = prefill.sourceRecordId || "";
   form.sourceName = prefill.sourceName || "";
-  syncDefaultOperationsJson({ force: true });
+  syncDefaultOperationsJson();
 
   if (prefill.openCreate !== false) {
     createVisible.value = true;
@@ -1357,6 +2092,92 @@ function applyRoutePrefill() {
   }
 
   cleanupRoutePrefill();
+}
+
+function replaceOperationsJson(operationsList: any[]) {
+  form.operationsJson = JSON.stringify(operationsList, null, 2);
+}
+
+function parseOperationsJsonArray(rawValue: string) {
+  const raw = String(rawValue || "").trim();
+  if (!raw) {
+    return [];
+  }
+
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) {
+    throw new Error("处理链 JSON 必须是数组");
+  }
+  return parsed;
+}
+
+function clearOperationsChain() {
+  form.operationsJson = EMPTY_OPERATIONS_JSON;
+  processWorkspaceTab.value = "steps";
+}
+
+function moveCurrentOperation(index: number, direction: -1 | 1) {
+  try {
+    const parsed = parseOperationsJsonArray(form.operationsJson);
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= parsed.length) {
+      return;
+    }
+    const [current] = parsed.splice(index, 1);
+    parsed.splice(targetIndex, 0, current);
+    replaceOperationsJson(parsed);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "当前处理链格式不合法，无法调整顺序");
+  }
+}
+
+function removeCurrentOperation(index: number) {
+  try {
+    const parsed = parseOperationsJsonArray(form.operationsJson);
+    parsed.splice(index, 1);
+    replaceOperationsJson(parsed);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "当前处理链格式不合法，无法删除步骤");
+  }
+}
+
+function selectCatalogOperation(operation: any) {
+  activeCatalogOperationKey.value = getOperationIdentity(operation);
+}
+
+function getOperationUsageCount(operation: any) {
+  const identity = getOperationIdentity(operation);
+  if (!identity) {
+    return 0;
+  }
+  return operationUsageCountMap.value.get(identity) || 0;
+}
+
+function matchesOperationKeyword(operation: any, keyword: string) {
+  const paramDefinitionTexts = Object.values(operation?.params || {}).reduce<any[]>(
+    (result, definition: any) => {
+      result.push(definition?.description, definition?.type);
+      if (Array.isArray(definition?.enum)) {
+        result.push(...definition.enum);
+      }
+      return result;
+    },
+    [],
+  );
+
+  const textParts = [
+    operation?.type,
+    operation?.apiType,
+    operation?.description,
+    operation?.category,
+    ...(Array.isArray(operation?.aliases) ? operation.aliases : []),
+    ...Object.keys(operation?.params || {}),
+    ...paramDefinitionTexts,
+  ]
+    .filter((item) => item !== undefined && item !== null && item !== "")
+    .map((item) => String(item).toLowerCase());
+
+  return textParts.some((item) => item.includes(keyword));
 }
 
 function appendOperationTemplate(operation: any) {
@@ -1378,7 +2199,9 @@ function appendOperationTemplate(operation: any) {
   }
 
   parsed.push(buildOperationTemplate(operation));
-  form.operationsJson = JSON.stringify(parsed, null, 2);
+  replaceOperationsJson(parsed);
+  createStageTab.value = "workflow";
+  selectCatalogOperation(operation);
 }
 
 function formatJson(value: any) {
@@ -1412,6 +2235,16 @@ function parseOperationsJsonSafe(rawValue: string) {
   }
 }
 
+function buildCreateRequestFlow() {
+  return [
+    "design-server 归档源图到 COS",
+    form.taskType === "process"
+      ? "yishe-images 调用 /api/process 执行当前处理链"
+      : "yishe-images 调用 /api/variations 执行全部裂变预设",
+    "design-server 归档结果到 COS 并写入记录",
+  ];
+}
+
 function buildCreateRequestPreview() {
   return {
     title: String(form.title || "").trim() || null,
@@ -1435,11 +2268,7 @@ function buildCreateRequestPreview() {
             variationCount: variations.value.length,
             variationNames: variations.value.map((item) => item?.name).filter(Boolean),
           },
-    flow: [
-      "design-server 归档源图到 COS",
-      "yishe-images 执行真实图片处理",
-      "design-server 归档结果到 COS 并写入记录",
-    ],
+    flow: buildCreateRequestFlow(),
   };
 }
 
@@ -1479,6 +2308,14 @@ async function loadMeta(silent = false) {
     catalog.value = result?.catalog || null;
     operations.value = Array.isArray(result?.operations) ? result.operations : [];
     variations.value = Array.isArray(result?.variations) ? result.variations : [];
+    if (
+      !activeCatalogOperationKey.value ||
+      !operations.value.some((operation) => getOperationIdentity(operation) === activeCatalogOperationKey.value)
+    ) {
+      activeCatalogOperationKey.value = operations.value[0]
+        ? getOperationIdentity(operations.value[0])
+        : "";
+    }
     syncDefaultOperationsJson();
   } catch (error: any) {
     catalog.value = null;
@@ -1572,7 +2409,7 @@ async function prepareDetailState(row: any) {
 
 async function submitCreate() {
   if (!canSubmitCreate.value) {
-    ElMessage.warning("请先补全图片来源");
+    ElMessage.warning(createSubmitHint.value);
     return;
   }
 
@@ -1919,9 +2756,10 @@ onBeforeUnmount(() => {
 }
 
 .image-processing-create-layout {
-  display: grid;
+  display: flex;
   height: 100%;
-  grid-template-columns: 340px minmax(0, 1fr) 400px;
+  min-height: 0;
+  flex-direction: column;
   gap: 16px;
 }
 
@@ -1930,22 +2768,114 @@ onBeforeUnmount(() => {
 }
 
 .image-processing-create-layout :deep(.image-processing-panel-card .el-card__body) {
+  gap: 16px;
   padding: 20px 20px 18px;
 }
 
-.image-processing-create-banner {
+.image-processing-create-hero {
   display: flex;
-  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(103, 194, 58, 0.06)),
+    var(--el-fill-color-extra-light);
+  padding: 20px 22px;
+}
+
+.image-processing-create-hero__content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.image-processing-create-hero__desc {
+  max-width: 820px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.image-processing-create-hero__status {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  min-height: 0;
-  padding: 2px 2px 0;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.image-processing-create-hero__status-text {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .image-processing-create-banner__title {
   color: var(--el-text-color-primary);
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   line-height: 1.2;
+}
+
+.image-processing-create-mode-tabs {
+  min-height: 0;
+}
+
+.image-processing-create-mode-tabs :deep(.el-tabs__header),
+.image-processing-stage-tabs :deep(.el-tabs__header),
+.image-processing-process-tabs :deep(.el-tabs__header) {
+  margin: 0;
+}
+
+.image-processing-create-mode-tabs :deep(.el-tabs__nav-wrap::after),
+.image-processing-stage-tabs :deep(.el-tabs__nav-wrap::after),
+.image-processing-process-tabs :deep(.el-tabs__nav-wrap::after) {
+  display: none;
+}
+
+.image-processing-create-mode-tabs :deep(.el-tabs__item),
+.image-processing-stage-tabs :deep(.el-tabs__item),
+.image-processing-process-tabs :deep(.el-tabs__item) {
+  height: 38px;
+}
+
+.image-processing-create-workspace {
+  min-height: 0;
+  flex: 1;
+}
+
+.image-processing-create-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.image-processing-create-summary__item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 14px;
+  background: var(--el-fill-color-extra-light);
+  padding: 12px 14px;
+}
+
+.image-processing-create-summary__item .label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-processing-create-summary__item .value {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .image-processing-panel-card {
@@ -1977,6 +2907,99 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.image-processing-stage-tabs,
+.image-processing-process-tabs {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.image-processing-stage-tabs :deep(.el-tabs__content),
+.image-processing-process-tabs :deep(.el-tabs__content) {
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-top: 16px;
+}
+
+.image-processing-stage-tabs :deep(.el-tab-pane),
+.image-processing-process-tabs :deep(.el-tab-pane) {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.image-processing-stage-panel {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.image-processing-stage-panel--source,
+.image-processing-stage-panel--preview-submit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) 360px;
+  gap: 16px;
+  align-items: start;
+}
+
+.image-processing-stage-section {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 16px;
+  background: var(--el-bg-color-page);
+  padding: 16px 18px;
+}
+
+.image-processing-stage-section--preview {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.image-processing-stage-section .image-processing-preview-card,
+.image-processing-stage-section .image-processing-source-context,
+.image-processing-stage-section .image-processing-request-preview {
+  margin-top: 0;
+}
+
+.image-processing-stage-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.image-processing-builder-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 14px;
+  background: var(--el-fill-color-extra-light);
+  padding: 12px 14px;
+}
+
+.image-processing-builder-intro__title {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.image-processing-builder-intro__desc {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .image-processing-form,
@@ -2093,6 +3116,42 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.image-processing-panel-toolbar--split {
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.image-processing-panel-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.image-processing-chain-overview,
+.image-processing-op-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.image-processing-chain-overview__item,
+.image-processing-op-toolbar span {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.image-processing-chain-overview__item {
+  border-radius: 999px;
+  background: var(--el-fill-color-extra-light);
+  padding: 6px 10px;
+}
+
 .image-processing-json-editor {
   min-height: 0;
   flex: 1;
@@ -2117,8 +3176,15 @@ onBeforeUnmount(() => {
   gap: 14px;
 }
 
+.image-processing-chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .image-processing-variation-card,
-.image-processing-op-card {
+.image-processing-op-card,
+.image-processing-chain-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2129,29 +3195,145 @@ onBeforeUnmount(() => {
 }
 
 .image-processing-variation-card__header,
-.image-processing-op-card__header {
+.image-processing-op-card__header,
+.image-processing-chain-card__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
 .image-processing-variation-card__title,
 .image-processing-op-card__title,
+.image-processing-chain-card__title,
 .image-processing-op-group__title {
   color: var(--el-text-color-primary);
   font-size: 14px;
   font-weight: 600;
 }
 
+.image-processing-variation-card__title-wrap {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .image-processing-variation-card__desc,
 .image-processing-op-card__desc,
 .image-processing-op-card__meta,
-.image-processing-op-card__params {
+.image-processing-op-card__params,
+.image-processing-chain-card__desc,
+.image-processing-chain-card__meta {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.6;
   padding-inline: 2px;
+}
+
+.image-processing-chain-card__main,
+.image-processing-chain-card__title-wrap,
+.image-processing-op-card__title-wrap {
+  display: flex;
+  min-width: 0;
+}
+
+.image-processing-chain-card__main {
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.image-processing-chain-card__title-wrap,
+.image-processing-op-card__title-wrap {
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.image-processing-chain-card__step {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--el-fill-color-light);
+  padding: 4px 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-processing-chain-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.image-processing-chain-card__tags,
+.image-processing-op-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.image-processing-variation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.image-processing-variation-card__ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.image-processing-variation-card__op {
+  border-radius: 999px;
+  background: var(--el-fill-color-light);
+  padding: 5px 10px;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-processing-variation-card__op--more {
+  background: var(--el-fill-color-extra-light);
+  color: var(--el-text-color-secondary);
+}
+
+.image-processing-chain-card__params {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.image-processing-chain-card__param {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 10px;
+  background: var(--el-fill-color-extra-light);
+  padding: 10px 12px;
+}
+
+.image-processing-chain-card__param-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-processing-chain-card__param-value {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.image-processing-chain-card__empty {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .image-processing-variation-card__json,
@@ -2172,6 +3354,112 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.image-processing-request-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.image-processing-request-flow__item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  border-radius: 12px;
+  background: var(--el-fill-color-extra-light);
+  padding: 10px 12px;
+}
+
+.image-processing-request-flow__index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--el-bg-color);
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.image-processing-request-flow__text {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.image-processing-preview-chain {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-radius: 14px;
+  background: var(--el-fill-color-extra-light);
+  padding: 14px;
+}
+
+.image-processing-preview-chain__title {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.image-processing-preview-chain__desc {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.image-processing-preview-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.image-processing-preview-chip {
+  border-radius: 999px;
+  background: var(--el-bg-color);
+  padding: 5px 10px;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.image-processing-preview-chip--more {
+  color: var(--el-text-color-secondary);
+}
+
+.image-processing-op-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.image-processing-op-filter__categories {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.image-processing-op-card {
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.image-processing-op-card:hover,
+.image-processing-op-card.is-active {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+}
+
+.image-processing-op-card__api {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .image-processing-op-card__param-list {
@@ -2210,6 +3498,34 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   font-weight: 400;
+}
+
+.image-processing-empty-state--chain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 14px;
+  background: var(--el-fill-color-extra-light);
+  padding: 24px 16px;
+}
+
+.image-processing-empty-state__title {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.image-processing-empty-state__desc {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.image-processing-empty-state__actions {
+  display: flex;
+  justify-content: center;
 }
 
 .image-processing-submit-alert {
@@ -2402,8 +3718,9 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1440px) {
-  .image-processing-create-layout {
-    grid-template-columns: 320px minmax(0, 1fr) 360px;
+  .image-processing-stage-panel--source,
+  .image-processing-stage-panel--preview-submit {
+    grid-template-columns: minmax(0, 1fr) 320px;
   }
 
   .image-processing-detail-layout {
@@ -2412,10 +3729,19 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 1200px) {
-  .image-processing-create-layout,
+  .image-processing-stage-panel--source,
+  .image-processing-stage-panel--preview-submit {
+    grid-template-columns: 1fr;
+  }
+
   .image-processing-detail-layout {
     display: flex;
     flex-direction: column;
+    min-height: 100%;
+  }
+
+  .image-processing-create-layout {
+    height: auto;
   }
 
   :deep(.image-processing-create-dialog .el-dialog__body),
@@ -2434,10 +3760,34 @@ onBeforeUnmount(() => {
     align-items: flex-start;
   }
 
+  .image-processing-create-hero,
+  .image-processing-panel-toolbar--split,
+  .image-processing-chain-card__header,
+  .image-processing-op-card__header,
+  .image-processing-variation-card__header,
+  .image-processing-stage-footer {
+    flex-direction: column;
+  }
+
+  .image-processing-create-hero__status,
+  .image-processing-chain-card__actions,
+  .image-processing-panel-toolbar__actions {
+    justify-content: flex-start;
+  }
+
+  .image-processing-stage-section {
+    padding: 14px;
+  }
+
+  .image-processing-stage-section--preview {
+    padding: 0;
+  }
+
   .image-processing-create-actions__buttons {
     justify-content: stretch;
   }
 
+  .image-processing-stage-footer .el-button,
   .image-processing-create-actions__buttons .el-button {
     flex: 1;
   }
