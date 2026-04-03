@@ -82,6 +82,10 @@ $prefix-cls: #{$namespace}-tool-header;
   overflow: hidden;
 }
 
+.tool-header-right {
+  overflow: hidden;
+}
+
 .header-breadcrumb {
   flex-shrink: 1;
   overflow: hidden;
@@ -89,14 +93,15 @@ $prefix-cls: #{$namespace}-tool-header;
 }
 
 .client-status-wrapper {
-  flex-shrink: 0;
+  display: flex;
+  min-width: 0;
+  flex-shrink: 1;
+  justify-content: flex-end;
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .client-status-wrapper {
-    display: none !important;
-  }
+.client-status-wrapper :deep(.header-connection-status__trigger) {
+  max-width: 100%;
 }
 
 @media (min-width: 768px) and (max-width: 1180px) {
@@ -129,7 +134,18 @@ $prefix-cls: #{$namespace}-tool-header;
   }
 
   .tool-header-right {
-    gap: 2px;
+    gap: 4px;
+  }
+
+  .client-status-wrapper {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .#{$prefix-cls} {
+    padding-left: 8px;
+    padding-right: 4px;
   }
 }
 </style>

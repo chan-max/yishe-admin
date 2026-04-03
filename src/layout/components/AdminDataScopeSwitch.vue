@@ -5,7 +5,8 @@
       v-model="selectedValue"
       class="admin-data-scope__select"
       filterable
-      :loading="loading"
+      :loading="loading || switching"
+      :disabled="switching"
       placeholder="选择范围"
       @visible-change="handleVisibleChange"
       @change="handleChange"
@@ -25,95 +26,115 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getUserList } from '@/api/user'
-import { useDataScopeStore } from '@/store/modules/dataScope'
-import { useUserStore } from '@/store/modules/user'
+import { computed, onMounted, ref } from "vue";
+import { ElMessage } from "element-plus";
+import { getUserList } from "@/api/user";
+import { useTagsView } from "@/hooks/web/useTagsView";
+import { useDataScopeStore } from "@/store/modules/dataScope";
+import { useUserStore } from "@/store/modules/user";
 
 type UserOption = {
-  value: string
-  label: string
-  userId: string
-}
+  value: string;
+  label: string;
+  userId: string;
+};
 
-const userStore = useUserStore()
-const dataScopeStore = useDataScopeStore()
-const loading = ref(false)
-const loaded = ref(false)
-const userOptions = ref<UserOption[]>([])
+const userStore = useUserStore();
+const dataScopeStore = useDataScopeStore();
+const { refreshPage } = useTagsView();
+const loading = ref(false);
+const loaded = ref(false);
+const userOptions = ref<UserOption[]>([]);
+const switching = ref(false);
 
-const visible = computed(() => !!userStore.user?.isAdmin)
+const visible = computed(() => !!userStore.user?.isAdmin);
 
 const selectedValue = computed({
   get: () => {
-    if (dataScopeStore.mode === 'all') {
-      return 'all'
+    if (dataScopeStore.mode === "all") {
+      return "all";
     }
-    if (dataScopeStore.mode === 'user' && dataScopeStore.userId) {
-      return `user:${dataScopeStore.userId}`
+    if (dataScopeStore.mode === "user" && dataScopeStore.userId) {
+      return `user:${dataScopeStore.userId}`;
     }
-    return 'self'
+    return "self";
   },
-  set: (_value: string) => undefined
-})
+  set: (_value: string) => undefined,
+});
 
 async function loadUsers() {
   if (loading.value || loaded.value || !visible.value) {
-    return
+    return;
   }
-  loading.value = true
+  loading.value = true;
   try {
-    const res = await getUserList({ currentPage: 1, pageSize: 1000 })
-    const currentUserId = String(userStore.user?.id || '')
+    const res = await getUserList({ currentPage: 1, pageSize: 1000 });
+    const currentUserId = String(userStore.user?.id || "");
     userOptions.value = (res.list || [])
       .map((item: any) => ({
         value: `user:${String(item.id)}`,
         label: `${item.name || item.account} (${item.account})`,
-        userId: String(item.id)
+        userId: String(item.id),
       }))
-      .filter((item: UserOption) => item.userId !== currentUserId)
-    loaded.value = true
+      .filter((item: UserOption) => item.userId !== currentUserId);
+    loaded.value = true;
   } catch (error) {
-    ElMessage.error('加载用户列表失败')
+    ElMessage.error("加载用户列表失败");
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function handleVisibleChange(show: boolean) {
   if (show) {
-    loadUsers()
+    loadUsers();
   }
 }
 
-function handleChange(value: string) {
-  if (value === 'all') {
-    dataScopeStore.setAll()
-    return
+async function refreshCurrentView() {
+  switching.value = true;
+  try {
+    await refreshPage();
+  } finally {
+    switching.value = false;
+  }
+}
+
+async function handleChange(value: string) {
+  if (value === "all") {
+    dataScopeStore.setAll();
+    ElMessage.success("已切换到全部数据，正在刷新当前页面");
+    await refreshCurrentView();
+    return;
   }
 
-  if (value === 'self' || !value) {
-    dataScopeStore.setSelf()
-    return
+  if (value === "self" || !value) {
+    dataScopeStore.setSelf();
+    ElMessage.success("已切换到我的数据，正在刷新当前页面");
+    await refreshCurrentView();
+    return;
   }
 
-  if (value.startsWith('user:')) {
-    const userId = value.slice(5)
-    const option = userOptions.value.find((item) => item.userId === userId)
+  if (value.startsWith("user:")) {
+    const userId = value.slice(5);
+    const option = userOptions.value.find((item) => item.userId === userId);
     if (!option) {
-      dataScopeStore.setSelf()
-      return
+      dataScopeStore.setSelf();
+      ElMessage.success("已切换到我的数据，正在刷新当前页面");
+      await refreshCurrentView();
+      return;
     }
-    dataScopeStore.setUser(option.userId, option.label)
+    dataScopeStore.setUser(option.userId, option.label);
+    ElMessage.success(`已切换到 ${option.label}，正在刷新当前页面`);
+    await refreshCurrentView();
   }
 }
 
 onMounted(() => {
-  if (dataScopeStore.mode === 'user' && dataScopeStore.userId) {
-    loadUsers()
+  if (dataScopeStore.mode === "user" && dataScopeStore.userId) {
+    loadUsers();
   }
-})
+});
 </script>
 
 <style scoped>

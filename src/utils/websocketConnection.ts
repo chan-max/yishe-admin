@@ -15,13 +15,13 @@ export const resolveRuntimeConnectionSourceKey = (
 export const formatRuntimeConnectionSourceLabel = (row?: Partial<WebsocketConnectionVO> | null) => {
   switch (resolveRuntimeConnectionSourceKey(row)) {
     case "extension":
-      return "浏览器插件";
+      return "插件端";
     case "admin":
-      return "管理后台";
+      return "管理端";
     case "client":
       return "客户端";
     default:
-      return row?.clientSource || row?.clientInfo?.source || "未知";
+      return "未知端";
   }
 };
 

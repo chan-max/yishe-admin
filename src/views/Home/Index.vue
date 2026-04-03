@@ -1,11 +1,12 @@
 <template>
-  <div class="home-dashboard" v-loading="loading">
+  <div class="home-dashboard">
     <section class="home-panel home-hero">
       <div class="home-hero__content">
         <div class="home-hero__eyebrow">统一操作入口</div>
         <div class="home-hero__title">工作台</div>
         <div class="home-hero__desc">
-          将客户端下载、节点状态和核心操作入口集中到首页，方便在 iPad 与桌面端快速进入对应模块。
+          将客户端下载和核心操作入口集中到首页，个人连接状态统一收拢到顶部状态入口，方便在 iPad
+          与桌面端快速进入对应模块。
         </div>
       </div>
 
@@ -17,39 +18,6 @@
         <el-button @click="goTo('/system/ai-api-key')">AI API Key</el-button>
       </div>
     </section>
-
-    <section class="home-section">
-      <div class="home-section__head">
-        <div>
-          <div class="home-section__title">节点概览</div>
-          <div class="home-section__desc">首页直接查看客户端、PS 与浏览器自动化的当前状态。</div>
-        </div>
-      </div>
-
-      <div class="home-grid home-grid--status">
-        <button
-          v-for="card in statusCards"
-          :key="card.key"
-          type="button"
-          class="home-panel home-status-card"
-          :class="`is-${card.tone}`"
-          @click="goTo(card.route)"
-        >
-          <div class="home-status-card__head">
-            <span class="home-status-card__icon">
-              <Icon :icon="card.icon" />
-            </span>
-            <span class="home-status-card__badge">{{ card.statusText }}</span>
-          </div>
-          <div class="home-status-card__value">{{ card.value }}</div>
-          <div class="home-status-card__title">{{ card.title }}</div>
-          <div class="home-status-card__meta">{{ card.meta }}</div>
-          <div class="home-status-card__hint">{{ card.hint }}</div>
-        </button>
-      </div>
-    </section>
-
-    <MyRuntimeConnections />
 
     <section class="home-section">
       <div class="home-section__head">
@@ -122,15 +90,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Icon } from "@/components/Icon";
-import MyRuntimeConnections from "./components/MyRuntimeConnections.vue";
-import { getClientServiceRuntime, useClientNodeStoreRefs } from "@/store/modules/clientNode";
-import {
-  isClientServiceNodeAvailable,
-  type ClientServiceSummary,
-} from "@/services/clientServiceRuntime";
 
 defineOptions({ name: "HomeIndex" });
 
@@ -153,7 +114,6 @@ interface ShortcutItem {
 }
 
 const router = useRouter();
-const { store, clients, onlineClients, loading, pluginStatusMap } = useClientNodeStoreRefs();
 
 // 下载链接后续只需要在这里补充即可，不需要改模板结构。
 const downloadCards: DownloadCard[] = [
@@ -217,118 +177,6 @@ const shortcuts: ShortcutItem[] = [
   },
 ];
 
-const browserAutomationClients = computed(() =>
-  store.getPluginClients("browser-automation", { includeOffline: true }),
-);
-const psAutomationClients = computed(() =>
-  store.getPluginClients("ps-automation", { includeOffline: true }),
-);
-const googleArtClients = computed(() =>
-  store.getPluginClients("google-art", { includeOffline: true }),
-);
-
-const browserAutomationAvailableCount = computed(
-  () =>
-    browserAutomationClients.value.filter((client) =>
-      isClientServiceNodeAvailable(client, getClientServiceRuntime(client, "browser-automation")),
-    ).length,
-);
-
-const psAutomationEnabledCount = computed(
-  () =>
-    psAutomationClients.value.filter((client) =>
-      isClientServiceNodeAvailable(client, getClientServiceRuntime(client, "ps-automation")),
-    ).length,
-);
-
-const psAutomationRunningCount = computed(
-  () =>
-    clients.value.filter((client) => {
-      if (!client?.isOnline) {
-        return false;
-      }
-
-      const psAutomation = client.clientInfo?.psAutomation || {};
-      return !!(
-        psAutomation.running ||
-        psAutomation.currentPsSetId ||
-        psAutomation.currentPsSetName
-      );
-    }).length,
-);
-
-const googleArtAvailableCount = computed(
-  () =>
-    googleArtClients.value.filter((client) =>
-      isClientServiceNodeAvailable(client, getClientServiceRuntime(client, "google-art")),
-    ).length,
-);
-
-const summaryTextMap: Record<ClientServiceSummary, string> = {
-  available: "可用",
-  degraded: "受限",
-  offline: "离线",
-};
-
-const statusCards = computed(() => [
-  {
-    key: "clients",
-    title: "客户端节点",
-    value: `${onlineClients.value.length}/${clients.value.length}`,
-    meta: "在线 / 总数",
-    hint:
-      onlineClients.value.length > 0
-        ? "当前至少有一个在线客户端，可以继续进行节点调度。"
-        : "当前没有在线客户端，请先确认桌面端是否已启动并连接。",
-    tone: onlineClients.value.length > 0 ? "available" : "offline",
-    statusText: onlineClients.value.length > 0 ? "在线中" : "未连接",
-    route: "/external/browser-automation",
-    icon: "ep:monitor",
-  },
-  {
-    key: "browser-automation",
-    title: "浏览器自动化",
-    value: `${browserAutomationAvailableCount.value}/${browserAutomationClients.value.length}`,
-    meta: "可执行节点 / 总节点",
-    hint: `状态 ${summaryTextMap[pluginStatusMap.value["browser-automation"]] || "离线"}，当前可执行 ${browserAutomationAvailableCount.value} 个节点。`,
-    tone: resolveClientServiceSummaryState("browser-automation"),
-    statusText: summaryTextMap[resolveClientServiceSummaryState("browser-automation")],
-    route: "/external/browser-automation",
-    icon: "ep:connection",
-  },
-  {
-    key: "ps-automation",
-    title: "PS 自动化",
-    value: `${psAutomationEnabledCount.value}/${psAutomationClients.value.length}`,
-    meta: `可调用节点 / 总节点 · 执行中 ${psAutomationRunningCount.value}`,
-    hint:
-      psAutomationRunningCount.value > 0
-        ? `当前有 ${psAutomationRunningCount.value} 个 PS 任务正在执行。`
-        : "当前没有进行中的 PS 任务。",
-    tone: resolveClientServiceSummaryState("ps-automation"),
-    statusText: summaryTextMap[resolveClientServiceSummaryState("ps-automation")],
-    route: "/external/ps-automation",
-    icon: "ep:set-up",
-  },
-  {
-    key: "google-art",
-    title: "Google Art",
-    value: `${googleArtAvailableCount.value}/${googleArtClients.value.length}`,
-    meta: "可用节点 / 总节点",
-    hint: `状态 ${summaryTextMap[pluginStatusMap.value["google-art"]] || "离线"}，当前可用 ${googleArtAvailableCount.value} 个节点。`,
-    tone: resolveClientServiceSummaryState("google-art"),
-    statusText: summaryTextMap[resolveClientServiceSummaryState("google-art")],
-    route: "/external/google-art",
-    icon: "ep:picture-filled",
-  },
-]);
-
-function resolveClientServiceSummaryState(
-  key: "browser-automation" | "ps-automation" | "google-art",
-): ClientServiceSummary {
-  return pluginStatusMap.value[key] || "offline";
-}
-
 function goTo(route: string) {
   router.push(route);
 }
@@ -340,10 +188,6 @@ function handleDownload(downloadUrl: string) {
 
   window.open(downloadUrl, "_blank", "noopener");
 }
-
-onMounted(() => {
-  void store.refresh();
-});
 </script>
 
 <style scoped lang="scss">
@@ -442,10 +286,6 @@ onMounted(() => {
   gap: 14px;
 }
 
-.home-grid--status {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
 .home-grid--downloads {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -454,7 +294,6 @@ onMounted(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.home-status-card,
 .home-shortcut {
   appearance: none;
   -webkit-appearance: none;
@@ -471,23 +310,16 @@ onMounted(() => {
     box-shadow 0.18s ease;
 }
 
-.home-status-card {
-  padding: 18px;
-}
-
-.home-status-card:hover,
 .home-shortcut:hover {
   transform: translateY(-1px);
 }
 
-.home-status-card:focus-visible,
 .home-shortcut:focus-visible {
   box-shadow:
     0 0 0 3px rgb(59 130 246 / 14%),
     0 10px 28px rgba(15, 23, 42, 0.05);
 }
 
-.home-status-card__head,
 .home-download-card__head {
   display: flex;
   align-items: center;
@@ -495,7 +327,6 @@ onMounted(() => {
   gap: 12px;
 }
 
-.home-status-card__icon,
 .home-download-card__icon,
 .home-shortcut__icon {
   display: inline-flex;
@@ -507,66 +338,6 @@ onMounted(() => {
   background: color-mix(in srgb, var(--el-fill-color-light) 78%, transparent 22%);
   color: var(--el-text-color-primary);
   font-size: 18px;
-}
-
-.home-status-card__badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 74%, transparent 26%);
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.home-status-card__value {
-  margin-top: 18px;
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.home-status-card__title {
-  margin-top: 12px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.home-status-card__meta {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.home-status-card__hint {
-  margin-top: 12px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.home-status-card.is-available {
-  border-color: color-mix(in srgb, var(--el-color-success) 26%, transparent 74%);
-}
-
-.home-status-card.is-available .home-status-card__badge {
-  background: color-mix(in srgb, var(--el-color-success-light-9) 88%, transparent 12%);
-  color: var(--el-color-success);
-}
-
-.home-status-card.is-degraded {
-  border-color: color-mix(in srgb, var(--el-color-warning) 28%, transparent 72%);
-}
-
-.home-status-card.is-degraded .home-status-card__badge {
-  background: color-mix(in srgb, var(--el-color-warning-light-9) 88%, transparent 12%);
-  color: var(--el-color-warning);
-}
-
-.home-status-card.is-offline .home-status-card__badge {
-  color: var(--el-text-color-placeholder);
 }
 
 .home-download-card {
@@ -637,7 +408,6 @@ onMounted(() => {
 }
 
 @media (max-width: 1180px) {
-  .home-grid--status,
   .home-grid--downloads {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -649,7 +419,6 @@ onMounted(() => {
   }
 
   .home-hero,
-  .home-status-card,
   .home-download-card,
   .home-shortcut {
     border-radius: 24px;
@@ -664,14 +433,9 @@ onMounted(() => {
   }
 
   .home-hero__desc,
-  .home-status-card__hint,
   .home-download-card__desc,
   .home-shortcut__desc {
     font-size: 14px;
-  }
-
-  .home-status-card__value {
-    font-size: 32px;
   }
 }
 
@@ -681,7 +445,6 @@ onMounted(() => {
   }
 
   .home-hero,
-  .home-status-card,
   .home-download-card,
   .home-shortcut {
     border-radius: 18px;
@@ -697,7 +460,6 @@ onMounted(() => {
     font-size: 24px;
   }
 
-  .home-grid--status,
   .home-grid--downloads,
   .home-grid--shortcuts {
     grid-template-columns: 1fr;

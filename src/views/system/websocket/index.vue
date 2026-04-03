@@ -7,7 +7,7 @@
             <div class="websocket-toolbar__summary">
               <div class="websocket-toolbar__title">远程连接</div>
               <div class="websocket-toolbar__description">
-                {{ activeViewDescription }}
+                {{ runtimeViewDescription }}
               </div>
             </div>
 
@@ -29,8 +29,8 @@
               <div class="websocket-toolbar__meta-item">
                 <span class="websocket-toolbar__meta-label">运行时连接</span>
                 <span class="websocket-toolbar__meta-value">
-                  插件 {{ runtimeExtensionCount }} / 其他后台 {{ runtimeOtherAdminCount }} / 当前后台
-                  {{ runtimeCurrentAdminCount }} / 客户端 {{ runtimeClientCount }}
+                  插件 {{ runtimeExtensionCount }} / 其他后台 {{ runtimeOtherAdminCount }} /
+                  当前后台 {{ runtimeCurrentAdminCount }} / 客户端 {{ runtimeClientCount }}
                 </span>
               </div>
 
@@ -45,30 +45,25 @@
               </div>
 
               <div class="websocket-toolbar__actions">
-                <el-button size="small" type="primary" @click="refreshConnectionData" :loading="isLoading">
+                <el-button
+                  size="small"
+                  type="primary"
+                  @click="refreshConnectionData"
+                  :loading="isRefreshing"
+                >
                   <Icon icon="ep:refresh" class="mr-5px" /> 刷新列表
                 </el-button>
               </div>
             </div>
           </div>
-
-          <div class="websocket-view-switch">
-            <el-radio-group v-model="activeView" size="small">
-              <el-radio-button label="runtime">
-                运行时连接
-                <span class="websocket-view-switch__count">{{ runtimeConnections.length }}</span>
-              </el-radio-button>
-              <el-radio-button label="nodes">
-                客户端节点
-                <span class="websocket-view-switch__count">{{ nodeConnections.length }}</span>
-              </el-radio-button>
-            </el-radio-group>
-          </div>
         </div>
       </template>
 
       <template #table>
-        <el-empty v-if="!isLoading && activeRows.length === 0" :description="activeEmptyDescription" />
+        <el-empty
+          v-if="!isRefreshing && adminConnectionRows.length === 0"
+          :description="runtimeEmptyDescription"
+        />
 
         <div
           v-else
@@ -76,14 +71,19 @@
         >
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid v-bind="activeGridOptions" :data="activeRows" :loading="isLoading" ref="gridRef">
+              <vxe-grid
+                v-bind="runtimeGridOptions"
+                :data="adminConnectionRows"
+                :loading="isRefreshing"
+                ref="gridRef"
+              >
                 <template #status_default="{ row }">
                   <el-tag :type="getConnectionStatusTagType(row)" size="small">
                     {{ getConnectionStatusText(row) }}
                   </el-tag>
                 </template>
 
-                <template #lastOnlineAt_default="{ row }">
+                <template #connectedAt_default="{ row }">
                   {{ formatStatusTime(row.lastOnlineAt || row.connectedAt) }}
                 </template>
 
@@ -92,7 +92,7 @@
                 </template>
 
                 <template #duration_default="{ row }">
-                  {{ formatPast(row.connectedAt || row.lastOnlineAt) }}
+                  {{ row.isOnline ? formatPast(row.connectedAt || row.lastOnlineAt) : "-" }}
                 </template>
 
                 <template #clientSource_default="{ row }">
@@ -100,21 +100,15 @@
                     <el-tag :type="getSourceTagType(row)" size="small">
                       {{ formatSourceLabel(row) }}
                     </el-tag>
-                    <el-tag v-if="isCurrentAdminConnection(row)" size="small" effect="plain" type="primary">
-                      当前后台
-                    </el-tag>
-                    <el-tag v-else-if="isOtherAdminConnection(row)" size="small" effect="plain">
-                      其他后台
-                    </el-tag>
                   </div>
                 </template>
 
                 <template #ip_default="{ row }">
-                  {{ row.ip || row.clientInfo?.location?.ip || '-' }}
+                  {{ row.ip || row.clientInfo?.location?.ip || "-" }}
                 </template>
 
                 <template #ua_default="{ row }">
-                  {{ row.userAgent || row.clientInfo?.userAgent || '-' }}
+                  {{ row.userAgent || row.clientInfo?.userAgent || "-" }}
                 </template>
 
                 <template #clientInfo_default="{ row }">
@@ -141,10 +135,18 @@
                           <el-dropdown-item command="send-message">
                             <span>发送消息</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-if="canControlConnection(row)" command="control" divided>
+                          <el-dropdown-item
+                            v-if="canControlConnection(row)"
+                            command="control"
+                            divided
+                          >
                             <span>操控</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="disconnect" divided class="operation-menu-item--danger">
+                          <el-dropdown-item
+                            command="disconnect"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
                             <span>强制断开</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
@@ -228,7 +230,11 @@
                   <span class="schedule-info-text">{{ formatSchedule(row.schedule) }}</span>
                 </div>
                 <div v-if="row.schedule.type" class="schedule-type-text">
-                  <el-tag :type="row.schedule.type === 'cron' ? 'primary' : 'success'" size="small" plain>
+                  <el-tag
+                    :type="row.schedule.type === 'cron' ? 'primary' : 'success'"
+                    size="small"
+                    plain
+                  >
                     {{ row.schedule.type === "cron" ? "固定时间点" : "间隔时间" }}
                   </el-tag>
                 </div>
@@ -258,11 +264,7 @@
             </template>
           </vxe-grid>
 
-          <el-empty
-            v-else
-            description="当前连接类型不支持操控功能"
-            :image-size="100"
-          />
+          <el-empty v-else description="当前连接类型不支持操控功能" :image-size="100" />
         </div>
       </div>
       <template #footer>
@@ -300,7 +302,11 @@
       </el-form>
       <template #footer>
         <el-button @click="sendMessageDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="sendMessageDialogLoading" @click="handleConfirmSendMessage">
+        <el-button
+          type="primary"
+          :loading="sendMessageDialogLoading"
+          @click="handleConfirmSendMessage"
+        >
           发送
         </el-button>
       </template>
@@ -319,12 +325,16 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useMessage } from "@/hooks/web/useMessage";
 import { formatDate, formatPast } from "@/utils/formatTime";
 import * as WebsocketApi from "@/api/system/websocket";
-import type { ScheduledTask, TokenUserInfo, WebsocketClientInfo, WebsocketConnectionVO } from "@/api/system/websocket";
+import type {
+  ScheduledTask,
+  TokenUserInfo,
+  WebsocketClientInfo,
+  WebsocketConnectionVO,
+} from "@/api/system/websocket";
 import { websocketClient } from "@/services/websocketClient";
 
 defineOptions({ name: "SystemWebsocketConnections" });
 
-type ConnectionViewMode = "runtime" | "nodes";
 type WebsocketConnectionRow = WebsocketConnectionVO;
 
 interface ExtensionFunctionItem {
@@ -342,7 +352,6 @@ const message = useMessage();
 const gridRef = ref<VxeGridInstance>();
 const { height } = useWindowSize();
 
-const activeView = ref<ConnectionViewMode>("runtime");
 const autoRefresh = ref(false);
 const refreshTimer = ref<number | null>(null);
 const refreshInterval = 10_000;
@@ -351,6 +360,7 @@ const runtimeConnections = ref<WebsocketConnectionRow[]>([]);
 const nodeConnections = ref<WebsocketConnectionRow[]>([]);
 const runtimeLoading = ref(false);
 const nodeLoading = ref(false);
+const isRefreshing = computed(() => runtimeLoading.value || nodeLoading.value);
 
 const sendMessageDialogVisible = ref(false);
 const sendMessageDialogLoading = ref(false);
@@ -380,15 +390,10 @@ const adminWsStatusTag = computed(() => {
   }
 });
 
-const activeRows = computed(() =>
-  activeView.value === "runtime" ? runtimeConnections.value : nodeConnections.value,
-);
-const isLoading = computed(() =>
-  activeView.value === "runtime" ? runtimeLoading.value : nodeLoading.value,
-);
-
 const nodeOnlineCount = computed(() => nodeConnections.value.filter((row) => row.isOnline).length);
-const nodeOfflineCount = computed(() => nodeConnections.value.filter((row) => !row.isOnline).length);
+const nodeOfflineCount = computed(
+  () => nodeConnections.value.filter((row) => !row.isOnline).length,
+);
 
 const resolveConnectionSourceKey = (row?: Partial<WebsocketConnectionRow> | null) => {
   const source = String(row?.clientSource || row?.clientInfo?.source || "").trim();
@@ -399,7 +404,9 @@ const resolveConnectionSourceKey = (row?: Partial<WebsocketConnectionRow> | null
 };
 
 const isCurrentAdminConnection = (row?: Partial<WebsocketConnectionRow> | null) => {
-  return resolveConnectionSourceKey(row) === "admin" && !!row?.id && row.id === adminConnectionId.value;
+  return (
+    resolveConnectionSourceKey(row) === "admin" && !!row?.id && row.id === adminConnectionId.value
+  );
 };
 
 const isOtherAdminConnection = (row?: Partial<WebsocketConnectionRow> | null) => {
@@ -407,10 +414,13 @@ const isOtherAdminConnection = (row?: Partial<WebsocketConnectionRow> | null) =>
 };
 
 const runtimeExtensionCount = computed(
-  () => runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "extension").length,
+  () =>
+    runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "extension")
+      .length,
 );
 const runtimeClientCount = computed(
-  () => runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "client").length,
+  () =>
+    runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "client").length,
 );
 const runtimeCurrentAdminCount = computed(
   () => runtimeConnections.value.filter((row) => isCurrentAdminConnection(row)).length,
@@ -418,17 +428,25 @@ const runtimeCurrentAdminCount = computed(
 const runtimeOtherAdminCount = computed(
   () => runtimeConnections.value.filter((row) => isOtherAdminConnection(row)).length,
 );
+const adminConnectionRows = computed(() => {
+  const rowMap = new Map<string, WebsocketConnectionRow>();
 
-const activeViewDescription = computed(() => {
-  if (activeView.value === "runtime") {
-    return "运行时连接只展示当前在线会话，适合查看有哪些浏览器插件、其他管理后台和客户端正在使用系统。";
+  for (const row of runtimeConnections.value) {
+    rowMap.set(row.id, row);
   }
-  return "客户端节点会合并实时连接和节点持久化记录，适合查看可执行客户端、离线节点和最近在线情况。";
+
+  for (const row of nodeConnections.value) {
+    if (!rowMap.has(row.id)) {
+      rowMap.set(row.id, row);
+    }
+  }
+
+  return Array.from(rowMap.values()).sort(compareAdminConnectionRows);
 });
 
-const activeEmptyDescription = computed(() => {
-  return activeView.value === "runtime" ? "暂无在线运行时连接" : "暂无客户端节点";
-});
+const runtimeViewDescription =
+  "当前页面直接展示统一连接列表，在线会话和离线客户端节点都会显示，方便管理员统一排查。";
+const runtimeEmptyDescription = "暂无可展示的连接记录";
 
 const formatStatusTime = (value?: string | null) => {
   if (!value) return "-";
@@ -446,27 +464,18 @@ const getConnectionStatusTagType = (row: WebsocketConnectionRow) =>
 const formatSourceLabel = (row?: Partial<WebsocketConnectionRow> | null) => {
   switch (resolveConnectionSourceKey(row)) {
     case "extension":
-      return "浏览器插件";
+      return "插件端";
     case "admin":
-      return "管理后台";
+      return "管理端";
     case "client":
       return "客户端";
     default:
-      return row?.clientSource || row?.clientInfo?.source || "未知";
+      return "未知端";
   }
 };
 
 const getSourceTagType = (row?: Partial<WebsocketConnectionRow> | null) => {
-  switch (resolveConnectionSourceKey(row)) {
-    case "extension":
-      return "success";
-    case "admin":
-      return "primary";
-    case "client":
-      return "warning";
-    default:
-      return "info";
-  }
+  return row?.isOnline === false ? "danger" : "success";
 };
 
 const formatQuery = (query?: Record<string, string | string[]>) => {
@@ -585,7 +594,9 @@ const formatClientInfo = (info?: WebsocketClientInfo) => {
     segments.push(`硬件: ${parts.join(" / ")}`);
   }
 
-  const locationParts = [info.location?.city, info.location?.region, info.location?.country].filter(Boolean);
+  const locationParts = [info.location?.city, info.location?.region, info.location?.country].filter(
+    Boolean,
+  );
   if (locationParts.length) {
     segments.push(`位置: ${locationParts.join(" · ")}`);
   }
@@ -639,6 +650,14 @@ const compareRuntimeConnections = (a: WebsocketConnectionRow, b: WebsocketConnec
   const aTime = a.connectedAt || "";
   const bTime = b.connectedAt || "";
   return aTime > bTime ? -1 : 1;
+};
+
+const compareAdminConnectionRows = (a: WebsocketConnectionRow, b: WebsocketConnectionRow) => {
+  if (!!a.isOnline !== !!b.isOnline) {
+    return a.isOnline ? -1 : 1;
+  }
+
+  return a.isOnline ? compareRuntimeConnections(a, b) : compareNodeConnections(a, b);
 };
 
 const fetchRuntimeConnections = async () => {
@@ -702,7 +721,9 @@ const initializeFunctionList = () => {
       name: "浏览器自动化",
       description: "打开浏览器自动化页面查看当前插件能力与运行时状态。",
       icon: "ep:monitor",
-      handler: () => router.push("/external/browser-automation"),
+      handler: async () => {
+        await router.push("/external/browser-automation");
+      },
       schedule: null,
     },
     {
@@ -710,7 +731,9 @@ const initializeFunctionList = () => {
       name: "套图制作",
       description: "打开套图制作页面查看 PS 自动化相关配置与状态。",
       icon: "ep:picture-filled",
-      handler: () => router.push("/external/ps-automation"),
+      handler: async () => {
+        await router.push("/external/ps-automation");
+      },
       schedule: null,
     },
     {
@@ -718,7 +741,9 @@ const initializeFunctionList = () => {
       name: "Google Art",
       description: "打开 Google Art 页面查看当前插件侧的运行能力。",
       icon: "ep:brush-filled",
-      handler: () => router.push("/external/google-art"),
+      handler: async () => {
+        await router.push("/external/google-art");
+      },
       schedule: null,
     },
   ];
@@ -734,7 +759,10 @@ const loadFunctionSchedule = async () => {
         return;
       }
       try {
-        const response = await WebsocketApi.getScheduleTask(currentConnection.value!.id, func.scheduleCommand);
+        const response = await WebsocketApi.getScheduleTask(
+          currentConnection.value!.id,
+          func.scheduleCommand,
+        );
         func.schedule = response.data;
       } catch {
         func.schedule = null;
@@ -931,9 +959,15 @@ const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
     },
     {
       field: "connectedAt",
-      title: "连接时间",
+      title: "最近在线",
       minWidth: 180,
-      formatter: ({ cellValue }) => (cellValue ? formatDate(new Date(cellValue)) : "-"),
+      slots: { default: "connectedAt_default" },
+    },
+    {
+      field: "lastOfflineAt",
+      title: "断线时间",
+      minWidth: 180,
+      slots: { default: "lastOfflineAt_default" },
     },
     {
       field: "duration",
@@ -966,72 +1000,9 @@ const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
   ],
 });
 
-const nodeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
-  ...commonGridOptions,
-  maxHeight: null,
-  rowConfig: {
-    keyField: "id",
-  },
-  columns: [
-    { type: "seq", width: 60, title: "序号", align: "center" },
-    {
-      field: "isOnline",
-      title: "在线状态",
-      width: 110,
-      align: "center",
-      slots: { default: "status_default" },
-    },
-    {
-      field: "id",
-      title: "节点 ID",
-      minWidth: 240,
-      showOverflow: "tooltip",
-    },
-    {
-      field: "clientSource",
-      title: "来源",
-      width: 170,
-      align: "center",
-      slots: { default: "clientSource_default" },
-    },
-    {
-      field: "user",
-      title: "用户信息",
-      minWidth: 220,
-      showOverflow: "tooltip",
-      formatter: ({ row }) => formatUserFromConnection(row as WebsocketConnectionRow),
-    },
-    {
-      field: "lastOnlineAt",
-      title: "最近在线",
-      minWidth: 180,
-      slots: { default: "lastOnlineAt_default" },
-    },
-    {
-      field: "lastOfflineAt",
-      title: "断线时间",
-      minWidth: 180,
-      slots: { default: "lastOfflineAt_default" },
-    },
-    {
-      field: "clientInfo",
-      title: "设备与环境",
-      minWidth: 420,
-      showOverflow: "tooltip",
-      slots: { default: "clientInfo_default" },
-    },
-    buildOperationColumn("operation_default"),
-  ],
-});
-
-const activeGridOptions = computed(() =>
-  activeView.value === "runtime" ? runtimeGridOptions.value : nodeGridOptions.value,
-);
-
 watchEffect(() => {
   const maxHeight = height.value - 240;
   runtimeGridOptions.value.maxHeight = maxHeight;
-  nodeGridOptions.value.maxHeight = maxHeight;
   functionGridOptions.value.maxHeight = maxHeight;
 });
 
@@ -1141,17 +1112,6 @@ onBeforeUnmount(() => {
 .websocket-toolbar__actions {
   display: inline-flex;
   align-items: center;
-}
-
-.websocket-view-switch {
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-}
-
-.websocket-view-switch__count {
-  margin-left: 6px;
-  opacity: 0.8;
 }
 
 .admin-connection-id {
@@ -1319,19 +1279,6 @@ onBeforeUnmount(() => {
 
   .websocket-toolbar__actions :deep(.el-button) {
     width: 100%;
-  }
-
-  .websocket-view-switch {
-    width: 100%;
-  }
-
-  .websocket-view-switch :deep(.el-radio-group) {
-    width: 100%;
-    display: flex;
-  }
-
-  .websocket-view-switch :deep(.el-radio-button) {
-    flex: 1;
   }
 }
 </style>

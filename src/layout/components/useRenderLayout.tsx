@@ -11,7 +11,6 @@ const { getPrefixCls } = useDesign();
 const prefixCls = getPrefixCls("layout");
 const appStore = useAppStore();
 
-const pageLoading = computed(() => appStore.getPageLoading);
 const tagsView = computed(() => appStore.getTagsView);
 const fixedHeader = computed(() => appStore.getFixedHeader);
 const mobile = computed(() => appStore.getMobile);
@@ -64,7 +63,6 @@ export const useRenderLayout = ({
           ]}
         >
           <ElScrollbar
-            v-loading={pageLoading.value}
             class={[
               `${prefixCls}-content-scrollbar`,
               {

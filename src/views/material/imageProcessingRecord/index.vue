@@ -182,7 +182,10 @@
                   </div>
                 </template>
                 <template #taskTypeSlot="{ row }">
-                  <el-tag :type="row.taskType === 'variations' ? 'warning' : 'primary'" effect="plain">
+                  <el-tag
+                    :type="row.taskType === 'variations' ? 'warning' : 'primary'"
+                    effect="plain"
+                  >
                     {{ getTaskTypeLabel(row.taskType) }}
                   </el-tag>
                 </template>
@@ -460,10 +463,14 @@
           <div class="image-processing-panel-scroll image-processing-panel-scroll--column">
             <template v-if="form.taskType === 'process'">
               <div class="image-processing-panel-tip">
-                下方列表直接来自 yishe-images 元数据。点击“插入模板”会把默认参数片段追加到当前
-                JSON 中，后续新增操作无需改前端页面逻辑。
+                下方列表直接来自 yishe-images 元数据。点击“插入模板”会把默认参数片段追加到当前 JSON
+                中，后续新增操作无需改前端页面逻辑。
               </div>
-              <div v-for="group in groupedOperations" :key="group.category" class="image-processing-op-group">
+              <div
+                v-for="group in groupedOperations"
+                :key="group.category"
+                class="image-processing-op-group"
+              >
                 <div class="image-processing-op-group__title">
                   {{ group.label }} <span>({{ group.items.length }})</span>
                 </div>
@@ -477,7 +484,12 @@
                       <div class="image-processing-op-card__title">
                         {{ operation.type || operation.apiType }}
                       </div>
-                      <el-button size="small" type="primary" link @click="appendOperationTemplate(operation)">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        link
+                        @click="appendOperationTemplate(operation)"
+                      >
                         插入模板
                       </el-button>
                     </div>
@@ -728,8 +740,15 @@
                   </el-tag>
                   <el-tag v-else type="info" effect="plain">不可导入</el-tag>
                 </div>
-                <div class="image-processing-result-card__thumb" @click="file.url && openUrl(file.url)">
-                  <img v-if="file.url" :src="file.url" :alt="file.name || file.outputFile || 'result'" />
+                <div
+                  class="image-processing-result-card__thumb"
+                  @click="file.url && openUrl(file.url)"
+                >
+                  <img
+                    v-if="file.url"
+                    :src="file.url"
+                    :alt="file.name || file.outputFile || 'result'"
+                  />
                   <div v-else class="image-processing-result-card__empty">无归档结果</div>
                 </div>
                 <div class="image-processing-result-card__body">
@@ -742,7 +761,10 @@
                   <div v-if="file.outputFile" class="image-processing-result-card__meta is-mono">
                     {{ file.outputFile }}
                   </div>
-                  <div v-if="file.engine?.label || file.engine?.id" class="image-processing-result-card__meta">
+                  <div
+                    v-if="file.engine?.label || file.engine?.id"
+                    class="image-processing-result-card__meta"
+                  >
                     引擎：{{ file.engine?.label || file.engine?.id }}
                   </div>
                   <div
@@ -785,13 +807,17 @@
           <el-card shadow="never" class="image-processing-panel-card">
             <template #header>请求参数</template>
             <div class="image-processing-panel-scroll">
-              <pre class="image-processing-json-block">{{ formatJson(currentRow.requestParams) }}</pre>
+              <pre class="image-processing-json-block">{{
+                formatJson(currentRow.requestParams)
+              }}</pre>
             </div>
           </el-card>
           <el-card shadow="never" class="image-processing-panel-card">
             <template #header>服务响应</template>
             <div class="image-processing-panel-scroll">
-              <pre class="image-processing-json-block">{{ formatJson(currentRow.responseData) }}</pre>
+              <pre class="image-processing-json-block">{{
+                formatJson(currentRow.responseData)
+              }}</pre>
             </div>
           </el-card>
         </div>
@@ -910,7 +936,9 @@ const imageStatusDetail = computed(() => {
 });
 
 const processorOptions = computed(() => {
-  return Array.isArray(catalog.value?.processors?.available) ? catalog.value?.processors?.available : [];
+  return Array.isArray(catalog.value?.processors?.available)
+    ? catalog.value?.processors?.available
+    : [];
 });
 
 const selectedProcessorLabel = computed(() => {
@@ -1221,10 +1249,7 @@ function formatOperationParamValue(value: unknown) {
 function getOperationParamRows(operation: any) {
   const params = operation?.params || {};
   return Object.entries(params as Record<string, any>).map(([name, definition]) => {
-    const metaParts = [
-      definition?.type || "any",
-      definition?.required ? "必填" : "可选",
-    ];
+    const metaParts = [definition?.type || "any", definition?.required ? "必填" : "可选"];
 
     if (definition?.default !== undefined) {
       metaParts.push(`默认 ${formatOperationParamValue(definition.default)}`);
@@ -1233,9 +1258,7 @@ function getOperationParamRows(operation: any) {
     }
 
     if (definition?.minimum !== undefined || definition?.maximum !== undefined) {
-      metaParts.push(
-        `范围 ${definition?.minimum ?? "-"} ~ ${definition?.maximum ?? "-"}`
-      );
+      metaParts.push(`范围 ${definition?.minimum ?? "-"} ~ ${definition?.maximum ?? "-"}`);
     }
 
     if (Array.isArray(definition?.enum) && definition.enum.length) {
@@ -1900,6 +1923,14 @@ onBeforeUnmount(() => {
   height: 100%;
   grid-template-columns: 340px minmax(0, 1fr) 400px;
   gap: 16px;
+}
+
+.image-processing-create-layout :deep(.image-processing-panel-card .el-card__header) {
+  padding: 16px 20px 14px;
+}
+
+.image-processing-create-layout :deep(.image-processing-panel-card .el-card__body) {
+  padding: 20px 20px 18px;
 }
 
 .image-processing-create-banner {
