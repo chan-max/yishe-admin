@@ -458,7 +458,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/operation",
     component: Layout,
     name: "Operation",
-    redirect: "/operation/shop",
+    redirect: "/operation/ecom-platform-collect",
     meta: {
       title: "运营支持",
       icon: "ep:shop",
@@ -466,6 +466,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
       alwaysShow: true,
     },
     children: [
+      {
+        path: "ecom-platform-collect",
+        component: () => import("@/views/operation/ecom-platform-collect/index.vue"),
+        name: "OperationEcomPlatformCollect",
+        meta: {
+          title: "电商数据获取",
+        },
+      },
       {
         path: "link-navigation",
         component: () => import("@/views/operation/link-navigation/index.vue"),

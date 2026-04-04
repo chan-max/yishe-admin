@@ -60,6 +60,7 @@ export const MENU_ACCESS_GROUPS = [
   {
     label: "运营协同",
     options: [
+      { key: "operation.ecom-platform-collect", label: "电商数据获取" },
       { key: "operation.link-navigation", label: "链接导航" },
       { key: "operation.shop", label: "店铺" },
       { key: "operation.vendor", label: "厂家" },
@@ -113,6 +114,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   DesignRequest: "product.design-request",
   PublishConfig: "product.publish-config",
   SystemQueue: "product.queue",
+  OperationEcomPlatformCollect: "operation.ecom-platform-collect",
   OperationLinkNavigation: "operation.link-navigation",
   ShopIndex: "operation.shop",
   VendorIndex: "operation.vendor",
