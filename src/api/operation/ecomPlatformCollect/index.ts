@@ -129,6 +129,20 @@ export const deleteEcomPlatformCollectTask = (id: string) => {
   });
 };
 
+export const batchDeleteEcomPlatformCollectTask = (ids: string[]) => {
+  return request.post<{
+    success: boolean;
+    message?: string;
+    taskCount?: number;
+    runCount?: number;
+    rawRecordCount?: number;
+    snapshotCount?: number;
+  }>({
+    url: "/ecom-platform-collect/task/batch-delete",
+    data: { ids },
+  });
+};
+
 export const triggerEcomPlatformCollectTask = (id: string) => {
   return request.post<{
     success: boolean;
@@ -160,6 +174,28 @@ export const getEcomPlatformCollectRunDetail = (id: string) => {
   });
 };
 
+export const deleteEcomPlatformCollectRun = (id: string) => {
+  return request.delete<{
+    success: boolean;
+    id: string;
+  }>({
+    url: `/ecom-platform-collect/run/${id}`,
+  });
+};
+
+export const batchDeleteEcomPlatformCollectRun = (ids: string[]) => {
+  return request.post<{
+    success: boolean;
+    message?: string;
+    runCount?: number;
+    rawRecordCount?: number;
+    snapshotCount?: number;
+  }>({
+    url: "/ecom-platform-collect/run/batch-delete",
+    data: { ids },
+  });
+};
+
 export const getEcomPlatformRawRecordList = (params?: Record<string, any>) => {
   return request.get<{
     list: EcomPlatformRawRecord[];
@@ -175,5 +211,26 @@ export const getEcomPlatformRawRecordList = (params?: Record<string, any>) => {
 export const getEcomPlatformRawRecordDetail = (id: string) => {
   return request.get<EcomPlatformRawRecord>({
     url: `/ecom-platform-collect/raw-record/${id}`,
+  });
+};
+
+export const deleteEcomPlatformRawRecord = (id: string) => {
+  return request.delete<{
+    success: boolean;
+    id: string;
+  }>({
+    url: `/ecom-platform-collect/raw-record/${id}`,
+  });
+};
+
+export const batchDeleteEcomPlatformRawRecord = (ids: string[]) => {
+  return request.post<{
+    success: boolean;
+    message?: string;
+    rawRecordCount?: number;
+    snapshotCount?: number;
+  }>({
+    url: "/ecom-platform-collect/raw-record/batch-delete",
+    data: { ids },
   });
 };

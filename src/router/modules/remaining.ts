@@ -455,25 +455,55 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ],
   },
   {
-    path: "/operation",
+    path: "/ecom-platform-collect",
     component: Layout,
-    name: "Operation",
-    redirect: "/operation/ecom-platform-collect",
+    name: "EcomPlatformCollectRoot",
+    redirect: "/ecom-platform-collect/tasks",
     meta: {
-      title: "运营支持",
-      icon: "ep:shop",
+      title: "电商数据获取",
+      icon: "ep:data-analysis",
       order: 6,
       alwaysShow: true,
     },
     children: [
       {
-        path: "ecom-platform-collect",
+        path: "tasks",
         component: () => import("@/views/operation/ecom-platform-collect/index.vue"),
-        name: "OperationEcomPlatformCollect",
+        name: "EcomPlatformCollectTaskPage",
         meta: {
-          title: "电商数据获取",
+          title: "采集任务",
         },
       },
+      {
+        path: "runs",
+        component: () => import("@/views/operation/ecom-platform-collect/runs.vue"),
+        name: "EcomPlatformCollectRunPage",
+        meta: {
+          title: "运行记录",
+        },
+      },
+      {
+        path: "raw-records",
+        component: () => import("@/views/operation/ecom-platform-collect/raw-records.vue"),
+        name: "EcomPlatformCollectRawPage",
+        meta: {
+          title: "原始数据",
+        },
+      },
+    ],
+  },
+  {
+    path: "/operation",
+    component: Layout,
+    name: "Operation",
+    redirect: "/operation/link-navigation",
+    meta: {
+      title: "运营支持",
+      icon: "ep:shop",
+      order: 7,
+      alwaysShow: true,
+    },
+    children: [
       {
         path: "link-navigation",
         component: () => import("@/views/operation/link-navigation/index.vue"),
@@ -951,6 +981,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/system/audit/operatelog",
     redirect: "/system/operatelog",
     name: "SystemAuditOperatelogCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/operation/ecom-platform-collect",
+    redirect: "/ecom-platform-collect/tasks",
+    name: "OperationEcomPlatformCollectCompat",
     meta: {
       hidden: true,
       noTagsView: true,
