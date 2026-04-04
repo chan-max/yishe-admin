@@ -7,7 +7,7 @@
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">电商采集运行记录</div>
               <div class="resource-toolbar__desc">
-                跟踪每次执行的状态、客户端归属、摘要信息，并支持批量清理历史运行。
+                跟踪每次手动执行的状态、执行客户端和采集摘要，并支持批量清理历史运行。
               </div>
             </div>
             <div class="resource-toolbar__actions">
@@ -48,14 +48,6 @@
                     <el-option label="失败" value="failed" />
                     <el-option label="跳过" value="skipped" />
                     <el-option label="终止" value="terminated" />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="触发方式">
-                  <el-select v-model="filters.triggerMode" clearable placeholder="触发方式">
-                    <el-option label="手动" value="manual" />
-                    <el-option label="调度" value="schedule" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -160,7 +152,6 @@ import {
   getRunStatusLabel,
   getRunStatusTagType,
   getSceneLabel,
-  getTriggerModeLabel,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectRunPage" });
@@ -180,7 +171,6 @@ const filters = reactive({
   pageSize: 10,
   platform: "",
   status: "",
-  triggerMode: "",
 });
 
 const updateSelectedIds = (records: EcomPlatformCollectRun[] = []) => {
@@ -212,12 +202,6 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectRun>>({
       field: "status",
       width: 100,
       slots: { default: "statusSlot" },
-    },
-    {
-      title: "触发方式",
-      field: "triggerMode",
-      width: 100,
-      formatter: ({ row }) => getTriggerModeLabel(row.triggerMode),
     },
     {
       title: "执行机器",
@@ -255,7 +239,6 @@ const loadCatalog = async () => {
   const data = await getEcomPlatformCollectCatalog();
   catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
   catalog.scenes = Array.isArray(data?.scenes) ? data.scenes : [];
-  catalog.defaults = data?.defaults || catalog.defaults;
 };
 
 const loadList = async () => {
@@ -284,7 +267,6 @@ const handleReset = async () => {
   filters.pageNo = 1;
   filters.platform = "";
   filters.status = "";
-  filters.triggerMode = "";
   await loadList();
 };
 
@@ -349,6 +331,24 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+:deep(.ecom-collect-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.ecom-collect-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.ecom-collect-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.ecom-collect-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+
 .resource-toolbar__title {
   color: var(--el-text-color-primary);
   font-size: 18px;

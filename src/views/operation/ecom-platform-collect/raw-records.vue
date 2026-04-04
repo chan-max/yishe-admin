@@ -272,7 +272,6 @@ const loadCatalog = async () => {
   const data = await getEcomPlatformCollectCatalog();
   catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
   catalog.scenes = Array.isArray(data?.scenes) ? data.scenes : [];
-  catalog.defaults = data?.defaults || catalog.defaults;
 };
 
 const loadList = async () => {
@@ -376,6 +375,24 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+:deep(.ecom-collect-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.ecom-collect-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.ecom-collect-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
+}
+
+:deep(.ecom-collect-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+
 .resource-toolbar__title {
   color: var(--el-text-color-primary);
   font-size: 18px;

@@ -1,25 +1,12 @@
-import type { BrowserAutomationCapabilityClient } from "@/api/external/browserAutomation";
 import type {
   EcomPlatformCollectCatalog,
   EcomPlatformRawRecord,
 } from "@/api/operation/ecomPlatformCollect";
 import { formatDate } from "@/utils/formatTime";
 
-export interface EcomCollectClientOption {
-  clientId: string;
-  label: string;
-  machineCode: string;
-  location: string;
-  busy: boolean;
-}
-
 export const createEmptyEcomCollectCatalog = (): EcomPlatformCollectCatalog => ({
   platforms: [],
   scenes: [],
-  defaults: {
-    intervalMinutes: 30,
-    minIntervalMinutes: 10,
-  },
 });
 
 export const getPlatformLabel = (
@@ -68,10 +55,6 @@ export const getRunStatusTagType = (value?: string | null) => {
     terminated: "danger",
   };
   return map[String(value || "")] || "info";
-};
-
-export const getTriggerModeLabel = (value?: string | null) => {
-  return value === "schedule" ? "调度" : "手动";
 };
 
 export const formatDateTime = (value?: string | Date | null) => {
@@ -132,38 +115,4 @@ export const parseKeywordsText = (value?: string | null) => {
     .split(/[\n,，]/)
     .map((item) => item.trim())
     .filter(Boolean);
-};
-
-export const buildAvailableClientOptions = (
-  clients: BrowserAutomationCapabilityClient[] = [],
-): EcomCollectClientOption[] => {
-  return clients
-    .filter((item) => item.isOnline && item.available)
-    .sort((left, right) => {
-      const busyCompare = Number(left.busy) - Number(right.busy);
-      if (busyCompare !== 0) {
-        return busyCompare;
-      }
-      return String(left.machineCode || left.clientId).localeCompare(
-        String(right.machineCode || right.clientId),
-      );
-    })
-    .map((item) => {
-      const machineCode = String(item.machineCode || "").trim();
-      const location = String(item.location || "").trim();
-      const busy = item.busy === true;
-      return {
-        clientId: item.clientId,
-        machineCode,
-        location,
-        busy,
-        label: [
-          machineCode || item.clientId,
-          location,
-          busy ? "忙碌中" : "空闲",
-        ]
-          .filter(Boolean)
-          .join(" / "),
-      };
-    });
 };

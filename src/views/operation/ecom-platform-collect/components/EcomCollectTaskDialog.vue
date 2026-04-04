@@ -2,192 +2,138 @@
   <el-dialog
     :model-value="modelValue"
     :title="currentTask?.id ? '编辑采集任务' : '新建采集任务'"
-    width="760px"
+    fullscreen
+    append-to-body
+    class="ecom-collect-task-dialog"
+    :close-on-click-modal="false"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
   >
-    <el-form label-width="110px">
-      <el-form-item label="任务名称" required>
-        <el-input
-          v-model="taskForm.name"
-          :placeholder="
-            selectedPlatformSpec?.taskNamePlaceholder || '例如：Amazon 热门耳机抓取'
-          "
-        />
-      </el-form-item>
+    <div class="task-dialog-shell">
+      <el-form label-position="top" class="task-dialog-form">
+        <el-form-item label="任务名称" required>
+          <el-input
+            v-model="taskForm.name"
+            :placeholder="
+              selectedPlatformSpec?.taskNamePlaceholder || '例如：Amazon 热门耳机抓取'
+            "
+          />
+        </el-form-item>
 
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="平台" required>
-            <el-select
-              v-model="taskForm.platform"
-              placeholder="请选择平台"
-              style="width: 100%"
-              @change="handlePlatformChange"
-            >
-              <el-option
-                v-for="item in catalog.platforms"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+        <el-row :gutter="20">
+          <el-col :xs="24" :lg="12">
+            <el-form-item label="平台" required>
+              <el-select
+                v-model="taskForm.platform"
+                placeholder="请选择平台"
+                @change="handlePlatformChange"
+              >
+                <el-option
+                  v-for="item in catalog.platforms"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :lg="12">
+            <el-form-item label="采集场景" required>
+              <el-select v-model="taskForm.collectScene" placeholder="请选择场景">
+                <el-option
+                  v-for="item in availableSceneOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+              <div v-if="selectedSceneMeta?.description" class="form-hint">
+                {{ selectedSceneMeta.description }}
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <PlatformTaskSpecCard :spec="selectedPlatformSpec" :scene="selectedSceneKey" />
+
+        <el-row :gutter="20">
+          <el-col v-if="showKeywordConfig" :xs="24" :lg="12">
+            <el-form-item label="关键词">
+              <el-input
+                v-model="taskForm.keyword"
+                :placeholder="
+                  selectedPlatformSpec?.keywordPlaceholder || 'search 场景优先使用'
+                "
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
+            </el-form-item>
+          </el-col>
 
-        <el-col :span="12">
-          <el-form-item label="采集场景" required>
-            <el-select v-model="taskForm.collectScene" placeholder="请选择场景" style="width: 100%">
-              <el-option
-                v-for="item in availableSceneOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
+          <el-col v-if="showTargetUrlConfig" :xs="24" :lg="12">
+            <el-form-item label="目标链接">
+              <el-input
+                v-model="taskForm.targetUrl"
+                :placeholder="
+                  selectedPlatformSpec?.targetUrlPlaceholder || '详情页 / 店铺页链接'
+                "
               />
-            </el-select>
-            <div v-if="selectedSceneMeta?.description" class="form-hint">
-              {{ selectedSceneMeta.description }}
-            </div>
-          </el-form-item>
-        </el-col>
-      </el-row>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-      <PlatformTaskSpecCard :spec="selectedPlatformSpec" :scene="selectedSceneKey" />
-
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="执行客户端">
-            <el-select
-              v-model="taskForm.targetClientId"
-              clearable
-              filterable
-              placeholder="仅显示在线且可用客户端"
-              style="width: 100%"
-              @change="handleClientChange"
-            >
-              <el-option
-                v-for="item in clientOptions"
-                :key="item.clientId"
-                :label="item.label"
-                :value="item.clientId"
+        <el-row :gutter="20">
+          <el-col v-if="showKeywordConfig" :xs="24" :lg="12">
+            <el-form-item label="关键词列表">
+              <el-input
+                v-model="taskForm.keywordsText"
+                type="textarea"
+                :rows="4"
+                :placeholder="
+                  selectedPlatformSpec?.keywordsPlaceholder || '一行一个或逗号分隔'
+                "
               />
-            </el-select>
-          </el-form-item>
-        </el-col>
+            </el-form-item>
+          </el-col>
 
-        <el-col :span="12">
-          <el-form-item label="机器编码">
-            <el-input v-model="taskForm.targetMachineCode" placeholder="自动回填，可手动调整" />
-          </el-form-item>
-        </el-col>
-      </el-row>
+          <el-col v-if="showPaginationConfig" :xs="24" :sm="12" :lg="6">
+            <el-form-item label="最大页数">
+              <el-input-number
+                v-model="taskForm.maxPages"
+                :min="1"
+                :max="20"
+              />
+            </el-form-item>
+          </el-col>
 
-      <el-row :gutter="16">
-        <el-col :span="12">
-          <el-form-item label="轮询间隔">
-            <el-input-number
-              v-model="taskForm.intervalMinutes"
-              :min="catalog.defaults.minIntervalMinutes || 10"
-              :max="720"
-              controls-position="right"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
+          <el-col :xs="24" :sm="12" :lg="showKeywordConfig ? 6 : 12">
+            <el-form-item label="最大记录数">
+              <el-input-number
+                v-model="taskForm.maxItems"
+                :min="1"
+                :max="500"
+              />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <el-col :span="12">
-          <el-form-item label="下次执行时间">
-            <el-date-picker
-              v-model="taskForm.nextRunAt"
-              type="datetime"
-              value-format="YYYY-MM-DDTHH:mm:ss.SSS[Z]"
-              placeholder="留空则按当前时间进入调度"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="16">
-        <el-col v-if="showKeywordConfig" :span="12">
-          <el-form-item label="关键词">
-            <el-input
-              v-model="taskForm.keyword"
-              :placeholder="
-                selectedPlatformSpec?.keywordPlaceholder || 'search 场景优先使用'
-              "
-            />
-          </el-form-item>
-        </el-col>
-
-        <el-col v-if="showTargetUrlConfig" :span="12">
-          <el-form-item label="目标链接">
-            <el-input
-              v-model="taskForm.targetUrl"
-              :placeholder="
-                selectedPlatformSpec?.targetUrlPlaceholder || '详情页 / 店铺页链接'
-              "
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="16">
-        <el-col v-if="showKeywordConfig" :span="12">
-          <el-form-item label="关键词列表">
-            <el-input
-              v-model="taskForm.keywordsText"
-              type="textarea"
-              :rows="3"
-              :placeholder="
-                selectedPlatformSpec?.keywordsPlaceholder || '一行一个或逗号分隔'
-              "
-            />
-          </el-form-item>
-        </el-col>
-
-        <el-col v-if="showPaginationConfig" :span="6">
-          <el-form-item label="最大页数">
-            <el-input-number
-              v-model="taskForm.maxPages"
-              :min="1"
-              :max="20"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-
-        <el-col :span="showKeywordConfig ? 6 : 12">
-          <el-form-item label="最大记录数">
-            <el-input-number
-              v-model="taskForm.maxItems"
-              :min="1"
-              :max="500"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-      </el-row>
-
-      <el-form-item label="附加配置 JSON">
-        <el-input
-          v-model="taskForm.extraJson"
-          type="textarea"
-          :rows="5"
-          :placeholder="extraJsonPlaceholder"
-        />
-      </el-form-item>
-
-      <el-form-item label="启用任务">
-        <el-switch v-model="taskForm.isActive" />
-      </el-form-item>
-    </el-form>
+        <el-form-item label="附加配置 JSON">
+          <el-input
+            v-model="taskForm.extraJson"
+            type="textarea"
+            :rows="8"
+            :placeholder="extraJsonPlaceholder"
+          />
+        </el-form-item>
+      </el-form>
+    </div>
 
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">取消</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">
-        保存
-      </el-button>
+      <div class="task-dialog-footer-bar">
+        <el-button @click="emit('update:modelValue', false)">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+          保存
+        </el-button>
+      </div>
     </template>
   </el-dialog>
 </template>
@@ -201,7 +147,6 @@ import {
   type EcomPlatformCollectCatalog,
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
-import type { EcomCollectClientOption } from "../shared";
 import { parseKeywordsText } from "../shared";
 import PlatformTaskSpecCard from "./task-platforms/PlatformTaskSpecCard.vue";
 import {
@@ -212,7 +157,6 @@ import {
 const props = defineProps<{
   modelValue: boolean;
   catalog: EcomPlatformCollectCatalog;
-  clientOptions: EcomCollectClientOption[];
   task?: EcomPlatformCollectTask | null;
 }>();
 
@@ -228,17 +172,12 @@ const taskForm = reactive({
   name: "",
   platform: "",
   collectScene: "search",
-  targetClientId: "",
-  targetMachineCode: "",
-  intervalMinutes: 30,
-  nextRunAt: "",
   keyword: "",
   keywordsText: "",
   targetUrl: "",
   maxPages: 2,
   maxItems: 60,
   extraJson: "",
-  isActive: true,
 });
 
 const resetTaskForm = () => {
@@ -246,17 +185,12 @@ const resetTaskForm = () => {
   taskForm.name = "";
   taskForm.platform = "";
   taskForm.collectScene = "search";
-  taskForm.targetClientId = "";
-  taskForm.targetMachineCode = "";
-  taskForm.intervalMinutes = props.catalog.defaults.intervalMinutes || 30;
-  taskForm.nextRunAt = "";
   taskForm.keyword = "";
   taskForm.keywordsText = "";
   taskForm.targetUrl = "";
   taskForm.maxPages = 2;
   taskForm.maxItems = 60;
   taskForm.extraJson = "";
-  taskForm.isActive = true;
 };
 
 const currentTask = computed(() => props.task || null);
@@ -306,11 +240,6 @@ const showTargetUrlConfig = computed(
 const showPaginationConfig = computed(
   () => selectedSceneRequirements.value.pagination === true,
 );
-
-const handleClientChange = (clientId: string) => {
-  const matched = props.clientOptions.find((item) => item.clientId === clientId);
-  taskForm.targetMachineCode = matched?.machineCode || "";
-};
 
 const handlePlatformChange = (platform: string) => {
   const matchedPlatform = props.catalog.platforms.find((item) => item.value === platform);
@@ -386,10 +315,6 @@ const syncTaskToForm = () => {
   taskForm.name = task.name;
   taskForm.platform = task.platform;
   taskForm.collectScene = task.collectScene;
-  taskForm.targetClientId = task.targetClientId || "";
-  taskForm.targetMachineCode = task.targetMachineCode || "";
-  taskForm.intervalMinutes = task.intervalMinutes || props.catalog.defaults.intervalMinutes || 30;
-  taskForm.nextRunAt = task.nextRunAt || "";
   taskForm.keyword = String(task.configData?.keyword || "");
   taskForm.keywordsText = Array.isArray(task.configData?.keywords)
     ? task.configData.keywords.join("\n")
@@ -397,7 +322,6 @@ const syncTaskToForm = () => {
   taskForm.targetUrl = String(task.configData?.targetUrl || "");
   taskForm.maxPages = Number(task.configData?.maxPages || 2);
   taskForm.maxItems = Number(task.configData?.maxItems || 60);
-  taskForm.isActive = task.isActive !== false;
 
   const { keyword, keywords, targetUrl, maxPages, maxItems, ...extraConfig } =
     task.configData || {};
@@ -415,11 +339,6 @@ const handleSubmit = async () => {
       name: taskForm.name.trim(),
       platform: taskForm.platform,
       collectScene: taskForm.collectScene,
-      targetClientId: taskForm.targetClientId || undefined,
-      targetMachineCode: taskForm.targetMachineCode || undefined,
-      intervalMinutes: taskForm.intervalMinutes,
-      nextRunAt: taskForm.nextRunAt || undefined,
-      isActive: taskForm.isActive,
       configData,
     };
 
@@ -452,10 +371,96 @@ watch(
 </script>
 
 <style scoped lang="scss">
+.ecom-collect-task-dialog :deep(.el-dialog) {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  border-radius: 0;
+}
+
+.ecom-collect-task-dialog :deep(.el-dialog__header) {
+  padding: 18px 28px 14px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
+.ecom-collect-task-dialog :deep(.el-dialog__body) {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--el-bg-color-page);
+}
+
+.ecom-collect-task-dialog :deep(.el-dialog__footer) {
+  flex: 0 0 auto;
+  padding: 0;
+  border-top: 1px solid rgb(15 23 42 / 8%);
+  background: rgb(255 255 255 / 88%);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 -10px 30px rgb(15 23 42 / 6%);
+}
+
+.task-dialog-shell {
+  height: 100%;
+  overflow: auto;
+  padding: 24px 28px 28px;
+  box-sizing: border-box;
+}
+
+.task-dialog-form {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.task-dialog-form :deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+.task-dialog-form :deep(.el-form-item__label) {
+  padding-bottom: 8px;
+  line-height: 1.45;
+}
+
+.task-dialog-form :deep(.el-input),
+.task-dialog-form :deep(.el-select),
+.task-dialog-form :deep(.el-date-editor),
+.task-dialog-form :deep(.el-input-number) {
+  width: 100%;
+}
+
+.task-dialog-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 76px;
+  padding: 14px 28px 18px;
+  box-sizing: border-box;
+}
+
 .form-hint {
   margin-top: 6px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .task-dialog-shell {
+    padding: 16px;
+  }
+
+  .ecom-collect-task-dialog :deep(.el-dialog__header) {
+    padding: 16px 16px 12px;
+  }
+
+  .task-dialog-footer-bar {
+    padding: 12px 16px 16px;
+    min-height: 68px;
+  }
 }
 </style>

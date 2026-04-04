@@ -7,7 +7,7 @@
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">电商采集任务</div>
               <div class="resource-toolbar__desc">
-                管理按平台分发的采集任务，指定在线可用客户端执行，并保留平台扩展配置入口。
+                这里只保留任务需求定义和手动执行入口，不再承载调度与机器绑定逻辑。
               </div>
             </div>
             <div class="resource-toolbar__actions">
@@ -21,28 +21,15 @@
               >
                 批量删除 ({{ selectedIds.length }})
               </el-button>
-              <el-button size="small" type="primary" @click="openTaskDialog()">新建任务</el-button>
-            </div>
-          </div>
-
-          <div class="ecom-collect-page__stats">
-            <div class="ecom-collect-page__stat-card">
-              <div class="label">任务数</div>
-              <div class="value">{{ total }}</div>
-            </div>
-            <div class="ecom-collect-page__stat-card">
-              <div class="label">在线可用客户端</div>
-              <div class="value">{{ clientOptions.length }}</div>
-            </div>
-            <div class="ecom-collect-page__stat-card">
-              <div class="label">平台数</div>
-              <div class="value">{{ catalog.platforms.length }}</div>
+              <el-button size="small" type="primary" @click="openTaskDialog()">
+                新建任务
+              </el-button>
             </div>
           </div>
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="7">
+              <el-col :xs="24" :sm="12" :md="8" :lg="8">
                 <el-form-item label="任务名称 / 平台">
                   <el-input
                     v-model="filters.keyword"
@@ -52,7 +39,7 @@
                   />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
                 <el-form-item label="平台">
                   <el-select v-model="filters.platform" clearable placeholder="平台">
                     <el-option
@@ -64,7 +51,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
                 <el-form-item label="场景">
                   <el-select v-model="filters.collectScene" clearable placeholder="场景">
                     <el-option
@@ -73,14 +60,6 @@
                       :label="item.label"
                       :value="item.value"
                     />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="4">
-                <el-form-item label="启用状态">
-                  <el-select v-model="filters.isActive" clearable placeholder="启用状态">
-                    <el-option label="启用" value="true" />
-                    <el-option label="停用" value="false" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -114,56 +93,21 @@
                   </div>
                 </template>
 
-                <template #clientSlot="{ row }">
-                  <div class="table-stack">
-                    <span>{{ row.targetMachineCode || "-" }}</span>
-                    <span class="table-meta-text">{{ row.targetClientId || "-" }}</span>
-                  </div>
-                </template>
-
-                <template #statusSlot="{ row }">
-                  <el-tag size="small" :type="getRunStatusTagType(row.lastStatus)">
-                    {{ getRunStatusLabel(row.lastStatus) }}
-                  </el-tag>
-                </template>
-
-                <template #activeSlot="{ row }">
-                  <div class="table-switch-cell">
-                    <el-switch
-                      :model-value="!!row.isActive"
-                      :loading="toggleLoadingId === row.id"
-                      inline-prompt
-                      active-text="开"
-                      inactive-text="关"
-                      @change="(value) => handleToggleTask(row, value === true)"
-                    />
-                  </div>
+                <template #configSlot="{ row }">
+                  <span class="table-meta-text">{{ getTaskConfigSummary(row) }}</span>
                 </template>
 
                 <template #operationSlot="{ row }">
-                  <div class="flex justify-start">
-                    <el-dropdown
-                      class="operation-dropdown"
-                      placement="bottom-end"
-                      @command="(command) => handleOperationCommand(String(command), row)"
-                    >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">
-                        操作
-                      </el-button>
-                      <template #dropdown>
-                        <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item command="trigger">立即执行</el-dropdown-item>
-                          <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                          <el-dropdown-item
-                            command="delete"
-                            divided
-                            class="operation-menu-item--danger"
-                          >
-                            删除
-                          </el-dropdown-item>
-                        </el-dropdown-menu>
-                      </template>
-                    </el-dropdown>
+                  <div class="flex justify-start gap-3">
+                    <el-button link type="primary" size="small" @click="handleTriggerTask(row)">
+                      立即执行
+                    </el-button>
+                    <el-button link type="primary" size="small" @click="openTaskDialog(row)">
+                      编辑
+                    </el-button>
+                    <el-button link type="danger" size="small" @click="handleDelete(row)">
+                      删除
+                    </el-button>
                   </div>
                 </template>
               </vxe-grid>
@@ -187,7 +131,6 @@
     <EcomCollectTaskDialog
       v-model="dialogVisible"
       :catalog="catalog"
-      :client-options="clientOptions"
       :task="currentTask"
       @success="handleDialogSuccess"
     />
@@ -195,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { VxeGridProps } from "vxe-table";
@@ -205,45 +148,29 @@ import {
   getEcomPlatformCollectCatalog,
   getEcomPlatformCollectTaskList,
   triggerEcomPlatformCollectTask,
-  updateEcomPlatformCollectTask,
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
-import {
-  getBrowserAutomationCapabilities,
-  type BrowserAutomationCapabilityClient,
-} from "@/api/external/browserAutomation";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import EcomCollectTaskDialog from "./components/EcomCollectTaskDialog.vue";
 import {
-  buildAvailableClientOptions,
   createEmptyEcomCollectCatalog,
   formatDateTime,
   getPlatformLabel,
-  getRunStatusLabel,
-  getRunStatusTagType,
   getSceneLabel,
-  type EcomCollectClientOption,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectTaskPage" });
 
 const router = useRouter();
-
 const loading = ref(false);
-const toggleLoadingId = ref("");
 const dialogVisible = ref(false);
 const currentTask = ref<EcomPlatformCollectTask | null>(null);
 const list = ref<EcomPlatformCollectTask[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
-const capabilityClients = ref<BrowserAutomationCapabilityClient[]>([]);
 
 const catalog = reactive(createEmptyEcomCollectCatalog());
-
-const clientOptions = computed<EcomCollectClientOption[]>(() =>
-  buildAvailableClientOptions(capabilityClients.value),
-);
 
 const filters = reactive({
   pageNo: 1,
@@ -251,13 +178,26 @@ const filters = reactive({
   keyword: "",
   platform: "",
   collectScene: "",
-  isActive: "",
 });
 
 const updateSelectedIds = (records: EcomPlatformCollectTask[] = []) => {
   selectedIds.value = Array.from(
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
+};
+
+const getTaskConfigSummary = (task: EcomPlatformCollectTask) => {
+  const config = task.configData || {};
+  const keywords = Array.isArray(config.keywords) ? config.keywords.filter(Boolean) : [];
+  const summaryParts = [
+    config.keyword ? `关键词: ${config.keyword}` : "",
+    !config.keyword && keywords.length ? `关键词: ${keywords.slice(0, 3).join(" / ")}` : "",
+    config.targetUrl ? `链接: ${config.targetUrl}` : "",
+    config.maxPages ? `页数: ${config.maxPages}` : "",
+    config.maxItems ? `条数: ${config.maxItems}` : "",
+  ].filter(Boolean);
+
+  return summaryParts.join(" | ") || "按表单配置执行";
 };
 
 const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
@@ -275,48 +215,27 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
     {
       title: "平台 / 场景",
       field: "platform",
-      width: 170,
+      width: 160,
       slots: { default: "platformSceneSlot" },
     },
     {
-      title: "执行机器",
-      field: "targetMachineCode",
-      minWidth: 200,
-      slots: { default: "clientSlot" },
+      title: "采集配置",
+      field: "configData",
+      minWidth: 320,
+      showOverflow: "tooltip",
+      slots: { default: "configSlot" },
     },
     {
-      title: "轮询间隔",
-      field: "intervalMinutes",
-      width: 110,
-      formatter: ({ row }) => `${row.intervalMinutes || 0} 分钟`,
+      title: "创建人",
+      field: "creator",
+      width: 120,
+      formatter: ({ row }) => row.creator || "-",
     },
     {
-      title: "下次执行",
-      field: "nextRunAt",
-      width: 180,
+      ...buildTimeColumn("更新时间", "updateTime", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
-    {
-      title: "最近状态",
-      field: "lastStatus",
-      width: 110,
-      slots: { default: "statusSlot" },
-    },
-    {
-      ...buildTimeColumn("最近执行", "lastRunAt", 180),
-      formatter: ({ cellValue }) => formatDateTime(cellValue as string),
-    },
-    {
-      ...buildTimeColumn("最近成功", "lastSuccessAt", 180),
-      formatter: ({ cellValue }) => formatDateTime(cellValue as string),
-    },
-    {
-      title: "启用",
-      field: "isActive",
-      width: 100,
-      slots: { default: "activeSlot" },
-    },
-    buildOperationColumn("operationSlot", 110),
+    buildOperationColumn("operationSlot", 180),
   ],
 });
 
@@ -324,12 +243,6 @@ const loadCatalog = async () => {
   const data = await getEcomPlatformCollectCatalog();
   catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
   catalog.scenes = Array.isArray(data?.scenes) ? data.scenes : [];
-  catalog.defaults = data?.defaults || catalog.defaults;
-};
-
-const loadClients = async () => {
-  const response = await getBrowserAutomationCapabilities();
-  capabilityClients.value = Array.isArray(response?.data?.clients) ? response.data.clients : [];
 };
 
 const loadList = async () => {
@@ -345,7 +258,7 @@ const loadList = async () => {
 };
 
 const loadData = async () => {
-  await Promise.all([loadCatalog(), loadClients()]);
+  await loadCatalog();
   await loadList();
 };
 
@@ -369,7 +282,6 @@ const handleReset = async () => {
   filters.keyword = "";
   filters.platform = "";
   filters.collectScene = "";
-  filters.isActive = "";
   await loadList();
 };
 
@@ -386,30 +298,13 @@ const handleCheckboxAll = ({ records }: { records: EcomPlatformCollectTask[] }) 
   updateSelectedIds(records);
 };
 
-const handleToggleTask = async (row: EcomPlatformCollectTask, value: boolean) => {
-  if (!row.id || toggleLoadingId.value === row.id) {
-    return;
-  }
-
-  toggleLoadingId.value = row.id;
-  try {
-    await updateEcomPlatformCollectTask(row.id, {
-      isActive: value,
-      nextRunAt: value ? row.nextRunAt || new Date().toISOString() : row.nextRunAt || undefined,
-    });
-    ElMessage.success(value ? "任务已启用" : "任务已停用");
-    await loadList();
-  } catch (error: any) {
-    ElMessage.error(error?.message || "更新任务状态失败");
-  } finally {
-    toggleLoadingId.value = "";
-  }
-};
-
 const handleTriggerTask = async (row: EcomPlatformCollectTask) => {
   const result = await triggerEcomPlatformCollectTask(row.id);
   if (result?.success === false) {
     ElMessage.warning(result.message || "触发失败");
+    if (result?.data?.runId) {
+      await router.push("/ecom-platform-collect/runs");
+    }
     return;
   }
   ElMessage.success(result?.message || "任务已触发");
@@ -443,52 +338,28 @@ const handleBatchDelete = async () => {
   } catch {}
 };
 
-const handleOperationCommand = (command: string, row: EcomPlatformCollectTask) => {
-  switch (command) {
-    case "trigger":
-      void handleTriggerTask(row);
-      break;
-    case "edit":
-      openTaskDialog(row);
-      break;
-    case "delete":
-      void handleDelete(row);
-      break;
-  }
-};
-
 onMounted(() => {
   void loadData();
 });
 </script>
 
 <style scoped lang="scss">
-.ecom-collect-page__stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 12px;
+:deep(.ecom-collect-page) {
+  gap: 10px;
+  padding: 8px 0 0;
 }
 
-.ecom-collect-page__stat-card {
-  padding: 14px 16px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 12px;
-  background: var(--el-bg-color-overlay);
+:deep(.ecom-collect-page .list-page-layout__main) {
+  gap: 10px;
 }
 
-.ecom-collect-page__stat-card .label {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.5;
+:deep(.ecom-collect-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
 }
 
-.ecom-collect-page__stat-card .value {
-  margin-top: 6px;
-  color: var(--el-text-color-primary);
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.2;
+:deep(.ecom-collect-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
 }
 
 .resource-toolbar__title {
@@ -509,16 +380,5 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.table-switch-cell {
-  display: flex;
-  align-items: center;
-}
-
-@media (max-width: 960px) {
-  .ecom-collect-page__stats {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

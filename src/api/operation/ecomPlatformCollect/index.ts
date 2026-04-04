@@ -5,15 +5,7 @@ export interface EcomPlatformCollectTask {
   name: string;
   platform: string;
   collectScene: string;
-  targetClientId?: string | null;
-  targetMachineCode?: string | null;
-  intervalMinutes: number;
-  nextRunAt?: string | null;
-  isActive: boolean;
   configData?: Record<string, any> | null;
-  lastRunAt?: string | null;
-  lastSuccessAt?: string | null;
-  lastStatus?: string | null;
   creator?: string;
   userId?: number | null;
   createTime?: string;
@@ -27,13 +19,11 @@ export interface EcomPlatformCollectRun {
   platform?: string;
   collectScene?: string;
   status: string;
-  triggerMode: string;
   assignedClientId?: string | null;
   assignedMachineCode?: string | null;
   commandId?: string | null;
   startedAt?: string | null;
   finishedAt?: string | null;
-  timeoutAt?: string | null;
   summaryData?: Record<string, any> | null;
   errorMessage?: string | null;
   createTime?: string;
@@ -73,10 +63,6 @@ export interface EcomPlatformCollectCatalog {
       pagination?: boolean;
     };
   }>;
-  defaults: {
-    intervalMinutes: number;
-    minIntervalMinutes: number;
-  };
 }
 
 export const getEcomPlatformCollectCatalog = () => {
