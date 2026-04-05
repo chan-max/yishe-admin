@@ -160,13 +160,15 @@
       </template>
     </ListPageLayout>
 
-    <el-drawer
+    <el-dialog
       v-model="detailVisible"
-      size="960px"
+      fullscreen
       destroy-on-close
       :title="detailTitle"
+      class="ecom-raw-detail-dialog"
+      @closed="handleDetailClosed"
     >
-      <div v-loading="detailLoading">
+      <div v-loading="detailLoading" class="ecom-raw-detail-dialog__body">
         <PlatformRawRecordDetail
           v-if="currentDetail"
           :record="currentDetail"
@@ -174,7 +176,7 @@
         />
         <el-empty v-else description="暂无详情数据" />
       </div>
-    </el-drawer>
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -390,6 +392,11 @@ const openDetail = async (row: EcomPlatformRawRecord) => {
   }
 };
 
+const handleDetailClosed = () => {
+  currentDetail.value = null;
+  detailLoading.value = false;
+};
+
 const handleDelete = async (row: EcomPlatformRawRecord) => {
   try {
     await ElMessageBox.confirm(
@@ -481,5 +488,27 @@ onActivated(() => {
     "Cascadia Code",
     "Source Code Pro",
     monospace;
+}
+
+:deep(.ecom-raw-detail-dialog.el-dialog.is-fullscreen) {
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+}
+
+:deep(.ecom-raw-detail-dialog .el-dialog__header) {
+  padding: 14px 18px 10px;
+}
+
+:deep(.ecom-raw-detail-dialog .el-dialog__body) {
+  height: calc(100vh - 52px);
+  padding: 0 18px 18px;
+  overflow: hidden;
+}
+
+.ecom-raw-detail-dialog__body {
+  height: 100%;
+  overflow: auto;
 }
 </style>
