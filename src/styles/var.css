@@ -42,6 +42,7 @@ html.light {
   --left-menu-section-icon-size: 13px;
   --left-menu-section-title-size: 13px;
   --left-menu-section-arrow-size: 11px;
+  --left-menu-links-columns: 2;
   --left-menu-links-padding-top: 7px;
   --left-menu-links-padding-left: 24px;
   --left-menu-links-padding-right: 2px;
@@ -53,7 +54,9 @@ html.light {
   --left-menu-link-radius: 5px;
   --left-menu-link-font-size: 11px;
   --left-menu-status-dot-size: 8px;
+  --left-menu-status-dot-margin-left: 6px;
   --left-menu-psd-dot-size: 7px;
+  --left-menu-psd-dot-margin-left: 8px;
 
   --logo-height: 42px;
   --logo-padding-x: 12px;
@@ -202,43 +205,91 @@ html.light {
   }
 }
 
-/* 平板 / 紧凑桌面：进一步提升信息密度 */
-@media only screen and (min-width: 768px) and (max-width: 1180px) {
+/* 大屏 iPad 横屏：按平板交互走单列菜单，避免双列挤压文字 */
+@media only screen and (min-width: 1181px) and (max-width: 1366px) and (any-pointer: coarse) {
   :root,
   html.light,
   html.dark {
-    --left-menu-max-width: 208px;
-    --left-menu-mobile-max-width: 188px;
+    --left-menu-max-width: 224px;
+    --left-menu-mobile-max-width: 198px;
     --left-menu-panel-padding-x: 6px;
     --left-menu-panel-padding-bottom: 14px;
     --left-menu-logo-padding-top: 6px;
     --left-menu-logo-padding-bottom: 8px;
     --left-menu-logo-margin-bottom: 2px;
     --left-menu-section-padding-top: 4px;
+    --left-menu-section-padding-bottom: 6px;
+    --left-menu-section-head-padding-x: 7px;
+    --left-menu-section-head-padding-y: 5px;
+    --left-menu-section-radius: 8px;
+    --left-menu-section-gap: 6px;
+    --left-menu-section-icon-size: 12px;
+    --left-menu-section-title-size: 12px;
+    --left-menu-section-arrow-size: 9px;
+    --left-menu-links-columns: 1;
+    --left-menu-links-padding-top: 5px;
+    --left-menu-links-padding-left: 12px;
+    --left-menu-links-padding-right: 2px;
+    --left-menu-links-gap-x: 4px;
+    --left-menu-links-gap-y: 4px;
+    --left-menu-link-min-height: 26px;
+    --left-menu-link-padding-x: 6px;
+    --left-menu-link-padding-y: 4px;
+    --left-menu-link-radius: 4px;
+    --left-menu-link-font-size: 11px;
+    --left-menu-status-dot-size: 6px;
+    --left-menu-status-dot-margin-left: 5px;
+    --left-menu-psd-dot-size: 6px;
+    --left-menu-psd-dot-margin-left: 6px;
+    --logo-height: 36px;
+    --logo-padding-x: 8px;
+    --logo-padding-y: 3px;
+    --logo-title-gap: 6px;
+    --logo-title-font-size: 12px;
+  }
+}
+
+/* 平板 / 紧凑桌面：进一步提升信息密度 */
+@media only screen and (min-width: 768px) and (max-width: 1180px) {
+  :root,
+  html.light,
+  html.dark {
+    --left-menu-max-width: 206px;
+    --left-menu-mobile-max-width: 182px;
+    --left-menu-panel-padding-x: 5px;
+    --left-menu-panel-padding-bottom: 14px;
+    --left-menu-logo-padding-top: 6px;
+    --left-menu-logo-padding-bottom: 7px;
+    --left-menu-logo-margin-bottom: 1px;
+    --left-menu-section-padding-top: 4px;
     --left-menu-section-padding-bottom: 5px;
     --left-menu-section-head-padding-x: 6px;
     --left-menu-section-head-padding-y: 4px;
     --left-menu-section-radius: 8px;
-    --left-menu-section-gap: 5px;
+    --left-menu-section-gap: 6px;
     --left-menu-section-icon-size: 11px;
-    --left-menu-section-title-size: 11px;
-    --left-menu-section-arrow-size: 10px;
+    --left-menu-section-title-size: 12px;
+    --left-menu-section-arrow-size: 9px;
+    --left-menu-links-columns: 1;
     --left-menu-links-padding-top: 5px;
-    --left-menu-links-padding-left: 18px;
+    --left-menu-links-padding-left: 11px;
+    --left-menu-links-padding-right: 2px;
     --left-menu-links-gap-x: 4px;
-    --left-menu-links-gap-y: 3px;
-    --left-menu-link-min-height: 24px;
+    --left-menu-links-gap-y: 4px;
+    --left-menu-link-min-height: 25px;
     --left-menu-link-padding-x: 6px;
-    --left-menu-link-padding-y: 3px;
+    --left-menu-link-padding-y: 4px;
     --left-menu-link-radius: 4px;
-    --left-menu-link-font-size: 9px;
-    --left-menu-status-dot-size: 7px;
+    --left-menu-link-font-size: 11px;
+    --left-menu-status-dot-size: 6px;
+    --left-menu-status-dot-margin-left: 5px;
     --left-menu-psd-dot-size: 6px;
+    --left-menu-psd-dot-margin-left: 6px;
     --logo-height: 34px;
     --logo-padding-x: 8px;
-    --logo-padding-y: 2px;
+    --logo-padding-y: 3px;
     --logo-title-gap: 6px;
-    --logo-title-font-size: 11px;
+    --logo-title-font-size: 12px;
     --top-tool-height: 44px;
     --top-header-action-size: 30px;
     --top-header-action-radius: 7px;
@@ -273,16 +324,20 @@ html.light {
   :root,
   html.light,
   html.dark {
-    --left-menu-max-width: 190px;
-    --left-menu-mobile-max-width: 172px;
-    --left-menu-section-icon-size: 10px;
-    --left-menu-section-title-size: 10px;
-    --left-menu-links-padding-left: 16px;
+    --left-menu-max-width: 194px;
+    --left-menu-mobile-max-width: 170px;
+    --left-menu-section-icon-size: 11px;
+    --left-menu-section-title-size: 11px;
+    --left-menu-links-padding-left: 10px;
     --left-menu-link-padding-x: 5px;
-    --left-menu-link-font-size: 9px;
+    --left-menu-link-font-size: 10px;
+    --left-menu-status-dot-size: 5px;
+    --left-menu-status-dot-margin-left: 4px;
+    --left-menu-psd-dot-size: 5px;
+    --left-menu-psd-dot-margin-left: 5px;
     --logo-height: 32px;
     --logo-title-gap: 5px;
-    --logo-title-font-size: 10px;
+    --logo-title-font-size: 11px;
     --tags-view-tool-width: 28px;
     --tags-view-item-font-size: 10px;
     --tags-view-item-inline-padding: 16px;

@@ -44,6 +44,7 @@ const title = computed(() => appStore.getTitle);
 }
 
 .logo-title {
+  flex: 1;
   min-width: 0;
   margin-left: var(--logo-title-gap);
   overflow: hidden;

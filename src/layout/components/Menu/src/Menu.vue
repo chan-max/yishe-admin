@@ -521,7 +521,7 @@ $prefix-cls: #{$namespace}-menu;
 
   &__links {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--left-menu-links-columns), minmax(0, 1fr));
     gap: var(--left-menu-links-gap-y) var(--left-menu-links-gap-x);
     padding: var(--left-menu-links-padding-top) var(--left-menu-links-padding-right) 0
       var(--left-menu-links-padding-left);
@@ -609,7 +609,7 @@ $prefix-cls: #{$namespace}-menu;
     position: relative;
     width: var(--left-menu-psd-dot-size);
     height: var(--left-menu-psd-dot-size);
-    margin-left: 8px;
+    margin-left: var(--left-menu-psd-dot-margin-left);
     border-radius: 999px;
     background: rgb(148 163 184 / 88%);
     box-shadow: 0 0 0 1px rgb(148 163 184 / 14%);
@@ -678,7 +678,7 @@ $prefix-cls: #{$namespace}-menu;
     position: relative;
     width: var(--left-menu-status-dot-size);
     height: var(--left-menu-status-dot-size);
-    margin-left: 6px;
+    margin-left: var(--left-menu-status-dot-margin-left);
     border-radius: 999px;
     background: var(--el-text-color-placeholder);
     box-shadow: 0 0 0 1px rgb(255 255 255 / 10%);
@@ -756,7 +756,28 @@ $prefix-cls: #{$namespace}-menu;
     animation: status-dot-breathe-offline 3s ease-in-out infinite;
   }
 
-  @media (max-width: 1024px) {
+  @media (min-width: 768px) and (max-width: 1180px),
+    (min-width: 1181px) and (max-width: 1366px) and (any-pointer: coarse) {
+    &__panel {
+      gap: 1px;
+    }
+
+    &__section-title {
+      font-weight: 500;
+      line-height: 1.05;
+    }
+
+    &__links {
+      grid-template-columns: 1fr;
+      padding-left: var(--left-menu-links-padding-left);
+    }
+
+    &__link-text {
+      line-height: 1.05;
+    }
+  }
+
+  @media (max-width: 767px) {
     &__links {
       grid-template-columns: 1fr;
       padding-left: calc(var(--left-menu-links-padding-left) + 2px);
