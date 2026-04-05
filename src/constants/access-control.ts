@@ -60,7 +60,7 @@ export const MENU_ACCESS_GROUPS = [
   {
     label: "运营协同",
     options: [
-      { key: "operation.ecom-platform-collect", label: "电商数据获取" },
+      { key: "operation.ecom-platform-collect", label: "电商数据链路" },
       { key: "operation.link-navigation", label: "链接导航" },
       { key: "operation.shop", label: "店铺" },
       { key: "operation.vendor", label: "厂家" },
@@ -118,6 +118,11 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   EcomPlatformCollectTaskPage: "operation.ecom-platform-collect",
   EcomPlatformCollectRunPage: "operation.ecom-platform-collect",
   EcomPlatformCollectRawPage: "operation.ecom-platform-collect",
+  EcomSelectionAnalysisTaskPage: "operation.ecom-platform-collect",
+  EcomSelectionAnalysisRunPage: "operation.ecom-platform-collect",
+  EcomSelectionSupplyMatchTaskPage: "operation.ecom-platform-collect",
+  EcomSelectionSupplyMatchRunPage: "operation.ecom-platform-collect",
+  EcomSelectionSupplyMatchItemPage: "operation.ecom-platform-collect",
   OperationEcomPlatformCollect: "operation.ecom-platform-collect",
   OperationLinkNavigation: "operation.link-navigation",
   ShopIndex: "operation.shop",

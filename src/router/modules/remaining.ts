@@ -460,7 +460,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     name: "EcomPlatformCollectRoot",
     redirect: "/ecom-platform-collect/tasks",
     meta: {
-      title: "电商数据获取",
+      title: "电商数据链路",
       icon: "ep:data-analysis",
       order: 6,
       alwaysShow: true,
@@ -473,6 +473,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "采集任务",
           noCache: true,
+          order: 1,
         },
       },
       {
@@ -480,8 +481,9 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-platform-collect/runs.vue"),
         name: "EcomPlatformCollectRunPage",
         meta: {
-          title: "运行记录",
+          title: "采集运行",
           noCache: true,
+          order: 2,
         },
       },
       {
@@ -491,6 +493,57 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "原始数据",
           noCache: true,
+          order: 3,
+        },
+      },
+      {
+        path: "selection-analysis/tasks",
+        component: () => import("@/views/operation/ecom-selection-analysis/index.vue"),
+        name: "EcomSelectionAnalysisTaskPage",
+        meta: {
+          title: "选品分析任务",
+          noCache: true,
+          order: 4,
+        },
+      },
+      {
+        path: "selection-analysis/runs",
+        component: () => import("@/views/operation/ecom-selection-analysis/runs.vue"),
+        name: "EcomSelectionAnalysisRunPage",
+        meta: {
+          title: "选品分析结果",
+          noCache: true,
+          order: 5,
+        },
+      },
+      {
+        path: "supply-match/tasks",
+        component: () => import("@/views/operation/ecom-selection-supply-match/index.vue"),
+        name: "EcomSelectionSupplyMatchTaskPage",
+        meta: {
+          title: "找同款任务",
+          noCache: true,
+          order: 6,
+        },
+      },
+      {
+        path: "supply-match/runs",
+        component: () => import("@/views/operation/ecom-selection-supply-match/runs.vue"),
+        name: "EcomSelectionSupplyMatchRunPage",
+        meta: {
+          title: "找同款运行",
+          noCache: true,
+          order: 7,
+        },
+      },
+      {
+        path: "supply-match/items",
+        component: () => import("@/views/operation/ecom-selection-supply-match/items.vue"),
+        name: "EcomSelectionSupplyMatchItemPage",
+        meta: {
+          title: "找同款结果",
+          noCache: true,
+          order: 8,
         },
       },
     ],
