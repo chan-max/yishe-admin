@@ -10,127 +10,223 @@
     @update:model-value="emit('update:modelValue', $event)"
   >
     <div class="task-dialog-shell">
-      <el-form label-position="top" class="task-dialog-form">
-        <el-form-item label="任务名称" required>
-          <el-input
-            v-model="taskForm.name"
-            :placeholder="
-              selectedPlatformSpec?.taskNamePlaceholder || '例如：Amazon 热门耳机抓取'
-            "
+      <div class="task-dialog-layout">
+        <div class="task-dialog-main">
+          <CompactNotice
+            v-if="!catalog.platforms.length"
+            type="warning"
+            title="先连接客户端并同步能力"
+            description="当前还没有可用的电商采集能力。"
+            class="task-dialog-alert"
           />
-        </el-form-item>
 
-        <el-row :gutter="20">
-          <el-col :xs="24" :lg="12">
-            <el-form-item label="平台" required>
-              <el-select
-                v-model="taskForm.platform"
-                placeholder="请选择平台"
-                @change="handlePlatformChange"
-              >
-                <el-option
-                  v-for="item in catalog.platforms"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
+          <CompactNotice
+            v-else-if="sceneUnavailableReason"
+            type="warning"
+            title="当前平台场景暂不可执行"
+            :description="sceneUnavailableReason"
+            class="task-dialog-alert"
+          />
+
+          <el-form label-position="top" class="task-dialog-form">
+            <el-form-item label="任务名称" required>
+              <el-input
+                v-model="taskForm.name"
+                placeholder="例如：Amazon 无线耳机搜索采集"
+              />
             </el-form-item>
-          </el-col>
 
-          <el-col :xs="24" :lg="12">
-            <el-form-item label="采集场景" required>
-              <el-select v-model="taskForm.collectScene" placeholder="请选择场景">
-                <el-option
-                  v-for="item in availableSceneOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-              <div v-if="selectedSceneMeta?.description" class="form-hint">
-                {{ selectedSceneMeta.description }}
+            <el-row :gutter="20">
+              <el-col :xs="24" :lg="12">
+                <el-form-item label="平台" required>
+                  <el-select
+                    v-model="taskForm.platform"
+                    placeholder="请选择平台"
+                    filterable
+                    @change="handlePlatformChange"
+                  >
+                    <el-option
+                      v-for="item in catalog.platforms"
+                      :key="item.value"
+                      :label="buildPlatformOptionLabel(item)"
+                      :value="item.value"
+                    />
+                  </el-select>
+                  <div v-if="selectedPlatform?.reason" class="form-hint">
+                    {{ selectedPlatform.reason }}
+                  </div>
+                </el-form-item>
+              </el-col>
+
+              <el-col :xs="24" :lg="12">
+                <el-form-item label="采集场景" required>
+                  <el-select
+                    v-model="taskForm.collectScene"
+                    placeholder="请选择采集场景"
+                  >
+                    <el-option
+                      v-for="item in availableSceneOptions"
+                      :key="item.value"
+                      :label="buildSceneOptionLabel(item)"
+                      :value="item.value"
+                    />
+                  </el-select>
+                  <div v-if="selectedScene?.description" class="form-hint">
+                    {{ selectedScene.description }}
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-row :gutter="20">
+              <el-col
+                v-for="field in sceneFields"
+                :key="field.key"
+                :xs="24"
+                :lg="resolveFieldLgSpan(field)"
+              >
+                <el-form-item :label="field.label" :required="field.required">
+                  <el-select
+                    v-if="field.component === 'select'"
+                    :model-value="getFieldValue(field)"
+                    filterable
+                    clearable
+                    :placeholder="field.placeholder || `请选择${field.label}`"
+                    @update:model-value="setFieldValue(field, $event)"
+                  >
+                    <el-option
+                      v-for="option in field.options || []"
+                      :key="String(option.value)"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+
+                  <el-switch
+                    v-else-if="field.component === 'switch'"
+                    :model-value="!!getFieldValue(field)"
+                    @update:model-value="setFieldValue(field, $event)"
+                  />
+
+                  <el-input-number
+                    v-else-if="field.component === 'input-number'"
+                    :model-value="getFieldValue(field)"
+                    :min="field.min"
+                    :max="field.max"
+                    :step="field.step || 1"
+                    controls-position="right"
+                    @update:model-value="setFieldValue(field, $event)"
+                  />
+
+                  <el-input
+                    v-else-if="
+                      field.component === 'textarea' ||
+                      field.component === 'array-text' ||
+                      field.component === 'json'
+                    "
+                    :model-value="getFieldValue(field)"
+                    type="textarea"
+                    :rows="field.rows || (field.component === 'json' ? 8 : 4)"
+                    :placeholder="field.placeholder || ''"
+                    @update:model-value="setFieldValue(field, $event)"
+                  />
+
+                  <el-input
+                    v-else
+                    :model-value="getFieldValue(field)"
+                    :placeholder="field.placeholder || ''"
+                    @update:model-value="setFieldValue(field, $event)"
+                  />
+
+                  <div
+                    v-if="field.description || (field.examples && field.examples.length)"
+                    class="form-hint"
+                  >
+                    <div v-if="field.description">{{ field.description }}</div>
+                    <div
+                      v-if="field.examples && field.examples.length"
+                      class="form-hint__examples"
+                    >
+                      例如：{{ field.examples.map(formatExample).join(" / ") }}
+                    </div>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+
+            <el-form-item label="附加配置 / 未建模参数">
+              <el-input
+                v-model="advancedJsonText"
+                type="textarea"
+                :rows="8"
+                placeholder='{"sort":"sales"}'
+              />
+              <div class="form-hint">
+                用于保留当前场景 schema 尚未覆盖的配置；留空则只保存已建模字段。
               </div>
             </el-form-item>
-          </el-col>
-        </el-row>
+          </el-form>
+        </div>
 
-        <PlatformTaskSpecCard :spec="selectedPlatformSpec" :scene="selectedSceneKey" />
+        <div class="task-dialog-side">
+          <div class="capability-card">
+            <div class="capability-card__header">
+              <div class="capability-card__title">实时参数</div>
+              <div class="capability-card__tags" v-if="selectedPlatform">
+                <el-tag
+                  size="small"
+                  :type="getCapabilityStatusTagType(selectedPlatform.status)"
+                >
+                  {{ getCapabilityStatusLabel(selectedPlatform.status) }}
+                </el-tag>
+              </div>
+            </div>
 
-        <el-row :gutter="20">
-          <el-col v-if="showKeywordConfig" :xs="24" :lg="12">
-            <el-form-item label="关键词">
-              <el-input
-                v-model="taskForm.keyword"
-                :placeholder="
-                  selectedPlatformSpec?.keywordPlaceholder || 'search 场景优先使用'
-                "
-              />
-            </el-form-item>
-          </el-col>
+            <div v-if="selectedPlatform" class="capability-card__body">
+              <div v-if="selectedScene" class="capability-block">
+                <div class="capability-block__label">当前功能</div>
+                <div class="capability-block__text">
+                  {{ customerFeatureSummary }}
+                </div>
+              </div>
 
-          <el-col v-if="showTargetUrlConfig" :xs="24" :lg="12">
-            <el-form-item label="目标链接">
-              <el-input
-                v-model="taskForm.targetUrl"
-                :placeholder="
-                  selectedPlatformSpec?.targetUrlPlaceholder || '详情页 / 店铺页链接'
-                "
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
+              <div class="capability-block">
+                <div class="capability-block__label">请求体</div>
+                <pre class="capability-example__code">{{
+                  liveRequestPreviewText
+                }}</pre>
+              </div>
 
-        <el-row :gutter="20">
-          <el-col v-if="showKeywordConfig" :xs="24" :lg="12">
-            <el-form-item label="关键词列表">
-              <el-input
-                v-model="taskForm.keywordsText"
-                type="textarea"
-                :rows="4"
-                :placeholder="
-                  selectedPlatformSpec?.keywordsPlaceholder || '一行一个或逗号分隔'
-                "
-              />
-            </el-form-item>
-          </el-col>
+              <div v-if="currentTask?.id" class="capability-block">
+                <div class="capability-block__label">路径参数</div>
+                <div class="capability-kv">
+                  <span>编辑保存时会使用当前任务 ID：</span>
+                  <code>{{ currentTask.id }}</code>
+                </div>
+              </div>
 
-          <el-col v-if="showPaginationConfig" :xs="24" :sm="12" :lg="6">
-            <el-form-item label="最大页数">
-              <el-input-number
-                v-model="taskForm.maxPages"
-                :min="1"
-                :max="20"
-              />
-            </el-form-item>
-          </el-col>
+              <div v-if="liveRequestPreviewError" class="capability-warning">
+                {{ liveRequestPreviewError }}
+              </div>
+            </div>
 
-          <el-col :xs="24" :sm="12" :lg="showKeywordConfig ? 6 : 12">
-            <el-form-item label="最大记录数">
-              <el-input-number
-                v-model="taskForm.maxItems"
-                :min="1"
-                :max="500"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="附加配置 JSON">
-          <el-input
-            v-model="taskForm.extraJson"
-            type="textarea"
-            :rows="8"
-            :placeholder="extraJsonPlaceholder"
-          />
-        </el-form-item>
-      </el-form>
+            <div v-else class="capability-card__placeholder">
+              暂无参数
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <template #footer>
       <div class="task-dialog-footer-bar">
         <el-button @click="emit('update:modelValue', false)">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+        <el-button
+          type="primary"
+          :loading="submitting"
+          :disabled="!canSubmit"
+          @click="handleSubmit"
+        >
           保存
         </el-button>
       </div>
@@ -141,18 +237,22 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
+import CompactNotice from "@/components/CompactNotice/index.vue";
 import {
   createEcomPlatformCollectTask,
   updateEcomPlatformCollectTask,
+  type EcomCollectFieldSchema,
+  type EcomCollectPlatformSchema,
+  type EcomCollectSceneSchema,
   type EcomPlatformCollectCatalog,
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
-import { parseKeywordsText } from "../shared";
-import PlatformTaskSpecCard from "./task-platforms/PlatformTaskSpecCard.vue";
 import {
-  getEcomCollectPlatformFormSpec,
-  type EcomCollectSceneKey,
-} from "./task-platforms";
+  getCapabilityStatusLabel,
+  getCapabilityStatusTagType,
+  getPlatformSchema,
+  getSceneSchema,
+} from "../shared";
 
 const props = defineProps<{
   modelValue: boolean;
@@ -166,121 +266,338 @@ const emit = defineEmits<{
 }>();
 
 const submitting = ref(false);
+const hydratingForm = ref(false);
+const advancedJsonText = ref("");
+const fieldValues = reactive<Record<string, any>>({});
 
 const taskForm = reactive({
   id: "",
   name: "",
   platform: "",
-  collectScene: "search",
-  keyword: "",
-  keywordsText: "",
-  targetUrl: "",
-  maxPages: 2,
-  maxItems: 60,
-  extraJson: "",
+  collectScene: "",
+});
+
+const currentTask = computed(() => props.task || null);
+
+const selectedPlatform = computed(() =>
+  getPlatformSchema(props.catalog, taskForm.platform),
+);
+
+const availableSceneOptions = computed<EcomCollectSceneSchema[]>(() => {
+  return Array.isArray(selectedPlatform.value?.scenes)
+    ? selectedPlatform.value.scenes
+    : [];
+});
+
+const selectedScene = computed(() =>
+  getSceneSchema(props.catalog, taskForm.platform, taskForm.collectScene),
+);
+
+const sceneFields = computed(() =>
+  Array.isArray(selectedScene.value?.fields) ? selectedScene.value.fields : [],
+);
+
+const sceneUnavailableReason = computed(() => {
+  if (selectedScene.value && selectedScene.value.runnable === false) {
+    return (
+      selectedScene.value.reason ||
+      `${selectedScene.value.label} 当前暂不可执行`
+    );
+  }
+  if (
+    !selectedScene.value &&
+    selectedPlatform.value &&
+    selectedPlatform.value.runnable === false
+  ) {
+    return (
+      selectedPlatform.value.reason ||
+      `${selectedPlatform.value.label} 当前暂不可执行`
+    );
+  }
+  return "";
+});
+
+const canSubmit = computed(
+  () =>
+    !!selectedPlatform.value &&
+    !!selectedScene.value &&
+    selectedScene.value.runnable !== false,
+);
+
+const customerFeatureSummary = computed(() => {
+  const sceneValue = selectedScene.value?.value;
+  if (sceneValue === "search") {
+    return "按关键词获取商品列表数据。";
+  }
+  if (sceneValue === "product_detail") {
+    return "获取单个商品的详情信息。";
+  }
+  if (sceneValue === "shop_hot_products") {
+    return "获取店铺热门商品列表。";
+  }
+
+  return selectedScene.value?.description || "-";
+});
+
+const buildLiveRequestBody = (allowInvalid = false) => {
+  return {
+    name: taskForm.name.trim(),
+    platform: taskForm.platform,
+    collectScene: taskForm.collectScene,
+    configData: buildDraftConfigData(allowInvalid),
+  };
+};
+
+const liveRequestPreview = computed(() => {
+  try {
+    return {
+      body: buildLiveRequestBody(false),
+      error: "",
+    };
+  } catch (error: any) {
+    return {
+      body: buildLiveRequestBody(true),
+      error: error?.message || "当前仍有未完成或格式不正确的参数",
+    };
+  }
+});
+
+const liveRequestPreviewText = computed(() =>
+  formatPayloadExample(liveRequestPreview.value.body),
+);
+
+const liveRequestPreviewError = computed(() => {
+  if (!liveRequestPreview.value.error) {
+    return "";
+  }
+  return `当前参数还不能直接保存：${liveRequestPreview.value.error}`;
 });
 
 const resetTaskForm = () => {
   taskForm.id = "";
   taskForm.name = "";
   taskForm.platform = "";
-  taskForm.collectScene = "search";
-  taskForm.keyword = "";
-  taskForm.keywordsText = "";
-  taskForm.targetUrl = "";
-  taskForm.maxPages = 2;
-  taskForm.maxItems = 60;
-  taskForm.extraJson = "";
+  taskForm.collectScene = "";
+  advancedJsonText.value = "";
+  replaceFieldValues({});
 };
 
-const currentTask = computed(() => props.task || null);
+const replaceFieldValues = (nextValues: Record<string, any>) => {
+  Object.keys(fieldValues).forEach((key) => {
+    delete fieldValues[key];
+  });
+  Object.assign(fieldValues, nextValues);
+};
 
-const selectedPlatformMeta = computed(() =>
-  props.catalog.platforms.find((item) => item.value === taskForm.platform),
-);
-
-const selectedPlatformSpec = computed(() =>
-  getEcomCollectPlatformFormSpec(taskForm.platform),
-);
-
-const availableSceneOptions = computed(() => {
-  const supportedScenes = selectedPlatformMeta.value?.supportedScenes;
-  if (!Array.isArray(supportedScenes) || !supportedScenes.length) {
-    return props.catalog.scenes;
+const formatPayloadExample = (value: any) => {
+  try {
+    return JSON.stringify(value ?? {}, null, 2);
+  } catch {
+    return String(value ?? "");
   }
-  return props.catalog.scenes.filter((item) => supportedScenes.includes(item.value));
-});
+};
 
-const selectedSceneMeta = computed(() =>
-  props.catalog.scenes.find((item) => item.value === taskForm.collectScene),
-);
+const formatExample = (value: any) => {
+  if (typeof value === "string") {
+    return value;
+  }
+  return formatPayloadExample(value);
+};
 
-const selectedSceneRequirements = computed(
-  () => selectedSceneMeta.value?.requirements || {},
-);
+const buildPlatformOptionLabel = (platform: EcomCollectPlatformSchema) => {
+  return `${platform.label} · ${getCapabilityStatusLabel(platform.status)}`;
+};
 
-const selectedSceneKey = computed(
-  () => taskForm.collectScene as EcomCollectSceneKey,
-);
+const buildSceneOptionLabel = (scene: EcomCollectSceneSchema) => {
+  const availabilityLabel = scene.availability
+    ? getCapabilityStatusLabel(scene.availability)
+    : "";
+  return availabilityLabel ? `${scene.label} · ${availabilityLabel}` : scene.label;
+};
 
-const extraJsonPlaceholder = computed(
-  () =>
-    selectedPlatformSpec.value?.extraJsonPlaceholder ||
-    '{"sort":"sales","shopId":"xxx"}',
-);
-
-const showKeywordConfig = computed(
-  () => selectedSceneRequirements.value.keyword === true,
-);
-
-const showTargetUrlConfig = computed(
-  () => selectedSceneRequirements.value.targetUrl === true,
-);
-
-const showPaginationConfig = computed(
-  () => selectedSceneRequirements.value.pagination === true,
-);
-
-const handlePlatformChange = (platform: string) => {
-  const matchedPlatform = props.catalog.platforms.find((item) => item.value === platform);
-  const supportedScenes = matchedPlatform?.supportedScenes || [];
+const resolveFieldLgSpan = (field: EcomCollectFieldSchema) => {
   if (
-    supportedScenes.length > 0 &&
-    taskForm.collectScene &&
-    !supportedScenes.includes(taskForm.collectScene)
+    field.component === "textarea" ||
+    field.component === "array-text" ||
+    field.component === "json"
   ) {
-    taskForm.collectScene = supportedScenes[0] || "";
+    return 24;
   }
+  return 12;
 };
 
-const buildConfigData = () => {
-  let extraConfig = {};
-  if (taskForm.extraJson.trim()) {
+const toFieldUiValue = (field: EcomCollectFieldSchema, value: any) => {
+  if (field.component === "array-text") {
+    if (Array.isArray(value)) {
+      return value.join("\n");
+    }
+    return String(value || "");
+  }
+
+  if (field.component === "json") {
+    if (value === undefined || value === null || value === "") {
+      return "";
+    }
+    if (typeof value === "string") {
+      return value;
+    }
+    return formatPayloadExample(value);
+  }
+
+  if (field.component === "input-number") {
+    if (value === undefined || value === null || value === "") {
+      return field.defaultValue ?? null;
+    }
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+
+  if (field.component === "switch") {
+    return value === true;
+  }
+
+  if (value === undefined || value === null) {
+    if (field.defaultValue !== undefined) {
+      return field.defaultValue;
+    }
+    return "";
+  }
+
+  return value;
+};
+
+const fromFieldUiValue = (
+  field: EcomCollectFieldSchema,
+  value: any,
+  options?: { allowInvalid?: boolean },
+) => {
+  if (field.component === "array-text") {
+    return String(value || "")
+      .split(/[\n,，]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (field.component === "json") {
+    const text = String(value || "").trim();
+    if (!text) {
+      return undefined;
+    }
     try {
-      extraConfig = JSON.parse(taskForm.extraJson.trim());
-    } catch {
-      throw new Error("附加配置 JSON 格式不正确");
+      return JSON.parse(text);
+    } catch (error) {
+      if (options?.allowInvalid) {
+        return undefined;
+      }
+      throw new Error(`${field.label} JSON 格式不正确`);
     }
   }
 
-  return {
-    ...extraConfig,
-    keyword: showKeywordConfig.value ? taskForm.keyword.trim() || undefined : undefined,
-    keywords: showKeywordConfig.value
-      ? parseKeywordsText(taskForm.keywordsText)
-      : undefined,
-    targetUrl: showTargetUrlConfig.value ? taskForm.targetUrl.trim() || undefined : undefined,
-    maxPages: showPaginationConfig.value ? taskForm.maxPages || undefined : undefined,
-    maxItems: taskForm.maxItems || undefined,
+  if (field.component === "input-number") {
+    if (value === undefined || value === null || value === "") {
+      return undefined;
+    }
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+      return undefined;
+    }
+    return field.valueType === "integer" ? Math.floor(numericValue) : numericValue;
+  }
+
+  if (field.component === "switch") {
+    return !!value;
+  }
+
+  const text = String(value || "").trim();
+  return text || undefined;
+};
+
+const isFieldEmpty = (value: any) => {
+  if (value === undefined || value === null) {
+    return true;
+  }
+  if (typeof value === "string") {
+    return value.trim().length === 0;
+  }
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+  return false;
+};
+
+const parseAdvancedJson = (allowInvalid = false) => {
+  const text = advancedJsonText.value.trim();
+  if (!text) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("附加配置必须是 JSON 对象");
+    }
+    return parsed;
+  } catch (error) {
+    if (allowInvalid) {
+      return {};
+    }
+    throw new Error("附加配置 JSON 格式不正确");
+  }
+};
+
+const buildDraftConfigData = (allowInvalid = false) => {
+  const draft: Record<string, any> = {
+    ...parseAdvancedJson(allowInvalid),
   };
+
+  sceneFields.value.forEach((field) => {
+    try {
+      const resolved = fromFieldUiValue(field, fieldValues[field.key], {
+        allowInvalid,
+      });
+      if (resolved !== undefined) {
+        draft[field.key] = resolved;
+      }
+    } catch {
+      if (!allowInvalid) {
+        throw new Error(`${field.label} 格式不正确`);
+      }
+    }
+  });
+
+  return draft;
+};
+
+const syncFieldValuesFromConfig = (configData: Record<string, any> = {}) => {
+  const nextValues: Record<string, any> = {};
+  const activeFieldKeys = new Set<string>();
+
+  sceneFields.value.forEach((field) => {
+    activeFieldKeys.add(field.key);
+    nextValues[field.key] = toFieldUiValue(field, configData[field.key]);
+  });
+
+  replaceFieldValues(nextValues);
+
+  const extraConfig = Object.fromEntries(
+    Object.entries(configData || {}).filter(
+      ([key, value]) => !activeFieldKeys.has(key) && value !== undefined,
+    ),
+  );
+
+  advancedJsonText.value = Object.keys(extraConfig).length
+    ? JSON.stringify(extraConfig, null, 2)
+    : "";
+};
+
+const getFieldValue = (field: EcomCollectFieldSchema) => {
+  return fieldValues[field.key];
+};
+
+const setFieldValue = (field: EcomCollectFieldSchema, value: any) => {
+  fieldValues[field.key] = value;
 };
 
 const validateTaskForm = () => {
-  const configData = buildConfigData();
-  const keyword = String(configData.keyword || "").trim();
-  const keywords = Array.isArray(configData.keywords) ? configData.keywords : [];
-  const targetUrl = String(configData.targetUrl || "").trim();
-
   if (!taskForm.name.trim()) {
     throw new Error("请填写任务名称");
   }
@@ -290,23 +607,35 @@ const validateTaskForm = () => {
   if (!taskForm.collectScene) {
     throw new Error("请选择采集场景");
   }
-  if (taskForm.collectScene === "search" && !keyword && !keywords.length) {
-    throw new Error("关键词搜索场景至少需要填写一个关键词");
+  if (!selectedScene.value) {
+    throw new Error("当前平台缺少可用场景定义");
   }
-  if (
-    ["product_detail", "shop_hot_products"].includes(taskForm.collectScene) &&
-    !targetUrl
-  ) {
-    throw new Error("当前采集场景需要填写目标链接");
+  if (selectedScene.value.runnable === false) {
+    throw new Error(
+      selectedScene.value.reason ||
+        `${selectedScene.value.label} 当前暂不可执行`,
+    );
+  }
+
+  const configData = buildDraftConfigData(false);
+
+  const missingField = sceneFields.value.find(
+    (field) => field.required && isFieldEmpty(configData[field.key]),
+  );
+
+  if (missingField) {
+    throw new Error(`请填写 ${missingField.label}`);
   }
 
   return configData;
 };
 
-const syncTaskToForm = () => {
+const loadTaskToForm = () => {
+  hydratingForm.value = true;
   resetTaskForm();
 
   if (!currentTask.value) {
+    hydratingForm.value = false;
     return;
   }
 
@@ -315,20 +644,24 @@ const syncTaskToForm = () => {
   taskForm.name = task.name;
   taskForm.platform = task.platform;
   taskForm.collectScene = task.collectScene;
-  taskForm.keyword = String(task.configData?.keyword || "");
-  taskForm.keywordsText = Array.isArray(task.configData?.keywords)
-    ? task.configData.keywords.join("\n")
-    : "";
-  taskForm.targetUrl = String(task.configData?.targetUrl || "");
-  taskForm.maxPages = Number(task.configData?.maxPages || 2);
-  taskForm.maxItems = Number(task.configData?.maxItems || 60);
+  syncFieldValuesFromConfig((task.configData || {}) as Record<string, any>);
+  hydratingForm.value = false;
+};
 
-  const { keyword, keywords, targetUrl, maxPages, maxItems, ...extraConfig } =
-    task.configData || {};
-  taskForm.extraJson =
-    extraConfig && Object.keys(extraConfig).length
-      ? JSON.stringify(extraConfig, null, 2)
-      : "";
+const handlePlatformChange = (platform: string) => {
+  const nextPlatform = getPlatformSchema(props.catalog, platform);
+  const availableScenes = Array.isArray(nextPlatform?.scenes)
+    ? nextPlatform.scenes
+    : [];
+  if (
+    availableScenes.length &&
+    !availableScenes.some((item) => item.value === taskForm.collectScene)
+  ) {
+    taskForm.collectScene = availableScenes[0]?.value || "";
+  }
+  if (!availableScenes.length) {
+    taskForm.collectScene = "";
+  }
 };
 
 const handleSubmit = async () => {
@@ -360,10 +693,25 @@ const handleSubmit = async () => {
 };
 
 watch(
-  () => [props.modelValue, props.task, props.catalog.platforms.length, props.catalog.scenes.length],
+  () => [taskForm.platform, taskForm.collectScene],
+  () => {
+    if (!props.modelValue || hydratingForm.value) {
+      return;
+    }
+    syncFieldValuesFromConfig(buildDraftConfigData(true));
+  },
+  { flush: "post" },
+);
+
+watch(
+  () => [
+    props.modelValue,
+    props.task,
+    props.catalog.platforms.length,
+  ],
   ([visible]) => {
     if (visible) {
-      syncTaskToForm();
+      loadTaskToForm();
     }
   },
   { immediate: true },
@@ -396,10 +744,8 @@ watch(
 .ecom-collect-task-dialog :deep(.el-dialog__footer) {
   flex: 0 0 auto;
   padding: 0;
-  border-top: 1px solid rgb(15 23 42 / 8%);
-  background: rgb(255 255 255 / 88%);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 -10px 30px rgb(15 23 42 / 6%);
+  border-top: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
 }
 
 .task-dialog-shell {
@@ -409,10 +755,20 @@ watch(
   box-sizing: border-box;
 }
 
-.task-dialog-form {
-  width: 100%;
-  max-width: none;
-  margin: 0;
+.task-dialog-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
+  gap: 20px;
+  min-height: 100%;
+}
+
+.task-dialog-main,
+.task-dialog-side {
+  min-width: 0;
+}
+
+.task-dialog-alert {
+  margin-bottom: 18px;
 }
 
 .task-dialog-form :deep(.el-form-item) {
@@ -421,14 +777,132 @@ watch(
 
 .task-dialog-form :deep(.el-form-item__label) {
   padding-bottom: 8px;
-  line-height: 1.45;
 }
 
 .task-dialog-form :deep(.el-input),
 .task-dialog-form :deep(.el-select),
-.task-dialog-form :deep(.el-date-editor),
 .task-dialog-form :deep(.el-input-number) {
   width: 100%;
+}
+
+.capability-card {
+  position: sticky;
+  top: 0;
+  padding: 18px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 16px;
+  background: var(--el-bg-color);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+}
+
+.capability-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.capability-card__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.capability-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.capability-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.capability-card__placeholder {
+  color: var(--el-text-color-secondary);
+  line-height: 1.7;
+}
+
+.capability-warning {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--el-color-warning-light-9);
+  color: var(--el-color-warning-dark-2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.capability-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.capability-block__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.capability-block__text {
+  color: var(--el-text-color-regular);
+  line-height: 1.7;
+}
+
+.capability-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--el-text-color-regular);
+  line-height: 1.7;
+}
+
+.capability-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.capability-kv code {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.capability-example {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--el-fill-color-light);
+}
+
+.capability-example__title {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.capability-example__desc {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+}
+
+.capability-example__code {
+  margin: 10px 0 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  line-height: 1.65;
+  overflow: auto;
 }
 
 .task-dialog-footer-bar {
@@ -445,8 +919,22 @@ watch(
   margin-top: 6px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.form-hint__examples {
+  margin-top: 4px;
+}
+
+@media (max-width: 1200px) {
+  .task-dialog-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .capability-card {
+    position: static;
+  }
 }
 
 @media (max-width: 768px) {

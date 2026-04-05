@@ -46,23 +46,95 @@ export interface EcomPlatformRawRecord {
   updateTime?: string;
 }
 
+export interface EcomCollectFieldOption {
+  label: string;
+  value: string | number | boolean;
+  description?: string;
+}
+
+export interface EcomCollectFieldSchema {
+  key: string;
+  label: string;
+  component:
+    | "input"
+    | "textarea"
+    | "input-number"
+    | "url"
+    | "select"
+    | "switch"
+    | "json"
+    | "array-text";
+  valueType?: string;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+  defaultValue?: any;
+  rows?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  examples?: any[];
+  options?: EcomCollectFieldOption[];
+}
+
+export interface EcomCollectSceneSchema {
+  value: string;
+  label: string;
+  description?: string;
+  availability?: string;
+  availabilityLabel?: string;
+  runnable?: boolean;
+  verification?: string;
+  verificationLabel?: string;
+  reason?: string | null;
+  fields?: EcomCollectFieldSchema[];
+  docs?: {
+    overview?: string;
+    notes?: string[];
+    examples?: Array<{
+      title?: string;
+      description?: string;
+      payload?: Record<string, any>;
+    }>;
+  };
+}
+
+export interface EcomCollectPlatformSchema {
+  value: string;
+  label: string;
+  regions?: string[];
+  status?: string;
+  statusLabel?: string;
+  runnable?: boolean;
+  reason?: string | null;
+  supportedScenes?: string[];
+  scenes?: EcomCollectSceneSchema[];
+  docs?: {
+    overview?: string;
+    notes?: string[];
+  };
+  maintenance?: {
+    moduleDir?: string;
+    selectorFile?: string;
+    readmeFile?: string;
+    notes?: string[];
+  };
+  verification?: Record<string, string>;
+  sourceClientId?: string | null;
+  sourceMachineCode?: string | null;
+  sourceUpdatedAt?: string | null;
+}
+
 export interface EcomPlatformCollectCatalog {
-  platforms: Array<{
-    value: string;
-    label: string;
-    regions?: string[];
-    supportedScenes?: string[];
-  }>;
-  scenes: Array<{
-    value: string;
-    label: string;
-    description?: string;
-    requirements?: {
-      keyword?: boolean;
-      targetUrl?: boolean;
-      pagination?: boolean;
-    };
-  }>;
+  schemaVersion?: number;
+  generatedAt?: string | null;
+  platforms: EcomCollectPlatformSchema[];
+  meta?: {
+    capabilityClientCount?: number;
+    onlineCapabilityClientCount?: number;
+    generatedAt?: string | null;
+    source?: string;
+  };
 }
 
 export const getEcomPlatformCollectCatalog = () => {

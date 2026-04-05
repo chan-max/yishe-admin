@@ -7,20 +7,11 @@
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">电商采集任务</div>
               <div class="resource-toolbar__desc">
-                这里只保留任务需求定义和手动执行入口，不再承载调度与机器绑定逻辑。
+                任务表单字段直接来自浏览器自动化端下发的能力 schema，admin 这里只负责需求配置与手动执行入口。
               </div>
             </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
-              <el-button
-                size="small"
-                type="danger"
-                plain
-                :disabled="!selectedIds.length"
-                @click="handleBatchDelete"
-              >
-                批量删除 ({{ selectedIds.length }})
-              </el-button>
               <el-button size="small" type="primary" @click="openTaskDialog()">
                 新建任务
               </el-button>
@@ -51,23 +42,19 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="6">
-                <el-form-item label="场景">
-                  <el-select v-model="filters.collectScene" clearable placeholder="场景">
-                    <el-option
-                      v-for="item in catalog.scenes"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-col>
             </el-row>
 
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button
+                size="small"
+                type="danger"
+                :disabled="!selectedIds.length"
+                @click="handleBatchDelete"
+              >
+                批量删除 ({{ selectedIds.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -79,7 +66,7 @@
             <div class="common-table">
               <vxe-grid
                 v-bind="gridOptions"
-                :data="list"
+                :data="tableData"
                 :loading="loading"
                 @checkbox-change="handleCheckboxChange"
                 @checkbox-all="handleCheckboxAll"
@@ -88,7 +75,7 @@
                   <div class="table-stack">
                     <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
                     <span class="table-meta-text">
-                      {{ getSceneLabel(catalog, row.collectScene) }}
+                      {{ getSceneLabel(catalog, row.platform, row.collectScene) }}
                     </span>
                   </div>
                 </template>
@@ -98,32 +85,61 @@
                 </template>
 
                 <template #operationSlot="{ row }">
-                  <div class="flex justify-start gap-3">
-                    <el-button link type="primary" size="small" @click="handleTriggerTask(row)">
-                      立即执行
-                    </el-button>
-                    <el-button link type="primary" size="small" @click="openTaskDialog(row)">
-                      编辑
-                    </el-button>
-                    <el-button link type="danger" size="small" @click="handleDelete(row)">
-                      删除
-                    </el-button>
+                  <div class="flex justify-start">
+                    <el-dropdown
+                      class="operation-dropdown"
+                      placement="bottom-end"
+                      :disabled="!!triggeringTaskId"
+                      @command="(command) => handleOperationCommand(String(command), row)"
+                    >
+                      <el-button
+                        type="primary"
+                        link
+                        size="small"
+                        class="operation-trigger-button"
+                        :loading="triggeringTaskId === row.id"
+                      >
+                        操作
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="trigger">
+                            <el-icon><VideoPlay /></el-icon>
+                            <span>立即执行</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="edit">
+                            <el-icon><Edit /></el-icon>
+                            <span>编辑</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
+                            <el-icon><Delete /></el-icon>
+                            <span>删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
                   </div>
                 </template>
               </vxe-grid>
             </div>
           </div>
+        </div>
+      </template>
 
-          <div class="list-page-table-panel__pagination--flat">
-            <el-pagination
-              background
-              layout="total, prev, pager, next"
-              :total="total"
-              :page-size="filters.pageSize"
-              :current-page="filters.pageNo"
-              @current-change="handlePageChange"
-            />
-          </div>
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="filters.pageNo"
+            v-model:limit="filters.pageSize"
+            @pagination="loadList"
+          />
         </div>
       </template>
     </ListPageLayout>
@@ -138,9 +154,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
+import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
 import {
   batchDeleteEcomPlatformCollectTask,
@@ -151,6 +167,7 @@ import {
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import Pagination from "@/components/Pagination/index.vue";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import EcomCollectTaskDialog from "./components/EcomCollectTaskDialog.vue";
 import {
@@ -162,13 +179,13 @@ import {
 
 defineOptions({ name: "EcomPlatformCollectTaskPage" });
 
-const router = useRouter();
 const loading = ref(false);
 const dialogVisible = ref(false);
 const currentTask = ref<EcomPlatformCollectTask | null>(null);
 const list = ref<EcomPlatformCollectTask[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
+const triggeringTaskId = ref("");
 
 const catalog = reactive(createEmptyEcomCollectCatalog());
 
@@ -177,7 +194,6 @@ const filters = reactive({
   pageSize: 10,
   keyword: "",
   platform: "",
-  collectScene: "",
 });
 
 const updateSelectedIds = (records: EcomPlatformCollectTask[] = []) => {
@@ -185,6 +201,14 @@ const updateSelectedIds = (records: EcomPlatformCollectTask[] = []) => {
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
 };
+
+const tableData = computed(() => {
+  if (list.value.length <= filters.pageSize) {
+    return list.value;
+  }
+  const start = (filters.pageNo - 1) * filters.pageSize;
+  return list.value.slice(start, start + filters.pageSize);
+});
 
 const getTaskConfigSummary = (task: EcomPlatformCollectTask) => {
   const config = task.configData || {};
@@ -235,31 +259,47 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
       ...buildTimeColumn("更新时间", "updateTime", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
-    buildOperationColumn("operationSlot", 180),
+    buildOperationColumn("operationSlot", 120),
   ],
 });
 
-const loadCatalog = async () => {
-  const data = await getEcomPlatformCollectCatalog();
+const applyCatalog = (data: any) => {
   catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
-  catalog.scenes = Array.isArray(data?.scenes) ? data.scenes : [];
+};
+
+const applyListData = (data: any) => {
+  list.value = Array.isArray(data?.list) ? data.list : [];
+  total.value = Number(data?.total || 0);
+  selectedIds.value = [];
+};
+
+const fetchListData = async () => {
+  const data = await getEcomPlatformCollectTaskList(filters);
+  applyListData(data);
+  return data;
 };
 
 const loadList = async () => {
   loading.value = true;
   try {
-    const data = await getEcomPlatformCollectTaskList(filters);
-    list.value = Array.isArray(data?.list) ? data.list : [];
-    total.value = Number(data?.total || 0);
-    selectedIds.value = [];
+    await fetchListData();
   } finally {
     loading.value = false;
   }
 };
 
 const loadData = async () => {
-  await loadCatalog();
-  await loadList();
+  loading.value = true;
+  try {
+    const [catalogData, listData] = await Promise.all([
+      getEcomPlatformCollectCatalog(),
+      getEcomPlatformCollectTaskList(filters),
+    ]);
+    applyCatalog(catalogData);
+    applyListData(listData);
+  } finally {
+    loading.value = false;
+  }
 };
 
 const openTaskDialog = (task?: EcomPlatformCollectTask) => {
@@ -281,13 +321,7 @@ const handleReset = async () => {
   filters.pageNo = 1;
   filters.keyword = "";
   filters.platform = "";
-  filters.collectScene = "";
   await loadList();
-};
-
-const handlePageChange = (page: number) => {
-  filters.pageNo = page;
-  void loadList();
 };
 
 const handleCheckboxChange = ({ records }: { records: EcomPlatformCollectTask[] }) => {
@@ -298,17 +332,63 @@ const handleCheckboxAll = ({ records }: { records: EcomPlatformCollectTask[] }) 
   updateSelectedIds(records);
 };
 
+const handleOperationCommand = (command: string, row: EcomPlatformCollectTask) => {
+  switch (command) {
+    case "trigger":
+      void handleTriggerTask(row);
+      break;
+    case "edit":
+      openTaskDialog(row);
+      break;
+    case "delete":
+      void handleDelete(row);
+      break;
+  }
+};
+
 const handleTriggerTask = async (row: EcomPlatformCollectTask) => {
-  const result = await triggerEcomPlatformCollectTask(row.id);
-  if (result?.success === false) {
-    ElMessage.warning(result.message || "触发失败");
-    if (result?.data?.runId) {
-      await router.push("/ecom-platform-collect/runs");
-    }
+  if (triggeringTaskId.value) {
     return;
   }
-  ElMessage.success(result?.message || "任务已触发");
-  await router.push("/ecom-platform-collect/runs");
+
+  triggeringTaskId.value = row.id;
+  const loadingMessage = ElMessage({
+    type: "info",
+    message: `正在提交执行：${row.name}`,
+    duration: 0,
+    showClose: true,
+  });
+
+  try {
+    const result = await triggerEcomPlatformCollectTask(row.id);
+    loadingMessage.close();
+
+    if (result?.success === false) {
+      ElNotification({
+        title: "执行未启动",
+        type: "warning",
+        duration: 4500,
+        message: result?.data?.runId
+          ? `${result.message || "触发失败"}，已生成运行记录：${result.data.runId}`
+          : result?.message || "触发失败",
+      });
+      return;
+    }
+
+    ElNotification({
+      title: "已开始执行",
+      type: "success",
+      duration: 4500,
+      message: result?.data?.runId
+        ? `任务已下发到客户端，运行记录：${result.data.runId}`
+        : result?.message || "任务已触发",
+    });
+  } catch (error: any) {
+    loadingMessage.close();
+    ElMessage.error(error?.message || "触发失败");
+  } finally {
+    triggeringTaskId.value = "";
+  }
 };
 
 const handleDelete = async (row: EcomPlatformCollectTask) => {
@@ -339,6 +419,10 @@ const handleBatchDelete = async () => {
 };
 
 onMounted(() => {
+  void loadData();
+});
+
+onActivated(() => {
   void loadData();
 });
 </script>

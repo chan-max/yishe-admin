@@ -12,15 +12,6 @@
             </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
-              <el-button
-                size="small"
-                type="danger"
-                plain
-                :disabled="!selectedIds.length"
-                @click="handleBatchDelete"
-              >
-                批量删除 ({{ selectedIds.length }})
-              </el-button>
             </div>
           </div>
 
@@ -62,6 +53,14 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button
+                size="small"
+                type="danger"
+                :disabled="!selectedIds.length"
+                @click="handleBatchDelete"
+              >
+                批量删除 ({{ selectedIds.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -73,7 +72,7 @@
             <div class="common-table">
               <vxe-grid
                 v-bind="gridOptions"
-                :data="list"
+                :data="tableData"
                 :loading="loading"
                 @checkbox-change="handleCheckboxChange"
                 @checkbox-all="handleCheckboxAll"
@@ -82,7 +81,7 @@
                   <div class="table-stack">
                     <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
                     <span class="table-meta-text">
-                      {{ getSceneLabel(catalog, row.collectScene) }}
+                      {{ getSceneLabel(catalog, row.platform, row.collectScene) }}
                     </span>
                   </div>
                 </template>
@@ -108,29 +107,55 @@
                 </template>
 
                 <template #operationSlot="{ row }">
-                  <div class="flex justify-start gap-3">
-                    <el-button link type="primary" size="small" @click="openDetail(row)">
-                      详情
-                    </el-button>
-                    <el-button link type="danger" size="small" @click="handleDelete(row)">
-                      删除
-                    </el-button>
+                  <div class="flex justify-start">
+                    <el-dropdown
+                      class="operation-dropdown"
+                      placement="bottom-end"
+                      @command="(command) => handleOperationCommand(String(command), row)"
+                    >
+                      <el-button
+                        type="primary"
+                        link
+                        size="small"
+                        class="operation-trigger-button"
+                      >
+                        操作
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="detail">
+                            <el-icon><View /></el-icon>
+                            <span>详情</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
+                            <el-icon><Delete /></el-icon>
+                            <span>删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
                   </div>
                 </template>
               </vxe-grid>
             </div>
           </div>
+        </div>
+      </template>
 
-          <div class="list-page-table-panel__pagination--flat">
-            <el-pagination
-              background
-              layout="total, prev, pager, next"
-              :total="total"
-              :page-size="filters.pageSize"
-              :current-page="filters.pageNo"
-              @current-change="handlePageChange"
-            />
-          </div>
+      <template #pagination>
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="filters.pageNo"
+            v-model:limit="filters.pageSize"
+            @pagination="loadList"
+          />
         </div>
       </template>
     </ListPageLayout>
@@ -154,9 +179,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from "vue";
+import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { Delete, View } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
 import {
   batchDeleteEcomPlatformRawRecord,
@@ -167,6 +193,7 @@ import {
   type EcomPlatformRawRecord,
 } from "@/api/operation/ecomPlatformCollect";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import Pagination from "@/components/Pagination/index.vue";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import PlatformRawRecordDetail from "./components/raw-detail/PlatformRawRecordDetail.vue";
 import {
@@ -214,6 +241,14 @@ const updateSelectedIds = (records: EcomPlatformRawRecord[] = []) => {
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
 };
+
+const tableData = computed(() => {
+  if (list.value.length <= filters.pageSize) {
+    return list.value;
+  }
+  const start = (filters.pageNo - 1) * filters.pageSize;
+  return list.value.slice(start, start + filters.pageSize);
+});
 
 const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
   ...(commonGridOptions as VxeGridProps<EcomPlatformRawRecord>),
@@ -268,27 +303,43 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
   ],
 });
 
-const loadCatalog = async () => {
-  const data = await getEcomPlatformCollectCatalog();
+const applyCatalog = (data: any) => {
   catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
-  catalog.scenes = Array.isArray(data?.scenes) ? data.scenes : [];
+};
+
+const applyListData = (data: any) => {
+  list.value = Array.isArray(data?.list) ? data.list : [];
+  total.value = Number(data?.total || 0);
+  selectedIds.value = [];
+};
+
+const fetchListData = async () => {
+  const data = await getEcomPlatformRawRecordList(filters);
+  applyListData(data);
+  return data;
 };
 
 const loadList = async () => {
   loading.value = true;
   try {
-    const data = await getEcomPlatformRawRecordList(filters);
-    list.value = Array.isArray(data?.list) ? data.list : [];
-    total.value = Number(data?.total || 0);
-    selectedIds.value = [];
+    await fetchListData();
   } finally {
     loading.value = false;
   }
 };
 
 const loadData = async () => {
-  await loadCatalog();
-  await loadList();
+  loading.value = true;
+  try {
+    const [catalogData, listData] = await Promise.all([
+      getEcomPlatformCollectCatalog(),
+      getEcomPlatformRawRecordList(filters),
+    ]);
+    applyCatalog(catalogData);
+    applyListData(listData);
+  } finally {
+    loading.value = false;
+  }
 };
 
 const handleSearch = async () => {
@@ -305,17 +356,23 @@ const handleReset = async () => {
   await loadList();
 };
 
-const handlePageChange = (page: number) => {
-  filters.pageNo = page;
-  void loadList();
-};
-
 const handleCheckboxChange = ({ records }: { records: EcomPlatformRawRecord[] }) => {
   updateSelectedIds(records);
 };
 
 const handleCheckboxAll = ({ records }: { records: EcomPlatformRawRecord[] }) => {
   updateSelectedIds(records);
+};
+
+const handleOperationCommand = (command: string, row: EcomPlatformRawRecord) => {
+  switch (command) {
+    case "detail":
+      void openDetail(row);
+      break;
+    case "delete":
+      void handleDelete(row);
+      break;
+  }
 };
 
 const openDetail = async (row: EcomPlatformRawRecord) => {
@@ -369,6 +426,11 @@ watch(
 );
 
 onMounted(() => {
+  syncQueryToFilters();
+  void loadData();
+});
+
+onActivated(() => {
   syncQueryToFilters();
   void loadData();
 });

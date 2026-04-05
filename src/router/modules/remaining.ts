@@ -472,6 +472,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectTaskPage",
         meta: {
           title: "采集任务",
+          noCache: true,
         },
       },
       {
@@ -480,6 +481,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectRunPage",
         meta: {
           title: "运行记录",
+          noCache: true,
         },
       },
       {
@@ -488,6 +490,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "EcomPlatformCollectRawPage",
         meta: {
           title: "原始数据",
+          noCache: true,
         },
       },
     ],
