@@ -263,7 +263,7 @@ watch(
   >
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool ${prefixCls}__tool--first`"
-      class="h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
+      class="h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
       @click="move(-200)"
     >
       <Icon
@@ -377,7 +377,7 @@ watch(
     </div>
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-      class="h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
+      class="h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
       @click="move(200)"
     >
       <Icon
@@ -390,7 +390,7 @@ watch(
     </span>
     <span
       :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-      class="h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
+      class="h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
       @click="refreshSelectedTag(selectedTag)"
     >
       <Icon
@@ -457,7 +457,7 @@ watch(
     >
       <span
         :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-        class="block h-[var(--tags-view-height)] w-[34px] flex cursor-pointer items-center justify-center"
+        class="block h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
       >
         <Icon
           hover-color="var(--tags-view-tool-hover-color)"
@@ -529,7 +529,7 @@ $prefix-cls: #{$namespace}-tags-view;
     justify-content: center;
     padding-right: 0;
     margin-left: 0;
-    font-size: 11px;
+    font-size: var(--tags-view-item-font-size);
     font-weight: 400;
     color: var(--tags-view-item-color);
     cursor: pointer;
@@ -545,10 +545,10 @@ $prefix-cls: #{$namespace}-tags-view;
     &--close {
       position: absolute;
       top: 50%;
-      right: 6px;
+      right: var(--tags-view-close-right);
       display: flex;
-      width: 13px;
-      height: 13px;
+      width: var(--tags-view-close-size);
+      height: var(--tags-view-close-size);
       align-items: center;
       justify-content: center;
       color: inherit;
@@ -580,7 +580,7 @@ $prefix-cls: #{$namespace}-tags-view;
     min-width: 0;
     align-items: center;
     justify-content: center;
-    padding: 0 24px;
+    padding: 0 var(--tags-view-item-inline-padding);
     line-height: 1;
     text-align: center;
   }
@@ -611,9 +611,9 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item.is-active .#{$prefix-cls}__item--title::after {
     position: absolute;
-    bottom: -10px;
+    bottom: var(--tags-view-active-indicator-offset);
     left: 50%;
-    width: 24px;
+    width: var(--tags-view-active-indicator-width);
     height: 2px;
     border-radius: 999px;
     background: var(--el-color-primary);
@@ -629,11 +629,11 @@ $prefix-cls: #{$namespace}-tags-view;
     border: none !important;
 
     .#{$prefix-cls}__item--label {
-      padding: 0 24px;
+      padding: 0 var(--tags-view-item-inline-padding);
     }
 
     .#{$prefix-cls}__item--close {
-      right: 6px;
+      right: var(--tags-view-close-right);
     }
   }
 

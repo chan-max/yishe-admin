@@ -82,21 +82,21 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: var(--top-header-breadcrumb-font-size);
 
   &__label {
     display: inline-flex;
     align-items: center;
-    max-width: 180px;
+    max-width: var(--top-header-breadcrumb-label-max-width);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   :deep(.#{$prefix-cls}__separator) {
-    margin: 0 6px;
+    margin: 0 5px;
     color: var(--top-header-breadcrumb-muted-color);
-    font-size: 10px;
+    font-size: var(--top-header-breadcrumb-separator-size);
   }
 
   :deep(.#{$prefix-cls}__item) {
@@ -108,7 +108,7 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
       min-width: 0;
       align-items: center;
       color: var(--top-header-breadcrumb-color);
-      font-size: 11px;
+      font-size: var(--top-header-breadcrumb-font-size);
       font-weight: 400;
 
       &:hover {
@@ -132,22 +132,12 @@ $prefix-cls: #{$elNamespace}-breadcrumb;
       display: flex;
       align-items: center;
       color: var(--top-header-breadcrumb-active-color);
-      font-size: 11px;
+      font-size: var(--top-header-breadcrumb-font-size);
       font-weight: 500;
 
       &:hover {
         color: var(--top-header-breadcrumb-active-color);
       }
-    }
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1180px) {
-  .#{$prefix-cls} {
-    font-size: 12px;
-
-    &__label {
-      max-width: 220px;
     }
   }
 }

@@ -233,8 +233,17 @@ html.dark {
   }
 }
 
-.list-page-search-form :deep(.el-form-item.is-required:not(.is-no-asterisk).asterisk-right > .el-form-item__label-wrap > .el-form-item__label::after),
-.list-page-search-form :deep(.el-form-item.is-required:not(.is-no-asterisk).asterisk-right > .el-form-item__label::after) {
+.list-page-search-form
+  :deep(
+    .el-form-item.is-required:not(.is-no-asterisk).asterisk-right
+      > .el-form-item__label-wrap
+      > .el-form-item__label::after
+  ),
+.list-page-search-form
+  :deep(
+    .el-form-item.is-required:not(.is-no-asterisk).asterisk-right
+      > .el-form-item__label::after
+  ) {
   margin-left: 4px;
 }
 
@@ -633,7 +642,8 @@ html.dark {
 .common-table :deep(.table-operation-header-cell .vxe-cell--wrapper),
 .common-table :deep(.table-operation-header-cell .vxe-cell--title),
 .common-table :deep(.vxe-header--column.table-operation-cell .vxe-cell),
-.common-table :deep(.vxe-header--column.table-operation-cell .vxe-cell--wrapper),
+.common-table
+  :deep(.vxe-header--column.table-operation-cell .vxe-cell--wrapper),
 .common-table :deep(.vxe-header--column.table-operation-cell .vxe-cell--title) {
   display: flex;
   justify-content: flex-start !important;
@@ -1065,23 +1075,29 @@ html.dark {
   padding-top: 8px !important;
 }
 
-.operation-menu-compact :deep(.el-dropdown-menu__item.operation-menu-item--danger),
+.operation-menu-compact
+  :deep(.el-dropdown-menu__item.operation-menu-item--danger),
 .operation-menu-compact :deep(.el-dropdown-menu__item.dropdown-item-danger),
 .operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger),
 .operation-dropdown :deep(.el-dropdown-menu__item.dropdown-item-danger) {
   color: var(--el-color-danger) !important;
 }
 
-.operation-menu-compact :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
-.operation-menu-compact :deep(.el-dropdown-menu__item.dropdown-item-danger:hover),
-.operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
+.operation-menu-compact
+  :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
+.operation-menu-compact
+  :deep(.el-dropdown-menu__item.dropdown-item-danger:hover),
+.operation-dropdown
+  :deep(.el-dropdown-menu__item.operation-menu-item--danger:hover),
 .operation-dropdown :deep(.el-dropdown-menu__item.dropdown-item-danger:hover) {
   background: var(--el-color-danger-light-9) !important;
   color: var(--el-color-danger) !important;
 }
 
-.operation-menu-compact :deep(.el-dropdown-menu__item.operation-menu-item--danger.is-disabled),
-.operation-dropdown :deep(.el-dropdown-menu__item.operation-menu-item--danger.is-disabled) {
+.operation-menu-compact
+  :deep(.el-dropdown-menu__item.operation-menu-item--danger.is-disabled),
+.operation-dropdown
+  :deep(.el-dropdown-menu__item.operation-menu-item--danger.is-disabled) {
   color: var(--el-text-color-placeholder) !important;
 }
 
@@ -1317,6 +1333,54 @@ html.dark {
 
   .folder-sidebar-body {
     padding-bottom: 30px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1366px) {
+  .search-bar {
+    gap: 0.75rem;
+  }
+
+  .list-page-search-form :deep(.el-form-item__label) {
+    font-size: 11px;
+  }
+
+  .list-page-search-form :deep(.el-input__wrapper),
+  .list-page-search-form :deep(.el-textarea__inner),
+  .list-page-search-form :deep(.el-select__wrapper),
+  .list-page-search-form :deep(.el-date-editor.el-input__wrapper) {
+    --el-component-size: 26px;
+  }
+
+  .list-page-search-form :deep(.el-input__inner),
+  .list-page-search-form :deep(.el-select__placeholder),
+  .list-page-search-form :deep(.el-textarea__inner),
+  .list-page-search-form :deep(.el-range-input),
+  .list-page-search-form :deep(.el-range-separator) {
+    font-size: 11px;
+  }
+
+  .common-table .vxe-table,
+  .common-table .vxe-grid {
+    --vxe-ui-font-size-default: 11px;
+  }
+
+  .common-table :deep(.common-table__header-cell) {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .common-table :deep(.common-table__body-cell) {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+
+  .table-cell-text,
+  .table-cell-text--muted,
+  .table-cell-empty,
+  .table-cell-id,
+  .table-cell-link {
+    font-size: 11px;
   }
 }
 

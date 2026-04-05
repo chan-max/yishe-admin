@@ -35,7 +35,7 @@ export default defineComponent({
           {mobile.value ? (
             <button
               type="button"
-              class="flex h-34px w-34px items-center justify-center rounded-8px border border-[var(--left-menu-border-color)] bg-[var(--top-header-hover-color)] text-[var(--top-header-text-color)]"
+              class="flex h-[var(--top-header-action-size)] w-[var(--top-header-action-size)] items-center justify-center rounded-[var(--top-header-action-radius)] border border-[var(--left-menu-border-color)] bg-[var(--top-header-hover-color)] text-[var(--top-header-text-color)]"
               onClick={openMobileMenu}
             >
               <Icon icon="ep:menu" />
@@ -53,7 +53,7 @@ export default defineComponent({
           <div class="client-status-wrapper">
             <ClientStatus />
           </div>
-          <div class="custom-hover flex h-34px items-center rounded-999px px-6px">
+          <div class="custom-hover flex h-[var(--top-header-action-size)] items-center rounded-999px px-6px">
             <ThemeSwitch />
           </div>
           {screenfull.value ? (
@@ -72,6 +72,10 @@ $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} {
   color: var(--top-header-text-color);
+}
+
+.#{$prefix-cls} :deep(.custom-hover) {
+  min-height: var(--top-header-action-size);
 }
 
 .#{$prefix-cls} :deep(.admin-data-scope) {
@@ -107,23 +111,23 @@ $prefix-cls: #{$namespace}-tool-header;
 @media (min-width: 768px) and (max-width: 1180px) {
   .#{$prefix-cls} {
     min-height: var(--top-tool-height);
-    padding-left: 14px;
-    padding-right: 12px;
+    padding-left: 10px;
+    padding-right: 8px;
   }
 
   .tool-header-left,
   .tool-header-right {
-    gap: 8px;
+    gap: 6px;
   }
 
   .tool-header-right > * {
     display: flex;
-    min-height: 38px;
+    min-height: var(--top-header-action-size);
     align-items: center;
   }
 
   .header-breadcrumb {
-    max-width: min(42vw, 420px);
+    max-width: min(34vw, 280px);
   }
 }
 

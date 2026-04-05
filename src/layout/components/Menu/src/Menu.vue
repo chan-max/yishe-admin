@@ -405,15 +405,15 @@ $prefix-cls: #{$namespace}-menu;
     flex-direction: column;
     gap: 2px;
     min-height: 100%;
-    padding: 0 7px 18px;
+    padding: 0 var(--left-menu-panel-padding-x) var(--left-menu-panel-padding-bottom);
   }
 
   &__logo {
     position: sticky;
     top: 0;
     z-index: 2;
-    padding: 8px 0 10px;
-    margin-bottom: 4px;
+    padding: var(--left-menu-logo-padding-top) 0 var(--left-menu-logo-padding-bottom);
+    margin-bottom: var(--left-menu-logo-margin-bottom);
     border-bottom: 1px solid var(--left-menu-divider-color);
     background: var(--left-menu-bg-color, #141414);
   }
@@ -425,7 +425,7 @@ $prefix-cls: #{$namespace}-menu;
 
   &__section {
     width: 100%;
-    padding: 5px 0 7px;
+    padding: var(--left-menu-section-padding-top) 0 var(--left-menu-section-padding-bottom);
     border-bottom: 1px solid var(--left-menu-divider-color);
   }
 
@@ -450,8 +450,8 @@ $prefix-cls: #{$namespace}-menu;
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    padding: 5px 7px;
-    border-radius: 9px;
+    padding: var(--left-menu-section-head-padding-y) var(--left-menu-section-head-padding-x);
+    border-radius: var(--left-menu-section-radius);
     background: transparent;
     cursor: pointer;
     text-align: left;
@@ -481,14 +481,14 @@ $prefix-cls: #{$namespace}-menu;
   &__section-label {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: var(--left-menu-section-gap);
     flex: 1;
     min-width: 0;
   }
 
   &__section-icon {
     flex: none;
-    font-size: 13px;
+    font-size: var(--left-menu-section-icon-size);
     color: var(--left-menu-icon-color);
   }
 
@@ -497,7 +497,7 @@ $prefix-cls: #{$namespace}-menu;
     min-width: 0;
     overflow: hidden;
     color: var(--left-menu-title-color);
-    font-size: 13px;
+    font-size: var(--left-menu-section-title-size);
     font-weight: 600;
     line-height: 1.15;
     text-overflow: ellipsis;
@@ -506,7 +506,7 @@ $prefix-cls: #{$namespace}-menu;
 
   &__section-arrow {
     flex: none;
-    font-size: 11px;
+    font-size: var(--left-menu-section-arrow-size);
     color: var(--left-menu-arrow-color);
   }
 
@@ -522,8 +522,9 @@ $prefix-cls: #{$namespace}-menu;
   &__links {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 6px;
-    padding: 7px 2px 0 24px;
+    gap: var(--left-menu-links-gap-y) var(--left-menu-links-gap-x);
+    padding: var(--left-menu-links-padding-top) var(--left-menu-links-padding-right) 0
+      var(--left-menu-links-padding-left);
   }
 
   &__link {
@@ -532,12 +533,12 @@ $prefix-cls: #{$namespace}-menu;
     display: flex;
     align-items: center;
     width: 100%;
-    min-height: 26px;
+    min-height: var(--left-menu-link-min-height);
     min-width: 0;
-    padding: 4px 7px;
+    padding: var(--left-menu-link-padding-y) var(--left-menu-link-padding-x);
     border: 0;
     border-left: 2px solid transparent;
-    border-radius: 0 5px 5px 0;
+    border-radius: 0 var(--left-menu-link-radius) var(--left-menu-link-radius) 0;
     background: transparent;
     outline: none;
     box-shadow: none;
@@ -583,7 +584,7 @@ $prefix-cls: #{$namespace}-menu;
     flex: 1;
     min-width: 0;
     overflow: hidden;
-    font-size: 11px;
+    font-size: var(--left-menu-link-font-size);
     font-weight: 500;
     line-height: 1.1;
     text-overflow: ellipsis;
@@ -606,8 +607,8 @@ $prefix-cls: #{$namespace}-menu;
   &__psd-status-dot {
     flex: none;
     position: relative;
-    width: 7px;
-    height: 7px;
+    width: var(--left-menu-psd-dot-size);
+    height: var(--left-menu-psd-dot-size);
     margin-left: 8px;
     border-radius: 999px;
     background: rgb(148 163 184 / 88%);
@@ -675,8 +676,8 @@ $prefix-cls: #{$namespace}-menu;
   &__status-dot {
     flex: none;
     position: relative;
-    width: 8px;
-    height: 8px;
+    width: var(--left-menu-status-dot-size);
+    height: var(--left-menu-status-dot-size);
     margin-left: 6px;
     border-radius: 999px;
     background: var(--el-text-color-placeholder);
@@ -758,7 +759,7 @@ $prefix-cls: #{$namespace}-menu;
   @media (max-width: 1024px) {
     &__links {
       grid-template-columns: 1fr;
-      padding-left: 26px;
+      padding-left: calc(var(--left-menu-links-padding-left) + 2px);
     }
   }
 }

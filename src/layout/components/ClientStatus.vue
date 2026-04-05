@@ -352,7 +352,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   padding: 0 4px;
-  height: 34px;
+  height: var(--top-header-action-size);
   color: var(--top-header-text-color);
   cursor: pointer;
   transition:
@@ -691,6 +691,11 @@ onUnmounted(() => {
 @media (max-width: 1180px) {
   .header-connection-status__trigger {
     padding: 0 3px;
+    gap: 6px;
+  }
+
+  .header-connection-status__trigger-label {
+    font-size: 11px;
   }
 
   .header-connection-status__trigger-subtitle {
