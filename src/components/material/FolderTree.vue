@@ -1,12 +1,16 @@
 <template>
-  <div class="sticker-folder-tree-container" :class="{ 'is-dragging-over-folders': dragState?.dragging }" :style="{
-    width: typeof width === 'number' ? width + 'px' : width,
-    minWidth: typeof width === 'number' ? width + 'px' : width,
-    maxWidth: typeof width === 'number' ? width + 'px' : width,
-    flexShrink: 0,
-    borderRight: showBorder ? '1px solid var(--el-border-color)' : undefined,
-    paddingRight: showBorder ? '16px' : undefined,
-  }">
+  <div
+    class="sticker-folder-tree-container"
+    :class="{ 'is-dragging-over-folders': dragState?.dragging }"
+    :style="{
+      width: typeof width === 'number' ? width + 'px' : width,
+      minWidth: typeof width === 'number' ? width + 'px' : width,
+      maxWidth: typeof width === 'number' ? width + 'px' : width,
+      flexShrink: 0,
+      borderRight: showBorder ? '1px solid var(--el-border-color)' : undefined,
+      paddingRight: showBorder ? '16px' : undefined,
+    }"
+  >
     <div v-if="mode === 'manage'" class="sticker-folder-tree-header">
       <el-button type="primary" size="small" plain style="width: 100%" @click="handleCreateRoot">
         <el-icon>
@@ -17,46 +21,92 @@
     </div>
 
     <div class="sticker-folder-tree-search">
-      <el-input
-        v-model="searchKeyword"
-        clearable
-        size="small"
-        placeholder="搜索文件夹"
-      />
+      <el-input v-model="searchKeyword" clearable size="small" placeholder="搜索文件夹" />
     </div>
 
     <div class="sticker-folder-tree-drag-surface" @dragleave="handleTreeDragLeave">
-      <el-tree ref="treeRef" :data="displayTreeData" :props="{ children: 'children', label: 'name' }" node-key="id"
-        :expand-on-click-node="false" :default-expand-all="false" :default-expanded-keys="expandedKeys"
-        :highlight-current="true" :current-node-key="modelValue || getDefaultCurrentKey()"
-        style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden" class="sticker-folder-tree">
+      <el-tree
+        ref="treeRef"
+        :data="displayTreeData"
+        :props="{ children: 'children', label: 'name' }"
+        node-key="id"
+        :indent="14"
+        :expand-on-click-node="false"
+        :default-expand-all="false"
+        :default-expanded-keys="expandedKeys"
+        :highlight-current="true"
+        :current-node-key="modelValue || getDefaultCurrentKey()"
+        style="max-height: calc(100vh - 300px); overflow-y: auto; overflow-x: hidden"
+        class="sticker-folder-tree"
+      >
         <template #default="{ node, data }">
-          <div class="sticker-folder-node"
-            :class="{ 'is-drop-hover': String(dragState?.overFolderId ?? '') === String(data.id) && dragState?.dragging }"
+          <div
+            class="sticker-folder-node"
+            :data-folder-drop-target="'true'"
+            :data-folder-id="data.id != null ? String(data.id) : ''"
+            :data-folder-path="data.path || ''"
+            :data-folder-name="data.name || ''"
+            :data-folder-is-all="data.isAll ? '1' : '0'"
+            :class="{
+              'is-drop-hover':
+                String(dragState?.overFolderId ?? '') === String(data.id) && dragState?.dragging,
+            }"
             @dragover.prevent="handleFolderDragOver(data, $event)"
-            @drop.prevent="handleFolderDrop(data)">
-            <div class="sticker-folder-node-content">
+            @drop.prevent="handleFolderDrop(data)"
+          >
+            <div class="sticker-folder-node-content" @click.stop="handleNodeClick(data)">
+              <button
+                type="button"
+                class="sticker-folder-node-toggle"
+                :class="{ 'is-expanded': node.expanded, 'is-leaf': !hasChildren(data) }"
+                :disabled="!hasChildren(data)"
+                @click.stop="toggleNode(node)"
+              >
+                <el-icon v-if="hasChildren(data)">
+                  <CaretRight />
+                </el-icon>
+              </button>
+
               <template v-if="data.isAll || data.id === FOLDER_FILTER.NOT_GROUP">
-                <el-icon class="folder-icon" style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)">
+                <el-icon
+                  class="folder-icon"
+                  style="flex-shrink: 0; margin-right: 6px; color: var(--el-color-primary)"
+                >
                   <Files />
                 </el-icon>
               </template>
               <template v-else>
-                <img v-if="node.expanded && data.children && data.children.length > 0" src="/img/folder-open.svg"
-                  class="folder-icon" alt="folder" />
+                <img
+                  v-if="node.expanded && data.children && data.children.length > 0"
+                  src="/img/folder-open.svg"
+                  class="folder-icon"
+                  alt="folder"
+                />
                 <img v-else src="/img/folder-close.svg" class="folder-icon" alt="folder" />
               </template>
-
-              <span class="sticker-folder-node-text" @click.stop="handleNodeClick(data)">
-                <template v-for="segment in getHighlightedSegments(data.name)" :key="`${data.id}-${segment.key}`">
-                  <span v-if="segment.matched" class="sticker-folder-node-highlight">{{ segment.text }}</span>
+              <span class="sticker-folder-node-text">
+                <template
+                  v-for="segment in getHighlightedSegments(data.name)"
+                  :key="`${data.id}-${segment.key}`"
+                >
+                  <span v-if="segment.matched" class="sticker-folder-node-highlight">{{
+                    segment.text
+                  }}</span>
                   <span v-else>{{ segment.text }}</span>
                 </template>
               </span>
             </div>
 
-            <div v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'" class="sticker-folder-node-actions">
-              <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, data)" @click.stop size="small">
+            <div
+              v-if="data.id !== FOLDER_FILTER.NOT_GROUP && mode === 'manage'"
+              class="sticker-folder-node-actions"
+            >
+              <el-dropdown
+                trigger="click"
+                @command="(cmd) => handleCommand(cmd, data)"
+                @click.stop
+                size="small"
+              >
                 <el-icon class="sticker-folder-action-icon">
                   <MoreFilled />
                 </el-icon>
@@ -94,8 +144,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { FolderAdd, MoreFilled, Edit, Delete, Files } from "@element-plus/icons-vue";
-import { createStickerFolder, deleteStickerFolder, getStickerFolderTree, renameStickerFolder } from "@/api/material";
+import { FolderAdd, MoreFilled, Edit, Delete, Files, CaretRight } from "@element-plus/icons-vue";
+import {
+  createStickerFolder,
+  deleteStickerFolder,
+  getStickerFolderTree,
+  renameStickerFolder,
+} from "@/api/material";
 import { FOLDER_FILTER } from "@/constants/folder";
 
 type FolderNode = {
@@ -120,15 +175,15 @@ const props = withDefaults(
       overFolderId: string | null;
       overFolderPath: string;
     } | null;
-    mode?: 'manage' | 'select';
+    mode?: "manage" | "select";
   }>(),
   {
     showCount: true,
     width: 280,
     showBorder: true,
     dragState: null,
-    mode: 'manage',
-  }
+    mode: "manage",
+  },
 );
 
 const emit = defineEmits<{
@@ -160,6 +215,10 @@ const expandedKeys = computed(() => {
 
 function getDefaultCurrentKey() {
   return props.mode === "select" ? FOLDER_FILTER.NOT_GROUP : FOLDER_FILTER.ALL;
+}
+
+function hasChildren(node: FolderNode) {
+  return Array.isArray(node.children) && node.children.length > 0;
 }
 
 function cloneNode(node: FolderNode) {
@@ -248,7 +307,9 @@ function getHighlightedSegments(name: string) {
 
 async function loadTree() {
   const res = await getStickerFolderTree({ folderCategory: props.folderCategory });
-  const rootFolders = (res || []).filter((f: any) => f.parentId === null || f.parentId === undefined);
+  const rootFolders = (res || []).filter(
+    (f: any) => f.parentId === null || f.parentId === undefined,
+  );
 
   const allNode: any = {
     id: FOLDER_FILTER.ALL,
@@ -268,7 +329,7 @@ async function loadTree() {
     stickerCount: 0,
   };
 
-  if (props.mode === 'select') {
+  if (props.mode === "select") {
     rawTreeData.value = [rootNode, ...rootFolders];
   } else {
     rawTreeData.value = [allNode, rootNode, ...rootFolders];
@@ -286,8 +347,20 @@ function handleNodeClick(node: any) {
     return;
   }
   const folderId = node.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : node.id;
-  emit("update:modelValue", node.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : node.id);
+  emit(
+    "update:modelValue",
+    node.id === FOLDER_FILTER.NOT_GROUP ? FOLDER_FILTER.NOT_GROUP : node.id,
+  );
   emit("change", { folderId, node });
+}
+
+function toggleNode(node: any) {
+  if (!node) return;
+  if (node.expanded) {
+    node.collapse();
+    return;
+  }
+  node.expand();
 }
 
 // 新建根文件夹
@@ -300,7 +373,11 @@ async function handleCreateRoot() {
       inputErrorMessage: "文件夹名称不能为空",
     });
 
-    await createStickerFolder({ name: value, parentId: null, folderCategory: props.folderCategory });
+    await createStickerFolder({
+      name: value,
+      parentId: null,
+      folderCategory: props.folderCategory,
+    });
     ElMessage.success("创建成功");
     loadTree();
   } catch (error) {
@@ -321,7 +398,11 @@ async function handleCommand(command: string, data: any) {
         inputErrorMessage: "文件夹名称不能为空",
       });
 
-      await createStickerFolder({ name: value, parentId: data.id, folderCategory: props.folderCategory });
+      await createStickerFolder({
+        name: value,
+        parentId: data.id,
+        folderCategory: props.folderCategory,
+      });
       ElMessage.success("创建成功");
       loadTree();
     } catch (error) {
@@ -352,7 +433,7 @@ async function handleCommand(command: string, data: any) {
           confirmButtonText: "确定",
           cancelButtonText: "取消",
           type: "warning",
-        }
+        },
       );
 
       await deleteStickerFolder(String(data.id));
@@ -397,7 +478,7 @@ function handleFolderDrop(data: any) {
 onMounted(loadTree);
 watch(
   () => props.folderCategory,
-  () => loadTree()
+  () => loadTree(),
 );
 watch(displayTreeData, () => {
   nextTick(() => {
@@ -410,14 +491,21 @@ watch(
     if (!dragging) {
       lastDragOverFolderId.value = null;
     }
-  }
+  },
 );
 </script>
 
 <style lang="less" scoped>
 /* 文件夹树样式（复用 material/index 的样式） */
 .sticker-folder-tree-container {
+  --folder-tree-toggle-slot-size: 16px;
+
   padding-top: 4px;
+
+  &.is-dragging-over-folders {
+    position: relative;
+    z-index: 2;
+  }
 
   .sticker-folder-tree-header {
     margin-bottom: 10px;
@@ -449,21 +537,12 @@ watch(
       will-change: color;
     }
 
+    :deep(.el-tree-node__content > .el-tree-node__expand-icon) {
+      display: none;
+    }
+
     :deep(.el-tree-node.is-current > .el-tree-node__content) {
       background: transparent;
-    }
-
-    :deep(.el-tree-node__expand-icon) {
-      margin-right: 2px;
-      color: var(--el-text-color-secondary);
-      font-size: 12px;
-      transition:
-        color 0.18s ease,
-        transform 0.18s ease;
-    }
-
-    :deep(.el-tree-node__expand-icon:hover) {
-      color: var(--folder-tree-node-active-color);
     }
   }
 
@@ -507,7 +586,9 @@ watch(
     transform: translateY(-50%) scaleY(1);
   }
 
-  :deep(.el-tree-node.is-current > .el-tree-node__content .sticker-folder-node .sticker-folder-node-text) {
+  :deep(
+    .el-tree-node.is-current > .el-tree-node__content .sticker-folder-node .sticker-folder-node-text
+  ) {
     font-weight: 600;
   }
 
@@ -607,8 +688,56 @@ watch(
       align-items: center;
       flex: 1;
       min-width: 0;
-      padding-left: 8px;
+      padding-left: 6px;
       transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+      cursor: pointer;
+
+      .sticker-folder-node-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--folder-tree-toggle-slot-size);
+        height: var(--folder-tree-toggle-slot-size);
+        padding: 0;
+        margin-right: 4px;
+        border: 0;
+        border-radius: 5px;
+        background: transparent;
+        color: var(--el-text-color-secondary);
+        flex-shrink: 0;
+        cursor: pointer;
+        transition:
+          color 0.18s ease,
+          background-color 0.18s ease,
+          transform 0.18s ease;
+
+        .el-icon {
+          font-size: 12px;
+          transition: transform 0.18s ease;
+        }
+
+        &.is-expanded .el-icon {
+          transform: rotate(90deg);
+        }
+
+        &:hover:not(:disabled) {
+          color: var(--folder-tree-node-active-color);
+          background: rgba(45, 107, 255, 0.08);
+        }
+
+        &:focus-visible {
+          outline: 2px solid rgba(45, 107, 255, 0.22);
+          outline-offset: 1px;
+        }
+
+        &:disabled {
+          width: var(--folder-tree-toggle-slot-size);
+          margin-right: 4px;
+          background: transparent;
+          cursor: default;
+          pointer-events: none;
+        }
+      }
 
       .folder-icon {
         width: 18px;

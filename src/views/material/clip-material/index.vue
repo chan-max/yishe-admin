@@ -1,6 +1,9 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="clip-material-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
+    <ListPageLayout
+      class="clip-material-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
+    >
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
@@ -12,7 +15,11 @@
                     size="small"
                     placeholder="请输入名称、描述或关键词"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
@@ -75,7 +82,11 @@
                     size="small"
                     placeholder="请输入ID"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
@@ -94,16 +105,29 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="getList"
+                >搜索</el-button
+              >
               <el-button
                 v-if="isAdmin"
                 size="small"
                 type="primary"
-                @click="() => { uploadModalVisible = true; }"
+                @click="
+                  () => {
+                    uploadModalVisible = true;
+                  }
+                "
               >
                 上传
               </el-button>
-              <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+              <el-button size="small" @click="handleMultiDownload"
+                >下载 ({{ ids.length }})</el-button
+              >
               <el-button
                 v-if="isAdmin"
                 size="small"
@@ -114,7 +138,9 @@
               >
                 批量删除 ({{ ids.length }})
               </el-button>
-              <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true">筛选</el-button>
+              <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true"
+                >筛选</el-button
+              >
             </div>
           </el-form>
         </div>
@@ -179,9 +205,14 @@
       </template>
 
       <template #sidebar>
-        <div class="list-page-panel list-page-panel--flat list-page-sidebar clip-material-sidebar folder-sidebar-shell">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-sidebar clip-material-sidebar folder-sidebar-shell"
+        >
           <div class="list-page-sidebar__body clip-material-sidebar__body folder-sidebar-body">
-            <div v-show="!folderTreeCollapsed" class="clip-material-sidebar__tree folder-sidebar-tree">
+            <div
+              v-show="!folderTreeCollapsed"
+              class="clip-material-sidebar__tree folder-sidebar-tree"
+            >
               <FolderTree
                 v-model="selectedFolderId"
                 width="100%"
@@ -209,7 +240,9 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
@@ -295,7 +328,9 @@
                       placement="bottom-end"
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item v-if="isAdmin" command="edit">
@@ -316,7 +351,12 @@
                             <span>预览</span>
                           </el-dropdown-item>
                           <!-- toggle public/private removed -->
-                          <el-dropdown-item v-if="isAdmin" command="delete" divided class="operation-menu-item--danger">
+                          <el-dropdown-item
+                            v-if="isAdmin"
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
                             <el-icon><Delete /></el-icon>
                             <span>删除</span>
                           </el-dropdown-item>
@@ -332,7 +372,9 @@
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
           <pagination
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
@@ -574,12 +616,19 @@ const loading = ref(false);
 const ids = ref<any[]>([]);
 const total = ref(0);
 
-const { dragState, setupRowDrag, handleFolderDragOver, handleFolderDragLeave, resetAfterDrop } =
-  useFolderRowDrag({
-    gridClass: "clip-material-dnd-grid",
-    dataSource,
-    selectedIds: ids,
-  });
+const {
+  dragState,
+  setupRowDrag,
+  handleFolderDragOver,
+  handleFolderDragLeave,
+  resetAfterDrop,
+  markExternalFolderDropHandled,
+} = useFolderRowDrag({
+  gridClass: "clip-material-dnd-grid",
+  dataSource,
+  selectedIds: ids,
+  onDropToFolder: handleFolderDrop,
+});
 
 // 上传相关
 const uploadModalVisible = ref(false);
@@ -731,6 +780,7 @@ function handleFolderChange(payload: { folderId: string | null; node?: any }) {
 }
 
 async function handleFolderDrop(payload: { data: any }) {
+  markExternalFolderDropHandled();
   if (!dragState.draggingIds.length) return;
 
   let targetFolderId: string | null = null;

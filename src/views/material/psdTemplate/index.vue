@@ -1,30 +1,56 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="psd-template-page" :sidebar-width="folderTreeCollapsed ? '28px' : '280px'">
+    <ListPageLayout
+      class="psd-template-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
+    >
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="ID搜索">
-                  <el-input v-model="queryParams.id" size="small" clearable placeholder="请输入模板ID" @keyup.enter="getList" />
+                  <el-input
+                    v-model="queryParams.id"
+                    size="small"
+                    clearable
+                    placeholder="请输入模板ID"
+                    @keyup.enter="getList"
+                  />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="搜索">
-                  <el-input v-model="queryParams.searchKeyword" size="small" clearable placeholder="请输入名称、关键词或描述" @keyup.enter="getList" />
+                  <el-input
+                    v-model="queryParams.searchKeyword"
+                    size="small"
+                    clearable
+                    placeholder="请输入名称、关键词或描述"
+                    @keyup.enter="getList"
+                  />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="排序方式">
                   <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
-                    <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                    <el-option
+                      v-for="item in sortTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
                 <el-form-item label="是否可用">
-                  <el-select v-model="queryParams.enabled" size="small" clearable placeholder="全部" @change="getList">
+                  <el-select
+                    v-model="queryParams.enabled"
+                    size="small"
+                    clearable
+                    placeholder="全部"
+                    @change="getList"
+                  >
                     <el-option label="可用" :value="true" />
                     <el-option label="不可用" :value="false" />
                   </el-select>
@@ -76,11 +102,30 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" @click="getList" :icon="Search" :loading="loading">搜索</el-button>
-              <el-button size="small" type="primary" :disabled="single" @click="handleAdd" :icon="Plus">
+              <el-button
+                size="small"
+                type="primary"
+                @click="getList"
+                :icon="Search"
+                :loading="loading"
+                >搜索</el-button
+              >
+              <el-button
+                size="small"
+                type="primary"
+                :disabled="single"
+                @click="handleAdd"
+                :icon="Plus"
+              >
                 新增
               </el-button>
-              <el-button size="small" type="danger" :icon="Delete" :disabled="loading" @click="handleDelete(null)">
+              <el-button
+                size="small"
+                type="danger"
+                :icon="Delete"
+                :disabled="loading"
+                @click="handleDelete(null)"
+              >
                 批量删除
               </el-button>
             </div>
@@ -89,7 +134,9 @@
       </template>
 
       <template #sidebar>
-        <div class="list-page-panel list-page-panel--flat list-page-sidebar psd-template-sidebar folder-sidebar-shell">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-sidebar psd-template-sidebar folder-sidebar-shell"
+        >
           <div class="list-page-sidebar__body folder-sidebar-body">
             <div v-show="!folderTreeCollapsed" class="folder-sidebar-tree">
               <FolderTree
@@ -119,162 +166,220 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
-            <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden;">
-        <!-- 表格展示 -->
-        <div class="common-table">
-          <vxe-grid class="psd-template-dnd-grid dnd-text-selectable" v-bind="gridOptions" :data="dataSource" :loading="loading"
-            :row-class-name="getRowClassName" @checkbox-change="checkboxChange" @checkbox-all="checkboxAllChange">
-            <template #dragHandleSlot>
-              <TableRowDragHandle />
-            </template>
-            <template #thumbnailSlot="{ row }">
-              <div class="thumbnail-cell">
-                <el-image v-if="row.thumbnail" :src="getPreviewImageUrl(row.thumbnail, { width: 150, height: 150, quality: 80, format: 'webp' })" :preview-src-list="[row.thumbnail]"
-                  :initial-index="0" preview-teleported hide-on-click-modal fit="contain" :lazy="true"
-                  class="thumbnail-image" />
-                <span v-else class="thumbnail-placeholder">暂无缩略图</span>
-              </div>
-            </template>
-
-            <template #titleNameDefaultSlot="{ row }">
-              <div v-if="row.titleTemplateId" class="flex items-center gap-2">
-                <span>
-                  {{ row.titleName }}
-                </span>
-              </div>
-              <div v-else>
-                <el-button type="danger" @click="handleEdit(row)" link size="small">
-                  未选择标题,点击选择
-                </el-button>
-              </div>
-            </template>
-
-            <template #urlSlot="{ row }">
-              <div class="flex items-center gap-1">
-                <a v-if="row.url" :href="row.url" target="_blank" rel="noopener" class="text-primary">
-                  {{ row.url }}
-                </a>
-                <span v-else class="text-gray-400">无</span>
-              </div>
-            </template>
-
-            <template #psdInfoSlot="{ row }">
-              <div class="psd-info-cell">
-                <el-button v-if="row.psdTemplateConfig" type="primary" link size="small"
-                  @click="handleViewPsdInfo(row)">
-                  <el-icon class="info-icon">
-                    <InfoFilled />
-                  </el-icon>
-                  <span class="info-text">配置</span>
-                </el-button>
-                <span v-else class="text-gray-400 text-xs">无</span>
-              </div>
-            </template>
-
-            <template #suitableSizesSlot="{ row }">
-              <div class="suitable-sizes-cell-compact">
-                <template v-if="row.suitableSizes && row.suitableSizes.length > 0">
-                  <el-popover placement="top" :width="360" trigger="hover">
-                    <template #reference>
-                      <span class="size-summary-link">
-                        {{ (row.suitableSizes || [])
-                          .slice(0, 2)
-                          .map((sizeKey) => getSizeShapeUiConfig(sizeKey)?.label || sizeKey)
-                          .join(' / ') }}
-                        <span v-if="row.suitableSizes.length > 2"> 等{{ row.suitableSizes.length }}个</span>
-                      </span>
-                    </template>
-                    <div class="suitable-sizes-popover">
-                      <el-tag
-                        v-for="sizeKey in row.suitableSizes"
-                        :key="sizeKey"
-                        size="small"
-                        class="size-tag-mini"
-                        :style="{
-                          backgroundColor: getSizeShapeUiConfig(sizeKey)?.color + '20',
-                          borderColor: getSizeShapeUiConfig(sizeKey)?.color,
-                          color: getSizeShapeUiConfig(sizeKey)?.color
-                        }"
-                      >
-                        {{ getSizeShapeUiConfig(sizeKey)?.label || sizeKey }}
-                      </el-tag>
+            <div class="content-container" style="flex: 1; min-width: 0; overflow: hidden">
+              <!-- 表格展示 -->
+              <div class="common-table">
+                <vxe-grid
+                  class="psd-template-dnd-grid dnd-text-selectable"
+                  v-bind="gridOptions"
+                  :data="dataSource"
+                  :loading="loading"
+                  :row-class-name="getRowClassName"
+                  @checkbox-change="checkboxChange"
+                  @checkbox-all="checkboxAllChange"
+                >
+                  <template #dragHandleSlot>
+                    <TableRowDragHandle />
+                  </template>
+                  <template #thumbnailSlot="{ row }">
+                    <div class="thumbnail-cell">
+                      <el-image
+                        v-if="row.thumbnail"
+                        :src="
+                          getPreviewImageUrl(row.thumbnail, {
+                            width: 150,
+                            height: 150,
+                            quality: 80,
+                            format: 'webp',
+                          })
+                        "
+                        :preview-src-list="[row.thumbnail]"
+                        :initial-index="0"
+                        preview-teleported
+                        hide-on-click-modal
+                        fit="contain"
+                        :lazy="true"
+                        class="thumbnail-image"
+                      />
+                      <span v-else class="thumbnail-placeholder">暂无缩略图</span>
                     </div>
-                  </el-popover>
-                </template>
-                <span v-else class="text-gray-400 text-xs">未设置</span>
+                  </template>
+
+                  <template #titleNameDefaultSlot="{ row }">
+                    <div v-if="row.titleTemplateId" class="flex items-center gap-2">
+                      <span>
+                        {{ row.titleName }}
+                      </span>
+                    </div>
+                    <div v-else>
+                      <el-button type="danger" @click="handleEdit(row)" link size="small">
+                        未选择标题,点击选择
+                      </el-button>
+                    </div>
+                  </template>
+
+                  <template #urlSlot="{ row }">
+                    <div class="flex items-center gap-1">
+                      <a
+                        v-if="row.url"
+                        :href="row.url"
+                        target="_blank"
+                        rel="noopener"
+                        class="text-primary"
+                      >
+                        {{ row.url }}
+                      </a>
+                      <span v-else class="text-gray-400">无</span>
+                    </div>
+                  </template>
+
+                  <template #psdInfoSlot="{ row }">
+                    <div class="psd-info-cell">
+                      <el-button
+                        v-if="row.psdTemplateConfig"
+                        type="primary"
+                        link
+                        size="small"
+                        @click="handleViewPsdInfo(row)"
+                      >
+                        <el-icon class="info-icon">
+                          <InfoFilled />
+                        </el-icon>
+                        <span class="info-text">配置</span>
+                      </el-button>
+                      <span v-else class="text-gray-400 text-xs">无</span>
+                    </div>
+                  </template>
+
+                  <template #suitableSizesSlot="{ row }">
+                    <div class="suitable-sizes-cell-compact">
+                      <template v-if="row.suitableSizes && row.suitableSizes.length > 0">
+                        <el-popover placement="top" :width="360" trigger="hover">
+                          <template #reference>
+                            <span class="size-summary-link">
+                              {{
+                                (row.suitableSizes || [])
+                                  .slice(0, 2)
+                                  .map((sizeKey) => getSizeShapeUiConfig(sizeKey)?.label || sizeKey)
+                                  .join(" / ")
+                              }}
+                              <span v-if="row.suitableSizes.length > 2">
+                                等{{ row.suitableSizes.length }}个</span
+                              >
+                            </span>
+                          </template>
+                          <div class="suitable-sizes-popover">
+                            <el-tag
+                              v-for="sizeKey in row.suitableSizes"
+                              :key="sizeKey"
+                              size="small"
+                              class="size-tag-mini"
+                              :style="{
+                                backgroundColor: getSizeShapeUiConfig(sizeKey)?.color + '20',
+                                borderColor: getSizeShapeUiConfig(sizeKey)?.color,
+                                color: getSizeShapeUiConfig(sizeKey)?.color,
+                              }"
+                            >
+                              {{ getSizeShapeUiConfig(sizeKey)?.label || sizeKey }}
+                            </el-tag>
+                          </div>
+                        </el-popover>
+                      </template>
+                      <span v-else class="text-gray-400 text-xs">未设置</span>
+                    </div>
+                  </template>
+
+                  <template #cutoutModesSlot="{ row }">
+                    <div class="suitable-sizes-cell-compact">
+                      <template v-if="row.cutoutModes && row.cutoutModes.length > 0">
+                        <el-tag
+                          v-for="mode in row.cutoutModes"
+                          :key="mode"
+                          size="small"
+                          class="size-tag-mini"
+                          type="info"
+                        >
+                          {{ getCutoutModeLabel(mode) }}
+                        </el-tag>
+                      </template>
+                      <span v-else class="text-gray-400 text-xs">未设置</span>
+                    </div>
+                  </template>
+
+                  <template #pathStatusSlot="{ row }">
+                    <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small"
+                      >远程 + 本地</el-tag
+                    >
+                    <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
+                    <el-tag v-else-if="row.windowsLocalPath" type="warning" size="small"
+                      >本地路径</el-tag
+                    >
+                    <el-tag v-else type="info" size="small">未提供路径</el-tag>
+                  </template>
+
+                  <template #enabledSlot="{ row }">
+                    <el-tag v-if="row.enabled" type="success" size="small" effect="dark">
+                      可用
+                    </el-tag>
+                    <el-tag v-else type="info" size="small" effect="plain"> 不可用 </el-tag>
+                  </template>
+
+                  <template #operationDefaultSlot="{ row }">
+                    <el-dropdown trigger="click" class="operation-dropdown">
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
+                          <el-dropdown-item @click="handleToggleEnabled(row)">
+                            {{ row.enabled ? "设为不可用" : "设为可用" }}
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            @click="handleAiGenerate(row)"
+                            :disabled="!row.thumbnail || aiTableLoading[row.id]"
+                          >
+                            <span v-if="aiTableLoading[row.id]">AI生成中...</span>
+                            <span v-else>AI生成内容</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            :disabled="!row.url"
+                            @click="() => downloadFileByElement(row.url, row.name)"
+                          >
+                            下载源文件
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            divided
+                            class="dropdown-item-danger"
+                            @click="handleDelete(row)"
+                          >
+                            删除
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </template>
+                </vxe-grid>
               </div>
-            </template>
-
-            <template #cutoutModesSlot="{ row }">
-              <div class="suitable-sizes-cell-compact">
-                <template v-if="row.cutoutModes && row.cutoutModes.length > 0">
-                  <el-tag
-                    v-for="mode in row.cutoutModes"
-                    :key="mode"
-                    size="small"
-                    class="size-tag-mini"
-                    type="info"
-                  >
-                    {{ getCutoutModeLabel(mode) }}
-                  </el-tag>
-                </template>
-                <span v-else class="text-gray-400 text-xs">未设置</span>
-              </div>
-            </template>
-
-            <template #pathStatusSlot="{ row }">
-              <el-tag v-if="row.url && row.windowsLocalPath" type="success" size="small">远程 + 本地</el-tag>
-              <el-tag v-else-if="row.url" type="primary" size="small">远程路径</el-tag>
-              <el-tag v-else-if="row.windowsLocalPath" type="warning" size="small">本地路径</el-tag>
-              <el-tag v-else type="info" size="small">未提供路径</el-tag>
-            </template>
-
-            <template #enabledSlot="{ row }">
-              <el-tag v-if="row.enabled" type="success" size="small" effect="dark">
-                可用
-              </el-tag>
-              <el-tag v-else type="info" size="small" effect="plain">
-                不可用
-              </el-tag>
-            </template>
-
-            <template #operationDefaultSlot="{ row }">
-              <el-dropdown trigger="click" class="operation-dropdown">
-                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-                <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item @click="handleEdit(row)">编辑</el-dropdown-item>
-                    <el-dropdown-item @click="handleToggleEnabled(row)">
-                      {{ row.enabled ? '设为不可用' : '设为可用' }}
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="handleAiGenerate(row)"
-                      :disabled="!row.thumbnail || aiTableLoading[row.id]">
-                      <span v-if="aiTableLoading[row.id]">AI生成中...</span>
-                      <span v-else>AI生成内容</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item :disabled="!row.url" @click="() => downloadFileByElement(row.url, row.name)">
-                      下载源文件
-                    </el-dropdown-item>
-                    <el-dropdown-item divided class="dropdown-item-danger" @click="handleDelete(row)">
-                      删除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </template>
-          </vxe-grid>
-        </div>
             </div>
           </div>
         </div>
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
-          <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
-            @pagination="getList" />
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
         </div>
       </template>
     </ListPageLayout>
@@ -292,7 +397,13 @@
           <!-- 基础信息 -->
           <div class="dialog-section dialog-section-basic">
             <div class="dialog-section-title">基础信息</div>
-            <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" class="psd-template-form">
+            <el-form
+              :model="form"
+              :rules="rules"
+              ref="formRef"
+              label-width="100px"
+              class="psd-template-form"
+            >
               <el-row :gutter="20">
                 <el-col :span="12">
                   <el-form-item label="模板名称" prop="name">
@@ -301,7 +412,11 @@
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="是否可用">
-                    <el-switch v-model="form.enabled" :active-value="true" :inactive-value="false" />
+                    <el-switch
+                      v-model="form.enabled"
+                      :active-value="true"
+                      :inactive-value="false"
+                    />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -309,7 +424,10 @@
               <el-row :gutter="20">
                 <el-col :span="24">
                   <el-form-item label="关键词" prop="keywords">
-                    <el-input v-model="form.keywords" placeholder="请输入关键词，多个关键词用逗号分隔" />
+                    <el-input
+                      v-model="form.keywords"
+                      placeholder="请输入关键词，多个关键词用逗号分隔"
+                    />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -317,7 +435,12 @@
               <el-row :gutter="20">
                 <el-col :span="24">
                   <el-form-item label="描述" prop="description">
-                    <el-input v-model="form.description" type="textarea" :rows="2" placeholder="请输入模板描述" />
+                    <el-input
+                      v-model="form.description"
+                      type="textarea"
+                      :rows="2"
+                      placeholder="请输入模板描述"
+                    />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -325,7 +448,10 @@
               <el-row :gutter="20">
                 <el-col :span="24">
                   <el-form-item label="本地路径" prop="windowsLocalPath">
-                    <el-input v-model="form.windowsLocalPath" placeholder="请输入 Windows 本地路径" />
+                    <el-input
+                      v-model="form.windowsLocalPath"
+                      placeholder="请输入 Windows 本地路径"
+                    />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -353,7 +479,7 @@
                       <el-button type="primary">选择文件</el-button>
                       <template #tip>
                         <div class="el-upload__tip">
-                          {{ isEdit ? '可选，替换则重新上传' : '可选' }}
+                          {{ isEdit ? "可选，替换则重新上传" : "可选" }}
                         </div>
                       </template>
                     </el-upload>
@@ -370,7 +496,9 @@
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">像素尺寸</span>
-                          <span class="asset-file-meta__value">{{ psdFileInfo.dimensionsLabel }}</span>
+                          <span class="asset-file-meta__value">{{
+                            psdFileInfo.dimensionsLabel
+                          }}</span>
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">格式</span>
@@ -378,15 +506,21 @@
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">颜色模式</span>
-                          <span class="asset-file-meta__value">{{ psdFileInfo.colorModeLabel }}</span>
+                          <span class="asset-file-meta__value">{{
+                            psdFileInfo.colorModeLabel
+                          }}</span>
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">色深 / 通道</span>
-                          <span class="asset-file-meta__value">{{ psdFileInfo.depthLabel }} / {{ psdFileInfo.channelLabel }}</span>
+                          <span class="asset-file-meta__value"
+                            >{{ psdFileInfo.depthLabel }} / {{ psdFileInfo.channelLabel }}</span
+                          >
                         </div>
                         <div class="asset-file-meta__item asset-file-meta__item--full">
                           <span class="asset-file-meta__label">修改时间</span>
-                          <span class="asset-file-meta__value">{{ psdFileInfo.modifiedAtLabel }}</span>
+                          <span class="asset-file-meta__value">{{
+                            psdFileInfo.modifiedAtLabel
+                          }}</span>
                         </div>
                       </div>
                     </div>
@@ -416,13 +550,24 @@
                       </div>
                       <div v-else class="thumbnail-preview-wrapper">
                         <el-image
-                          :src="getPreviewImageUrl(thumbnailPreviewUrl || form.thumbnail, { width: 180, height: 180, quality: 85, format: 'webp' })"
+                          :src="
+                            getPreviewImageUrl(thumbnailPreviewUrl || form.thumbnail, {
+                              width: 180,
+                              height: 180,
+                              quality: 85,
+                              format: 'webp',
+                            })
+                          "
                           fit="contain"
                           :lazy="true"
                           class="thumbnail-preview-image"
                         />
                         <div class="thumbnail-action-buttons">
-                          <el-button type="primary" size="small" @click.stop="triggerThumbnailSelect">
+                          <el-button
+                            type="primary"
+                            size="small"
+                            @click.stop="triggerThumbnailSelect"
+                          >
                             <el-icon>
                               <Edit />
                             </el-icon>
@@ -434,7 +579,10 @@
                           </el-button>
                         </div>
                       </div>
-                      <div v-if="thumbnailFileInfo" class="asset-file-meta asset-file-meta--thumbnail">
+                      <div
+                        v-if="thumbnailFileInfo"
+                        class="asset-file-meta asset-file-meta--thumbnail"
+                      >
                         <div class="asset-file-meta__title">已选缩略图</div>
                         <div class="asset-file-meta__grid">
                           <div class="asset-file-meta__item">
@@ -443,19 +591,27 @@
                           </div>
                           <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">类型</span>
-                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.typeLabel }}</span>
+                            <span class="asset-file-meta__value">{{
+                              thumbnailFileInfo.typeLabel
+                            }}</span>
                           </div>
                           <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">大小</span>
-                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.sizeLabel }}</span>
+                            <span class="asset-file-meta__value">{{
+                              thumbnailFileInfo.sizeLabel
+                            }}</span>
                           </div>
                           <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">像素尺寸</span>
-                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.dimensionsLabel }}</span>
+                            <span class="asset-file-meta__value">{{
+                              thumbnailFileInfo.dimensionsLabel
+                            }}</span>
                           </div>
                           <div class="asset-file-meta__item asset-file-meta__item--full">
                             <span class="asset-file-meta__label">修改时间</span>
-                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.modifiedAtLabel }}</span>
+                            <span class="asset-file-meta__value">{{
+                              thumbnailFileInfo.modifiedAtLabel
+                            }}</span>
                           </div>
                         </div>
                       </div>
@@ -489,7 +645,6 @@
                     :label="getFullLabel(config)"
                   />
                 </el-select>
-
               </el-form-item>
 
               <el-form-item label="抠图支持" prop="cutoutModes">
@@ -534,7 +689,9 @@
       <template #footer>
         <div class="psd-template-dialog-footer">
           <div class="footer-left">
-            <span class="footer-tip">填写完成后请点击“确定”保存，表单验证未通过会在对应项下方提示。</span>
+            <span class="footer-tip"
+              >填写完成后请点击“确定”保存，表单验证未通过会在对应项下方提示。</span
+            >
           </div>
           <div class="footer-right">
             <el-button @click="dialogVisible = false">取消</el-button>
@@ -545,40 +702,56 @@
     </el-dialog>
 
     <!-- AI生成内容弹窗 -->
-    <el-dialog v-model="aiGenDialogVisible" title="AI自动生成内容" width="500px" align-center :destroy-on-close="true">
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px;">
-
-        <span style="color: #f56c6c; font-size: 13px;">
-          注意：需要模板有缩略图才能进行AI分析
-        </span>
+    <el-dialog
+      v-model="aiGenDialogVisible"
+      title="AI自动生成内容"
+      width="500px"
+      align-center
+      :destroy-on-close="true"
+    >
+      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
+        <span style="color: #f56c6c; font-size: 13px"> 注意：需要模板有缩略图才能进行AI分析 </span>
       </div>
-      <el-input v-model="aiGenPrompt" type="textarea" :rows="6"
+      <el-input
+        v-model="aiGenPrompt"
+        type="textarea"
+        :rows="6"
         placeholder="例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点描述商品名称和相关的类别/兼容性关键词，方便搜索。"
-        :autosize="{ minRows: 6, maxRows: 10 }" style="font-size:16px;min-height:120px;width:100%;resize:vertical;" />
+        :autosize="{ minRows: 6, maxRows: 10 }"
+        style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
+      />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog">确定</el-button>
+        <el-button type="primary" :loading="aiGenDialogLoading" @click="submitAiGenDialog"
+          >确定</el-button
+        >
       </template>
     </el-dialog>
 
     <!-- psd模板配置全屏弹窗 -->
-    <el-dialog v-model="psdInfoDialogVisible" title="psd模板配置" fullscreen :destroy-on-close="true">
+    <el-dialog
+      v-model="psdInfoDialogVisible"
+      title="psd模板配置"
+      fullscreen
+      :destroy-on-close="true"
+    >
       <div class="psd-info-fullscreen-content">
         <div class="psd-info-header">
           <div class="psd-info-title">
             <span>模板名称：</span>
-            <strong>{{ currentPsdInfoRow?.name || '未知' }}</strong>
+            <strong>{{ currentPsdInfoRow?.name || "未知" }}</strong>
           </div>
         </div>
         <div class="psd-info-body">
-          <pre class="psd-info-json-fullscreen">{{ formatPsdInfo(currentPsdInfoRow?.psdTemplateConfig) }}</pre>
+          <pre class="psd-info-json-fullscreen">{{
+            formatPsdInfo(currentPsdInfoRow?.psdTemplateConfig)
+          }}</pre>
         </div>
       </div>
       <template #footer>
         <el-button type="primary" @click="psdInfoDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-
   </ContentWrap>
 </template>
 
@@ -613,9 +786,9 @@ import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
 import { uploadToCOS } from "@/api/cos";
-import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
-import ListPageLayout from '@/components/ListPageLayout/index.vue'
-import Pagination from '@/components/Pagination/index.vue'
+import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
+import ListPageLayout from "@/components/ListPageLayout/index.vue";
+import Pagination from "@/components/Pagination/index.vue";
 import { getPreviewImageUrl } from "@/utils/image";
 import { downloadFileByElement } from "@/common/download";
 import {
@@ -623,21 +796,21 @@ import {
   getFullLabel,
   getSizeShapeUiConfig,
 } from "../index/sizeShapeConfig";
-import { useFolderRowDrag } from '@/hooks/useFolderRowDrag';
-import { FOLDER_FILTER, convertFolderIdToApiParam } from '@/constants/folder';
+import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
+import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 
-const userStore = useUserStore()
+const userStore = useUserStore();
 
 const FOLDER_CATEGORY = "psdtemplate";
 const cutoutModeOptions = [
-  { label: '抠图', value: 'CUTOUT' },
-  { label: '非抠图', value: 'NON_CUTOUT' },
+  { label: "抠图", value: "CUTOUT" },
+  { label: "非抠图", value: "NON_CUTOUT" },
 ];
 
 const getCutoutModeLabel = (mode: string) => {
   const map = {
-    CUTOUT: '抠图',
-    NON_CUTOUT: '非抠图',
+    CUTOUT: "抠图",
+    NON_CUTOUT: "非抠图",
   };
   return map[mode] || mode;
 };
@@ -667,8 +840,8 @@ const gridOptions = ref<VxeGridProps<any>>({
       showOverflow: false,
       align: "center",
       slots: {
-        default: "dragHandleSlot"
-      }
+        default: "dragHandleSlot",
+      },
     },
     { type: "checkbox", width: 50, showOverflow: true },
     {
@@ -749,11 +922,11 @@ const gridOptions = ref<VxeGridProps<any>>({
       width: 100,
       showOverflow: true,
       formatter: ({ cellValue }) => {
-        if (!cellValue) return '0 B';
+        if (!cellValue) return "0 B";
         const k = 1024;
-        const ns = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const ns = ["B", "KB", "MB", "GB", "TB"];
         const i = Math.floor(Math.log(cellValue) / Math.log(k));
-        return parseFloat((cellValue / Math.pow(k, i)).toFixed(2)) + ' ' + ns[i];
+        return parseFloat((cellValue / Math.pow(k, i)).toFixed(2)) + " " + ns[i];
       },
     },
     {
@@ -824,11 +997,13 @@ const {
   setupRowDrag,
   handleFolderDragOver,
   handleFolderDragLeave,
-  resetAfterDrop
+  resetAfterDrop,
+  markExternalFolderDropHandled,
 } = useFolderRowDrag({
-  gridClass: 'psd-template-dnd-grid',
+  gridClass: "psd-template-dnd-grid",
   dataSource,
-  selectedIds: ids
+  selectedIds: ids,
+  onDropToFolder: handleFolderDrop,
 });
 
 async function getList() {
@@ -840,30 +1015,35 @@ async function getList() {
     ...restQueryParams,
     // 转换文件夹ID为后端API参数
     folderId: convertFolderIdToApiParam(queryParams.folderId),
-    suitableSizes: suitableSizesArray?.length ? suitableSizesArray.join(',') : undefined,
-    cutoutModes: cutoutModesArray?.length ? cutoutModesArray.join(',') : undefined,
+    suitableSizes: suitableSizesArray?.length ? suitableSizesArray.join(",") : undefined,
+    cutoutModes: cutoutModesArray?.length ? cutoutModesArray.join(",") : undefined,
   };
 
   let res = await psdTemplateApi
     .getPsdTemplatePage({
       ...params,
     })
-    .catch(() => { })
+    .catch(() => {})
     .finally(() => {
       loading.value = false;
     });
   // convert suitableSizes field to array for easier handling
-  dataSource.value = (res.list || []).map(item => {
-    if (item && typeof item.suitableSizes === 'string') {
+  dataSource.value = (res.list || []).map((item) => {
+    if (item && typeof item.suitableSizes === "string") {
       try {
-        item.suitableSizes = item.suitableSizes ? item.suitableSizes.split(',') : [];
+        item.suitableSizes = item.suitableSizes ? item.suitableSizes.split(",") : [];
       } catch (e) {
         item.suitableSizes = [];
       }
     }
-    if (item && typeof item.cutoutModes === 'string') {
+    if (item && typeof item.cutoutModes === "string") {
       try {
-        item.cutoutModes = item.cutoutModes ? item.cutoutModes.split(',').map(mode => mode.trim()).filter(Boolean) : [];
+        item.cutoutModes = item.cutoutModes
+          ? item.cutoutModes
+              .split(",")
+              .map((mode) => mode.trim())
+              .filter(Boolean)
+          : [];
       } catch (e) {
         item.cutoutModes = [];
       }
@@ -880,7 +1060,7 @@ async function getList() {
 getList();
 
 // ============= 文件夹相关 =============
-const folderTreeCollapsed = useLocalStorage('psd_template_folder_collapsed', false);
+const folderTreeCollapsed = useLocalStorage("psd_template_folder_collapsed", false);
 const selectedFolderId = ref<string | null>(FOLDER_FILTER.ALL); // 默认选中"全部"
 
 function handleFolderChange(payload: { folderId: string | null }) {
@@ -891,6 +1071,7 @@ function handleFolderChange(payload: { folderId: string | null }) {
 }
 
 async function handleFolderDrop(payload: { data: any }) {
+  markExternalFolderDropHandled();
   if (!dragState.draggingIds.length) return;
 
   // 使用新的常量标识处理目标文件夹ID
@@ -905,22 +1086,22 @@ async function handleFolderDrop(payload: { data: any }) {
   } else {
     targetFolderId = payload.data.id; // 普通文件夹
   }
-  
-  const targetPath = payload.data.path || '';
+
+  const targetPath = payload.data.path || "";
   const movingIds = [...dragState.draggingIds];
 
   try {
-    await psdTemplateApi.batchMove({ 
-      ids: movingIds, 
-      folderId: convertFolderIdToApiParam(targetFolderId) 
+    await psdTemplateApi.batchMove({
+      ids: movingIds,
+      folderId: convertFolderIdToApiParam(targetFolderId),
     });
-    ElMessage.success(`已移动 ${movingIds.length} 个模板到 ${targetPath || '未分组'}`);
+    ElMessage.success(`已移动 ${movingIds.length} 个模板到 ${targetPath || "未分组"}`);
 
     // Stay in the current folder, just refresh the list
     await getList();
     ids.value = [];
   } catch (error) {
-    ElMessage.error((error as Error).message || '移动失败');
+    ElMessage.error((error as Error).message || "移动失败");
   } finally {
     resetAfterDrop();
   }
@@ -966,7 +1147,7 @@ function handleDelete(row?) {
       ElMessage.success("删除成功");
       getList();
     })
-    .catch(() => { });
+    .catch(() => {});
 }
 
 function handleAdd() {
@@ -1003,22 +1184,31 @@ function handleEdit(row) {
   form.value = {
     ...row,
     enabled: row.enabled !== undefined ? row.enabled : false, // 确保enabled有默认值
-    suitableSizesArray: Array.isArray(row.suitableSizes) ? row.suitableSizes : (row.suitableSizes ? row.suitableSizes.split(',') : []),
-    cutoutModesArray: Array.isArray(row.cutoutModes) ? row.cutoutModes : (row.cutoutModes ? row.cutoutModes.split(',') : []),
+    suitableSizesArray: Array.isArray(row.suitableSizes)
+      ? row.suitableSizes
+      : row.suitableSizes
+        ? row.suitableSizes.split(",")
+        : [],
+    cutoutModesArray: Array.isArray(row.cutoutModes)
+      ? row.cutoutModes
+      : row.cutoutModes
+        ? row.cutoutModes.split(",")
+        : [],
   };
   resetSelectedFileState();
 
   // 处理psdTemplateConfig：如果是对象，转换为JSON字符串显示
   if (form.value.psdTemplateConfig) {
     try {
-      form.value.psdTemplateConfigText = typeof form.value.psdTemplateConfig === 'string'
-        ? form.value.psdTemplateConfig
-        : JSON.stringify(form.value.psdTemplateConfig, null, 2);
+      form.value.psdTemplateConfigText =
+        typeof form.value.psdTemplateConfig === "string"
+          ? form.value.psdTemplateConfig
+          : JSON.stringify(form.value.psdTemplateConfig, null, 2);
     } catch (e) {
-      form.value.psdTemplateConfigText = '';
+      form.value.psdTemplateConfigText = "";
     }
   } else {
-    form.value.psdTemplateConfigText = '';
+    form.value.psdTemplateConfigText = "";
   }
 
   resetThumbnailLocalState();
@@ -1046,7 +1236,7 @@ const form = ref<any>({
 
 // AI生成内容相关
 const aiGenDialogVisible = ref(false);
-const aiGenPrompt = ref('');
+const aiGenPrompt = ref("");
 const aiDefaultPrompt = `请描述这是什么商品/物品，以及相关的类别关键词。例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点是商品名称和兼容性关键词和相似商品的关联词，并且尽可能详细一些，方便用户搜索找到。`;
 const aiGenDialogLoading = ref(false);
 const aiGenRow = ref<any>(null);
@@ -1092,15 +1282,19 @@ const submitForm = async () => {
       let url = form.value.url;
       let key = form.value.key;
       if (form.value.file) {
-        const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
+        const userAccount =
+          (userStore.user as any)?.account ||
+          userStore.user?.shortName ||
+          userStore.user?.name ||
+          "anonymous";
+        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
         const cos = await uploadToCOS({
           file: form.value.file,
-          category: 'psd-template',
+          category: "psd-template",
           account: userAccount,
           userId,
           entityId: form.value.id, // 编辑时使用现有 ID
-          isThumbnail: false
+          isThumbnail: false,
         });
         key = cos.key;
         url = cos.url;
@@ -1109,15 +1303,19 @@ const submitForm = async () => {
       // 如果有新的缩略图文件，先上传
       let thumbnail = form.value.thumbnail;
       if (form.value.thumbnailFile) {
-        const userAccount = (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
+        const userAccount =
+          (userStore.user as any)?.account ||
+          userStore.user?.shortName ||
+          userStore.user?.name ||
+          "anonymous";
+        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
         const thumbnailCos = await uploadToCOS({
           file: form.value.thumbnailFile,
-          category: 'psd-template',
+          category: "psd-template",
           account: userAccount,
           userId,
           entityId: form.value.id, // 编辑时使用现有 ID
-          isThumbnail: true
+          isThumbnail: true,
         });
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
@@ -1128,7 +1326,7 @@ const submitForm = async () => {
         try {
           psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
         } catch (e: any) {
-          ElMessage.error(e.message || 'psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式');
+          ElMessage.error(e.message || "psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式");
           submitLoading.value = false;
           return;
         }
@@ -1146,14 +1344,14 @@ const submitForm = async () => {
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,
-        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(',') : "",
-        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(',') : "",
+        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(",") : "",
+        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(",") : "",
       });
       ElMessage.success("更新成功");
       // 释放预览URL
       if (thumbnailPreviewUrl.value) {
         URL.revokeObjectURL(thumbnailPreviewUrl.value);
-        thumbnailPreviewUrl.value = '';
+        thumbnailPreviewUrl.value = "";
       }
       getList();
     } else {
@@ -1162,16 +1360,17 @@ const submitForm = async () => {
       // 上传PSD文件（如果存在）
       let url = "";
       let key = "";
-      const userAccount = userStore.user?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous'
-      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id
+      const userAccount =
+        userStore.user?.account || userStore.user?.shortName || userStore.user?.name || "anonymous";
+      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
       if (form.value.file) {
         const cos = await uploadToCOS({
           file: form.value.file,
-          category: 'psd-template',
+          category: "psd-template",
           account: userAccount,
           userId,
           // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
-          isThumbnail: false
+          isThumbnail: false,
         });
         key = cos.key;
         url = cos.url;
@@ -1182,11 +1381,11 @@ const submitForm = async () => {
       if (form.value.thumbnailFile) {
         const thumbnailCos = await uploadToCOS({
           file: form.value.thumbnailFile,
-          category: 'psd-template',
+          category: "psd-template",
           account: userAccount,
           userId,
           // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
-          isThumbnail: true
+          isThumbnail: true,
         });
         thumbnail = thumbnailCos.url; // 直接存储URL字符串
       }
@@ -1197,7 +1396,7 @@ const submitForm = async () => {
         try {
           psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
         } catch (e: any) {
-          ElMessage.error(e.message || 'psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式');
+          ElMessage.error(e.message || "psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式");
           submitLoading.value = false;
           return;
         }
@@ -1216,22 +1415,22 @@ const submitForm = async () => {
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
         size: form.value.size,
-        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(',') : "",
-        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(',') : "",
+        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(",") : "",
+        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(",") : "",
       });
       ElMessage.success("添加成功");
       // 释放预览URL
       if (thumbnailPreviewUrl.value) {
         URL.revokeObjectURL(thumbnailPreviewUrl.value);
-        thumbnailPreviewUrl.value = '';
+        thumbnailPreviewUrl.value = "";
       }
       getList();
     }
 
     dialogVisible.value = false;
   } catch (e) {
-    console.error('提交失败:', e);
-    ElMessage.error('操作失败，请重试');
+    console.error("提交失败:", e);
+    ElMessage.error("操作失败，请重试");
   } finally {
     submitLoading.value = false;
     dialogVisible.value = false;
@@ -1244,7 +1443,7 @@ const submitForm = async () => {
 
 const fileList = ref([]);
 const thumbnailInputRef = ref();
-const thumbnailPreviewUrl = ref(''); // 新选择的文件预览URL
+const thumbnailPreviewUrl = ref(""); // 新选择的文件预览URL
 const originalPsdSize = ref(0);
 const psdFileInfo = ref<PsdFileInfo | null>(null);
 const thumbnailFileInfo = ref<ImageFileInfo | null>(null);
@@ -1269,19 +1468,19 @@ type ImageFileInfo = {
 };
 
 const PSD_COLOR_MODE_MAP: Record<number, string> = {
-  0: '位图',
-  1: '灰度',
-  2: '索引颜色',
-  3: 'RGB',
-  4: 'CMYK',
-  7: '多通道',
-  8: '双色调',
-  9: 'Lab'
+  0: "位图",
+  1: "灰度",
+  2: "索引颜色",
+  3: "RGB",
+  4: "CMYK",
+  7: "多通道",
+  8: "双色调",
+  9: "Lab",
 };
 
 const formatBytes = (size = 0) => {
-  if (!size) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  if (!size) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
   let currentSize = size;
   let unitIndex = 0;
 
@@ -1294,25 +1493,25 @@ const formatBytes = (size = 0) => {
 };
 
 const formatDateTime = (timestamp?: number) => {
-  if (!timestamp) return '—';
-  return new Date(timestamp).toLocaleString('zh-CN', { hour12: false });
+  if (!timestamp) return "—";
+  return new Date(timestamp).toLocaleString("zh-CN", { hour12: false });
 };
 
 const formatDimensions = (width?: number, height?: number) => {
-  if (!width || !height) return '—';
+  if (!width || !height) return "—";
   return `${width} × ${height} px`;
 };
 
 const getPsdFormatLabel = (file: File, version?: number) => {
-  if (version === 2) return 'PSB';
-  if (version === 1) return 'PSD';
-  return file.name.toLowerCase().endsWith('.psb') ? 'PSB' : 'PSD';
+  if (version === 2) return "PSB";
+  if (version === 1) return "PSD";
+  return file.name.toLowerCase().endsWith(".psb") ? "PSB" : "PSD";
 };
 
 const clearThumbnailPreviewUrl = () => {
   if (thumbnailPreviewUrl.value) {
     URL.revokeObjectURL(thumbnailPreviewUrl.value);
-    thumbnailPreviewUrl.value = '';
+    thumbnailPreviewUrl.value = "";
   }
 };
 
@@ -1321,7 +1520,7 @@ const resetThumbnailLocalState = () => {
   form.value.thumbnailFile = null;
   thumbnailFileInfo.value = null;
   if (thumbnailInputRef.value) {
-    thumbnailInputRef.value.value = '';
+    thumbnailInputRef.value.value = "";
   }
 };
 
@@ -1335,7 +1534,7 @@ const resetSelectedFileState = () => {
 const readPsdHeader = async (file: File) => {
   const headerBuffer = await file.slice(0, 26).arrayBuffer();
   if (headerBuffer.byteLength < 26) {
-    throw new Error('文件头不完整');
+    throw new Error("文件头不完整");
   }
 
   const view = new DataView(headerBuffer);
@@ -1343,11 +1542,11 @@ const readPsdHeader = async (file: File) => {
     view.getUint8(0),
     view.getUint8(1),
     view.getUint8(2),
-    view.getUint8(3)
+    view.getUint8(3),
   );
 
-  if (signature !== '8BPS') {
-    throw new Error('不是有效的 PSD 文件');
+  if (signature !== "8BPS") {
+    throw new Error("不是有效的 PSD 文件");
   }
 
   return {
@@ -1356,7 +1555,7 @@ const readPsdHeader = async (file: File) => {
     height: view.getUint32(14, false),
     width: view.getUint32(18, false),
     depth: view.getUint16(22, false),
-    colorMode: view.getUint16(24, false)
+    colorMode: view.getUint16(24, false),
   };
 };
 
@@ -1364,12 +1563,12 @@ const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
   const baseInfo: PsdFileInfo = {
     name: file.name,
     sizeLabel: formatBytes(file.size),
-    dimensionsLabel: '解析失败',
+    dimensionsLabel: "解析失败",
     formatLabel: getPsdFormatLabel(file),
-    colorModeLabel: '解析失败',
-    depthLabel: '解析失败',
-    channelLabel: '解析失败',
-    modifiedAtLabel: formatDateTime(file.lastModified)
+    colorModeLabel: "解析失败",
+    depthLabel: "解析失败",
+    channelLabel: "解析失败",
+    modifiedAtLabel: formatDateTime(file.lastModified),
   };
 
   try {
@@ -1380,7 +1579,7 @@ const buildPsdFileInfo = async (file: File): Promise<PsdFileInfo> => {
       formatLabel: getPsdFormatLabel(file, header.version),
       colorModeLabel: PSD_COLOR_MODE_MAP[header.colorMode] || `模式 ${header.colorMode}`,
       depthLabel: `${header.depth} bit`,
-      channelLabel: `${header.channels} 通道`
+      channelLabel: `${header.channels} 通道`,
     };
   } catch (error) {
     return baseInfo;
@@ -1393,27 +1592,27 @@ const readImageDimensions = (src: string) =>
     img.onload = () => {
       resolve({
         width: img.naturalWidth || img.width,
-        height: img.naturalHeight || img.height
+        height: img.naturalHeight || img.height,
       });
     };
-    img.onerror = () => reject(new Error('图片尺寸解析失败'));
+    img.onerror = () => reject(new Error("图片尺寸解析失败"));
     img.src = src;
   });
 
 const buildImageFileInfo = async (file: File, previewUrl: string): Promise<ImageFileInfo> => {
   const baseInfo: ImageFileInfo = {
     name: file.name,
-    typeLabel: file.type || '未知',
+    typeLabel: file.type || "未知",
     sizeLabel: formatBytes(file.size),
-    dimensionsLabel: '解析失败',
-    modifiedAtLabel: formatDateTime(file.lastModified)
+    dimensionsLabel: "解析失败",
+    modifiedAtLabel: formatDateTime(file.lastModified),
   };
 
   try {
     const dimensions = await readImageDimensions(previewUrl);
     return {
       ...baseInfo,
-      dimensionsLabel: formatDimensions(dimensions.width, dimensions.height)
+      dimensionsLabel: formatDimensions(dimensions.width, dimensions.height),
     };
   } catch (error) {
     return baseInfo;
@@ -1446,7 +1645,7 @@ const handleFileRemove = () => {
 };
 
 // 文件上传前的校验
-const beforeUpload = (file) => { };
+const beforeUpload = (file) => {};
 
 // 触发缩略图文件选择
 const triggerThumbnailSelect = () => {
@@ -1459,17 +1658,17 @@ const handleThumbnailFileSelect = async (event) => {
   if (!file) return;
 
   // 校验文件类型
-  if (!file.type.startsWith('image/')) {
-    ElMessage.error('只能上传图片文件!');
-    event.target.value = ''; // 清空选择
+  if (!file.type.startsWith("image/")) {
+    ElMessage.error("只能上传图片文件!");
+    event.target.value = ""; // 清空选择
     return;
   }
 
   // 限制缩略图大小为 10MB
   const maxSizeBytes = 10 * 1024 * 1024;
   if (file.size > maxSizeBytes) {
-    ElMessage.error('缩略图大小不能超过 10MB!');
-    event.target.value = '';
+    ElMessage.error("缩略图大小不能超过 10MB!");
+    event.target.value = "";
     return;
   }
 
@@ -1485,7 +1684,7 @@ const handleThumbnailFileSelect = async (event) => {
   }
 
   // 清空input，允许重复选择同一文件
-  event.target.value = '';
+  event.target.value = "";
 };
 
 // 清除缩略图
@@ -1498,7 +1697,7 @@ const clearThumbnail = () => {
 function handleAiGenerate(row) {
   if (aiTableLoading.value[row.id]) return;
   if (!row.thumbnail) {
-    ElMessage.warning('该模板没有缩略图，无法进行AI分析');
+    ElMessage.warning("该模板没有缩略图，无法进行AI分析");
     return;
   }
   aiGenRow.value = row;
@@ -1511,12 +1710,16 @@ async function submitAiGenDialog() {
   aiGenDialogLoading.value = true;
   aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: true };
   try {
-    await handleAiAutoGenerate(aiGenRow.value, () => {
-      aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: false };
-      aiGenDialogLoading.value = false;
-      aiGenDialogVisible.value = false;
-      aiGenRow.value = null;
-    }, aiGenPrompt.value);
+    await handleAiAutoGenerate(
+      aiGenRow.value,
+      () => {
+        aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: false };
+        aiGenDialogLoading.value = false;
+        aiGenDialogVisible.value = false;
+        aiGenRow.value = null;
+      },
+      aiGenPrompt.value,
+    );
   } catch (e) {
     aiTableLoading.value = { ...aiTableLoading.value, [aiGenRow.value.id]: false };
     aiGenDialogLoading.value = false;
@@ -1528,7 +1731,7 @@ async function submitAiGenDialog() {
 async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     // 调用PSD模板的AI补全接口
-    const res = await psdTemplateApi.aiCompleteContent(row.id, prompt || '');
+    const res = await psdTemplateApi.aiCompleteContent(row.id, prompt || "");
 
     // 更新行数据
     if (res) {
@@ -1537,12 +1740,12 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       row.keywords = res.keywords || row.keywords;
     }
 
-    ElMessage.success('AI自动生成内容成功');
-    if (typeof cb === 'function') cb();
+    ElMessage.success("AI自动生成内容成功");
+    if (typeof cb === "function") cb();
     getList();
   } catch (e) {
-    ElMessage.error('AI自动生成内容失败');
-    if (typeof cb === 'function') cb();
+    ElMessage.error("AI自动生成内容失败");
+    if (typeof cb === "function") cb();
   }
 }
 
@@ -1560,15 +1763,17 @@ function parsePsdInfoText(text: string): any {
     try {
       // 使用 new Function 安全地解析 JavaScript 对象格式
       // 例如：{images: [], description: ""} 或 {images:[],description:""}
-      const func = new Function('return ' + trimmedText);
+      const func = new Function("return " + trimmedText);
       const result = func();
       // 验证返回的是对象
-      if (typeof result === 'object' && result !== null) {
+      if (typeof result === "object" && result !== null) {
         return result;
       }
-      throw new Error('解析结果不是对象');
+      throw new Error("解析结果不是对象");
     } catch (e2) {
-      throw new Error('格式错误：请输入有效的JSON格式（如：{"images": []}）或JavaScript对象格式（如：{images: []}）');
+      throw new Error(
+        '格式错误：请输入有效的JSON格式（如：{"images": []}）或JavaScript对象格式（如：{images: []}）',
+      );
     }
   }
 }
@@ -1581,15 +1786,15 @@ function handleViewPsdInfo(row: any) {
 
 // 格式化psd模板配置显示（支持后端返回的新数据结构）
 function formatPsdInfo(psdInfo: any): string {
-  if (!psdInfo) return '无';
+  if (!psdInfo) return "无";
 
   try {
     // 如果是字符串，尝试解析
-    let info = typeof psdInfo === 'string' ? JSON.parse(psdInfo) : psdInfo;
+    let info = typeof psdInfo === "string" ? JSON.parse(psdInfo) : psdInfo;
 
     // 确保处理后端返回的新数据结构（包含 artboards, smart_objects 等）
     // 如果已经是对象，直接使用；如果是字符串，解析后使用
-    if (typeof info === 'object' && info !== null) {
+    if (typeof info === "object" && info !== null) {
       // 格式化为可读的JSON字符串
       return JSON.stringify(info, null, 2);
     }
@@ -1604,9 +1809,9 @@ function formatPsdInfo(psdInfo: any): string {
 
 // 获取行样式类名
 function getRowClassName({ row }) {
-  let className = row.enabled ? 'row-enabled' : 'row-disabled';
+  let className = row.enabled ? "row-enabled" : "row-disabled";
   if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
-    className += ' is-dragging-row';
+    className += " is-dragging-row";
   }
   return className;
 }
@@ -1628,12 +1833,11 @@ async function handleToggleEnabled(row: any) {
       enabled: newEnabled,
     });
     row.enabled = newEnabled;
-    ElMessage.success(newEnabled ? '已设为可用' : '已设为不可用');
+    ElMessage.success(newEnabled ? "已设为可用" : "已设为不可用");
   } catch (e) {
-    ElMessage.error('更新状态失败，请重试');
+    ElMessage.error("更新状态失败，请重试");
   }
 }
-
 
 // ============= 适用尺寸相关 =============
 // 处理适用尺寸变化
@@ -1659,7 +1863,6 @@ function removeSuitableSize(sizeKey: string) {
     }
   }
 }
-
 </script>
 
 <style lang="less" scoped>
@@ -1884,7 +2087,6 @@ function removeSuitableSize(sizeKey: string) {
   line-height: 1.5;
 }
 
-
 .suitable-sizes-cell .size-tag-mini {
   white-space: normal;
   line-height: 1.4 !important;
@@ -1952,7 +2154,7 @@ function removeSuitableSize(sizeKey: string) {
 .size-option-key {
   font-size: 12px;
   color: var(--el-text-color-placeholder);
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
 }
 
 // 调整下拉项高度，避免内容被裁切
@@ -1987,8 +2189,6 @@ function removeSuitableSize(sizeKey: string) {
   background-color: var(--el-fill-color-light);
 }
 
-
-
 .psd-template-dialog-footer {
   display: flex;
   align-items: center;
@@ -2022,7 +2222,6 @@ function removeSuitableSize(sizeKey: string) {
     overflow-y: auto;
   }
 }
-
 
 // 行样式区分是否可用
 :deep(.row-disabled) {
@@ -2087,7 +2286,7 @@ function removeSuitableSize(sizeKey: string) {
     color: var(--el-text-color-primary);
     white-space: pre-wrap;
     word-break: break-all;
-    font-family: 'Courier New', 'Consolas', 'Monaco', monospace;
+    font-family: "Courier New", "Consolas", "Monaco", monospace;
     border: 1px solid var(--el-border-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     max-width: 100%;
@@ -2138,7 +2337,6 @@ function removeSuitableSize(sizeKey: string) {
     word-break: break-word;
   }
 }
-
 
 .thumbnail-upload-container {
   width: 100%;
