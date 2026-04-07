@@ -102,41 +102,22 @@
                 {{ hasClientRecords ? "查看" : "启动" }}
               </el-button>
             </div>
-          </div>
-        </section>
 
-        <section class="header-connection-status__section">
-          <div class="header-connection-status__runtime-head">
-            <span class="header-connection-status__section-title">在线连接</span>
-            <span class="header-connection-status__runtime-total">{{ runtimeTotalCount }} 个</span>
-          </div>
-
-          <div
-            v-if="runtimePreviewConnections.length"
-            class="header-connection-status__runtime-list"
-          >
-            <div
-              v-for="item in runtimePreviewConnections"
-              :key="item.id"
-              class="header-connection-status__runtime-item"
-            >
-              <div class="header-connection-status__runtime-main">
+            <div class="header-connection-status__status-line">
+              <div class="header-connection-status__status-main">
                 <span
-                  class="header-connection-status__runtime-source"
-                  :class="`is-${resolveRuntimeConnectionSourceKey(item)}`"
-                >
-                  {{ formatRuntimeConnectionSourceLabel(item) }}
-                </span>
-                <span class="header-connection-status__runtime-title">
-                  {{ resolveConnectionTitle(item) }}
-                </span>
-              </div>
-              <div class="header-connection-status__runtime-meta">
-                {{ resolveConnectionMeta(item) }}
+                  class="header-connection-status__status-dot"
+                  :class="extensionCount > 0 ? 'is-online' : 'is-offline'"
+                />
+                <div class="header-connection-status__status-copy">
+                  <div class="header-connection-status__status-title">插件端</div>
+                  <div class="header-connection-status__status-meta">
+                    {{ extensionStatusText }} · {{ extensionStatusMeta }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div v-else class="header-connection-status__runtime-empty">暂无在线连接</div>
         </section>
       </div>
     </el-popover>
@@ -164,11 +145,7 @@ import {
 import { websocketClient } from "@/services/websocketClient";
 import { useMyRuntimeConnectionStoreRefs } from "@/store/modules/myRuntimeConnection";
 import { formatPast } from "@/utils/formatTime";
-import {
-  formatRuntimeConnectionSourceLabel,
-  resolveRuntimeConnectionSourceKey,
-} from "@/utils/websocketConnection";
-import type { WebsocketConnectionVO } from "@/api/system/websocket";
+import { resolveRuntimeConnectionSourceKey } from "@/utils/websocketConnection";
 
 defineOptions({ name: "ClientStatus" });
 
@@ -205,7 +182,6 @@ const clientRuntimeCount = computed(
       .length,
 );
 const runtimeTotalCount = computed(() => runtimeConnections.value.length);
-const runtimePreviewConnections = computed(() => runtimeConnections.value.slice(0, 4));
 const isRefreshing = computed(() => clientRefreshLoading.value || runtimeLoading.value);
 const triggerSummaryText = computed(() => {
   const nodeText = clientRecordCount.value
@@ -219,11 +195,7 @@ const triggerSummaryText = computed(() => {
   return isRemoteConnected.value ? `已连接 · ${nodeText}` : `远程未连接`;
 });
 const clientNodeStatusText = computed(() => {
-  if (onlineClientCount.value > 0) {
-    return "在线中";
-  }
-
-  return clientRecordCount.value > 0 ? "已断开" : "未连接";
+  return `${clientRuntimeCount.value} 个连接`;
 });
 const clientNodeMeta = computed(() => {
   if (!clientRecordCount.value) {
@@ -231,38 +203,27 @@ const clientNodeMeta = computed(() => {
   }
 
   if (onlineClientCount.value === clientRecordCount.value) {
-    return `${clientRecordCount.value} 个在线`;
+    return `${clientRecordCount.value} 个节点在线`;
   }
 
   if (onlineClientCount.value > 0) {
-    return `${onlineClientCount.value}/${clientRecordCount.value} 在线`;
+    return `节点 ${onlineClientCount.value}/${clientRecordCount.value} 在线`;
   }
 
-  return `${offlineClientCount.value} 个离线`;
+  return `${offlineClientCount.value} 个节点离线`;
 });
+const extensionStatusText = computed(() => `${extensionCount.value} 个连接`);
+const extensionStatusMeta = computed(() => (extensionCount.value > 0 ? "在线中" : "暂无插件连接"));
 
 let timers: { localTimer: number; remoteTimer: number } | null = null;
 
-const remoteStatusText = computed(() => {
-  if (isRemoteConnected.value) {
-    return "已连接";
-  }
-
-  switch (websocketClient.state.status) {
-    case "connecting":
-      return "连接中";
-    case "reconnecting":
-      return "重连中";
-    case "error":
-      return "异常";
-    default:
-      return "未连接";
-  }
-});
+const remoteStatusText = computed(() => `${adminCount.value} 个连接`);
 
 const remoteStatusMeta = computed(() => {
   if (isRemoteConnected.value) {
-    return websocketClient.state.connectedAt ? formatPast(websocketClient.state.connectedAt) : "连接正常";
+    return websocketClient.state.connectedAt
+      ? formatPast(websocketClient.state.connectedAt)
+      : "连接正常";
   }
 
   switch (websocketClient.state.status) {
@@ -316,27 +277,6 @@ function handleClientDialogVisibleChange(value: boolean) {
   if (!value) {
     void refreshMyClients();
   }
-}
-
-function resolveConnectionTitle(item: WebsocketConnectionVO) {
-  const info = item.clientInfo || {};
-  return (
-    info.page?.title ||
-    info.extension?.name ||
-    info.app?.name ||
-    info.machine?.code ||
-    info.clientId ||
-    item.id
-  );
-}
-
-function resolveConnectionMeta(item: WebsocketConnectionVO) {
-  const statusTime = item.connectedAt || item.lastOnlineAt;
-  if (statusTime) {
-    return formatPast(statusTime);
-  }
-
-  return "在线";
 }
 
 onMounted(() => {
@@ -478,8 +418,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  border: 1px solid
-    color-mix(in srgb, var(--app-content-border-color) 62%, transparent 38%);
+  border: 1px solid color-mix(in srgb, var(--app-content-border-color) 62%, transparent 38%);
   border-radius: 12px;
   background: color-mix(in srgb, var(--el-fill-color-light) 38%, var(--el-bg-color) 62%);
 }
@@ -504,7 +443,8 @@ onUnmounted(() => {
   padding: 8px 8px 7px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--el-bg-color) 54%, var(--el-fill-color-light) 46%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 36%, transparent 64%);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--app-content-border-color) 36%, transparent 64%);
 }
 
 .header-connection-status__metric-head {
@@ -523,8 +463,7 @@ onUnmounted(() => {
   line-height: 1;
 }
 
-.header-connection-status__metric-dot,
-.header-connection-status__status-dot {
+.header-connection-status__metric-dot {
   width: 6px;
   height: 6px;
   flex-shrink: 0;
@@ -541,6 +480,13 @@ onUnmounted(() => {
 
 .header-connection-status__metric-dot.is-client {
   background: #e6a23c;
+}
+
+.header-connection-status__status-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
 }
 
 .header-connection-status__status-dot.is-online {
@@ -565,7 +511,8 @@ onUnmounted(() => {
   padding: 8px 10px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 34%, transparent 66%);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--app-content-border-color) 34%, transparent 66%);
 }
 
 .header-connection-status__status-main {
@@ -593,22 +540,6 @@ onUnmounted(() => {
   line-height: 1.35;
 }
 
-.header-connection-status__runtime-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--el-text-color-primary);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.header-connection-status__runtime-total {
-  color: var(--el-text-color-secondary);
-  font-size: 10px;
-  font-weight: 500;
-}
-
 .header-connection-status__runtime-list {
   display: flex;
   max-height: 184px;
@@ -624,7 +555,8 @@ onUnmounted(() => {
   padding: 7px 8px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 32%, transparent 68%);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--app-content-border-color) 32%, transparent 68%);
 }
 
 .header-connection-status__runtime-main {
@@ -701,8 +633,7 @@ onUnmounted(() => {
 
 :global(.header-connection-status-popover.el-popover.el-popper) {
   max-width: min(92vw, 344px);
-  border: 1px solid
-    color-mix(in srgb, var(--app-content-border-color) 76%, transparent 24%) !important;
+  border: 1px solid color-mix(in srgb, var(--app-content-border-color) 76%, transparent 24%) !important;
   background: color-mix(in srgb, var(--el-bg-color) 98%, transparent 2%) !important;
   box-shadow:
     0 10px 28px rgba(15, 23, 42, 0.12),
