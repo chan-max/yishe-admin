@@ -27,12 +27,9 @@ export default defineComponent({
     return () => (
       <header
         id={`${variables.namespace}-tool-header`}
-        class={[
-          prefixCls,
-          "h-[var(--top-tool-height)] pl-10px pr-6px md:pl-12px md:pr-8px flex items-center justify-between",
-        ]}
+        class={[prefixCls, "flex h-[var(--top-tool-height)] items-center justify-between"]}
       >
-        <div class="tool-header-left flex h-full min-w-0 items-center gap-4px md:gap-6px">
+        <div class="tool-header-left flex h-full min-w-0 items-center">
           {mobile.value ? (
             <button
               type="button"
@@ -47,7 +44,7 @@ export default defineComponent({
           ) : undefined}
         </div>
 
-        <div class="tool-header-right flex h-full min-w-0 items-center justify-end gap-2px md:gap-2px">
+        <div class="tool-header-right flex h-full min-w-0 items-center justify-end">
           <GlobalNotificationToastStack />
           <AdminDataScopeSwitch />
           <GlobalNotificationCenter />
@@ -55,7 +52,7 @@ export default defineComponent({
           <div class="client-status-wrapper">
             <ClientStatus />
           </div>
-          <div class="custom-hover flex h-[var(--top-header-action-size)] items-center rounded-999px px-4px">
+          <div class="custom-hover tool-header-theme-switch flex h-[var(--top-header-action-size)] items-center rounded-999px">
             <ThemeSwitch />
           </div>
           {screenfull.value ? (
@@ -73,6 +70,9 @@ export default defineComponent({
 $prefix-cls: #{$namespace}-tool-header;
 
 .#{$prefix-cls} {
+  min-height: var(--top-tool-height);
+  padding-left: 14px;
+  padding-right: 14px;
   color: var(--top-header-text-color);
 }
 
@@ -86,10 +86,23 @@ $prefix-cls: #{$namespace}-tool-header;
 
 .tool-header-left {
   overflow: hidden;
+  gap: 8px;
 }
 
 .tool-header-right {
-  overflow: hidden;
+  gap: 10px;
+  overflow: visible;
+  padding-left: 10px;
+}
+
+.tool-header-right>* {
+  display: flex;
+  min-height: var(--top-header-action-size);
+  align-items: center;
+}
+
+.tool-header-theme-switch {
+  padding-inline: 6px;
 }
 
 .header-breadcrumb {
@@ -104,6 +117,7 @@ $prefix-cls: #{$namespace}-tool-header;
   flex-shrink: 1;
   justify-content: flex-end;
   white-space: nowrap;
+  padding-right: 2px;
 }
 
 .client-status-wrapper :deep(.header-connection-status__trigger) {
@@ -112,20 +126,20 @@ $prefix-cls: #{$namespace}-tool-header;
 
 @media (min-width: 768px) and (max-width: 1180px) {
   .#{$prefix-cls} {
-    min-height: var(--top-tool-height);
-    padding-left: 8px;
-    padding-right: 6px;
+    padding-left: 12px;
+    padding-right: 10px;
   }
 
-  .tool-header-left,
   .tool-header-right {
-    gap: 4px;
+    gap: 8px;
   }
 
-  .tool-header-right>* {
-    display: flex;
-    min-height: var(--top-header-action-size);
-    align-items: center;
+  .tool-header-left {
+    gap: 6px;
+  }
+
+  .tool-header-right {
+    padding-left: 8px;
   }
 
   .header-breadcrumb {
@@ -135,12 +149,13 @@ $prefix-cls: #{$namespace}-tool-header;
 
 @media (max-width: 768px) {
   .#{$prefix-cls} {
-    padding-left: 8px;
-    padding-right: 4px;
+    padding-left: 10px;
+    padding-right: 8px;
   }
 
   .tool-header-right {
-    gap: 3px;
+    gap: 6px;
+    padding-left: 6px;
   }
 
   .client-status-wrapper {
@@ -150,8 +165,17 @@ $prefix-cls: #{$namespace}-tool-header;
 
 @media (max-width: 640px) {
   .#{$prefix-cls} {
-    padding-left: 6px;
-    padding-right: 3px;
+    padding-left: 8px;
+    padding-right: 6px;
+  }
+
+  .tool-header-left {
+    gap: 4px;
+  }
+
+  .tool-header-right {
+    gap: 5px;
+    padding-left: 4px;
   }
 }
 </style>

@@ -4,7 +4,7 @@
       v-model:visible="popoverVisible"
       trigger="click"
       placement="bottom-end"
-      :width="360"
+      :width="344"
       :show-after="0"
       :hide-after="0"
       transition="header-connection-status-pop"
@@ -32,74 +32,83 @@
 
       <div class="header-connection-status__panel">
         <div class="header-connection-status__panel-head">
-          <div>
-            <div class="header-connection-status__panel-title">连接状态</div>
-            <div class="header-connection-status__panel-desc">当前账号的连接与节点状态</div>
-          </div>
+          <div class="header-connection-status__panel-title">连接状态</div>
           <el-button text size="small" :loading="isRefreshing" @click="refreshAllStatuses">
             刷新
           </el-button>
         </div>
 
-        <div class="header-connection-status__metrics">
-          <span class="header-connection-status__metric">
-            <span class="header-connection-status__metric-dot is-plugin" />
-            插件 {{ extensionCount }}
-          </span>
-          <span class="header-connection-status__metric">
-            <span class="header-connection-status__metric-dot is-admin" />
-            后台 {{ adminCount }}
-          </span>
-          <span class="header-connection-status__metric">
-            <span class="header-connection-status__metric-dot is-client" />
-            客户端 {{ clientRuntimeCount }}
-          </span>
-        </div>
-
-        <section class="header-connection-status__status-lines">
-          <div class="header-connection-status__status-line">
-            <div class="header-connection-status__status-main">
-              <span
-                class="header-connection-status__status-dot"
-                :class="isRemoteConnected ? 'is-online' : 'is-offline'"
-              />
-              <div class="header-connection-status__status-copy">
-                <div class="header-connection-status__status-title">
-                  远程通道 {{ remoteStatusText }}
-                </div>
-                <div class="header-connection-status__status-meta">{{ remoteStatusMeta }}</div>
+        <section class="header-connection-status__section">
+          <div class="header-connection-status__metrics">
+            <div class="header-connection-status__metric">
+              <div class="header-connection-status__metric-head">
+                <span class="header-connection-status__metric-dot is-plugin" />
+                <span>插件端</span>
               </div>
+              <span class="header-connection-status__metric-value">{{ extensionCount }}</span>
             </div>
-            <el-button v-if="!isRemoteConnected" link size="small" @click="reconnectRemote">
-              重连
-            </el-button>
-          </div>
-
-          <div class="header-connection-status__status-line">
-            <div class="header-connection-status__status-main">
-              <span
-                class="header-connection-status__status-dot"
-                :class="onlineClientCount > 0 ? 'is-online' : 'is-offline'"
-              />
-              <div class="header-connection-status__status-copy">
-                <div class="header-connection-status__status-title">
-                  客户端节点 {{ clientNodeStatusText }}
-                </div>
-                <div class="header-connection-status__status-meta">{{ clientNodeMeta }}</div>
+            <div class="header-connection-status__metric">
+              <div class="header-connection-status__metric-head">
+                <span class="header-connection-status__metric-dot is-admin" />
+                <span>管理端</span>
               </div>
+              <span class="header-connection-status__metric-value">{{ adminCount }}</span>
             </div>
-            <el-button link size="small" @click="handleClientAction">
-              {{ hasClientRecords ? "查看客户端" : "启动客户端" }}
-            </el-button>
+            <div class="header-connection-status__metric">
+              <div class="header-connection-status__metric-head">
+                <span class="header-connection-status__metric-dot is-client" />
+                <span>客户端</span>
+              </div>
+              <span class="header-connection-status__metric-value">{{ clientRuntimeCount }}</span>
+            </div>
           </div>
         </section>
 
-        <section class="header-connection-status__runtime">
+        <section class="header-connection-status__section">
+          <div class="header-connection-status__section-title">连接概览</div>
+          <div class="header-connection-status__status-lines">
+            <div class="header-connection-status__status-line">
+              <div class="header-connection-status__status-main">
+                <span
+                  class="header-connection-status__status-dot"
+                  :class="isRemoteConnected ? 'is-online' : 'is-offline'"
+                />
+                <div class="header-connection-status__status-copy">
+                  <div class="header-connection-status__status-title">管理端</div>
+                  <div class="header-connection-status__status-meta">
+                    {{ remoteStatusText }} · {{ remoteStatusMeta }}
+                  </div>
+                </div>
+              </div>
+              <el-button v-if="!isRemoteConnected" link size="small" @click="reconnectRemote">
+                重连
+              </el-button>
+            </div>
+
+            <div class="header-connection-status__status-line">
+              <div class="header-connection-status__status-main">
+                <span
+                  class="header-connection-status__status-dot"
+                  :class="onlineClientCount > 0 ? 'is-online' : 'is-offline'"
+                />
+                <div class="header-connection-status__status-copy">
+                  <div class="header-connection-status__status-title">客户端</div>
+                  <div class="header-connection-status__status-meta">
+                    {{ clientNodeStatusText }} · {{ clientNodeMeta }}
+                  </div>
+                </div>
+              </div>
+              <el-button link size="small" @click="handleClientAction">
+                {{ hasClientRecords ? "查看" : "启动" }}
+              </el-button>
+            </div>
+          </div>
+        </section>
+
+        <section class="header-connection-status__section">
           <div class="header-connection-status__runtime-head">
-            <span>当前在线连接</span>
-            <span class="header-connection-status__runtime-total"
-              >共 {{ runtimeTotalCount }} 个</span
-            >
+            <span class="header-connection-status__section-title">在线连接</span>
+            <span class="header-connection-status__runtime-total">{{ runtimeTotalCount }} 个</span>
           </div>
 
           <div
@@ -113,10 +122,9 @@
             >
               <div class="header-connection-status__runtime-main">
                 <span
-                  class="header-connection-status__runtime-source-dot"
+                  class="header-connection-status__runtime-source"
                   :class="`is-${resolveRuntimeConnectionSourceKey(item)}`"
-                />
-                <span class="header-connection-status__runtime-source">
+                >
                   {{ formatRuntimeConnectionSourceLabel(item) }}
                 </span>
                 <span class="header-connection-status__runtime-title">
@@ -128,7 +136,7 @@
               </div>
             </div>
           </div>
-          <div v-else class="header-connection-status__runtime-empty">当前账号还没有在线连接</div>
+          <div v-else class="header-connection-status__runtime-empty">暂无在线连接</div>
         </section>
       </div>
     </el-popover>
@@ -219,10 +227,18 @@ const clientNodeStatusText = computed(() => {
 });
 const clientNodeMeta = computed(() => {
   if (!clientRecordCount.value) {
-    return "当前账号暂无客户端节点";
+    return "暂无节点";
   }
 
-  return `在线 ${onlineClientCount.value} / 断线 ${offlineClientCount.value}`;
+  if (onlineClientCount.value === clientRecordCount.value) {
+    return `${clientRecordCount.value} 个在线`;
+  }
+
+  if (onlineClientCount.value > 0) {
+    return `${onlineClientCount.value}/${clientRecordCount.value} 在线`;
+  }
+
+  return `${offlineClientCount.value} 个离线`;
 });
 
 let timers: { localTimer: number; remoteTimer: number } | null = null;
@@ -246,12 +262,19 @@ const remoteStatusText = computed(() => {
 
 const remoteStatusMeta = computed(() => {
   if (isRemoteConnected.value) {
-    return websocketClient.state.connectedAt
-      ? `已连接 ${formatPast(websocketClient.state.connectedAt)}`
-      : "远程通道工作正常";
+    return websocketClient.state.connectedAt ? formatPast(websocketClient.state.connectedAt) : "连接正常";
   }
 
-  return websocketClient.state.lastError || "点击后可重新发起远程连接";
+  switch (websocketClient.state.status) {
+    case "connecting":
+      return "正在建立";
+    case "reconnecting":
+      return "正在恢复";
+    case "error":
+      return "连接异常";
+    default:
+      return "等待连接";
+  }
 });
 
 function openClient() {
@@ -308,21 +331,12 @@ function resolveConnectionTitle(item: WebsocketConnectionVO) {
 }
 
 function resolveConnectionMeta(item: WebsocketConnectionVO) {
-  const info = item.clientInfo || {};
-  const parts: string[] = [];
-
   const statusTime = item.connectedAt || item.lastOnlineAt;
   if (statusTime) {
-    parts.push(`已连接 ${formatPast(statusTime)}`);
+    return formatPast(statusTime);
   }
 
-  if (info.page?.path) {
-    parts.push(info.page.path);
-  } else if (info.machine?.code) {
-    parts.push(info.machine.code);
-  }
-
-  return parts.join(" · ") || "当前账号的在线连接";
+  return "在线";
 }
 
 onMounted(() => {
@@ -349,10 +363,11 @@ onUnmounted(() => {
   min-width: 0;
   align-items: center;
   gap: 8px;
-  border: none;
-  background: transparent;
-  padding: 0 4px;
+  padding: 0 10px;
   height: var(--top-header-action-size);
+  border: none;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--top-header-hover-color) 48%, transparent 52%);
   color: var(--top-header-text-color);
   cursor: pointer;
   transition:
@@ -361,11 +376,11 @@ onUnmounted(() => {
 }
 
 .header-connection-status__trigger:hover {
-  background: color-mix(in srgb, var(--top-header-hover-color) 72%, transparent 28%);
+  background: color-mix(in srgb, var(--top-header-hover-color) 82%, transparent 18%);
 }
 
 .header-connection-status__trigger.is-active {
-  background: color-mix(in srgb, var(--top-header-hover-color) 84%, transparent 16%);
+  background: color-mix(in srgb, var(--top-header-hover-color) 96%, transparent 4%);
   transform: translateY(-1px);
 }
 
@@ -440,7 +455,7 @@ onUnmounted(() => {
 .header-connection-status__panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   will-change: transform, opacity;
 }
 
@@ -448,58 +463,83 @@ onUnmounted(() => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+  padding-bottom: 1px;
 }
 
 .header-connection-status__panel-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--el-text-color-primary);
 }
 
-.header-connection-status__panel-desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.5;
+.header-connection-status__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid
+    color-mix(in srgb, var(--app-content-border-color) 62%, transparent 38%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--el-fill-color-light) 38%, var(--el-bg-color) 62%);
+}
+
+.header-connection-status__section-title {
+  color: var(--el-text-color-primary);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .header-connection-status__metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .header-connection-status__metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 8px 7px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--el-bg-color) 54%, var(--el-fill-color-light) 46%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 36%, transparent 64%);
+}
+
+.header-connection-status__metric-head {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  white-space: nowrap;
+  gap: 5px;
+  color: var(--el-text-color-secondary);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.header-connection-status__metric-value {
+  color: var(--el-text-color-primary);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .header-connection-status__metric-dot,
-.header-connection-status__status-dot,
-.header-connection-status__runtime-source-dot {
+.header-connection-status__status-dot {
   width: 6px;
   height: 6px;
   flex-shrink: 0;
   border-radius: 999px;
 }
 
-.header-connection-status__metric-dot.is-plugin,
-.header-connection-status__runtime-source-dot.is-extension {
+.header-connection-status__metric-dot.is-plugin {
   background: #67c23a;
 }
 
-.header-connection-status__metric-dot.is-admin,
-.header-connection-status__runtime-source-dot.is-admin {
+.header-connection-status__metric-dot.is-admin {
   background: var(--el-color-primary);
 }
 
-.header-connection-status__metric-dot.is-client,
-.header-connection-status__runtime-source-dot.is-client {
+.header-connection-status__metric-dot.is-client {
   background: #e6a23c;
 }
 
@@ -514,21 +554,25 @@ onUnmounted(() => {
 .header-connection-status__status-lines {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .header-connection-status__status-line {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 34%, transparent 66%);
 }
 
 .header-connection-status__status-main {
   display: flex;
   min-width: 0;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .header-connection-status__status-copy {
@@ -537,52 +581,50 @@ onUnmounted(() => {
 
 .header-connection-status__status-title {
   color: var(--el-text-color-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .header-connection-status__status-meta {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.header-connection-status__runtime {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .header-connection-status__runtime-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   color: var(--el-text-color-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .header-connection-status__runtime-total {
   color: var(--el-text-color-secondary);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
 }
 
 .header-connection-status__runtime-list {
   display: flex;
-  max-height: 200px;
+  max-height: 184px;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   overflow-y: auto;
 }
 
 .header-connection-status__runtime-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px 0;
+  gap: 3px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--el-bg-color) 58%, var(--el-fill-color-light) 42%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 32%, transparent 68%);
 }
 
 .header-connection-status__runtime-main {
@@ -593,16 +635,48 @@ onUnmounted(() => {
 }
 
 .header-connection-status__runtime-source {
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 9px;
+  font-weight: 700;
   white-space: nowrap;
+}
+
+.header-connection-status__runtime-source.is-extension {
+  border-color: color-mix(in srgb, #67c23a 34%, transparent);
+  background: color-mix(in srgb, #67c23a 12%, transparent);
+  color: #4e9b2f;
+}
+
+.header-connection-status__runtime-source.is-admin {
+  border-color: color-mix(in srgb, var(--el-color-primary) 30%, transparent);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  color: var(--el-color-primary);
+}
+
+.header-connection-status__runtime-source.is-client {
+  border-color: color-mix(in srgb, #e6a23c 30%, transparent);
+  background: color-mix(in srgb, #e6a23c 12%, transparent);
+  color: #c78922;
+}
+
+.header-connection-status__runtime-source.is-unknown {
+  border-color: color-mix(in srgb, var(--el-text-color-secondary) 26%, transparent);
+  background: color-mix(in srgb, var(--el-text-color-secondary) 10%, transparent);
+  color: var(--el-text-color-secondary);
 }
 
 .header-connection-status__runtime-title {
   min-width: 0;
   flex: 1;
   color: var(--el-text-color-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -611,28 +685,36 @@ onUnmounted(() => {
 
 .header-connection-status__runtime-meta {
   color: var(--el-text-color-secondary);
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: 9px;
+  line-height: 1.3;
 }
 
 .header-connection-status__runtime-empty {
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.7;
+  font-size: 11px;
+  line-height: 1.5;
   text-align: center;
-  padding: 8px 0 4px;
+  padding: 8px 0 1px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--el-fill-color-light) 56%, transparent 44%);
 }
 
 :global(.header-connection-status-popover.el-popover.el-popper) {
-  max-width: min(92vw, 360px);
+  max-width: min(92vw, 344px);
   border: 1px solid
-    color-mix(in srgb, var(--app-content-border-color) 96%, var(--el-text-color-primary) 4%) !important;
+    color-mix(in srgb, var(--app-content-border-color) 76%, transparent 24%) !important;
   background: color-mix(in srgb, var(--el-bg-color) 98%, transparent 2%) !important;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--app-content-border-color) 72%, transparent 28%),
-    0 14px 34px rgba(15, 23, 42, 0.14) !important;
-  padding: 12px 14px !important;
+    0 10px 28px rgba(15, 23, 42, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset !important;
+  padding: 10px !important;
   backdrop-filter: blur(10px);
+}
+
+:global(.header-connection-status__panel .el-button--small) {
+  min-height: 24px;
+  padding: 5px 8px;
+  font-size: 11px;
 }
 
 :global(.header-connection-status-popover .el-popper__arrow) {
