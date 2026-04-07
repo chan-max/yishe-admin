@@ -465,28 +465,59 @@ html.dark {
 }
 
 .common-table .vxe-table,
-.common-table .vxe-grid {
-  --vxe-ui-font-size-default: 12px;
+.common-table .vxe-grid,
+.vxe-table,
+.vxe-grid {
+  --vxe-ui-font-size-default: 11px;
+  --vxe-ui-font-size-mini: 11px;
+  --vxe-ui-font-size-small: 11px;
 }
 
-.common-table :deep(.common-table__header-cell) {
+.common-table .common-table__header-cell,
+.vxe-table .common-table__header-cell,
+.vxe-grid .common-table__header-cell {
   padding-top: 10px;
   padding-bottom: 10px;
 }
 
-.common-table :deep(.common-table__body-cell) {
+.common-table .common-table__body-cell,
+.vxe-table .common-table__body-cell,
+.vxe-grid .common-table__body-cell {
   padding-top: 9px;
   padding-bottom: 9px;
 }
 
-.common-table :deep(.vxe-header--column) {
-  font-size: 11px;
-  font-weight: 600;
+.common-table .vxe-header--column,
+.vxe-table .vxe-header--column,
+.vxe-grid .vxe-header--column {
+  font-size: 10px !important;
+  font-weight: 600 !important;
   color: var(--el-text-color-regular);
   letter-spacing: 0.02em;
 }
 
-.common-table :deep(.vxe-body--column) {
+.common-table .vxe-header--column .vxe-cell--title,
+.common-table .vxe-header--column .vxe-cell,
+.vxe-table .vxe-header--column .vxe-cell--title,
+.vxe-table .vxe-header--column .vxe-cell,
+.vxe-grid .vxe-header--column .vxe-cell--title,
+.vxe-grid .vxe-header--column .vxe-cell {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.common-table .vxe-header--column .vxe-cell,
+.vxe-table .vxe-header--column .vxe-cell,
+.vxe-grid .vxe-header--column .vxe-cell {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  min-height: 0 !important;
+}
+
+.common-table .vxe-body--column,
+.vxe-table .vxe-body--column,
+.vxe-grid .vxe-body--column {
   vertical-align: middle;
 }
 
@@ -497,8 +528,8 @@ html.dark {
 }
 
 .table-cell-text {
-  font-size: 12px;
-  line-height: 1.55;
+  font-size: 11px;
+  line-height: 1.5;
   color: var(--el-text-color-primary);
   word-break: break-word;
 }
@@ -509,13 +540,13 @@ html.dark {
 
 .table-cell-text--muted,
 .table-cell-empty {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.45;
   color: var(--el-text-color-secondary);
 }
 
 .table-cell-id {
-  font-size: 12px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: var(--el-text-color-primary);
 }
@@ -573,7 +604,7 @@ html.dark {
 .table-bilingual-cell__label {
   flex: none;
   color: var(--el-text-color-secondary);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.5;
 }
 
@@ -581,7 +612,7 @@ html.dark {
 .table-bilingual-cell__content {
   min-width: 0;
   flex: 1;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.5;
   color: var(--el-text-color-primary);
   word-break: break-word;
@@ -623,7 +654,7 @@ html.dark {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
   font-variant-numeric: tabular-nums;
@@ -831,7 +862,7 @@ html.dark {
 }
 
 .form-section-title {
-  font-size: 0.875rem;
+  font-size: 13px;
   font-weight: 600;
   color: var(--el-text-color-primary);
   margin-bottom: 0.5rem;

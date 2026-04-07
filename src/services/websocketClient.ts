@@ -145,6 +145,7 @@ export interface PublishTaskRuntimeEvent {
   taskId: string;
   taskType?: string;
   queue?: string;
+  profileId?: string | null;
   status?: string;
   message?: string;
   currentStep?: string | null;

@@ -20,6 +20,42 @@ export interface BrowserAutomationServiceStatus {
   details?: Record<string, any>;
 }
 
+export interface BrowserAutomationProfileSummary {
+  id: string;
+  name: string;
+  remark?: string;
+  account?: string;
+  platforms?: string[];
+  browserVersion?: string;
+  loginSummary?: Record<string, any>;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  lastUsedAt?: string | null;
+  userDataDir?: string;
+  exists?: boolean;
+  isActive?: boolean;
+}
+
+export interface BrowserAutomationProfileInstanceSummary {
+  profileId: string;
+  profileName?: string;
+  connected?: boolean;
+  available?: boolean;
+  busy?: boolean;
+  currentTaskId?: string | null;
+  taskType?: string | null;
+  currentStep?: string | null;
+  pageCount?: number;
+  lastActivity?: string | null;
+  lastError?: string | null;
+  browserVersion?: string;
+  hasInstance?: boolean;
+  connecting?: boolean;
+  userDataDir?: string | null;
+  pages?: Array<Record<string, any>>;
+  isActiveProfile?: boolean;
+}
+
 export interface BrowserAutomationClientVO {
   clientId: string;
   isOnline?: boolean;
@@ -99,6 +135,13 @@ export interface BrowserAutomationSnapshotResponse {
   data: BrowserAutomationClientVO;
 }
 
+export interface BrowserAutomationProfilesPayload {
+  activeProfileId?: string | null;
+  workspaceDir?: string;
+  profilesRootDir?: string;
+  items: BrowserAutomationProfileSummary[];
+}
+
 export const getBrowserAutomationClients = () => {
   return request.get<BrowserAutomationClientVO[]>({ url: "/external/browser-automation/clients" });
 };
@@ -123,7 +166,7 @@ export const checkBrowserAutomationStatus = (clientId: string) => {
 
 export const connectBrowserAutomation = (
   clientId: string,
-  data?: { port?: number; headless?: boolean },
+  data?: { port?: number; headless?: boolean; profileId?: string },
 ) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/connect`,
@@ -134,6 +177,31 @@ export const connectBrowserAutomation = (
 export const closeBrowserAutomation = (clientId: string) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/close`,
+    data: {},
+  });
+};
+
+export const closeBrowserAutomationProfile = (
+  clientId: string,
+  profileId?: string,
+) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/close`,
+    data: String(profileId || "").trim()
+      ? { profileId: String(profileId || "").trim() }
+      : {},
+  });
+};
+
+export const focusBrowserAutomationProfile = (
+  clientId: string,
+  profileId?: string,
+) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/focus`,
+    data: String(profileId || "").trim()
+      ? { profileId: String(profileId || "").trim() }
+      : {},
   });
 };
 
@@ -144,9 +212,12 @@ export const forceCloseBrowserAutomation = (clientId: string, data?: { port?: nu
   });
 };
 
-export const fetchBrowserAutomationPages = (clientId: string) => {
+export const fetchBrowserAutomationPages = (clientId: string, profileId?: string) => {
   return request.get<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/pages`,
+    params: String(profileId || "").trim()
+      ? { profileId: String(profileId || "").trim() }
+      : undefined,
   });
 };
 
@@ -157,14 +228,20 @@ export const executeBrowserAutomationDebug = (clientId: string, data: Record<str
   });
 };
 
-export const openBrowserAutomationPlatform = (clientId: string, data: { platform: string }) => {
+export const openBrowserAutomationPlatform = (
+  clientId: string,
+  data: { platform: string; profileId?: string },
+) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/open-platform`,
     data,
   });
 };
 
-export const openBrowserAutomationLink = (clientId: string, data: { url: string }) => {
+export const openBrowserAutomationLink = (
+  clientId: string,
+  data: { url: string; profileId?: string },
+) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/open-link`,
     data,
@@ -200,6 +277,60 @@ export const getBrowserAutomationLoginStatus = (clientId: string, data?: { refre
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/login-status`,
     data,
+  });
+};
+
+export const getBrowserAutomationProfiles = (clientId: string) => {
+  return request.get<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/profiles`,
+  });
+};
+
+export const getBrowserAutomationProfileDetail = (
+  clientId: string,
+  profileId: string,
+) => {
+  return request.get<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/profiles/${encodeURIComponent(profileId)}`,
+  });
+};
+
+export const createBrowserAutomationProfile = (
+  clientId: string,
+  data: Record<string, any>,
+) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/profiles`,
+    data,
+  });
+};
+
+export const updateBrowserAutomationProfile = (
+  clientId: string,
+  profileId: string,
+  data: Record<string, any>,
+) => {
+  return request.put<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/profiles/${encodeURIComponent(profileId)}`,
+    data,
+  });
+};
+
+export const deleteBrowserAutomationProfile = (
+  clientId: string,
+  profileId: string,
+) => {
+  return request.delete<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/profiles/${encodeURIComponent(profileId)}`,
+  });
+};
+
+export const switchBrowserAutomationProfile = (
+  clientId: string,
+  profileId: string,
+) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/profiles/${encodeURIComponent(profileId)}/switch`,
   });
 };
 

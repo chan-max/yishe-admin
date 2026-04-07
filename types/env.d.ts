@@ -26,6 +26,7 @@ interface ImportMetaEnv {
   readonly VITE_SOURCEMAP: string
   readonly VITE_OUT_DIR: string
   readonly VITE_GOVIEW_URL: string
+  readonly VITE_YISHE_TOOL_URL: string
 }
 
 declare global {

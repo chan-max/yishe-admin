@@ -197,6 +197,7 @@ export interface ServiceCommandDTO {
 
 export interface DispatchPublishTaskDTO {
   clientId?: string;
+  profileId?: string;
 }
 
 export const sendServiceCommand = (data: ServiceCommandDTO) => {

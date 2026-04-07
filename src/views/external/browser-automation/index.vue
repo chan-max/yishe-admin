@@ -45,40 +45,111 @@
             </div>
           </div>
 
-          <div class="card panel supported-task-panel" v-loading="capabilityLoading">
+          <div class="card panel">
             <div class="supported-task-panel__head">
               <div>
-                <div class="section-title">支持任务类型</div>
-                <div class="muted">仅显示当前已接入浏览器自动化执行链路的任务类型。</div>
+                <div class="section-title">执行环境</div>
+                <div class="muted">一个客户端可维护多个浏览器缓存环境，设为默认后可复用对应账号登录态。</div>
               </div>
+              <el-button type="primary" :disabled="!selectedClientId" @click="openCreateProfileDialog">
+                新增环境
+              </el-button>
             </div>
-            <div v-if="supportedTaskTypeItems.length" class="supported-task-list">
-              <span
-                v-for="item in supportedTaskTypeItems"
-                :key="item.taskType"
-                class="supported-task-chip"
-              >
-                <span class="supported-task-chip__label">{{ item.label }}</span>
-                <span class="supported-task-chip__key">{{ item.taskType }}</span>
-              </span>
+            <div class="row wrap browser-profile-banner-row" style="margin-bottom: 12px">
+              <div v-if="activeProfile" class="active-profile-banner">
+                <span class="active-profile-banner__flag">当前环境</span>
+                <span class="active-profile-banner__name">
+                  {{ activeProfile.name || activeProfile.id }}
+                </span>
+                <span class="active-profile-banner__id">{{ activeProfile.id }}</span>
+              </div>
+              <span v-else class="muted">当前还没有已管理的环境，未创建时仍会兼容旧默认目录。</span>
             </div>
-            <div v-else class="muted">当前还没有可展示的任务类型。</div>
+            <div class="common-table common-table--full">
+              <vxe-grid v-bind="profileGridOptions" :data="profileTableRows" class="profile-grid">
+                <template #platforms_default="{ row }">
+                  {{ Array.isArray(row.platforms) && row.platforms.length ? row.platforms.join(", ") : "-" }}
+                </template>
+
+                <template #lastUsedAt_default="{ row }">
+                  {{ dateText(row.lastUsedAt) }}
+                </template>
+
+                <template #instance_default="{ row }">
+                  <div class="table-stack">
+                    <el-tag :type="getProfileInstanceTagType(row.instance)" effect="plain">
+                      {{ getProfileInstanceText(row.instance) }}
+                    </el-tag>
+                    <span class="muted">{{ getProfileInstanceHint(row.instance) }}</span>
+                  </div>
+                </template>
+
+                <template #pageCount_default="{ row }">
+                  {{ row.instance?.pageCount ?? 0 }}
+                </template>
+
+                <template #status_default="{ row }">
+                  <span
+                    class="profile-active-badge"
+                    :class="{ 'is-active': row.isActive, 'is-standby': !row.isActive }"
+                  >
+                    <span class="profile-active-badge__dot"></span>
+                    <span>{{ row.isActive ? "当前环境" : "待命" }}</span>
+                  </span>
+                </template>
+
+                <template #profileOperation_default="{ row }">
+                  <div class="flex justify-start">
+                    <el-dropdown
+                      class="operation-dropdown"
+                      placement="bottom-end"
+                      @command="(command) => handleProfileOperationCommand(String(command), row)"
+                    >
+                      <el-button type="primary" link size="small" class="operation-trigger-button">
+                        操作
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="connect">
+                            <span>{{ row.instance?.connected ? "重新连接" : "打开窗口" }}</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            command="close"
+                            :disabled="!row.instance?.hasInstance && !row.instance?.connected"
+                          >
+                            <span>关闭窗口</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            command="focus"
+                            :disabled="!row.instance?.hasInstance && !row.instance?.connected"
+                          >
+                            <span>聚焦窗口</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="panel">
+                            <span>进入面板</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="switch" :disabled="row.isActive">
+                            <span>设为默认</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="edit" divided>
+                            <span>编辑</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
+                            <span>删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
           </div>
 
-          <div class="card panel console-entry">
-            <div class="console-entry__content">
-              <div class="section-title">集中操作台</div>
-              <div class="muted">
-                将连接控制、链接调试和任务中心统一收口到全屏面板中，方便集中管理当前节点。
-              </div>
-            </div>
-            <el-button
-              type="primary"
-              :disabled="!selectedClientId"
-              @click="operationDialogVisible = true"
-              >打开操作面板</el-button
-            >
-          </div>
         </section>
 
         <section v-else class="main-empty card">
@@ -101,6 +172,10 @@
                 <div class="card panel">
                   <div class="section-title">浏览器控制</div>
                   <div class="row">
+                    <el-tag v-if="currentProfileId" type="success" effect="plain">
+                      当前实例：{{ currentProfileName }} ({{ currentProfileId }})
+                    </el-tag>
+                    <el-tag v-else type="info" effect="plain">当前实例：未选择环境</el-tag>
                     <el-input-number
                       v-model="browserForm.port"
                       :min="1"
@@ -120,7 +195,7 @@
                       type="primary"
                       :disabled="!serviceEnabled"
                       :loading="loadingMap.connect"
-                      @click="sendConnect"
+                      @click="() => sendConnect()"
                       >连接</el-button
                     >
                     <el-button
@@ -142,6 +217,9 @@
                       @click="sendSimple('pages')"
                       >获取页面</el-button
                     >
+                  </div>
+                  <div v-if="currentProfileId" class="muted">
+                    当前操作环境：{{ currentProfileName }}，{{ currentProfileStatusText }}
                   </div>
                   <div v-if="!serviceEnabled" class="muted">
                     自动化服务未启动，当前节点不可执行相关操作。
@@ -413,6 +491,39 @@
         </div>
       </el-dialog>
 
+      <el-dialog
+        v-model="profileDialogVisible"
+        :title="editingProfileId ? '编辑执行环境' : '新增执行环境'"
+        width="520px"
+      >
+        <div class="stack">
+          <el-input
+            v-model="profileForm.id"
+            :disabled="!!editingProfileId"
+            placeholder="环境编号，例如 001；留空则自动生成"
+          />
+          <el-input v-model="profileForm.name" placeholder="环境名称" />
+          <el-input v-model="profileForm.account" placeholder="账号标识，可选" />
+          <el-input v-model="profileForm.remark" type="textarea" :rows="3" placeholder="备注，可选" />
+          <el-input
+            v-model="profileForm.platformsText"
+            placeholder="平台标签，多个用逗号分隔，例如 douyin,xiaohongshu"
+          />
+        </div>
+        <template #footer>
+          <div class="row" style="justify-content: flex-end">
+            <el-button @click="profileDialogVisible = false">取消</el-button>
+            <el-button
+              type="primary"
+              :loading="editingProfileId ? loadingMap.updateProfile : loadingMap.createProfile"
+              @click="submitProfileForm"
+            >
+              {{ editingProfileId ? "保存" : "创建" }}
+            </el-button>
+          </div>
+        </template>
+      </el-dialog>
+
       <el-dialog v-model="detailVisible" title="任务详情" width="900px">
         <pre class="result">{{ detailText }}</pre>
       </el-dialog>
@@ -425,26 +536,32 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
+import type { VxeGridProps } from "vxe-table";
 import {
   checkBrowserAutomationStatus,
   closeBrowserAutomation,
+  closeBrowserAutomationProfile,
   connectBrowserAutomation,
+  createBrowserAutomationProfile,
+  deleteBrowserAutomationProfile,
   executeBrowserAutomationDebug,
   fetchBrowserAutomationPages,
+  focusBrowserAutomationProfile,
   forceCloseBrowserAutomation,
-  getBrowserAutomationCapabilities,
   getBrowserAutomationTaskDetail,
   getBrowserAutomationTaskLogs,
   openBrowserAutomationLink,
   queryBrowserAutomationTasks,
-  type BrowserAutomationCapabilityCatalogResponse,
+  switchBrowserAutomationProfile,
+  updateBrowserAutomationProfile,
   type BrowserAutomationClientVO,
   type BrowserAutomationCommandResponse,
+  type BrowserAutomationProfileInstanceSummary,
+  type BrowserAutomationProfileSummary,
   type BrowserAutomationServiceStatus,
 } from "@/api/external/browserAutomation";
 import {
-  extractBrowserAutomationSupportedTaskTypes,
   getBrowserAutomationBrowserText,
   getBrowserAutomationBrowserTone,
   getBrowserAutomationServiceText,
@@ -452,6 +569,7 @@ import {
 } from "@/services/browserAutomationRuntime";
 import { websocketClient, type ServiceCommandResultEvent } from "@/services/websocketClient";
 import { usePluginClientNodes } from "@/services/clientNodeState";
+import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatDate } from "@/utils/formatTime";
 import ExternalClientSidebar, {
   type ClientNodeItem,
@@ -474,11 +592,6 @@ interface BrowserDebugFeedback {
   updatedAt: string | null;
 }
 
-interface BrowserSupportedTaskTypeItem {
-  taskType: string;
-  label: string;
-}
-
 const {
   clients: rawClients,
   loading,
@@ -496,13 +609,14 @@ const logsText = ref("");
 const detailVisible = ref(false);
 const logsVisible = ref(false);
 const operationDialogVisible = ref(false);
-const capabilityLoading = ref(false);
-const capabilityCatalog = ref<BrowserAutomationCapabilityCatalogResponse["data"] | null>(null);
+const profileDialogVisible = ref(false);
+const editingProfileId = ref<string | null>(null);
 
 const loadingMap = reactive<Record<string, boolean>>({
   checkStatus: false,
   connect: false,
   close: false,
+  focus: false,
   forceClose: false,
   pages: false,
   debug: false,
@@ -510,11 +624,22 @@ const loadingMap = reactive<Record<string, boolean>>({
   taskDetail: false,
   taskLogs: false,
   openLink: false,
+  createProfile: false,
+  updateProfile: false,
+  deleteProfile: false,
+  switchProfile: false,
 });
 const pending = reactive<Record<string, string>>({});
 
-const browserForm = reactive({ port: 9222, headless: false });
+const browserForm = reactive({ port: 9222, headless: false, profileId: "" });
 const openForm = reactive({ url: "" });
+const profileForm = reactive({
+  id: "",
+  name: "",
+  remark: "",
+  account: "",
+  platformsText: "",
+});
 const debugForm = reactive({
   pageIndex: 0,
   url: "",
@@ -566,55 +691,135 @@ const selectedClient = computed(
 const selectedClientName = computed(
   () => selectedClient.value?.machine?.code || selectedClient.value?.clientId || "未选择节点",
 );
-const operationDialogTitle = computed(() => `集中操作台 · ${selectedClientName.value}`);
 const selectedService = computed<BrowserAutomationServiceStatus | null>(
   () => selectedClient.value?.uploader || null,
 );
 const selectedDetails = computed(() => selectedService.value?.details || {});
+const profileItems = computed<BrowserAutomationProfileSummary[]>(() => {
+  const profiles = selectedDetails.value?.profiles;
+  return Array.isArray(profiles) ? profiles : [];
+});
+const profileInstances = computed<BrowserAutomationProfileInstanceSummary[]>(() => {
+  const instances = selectedDetails.value?.instances;
+  return Array.isArray(instances) ? instances : [];
+});
+const profileInstanceMap = computed(
+  () =>
+    new Map(
+      profileInstances.value
+        .map((item) => [String(item?.profileId || "").trim(), item] as const)
+        .filter(([profileId]) => !!profileId),
+    ),
+);
+const profileTableRows = computed(() =>
+  profileItems.value.map((item) => ({
+    ...item,
+    instance: profileInstanceMap.value.get(String(item?.id || "").trim()) || null,
+  })),
+);
+const profileGridOptions = ref<VxeGridProps<any>>({
+  ...commonGridOptions,
+  rowConfig: {
+    keyField: "id",
+    isHover: true,
+  },
+  columns: [
+    { field: "id", title: "编号", width: 90 },
+    { field: "name", title: "名称", minWidth: 180, showOverflow: "tooltip" },
+    { field: "account", title: "账号", minWidth: 160, showOverflow: "tooltip" },
+    {
+      field: "platforms",
+      title: "平台",
+      minWidth: 180,
+      showOverflow: "tooltip",
+      slots: { default: "platforms_default" },
+    },
+    {
+      field: "lastUsedAt",
+      title: "最近使用",
+      minWidth: 170,
+      slots: { default: "lastUsedAt_default" },
+    },
+    {
+      field: "instance",
+      title: "浏览器",
+      minWidth: 200,
+      slots: { default: "instance_default" },
+    },
+    {
+      field: "pageCount",
+      title: "页面",
+      width: 80,
+      align: "center",
+      slots: { default: "pageCount_default" },
+    },
+    {
+      field: "isActive",
+      title: "状态",
+      width: 100,
+      align: "center",
+      slots: { default: "status_default" },
+    },
+    buildOperationColumn("profileOperation_default", 110),
+  ],
+});
+const activeProfileId = computed(
+  () =>
+    String(
+      selectedDetails.value?.activeProfileId ||
+        selectedDetails.value?.activeProfile?.id ||
+        "",
+    ).trim() || "",
+);
+const activeProfile = computed(
+  () =>
+    profileItems.value.find(
+      (item) => item?.isActive === true || item?.id === activeProfileId.value,
+    ) || null,
+);
+const currentProfileId = computed(
+  () =>
+    String(
+      browserForm.profileId || activeProfileId.value || profileItems.value[0]?.id || "",
+    ).trim() || "",
+);
+const currentProfile = computed(
+  () =>
+    profileItems.value.find((item) => String(item?.id || "").trim() === currentProfileId.value) ||
+    null,
+);
+const currentProfileInstance = computed(
+  () => profileInstanceMap.value.get(currentProfileId.value) || null,
+);
+const currentProfileName = computed(
+  () =>
+    currentProfile.value?.name ||
+    currentProfileInstance.value?.profileName ||
+    currentProfileId.value ||
+    "未选择环境",
+);
+const operationDialogTitle = computed(() => {
+  const clientName = selectedClientName.value;
+  const profileName = currentProfileId.value
+    ? `${currentProfileName.value} (${currentProfileId.value})`
+    : "未选择环境";
+  return `集中操作台 · ${clientName} · ${profileName}`;
+});
+const hasAnyConnectedProfile = computed(
+  () =>
+    profileInstances.value.some(
+      (item) => item.connected === true || item.hasInstance === true,
+    ) ||
+    selectedDetails.value?.browserConnected === true ||
+    selectedDetails.value?.hasInstance === true,
+);
 const serviceEnabled = computed(() =>
   Boolean(selectedClient.value?.isOnline && selectedService.value?.connected),
 );
-const capabilityLabelMap = computed(() => {
-  const items = capabilityCatalog.value?.declaredCapabilities || [];
-  return new Map(items.map((item) => [item.taskType, item.label]));
-});
-const supportedTaskTypeItems = computed<BrowserSupportedTaskTypeItem[]>(() => {
-  const normalized = new Map<string, string>();
-  const runtimeCapabilities = Array.isArray(selectedDetails.value?.capabilities)
-    ? selectedDetails.value.capabilities
-    : [];
-
-  runtimeCapabilities.forEach((item: any) => {
-    const taskType = String(item?.taskType || "").trim();
-    if (!taskType) {
-      return;
-    }
-    normalized.set(
-      taskType,
-      String(item?.label || capabilityLabelMap.value.get(taskType) || taskType),
-    );
-  });
-
-  if (!normalized.size) {
-    extractBrowserAutomationSupportedTaskTypes(selectedService.value).forEach((taskType) => {
-      normalized.set(taskType, capabilityLabelMap.value.get(taskType) || taskType);
-    });
-  }
-
-  if (!normalized.size) {
-    (capabilityCatalog.value?.declaredCapabilities || []).forEach((item) => {
-      const taskType = String(item?.taskType || "").trim();
-      if (!taskType) {
-        return;
-      }
-      normalized.set(taskType, String(item?.label || taskType));
-    });
-  }
-
-  return Array.from(normalized.entries())
-    .map(([taskType, label]) => ({ taskType, label }))
-    .sort((left, right) => left.label.localeCompare(right.label, "zh-CN"));
-});
+const browserReady = computed(() => Boolean(serviceEnabled.value && hasAnyConnectedProfile.value));
+const currentProfileStatusText = computed(() =>
+  getProfileInstanceText(currentProfileInstance.value),
+);
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   clients.value.map((client) => ({
     connectionId: client.clientId,
@@ -660,23 +865,6 @@ const jsonText = (value: any) => {
 const toNullableText = (value: any) => {
   const normalized = String(value || "").trim();
   return normalized || null;
-};
-const normalizeCapabilityCatalogPayload = (response: any) => {
-  const payload =
-    response?.data && typeof response.data === "object" && !Array.isArray(response.data)
-      ? response.data
-      : response;
-
-  if (payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
-    return payload.data as BrowserAutomationCapabilityCatalogResponse["data"];
-  }
-
-  return payload &&
-    typeof payload === "object" &&
-    !Array.isArray(payload) &&
-    Array.isArray(payload.declaredCapabilities)
-    ? (payload as BrowserAutomationCapabilityCatalogResponse["data"])
-    : null;
 };
 const getCommandErrorDetail = (event: ServiceCommandResultEvent) => {
   if (
@@ -783,7 +971,24 @@ const normalizePageOption = (page: Record<string, any>, fallbackIndex: number) =
     optionLabel: `#${rawIndex} ${title}${url ? ` · ${url}` : ""}`,
   };
 };
-const getPagesFromClient = (client?: BrowserAutomationClientVO | null) => {
+const getPagesFromClient = (
+  client?: BrowserAutomationClientVO | null,
+  profileId?: string | null,
+) => {
+  const normalizedProfileId = String(profileId || "").trim();
+  if (normalizedProfileId) {
+    const instances = client?.uploader?.details?.instances;
+    if (Array.isArray(instances)) {
+      const matchedInstance = instances.find(
+        (item: Record<string, any>) =>
+          String(item?.profileId || "").trim() === normalizedProfileId,
+      );
+      if (Array.isArray(matchedInstance?.pages)) {
+        return matchedInstance.pages;
+      }
+    }
+  }
+
   const pages = client?.uploader?.details?.pages;
   return Array.isArray(pages) ? pages : [];
 };
@@ -794,7 +999,7 @@ const selectedDebugPage = computed(
   () => pageOptions.value.find((page) => page.index === debugForm.pageIndex) || null,
 );
 const syncSelectedPages = () => {
-  pageList.value = getPagesFromClient(selectedClient.value);
+  pageList.value = getPagesFromClient(selectedClient.value, currentProfileId.value);
 };
 const syncDebugPageIndex = () => {
   if (!pageOptions.value.length) {
@@ -825,6 +1030,166 @@ const handlePageRowClick = (row: Record<string, any>) => {
 };
 const getPageRowClassName = ({ row }: { row: Record<string, any> }) => {
   return row?.index === debugForm.pageIndex ? "page-row-is-active" : "";
+};
+const getProfileInstanceText = (
+  instance?: BrowserAutomationProfileInstanceSummary | null,
+) => {
+  if (!instance) return "未打开";
+  if (instance.busy) return "执行中";
+  if (instance.connected) return "已打开";
+  if (instance.hasInstance || instance.connecting) return "连接中";
+  return "未打开";
+};
+const getProfileInstanceTagType = (
+  instance?: BrowserAutomationProfileInstanceSummary | null,
+) => {
+  if (instance?.busy) return "warning";
+  if (instance?.connected) return "success";
+  if (instance?.hasInstance || instance?.connecting) return "info";
+  return "info";
+};
+const getProfileInstanceHint = (
+  instance?: BrowserAutomationProfileInstanceSummary | null,
+) => {
+  if (!instance) return "浏览器窗口未打开";
+  if (instance.busy) {
+    return instance.currentTaskId
+      ? `任务 ${instance.currentTaskId} 执行中`
+      : "当前环境正在执行任务";
+  }
+  if (instance.connected) {
+    return `已打开 ${instance.pageCount ?? 0} 个页面`;
+  }
+  if (instance.hasInstance || instance.connecting) {
+    return "浏览器正在建立连接";
+  }
+  return "浏览器窗口未打开";
+};
+const setOperationProfile = (profileId?: string | null) => {
+  const normalizedProfileId = String(profileId || "").trim();
+  browserForm.profileId = normalizedProfileId;
+};
+const openOperationPanelForProfile = (profileId?: string | null) => {
+  setOperationProfile(profileId);
+  operationDialogVisible.value = true;
+};
+const resetProfileForm = () => {
+  editingProfileId.value = null;
+  profileForm.id = "";
+  profileForm.name = "";
+  profileForm.remark = "";
+  profileForm.account = "";
+  profileForm.platformsText = "";
+};
+const openCreateProfileDialog = () => {
+  resetProfileForm();
+  profileDialogVisible.value = true;
+};
+const openEditProfileDialog = (profile: BrowserAutomationProfileSummary) => {
+  resetProfileForm();
+  editingProfileId.value = profile.id;
+  profileDialogVisible.value = true;
+  profileForm.id = String(profile.id || "").trim();
+  profileForm.name = String(profile.name || "").trim();
+  profileForm.remark = String(profile.remark || "").trim();
+  profileForm.account = String(profile.account || "").trim();
+  profileForm.platformsText = Array.isArray(profile.platforms)
+    ? profile.platforms.join(", ")
+    : "";
+};
+const handleProfileOperationCommand = (
+  command: string,
+  row: BrowserAutomationProfileSummary & { instance?: BrowserAutomationProfileInstanceSummary | null },
+) => {
+  switch (command) {
+    case "connect":
+      void sendConnect(row.id);
+      break;
+    case "close":
+      void sendCloseProfile(row.id);
+      break;
+    case "focus":
+      void sendFocusProfile(row.id);
+      break;
+    case "panel":
+      openOperationPanelForProfile(row.id);
+      break;
+    case "switch":
+      void sendSwitchProfile(row.id);
+      break;
+    case "edit":
+      openEditProfileDialog(row);
+      break;
+    case "delete":
+      void sendDeleteProfile(row.id);
+      break;
+  }
+};
+const submitProfileForm = async () => {
+  if (!selectedClientId.value) return;
+  const payload = {
+    ...(editingProfileId.value ? {} : { id: profileForm.id.trim() || undefined }),
+    name: profileForm.name.trim() || undefined,
+    remark: profileForm.remark.trim() || undefined,
+    account: profileForm.account.trim() || undefined,
+    platforms: profileForm.platformsText
+      .split(/[,，\s]+/)
+      .map((item) => item.trim())
+      .filter(Boolean),
+  };
+
+  if (!payload.name && !editingProfileId.value) {
+    ElMessage.warning("请填写环境名称");
+    return;
+  }
+
+  if (editingProfileId.value) {
+    return dispatch(
+      "updateProfile",
+      () =>
+        updateBrowserAutomationProfile(
+          selectedClientId.value,
+          editingProfileId.value as string,
+          payload,
+        ),
+      "更新环境命令已发送",
+    );
+  }
+
+  return dispatch(
+    "createProfile",
+    () => createBrowserAutomationProfile(selectedClientId.value, payload),
+    "创建环境命令已发送",
+  );
+};
+const sendSwitchProfile = async (profileId: string) =>
+  selectedClientId.value &&
+  dispatch(
+    "switchProfile",
+    () => switchBrowserAutomationProfile(selectedClientId.value, profileId),
+    "设为默认环境命令已发送",
+  );
+const sendDeleteProfile = async (profileId: string) => {
+  if (!selectedClientId.value) return;
+  try {
+    await ElMessageBox.confirm(
+      `确认删除执行环境 ${profileId} 吗？会同时删除对应缓存目录。`,
+      "删除环境",
+      {
+        type: "warning",
+        confirmButtonText: "删除",
+        cancelButtonText: "取消",
+      },
+    );
+  } catch {
+    return;
+  }
+
+  return dispatch(
+    "deleteProfile",
+    () => deleteBrowserAutomationProfile(selectedClientId.value, profileId),
+    "删除环境命令已发送",
+  );
 };
 
 const finish = (action?: string) => {
@@ -869,24 +1234,13 @@ const loadClients = async () => {
   syncSelectedPages();
 };
 
-const loadCapabilityCatalog = async () => {
-  capabilityLoading.value = true;
-  try {
-    const response = await getBrowserAutomationCapabilities();
-    capabilityCatalog.value = normalizeCapabilityCatalogPayload(response);
-  } catch (error) {
-    console.warn("[browser-automation] 加载能力目录失败", error);
-  } finally {
-    capabilityLoading.value = false;
-  }
-};
-
 const handleRefreshClients = async () => {
-  await Promise.all([loadClients(), loadCapabilityCatalog()]);
+  await loadClients();
 };
 
 const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
   if (!selectedClientId.value) return;
+  const targetProfileId = currentProfileId.value || undefined;
   if (kind === "pages") {
     resetDebugOutput();
   }
@@ -897,25 +1251,51 @@ const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
       "状态刷新命令已发送",
     );
   if (kind === "close")
-    return dispatch(
-      "close",
-      () => closeBrowserAutomation(selectedClientId.value),
-      "关闭命令已发送",
-    );
+    return sendCloseProfile(targetProfileId);
   return dispatch(
     "pages",
-    () => fetchBrowserAutomationPages(selectedClientId.value),
+    () => fetchBrowserAutomationPages(selectedClientId.value, targetProfileId),
     "获取页面命令已发送",
   );
 };
 
-const sendConnect = async () =>
-  selectedClientId.value &&
-  dispatch(
+const sendConnect = async (profileId?: string | null) => {
+  if (!selectedClientId.value) return;
+  const normalizedProfileId = String(profileId || browserForm.profileId || "").trim();
+  if (normalizedProfileId) {
+    browserForm.profileId = normalizedProfileId;
+  }
+  return dispatch(
     "connect",
-    () => connectBrowserAutomation(selectedClientId.value, browserForm),
+    () =>
+      connectBrowserAutomation(selectedClientId.value, {
+        ...browserForm,
+        ...(normalizedProfileId ? { profileId: normalizedProfileId } : {}),
+      }),
     "连接命令已发送",
   );
+};
+const sendCloseProfile = async (profileId?: string | null) => {
+  if (!selectedClientId.value) return;
+  const normalizedProfileId = String(profileId || "").trim();
+  return dispatch(
+    "close",
+    () =>
+      normalizedProfileId
+        ? closeBrowserAutomationProfile(selectedClientId.value, normalizedProfileId)
+        : closeBrowserAutomation(selectedClientId.value),
+    "关闭命令已发送",
+  );
+};
+const sendFocusProfile = async (profileId?: string | null) => {
+  if (!selectedClientId.value) return;
+  const normalizedProfileId = String(profileId || "").trim();
+  return dispatch(
+    "focus",
+    () => focusBrowserAutomationProfile(selectedClientId.value, normalizedProfileId || undefined),
+    "聚焦窗口命令已发送",
+  );
+};
 const sendForceClose = async () =>
   selectedClientId.value &&
   dispatch(
@@ -928,7 +1308,11 @@ const sendOpenLink = async () =>
   openForm.url.trim() &&
   dispatch(
     "openLink",
-    () => openBrowserAutomationLink(selectedClientId.value, { url: openForm.url.trim() }),
+    () =>
+      openBrowserAutomationLink(selectedClientId.value, {
+        url: openForm.url.trim(),
+        ...(currentProfileId.value ? { profileId: currentProfileId.value } : {}),
+      }),
     "打开链接命令已发送",
   );
 const sendDebug = async (action: string) =>
@@ -936,7 +1320,12 @@ const sendDebug = async (action: string) =>
   (resetDebugOutput(),
   dispatch(
     "debug",
-    () => executeBrowserAutomationDebug(selectedClientId.value, { action, ...debugForm }),
+    () =>
+      executeBrowserAutomationDebug(selectedClientId.value, {
+        action,
+        ...debugForm,
+        ...(currentProfileId.value ? { profileId: currentProfileId.value } : {}),
+      }),
     "调试命令已发送",
   ));
 const sendTasks = async () =>
@@ -965,6 +1354,9 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
   if (normalizeBrowserAutomationKey(event.pluginKey || event.service) !== "browser-automation")
     return;
   const action = pending[event.commandId];
+  if (!action) {
+    return;
+  }
   delete pending[event.commandId];
   finish(action);
   const data = event.data || {};
@@ -984,6 +1376,10 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
       logsText.value = jsonText(data.logs || []);
       logsVisible.value = true;
     }
+  }
+  if (event.success && (action === "createProfile" || action === "updateProfile")) {
+    profileDialogVisible.value = false;
+    resetProfileForm();
   }
   (event.success ? ElMessage.success : ElMessage.error)(feedback.message);
   await loadClients();
@@ -1008,8 +1404,33 @@ watch(selectedClientId, (value) => {
   syncSelectedPages();
   syncDebugPageIndex();
   resetDebugOutput();
+  browserForm.profileId = activeProfileId.value || "";
   if (!value) operationDialogVisible.value = false;
 });
+
+watch(
+  currentProfileId,
+  () => {
+    syncSelectedPages();
+    syncDebugPageIndex();
+    resetDebugOutput();
+  },
+  { immediate: true },
+);
+
+watch(
+  activeProfileId,
+  (value) => {
+    if (!value) {
+      browserForm.profileId = "";
+      return;
+    }
+    if (!browserForm.profileId || !profileItems.value.some((item) => item.id === browserForm.profileId)) {
+      browserForm.profileId = value;
+    }
+  },
+  { immediate: true },
+);
 
 watch(
   pageOptions,
@@ -1019,15 +1440,21 @@ watch(
   { deep: true, immediate: true },
 );
 
-watch([operationDialogVisible, activeTab, serviceEnabled], ([visible, tab, enabled]) => {
-  if (!visible || !enabled) return;
+watch([operationDialogVisible, activeTab, browserReady], ([visible, tab, ready]) => {
+  if (!visible || !ready) return;
   if ((tab === "browser" || tab === "debug") && !pageOptions.value.length && !loadingMap.pages) {
     void sendSimple("pages");
   }
 });
 
+watch(browserReady, (ready) => {
+  if (!ready) {
+    operationDialogVisible.value = false;
+  }
+});
+
 onMounted(async () => {
-  await Promise.all([loadClients(), loadCapabilityCatalog()]);
+  await loadClients();
   websocketClient.events.on("serviceCommandResult", onCommand);
 });
 
@@ -1165,6 +1592,120 @@ onUnmounted(() => {
   gap: 10px;
 }
 
+.table-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.browser-profile-banner-row {
+  align-items: stretch;
+}
+
+.active-profile-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 14px 0 0;
+  border: 1px solid rgba(34, 197, 94, 0.24);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.05));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    0 8px 18px rgba(34, 197, 94, 0.08);
+  color: var(--el-text-color-primary);
+}
+
+.active-profile-banner__flag {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #22c55e, #16a34a);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.active-profile-banner__name {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.active-profile-banner__id {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.profile-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.profile-active-badge__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.profile-active-badge.is-active {
+  border-color: rgba(34, 197, 94, 0.26);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.06));
+  color: #15803d;
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.08);
+}
+
+.profile-active-badge.is-standby {
+  border-color: rgba(148, 163, 184, 0.32);
+  background: rgba(148, 163, 184, 0.08);
+  color: #64748b;
+}
+
+.common-table {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.common-table--full :deep(.vxe-grid),
+.common-table--full :deep(.vxe-table),
+.common-table--full :deep(.vxe-table--render-wrapper),
+.common-table--full :deep(.vxe-table--main-wrapper),
+.profile-grid {
+  width: 100%;
+}
+
 .main-empty {
   display: flex;
   align-items: center;
@@ -1211,6 +1752,22 @@ onUnmounted(() => {
 .section-title {
   font-size: 13px;
   line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  .active-profile-banner {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 0 10px 10px 0;
+    border-radius: 16px;
+  }
+
+  .active-profile-banner__name {
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
 }
 
 .row :deep(.el-input),

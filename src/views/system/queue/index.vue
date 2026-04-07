@@ -160,6 +160,15 @@
                 <div class="queue-dispatch-panel__desc">
                   保留自动执行和手动触发。支持的任务类型请到浏览器自动化模块查看。
                 </div>
+                <div class="queue-dispatch-panel__binding" :class="publishTaskAutoDispatchTargetClass">
+                  <span class="queue-dispatch-panel__binding-label">自动调度目标</span>
+                  <span class="queue-dispatch-panel__binding-value">
+                    {{ publishTaskAutoDispatchTargetText }}
+                  </span>
+                  <span v-if="publishTaskAutoDispatchTargetHint" class="queue-dispatch-panel__binding-meta">
+                    {{ publishTaskAutoDispatchTargetHint }}
+                  </span>
+                </div>
                 <div
                   class="queue-dispatch-panel__runtime"
                   :class="`is-${publishTaskSchedulerIndicator.tone}`"
@@ -186,6 +195,14 @@
                   @click="handleTogglePublishAutoDispatch(!publishTaskAutoDispatchEnabled)"
                 >
                   {{ publishTaskAutoDispatchEnabled ? "关闭自动执行" : "开启自动执行" }}
+                </el-button>
+                <el-button
+                  size="small"
+                  plain
+                  :disabled="publishTaskAutoDispatchEnabled"
+                  @click="openAutoDispatchTargetDialog"
+                >
+                  设置目标
                 </el-button>
                 <el-button
                   size="small"
@@ -234,6 +251,20 @@
                       </el-tag>
                       <span v-else class="text-gray-400 text-sm">-</span>
                     </el-tooltip>
+                  </template>
+
+                  <template #dispatchTargetDefaultSlot="{ row }">
+                    <div class="queue-dispatch-target-cell">
+                      <div class="queue-dispatch-target-cell__main">
+                        {{ getQueueTaskDispatchTargetText(row) }}
+                      </div>
+                      <div
+                        v-if="getQueueTaskDispatchTargetHint(row)"
+                        class="queue-dispatch-target-cell__hint"
+                      >
+                        {{ getQueueTaskDispatchTargetHint(row) }}
+                      </div>
+                    </div>
                   </template>
 
                   <template #dataDefaultSlot="{ row }">
@@ -648,54 +679,63 @@
     <el-dialog
       v-model="publishDispatchDialogVisible"
       title="开始执行发布任务"
-      width="760px"
+      width="780px"
       :center="false"
       align-center
       class="publish-dispatch-dialog"
     >
       <div class="publish-dispatch-dialog__body">
-        <div class="publish-dispatch-dialog__summary">
-          <div class="publish-dispatch-dialog__title">
-            {{ dispatchTargetTask?.description || taskTypeLabel(dispatchTargetTask?.type) }}
-          </div>
-          <div class="publish-dispatch-dialog__meta">
-            <el-tag type="info" effect="plain">任务ID {{ dispatchTargetTask?.id || "-" }}</el-tag>
-            <el-tag type="primary" effect="plain">{{
-              taskTypeLabel(dispatchTargetTask?.type)
-            }}</el-tag>
-          </div>
-          <div class="publish-dispatch-dialog__hint">
-            可直接看到当前浏览器自动化节点是否可执行，以及不可执行原因。
-          </div>
+        <div v-if="dispatchAvailableRows.length" class="publish-dispatch-table">
+          <el-table
+            :data="dispatchAvailableRows"
+            border
+            size="small"
+            row-key="optionKey"
+            :max-height="360"
+            class="publish-dispatch-table__main"
+            @row-click="handleDispatchOptionRowClick"
+          >
+            <el-table-column label="" width="54" align="center">
+              <template #default="{ row }">
+                <el-radio
+                  :value="row.optionKey"
+                  v-model="selectedDispatchOptionKey"
+                  @click.stop
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="clientLabel"
+              label="客户端"
+              min-width="150"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="profileLabel"
+              label="可用节点"
+              min-width="190"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="statusText"
+              label="状态"
+              width="88"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="description"
+              label="说明"
+              min-width="240"
+              show-overflow-tooltip
+            />
+          </el-table>
         </div>
 
-        <div v-if="dispatchClientCandidates.length" class="publish-dispatch-dialog__client-list">
-          <button
-            v-for="item in dispatchClientCandidates"
-            :key="item.client.id"
-            type="button"
-            class="publish-dispatch-client"
-            :class="{
-              'is-selected': selectedDispatchClientId === item.client.id,
-              'is-disabled': !item.state.enabled,
-            }"
-            :disabled="!item.state.enabled"
-            @click="item.state.enabled && (selectedDispatchClientId = item.client.id)"
-          >
-            <div class="publish-dispatch-client__header">
-              <span class="publish-dispatch-client__title">{{
-                formatClientNodeName(item.client)
-              }}</span>
-              <el-tag :type="item.state.tagType" size="small" effect="plain">
-                {{ item.state.tagText }}
-              </el-tag>
-            </div>
-            <div class="publish-dispatch-client__desc">
-              {{ item.state.text }}
-            </div>
-          </button>
-        </div>
-        <el-empty v-else description="当前没有浏览器自动化节点" :image-size="72" />
+        <el-empty
+          v-else
+          description="当前没有可执行的浏览器自动化节点"
+          :image-size="72"
+        />
       </div>
       <template #footer>
         <div class="dialog-footer">
@@ -707,10 +747,86 @@
           <el-button
             type="primary"
             :loading="publishDispatchSubmitting"
-            :disabled="!selectedDispatchClientId"
+            :disabled="!selectedDispatchClientId || !canConfirmPublishDispatch"
             @click="handleConfirmPublishDispatch"
           >
             开始执行
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="autoDispatchTargetDialogVisible"
+      title="设置自动调度目标"
+      width="780px"
+      :center="false"
+      align-center
+      class="publish-dispatch-dialog"
+    >
+      <div class="publish-dispatch-dialog__body">
+        <div v-if="autoDispatchAvailableRows.length" class="publish-dispatch-table">
+          <el-table
+            :data="autoDispatchAvailableRows"
+            border
+            size="small"
+            row-key="optionKey"
+            :max-height="360"
+            class="publish-dispatch-table__main"
+            @row-click="handleAutoDispatchOptionRowClick"
+          >
+            <el-table-column label="" width="54" align="center">
+              <template #default="{ row }">
+                <el-radio
+                  :value="row.optionKey"
+                  v-model="selectedAutoDispatchOptionKey"
+                  @click.stop
+                />
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="clientLabel"
+              label="客户端"
+              min-width="150"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="profileLabel"
+              label="可用节点"
+              min-width="190"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="statusText"
+              label="状态"
+              width="88"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="description"
+              label="说明"
+              min-width="240"
+              show-overflow-tooltip
+            />
+          </el-table>
+        </div>
+        <el-empty v-else description="当前没有可绑定的浏览器自动化节点" :image-size="72" />
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button
+            :disabled="autoDispatchTargetSubmitting"
+            @click="autoDispatchTargetDialogVisible = false"
+          >
+            取消
+          </el-button>
+          <el-button
+            type="primary"
+            :loading="autoDispatchTargetSubmitting"
+            :disabled="!canConfirmAutoDispatchTarget"
+            @click="handleConfirmAutoDispatchTarget"
+          >
+            保存并开启
           </el-button>
         </div>
       </template>
@@ -781,6 +897,32 @@ interface DispatchClientState {
   text: string;
   tagType: QueueTagType;
   tagText: string;
+}
+
+interface DispatchProfileOption {
+  profileId: string | null;
+  label: string;
+  description: string;
+  enabled: boolean;
+  connected: boolean;
+  busy: boolean;
+  isAuto?: boolean;
+}
+
+interface AutoDispatchClientCandidate {
+  client: any;
+  enabled: boolean;
+  description: string;
+}
+
+interface DispatchOptionRow {
+  optionKey: string;
+  clientId: string;
+  clientLabel: string;
+  profileId: string | null;
+  profileLabel: string;
+  statusText: string;
+  description: string;
 }
 
 const userStore = useUserStore();
@@ -858,6 +1000,14 @@ const gridOptions = ref({
       },
     },
     {
+      title: "执行节点",
+      field: "dispatchTarget",
+      minWidth: 220,
+      slots: {
+        default: "dispatchTargetDefaultSlot",
+      },
+    },
+    {
       title: "优先级",
       field: "priority",
       width: 80,
@@ -930,8 +1080,13 @@ const publishTaskSchedulerRuntime = ref<AutoDispatchSchedulerRuntime | null>(nul
 const executionReadinessSubmittingId = ref("");
 const publishDispatchDialogVisible = ref(false);
 const publishDispatchSubmitting = ref(false);
+const autoDispatchTargetDialogVisible = ref(false);
+const autoDispatchTargetSubmitting = ref(false);
 const dispatchTargetTask = ref<QueueMessage | null>(null);
 const selectedDispatchClientId = ref("");
+const selectedDispatchProfileId = ref("");
+const autoDispatchTargetClientId = ref("");
+const autoDispatchTargetProfileId = ref("");
 let publishTaskSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let publishTaskRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -1056,6 +1211,125 @@ const publishTaskSchedulerMeta = computed(() =>
   resolveAutoDispatchSchedulerMeta(publishTaskSchedulerRuntime.value),
 );
 
+const autoDispatchTargetClient = computed(
+  () =>
+    browserAutomationClients.value.find(
+      (client) => client.id === autoDispatchTargetClientId.value,
+    ) || null,
+);
+
+const autoDispatchTargetProfileOptions = computed(() =>
+  resolveAutoDispatchTargetProfileOptions(autoDispatchTargetClient.value),
+);
+
+const selectedAutoDispatchTargetProfile = computed(
+  () =>
+    autoDispatchTargetProfileOptions.value.find(
+      (item) => item.profileId === autoDispatchTargetProfileId.value,
+    ) || null,
+);
+
+const selectedAutoDispatchTargetProfileDescription = computed(
+  () =>
+    selectedAutoDispatchTargetProfile.value?.description ||
+    "请选择一个浏览器实例，自动调度将固定投递到这个实例。",
+);
+const selectedAutoDispatchOptionKey = computed({
+  get: () =>
+    buildDispatchOptionKey(
+      autoDispatchTargetClientId.value,
+      normalizeDispatchProfileId(autoDispatchTargetProfileId.value),
+    ),
+  set: (value: string) => {
+    const selection = parseDispatchOptionKey(value);
+    autoDispatchTargetClientId.value = selection.clientId;
+    autoDispatchTargetProfileId.value = selection.profileId || "";
+  },
+});
+
+const canConfirmAutoDispatchTarget = computed(
+  () => !!autoDispatchTargetClientId.value && !!autoDispatchTargetProfileId.value,
+);
+
+const publishTaskAutoDispatchTargetClient = computed(
+  () =>
+    browserAutomationClients.value.find(
+      (client) => client.id === autoDispatchTargetClientId.value,
+    ) || null,
+);
+
+const publishTaskAutoDispatchTargetProfile = computed(
+  () =>
+    autoDispatchTargetProfileOptions.value.find(
+      (item) => item.profileId === autoDispatchTargetProfileId.value,
+    ) || null,
+);
+
+const publishTaskAutoDispatchTargetText = computed(() => {
+  const clientLabel = publishTaskAutoDispatchTargetClient.value
+    ? formatClientNodeName(publishTaskAutoDispatchTargetClient.value)
+    : autoDispatchTargetClientId.value || "未设置客户端";
+  const profileLabel =
+    publishTaskAutoDispatchTargetProfile.value?.label ||
+    (autoDispatchTargetProfileId.value
+      ? `实例 ${autoDispatchTargetProfileId.value}`
+      : "未设置实例");
+  return `${clientLabel} / ${profileLabel}`;
+});
+
+const publishTaskAutoDispatchTargetHint = computed(() => {
+  const runningCount = currentAutoDispatchRunningRows.value.length;
+  const client = publishTaskAutoDispatchTargetClient.value;
+  if (!autoDispatchTargetClientId.value || !autoDispatchTargetProfileId.value) {
+    return "当前尚未绑定自动调度目标";
+  }
+  if (!client) {
+    return "目标客户端当前不在已连接列表中";
+  }
+  if (!client.isOnline) {
+    return "目标客户端当前离线";
+  }
+  const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+  if (!(runtime?.available || runtime?.connected)) {
+    return "浏览器自动化服务未就绪";
+  }
+  const targetProfile =
+    resolveAutoDispatchTargetProfileOptions(client).find(
+      (item) => item.profileId === autoDispatchTargetProfileId.value,
+    ) || null;
+  const baseText = targetProfile?.description || "目标已绑定";
+  return runningCount > 0 ? `${baseText}，当前运行 ${runningCount} 条任务` : baseText;
+});
+
+const publishTaskAutoDispatchTargetClass = computed(() => ({
+  "is-success":
+    !!autoDispatchTargetClient.value &&
+    !!autoDispatchTargetClient.value.isOnline &&
+    !!autoDispatchTargetProfileId.value,
+  "is-warning":
+    !!autoDispatchTargetClientId.value &&
+    !!autoDispatchTargetProfileId.value &&
+    (!publishTaskAutoDispatchTargetClient.value ||
+      !publishTaskAutoDispatchTargetClient.value.isOnline),
+  "is-info": !autoDispatchTargetClientId.value || !autoDispatchTargetProfileId.value,
+}));
+
+const currentAutoDispatchRunningRows = computed(() =>
+  dataSource.value.filter((row) => {
+    const target = getQueueTaskDispatchTarget(row);
+    if (!target.clientId || !target.profileId) {
+      return false;
+    }
+    if (target.clientId !== autoDispatchTargetClientId.value) {
+      return false;
+    }
+    if (target.profileId !== autoDispatchTargetProfileId.value) {
+      return false;
+    }
+    return row.status === "processing" || row.status === "waiting";
+  }),
+);
+
 const dispatchClientCandidates = computed(() => {
   const taskType = dispatchTargetTask.value?.type;
   if (!taskType) return [];
@@ -1069,6 +1343,110 @@ const dispatchClientCandidates = computed(() => {
 
 const dispatchSelectableClients = computed(() =>
   dispatchClientCandidates.value.filter((item) => item.state.enabled),
+);
+const dispatchAvailableRows = computed<DispatchOptionRow[]>(() => {
+  const taskType = dispatchTargetTask.value?.type;
+  return dispatchSelectableClients.value.flatMap((item) => {
+    const options = resolveClientDispatchProfileOptions(item.client, taskType);
+    const concreteOptions = options.filter((option) => option.enabled && !option.isAuto);
+    const fallbackOptions = concreteOptions.length
+      ? concreteOptions
+      : options.filter((option) => option.enabled);
+
+    return fallbackOptions.map((option) => ({
+      optionKey: buildDispatchOptionKey(item.client.id, option.profileId),
+      clientId: String(item.client.id || "").trim(),
+      clientLabel: formatClientNodeName(item.client),
+      profileId: option.profileId,
+      profileLabel: option.label,
+      statusText: option.connected ? "已打开" : option.isAuto ? "自动" : "待拉起",
+      description: option.description,
+    }));
+  });
+});
+
+const autoDispatchClientCandidates = computed<AutoDispatchClientCandidate[]>(() =>
+  browserAutomationClients.value.map((client) => {
+    const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+    const profiles = getClientDispatchProfiles(client);
+    const enabled = !!(
+      client?.isOnline &&
+      (runtime?.available || runtime?.connected) &&
+      profiles.length
+    );
+
+    let description = "客户端离线";
+    if (!client?.isOnline) {
+      description = "客户端离线";
+    } else if (!(runtime?.available || runtime?.connected)) {
+      description = "浏览器自动化服务未就绪";
+    } else if (!profiles.length) {
+      description = "当前客户端还没有可绑定的浏览器实例";
+    } else {
+      description = `可绑定 ${profiles.length} 个实例，自动调度将固定投递到其中一个`;
+    }
+
+    return {
+      client,
+      enabled,
+      description,
+    };
+  }),
+);
+const autoDispatchAvailableRows = computed<DispatchOptionRow[]>(() =>
+  autoDispatchClientCandidates.value
+    .filter((item) => item.enabled)
+    .flatMap((item) =>
+      resolveAutoDispatchTargetProfileOptions(item.client).map((option) => ({
+        optionKey: buildDispatchOptionKey(item.client.id, option.profileId),
+        clientId: String(item.client.id || "").trim(),
+        clientLabel: formatClientNodeName(item.client),
+        profileId: option.profileId,
+        profileLabel: option.label,
+        statusText: option.busy ? "忙碌" : option.connected ? "已打开" : "待拉起",
+        description: option.description,
+      })),
+    ),
+);
+
+const selectedDispatchClient = computed(
+  () =>
+    browserAutomationClients.value.find((client) => client.id === selectedDispatchClientId.value) ||
+    null,
+);
+
+const selectedDispatchProfileOptions = computed(() =>
+  resolveClientDispatchProfileOptions(
+    selectedDispatchClient.value,
+    dispatchTargetTask.value?.type,
+  ),
+);
+
+const selectedDispatchProfileOption = computed(
+  () =>
+    selectedDispatchProfileOptions.value.find(
+      (item) => (item.profileId || "") === selectedDispatchProfileId.value,
+    ) || null,
+);
+
+const selectedDispatchClientLabel = computed(() =>
+  selectedDispatchClient.value ? formatClientNodeName(selectedDispatchClient.value) : "未选择节点",
+);
+const selectedDispatchOptionKey = computed({
+  get: () =>
+    buildDispatchOptionKey(
+      selectedDispatchClientId.value,
+      normalizeDispatchProfileId(selectedDispatchProfileId.value),
+    ),
+  set: (value: string) => {
+    const selection = parseDispatchOptionKey(value);
+    selectedDispatchClientId.value = selection.clientId;
+    selectedDispatchProfileId.value = selection.profileId || "";
+  },
+});
+
+const canConfirmPublishDispatch = computed(
+  () => !!selectedDispatchClientId.value && !!selectedDispatchProfileOption.value?.enabled,
 );
 
 watchEffect(() => {
@@ -1092,6 +1470,200 @@ function getPublishDispatchMeta(row?: QueueMessage | null) {
 function supportsTaskType(client: any, taskType?: string) {
   const runtime = getBrowserAutomationRuntime(client);
   return supportsBrowserAutomationTaskType(runtime, taskType);
+}
+
+function normalizeDispatchProfileId(value: any) {
+  const normalized = String(value || "").trim();
+  return normalized || null;
+}
+
+function buildDispatchOptionKey(clientId: any, profileId?: string | null) {
+  const normalizedClientId = String(clientId || "").trim();
+  if (!normalizedClientId) {
+    return "";
+  }
+  return `${normalizedClientId}::${normalizeDispatchProfileId(profileId) || "__auto__"}`;
+}
+
+function parseDispatchOptionKey(value: any) {
+  const normalizedValue = String(value || "").trim();
+  const [rawClientId, rawProfileId = ""] = normalizedValue.split("::");
+  const clientId = String(rawClientId || "").trim();
+  const profileId =
+    rawProfileId && rawProfileId !== "__auto__" ? normalizeDispatchProfileId(rawProfileId) : null;
+
+  return {
+    clientId,
+    profileId,
+  };
+}
+
+function handleDispatchOptionRowClick(row?: DispatchOptionRow | null) {
+  if (!row?.optionKey) {
+    return;
+  }
+  selectedDispatchOptionKey.value = row.optionKey;
+}
+
+function handleAutoDispatchOptionRowClick(row?: DispatchOptionRow | null) {
+  if (!row?.optionKey) {
+    return;
+  }
+  selectedAutoDispatchOptionKey.value = row.optionKey;
+}
+
+function getClientDispatchProfileInstances(client: any) {
+  const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+  const instances = runtime?.details?.instances;
+  return Array.isArray(instances) ? instances : [];
+}
+
+function getClientDispatchProfiles(client: any) {
+  const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+  const profiles = runtime?.details?.profiles;
+  return Array.isArray(profiles) ? profiles : [];
+}
+
+function resolveAutoDispatchTargetProfileOptions(
+  client: any,
+): Array<
+  DispatchProfileOption & {
+    profileId: string;
+  }
+> {
+  const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+  const profiles = getClientDispatchProfiles(client);
+  const instances = getClientDispatchProfileInstances(client);
+  const instanceMap = new Map(
+    instances
+      .map((item: any) => [normalizeDispatchProfileId(item?.profileId), item] as const)
+      .filter(([profileId]) => !!profileId),
+  );
+
+  return profiles
+    .map((profile: any) => {
+      const profileId = normalizeDispatchProfileId(profile?.id);
+      if (!profileId) {
+        return null;
+      }
+      const instance = instanceMap.get(profileId) || null;
+      const connected = instance?.connected === true || instance?.hasInstance === true;
+      const busy = instance?.busy === true;
+      const pageCount =
+        typeof instance?.pageCount === "number" ? Number(instance.pageCount) : null;
+
+      let description = "浏览器未打开，自动调度执行时会拉起";
+      if (busy) {
+        description = instance?.currentTaskId
+          ? `当前实例忙碌中，任务 ${instance.currentTaskId} 正在执行`
+          : "当前实例忙碌中，后续任务会排队等待";
+      } else if (connected) {
+        description =
+          pageCount !== null ? `浏览器已打开，当前 ${pageCount} 个页面` : "浏览器已打开";
+      } else if (!(runtime?.available || runtime?.connected)) {
+        description = "自动化服务未就绪，当前不建议绑定";
+      }
+
+      return {
+        profileId,
+        label: formatDispatchProfileLabel(profileId, profile),
+        description,
+        enabled: true,
+        connected,
+        busy,
+      };
+    })
+    .filter(Boolean) as Array<
+    DispatchProfileOption & {
+      profileId: string;
+    }
+  >;
+}
+
+function formatDispatchProfileLabel(profileId: string, profile?: Record<string, any> | null) {
+  const profileName =
+    String(profile?.name || profile?.profileName || profileId).trim() || profileId;
+  return `${profileName}${profileId ? ` (${profileId})` : ""}`;
+}
+
+function resolveClientDispatchProfileOptions(
+  client: any,
+  taskType?: string,
+): DispatchProfileOption[] {
+  const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+  if (!taskType || !client?.isOnline || !runtime?.connected || !supportsTaskType(client, taskType)) {
+    return [];
+  }
+
+  const profileInstances = getClientDispatchProfileInstances(client);
+  const profiles = getClientDispatchProfiles(client);
+  const profileMap = new Map(
+    profiles
+      .map((item: any) => [normalizeDispatchProfileId(item?.id), item] as const)
+      .filter(([profileId]) => !!profileId),
+  );
+  const instanceMap = new Map(
+    profileInstances
+      .map((item: any) => [normalizeDispatchProfileId(item?.profileId), item] as const)
+      .filter(([profileId]) => !!profileId),
+  );
+  const orderedProfileIds = Array.from(
+    new Set(
+      [...profileInstances, ...profiles]
+        .map((item: any) => normalizeDispatchProfileId(item?.profileId || item?.id))
+        .filter(Boolean),
+    ),
+  ) as string[];
+
+  const concreteOptions = orderedProfileIds.map((profileId) => {
+    const profile = profileMap.get(profileId) || instanceMap.get(profileId) || null;
+    const instance = instanceMap.get(profileId) || null;
+    const busy = instance?.busy === true;
+    const connected = instance?.connected === true || instance?.hasInstance === true;
+    const pageCount =
+      typeof instance?.pageCount === "number" ? Number(instance.pageCount) : null;
+
+    let description = "浏览器未打开，执行时会自动拉起";
+    if (busy) {
+      description = instance?.currentTaskId
+        ? `当前执行中，任务 ${instance.currentTaskId}`
+        : "当前环境正在执行任务";
+    } else if (connected) {
+      description =
+        pageCount !== null ? `浏览器已打开，当前 ${pageCount} 个页面` : "浏览器已打开";
+    }
+
+    return {
+      profileId,
+      label: formatDispatchProfileLabel(profileId, profile),
+      description,
+      enabled: !busy,
+      connected,
+      busy,
+    } satisfies DispatchProfileOption;
+  });
+
+  const enabledConcreteOptions = concreteOptions.filter((item) => item.enabled);
+  const autoEnabled = orderedProfileIds.length
+    ? enabledConcreteOptions.length > 0
+    : !isBrowserAutomationRuntimeBusyByRuntime(runtime);
+
+  return [
+    {
+      profileId: null,
+      label: orderedProfileIds.length ? "自动选择可用环境" : "使用默认环境",
+      description: orderedProfileIds.length
+        ? autoEnabled
+          ? `由服务端在 ${enabledConcreteOptions.length} 个空闲环境中自动选择`
+          : "当前没有空闲环境可供自动选择"
+        : "当前客户端未上报环境列表，将按默认环境执行",
+      enabled: autoEnabled,
+      connected: !!runtime?.available,
+      busy: !autoEnabled,
+      isAuto: true,
+    },
+    ...concreteOptions,
+  ];
 }
 
 function formatClientNodeName(client: any) {
@@ -1144,6 +1716,30 @@ function getClientTaskTypeState(client: any, taskType?: string) {
       tagText: "不支持",
     } satisfies DispatchClientState;
   }
+  const profileOptions = resolveClientDispatchProfileOptions(client, taskType).filter(
+    (item) => !item.isAuto,
+  );
+  if (profileOptions.length > 0) {
+    const enabledProfiles = profileOptions.filter((item) => item.enabled);
+    if (!enabledProfiles.length) {
+      return {
+        enabled: false,
+        text: "当前节点环境都在忙碌中，请稍后再试",
+        tagType: "warning" as QueueTagType,
+        tagText: "忙碌",
+      } satisfies DispatchClientState;
+    }
+    const connectedCount = enabledProfiles.filter((item) => item.connected).length;
+    return {
+      enabled: true,
+      text:
+        connectedCount > 0
+          ? `可执行环境 ${enabledProfiles.length} 个，其中已打开 ${connectedCount} 个`
+          : `可执行环境 ${enabledProfiles.length} 个，任务执行时会自动拉起浏览器`,
+      tagType: "success" as QueueTagType,
+      tagText: "可执行",
+    } satisfies DispatchClientState;
+  }
   if (isBrowserAutomationClientBusy(client)) {
     return {
       enabled: false,
@@ -1158,6 +1754,23 @@ function getClientTaskTypeState(client: any, taskType?: string) {
     tagType: "success" as QueueTagType,
     tagText: "可执行",
   } satisfies DispatchClientState;
+}
+
+function syncDispatchProfileSelection() {
+  const matched = selectedDispatchProfileOptions.value.find(
+    (item) =>
+      (item.profileId || "") === selectedDispatchProfileId.value && item.enabled,
+  );
+  if (matched) {
+    return;
+  }
+
+  const preferredOption =
+    selectedDispatchProfileOptions.value.find(
+      (item) => item.enabled && !item.isAuto,
+    ) || selectedDispatchProfileOptions.value.find((item) => item.enabled);
+
+  selectedDispatchProfileId.value = preferredOption?.profileId || "";
 }
 
 // 获取状态类型
@@ -1192,6 +1805,52 @@ function getExecutionStatusInfo(row: QueueMessage): ExecutionStatusInfo {
     reason: indicator.reason || null,
     ready: indicator.ready,
   };
+}
+
+function getQueueTaskDispatchTarget(row?: QueueMessage | null) {
+  const meta = getPublishDispatchMeta(row);
+  const runtime = extractTaskRuntime(normalizeTaskDataRecord(row?.data));
+  const clientId =
+    String(meta?.assignedClientId || runtime?.assignedClientId || "").trim() || null;
+  const machineCode =
+    String(meta?.assignedMachineCode || runtime?.assignedMachineCode || "").trim() || null;
+  const profileId =
+    String(
+      meta?.profileId ||
+        row?.metadata?.profileId ||
+        row?.metadata?.browserAutomationProfileId ||
+        runtime?.assignedProfileId ||
+        "",
+    ).trim() || null;
+
+  return {
+    clientId,
+    machineCode,
+    profileId,
+  };
+}
+
+function getQueueTaskDispatchTargetText(row?: QueueMessage | null) {
+  const target = getQueueTaskDispatchTarget(row);
+  if (!target.clientId && !target.profileId) {
+    return "-";
+  }
+
+  const clientLabel = target.machineCode || target.clientId || "未知客户端";
+  const profileLabel = target.profileId ? `实例 ${target.profileId}` : "默认实例";
+  return `${clientLabel} / ${profileLabel}`;
+}
+
+function getQueueTaskDispatchTargetHint(row?: QueueMessage | null) {
+  const meta = getPublishDispatchMeta(row);
+  const hints = [
+    meta?.status ? `调度状态: ${meta.status}` : "",
+    meta?.currentStep ? String(meta.currentStep) : "",
+  ]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  return hints.join(" · ");
 }
 
 function canStartPublishExecution(row: QueueMessage) {
@@ -1547,7 +2206,42 @@ function openPublishDispatchDialog(row: QueueMessage) {
   dispatchTargetTask.value = row;
   const preferredClient = dispatchSelectableClients.value[0]?.client;
   selectedDispatchClientId.value = preferredClient?.id || "";
+  selectedDispatchProfileId.value = "";
+  syncDispatchProfileSelection();
   publishDispatchDialogVisible.value = true;
+}
+
+function syncAutoDispatchTargetProfileSelection() {
+  const matched = autoDispatchTargetProfileOptions.value.find(
+    (item) => item.profileId === autoDispatchTargetProfileId.value,
+  );
+  if (matched) {
+    return;
+  }
+
+  autoDispatchTargetProfileId.value =
+    autoDispatchTargetProfileOptions.value[0]?.profileId || "";
+}
+
+function openAutoDispatchTargetDialog() {
+  if (!autoDispatchAvailableRows.value.length) {
+    ElMessage.warning("当前没有可用的浏览器自动化客户端");
+    return;
+  }
+
+  const hasMatchedSelection = autoDispatchAvailableRows.value.some(
+    (item) =>
+      item.clientId === autoDispatchTargetClientId.value &&
+      (item.profileId || "") === autoDispatchTargetProfileId.value,
+  );
+
+  if (!hasMatchedSelection) {
+    const firstRow = autoDispatchAvailableRows.value[0];
+    autoDispatchTargetClientId.value = firstRow?.clientId || "";
+    autoDispatchTargetProfileId.value = firstRow?.profileId || "";
+  }
+
+  autoDispatchTargetDialogVisible.value = true;
 }
 
 async function handleConfirmPublishDispatch() {
@@ -1556,6 +2250,12 @@ async function handleConfirmPublishDispatch() {
   }
   if (!selectedDispatchClientId.value) {
     ElMessage.warning("请选择一个可执行客户端");
+    return;
+  }
+
+  const profileOption = selectedDispatchProfileOption.value;
+  if (!profileOption || !profileOption.enabled) {
+    ElMessage.warning("请选择一个可执行环境");
     return;
   }
 
@@ -1574,8 +2274,13 @@ async function handleConfirmPublishDispatch() {
   try {
     await startPublishTaskDispatch(dispatchTargetTask.value.id, {
       clientId: selectedDispatchClientId.value,
+      ...(profileOption.profileId ? { profileId: profileOption.profileId } : {}),
     });
-    ElMessage.success("发布任务已分配到客户端执行");
+    ElMessage.success(
+      profileOption.profileId
+        ? `发布任务已分配到环境 ${profileOption.label} 执行`
+        : "发布任务已分配到客户端执行",
+    );
     publishDispatchDialogVisible.value = false;
     await Promise.all([getList(), refreshStats(), refreshBrowserAutomationClients()]);
   } catch (error: any) {
@@ -1585,13 +2290,54 @@ async function handleConfirmPublishDispatch() {
   }
 }
 
+async function handleConfirmAutoDispatchTarget() {
+  if (!canConfirmAutoDispatchTarget.value) {
+    ElMessage.warning("请选择自动调度目标客户端和实例");
+    return;
+  }
+
+  autoDispatchTargetSubmitting.value = true;
+  publishTaskAutoDispatchLoading.value = true;
+  try {
+    await updateUserSetting({
+      key: "browserAutomation",
+      data: {
+        autoSchedulingEnabled: true,
+        autoDispatchClientId: autoDispatchTargetClientId.value,
+        autoDispatchProfileId: autoDispatchTargetProfileId.value,
+      },
+    });
+    publishTaskAutoDispatchEnabled.value = true;
+    autoDispatchTargetDialogVisible.value = false;
+
+    const response = await triggerPublishTaskAutoDispatch();
+    ElMessage.success(response?.message || "已保存自动调度目标并开启自动执行");
+    await Promise.all([
+      getList(),
+      refreshStats(),
+      refreshBrowserAutomationClients(),
+      loadPublishTaskAutoDispatchSetting(),
+      loadPublishTaskSchedulerRuntime(),
+    ]);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "保存自动调度目标失败");
+  } finally {
+    autoDispatchTargetSubmitting.value = false;
+    publishTaskAutoDispatchLoading.value = false;
+  }
+}
+
 async function loadPublishTaskAutoDispatchSetting() {
   try {
     const response: any = await getUserSetting({ key: "browserAutomation" });
     const data = response?.data || response || {};
     publishTaskAutoDispatchEnabled.value = !!data?.autoSchedulingEnabled;
+    autoDispatchTargetClientId.value = String(data?.autoDispatchClientId || "").trim();
+    autoDispatchTargetProfileId.value = String(data?.autoDispatchProfileId || "").trim();
   } catch {
     publishTaskAutoDispatchEnabled.value = false;
+    autoDispatchTargetClientId.value = "";
+    autoDispatchTargetProfileId.value = "";
   }
 }
 
@@ -1605,22 +2351,23 @@ async function loadPublishTaskSchedulerRuntime() {
 }
 
 async function handleTogglePublishAutoDispatch(enabled: boolean) {
+  if (enabled) {
+    openAutoDispatchTargetDialog();
+    return;
+  }
+
   publishTaskAutoDispatchLoading.value = true;
   try {
     await updateUserSetting({
       key: "browserAutomation",
       data: {
-        autoSchedulingEnabled: enabled,
+        autoSchedulingEnabled: false,
+        autoDispatchClientId: autoDispatchTargetClientId.value || undefined,
+        autoDispatchProfileId: autoDispatchTargetProfileId.value || undefined,
       },
     });
-    publishTaskAutoDispatchEnabled.value = enabled;
-
-    if (enabled) {
-      const response = await triggerPublishTaskAutoDispatch();
-      ElMessage.success(response?.message || "已开启自动执行");
-    } else {
-      ElMessage.success("已关闭自动执行");
-    }
+    publishTaskAutoDispatchEnabled.value = false;
+    ElMessage.success("已关闭自动执行");
     await loadPublishTaskSchedulerRuntime();
   } catch (error: any) {
     ElMessage.error(error?.message || "更新自动执行开关失败");
@@ -1698,6 +2445,8 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
           status: event.status === "pending" ? "pending" : event.status || "running",
           assignedClientId: event.clientId || currentDispatchMeta.assignedClientId || null,
           assignedMachineCode: event.machineCode || currentDispatchMeta.assignedMachineCode || null,
+          profileId:
+            String(event.profileId || "").trim() || currentDispatchMeta.profileId || null,
           currentStep:
             event.currentStep || event.message || currentDispatchMeta.currentStep || null,
           progress:
@@ -2132,6 +2881,22 @@ watch(
   },
 );
 
+watch(selectedDispatchClientId, () => {
+  syncDispatchProfileSelection();
+});
+
+watch(selectedDispatchProfileOptions, () => {
+  syncDispatchProfileSelection();
+});
+
+watch(autoDispatchTargetClientId, () => {
+  syncAutoDispatchTargetProfileSelection();
+});
+
+watch(autoDispatchTargetProfileOptions, () => {
+  syncAutoDispatchTargetProfileSelection();
+});
+
 // 初始化
 onMounted(() => {
   void Promise.all([
@@ -2162,7 +2927,7 @@ onUnmounted(() => {
 });
 </script>
 <style lang="less">
-.queue-page {
+.queue-page.list-page-layout {
   gap: 10px;
   padding: 8px 0 0;
 }
@@ -2279,6 +3044,42 @@ onUnmounted(() => {
   line-height: 1.45;
 }
 
+.queue-dispatch-panel__binding {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.queue-dispatch-panel__binding-label {
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.queue-dispatch-panel__binding-value {
+  font-weight: 600;
+}
+
+.queue-dispatch-panel__binding-meta {
+  color: var(--el-text-color-placeholder);
+}
+
+.queue-dispatch-panel__binding.is-success .queue-dispatch-panel__binding-value {
+  color: #67c23a;
+}
+
+.queue-dispatch-panel__binding.is-warning .queue-dispatch-panel__binding-value {
+  color: #f97316;
+}
+
+.queue-dispatch-panel__binding.is-info .queue-dispatch-panel__binding-value {
+  color: #909399;
+}
+
 .queue-dispatch-panel__runtime {
   display: inline-flex;
   align-items: center;
@@ -2387,6 +3188,25 @@ onUnmounted(() => {
   min-height: 28px;
 }
 
+.queue-dispatch-target-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.queue-dispatch-target-cell__main {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.queue-dispatch-target-cell__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .queue-page :deep(.table-operation-cell .vxe-cell),
 .queue-page :deep(.table-operation-cell .vxe-cell--wrapper),
 .queue-page :deep(.table-operation-cell .vxe-cell--label) {
@@ -2408,6 +3228,19 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.publish-dispatch-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.publish-dispatch-table__main :deep(.el-table__row) {
+  cursor: pointer;
+}
+
+.publish-dispatch-table__main :deep(.el-radio) {
+  margin-right: 0;
 }
 
 .publish-dispatch-dialog__summary {
@@ -2433,19 +3266,113 @@ onUnmounted(() => {
   line-height: 1.55;
 }
 
+.publish-dispatch-dialog__hint--section {
+  margin-top: -6px;
+}
+
+.publish-dispatch-dialog__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.publish-dispatch-dialog__section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.publish-dispatch-dialog__section-head--compact {
+  gap: 12px;
+}
+
+.publish-dispatch-dialog__section-title {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.publish-dispatch-dialog__section-desc {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.publish-dispatch-dialog__section-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.publish-dispatch-dialog__meta-pill {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 70%, transparent 30%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--el-fill-color-light) 64%, white 36%);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.publish-dispatch-dialog__meta-pill.is-muted {
+  color: var(--el-text-color-secondary);
+}
+
+.publish-dispatch-dialog__meta-pill.is-warning {
+  border-color: rgb(249 115 22 / 24%);
+  color: #f97316;
+}
+
+.publish-dispatch-dialog__profile-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 58%, transparent 42%);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--el-fill-color-light) 68%, white 32%), #fff);
+}
+
+.publish-dispatch-dialog__profile-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
 .publish-dispatch-dialog__client-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
 
+.publish-dispatch-dialog__profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
 .publish-dispatch-client {
+  display: flex;
+  min-height: 108px;
+  flex-direction: column;
+  justify-content: space-between;
   width: 100%;
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--el-border-color) 54%, transparent 46%);
   border-radius: 16px;
   background: color-mix(in srgb, var(--el-bg-color) 94%, transparent 6%);
   text-align: left;
+  cursor: pointer;
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -2471,20 +3398,124 @@ onUnmounted(() => {
 
 .publish-dispatch-client__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
 
 .publish-dispatch-client__title {
+  min-width: 0;
+  flex: 1;
   font-size: 14px;
   font-weight: 700;
+  word-break: break-word;
 }
 
 .publish-dispatch-client__desc {
   margin-top: 10px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
+  line-height: 1.6;
+}
+
+.publish-dispatch-profile {
+  display: flex;
+  min-height: 120px;
+  width: 100%;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 15px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 56%, transparent 44%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--el-bg-color) 96%, transparent 4%);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.publish-dispatch-profile:not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--el-color-primary) 34%, transparent 66%);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+}
+
+.publish-dispatch-profile.is-selected {
+  border-color: color-mix(in srgb, var(--el-color-primary) 56%, transparent 44%);
+  background: color-mix(in srgb, var(--el-color-primary-light-9) 62%, white 38%);
+  box-shadow:
+    0 12px 24px rgba(37, 99, 235, 0.1),
+    inset 0 0 0 1px rgba(37, 99, 235, 0.14);
+}
+
+.publish-dispatch-profile.is-disabled {
+  opacity: 0.62;
+}
+
+.publish-dispatch-profile__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.publish-dispatch-profile__title-wrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.publish-dispatch-profile__title {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.publish-dispatch-profile__caption {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.publish-dispatch-profile__badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.publish-dispatch-profile__selected {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--el-color-primary);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.publish-dispatch-profile__desc {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.publish-dispatch-dialog__profile-empty {
+  padding: 14px 16px;
+  border: 1px dashed color-mix(in srgb, var(--el-border-color) 74%, transparent 26%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--el-fill-color-light) 56%, white 44%);
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -2968,6 +3999,10 @@ onUnmounted(() => {
     padding-right: 18px;
   }
 
+  .publish-dispatch-dialog__profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .queue-runtime-console {
     padding: 14px 16px;
   }
@@ -2979,6 +4014,17 @@ onUnmounted(() => {
 
   .publish-dispatch-dialog :deep(.el-dialog__body) {
     padding: 18px 20px;
+  }
+}
+
+@media (max-width: 767px) {
+  .publish-dispatch-dialog__client-list,
+  .publish-dispatch-dialog__profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .publish-dispatch-dialog__section-meta {
+    width: 100%;
   }
 }
 

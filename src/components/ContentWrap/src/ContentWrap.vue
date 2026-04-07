@@ -95,7 +95,7 @@ $prefix-cls: #{$namespace}-content-wrap;
 }
 
 .content-wrap__title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--el-text-color-primary);
   letter-spacing: 0.01em;
@@ -142,7 +142,7 @@ $prefix-cls: #{$namespace}-content-wrap;
   }
 
   .content-wrap__title {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 </style>

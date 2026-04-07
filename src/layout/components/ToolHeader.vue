@@ -9,6 +9,7 @@ import ClientStatus from "@/layout/components/ClientStatus.vue";
 import AdminDataScopeSwitch from "@/layout/components/AdminDataScopeSwitch.vue";
 import GlobalNotificationCenter from "@/layout/components/GlobalNotificationCenter.vue";
 import GlobalNotificationToastStack from "@/layout/components/GlobalNotificationToastStack.vue";
+import ToolLauncherDropdown from "@/components/ToolWindowHost/ToolLauncherDropdown.vue";
 import { useAppStore } from "@/store/modules/app";
 import { useDesign } from "@/hooks/web/useDesign";
 
@@ -21,17 +22,17 @@ export default defineComponent({
     const breadcrumb = computed(() => appStore.getBreadcrumb);
     const screenfull = computed(() => appStore.getScreenfull);
     const mobile = computed(() => appStore.getMobile);
-    const openMobileMenu = inject<() => void>("openMobileMenu", () => {});
+    const openMobileMenu = inject<() => void>("openMobileMenu", () => { });
 
     return () => (
       <header
         id={`${variables.namespace}-tool-header`}
         class={[
           prefixCls,
-          "h-[var(--top-tool-height)] pl-12px pr-8px md:pl-16px md:pr-10px flex items-center justify-between",
+          "h-[var(--top-tool-height)] pl-10px pr-6px md:pl-12px md:pr-8px flex items-center justify-between",
         ]}
       >
-        <div class="tool-header-left flex h-full min-w-0 items-center gap-6px md:gap-8px">
+        <div class="tool-header-left flex h-full min-w-0 items-center gap-4px md:gap-6px">
           {mobile.value ? (
             <button
               type="button"
@@ -46,14 +47,15 @@ export default defineComponent({
           ) : undefined}
         </div>
 
-        <div class="tool-header-right flex h-full min-w-0 items-center justify-end gap-2px md:gap-4px">
+        <div class="tool-header-right flex h-full min-w-0 items-center justify-end gap-2px md:gap-2px">
           <GlobalNotificationToastStack />
           <AdminDataScopeSwitch />
           <GlobalNotificationCenter />
+          <ToolLauncherDropdown />
           <div class="client-status-wrapper">
             <ClientStatus />
           </div>
-          <div class="custom-hover flex h-[var(--top-header-action-size)] items-center rounded-999px px-6px">
+          <div class="custom-hover flex h-[var(--top-header-action-size)] items-center rounded-999px px-4px">
             <ThemeSwitch />
           </div>
           {screenfull.value ? (
@@ -111,16 +113,16 @@ $prefix-cls: #{$namespace}-tool-header;
 @media (min-width: 768px) and (max-width: 1180px) {
   .#{$prefix-cls} {
     min-height: var(--top-tool-height);
-    padding-left: 10px;
-    padding-right: 8px;
+    padding-left: 8px;
+    padding-right: 6px;
   }
 
   .tool-header-left,
   .tool-header-right {
-    gap: 6px;
+    gap: 4px;
   }
 
-  .tool-header-right > * {
+  .tool-header-right>* {
     display: flex;
     min-height: var(--top-header-action-size);
     align-items: center;
@@ -133,12 +135,12 @@ $prefix-cls: #{$namespace}-tool-header;
 
 @media (max-width: 768px) {
   .#{$prefix-cls} {
-    padding-left: 10px;
-    padding-right: 6px;
+    padding-left: 8px;
+    padding-right: 4px;
   }
 
   .tool-header-right {
-    gap: 4px;
+    gap: 3px;
   }
 
   .client-status-wrapper {
@@ -148,8 +150,8 @@ $prefix-cls: #{$namespace}-tool-header;
 
 @media (max-width: 640px) {
   .#{$prefix-cls} {
-    padding-left: 8px;
-    padding-right: 4px;
+    padding-left: 6px;
+    padding-right: 3px;
   }
 }
 </style>

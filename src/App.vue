@@ -4,6 +4,7 @@ import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import routerSearch from '@/components/RouterSearch/index.vue'
+import ToolWindowHost from '@/components/ToolWindowHost/index.vue'
 
 defineOptions({ name: 'APP' })
 
@@ -28,6 +29,7 @@ setDefaultTheme()
   <ConfigGlobal :size="currentSize">
     <RouterView :class="greyMode ? `${prefixCls}-grey-mode` : ''" />
     <routerSearch />
+    <ToolWindowHost />
   </ConfigGlobal>
 </template>
 <style lang="scss">
