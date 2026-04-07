@@ -499,6 +499,8 @@ watch(
 /* 文件夹树样式（复用 material/index 的样式） */
 .sticker-folder-tree-container {
   --folder-tree-toggle-slot-size: 16px;
+  --folder-tree-node-height: 34px;
+  --folder-tree-node-radius: 8px;
 
   padding-top: 4px;
 
@@ -508,18 +510,18 @@ watch(
   }
 
   .sticker-folder-tree-header {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     padding-inline: 4px;
   }
 
   .sticker-folder-tree-search {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     padding-inline: 4px;
   }
 
   .sticker-folder-tree-drag-surface {
     padding-inline: 4px;
-    padding-bottom: 6px;
+    padding-bottom: 4px;
   }
 
   .sticker-folder-tree {
@@ -605,7 +607,7 @@ watch(
     justify-content: space-between;
     width: 100%;
     min-height: calc(var(--folder-tree-node-height) - 2px);
-    padding-right: 6px;
+    padding-right: 4px;
     border-radius: var(--folder-tree-node-radius);
     border: 1px solid transparent;
     overflow: hidden;
@@ -634,7 +636,7 @@ watch(
       top: 50%;
       left: 4px;
       width: 3px;
-      height: 18px;
+      height: 16px;
       z-index: 1;
       border-radius: 999px;
       background: var(--folder-tree-node-accent-color);
@@ -688,7 +690,7 @@ watch(
       align-items: center;
       flex: 1;
       min-width: 0;
-      padding-left: 6px;
+      padding-left: 4px;
       transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
       cursor: pointer;
 
@@ -699,7 +701,7 @@ watch(
         width: var(--folder-tree-toggle-slot-size);
         height: var(--folder-tree-toggle-slot-size);
         padding: 0;
-        margin-right: 4px;
+        margin-right: 2px;
         border: 0;
         border-radius: 5px;
         background: transparent;
@@ -732,7 +734,7 @@ watch(
 
         &:disabled {
           width: var(--folder-tree-toggle-slot-size);
-          margin-right: 4px;
+          margin-right: 2px;
           background: transparent;
           cursor: default;
           pointer-events: none;
@@ -740,9 +742,9 @@ watch(
       }
 
       .folder-icon {
-        width: 18px;
-        height: 18px;
-        margin-right: 6px;
+        width: 16px;
+        height: 16px;
+        margin-right: 5px;
         flex-shrink: 0;
         transition:
           transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
@@ -754,7 +756,7 @@ watch(
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: 13px;
+        font-size: 11px;
         color: var(--el-text-color-primary);
         cursor: pointer;
         transition:
@@ -771,10 +773,10 @@ watch(
       }
 
       .sticker-folder-node-count {
-        font-size: 11px;
+        font-size: 9px;
         color: var(--el-text-color-secondary);
         font-weight: 500;
-        margin-left: 6px;
+        margin-left: 4px;
       }
     }
 
@@ -782,9 +784,9 @@ watch(
       display: flex;
       align-items: center;
       padding-right: 2px;
-      margin-left: 12px;
+      margin-left: 8px;
       opacity: 0;
-      transform: translateX(6px) scale(0.94);
+      transform: translateX(4px) scale(0.94);
       pointer-events: none;
       transition:
         opacity 0.18s ease,
@@ -794,9 +796,9 @@ watch(
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 24px;
-        height: 24px;
-        font-size: 14px;
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
         cursor: pointer;
         transition:
           color 0.2s ease,
@@ -850,12 +852,12 @@ watch(
     padding: 4px 0;
 
     .el-dropdown-menu__item {
-      padding: 6px 16px;
-      font-size: 13px;
+      padding: 6px 14px;
+      font-size: 11px;
 
       .el-icon {
         margin-right: 6px;
-        font-size: 14px;
+        font-size: 12px;
       }
     }
   }

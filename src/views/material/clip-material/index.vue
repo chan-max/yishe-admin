@@ -286,14 +286,15 @@
                         <span class="table-file-audio-card__title">{{ row.name || "音频文件" }}</span>
                         <span class="table-file-audio-card__suffix">{{ String(row.suffix || '').toUpperCase() }}</span>
                       </div>
-                      <audio
-                        :src="row.url"
-                        controls
-                        preload="metadata"
-                        class="table-file-audio-card__player"
-                        @click.stop
-                        @error="handleAudioError"
-                      />
+                      <div class="table-file-audio-card__player-wrap" @click.stop>
+                        <audio
+                          :src="row.url"
+                          controls
+                          preload="metadata"
+                          class="table-file-audio-card__player"
+                          @error="handleAudioError"
+                        />
+                      </div>
                     </div>
                     <div
                       v-else-if="row.url && isPdfFile(row.suffix)"
@@ -1052,6 +1053,8 @@ function handleOperationCommand(command: string, row: any) {
 .table-file-cell {
   display: flex;
   align-items: center;
+  width: 100%;
+  min-width: 0;
 }
 
 .table-file-cell__video,
@@ -1069,7 +1072,6 @@ function handleOperationCommand(command: string, row: any) {
 
 .table-file-audio-card,
 .table-file-doc-card {
-  width: 180px;
   min-height: 120px;
   padding: 12px;
   border-radius: 12px;
@@ -1082,14 +1084,29 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 .table-file-audio-card {
+  width: min(100%, 320px);
+  min-height: 128px;
+  padding: 14px 16px;
+  box-sizing: border-box;
   cursor: pointer;
   background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-blank) 100%);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.table-file-audio-card:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 10px 24px rgba(64, 158, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .table-file-audio-card__meta {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   color: var(--el-text-color-primary);
 }
 
@@ -1109,13 +1126,36 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 .table-file-audio-card__player {
-  width: 100%;
-  min-width: 156px;
-  height: 38px;
+  width: calc(100% / 0.92);
+  min-width: 0;
+  height: 40px;
   display: block;
+  transform: scale(0.92);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.table-file-audio-card__player-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.table-file-audio-card__player::-webkit-media-controls-panel {
+  padding-inline: 4px;
+}
+
+.table-file-audio-card__player::-webkit-media-controls-current-time-display,
+.table-file-audio-card__player::-webkit-media-controls-time-remaining-display {
+  font-size: 11px;
+  min-width: auto;
+}
+
+.table-file-audio-card__player::-webkit-media-controls-timeline {
+  margin-inline: 4px;
 }
 
 .table-file-doc-card {
+  width: 180px;
   align-items: center;
   text-align: center;
   color: var(--el-text-color-secondary);
