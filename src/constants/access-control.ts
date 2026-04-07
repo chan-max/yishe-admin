@@ -1,3 +1,6 @@
+// 保留历史权限 key，避免线上已有角色权限失效；展示语义已经统一为“文件资源”。
+const FILE_RESOURCE_MENU_KEY = "resource.clip-material";
+
 export const MENU_ACCESS_GROUPS = [
   {
     label: "工作台",
@@ -13,7 +16,7 @@ export const MENU_ACCESS_GROUPS = [
     options: [
       { key: "resource.crawler-material", label: "爬图素材" },
       { key: "resource.material", label: "图片素材" },
-      { key: "resource.clip-material", label: "媒体剪辑素材" },
+      { key: FILE_RESOURCE_MENU_KEY, label: "文件资源" },
       { key: "resource.font", label: "字体" },
       { key: "resource.psd", label: "PSD模板" },
       { key: "resource.story-script", label: "故事脚本" },
@@ -92,7 +95,8 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   Statistics: "home.statistics",
   CrawlerMaterial: "resource.crawler-material",
   Material: "resource.material",
-  ClipMaterial: "resource.clip-material",
+  FileResource: FILE_RESOURCE_MENU_KEY,
+  ClipMaterial: FILE_RESOURCE_MENU_KEY,
   Font: "resource.font",
   Psd: "resource.psd",
   StoryScript: "resource.story-script",

@@ -18,6 +18,8 @@ import UnoCSS from 'unocss/vite'
 
 export function createVitePlugins() {
   const root = process.cwd()
+  const skipAutoImportDts = process.env.SKIP_VITE_DTS_WRITE === 'true'
+  const skipProgressCache = process.env.SKIP_VITE_PROGRESS_CACHE === 'true'
 
   // 路径查找
   function pathResolve(dir: string) {
@@ -28,7 +30,7 @@ export function createVitePlugins() {
     Vue(),
     VueJsx(),
     UnoCSS(),
-    progress(),
+    ...(skipProgressCache ? [] : [progress()]),
     PurgeIcons(),
     ElementPlus({}),
     AutoImport({
@@ -51,7 +53,7 @@ export function createVitePlugins() {
           '@/utils/dict': ['DICT_TYPE']
         }
       ],
-      dts: 'src/types/auto-imports.d.ts',
+      dts: skipAutoImportDts ? false : 'src/types/auto-imports.d.ts',
       resolvers: [ElementPlusResolver()],
       eslintrc: {
         enabled: false, // Default `false`
@@ -61,7 +63,7 @@ export function createVitePlugins() {
     }),
     Components({
       // 生成自定义 `auto-components.d.ts` 全局声明
-      dts: 'src/types/auto-components.d.ts',
+      dts: skipAutoImportDts ? false : 'src/types/auto-components.d.ts',
       // 自定义组件的解析器
       resolvers: [ElementPlusResolver()],
       globs: ["src/components/**/**.{vue, md}", '!src/components/DiyEditor/components/mobile/**']

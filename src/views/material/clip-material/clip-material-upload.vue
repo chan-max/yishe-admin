@@ -1,6 +1,6 @@
 <template>
   <div class="multi-video-upload-container">
-    <!-- 左侧：视频预览区域 -->
+    <!-- 左侧：文件预览区域 -->
     <div class="video-preview-container">
       <div class="video-preview-list">
         <div v-for="(file, index) in fileList" :key="file.uid" class="video-preview-item">
@@ -89,7 +89,7 @@
 
     <div class="operation-container">
       <div class="font-bold py-2 text-secondary border-bottom">
-        上传路径 : <span class="text-xs">{{ currentUploadInfo.path || 'clip-material' }}</span>
+        上传路径 : <span class="text-xs">{{ currentUploadInfo.path || 'file-resource' }}</span>
       </div>
       <div class="stats">
         <span>
@@ -170,7 +170,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useDebounceFn } from '@vueuse/core'
 import { throttleLoop, throttleLoopWithRAF } from '@/common/render'
-import { createClipMaterial } from '@/api/clip-material'
+import { createFileResource } from '@/api/file-resource'
 import { useUserStore } from '@/store/modules/user'
 import { uploadToCOS, initCOS } from '@/api/cos'
 
@@ -324,7 +324,7 @@ async function uploadSingleFile(fileItem: any) {
     // 上传到COS
     const cosResult = await uploadToCOS({ 
       file: fileItem.file,
-      category: 'clip-material',
+      category: 'file-resource',
       account: (userStore.user as any)?.account || userStore.user?.shortName || userStore.user?.name || 'anonymous',
       userId: (userStore.user as any)?.id || (userStore as any).userInfo?.id
     })
@@ -348,7 +348,7 @@ async function uploadSingleFile(fileItem: any) {
       userId: userStore.userInfo?.id
     }
 
-    const result = await createClipMaterial(materialData)
+    const result = await createFileResource(materialData)
     
     if (result) {
       fileItem.status = UploadStatus.Success

@@ -526,7 +526,7 @@ import {
   Loading
 } from '@element-plus/icons-vue';
 import { generateProductVideo } from '@/api/product';
-import { getClipMaterialList } from '@/api/clip-material';
+import { getFileResourceList } from '@/api/file-resource';
 import { getPreviewImageUrl } from '@/utils/image';
 import { getPromptList } from '@/api/prompt';
 
@@ -768,7 +768,7 @@ function applyBatchSettings() {
 async function loadAudioMaterials(keyword: string = '') {
   audioLoading.value = true;
   try {
-    const res = await getClipMaterialList({
+    const res = await getFileResourceList({
       currentPage: 1,
       pageSize: 50,
       keyword: keyword || undefined

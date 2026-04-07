@@ -135,7 +135,7 @@
           <el-form-item v-if="isVoiceCloneModel" label="音色来源" required>
             <el-radio-group v-model="voiceSource">
               <el-radio value="existing">选择已有音色</el-radio>
-              <el-radio value="material">从剪辑素材创建</el-radio>
+              <el-radio value="material">从文件资源创建</el-radio>
             </el-radio-group>
           </el-form-item>
 
@@ -161,12 +161,12 @@
                 </el-option>
               </el-select>
               <div v-if="customVoiceList.length === 0 && !loadingVoices" class="voice-empty">
-                暂无已创建音色，请从剪辑素材创建
+                暂无已创建音色，请从文件资源创建
               </div>
             </div>
           </el-form-item>
 
-          <!-- 从剪辑素材创建音色 -->
+          <!-- 从文件资源创建音色 -->
           <el-form-item v-if="isVoiceCloneModel && voiceSource === 'material'" label="音色名称">
             <el-input v-model="customVoiceName" placeholder="请输入音色名称（可选，留空则使用素材名称）" :disabled="uploadingAudio" clearable
               maxlength="32" show-word-limit />
@@ -391,7 +391,7 @@ import {
   listCustomVoices,
   deleteCustomVoice
 } from '@/api/ai/tts'
-import { getClipMaterialList } from '@/api/clip-material'
+import { getFileResourceList } from '@/api/file-resource'
 import { buildOperationColumn, commonGridOptions } from '@/common/table'
 import { useWindowSize } from '@vueuse/core'
 import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
@@ -778,7 +778,7 @@ const loadClipMaterialAudios = async () => {
   if (loadingClipMaterials.value) return
   loadingClipMaterials.value = true
   try {
-    const res = await getClipMaterialList({
+    const res = await getFileResourceList({
       currentPage: 1,
       pageSize: 200,
       keyword: clipMaterialKeyword.value || undefined,
@@ -899,7 +899,7 @@ const submitForm = async () => {
       return
     }
     if (voiceSource.value === 'material' && !customVoiceInfo.value) {
-      ElMessage.warning('请先从剪辑素材创建自定义音色')
+      ElMessage.warning('请先从文件资源创建自定义音色')
       return
     }
   }

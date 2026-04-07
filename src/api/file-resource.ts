@@ -1,0 +1,48 @@
+import request from '@/config/axios'
+
+export function getFileResourceList(params: any) {
+  return request.post({
+    url: '/file-resource/page',
+    data: params
+  })
+}
+
+export function createFileResource(data: any) {
+  return request.post({
+    url: '/file-resource/create',
+    data
+  })
+}
+
+export function updateFileResource(data: any) {
+  return request.post({
+    url: '/file-resource/update',
+    data
+  })
+}
+
+export function deleteFileResource(data: { ids: string | string[] }) {
+  return request.post({
+    url: '/file-resource/delete',
+    data
+  })
+}
+
+export function getFileResourceById(id: string) {
+  return request.get({
+    url: `/file-resource/${id}`
+  })
+}
+
+export function getAllFileResources() {
+  return request.get({
+    url: '/file-resource'
+  })
+}
+
+export function batchMoveFileResource(data: { ids: string[]; folderId: string | null }) {
+  return request.post({
+    url: '/file-resource/batch-move',
+    data
+  })
+}

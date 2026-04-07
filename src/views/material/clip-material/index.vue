@@ -46,13 +46,12 @@
                     @change="getList"
                   >
                     <el-option label="全部" value="" />
-                    <el-option label="mp4" value="mp4" />
-                    <el-option label="mov" value="mov" />
-                    <el-option label="avi" value="avi" />
-                    <el-option label="mkv" value="mkv" />
-                    <el-option label="wmv" value="wmv" />
-                    <el-option label="flv" value="flv" />
-                    <el-option label="webm" value="webm" />
+                    <el-option
+                      v-for="option in suffixOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -174,13 +173,12 @@
             <el-form-item label="后缀">
               <el-select v-model="queryParams.suffix" placeholder="请选择后缀" clearable>
                 <el-option label="全部" value="" />
-                <el-option label="mp4" value="mp4" />
-                <el-option label="mov" value="mov" />
-                <el-option label="avi" value="avi" />
-                <el-option label="mkv" value="mkv" />
-                <el-option label="wmv" value="wmv" />
-                <el-option label="flv" value="flv" />
-                <el-option label="webm" value="webm" />
+                <el-option
+                  v-for="option in suffixOptions"
+                  :key="option.value"
+                  :label="option.label"
+                  :value="option.value"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="ID精确查询">
@@ -259,46 +257,64 @@
                 </template>
 
                 <template #previewDefaultSlot="{ row }">
-                  <div class="table-media-cell p-2">
+                  <div class="table-media-cell table-file-cell p-2">
                     <video
                       v-if="row.url && isVideoFile(row.suffix)"
                       :src="row.url"
-                      :alt="row.name || '文件素材'"
-                      class="block max-h-[120px] max-w-[180px] cursor-pointer rounded-md bg-black/5 object-contain"
-                      @click="openVideoPreview(row.url, row.name)"
+                      :alt="row.name || '文件资源'"
+                      class="table-file-cell__video"
+                      @click="openFilePreview(row)"
                       @error="handleVideoError"
                       controls
                       preload="metadata"
                     />
-                    <el-image
+                    <img
                       v-else-if="row.url && isImageFile(row.suffix)"
                       :src="row.url"
-                      :alt="row.name || '图片素材'"
-                      fit="contain"
-                      preview-teleported
-                      class="h-[120px] w-[180px] cursor-pointer rounded-md border border-solid border-[var(--el-border-color-light)] bg-black/5"
-                      @click="openImagePreview(row.url)"
+                      :alt="row.name || '图片文件'"
+                      class="table-file-cell__image"
+                      @click="openFilePreview(row)"
                       @error="handleImageError"
                     />
                     <div
                       v-else-if="row.url && isAudioFile(row.suffix)"
-                      class="flex w-full flex-col items-start justify-center rounded-lg bg-[var(--el-fill-color-light)] px-2 py-2"
+                      class="table-file-audio-card"
+                      @click="openFilePreview(row)"
                     >
+                      <div class="table-file-audio-card__meta">
+                        <el-icon size="18"><Headset /></el-icon>
+                        <span class="table-file-audio-card__title">{{ row.name || "音频文件" }}</span>
+                        <span class="table-file-audio-card__suffix">{{ String(row.suffix || '').toUpperCase() }}</span>
+                      </div>
                       <audio
                         :src="row.url"
                         controls
                         preload="metadata"
-                        class="h-7 w-full"
+                        class="table-file-audio-card__player"
+                        @click.stop
                         @error="handleAudioError"
                       />
                     </div>
                     <div
+                      v-else-if="row.url && isPdfFile(row.suffix)"
+                      class="table-file-doc-card table-file-doc-card--pdf"
+                      @click="openFilePreview(row)"
+                    >
+                      <el-icon size="24"><Document /></el-icon>
+                      <div class="table-file-doc-card__title">{{ row.name || "PDF 文件" }}</div>
+                      <div class="table-file-doc-card__tip">点击预览 PDF</div>
+                    </div>
+                    <div
                       v-else
-                      class="flex h-20 w-30 items-center justify-center rounded-md bg-gray-100 text-gray-500"
+                      class="table-file-doc-card"
                     >
                       <el-icon size="24">
                         <component :is="getFileIcon(row.suffix)" />
                       </el-icon>
+                      <div class="table-file-doc-card__title">{{ row.name || "文件资源" }}</div>
+                      <div class="table-file-doc-card__tip">
+                        {{ String(row.suffix || "FILE").toUpperCase() }}
+                      </div>
                     </div>
                   </div>
                 </template>
@@ -343,10 +359,10 @@
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="preview"
-                            v-if="isVideoFile(row.suffix) || isAudioFile(row.suffix)"
+                            v-if="isPreviewableFile(row.suffix)"
                           >
                             <el-icon
-                              ><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset v-else
+                              ><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset v-else-if="isAudioFile(row.suffix)" /><Document v-else-if="isPdfFile(row.suffix)" /><Picture v-else
                             /></el-icon>
                             <span>预览</span>
                           </el-dropdown-item>
@@ -387,7 +403,7 @@
 
     <el-dialog
       v-model="uploadModalVisible"
-      title="文件素材上传"
+      title="文件资源上传"
       width="100%"
       style="height: 100%"
       align-center
@@ -403,7 +419,7 @@
 
     <el-dialog
       v-model="editDialogVisible"
-      title="编辑剪辑素材信息"
+      title="编辑文件资源信息"
       width="800px"
       :destroy-on-close="true"
       align-center
@@ -449,18 +465,12 @@
       </template>
     </el-dialog>
 
-    <!-- 视频预览弹窗 -->
     <VideoPreview
       :visible="videoPreviewVisible"
-      :video-url="currentVideoUrl"
-      :video-name="currentVideoName"
+      :file-url="currentPreviewUrl"
+      :file-name="currentPreviewName"
+      :file-suffix="currentPreviewSuffix"
       @close="closeVideoPreview"
-    />
-
-    <ImagePreview
-      :visible="imagePreviewVisible"
-      :image-url="currentImageUrl"
-      @close="closeImagePreview"
     />
   </ContentWrap>
 </template>
@@ -469,11 +479,11 @@
 import { ref, reactive, computed, nextTick, watchEffect } from "vue";
 
 import {
-  getClipMaterialList,
-  deleteClipMaterial,
-  updateClipMaterial,
-  batchMoveClipMaterial,
-} from "@/api/clip-material";
+  getFileResourceList,
+  deleteFileResource,
+  updateFileResource,
+  batchMoveFileResource,
+} from "@/api/file-resource";
 
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
@@ -507,7 +517,17 @@ import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 
 const userStore = useUserStore();
-const FOLDER_CATEGORY = "clipmaterial";
+const FOLDER_CATEGORY = "fileresource";
+const suffixOptions = [
+  { label: "mp4", value: "mp4" },
+  { label: "mov", value: "mov" },
+  { label: "mp3", value: "mp3" },
+  { label: "wav", value: "wav" },
+  { label: "pdf", value: "pdf" },
+  { label: "png", value: "png" },
+  { label: "jpg", value: "jpg" },
+  { label: "webp", value: "webp" },
+];
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
@@ -570,7 +590,7 @@ const gridOptions = ref({
       width: 400,
       slots: { default: "previewDefaultSlot" },
     },
-    { title: "素材名称", field: "name", minWidth: 180, className: "font-bold" },
+    { title: "资源名称", field: "name", minWidth: 180, className: "font-bold" },
     { title: "描述", field: "description", minWidth: 200 },
     { title: "关键词", field: "keywords", minWidth: 160 },
     { title: "后缀", field: "suffix", width: 80 },
@@ -639,7 +659,7 @@ function uploadModalClose() {}
 
 async function getList() {
   loading.value = true;
-  let res = await getClipMaterialList({
+  let res = await getFileResourceList({
     ...queryParams,
     folderId: convertFolderIdToApiParam(queryParams.folderId),
   }).finally(() => {
@@ -707,7 +727,7 @@ function handleDelete(row?) {
   console.log("准备删除的ID:", delIds);
   console.log("ids.value:", ids.value);
 
-  ElMessageBox.confirm("确认删除该文件素材吗", "删除提示", {
+  ElMessageBox.confirm("确认删除该文件资源吗", "删除提示", {
     confirmButtonText: "确认",
     cancelButtonText: "取消",
     type: "error",
@@ -715,7 +735,7 @@ function handleDelete(row?) {
     .then(async () => {
       try {
         console.log("发送删除请求，ID:", delIds);
-        const result = await deleteClipMaterial({ ids: delIds });
+        const result = await deleteFileResource({ ids: delIds });
         console.log("删除结果:", result);
         ElNotification.success("删除成功");
         resetCheckStatus();
@@ -800,11 +820,11 @@ async function handleFolderDrop(payload: { data: any }) {
   const targetPath = payload.data.path || "";
 
   try {
-    await batchMoveClipMaterial({
+    await batchMoveFileResource({
       ids: movingIds,
       folderId: convertFolderIdToApiParam(targetFolderId) as string | null,
     });
-    ElMessage.success(`已移动 ${movingIds.length} 个素材到 ${targetPath || "未分类"}`);
+    ElMessage.success(`已移动 ${movingIds.length} 个文件资源到 ${targetPath || "未分类"}`);
     resetCheckStatus();
     await getList();
   } catch (error) {
@@ -851,7 +871,7 @@ function handleEdit(row) {
 async function submitEdit() {
   editLoading.value = true;
   try {
-    await updateClipMaterial(editForm.value);
+    await updateFileResource(editForm.value);
     ElNotification.success("保存成功");
     editDialogVisible.value = false;
     getList();
@@ -864,31 +884,22 @@ async function submitEdit() {
 
 // 视频预览相关状态
 const videoPreviewVisible = ref(false);
-const currentVideoUrl = ref("");
-const currentVideoName = ref("");
-const imagePreviewVisible = ref(false);
-const currentImageUrl = ref("");
+const currentPreviewUrl = ref("");
+const currentPreviewName = ref("");
+const currentPreviewSuffix = ref("");
 
-function openVideoPreview(videoUrl: string, videoName?: string) {
-  currentVideoUrl.value = videoUrl;
-  currentVideoName.value = videoName || "剪辑素材";
+function openFilePreview(row: { url?: string; name?: string; suffix?: string }) {
+  currentPreviewUrl.value = row?.url || "";
+  currentPreviewName.value = row?.name || "文件资源";
+  currentPreviewSuffix.value = row?.suffix || "";
   videoPreviewVisible.value = true;
 }
 
 function closeVideoPreview() {
   videoPreviewVisible.value = false;
-  currentVideoUrl.value = "";
-  currentVideoName.value = "";
-}
-
-function openImagePreview(imageUrl: string) {
-  currentImageUrl.value = imageUrl;
-  imagePreviewVisible.value = true;
-}
-
-function closeImagePreview() {
-  imagePreviewVisible.value = false;
-  currentImageUrl.value = "";
+  currentPreviewUrl.value = "";
+  currentPreviewName.value = "";
+  currentPreviewSuffix.value = "";
 }
 
 function handleVideoError(event: Event) {
@@ -924,10 +935,18 @@ function isAudioFile(suffix: string): boolean {
   return audioSuffixes.includes(normalizeSuffix(suffix));
 }
 
+function isPdfFile(suffix: string): boolean {
+  return normalizeSuffix(suffix) === "pdf";
+}
+
 // 判断是否为图片文件
 function isImageFile(suffix: string): boolean {
   const imageSuffixes = ["jpg", "jpeg", "png", "gif", "bmp", "webp", "svg", "ico", "tiff", "tif"];
   return imageSuffixes.includes(normalizeSuffix(suffix));
+}
+
+function isPreviewableFile(suffix: string): boolean {
+  return isVideoFile(suffix) || isAudioFile(suffix) || isImageFile(suffix) || isPdfFile(suffix);
 }
 
 // 获取文件图标
@@ -976,10 +995,7 @@ function handleOperationCommand(command: string, row: any) {
       handleDownload(row);
       break;
     case "preview":
-      if (isVideoFile(row.suffix)) {
-        openVideoPreview(row.url, row.name);
-      }
-      // 音频文件在列表中已直接显示播放控件，无需额外预览弹窗
+      openFilePreview(row);
       break;
 
     case "delete":
@@ -1031,6 +1047,88 @@ function handleOperationCommand(command: string, row: any) {
   min-height: 0;
   height: 100%;
   overflow: hidden;
+}
+
+.table-file-cell {
+  display: flex;
+  align-items: center;
+}
+
+.table-file-cell__video,
+.table-file-cell__image {
+  display: block;
+  width: 180px;
+  max-width: 180px;
+  max-height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-light);
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.table-file-audio-card,
+.table-file-doc-card {
+  width: 180px;
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-blank);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.table-file-audio-card {
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-blank) 100%);
+}
+
+.table-file-audio-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-primary);
+}
+
+.table-file-audio-card__title,
+.table-file-doc-card__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  word-break: break-word;
+}
+
+.table-file-audio-card__suffix {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.table-file-audio-card__player {
+  width: 100%;
+  min-width: 156px;
+  height: 38px;
+  display: block;
+}
+
+.table-file-doc-card {
+  align-items: center;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+}
+
+.table-file-doc-card--pdf {
+  cursor: pointer;
+  background: linear-gradient(180deg, var(--el-color-danger-light-9) 0%, var(--el-fill-color-blank) 100%);
+}
+
+.table-file-doc-card__tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 @media (max-width: 1024px) {
