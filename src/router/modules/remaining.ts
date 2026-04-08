@@ -442,7 +442,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/product/publish-config/index.vue"),
         name: "PublishConfig",
         meta: {
-          title: "发布配置",
+          title: "任务配置",
         },
       },
       {

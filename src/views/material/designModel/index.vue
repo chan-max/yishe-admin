@@ -493,6 +493,7 @@ import type { DesignModelVO } from '@/api/designModel'
 import VueJsonPretty from 'vue-json-pretty';
 import 'vue-json-pretty/lib/styles.css';
 import { useWindowSize } from '@vueuse/core'
+import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from '@/utils/aiTask'
 
 // 获取窗口尺寸
 const { width } = useWindowSize()
@@ -685,10 +686,18 @@ async function handleAiAutoGenerate(row, cb, prompt) {
       id: row.id,
       prompt: prompt || ''
     })
-    if (res && res.data) {
-      row.name = res.data.name
-      row.description = res.data.description
-      row.keywords = res.data.keywords
+
+    const resultData = unwrapAiTaskResult(res)
+    if (isQueuedAiTaskResult(resultData)) {
+      notifyQueuedAiTask(resultData)
+      if (typeof cb === 'function') cb()
+      return
+    }
+
+    if (resultData) {
+      row.name = resultData.name
+      row.description = resultData.description
+      row.keywords = resultData.keywords
     }
     ElMessage.success('AI自动生成内容成功')
     if (typeof cb === 'function') cb()

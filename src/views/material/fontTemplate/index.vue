@@ -805,6 +805,7 @@ import { htmlToPngFile } from "@/utils/htmlToPng";
 import { copyLink } from "@/utils/clipboard";
 import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
+import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
 
 // 语言枚举定义
 const LANGUAGE_OPTIONS = [
@@ -1460,12 +1461,19 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     // 调用字体模板的AI补全接口
     const res = await fontTemplateApi.aiCompleteContent(row.id, prompt || "");
+    const resultData = unwrapAiTaskResult(res);
+
+    if (isQueuedAiTaskResult(resultData)) {
+      notifyQueuedAiTask(resultData);
+      if (typeof cb === "function") cb();
+      return;
+    }
 
     // 更新行数据
-    if (res) {
-      row.name = res.name || row.name;
-      row.description = res.description || row.description;
-      row.keywords = res.keywords || row.keywords;
+    if (resultData) {
+      row.name = resultData.name || row.name;
+      row.description = resultData.description || row.description;
+      row.keywords = resultData.keywords || row.keywords;
     }
 
     ElMessage.success("AI自动生成内容成功");
@@ -1493,38 +1501,48 @@ async function submitBatchAiDialog() {
 
   batchAiDialogLoading.value = true;
 
-  // 初始化进度
-  batchProgress.value = {
-    total: ids.value.length,
-    processed: 0,
-    success: 0,
-    failed: 0,
-  };
-
   try {
-    // 显示确认信息
-    ElMessage.info(`开始处理 ${ids.value.length} 个字体模板，请耐心等待...`);
-
     const res = await fontTemplateApi.batchAiCompleteContent({
       ids: ids.value,
       prompt: batchAiPrompt.value,
       batchSize: 5,
     });
 
+    const resultData = unwrapAiTaskResult(res);
+
+    if (isQueuedAiTaskResult(resultData)) {
+      notifyQueuedAiTask(resultData, {
+        title: "批量AI补全任务已提交",
+        fallbackMessage: `已提交 ${ids.value.length} 个字体模板的AI补全任务，完成后会通过消息中心通知结果`,
+      });
+      batchAiDialogVisible.value = false;
+      batchAiPrompt.value = "";
+      batchProgress.value = { total: 0, processed: 0, success: 0, failed: 0 };
+      return;
+    }
+
+    // 初始化进度
+    batchProgress.value = {
+      total: ids.value.length,
+      processed: 0,
+      success: 0,
+      failed: 0,
+    };
+
     // 更新最终进度
-    batchProgress.value.processed = res.processed;
-    batchProgress.value.success = res.success;
-    batchProgress.value.failed = res.failed;
+    batchProgress.value.processed = resultData.processed;
+    batchProgress.value.success = resultData.success;
+    batchProgress.value.failed = resultData.failed;
 
-    if (res.success > 0) {
+    if (resultData.success > 0) {
       // 显示详细结果
-      let message = `批量AI补全完成：成功 ${res.success} 个，失败 ${res.failed} 个`;
+      let message = `批量AI补全完成：成功 ${resultData.success} 个，失败 ${resultData.failed} 个`;
 
-      if (res.failed > 0 && res.errors && res.errors.length > 0) {
-        message += `\n失败项目：${res.errors
+      if (resultData.failed > 0 && resultData.errors && resultData.errors.length > 0) {
+        message += `\n失败项目：${resultData.errors
           .slice(0, 3)
           .map((e) => e.id)
-          .join(", ")}${res.errors.length > 3 ? "..." : ""}`;
+          .join(", ")}${resultData.errors.length > 3 ? "..." : ""}`;
       }
 
       ElMessage.success(message);

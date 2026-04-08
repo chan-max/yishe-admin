@@ -1986,6 +1986,7 @@ import DateRangePicker from "@/components/DateRangePicker.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
+import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
 
 // 查询条件
 const queryParams = reactive({
@@ -3192,15 +3193,24 @@ async function submitAiGenDialog() {
       id: aiGenRow.value.id,
       prompt: aiGenPrompt.value || "",
     });
-    if (res && res.name) {
-      aiGenRow.value.name = res.name;
-      aiGenRow.value.enName = res.enName;
-      aiGenRow.value.description = res.description;
-      aiGenRow.value.enDescription = res.enDescription;
-      aiGenRow.value.keywords = res.keywords;
-      aiGenRow.value.enKeywords = res.enKeywords;
-      aiGenRow.value.searchKeywords = res.searchKeywords;
-      aiGenRow.value.enSearchKeywords = res.enSearchKeywords;
+
+    const resultData = unwrapAiTaskResult(res);
+
+    if (isQueuedAiTaskResult(resultData)) {
+      notifyQueuedAiTask(resultData);
+      aiGenDialogVisible.value = false;
+      return;
+    }
+
+    if (resultData && resultData.name) {
+      aiGenRow.value.name = resultData.name;
+      aiGenRow.value.enName = resultData.enName;
+      aiGenRow.value.description = resultData.description;
+      aiGenRow.value.enDescription = resultData.enDescription;
+      aiGenRow.value.keywords = resultData.keywords;
+      aiGenRow.value.enKeywords = resultData.enKeywords;
+      aiGenRow.value.searchKeywords = resultData.searchKeywords;
+      aiGenRow.value.enSearchKeywords = resultData.enSearchKeywords;
       ElMessage.success("AI自动生成内容成功");
       getList();
     } else {

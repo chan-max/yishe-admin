@@ -798,7 +798,7 @@
           <div>
             <div class="generate-product-dialog-title">套图生成发布任务</div>
             <div class="generate-product-dialog-subtitle">
-              已选择 {{ publishConfigTargetIds.length }} 个套图，配置要创建的发布任务
+              已选择 {{ publishConfigTargetIds.length }} 个套图，选择任务配置来创建发布任务
             </div>
           </div>
         </div>
@@ -818,13 +818,13 @@
                 </div>
               </div>
               <div class="publish-config-stat-card">
-                <div class="publish-config-stat-card__label">可选配置</div>
+                <div class="publish-config-stat-card__label">可选任务配置</div>
                 <div class="publish-config-stat-card__value">
                   {{ filteredPublishConfigs.length }}
                 </div>
               </div>
               <div class="publish-config-stat-card">
-                <div class="publish-config-stat-card__label">已选配置</div>
+                <div class="publish-config-stat-card__label">已选任务配置</div>
                 <div class="publish-config-stat-card__value">
                   {{ publishConfigSelectedIds.length }}
                 </div>
@@ -833,7 +833,7 @@
             <div class="publish-config-toolbar__actions">
               <el-input
                 v-model="publishConfigSearchText"
-                placeholder="搜索配置名称或平台..."
+                placeholder="搜索任务配置名称、任务类型或平台..."
                 clearable
                 @input="publishConfigCurrentPage = 1"
                 class="publish-config-search"
@@ -863,10 +863,6 @@
               size="small"
               background
             />
-          </div>
-
-          <div class="generate-product-tip publish-config-tip">
-            会基于套图图片直接创建发布任务，不再依赖商品。
           </div>
         </div>
       </div>
@@ -1083,6 +1079,7 @@ import {
 } from "@/services/autoDispatchSchedulerRuntime";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
+import { derivePublishTaskTypeByPlatform, getTaskTypeLabel, resolveTaskTypePlatform } from "@/config/task-types";
 import { downloadImageEnhanced } from "@/common/download";
 import ExternalClientSidebar, { type ClientNodeItem } from "@/views/external/components/ExternalClientSidebar.vue";
 
@@ -1149,6 +1146,10 @@ function formatPlatformName(platform?: string) {
   return publishPlatformNameMap[String(platform || "")] || String(platform || "-");
 }
 
+function formatTaskTypeName(taskType?: string, platform?: string) {
+  return getTaskTypeLabel(taskType || derivePublishTaskTypeByPlatform(platform), platform)
+}
+
 function getPublishTaskStatusLabel(status?: string) {
   const map: Record<string, string> = {
     pending: "待处理",
@@ -1181,7 +1182,9 @@ const filteredPublishConfigs = computed(() => {
     (item: any) =>
       String(item?.name || "")
         .toLowerCase()
-        .includes(text) || formatPlatformName(item?.platform).toLowerCase().includes(text),
+        .includes(text) ||
+      formatTaskTypeName(item?.taskType, item?.platform).toLowerCase().includes(text) ||
+      formatPlatformName(item?.platform).toLowerCase().includes(text),
   );
 });
 
@@ -1211,10 +1214,10 @@ const publishConfigGridOptions = computed(() => ({
   columns: [
     { type: "checkbox" as any, width: 60, align: "center" as any },
     {
-      field: "platform",
-      title: "平台",
-      width: 140,
-      formatter: ({ cellValue }: any) => formatPlatformName(cellValue),
+      field: "taskType",
+      title: "任务类型",
+      width: 180,
+      formatter: ({ row }: any) => formatTaskTypeName(row?.taskType, row?.platform),
     },
     { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
     { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
@@ -2289,8 +2292,8 @@ async function ensurePublishConfigOptions() {
         : [];
     publishConfigOptions.value = list.filter((item: any) => item?.isActive !== false);
   } catch (error: any) {
-    console.error("加载发布配置失败:", error);
-    ElMessage.error(error?.message || "加载发布配置失败");
+    console.error("加载任务配置失败:", error);
+    ElMessage.error(error?.message || "加载任务配置失败");
   } finally {
     publishConfigDialogLoading.value = false;
   }
@@ -2364,7 +2367,7 @@ async function handleSubmitCreatePublishTask() {
     return ElMessage.warning("未选择套图");
   }
   if (!publishConfigSelectedIds.value.length) {
-    return ElMessage.warning("请选择发布配置");
+    return ElMessage.warning("请选择任务配置");
   }
 
   publishConfigSubmitting.value = true;
@@ -2378,15 +2381,22 @@ async function handleSubmitCreatePublishTask() {
           const config = publishConfigOptions.value.find(
             (item: any) => item.id === publishConfigId,
           );
-          if (!config?.platform) {
-            throw new Error("发布配置缺少平台信息");
+          const resolvedTaskType = String(
+            config?.taskType || derivePublishTaskTypeByPlatform(config?.platform),
+          ).trim();
+          const resolvedPlatform = String(
+            config?.platform || resolveTaskTypePlatform(resolvedTaskType),
+          ).trim();
+          if (!resolvedTaskType || !resolvedPlatform) {
+            throw new Error("任务配置缺少任务类型或平台信息");
           }
           await createPublishTaskApi({
             psdSetId,
-            platform: config.platform,
+            taskType: resolvedTaskType,
+            platform: resolvedPlatform,
             publishConfigId,
             publishOptions: config.configData || {},
-            description: `套图 ${psdSetId} -> ${config.name || publishConfigId}`,
+            description: `套图 ${psdSetId} -> ${config.name || resolvedTaskType || publishConfigId}`,
           });
           successCount += 1;
         } catch (error) {
@@ -2461,7 +2471,7 @@ async function handleRegeneratePublishTask(row: any) {
   }
 
   await ElMessageBox.confirm(
-    "将基于当前套图信息和发布配置，重新生成这条任务的发布数据。是否继续？",
+    "将基于当前套图信息和任务配置，重新生成这条任务的发布数据。是否继续？",
     "重新生成发布数据",
     {
       type: "warning",

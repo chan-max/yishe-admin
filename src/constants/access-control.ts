@@ -56,7 +56,7 @@ export const MENU_ACCESS_GROUPS = [
       { key: "product.index", label: "商品" },
       { key: "product.psd-set", label: "套图" },
       { key: "product.design-request", label: "设计需求" },
-      { key: "product.publish-config", label: "发布配置" },
+      { key: "product.publish-config", label: "任务配置" },
       { key: "product.queue", label: "任务队列" },
     ],
   },
