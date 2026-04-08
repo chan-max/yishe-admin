@@ -2024,7 +2024,12 @@
       class="edit-material-dialog"
     >
       <div class="edit-material-body">
-        <el-form :model="editForm" label-width="110px" class="edit-form">
+        <el-form
+          :model="editForm"
+          label-position="top"
+          size="small"
+          class="edit-form material-index-search-form"
+        >
           <section class="edit-section">
             <div class="edit-section-title">基础信息</div>
             <el-row :gutter="20">
@@ -2097,22 +2102,42 @@
             <el-row :gutter="20">
               <el-col :xs="24" :sm="12" :lg="6">
                 <el-form-item label="自定义贴纸">
-                  <el-switch v-model="editForm.isCustom" active-text="是" inactive-text="否" />
+                  <el-switch
+                    v-model="editForm.isCustom"
+                    size="small"
+                    active-text="是"
+                    inactive-text="否"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="6">
                 <el-form-item label="是否公开">
-                  <el-switch v-model="editForm.isPublic" active-text="是" inactive-text="否" />
+                  <el-switch
+                    v-model="editForm.isPublic"
+                    size="small"
+                    active-text="是"
+                    inactive-text="否"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="6">
                 <el-form-item label="是否为材质">
-                  <el-switch v-model="editForm.isTexture" active-text="是" inactive-text="否" />
+                  <el-switch
+                    v-model="editForm.isTexture"
+                    size="small"
+                    active-text="是"
+                    inactive-text="否"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :lg="6">
                 <el-form-item label="抠图素材">
-                  <el-switch v-model="editForm.isCutout" active-text="是" inactive-text="否" />
+                  <el-switch
+                    v-model="editForm.isCutout"
+                    size="small"
+                    active-text="是"
+                    inactive-text="否"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :md="12">
@@ -2136,7 +2161,10 @@
                     maxlength="14"
                   >
                     <template #append>
-                      <el-button :loading="generatingCode" @click="handleGenerateMaterialCode"
+                      <el-button
+                        size="small"
+                        :loading="generatingCode"
+                        @click="handleGenerateMaterialCode"
                         >生成编码</el-button
                       >
                     </template>
@@ -2223,8 +2251,10 @@
       </div>
       <template #footer>
         <div class="edit-dialog-footer">
-          <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="editLoading" @click="submitEdit">保存</el-button>
+          <el-button size="small" @click="editDialogVisible = false">取消</el-button>
+          <el-button size="small" type="primary" :loading="editLoading" @click="submitEdit"
+            >保存</el-button
+          >
         </div>
       </template>
     </el-dialog>
@@ -6679,41 +6709,53 @@ h1 {
 .edit-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .edit-section {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  padding: 20px 20px 4px;
+  border-radius: 10px;
+  padding: 16px 16px 4px;
 }
 
 .edit-section-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .edit-form :deep(.el-form-item) {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .edit-form :deep(.el-form-item__label) {
+  padding-bottom: 6px;
   font-weight: 500;
   color: var(--el-text-color-regular);
-  font-size: 14px;
 }
 
 .edit-form :deep(.el-row) {
   margin-bottom: 0;
 }
 
-.edit-form :deep(.el-input),
-.edit-form :deep(.el-textarea),
-.edit-form :deep(.el-select) {
-  font-size: 14px;
+.edit-form :deep(.el-form-item__content) {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.edit-form :deep(.el-form-item__content) > * {
+  width: 100%;
+}
+
+.edit-form :deep(.el-switch) {
+  width: auto;
+}
+
+.edit-form :deep(.el-input-group__append .el-button) {
+  min-width: 72px;
 }
 
 .edit-form :deep(.el-textarea__inner) {
