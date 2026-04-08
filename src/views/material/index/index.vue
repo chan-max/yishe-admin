@@ -6648,6 +6648,21 @@ h1 {
 }
 </style>
 <style scoped>
+.op-submenu {
+  min-width: 132px;
+  padding: 1px 0;
+}
+
+.op-submenu-item {
+  display: flex;
+  align-items: center;
+  min-height: 31px;
+  box-sizing: border-box;
+  padding: 7px 14px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .material-upload-dialog :deep(.el-dialog) {
   display: flex;
   max-width: calc(100vw - 32px);
@@ -6777,6 +6792,16 @@ h1 {
 }
 
 @media (max-width: 768px) {
+  .op-submenu {
+    min-width: 140px;
+  }
+
+  .op-submenu-item {
+    min-height: 36px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
   .material-upload-dialog :deep(.el-dialog) {
     max-width: calc(100vw - 12px);
     height: calc(100vh - 12px);
