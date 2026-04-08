@@ -286,7 +286,30 @@ watch(() => form.taskType, (newTaskType) => {
   }
 }, { immediate: true })
 
-const taskTypeOptions = getAllTaskTypes()
+const baseTaskTypeOptions = getAllTaskTypes()
+
+const taskTypeOptions = computed(() => {
+  const currentTaskType = String(form.taskType || '').trim()
+  if (!currentTaskType || baseTaskTypeOptions.some((item) => item.value === currentTaskType)) {
+    return baseTaskTypeOptions
+  }
+
+  const currentPlatform = resolveTaskTypePlatform(currentTaskType)
+  const currentTaskConfig = getTaskTypeConfig(currentTaskType)
+  if (!currentPlatform || !currentTaskConfig) {
+    return baseTaskTypeOptions
+  }
+
+  return [
+    {
+      label: `${getTaskTypeLabel(currentTaskType, currentPlatform)}（历史配置）`,
+      value: currentTaskType,
+      platform: currentPlatform,
+      taskKind: currentTaskConfig.taskKind
+    },
+    ...baseTaskTypeOptions
+  ]
+})
 
 const rules = {
   name: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],

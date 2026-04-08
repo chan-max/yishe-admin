@@ -5,6 +5,8 @@
 
 import { PUBLISH_TASK_TYPE_PREFIX, derivePublishTaskTypeByPlatform, getTaskTypeLabel } from '@/config/task-types'
 
+const HIDDEN_TASK_CONFIG_PLATFORMS = new Set(['douyin', 'kuaishou'])
+
 export interface FieldConfig {
   key: string
   label: string
@@ -388,42 +390,6 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     titleMaxLength: 60,
     fields: [
       {
-        key: 'price',
-        label: '商品价格',
-        type: 'number',
-        placeholder: '输入价格',
-        span: 8,
-        required: true
-      },
-      {
-        key: 'stock',
-        label: '库存',
-        type: 'number',
-        placeholder: '可选，库存数量',
-        span: 8
-      },
-      {
-        key: 'categoryId',
-        label: '类目ID',
-        type: 'input',
-        placeholder: '可选，Temu类目ID',
-        span: 8
-      },
-      {
-        key: 'shippingTemplate',
-        label: '运费模板',
-        type: 'input',
-        placeholder: '可选，运费模板名称/ID',
-        span: 12
-      },
-      {
-        key: 'brand',
-        label: '品牌',
-        type: 'input',
-        placeholder: '可选，品牌名称',
-        span: 12
-      },
-      {
         key: 'account',
         label: '账号',
         type: 'input',
@@ -500,13 +466,15 @@ export function getTaskTypeDefaultData(taskType: string): Record<string, any> {
 
 // 获取所有支持的任务类型列表
 export function getAllTaskTypes() {
-  return Object.values(PLATFORM_CONFIGS).map((config) => {
-    const taskType = derivePublishTaskTypeByPlatform(config.platform)
-    return {
-      label: getTaskTypeLabel(taskType, config.platform),
-      value: taskType,
-      platform: config.platform,
-      taskKind: 'publish-product' as const
-    }
-  })
+  return Object.values(PLATFORM_CONFIGS)
+    .filter((config) => !HIDDEN_TASK_CONFIG_PLATFORMS.has(config.platform))
+    .map((config) => {
+      const taskType = derivePublishTaskTypeByPlatform(config.platform)
+      return {
+        label: getTaskTypeLabel(taskType, config.platform),
+        value: taskType,
+        platform: config.platform,
+        taskKind: 'publish-product' as const
+      }
+    })
 }

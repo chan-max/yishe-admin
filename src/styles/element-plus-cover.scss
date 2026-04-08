@@ -78,6 +78,23 @@ html.dark {
   --ep-cover-feedback-error-text: #ffe4e6;
 }
 
+:root,
+html.light {
+  --ep-cover-alert-padding-y: 9px;
+  --ep-cover-alert-padding-x: 12px;
+  --ep-cover-alert-radius: 12px;
+  --ep-cover-alert-title-size: 11px;
+  --ep-cover-alert-desc-size: 10px;
+  --ep-cover-alert-icon-size: 13px;
+  --ep-cover-alert-close-size: 11px;
+}
+
+html.dark {
+  --ep-cover-alert-padding-y: 9px;
+  --ep-cover-alert-padding-x: 12px;
+  --ep-cover-alert-radius: 12px;
+}
+
 @media only screen and (min-width: 768px) and (max-width: 1366px) {
   :root,
   html.light,
@@ -92,7 +109,77 @@ html.dark {
     --ep-cover-control-height: 30px;
     --ep-cover-control-height-lg: 34px;
     --ep-cover-control-padding-x: 11px;
+    --ep-cover-alert-padding-y: 8px;
+    --ep-cover-alert-padding-x: 11px;
+    --ep-cover-alert-title-size: 10px;
+    --ep-cover-alert-desc-size: 9px;
   }
+}
+
+.el-alert {
+  --el-alert-padding: var(--ep-cover-alert-padding-y)
+    var(--ep-cover-alert-padding-x);
+  border: 1px solid var(--el-alert-border-color);
+  border-radius: var(--ep-cover-alert-radius);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  align-items: flex-start;
+}
+
+.el-alert::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 999px;
+  background: var(--el-alert-border-color);
+  opacity: 0.9;
+}
+
+.el-alert .el-alert__icon {
+  margin-top: 1px;
+  margin-right: 8px;
+  font-size: var(--ep-cover-alert-icon-size);
+}
+
+.el-alert .el-alert__content {
+  padding-right: 6px;
+}
+
+.el-alert .el-alert__title {
+  font-size: var(--ep-cover-alert-title-size);
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.el-alert .el-alert__title.with-description {
+  margin-bottom: 2px;
+}
+
+.el-alert .el-alert__description {
+  margin: 0;
+  font-size: var(--ep-cover-alert-desc-size);
+  line-height: 1.5;
+}
+
+.el-alert .el-alert__close-btn {
+  top: 10px;
+  right: 10px;
+  font-size: var(--ep-cover-alert-close-size);
+  transition:
+    color var(--ep-cover-motion-fast),
+    opacity var(--ep-cover-motion-fast),
+    transform var(--ep-cover-motion-fast);
+}
+
+.el-alert .el-alert__close-btn:hover {
+  transform: scale(1.04);
+}
+
+html.dark .el-alert {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .el-button {
