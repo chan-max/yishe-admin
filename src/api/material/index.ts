@@ -323,6 +323,26 @@ export function copyStickers(data: { ids: string[] | string }) {
 }
 
 /**
+ * Copy stickers to target user
+ */
+export function copyStickersToUser(data: { ids: string[] | string; targetUserId: string }) {
+  return request.post({
+    url: '/sticker/copy-to-user',
+    data
+  })
+}
+
+/**
+ * Move stickers to target user
+ */
+export function moveStickersToUser(data: { ids: string[] | string; targetUserId: string }) {
+  return request.post({
+    url: '/sticker/move-to-user',
+    data
+  })
+}
+
+/**
  * Trim transparent PNG borders (PNG only)
  */
 export function trimPng(data: { id: string, threshold?: number }) {

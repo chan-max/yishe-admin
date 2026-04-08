@@ -349,6 +349,7 @@
               </el-col>
 
               <el-col
+                v-if="!similarSearchDisabled"
                 class="list-page-search-form__col--full"
                 :xs="24"
                 :sm="24"
@@ -428,10 +429,28 @@
               <el-button size="small" @click="handleMultiDownload"
                 >下载 ({{ ids.length }})</el-button
               >
-              <el-button v-if="isAdmin" size="small" @click="() => openPsdSetDialog(false)"
+              <el-button
+                v-admin-only
+                size="small"
+                type="success"
+                :disabled="loading || !ids.length"
+                @click="() => openStickerUserTransferDialog('copy')"
+              >
+                分享给用户({{ ids.length }})
+              </el-button>
+              <el-button
+                v-admin-only
+                size="small"
+                type="warning"
+                :disabled="loading || !ids.length"
+                @click="() => openStickerUserTransferDialog('move')"
+              >
+                转移给用户({{ ids.length }})
+              </el-button>
+              <el-button size="small" @click="() => openPsdSetDialog(false)"
                 >制作PS套图({{ ids.length }})</el-button
               >
-              <el-button v-if="isAdmin" size="small" @click="() => openPsdSetDialog(true)"
+              <el-button size="small" @click="() => openPsdSetDialog(true)"
                 >多图套图({{ ids.length }})</el-button
               >
               <el-button
@@ -1730,9 +1749,8 @@
                             </div>
                           </div>
 
-                          <!-- 制作操作（仅管理员） -->
+                          <!-- 制作操作 -->
                           <div
-                            v-if="isAdmin"
                             class="op-menu-item has-submenu"
                             @mouseenter="handleSubmenuEnter"
                             @mouseleave="handleSubmenuLeave"
@@ -1792,6 +1810,7 @@
                                 复制
                               </div>
                               <div
+                                v-if="!similarSearchDisabled"
                                 class="op-submenu-item"
                                 @click="() => handleOperationCommand('find-similar', row)"
                               >
@@ -1810,6 +1829,37 @@
                                 @click="() => handleOperationCommand('svg-to-png', row)"
                               >
                                 SVG转PNG
+                              </div>
+                            </div>
+                          </div>
+
+                          <div
+                            v-if="isAdmin"
+                            class="op-menu-item has-submenu"
+                            @mouseenter="handleSubmenuEnter"
+                            @mouseleave="handleSubmenuLeave"
+                          >
+                            <el-icon class="op-menu-arrow">
+                              <ArrowLeft />
+                            </el-icon>
+                            <span class="op-menu-label">归属操作</span>
+                            <div
+                              class="op-submenu"
+                              data-submenu="ownership"
+                              @mouseenter="handleSubmenuKeepVisible"
+                              @mouseleave="handleSubmenuHide"
+                            >
+                              <div
+                                class="op-submenu-item"
+                                @click="() => handleOperationCommand('copy-to-user', row)"
+                              >
+                                分享给用户
+                              </div>
+                              <div
+                                class="op-submenu-item"
+                                @click="() => handleOperationCommand('move-to-user', row)"
+                              >
+                                转移给用户
                               </div>
                             </div>
                           </div>
@@ -2325,6 +2375,92 @@
       </div>
     </el-dialog>
 
+    <el-dialog
+      v-model="stickerUserTransferDialogVisible"
+      :title="stickerUserTransferDialogTitle"
+      width="560px"
+      align-center
+      :close-on-click-modal="false"
+      @closed="resetStickerUserTransferDialog"
+    >
+      <div class="sticker-user-transfer-dialog">
+        <el-alert
+          :type="stickerUserTransferAction === 'copy' ? 'success' : 'warning'"
+          :closable="false"
+          show-icon
+          :title="
+            stickerUserTransferAction === 'copy'
+              ? '复制素材并分享给目标用户，原素材会保留。'
+              : '转移素材给目标用户，会变更素材归属并同步调整 COS 路径。'
+          "
+        />
+
+        <el-form label-width="96px" class="sticker-user-transfer-form">
+          <el-form-item label="目标用户" required>
+            <el-select
+              v-model="stickerUserTransferTargetUserId"
+              class="sticker-user-transfer-form__select"
+              filterable
+              clearable
+              :loading="stickerUserTransferUsersLoading"
+              placeholder="请选择目标用户"
+            >
+              <el-option
+                v-for="item in stickerUserTransferUserOptions"
+                :key="item.id"
+                :label="item.label"
+                :value="item.id"
+              >
+                <div class="sticker-user-transfer-option">
+                  <div class="sticker-user-transfer-option__main">
+                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
+                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                  </div>
+                  <span class="sticker-user-transfer-option__meta">
+                    {{ item.account || `ID ${item.id}` }}
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="素材数量">
+            <el-tag type="info">{{ stickerUserTransferIds.length }}</el-tag>
+          </el-form-item>
+
+          <el-form-item label="选中素材">
+            <div class="sticker-user-transfer-preview">
+              <el-tag
+                v-for="item in stickerUserTransferPreviewItems"
+                :key="item.id"
+                size="small"
+                effect="plain"
+              >
+                {{ item.label }}
+              </el-tag>
+              <span
+                v-if="stickerUserTransferIds.length > stickerUserTransferPreviewItems.length"
+                class="sticker-user-transfer-preview__more"
+              >
+                等 {{ stickerUserTransferIds.length }} 条
+              </span>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <el-button @click="stickerUserTransferDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="stickerUserTransferSubmitting"
+          @click="submitStickerUserTransfer"
+        >
+          {{ stickerUserTransferSubmitText }}
+        </el-button>
+      </template>
+    </el-dialog>
+
     <!-- SVG转PNG尺寸设置弹窗 -->
     <el-dialog
       v-model="svgToPngDialogVisible"
@@ -2684,6 +2820,8 @@ import {
   getStickerFolderTree,
   uploadMaterialFile,
   copyStickers,
+  copyStickersToUser,
+  moveStickersToUser,
   trimPng,
   svgToPng,
   generateStickerStoryScript,
@@ -2753,7 +2891,7 @@ import genPicture from "./genPicture.vue";
 import { getAccessToken } from "@/utils/auth";
 import { getTenantId } from "@/utils/auth";
 import { buildImageProcessingRouteLocation } from "@/utils/imageProcessingRoute";
-import useListSelect from "@/components/common/userListSelect.vue";
+import { getUserList } from "@/api/user";
 import { getDesignModelList } from "@/api/designModel";
 import request from "@/config/axios";
 import VueJsonPretty from "vue-json-pretty";
@@ -2778,6 +2916,18 @@ const FOLDER_CATEGORY = "sticker";
 
 // 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
+const similarSearchDisabled = true;
+const SIMILAR_SEARCH_DISABLED_MESSAGE = "相似匹配功能暂时禁用";
+
+type StickerUserTransferAction = "copy" | "move";
+type StickerUserTransferUserOption = {
+  id: string;
+  name: string;
+  account: string;
+  label: string;
+  isAdmin: boolean;
+};
+
 const storyScriptDialogVisible = ref(false);
 const storyScriptSubmitting = ref(false);
 const storyScriptListLoading = ref(false);
@@ -3209,6 +3359,32 @@ function closeImagePreview() {
 const metaDialogVisible = ref(false);
 const metaDialogContent = ref("");
 
+// 素材转移 / 分享给用户
+const stickerUserTransferDialogVisible = ref(false);
+const stickerUserTransferSubmitting = ref(false);
+const stickerUserTransferUsersLoading = ref(false);
+const stickerUserTransferUsersLoaded = ref(false);
+const stickerUserTransferAction = ref<StickerUserTransferAction>("copy");
+const stickerUserTransferIds = ref<string[]>([]);
+const stickerUserTransferTargetUserId = ref("");
+const stickerUserTransferUserOptions = ref<StickerUserTransferUserOption[]>([]);
+
+const stickerUserTransferDialogTitle = computed(() =>
+  stickerUserTransferAction.value === "copy" ? "分享素材给用户" : "转移素材给用户",
+);
+const stickerUserTransferSubmitText = computed(() =>
+  stickerUserTransferAction.value === "copy" ? "确认分享" : "确认转移",
+);
+const stickerUserTransferPreviewItems = computed(() => {
+  return stickerUserTransferIds.value.slice(0, 5).map((id) => {
+    const row = dataSource.value.find((item) => String(item.id) === String(id));
+    return {
+      id: String(id),
+      label: row?.name || row?.nameEn || `ID: ${id}`,
+    };
+  });
+});
+
 // SVG转PNG相关状态
 const svgToPngDialogVisible = ref(false);
 const currentSvgRow = ref<any>(null);
@@ -3425,6 +3601,9 @@ watch(uploadModalVisible, (visible) => {
 
 async function getList() {
   loading.value = true;
+  if (similarSearchDisabled) {
+    queryParams.phash = "";
+  }
   // 清理旧的超时定时器
   imageLoadTimeouts.forEach((timeout) => {
     clearTimeout(timeout);
@@ -3559,6 +3738,10 @@ onUnmounted(() => {
 
 // phash相似图片搜索
 async function handlePhashSearch() {
+  if (similarSearchDisabled) {
+    ElMessage.warning(SIMILAR_SEARCH_DISABLED_MESSAGE);
+    return;
+  }
   // 去除phash值的前后空格
   queryParams.phash = queryParams.phash.trim();
 
@@ -3575,6 +3758,9 @@ async function handlePhashSearch() {
 
 // phash输入框失去焦点时自动trim
 function onPhashInputBlur() {
+  if (similarSearchDisabled) {
+    return;
+  }
   queryParams.phash = queryParams.phash.trim();
 }
 
@@ -3877,6 +4063,141 @@ async function handleCopy(row) {
     getList();
   } catch (e) {
     ElMessage.error("复制失败");
+  }
+}
+
+function ensureStickerAdminOperation() {
+  if (!isAdmin.value) {
+    ElMessage.warning("无权限：仅管理员可执行该操作");
+    return false;
+  }
+  return true;
+}
+
+async function loadStickerTransferUserOptions() {
+  if (stickerUserTransferUsersLoading.value || stickerUserTransferUsersLoaded.value) {
+    return;
+  }
+
+  stickerUserTransferUsersLoading.value = true;
+  try {
+    const res = await getUserList({ currentPage: 1, pageSize: 1000 });
+    stickerUserTransferUserOptions.value = (res?.list || []).map((item: any) => ({
+      id: String(item.id),
+      name: String(item.name || "").trim(),
+      account: String(item.account || "").trim(),
+      label: `${item.name || item.account || `用户#${item.id}`} (${item.account || item.id})`,
+      isAdmin: !!item.isAdmin,
+    }));
+    stickerUserTransferUsersLoaded.value = true;
+  } catch (error: any) {
+    ElMessage.error(error?.message || "加载用户列表失败");
+  } finally {
+    stickerUserTransferUsersLoading.value = false;
+  }
+}
+
+function resetStickerUserTransferDialog() {
+  stickerUserTransferSubmitting.value = false;
+  stickerUserTransferAction.value = "copy";
+  stickerUserTransferIds.value = [];
+  stickerUserTransferTargetUserId.value = "";
+}
+
+async function openStickerUserTransferDialog(
+  action: StickerUserTransferAction,
+  row?: any,
+) {
+  if (!ensureStickerAdminOperation()) {
+    return;
+  }
+
+  const targetIds = row
+    ? [String(row.id)]
+    : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
+
+  if (!targetIds.length) {
+    ElMessage.warning("请选择要操作的素材");
+    return;
+  }
+
+  stickerUserTransferAction.value = action;
+  stickerUserTransferIds.value = Array.from(new Set(targetIds));
+  stickerUserTransferTargetUserId.value = "";
+  await loadStickerTransferUserOptions();
+  stickerUserTransferDialogVisible.value = true;
+}
+
+async function submitStickerUserTransfer() {
+  if (!ensureStickerAdminOperation()) {
+    return;
+  }
+
+  if (!stickerUserTransferIds.value.length) {
+    ElMessage.warning("请选择要操作的素材");
+    return;
+  }
+
+  if (!stickerUserTransferTargetUserId.value) {
+    ElMessage.warning("请选择目标用户");
+    return;
+  }
+
+  stickerUserTransferSubmitting.value = true;
+  const actionLabel = stickerUserTransferAction.value === "copy" ? "分享" : "转移";
+
+  try {
+    const payload = {
+      ids: stickerUserTransferIds.value,
+      targetUserId: stickerUserTransferTargetUserId.value,
+    };
+    const res =
+      stickerUserTransferAction.value === "copy"
+        ? await copyStickersToUser(payload)
+        : await moveStickersToUser(payload);
+
+    const successCount = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
+    const failedCount = Array.isArray(res?.failed) ? res.failed.length : 0;
+    const warningCount = Array.isArray(res?.warnings) ? res.warnings.length : 0;
+
+    if (successCount > 0) {
+      ElNotification.success(
+        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+      );
+      stickerUserTransferDialogVisible.value = false;
+      resetCheckStatus(ids);
+      await getList();
+    } else if (failedCount > 0) {
+      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+    } else {
+      ElMessage.warning(`未处理任何素材，请稍后重试`);
+    }
+
+    if (failedCount > 0) {
+      ElNotification.warning({
+        title: `${actionLabel}失败详情`,
+        message: res.failed
+          .slice(0, 3)
+          .map((item: any) => `${item.id}: ${item.message}`)
+          .join("；"),
+        duration: 6000,
+      });
+    }
+
+    if (warningCount > 0) {
+      ElNotification.warning({
+        title: `${actionLabel}完成，但有警告`,
+        message: res.warnings
+          .slice(0, 3)
+          .map((item: any) => `${item.id}: ${item.message}`)
+          .join("；"),
+        duration: 6000,
+      });
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || `${actionLabel}失败`);
+  } finally {
+    stickerUserTransferSubmitting.value = false;
   }
 }
 
@@ -4813,6 +5134,10 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
 
 // 查找相似图：将当前行的 phash 带入搜索
 async function handleFindSimilar(row) {
+  if (similarSearchDisabled) {
+    ElMessage.warning(SIMILAR_SEARCH_DISABLED_MESSAGE);
+    return;
+  }
   if (!row?.phash) {
     ElMessage.warning("该图片暂无 phash，请先生成后再搜索相似图");
     return;
@@ -5095,6 +5420,12 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case "copy":
       handleCopy(row);
+      break;
+    case "copy-to-user":
+      openStickerUserTransferDialog("copy", row);
+      break;
+    case "move-to-user":
+      openStickerUserTransferDialog("move", row);
       break;
     case "create-ps-set":
       openPsdSetDialog(row);
@@ -7547,6 +7878,54 @@ h1 {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+}
+
+.sticker-user-transfer-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sticker-user-transfer-form {
+  margin-top: 4px;
+}
+
+.sticker-user-transfer-form__select {
+  width: 100%;
+}
+
+.sticker-user-transfer-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.sticker-user-transfer-option__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--el-text-color-primary);
+}
+
+.sticker-user-transfer-option__meta {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.sticker-user-transfer-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sticker-user-transfer-preview__more {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  line-height: 24px;
 }
 
 .material-index-sidebar {

@@ -119,6 +119,22 @@ export default defineComponent({
       );
     };
 
+    const renderRunningStatusDot = (
+      title: string,
+      variant?: "queue" | "psd",
+    ) => {
+      return renderMenuStatusHint(
+        <span
+          class={[
+            `${prefixCls}__status-dot`,
+            `${prefixCls}__status-dot--running`,
+            variant ? `${prefixCls}__status-dot--running-${variant}` : undefined,
+          ]}
+        />,
+        title,
+      );
+    };
+
     const renderStatusDot = (routePath: string) => {
       const status = routeStatusMap.value[routePath];
       if (!status) {
@@ -156,11 +172,18 @@ export default defineComponent({
             ? "当前有任务正在执行"
             : titleMap[routePath]?.[status];
 
+      if (running) {
+        return renderRunningStatusDot(
+          title || "当前有任务正在执行",
+          routePath === "/product/queue" ? "queue" : undefined,
+        );
+      }
+
       return renderMenuStatusHint(
         <span
           class={[
             `${prefixCls}__status-dot`,
-            running ? `${prefixCls}__status-dot--running` : `${prefixCls}__status-dot--${status}`,
+            `${prefixCls}__status-dot--${status}`,
           ]}
         />,
         title || "当前不可用",
@@ -185,11 +208,15 @@ export default defineComponent({
     };
 
     const isPsdSetRoute = (routePath: string) => routePath === "/product/psd-set";
-    const shouldUseRunningLinkHighlight = (routePath: string) => routePath === "/product/queue";
+    const isQueueRoute = (routePath: string) => routePath === "/product/queue";
 
     const renderPsdSetAutoDot = (routePath: string) => {
       if (!isPsdSetRoute(routePath)) {
         return undefined;
+      }
+
+      if (isAnyPsdSetProcessing.value) {
+        return renderRunningStatusDot("当前有套图正在制作", "psd");
       }
 
       return renderMenuStatusHint(
@@ -203,6 +230,16 @@ export default defineComponent({
         />,
         userAutoSchedulingEnabled.value ? "自动处理已开启" : "自动处理未开启",
       );
+    };
+
+    const isMenuLinkRunning = (routePath: string) => {
+      if (isPsdSetRoute(routePath)) {
+        return isAnyPsdSetProcessing.value;
+      }
+      if (isQueueRoute(routePath)) {
+        return !!routeRunningMap.value[routePath];
+      }
+      return false;
     };
 
     const getRoutePath = (route: AppRouteRecordRaw, parentPath = "/") => {
@@ -342,11 +379,11 @@ export default defineComponent({
                             `${prefixCls}__link`,
                             {
                               [`${prefixCls}__link--active`]: childPath === activeMenu.value,
-                              [`${prefixCls}__link--psd-running`]:
+                              [`${prefixCls}__link--running`]: isMenuLinkRunning(childPath),
+                              [`${prefixCls}__link--running-psd`]:
                                 isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
-                              [`${prefixCls}__link--service-running`]:
-                                shouldUseRunningLinkHighlight(childPath) &&
-                                !!routeRunningMap.value[childPath],
+                              [`${prefixCls}__link--running-queue`]:
+                                isQueueRoute(childPath) && !!routeRunningMap.value[childPath],
                             },
                           ]}
                           onClick={() => selectMenu(childPath)}
@@ -582,6 +619,8 @@ $prefix-cls: #{$namespace}-menu;
   &__link-text {
     display: block;
     flex: 1;
+    position: relative;
+    z-index: 1;
     min-width: 0;
     overflow: hidden;
     font-size: var(--left-menu-link-font-size);
@@ -596,6 +635,7 @@ $prefix-cls: #{$namespace}-menu;
     display: inline-flex;
     flex: none;
     align-items: center;
+    z-index: 1;
   }
 
   :global(.#{$prefix-cls}__status-tooltip-popper.el-popper),
@@ -637,40 +677,94 @@ $prefix-cls: #{$namespace}-menu;
     animation: status-dot-wave-available 2.2s ease-out infinite;
   }
 
-  &__psd-status-dot--running {
-    background: #f97316;
-    box-shadow:
-      0 0 0 1px rgb(249 115 22 / 24%),
-      0 0 10px rgb(249 115 22 / 38%);
-    animation: status-dot-breathe-running 1.9s ease-in-out infinite;
-  }
-
-  &__psd-status-dot--running::after {
-    background: rgb(249 115 22 / 24%);
-    animation: status-dot-wave-running 1.9s ease-out infinite;
-  }
-
   &__psd-status-dot--muted {
     background: rgb(148 163 184 / 88%);
     box-shadow: 0 0 0 1px rgb(148 163 184 / 12%);
   }
 
-  &__link--psd-running {
-    border-left-color: rgb(250 204 21 / 72%);
-    background: rgb(250 204 21 / 18%);
+  &__link--running {
+    position: relative;
+    isolation: isolate;
+    border-left-color: transparent;
     box-shadow:
-      inset 0 0 0 1px rgb(250 204 21 / 20%),
-      inset 2px 0 0 rgb(250 204 21 / 58%);
-    animation: psd-link-amber-breathe 2.2s ease-in-out infinite;
+      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 18%),
+      0 6px 18px rgb(var(--menu-running-rgb, 245 158 11) / 6%);
   }
 
-  &__link--service-running {
-    border-left-color: rgb(45 212 191 / 70%);
-    background: rgb(45 212 191 / 14%);
+  &__link--running:not(.#{$prefix-cls}__link--active) {
+    background:
+      radial-gradient(
+        circle at 86% 50%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 12%) 0%,
+        transparent 38%
+      ),
+      linear-gradient(
+        90deg,
+        rgb(var(--menu-running-rgb, 245 158 11) / 14%) 0%,
+        rgb(var(--menu-running-rgb, 245 158 11) / 4%) 62%,
+        transparent 100%
+      );
+    color: var(--menu-running-text-color, rgb(255 244 214 / 92%));
+  }
+
+  &__link--running:hover {
+    border-left-color: transparent;
+    transform: none;
     box-shadow:
-      inset 0 0 0 1px rgb(45 212 191 / 16%),
-      inset 2px 0 0 rgb(45 212 191 / 52%);
-    animation: service-link-teal-breathe 2.4s ease-in-out infinite;
+      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 24%),
+      0 8px 22px rgb(var(--menu-running-rgb, 245 158 11) / 10%);
+  }
+
+  &__link--running:not(.#{$prefix-cls}__link--active)::after {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background:
+      linear-gradient(
+        120deg,
+        transparent 0%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 38%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 9%) 50%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 62%,
+        transparent 100%
+      );
+    content: "";
+    opacity: 0.9;
+    animation: queue-link-sheen 2.2s linear infinite;
+    pointer-events: none;
+  }
+
+  &__link--running.#{$prefix-cls}__link--active {
+    border-left-color: transparent;
+    background:
+      radial-gradient(
+        circle at 86% 50%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 10%) 0%,
+        transparent 36%
+      ),
+      linear-gradient(
+        90deg,
+        rgb(var(--menu-running-rgb, 245 158 11) / 10%) 0%,
+        rgb(var(--menu-running-rgb, 245 158 11) / 3%) 56%,
+        transparent 100%
+      ),
+      var(--left-menu-link-active-bg);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 22%),
+      0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 8%);
+  }
+
+  &__link--running-queue {
+    --menu-running-rgb: 245 158 11;
+    --menu-running-highlight-rgb: 251 191 36;
+    --menu-running-text-color: rgb(255 244 214 / 92%);
+  }
+
+  &__link--running-psd {
+    --menu-running-rgb: 234 179 8;
+    --menu-running-highlight-rgb: 250 204 21;
+    --menu-running-text-color: rgb(255 249 214 / 92%);
   }
 
   &__status-dot {
@@ -731,17 +825,41 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__status-dot--running {
-    background: #14b8a6;
+    background: rgb(var(--menu-running-rgb, 245 158 11) / 10%);
     box-shadow:
-      0 0 0 1px rgb(20 184 166 / 22%),
-      0 0 12px rgb(20 184 166 / 36%),
-      0 0 20px rgb(20 184 166 / 16%);
-    animation: status-dot-breathe-running 1.9s ease-in-out infinite;
+      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 22%),
+      0 0 10px rgb(var(--menu-running-rgb, 245 158 11) / 20%);
+    animation: status-dot-running-core 1.35s ease-in-out infinite;
+  }
+
+  &__status-dot--running::before {
+    inset: -1px;
+    border: 1.5px solid transparent;
+    border-top-color: rgb(var(--menu-running-rgb, 245 158 11));
+    border-right-color: rgb(var(--menu-running-highlight-rgb, 251 191 36) / 88%);
+    background: transparent;
+    animation: status-ring-spin 0.9s linear infinite;
   }
 
   &__status-dot--running::after {
-    background: rgb(20 184 166 / 26%);
-    animation: status-dot-wave-running 1.9s ease-out infinite;
+    inset: 3px;
+    background: rgb(var(--menu-running-rgb, 245 158 11) / 92%);
+    opacity: 0.92;
+    transform: scale(1);
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 18%),
+      0 0 8px rgb(var(--menu-running-rgb, 245 158 11) / 34%);
+    animation: status-dot-running-pulse 1.25s ease-in-out infinite;
+  }
+
+  &__status-dot--running-queue {
+    --menu-running-rgb: 245 158 11;
+    --menu-running-highlight-rgb: 251 191 36;
+  }
+
+  &__status-dot--running-psd {
+    --menu-running-rgb: 234 179 8;
+    --menu-running-highlight-rgb: 250 204 21;
   }
 
   &__status-dot--offline {
@@ -861,65 +979,51 @@ $prefix-cls: #{$namespace}-menu;
   }
 }
 
-@keyframes status-dot-breathe-running {
+@keyframes queue-link-sheen {
   0%,
-  100% {
-    transform: scale(0.96);
-    box-shadow:
-      0 0 0 1px rgb(249 115 22 / 18%),
-      0 0 8px rgb(249 115 22 / 22%),
-      0 0 14px rgb(249 115 22 / 10%);
+  12% {
+    transform: translateX(-112%);
   }
-  50% {
-    transform: scale(1.08);
-    box-shadow:
-      0 0 0 1px rgb(249 115 22 / 28%),
-      0 0 14px rgb(249 115 22 / 42%),
-      0 0 22px rgb(249 115 22 / 18%);
+  48%,
+  100% {
+    transform: translateX(112%);
   }
 }
 
-@keyframes status-dot-wave-running {
-  0% {
-    opacity: 0.36;
+@keyframes status-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes status-dot-running-core {
+  0%,
+  100% {
+    transform: scale(0.98);
+    box-shadow:
+      inset 0 0 0 1px rgb(245 158 11 / 20%),
+      0 0 8px rgb(245 158 11 / 16%);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow:
+      inset 0 0 0 1px rgb(245 158 11 / 28%),
+      0 0 12px rgb(245 158 11 / 28%);
+  }
+}
+
+@keyframes status-dot-running-pulse {
+  0%,
+  100% {
+    opacity: 0.88;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
     transform: scale(1);
-  }
-  75%,
-  100% {
-    opacity: 0;
-    transform: scale(2.5);
-  }
-}
-
-@keyframes psd-link-amber-breathe {
-  0%,
-  100% {
-    box-shadow:
-      inset 0 0 0 1px rgb(250 204 21 / 14%),
-      inset 2px 0 0 rgb(250 204 21 / 44%);
-    background: rgb(250 204 21 / 14%);
-  }
-  50% {
-    box-shadow:
-      inset 0 0 0 1px rgb(250 204 21 / 28%),
-      inset 2px 0 0 rgb(250 204 21 / 72%);
-    background: rgb(250 204 21 / 22%);
-  }
-}
-
-@keyframes service-link-teal-breathe {
-  0%,
-  100% {
-    box-shadow:
-      inset 0 0 0 1px rgb(45 212 191 / 12%),
-      inset 2px 0 0 rgb(45 212 191 / 40%);
-    background: rgb(45 212 191 / 12%);
-  }
-  50% {
-    box-shadow:
-      inset 0 0 0 1px rgb(45 212 191 / 24%),
-      inset 2px 0 0 rgb(45 212 191 / 66%);
-    background: rgb(45 212 191 / 18%);
   }
 }
 
