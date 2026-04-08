@@ -1,51 +1,47 @@
 <template>
   <div class="tools-page">
-    <section class="tools-hero">
-      <div class="tools-hero__content">
-        <div class="tools-hero__title">工具</div>
-        <div class="tools-hero__desc">
-          将客户端下载与常用工具入口集中管理，后续只需要调整页面常量即可维护下载地址。
-        </div>
-      </div>
-    </section>
+    <header class="tools-header">
+      <h1 class="tools-header__title">工具</h1>
+      <p class="tools-header__desc">客户端与插件安装包集中入口；点击下方按钮在新窗口下载。</p>
+    </header>
 
-    <section class="tools-section">
+    <section class="tools-section" aria-labelledby="tools-downloads-heading">
       <div class="tools-section__head">
-        <div class="tools-section__title">客户端下载</div>
-        <div class="tools-section__desc">暂未配置的下载项会保持禁用，补充链接后即可直接启用。</div>
+        <h2 id="tools-downloads-heading" class="tools-section__title">下载</h2>
+        <p class="tools-section__meta">未配置链接的项将保持灰色不可用。</p>
       </div>
 
-      <div class="tools-grid tools-grid--downloads">
-        <div v-for="item in downloadCards" :key="item.key" class="tools-card tools-download-card">
-          <div class="tools-download-card__head">
-            <span class="tools-download-card__icon">
+      <div class="tools-grid">
+        <article
+          v-for="item in downloadCards"
+          :key="item.key"
+          class="tools-card"
+          :class="{ 'is-disabled': !item.downloadUrl }"
+        >
+          <div class="tools-card__top">
+            <span class="tools-card__icon" aria-hidden="true">
               <Icon :icon="item.icon" />
             </span>
-            <el-tag size="small" effect="plain" :type="item.downloadUrl ? 'success' : 'info'">
-              {{ item.downloadUrl ? "可下载" : "待配置" }}
+            <el-tag size="small" effect="plain" round :type="item.downloadUrl ? 'success' : 'info'">
+              {{ item.downloadUrl ? "可用" : "未配置" }}
             </el-tag>
           </div>
 
-          <div class="tools-download-card__title">{{ item.title }}</div>
-          <div class="tools-download-card__platform">{{ item.platform }}</div>
-          <div class="tools-download-card__desc">{{ item.description }}</div>
+          <div class="tools-card__headline">
+            <span class="tools-card__title">{{ item.title }}</span>
+            <span class="tools-card__platform">{{ item.platform }}</span>
+          </div>
 
-          <div class="tools-download-card__actions">
-            <el-button
-              type="primary"
-              :disabled="!item.downloadUrl"
-              @click="handleDownload(item.downloadUrl)"
-            >
+          <p class="tools-card__desc">{{ item.description }}</p>
+
+          <div class="tools-card__actions">
+            <el-button type="primary" round :disabled="!item.downloadUrl" @click="handleDownload(item.downloadUrl)">
               {{ item.actionText }}
             </el-button>
-            <span class="tools-download-card__hint">
-              {{ item.downloadUrl ? "点击后新窗口打开下载地址" : "下载链接待补充" }}
-            </span>
           </div>
-        </div>
+        </article>
       </div>
     </section>
-
   </div>
 </template>
 
@@ -69,8 +65,8 @@ const downloadCards: DownloadCard[] = [
     key: "client-windows",
     title: "客户端",
     platform: "Windows",
-    description: "负责与服务端建立长连接，并桥接浏览器自动化与桌面能力。",
-    actionText: "下载 Windows 客户端",
+    description: "与服务端长连接，桥接浏览器自动化与桌面能力。",
+    actionText: "Windows 安装包",
     downloadUrl: "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
     icon: "ep:monitor",
   },
@@ -78,8 +74,8 @@ const downloadCards: DownloadCard[] = [
     key: "client-macos",
     title: "客户端",
     platform: "macOS",
-    description: "负责与服务端建立长连接，并桥接浏览器自动化与桌面能力。",
-    actionText: "下载 macOS 客户端",
+    description: "与服务端长连接，桥接浏览器自动化与桌面能力。",
+    actionText: "macOS 安装包",
     downloadUrl: "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
     icon: "mdi:apple",
   },
@@ -87,8 +83,8 @@ const downloadCards: DownloadCard[] = [
     key: "ps-automation",
     title: "PS 自动化端",
     platform: "Windows",
-    description: "负责 Photoshop 桥接能力与相关自动化任务执行。",
-    actionText: "下载 PS 端",
+    description: "Photoshop 桥接与相关自动化任务。",
+    actionText: "PS 端",
     downloadUrl: "https://github.com/1s-design/yishe-ps/releases/latest/download/yishe-ps-windows.exe",
     icon: "ep:set-up",
   },
@@ -96,8 +92,8 @@ const downloadCards: DownloadCard[] = [
     key: "browser-automation",
     title: "浏览器自动化端",
     platform: "Windows",
-    description: "作为独立服务承接浏览器自动化执行，与客户端保持清晰解耦。",
-    actionText: "下载 Windows 自动化端",
+    description: "独立承接浏览器自动化，与客户端解耦。",
+    actionText: "Windows 包",
     downloadUrl: "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-windows.exe",
     icon: "ep:connection",
   },
@@ -105,10 +101,19 @@ const downloadCards: DownloadCard[] = [
     key: "browser-automation-macos",
     title: "浏览器自动化端",
     platform: "macOS",
-    description: "作为独立服务承接浏览器自动化执行，与客户端保持清晰解耦。",
-    actionText: "下载 macOS 自动化端",
+    description: "独立承接浏览器自动化，与客户端解耦。",
+    actionText: "macOS 包",
     downloadUrl: "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-mac",
     icon: "mdi:apple",
+  },
+  {
+    key: "chrome-extension",
+    title: "YiShe 浏览器插件",
+    platform: "Chrome / Edge",
+    description: "解压后于扩展页「加载已解压的扩展程序」导入。",
+    actionText: "插件 zip",
+    downloadUrl: "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
+    icon: "mdi:puzzle",
   },
 ];
 
@@ -124,154 +129,155 @@ function handleDownload(downloadUrl: string) {
   flex-direction: column;
   gap: 18px;
   padding: 4px 0 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.tools-hero,
-.tools-card {
-  border: 1px solid color-mix(in srgb, var(--el-border-color) 54%, transparent 46%);
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--el-bg-color) 96%, transparent 4%);
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+.tools-header {
+  padding: 8px 0 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--el-border-color) 45%, transparent 55%);
 }
 
-.tools-hero {
-  padding: 24px;
-  background:
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.08), transparent 32%),
-    radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.06), transparent 28%),
-    color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
-}
-
-.tools-hero__title {
-  font-size: 28px;
+.tools-header__title {
+  margin: 0;
+  font-size: 22px;
   font-weight: 700;
-  line-height: 1.15;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--el-text-color-primary);
 }
 
-.tools-hero__desc {
-  margin-top: 10px;
+.tools-header__desc {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
   color: var(--el-text-color-secondary);
-  font-size: 14px;
-  line-height: 1.75;
-  max-width: 760px;
+  max-width: 48rem;
 }
 
 .tools-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
+}
+
+.tools-section__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
 }
 
 .tools-section__title {
-  font-size: 17px;
+  margin: 0;
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--el-text-color-primary);
 }
 
-.tools-section__desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.7;
+.tools-section__meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+  line-height: 1.45;
 }
 
 .tools-grid {
   display: grid;
-  gap: 14px;
+  width: 100%;
+  /* auto-fit 收起空列，1fr 均分剩余宽度，行内卡片拉满整行 */
+  gap: clamp(12px, 1.4vw, 18px);
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
 }
 
-.tools-grid--downloads {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.tools-download-card {
+.tools-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 18px;
+  gap: 10px;
+  padding: 16px 17px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 52%, transparent 48%);
+  background: color-mix(in srgb, var(--el-bg-color) 97%, transparent 3%);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+
+  &:hover:not(.is-disabled) {
+    border-color: color-mix(in srgb, var(--el-color-primary) 20%, var(--el-border-color) 80%);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  }
+
+  &.is-disabled {
+    opacity: 0.75;
+  }
 }
 
-.tools-download-card__head {
+.tools-card__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  min-height: 30px;
 }
 
-.tools-download-card__icon {
+.tools-card__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--el-fill-color-light) 78%, transparent 22%);
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--el-fill-color-light) 82%, transparent 18%);
   color: var(--el-text-color-primary);
-  font-size: 18px;
+  font-size: 17px;
 }
 
-.tools-download-card__title {
-  font-size: 16px;
+.tools-card__headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.tools-card__title {
+  font-size: 15px;
   font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--el-text-color-primary);
+  line-height: 1.3;
 }
 
-.tools-download-card__platform {
-  color: var(--el-color-primary);
+.tools-card__platform {
   font-size: 12px;
   font-weight: 600;
+  color: var(--el-color-primary);
+  line-height: 1.25;
 }
 
-.tools-download-card__desc {
-  min-height: 66px;
-  color: var(--el-text-color-secondary);
+.tools-card__desc {
+  margin: 0;
   font-size: 13px;
-  line-height: 1.75;
+  line-height: 1.65;
+  color: var(--el-text-color-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 3.1em;
 }
 
-.tools-download-card__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+.tools-card__actions {
   margin-top: auto;
+  padding-top: 4px;
 }
 
-.tools-download-card__actions :deep(.el-button) {
-  min-height: 42px;
+.tools-card__actions :deep(.el-button) {
+  font-weight: 600;
+  min-height: 38px;
   padding: 0 18px;
-  border-radius: 14px;
+  border-radius: 12px;
 }
 
-.tools-download-card__hint {
-  color: var(--el-text-color-placeholder);
-  font-size: 12px;
-}
-
-@media (max-width: 1180px) {
-  .tools-grid--downloads {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 767px) {
-  .tools-page {
-    gap: 16px;
-  }
-
-  .tools-hero,
-  .tools-card {
-    border-radius: 18px;
-  }
-
-  .tools-hero {
-    padding: 18px;
-  }
-
-  .tools-hero__title {
-    font-size: 24px;
-  }
-
-  .tools-grid--downloads {
-    grid-template-columns: 1fr;
-  }
-}
 </style>
