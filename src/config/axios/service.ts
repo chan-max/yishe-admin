@@ -67,6 +67,14 @@ const normalizeUrlPath = (url = '') => {
 
 const canCarryOwnership = (payload: unknown) => payload instanceof FormData || isPlainObject(payload)
 
+const normalizeOwnershipUserId = (userId: unknown) => {
+  if (userId === undefined || userId === null || userId === '') {
+    return ''
+  }
+
+  return String(userId)
+}
+
 const shouldInjectOwnership = (
   config: OwnershipAwareRequestConfig,
   currentUserId: string
@@ -103,8 +111,14 @@ const shouldInjectOwnership = (
 
 const applyOwnershipToPayload = (payload: unknown, userId: string) => {
   if (payload instanceof FormData) {
-    if (!payload.get('userId')) {
-      payload.append('userId', userId)
+    const normalizedUserId = normalizeOwnershipUserId(payload.get('userId')) || userId
+    if (normalizedUserId) {
+      if (typeof payload.set === 'function') {
+        payload.set('userId', normalizedUserId)
+      } else {
+        payload.delete('userId')
+        payload.append('userId', normalizedUserId)
+      }
     }
     return payload
   }
@@ -113,8 +127,9 @@ const applyOwnershipToPayload = (payload: unknown, userId: string) => {
     return payload
   }
 
-  if (payload.userId === undefined || payload.userId === null || payload.userId === '') {
-    payload.userId = userId
+  const normalizedUserId = normalizeOwnershipUserId(payload.userId) || userId
+  if (normalizedUserId) {
+    payload.userId = normalizedUserId
   }
   return payload
 }

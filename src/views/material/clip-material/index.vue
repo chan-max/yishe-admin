@@ -283,8 +283,12 @@
                     >
                       <div class="table-file-audio-card__meta">
                         <el-icon size="18"><Headset /></el-icon>
-                        <span class="table-file-audio-card__title">{{ row.name || "音频文件" }}</span>
-                        <span class="table-file-audio-card__suffix">{{ String(row.suffix || '').toUpperCase() }}</span>
+                        <span class="table-file-audio-card__title">{{
+                          row.name || "音频文件"
+                        }}</span>
+                        <span class="table-file-audio-card__suffix">{{
+                          String(row.suffix || "").toUpperCase()
+                        }}</span>
                       </div>
                       <div class="table-file-audio-card__player-wrap" @click.stop>
                         <audio
@@ -305,10 +309,7 @@
                       <div class="table-file-doc-card__title">{{ row.name || "PDF 文件" }}</div>
                       <div class="table-file-doc-card__tip">点击预览 PDF</div>
                     </div>
-                    <div
-                      v-else
-                      class="table-file-doc-card"
-                    >
+                    <div v-else class="table-file-doc-card">
                       <el-icon size="24">
                         <component :is="getFileIcon(row.suffix)" />
                       </el-icon>
@@ -358,12 +359,11 @@
                             <el-icon><Download /></el-icon>
                             <span>下载</span>
                           </el-dropdown-item>
-                          <el-dropdown-item
-                            command="preview"
-                            v-if="isPreviewableFile(row.suffix)"
-                          >
+                          <el-dropdown-item command="preview" v-if="isPreviewableFile(row.suffix)">
                             <el-icon
-                              ><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset v-else-if="isAudioFile(row.suffix)" /><Document v-else-if="isPdfFile(row.suffix)" /><Picture v-else
+                              ><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset
+                                v-else-if="isAudioFile(row.suffix)" /><Document
+                                v-else-if="isPdfFile(row.suffix)" /><Picture v-else
                             /></el-icon>
                             <span>预览</span>
                           </el-dropdown-item>
@@ -1029,8 +1029,35 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 :deep(.clip-material-upload-dialog) {
+  .el-dialog {
+    display: flex;
+    max-width: calc(100vw - 32px);
+    height: calc(100vh - 32px);
+    flex-direction: column;
+    margin: 16px auto !important;
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .el-dialog__header {
+    padding: 18px 24px 16px;
+    margin-right: 0;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
+  }
+
   .el-dialog__body {
-    height: calc(100% - 40px);
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    padding: 12px 14px 14px;
+    overflow: hidden;
+    background: var(--el-bg-color-page);
+  }
+
+  .el-dialog__body > div {
+    flex: 1;
+    min-height: 0;
   }
 }
 
@@ -1089,7 +1116,11 @@ function handleOperationCommand(command: string, row: any) {
   padding: 14px 16px;
   box-sizing: border-box;
   cursor: pointer;
-  background: linear-gradient(180deg, var(--el-color-primary-light-9) 0%, var(--el-fill-color-blank) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--el-color-primary-light-9) 0%,
+    var(--el-fill-color-blank) 100%
+  );
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -1163,7 +1194,11 @@ function handleOperationCommand(command: string, row: any) {
 
 .table-file-doc-card--pdf {
   cursor: pointer;
-  background: linear-gradient(180deg, var(--el-color-danger-light-9) 0%, var(--el-fill-color-blank) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--el-color-danger-light-9) 0%,
+    var(--el-fill-color-blank) 100%
+  );
 }
 
 .table-file-doc-card__tip {
@@ -1172,6 +1207,23 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 @media (max-width: 1024px) {
+  :deep(.clip-material-upload-dialog) {
+    .el-dialog {
+      max-width: calc(100vw - 12px);
+      height: calc(100vh - 12px);
+      margin: 6px auto !important;
+      border-radius: 14px;
+    }
+
+    .el-dialog__header {
+      padding: 14px 16px;
+    }
+
+    .el-dialog__body {
+      padding: 12px;
+    }
+  }
+
   .clip-material-sidebar__body {
     padding: 0;
   }

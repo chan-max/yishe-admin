@@ -6594,7 +6594,6 @@ h1 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
 </style>
 <style>
 .el-popper.is-pure {
@@ -6619,6 +6618,37 @@ h1 {
 }
 </style>
 <style scoped>
+.material-upload-dialog :deep(.el-dialog) {
+  display: flex;
+  max-width: calc(100vw - 32px);
+  height: calc(100vh - 32px);
+  flex-direction: column;
+  margin: 16px auto !important;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.material-upload-dialog :deep(.el-dialog__header) {
+  padding: 18px 24px 16px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
+.material-upload-dialog :deep(.el-dialog__body) {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 12px 14px 14px;
+  overflow: hidden;
+  background: var(--el-bg-color-page);
+}
+
+.material-upload-dialog :deep(.el-dialog__body > div) {
+  flex: 1;
+  min-height: 0;
+}
+
 .edit-material-dialog :deep(.el-dialog__body) {
   padding: 0;
   overflow: hidden;
@@ -6705,6 +6735,21 @@ h1 {
 }
 
 @media (max-width: 768px) {
+  .material-upload-dialog :deep(.el-dialog) {
+    max-width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+    margin: 6px auto !important;
+    border-radius: 14px;
+  }
+
+  .material-upload-dialog :deep(.el-dialog__header) {
+    padding: 14px 16px;
+  }
+
+  .material-upload-dialog :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+
   .edit-material-dialog :deep(.el-dialog__header),
   .edit-material-dialog :deep(.el-dialog__footer) {
     padding-left: 16px;

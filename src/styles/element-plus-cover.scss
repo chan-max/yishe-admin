@@ -202,6 +202,167 @@ html.dark {
   background: transparent;
 }
 
+.el-button--default.is-plain,
+.el-button--info.is-plain {
+  --el-button-bg-color: transparent;
+  --el-button-border-color: color-mix(
+    in srgb,
+    var(--ep-cover-border-color-strong) 86%,
+    transparent
+  );
+  --el-button-text-color: var(--el-text-color-primary);
+  --el-button-hover-text-color: var(--el-text-color-primary);
+  --el-button-hover-bg-color: var(--ep-cover-soft-bg-hover);
+  --el-button-hover-border-color: var(--ep-cover-border-color-strong);
+  --el-button-active-text-color: var(--el-text-color-primary);
+  --el-button-active-bg-color: var(--ep-cover-soft-bg-active);
+  --el-button-active-border-color: var(--ep-cover-border-color-strong);
+}
+
+.el-button--primary.is-plain {
+  --el-button-bg-color: color-mix(
+    in srgb,
+    var(--el-color-primary-light-9) 78%,
+    transparent
+  );
+  --el-button-border-color: color-mix(
+    in srgb,
+    var(--el-color-primary) 22%,
+    var(--ep-cover-border-color) 78%
+  );
+  --el-button-text-color: var(--el-color-primary);
+  --el-button-hover-text-color: var(--el-color-primary);
+  --el-button-hover-bg-color: color-mix(
+    in srgb,
+    var(--el-color-primary-light-8) 88%,
+    transparent
+  );
+  --el-button-hover-border-color: color-mix(
+    in srgb,
+    var(--el-color-primary) 30%,
+    var(--ep-cover-border-color) 70%
+  );
+  --el-button-active-text-color: var(--el-color-primary);
+  --el-button-active-bg-color: color-mix(
+    in srgb,
+    var(--el-color-primary-light-7) 92%,
+    transparent
+  );
+  --el-button-active-border-color: color-mix(
+    in srgb,
+    var(--el-color-primary) 36%,
+    var(--ep-cover-border-color) 64%
+  );
+}
+
+.el-button--success.is-plain {
+  --el-button-bg-color: color-mix(
+    in srgb,
+    var(--el-color-success-light-9) 78%,
+    transparent
+  );
+  --el-button-border-color: color-mix(
+    in srgb,
+    var(--el-color-success) 22%,
+    var(--ep-cover-border-color) 78%
+  );
+  --el-button-text-color: var(--el-color-success);
+  --el-button-hover-text-color: var(--el-color-success);
+  --el-button-hover-bg-color: color-mix(
+    in srgb,
+    var(--el-color-success-light-8) 88%,
+    transparent
+  );
+  --el-button-hover-border-color: color-mix(
+    in srgb,
+    var(--el-color-success) 30%,
+    var(--ep-cover-border-color) 70%
+  );
+  --el-button-active-text-color: var(--el-color-success);
+  --el-button-active-bg-color: color-mix(
+    in srgb,
+    var(--el-color-success-light-7) 92%,
+    transparent
+  );
+  --el-button-active-border-color: color-mix(
+    in srgb,
+    var(--el-color-success) 36%,
+    var(--ep-cover-border-color) 64%
+  );
+}
+
+.el-button--warning.is-plain {
+  --el-button-bg-color: color-mix(
+    in srgb,
+    var(--el-color-warning-light-9) 80%,
+    transparent
+  );
+  --el-button-border-color: color-mix(
+    in srgb,
+    var(--el-color-warning) 22%,
+    var(--ep-cover-border-color) 78%
+  );
+  --el-button-text-color: var(--el-color-warning);
+  --el-button-hover-text-color: var(--el-color-warning);
+  --el-button-hover-bg-color: color-mix(
+    in srgb,
+    var(--el-color-warning-light-8) 88%,
+    transparent
+  );
+  --el-button-hover-border-color: color-mix(
+    in srgb,
+    var(--el-color-warning) 30%,
+    var(--ep-cover-border-color) 70%
+  );
+  --el-button-active-text-color: var(--el-color-warning);
+  --el-button-active-bg-color: color-mix(
+    in srgb,
+    var(--el-color-warning-light-7) 92%,
+    transparent
+  );
+  --el-button-active-border-color: color-mix(
+    in srgb,
+    var(--el-color-warning) 36%,
+    var(--ep-cover-border-color) 64%
+  );
+}
+
+.el-button--danger.is-plain {
+  --el-button-bg-color: color-mix(
+    in srgb,
+    var(--el-color-danger-light-9) 80%,
+    transparent
+  );
+  --el-button-border-color: color-mix(
+    in srgb,
+    var(--el-color-danger) 22%,
+    var(--ep-cover-border-color) 78%
+  );
+  --el-button-text-color: var(--el-color-danger);
+  --el-button-hover-text-color: var(--el-color-danger);
+  --el-button-hover-bg-color: color-mix(
+    in srgb,
+    var(--el-color-danger-light-8) 88%,
+    transparent
+  );
+  --el-button-hover-border-color: color-mix(
+    in srgb,
+    var(--el-color-danger) 30%,
+    var(--ep-cover-border-color) 70%
+  );
+  --el-button-active-text-color: var(--el-color-danger);
+  --el-button-active-bg-color: color-mix(
+    in srgb,
+    var(--el-color-danger-light-7) 92%,
+    transparent
+  );
+  --el-button-active-border-color: color-mix(
+    in srgb,
+    var(--el-color-danger) 36%,
+    var(--ep-cover-border-color) 64%
+  );
+}
+
 .el-button.is-link {
   height: auto;
   padding: 0;

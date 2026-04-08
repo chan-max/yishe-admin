@@ -256,118 +256,92 @@ watch(
 </script>
 
 <template>
-  <div
-    :id="prefixCls"
-    :class="prefixCls"
-    class="relative w-full flex border-b border-[color:color-mix(in_srgb,var(--tags-view-border-color)_16%,transparent_84%)] bg-[var(--top-header-bg-color)]"
-  >
-    <span
-      :class="tagsViewImmerse ? '' : `${prefixCls}__tool ${prefixCls}__tool--first`"
+  <div :id="prefixCls" :class="prefixCls" class="relative w-full flex bg-[var(--top-header-bg-color)]">
+    <span :class="tagsViewImmerse ? '' : `${prefixCls}__tool ${prefixCls}__tool--first`"
       class="h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
-      @click="move(-200)"
-    >
-      <Icon
-        hover-color="var(--tags-view-tool-hover-color)"
-        color="var(--el-text-color-placeholder)"
-        icon="ep:arrow-left"
-        width="12"
-        height="12"
-      />
+      @click="move(-200)">
+      <Icon hover-color="var(--tags-view-tool-hover-color)" color="var(--el-text-color-placeholder)"
+        icon="ep:arrow-left" width="12" height="12" />
     </span>
     <div class="flex-1 overflow-hidden">
       <ElScrollbar ref="scrollbarRef" class="h-full" @scroll="scroll">
         <div class="h-[var(--tags-view-height)] flex">
-          <ContextMenu
-            v-for="item in visitedViews"
-            :key="item.fullPath"
-            :ref="itemRefs.set"
-            :class="[
-              `${prefixCls}__item`,
-              tagsViewImmerse ? `${prefixCls}__item--immerse` : '',
-              item?.meta?.affix ? `${prefixCls}__item--affix` : '',
-              {
-                'is-active': isActive(item),
+          <ContextMenu v-for="item in visitedViews" :key="item.fullPath" :ref="itemRefs.set" :class="[
+            `${prefixCls}__item`,
+            tagsViewImmerse ? `${prefixCls}__item--immerse` : '',
+            item?.meta?.affix ? `${prefixCls}__item--affix` : '',
+            {
+              'is-active': isActive(item),
+            },
+          ]" :schema="[
+            {
+              icon: 'ep:refresh',
+              label: t('common.reload'),
+              disabled: selectedTag?.fullPath !== item.fullPath,
+              command: () => {
+                refreshSelectedTag(item);
               },
-            ]"
-            :schema="[
-              {
-                icon: 'ep:refresh',
-                label: t('common.reload'),
-                disabled: selectedTag?.fullPath !== item.fullPath,
-                command: () => {
-                  refreshSelectedTag(item);
-                },
+            },
+            {
+              icon: 'ep:close',
+              label: t('common.closeTab'),
+              disabled: !!visitedViews?.length && selectedTag?.meta.affix,
+              command: () => {
+                closeSelectedTag(item);
               },
-              {
-                icon: 'ep:close',
-                label: t('common.closeTab'),
-                disabled: !!visitedViews?.length && selectedTag?.meta.affix,
-                command: () => {
-                  closeSelectedTag(item);
-                },
+            },
+            {
+              divided: true,
+              icon: 'ep:d-arrow-left',
+              label: t('common.closeTheLeftTab'),
+              disabled:
+                !!visitedViews?.length &&
+                (item.fullPath === visitedViews[0].fullPath ||
+                  selectedTag?.fullPath !== item.fullPath),
+              command: () => {
+                closeLeftTags();
               },
-              {
-                divided: true,
-                icon: 'ep:d-arrow-left',
-                label: t('common.closeTheLeftTab'),
-                disabled:
-                  !!visitedViews?.length &&
-                  (item.fullPath === visitedViews[0].fullPath ||
-                    selectedTag?.fullPath !== item.fullPath),
-                command: () => {
-                  closeLeftTags();
-                },
+            },
+            {
+              icon: 'ep:d-arrow-right',
+              label: t('common.closeTheRightTab'),
+              disabled:
+                !!visitedViews?.length &&
+                (item.fullPath === visitedViews[visitedViews.length - 1].fullPath ||
+                  selectedTag?.fullPath !== item.fullPath),
+              command: () => {
+                closeRightTags();
               },
-              {
-                icon: 'ep:d-arrow-right',
-                label: t('common.closeTheRightTab'),
-                disabled:
-                  !!visitedViews?.length &&
-                  (item.fullPath === visitedViews[visitedViews.length - 1].fullPath ||
-                    selectedTag?.fullPath !== item.fullPath),
-                command: () => {
-                  closeRightTags();
-                },
+            },
+            {
+              divided: true,
+              icon: 'ep:discount',
+              label: t('common.closeOther'),
+              disabled: selectedTag?.fullPath !== item.fullPath,
+              command: () => {
+                closeOthersTags();
               },
-              {
-                divided: true,
-                icon: 'ep:discount',
-                label: t('common.closeOther'),
-                disabled: selectedTag?.fullPath !== item.fullPath,
-                command: () => {
-                  closeOthersTags();
-                },
+            },
+            {
+              icon: 'ep:minus',
+              label: t('common.closeAll'),
+              command: () => {
+                closeAllTags();
               },
-              {
-                icon: 'ep:minus',
-                label: t('common.closeAll'),
-                command: () => {
-                  closeAllTags();
-                },
-              },
-            ]"
-            :tag-item="item"
-            @visible-change="visibleChange"
-          >
+            },
+          ]" :tag-item="item" @visible-change="visibleChange">
             <div>
               <router-link :ref="tagLinksRefs.set" v-slot="{ navigate }" :to="{ ...item }" custom>
-                <div
-                  :class="`h-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
-                  @click="navigate"
-                >
+                <div :class="`h-full flex items-center justify-center whitespace-nowrap ${prefixCls}__item--label`"
+                  @click="navigate">
                   <span :class="`${prefixCls}__item--title`">
                     {{
                       t(item?.meta?.title as string) +
                       (item?.meta?.titleSuffix ? ` (${item?.meta?.titleSuffix})` : "")
                     }}
                   </span>
-                  <Icon
-                    :class="`${prefixCls}__item--close`"
-                    :size="11"
-                    color="currentColor"
-                    icon="ep:close"
-                    @click.prevent.stop="closeSelectedTag(item)"
-                  />
+                  <Icon :class="`${prefixCls}__item--close`" :size="11" color="currentColor" icon="ep:close"
+                    @click.prevent.stop="closeSelectedTag(item)" />
                 </div>
               </router-link>
             </div>
@@ -375,97 +349,73 @@ watch(
         </div>
       </ElScrollbar>
     </div>
-    <span
-      :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
+    <span :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
       class="h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
-      @click="move(200)"
-    >
-      <Icon
-        hover-color="var(--tags-view-tool-hover-color)"
-        color="var(--el-text-color-placeholder)"
-        icon="ep:arrow-right"
-        width="12"
-        height="12"
-      />
+      @click="move(200)">
+      <Icon hover-color="var(--tags-view-tool-hover-color)" color="var(--el-text-color-placeholder)"
+        icon="ep:arrow-right" width="12" height="12" />
     </span>
-    <span
-      :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
+    <span :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
       class="h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
-      @click="refreshSelectedTag(selectedTag)"
-    >
-      <Icon
-        hover-color="var(--tags-view-tool-hover-color)"
-        color="var(--el-text-color-placeholder)"
-        icon="ep:refresh"
-        width="12"
-        height="12"
-      />
+      @click="refreshSelectedTag(selectedTag)">
+      <Icon hover-color="var(--tags-view-tool-hover-color)" color="var(--el-text-color-placeholder)" icon="ep:refresh"
+        width="12" height="12" />
     </span>
-    <ContextMenu
-      :schema="[
-        {
-          icon: 'ep:refresh',
-          label: t('common.reload'),
-          command: () => {
-            refreshSelectedTag(selectedTag);
-          },
+    <ContextMenu :schema="[
+      {
+        icon: 'ep:refresh',
+        label: t('common.reload'),
+        command: () => {
+          refreshSelectedTag(selectedTag);
         },
-        {
-          icon: 'ep:close',
-          label: t('common.closeTab'),
-          disabled: !!visitedViews?.length && selectedTag?.meta.affix,
-          command: () => {
-            closeSelectedTag(selectedTag!);
-          },
+      },
+      {
+        icon: 'ep:close',
+        label: t('common.closeTab'),
+        disabled: !!visitedViews?.length && selectedTag?.meta.affix,
+        command: () => {
+          closeSelectedTag(selectedTag!);
         },
-        {
-          divided: true,
-          icon: 'ep:d-arrow-left',
-          label: t('common.closeTheLeftTab'),
-          disabled: !!visitedViews?.length && selectedTag?.fullPath === visitedViews[0].fullPath,
-          command: () => {
-            closeLeftTags();
-          },
+      },
+      {
+        divided: true,
+        icon: 'ep:d-arrow-left',
+        label: t('common.closeTheLeftTab'),
+        disabled: !!visitedViews?.length && selectedTag?.fullPath === visitedViews[0].fullPath,
+        command: () => {
+          closeLeftTags();
         },
-        {
-          icon: 'ep:d-arrow-right',
-          label: t('common.closeTheRightTab'),
-          disabled:
-            !!visitedViews?.length &&
-            selectedTag?.fullPath === visitedViews[visitedViews.length - 1].fullPath,
-          command: () => {
-            closeRightTags();
-          },
+      },
+      {
+        icon: 'ep:d-arrow-right',
+        label: t('common.closeTheRightTab'),
+        disabled:
+          !!visitedViews?.length &&
+          selectedTag?.fullPath === visitedViews[visitedViews.length - 1].fullPath,
+        command: () => {
+          closeRightTags();
         },
-        {
-          divided: true,
-          icon: 'ep:discount',
-          label: t('common.closeOther'),
-          command: () => {
-            closeOthersTags();
-          },
+      },
+      {
+        divided: true,
+        icon: 'ep:discount',
+        label: t('common.closeOther'),
+        command: () => {
+          closeOthersTags();
         },
-        {
-          icon: 'ep:minus',
-          label: t('common.closeAll'),
-          command: () => {
-            closeAllTags();
-          },
+      },
+      {
+        icon: 'ep:minus',
+        label: t('common.closeAll'),
+        command: () => {
+          closeAllTags();
         },
-      ]"
-      trigger="click"
-    >
-      <span
-        :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
-        class="block h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center"
-      >
-        <Icon
-          hover-color="var(--tags-view-tool-hover-color)"
-          color="var(--el-text-color-placeholder)"
-          icon="ep:more-filled"
-          width="12"
-          height="12"
-        />
+      },
+    ]" trigger="click">
+      <span :class="tagsViewImmerse ? '' : `${prefixCls}__tool`"
+        class="block h-[var(--tags-view-height)] w-[var(--tags-view-tool-width)] flex cursor-pointer items-center justify-center">
+        <Icon hover-color="var(--tags-view-tool-hover-color)" color="var(--el-text-color-placeholder)"
+          icon="ep:more-filled" width="12" height="12" />
       </span>
     </ContextMenu>
   </div>
@@ -475,6 +425,21 @@ watch(
 $prefix-cls: #{$namespace}-tags-view;
 
 .#{$prefix-cls} {
+  isolation: isolate;
+  border-top: 1px solid color-mix(in srgb, var(--tags-view-border-color) 44%, transparent 56%);
+  border-bottom: 1px solid color-mix(in srgb, var(--tags-view-border-color) 58%, transparent 42%);
+  background: linear-gradient(180deg,
+      color-mix(in srgb, var(--top-header-bg-color) 92%, #ffffff 8%) 0%,
+      var(--top-header-bg-color) 100%);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 68%, transparent 32%),
+    inset 0 -1px 0 color-mix(in srgb, var(--tags-view-border-color) 16%, transparent 84%);
+
+  >* {
+    position: relative;
+    z-index: 1;
+  }
+
   :deep(.#{$elNamespace}-scrollbar__view) {
     height: 100%;
   }
@@ -512,8 +477,7 @@ $prefix-cls: #{$namespace}-tags-view;
         left: 0;
         width: 100%;
         height: 100%;
-        border-right: 1px solid
-          color-mix(in srgb, var(--tags-view-border-color) 18%, transparent 82%);
+        border-right: 1px solid color-mix(in srgb, var(--tags-view-border-color) 18%, transparent 82%);
         border-left: none;
         content: "";
       }
@@ -524,23 +488,24 @@ $prefix-cls: #{$namespace}-tags-view;
     position: relative;
     top: 0;
     display: flex;
-    height: 100%;
+    height: calc(100% - 10px);
     align-items: center;
     justify-content: center;
     padding-right: 0;
-    margin-left: 0;
+    margin: 5px 0 5px 4px;
     font-size: var(--tags-view-item-font-size);
     font-weight: 400;
     color: var(--tags-view-item-color);
     cursor: pointer;
-    border-right: 1px solid
-      color-mix(in srgb, var(--tags-view-item-border-color) 58%, transparent 42%);
-    border-radius: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
     box-sizing: border-box;
     transition:
       color 0.2s ease,
       background-color 0.2s ease,
-      border-color 0.2s ease;
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
 
     &--close {
       position: absolute;
@@ -562,7 +527,8 @@ $prefix-cls: #{$namespace}-tags-view;
 
     &:not(.#{$prefix-cls}__item--affix):hover {
       color: var(--tags-view-item-hover-color);
-      background: color-mix(in srgb, var(--tags-view-item-hover-bg) 72%, transparent 28%);
+      background: color-mix(in srgb, var(--tags-view-item-hover-bg) 70%, transparent 30%);
+      border-color: color-mix(in srgb, var(--tags-view-item-border-color) 42%, transparent 58%);
 
       .#{$prefix-cls}__item--close {
         opacity: 1;
@@ -587,13 +553,13 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item.is-active {
     color: var(--el-color-primary);
-    background: none;
-    border-right-color: color-mix(
-      in srgb,
-      var(--tags-view-item-active-border-color) 46%,
-      transparent 54%
-    );
-    box-shadow: none;
+    background: color-mix(in srgb, var(--tags-view-item-bg) 82%, transparent 18%);
+    border-color: color-mix(in srgb,
+        var(--tags-view-item-active-border-color) 44%,
+        transparent 56%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 1px 2px rgba(15, 23, 42, 0.03);
   }
 
   &__item.is-active .#{$prefix-cls}__item--title {
@@ -623,10 +589,9 @@ $prefix-cls: #{$namespace}-tags-view;
 
   &__item--immerse {
     top: 0;
-    height: 100%;
+    height: calc(100% - 10px);
     padding-right: 0;
-    margin: 0;
-    border: none !important;
+    margin: 5px 0 5px 4px;
 
     .#{$prefix-cls}__item--label {
       padding: 0 var(--tags-view-item-inline-padding);
@@ -646,6 +611,19 @@ $prefix-cls: #{$namespace}-tags-view;
 
 .dark {
   .#{$prefix-cls} {
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--top-header-bg-color) 96%, #1f1f1f 4%) 0%,
+        var(--top-header-bg-color) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.03),
+      inset 0 -1px 0 color-mix(in srgb, var(--tags-view-border-color) 32%, transparent 68%);
+
+    &::before {
+      border-color: color-mix(in srgb, var(--tags-view-border-color) 92%, transparent 8%);
+      background: color-mix(in srgb, var(--top-header-bg-color) 94%, #1a1a1a 6%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
     &__tool {
       &--first {
         &::after {
@@ -655,16 +633,19 @@ $prefix-cls: #{$namespace}-tags-view;
     }
 
     &__item {
-      border-right-color: color-mix(
-        in srgb,
-        var(--tags-view-item-border-color) 72%,
-        transparent 28%
-      );
+      background: transparent;
+      border-color: transparent;
     }
 
     &__item.is-active {
       color: var(--el-color-primary);
-      background: none;
+      background: color-mix(in srgb, var(--tags-view-item-bg) 92%, transparent 8%);
+      border-color: color-mix(in srgb,
+          var(--tags-view-item-active-border-color) 30%,
+          transparent 70%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.03),
+        0 1px 2px rgba(0, 0, 0, 0.16);
     }
 
     &__item--immerse:not(.is-active) {
