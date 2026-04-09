@@ -872,7 +872,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted, watchEffect, nextTick } from "vue";
+import { ref, reactive, computed, watchEffect, nextTick } from "vue";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
@@ -885,22 +885,14 @@ import {
   Search,
   Plus,
   Delete,
-  TopRight,
   Edit,
-  CirclePlusFilled,
-  CirclePlus,
   InfoFilled,
-  RefreshLeft,
-  Folder,
   DArrowLeft,
   DArrowRight,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 import type { VxeGridProps } from "vxe-table";
 import { psdTemplateApi } from "@/api/psdTemplate";
-import { ShopPlatformApi } from "@/api/shop/platform";
-import { ShopCategoryApi } from "@/api/shop/category";
-import { ShopApi } from "@/api/shop/shopIndex";
 import { uploadToCOS } from "@/api/cos";
 import { getUserList } from "@/api/user";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
@@ -1098,11 +1090,8 @@ watchEffect(() => {
 
 const dataSource = ref([]);
 const loading = ref(false);
-const open = ref(false);
-const title = ref("");
 const ids = ref([]);
 const single = ref(false);
-const multiple = ref(true);
 const total = ref(0);
 const formRef = ref();
 const dialogTitle = ref("");
@@ -1207,6 +1196,145 @@ async function getList() {
   nextTick(setupRowDrag);
 }
 
+function ensurePsdTemplateAdminOperation() {
+  if (!isAdmin.value) {
+    ElMessage.warning("仅管理员可执行该操作");
+    return false;
+  }
+  return true;
+}
+
+async function loadPsdTemplateTransferUserOptions() {
+  if (psdTemplateUserTransferUsersLoaded.value || psdTemplateUserTransferUsersLoading.value) {
+    return;
+  }
+
+  psdTemplateUserTransferUsersLoading.value = true;
+  try {
+    const res = await getUserList({
+      currentPage: 1,
+      pageSize: 1000,
+    });
+    const list = Array.isArray(res?.list) ? res.list : [];
+    psdTemplateUserTransferUserOptions.value = list.map((item: any) => ({
+      id: String(item.id),
+      name: item.name || "",
+      account: item.account || "",
+      label: item.name || item.account || `用户 #${item.id}`,
+      isAdmin: !!item.isAdmin,
+    }));
+    psdTemplateUserTransferUsersLoaded.value = true;
+  } catch (error: any) {
+    ElMessage.error(error?.message || "加载用户列表失败");
+  } finally {
+    psdTemplateUserTransferUsersLoading.value = false;
+  }
+}
+
+function resetPsdTemplateUserTransferDialog() {
+  psdTemplateUserTransferSubmitting.value = false;
+  psdTemplateUserTransferAction.value = "copy";
+  psdTemplateUserTransferIds.value = [];
+  psdTemplateUserTransferTargetUserId.value = "";
+}
+
+async function openPsdTemplateUserTransferDialog(
+  action: PsdTemplateUserTransferAction,
+  row?: any,
+) {
+  if (!ensurePsdTemplateAdminOperation()) {
+    return;
+  }
+
+  const targetIds = row
+    ? [String(row.id)]
+    : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
+
+  if (!targetIds.length) {
+    ElMessage.warning("请选择要操作的模板");
+    return;
+  }
+
+  psdTemplateUserTransferAction.value = action;
+  psdTemplateUserTransferIds.value = Array.from(new Set(targetIds));
+  psdTemplateUserTransferTargetUserId.value = "";
+  await loadPsdTemplateTransferUserOptions();
+  psdTemplateUserTransferDialogVisible.value = true;
+}
+
+async function submitPsdTemplateUserTransfer() {
+  if (!ensurePsdTemplateAdminOperation()) {
+    return;
+  }
+
+  if (!psdTemplateUserTransferIds.value.length) {
+    ElMessage.warning("请选择要操作的模板");
+    return;
+  }
+
+  if (!psdTemplateUserTransferTargetUserId.value) {
+    ElMessage.warning("请选择目标用户");
+    return;
+  }
+
+  psdTemplateUserTransferSubmitting.value = true;
+  const actionLabel = psdTemplateUserTransferAction.value === "copy" ? "分享" : "转移";
+
+  try {
+    const payload = {
+      ids: psdTemplateUserTransferIds.value,
+      targetUserId: psdTemplateUserTransferTargetUserId.value,
+    };
+    const res =
+      psdTemplateUserTransferAction.value === "copy"
+        ? await psdTemplateApi.copyToUser(payload)
+        : await psdTemplateApi.moveToUser(payload);
+
+    const successCount = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
+    const failedCount = Array.isArray(res?.failed) ? res.failed.length : 0;
+    const warningCount = Array.isArray(res?.warnings) ? res.warnings.length : 0;
+
+    if (successCount > 0) {
+      ElNotification.success(
+        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+      );
+      psdTemplateUserTransferDialogVisible.value = false;
+      ids.value = [];
+      await getList();
+    } else if (failedCount > 0) {
+      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+    } else {
+      ElMessage.warning("未处理任何模板，请稍后重试");
+    }
+
+    if (failedCount > 0) {
+      ElNotification.warning({
+        title: `${actionLabel}失败详情`,
+        message: res.failed
+          .slice(0, 3)
+          .map((item: any) => `${item.id}: ${item.message}`)
+          .join("；"),
+        duration: 6000,
+      });
+    }
+
+    if (warningCount > 0) {
+      ElNotification.warning({
+        title: `${actionLabel}完成，但有警告`,
+        message: res.warnings
+          .slice(0, 3)
+          .map((item: any) => `${item.id}: ${item.message}`)
+          .join("；"),
+        duration: 6000,
+      });
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || `${actionLabel}失败`);
+  } finally {
+    psdTemplateUserTransferSubmitting.value = false;
+  }
+}
+
 getList();
 
 // ============= 文件夹相关 =============
@@ -1257,11 +1385,6 @@ async function handleFolderDrop(payload: { data: any }) {
   }
 }
 
-// 操作函数
-function handleQuery() {
-  queryParams.currentPage = 1;
-}
-
 function handleQuerySuitableSizesChange() {
   queryParams.currentPage = 1;
   getList();
@@ -1269,10 +1392,6 @@ function handleQuerySuitableSizesChange() {
 
 function handleQueryCutoutModesChange() {
   queryParams.currentPage = 1;
-  getList();
-}
-
-function resetQuery() {
   getList();
 }
 
@@ -1362,10 +1481,6 @@ function handleEdit(row) {
   }
 
   resetThumbnailLocalState();
-}
-
-function cancel() {
-  open.value = false;
 }
 
 const form = ref<any>({
@@ -1795,7 +1910,7 @@ const handleFileRemove = () => {
 };
 
 // 文件上传前的校验
-const beforeUpload = (file) => {};
+const beforeUpload = () => {};
 
 // 触发缩略图文件选择
 const triggerThumbnailSelect = () => {
@@ -2011,15 +2126,6 @@ function handleCutoutModesChange(values: string[]) {
   }
 }
 
-// 移除某个适用尺寸
-function removeSuitableSize(sizeKey: string) {
-  if (form.value && form.value.suitableSizesArray) {
-    const index = form.value.suitableSizesArray.indexOf(sizeKey);
-    if (index > -1) {
-      form.value.suitableSizesArray.splice(index, 1);
-    }
-  }
-}
 </script>
 
 <style lang="less" scoped>

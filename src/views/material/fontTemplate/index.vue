@@ -71,6 +71,24 @@
               >
                 批量删除 ({{ ids.length }})
               </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="success"
+                :disabled="!ids.length"
+                @click="openFontTemplateUserTransferDialog('copy')"
+              >
+                分享给用户 ({{ ids.length }})
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="openFontTemplateUserTransferDialog('move')"
+              >
+                转移给用户 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -224,6 +242,18 @@
                                 <MagicStick />
                               </el-icon>
                               <span>AI生成内容</span>
+                            </el-dropdown-item>
+                            <el-dropdown-item v-if="isAdmin" command="copy-to-user">
+                              <el-icon>
+                                <DocumentCopy />
+                              </el-icon>
+                              <span>分享给用户</span>
+                            </el-dropdown-item>
+                            <el-dropdown-item v-if="isAdmin" command="move-to-user">
+                              <el-icon>
+                                <TopRight />
+                              </el-icon>
+                              <span>转移给用户</span>
                             </el-dropdown-item>
                             <el-dropdown-item
                               v-if="isAdmin"
@@ -755,16 +785,102 @@
       :image-url="currentImageUrl"
       @close="closeImagePreview"
     />
+
+    <el-dialog
+      v-model="fontTemplateUserTransferDialogVisible"
+      :title="fontTemplateUserTransferDialogTitle"
+      width="560px"
+      align-center
+      :close-on-click-modal="false"
+      @closed="resetFontTemplateUserTransferDialog"
+    >
+      <div class="sticker-user-transfer-dialog">
+        <el-alert
+          :type="fontTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
+          :closable="false"
+          show-icon
+          :title="
+            fontTemplateUserTransferAction === 'copy'
+              ? '复制字体模板并分享给目标用户，原模板会保留。'
+              : '转移字体模板给目标用户，会变更模板归属并同步调整 COS 路径。'
+          "
+        />
+
+        <el-form label-width="96px" class="sticker-user-transfer-form">
+          <el-form-item label="目标用户" required>
+            <el-select
+              v-model="fontTemplateUserTransferTargetUserId"
+              class="sticker-user-transfer-form__select"
+              filterable
+              clearable
+              :loading="fontTemplateUserTransferUsersLoading"
+              placeholder="请选择目标用户"
+            >
+              <el-option
+                v-for="item in fontTemplateUserTransferUserOptions"
+                :key="item.id"
+                :label="item.label"
+                :value="item.id"
+              >
+                <div class="sticker-user-transfer-option">
+                  <div class="sticker-user-transfer-option__main">
+                    <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
+                    <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                  </div>
+                  <span class="sticker-user-transfer-option__meta">
+                    {{ item.account || `ID ${item.id}` }}
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="模板数量">
+            <el-tag type="info">{{ fontTemplateUserTransferIds.length }}</el-tag>
+          </el-form-item>
+
+          <el-form-item label="选中模板">
+            <div class="sticker-user-transfer-preview">
+              <el-tag
+                v-for="item in fontTemplateUserTransferPreviewItems"
+                :key="item.id"
+                size="small"
+                effect="plain"
+              >
+                {{ item.label }}
+              </el-tag>
+              <span
+                v-if="fontTemplateUserTransferIds.length > fontTemplateUserTransferPreviewItems.length"
+                class="sticker-user-transfer-preview__more"
+              >
+                等 {{ fontTemplateUserTransferIds.length }} 条
+              </span>
+            </div>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <template #footer>
+        <el-button @click="fontTemplateUserTransferDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="fontTemplateUserTransferSubmitting"
+          @click="submitFontTemplateUserTransfer"
+        >
+          {{ fontTemplateUserTransferSubmitText }}
+        </el-button>
+      </template>
+    </el-dialog>
   </ContentWrap>
 </template>
 
 <script setup lang="tsx">
-import { ref, reactive, computed, onMounted, onUnmounted, watchEffect, nextTick } from "vue";
+import { ref, reactive, computed, watchEffect, nextTick } from "vue";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
-import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { defaultSortingValue } from "@/common/sort";
+import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
@@ -774,28 +890,20 @@ import {
   Delete,
   TopRight,
   Edit,
-  CirclePlusFilled,
-  CirclePlus,
   Loading,
-  View,
   Picture,
   Download,
   MagicStick,
   InfoFilled,
   DocumentCopy,
-  Folder,
   DArrowLeft,
   DArrowRight,
 } from "@element-plus/icons-vue";
 import { useWindowSize, useLocalStorage } from "@vueuse/core";
 
-import { ShopPlatformApi } from "@/api/shop/platform";
-import { ShopCategoryApi } from "@/api/shop/category";
-import { ShopApi } from "@/api/shop/shopIndex";
 import { downloadFileByElement } from "@/common/download";
-import { uploadOSSFile } from "@/api/oss";
 import { uploadToCOS } from "@/api/cos";
-import PsdPreview from "@/components/PsdPreview/index.vue";
+import { getUserList } from "@/api/user";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
@@ -870,20 +978,6 @@ const LANGUAGE_OPTIONS = [
 // 根据语言代码获取语言信息
 function getLanguageByCode(code: string) {
   return LANGUAGE_OPTIONS.find((lang) => lang.code === code);
-}
-
-// 获取语言显示文本（带例子和中文）
-function getLanguageDisplayText(codes: string[]): string {
-  if (!codes || codes.length === 0) return "未设置";
-  return codes
-    .map((code) => {
-      const lang = getLanguageByCode(code);
-      if (lang) {
-        return `${lang.label} (${lang.example}) - ${lang.chineseName}`;
-      }
-      return code;
-    })
-    .join("; ");
 }
 
 const userStore = useUserStore();
@@ -977,11 +1071,7 @@ watchEffect(() => {
 
 const dataSource = ref([]);
 const loading = ref(false);
-const open = ref(false);
-const title = ref("");
 const ids = ref([]);
-const single = ref(false);
-const multiple = ref(true);
 const total = ref(0);
 const formRef = ref();
 const dialogTitle = ref("");
@@ -993,6 +1083,37 @@ const currentRow = ref<{
   name?: string;
 }>({});
 const submitLoading = ref(false);
+type FontTemplateUserTransferAction = "copy" | "move";
+type FontTemplateUserTransferUserOption = {
+  id: string;
+  name?: string;
+  account?: string;
+  label: string;
+  isAdmin?: boolean;
+};
+const fontTemplateUserTransferDialogVisible = ref(false);
+const fontTemplateUserTransferSubmitting = ref(false);
+const fontTemplateUserTransferUsersLoading = ref(false);
+const fontTemplateUserTransferUsersLoaded = ref(false);
+const fontTemplateUserTransferAction = ref<FontTemplateUserTransferAction>("copy");
+const fontTemplateUserTransferIds = ref<string[]>([]);
+const fontTemplateUserTransferTargetUserId = ref("");
+const fontTemplateUserTransferUserOptions = ref<FontTemplateUserTransferUserOption[]>([]);
+const fontTemplateUserTransferDialogTitle = computed(() =>
+  fontTemplateUserTransferAction.value === "copy" ? "分享字体模板给用户" : "转移字体模板给用户",
+);
+const fontTemplateUserTransferSubmitText = computed(() =>
+  fontTemplateUserTransferAction.value === "copy" ? "确认分享" : "确认转移",
+);
+const fontTemplateUserTransferPreviewItems = computed(() =>
+  fontTemplateUserTransferIds.value.slice(0, 5).map((id) => {
+    const row = dataSource.value.find((item: any) => String(item.id) === String(id));
+    return {
+      id: String(id),
+      label: row?.name || `ID: ${id}`,
+    };
+  }),
+);
 
 // 拖拽状态（拖模板 -> 文件夹）
 const {
@@ -1124,6 +1245,145 @@ async function getList() {
   nextTick(setupRowDrag);
 }
 
+function ensureFontTemplateAdminOperation() {
+  if (!isAdmin.value) {
+    ElMessage.warning("仅管理员可执行该操作");
+    return false;
+  }
+  return true;
+}
+
+async function loadFontTemplateTransferUserOptions() {
+  if (fontTemplateUserTransferUsersLoaded.value || fontTemplateUserTransferUsersLoading.value) {
+    return;
+  }
+
+  fontTemplateUserTransferUsersLoading.value = true;
+  try {
+    const res = await getUserList({
+      currentPage: 1,
+      pageSize: 1000,
+    });
+    const list = Array.isArray(res?.list) ? res.list : [];
+    fontTemplateUserTransferUserOptions.value = list.map((item: any) => ({
+      id: String(item.id),
+      name: item.name || "",
+      account: item.account || "",
+      label: item.name || item.account || `用户 #${item.id}`,
+      isAdmin: !!item.isAdmin,
+    }));
+    fontTemplateUserTransferUsersLoaded.value = true;
+  } catch (error: any) {
+    ElMessage.error(error?.message || "加载用户列表失败");
+  } finally {
+    fontTemplateUserTransferUsersLoading.value = false;
+  }
+}
+
+function resetFontTemplateUserTransferDialog() {
+  fontTemplateUserTransferSubmitting.value = false;
+  fontTemplateUserTransferAction.value = "copy";
+  fontTemplateUserTransferIds.value = [];
+  fontTemplateUserTransferTargetUserId.value = "";
+}
+
+async function openFontTemplateUserTransferDialog(
+  action: FontTemplateUserTransferAction,
+  row?: any,
+) {
+  if (!ensureFontTemplateAdminOperation()) {
+    return;
+  }
+
+  const targetIds = row
+    ? [String(row.id)]
+    : (Array.isArray(ids.value) ? ids.value : []).map((id) => String(id)).filter(Boolean);
+
+  if (!targetIds.length) {
+    ElMessage.warning("请选择要操作的字体模板");
+    return;
+  }
+
+  fontTemplateUserTransferAction.value = action;
+  fontTemplateUserTransferIds.value = Array.from(new Set(targetIds));
+  fontTemplateUserTransferTargetUserId.value = "";
+  await loadFontTemplateTransferUserOptions();
+  fontTemplateUserTransferDialogVisible.value = true;
+}
+
+async function submitFontTemplateUserTransfer() {
+  if (!ensureFontTemplateAdminOperation()) {
+    return;
+  }
+
+  if (!fontTemplateUserTransferIds.value.length) {
+    ElMessage.warning("请选择要操作的字体模板");
+    return;
+  }
+
+  if (!fontTemplateUserTransferTargetUserId.value) {
+    ElMessage.warning("请选择目标用户");
+    return;
+  }
+
+  fontTemplateUserTransferSubmitting.value = true;
+  const actionLabel = fontTemplateUserTransferAction.value === "copy" ? "分享" : "转移";
+
+  try {
+    const payload = {
+      ids: fontTemplateUserTransferIds.value,
+      targetUserId: fontTemplateUserTransferTargetUserId.value,
+    };
+    const res =
+      fontTemplateUserTransferAction.value === "copy"
+        ? await fontTemplateApi.copyToUser(payload)
+        : await fontTemplateApi.moveToUser(payload);
+
+    const successCount = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
+    const failedCount = Array.isArray(res?.failed) ? res.failed.length : 0;
+    const warningCount = Array.isArray(res?.warnings) ? res.warnings.length : 0;
+
+    if (successCount > 0) {
+      ElNotification.success(
+        `${actionLabel}成功 ${successCount} 条${failedCount ? `，失败 ${failedCount} 条` : ""}${warningCount ? `，警告 ${warningCount} 条` : ""}`,
+      );
+      fontTemplateUserTransferDialogVisible.value = false;
+      ids.value = [];
+      await getList();
+    } else if (failedCount > 0) {
+      ElMessage.error(`${actionLabel}失败 ${failedCount} 条`);
+    } else {
+      ElMessage.warning("未处理任何字体模板，请稍后重试");
+    }
+
+    if (failedCount > 0) {
+      ElNotification.warning({
+        title: `${actionLabel}失败详情`,
+        message: res.failed
+          .slice(0, 3)
+          .map((item: any) => `${item.id}: ${item.message}`)
+          .join("；"),
+        duration: 6000,
+      });
+    }
+
+    if (warningCount > 0) {
+      ElNotification.warning({
+        title: `${actionLabel}完成，但有警告`,
+        message: res.warnings
+          .slice(0, 3)
+          .map((item: any) => `${item.id}: ${item.message}`)
+          .join("；"),
+        duration: 6000,
+      });
+    }
+  } catch (error: any) {
+    ElMessage.error(error?.message || `${actionLabel}失败`);
+  } finally {
+    fontTemplateUserTransferSubmitting.value = false;
+  }
+}
+
 getList();
 
 function handleFolderChange(payload: { folderId: string | null }) {
@@ -1138,11 +1398,6 @@ function handleFolderChange(payload: { folderId: string | null }) {
   getList();
 }
 
-// 操作函数
-function handleQuery() {
-  queryParams.currentPage = 1;
-}
-
 // 搜索功能
 function handleSearch() {
   queryParams.currentPage = 1;
@@ -1155,10 +1410,6 @@ function handleReset() {
   queryParams.startTime = "";
   queryParams.endTime = "";
   queryParams.currentPage = 1;
-  getList();
-}
-
-function resetQuery() {
   getList();
 }
 
@@ -1279,10 +1530,6 @@ function handleEdit(row) {
   };
 }
 
-function cancel() {
-  open.value = false;
-}
-
 const form = ref<{
   file?: any;
   name: string;
@@ -1368,7 +1615,7 @@ const submitForm = async () => {
         // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
         isThumbnail: false,
       });
-      const { key, url } = cos;
+      const { url } = cos;
 
       await fontTemplateApi.createFontTemplate({
         name: form.value.name,
@@ -1822,6 +2069,12 @@ function handleOperationCommand(command: string, row: any) {
     case "ai-generate":
       handleAiGenerate(row);
       break;
+    case "copy-to-user":
+      openFontTemplateUserTransferDialog("copy", row);
+      break;
+    case "move-to-user":
+      openFontTemplateUserTransferDialog("move", row);
+      break;
     case "delete":
       handleDelete(row);
       break;
@@ -1831,7 +2084,7 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 // 缩略图预览相关方法
-function openThumbnailPreview(thumbnailUrl: string, fontName?: string) {
+function openThumbnailPreview(thumbnailUrl: string, _fontName?: string) {
   currentImageUrl.value = thumbnailUrl;
   imagePreviewVisible.value = true;
 }
