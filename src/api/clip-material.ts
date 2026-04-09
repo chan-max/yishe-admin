@@ -5,5 +5,7 @@ export {
   deleteFileResource as deleteClipMaterial,
   getFileResourceById as getClipMaterialById,
   getAllFileResources as getAllClipMaterials,
-  batchMoveFileResource as batchMoveClipMaterial
+  batchMoveFileResource as batchMoveClipMaterial,
+  copyFileResourceToUser as copyClipMaterialToUser,
+  moveFileResourceToUser as moveClipMaterialToUser
 } from './file-resource'

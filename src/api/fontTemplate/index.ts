@@ -64,4 +64,18 @@ export const fontTemplateApi = {
     })
   },
 
+  copyToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
+    return await request.post({
+      url: `/font-template/copy-to-user`,
+      data,
+    })
+  },
+
+  moveToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
+    return await request.post({
+      url: `/font-template/move-to-user`,
+      data,
+    })
+  },
+
 }

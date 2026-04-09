@@ -128,6 +128,24 @@
               >
                 批量删除
               </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="success"
+                :disabled="!ids.length"
+                @click="openPsdTemplateUserTransferDialog('copy')"
+              >
+                分享给用户 ({{ ids.length }})
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                @click="openPsdTemplateUserTransferDialog('move')"
+              >
+                转移给用户 ({{ ids.length }})
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -351,6 +369,18 @@
                             @click="() => downloadFileByElement(row.url, row.name)"
                           >
                             下载源文件
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            v-if="isAdmin"
+                            @click="() => openPsdTemplateUserTransferDialog('copy', row)"
+                          >
+                            分享给用户
+                          </el-dropdown-item>
+                          <el-dropdown-item
+                            v-if="isAdmin"
+                            @click="() => openPsdTemplateUserTransferDialog('move', row)"
+                          >
+                            转移给用户
                           </el-dropdown-item>
                           <el-dropdown-item
                             divided
@@ -753,6 +783,92 @@
       </template>
     </el-dialog>
   </ContentWrap>
+
+  <el-dialog
+    v-model="psdTemplateUserTransferDialogVisible"
+    :title="psdTemplateUserTransferDialogTitle"
+    width="560px"
+    align-center
+    :close-on-click-modal="false"
+    @closed="resetPsdTemplateUserTransferDialog"
+  >
+    <div class="sticker-user-transfer-dialog">
+      <el-alert
+        :type="psdTemplateUserTransferAction === 'copy' ? 'success' : 'warning'"
+        :closable="false"
+        show-icon
+        :title="
+          psdTemplateUserTransferAction === 'copy'
+            ? '复制模板并分享给目标用户，原模板会保留。'
+            : '转移模板给目标用户，会变更模板归属并同步调整 COS 路径。'
+        "
+      />
+
+      <el-form label-width="96px" class="sticker-user-transfer-form">
+        <el-form-item label="目标用户" required>
+          <el-select
+            v-model="psdTemplateUserTransferTargetUserId"
+            class="sticker-user-transfer-form__select"
+            filterable
+            clearable
+            :loading="psdTemplateUserTransferUsersLoading"
+            placeholder="请选择目标用户"
+          >
+            <el-option
+              v-for="item in psdTemplateUserTransferUserOptions"
+              :key="item.id"
+              :label="item.label"
+              :value="item.id"
+            >
+              <div class="sticker-user-transfer-option">
+                <div class="sticker-user-transfer-option__main">
+                  <span>{{ item.name || item.account || `用户 #${item.id}` }}</span>
+                  <el-tag v-if="item.isAdmin" size="small" type="warning">管理员</el-tag>
+                </div>
+                <span class="sticker-user-transfer-option__meta">
+                  {{ item.account || `ID ${item.id}` }}
+                </span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="模板数量">
+          <el-tag type="info">{{ psdTemplateUserTransferIds.length }}</el-tag>
+        </el-form-item>
+
+        <el-form-item label="选中模板">
+          <div class="sticker-user-transfer-preview">
+            <el-tag
+              v-for="item in psdTemplateUserTransferPreviewItems"
+              :key="item.id"
+              size="small"
+              effect="plain"
+            >
+              {{ item.label }}
+            </el-tag>
+            <span
+              v-if="psdTemplateUserTransferIds.length > psdTemplateUserTransferPreviewItems.length"
+              class="sticker-user-transfer-preview__more"
+            >
+              等 {{ psdTemplateUserTransferIds.length }} 条
+            </span>
+          </div>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <template #footer>
+      <el-button @click="psdTemplateUserTransferDialogVisible = false">取消</el-button>
+      <el-button
+        type="primary"
+        :loading="psdTemplateUserTransferSubmitting"
+        @click="submitPsdTemplateUserTransfer"
+      >
+        {{ psdTemplateUserTransferSubmitText }}
+      </el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="tsx">
@@ -761,7 +877,7 @@ import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { useUserStore } from "@/store/modules/user";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 // import { getShopProductCategoryList, deleteShopProductCategory, editShopProductCategory, addShopProductCategory } from "@/api/shop";
@@ -786,6 +902,7 @@ import { ShopPlatformApi } from "@/api/shop/platform";
 import { ShopCategoryApi } from "@/api/shop/category";
 import { ShopApi } from "@/api/shop/shopIndex";
 import { uploadToCOS } from "@/api/cos";
+import { getUserList } from "@/api/user";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
@@ -800,6 +917,7 @@ import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 
 const userStore = useUserStore();
+const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
 
 const FOLDER_CATEGORY = "psdtemplate";
 const cutoutModeOptions = [
@@ -990,6 +1108,37 @@ const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
 const submitLoading = ref(false);
+type PsdTemplateUserTransferAction = "copy" | "move";
+type PsdTemplateUserTransferUserOption = {
+  id: string;
+  name?: string;
+  account?: string;
+  label: string;
+  isAdmin?: boolean;
+};
+const psdTemplateUserTransferDialogVisible = ref(false);
+const psdTemplateUserTransferSubmitting = ref(false);
+const psdTemplateUserTransferUsersLoading = ref(false);
+const psdTemplateUserTransferUsersLoaded = ref(false);
+const psdTemplateUserTransferAction = ref<PsdTemplateUserTransferAction>("copy");
+const psdTemplateUserTransferIds = ref<string[]>([]);
+const psdTemplateUserTransferTargetUserId = ref("");
+const psdTemplateUserTransferUserOptions = ref<PsdTemplateUserTransferUserOption[]>([]);
+const psdTemplateUserTransferDialogTitle = computed(() =>
+  psdTemplateUserTransferAction.value === "copy" ? "分享模板给用户" : "转移模板给用户",
+);
+const psdTemplateUserTransferSubmitText = computed(() =>
+  psdTemplateUserTransferAction.value === "copy" ? "确认分享" : "确认转移",
+);
+const psdTemplateUserTransferPreviewItems = computed(() =>
+  psdTemplateUserTransferIds.value.slice(0, 5).map((id) => {
+    const row = dataSource.value.find((item: any) => String(item.id) === String(id));
+    return {
+      id: String(id),
+      label: row?.name || `ID: ${id}`,
+    };
+  }),
+);
 
 // 拖拽状态（拖模板 -> 文件夹）
 const {

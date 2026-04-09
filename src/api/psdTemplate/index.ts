@@ -51,4 +51,18 @@ export const psdTemplateApi = {
       data
     })
   },
+
+  copyToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
+    return await request.post({
+      url: `/psd-template/copy-to-user`,
+      data,
+    })
+  },
+
+  moveToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
+    return await request.post({
+      url: `/psd-template/move-to-user`,
+      data,
+    })
+  },
 }

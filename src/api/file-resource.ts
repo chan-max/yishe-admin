@@ -46,3 +46,17 @@ export function batchMoveFileResource(data: { ids: string[]; folderId: string | 
     data
   })
 }
+
+export function copyFileResourceToUser(data: { ids: string[] | string; targetUserId: string }) {
+  return request.post({
+    url: '/file-resource/copy-to-user',
+    data
+  })
+}
+
+export function moveFileResourceToUser(data: { ids: string[] | string; targetUserId: string }) {
+  return request.post({
+    url: '/file-resource/move-to-user',
+    data
+  })
+}
