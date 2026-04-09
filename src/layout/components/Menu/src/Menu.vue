@@ -647,6 +647,7 @@ $prefix-cls: #{$namespace}-menu;
   &__psd-status-dot {
     flex: none;
     position: relative;
+    z-index: 1;
     width: var(--left-menu-psd-dot-size);
     height: var(--left-menu-psd-dot-size);
     margin-left: var(--left-menu-psd-dot-margin-left);
@@ -685,74 +686,106 @@ $prefix-cls: #{$namespace}-menu;
   &__link--running {
     position: relative;
     isolation: isolate;
-    border-left-color: transparent;
+    overflow: hidden;
     box-shadow:
       inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 18%),
-      0 6px 18px rgb(var(--menu-running-rgb, 245 158 11) / 6%);
+      0 3px 12px rgb(var(--menu-running-rgb, 245 158 11) / 10%);
+  }
+
+  &__link--running::before {
+    position: absolute;
+    inset: 1px;
+    z-index: 0;
+    border-radius: calc(var(--left-menu-link-radius) - 1px);
+    background:
+      linear-gradient(
+        90deg,
+        rgb(var(--menu-running-rgb, 245 158 11) / 18%) 0%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 28%) 52%,
+        rgb(var(--menu-running-rgb, 245 158 11) / 18%) 100%
+      ),
+      repeating-linear-gradient(
+        -62deg,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 0 14px,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 20%) 14px 30px,
+        rgb(var(--menu-running-rgb, 245 158 11) / 10%) 30px 46px,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 46px 64px
+      );
+    background-size:
+      100% 100%,
+      160px 100%;
+    background-position:
+      0 0,
+      0 0;
+    content: "";
+    opacity: 0.98;
+    pointer-events: none;
+    animation:
+      queue-link-background-flow 1.55s linear infinite,
+      queue-link-background-pulse 2.05s ease-in-out infinite;
+  }
+
+  &__link--running::after {
+    position: absolute;
+    inset: 1px;
+    z-index: 0;
+    border-radius: calc(var(--left-menu-link-radius) - 1px);
+    background: linear-gradient(
+      90deg,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 0%,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 10%) 18%,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 32%) 50%,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 10%) 82%,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 100%
+    );
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 20%),
+      inset 0 0 18px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 12%);
+    content: "";
+    opacity: 0.88;
+    pointer-events: none;
+    animation: queue-link-background-glow 1.85s ease-in-out infinite;
   }
 
   &__link--running:not(.#{$prefix-cls}__link--active) {
-    background:
-      radial-gradient(
-        circle at 86% 50%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 12%) 0%,
-        transparent 38%
-      ),
-      linear-gradient(
-        90deg,
-        rgb(var(--menu-running-rgb, 245 158 11) / 14%) 0%,
-        rgb(var(--menu-running-rgb, 245 158 11) / 4%) 62%,
-        transparent 100%
-      );
     color: var(--menu-running-text-color, rgb(255 244 214 / 92%));
   }
 
   &__link--running:hover {
-    border-left-color: transparent;
-    transform: none;
     box-shadow:
       inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 24%),
-      0 8px 22px rgb(var(--menu-running-rgb, 245 158 11) / 10%);
-  }
-
-  &__link--running:not(.#{$prefix-cls}__link--active)::after {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    background:
-      linear-gradient(
-        120deg,
-        transparent 0%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 38%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 9%) 50%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 62%,
-        transparent 100%
-      );
-    content: "";
-    opacity: 0.9;
-    animation: queue-link-sheen 2.2s linear infinite;
-    pointer-events: none;
+      0 4px 14px rgb(var(--menu-running-rgb, 245 158 11) / 14%);
   }
 
   &__link--running.#{$prefix-cls}__link--active {
-    border-left-color: transparent;
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 18%),
+      0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 9%);
+  }
+
+  &__link--running.#{$prefix-cls}__link--active::before {
     background:
-      radial-gradient(
-        circle at 86% 50%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 10%) 0%,
-        transparent 36%
-      ),
       linear-gradient(
         90deg,
-        rgb(var(--menu-running-rgb, 245 158 11) / 10%) 0%,
-        rgb(var(--menu-running-rgb, 245 158 11) / 3%) 56%,
-        transparent 100%
+        rgb(var(--menu-running-rgb, 245 158 11) / 11%) 0%,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 18%) 52%,
+        rgb(var(--menu-running-rgb, 245 158 11) / 11%) 100%
       ),
-      var(--left-menu-link-active-bg);
+      repeating-linear-gradient(
+        -62deg,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 0 14px,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 14%) 14px 30px,
+        rgb(var(--menu-running-rgb, 245 158 11) / 7%) 30px 46px,
+        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 46px 64px
+      );
+    opacity: 0.9;
+  }
+
+  &__link--running.#{$prefix-cls}__link--active::after {
     box-shadow:
-      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 22%),
-      0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 8%);
+      inset 0 0 0 1px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 14%),
+      inset 0 0 14px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 8%);
+    opacity: 0.8;
   }
 
   &__link--running-queue {
@@ -770,6 +803,7 @@ $prefix-cls: #{$namespace}-menu;
   &__status-dot {
     flex: none;
     position: relative;
+    z-index: 1;
     width: var(--left-menu-status-dot-size);
     height: var(--left-menu-status-dot-size);
     margin-left: var(--left-menu-status-dot-margin-left);
@@ -979,14 +1013,40 @@ $prefix-cls: #{$namespace}-menu;
   }
 }
 
-@keyframes queue-link-sheen {
+@keyframes queue-link-background-pulse {
   0%,
-  12% {
-    transform: translateX(-112%);
-  }
-  48%,
   100% {
-    transform: translateX(112%);
+    opacity: 0.88;
+    filter: saturate(0.98) brightness(0.99);
+  }
+  50% {
+    opacity: 1;
+    filter: saturate(1.14) brightness(1.07);
+  }
+}
+
+@keyframes queue-link-background-flow {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 0,
+      160px 0;
+  }
+}
+
+@keyframes queue-link-background-glow {
+  0%,
+  100% {
+    opacity: 0.72;
+    filter: brightness(0.98);
+  }
+  50% {
+    opacity: 0.96;
+    filter: brightness(1.08);
   }
 }
 

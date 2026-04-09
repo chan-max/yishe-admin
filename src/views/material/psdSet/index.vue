@@ -1118,6 +1118,7 @@ const publishTasksVisible = ref(false);
 const publishTasksLoading = ref(false);
 const publishTasks = ref<any[]>([]);
 const currentPublishTasksPsdSetId = ref<string>("");
+let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
@@ -1127,6 +1128,17 @@ const {
   refreshUserAutoScheduling,
   setUserAutoSchedulingEnabled,
 } = usePsdSetRuntimeState();
+
+function schedulePsdSetMenuRuntimeSync() {
+  void refreshClientNodes();
+  if (psdSetMenuRuntimeSyncTimer) {
+    clearTimeout(psdSetMenuRuntimeSyncTimer);
+  }
+  psdSetMenuRuntimeSyncTimer = setTimeout(() => {
+    psdSetMenuRuntimeSyncTimer = null;
+    void refreshClientNodes();
+  }, 1500);
+}
 
 const publishPlatformNameMap: Record<string, string> = {
   douyin: "抖音",
@@ -2633,8 +2645,9 @@ async function handleConfirmStartProduction() {
     productionDispatchDialogVisible.value = false;
 
     if (response?.success) {
+      schedulePsdSetMenuRuntimeSync();
       ElMessage.success(response.message || "制作任务已调度");
-      getList();
+      await Promise.all([getList(), refreshClientNodes()]);
     } else {
       ElMessage.warning(response?.message || "开始制作失败");
     }
@@ -2712,6 +2725,10 @@ onUnmounted(() => {
   // 清理全局监听器
   websocketClient.events.off("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.off("production-status", productionStatusHandler);
+  if (psdSetMenuRuntimeSyncTimer) {
+    clearTimeout(psdSetMenuRuntimeSyncTimer);
+    psdSetMenuRuntimeSyncTimer = null;
+  }
   if (psdSetSchedulerRuntimeTimer) {
     clearInterval(psdSetSchedulerRuntimeTimer);
     psdSetSchedulerRuntimeTimer = null;

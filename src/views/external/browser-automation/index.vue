@@ -67,10 +67,6 @@
             </div>
             <div class="common-table common-table--full">
               <vxe-grid v-bind="profileGridOptions" :data="profileTableRows" class="profile-grid">
-                <template #platforms_default="{ row }">
-                  {{ Array.isArray(row.platforms) && row.platforms.length ? row.platforms.join(", ") : "-" }}
-                </template>
-
                 <template #lastUsedAt_default="{ row }">
                   {{ dateText(row.lastUsedAt) }}
                 </template>
@@ -212,7 +208,7 @@
                       >强制关闭</el-button
                     >
                     <el-button
-                      :disabled="!serviceEnabled"
+                      :disabled="!canLoadCurrentProfilePages"
                       :loading="loadingMap.pages"
                       @click="sendSimple('pages')"
                       >获取页面</el-button
@@ -220,6 +216,9 @@
                   </div>
                   <div v-if="currentProfileId" class="muted">
                     当前操作环境：{{ currentProfileName }}，{{ currentProfileStatusText }}
+                  </div>
+                  <div v-if="currentProfileId && !currentProfileConnected" class="muted">
+                    当前环境的浏览器窗口尚未打开，请先点击“连接”打开对应环境后再获取页面或执行调试。
                   </div>
                   <div v-if="!serviceEnabled" class="muted">
                     自动化服务未启动，当前节点不可执行相关操作。
@@ -278,7 +277,7 @@
                     <el-select
                       v-model="debugForm.pageIndex"
                       placeholder="选择调试页面"
-                      :disabled="!serviceEnabled || !pageOptions.length"
+                      :disabled="!canDebugCurrentProfile || !pageOptions.length"
                     >
                       <el-option
                         v-for="page in pageOptions"
@@ -300,46 +299,46 @@
                       v-model="debugForm.pageIndex"
                       :min="0"
                       controls-position="right"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                     <el-input
                       v-model="debugForm.url"
                       placeholder="URL"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                     <el-input
                       v-model="debugForm.selector"
                       placeholder="Selector"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                     <el-input
                       v-model="debugForm.text"
                       placeholder="Text"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                     <el-input
                       v-model="debugForm.key"
                       placeholder="Key"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                     <el-input-number
                       v-model="debugForm.ms"
                       :min="1"
                       controls-position="right"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                     <el-input-number
                       v-model="debugForm.timeout"
                       :min="1000"
                       controls-position="right"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                     />
                   </div>
                   <div class="action-grid">
                     <el-button
                       v-for="item in debugActions"
                       :key="item"
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                       :loading="loadingMap.debug"
                       @click="sendDebug(item)"
                       >{{ item }}</el-button
@@ -353,17 +352,17 @@
                     type="textarea"
                     :rows="14"
                     placeholder="页面内 JS 或 Playwright 脚本"
-                    :disabled="!serviceEnabled"
+                    :disabled="!canDebugCurrentProfile"
                   />
                   <div class="row">
                     <el-button
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                       :loading="loadingMap.debug"
                       @click="sendDebug('eval')"
                       >执行页面内 JS</el-button
                     >
                     <el-button
-                      :disabled="!serviceEnabled"
+                      :disabled="!canDebugCurrentProfile"
                       :loading="loadingMap.debug"
                       @click="sendDebug('playwright')"
                       >执行 Playwright</el-button
@@ -503,12 +502,7 @@
             placeholder="环境编号，例如 001；留空则自动生成"
           />
           <el-input v-model="profileForm.name" placeholder="环境名称" />
-          <el-input v-model="profileForm.account" placeholder="账号标识，可选" />
           <el-input v-model="profileForm.remark" type="textarea" :rows="3" placeholder="备注，可选" />
-          <el-input
-            v-model="profileForm.platformsText"
-            placeholder="平台标签，多个用逗号分隔，例如 douyin,xiaohongshu"
-          />
         </div>
         <template #footer>
           <div class="row" style="justify-content: flex-end">
@@ -637,8 +631,6 @@ const profileForm = reactive({
   id: "",
   name: "",
   remark: "",
-  account: "",
-  platformsText: "",
 });
 const debugForm = reactive({
   pageIndex: 0,
@@ -712,10 +704,21 @@ const profileInstanceMap = computed(
     ),
 );
 const profileTableRows = computed(() =>
-  profileItems.value.map((item) => ({
-    ...item,
-    instance: profileInstanceMap.value.get(String(item?.id || "").trim()) || null,
-  })),
+  profileItems.value.map((item) => {
+    const instance = profileInstanceMap.value.get(String(item?.id || "").trim()) || null;
+    const connection = selectedDetails.value?.connection;
+    const isCurrentProfile =
+      String(item?.id || "").trim() &&
+      String(item?.id || "").trim() === String(activeProfileId.value || "").trim();
+
+    return {
+      ...item,
+      instance,
+      port:
+        normalizeBrowserPortValue(instance) ??
+        (isCurrentProfile ? normalizeBrowserPortValue(connection) : null),
+    };
+  }),
 );
 const profileGridOptions = ref<VxeGridProps<any>>({
   ...commonGridOptions,
@@ -724,43 +727,59 @@ const profileGridOptions = ref<VxeGridProps<any>>({
     isHover: true,
   },
   columns: [
-    { field: "id", title: "编号", width: 90 },
-    { field: "name", title: "名称", minWidth: 180, showOverflow: "tooltip" },
-    { field: "account", title: "账号", minWidth: 160, showOverflow: "tooltip" },
+    { field: "id", title: "编号", width: 90, align: "left", headerAlign: "left" },
     {
-      field: "platforms",
-      title: "平台",
+      field: "name",
+      title: "名称",
       minWidth: 180,
       showOverflow: "tooltip",
-      slots: { default: "platforms_default" },
+      align: "left",
+      headerAlign: "left",
+    },
+    {
+      field: "port",
+      title: "端口",
+      width: 90,
+      align: "left",
+      headerAlign: "left",
+      formatter: ({ row }) => row?.port ?? "-",
     },
     {
       field: "lastUsedAt",
       title: "最近使用",
       minWidth: 170,
+      align: "left",
+      headerAlign: "left",
       slots: { default: "lastUsedAt_default" },
     },
     {
       field: "instance",
-      title: "浏览器",
+      title: "浏览器状态",
       minWidth: 200,
+      align: "left",
+      headerAlign: "left",
       slots: { default: "instance_default" },
     },
     {
       field: "pageCount",
       title: "页面",
       width: 80,
-      align: "center",
+      align: "left",
+      headerAlign: "left",
       slots: { default: "pageCount_default" },
     },
     {
       field: "isActive",
       title: "状态",
       width: 100,
-      align: "center",
+      align: "left",
+      headerAlign: "left",
       slots: { default: "status_default" },
     },
-    buildOperationColumn("profileOperation_default", 110),
+    buildOperationColumn("profileOperation_default", 110, {
+      align: "left",
+      headerAlign: "left",
+    }),
   ],
 });
 const activeProfileId = computed(
@@ -817,6 +836,22 @@ const serviceEnabled = computed(() =>
   Boolean(selectedClient.value?.isOnline && selectedService.value?.connected),
 );
 const browserReady = computed(() => Boolean(serviceEnabled.value && hasAnyConnectedProfile.value));
+const currentProfileConnected = computed(() => {
+  if (!currentProfileId.value) {
+    return browserReady.value;
+  }
+  return currentProfileInstance.value?.connected === true;
+});
+const canLoadCurrentProfilePages = computed(() => {
+  if (!serviceEnabled.value) {
+    return false;
+  }
+  if (!currentProfileId.value) {
+    return browserReady.value;
+  }
+  return currentProfileConnected.value;
+});
+const canDebugCurrentProfile = computed(() => canLoadCurrentProfilePages.value);
 const currentProfileStatusText = computed(() =>
   getProfileInstanceText(currentProfileInstance.value),
 );
@@ -843,6 +878,23 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
 
 const dateText = (value?: string | null) =>
   value ? formatDate(new Date(value), "YYYY-MM-DD HH:mm:ss") : "-";
+function normalizeBrowserPortValue(source: any) {
+  const candidates = [
+    source?.port,
+    source?.debugPort,
+    source?.remoteDebuggingPort,
+    source?.remoteDebugPort,
+  ];
+
+  for (const candidate of candidates) {
+    const port = Number(candidate);
+    if (Number.isInteger(port) && port > 0) {
+      return port;
+    }
+  }
+
+  return null;
+}
 const normalizeBrowserAutomationKey = (value?: string | null) => {
   const normalized = String(value || "").trim();
   if (!normalized) return "";
@@ -1069,8 +1121,15 @@ const setOperationProfile = (profileId?: string | null) => {
   const normalizedProfileId = String(profileId || "").trim();
   browserForm.profileId = normalizedProfileId;
 };
-const openOperationPanelForProfile = (profileId?: string | null) => {
+const openOperationPanelForProfile = (
+  profileId?: string | null,
+  port?: number | null,
+) => {
   setOperationProfile(profileId);
+  const normalizedPort = normalizeBrowserPortValue({ port });
+  if (normalizedPort) {
+    browserForm.port = normalizedPort;
+  }
   operationDialogVisible.value = true;
 };
 const resetProfileForm = () => {
@@ -1078,8 +1137,6 @@ const resetProfileForm = () => {
   profileForm.id = "";
   profileForm.name = "";
   profileForm.remark = "";
-  profileForm.account = "";
-  profileForm.platformsText = "";
 };
 const openCreateProfileDialog = () => {
   resetProfileForm();
@@ -1092,14 +1149,13 @@ const openEditProfileDialog = (profile: BrowserAutomationProfileSummary) => {
   profileForm.id = String(profile.id || "").trim();
   profileForm.name = String(profile.name || "").trim();
   profileForm.remark = String(profile.remark || "").trim();
-  profileForm.account = String(profile.account || "").trim();
-  profileForm.platformsText = Array.isArray(profile.platforms)
-    ? profile.platforms.join(", ")
-    : "";
 };
 const handleProfileOperationCommand = (
   command: string,
-  row: BrowserAutomationProfileSummary & { instance?: BrowserAutomationProfileInstanceSummary | null },
+  row: BrowserAutomationProfileSummary & {
+    port?: number | null;
+    instance?: BrowserAutomationProfileInstanceSummary | null;
+  },
 ) => {
   switch (command) {
     case "connect":
@@ -1112,7 +1168,7 @@ const handleProfileOperationCommand = (
       void sendFocusProfile(row.id);
       break;
     case "panel":
-      openOperationPanelForProfile(row.id);
+      openOperationPanelForProfile(row.id, row.port);
       break;
     case "switch":
       void sendSwitchProfile(row.id);
@@ -1131,11 +1187,6 @@ const submitProfileForm = async () => {
     ...(editingProfileId.value ? {} : { id: profileForm.id.trim() || undefined }),
     name: profileForm.name.trim() || undefined,
     remark: profileForm.remark.trim() || undefined,
-    account: profileForm.account.trim() || undefined,
-    platforms: profileForm.platformsText
-      .split(/[,，\s]+/)
-      .map((item) => item.trim())
-      .filter(Boolean),
   };
 
   if (!payload.name && !editingProfileId.value) {
@@ -1440,16 +1491,10 @@ watch(
   { deep: true, immediate: true },
 );
 
-watch([operationDialogVisible, activeTab, browserReady], ([visible, tab, ready]) => {
+watch([operationDialogVisible, activeTab, canLoadCurrentProfilePages], ([visible, tab, ready]) => {
   if (!visible || !ready) return;
   if ((tab === "browser" || tab === "debug") && !pageOptions.value.length && !loadingMap.pages) {
     void sendSimple("pages");
-  }
-});
-
-watch(browserReady, (ready) => {
-  if (!ready) {
-    operationDialogVisible.value = false;
   }
 });
 
@@ -1606,55 +1651,57 @@ onUnmounted(() => {
 .active-profile-banner {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 38px;
-  padding: 0 14px 0 0;
-  border: 1px solid rgba(34, 197, 94, 0.24);
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.05));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    0 8px 18px rgba(34, 197, 94, 0.08);
+  gap: 8px;
+  min-height: 34px;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.035), rgba(16, 185, 129, 0.055));
   color: var(--el-text-color-primary);
 }
 
 .active-profile-banner__flag {
   display: inline-flex;
   align-items: center;
-  height: 100%;
-  min-height: 36px;
-  padding: 0 12px;
+  justify-content: center;
+  height: 22px;
+  padding: 0 8px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #22c55e, #16a34a);
-  color: #fff;
+  background: rgba(16, 185, 129, 0.12);
+  color: #047857;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
   line-height: 1;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .active-profile-banner__name {
-  max-width: 360px;
+  max-width: 320px;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
 }
 
 .active-profile-banner__id {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 22px;
+  max-width: 220px;
   padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--el-text-color-secondary);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(71, 85, 105, 0.92);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-active-badge {
@@ -1704,6 +1751,11 @@ onUnmounted(() => {
 .common-table--full :deep(.vxe-table--main-wrapper),
 .profile-grid {
   width: 100%;
+}
+
+.profile-grid :deep(.vxe-header--column),
+.profile-grid :deep(.vxe-body--column) {
+  text-align: left;
 }
 
 .main-empty {
@@ -1759,7 +1811,7 @@ onUnmounted(() => {
     width: 100%;
     flex-wrap: wrap;
     justify-content: flex-start;
-    padding: 0 10px 10px 0;
+    padding: 8px 10px;
     border-radius: 16px;
   }
 

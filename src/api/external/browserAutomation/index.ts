@@ -39,6 +39,7 @@ export interface BrowserAutomationProfileSummary {
 export interface BrowserAutomationProfileInstanceSummary {
   profileId: string;
   profileName?: string;
+  port?: number | null;
   connected?: boolean;
   available?: boolean;
   busy?: boolean;

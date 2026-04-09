@@ -882,6 +882,7 @@ import {
   type PublishTaskRuntimeEvent,
   type ServiceCommandResultEvent,
 } from "@/services/websocketClient";
+import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 
 type QueueTagType = "success" | "warning" | "info" | "primary" | "danger";
 
@@ -931,6 +932,7 @@ const {
   refresh: refreshBrowserAutomationClients,
   getServiceRuntime: getBrowserAutomationRuntime,
 } = usePluginClientNodes("browser-automation", { includeOffline: true });
+const { refresh: refreshPublishTaskRuntime } = usePublishTaskRuntimeState();
 
 // 查询条件
 const queryParams = reactive({
@@ -1089,6 +1091,7 @@ const autoDispatchTargetClientId = ref("");
 const autoDispatchTargetProfileId = ref("");
 let publishTaskSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let publishTaskRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
+let publishTaskMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 对话框相关
 const dialogVisible = ref(false);
@@ -2276,6 +2279,7 @@ async function handleConfirmPublishDispatch() {
       clientId: selectedDispatchClientId.value,
       ...(profileOption.profileId ? { profileId: profileOption.profileId } : {}),
     });
+    schedulePublishTaskMenuRuntimeSync();
     ElMessage.success(
       profileOption.profileId
         ? `发布任务已分配到环境 ${profileOption.label} 执行`
@@ -2311,6 +2315,7 @@ async function handleConfirmAutoDispatchTarget() {
     autoDispatchTargetDialogVisible.value = false;
 
     const response = await triggerPublishTaskAutoDispatch();
+    schedulePublishTaskMenuRuntimeSync();
     ElMessage.success(response?.message || "已保存自动调度目标并开启自动执行");
     await Promise.all([
       getList(),
@@ -2380,6 +2385,7 @@ async function handleTriggerPublishTaskAutoDispatch() {
   publishTaskAutoDispatchLoading.value = true;
   try {
     const response = await triggerPublishTaskAutoDispatch();
+    schedulePublishTaskMenuRuntimeSync();
     ElMessage.success(response?.message || "已触发自动调度");
     await Promise.all([
       getList(),
@@ -2403,6 +2409,17 @@ function schedulePublishTaskListRefresh() {
     publishTaskRuntimeReloadTimer = null;
     void Promise.all([getList(), refreshStats()]);
   }, 260);
+}
+
+function schedulePublishTaskMenuRuntimeSync() {
+  void refreshPublishTaskRuntime();
+  if (publishTaskMenuRuntimeSyncTimer) {
+    clearTimeout(publishTaskMenuRuntimeSyncTimer);
+  }
+  publishTaskMenuRuntimeSyncTimer = setTimeout(() => {
+    publishTaskMenuRuntimeSyncTimer = null;
+    void refreshPublishTaskRuntime();
+  }, 1500);
 }
 
 function findQueueTaskIndexById(taskId: unknown) {
@@ -2917,6 +2934,10 @@ onUnmounted(() => {
   if (publishTaskSchedulerRuntimeTimer) {
     clearInterval(publishTaskSchedulerRuntimeTimer);
     publishTaskSchedulerRuntimeTimer = null;
+  }
+  if (publishTaskMenuRuntimeSyncTimer) {
+    clearTimeout(publishTaskMenuRuntimeSyncTimer);
+    publishTaskMenuRuntimeSyncTimer = null;
   }
   if (publishTaskRuntimeReloadTimer) {
     clearTimeout(publishTaskRuntimeReloadTimer);
