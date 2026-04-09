@@ -157,9 +157,6 @@
             <div class="queue-dispatch-panel__summary">
               <div class="queue-dispatch-panel__main">
                 <div class="queue-dispatch-panel__title">发布任务调度</div>
-                <div class="queue-dispatch-panel__desc">
-                  保留自动执行和手动触发。支持的任务类型请到浏览器自动化模块查看。
-                </div>
                 <div class="queue-dispatch-panel__binding" :class="publishTaskAutoDispatchTargetClass">
                   <span class="queue-dispatch-panel__binding-label">自动调度目标</span>
                   <span class="queue-dispatch-panel__binding-value">
@@ -3058,12 +3055,6 @@ onUnmounted(() => {
   color: var(--el-text-color-primary);
 }
 
-.queue-dispatch-panel__desc {
-  max-width: 420px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.45;
-}
 
 .queue-dispatch-panel__binding {
   display: flex;

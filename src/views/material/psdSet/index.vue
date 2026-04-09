@@ -101,9 +101,7 @@
               <div class="psd-set-page__auto-dispatch">
                 <div class="psd-set-page__auto-dispatch-main">
                   <div class="psd-set-page__auto-dispatch-title">自动调度</div>
-                  <div class="psd-set-page__auto-dispatch-subtitle">
-                    开启后，服务端会自动为当前账号调度空闲客户端执行套图制作。
-                  </div>
+  
                   <div
                     class="psd-set-page__auto-dispatch-runtime"
                     :class="`is-${psdSetSchedulerIndicator.tone}`"
@@ -3137,13 +3135,6 @@ getList();
   font-weight: 600;
   line-height: 1.3;
   color: var(--el-text-color-primary);
-}
-
-.psd-set-page__auto-dispatch-subtitle {
-  max-width: 420px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--el-text-color-secondary);
 }
 
 .psd-set-page__auto-dispatch-runtime {
