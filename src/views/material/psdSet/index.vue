@@ -2699,7 +2699,6 @@ async function handleSubmitCreatePublishTask() {
             taskType: resolvedTaskType,
             platform: resolvedPlatform,
             publishConfigId,
-            publishOptions: config.configData || {},
             description: `套图 ${psdSetId} -> ${config.name || resolvedTaskType || publishConfigId}`,
           });
           successCount += 1;
