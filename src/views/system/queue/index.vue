@@ -543,17 +543,6 @@
       align-center
       class="queue-runtime-dialog"
     >
-      <template #header>
-        <div class="queue-runtime-window__toolbar">
-          <div class="queue-runtime-window__chrome">
-            <span class="queue-runtime-window__chrome-btn queue-runtime-window__chrome-btn--red" />
-            <span class="queue-runtime-window__chrome-btn queue-runtime-window__chrome-btn--yellow" />
-            <span class="queue-runtime-window__chrome-btn queue-runtime-window__chrome-btn--green" />
-          </div>
-          <div class="queue-runtime-window__toolbar-user">yishe@admin: ~/publish-logs</div>
-          <div class="queue-runtime-window__toolbar-tab">+</div>
-        </div>
-      </template>
 
       <div class="queue-runtime-window">
         <div class="queue-runtime-window__summary">
@@ -3767,32 +3756,6 @@ onUnmounted(() => {
   height: 100%;
   min-height: 0;
   font-family: "Fira Code", "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-}
-
-.queue-runtime-window__toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 38px;
-  padding: 0 12px;
-  background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.queue-runtime-window__chrome {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.queue-runtime-window__chrome-btn {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  box-shadow:
-    0 0 1px rgba(0, 0, 0, 0.45),
-    0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 .queue-runtime-window__chrome-btn--red {
