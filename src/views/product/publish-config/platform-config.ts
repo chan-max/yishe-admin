@@ -3,10 +3,15 @@
  * 每个平台定义自己需要的字段配置
  */
 
+import { PUBLISH_TASK_TYPE_PREFIX, derivePublishTaskTypeByPlatform, getTaskTypeLabel } from '@/config/task-types'
+
+const HIDDEN_TASK_CONFIG_PLATFORMS = new Set(['douyin', 'kuaishou'])
+
 export interface FieldConfig {
   key: string
   label: string
   type: 'input' | 'textarea' | 'select' | 'switch' | 'number' | 'radio' | 'url-list'
+  inputType?: 'text' | 'password'
   placeholder?: string
   options?: Array<{ label: string; value: any }>
   defaultValue?: any
@@ -24,6 +29,12 @@ export interface PlatformConfig {
   supportVideo: boolean
   supportImage: boolean
   titleMaxLength?: number
+}
+
+export interface TaskTypeConfig extends PlatformConfig {
+  taskType: string
+  taskKind: 'publish-product'
+  platformLabel: string
 }
 
 // 视频平台通用字段
@@ -379,40 +390,27 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
     titleMaxLength: 60,
     fields: [
       {
-        key: 'price',
-        label: '商品价格',
-        type: 'number',
-        placeholder: '输入价格',
-        span: 8,
-        required: true
-      },
-      {
-        key: 'stock',
-        label: '库存',
-        type: 'number',
-        placeholder: '可选，库存数量',
-        span: 8
-      },
-      {
-        key: 'categoryId',
-        label: '类目ID',
+        key: 'account',
+        label: '账号',
         type: 'input',
-        placeholder: '可选，Temu类目ID',
-        span: 8
-      },
-      {
-        key: 'shippingTemplate',
-        label: '运费模板',
-        type: 'input',
-        placeholder: '可选，运费模板名称/ID',
+        placeholder: '请输入 Temu 登录账号',
         span: 12
       },
       {
-        key: 'brand',
-        label: '品牌',
+        key: 'password',
+        label: '密码',
         type: 'input',
-        placeholder: '可选，品牌名称',
+        inputType: 'password',
+        placeholder: '请输入 Temu 登录密码',
         span: 12
+      },
+      {
+        key: 'needLogin',
+        label: '是否需要登录',
+        type: 'switch',
+        defaultValue: false,
+        span: 12,
+        tooltip: '开启后，执行发布前会按模板提供的账号密码进行登录准备'
       }
     ]
   }
@@ -437,10 +435,46 @@ export function getPlatformDefaultData(platform: string): Record<string, any> {
   return defaultData
 }
 
-// 获取所有支持的平台列表
-export function getAllPlatforms() {
-  return Object.values(PLATFORM_CONFIGS).map(config => ({
-    label: config.label,
-    value: config.platform
-  }))
+export function resolveTaskTypePlatform(taskType: string): string {
+  const normalizedTaskType = String(taskType || '').trim()
+  if (!normalizedTaskType.startsWith(PUBLISH_TASK_TYPE_PREFIX)) {
+    return ''
+  }
+  return normalizedTaskType.slice(PUBLISH_TASK_TYPE_PREFIX.length)
+}
+
+export function getTaskTypeConfig(taskType: string): TaskTypeConfig | null {
+  const platform = resolveTaskTypePlatform(taskType)
+  const platformConfig = getPlatformConfig(platform)
+  if (!platformConfig) {
+    return null
+  }
+
+  return {
+    ...platformConfig,
+    taskType,
+    taskKind: 'publish-product',
+    label: getTaskTypeLabel(taskType, platform),
+    platformLabel: platformConfig.label
+  }
+}
+
+export function getTaskTypeDefaultData(taskType: string): Record<string, any> {
+  const platform = resolveTaskTypePlatform(taskType)
+  return getPlatformDefaultData(platform)
+}
+
+// 获取所有支持的任务类型列表
+export function getAllTaskTypes() {
+  return Object.values(PLATFORM_CONFIGS)
+    .filter((config) => !HIDDEN_TASK_CONFIG_PLATFORMS.has(config.platform))
+    .map((config) => {
+      const taskType = derivePublishTaskTypeByPlatform(config.platform)
+      return {
+        label: getTaskTypeLabel(taskType, config.platform),
+        value: taskType,
+        platform: config.platform,
+        taskKind: 'publish-product' as const
+      }
+    })
 }

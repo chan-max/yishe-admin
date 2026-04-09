@@ -915,6 +915,7 @@ import {
 } from "../index/sizeShapeConfig";
 import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
+import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
 
 const userStore = useUserStore();
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
@@ -1881,12 +1882,19 @@ async function handleAiAutoGenerate(row, cb, prompt) {
   try {
     // 调用PSD模板的AI补全接口
     const res = await psdTemplateApi.aiCompleteContent(row.id, prompt || "");
+    const resultData = unwrapAiTaskResult(res);
+
+    if (isQueuedAiTaskResult(resultData)) {
+      notifyQueuedAiTask(resultData);
+      if (typeof cb === "function") cb();
+      return;
+    }
 
     // 更新行数据
-    if (res) {
-      row.name = res.name || row.name;
-      row.description = res.description || row.description;
-      row.keywords = res.keywords || row.keywords;
+    if (resultData) {
+      row.name = resultData.name || row.name;
+      row.description = resultData.description || row.description;
+      row.keywords = resultData.keywords || row.keywords;
     }
 
     ElMessage.success("AI自动生成内容成功");

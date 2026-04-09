@@ -1116,7 +1116,7 @@
                     <el-option
                       v-for="config in psdSetAutomationPublishConfigs"
                       :key="config.id"
-                      :label="`${config.name} [${config.platform}]`"
+                      :label="`${config.name} [${getTaskTypeLabel(config.taskType || derivePublishTaskTypeByPlatform(config.platform), config.platform)}]`"
                       :value="config.id"
                     />
                   </el-select>
@@ -2850,6 +2850,7 @@ import { useUserStore } from "@/store/modules/user";
 import listUpload from "./listUpload.vue";
 
 import { ElButton, ElNotification, ElMessage, ElMessageBox } from "element-plus";
+import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
 import {
   Delete,
   Plus,
@@ -2909,6 +2910,7 @@ import FolderTree from "@/components/material/FolderTree.vue";
 import TableRowDragHandle from "@/components/TableRowDragHandle/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { FOLDER_FILTER } from "@/constants/folder";
+import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
 
 const userStore = useUserStore();
 const router = useRouter();
@@ -3476,7 +3478,7 @@ const psdSetAutomationActions = ref([
   {
     key: "create_publish_task_from_config",
     label: "自动生成发布任务",
-    description: "套图制作完成后，直接按选中的发布配置创建发布任务。",
+    description: "套图制作完成后，直接按选中的任务配置创建发布任务。",
     enabled: false,
     params: {
       publishConfigIds: [] as string[],
@@ -3484,9 +3486,9 @@ const psdSetAutomationActions = ref([
     fields: [
       {
         key: "publishConfigIds",
-        label: "发布配置",
+        label: "任务配置",
         component: "select-multiple",
-        placeholder: "选择一个或多个发布配置",
+        placeholder: "选择一个或多个任务配置",
       },
     ],
   },
@@ -4104,10 +4106,7 @@ function resetStickerUserTransferDialog() {
   stickerUserTransferTargetUserId.value = "";
 }
 
-async function openStickerUserTransferDialog(
-  action: StickerUserTransferAction,
-  row?: any,
-) {
+async function openStickerUserTransferDialog(action: StickerUserTransferAction, row?: any) {
   if (!ensureStickerAdminOperation()) {
     return;
   }
@@ -4543,8 +4542,8 @@ async function loadPublishConfigsForPsdAutomation() {
         : [];
     psdSetAutomationPublishConfigs.value = list.filter((item: any) => item?.isActive !== false);
   } catch (error) {
-    console.error("加载发布配置失败:", error);
-    ElMessage.error("加载发布配置失败");
+    console.error("加载任务配置失败:", error);
+    ElMessage.error("加载任务配置失败");
   } finally {
     psdSetAutomationPublishConfigsLoading.value = false;
   }
@@ -5103,8 +5102,15 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
       prompt: prompt || "",
       aiGenerateRawInfo: aiGenerateRawInfo || "",
     });
+    const resultData = unwrapAiTaskResult(res);
+
+    if (isQueuedAiTaskResult(resultData)) {
+      notifyQueuedAiTask(resultData);
+      if (typeof cb === "function") cb();
+      return;
+    }
+
     // 更新行数据 - 兼容不同的返回结构
-    const resultData = res?.data || res;
     if (resultData) {
       row.name = resultData.name || row.name;
       row.nameEn = resultData.nameEn || row.nameEn;
@@ -5121,7 +5127,12 @@ async function handleAiAutoGenerate(row, cb, prompt, aiGenerateRawInfo) {
         row.suitableFor = resultData.suitableFor;
       }
     }
-    const infringementText = resultData?.isInfringement ? "（已标记为侵权）" : "（已标记为非侵权）";
+    const infringementText =
+      typeof resultData?.isInfringement === "boolean"
+        ? resultData.isInfringement
+          ? "（已标记为侵权）"
+          : "（已标记为非侵权）"
+        : "";
     const suitableText = resultData?.suitableFor ? `，适用商品：${resultData.suitableFor}` : "";
     ElNotification.success(`AI自动生成内容成功${infringementText}${suitableText}`);
     if (typeof cb === "function") cb();

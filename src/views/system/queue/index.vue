@@ -2742,7 +2742,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
 
   try {
     await ElMessageBox.confirm(
-      "将基于当前套图信息和发布配置重新生成这条任务的发布数据，是否继续？",
+      "将基于当前套图信息和任务配置重新生成这条任务的发布数据，是否继续？",
       "重新生成发布数据",
       {
         type: "warning",

@@ -3,6 +3,8 @@
  * 用于处理平台特定的数据转换、校验、格式化等
  */
 
+import { resolveTaskTypePlatform } from './platform-config'
+
 /**
  * 平台处理器接口
  */
@@ -445,14 +447,29 @@ const kuaishouShopHandler: PlatformHandler = {
 /**
  * Temu 平台处理器
  */
+function pickTemuConfigFields(configData: Record<string, any> = {}) {
+  return {
+    account: configData?.account,
+    password: configData?.password,
+    needLogin: configData?.needLogin
+  }
+}
+
 const temuHandler: PlatformHandler = {
   platform: 'temu',
 
   validateConfig(configData) {
     const errors: string[] = []
+    const account = typeof configData?.account === 'string' ? configData.account.trim() : ''
+    const password = typeof configData?.password === 'string' ? configData.password.trim() : ''
+    const needLogin = configData?.needLogin === true
 
-    if (!configData.price || Number(configData.price) <= 0) {
-      errors.push('必须设置有效的商品价格')
+    if (needLogin && !account) {
+      errors.push('开启登录后必须填写账号')
+    }
+
+    if (needLogin && !password) {
+      errors.push('开启登录后必须填写密码')
     }
 
     return {
@@ -462,23 +479,35 @@ const temuHandler: PlatformHandler = {
   },
 
   formatConfigForSubmit(configData) {
-    const formatted = { ...configData }
+    const formatted = pickTemuConfigFields(configData)
+    if (formatted.account !== undefined && formatted.account !== null) {
+      formatted.account = String(formatted.account).trim()
+    }
+    if (formatted.password !== undefined && formatted.password !== null) {
+      formatted.password = String(formatted.password).trim()
+    }
+    formatted.needLogin = formatted.needLogin === true
 
-    if (formatted.price) {
-      formatted.price = Number(formatted.price)
+    return formatted
+  },
+
+  formatConfigForEdit(configData) {
+    const formatted = pickTemuConfigFields(configData)
+
+    if (formatted.account !== undefined && formatted.account !== null) {
+      formatted.account = String(formatted.account).trim()
     }
-    if (formatted.stock) {
-      formatted.stock = Number(formatted.stock)
+    if (formatted.password !== undefined && formatted.password !== null) {
+      formatted.password = String(formatted.password).trim()
     }
+    formatted.needLogin = formatted.needLogin === true
 
     return formatted
   },
 
   getHints() {
     return [
-      'Temu 标题建议：不超过60字符',
-      '主图清晰、白底更佳',
-      '请确保价格与库存填写准确'
+      '如需发布前自动处理登录，请开启“是否需要登录”并填写账号密码'
     ]
   }
 }
@@ -556,4 +585,28 @@ export function executePlatformBeforeSubmit(platform: string, formData: any) {
     return formData
   }
   return handler.beforeSubmit(formData)
+}
+
+function resolveHandlerTaskPlatform(taskType: string): string {
+  return resolveTaskTypePlatform(taskType)
+}
+
+export function validateTaskTypeConfig(taskType: string, configData: Record<string, any>) {
+  return validatePlatformConfig(resolveHandlerTaskPlatform(taskType), configData)
+}
+
+export function formatTaskTypeConfigForSubmit(taskType: string, configData: Record<string, any>) {
+  return formatConfigForSubmit(resolveHandlerTaskPlatform(taskType), configData)
+}
+
+export function formatTaskTypeConfigForEdit(taskType: string, configData: Record<string, any>) {
+  return formatConfigForEdit(resolveHandlerTaskPlatform(taskType), configData)
+}
+
+export function executeTaskTypeBeforeSubmit(taskType: string, formData: any) {
+  return executePlatformBeforeSubmit(resolveHandlerTaskPlatform(taskType), formData)
+}
+
+export function getTaskTypeHints(taskType: string): string[] {
+  return getPlatformHints(resolveHandlerTaskPlatform(taskType))
 }
