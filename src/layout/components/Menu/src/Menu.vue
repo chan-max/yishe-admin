@@ -55,6 +55,8 @@ export default defineComponent({
       tooltipText: publishTaskTooltipText,
       refresh: refreshPublishTaskRuntime,
     } = usePublishTaskRuntimeState();
+    let psdSetRuntimePollingTimer: ReturnType<typeof setInterval> | null = null;
+    let publishTaskRuntimePollingTimer: ReturnType<typeof setInterval> | null = null;
     const clientNodeStore = useClientNodeStore();
     clientNodeStore.ensureInitialized();
 
@@ -291,6 +293,58 @@ export default defineComponent({
       { immediate: true, deep: true },
     );
 
+    const stopPsdSetRuntimePolling = () => {
+      if (!psdSetRuntimePollingTimer) {
+        return;
+      }
+      clearInterval(psdSetRuntimePollingTimer);
+      psdSetRuntimePollingTimer = null;
+    };
+
+    const stopPublishTaskRuntimePolling = () => {
+      if (!publishTaskRuntimePollingTimer) {
+        return;
+      }
+      clearInterval(publishTaskRuntimePollingTimer);
+      publishTaskRuntimePollingTimer = null;
+    };
+
+    watch(
+      isAnyPsdSetProcessing,
+      (running) => {
+        if (!running) {
+          stopPsdSetRuntimePolling();
+          return;
+        }
+        void refreshPsdSetRuntime();
+        if (psdSetRuntimePollingTimer) {
+          return;
+        }
+        psdSetRuntimePollingTimer = setInterval(() => {
+          void refreshPsdSetRuntime();
+        }, 3000);
+      },
+      { immediate: true },
+    );
+
+    watch(
+      isAnyPublishTaskRunning,
+      (running) => {
+        if (!running) {
+          stopPublishTaskRuntimePolling();
+          return;
+        }
+        void refreshPublishTaskRuntime();
+        if (publishTaskRuntimePollingTimer) {
+          return;
+        }
+        publishTaskRuntimePollingTimer = setInterval(() => {
+          void refreshPublishTaskRuntime();
+        }, 3000);
+      },
+      { immediate: true },
+    );
+
     onMounted(() => {
       void refreshPsdSetRuntime();
       void refreshPublishTaskRuntime();
@@ -298,6 +352,8 @@ export default defineComponent({
     });
 
     onUnmounted(() => {
+      stopPsdSetRuntimePolling();
+      stopPublishTaskRuntimePolling();
       websocketClient.events.off("psAutomationStatus", handlePsAutomationStatus);
     });
 

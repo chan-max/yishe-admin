@@ -446,7 +446,7 @@
               </div>
               <div class="psd-set-detail-text-card">
                 <div class="info-label">状态说明</div>
-                <div class="info-value">{{ detailData.statusMessage || "-" }}</div>
+                <div class="info-value">{{ resolvePsdSetStatusMessage(detailData) }}</div>
               </div>
             </div>
           </section>
@@ -1046,7 +1046,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watchEffect } from "vue";
+import { ref, reactive, computed, onMounted, onUnmounted, watch, watchEffect } from "vue";
 import { ContentWrap } from "@/components/ContentWrap";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
@@ -1131,12 +1131,19 @@ const {
 
 function schedulePsdSetMenuRuntimeSync() {
   void refreshClientNodes();
+  void getList(true);
+  void loadPsdSetSchedulerRuntime();
   if (psdSetMenuRuntimeSyncTimer) {
     clearTimeout(psdSetMenuRuntimeSyncTimer);
   }
   psdSetMenuRuntimeSyncTimer = setTimeout(() => {
     psdSetMenuRuntimeSyncTimer = null;
     void refreshClientNodes();
+    void getList(true);
+    void loadPsdSetSchedulerRuntime();
+    if (detailDialogVisible.value && detailData.value?.id) {
+      void loadPsdSetDetailById(detailData.value.id, true);
+    }
   }, 1500);
 }
 
@@ -1432,6 +1439,242 @@ const detailPublishTaskCount = computed(() => {
   return Number(value) || 0;
 });
 
+function normalizePsdSetId(value: unknown) {
+  return String(value || "").trim();
+}
+
+function normalizePsdSetSchedulerMeta(value: any) {
+  if (!value) {
+    return null;
+  }
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return typeof value === "object" && !Array.isArray(value) ? { ...value } : null;
+}
+
+function normalizePsdSetRecord(record: any) {
+  if (!record || typeof record !== "object" || Array.isArray(record)) {
+    return record;
+  }
+  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
+  return {
+    ...record,
+    ...(schedulerMeta ? { schedulerMeta } : {}),
+  };
+}
+
+function resolvePsdSetProgressPercent(
+  progress?: number,
+  total?: number,
+  fallback?: number | null,
+) {
+  if (typeof progress !== "number") {
+    return typeof fallback === "number" ? fallback : null;
+  }
+  if (typeof total === "number" && total > 0) {
+    return Math.max(0, Math.min(100, Math.round((progress / total) * 100)));
+  }
+  return Math.max(0, Math.min(100, progress));
+}
+
+function resolvePsdSetRuntimeStatusMessage(status: string, message?: string, schedulerMeta?: any) {
+  const currentStep = String(schedulerMeta?.currentStep || "").trim();
+  if (
+    currentStep &&
+    (status === "processing" || schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running")
+  ) {
+    return currentStep;
+  }
+
+  const explicitMessage = String(message || "").trim();
+  if (explicitMessage) {
+    return explicitMessage;
+  }
+
+  if (currentStep) {
+    return currentStep;
+  }
+
+  switch (status) {
+    case "completed":
+      return "制作完成";
+    case "failed":
+      return String(schedulerMeta?.lastError || "制作失败");
+    case "processing":
+      return "正在处理中...";
+    case "pending":
+      return "等待调度";
+    default:
+      return "";
+  }
+}
+
+function resolvePsdSetStatusMessage(record: any) {
+  if (!record || typeof record !== "object") {
+    return "-";
+  }
+  return (
+    resolvePsdSetRuntimeStatusMessage(
+      String(record.status || "").trim(),
+      record.statusMessage,
+      normalizePsdSetSchedulerMeta(record.schedulerMeta),
+    ) || "-"
+  );
+}
+
+function findPsdSetRowIndexById(psdSetId: unknown) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return -1;
+  }
+
+  return dataSource.value.findIndex((item) => normalizePsdSetId(item?.id) === normalizedId);
+}
+
+function buildPsdSetRuntimeRecord(
+  target: any,
+  payload: {
+    status?: string;
+    message?: string;
+    progress?: number;
+    total?: number;
+    assignedClientId?: string | null;
+    assignedMachineCode?: string | null;
+    schedulerStatus?: string;
+  },
+) {
+  if (!target || typeof target !== "object") {
+    return target;
+  }
+
+  const nextStatus = String(payload.status || target.status || "").trim() || target.status;
+  const currentMeta = normalizePsdSetSchedulerMeta(target.schedulerMeta) || {};
+  const now = new Date().toISOString();
+  const nextMeta: Record<string, any> = {
+    ...currentMeta,
+    lastHeartbeatAt: now,
+    assignedClientId:
+      payload.assignedClientId !== undefined
+        ? payload.assignedClientId
+        : currentMeta.assignedClientId || null,
+    assignedMachineCode:
+      payload.assignedMachineCode !== undefined
+        ? payload.assignedMachineCode
+        : currentMeta.assignedMachineCode || null,
+    currentStep:
+      payload.message !== undefined
+        ? payload.message || currentMeta.currentStep || null
+        : currentMeta.currentStep || null,
+    progress: resolvePsdSetProgressPercent(
+      payload.progress,
+      payload.total,
+      currentMeta.progress ?? null,
+    ),
+  };
+
+  const nextSchedulerStatus =
+    payload.schedulerStatus ||
+    (nextStatus === "processing"
+      ? "running"
+      : nextStatus === "completed"
+        ? "completed"
+        : nextStatus === "failed"
+          ? "failed"
+          : nextStatus === "pending"
+            ? "pending"
+            : currentMeta.status || null);
+
+  if (nextSchedulerStatus) {
+    nextMeta.status = nextSchedulerStatus;
+  }
+
+  if (nextSchedulerStatus === "assigned") {
+    nextMeta.progress = 0;
+    nextMeta.startedAt = null;
+    nextMeta.finishedAt = null;
+    nextMeta.lastError = null;
+    nextMeta.currentStep =
+      payload.message || currentMeta.currentStep || "等待客户端接收任务";
+  } else if (nextSchedulerStatus === "running") {
+    nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
+    nextMeta.finishedAt = null;
+    nextMeta.lastError = null;
+  } else if (nextSchedulerStatus === "completed") {
+    nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
+    nextMeta.finishedAt = now;
+    nextMeta.progress = 100;
+    nextMeta.lastError = null;
+  } else if (nextSchedulerStatus === "failed") {
+    nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
+    nextMeta.finishedAt = now;
+    nextMeta.lastError = payload.message || currentMeta.lastError || "制作失败";
+  } else if (nextSchedulerStatus === "pending") {
+    nextMeta.finishedAt = null;
+    nextMeta.assignedClientId = null;
+    nextMeta.assignedMachineCode = null;
+  }
+
+  return {
+    ...target,
+    status: nextStatus,
+    statusMessage: resolvePsdSetRuntimeStatusMessage(nextStatus, payload.message, nextMeta),
+    schedulerMeta: nextMeta,
+  };
+}
+
+function applyPsdSetRuntimeUpdate(
+  psdSetId: unknown,
+  payload: {
+    status?: string;
+    message?: string;
+    progress?: number;
+    total?: number;
+    assignedClientId?: string | null;
+    assignedMachineCode?: string | null;
+    schedulerStatus?: string;
+  },
+) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return;
+  }
+
+  const rowIndex = findPsdSetRowIndexById(normalizedId);
+  if (rowIndex >= 0) {
+    const currentRow = dataSource.value[rowIndex];
+    dataSource.value.splice(rowIndex, 1, buildPsdSetRuntimeRecord(currentRow, payload));
+  }
+
+  if (normalizePsdSetId(detailData.value?.id) === normalizedId) {
+    detailData.value = buildPsdSetRuntimeRecord(detailData.value, payload);
+  }
+}
+
+function isPsdSetRuntimeActive(record: any) {
+  if (!record || typeof record !== "object") {
+    return false;
+  }
+  const normalizedStatus = String(record.status || "").trim();
+  if (normalizedStatus === "processing") {
+    return true;
+  }
+  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
+  return schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running";
+}
+
+const hasActivePsdSetRuntime = computed(() => {
+  return (
+    dataSource.value.some((item) => isPsdSetRuntimeActive(item)) ||
+    isPsdSetRuntimeActive(detailData.value)
+  );
+});
+
 // 配置信息相关状态
 const configPreviewMode = ref(false);
 
@@ -1444,6 +1687,8 @@ const configEditDialogError = ref("");
 const configEditDialogSaving = ref(false);
 let configValidateTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
+let psdSetRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
+let psdSetActiveRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 
 // 查看配置对话框相关状态
 const configViewDialogVisible = ref(false);
@@ -1512,7 +1757,13 @@ function getColumns() {
         row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
-    { title: "状态说明", field: "statusMessage", width: 320, showOverflow: true },
+    {
+      title: "状态说明",
+      field: "statusMessage",
+      width: 320,
+      showOverflow: true,
+      formatter: ({ row }) => resolvePsdSetStatusMessage(row),
+    },
     { title: "配置信息", field: "config", width: 150, slots: { default: "configSlot" } },
     {
       title: "制作耗时",
@@ -1566,8 +1817,10 @@ watchEffect(() => {
   gridOptions.value.maxHeight = height.value - 240;
 });
 
-async function getList() {
-  loading.value = true;
+async function getList(silent = false) {
+  if (!silent) {
+    loading.value = true;
+  }
   try {
     const res = await stickerPsdSetApi.page({
       ...queryParams,
@@ -1579,10 +1832,12 @@ async function getList() {
       startTime: queryParams.startTime || undefined,
       endTime: queryParams.endTime || undefined,
     });
-    dataSource.value = res.list || [];
+    dataSource.value = Array.isArray(res.list) ? res.list.map((item) => normalizePsdSetRecord(item)) : [];
     total.value = res.total || 0;
   } finally {
-    loading.value = false;
+    if (!silent) {
+      loading.value = false;
+    }
   }
 }
 
@@ -1683,8 +1938,8 @@ function formatSchedulerProgress(progress?: number | null) {
 }
 
 function getSchedulerAssignedLabel(row: any) {
-  const meta = row?.schedulerMeta;
-  if (!meta || typeof meta !== "object") return "-";
+  const meta = normalizePsdSetSchedulerMeta(row?.schedulerMeta);
+  if (!meta) return "-";
   return meta.assignedMachineCode || meta.assignedClientId || "-";
 }
 
@@ -1846,6 +2101,34 @@ async function refreshUserAutoSchedulingSetting() {
   await refreshUserAutoScheduling();
 }
 
+async function loadPsdSetDetailById(psdSetId: unknown, silent = false) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return;
+  }
+
+  if (!silent) {
+    detailLoading.value = true;
+  }
+
+  try {
+    const res = await request.get({
+      url: `/sticker-psd-set/${normalizedId}`,
+    });
+    detailData.value = normalizePsdSetRecord(res?.data || res || {});
+  } catch (error: any) {
+    if (!silent) {
+      console.error("获取套图详情失败:", error);
+      ElMessage.error(error?.message || "获取详情失败");
+      detailDialogVisible.value = false;
+    }
+  } finally {
+    if (!silent) {
+      detailLoading.value = false;
+    }
+  }
+}
+
 async function loadPsdSetSchedulerRuntime() {
   try {
     const response = await getPsdSetAutoDispatchRuntime();
@@ -1853,6 +2136,29 @@ async function loadPsdSetSchedulerRuntime() {
   } catch {
     psdSetSchedulerRuntime.value = null;
   }
+}
+
+function schedulePsdSetRuntimeRefresh(delay = 600) {
+  if (psdSetRuntimeReloadTimer) {
+    clearTimeout(psdSetRuntimeReloadTimer);
+  }
+
+  psdSetRuntimeReloadTimer = setTimeout(() => {
+    psdSetRuntimeReloadTimer = null;
+    void getList(true);
+    void loadPsdSetSchedulerRuntime();
+    if (detailDialogVisible.value && detailData.value?.id) {
+      void loadPsdSetDetailById(detailData.value.id, true);
+    }
+  }, delay);
+}
+
+function stopPsdSetActiveRuntimeRefresh() {
+  if (!psdSetActiveRuntimeTimer) {
+    return;
+  }
+  clearInterval(psdSetActiveRuntimeTimer);
+  psdSetActiveRuntimeTimer = null;
 }
 
 async function handleToggleUserAutoScheduling(enabled: boolean) {
@@ -1994,20 +2300,8 @@ async function handleViewDetail(row: any) {
     return ElMessage.warning("缺少ID，无法查看详情");
   }
   detailDialogVisible.value = true;
-  detailLoading.value = true;
   configPreviewMode.value = false;
-  try {
-    const res = await request.get({
-      url: `/sticker-psd-set/${row.id}`,
-    });
-    detailData.value = res?.data || res || {};
-  } catch (error: any) {
-    console.error("获取套图详情失败:", error);
-    ElMessage.error(error?.message || "获取详情失败");
-    detailDialogVisible.value = false;
-  } finally {
-    detailLoading.value = false;
-  }
+  await loadPsdSetDetailById(row.id);
 }
 
 function handleCloseDetailDialog() {
@@ -2659,8 +2953,14 @@ async function handleConfirmStartProduction() {
 }
 
 // 全局监听制作响应消息（用于处理客户端主动发送的响应，比如正在制作中）
-const globalResponseHandler = (data: { success: boolean; message?: string; psdSetId?: string }) => {
+const globalResponseHandler = (data: {
+  success: boolean;
+  message?: string;
+  psdSetId?: string;
+  data?: Record<string, any>;
+}) => {
   console.log("[psd-set] 全局收到制作响应:", data);
+  const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
 
   // 如果 success 为 false，说明可能是正在制作中或其他错误
   if (!data.success) {
@@ -2669,18 +2969,31 @@ const globalResponseHandler = (data: { success: boolean; message?: string; psdSe
     ElMessage.warning(message);
 
     // 如果指定了 psdSetId，清除对应的 startingProductionId，并确保行状态不误标为 processing
-    if (data.psdSetId) {
-      if (startingProductionId.value === data.psdSetId) {
+    if (normalizedPsdSetId) {
+      if (normalizePsdSetId(startingProductionId.value) === normalizedPsdSetId) {
         startingProductionId.value = "";
       }
-      const row = dataSource.value.find((r) => r.id === data.psdSetId);
-      if (row && row.status === "processing") {
-        row.status = "pending";
-      }
+      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
+        status: "pending",
+        message,
+        schedulerStatus: "pending",
+      });
+      schedulePsdSetRuntimeRefresh(240);
     }
   } else {
     // 如果成功，也清除对应的 startingProductionId
-    if (data.psdSetId && startingProductionId.value === data.psdSetId) {
+    if (normalizedPsdSetId) {
+      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
+        status: "processing",
+        message: data.message || "任务已分配，等待客户端执行",
+        progress: 0,
+        assignedClientId: String(data?.data?.clientId || "").trim() || null,
+        assignedMachineCode: String(data?.data?.machineCode || "").trim() || null,
+        schedulerStatus: "assigned",
+      });
+      schedulePsdSetRuntimeRefresh(320);
+    }
+    if (normalizedPsdSetId && normalizePsdSetId(startingProductionId.value) === normalizedPsdSetId) {
       startingProductionId.value = "";
     }
   }
@@ -2695,21 +3008,52 @@ const productionStatusHandler = (data: {
   total?: number;
 }) => {
   try {
-    if (!data || !data.psdSetId) return;
-    const row = dataSource.value.find((r) => r.id === data.psdSetId);
-    if (row) {
-      // 优先使用客户端上报的状态
-      row.status = data.status || row.status;
-      if (data.message) row.statusMessage = data.message;
-      // 当任务完成或失败时，重新刷新列表以保证数据一致
-      if (data.status === "completed" || data.status === "failed") {
-        getList();
-      }
-    }
+    const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
+    if (!normalizedPsdSetId) return;
+
+    applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
+      status: data.status,
+      message: data.message,
+      progress: data.progress,
+      total: data.total,
+    });
+
+    schedulePsdSetRuntimeRefresh(
+      data.status === "completed" || data.status === "failed" ? 260 : 900,
+    );
   } catch (e) {
     console.error("处理 production-status 事件失败", e);
   }
 };
+
+watch(
+  hasActivePsdSetRuntime,
+  (active) => {
+    if (!active) {
+      stopPsdSetActiveRuntimeRefresh();
+      return;
+    }
+
+    void getList(true);
+    void loadPsdSetSchedulerRuntime();
+    if (detailDialogVisible.value && detailData.value?.id) {
+      void loadPsdSetDetailById(detailData.value.id, true);
+    }
+
+    if (psdSetActiveRuntimeTimer) {
+      return;
+    }
+
+    psdSetActiveRuntimeTimer = setInterval(() => {
+      void getList(true);
+      void loadPsdSetSchedulerRuntime();
+      if (detailDialogVisible.value && detailData.value?.id) {
+        void loadPsdSetDetailById(detailData.value.id, true);
+      }
+    }, 3000);
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   // 添加全局监听器
@@ -2725,9 +3069,14 @@ onUnmounted(() => {
   // 清理全局监听器
   websocketClient.events.off("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.off("production-status", productionStatusHandler);
+  stopPsdSetActiveRuntimeRefresh();
   if (psdSetMenuRuntimeSyncTimer) {
     clearTimeout(psdSetMenuRuntimeSyncTimer);
     psdSetMenuRuntimeSyncTimer = null;
+  }
+  if (psdSetRuntimeReloadTimer) {
+    clearTimeout(psdSetRuntimeReloadTimer);
+    psdSetRuntimeReloadTimer = null;
   }
   if (psdSetSchedulerRuntimeTimer) {
     clearInterval(psdSetSchedulerRuntimeTimer);
