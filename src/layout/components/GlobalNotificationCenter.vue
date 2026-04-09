@@ -48,6 +48,8 @@ const gridOptions = computed<VxeGridProps<any>>(() => ({
   size: "medium",
   showHeaderOverflow: false,
   showOverflow: "tooltip",
+  headerCellClassName: "common-table__header-cell",
+  cellClassName: "common-table__body-cell",
   columnConfig: {
     resizable: true,
   },
