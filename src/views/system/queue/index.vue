@@ -265,18 +265,25 @@
                   </template>
 
                   <template #dataDefaultSlot="{ row }">
-                    <div class="flex items-center gap-2">
-                      <el-button type="primary" link size="small" @click="handleViewData(row)">
-                        查看数据
-                      </el-button>
+                    <el-button type="primary" link size="small" @click="handleViewData(row)">
+                      查看数据
+                    </el-button>
+                  </template>
+
+                  <template #runtimeLogsDefaultSlot="{ row }">
+                    <div class="queue-runtime-log-cell">
                       <el-button
                         type="primary"
                         link
                         size="small"
+                        class="queue-runtime-log-cell__trigger"
                         @click="handleViewRuntimeLogs(row)"
                       >
-                        运行日志
+                        查看日志
                       </el-button>
+                      <span class="queue-runtime-log-cell__count">
+                        {{ getTaskLogCount(row) }} 条
+                      </span>
                     </div>
                   </template>
 
@@ -531,38 +538,50 @@
 
     <el-dialog
       v-model="runtimeLogDialogVisible"
-      title="运行日志"
       fullscreen
       :center="false"
       align-center
       class="queue-runtime-dialog"
     >
-      <div class="queue-runtime-shell">
-        <div class="queue-runtime-toolbar">
-          <div class="queue-runtime-toolbar__title">运行日志流</div>
-          <div class="queue-runtime-toolbar__meta">
-            <div class="queue-runtime-toolbar__item">
-              <span class="queue-runtime-toolbar__label">平台</span>
-              <span class="queue-runtime-toolbar__value">{{
-                currentTaskRuntime?.platform || "-"
-              }}</span>
-            </div>
-            <div class="queue-runtime-toolbar__item">
-              <span class="queue-runtime-toolbar__label">日志数</span>
-              <span class="queue-runtime-toolbar__value">{{ currentTaskLogs.length }}</span>
-            </div>
+      <template #header>
+        <div class="queue-runtime-window__toolbar">
+          <div class="queue-runtime-window__chrome">
+            <span class="queue-runtime-window__chrome-btn queue-runtime-window__chrome-btn--red" />
+            <span class="queue-runtime-window__chrome-btn queue-runtime-window__chrome-btn--yellow" />
+            <span class="queue-runtime-window__chrome-btn queue-runtime-window__chrome-btn--green" />
+          </div>
+          <div class="queue-runtime-window__toolbar-user">yishe@admin: ~/publish-logs</div>
+          <div class="queue-runtime-window__toolbar-tab">+</div>
+        </div>
+      </template>
+
+      <div class="queue-runtime-window">
+        <div class="queue-runtime-window__summary">
+          <div class="queue-runtime-window__summary-item">
+            <span class="queue-runtime-window__summary-label">任务 ID</span>
+            <span class="queue-runtime-window__summary-value">{{ currentTaskId || "-" }}</span>
+          </div>
+          <div class="queue-runtime-window__summary-item">
+            <span class="queue-runtime-window__summary-label">平台</span>
+            <span class="queue-runtime-window__summary-value">{{ currentTaskRuntime?.platform || "-" }}</span>
+          </div>
+          <div class="queue-runtime-window__summary-item">
+            <span class="queue-runtime-window__summary-label">日志数</span>
+            <span class="queue-runtime-window__summary-value">{{ currentTaskLogs.length }}</span>
           </div>
         </div>
-        <div v-if="currentTaskLogs.length" class="queue-runtime-console">
-          <div
-            v-for="(log, index) in currentTaskLogs"
-            :key="log.id || `${log.timestamp}-${index}`"
-            class="queue-runtime-console__line"
-            :data-level="normalizeLogLevel(log.level)"
-          >
-            <div class="queue-runtime-console__main">
-              <div class="queue-runtime-console__meta">
-                <span class="queue-runtime-console__tone-dot" />
+
+        <div class="queue-runtime-window__body">
+          <div v-if="currentTaskLogs.length" class="queue-runtime-console">
+            <div
+              v-for="(log, index) in currentTaskLogs"
+              :key="log.id || `${log.timestamp}-${index}`"
+              class="queue-runtime-console__line"
+              :data-level="normalizeLogLevel(log.level)"
+            >
+              <div class="queue-runtime-console__prompt">
+                <span class="queue-runtime-console__user">yishe@admin:</span>
+                <span class="queue-runtime-console__location">~</span>
                 <span class="queue-runtime-console__time">{{
                   formatLogTimestamp(log.time || log.timestamp)
                 }}</span>
@@ -582,13 +601,32 @@
                 </div>
               </div>
             </div>
+            <div class="queue-runtime-console__cursor-row">
+              <span class="queue-runtime-console__user">yishe@admin:</span>
+              <span class="queue-runtime-console__location">~</span>
+              <span class="queue-runtime-console__cursor" />
+            </div>
+          </div>
+          <div v-else class="queue-runtime-console queue-runtime-console--empty">
+            <div class="queue-runtime-console__empty">
+              <span class="queue-runtime-console__user">yishe@admin:</span>
+              <span class="queue-runtime-console__location">~</span>
+              <span class="queue-runtime-console__message">暂无匹配日志</span>
+              <span class="queue-runtime-console__cursor" />
+            </div>
           </div>
         </div>
-        <el-empty v-else description="暂无匹配日志" :image-size="72" />
       </div>
+
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
+        <div class="queue-runtime-dialog__footer">
+          <div class="queue-runtime-dialog__footer-meta">
+            <span>运行日志窗口</span>
+            <span>{{ currentTaskLogs.length }} 条记录</span>
+          </div>
+          <div class="queue-runtime-dialog__footer-actions">
+            <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
+          </div>
         </div>
       </template>
     </el-dialog>
@@ -1027,9 +1065,17 @@ const gridOptions = ref({
     {
       title: "任务数据",
       field: "data",
-      minWidth: 170,
+      minWidth: 110,
       slots: {
         default: "dataDefaultSlot",
+      },
+    },
+    {
+      title: "运行日志",
+      field: "runtimeLogs",
+      width: 130,
+      slots: {
+        default: "runtimeLogsDefaultSlot",
       },
     },
     {
@@ -1462,9 +1508,33 @@ function taskTypeLabel(taskType?: string) {
   return matched?.label || String(taskType || "-");
 }
 
+const PUBLISH_DISPATCH_STALE_MS = 45_000;
+
 function getPublishDispatchMeta(row?: QueueMessage | null) {
   const meta = row?.metadata?.publishDispatch;
-  return meta && typeof meta === "object" ? meta : {};
+  const normalizedMeta = meta && typeof meta === "object" ? meta : {};
+  const heartbeat = String(
+    normalizedMeta.lastHeartbeatAt ||
+      normalizedMeta.assignedAt ||
+      normalizedMeta.startedAt ||
+      "",
+  ).trim();
+  const status = String(normalizedMeta.status || "").trim();
+
+  if (
+    heartbeat &&
+    (status === "assigned" || status === "running") &&
+    Date.now() - new Date(heartbeat).getTime() >= PUBLISH_DISPATCH_STALE_MS
+  ) {
+    return {
+      ...normalizedMeta,
+      status: "timeout",
+      currentStep: normalizedMeta.currentStep || "执行心跳超时",
+      lastError: normalizedMeta.lastError || "长时间未收到任务心跳，任务可能已中断",
+    };
+  }
+
+  return normalizedMeta;
 }
 
 function supportsTaskType(client: any, taskType?: string) {
@@ -1920,6 +1990,11 @@ function extractTaskRuntime(data: any) {
     platform: firstPlatformRuntime.platform || firstPlatformKey,
     logs: Array.isArray(firstPlatformRuntime.logs) ? firstPlatformRuntime.logs : [],
   };
+}
+
+function getTaskLogCount(row?: QueueMessage | null) {
+  const runtime = extractTaskRuntime(normalizeTaskDataRecord(row?.data));
+  return Array.isArray(runtime?.logs) ? runtime.logs.length : 0;
 }
 
 function formatLogTimestamp(value: any) {
@@ -3200,6 +3275,19 @@ onUnmounted(() => {
   min-height: 28px;
 }
 
+.queue-runtime-log-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.queue-runtime-log-cell__count {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .queue-dispatch-target-cell {
   display: flex;
   flex-direction: column;
@@ -3628,81 +3716,169 @@ onUnmounted(() => {
   padding: 14px;
 }
 
-.queue-runtime-dialog :deep(.el-dialog__body) {
-  padding-top: 10px;
-  background:
-    radial-gradient(circle at top left, rgb(59 130 246 / 8%), transparent 28%),
-    linear-gradient(180deg, #f8fafc 0%, #f3f6fb 100%);
-}
-
-.queue-runtime-shell {
+.queue-runtime-dialog :deep(.el-dialog) {
+  height: 100vh;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  height: calc(100vh - 150px);
-  min-height: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: rgba(33, 33, 33, 0.78);
+  backdrop-filter: blur(8px);
 }
 
-.queue-runtime-toolbar {
+.queue-runtime-dialog :deep(.el-dialog__header) {
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.queue-runtime-dialog :deep(.el-dialog__headerbtn) {
+  top: 10px;
+  right: 12px;
+  z-index: 3;
+}
+
+.queue-runtime-dialog :deep(.el-dialog__headerbtn .el-dialog__close) {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.queue-runtime-dialog :deep(.el-dialog__body) {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(61, 157, 246, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.46) 0%, rgba(8, 8, 8, 0.72) 100%);
+}
+
+.queue-runtime-dialog :deep(.el-dialog__footer) {
+  flex-shrink: 0;
+  padding: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(145deg, #1d1d1d, #121212);
+}
+
+.queue-runtime-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-family: "Fira Code", "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+.queue-runtime-window__toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 4px 2px 0;
+  gap: 12px;
+  min-height: 38px;
+  padding: 0 12px;
+  background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.queue-runtime-toolbar__title {
-  color: #0f172a;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+.queue-runtime-window__chrome {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.queue-runtime-toolbar__meta {
+.queue-runtime-window__chrome-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow:
+    0 0 1px rgba(0, 0, 0, 0.45),
+    0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+.queue-runtime-window__chrome-btn--red {
+  background: radial-gradient(circle at 30% 30%, #ff5f56, #bf2e2e);
+}
+
+.queue-runtime-window__chrome-btn--yellow {
+  background: radial-gradient(circle at 30% 30%, #ffbd2e, #b4820e);
+}
+
+.queue-runtime-window__chrome-btn--green {
+  background: radial-gradient(circle at 30% 30%, #27c93f, #199f2c);
+}
+
+.queue-runtime-window__toolbar-user {
+  flex: 1;
+  min-width: 0;
+  color: #d5d0ce;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.queue-runtime-window__toolbar-tab {
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.queue-runtime-window__summary {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  padding: 14px 18px 8px;
 }
 
-.queue-runtime-toolbar__item {
+.queue-runtime-window__summary-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
+  min-height: 30px;
   padding: 0 10px;
-  border: 1px solid rgb(148 163 184 / 14%);
   border-radius: 999px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 72%) 0%, rgb(241 245 249 / 92%) 100%);
-  box-shadow: 0 4px 10px rgb(15 23 42 / 4%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.queue-runtime-toolbar__label {
-  color: #6b7280;
+.queue-runtime-window__summary-label {
+  color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
 }
 
-.queue-runtime-toolbar__value {
-  color: #1f2937;
+.queue-runtime-window__summary-value {
+  color: #f8fafc;
   font-size: 12px;
   font-weight: 700;
-  font-family:
-    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
-.queue-runtime-console {
+.queue-runtime-window__body {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  padding: 10px 18px 18px;
+}
+
+.queue-runtime-console {
+  min-height: 100%;
   padding: 12px;
-  border: 1px solid rgb(15 23 42 / 12%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background:
-    linear-gradient(180deg, rgb(15 23 42 / 98%) 0%, rgb(17 24 39 / 99%) 100%);
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 0.99) 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 4%),
-    0 18px 48px rgb(15 23 42 / 16%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 18px 48px rgba(15, 23, 42, 0.16);
+}
+
+.queue-runtime-console--empty {
+  display: flex;
+  align-items: center;
 }
 
 .queue-runtime-console__line + .queue-runtime-console__line {
@@ -3710,77 +3886,46 @@ onUnmounted(() => {
 }
 
 .queue-runtime-console__line {
-  position: relative;
   padding: 10px 12px;
-  border: 0;
   border-radius: 10px;
-  background: linear-gradient(180deg, rgb(15 23 42 / 52%) 0%, rgb(15 23 42 / 68%) 100%);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.52) 0%, rgba(15, 23, 42, 0.68) 100%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 2%),
-    0 4px 10px rgb(2 6 23 / 16%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.02),
+    0 4px 10px rgba(2, 6, 23, 0.16);
   transition:
     transform 0.18s ease,
-    background-color 0.18s ease,
     box-shadow 0.18s ease;
 }
 
 .queue-runtime-console__line:hover {
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 3%),
-    0 8px 16px rgb(2 6 23 / 20%);
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 8px 16px rgba(2, 6, 23, 0.2);
 }
 
-.queue-runtime-console__main {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.queue-runtime-console__meta {
+.queue-runtime-console__prompt,
+.queue-runtime-console__empty {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  color: #94a3b8;
+  gap: 6px;
+  flex-wrap: wrap;
   font-size: 12px;
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
-.queue-runtime-console__tone-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #3b82f6;
-  flex: 0 0 auto;
-  box-shadow: 0 0 0 3px rgb(59 130 246 / 16%);
+.queue-runtime-console__user {
+  color: #00ffae;
+  text-shadow: 0 0 4px rgba(0, 255, 174, 0.45);
 }
 
-.queue-runtime-console__line[data-level="success"] .queue-runtime-console__tone-dot {
-  background: #22c55e;
-  box-shadow: 0 0 0 3px rgb(34 197 94 / 14%);
-}
-
-.queue-runtime-console__line[data-level="warn"] .queue-runtime-console__tone-dot,
-.queue-runtime-console__line[data-level="warning"] .queue-runtime-console__tone-dot {
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgb(245 158 11 / 16%);
-}
-
-.queue-runtime-console__line[data-level="error"] .queue-runtime-console__tone-dot {
-  background: #ef4444;
-  box-shadow: 0 0 0 3px rgb(239 68 68 / 14%);
-}
-
-.queue-runtime-console__line[data-level="debug"] .queue-runtime-console__tone-dot {
-  background: #94a3b8;
-  box-shadow: 0 0 0 3px rgb(148 163 184 / 14%);
+.queue-runtime-console__location {
+  color: #3d9df6;
+  text-shadow: 0 0 4px rgba(61, 157, 246, 0.42);
 }
 
 .queue-runtime-console__time {
-  color: inherit;
-  font-family:
-    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  color: #94a3b8;
   font-size: 12px;
   letter-spacing: 0.01em;
 }
@@ -3790,6 +3935,7 @@ onUnmounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-top: 8px;
 }
 
 .queue-runtime-console__message {
@@ -3798,10 +3944,9 @@ onUnmounted(() => {
   color: #e5edf7;
   font-size: 13px;
   line-height: 1.55;
-  font-family:
-    "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   white-space: pre-wrap;
   word-break: break-word;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.12);
 }
 
 .queue-runtime-console__line[data-level="warn"] .queue-runtime-console__message,
@@ -3826,22 +3971,60 @@ onUnmounted(() => {
   min-height: 24px;
   padding: 0 9px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 3%);
+  background: rgba(255, 255, 255, 0.03);
   color: #a5d8ff;
   font-size: 12px;
   line-height: 1;
-  border: 1px solid rgb(148 163 184 / 12%);
+  border: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .queue-runtime-console__detail-trigger:hover {
   color: #d7ecff;
-  background: rgb(59 130 246 / 8%);
-  border-color: rgb(59 130 246 / 18%);
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.18);
 }
 
 .queue-runtime-console__detail-trigger:focus-visible {
-  outline: 2px solid rgb(59 130 246 / 30%);
+  outline: 2px solid rgba(59, 130, 246, 0.3);
   outline-offset: 1px;
+}
+
+.queue-runtime-console__cursor-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.queue-runtime-console__cursor {
+  display: inline-block;
+  width: 6px;
+  height: 14px;
+  border-radius: 2px;
+  background: #ffffff;
+  animation: queue-runtime-cursor-blink 800ms steps(2) infinite;
+}
+
+.queue-runtime-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  color: #cbd5e1;
+}
+
+.queue-runtime-dialog__footer-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.queue-runtime-dialog__footer-actions {
+  margin-left: auto;
 }
 
 .queue-runtime-data-dialog__header {
@@ -3955,17 +4138,19 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 
-  .queue-runtime-shell {
-    height: calc(100vh - 132px);
+  .queue-runtime-window__toolbar {
+    padding-right: 44px;
   }
 
-  .queue-runtime-toolbar {
-    align-items: flex-start;
+  .queue-runtime-window__toolbar-user {
+    text-align: left;
   }
 
-  .queue-runtime-toolbar__meta {
-    width: 100%;
-    gap: 10px;
+  .queue-runtime-window__summary,
+  .queue-runtime-window__body,
+  .queue-runtime-dialog__footer {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .queue-runtime-console__content {
@@ -4019,11 +4204,6 @@ onUnmounted(() => {
     padding: 14px 16px;
   }
 
-  .queue-runtime-toolbar__item {
-    min-height: 36px;
-    padding: 0 12px;
-  }
-
   .publish-dispatch-dialog :deep(.el-dialog__body) {
     padding: 18px 20px;
   }
@@ -4063,6 +4243,22 @@ onUnmounted(() => {
   50% {
     box-shadow: 0 0 0 6px rgb(249 115 22 / 0%);
     transform: scale(1.04);
+  }
+}
+
+@keyframes queue-runtime-cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+
+  50%,
+  99% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
   }
 }
 </style>

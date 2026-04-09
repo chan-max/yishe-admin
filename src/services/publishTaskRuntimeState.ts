@@ -24,9 +24,9 @@ const createDefaultSummary = (): PublishTaskRuntimeSummary => ({
 const summary = ref<PublishTaskRuntimeSummary>(createDefaultSummary());
 const loading = ref(false);
 const hasServerDirectExecutableTypes = ref(false);
+const activeTaskIds = ref<string[]>([]);
 
 let initialized = false;
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const applySummary = (payload?: Partial<PublishTaskRuntimeSummary> | null) => {
   const next = payload || {};
@@ -63,34 +63,40 @@ const refreshSummary = async (silent = false) => {
   }
 };
 
-const scheduleRefresh = (delay = 480) => {
-  if (refreshTimer) {
-    return;
-  }
-
-  refreshTimer = setTimeout(() => {
-    refreshTimer = null;
-    void refreshSummary(true);
-  }, delay);
-};
-
 const handlePublishTaskRuntime = (event: PublishTaskRuntimeEvent) => {
-  if (!event?.taskId) {
+  const taskId = String(event?.taskId || "").trim();
+  if (!taskId) {
     return;
   }
 
   const eventStatus = String(event.status || "").toLowerCase();
-  if (eventStatus === "running") {
+  const activeSet = new Set(activeTaskIds.value);
+  const wasActive = activeSet.has(taskId);
+
+  if (eventStatus === "assigned" || eventStatus === "running" || eventStatus === "processing") {
+    if (!wasActive) {
+      activeSet.add(taskId);
+    }
+    activeTaskIds.value = Array.from(activeSet);
     summary.value = {
       ...summary.value,
-      processing: Math.max(summary.value.processing, 1),
-      active: Math.max(summary.value.active, 1),
+      processing: Math.max(summary.value.processing, activeTaskIds.value.length),
+      active: Math.max(summary.value.active, activeTaskIds.value.length),
     };
-    scheduleRefresh(1200);
     return;
   }
 
-  scheduleRefresh(320);
+  if (eventStatus === "completed" || eventStatus === "failed" || eventStatus === "pending" || eventStatus === "timeout") {
+    if (wasActive) {
+      activeSet.delete(taskId);
+    }
+    activeTaskIds.value = Array.from(activeSet);
+    summary.value = {
+      ...summary.value,
+      processing: Math.min(summary.value.processing, activeTaskIds.value.length),
+      active: activeTaskIds.value.length,
+    };
+  }
 };
 
 const refreshCapabilityCatalog = async () => {
@@ -119,7 +125,9 @@ export function usePublishTaskRuntimeState() {
   const clientNodeStore = useClientNodeStore();
   clientNodeStore.ensureInitialized();
 
-  const runningCount = computed(() => summary.value.waiting + summary.value.processing);
+  const runningCount = computed(() =>
+    Math.max(activeTaskIds.value.length, summary.value.waiting + summary.value.processing),
+  );
   const isAnyPublishTaskRunning = computed(() => runningCount.value > 0);
   const hasBrowserAutomationExecutor = computed(
     () => clientNodeStore.pluginStatusMap["browser-automation"] === "available",
@@ -137,7 +145,7 @@ export function usePublishTaskRuntimeState() {
     return isPublishTaskExecutable.value ? "发布任务可执行" : "发布任务暂不可执行";
   });
   const refresh = async () => {
-    await Promise.all([refreshSummary(), refreshCapabilityCatalog()]);
+    await refreshSummary();
   };
 
   return {

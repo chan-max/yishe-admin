@@ -19,13 +19,13 @@ import {
   getTaskTypeDefaultData,
   resolveTaskTypePlatform,
   type TaskTypeConfig
-} from './platform-config'
+} from './task-types'
 import {
   validateTaskTypeConfig,
   formatTaskTypeConfigForSubmit,
   formatTaskTypeConfigForEdit,
   executeTaskTypeBeforeSubmit
-} from './platform-handlers'
+} from './task-types'
 import { getVendorList, type Vendor } from '@/api/vendor'
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from '@/config/task-types'
 
@@ -527,20 +527,20 @@ onMounted(() => {
                   <div class="publish-config-panel__desc">配置名称、任务类型、启用状态与描述。</div>
                 </div>
               </div>
-              <el-row :gutter="14">
-                <el-col :span="10">
+              <el-row :gutter="10" class="publish-config-basic-row">
+                <el-col :span="10" class="publish-config-basic-col">
                   <el-form-item label="配置名称" prop="name">
                     <el-input v-model="form.name" placeholder="例如：抖店商品发布 / Temu商品发布" />
                   </el-form-item>
                 </el-col>
-                <el-col :span="8">
+                <el-col :span="8" class="publish-config-basic-col">
                   <el-form-item label="任务类型" prop="taskType">
-                    <el-select v-model="form.taskType" placeholder="请选择任务类型" style="width: 100%;">
+                    <el-select v-model="form.taskType" placeholder="请选择任务类型">
                       <el-option v-for="item in taskTypeOptions" :key="item.value" :label="item.label" :value="item.value" />
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="6">
+                <el-col :span="6" class="publish-config-basic-col publish-config-basic-col--switch">
                   <el-form-item label="启用状态" prop="isActive">
                     <div class="publish-config-switch">
                       <el-switch v-model="form.isActive" />
@@ -548,7 +548,7 @@ onMounted(() => {
                     </div>
                   </el-form-item>
                 </el-col>
-                <el-col :span="24">
+                <el-col :span="24" class="publish-config-basic-col publish-config-basic-col--full">
                   <el-form-item label="描述" prop="description">
                     <el-input
                       v-model="form.description"
@@ -584,11 +584,15 @@ onMounted(() => {
                     {{ platformImageLimitTip }}
                   </div>
 
-                  <el-row v-if="currentPlatformConfig.fields.length > 0" :gutter="14">
+                  <el-row v-if="currentPlatformConfig.fields.length > 0" :gutter="10" class="publish-config-fields-row">
                     <el-col
                       v-for="field in currentPlatformConfig.fields"
                       :key="field.key"
                       :span="field.span || 24"
+                      :class="[
+                        'publish-config-field-col',
+                        { 'publish-config-field-col--full': (field.span || 24) >= 24 }
+                      ]"
                     >
                       <el-form-item :label="field.label" :required="field.required">
                         <el-input
@@ -644,14 +648,12 @@ onMounted(() => {
                           v-else-if="field.type === 'number'"
                           v-model="platformConfigData[field.key]"
                           :placeholder="field.placeholder"
-                          style="width: 100%;"
                         />
 
                         <template v-else-if="field.type === 'select'">
                           <el-select
                             v-model="platformConfigData[field.key]"
                             :placeholder="field.placeholder || '请选择'"
-                            style="width: 100%;"
                           >
                             <el-option
                               v-for="option in (field.key === 'vendorId' ? vendorOptions : field.options)"
@@ -720,7 +722,6 @@ onMounted(() => {
                         v-model="titleConfigForm.maxLength"
                         :min="1"
                         :max="200"
-                        style="width: 100%;"
                         placeholder="例如：30"
                       />
                     </el-form-item>
@@ -745,7 +746,6 @@ onMounted(() => {
                         allow-create
                         default-first-option
                         placeholder="输入后回车添加"
-                        style="width: 100%;"
                       />
                     </el-form-item>
                     <el-form-item label="禁用词">
@@ -756,7 +756,6 @@ onMounted(() => {
                         allow-create
                         default-first-option
                         placeholder="输入后回车添加"
-                        style="width: 100%;"
                       />
                     </el-form-item>
                   </div>
@@ -840,11 +839,31 @@ onMounted(() => {
 
   :deep(.el-form-item__content) {
     min-width: 0;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 
   :deep(.el-form-item__label) {
     color: var(--el-text-color-primary);
     font-weight: 500;
+  }
+
+  :deep(.el-form-item__content > .el-input),
+  :deep(.el-form-item__content > .el-select),
+  :deep(.el-form-item__content > .el-input-number) {
+    flex: 0 0 auto;
+    width: min(100%, 280px);
+  }
+
+  :deep(.el-form-item__content > .el-textarea) {
+    flex: 0 0 auto;
+    width: min(100%, 440px);
+  }
+
+  :deep(.el-form-item__content > .el-radio-group) {
+    flex: 0 0 auto;
+    max-width: 420px;
   }
 }
 
@@ -862,6 +881,42 @@ onMounted(() => {
 
 .publish-config-panel--basic {
   margin-bottom: 10px;
+}
+
+.publish-config-basic-row,
+.publish-config-fields-row {
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+.publish-config-basic-row :deep(.publish-config-basic-col),
+.publish-config-fields-row :deep(.publish-config-field-col) {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: none;
+}
+
+.publish-config-basic-row :deep(.publish-config-basic-col .el-form-item),
+.publish-config-fields-row :deep(.publish-config-field-col .el-form-item) {
+  margin-right: 0;
+}
+
+.publish-config-basic-row :deep(.publish-config-basic-col) {
+  width: min(100%, 430px) !important;
+}
+
+.publish-config-basic-row :deep(.publish-config-basic-col--switch) {
+  width: min(100%, 260px) !important;
+}
+
+.publish-config-basic-row :deep(.publish-config-basic-col--full),
+.publish-config-fields-row :deep(.publish-config-field-col--full) {
+  flex-basis: 100% !important;
+  width: 100% !important;
+}
+
+.publish-config-fields-row :deep(.publish-config-field-col) {
+  width: min(100%, 430px) !important;
 }
 
 .publish-config-workspace {
@@ -919,10 +974,18 @@ onMounted(() => {
   padding-bottom: 12px;
 }
 
+.publish-config-panel--ai .publish-config-ai-grid__main {
+  :deep(.el-form-item__content > .el-textarea) {
+    flex: 0 0 auto;
+    width: min(100%, 680px);
+  }
+}
+
 .publish-config-ai-grid__side {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+  justify-content: flex-start;
+  gap: 0 12px;
 }
 
 .publish-config-ai-grid__editor {
@@ -952,6 +1015,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-width: 560px;
 }
 
 .publish-config-url-list__item {
@@ -974,6 +1038,7 @@ onMounted(() => {
   align-items: center;
   gap: 10px;
   min-height: 32px;
+  justify-content: flex-start;
 }
 
 .publish-config-switch__text,
