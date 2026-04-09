@@ -1,5 +1,60 @@
 import request from "@/config/axios";
 
+const MY_CONNECTION_VIEW_REFRESH_INTERVAL_MS = 3_000;
+
+interface ConnectionViewRequestOptions {
+  force?: boolean;
+}
+
+function cloneConnectionViewResponse<T>(payload: T): T {
+  if (Array.isArray(payload)) {
+    return [...payload] as T;
+  }
+
+  if (payload && typeof payload === "object") {
+    const record = payload as Record<string, any>;
+    if (Array.isArray(record.data)) {
+      return {
+        ...record,
+        data: [...record.data],
+      } as T;
+    }
+  }
+
+  return payload;
+}
+
+function createDedupedPostRequest<T>(requester: () => Promise<T>, intervalMs: number) {
+  let lastResolvedAt = 0;
+  let lastResolvedValue: T | null = null;
+  let inFlightRequest: Promise<T> | null = null;
+
+  return async (options: ConnectionViewRequestOptions = {}): Promise<T> => {
+    const forceRefresh = options.force === true;
+    const now = Date.now();
+
+    if (!forceRefresh && inFlightRequest) {
+      return inFlightRequest;
+    }
+
+    if (!forceRefresh && lastResolvedValue !== null && now - lastResolvedAt < intervalMs) {
+      return cloneConnectionViewResponse(lastResolvedValue);
+    }
+
+    inFlightRequest = requester()
+      .then((response) => {
+        lastResolvedValue = response;
+        lastResolvedAt = Date.now();
+        return cloneConnectionViewResponse(response);
+      })
+      .finally(() => {
+        inFlightRequest = null;
+      });
+
+    return inFlightRequest;
+  };
+}
+
 export interface TokenUserInfo {
   id?: number | string;
   account?: string;
@@ -160,8 +215,13 @@ export const getRuntimeWebsocketConnectionViews = () => {
   return request.post<WebsocketConnectionVO[]>({ url: "/websocket/runtime-connections-view" });
 };
 
-export const getMyWebsocketConnectionViews = () => {
-  return request.post<WebsocketConnectionVO[]>({ url: "/websocket/my-connections-view" });
+const fetchMyWebsocketConnectionViews = createDedupedPostRequest(
+  () => request.post<WebsocketConnectionVO[]>({ url: "/websocket/my-connections-view" }),
+  MY_CONNECTION_VIEW_REFRESH_INTERVAL_MS,
+);
+
+export const getMyWebsocketConnectionViews = (options?: ConnectionViewRequestOptions) => {
+  return fetchMyWebsocketConnectionViews(options);
 };
 
 export const getMyRuntimeWebsocketConnectionViews = () => {
