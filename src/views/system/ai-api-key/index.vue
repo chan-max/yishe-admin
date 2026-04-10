@@ -25,11 +25,23 @@
         <div
           class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
         >
+          <div class="ai-api-key-tabs">
+            <el-tabs v-model="activeTab">
+              <el-tab-pane :label="`我的 Key (${mineList.length})`" name="mine" />
+              <el-tab-pane :label="`公开 Key (${publicList.length})`" name="public" />
+            </el-tabs>
+          </div>
+
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid v-bind="gridOptions" :data="list" :loading="loading">
+              <vxe-grid
+                :key="activeTab"
+                v-bind="currentGridOptions"
+                :data="currentList"
+                :loading="loading"
+              >
                 <template #enabledSlot="{ row }">
-                  <div class="ai-api-key-enabled">
+                  <div class="ai-api-key-switch-cell">
                     <el-switch
                       :model-value="row.enabled"
                       :loading="statusLoadingId === row.id"
@@ -40,6 +52,23 @@
                     />
                     <span class="table-meta-text">
                       {{ row.enabled ? "启用" : "停用" }}
+                    </span>
+                  </div>
+                </template>
+
+                <template #publicSlot="{ row }">
+                  <div class="ai-api-key-switch-cell">
+                    <el-switch
+                      :model-value="row.isPublic"
+                      :disabled="!canManagePublic"
+                      :loading="publicLoadingId === row.id"
+                      inline-prompt
+                      active-text="开"
+                      inactive-text="关"
+                      @change="(value) => handleTogglePublic(row, value === true)"
+                    />
+                    <span class="table-meta-text">
+                      {{ row.isPublic ? "公开" : "私有" }}
                     </span>
                   </div>
                 </template>
@@ -56,6 +85,18 @@
                     >
                       {{ isApiKeyVisible(row) ? "隐藏" : "查看明文" }}
                     </el-button>
+                  </div>
+                </template>
+
+                <template #availabilitySlot="{ row }">
+                  <div class="ai-api-key-availability">
+                    <el-tag
+                      size="small"
+                      :type="row.available === false ? 'danger' : 'success'"
+                      effect="plain"
+                    >
+                      {{ row.available === false ? row.unavailableReasonText || "不可用" : "可用" }}
+                    </el-tag>
                   </div>
                 </template>
 
@@ -76,9 +117,9 @@
                       placement="bottom-end"
                       @command="(command) => handleOperationCommand(String(command), row)"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button"
-                        >操作</el-button
-                      >
+                      <el-button type="primary" link size="small" class="operation-trigger-button">
+                        操作
+                      </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
@@ -104,40 +145,44 @@
     </ListPageLayout>
 
     <AiApiKeyDialog ref="dialogRef" @success="handleDialogSuccess" />
-    <AiUsageSettingPanel
-      ref="usageSettingDialogRef"
-      :keys="list"
-      @saved="handleUsageSettingSaved"
-    />
+    <AiUsageSettingPanel ref="usageSettingDialogRef" @saved="handleUsageSettingSaved" />
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import {
   deleteAiApiKey,
   getAiApiKeyDetail,
   getAiApiKeyList,
+  getPublicAiApiKeyList,
   updateAiApiKey,
   type AiApiKeyConfig,
 } from "@/api/aiApiKey";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
+import { useUserStore } from "@/store/modules/user";
 import AiApiKeyDialog from "./components/AiApiKeyDialog.vue";
 import AiUsageSettingPanel from "./components/AiUsageSettingPanel.vue";
 import { refreshAiConfigState } from "@/services/aiConfigState";
 
+const userStore = useUserStore();
+const canManagePublic = computed(() => !!userStore.user?.isAdmin);
+
 const loading = ref(false);
 const deleteLoading = ref(false);
 const statusLoadingId = ref<number | null>(null);
+const publicLoadingId = ref<number | null>(null);
 const apiKeyLoadingId = ref<number | null>(null);
-const list = ref<AiApiKeyConfig[]>([]);
+const activeTab = ref<"mine" | "public">("mine");
+const mineList = ref<AiApiKeyConfig[]>([]);
+const publicList = ref<AiApiKeyConfig[]>([]);
 const dialogRef = ref();
 const usageSettingDialogRef = ref();
 const revealedApiKeyMap = reactive<Record<number, boolean>>({});
 const plainApiKeyMap = reactive<Record<number, string>>({});
 
-const gridOptions = ref({
+const mineGridOptions = computed(() => ({
   ...commonGridOptions,
   columns: [
     { title: "ID", field: "id", width: 80 },
@@ -156,7 +201,8 @@ const gridOptions = ref({
       showOverflow: "tooltip",
       formatter: ({ row }) => row?.model || "-",
     },
-    { title: "状态", field: "enabled", width: 100, slots: { default: "enabledSlot" } },
+    { title: "状态", field: "enabled", width: 110, slots: { default: "enabledSlot" } },
+    { title: "公开", field: "isPublic", width: 110, slots: { default: "publicSlot" } },
     { title: "密钥", field: "maskedApiKey", minWidth: 360, slots: { default: "apiKeySlot" } },
     { title: "过期时间", field: "expiresAt", minWidth: 180, slots: { default: "expiresAtSlot" } },
     {
@@ -169,6 +215,46 @@ const gridOptions = ref({
     buildTimeColumn("创建时间", "createTime"),
     buildOperationColumn("operationDefaultSlot"),
   ],
+}));
+
+const publicGridOptions = computed(() => ({
+  ...commonGridOptions,
+  columns: [
+    { title: "ID", field: "id", width: 80 },
+    { title: "名称", field: "name", minWidth: 180 },
+    {
+      title: "创建人",
+      field: "uploader",
+      width: 140,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
+    {
+      title: "模型",
+      field: "model",
+      minWidth: 180,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => row?.model || "-",
+    },
+    { title: "可用状态", field: "available", width: 120, slots: { default: "availabilitySlot" } },
+    { title: "过期时间", field: "expiresAt", minWidth: 180, slots: { default: "expiresAtSlot" } },
+    {
+      title: "备注",
+      field: "remark",
+      minWidth: 220,
+      showOverflow: "tooltip",
+      slots: { default: "remarkSlot" },
+    },
+    buildTimeColumn("更新时间", "updateTime"),
+  ],
+}));
+
+const currentGridOptions = computed(() => {
+  return activeTab.value === "mine" ? mineGridOptions.value : publicGridOptions.value;
+});
+
+const currentList = computed(() => {
+  return activeTab.value === "mine" ? mineList.value : publicList.value;
 });
 
 const maskApiKey = (value?: string) => {
@@ -204,17 +290,25 @@ const formatExpiresAt = (expiresAt?: string | null) => {
   return isExpired(expiresAt) ? `${expiresAt}（已过期）` : expiresAt;
 };
 
+const resetPlainKeyState = () => {
+  Object.keys(revealedApiKeyMap).forEach((key) => {
+    delete revealedApiKeyMap[Number(key)];
+  });
+  Object.keys(plainApiKeyMap).forEach((key) => {
+    delete plainApiKeyMap[Number(key)];
+  });
+};
+
 const getList = async () => {
   loading.value = true;
   try {
-    const data = await getAiApiKeyList();
-    list.value = Array.isArray(data) ? data : [];
-    Object.keys(revealedApiKeyMap).forEach((key) => {
-      delete revealedApiKeyMap[Number(key)];
-    });
-    Object.keys(plainApiKeyMap).forEach((key) => {
-      delete plainApiKeyMap[Number(key)];
-    });
+    const [mineData, publicData] = await Promise.all([
+      getAiApiKeyList(),
+      getPublicAiApiKeyList(),
+    ]);
+    mineList.value = Array.isArray(mineData) ? mineData : [];
+    publicList.value = Array.isArray(publicData) ? publicData : [];
+    resetPlainKeyState();
     void refreshAiConfigState();
   } finally {
     loading.value = false;
@@ -244,12 +338,28 @@ const handleToggleEnabled = async (row: AiApiKeyConfig, enabled: boolean) => {
   try {
     await updateAiApiKey(row.id, { enabled });
     row.enabled = enabled;
-    void refreshAiConfigState();
+    await getList();
     ElMessage.success(enabled ? "已启用该 Key" : "已停用该 Key");
   } catch (error: any) {
     ElMessage.error(error?.message || "更新状态失败");
   } finally {
     statusLoadingId.value = null;
+  }
+};
+
+const handleTogglePublic = async (row: AiApiKeyConfig, isPublic: boolean) => {
+  if (!row.id || publicLoadingId.value === row.id || !canManagePublic.value) return;
+
+  publicLoadingId.value = row.id;
+  try {
+    await updateAiApiKey(row.id, { isPublic });
+    row.isPublic = isPublic;
+    await getList();
+    ElMessage.success(isPublic ? "已公开该 Key" : "已取消公开该 Key");
+  } catch (error: any) {
+    ElMessage.error(error?.message || "更新公开状态失败");
+  } finally {
+    publicLoadingId.value = null;
   }
 };
 
@@ -316,6 +426,14 @@ onMounted(() => {
   gap: 10px;
 }
 
+.ai-api-key-tabs {
+  padding: 0 14px;
+}
+
+.ai-api-key-tabs :deep(.el-tabs__header) {
+  margin-bottom: 10px;
+}
+
 .ai-api-key-mask {
   display: flex;
   align-items: center;
@@ -335,10 +453,15 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.ai-api-key-enabled {
+.ai-api-key-switch-cell {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+}
+
+.ai-api-key-availability {
+  display: inline-flex;
+  align-items: center;
 }
 
 .table-meta-text.is-expired {

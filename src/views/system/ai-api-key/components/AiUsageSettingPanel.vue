@@ -7,8 +7,8 @@
     scroll
   >
     <div class="ai-setting-dialog">
-      <div v-if="!keyOptions.length" class="ai-setting-dialog__empty">
-        当前还没有可选 Key。请先新增一个 Key，再回来绑定对应功能。
+      <div v-if="!availableKeyCount" class="ai-setting-dialog__empty">
+        当前还没有可用 Key。请先新增自己的 Key，或联系管理员开放可用 Key。
       </div>
 
       <el-form
@@ -50,22 +50,55 @@
               </template>
             </el-table-column>
 
-            <el-table-column label="使用 Key" min-width="320">
+            <el-table-column label="使用 Key" min-width="360">
               <template #default="{ row }">
-                <el-select
-                  v-model="row.keyId"
-                  class="w-full"
-                  clearable
-                  filterable
-                  placeholder="请选择这个功能要使用的 Key"
-                >
-                  <el-option
-                    v-for="item in keyOptions"
-                    :key="item.id"
-                    :label="formatKeyOptionLabel(item)"
-                    :value="item.id!"
-                  />
-                </el-select>
+                <div class="key-select-cell">
+                  <el-select
+                    v-model="row.keyId"
+                    class="w-full"
+                    clearable
+                    filterable
+                    placeholder="请选择这个功能要使用的 Key"
+                  >
+                    <el-option
+                      v-for="item in keyOptions"
+                      :key="item.id"
+                      :label="formatKeyOptionLabel(item)"
+                      :value="item.id!"
+                      :disabled="item.available === false"
+                    >
+                      <div class="key-option">
+                        <div class="key-option__title-row">
+                          <span class="key-option__title">{{ item.name }}</span>
+                          <span class="key-option__tag" :data-source="item.source">
+                            {{ formatSourceLabel(item.source) }}
+                          </span>
+                          <span
+                            v-if="item.available === false"
+                            class="key-option__tag key-option__tag--danger"
+                          >
+                            {{ item.unavailableReasonText || "不可用" }}
+                          </span>
+                        </div>
+                        <div class="key-option__meta">
+                          <span>{{ item.model || "未设置模型" }}</span>
+                          <span v-if="item.uploader?.account">
+                            / {{ item.uploader.account }}
+                          </span>
+                        </div>
+                      </div>
+                    </el-option>
+                  </el-select>
+
+                  <div
+                    v-if="resolveSelectedOption(row.keyId)?.available === false"
+                    class="feature-key-hint"
+                  >
+                    当前绑定的 Key
+                    {{ resolveSelectedOption(row.keyId)?.unavailableReasonText || "不可用" }}，
+                    请重新选择。
+                  </div>
+                </div>
               </template>
             </el-table-column>
 
@@ -99,8 +132,10 @@
 import { computed, reactive, ref } from "vue";
 import dayjs from "dayjs";
 import {
+  getAiApiKeyUsageOptions,
   getAiFeatureRegistry,
   type AiApiKeyConfig,
+  type AiApiKeySource,
   type AiFeatureRegistryItem,
 } from "@/api/aiApiKey";
 import { getAiSetting, updateAiSetting, type UserAiSetting } from "@/api/user";
@@ -116,16 +151,13 @@ type AiSettingFormData = {
   updatedAt: string;
 };
 
-const props = defineProps<{
-  keys: AiApiKeyConfig[];
-}>();
-
 const emit = defineEmits(["saved"]);
 
 const dialogVisible = ref(false);
 const loading = ref(false);
 const saving = ref(false);
 const registry = ref<AiFeatureRegistryItem[]>([]);
+const usageOptions = ref<AiApiKeyConfig[]>([]);
 
 const createDefaultSetting = (): AiSettingFormData => ({
   version: 1,
@@ -136,9 +168,21 @@ const createDefaultSetting = (): AiSettingFormData => ({
 const form = reactive<AiSettingFormData>(createDefaultSetting());
 
 const keyOptions = computed(() => {
-  return [...(props.keys || [])].sort(
+  return [...usageOptions.value].sort(
     (left, right) => Number(right.id || 0) - Number(left.id || 0),
   );
+});
+
+const keyOptionMap = computed(() => {
+  return new Map(
+    keyOptions.value
+      .map((item) => [normalizeKeyId(item.id), item] as const)
+      .filter((item): item is [number, AiApiKeyConfig] => item[0] !== null),
+  );
+});
+
+const availableKeyCount = computed(() => {
+  return keyOptions.value.filter((item) => item.available !== false).length;
 });
 
 const configuredCount = computed(() => {
@@ -157,6 +201,34 @@ const normalizeKeyId = (value: unknown) => {
     return null;
   }
   return normalized;
+};
+
+const formatSourceLabel = (source?: AiApiKeySource) => {
+  if (source === "public") return "公开";
+  if (source === "missing") return "失效";
+  return "我的";
+};
+
+const formatKeyOptionLabel = (item: AiApiKeyConfig) => {
+  const parts = [
+    item.name,
+    item.model ? `(${item.model})` : "",
+    `[${formatSourceLabel(item.source)}]`,
+  ].filter(Boolean);
+
+  if (item.available === false && item.unavailableReasonText) {
+    parts.push(`- ${item.unavailableReasonText}`);
+  }
+
+  return parts.join(" ");
+};
+
+const resolveSelectedOption = (keyId: unknown) => {
+  const normalizedKeyId = normalizeKeyId(keyId);
+  if (!normalizedKeyId) {
+    return null;
+  }
+  return keyOptionMap.value.get(normalizedKeyId) || null;
 };
 
 const applySetting = (payload?: Partial<UserAiSetting>) => {
@@ -180,11 +252,13 @@ const applySetting = (payload?: Partial<UserAiSetting>) => {
 const loadConfig = async () => {
   loading.value = true;
   try {
-    const [registryData, settingData] = await Promise.all([
+    const [registryData, settingData, optionData] = await Promise.all([
       getAiFeatureRegistry(),
       getAiSetting(),
+      getAiApiKeyUsageOptions(),
     ]);
     registry.value = Array.isArray(registryData) ? registryData : [];
+    usageOptions.value = Array.isArray(optionData) ? optionData : [];
     applySetting(settingData || {});
   } finally {
     loading.value = false;
@@ -198,11 +272,6 @@ const open = async () => {
 
 const resetFeature = (feature: FeatureSettingFormItem) => {
   feature.keyId = null;
-};
-
-const formatKeyOptionLabel = (item: AiApiKeyConfig) => {
-  const model = String(item.model || "").trim();
-  return model ? `${item.name} (${model})` : item.name;
 };
 
 const saveConfig = async () => {
@@ -240,147 +309,67 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-.ai-setting-dialog {
+.key-select-cell {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 6px;
 }
 
-.ai-setting-dialog__empty {
-  padding: 12px 14px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 10px;
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--el-text-color-secondary);
-  background: var(--el-fill-color-extra-light);
-}
-
-.ai-setting-dialog__form {
+.key-option {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 4px;
+  padding: 2px 0;
 }
 
-.ai-setting-dialog__toolbar {
+.key-option__title-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 6px;
+  min-width: 0;
 }
 
-.ai-setting-dialog__toolbar-text {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.ai-setting-dialog__table-wrap {
-  background: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 28%);
-}
-
-.ai-setting-dialog__table {
-  --ai-setting-table-header-bg: color-mix(
-    in srgb,
-    var(--el-fill-color-light) 88%,
-    var(--el-bg-color) 12%
-  );
-}
-
-.ai-setting-dialog__table :deep(.el-table__inner-wrapper::before) {
-  display: none;
-}
-
-.ai-setting-dialog__table :deep(th.el-table__cell) {
-  background: var(--ai-setting-table-header-bg);
+.key-option__title {
+  min-width: 0;
   color: var(--el-text-color-primary);
   font-weight: 600;
 }
 
-.ai-setting-dialog__table :deep(td.el-table__cell) {
-  background: var(--el-bg-color);
-}
-
-.ai-setting-dialog__table :deep(.el-table__row:hover > td.el-table__cell) {
-  background: var(--el-fill-color-extra-light);
-}
-
-.ai-setting-dialog__table :deep(.el-table__fixed-right) {
-  background: var(--el-bg-color);
-  box-shadow: -10px 0 18px rgb(15 23 42 / 8%);
-}
-
-.ai-setting-dialog__table :deep(.el-table__fixed-right-patch) {
-  background: var(--ai-setting-table-header-bg);
-}
-
-.ai-setting-dialog__table :deep(.el-table__fixed-right th.el-table__cell) {
-  background: var(--ai-setting-table-header-bg);
-}
-
-.ai-setting-dialog__table :deep(.el-table__fixed-right td.el-table__cell) {
-  background: var(--el-bg-color);
-}
-
-.ai-setting-dialog__table :deep(.el-table__fixed-right .el-table__row:hover > td.el-table__cell) {
-  background: var(--el-fill-color-extra-light);
-}
-
-.feature-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.feature-cell__title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.feature-cell__desc {
-  font-size: 12px;
-  line-height: 1.6;
+.key-option__meta {
   color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
-.feature-cell__code {
+.key-option__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
   font-size: 11px;
-  color: var(--el-text-color-disabled);
+  line-height: 20px;
 }
 
-.feature-group {
+.key-option__tag[data-source="mine"] {
+  background: rgba(64, 158, 255, 0.12);
+  color: var(--el-color-primary);
+}
+
+.key-option__tag[data-source="public"] {
+  background: rgba(103, 194, 58, 0.12);
+  color: var(--el-color-success);
+}
+
+.key-option__tag[data-source="missing"],
+.key-option__tag--danger {
+  background: rgba(245, 108, 108, 0.12);
+  color: var(--el-color-danger);
+}
+
+.feature-key-hint {
+  color: var(--el-color-danger);
   font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.ai-setting-dialog__footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  width: 100%;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.ai-setting-dialog__footer-actions {
-  display: flex;
-  gap: 10px;
-}
-
-@media (max-width: 960px) {
-  .ai-setting-dialog__toolbar,
-  .ai-setting-dialog__footer {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .ai-setting-dialog__footer-actions {
-    justify-content: flex-end;
-  }
+  line-height: 1.5;
 }
 </style>

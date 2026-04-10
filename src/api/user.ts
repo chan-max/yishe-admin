@@ -88,14 +88,19 @@ export function updateUserSetting(data: { key?: string; data?: any; setting?: Re
 }
 
 export function getUserAccessSetting(data: { userId: string }) {
-  return request.post({
+  return request.post<UserAccessControlSetting>({
     url: '/user/getAccessSetting',
     data
   })
 }
 
-export function updateUserAccessSetting(data: { userId: string; accessControl: Record<string, any> }) {
-  return request.post({
+export interface UserAccessControlSetting {
+  menuKeys: string[]
+  aiAccessEnabled: boolean
+}
+
+export function updateUserAccessSetting(data: { userId: string; accessControl: UserAccessControlSetting }) {
+  return request.post<UserAccessControlSetting>({
     url: '/user/updateAccessSetting',
     data
   })

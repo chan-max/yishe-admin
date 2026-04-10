@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { getAiApiKeyList, type AiApiKeyConfig } from "@/api/aiApiKey";
+import { getAiApiKeyUsageOptions, type AiApiKeyConfig } from "@/api/aiApiKey";
 import { getAiSetting, type UserAiSetting } from "@/api/user";
 
 type AiConfigState = {
@@ -48,7 +48,7 @@ const normalizeFeatureKeys = (payload?: Partial<UserAiSetting>) => {
 const buildEnabledKeyIdSet = (keys: AiApiKeyConfig[]) => {
   return new Set(
     keys
-      .filter((item) => item.enabled)
+      .filter((item) => item.available)
       .map((item) => normalizeKeyId(item.id))
       .filter((item): item is number => item !== null),
   );
@@ -83,7 +83,10 @@ export async function refreshAiConfigState() {
   pendingRefresh = (async () => {
     aiConfigState.loading = true;
     try {
-      const [keyList, aiSetting] = await Promise.all([getAiApiKeyList(), getAiSetting()]);
+      const [keyList, aiSetting] = await Promise.all([
+        getAiApiKeyUsageOptions(),
+        getAiSetting(),
+      ]);
       const keys = Array.isArray(keyList) ? keyList : [];
       const enabledKeyIds = buildEnabledKeyIdSet(keys);
       const featureKeys = normalizeFeatureKeys(aiSetting || {});

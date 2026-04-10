@@ -9,6 +9,28 @@
     <el-skeleton :loading="loading" animated>
       <template #default>
         <div class="access-dialog">
+          <div class="access-dialog__section access-dialog__section--ai">
+            <div class="access-dialog__title">共享 AI 使用权限</div>
+            <div class="access-dialog__desc">
+              控制该用户是否可以选择管理员公开的 AI Key。
+            </div>
+            <div class="access-dialog__ai-row">
+              <el-switch
+                v-model="form.aiAccessEnabled"
+                :disabled="loading || submitLoading || targetUserIsAdmin"
+              />
+              <span class="access-dialog__ai-text">
+                {{
+                  targetUserIsAdmin
+                    ? "管理员默认可使用公开 AI Key"
+                    : form.aiAccessEnabled
+                      ? "允许使用管理员公开的 AI Key"
+                      : "仅可使用自己配置的 Key"
+                }}
+              </span>
+            </div>
+          </div>
+
           <div class="access-dialog__section">
             <div class="access-dialog__heading">
               <div>
@@ -71,7 +93,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
-import { getUserAccessSetting, updateUserAccessSetting } from "@/api/user";
+import {
+  getUserAccessSetting,
+  updateUserAccessSetting,
+  type UserAccessControlSetting,
+} from "@/api/user";
 import { MENU_ACCESS_GROUPS, type MenuAccessOption } from "@/constants/access-control";
 
 const props = defineProps<{
@@ -93,8 +119,9 @@ const dialogVisible = computed({
 
 const loading = ref(false);
 const submitLoading = ref(false);
-const form = reactive({
-  menuKeys: [] as string[],
+const form = reactive<UserAccessControlSetting>({
+  menuKeys: [],
+  aiAccessEnabled: false,
 });
 
 const allMenuOptions = MENU_ACCESS_GROUPS.flatMap((group) => group.options);
@@ -124,6 +151,7 @@ function isOptionDisabled(option: MenuAccessOption) {
 
 function resetForm() {
   form.menuKeys = [];
+  form.aiAccessEnabled = false;
 }
 
 function handleSelectAll() {
@@ -147,6 +175,9 @@ async function handleOpen() {
     form.menuKeys = sanitizeMenuKeys(
       Array.isArray(accessControl?.menuKeys) ? accessControl.menuKeys : [],
     );
+    form.aiAccessEnabled = targetUserIsAdmin.value
+      ? true
+      : !!accessControl?.aiAccessEnabled;
   } catch (error) {
     ElMessage.error("加载权限配置失败");
   } finally {
@@ -162,13 +193,16 @@ async function handleSubmit() {
   submitLoading.value = true;
   try {
     const menuKeys = sanitizeMenuKeys(form.menuKeys);
+    const aiAccessEnabled = targetUserIsAdmin.value ? true : !!form.aiAccessEnabled;
     await updateUserAccessSetting({
       userId: props.userId,
       accessControl: {
         menuKeys,
+        aiAccessEnabled,
       },
     });
     form.menuKeys = menuKeys;
+    form.aiAccessEnabled = aiAccessEnabled;
     ElMessage.success("权限配置已保存");
     emit("success");
     dialogVisible.value = false;
@@ -193,6 +227,13 @@ async function handleSubmit() {
   gap: 12px;
 }
 
+.access-dialog__section--ai {
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background: var(--el-fill-color-extra-light);
+}
+
 .access-dialog__heading {
   display: flex;
   align-items: flex-start;
@@ -215,6 +256,17 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.access-dialog__ai-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.access-dialog__ai-text {
+  color: var(--el-text-color-regular);
+  font-size: 13px;
 }
 
 .access-dialog__group {
@@ -246,6 +298,11 @@ async function handleSubmit() {
 
   .access-dialog__toolbar {
     justify-content: flex-end;
+  }
+
+  .access-dialog__ai-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>

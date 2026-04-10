@@ -56,6 +56,16 @@
             <el-switch v-model="formData.enabled" />
           </el-form-item>
         </el-col>
+        <el-col v-if="canManagePublic" :xs="24" :md="12">
+          <el-form-item label="公开使用" class="ai-api-key-form__control-item">
+            <div class="ai-api-key-public-field">
+              <el-switch v-model="formData.isPublic" />
+              <div class="ai-api-key-public-field__hint">
+                开启后，拥有共享 AI 使用权限的用户可引用这个 Key，但看不到明文。
+              </div>
+            </div>
+          </el-form-item>
+        </el-col>
         <el-col :xs="24" :md="12">
           <el-form-item label="过期时间" class="ai-api-key-form__control-item">
             <el-date-picker
@@ -87,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, unref } from "vue";
+import { computed, reactive, ref, unref } from "vue";
 import { ElMessage } from "element-plus";
 import {
   createAiApiKey,
@@ -95,14 +105,17 @@ import {
   updateAiApiKey,
   type AiApiKeyConfig,
 } from "@/api/aiApiKey";
+import { useUserStore } from "@/store/modules/user";
 
 const emit = defineEmits(["success"]);
+const userStore = useUserStore();
 
 const dialogVisible = ref(false);
 const dialogTitle = ref("");
 const formLoading = ref(false);
 const formRef = ref();
 const formRenderKey = ref(0);
+const canManagePublic = computed(() => !!userStore.user?.isAdmin);
 
 const createFormData = (): AiApiKeyConfig => ({
   name: "",
@@ -110,6 +123,7 @@ const createFormData = (): AiApiKeyConfig => ({
   apiKey: "",
   baseUrl: "",
   enabled: true,
+  isPublic: false,
   expiresAt: "",
   remark: "",
 });
@@ -145,6 +159,7 @@ const open = async (id?: number) => {
       model: data.model || "",
       apiKey: data.apiKey || "",
       baseUrl: data.baseUrl || "",
+      isPublic: !!data.isPublic,
       expiresAt: data.expiresAt || "",
       remark: data.remark || "",
     });
@@ -162,7 +177,7 @@ const submitForm = async () => {
 
     formLoading.value = true;
     try {
-      const payload: AiApiKeyConfig = {
+      const payload: Partial<AiApiKeyConfig> = {
         ...formData,
         name: String(formData.name || "").trim(),
         model: String(formData.model || "").trim(),
@@ -173,11 +188,15 @@ const submitForm = async () => {
         enabled: Boolean(formData.enabled),
       };
 
+      if (canManagePublic.value) {
+        payload.isPublic = Boolean(formData.isPublic);
+      }
+
       if (payload.id) {
         await updateAiApiKey(payload.id, payload);
         ElMessage.success("修改成功");
       } else {
-        await createAiApiKey(payload);
+        await createAiApiKey(payload as AiApiKeyConfig);
         ElMessage.success("新增成功");
       }
 
@@ -218,5 +237,17 @@ defineExpose({ open });
 .ai-api-key-form :deep(.ai-api-key-form__date-picker .el-input__wrapper) {
   min-height: var(--ep-cover-control-height-lg, 38px);
   align-items: center;
+}
+
+.ai-api-key-public-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-api-key-public-field__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
 }
 </style>

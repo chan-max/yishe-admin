@@ -1,5 +1,7 @@
 import request from "@/config/axios";
 
+export type AiApiKeySource = "mine" | "public" | "missing";
+
 export interface AiApiKeyConfig {
   id?: number;
   name: string;
@@ -8,9 +10,14 @@ export interface AiApiKeyConfig {
   maskedApiKey?: string;
   baseUrl?: string | null;
   enabled: boolean;
+  isPublic?: boolean;
   expiresAt?: string | null;
   remark?: string;
   userId?: number | null;
+  source?: AiApiKeySource;
+  available?: boolean;
+  unavailableReasonCode?: string | null;
+  unavailableReasonText?: string;
   uploader?: {
     id?: number;
     account?: string;
@@ -28,6 +35,12 @@ export interface AiFeatureRegistryItem {
 }
 
 export const getAiApiKeyList = () => request.get<AiApiKeyConfig[]>({ url: "/system/ai-api-key" });
+
+export const getPublicAiApiKeyList = () =>
+  request.get<AiApiKeyConfig[]>({ url: "/system/ai-api-key/public" });
+
+export const getAiApiKeyUsageOptions = () =>
+  request.get<AiApiKeyConfig[]>({ url: "/system/ai-api-key/usage-options" });
 
 export const getAiFeatureRegistry = () =>
   request.get<AiFeatureRegistryItem[]>({ url: "/system/ai-api-key/feature-registry" });
