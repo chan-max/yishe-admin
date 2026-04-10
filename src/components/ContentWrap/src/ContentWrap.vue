@@ -60,6 +60,7 @@ $prefix-cls: #{$namespace}-content-wrap;
 
   :deep(.el-card__body) {
     padding: 0;
+    overflow: hidden;
   }
 }
 
@@ -77,6 +78,7 @@ $prefix-cls: #{$namespace}-content-wrap;
 
   :deep(.el-card__body) {
     padding: 0;
+    overflow: hidden;
     background: transparent;
   }
 }

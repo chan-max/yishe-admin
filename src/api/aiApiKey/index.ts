@@ -3,9 +3,10 @@ import request from "@/config/axios";
 export interface AiApiKeyConfig {
   id?: number;
   name: string;
-  platform: string;
+  model: string;
   apiKey?: string;
   maskedApiKey?: string;
+  baseUrl?: string | null;
   enabled: boolean;
   expiresAt?: string | null;
   remark?: string;
@@ -19,7 +20,17 @@ export interface AiApiKeyConfig {
   updateTime?: string;
 }
 
+export interface AiFeatureRegistryItem {
+  code: string;
+  label: string;
+  group: string;
+  description: string;
+}
+
 export const getAiApiKeyList = () => request.get<AiApiKeyConfig[]>({ url: "/system/ai-api-key" });
+
+export const getAiFeatureRegistry = () =>
+  request.get<AiFeatureRegistryItem[]>({ url: "/system/ai-api-key/feature-registry" });
 
 export const getAiApiKeyDetail = (id: number) =>
   request.get<AiApiKeyConfig>({ url: `/system/ai-api-key/${id}` });

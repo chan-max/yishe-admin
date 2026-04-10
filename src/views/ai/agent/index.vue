@@ -1,115 +1,119 @@
 ﻿<template>
   <ContentWrap :plain="true">
     <div class="agent-console-page space-y-3">
-      <el-card shadow="never" class="rounded-lg">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div class="min-w-0 space-y-1">
-            <div class="flex items-center gap-2">
-              <h2 class="text-base font-semibold text-[var(--el-text-color-primary)]">Agent 控制台</h2>
-              <el-tag size="small">asset.search_images</el-tag>
+      <section class="agent-console-card">
+        <div class="agent-console-card__body">
+          <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div class="min-w-0 space-y-1">
+              <div class="flex items-center gap-2">
+                <h2 class="text-base font-semibold text-[var(--el-text-color-primary)]">Agent 控制台</h2>
+                <el-tag size="small">asset.search_images</el-tag>
+              </div>
+              <p class="text-xs leading-5 text-[var(--el-text-color-secondary)]">
+                通用 Agent 入口。当前首个工具为素材库图片查询，后续可继续扩展更多可调度能力。
+              </p>
             </div>
-            <p class="text-xs leading-5 text-[var(--el-text-color-secondary)]">
-              通用 Agent 入口。当前首个工具为素材库图片查询，后续可继续扩展更多可调度能力。
-            </p>
+            <div class="flex shrink-0 items-center gap-2">
+              <el-button size="small" @click="toolDialogVisible = true">
+                查看工具（{{ tools.length }}）
+              </el-button>
+              <el-button size="small" :icon="Refresh" @click="loadTools" :loading="toolsLoading">
+                刷新工具
+              </el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Promotion"
+                :loading="executing"
+                @click="executeInstruction"
+              >
+                执行指令
+              </el-button>
+            </div>
           </div>
-          <div class="flex shrink-0 items-center gap-2">
-            <el-button size="small" @click="toolDialogVisible = true">
-              查看工具（{{ tools.length }}）
-            </el-button>
-            <el-button size="small" :icon="Refresh" @click="loadTools" :loading="toolsLoading">
-              刷新工具
-            </el-button>
-            <el-button
-              size="small"
-              type="primary"
-              :icon="Promotion"
-              :loading="executing"
-              @click="executeInstruction"
-            >
-              执行指令
-            </el-button>
+
+          <div class="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_18rem]">
+            <el-input
+              v-model="instruction"
+              type="textarea"
+              :rows="4"
+              resize="none"
+              placeholder="例如：帮我找三个春季女装海报素材库图片"
+            />
+
+            <div class="grid gap-2 rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-xs text-[var(--el-text-color-regular)]">
+              <div class="font-medium text-[var(--el-text-color-primary)]">当前建议用法</div>
+              <div>内部系统调用：直接输入自然语言，后端走 `/agent/execute`。</div>
+              <div>外部 AI 客户端：可基于 `/agent/tools` 与 `/agent/tools/execute` 对接。</div>
+              <div>当前能力：素材库图片搜索。后续可继续接发布、查询、调度等工具。</div>
+            </div>
           </div>
         </div>
-
-        <div class="mt-3 grid gap-3 xl:grid-cols-[minmax(0,1.6fr)_18rem]">
-          <el-input
-            v-model="instruction"
-            type="textarea"
-            :rows="4"
-            resize="none"
-            placeholder="例如：帮我找三个春季女装海报素材库图片"
-          />
-
-          <div class="grid gap-2 rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-xs text-[var(--el-text-color-regular)]">
-            <div class="font-medium text-[var(--el-text-color-primary)]">当前建议用法</div>
-            <div>内部系统调用：直接输入自然语言，后端走 `/agent/execute`。</div>
-            <div>外部 AI 客户端：可基于 `/agent/tools` 与 `/agent/tools/execute` 对接。</div>
-            <div>当前能力：素材库图片搜索。后续可继续接发布、查询、调度等工具。</div>
-          </div>
-        </div>
-      </el-card>
+      </section>
 
       <div class="grid gap-3 xl:grid-cols-[22rem_minmax(0,1fr)]">
-        <el-card shadow="never" class="rounded-lg">
-          <template #header>
+        <section class="agent-console-card">
+          <div class="agent-console-card__header">
             <div class="text-sm font-medium text-[var(--el-text-color-primary)]">执行计划</div>
-          </template>
+          </div>
+          <div class="agent-console-card__body">
+            <el-empty v-if="!result" description="执行后展示计划" :image-size="60" />
 
-          <el-empty v-if="!result" description="执行后展示计划" :image-size="60" />
-
-          <div v-else class="space-y-3 text-xs text-[var(--el-text-color-regular)]">
-            <div class="rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 leading-5 text-[var(--el-text-color-primary)]">
-              {{ result.reply || '执行完成' }}
-            </div>
-
-            <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-xs text-[var(--el-text-color-placeholder)]">plans</span>
-                <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.plans?.length || 0 }} 步</span>
+            <div v-else class="space-y-3 text-xs text-[var(--el-text-color-regular)]">
+              <div class="rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 leading-5 text-[var(--el-text-color-primary)]">
+                {{ result.reply || '执行完成' }}
               </div>
-              <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result.plans) }}</pre>
-            </div>
 
-            <div class="rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-[11px] leading-5 text-[var(--el-text-color-secondary)]">
-              <div>备注1：</div>
-              <div>`plans`：本次自然语言请求拆解后的执行步骤列表。</div>
-              <div>`stepId`：步骤唯一标识，用于和执行结果一一对应。</div>
-              <div>`tool`：本次准备调用的工具名。</div>
-              <div>`confidence`：本次工具判断的置信度，范围通常为 0 到 1。</div>
-              <div>`reason`：为什么会选择这个工具。</div>
-              <div>`message`：补充说明，通常在无法执行或需要提示时返回。</div>
-              <div>`input`：最终传给工具的参数对象。</div>
+              <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs text-[var(--el-text-color-placeholder)]">plans</span>
+                  <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.plans?.length || 0 }} 步</span>
+                </div>
+                <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result.plans) }}</pre>
+              </div>
+
+              <div class="rounded-md border border-[var(--el-border-color-light)] bg-[var(--el-fill-color-light)] p-3 text-[11px] leading-5 text-[var(--el-text-color-secondary)]">
+                <div>备注1：</div>
+                <div>`plans`：本次自然语言请求拆解后的执行步骤列表。</div>
+                <div>`stepId`：步骤唯一标识，用于和执行结果一一对应。</div>
+                <div>`tool`：本次准备调用的工具名。</div>
+                <div>`confidence`：本次工具判断的置信度，范围通常为 0 到 1。</div>
+                <div>`reason`：为什么会选择这个工具。</div>
+                <div>`message`：补充说明，通常在无法执行或需要提示时返回。</div>
+                <div>`input`：最终传给工具的参数对象。</div>
+              </div>
             </div>
           </div>
-        </el-card>
+        </section>
 
-        <el-card shadow="never" class="rounded-lg">
-          <template #header>
+        <section class="agent-console-card">
+          <div class="agent-console-card__header">
             <div class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--el-text-color-primary)]">
               <span>执行结果</span>
               <span class="text-xs font-normal text-[var(--el-text-color-placeholder)]">
                 {{ result?.toolResults?.length || 0 }} 次调用
               </span>
             </div>
-          </template>
+          </div>
+          <div class="agent-console-card__body">
+            <el-empty v-if="!result" description="执行后展示原始结果" :image-size="60" />
 
-          <el-empty v-if="!result" description="执行后展示原始结果" :image-size="60" />
-
-          <div v-else class="space-y-3">
-            <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
-              <div class="flex items-center justify-between gap-2">
-                <span class="text-xs text-[var(--el-text-color-placeholder)]">toolResults</span>
-                <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.toolResults?.length || 0 }} 条</span>
+            <div v-else class="space-y-3">
+              <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs text-[var(--el-text-color-placeholder)]">toolResults</span>
+                  <span class="text-xs text-[var(--el-text-color-placeholder)]">{{ result.toolResults?.length || 0 }} 条</span>
+                </div>
+                <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result.toolResults) }}</pre>
               </div>
-              <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result.toolResults) }}</pre>
-            </div>
 
-            <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
-              <span class="text-xs text-[var(--el-text-color-placeholder)]">完整响应</span>
-              <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result) }}</pre>
+              <div class="grid gap-1 rounded-md border border-[var(--el-border-color-light)] p-3">
+                <span class="text-xs text-[var(--el-text-color-placeholder)]">完整响应</span>
+                <pre class="agent-console-json overflow-auto rounded-md p-3 text-[11px] leading-5">{{ formatJson(result) }}</pre>
+              </div>
             </div>
           </div>
-        </el-card>
+        </section>
       </div>
 
       <el-dialog
@@ -263,24 +267,48 @@ onMounted(() => {
 
 <style scoped>
 .agent-console-page {
-  padding: 8px 0 0;
+  box-sizing: border-box;
 }
 
-.agent-console-page :deep(.el-card) {
+.agent-console-card {
   border: 1px solid var(--app-content-border-color);
   border-radius: 14px;
   background: var(--app-content-surface-color);
   box-shadow: var(--app-content-shadow);
+  min-width: 0;
 }
 
-.agent-console-page :deep(.el-card__header) {
-  border-bottom-color: var(--app-content-border-color);
+.agent-console-card__body {
+  padding: 20px;
+  overflow: visible;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.agent-console-card__header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--app-content-border-color);
+  border-radius: 14px 14px 0 0;
   background: var(--app-content-surface-muted-color);
+  box-sizing: border-box;
 }
 
 .agent-console-json {
   border: 1px solid var(--app-content-border-color);
   background: var(--app-content-surface-muted-color);
   color: var(--el-text-color-primary);
+}
+
+@media (max-width: 768px) {
+  .agent-console-page {
+  }
+
+  .agent-console-card__body {
+    padding: 16px;
+  }
+
+  .agent-console-card__header {
+    padding: 14px 16px;
+  }
 }
 </style>

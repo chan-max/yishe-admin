@@ -37,7 +37,6 @@ const loading = ref(false)
 const formRef = ref()
 const currentId = ref<number>()
 const currentName = ref('')
-const currentCode = ref('')
 
 const formData = reactive({
   title: '测试发送',
@@ -48,13 +47,12 @@ const formRules = {
   content: [{ required: true, message: '请输入测试消息内容', trigger: 'blur' }]
 }
 
-const channelSummary = computed(() => `当前渠道：${currentName.value || '-'}（${currentCode.value || '-'}）`)
+const channelSummary = computed(() => `当前渠道：${currentName.value || '-'}（ID: ${currentId.value || '-'}）`)
 
-const open = (row: { id: number; name: string; code: string }) => {
+const open = (row: { id: number; name: string }) => {
   dialogVisible.value = true
   currentId.value = row.id
   currentName.value = row.name
-  currentCode.value = row.code
   formData.title = '测试发送'
   formData.content = '这是一条来自消息推送管理模块的测试消息。'
 }

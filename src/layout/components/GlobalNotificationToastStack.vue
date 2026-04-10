@@ -13,6 +13,28 @@ const levelLabelMap = {
   warning: 'Warning',
   error: 'Error'
 } as const
+
+const getToastTitle = (item: { level?: string; title?: string; message?: string }) => {
+  const title = String(item.title || '').trim()
+  if (title) {
+    return title
+  }
+  const message = String(item.message || '').trim()
+  if (message) {
+    return message
+  }
+  const level = item.level as keyof typeof levelLabelMap
+  return levelLabelMap[level] || 'Info'
+}
+
+const getToastMessage = (item: { title?: string; message?: string }) => {
+  const title = String(item.title || '').trim()
+  const message = String(item.message || '').trim()
+  if (!message || message === title) {
+    return ''
+  }
+  return message
+}
 </script>
 
 <template>
@@ -41,9 +63,14 @@ const levelLabelMap = {
           />
         </svg>
 
-        <p class="uiverse-toast__text">
-          {{ levelLabelMap[item.level] || 'Info' }} - {{ item.title || item.message || '收到一条新消息' }}
-        </p>
+        <div class="uiverse-toast__content">
+          <p class="uiverse-toast__title">
+            {{ getToastTitle(item) }}
+          </p>
+          <p v-if="getToastMessage(item)" class="uiverse-toast__message">
+            {{ getToastMessage(item) }}
+          </p>
+        </div>
 
         <button class="uiverse-toast__close" type="button" @click="notificationStore.dismissToast(item.id)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
@@ -106,16 +133,36 @@ const levelLabelMap = {
   margin-right: 6px;
 }
 
-.uiverse-toast__text {
-  margin: 0;
-  flex: 0 1 auto;
+.uiverse-toast__content {
   min-width: 0;
+  flex: 1;
+}
+
+.uiverse-toast__title,
+.uiverse-toast__message {
+  margin: 0;
+  min-width: 0;
+  color: inherit;
+}
+
+.uiverse-toast__title {
   font-size: 11px;
   font-weight: 600;
   line-height: 1.3;
   font-family: inherit;
-  color: inherit;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uiverse-toast__message {
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+  opacity: 0.92;
 }
 
 .uiverse-toast__close {

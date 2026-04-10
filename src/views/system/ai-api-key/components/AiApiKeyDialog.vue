@@ -1,18 +1,20 @@
 <template>
-  <Dialog v-model="dialogVisible" :title="dialogTitle" width="760px">
+  <Dialog v-model="dialogVisible" :title="dialogTitle" width="720px">
     <div
       class="mb-14px rounded-12px bg-[var(--el-fill-color-light)] px-14px py-10px text-[12px] leading-[1.7] text-[var(--el-text-color-secondary)]"
     >
-      当前只做 AI Key 基础信息录入与启停管理，暂不处理具体平台对接逻辑。
+      这里录入的是可复用的 AI Key 配置。模型直接跟随 Key 本身，后续在“AI 使用设置”里只需要按功能选择使用哪个 Key。
     </div>
 
     <el-form
       ref="formRef"
+      :key="formRenderKey"
       :model="formData"
       :rules="formRules"
       label-width="110px"
       class="ai-api-key-form"
       v-loading="formLoading"
+      autocomplete="off"
     >
       <el-row :gutter="20">
         <el-col :xs="24" :md="12">
@@ -21,27 +23,32 @@
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
-          <el-form-item label="平台" prop="platform" class="ai-api-key-form__control-item">
-            <el-select
-              v-model="formData.platform"
-              class="w-full"
-              filterable
-              allow-create
-              default-first-option
-              placeholder="请选择或输入平台"
-            >
-              <el-option
-                v-for="item in platformOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </el-select>
+          <el-form-item label="模型" prop="model" class="ai-api-key-form__control-item">
+            <el-input
+              v-model="formData.model"
+              placeholder="例如：gpt-4o / qwen-vl-max-latest"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="24">
+          <el-form-item label="Base URL" class="ai-api-key-form__control-item">
+            <el-input
+              v-model="formData.baseUrl"
+              placeholder="可选，例如 https://api.openai.com/v1"
+              autocomplete="off"
+              name="ai-base-url"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="24">
           <el-form-item label="API Key" prop="apiKey" class="ai-api-key-form__control-item">
-            <el-input v-model="formData.apiKey" placeholder="请输入 API 密钥" show-password />
+            <el-input
+              v-model="formData.apiKey"
+              placeholder="请输入 API 密钥"
+              show-password
+              autocomplete="new-password"
+              name="ai-api-key"
+            />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
@@ -95,22 +102,13 @@ const dialogVisible = ref(false);
 const dialogTitle = ref("");
 const formLoading = ref(false);
 const formRef = ref();
-
-const platformOptions = [
-  { label: "OpenAI", value: "openai" },
-  { label: "Claude", value: "claude" },
-  { label: "Qwen", value: "qwen" },
-  { label: "DeepSeek", value: "deepseek" },
-  { label: "Gemini", value: "gemini" },
-  { label: "Doubao", value: "doubao" },
-  { label: "Moonshot", value: "moonshot" },
-  { label: "OpenRouter", value: "openrouter" },
-];
+const formRenderKey = ref(0);
 
 const createFormData = (): AiApiKeyConfig => ({
   name: "",
-  platform: "openai",
+  model: "",
   apiKey: "",
+  baseUrl: "",
   enabled: true,
   expiresAt: "",
   remark: "",
@@ -122,12 +120,13 @@ const formData = reactive<AiApiKeyConfig>({
 
 const formRules = {
   name: [{ required: true, message: "请输入名称", trigger: "blur" }],
-  platform: [{ required: true, message: "请选择或输入平台", trigger: "change" }],
+  model: [{ required: true, message: "请输入模型", trigger: "blur" }],
   apiKey: [{ required: true, message: "请输入 API Key", trigger: "blur" }],
 };
 
 const resetForm = () => {
   Object.assign(formData, createFormData(), { id: undefined });
+  formRenderKey.value += 1;
 };
 
 const open = async (id?: number) => {
@@ -143,7 +142,9 @@ const open = async (id?: number) => {
     Object.assign(formData, {
       ...createFormData(),
       ...data,
+      model: data.model || "",
       apiKey: data.apiKey || "",
+      baseUrl: data.baseUrl || "",
       expiresAt: data.expiresAt || "",
       remark: data.remark || "",
     });
@@ -164,10 +165,9 @@ const submitForm = async () => {
       const payload: AiApiKeyConfig = {
         ...formData,
         name: String(formData.name || "").trim(),
-        platform: String(formData.platform || "")
-          .trim()
-          .toLowerCase(),
+        model: String(formData.model || "").trim(),
         apiKey: String(formData.apiKey || "").trim(),
+        baseUrl: String(formData.baseUrl || "").trim(),
         remark: String(formData.remark || "").trim(),
         expiresAt: formData.expiresAt || "",
         enabled: Boolean(formData.enabled),

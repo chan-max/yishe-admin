@@ -14,8 +14,9 @@
     width: 100% !important;
 }
 
-// 解决表格内容超过表格总宽度后，横向滚动条前端顶不到表格边缘的问题
-.el-scrollbar__bar {
+// 仅在 Element Plus 表格场景下调整滚动条对齐，避免影响布局级滚动容器
+.el-table .el-scrollbar__bar,
+.el-table-v2 .el-scrollbar__bar {
     display: flex;
     justify-content: flex-start;
 }
@@ -188,27 +189,8 @@ html.light .vxe-table {
     --vxe-ui-font-secondary-color: var(--el-text-color-secondary);
 }
 
-
-
-.content-container,
-.vxe-table--body-wrapper,
-.vxe-table--main-wrapper {
-    overflow: visible !important;
-}
-
-/* 统一 vxe body cell 内容垂直居中，避免操作列按钮在不同页面出现上偏/下偏 */
-.vxe-table .vxe-body--column .vxe-cell--wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-width: 0;
-    min-height: 100%;
-}
-
 .common-table {
-    overflow-x: auto !important;
-    overflow-y: visible !important;
-    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
 }
 
 .el-dialog__body {

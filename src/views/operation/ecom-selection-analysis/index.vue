@@ -23,12 +23,8 @@
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
                 <el-form-item label="任务名称 / 创建人">
-                  <el-input
-                    v-model="filters.keyword"
-                    clearable
-                    placeholder="搜索任务名称 / 创建人"
-                    @keyup.enter="handleSearch"
-                  />
+                  <el-input v-model="filters.keyword" clearable placeholder="搜索任务名称 / 创建人"
+                    @keyup.enter="handleSearch" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
@@ -43,12 +39,7 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
-              <el-button
-                size="small"
-                type="danger"
-                :disabled="!selectedIds.length"
-                @click="handleBatchDelete"
-              >
+              <el-button size="small" type="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
                 批量删除 ({{ selectedIds.length }})
               </el-button>
             </div>
@@ -57,18 +48,11 @@
       </template>
 
       <template #table>
-        <div
-          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
-        >
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid
-                v-bind="gridOptions"
-                :data="tableData"
-                :loading="loading"
-                @checkbox-change="handleCheckboxChange"
-                @checkbox-all="handleCheckboxAll"
-              >
+              <vxe-grid v-bind="gridOptions" :data="tableData" :loading="loading"
+                @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
                 <template #typeSlot="{ row }">
                   <el-tag size="small" type="info">
                     {{ getAnalysisTypeLabel(row.analysisType) }}
@@ -83,18 +67,14 @@
                   <div class="table-stack">
                     <span>{{ getOptionsSummary(row) }}</span>
                     <span class="table-meta-text">
-                      模型：{{ row.optionsData?.aiModel || "free-qwen" }}
+                      模型：{{ row.optionsData?.aiModel }}
                     </span>
                   </div>
                 </template>
 
                 <template #lastRunSlot="{ row }">
                   <div class="table-stack">
-                    <el-tag
-                      v-if="row.lastRunStatus"
-                      size="small"
-                      :type="getRunStatusTagType(row.lastRunStatus)"
-                    >
+                    <el-tag v-if="row.lastRunStatus" size="small" :type="getRunStatusTagType(row.lastRunStatus)">
                       {{ getRunStatusLabel(row.lastRunStatus) }}
                     </el-tag>
                     <span v-else class="table-meta-text">未执行</span>
@@ -112,37 +92,30 @@
 
                 <template #operationSlot="{ row }">
                   <div class="flex justify-start">
-                    <el-dropdown
-                      class="operation-dropdown"
-                      placement="bottom-end"
-                      :disabled="!!triggeringTaskId"
-                      @command="(command) => handleOperationCommand(String(command), row)"
-                    >
-                      <el-button
-                        type="primary"
-                        link
-                        size="small"
-                        class="operation-trigger-button"
-                        :loading="triggeringTaskId === row.id"
-                      >
+                    <el-dropdown class="operation-dropdown" placement="bottom-end" :disabled="!!triggeringTaskId"
+                      @command="(command) => handleOperationCommand(String(command), row)">
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        :loading="triggeringTaskId === row.id">
                         操作
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="trigger">
-                            <el-icon><VideoPlay /></el-icon>
+                            <el-icon>
+                              <VideoPlay />
+                            </el-icon>
                             <span>立即分析</span>
                           </el-dropdown-item>
                           <el-dropdown-item command="edit">
-                            <el-icon><Edit /></el-icon>
+                            <el-icon>
+                              <Edit />
+                            </el-icon>
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <el-dropdown-item
-                            command="delete"
-                            divided
-                            class="operation-menu-item--danger"
-                          >
-                            <el-icon><Delete /></el-icon>
+                          <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
+                            <el-icon>
+                              <Delete />
+                            </el-icon>
                             <span>删除</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
@@ -158,26 +131,15 @@
 
       <template #pagination>
         <div
-          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
-        >
-          <Pagination
-            :total="total"
-            v-model:page="filters.pageNo"
-            v-model:limit="filters.pageSize"
-            @pagination="loadList"
-          />
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <Pagination :total="total" v-model:page="filters.pageNo" v-model:limit="filters.pageSize"
+            @pagination="loadList" />
         </div>
       </template>
     </ListPageLayout>
 
-    <SelectionAnalysisTaskDialog
-      v-model="dialogVisible"
-      :task="currentTask"
-      :collect-catalog="catalog"
-      :collect-tasks="collectTasks"
-      :collect-runs="collectRuns"
-      @success="handleDialogSuccess"
-    />
+    <SelectionAnalysisTaskDialog v-model="dialogVisible" :task="currentTask" :collect-catalog="catalog"
+      :collect-tasks="collectTasks" :collect-runs="collectRuns" @success="handleDialogSuccess" />
   </ContentWrap>
 </template>
 
@@ -263,9 +225,9 @@ const getSourceSummary = (task: EcomSelectionAnalysisTask) => {
       : "",
     Array.isArray(sourceConfig.platforms) && sourceConfig.platforms.length
       ? `平台 ${formatListPreview(
-          sourceConfig.platforms.map((item: string) => getPlatformLabel(catalog, item)),
-          2,
-        )}`
+        sourceConfig.platforms.map((item: string) => getPlatformLabel(catalog, item)),
+        2,
+      )}`
       : "",
     sourceConfig.keyword ? `关键词 ${sourceConfig.keyword}` : "",
     sourceConfig.requireDetail ? "仅详情数据" : "",
@@ -282,9 +244,9 @@ const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
     options.targetMarket ? options.targetMarket : "",
     Array.isArray(options.preferredPlatforms) && options.preferredPlatforms.length
       ? `优先 ${formatListPreview(
-          options.preferredPlatforms.map((item: string) => getPlatformLabel(catalog, item)),
-          2,
-        )}`
+        options.preferredPlatforms.map((item: string) => getPlatformLabel(catalog, item)),
+        2,
+      )}`
       : "",
     options.targetPriceRange?.min != null || options.targetPriceRange?.max != null
       ? `价格 ${options.targetPriceRange?.min ?? "-"} ~ ${options.targetPriceRange?.max ?? "-"}`
@@ -489,7 +451,7 @@ const handleDelete = async (row: EcomSelectionAnalysisTask) => {
     await deleteEcomSelectionAnalysisTask(row.id);
     ElMessage.success("分析任务已删除");
     await loadList();
-  } catch {}
+  } catch { }
 };
 
 const handleBatchDelete = async () => {
@@ -503,7 +465,7 @@ const handleBatchDelete = async () => {
     await batchDeleteEcomSelectionAnalysisTask(selectedIds.value);
     ElMessage.success("批量删除成功");
     await loadList();
-  } catch {}
+  } catch { }
 };
 
 onMounted(() => {

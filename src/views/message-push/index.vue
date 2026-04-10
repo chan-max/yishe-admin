@@ -4,10 +4,14 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-filter__row">
-            <div class="text-[12px] leading-[1.6] text-[var(--el-text-color-secondary)]">
-              统一维护飞书、企业微信机器人 webhook，并提供开放发送接口。
-            </div>
-            <div class="list-page-search-form__actions">
+            <div class="list-page-search-form__actions ml-auto">
+              <el-button
+                size="small"
+                :disabled="loading || deleteLoading"
+                @click="openDefaultDialog"
+              >
+                默认通知渠道
+              </el-button>
               <el-button size="small" type="primary" :disabled="loading || deleteLoading" @click="openDialog()">新增渠道</el-button>
             </div>
           </div>
@@ -19,6 +23,20 @@
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid v-bind="gridOptions" :data="list" :loading="loading">
+                <template #nameSlot="{ row }">
+                  <div class="message-push-name-cell">
+                    <span>{{ row.name }}</span>
+                    <el-tag
+                      v-if="Number(row.id) === Number(messagePushSetting.defaultMessagePushId)"
+                      size="small"
+                      type="primary"
+                      effect="light"
+                    >
+                      默认通知
+                    </el-tag>
+                  </div>
+                </template>
+
                 <template #platformSlot="{ row }">
                   <el-tag size="small" :type="row.platform === 'feishu' ? 'success' : 'warning'">
                     {{ platformLabelMap[row.platform] || row.platform }}
@@ -70,7 +88,12 @@
       </template>
     </ListPageLayout>
 
-    <MessagePushDialog ref="dialogRef" @success="getList" />
+    <MessagePushDialog ref="dialogRef" @success="refreshPageData" />
+    <MessagePushDefaultDialog
+      ref="defaultDialogRef"
+      :channels="list"
+      @saved="handleMessagePushSettingSaved"
+    />
     <MessagePushTestDialog ref="testDialogRef" />
   </ContentWrap>
 </template>
@@ -84,15 +107,22 @@ import {
   type MessagePushConfig,
   type MessagePushPlatform
 } from '@/api/messagePush'
+import { getMessagePushSetting, type UserMessagePushSetting } from '@/api/user'
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
 import MessagePushDialog from './components/MessagePushDialog.vue'
+import MessagePushDefaultDialog from './components/MessagePushDefaultDialog.vue'
 import MessagePushTestDialog from './components/MessagePushTestDialog.vue'
 
 const loading = ref(false)
 const deleteLoading = ref(false)
 const list = ref<MessagePushConfig[]>([])
 const dialogRef = ref()
+const defaultDialogRef = ref()
 const testDialogRef = ref()
+const messagePushSetting = ref<UserMessagePushSetting>({
+  defaultMessagePushId: null,
+  defaultMessagePush: null
+})
 
 const platformLabelMap: Record<MessagePushPlatform, string> = {
   feishu: '飞书',
@@ -103,8 +133,7 @@ const gridOptions = ref({
   ...commonGridOptions,
   columns: [
     { title: 'ID', field: 'id', width: 80 },
-    { title: '渠道名称', field: 'name', minWidth: 160 },
-    { title: '渠道编码', field: 'code', minWidth: 160 },
+    { title: '渠道名称', field: 'name', minWidth: 200, slots: { default: 'nameSlot' } },
     {
       title: '创建人',
       field: 'uploader',
@@ -138,16 +167,39 @@ const getList = async () => {
   }
 }
 
+const loadMessagePushSetting = async () => {
+  const data = await getMessagePushSetting()
+  messagePushSetting.value = data || {
+    defaultMessagePushId: null,
+    defaultMessagePush: null
+  }
+}
+
+const refreshPageData = async () => {
+  await Promise.all([getList(), loadMessagePushSetting()])
+}
+
 const openDialog = (id?: number) => {
   dialogRef.value?.open(id)
+}
+
+const openDefaultDialog = () => {
+  defaultDialogRef.value?.open()
 }
 
 const openTestDialog = (row: MessagePushConfig) => {
   testDialogRef.value?.open({
     id: Number(row.id),
-    name: row.name,
-    code: row.code
+    name: row.name
   })
+}
+
+const handleMessagePushSettingSaved = async (payload: UserMessagePushSetting) => {
+  messagePushSetting.value = payload || {
+    defaultMessagePushId: null,
+    defaultMessagePush: null
+  }
+  await getList()
 }
 
 const handleOperationCommand = (command: string, row: MessagePushConfig) => {
@@ -166,20 +218,20 @@ const handleOperationCommand = (command: string, row: MessagePushConfig) => {
 
 const handleDelete = async (id: number) => {
   try {
-    await ElMessageBox.confirm('确认删除该推送渠道吗？删除后开放 API 将无法再通过该编码发送。', '提示', {
+    await ElMessageBox.confirm('确认删除该推送渠道吗？删除后按该渠道 ID 的开放发送调用将失效。', '提示', {
       type: 'warning'
     })
     deleteLoading.value = true
     await deleteMessagePush(id)
     ElMessage.success('删除成功')
-    await getList()
+    await refreshPageData()
   } catch {} finally {
     deleteLoading.value = false
   }
 }
 
 onMounted(() => {
-  getList()
+  refreshPageData()
 })
 </script>
 
@@ -198,6 +250,13 @@ onMounted(() => {
   line-height: 1.5;
   color: var(--el-text-color-secondary);
   word-break: break-all;
+}
+
+.message-push-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 :deep(.message-push-page .list-page-filter--flat) {

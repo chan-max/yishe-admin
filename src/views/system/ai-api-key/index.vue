@@ -4,10 +4,10 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="list-page-filter__row">
-            <div class="text-[12px] leading-[1.6] text-[var(--el-text-color-secondary)]">
-              统一维护 OpenAI、Claude、Qwen 等平台的 API Key，当前只负责基础信息存储与启停管理。
-            </div>
             <div class="list-page-search-form__actions">
+              <el-button size="small" :disabled="loading" @click="openUsageSettingDialog()">
+                AI 使用设置
+              </el-button>
               <el-button
                 size="small"
                 type="primary"
@@ -28,12 +28,6 @@
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid v-bind="gridOptions" :data="list" :loading="loading">
-                <template #platformSlot="{ row }">
-                  <el-tag size="small" :type="platformTagTypeMap[row.platform] || 'info'">
-                    {{ formatPlatformLabel(row.platform) }}
-                  </el-tag>
-                </template>
-
                 <template #enabledSlot="{ row }">
                   <div class="ai-api-key-enabled">
                     <el-switch
@@ -109,7 +103,12 @@
       </template>
     </ListPageLayout>
 
-    <AiApiKeyDialog ref="dialogRef" @success="getList" />
+    <AiApiKeyDialog ref="dialogRef" @success="handleDialogSuccess" />
+    <AiUsageSettingPanel
+      ref="usageSettingDialogRef"
+      :keys="list"
+      @saved="handleUsageSettingSaved"
+    />
   </ContentWrap>
 </template>
 
@@ -125,6 +124,8 @@ import {
 } from "@/api/aiApiKey";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import AiApiKeyDialog from "./components/AiApiKeyDialog.vue";
+import AiUsageSettingPanel from "./components/AiUsageSettingPanel.vue";
+import { refreshAiConfigState } from "@/services/aiConfigState";
 
 const loading = ref(false);
 const deleteLoading = ref(false);
@@ -132,30 +133,9 @@ const statusLoadingId = ref<number | null>(null);
 const apiKeyLoadingId = ref<number | null>(null);
 const list = ref<AiApiKeyConfig[]>([]);
 const dialogRef = ref();
+const usageSettingDialogRef = ref();
 const revealedApiKeyMap = reactive<Record<number, boolean>>({});
 const plainApiKeyMap = reactive<Record<number, string>>({});
-
-const platformLabelMap: Record<string, string> = {
-  openai: "OpenAI",
-  claude: "Claude",
-  qwen: "Qwen",
-  deepseek: "DeepSeek",
-  gemini: "Gemini",
-  doubao: "Doubao",
-  moonshot: "Moonshot",
-  openrouter: "OpenRouter",
-};
-
-const platformTagTypeMap: Record<string, "success" | "warning" | "info" | "danger"> = {
-  openai: "success",
-  claude: "warning",
-  qwen: "info",
-  deepseek: "danger",
-  gemini: "success",
-  doubao: "warning",
-  moonshot: "info",
-  openrouter: "info",
-};
 
 const gridOptions = ref({
   ...commonGridOptions,
@@ -169,9 +149,15 @@ const gridOptions = ref({
       showOverflow: "tooltip",
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { title: "平台", field: "platform", width: 130, slots: { default: "platformSlot" } },
+    {
+      title: "模型",
+      field: "model",
+      minWidth: 180,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => row?.model || "-",
+    },
     { title: "状态", field: "enabled", width: 100, slots: { default: "enabledSlot" } },
-    { title: "密钥", field: "maskedApiKey", minWidth: 220, slots: { default: "apiKeySlot" } },
+    { title: "密钥", field: "maskedApiKey", minWidth: 360, slots: { default: "apiKeySlot" } },
     { title: "过期时间", field: "expiresAt", minWidth: 180, slots: { default: "expiresAtSlot" } },
     {
       title: "备注",
@@ -184,14 +170,6 @@ const gridOptions = ref({
     buildOperationColumn("operationDefaultSlot"),
   ],
 });
-
-const formatPlatformLabel = (platform?: string) => {
-  const value = String(platform || "")
-    .trim()
-    .toLowerCase();
-  if (!value) return "-";
-  return platformLabelMap[value] || value;
-};
 
 const maskApiKey = (value?: string) => {
   const key = String(value || "").trim();
@@ -237,13 +215,26 @@ const getList = async () => {
     Object.keys(plainApiKeyMap).forEach((key) => {
       delete plainApiKeyMap[Number(key)];
     });
+    void refreshAiConfigState();
   } finally {
     loading.value = false;
   }
 };
 
+const handleDialogSuccess = async () => {
+  await getList();
+};
+
+const handleUsageSettingSaved = () => {
+  void refreshAiConfigState();
+};
+
 const openDialog = (id?: number) => {
   dialogRef.value?.open(id);
+};
+
+const openUsageSettingDialog = () => {
+  usageSettingDialogRef.value?.open();
 };
 
 const handleToggleEnabled = async (row: AiApiKeyConfig, enabled: boolean) => {
@@ -253,6 +244,7 @@ const handleToggleEnabled = async (row: AiApiKeyConfig, enabled: boolean) => {
   try {
     await updateAiApiKey(row.id, { enabled });
     row.enabled = enabled;
+    void refreshAiConfigState();
     ElMessage.success(enabled ? "已启用该 Key" : "已停用该 Key");
   } catch (error: any) {
     ElMessage.error(error?.message || "更新状态失败");
@@ -332,6 +324,15 @@ onMounted(() => {
   line-height: 1.5;
   color: var(--el-text-color-secondary);
   word-break: break-all;
+}
+
+.ai-api-key-mask span {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-api-key-mask :deep(.el-button) {
+  flex-shrink: 0;
 }
 
 .ai-api-key-enabled {

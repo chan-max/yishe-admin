@@ -8,14 +8,9 @@
       v-loading="formLoading"
     >
       <el-row :gutter="20">
-        <el-col :xs="24" :md="12">
+        <el-col :span="24">
           <el-form-item label="渠道名称" prop="name">
             <el-input v-model="formData.name" placeholder="例如：运营告警群" />
-          </el-form-item>
-        </el-col>
-        <el-col :xs="24" :md="12">
-          <el-form-item label="渠道编码" prop="code">
-            <el-input v-model="formData.code" placeholder="例如：ops-alert" />
           </el-form-item>
         </el-col>
         <el-col :xs="24" :md="12">
@@ -87,7 +82,6 @@ const formLoading = ref(false)
 const formRef = ref()
 
 const createFormData = (): MessagePushConfig => ({
-  code: '',
   name: '',
   platform: 'feishu',
   webhookUrl: '',
@@ -102,14 +96,6 @@ const formData = reactive<MessagePushConfig>({
 
 const formRules = {
   name: [{ required: true, message: '请输入渠道名称', trigger: 'blur' }],
-  code: [
-    { required: true, message: '请输入渠道编码', trigger: 'blur' },
-    {
-      pattern: /^[A-Za-z0-9][A-Za-z0-9-_]*$/,
-      message: '渠道编码只能包含字母、数字、中划线和下划线',
-      trigger: 'blur'
-    }
-  ],
   platform: [{ required: true, message: '请选择推送平台', trigger: 'change' }],
   webhookUrl: [{ required: true, message: '请输入 webhook 地址', trigger: 'blur' }]
 }
@@ -150,7 +136,6 @@ const submitForm = async () => {
     try {
       const payload: MessagePushConfig = {
         ...formData,
-        code: String(formData.code || '').trim(),
         name: String(formData.name || '').trim(),
         webhookUrl: String(formData.webhookUrl || '').trim(),
         secret: String(formData.secret || '').trim(),

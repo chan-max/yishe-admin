@@ -10,6 +10,7 @@ import { Logo } from "@/layout/components/Logo";
 import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
+import { aiConfigState, refreshAiConfigState } from "@/services/aiConfigState";
 import {
   ensureServiceHealthInitialized,
   isServiceHealthKey,
@@ -233,6 +234,21 @@ export default defineComponent({
       );
     };
 
+    const renderAiConfigDot = (routePath: string) => {
+      if (
+        routePath !== "/system/ai-api-key" ||
+        !aiConfigState.initialized ||
+        !aiConfigState.missing
+      ) {
+        return undefined;
+      }
+
+      return renderMenuStatusHint(
+        <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--degraded`]} />,
+        `AI 配置未完成：${aiConfigState.reason}。点击进入 AI API Key 补充配置`,
+      );
+    };
+
     const isMenuLinkRunning = (routePath: string) => {
       if (isPsdSetRoute(routePath)) {
         return isAnyPsdSetProcessing.value;
@@ -250,6 +266,28 @@ export default defineComponent({
     const getVisibleChildren = (route: AppRouteRecordRaw) => {
       return (route.children ?? []).filter((child) => !child.meta?.hidden);
     };
+
+    const hasRoutePath = (
+      routeList: AppRouteRecordRaw[],
+      targetPath: string,
+      parentPath = "/",
+    ): boolean => {
+      return routeList.some((route) => {
+        const fullPath = getRoutePath(route, parentPath);
+        if (fullPath === targetPath) {
+          return true;
+        }
+        const children = getVisibleChildren(route);
+        if (!children.length) {
+          return false;
+        }
+        return hasRoutePath(children, targetPath, fullPath);
+      });
+    };
+
+    const shouldTrackAiConfig = computed(() =>
+      hasRoutePath(routers.value, "/system/ai-api-key"),
+    );
 
     const hasActiveChild = (route: AppRouteRecordRaw) => {
       const routePath = getRoutePath(route);
@@ -290,6 +328,16 @@ export default defineComponent({
         expandedMenus.value = nextExpanded;
       },
       { immediate: true, deep: true },
+    );
+
+    watch(
+      shouldTrackAiConfig,
+      (enabled) => {
+        if (enabled) {
+          void refreshAiConfigState();
+        }
+      },
+      { immediate: true },
     );
 
     const stopPsdSetRuntimePolling = () => {
@@ -407,6 +455,10 @@ export default defineComponent({
                             `${prefixCls}__link`,
                             {
                               [`${prefixCls}__link--active`]: childPath === activeMenu.value,
+                              [`${prefixCls}__link--warning`]:
+                                childPath === "/system/ai-api-key" &&
+                                aiConfigState.initialized &&
+                                aiConfigState.missing,
                               [`${prefixCls}__link--running`]: isMenuLinkRunning(childPath),
                               [`${prefixCls}__link--running-psd`]:
                                 isPsdSetRoute(childPath) && isAnyPsdSetProcessing.value,
@@ -417,7 +469,8 @@ export default defineComponent({
                           onClick={() => selectMenu(childPath)}
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
-                          {renderPsdSetAutoDot(childPath) ||
+                          {renderAiConfigDot(childPath) ||
+                            renderPsdSetAutoDot(childPath) ||
                             renderServiceHealthDot(child) ||
                             renderStatusDot(childPath)}
                         </button>
@@ -642,6 +695,20 @@ $prefix-cls: #{$namespace}-menu;
     background: var(--left-menu-link-active-bg);
     border-left-color: var(--left-menu-link-active-border-color);
     color: var(--left-menu-link-active-color);
+  }
+
+  &__link--warning:not(.#{$prefix-cls}__link--active) {
+    background: linear-gradient(90deg, rgb(245 158 11 / 10%) 0%, rgb(245 158 11 / 0%) 100%);
+    border-left-color: rgb(245 158 11 / 42%);
+    color: rgb(255 236 205 / 92%);
+  }
+
+  &__link--warning:hover:not(.#{$prefix-cls}__link--active) {
+    background:
+      linear-gradient(90deg, rgb(245 158 11 / 15%) 0%, rgb(245 158 11 / 2%) 100%),
+      var(--left-menu-link-hover-bg);
+    border-left-color: rgb(245 158 11 / 60%);
+    color: rgb(255 245 228 / 96%);
   }
 
   &__link-text {

@@ -108,6 +108,53 @@ export function getOpenApiSetting() {
   })
 }
 
+export interface UserAiSetting {
+  version?: number
+  featureKeys: Record<string, number>
+  updatedAt?: string
+}
+
+export interface UserMessagePushSummary {
+  id: number
+  name: string
+  platform: string
+  enabled: boolean
+  remark: string
+}
+
+export interface UserMessagePushSetting {
+  defaultMessagePushId: number | null
+  defaultMessagePush: UserMessagePushSummary | null
+}
+
+export function getAiSetting() {
+  return request.post<UserAiSetting>({
+    url: '/user/getAiSetting',
+    data: {}
+  })
+}
+
+export function updateAiSetting(aiSetting: UserAiSetting) {
+  return request.post<UserAiSetting>({
+    url: '/user/updateAiSetting',
+    data: { aiSetting }
+  })
+}
+
+export function getMessagePushSetting() {
+  return request.post<UserMessagePushSetting>({
+    url: '/user/getMessagePushSetting',
+    data: {}
+  })
+}
+
+export function updateMessagePushSetting(defaultMessagePushId: number | null) {
+  return request.post<UserMessagePushSetting>({
+    url: '/user/updateMessagePushSetting',
+    data: { defaultMessagePushId }
+  })
+}
+
 export function updateOpenApiSetting(data: { enabled: boolean }) {
   return request.post({
     url: '/user/updateOpenApiSetting',

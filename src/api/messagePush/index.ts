@@ -4,7 +4,6 @@ export type MessagePushPlatform = 'feishu' | 'wecom'
 
 export interface MessagePushConfig {
   id?: number
-  code: string
   name: string
   platform: MessagePushPlatform
   webhookUrl: string

@@ -45,12 +45,7 @@
               </div>
 
               <div class="websocket-toolbar__actions">
-                <el-button
-                  size="small"
-                  type="primary"
-                  @click="refreshConnectionData"
-                  :loading="isRefreshing"
-                >
+                <el-button size="small" type="primary" @click="refreshConnectionData" :loading="isRefreshing">
                   <Icon icon="ep:refresh" class="mr-5px" /> 刷新列表
                 </el-button>
               </div>
@@ -60,23 +55,12 @@
       </template>
 
       <template #table>
-        <el-empty
-          v-if="!isRefreshing && adminConnectionRows.length === 0"
-          :description="runtimeEmptyDescription"
-        />
+        <el-empty v-if="!isRefreshing && adminConnectionRows.length === 0" :description="runtimeEmptyDescription" />
 
-        <div
-          v-else
-          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
-        >
+        <div v-else class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid
-                v-bind="runtimeGridOptions"
-                :data="adminConnectionRows"
-                :loading="isRefreshing"
-                ref="gridRef"
-              >
+              <vxe-grid v-bind="runtimeGridOptions" :data="adminConnectionRows" :loading="isRefreshing" ref="gridRef">
                 <template #status_default="{ row }">
                   <el-tag :type="getConnectionStatusTagType(row)" size="small">
                     {{ getConnectionStatusText(row) }}
@@ -121,12 +105,8 @@
 
                 <template #operation_default="{ row }">
                   <div class="flex justify-start">
-                    <el-dropdown
-                      class="operation-dropdown"
-                      placement="bottom-end"
-                      :disabled="!row.isOnline"
-                      @command="(command) => handleOperationCommand(command, row)"
-                    >
+                    <el-dropdown class="operation-dropdown" placement="bottom-end" :disabled="!row.isOnline"
+                      @command="(command) => handleOperationCommand(command, row)">
                       <el-button type="primary" link size="small" class="operation-trigger-button">
                         操作
                       </el-button>
@@ -135,18 +115,10 @@
                           <el-dropdown-item command="send-message">
                             <span>发送消息</span>
                           </el-dropdown-item>
-                          <el-dropdown-item
-                            v-if="canControlConnection(row)"
-                            command="control"
-                            divided
-                          >
+                          <el-dropdown-item v-if="canControlConnection(row)" command="control" divided>
                             <span>操控</span>
                           </el-dropdown-item>
-                          <el-dropdown-item
-                            command="disconnect"
-                            divided
-                            class="operation-menu-item--danger"
-                          >
+                          <el-dropdown-item command="disconnect" divided class="operation-menu-item--danger">
                             <span>强制断开</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
@@ -161,13 +133,8 @@
       </template>
     </ListPageLayout>
 
-    <el-dialog
-      v-model="controlDialogVisible"
-      title="连接操控"
-      fullscreen
-      :close-on-click-modal="false"
-      class="control-dialog"
-    >
+    <el-dialog v-model="controlDialogVisible" title="连接操控" fullscreen :close-on-click-modal="false"
+      class="control-dialog">
       <div class="control-dialog-content">
         <div class="control-dialog-header">
           <div class="control-connection-info">
@@ -209,12 +176,8 @@
         </div>
 
         <div class="control-dialog-body">
-          <vxe-grid
-            v-if="currentConnection && canControlConnection(currentConnection)"
-            v-bind="functionGridOptions"
-            :data="functionList"
-            class="function-grid"
-          >
+          <vxe-grid v-if="currentConnection && canControlConnection(currentConnection)" v-bind="functionGridOptions"
+            :data="functionList" class="function-grid">
             <template #icon_default="{ row }">
               <div class="function-icon-cell">
                 <Icon :icon="row.icon" />
@@ -230,11 +193,7 @@
                   <span class="schedule-info-text">{{ formatSchedule(row.schedule) }}</span>
                 </div>
                 <div v-if="row.schedule.type" class="schedule-type-text">
-                  <el-tag
-                    :type="row.schedule.type === 'cron' ? 'primary' : 'success'"
-                    size="small"
-                    plain
-                  >
+                  <el-tag :type="row.schedule.type === 'cron' ? 'primary' : 'success'" size="small" plain>
                     {{ row.schedule.type === "cron" ? "固定时间点" : "间隔时间" }}
                   </el-tag>
                 </div>
@@ -244,11 +203,8 @@
 
             <template #operation_default="{ row }">
               <div class="flex justify-start">
-                <el-dropdown
-                  class="operation-dropdown"
-                  placement="bottom-end"
-                  @command="(command) => handleFunctionOperation(command, row)"
-                >
+                <el-dropdown class="operation-dropdown" placement="bottom-end"
+                  @command="(command) => handleFunctionOperation(command, row)">
                   <el-button type="primary" link size="small" class="operation-trigger-button">
                     操作
                   </el-button>
@@ -272,13 +228,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="sendMessageDialogVisible"
-      title="发送消息"
-      width="500px"
-      align-center
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="sendMessageDialogVisible" title="发送消息" width="500px" align-center :close-on-click-modal="false">
       <el-form label-width="100px">
         <el-form-item label="连接 ID">
           <el-input :value="currentConnection?.id" disabled />
@@ -292,21 +242,13 @@
           <el-input v-model="messageEvent" placeholder="默认为 admin-message" />
         </el-form-item>
         <el-form-item label="消息内容">
-          <el-input
-            v-model="messageContent"
-            type="textarea"
-            :rows="6"
-            placeholder='请输入消息内容，支持 JSON 格式，如 {"type":"test","message":"Hello"}'
-          />
+          <el-input v-model="messageContent" type="textarea" :rows="6"
+            placeholder='请输入消息内容，支持 JSON 格式，如 {"type":"test","message":"Hello"}' />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="sendMessageDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="sendMessageDialogLoading"
-          @click="handleConfirmSendMessage"
-        >
+        <el-button type="primary" :loading="sendMessageDialogLoading" @click="handleConfirmSendMessage">
           发送
         </el-button>
       </template>
@@ -934,14 +876,14 @@ const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
       field: "isOnline",
       title: "状态",
       width: 100,
-      align: "center",
+      align: "left",
       slots: { default: "status_default" },
     },
     {
       field: "clientSource",
       title: "连接类型",
       width: 170,
-      align: "center",
+      align: "left",
       slots: { default: "clientSource_default" },
     },
     {

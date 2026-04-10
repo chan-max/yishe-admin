@@ -23,6 +23,16 @@ export function createVitePlugins(root = process.cwd()) {
     return resolve(root, '.', dir)
   }
 
+  const customComponentResolver = (name: string) => {
+    if (name === 'ElEmpty') {
+      return {
+        name: 'default',
+        from: pathResolve('src/components/ElEmpty/index.vue')
+      }
+    }
+    return undefined
+  }
+
   return [
     Vue(),
     VueJsx(),
@@ -62,7 +72,7 @@ export function createVitePlugins(root = process.cwd()) {
       // 生成自定义 `auto-components.d.ts` 全局声明
       dts: skipAutoImportDts ? false : resolve(generatedTypesDir, 'auto-components.d.ts'),
       // 自定义组件的解析器
-      resolvers: [ElementPlusResolver()],
+      resolvers: [customComponentResolver, ElementPlusResolver()],
       globs: ["src/components/**/**.{vue, md}", '!src/components/DiyEditor/components/mobile/**']
     }),
     createSvgIconsPlugin({

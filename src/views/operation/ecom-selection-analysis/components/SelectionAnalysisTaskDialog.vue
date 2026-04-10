@@ -1,41 +1,21 @@
 <template>
-  <el-dialog
-    :model-value="modelValue"
-    :title="currentTask?.id ? '编辑选品分析任务' : '新建选品分析任务'"
-    fullscreen
-    append-to-body
-    destroy-on-close
-    class="selection-analysis-task-dialog"
-    :close-on-click-modal="false"
-    @update:model-value="emit('update:modelValue', $event)"
-  >
+  <el-dialog :model-value="modelValue" :title="currentTask?.id ? '编辑选品分析任务' : '新建选品分析任务'" fullscreen append-to-body
+    destroy-on-close class="selection-analysis-task-dialog" :close-on-click-modal="false"
+    @update:model-value="emit('update:modelValue', $event)">
     <div class="task-dialog-shell">
       <div class="task-dialog-layout">
         <div class="task-dialog-main">
-          <CompactNotice
-            v-if="!collectTasks.length && !collectRuns.length"
-            type="warning"
-            title="当前没有可选的采集任务或运行"
-            description="你仍可直接填写原始记录 ID 创建分析任务；如果需要按任务或运行筛选，再先到电商采集模块执行一次采集。"
-            class="task-dialog-alert"
-          />
+          <CompactNotice v-if="!collectTasks.length && !collectRuns.length" type="warning" title="当前没有可选的采集任务或运行"
+            description="你仍可直接填写原始记录 ID 创建分析任务；如果需要按任务或运行筛选，再先到电商采集模块执行一次采集。" class="task-dialog-alert" />
 
-          <CompactNotice
-            v-else-if="!hasExplicitScope"
-            type="info"
-            title="当前未设置显式数据范围"
-            description="如果直接保存，将按当前账号下符合条件的全部采集原始数据进行分析。"
-            class="task-dialog-alert"
-          />
+          <CompactNotice v-else-if="!hasExplicitScope" type="info" title="当前未设置显式数据范围"
+            description="如果直接保存，将按当前账号下符合条件的全部采集原始数据进行分析。" class="task-dialog-alert" />
 
           <el-form label-position="top" class="task-dialog-form">
             <el-row :gutter="20">
               <el-col :xs="24">
                 <el-form-item label="任务名称" required>
-                  <el-input
-                    v-model="taskForm.name"
-                    placeholder="例如：Amazon / Temu 无线耳机热门选品"
-                  />
+                  <el-input v-model="taskForm.name" placeholder="例如：Amazon / Temu 无线耳机热门选品" />
                   <div class="form-hint">
                     建议直接写清平台、品类和目标市场。当前版本默认执行“热门选品”分析，你主要配置数据源范围和分析偏好即可。
                   </div>
@@ -47,21 +27,10 @@
             <el-row :gutter="20">
               <el-col :xs="24" :lg="12">
                 <el-form-item label="采集任务">
-                  <el-select
-                    v-model="taskForm.sourceConfig.taskIds"
-                    multiple
-                    collapse-tags
-                    collapse-tags-tooltip
-                    filterable
-                    clearable
-                    placeholder="按采集任务筛选"
-                  >
-                    <el-option
-                      v-for="item in collectTaskOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
+                  <el-select v-model="taskForm.sourceConfig.taskIds" multiple collapse-tags collapse-tags-tooltip
+                    filterable clearable placeholder="按采集任务筛选">
+                    <el-option v-for="item in collectTaskOptions" :key="item.value" :label="item.label"
+                      :value="item.value" />
                   </el-select>
                   <div class="form-hint">
                     用来圈定“分析哪几个采集任务”的历史原始数据。不选时，可继续通过运行、平台或高级过滤来限定范围。
@@ -71,21 +40,10 @@
 
               <el-col :xs="24" :lg="12">
                 <el-form-item label="采集运行">
-                  <el-select
-                    v-model="taskForm.sourceConfig.runIds"
-                    multiple
-                    collapse-tags
-                    collapse-tags-tooltip
-                    filterable
-                    clearable
-                    placeholder="按运行记录筛选"
-                  >
-                    <el-option
-                      v-for="item in collectRunOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
+                  <el-select v-model="taskForm.sourceConfig.runIds" multiple collapse-tags collapse-tags-tooltip
+                    filterable clearable placeholder="按运行记录筛选">
+                    <el-option v-for="item in collectRunOptions" :key="item.value" :label="item.label"
+                      :value="item.value" />
                   </el-select>
                   <div class="form-hint">
                     用来锁定某几次具体执行结果。可以和“采集任务”同时使用，表示只分析这些任务里的指定运行。
@@ -95,12 +53,8 @@
 
               <el-col :xs="24">
                 <el-form-item label="直接指定原始记录 ID">
-                  <el-input
-                    v-model="rawRecordIdsText"
-                    type="textarea"
-                    :rows="4"
-                    placeholder="一行一个 rawRecordId，可直接基于统一原始数据做分析"
-                  />
+                  <el-input v-model="rawRecordIdsText" type="textarea" :rows="4"
+                    placeholder="一行一个 rawRecordId，可直接基于统一原始数据做分析" />
                   <div class="form-hint">
                     不想依赖采集任务或采集结果时可直接填写。可单独使用，也可和其他筛选条件组合收窄范围。
                   </div>
@@ -109,12 +63,7 @@
 
               <el-col :xs="24" :lg="8">
                 <el-form-item label="最大样本数">
-                  <el-input-number
-                    v-model="taskForm.sourceConfig.limit"
-                    :min="1"
-                    :max="80"
-                    controls-position="right"
-                  />
+                  <el-input-number v-model="taskForm.sourceConfig.limit" :min="1" :max="80" controls-position="right" />
                   <div class="form-hint">
                     进入 AI 分析前最终保留的样本上限。数值越大覆盖越全，耗时也会更高，通常 20-60
                     比较合适。
@@ -124,10 +73,7 @@
 
               <el-col :xs="24" :lg="6">
                 <el-form-item label="目标市场">
-                  <el-input
-                    v-model="taskForm.optionsData.targetMarket"
-                    placeholder="例如：美国站 / 东南亚 / 欧洲"
-                  />
+                  <el-input v-model="taskForm.optionsData.targetMarket" placeholder="例如：美国站 / 东南亚 / 欧洲" />
                   <div class="form-hint">
                     告诉 AI 结论面向哪个市场，影响需求、语言和价格带判断；它不会直接过滤原始数据。
                   </div>
@@ -136,12 +82,7 @@
 
               <el-col :xs="24" :lg="6">
                 <el-form-item label="输出 Top N">
-                  <el-input-number
-                    v-model="taskForm.optionsData.topN"
-                    :min="1"
-                    :max="20"
-                    controls-position="right"
-                  />
+                  <el-input-number v-model="taskForm.optionsData.topN" :min="1" :max="20" controls-position="right" />
                   <div class="form-hint">
                     控制最终输出多少个重点候选商品。适合先少量聚焦，再逐步扩大。
                   </div>
@@ -184,20 +125,10 @@
               <el-row v-if="advancedVisible" :gutter="20">
                 <el-col :xs="24" :lg="8">
                   <el-form-item label="来源平台">
-                    <el-select
-                      v-model="taskForm.sourceConfig.platforms"
-                      multiple
-                      collapse-tags
-                      collapse-tags-tooltip
-                      clearable
-                      placeholder="全部平台"
-                    >
-                      <el-option
-                        v-for="item in sourcePlatformOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                      />
+                    <el-select v-model="taskForm.sourceConfig.platforms" multiple collapse-tags collapse-tags-tooltip
+                      clearable placeholder="全部平台">
+                      <el-option v-for="item in sourcePlatformOptions" :key="item.value" :label="item.label"
+                        :value="item.value" />
                     </el-select>
                     <div class="form-hint">
                       在当前任务或运行范围内继续按平台过滤。不选表示不过滤；适合混合数据源时做二次收窄。
@@ -207,20 +138,10 @@
 
                 <el-col :xs="24" :lg="8">
                   <el-form-item label="采集场景">
-                    <el-select
-                      v-model="taskForm.sourceConfig.collectScenes"
-                      multiple
-                      collapse-tags
-                      collapse-tags-tooltip
-                      clearable
-                      placeholder="全部场景"
-                    >
-                      <el-option
-                        v-for="item in collectSceneOptions"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                      />
+                    <el-select v-model="taskForm.sourceConfig.collectScenes" multiple collapse-tags
+                      collapse-tags-tooltip clearable placeholder="全部场景">
+                      <el-option v-for="item in collectSceneOptions" :key="item.value" :label="item.label"
+                        :value="item.value" />
                     </el-select>
                     <div class="form-hint">
                       例如搜索结果、榜单、关键词、趋势等采集场景。适合在同平台下区分不同来源信号。
@@ -230,10 +151,7 @@
 
                 <el-col :xs="24" :lg="8">
                   <el-form-item label="关键词过滤">
-                    <el-input
-                      v-model="taskForm.sourceConfig.keyword"
-                      placeholder="匹配 recordKey / 来源链接 / 任务名"
-                    />
+                    <el-input v-model="taskForm.sourceConfig.keyword" placeholder="匹配 recordKey / 来源链接 / 任务名" />
                     <div class="form-hint">
                       用于在大样本里快速缩小范围，会匹配记录关键词、来源链接和任务名等文本。
                     </div>
@@ -242,58 +160,35 @@
 
                 <el-col :xs="24" :lg="8">
                   <el-form-item label="AI 模型">
-                    <el-input
-                      v-model="taskForm.optionsData.aiModel"
-                      placeholder="留空则使用服务端默认模型"
-                    />
+                    <el-input v-model="taskForm.optionsData.aiModel" placeholder="留空则按当前 AI 功能绑定的 Key 配置执行" />
                     <div class="form-hint">
-                      当前系统默认可直接使用 `free-qwen`。只有在你明确想切换模型时才需要修改。
+                      一般不需要填写。只有你明确想覆盖当前功能绑定 Key 上的模型时，才在这里单独指定。
                     </div>
                   </el-form-item>
                 </el-col>
 
                 <el-col :xs="24" :lg="6">
                   <el-form-item label="采集开始时间">
-                    <el-date-picker
-                      v-model="taskForm.sourceConfig.capturedAfter"
-                      type="datetime"
-                      value-format="YYYY-MM-DD HH:mm:ss"
-                      clearable
-                      placeholder="开始时间"
-                    />
+                    <el-date-picker v-model="taskForm.sourceConfig.capturedAfter" type="datetime"
+                      value-format="YYYY-MM-DD HH:mm:ss" clearable placeholder="开始时间" />
                     <div class="form-hint">只分析该时间之后抓取的原始数据。</div>
                   </el-form-item>
                 </el-col>
 
                 <el-col :xs="24" :lg="6">
                   <el-form-item label="采集结束时间">
-                    <el-date-picker
-                      v-model="taskForm.sourceConfig.capturedBefore"
-                      type="datetime"
-                      value-format="YYYY-MM-DD HH:mm:ss"
-                      clearable
-                      placeholder="结束时间"
-                    />
+                    <el-date-picker v-model="taskForm.sourceConfig.capturedBefore" type="datetime"
+                      value-format="YYYY-MM-DD HH:mm:ss" clearable placeholder="结束时间" />
                     <div class="form-hint">和开始时间组合使用，可限定某个时间窗口内的数据。</div>
                   </el-form-item>
                 </el-col>
 
                 <el-col :xs="24" :lg="12">
                   <el-form-item label="优先参考平台">
-                    <el-select
-                      v-model="taskForm.optionsData.preferredPlatforms"
-                      multiple
-                      collapse-tags
-                      collapse-tags-tooltip
-                      clearable
-                      placeholder="优先关注的平台"
-                    >
-                      <el-option
-                        v-for="item in collectCatalog.platforms"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value"
-                      />
+                    <el-select v-model="taskForm.optionsData.preferredPlatforms" multiple collapse-tags
+                      collapse-tags-tooltip clearable placeholder="优先关注的平台">
+                      <el-option v-for="item in collectCatalog.platforms" :key="item.value" :label="item.label"
+                        :value="item.value" />
                     </el-select>
                     <div class="form-hint">
                       不会过滤掉其他平台数据，只是提醒 AI 在结论里优先关注这些平台的证据和信号。
@@ -303,12 +198,8 @@
 
                 <el-col :xs="24" :lg="12">
                   <el-form-item label="重点关键词">
-                    <el-input
-                      v-model="focusKeywordsText"
-                      type="textarea"
-                      :rows="5"
-                      placeholder="一行一个，例如：wireless earbuds"
-                    />
+                    <el-input v-model="focusKeywordsText" type="textarea" :rows="5"
+                      placeholder="一行一个，例如：wireless earbuds" />
                     <div class="form-hint">
                       适合聚焦某个细分品类。命中这些词的样本更容易被保留和重点分析。
                     </div>
@@ -317,12 +208,8 @@
 
                 <el-col :xs="24" :lg="12">
                   <el-form-item label="排除关键词">
-                    <el-input
-                      v-model="excludeKeywordsText"
-                      type="textarea"
-                      :rows="5"
-                      placeholder="一行一个，例如：used / refurbished"
-                    />
+                    <el-input v-model="excludeKeywordsText" type="textarea" :rows="5"
+                      placeholder="一行一个，例如：used / refurbished" />
                     <div class="form-hint">
                       适合排除不希望进入分析的商品方向、成色、配件词或噪声词。
                     </div>
@@ -331,24 +218,16 @@
 
                 <el-col :xs="24" :lg="6">
                   <el-form-item label="目标价格最低值">
-                    <el-input-number
-                      v-model="taskForm.optionsData.targetPriceRange.min"
-                      :min="0"
-                      :step="1"
-                      controls-position="right"
-                    />
+                    <el-input-number v-model="taskForm.optionsData.targetPriceRange.min" :min="0" :step="1"
+                      controls-position="right" />
                     <div class="form-hint">和最高值配合，帮助 AI 聚焦目标价格带。</div>
                   </el-form-item>
                 </el-col>
 
                 <el-col :xs="24" :lg="6">
                   <el-form-item label="目标价格最高值">
-                    <el-input-number
-                      v-model="taskForm.optionsData.targetPriceRange.max"
-                      :min="0"
-                      :step="1"
-                      controls-position="right"
-                    />
+                    <el-input-number v-model="taskForm.optionsData.targetPriceRange.max" :min="0" :step="1"
+                      controls-position="right" />
                     <div class="form-hint">
                       只对能识别价格的样本生效；适合做中低价、高客单等不同选品策略。
                     </div>
@@ -357,12 +236,8 @@
 
                 <el-col :xs="24">
                   <el-form-item label="分析备注">
-                    <el-input
-                      v-model="taskForm.optionsData.notes"
-                      type="textarea"
-                      :rows="4"
-                      placeholder="补充你希望 AI 更关注的维度，例如材质、品牌空间、价格带策略等"
-                    />
+                    <el-input v-model="taskForm.optionsData.notes" type="textarea" :rows="4"
+                      placeholder="补充你希望 AI 更关注的维度，例如材质、品牌空间、价格带策略等" />
                     <div class="form-hint">
                       这里相当于补充提示词，不会改变样本筛选逻辑，但会影响 AI 输出时更关注的维度。
                     </div>
@@ -419,12 +294,7 @@
     <template #footer>
       <div class="task-dialog-footer-bar">
         <el-button @click="emit('update:modelValue', false)">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="submitting"
-          :disabled="!canSubmit"
-          @click="handleSubmit"
-        >
+        <el-button type="primary" :loading="submitting" :disabled="!canSubmit" @click="handleSubmit">
           保存
         </el-button>
       </div>
@@ -518,7 +388,7 @@ const createDefaultForm = (): AnalysisTaskForm => ({
       max: null,
     },
     notes: "",
-    aiModel: "free-qwen",
+    aiModel: "",
   },
 });
 
@@ -592,9 +462,9 @@ const availableCollectSceneOptions = computed(() => {
 
     return Array.isArray(platform.scenes)
       ? platform.scenes.map((scene) => ({
-          value: scene.value,
-          label: `${platform.label} / ${scene.label}`,
-        }))
+        value: scene.value,
+        label: `${platform.label} / ${scene.label}`,
+      }))
       : [];
   });
 });
@@ -669,13 +539,11 @@ const advancedSummaryText = computed(() => {
     excludeKeywordsText.value.trim() ? "已设置排除词" : "",
     taskForm.optionsData.preferredPlatforms.length ? "已设置优先平台" : "",
     taskForm.optionsData.targetPriceRange.min != null ||
-    taskForm.optionsData.targetPriceRange.max != null
+      taskForm.optionsData.targetPriceRange.max != null
       ? "已设置价格带"
       : "",
     taskForm.optionsData.notes.trim() ? "已填写备注" : "",
-    taskForm.optionsData.aiModel.trim() && taskForm.optionsData.aiModel.trim() !== "free-qwen"
-      ? `模型 ${taskForm.optionsData.aiModel.trim()}`
-      : "",
+    taskForm.optionsData.aiModel.trim() ? `模型 ${taskForm.optionsData.aiModel.trim()}` : "",
   ].filter(Boolean);
 
   return parts.length ? parts.join(" · ") : "默认使用推荐配置，如需更细粒度控制可展开设置。";
@@ -750,7 +618,7 @@ const hydrateForm = (task?: EcomSelectionAnalysisTask | null) => {
       ? Number(task.optionsData.targetPriceRange.max)
       : null;
   taskForm.optionsData.notes = String(task.optionsData?.notes || "").trim();
-  taskForm.optionsData.aiModel = String(task.optionsData?.aiModel || "free-qwen").trim();
+  taskForm.optionsData.aiModel = String(task.optionsData?.aiModel || "").trim();
   focusKeywordsText.value = Array.isArray(task.optionsData?.focusKeywords)
     ? task.optionsData?.focusKeywords.filter(Boolean).join("\n")
     : "";
@@ -779,7 +647,7 @@ watch(
         taskForm.optionsData.targetPriceRange.min != null ||
         taskForm.optionsData.targetPriceRange.max != null ||
         taskForm.optionsData.notes.trim() ||
-        (taskForm.optionsData.aiModel.trim() && taskForm.optionsData.aiModel.trim() !== "free-qwen")
+        taskForm.optionsData.aiModel.trim()
       );
     }
   },

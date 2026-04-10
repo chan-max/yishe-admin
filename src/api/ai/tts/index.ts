@@ -94,10 +94,6 @@ export const getTtsRecordById = (id: string) => {
   })
 }
 
-export const getAvailableModels = () => {
-  return request.get({ url: '/ai/models' })
-}
-
 export const createCustomVoice = (data: CreateCustomVoiceDto) => {
   return request.post({
     url: '/ai/tts/custom-voice',

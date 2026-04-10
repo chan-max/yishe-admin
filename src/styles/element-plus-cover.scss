@@ -1172,34 +1172,8 @@ html.dark .el-alert {
   display: none;
 }
 
-.el-empty__image::before {
-  content: "";
-  width: 52px;
-  height: 32px;
-  border: 1.5px solid
-    color-mix(in srgb, var(--ep-cover-border-color-strong) 86%, transparent);
-  border-radius: 12px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(248, 250, 252, 0.92) 100%
-  );
-}
 
-.el-empty__image::after {
-  content: "";
-  position: absolute;
-  top: 9px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--ep-cover-muted-color) 58%, transparent);
-  box-shadow:
-    -16px 10px 0 -2px
-      color-mix(in srgb, var(--ep-cover-muted-color) 22%, transparent),
-    16px 10px 0 -2px
-      color-mix(in srgb, var(--ep-cover-muted-color) 22%, transparent);
-}
+
 
 .el-empty__description {
   margin-top: 0;
