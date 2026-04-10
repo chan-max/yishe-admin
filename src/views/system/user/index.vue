@@ -5,33 +5,66 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <el-col
+                class="list-page-search-form__col--base"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="5"
+                :xl="4"
+              >
                 <el-form-item label="用户账号">
                   <el-input
                     v-model="queryParams.account"
                     size="small"
                     placeholder="请输入用户账号"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
-              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
+              <el-col
+                class="list-page-search-form__col--base"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="5"
+                :xl="4"
+              >
                 <el-form-item label="用户姓名">
                   <el-input
                     v-model="queryParams.name"
                     size="small"
                     placeholder="请输入用户姓名"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
-              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="handleSearch"
+                >搜索</el-button
+              >
+              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery"
+                >重置</el-button
+              >
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
+                >新增</el-button
+              >
               <el-button
                 size="small"
                 v-admin-only
@@ -48,7 +81,9 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
@@ -82,20 +117,29 @@
                       placement="bottom-end"
                       @command="(command) => handleOperationCommand(command, row)"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="access">
-                            <span>分配权限</span>
+                          <el-dropdown-item command="access" :disabled="row.isAdmin">
+                            <span>{{ row.isAdmin ? "管理员默认全部权限" : "分配权限" }}</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="resetPassword" class="operation-menu-item--danger">
+                          <el-dropdown-item
+                            command="resetPassword"
+                            class="operation-menu-item--danger"
+                          >
                             <span>重置密码</span>
                           </el-dropdown-item>
                           <template v-if="userStore.user?.isAdmin">
-                            <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
+                            <el-dropdown-item
+                              command="delete"
+                              divided
+                              class="operation-menu-item--danger"
+                            >
                               <span>删除</span>
                             </el-dropdown-item>
                           </template>
@@ -111,7 +155,9 @@
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
           <pagination
             :total="total"
             v-model:page="queryParams.currentPage"
@@ -315,8 +361,15 @@
       <div
         class="flex justify-end gap-3 border-t border-solid border-[var(--el-border-color-lighter)] pt-4"
       >
-        <el-button :disabled="passwordSubmitLoading" @click="passwordDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="passwordSubmitLoading" @click="handleResetPasswordSubmit">确定</el-button>
+        <el-button :disabled="passwordSubmitLoading" @click="passwordDialogVisible = false"
+          >取消</el-button
+        >
+        <el-button
+          type="primary"
+          :loading="passwordSubmitLoading"
+          @click="handleResetPasswordSubmit"
+          >确定</el-button
+        >
       </div>
     </template>
   </el-dialog>
@@ -325,6 +378,7 @@
     v-model="accessDialogVisible"
     :user-id="accessTarget.id"
     :user-name="accessTarget.name"
+    :user-is-admin="accessTarget.isAdmin"
     @success="handleAccessSaved"
   />
 </template>
@@ -345,25 +399,20 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import UserAccessDialog from "./UserAccessDialog.vue";
 
 function getErrorMessage(error: any, fallback: string) {
-  return (
-    error?.response?.data?.message ||
-    error?.response?.data?.msg ||
-    error?.message ||
-    fallback
-  );
+  return error?.response?.data?.message || error?.response?.data?.msg || error?.message || fallback;
 }
 
 function resolveUserState(row: any) {
-  const normalizedStatus = String(row?.status || '').trim() || 'active'
-  const expireTime = row?.expireTime ? new Date(row.expireTime).getTime() : 0
-  const expired = Number.isFinite(expireTime) && expireTime > 0 && expireTime <= Date.now()
-  if (normalizedStatus !== 'active') {
-    return { label: '禁用', type: 'danger' as const }
+  const normalizedStatus = String(row?.status || "").trim() || "active";
+  const expireTime = row?.expireTime ? new Date(row.expireTime).getTime() : 0;
+  const expired = Number.isFinite(expireTime) && expireTime > 0 && expireTime <= Date.now();
+  if (normalizedStatus !== "active") {
+    return { label: "禁用", type: "danger" as const };
   }
   if (expired) {
-    return { label: '已过期', type: 'warning' as const }
+    return { label: "已过期", type: "warning" as const };
   }
-  return { label: '正常', type: 'success' as const }
+  return { label: "正常", type: "success" as const };
 }
 
 // 查询条件
@@ -514,6 +563,7 @@ const accessDialogVisible = ref(false);
 const accessTarget = reactive({
   id: "",
   name: "",
+  isAdmin: false,
 });
 const passwordFormData = reactive({
   newPassword: "",
@@ -629,8 +679,13 @@ function handleAssignAccess(row) {
     ElMessage.warning("仅管理员可分配权限");
     return;
   }
+  if (row?.isAdmin) {
+    ElMessage.info("管理员默认拥有全部菜单权限，无需分配");
+    return;
+  }
   accessTarget.id = String(row.id || "");
   accessTarget.name = row.name || row.account || "";
+  accessTarget.isAdmin = !!row.isAdmin;
   accessDialogVisible.value = true;
 }
 
@@ -640,7 +695,7 @@ function handleAccessSaved() {
 
 // 删除用户
 function handleDelete(row?) {
-  if (deleteLoading.value) return
+  if (deleteLoading.value) return;
   const userStore = useUserStore();
   if (!userStore.user?.isAdmin) {
     return ElMessage.warning("无权限：仅管理员可执行删除操作");
@@ -661,7 +716,7 @@ function handleDelete(row?) {
   })
     .then(async () => {
       try {
-        deleteLoading.value = true
+        deleteLoading.value = true;
         for (const id of delIds) {
           await deleteUser(id);
         }
@@ -670,7 +725,7 @@ function handleDelete(row?) {
       } catch (error) {
         ElMessage.error("删除失败");
       } finally {
-        deleteLoading.value = false
+        deleteLoading.value = false;
       }
     })
     .catch(() => {});
@@ -678,9 +733,9 @@ function handleDelete(row?) {
 
 // 提交表单
 async function handleSubmit() {
-  if (submitLoading.value) return
+  if (submitLoading.value) return;
   try {
-    submitLoading.value = true
+    submitLoading.value = true;
     await formRef.value.validate();
 
     const submitData = { ...formData };
@@ -706,15 +761,15 @@ async function handleSubmit() {
   } catch (error) {
     ElMessage.error(getErrorMessage(error, "操作失败"));
   } finally {
-    submitLoading.value = false
+    submitLoading.value = false;
   }
 }
 
 // 重置密码提交
 async function handleResetPasswordSubmit() {
-  if (passwordSubmitLoading.value) return
+  if (passwordSubmitLoading.value) return;
   try {
-    passwordSubmitLoading.value = true
+    passwordSubmitLoading.value = true;
     await passwordFormRef.value.validate();
 
     await updateUserPassword({
@@ -727,7 +782,7 @@ async function handleResetPasswordSubmit() {
   } catch (error) {
     ElMessage.error("密码重置失败");
   } finally {
-    passwordSubmitLoading.value = false
+    passwordSubmitLoading.value = false;
   }
 }
 

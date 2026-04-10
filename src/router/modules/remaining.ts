@@ -88,7 +88,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "Statistics",
         meta: {
           title: "数据统计",
-          requiresAdmin: true,
         },
       },
     ],
@@ -213,7 +212,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "故事脚本",
-          requiresAdmin: true,
         },
       },
       {
@@ -239,7 +237,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       icon: "ep:files",
       order: 3,
       alwaysShow: true,
-      requiresAdmin: true,
     },
     children: [
       {
@@ -251,7 +248,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "代码脚本",
-          requiresAdmin: true,
           serviceStatusKey: "sandbox",
         },
       },
@@ -264,7 +260,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "脚本调度",
-          requiresAdmin: true,
         },
       },
       {
@@ -276,7 +271,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "视频生成 (模板)",
-          requiresAdmin: true,
           serviceStatusKey: "remotion",
         },
       },
@@ -289,7 +283,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "图片处理",
-          requiresAdmin: true,
           serviceStatusKey: "images",
         },
       },
@@ -305,7 +298,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       icon: "ep:connection",
       order: 4,
       alwaysShow: true,
-      requiresAdmin: true,
     },
     children: [
       {
@@ -314,7 +306,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ExternalBrowserAutomation",
         meta: {
           title: "浏览器自动化",
-          requiresAdmin: true,
         },
       },
       {
@@ -323,7 +314,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ExternalPsAutomation",
         meta: {
           title: "PS 自动化",
-          requiresAdmin: true,
         },
       },
       {
@@ -332,7 +322,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ExternalGoogleArt",
         meta: {
           title: "Google Art",
-          requiresAdmin: true,
         },
       },
     ],
@@ -371,7 +360,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "AiAgentConsole",
         meta: {
           title: "Agent 控制台",
-          requiresAdmin: true,
         },
       },
       {
@@ -383,7 +371,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "AI提示词管理",
-          requiresAdmin: true,
         },
       },
     ],
@@ -398,7 +385,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       icon: "ep:goods",
       order: 5,
       alwaysShow: true,
-      requiresAdmin: true,
     },
     children: [
       {
@@ -426,7 +412,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "套图",
-          requiresAdmin: true,
         },
       },
       {
@@ -591,7 +576,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "CommonUrlIndex",
         meta: {
           title: "网址管理",
-          requiresAdmin: true,
         },
       },
     ],
@@ -628,7 +612,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
       icon: "ep:setting",
       order: 8,
       alwaysShow: true,
-      requiresAdmin: true,
     },
     children: [
       {
@@ -637,7 +620,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "SystemAiApiKeyIndex",
         meta: {
           title: "AI API Key",
-          requiresAdmin: true,
         },
       },
       {
@@ -646,7 +628,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "MessagePushIndex",
         meta: {
           title: "消息推送",
-          requiresAdmin: true,
         },
       },
       {
@@ -655,6 +636,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "User",
         meta: {
           title: "用户管理",
+          requiresAdmin: true,
         },
       },
       {
@@ -663,6 +645,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "Company",
         meta: {
           title: "公司管理",
+          requiresAdmin: true,
         },
       },
       {
@@ -671,6 +654,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "PublicUser",
         meta: {
           title: "开放用户管理",
+          requiresAdmin: true,
         },
       },
       {
@@ -688,6 +672,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "SystemOperateLog",
         meta: {
           title: "操作日志",
+          requiresAdmin: true,
         },
       },
     ],

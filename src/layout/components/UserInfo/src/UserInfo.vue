@@ -1,73 +1,92 @@
 <script lang="ts" setup>
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox } from "element-plus";
 
-import avatarImg from '@/assets/imgs/avatar.png'
-import { useDesign } from '@/hooks/web/useDesign'
-import { useTagsViewStore } from '@/store/modules/tagsView'
-import { useUserStore } from '@/store/modules/user'
-import LockDialog from './components/LockDialog.vue'
-import LockPage from './components/LockPage.vue'
-import { useLockStore } from '@/store/modules/lock'
+import avatarImg from "@/assets/imgs/avatar.png";
+import { useDesign } from "@/hooks/web/useDesign";
+import { useTagsViewStore } from "@/store/modules/tagsView";
+import { usePermissionStore } from "@/store/modules/permission";
+import { useUserStore } from "@/store/modules/user";
+import LockDialog from "./components/LockDialog.vue";
+import LockPage from "./components/LockPage.vue";
+import { useLockStore } from "@/store/modules/lock";
 
-defineOptions({ name: 'UserInfo' })
+defineOptions({ name: "UserInfo" });
 
-const { t } = useI18n()
-const { push, replace } = useRouter()
-const userStore = useUserStore()
-const tagsViewStore = useTagsViewStore()
-const { getPrefixCls } = useDesign()
-const prefixCls = getPrefixCls('user-info')
+const { t } = useI18n();
+const { push, replace } = useRouter();
+const userStore = useUserStore();
+const permissionStore = usePermissionStore();
+const tagsViewStore = useTagsViewStore();
+const { getPrefixCls } = useDesign();
+const prefixCls = getPrefixCls("user-info");
 
-const avatar = computed(() => userStore.user.avatar || avatarImg)
-const userName = computed(() => userStore.user.name || userStore.user.account || 'Admin')
+const avatar = computed(() => userStore.user.avatar || avatarImg);
+const userName = computed(() => userStore.user.name || userStore.user.account || "Admin");
 
-const companyName = computed(() => userStore.user.company?.name || null)
-const isAdmin = computed(() => userStore.user.isAdmin || false)
-const expireTime = computed(() => userStore.user.expireTime)
-const isForever = computed(() => !expireTime.value)
+const companyName = computed(() => userStore.user.company?.name || null);
+const isAdmin = computed(() => userStore.user.isAdmin || false);
+const expireTime = computed(() => userStore.user.expireTime);
+const isForever = computed(() => !expireTime.value);
 
 const remainingTime = computed(() => {
-  if (!expireTime.value) return '永久有效'
-  
-  const now = new Date().getTime()
-  const expire = new Date(expireTime.value).getTime()
-  const diff = expire - now
-  
-  if (diff <= 0) return '已过期'
-  
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-  
-  if (days > 0) return `还有 ${days} 天到期`
-  if (hours > 0) return `还有 ${hours} 小时到期`
-  if (minutes > 0) return `还有 ${minutes} 分钟到期`
-  return '即将到期'
-})
+  if (!expireTime.value) return "永久有效";
 
-const lockStore = useLockStore()
-const getIsLock = computed(() => lockStore.getLockInfo?.isLock ?? false)
-const dialogVisible = ref<boolean>(false)
-const lockScreen = () => {
-  dialogVisible.value = true
+  const now = new Date().getTime();
+  const expire = new Date(expireTime.value).getTime();
+  const diff = expire - now;
+
+  if (diff <= 0) return "已过期";
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) return `还有 ${days} 天到期`;
+  if (hours > 0) return `还有 ${hours} 小时到期`;
+  if (minutes > 0) return `还有 ${minutes} 分钟到期`;
+  return "即将到期";
+});
+
+const lockStore = useLockStore();
+const getIsLock = computed(() => lockStore.getLockInfo?.isLock ?? false);
+const dialogVisible = ref<boolean>(false);
+
+function hasRouteByName(routes: AppRouteRecordRaw[] = [], routeName: string): boolean {
+  return routes.some((route) => {
+    if (String(route.name || "") === routeName) {
+      return true;
+    }
+    return hasRouteByName(route.children || [], routeName);
+  });
 }
+
+const canAccessProfile = computed(() =>
+  hasRouteByName(permissionStore.getRouters, "PersonalSettings"),
+);
+
+const lockScreen = () => {
+  dialogVisible.value = true;
+};
 
 const loginOut = async () => {
   try {
-    await ElMessageBox.confirm(t('common.loginOutMessage'), t('common.reminder'), {
-      confirmButtonText: t('common.ok'),
-      cancelButtonText: t('common.cancel'),
-      type: 'warning'
-    })
-    await userStore.loginOut()
-    tagsViewStore.delAllViews()
-    replace('/login?redirect=/home/index')
+    await ElMessageBox.confirm(t("common.loginOutMessage"), t("common.reminder"), {
+      confirmButtonText: t("common.ok"),
+      cancelButtonText: t("common.cancel"),
+      type: "warning",
+    });
+    await userStore.loginOut();
+    tagsViewStore.delAllViews();
+    replace("/login?redirect=/home/index");
   } catch {}
-}
+};
 
 const toProfile = async () => {
-  push('/personal/settings')
-}
+  if (!canAccessProfile.value) {
+    return;
+  }
+  push("/personal/settings");
+};
 </script>
 
 <template>
@@ -77,7 +96,7 @@ const toProfile = async () => {
       <div class="user-meta <lg:hidden">
         <span class="user-name">{{ userName }}</span>
         <span class="user-role" :class="isAdmin ? 'is-admin' : 'is-member'">
-          {{ isAdmin ? 'Administrator' : 'Member' }}
+          {{ isAdmin ? "Administrator" : "Member" }}
         </span>
       </div>
       <Icon icon="ep:caret-bottom" class="user-caret" />
@@ -95,18 +114,18 @@ const toProfile = async () => {
         </div>
 
         <div class="ud-actions">
-          <ElDropdownItem @click="toProfile" class="ud-item">
+          <ElDropdownItem v-if="canAccessProfile" @click="toProfile" class="ud-item">
             <Icon icon="ep:user" class="ud-icon" />
-            {{ t('common.profile') }}
+            {{ t("common.profile") }}
           </ElDropdownItem>
           <ElDropdownItem @click="lockScreen" class="ud-item">
             <Icon icon="ep:lock" class="ud-icon" />
-            {{ t('lock.lockScreen') }}
+            {{ t("lock.lockScreen") }}
           </ElDropdownItem>
           <div class="ud-sep" />
           <ElDropdownItem @click="loginOut" class="ud-item ud-item--out">
             <Icon icon="ep:switch-button" class="ud-icon" />
-            {{ t('common.loginOut') }}
+            {{ t("common.loginOut") }}
           </ElDropdownItem>
         </div>
       </ElDropdownMenu>

@@ -1,7 +1,26 @@
 // 保留历史权限 key，避免线上已有角色权限失效；展示语义已经统一为“文件资源”。
 const FILE_RESOURCE_MENU_KEY = "resource.clip-material";
 
-export const MENU_ACCESS_GROUPS = [
+export interface MenuAccessOption {
+  key: string;
+  label: string;
+  adminOnly?: boolean;
+}
+
+export interface MenuAccessGroup {
+  label: string;
+  options: MenuAccessOption[];
+}
+
+export const ADMIN_ONLY_MENU_KEYS = new Set([
+  "system.user",
+  "system.company",
+  "system.public-user",
+  "system.websocket",
+  "system.operatelog",
+]);
+
+export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
   {
     label: "工作台",
     options: [
@@ -75,18 +94,18 @@ export const MENU_ACCESS_GROUPS = [
     options: [
       { key: "system.ai-api-key", label: "AI API Key" },
       { key: "system.message-push", label: "消息推送" },
-      { key: "system.user", label: "用户管理" },
-      { key: "system.company", label: "公司管理" },
-      { key: "system.public-user", label: "客户端用户" },
-      { key: "system.websocket", label: "WebSocket连接" },
-      { key: "system.operatelog", label: "操作日志" },
+      { key: "system.user", label: "用户管理", adminOnly: true },
+      { key: "system.company", label: "公司管理", adminOnly: true },
+      { key: "system.public-user", label: "开放用户管理", adminOnly: true },
+      { key: "system.websocket", label: "远程连接", adminOnly: true },
+      { key: "system.operatelog", label: "操作日志", adminOnly: true },
     ],
   },
   {
     label: "个人账户",
     options: [{ key: "personal.settings", label: "个人设置" }],
   },
-] as const;
+];
 
 export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   Index: "home.index",

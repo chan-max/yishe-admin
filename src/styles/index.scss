@@ -66,6 +66,7 @@
 html,
 body,
 #app {
+    font-family: var(--app-font-family-sans);
     background: var(--app-content-bg-color);
     color: var(--el-text-color-primary);
 }
@@ -74,6 +75,13 @@ body {
     transition:
         background-color var(--transition-time-02),
         color var(--transition-time-02);
+}
+
+button,
+input,
+textarea,
+select {
+    font-family: inherit;
 }
 
 .el-loading-mask {

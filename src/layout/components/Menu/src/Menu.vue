@@ -11,6 +11,7 @@ import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
 import { aiConfigState, refreshAiConfigState } from "@/services/aiConfigState";
+import { getBrowserAutomationRuntimeHint } from "@/services/browserAutomationRuntime";
 import {
   ensureServiceHealthInitialized,
   isServiceHealthKey,
@@ -121,10 +122,7 @@ export default defineComponent({
       );
     };
 
-    const renderRunningStatusDot = (
-      title: string,
-      variant?: "queue" | "psd",
-    ) => {
+    const renderRunningStatusDot = (title: string, variant?: "queue" | "psd") => {
       return renderMenuStatusHint(
         <span
           class={[
@@ -135,6 +133,59 @@ export default defineComponent({
         />,
         title,
       );
+    };
+
+    const resolveBrowserAutomationStatusTitle = (
+      status: "available" | "degraded" | "offline",
+      running: boolean,
+    ) => {
+      if (running) {
+        return "当前有任务正在执行";
+      }
+
+      if (status === "available") {
+        return "浏览器自动化可用";
+      }
+
+      if (status === "offline") {
+        return "浏览器自动化不可用";
+      }
+
+      const browserRuntimes = clientNodeStore.clients
+        .filter((client) => client.isOnline)
+        .map((client) => getClientServiceRuntime(client, "browser-automation"))
+        .filter(Boolean);
+
+      const runtimePriority = (runtime: Record<string, any>) => {
+        if (runtime.lastError || runtime.status === "error" || runtime.state === "error") {
+          return 4;
+        }
+        if (runtime.details?.hasInstance) {
+          return 3;
+        }
+        if (runtime.connected) {
+          return 2;
+        }
+        return 1;
+      };
+
+      const targetRuntime = browserRuntimes
+        .slice()
+        .sort((left, right) => runtimePriority(right) - runtimePriority(left))[0];
+
+      if (!targetRuntime) {
+        return "客户端已连接，但自动化服务未启动";
+      }
+
+      const hint = getBrowserAutomationRuntimeHint(targetRuntime);
+      if (hint === "自动化服务未启动") {
+        return "客户端已连接，但自动化服务未启动";
+      }
+      if (hint === "自动化服务异常") {
+        return "客户端已连接，但自动化服务异常";
+      }
+
+      return hint;
     };
 
     const renderStatusDot = (routePath: string) => {
@@ -170,9 +221,11 @@ export default defineComponent({
       const title =
         routePath === "/product/queue"
           ? publishTaskTooltipText.value
-          : running
-            ? "当前有任务正在执行"
-            : titleMap[routePath]?.[status];
+          : routePath === "/external/browser-automation"
+            ? resolveBrowserAutomationStatusTitle(status, running)
+            : running
+              ? "当前有任务正在执行"
+              : titleMap[routePath]?.[status];
 
       if (running) {
         return renderRunningStatusDot(
@@ -182,12 +235,7 @@ export default defineComponent({
       }
 
       return renderMenuStatusHint(
-        <span
-          class={[
-            `${prefixCls}__status-dot`,
-            `${prefixCls}__status-dot--${status}`,
-          ]}
-        />,
+        <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--${status}`]} />,
         title || "当前不可用",
       );
     };
@@ -285,9 +333,7 @@ export default defineComponent({
       });
     };
 
-    const shouldTrackAiConfig = computed(() =>
-      hasRoutePath(routers.value, "/system/ai-api-key"),
-    );
+    const shouldTrackAiConfig = computed(() => hasRoutePath(routers.value, "/system/ai-api-key"));
 
     const hasActiveChild = (route: AppRouteRecordRaw) => {
       const routePath = getRoutePath(route);

@@ -1,14 +1,16 @@
+import { ADMIN_ONLY_MENU_KEYS } from "@/constants/access-control";
+
 function readConfiguredMenuKeys(setting: any) {
   if (!setting || typeof setting !== "object") {
     return { configured: false, keys: [] as string[] };
   }
 
-  const rawMenuAccess = setting.menuAccess && typeof setting.menuAccess === "object"
-    ? setting.menuAccess
-    : null;
-  const rawAccessControl = setting.accessControl && typeof setting.accessControl === "object"
-    ? setting.accessControl
-    : null;
+  const rawMenuAccess =
+    setting.menuAccess && typeof setting.menuAccess === "object" ? setting.menuAccess : null;
+  const rawAccessControl =
+    setting.accessControl && typeof setting.accessControl === "object"
+      ? setting.accessControl
+      : null;
   const configured = !!rawMenuAccess || !!rawAccessControl;
   const keys = Array.isArray(rawMenuAccess?.keys)
     ? rawMenuAccess.keys
@@ -18,7 +20,7 @@ function readConfiguredMenuKeys(setting: any) {
 
   return {
     configured,
-    keys: Array.from(new Set(keys.map((item: any) => String(item || "").trim()).filter(Boolean)))
+    keys: Array.from(new Set(keys.map((item: any) => String(item || "").trim()).filter(Boolean))),
   };
 }
 
@@ -26,14 +28,10 @@ const ALWAYS_ALLOW_ROUTE_NAMES = new Set([
   "Root",
   "RedirectRoot",
   "Redirect",
-  "Home",
-  "Index",
   "Login",
   "NoAccess",
   "NoFound",
   "Error",
-  "Personal",
-  "PersonalSettings",
   "UserProfileCompat",
 ]);
 
@@ -52,12 +50,18 @@ export function hasRouteMenuAccess(route: AppRouteRecordRaw, user: any) {
   }
 
   if (menuKey) {
-    if (configured) {
-      return keys.includes(menuKey);
-    }
     if (isAdmin) {
       return true;
     }
+
+    if (route.meta?.requiresAdmin || ADMIN_ONLY_MENU_KEYS.has(menuKey)) {
+      return false;
+    }
+
+    if (configured) {
+      return keys.includes(menuKey);
+    }
+
     return menuKey === "personal.settings";
   }
 
