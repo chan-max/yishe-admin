@@ -51,7 +51,7 @@ const initTags = () => {
   for (const tag of unref(affixTagArr)) {
     // Must have tag name
     if (tag.name) {
-      tagsViewStore.addVisitedView(cloneDeep(tag));
+      tagsViewStore.addVisitedView(cloneDeep(tag) as RouteLocationNormalizedLoaded);
     }
   }
 };

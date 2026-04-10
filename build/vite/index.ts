@@ -2,7 +2,6 @@ import { resolve } from 'path'
 import Vue from '@vitejs/plugin-vue'
 import VueJsx from '@vitejs/plugin-vue-jsx'
 import progress from 'vite-plugin-progress'
-import EslintPlugin from 'vite-plugin-eslint'
 import PurgeIcons from 'vite-plugin-purge-icons'
 import { ViteEjsPlugin } from 'vite-plugin-ejs'
 // @ts-ignore
@@ -16,10 +15,10 @@ import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import UnoCSS from 'unocss/vite'
 
-export function createVitePlugins() {
-  const root = process.cwd()
+export function createVitePlugins(root = process.cwd()) {
   const skipAutoImportDts = process.env.SKIP_VITE_DTS_WRITE === 'true'
   const skipProgressCache = process.env.SKIP_VITE_PROGRESS_CACHE === 'true'
+  const generatedTypesDir = resolve(root, 'types/generated')
 
   // 路径查找
   function pathResolve(dir: string) {
@@ -53,7 +52,7 @@ export function createVitePlugins() {
           '@/utils/dict': ['DICT_TYPE']
         }
       ],
-      dts: skipAutoImportDts ? false : 'src/types/auto-imports.d.ts',
+      dts: skipAutoImportDts ? false : resolve(generatedTypesDir, 'auto-imports.d.ts'),
       resolvers: [ElementPlusResolver()],
       eslintrc: {
         enabled: false, // Default `false`
@@ -63,19 +62,15 @@ export function createVitePlugins() {
     }),
     Components({
       // 生成自定义 `auto-components.d.ts` 全局声明
-      dts: skipAutoImportDts ? false : 'src/types/auto-components.d.ts',
+      dts: skipAutoImportDts ? false : resolve(generatedTypesDir, 'auto-components.d.ts'),
       // 自定义组件的解析器
       resolvers: [ElementPlusResolver()],
       globs: ["src/components/**/**.{vue, md}", '!src/components/DiyEditor/components/mobile/**']
     }),
-    // EslintPlugin({
-    //   cache: false,
-    //   include: ['src/**/*.vue', 'src/**/*.ts', 'src/**/*.tsx'] // 检查的文件
-    // }),
     VueI18nPlugin({
       runtimeOnly: true,
       compositionOnly: true,
-      include: [resolve(__dirname, 'src/locales/**')]
+      include: [pathResolve('src/locales/**')]
     }),
     createSvgIconsPlugin({
       iconDirs: [pathResolve('src/assets/svgs')],

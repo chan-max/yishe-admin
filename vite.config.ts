@@ -1,6 +1,5 @@
-import {resolve} from 'path'
-import type {ConfigEnv, UserConfig} from 'vite'
-import {loadEnv} from 'vite'
+import { resolve } from 'path'
+import { defineConfig, loadEnv, type ConfigEnv } from 'vite'
 import {createVitePlugins} from './build/vite'
 import {exclude, include} from "./build/vite/optimize"
 // 当前执行node命令时文件夹的地址(工作目录)
@@ -12,20 +11,15 @@ function pathResolve(dir: string) {
 }
 
 // https://vitejs.dev/config/
-export default ({command, mode}: ConfigEnv): UserConfig => {
-    let env = {} as any
-    const isBuild = command === 'build'
-    if (!isBuild) {
-        env = loadEnv((process.argv[3] === '--mode' ? process.argv[4] : process.argv[3]), root)
-    } else {
-        env = loadEnv(mode, root)
-    }
+export default defineConfig(({ mode }: ConfigEnv) => {
+    const env = loadEnv(mode, root, '')
+    const scssVariablesEntry = pathResolve('src/styles/variables.scss')
     return {
         base: env.VITE_BASE_PATH,
         root: root,
         // 服务端渲染
         server: {
-            port: env.VITE_PORT, // 端口号
+            port: Number(env.VITE_PORT) || 5173, // 端口号
             host: "0.0.0.0",
             open: env.VITE_OPEN === 'true',
             // 本地跨域代理. 目前注释的原因：暂时没有用途，server 端已经支持跨域
@@ -39,11 +33,11 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
             // },
         },
         // 项目使用的vite插件。 单独提取到build/vite/plugin中管理
-        plugins: createVitePlugins(),
+        plugins: createVitePlugins(root),
         css: {
             preprocessorOptions: {
                 scss: {
-                    additionalData: '@use "@/styles/variables.scss" as *;',
+                    additionalData: `@use "${scssVariablesEntry}" as *;`,
                     javascriptEnabled: true,
                     silenceDeprecations: ["legacy-js-api"], // 参考自 https://stackoverflow.com/questions/78997907/the-legacy-js-api-is-deprecated-and-will-be-removed-in-dart-sass-2-0-0
                 }
@@ -75,13 +69,12 @@ export default ({command, mode}: ConfigEnv): UserConfig => {
             },
             rollupOptions: {
                 output: {
-                    manualChunks: {
-                        echarts: ['echarts'] // 将 echarts 单独打包，参考 https://gitee.com/yudaocode/yudao-ui-admin-vue3/issues/IAB1SX 讨论
+                    manualChunks(id) {
+                        return id.includes('node_modules/echarts') ? 'echarts' : undefined
                     }
                 },
             },
         },
         optimizeDeps: {include, exclude}
     }
-}
-
+})
