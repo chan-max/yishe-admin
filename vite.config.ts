@@ -1,4 +1,5 @@
 import { resolve } from 'path'
+import { pathToFileURL } from 'url'
 import { defineConfig, loadEnv, type ConfigEnv } from 'vite'
 import {createVitePlugins} from './build/vite'
 import {exclude, include} from "./build/vite/optimize"
@@ -13,7 +14,7 @@ function pathResolve(dir: string) {
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }: ConfigEnv) => {
     const env = loadEnv(mode, root, '')
-    const scssVariablesEntry = pathResolve('src/styles/variables.scss')
+    const scssVariablesEntry = pathToFileURL(pathResolve('src/styles/variables.scss')).href
     return {
         base: env.VITE_BASE_PATH,
         root: root,

@@ -11,7 +11,6 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import viteCompression from 'vite-plugin-compression'
 import topLevelAwait from 'vite-plugin-top-level-await'
-import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import UnoCSS from 'unocss/vite'
 
@@ -66,11 +65,6 @@ export function createVitePlugins(root = process.cwd()) {
       // 自定义组件的解析器
       resolvers: [ElementPlusResolver()],
       globs: ["src/components/**/**.{vue, md}", '!src/components/DiyEditor/components/mobile/**']
-    }),
-    VueI18nPlugin({
-      runtimeOnly: true,
-      compositionOnly: true,
-      include: [pathResolve('src/locales/**')]
     }),
     createSvgIconsPlugin({
       iconDirs: [pathResolve('src/assets/svgs')],

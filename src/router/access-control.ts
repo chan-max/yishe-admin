@@ -24,6 +24,7 @@ function readConfiguredMenuKeys(setting: any) {
 
 const ALWAYS_ALLOW_ROUTE_NAMES = new Set([
   "Root",
+  "RedirectRoot",
   "Redirect",
   "Home",
   "Index",
