@@ -65,7 +65,14 @@
 
 html,
 body,
-#app {
+#app,
+.el-config-provider,
+.el-overlay,
+.el-overlay-dialog,
+.el-popper,
+.el-message,
+.el-message-box,
+.el-notification {
     font-family: var(--app-font-family-sans);
     background: var(--app-content-bg-color);
     color: var(--el-text-color-primary);

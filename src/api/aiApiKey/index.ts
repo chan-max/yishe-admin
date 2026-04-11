@@ -31,6 +31,7 @@ export interface AiFeatureRegistryItem {
   code: string;
   label: string;
   group: string;
+  scene: string;
   description: string;
 }
 

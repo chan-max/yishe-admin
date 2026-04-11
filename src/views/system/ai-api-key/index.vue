@@ -302,10 +302,7 @@ const resetPlainKeyState = () => {
 const getList = async () => {
   loading.value = true;
   try {
-    const [mineData, publicData] = await Promise.all([
-      getAiApiKeyList(),
-      getPublicAiApiKeyList(),
-    ]);
+    const [mineData, publicData] = await Promise.all([getAiApiKeyList(), getPublicAiApiKeyList()]);
     mineList.value = Array.isArray(mineData) ? mineData : [];
     publicList.value = Array.isArray(publicData) ? publicData : [];
     resetPlainKeyState();

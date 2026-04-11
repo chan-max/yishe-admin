@@ -1,8 +1,9 @@
 :root,
 html.light {
   color-scheme: light;
-  --app-font-family-sans: "SimHei", "Heiti SC", "Noto Sans SC",
-    "Microsoft YaHei", "PingFang SC", sans-serif;
+  --app-font-family-sans: "Noto Sans SC","Microsoft YaHei","SimHei", "Heiti SC", "STHeiti",
+    "Source Han Sans SC",
+    "PingFang SC", sans-serif;
   --el-font-family: var(--app-font-family-sans);
 
   --login-bg-color: #f3f7fd;

@@ -103,15 +103,19 @@
       :model="formData"
       :rules="formRules"
       label-width="100px"
-      class="space-y-4"
+      class="space-y-4 company-dialog-form"
     >
       <!-- 基本信息 -->
       <div class="list-page-dialog-section">
         <div class="list-page-dialog-section__title">基本信息</div>
-        <el-form-item label="公司名称" prop="name">
+        <el-form-item label="公司名称" prop="name" class="company-dialog-form__control-item">
           <el-input v-model="formData.name" placeholder="请输入公司名称" />
         </el-form-item>
-        <el-form-item label="邀请码" prop="inviteCode">
+        <el-form-item
+          label="邀请码"
+          prop="inviteCode"
+          class="company-dialog-form__control-item"
+        >
           <el-input v-model="formData.inviteCode" placeholder="系统自动生成">
             <template #append>
               <el-button
@@ -137,12 +141,16 @@
       <!-- 其他设置 -->
       <div class="list-page-dialog-section">
         <div class="list-page-dialog-section__title">其他设置</div>
-        <el-form-item label="过期时间" prop="expireTime">
+        <el-form-item
+          label="过期时间"
+          prop="expireTime"
+          class="company-dialog-form__control-item"
+        >
           <el-date-picker
             v-model="formData.expireTime"
             type="datetime"
             placeholder="请选择过期时间"
-            class="!w-full"
+            class="company-dialog-form__date-picker !w-full"
             :disabled-date="(date) => date.getTime() < Date.now() - 86400000"
           />
         </el-form-item>
@@ -423,5 +431,32 @@ getList();
 
 :deep(.company-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.company-dialog-form :deep(.company-dialog-form__control-item .el-form-item__label) {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: normal;
+}
+
+.company-dialog-form :deep(.company-dialog-form__control-item .el-form-item__content) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
+}
+
+.company-dialog-form :deep(.company-dialog-form__date-picker.el-date-editor) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+}
+
+.company-dialog-form :deep(.company-dialog-form__date-picker .el-input__wrapper) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
 }
 </style>

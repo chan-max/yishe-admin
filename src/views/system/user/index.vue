@@ -125,8 +125,8 @@
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="access" :disabled="row.isAdmin">
-                            <span>{{ row.isAdmin ? "管理员默认全部权限" : "分配权限" }}</span>
+                          <el-dropdown-item command="access">
+                            <span>{{ row.isAdmin ? "权限设置" : "分配权限" }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="resetPassword"
@@ -182,7 +182,7 @@
       :model="formData"
       :rules="formRules"
       label-width="100px"
-      class="space-y-4"
+      class="space-y-4 user-dialog-form"
     >
       <!-- 基础信息 -->
       <div class="list-page-dialog-section">
@@ -215,7 +215,7 @@
                 v-model="formData.birthday"
                 type="date"
                 placeholder="请选择出生日期"
-                class="!w-full"
+                class="user-dialog-form__date-picker !w-full"
               />
             </el-form-item>
           </el-col>
@@ -293,7 +293,7 @@
                 v-model="formData.expireTime"
                 type="datetime"
                 placeholder="请选择过期时间"
-                class="!w-full"
+                class="user-dialog-form__date-picker !w-full"
                 :disabled-date="(date) => date.getTime() < Date.now() - 86400000"
               />
             </el-form-item>
@@ -337,6 +337,7 @@
       :model="passwordFormData"
       :rules="passwordFormRules"
       label-width="100px"
+      class="user-dialog-form"
     >
       <div class="list-page-dialog-section">
         <el-form-item label="新密码" prop="newPassword">
@@ -679,10 +680,6 @@ function handleAssignAccess(row) {
     ElMessage.warning("仅管理员可分配权限");
     return;
   }
-  if (row?.isAdmin) {
-    ElMessage.info("管理员默认拥有全部菜单权限，无需分配");
-    return;
-  }
   accessTarget.id = String(row.id || "");
   accessTarget.name = row.name || row.account || "";
   accessTarget.isAdmin = !!row.isAdmin;
@@ -839,5 +836,32 @@ getCompanyListData();
 
 :deep(.user-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.user-dialog-form :deep(.el-form-item__label) {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: normal;
+}
+
+.user-dialog-form :deep(.el-form-item__content) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
+}
+
+.user-dialog-form :deep(.user-dialog-form__date-picker.el-date-editor) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+}
+
+.user-dialog-form :deep(.user-dialog-form__date-picker .el-input__wrapper) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
 }
 </style>

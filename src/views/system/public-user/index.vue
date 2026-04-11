@@ -124,7 +124,7 @@
       :model="formData"
       :rules="formRules"
       label-width="100px"
-      class="space-y-4"
+      class="space-y-4 public-user-dialog-form"
     >
       <!-- 基础信息 -->
       <div class="list-page-dialog-section">
@@ -161,7 +161,7 @@
                 v-model="formData.birthday"
                 type="date"
                 placeholder="请选择出生日期"
-                class="!w-full"
+                class="public-user-dialog-form__date-picker !w-full"
               />
             </el-form-item>
           </el-col>
@@ -523,5 +523,32 @@ getList();
 
 :deep(.public-user-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.public-user-dialog-form :deep(.el-form-item__label) {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: normal;
+}
+
+.public-user-dialog-form :deep(.el-form-item__content) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
+}
+
+.public-user-dialog-form :deep(.public-user-dialog-form__date-picker.el-date-editor) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: var(--ep-cover-control-height-lg, 38px);
+}
+
+.public-user-dialog-form :deep(.public-user-dialog-form__date-picker .el-input__wrapper) {
+  min-height: var(--ep-cover-control-height-lg, 38px);
+  align-items: center;
 }
 </style>

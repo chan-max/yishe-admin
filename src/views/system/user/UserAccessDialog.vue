@@ -12,7 +12,11 @@
           <div class="access-dialog__section access-dialog__section--ai">
             <div class="access-dialog__title">共享 AI 使用权限</div>
             <div class="access-dialog__desc">
-              控制该用户是否可以选择管理员公开的 AI Key。
+              {{
+                targetUserIsAdmin
+                  ? "管理员默认可使用公开 AI Key，无需额外开通。"
+                  : "控制该用户是否可以选择管理员公开的 AI Key。"
+              }}
             </div>
             <div class="access-dialog__ai-row">
               <el-switch
@@ -35,8 +39,12 @@
             <div class="access-dialog__heading">
               <div>
                 <div class="access-dialog__title">菜单权限</div>
-                <div v-if="!targetUserIsAdmin" class="access-dialog__desc">
-                  管理员专属菜单仅管理员用户可分配
+                <div class="access-dialog__desc">
+                  {{
+                    targetUserIsAdmin
+                      ? "管理员默认拥有全部菜单权限，这里展示当前生效范围。"
+                      : "管理员专属菜单仅管理员用户可分配"
+                  }}
                 </div>
               </div>
               <div class="access-dialog__toolbar">
@@ -172,9 +180,9 @@ async function handleOpen() {
   resetForm();
   try {
     const accessControl = await getUserAccessSetting({ userId: props.userId });
-    form.menuKeys = sanitizeMenuKeys(
-      Array.isArray(accessControl?.menuKeys) ? accessControl.menuKeys : [],
-    );
+    form.menuKeys = targetUserIsAdmin.value
+      ? [...selectableMenuKeys.value]
+      : sanitizeMenuKeys(Array.isArray(accessControl?.menuKeys) ? accessControl.menuKeys : []);
     form.aiAccessEnabled = targetUserIsAdmin.value
       ? true
       : !!accessControl?.aiAccessEnabled;
@@ -192,7 +200,9 @@ async function handleSubmit() {
 
   submitLoading.value = true;
   try {
-    const menuKeys = sanitizeMenuKeys(form.menuKeys);
+    const menuKeys = targetUserIsAdmin.value
+      ? [...selectableMenuKeys.value]
+      : sanitizeMenuKeys(form.menuKeys);
     const aiAccessEnabled = targetUserIsAdmin.value ? true : !!form.aiAccessEnabled;
     await updateUserAccessSetting({
       userId: props.userId,
