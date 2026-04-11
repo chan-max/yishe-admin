@@ -4,12 +4,6 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">电商采集原始数据</div>
-              <div class="resource-toolbar__desc">
-                保留平台原始返回、截图快照和回溯链接，详情展示按平台组件拆分维护。
-              </div>
-            </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
             </div>
@@ -18,18 +12,23 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="7">
-                <el-form-item label="记录标识 / 来源链接">
+                <el-form-item label="运行 ID / 任务名称">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="搜索 recordKey / 来源链接"
+                    placeholder="搜索运行 ID / 任务名称"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="平台">
-                  <el-select v-model="filters.platform" clearable placeholder="平台">
+                  <el-select
+                    v-model="filters.platform"
+                    clearable
+                    placeholder="平台"
+                    @change="handlePlatformFilterChange"
+                  >
                     <el-option
                       v-for="item in catalog.platforms"
                       :key="item.value"
@@ -40,11 +39,28 @@
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
+                <el-form-item label="任务类型">
+                  <el-select
+                    v-model="filters.taskType"
+                    clearable
+                    filterable
+                    placeholder="任务类型"
+                  >
+                    <el-option
+                      v-for="item in availableTaskTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="任务 ID">
                   <el-input v-model="filters.taskId" clearable placeholder="任务 ID" />
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
+              <el-col :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="运行 ID">
                   <el-input v-model="filters.runId" clearable placeholder="运行 ID" />
                 </el-form-item>
@@ -81,29 +97,22 @@
                   <div class="table-stack">
                     <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
                     <span class="table-meta-text">
-                      {{ getSceneLabel(catalog, row.platform, row.collectScene) }}
+                      {{ getTaskTypeLabel(catalog, row.platform, row.taskType) }}
                     </span>
                   </div>
                 </template>
 
-                <template #recordKeySlot="{ row }">
-                  <span class="mono">{{ row.recordKey || "-" }}</span>
-                </template>
-
-                <template #titleSlot="{ row }">
-                  <span class="table-meta-text">{{ getRawTitle(row) }}</span>
-                </template>
-
-                <template #sourceUrlSlot="{ row }">
-                  <el-link
-                    v-if="getRawLink(row)"
-                    :href="getRawLink(row)"
-                    target="_blank"
-                    type="primary"
+                <template #runStatusSlot="{ row }">
+                  <el-tag
+                    size="small"
+                    :type="getRunStatusTagType(getRawRunStatus(row))"
                   >
-                    {{ getShortUrl(getRawLink(row)) }}
-                  </el-link>
-                  <span v-else>-</span>
+                    {{ getRunStatusLabel(getRawRunStatus(row)) }}
+                  </el-tag>
+                </template>
+
+                <template #summarySlot="{ row }">
+                  <span class="table-meta-text">{{ getRawSummaryMessage(row) }}</span>
                 </template>
 
                 <template #operationSlot="{ row }">
@@ -202,11 +211,14 @@ import {
   createEmptyEcomCollectCatalog,
   formatDateTime,
   getPlatformLabel,
-  getRawLink,
-  getRawTitle,
-  getSceneLabel,
-  getShortUrl,
+  getRawRecordsCount,
+  getRawRunStatus,
+  getRawSummaryMessage,
+  getRunStatusLabel,
+  getRunStatusTagType,
   getSnapshotCount,
+  getTaskTypeLabel,
+  getTaskTypeSchemas,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectRawPage" });
@@ -228,14 +240,20 @@ const filters = reactive({
   pageSize: 10,
   keyword: "",
   platform: "",
+  taskType: "",
   taskId: "",
   runId: "",
 });
+
+const availableTaskTypeOptions = computed(() =>
+  getTaskTypeSchemas(catalog, filters.platform),
+);
 
 const syncQueryToFilters = () => {
   filters.runId = String(route.query.runId || "").trim();
   filters.taskId = String(route.query.taskId || "").trim();
   filters.platform = String(route.query.platform || "").trim();
+  filters.taskType = String(route.query.taskType || "").trim();
 };
 
 const updateSelectedIds = (records: EcomPlatformRawRecord[] = []) => {
@@ -265,41 +283,44 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
     { type: "checkbox", width: 48 },
     { title: "任务名称", field: "taskName", minWidth: 160, showOverflow: "tooltip" },
     {
-      title: "平台 / 场景",
+      title: "平台 / 任务类型",
       field: "platform",
       width: 160,
       slots: { default: "platformSceneSlot" },
     },
     {
-      title: "记录标识",
-      field: "recordKey",
-      minWidth: 180,
-      showOverflow: "tooltip",
-      slots: { default: "recordKeySlot" },
+      title: "运行状态",
+      field: "runStatus",
+      width: 110,
+      slots: { default: "runStatusSlot" },
     },
     {
-      title: "原始摘要",
-      field: "rawTitle",
-      minWidth: 260,
-      showOverflow: "tooltip",
-      slots: { default: "titleSlot" },
-    },
-    {
-      title: "来源链接",
-      field: "sourceUrl",
+      title: "执行摘要",
+      field: "summaryMessage",
       minWidth: 240,
       showOverflow: "tooltip",
-      slots: { default: "sourceUrlSlot" },
+      slots: { default: "summarySlot" },
+    },
+    {
+      title: "记录数",
+      field: "recordsCount",
+      width: 90,
+      formatter: ({ row }) => getRawRecordsCount(row),
     },
     {
       ...buildTimeColumn("采集时间", "capturedAt", 180),
       formatter: ({ cellValue }) => formatDateTime(cellValue as string),
     },
     {
+      ...buildTimeColumn("完成时间", "finishedAt", 180),
+      formatter: ({ row }) => formatDateTime(row.finishedAt || row.run?.finishedAt),
+    },
+    {
       title: "截图数",
       field: "snapshotData",
       width: 80,
-      formatter: ({ row }) => getSnapshotCount(row.snapshotData),
+      formatter: ({ row }) =>
+        Number(row.snapshotCount) || getSnapshotCount(row.snapshotData),
     },
     buildOperationColumn("operationSlot", 120),
   ],
@@ -349,10 +370,20 @@ const handleSearch = async () => {
   await loadList();
 };
 
+const handlePlatformFilterChange = () => {
+  if (
+    filters.taskType &&
+    !availableTaskTypeOptions.value.some((item) => item.value === filters.taskType)
+  ) {
+    filters.taskType = "";
+  }
+};
+
 const handleReset = async () => {
   filters.pageNo = 1;
   filters.keyword = "";
   filters.platform = "";
+  filters.taskType = "";
   filters.taskId = "";
   filters.runId = "";
   await loadList();
@@ -380,7 +411,7 @@ const handleOperationCommand = (command: string, row: EcomPlatformRawRecord) => 
 const openDetail = async (row: EcomPlatformRawRecord) => {
   detailLoading.value = true;
   detailVisible.value = true;
-  detailTitle.value = `原始数据详情 · ${row.recordKey || row.id}`;
+  detailTitle.value = `原始数据详情 · ${row.runId || row.id}`;
   try {
     const detail = await getEcomPlatformRawRecordDetail(row.id);
     currentDetail.value = {

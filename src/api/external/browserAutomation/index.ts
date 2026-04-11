@@ -143,6 +143,32 @@ export interface BrowserAutomationProfilesPayload {
   items: BrowserAutomationProfileSummary[];
 }
 
+export interface BrowserAutomationSmallFeatureFieldOption {
+  label?: string;
+  value?: string | number | boolean;
+}
+
+export interface BrowserAutomationSmallFeatureFieldSchema {
+  key: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  placeholder?: string;
+  description?: string;
+  defaultValue?: unknown;
+  options?: BrowserAutomationSmallFeatureFieldOption[];
+}
+
+export interface BrowserAutomationSmallFeatureItem {
+  key: string;
+  name: string;
+  platform?: string;
+  category?: string;
+  description?: string;
+  tips?: string[];
+  fields?: BrowserAutomationSmallFeatureFieldSchema[];
+}
+
 export const getBrowserAutomationClients = () => {
   return request.get<BrowserAutomationClientVO[]>({ url: "/external/browser-automation/clients" });
 };
@@ -277,6 +303,22 @@ export const getBrowserAutomationPlatforms = (clientId: string) => {
 export const getBrowserAutomationLoginStatus = (clientId: string, data?: { refresh?: boolean }) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/login-status`,
+    data,
+  });
+};
+
+export const getBrowserAutomationSmallFeatures = (clientId: string) => {
+  return request.get<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/small-features`,
+  });
+};
+
+export const runBrowserAutomationSmallFeature = (
+  clientId: string,
+  data: Record<string, any>,
+) => {
+  return request.post<BrowserAutomationCommandResponse>({
+    url: `/external/browser-automation/${clientId}/small-features/run`,
     data,
   });
 };

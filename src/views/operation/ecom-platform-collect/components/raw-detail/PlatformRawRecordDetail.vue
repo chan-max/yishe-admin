@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { EcomPlatformCollectCatalog, EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
+import RunPackageRawRenderer from "./RunPackageRawRenderer.vue";
 import AmazonRawRecordRenderer from "./platforms/AmazonRawRecordRenderer.vue";
 import TemuRawRecordRenderer from "./platforms/TemuRawRecordRenderer.vue";
 import TiktokShopRawRecordRenderer from "./platforms/TiktokShopRawRecordRenderer.vue";
@@ -32,8 +33,16 @@ const rendererMap: Record<string, any> = {
   shein: SheinRawRecordRenderer,
 };
 
+const isRunPackageRecord = computed(() =>
+  Array.isArray(props.record?.collectData?.records) ||
+  String(props.record?.collectData?.packageType || "").trim() === "run_result",
+);
+
 const renderer = computed(
-  () => rendererMap[String(props.record.platform || "").trim()] || DefaultRawRecordRenderer,
+  () =>
+    isRunPackageRecord.value
+      ? RunPackageRawRenderer
+      : rendererMap[String(props.record.platform || "").trim()] || DefaultRawRecordRenderer,
 );
 
 const platformLabel = computed(() =>
@@ -41,6 +50,13 @@ const platformLabel = computed(() =>
 );
 
 const rendererProps = computed(() => {
+  if (renderer.value === RunPackageRawRenderer) {
+    return {
+      record: props.record,
+      catalog: props.catalog,
+    };
+  }
+
   if (renderer.value === DefaultRawRecordRenderer) {
     return {
       record: props.record,

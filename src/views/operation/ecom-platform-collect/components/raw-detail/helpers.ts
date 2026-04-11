@@ -164,7 +164,7 @@ export const normalizeSnapshotItems = (value: unknown) => {
 export const getDefaultHeroTitle = (record: EcomPlatformRawRecord) => {
   return (
     normalizeDisplayValue(
-      pickFirstValue(record.rawPayload, [
+      pickFirstValue(record.collectData, [
         "title",
         "name",
         "productName",
@@ -172,7 +172,6 @@ export const getDefaultHeroTitle = (record: EcomPlatformRawRecord) => {
         "descriptionText",
       ]),
     ) ||
-    record.recordKey ||
     record.id
   );
 };

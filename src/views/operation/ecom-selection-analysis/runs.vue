@@ -278,17 +278,17 @@
 
               <div
                 class="detail-mini-section"
-                v-if="detailSourceStats.collectSceneBreakdown?.length"
+                v-if="detailSourceStats.taskTypeBreakdown?.length"
               >
-                <div class="detail-mini-section__title">场景分布</div>
+                <div class="detail-mini-section__title">任务类型分布</div>
                 <div class="chip-list">
                   <el-tag
-                    v-for="item in detailSourceStats.collectSceneBreakdown"
-                    :key="item.collectScene"
+                    v-for="item in detailSourceStats.taskTypeBreakdown"
+                    :key="item.taskType"
                     size="small"
                     type="info"
                   >
-                    {{ item.collectScene }} · {{ item.count }}
+                    {{ item.taskType }} · {{ item.count }}
                   </el-tag>
                 </div>
               </div>
@@ -479,7 +479,7 @@
                     </div>
                     <div class="detail-chip-row">
                       <el-tag size="small">{{ item.platform || "-" }}</el-tag>
-                      <el-tag size="small" type="info">{{ item.collectScene || "-" }}</el-tag>
+                      <el-tag size="small" type="info">{{ item.taskType || "-" }}</el-tag>
                       <el-tag size="small" type="success" v-if="item.hasDetailData">含详情</el-tag>
                     </div>
                   </div>

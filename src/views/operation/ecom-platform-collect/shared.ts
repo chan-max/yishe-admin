@@ -1,10 +1,31 @@
 import type {
   EcomCollectPlatformSchema,
   EcomCollectSceneSchema,
+  EcomCollectTaskTypeSchema,
   EcomPlatformCollectCatalog,
   EcomPlatformRawRecord,
 } from "@/api/operation/ecomPlatformCollect";
 import { formatDate } from "@/utils/formatTime";
+
+export const buildDefaultTaskTypeValue = (
+  platform?: string | null,
+  collectScene?: string | null,
+) => {
+  const normalizedPlatform = String(platform || "").trim();
+  const normalizedScene = String(collectScene || "").trim();
+  if (!normalizedPlatform || !normalizedScene) {
+    return "";
+  }
+  return `${normalizedPlatform}.${normalizedScene}`;
+};
+
+export const resolveTaskTypeValue = (
+  _platform?: string | null,
+  taskType?: string | null,
+  _collectScene?: string | null,
+) => {
+  return String(taskType || "").trim() || "";
+};
 
 export const createEmptyEcomCollectCatalog = (): EcomPlatformCollectCatalog => ({
   platforms: [],
@@ -61,6 +82,81 @@ export const getSceneSchema = (
     ) as EcomCollectSceneSchema | null;
   }
   return null;
+};
+
+const buildFallbackTaskTypeSchema = (
+  platform: EcomCollectPlatformSchema,
+  scene: EcomCollectSceneSchema,
+): EcomCollectTaskTypeSchema => {
+  const value = buildDefaultTaskTypeValue(platform.value, scene.value);
+  return {
+    value,
+    taskType: value,
+    label: scene.label || value,
+    description: scene.description,
+    platform: platform.value,
+    collectScene: scene.value,
+    availability: scene.availability,
+    availabilityLabel: scene.availabilityLabel,
+    runnable: scene.runnable,
+    verification: scene.verification,
+    verificationLabel: scene.verificationLabel,
+    reason: scene.reason || null,
+    fields: Array.isArray(scene.fields) ? scene.fields : [],
+    docs: scene.docs,
+  };
+};
+
+export const getTaskTypeSchemas = (
+  catalog: EcomPlatformCollectCatalog,
+  platformValue?: string | null,
+) => {
+  const platform = getPlatformSchema(catalog, platformValue);
+  if (!platform) {
+    return [] as EcomCollectTaskTypeSchema[];
+  }
+  if (Array.isArray(platform.taskTypes) && platform.taskTypes.length) {
+    return platform.taskTypes;
+  }
+  if (Array.isArray(platform.scenes)) {
+    return platform.scenes.map((scene) => buildFallbackTaskTypeSchema(platform, scene));
+  }
+  return [] as EcomCollectTaskTypeSchema[];
+};
+
+export const getTaskTypeSchema = (
+  catalog: EcomPlatformCollectCatalog,
+  platformValue?: string | null,
+  taskTypeValue?: string | null,
+  _collectSceneValue?: string | null,
+) => {
+  const taskTypes = getTaskTypeSchemas(catalog, platformValue);
+  const normalizedTaskType = resolveTaskTypeValue(platformValue, taskTypeValue);
+  if (normalizedTaskType) {
+    return (
+      taskTypes.find((item) => item.value === normalizedTaskType) || null
+    ) as EcomCollectTaskTypeSchema | null;
+  }
+  return null;
+};
+
+export const getTaskTypeLabel = (
+  catalog: EcomPlatformCollectCatalog,
+  platformValue?: string | null,
+  taskTypeValue?: string | null,
+  collectSceneValue?: string | null,
+) => {
+  const taskType = getTaskTypeSchema(
+    catalog,
+    platformValue,
+    taskTypeValue,
+    collectSceneValue,
+  );
+  return (
+    taskType?.label ||
+    resolveTaskTypeValue(platformValue, taskTypeValue) ||
+    "-"
+  );
 };
 
 export const getCapabilityStatusLabel = (value?: string | null) => {
@@ -136,7 +232,23 @@ export const formatJson = (value: any) => {
   }
 };
 
+export const getRawPackageRecords = (row: EcomPlatformRawRecord) => {
+  return Array.isArray(row?.collectData?.records) ? row.collectData.records : [];
+};
+
+export const getRawRecordsCount = (row: EcomPlatformRawRecord) => {
+  const explicitCount = Number(row?.recordsCount);
+  if (Number.isFinite(explicitCount) && explicitCount >= 0) {
+    return explicitCount;
+  }
+  return getRawPackageRecords(row).length;
+};
+
 export const getSnapshotCount = (value: any) => {
+  const explicitCount = Number(value?.snapshotCount);
+  if (Number.isFinite(explicitCount) && explicitCount >= 0) {
+    return explicitCount;
+  }
   if (Array.isArray(value)) {
     return value.length;
   }
@@ -146,13 +258,31 @@ export const getSnapshotCount = (value: any) => {
   return 0;
 };
 
+export const getRawSummaryMessage = (row: EcomPlatformRawRecord) => {
+  return String(
+    row?.summaryMessage ||
+      row?.collectData?.message ||
+      row?.collectData?.summary?.message ||
+      row?.summaryData?.message ||
+      row?.run?.summaryData?.message ||
+      "-",
+  );
+};
+
+export const getRawRunStatus = (row: EcomPlatformRawRecord) => {
+  return String(
+    row?.runStatus || row?.collectData?.status || row?.run?.status || "",
+  ).trim();
+};
+
 export const getRawTitle = (row: EcomPlatformRawRecord) => {
   return String(
-    row?.rawPayload?.title ||
-      row?.rawPayload?.name ||
-      row?.rawPayload?.pageTitle ||
-      row?.rawPayload?.descriptionText ||
-      row?.rawPayload?.productName ||
+    row?.collectData?.title ||
+      row?.collectData?.summary?.message ||
+      row?.collectData?.name ||
+      row?.collectData?.pageTitle ||
+      row?.collectData?.descriptionText ||
+      row?.collectData?.productName ||
       "-",
   );
 };
@@ -170,9 +300,11 @@ export const getShortUrl = (value?: string | null) => {
 
 export const getRawLink = (row: EcomPlatformRawRecord) => {
   return String(
-    row?.rawPayload?.originalSourceUrl ||
-      row?.rawPayload?.sourceUrl ||
-      row?.sourceUrl ||
+    row?.collectData?.records?.[0]?.originalSourceUrl ||
+      row?.collectData?.records?.[0]?.sourceUrl ||
+      row?.collectData?.records?.[0]?.url ||
+    row?.collectData?.originalSourceUrl ||
+      row?.collectData?.sourceUrl ||
       "",
   ).trim();
 };

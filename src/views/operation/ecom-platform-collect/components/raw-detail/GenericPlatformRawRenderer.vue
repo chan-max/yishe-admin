@@ -10,7 +10,7 @@
         <div v-if="heroPrice" class="platform-raw-renderer__price">{{ heroPrice }}</div>
         <div class="platform-raw-renderer__meta">
           <span>记录标识</span>
-          <span class="mono">{{ record.recordKey || "-" }}</span>
+          <span class="mono">{{ recordIdentity }}</span>
         </div>
         <div class="platform-raw-renderer__meta">
           <span>采集时间</span>
@@ -110,7 +110,7 @@
 
     <div class="platform-raw-renderer__section">
       <div class="platform-raw-renderer__section-title">原始 JSON</div>
-      <pre class="platform-raw-renderer__json">{{ formatJson(record.rawPayload || {}) }}</pre>
+      <pre class="platform-raw-renderer__json">{{ formatJson(collectData) }}</pre>
     </div>
   </div>
 </template>
@@ -151,30 +151,36 @@ const props = withDefaults(
   },
 );
 
+const collectData = computed(() =>
+  props.record?.collectData && typeof props.record.collectData === "object"
+    ? props.record.collectData
+    : {},
+);
+
 const heroTitle = computed(() => {
-  const resolved = pickFirstValue(props.record.rawPayload, props.titlePaths);
-  return resolved ? resolveFieldValue(props.record.rawPayload, {
+  const resolved = pickFirstValue(collectData.value, props.titlePaths);
+  return resolved ? resolveFieldValue(collectData.value, {
     label: "标题",
     paths: props.titlePaths,
   }) : getDefaultHeroTitle(props.record);
 });
 
 const heroSubtitle = computed(() =>
-  resolveFieldValue(props.record.rawPayload, {
+  resolveFieldValue(collectData.value, {
     label: "副标题",
     paths: props.subtitlePaths,
   }),
 );
 
 const heroPrice = computed(() =>
-  resolveFieldValue(props.record.rawPayload, {
+  resolveFieldValue(collectData.value, {
     label: "价格",
     paths: props.pricePaths,
   }),
 );
 
 const imageList = computed(() => {
-  const candidates = extractStringList(props.record.rawPayload, props.imagePaths);
+  const candidates = extractStringList(collectData.value, props.imagePaths);
   return Array.from(new Set(candidates.filter(Boolean)))
     .filter(
       (item) =>
@@ -189,7 +195,7 @@ const detailRows = computed(() =>
   props.detailFields
     .map((item) => ({
       label: item.label,
-      value: resolveFieldValue(props.record.rawPayload, item),
+      value: resolveFieldValue(collectData.value, item),
     }))
     .filter((item) => item.value),
 );
@@ -199,6 +205,13 @@ const snapshotUrls = computed(() =>
   snapshots.value
     .map((item) => String(item.url || "").trim())
     .filter(Boolean),
+);
+const recordIdentity = computed(
+  () =>
+    resolveFieldValue(collectData.value, {
+      label: "记录标识",
+      paths: ["recordKey", "asin", "itemId", "sku", "id"],
+    }) || "-",
 );
 const sourceUrl = computed(() => getRawLink(props.record));
 </script>

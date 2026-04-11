@@ -4,7 +4,7 @@ export interface EcomPlatformCollectTask {
   id: string;
   name: string;
   platform: string;
-  collectScene: string;
+  taskType?: string | null;
   configData?: Record<string, any> | null;
   creator?: string;
   userId?: number | null;
@@ -12,13 +12,21 @@ export interface EcomPlatformCollectTask {
   updateTime?: string;
 }
 
+export interface EcomCollectTaskSnapshot {
+  name?: string;
+  platform?: string;
+  taskType?: string | null;
+  configData?: Record<string, any> | null;
+}
+
 export interface EcomPlatformCollectRun {
   id: string;
   taskId: string;
   taskName?: string;
   platform?: string;
-  collectScene?: string;
+  taskType?: string | null;
   status: string;
+  taskSnapshot?: EcomCollectTaskSnapshot | null;
   assignedClientId?: string | null;
   assignedMachineCode?: string | null;
   commandId?: string | null;
@@ -26,6 +34,7 @@ export interface EcomPlatformCollectRun {
   finishedAt?: string | null;
   summaryData?: Record<string, any> | null;
   errorMessage?: string | null;
+  task?: EcomPlatformCollectTask | null;
   createTime?: string;
   updateTime?: string;
 }
@@ -36,12 +45,19 @@ export interface EcomPlatformRawRecord {
   taskName?: string;
   runId: string;
   platform?: string;
-  collectScene?: string;
-  recordKey?: string | null;
-  sourceUrl?: string | null;
+  taskType?: string | null;
+  taskSnapshot?: EcomCollectTaskSnapshot | null;
+  runStatus?: string | null;
+  finishedAt?: string | null;
+  summaryData?: Record<string, any> | null;
+  summaryMessage?: string | null;
+  recordsCount?: number | null;
+  snapshotCount?: number | null;
   capturedAt?: string | null;
-  rawPayload?: Record<string, any> | null;
-  snapshotData?: Record<string, any> | null;
+  collectData?: Record<string, any> | null;
+  snapshotData?: any;
+  task?: EcomPlatformCollectTask | null;
+  run?: EcomPlatformCollectRun | null;
   createTime?: string;
   updateTime?: string;
 }
@@ -99,6 +115,32 @@ export interface EcomCollectSceneSchema {
   };
 }
 
+export interface EcomCollectTaskTypeSchema {
+  value: string;
+  taskType?: string;
+  label: string;
+  description?: string;
+  platform?: string;
+  collectScene?: string;
+  entityType?: string;
+  availability?: string;
+  availabilityLabel?: string;
+  runnable?: boolean;
+  verification?: string;
+  verificationLabel?: string;
+  reason?: string | null;
+  fields?: EcomCollectFieldSchema[];
+  docs?: {
+    overview?: string;
+    notes?: string[];
+    examples?: Array<{
+      title?: string;
+      description?: string;
+      payload?: Record<string, any>;
+    }>;
+  };
+}
+
 export interface EcomCollectPlatformSchema {
   value: string;
   label: string;
@@ -108,7 +150,9 @@ export interface EcomCollectPlatformSchema {
   runnable?: boolean;
   reason?: string | null;
   supportedScenes?: string[];
+  supportedTaskTypes?: string[];
   scenes?: EcomCollectSceneSchema[];
+  taskTypes?: EcomCollectTaskTypeSchema[];
   docs?: {
     overview?: string;
     notes?: string[];

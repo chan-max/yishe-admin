@@ -137,14 +137,15 @@
                 </el-col>
 
                 <el-col :xs="24" :lg="8">
-                  <el-form-item label="采集场景">
-                    <el-select v-model="taskForm.sourceConfig.collectScenes" multiple collapse-tags
-                      collapse-tags-tooltip clearable placeholder="全部场景">
-                      <el-option v-for="item in collectSceneOptions" :key="item.value" :label="item.label"
+                  <el-form-item label="任务类型">
+                    <el-select v-model="taskForm.sourceConfig.taskTypes" multiple collapse-tags
+                      collapse-tags-tooltip clearable placeholder="全部任务类型">
+                      <el-option v-for="item in taskTypeOptions" :key="item.value" :label="item.label"
                         :value="item.value" />
                     </el-select>
                     <div class="form-hint">
-                      例如搜索结果、榜单、关键词、趋势等采集场景。适合在同平台下区分不同来源信号。
+                      例如 `amazon.search`、`amazon.product_detail`、`google_trends.trend_keywords`。
+                      适合在同平台下精确区分数据来源。
                     </div>
                   </el-form-item>
                 </el-col>
@@ -322,6 +323,10 @@ import {
   getRunStatusLabel,
   parseTextareaList,
 } from "@/views/operation/ecom-data/shared";
+import {
+  getTaskTypeLabel,
+  getTaskTypeSchemas,
+} from "@/views/operation/ecom-platform-collect/shared";
 
 type AnalysisTaskForm = {
   name: string;
@@ -331,7 +336,7 @@ type AnalysisTaskForm = {
     runIds: string[];
     rawRecordIds: string[];
     platforms: string[];
-    collectScenes: string[];
+    taskTypes: string[];
     keyword: string;
     capturedAfter: string;
     capturedBefore: string;
@@ -372,7 +377,7 @@ const createDefaultForm = (): AnalysisTaskForm => ({
     runIds: [],
     rawRecordIds: [],
     platforms: [],
-    collectScenes: [],
+    taskTypes: [],
     keyword: "",
     capturedAfter: "",
     capturedBefore: "",
@@ -422,7 +427,7 @@ const collectTaskOptions = computed(() =>
   buildOptionList(
     props.collectTasks.map((item) => ({
       value: item.id,
-      label: `${item.name} · ${getPlatformLabel(props.collectCatalog, item.platform)} / ${item.collectScene || "-"}`,
+      label: `${item.name} · ${getPlatformLabel(props.collectCatalog, item.platform)} / ${getTaskTypeLabel(props.collectCatalog, item.platform, item.taskType)}`,
     })),
     taskForm.sourceConfig.taskIds,
     "采集任务",
@@ -453,24 +458,22 @@ const sourcePlatformOptions = computed(() =>
   ),
 );
 
-const availableCollectSceneOptions = computed(() => {
+const availableTaskTypeOptions = computed(() => {
   const platformSet = new Set(taskForm.sourceConfig.platforms);
   return props.collectCatalog.platforms.flatMap((platform) => {
     if (platformSet.size && !platformSet.has(platform.value)) {
       return [];
     }
 
-    return Array.isArray(platform.scenes)
-      ? platform.scenes.map((scene) => ({
-        value: scene.value,
-        label: `${platform.label} / ${scene.label}`,
-      }))
-      : [];
+    return getTaskTypeSchemas(props.collectCatalog, platform.value).map((taskType) => ({
+      value: taskType.value,
+      label: `${platform.label} / ${taskType.label}`,
+    }));
   });
 });
 
-const collectSceneOptions = computed(() =>
-  buildOptionList(availableCollectSceneOptions.value, taskForm.sourceConfig.collectScenes, "场景"),
+const taskTypeOptions = computed(() =>
+  buildOptionList(availableTaskTypeOptions.value, taskForm.sourceConfig.taskTypes, "任务类型"),
 );
 
 const canSubmit = computed(() => !!taskForm.name.trim());
@@ -481,7 +484,7 @@ const hasExplicitScope = computed(() => {
     taskForm.sourceConfig.runIds.length ||
     parsedRawRecordIds.value.length ||
     taskForm.sourceConfig.platforms.length ||
-    taskForm.sourceConfig.collectScenes.length ||
+    taskForm.sourceConfig.taskTypes.length ||
     taskForm.sourceConfig.keyword.trim() ||
     taskForm.sourceConfig.capturedAfter ||
     taskForm.sourceConfig.capturedBefore
@@ -496,7 +499,7 @@ const normalizedPayload = computed(() => ({
     runIds: taskForm.sourceConfig.runIds,
     rawRecordIds: parsedRawRecordIds.value,
     platforms: taskForm.sourceConfig.platforms,
-    collectScenes: taskForm.sourceConfig.collectScenes,
+    taskTypes: taskForm.sourceConfig.taskTypes,
     keyword: taskForm.sourceConfig.keyword.trim(),
     capturedAfter: taskForm.sourceConfig.capturedAfter || null,
     capturedBefore: taskForm.sourceConfig.capturedBefore || null,
@@ -530,7 +533,7 @@ const advancedSummaryText = computed(() => {
   const parts = [
     taskForm.sourceConfig.platforms.length ? "已设置来源平台" : "",
     parsedRawRecordIds.value.length ? `原始记录 ${parsedRawRecordIds.value.length} 条` : "",
-    taskForm.sourceConfig.collectScenes.length ? "已设置场景" : "",
+    taskForm.sourceConfig.taskTypes.length ? "已设置任务类型" : "",
     taskForm.sourceConfig.keyword.trim() ? "已设置关键词过滤" : "",
     taskForm.sourceConfig.capturedAfter || taskForm.sourceConfig.capturedBefore
       ? "已设置采集时间"
@@ -557,7 +560,7 @@ const resetForm = () => {
   taskForm.sourceConfig.runIds = [...next.sourceConfig.runIds];
   taskForm.sourceConfig.rawRecordIds = [...next.sourceConfig.rawRecordIds];
   taskForm.sourceConfig.platforms = [...next.sourceConfig.platforms];
-  taskForm.sourceConfig.collectScenes = [...next.sourceConfig.collectScenes];
+  taskForm.sourceConfig.taskTypes = [...next.sourceConfig.taskTypes];
   taskForm.sourceConfig.keyword = next.sourceConfig.keyword;
   taskForm.sourceConfig.capturedAfter = next.sourceConfig.capturedAfter;
   taskForm.sourceConfig.capturedBefore = next.sourceConfig.capturedBefore;
@@ -596,8 +599,8 @@ const hydrateForm = (task?: EcomSelectionAnalysisTask | null) => {
   taskForm.sourceConfig.platforms = Array.isArray(task.sourceConfig?.platforms)
     ? task.sourceConfig?.platforms.filter(Boolean)
     : [];
-  taskForm.sourceConfig.collectScenes = Array.isArray(task.sourceConfig?.collectScenes)
-    ? task.sourceConfig?.collectScenes.filter(Boolean)
+  taskForm.sourceConfig.taskTypes = Array.isArray(task.sourceConfig?.taskTypes)
+    ? task.sourceConfig?.taskTypes.filter(Boolean)
     : [];
   taskForm.sourceConfig.keyword = String(task.sourceConfig?.keyword || "").trim();
   taskForm.sourceConfig.capturedAfter = String(task.sourceConfig?.capturedAfter || "").trim();
@@ -637,7 +640,7 @@ watch(
       hydrateForm(props.task || null);
       advancedVisible.value = !!(
         taskForm.sourceConfig.platforms.length ||
-        taskForm.sourceConfig.collectScenes.length ||
+        taskForm.sourceConfig.taskTypes.length ||
         taskForm.sourceConfig.keyword.trim() ||
         taskForm.sourceConfig.capturedAfter ||
         taskForm.sourceConfig.capturedBefore ||
@@ -655,20 +658,20 @@ watch(
 );
 
 watch(
-  () => availableCollectSceneOptions.value.map((item) => item.value).join("|"),
+  () => availableTaskTypeOptions.value.map((item) => item.value).join("|"),
   () => {
-    const sceneValues = availableCollectSceneOptions.value.map((item) => item.value);
-    const allowSet = new Set(sceneValues);
-    const nextScenes = taskForm.sourceConfig.collectScenes.filter((item) => allowSet.has(item));
+    const taskTypeValues = availableTaskTypeOptions.value.map((item) => item.value);
+    const allowSet = new Set(taskTypeValues);
+    const nextTaskTypes = taskForm.sourceConfig.taskTypes.filter((item) => allowSet.has(item));
 
     if (
-      nextScenes.length === taskForm.sourceConfig.collectScenes.length &&
-      nextScenes.every((item, index) => item === taskForm.sourceConfig.collectScenes[index])
+      nextTaskTypes.length === taskForm.sourceConfig.taskTypes.length &&
+      nextTaskTypes.every((item, index) => item === taskForm.sourceConfig.taskTypes[index])
     ) {
       return;
     }
 
-    taskForm.sourceConfig.collectScenes = nextScenes;
+    taskForm.sourceConfig.taskTypes = nextTaskTypes;
   },
 );
 

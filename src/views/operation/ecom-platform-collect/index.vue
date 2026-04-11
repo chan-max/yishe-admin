@@ -4,12 +4,6 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">电商采集任务</div>
-              <div class="resource-toolbar__desc">
-                任务表单字段直接来自浏览器自动化端下发的能力 schema，admin 这里只负责需求配置与手动执行入口。
-              </div>
-            </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
               <el-button size="small" type="primary" @click="openTaskDialog()">
@@ -21,20 +15,42 @@
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
-                <el-form-item label="任务名称 / 平台">
+                <el-form-item label="任务名称 / 平台 / 任务类型">
                   <el-input
                     v-model="filters.keyword"
                     clearable
-                    placeholder="搜索任务名称 / 平台"
+                    placeholder="搜索任务名称 / 平台 / 任务类型"
                     @keyup.enter="handleSearch"
                   />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
                 <el-form-item label="平台">
-                  <el-select v-model="filters.platform" clearable placeholder="平台">
+                  <el-select
+                    v-model="filters.platform"
+                    clearable
+                    placeholder="平台"
+                    @change="handlePlatformFilterChange"
+                  >
                     <el-option
                       v-for="item in catalog.platforms"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="任务类型">
+                  <el-select
+                    v-model="filters.taskType"
+                    clearable
+                    filterable
+                    placeholder="任务类型"
+                  >
+                    <el-option
+                      v-for="item in availableTaskTypeOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value"
@@ -75,7 +91,7 @@
                   <div class="table-stack">
                     <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
                     <span class="table-meta-text">
-                      {{ getSceneLabel(catalog, row.platform, row.collectScene) }}
+                      {{ getTaskTypeLabel(catalog, row.platform, row.taskType) }}
                     </span>
                   </div>
                 </template>
@@ -174,7 +190,8 @@ import {
   createEmptyEcomCollectCatalog,
   formatDateTime,
   getPlatformLabel,
-  getSceneLabel,
+  getTaskTypeLabel,
+  getTaskTypeSchemas,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectTaskPage" });
@@ -194,7 +211,12 @@ const filters = reactive({
   pageSize: 10,
   keyword: "",
   platform: "",
+  taskType: "",
 });
+
+const availableTaskTypeOptions = computed(() =>
+  getTaskTypeSchemas(catalog, filters.platform),
+);
 
 const updateSelectedIds = (records: EcomPlatformCollectTask[] = []) => {
   selectedIds.value = Array.from(
@@ -237,7 +259,7 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectTask>>({
     { type: "checkbox", width: 48 },
     { title: "任务名称", field: "name", minWidth: 220, showOverflow: "tooltip" },
     {
-      title: "平台 / 场景",
+      title: "平台 / 任务类型",
       field: "platform",
       width: 160,
       slots: { default: "platformSceneSlot" },
@@ -317,10 +339,20 @@ const handleSearch = async () => {
   await loadList();
 };
 
+const handlePlatformFilterChange = () => {
+  if (
+    filters.taskType &&
+    !availableTaskTypeOptions.value.some((item) => item.value === filters.taskType)
+  ) {
+    filters.taskType = "";
+  }
+};
+
 const handleReset = async () => {
   filters.pageNo = 1;
   filters.keyword = "";
   filters.platform = "";
+  filters.taskType = "";
   await loadList();
 };
 

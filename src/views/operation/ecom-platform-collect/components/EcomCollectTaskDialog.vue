@@ -21,10 +21,10 @@
           />
 
           <CompactNotice
-            v-else-if="sceneUnavailableReason"
+            v-else-if="taskTypeUnavailableReason"
             type="warning"
-            title="当前平台场景暂不可执行"
-            :description="sceneUnavailableReason"
+            title="当前任务类型暂不可执行"
+            :description="taskTypeUnavailableReason"
             class="task-dialog-alert"
           />
 
@@ -59,20 +59,27 @@
               </el-col>
 
               <el-col :xs="24" :lg="12">
-                <el-form-item label="采集场景" required>
+                <el-form-item label="任务类型" required>
                   <el-select
-                    v-model="taskForm.collectScene"
-                    placeholder="请选择采集场景"
+                    v-model="taskForm.taskType"
+                    placeholder="请选择任务类型"
+                    filterable
+                    @change="handleTaskTypeChange"
                   >
                     <el-option
-                      v-for="item in availableSceneOptions"
+                      v-for="item in availableTaskTypeOptions"
                       :key="item.value"
-                      :label="buildSceneOptionLabel(item)"
+                      :label="buildTaskTypeOptionLabel(item)"
                       :value="item.value"
                     />
                   </el-select>
-                  <div v-if="selectedScene?.description" class="form-hint">
-                    {{ selectedScene.description }}
+                  <div
+                    v-if="selectedTaskType?.description"
+                    class="form-hint"
+                  >
+                    <div v-if="selectedTaskType?.description">
+                      {{ selectedTaskType.description }}
+                    </div>
                   </div>
                 </el-form-item>
               </el-col>
@@ -80,7 +87,7 @@
 
             <el-row :gutter="20">
               <el-col
-                v-for="field in sceneFields"
+                v-for="field in schemaFields"
                 :key="field.key"
                 :xs="24"
                 :lg="resolveFieldLgSpan(field)"
@@ -104,6 +111,7 @@
 
                   <el-switch
                     v-else-if="field.component === 'switch'"
+                    class="field-switch-control"
                     :model-value="!!getFieldValue(field)"
                     @update:model-value="setFieldValue(field, $event)"
                   />
@@ -162,7 +170,7 @@
                 placeholder='{"sort":"sales"}'
               />
               <div class="form-hint">
-                用于保留当前场景 schema 尚未覆盖的配置；留空则只保存已建模字段。
+                用于保留当前任务类型 schema 尚未覆盖的配置；留空则只保存已建模字段。
               </div>
             </el-form-item>
           </el-form>
@@ -183,10 +191,18 @@
             </div>
 
             <div v-if="selectedPlatform" class="capability-card__body">
-              <div v-if="selectedScene" class="capability-block">
+              <div v-if="selectedTaskType" class="capability-block">
                 <div class="capability-block__label">当前功能</div>
                 <div class="capability-block__text">
                   {{ customerFeatureSummary }}
+                </div>
+              </div>
+
+              <div v-if="selectedTaskType" class="capability-block">
+                <div class="capability-block__label">执行标识</div>
+                <div class="capability-kv">
+                  <span>任务类型</span>
+                  <code>{{ selectedTaskType.value }}</code>
                 </div>
               </div>
 
@@ -243,7 +259,7 @@ import {
   updateEcomPlatformCollectTask,
   type EcomCollectFieldSchema,
   type EcomCollectPlatformSchema,
-  type EcomCollectSceneSchema,
+  type EcomCollectTaskTypeSchema,
   type EcomPlatformCollectCatalog,
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
@@ -252,6 +268,9 @@ import {
   getCapabilityStatusTagType,
   getPlatformSchema,
   getSceneSchema,
+  getTaskTypeSchema,
+  getTaskTypeSchemas,
+  resolveTaskTypeValue,
 } from "../shared";
 
 const props = defineProps<{
@@ -274,7 +293,7 @@ const taskForm = reactive({
   id: "",
   name: "",
   platform: "",
-  collectScene: "",
+  taskType: "",
 });
 
 const currentTask = computed(() => props.task || null);
@@ -283,21 +302,36 @@ const selectedPlatform = computed(() =>
   getPlatformSchema(props.catalog, taskForm.platform),
 );
 
-const availableSceneOptions = computed<EcomCollectSceneSchema[]>(() => {
-  return Array.isArray(selectedPlatform.value?.scenes)
-    ? selectedPlatform.value.scenes
-    : [];
-});
+const availableTaskTypeOptions = computed<EcomCollectTaskTypeSchema[]>(() =>
+  getTaskTypeSchemas(props.catalog, taskForm.platform),
+);
+
+const selectedTaskType = computed(() =>
+  getTaskTypeSchema(props.catalog, taskForm.platform, taskForm.taskType),
+);
+
+const resolvedCollectScene = computed(
+  () => String(selectedTaskType.value?.collectScene || "").trim(),
+);
 
 const selectedScene = computed(() =>
-  getSceneSchema(props.catalog, taskForm.platform, taskForm.collectScene),
+  getSceneSchema(props.catalog, taskForm.platform, resolvedCollectScene.value),
 );
 
-const sceneFields = computed(() =>
-  Array.isArray(selectedScene.value?.fields) ? selectedScene.value.fields : [],
-);
+const schemaFields = computed(() => {
+  if (Array.isArray(selectedTaskType.value?.fields) && selectedTaskType.value?.fields?.length) {
+    return selectedTaskType.value.fields;
+  }
+  return Array.isArray(selectedScene.value?.fields) ? selectedScene.value.fields : [];
+});
 
-const sceneUnavailableReason = computed(() => {
+const taskTypeUnavailableReason = computed(() => {
+  if (selectedTaskType.value && selectedTaskType.value.runnable === false) {
+    return (
+      selectedTaskType.value.reason ||
+      `${selectedTaskType.value.label} 当前暂不可执行`
+    );
+  }
   if (selectedScene.value && selectedScene.value.runnable === false) {
     return (
       selectedScene.value.reason ||
@@ -305,7 +339,7 @@ const sceneUnavailableReason = computed(() => {
     );
   }
   if (
-    !selectedScene.value &&
+    !selectedTaskType.value &&
     selectedPlatform.value &&
     selectedPlatform.value.runnable === false
   ) {
@@ -320,11 +354,20 @@ const sceneUnavailableReason = computed(() => {
 const canSubmit = computed(
   () =>
     !!selectedPlatform.value &&
-    !!selectedScene.value &&
-    selectedScene.value.runnable !== false,
+    !!selectedTaskType.value &&
+    !!resolvedCollectScene.value &&
+    selectedTaskType.value.runnable !== false &&
+    (!selectedScene.value || selectedScene.value.runnable !== false),
 );
 
 const customerFeatureSummary = computed(() => {
+  if (selectedTaskType.value?.description) {
+    return selectedTaskType.value.description;
+  }
+  if (selectedTaskType.value?.docs?.overview) {
+    return selectedTaskType.value.docs.overview;
+  }
+
   const sceneValue = selectedScene.value?.value;
   if (sceneValue === "search") {
     return "按关键词获取商品列表数据。";
@@ -343,7 +386,7 @@ const buildLiveRequestBody = (allowInvalid = false) => {
   return {
     name: taskForm.name.trim(),
     platform: taskForm.platform,
-    collectScene: taskForm.collectScene,
+    taskType: taskForm.taskType,
     configData: buildDraftConfigData(allowInvalid),
   };
 };
@@ -377,7 +420,7 @@ const resetTaskForm = () => {
   taskForm.id = "";
   taskForm.name = "";
   taskForm.platform = "";
-  taskForm.collectScene = "";
+  taskForm.taskType = "";
   advancedJsonText.value = "";
   replaceFieldValues({});
 };
@@ -408,11 +451,11 @@ const buildPlatformOptionLabel = (platform: EcomCollectPlatformSchema) => {
   return `${platform.label} · ${getCapabilityStatusLabel(platform.status)}`;
 };
 
-const buildSceneOptionLabel = (scene: EcomCollectSceneSchema) => {
-  const availabilityLabel = scene.availability
-    ? getCapabilityStatusLabel(scene.availability)
+const buildTaskTypeOptionLabel = (taskType: EcomCollectTaskTypeSchema) => {
+  const availabilityLabel = taskType.availability
+    ? getCapabilityStatusLabel(taskType.availability)
     : "";
-  return availabilityLabel ? `${scene.label} · ${availabilityLabel}` : scene.label;
+  return availabilityLabel ? `${taskType.label} · ${availabilityLabel}` : taskType.label;
 };
 
 const resolveFieldLgSpan = (field: EcomCollectFieldSchema) => {
@@ -485,7 +528,7 @@ const fromFieldUiValue = (
     }
     try {
       return JSON.parse(text);
-    } catch (error) {
+    } catch {
       if (options?.allowInvalid) {
         return undefined;
       }
@@ -536,7 +579,7 @@ const parseAdvancedJson = (allowInvalid = false) => {
       throw new Error("附加配置必须是 JSON 对象");
     }
     return parsed;
-  } catch (error) {
+  } catch {
     if (allowInvalid) {
       return {};
     }
@@ -549,7 +592,7 @@ const buildDraftConfigData = (allowInvalid = false) => {
     ...parseAdvancedJson(allowInvalid),
   };
 
-  sceneFields.value.forEach((field) => {
+  schemaFields.value.forEach((field) => {
     try {
       const resolved = fromFieldUiValue(field, fieldValues[field.key], {
         allowInvalid,
@@ -571,7 +614,7 @@ const syncFieldValuesFromConfig = (configData: Record<string, any> = {}) => {
   const nextValues: Record<string, any> = {};
   const activeFieldKeys = new Set<string>();
 
-  sceneFields.value.forEach((field) => {
+  schemaFields.value.forEach((field) => {
     activeFieldKeys.add(field.key);
     nextValues[field.key] = toFieldUiValue(field, configData[field.key]);
   });
@@ -597,6 +640,19 @@ const setFieldValue = (field: EcomCollectFieldSchema, value: any) => {
   fieldValues[field.key] = value;
 };
 
+const syncTaskTypeSelection = (preferredTaskType?: string | null) => {
+  const taskTypes = getTaskTypeSchemas(props.catalog, taskForm.platform);
+  const normalizedPreferred = resolveTaskTypeValue(
+    taskForm.platform,
+    preferredTaskType ?? taskForm.taskType,
+  );
+  const matchedTaskType =
+    taskTypes.find((item) => item.value === normalizedPreferred) || null;
+  const fallbackTaskType = matchedTaskType || taskTypes[0] || null;
+
+  taskForm.taskType = fallbackTaskType?.value || "";
+};
+
 const validateTaskForm = () => {
   if (!taskForm.name.trim()) {
     throw new Error("请填写任务名称");
@@ -604,13 +660,19 @@ const validateTaskForm = () => {
   if (!taskForm.platform) {
     throw new Error("请选择平台");
   }
-  if (!taskForm.collectScene) {
-    throw new Error("请选择采集场景");
+  if (!taskForm.taskType) {
+    throw new Error("请选择任务类型");
   }
-  if (!selectedScene.value) {
-    throw new Error("当前平台缺少可用场景定义");
+  if (!selectedTaskType.value) {
+    throw new Error("当前平台缺少可用任务类型定义");
   }
-  if (selectedScene.value.runnable === false) {
+  if (selectedTaskType.value.runnable === false) {
+    throw new Error(
+      selectedTaskType.value.reason ||
+        `${selectedTaskType.value.label} 当前暂不可执行`,
+    );
+  }
+  if (selectedScene.value?.runnable === false) {
     throw new Error(
       selectedScene.value.reason ||
         `${selectedScene.value.label} 当前暂不可执行`,
@@ -619,7 +681,7 @@ const validateTaskForm = () => {
 
   const configData = buildDraftConfigData(false);
 
-  const missingField = sceneFields.value.find(
+  const missingField = schemaFields.value.find(
     (field) => field.required && isFieldEmpty(configData[field.key]),
   );
 
@@ -643,25 +705,22 @@ const loadTaskToForm = () => {
   taskForm.id = task.id;
   taskForm.name = task.name;
   taskForm.platform = task.platform;
-  taskForm.collectScene = task.collectScene;
+  taskForm.taskType = resolveTaskTypeValue(
+    task.platform,
+    task.taskType,
+  );
+  syncTaskTypeSelection(taskForm.taskType);
   syncFieldValuesFromConfig((task.configData || {}) as Record<string, any>);
   hydratingForm.value = false;
 };
 
 const handlePlatformChange = (platform: string) => {
-  const nextPlatform = getPlatformSchema(props.catalog, platform);
-  const availableScenes = Array.isArray(nextPlatform?.scenes)
-    ? nextPlatform.scenes
-    : [];
-  if (
-    availableScenes.length &&
-    !availableScenes.some((item) => item.value === taskForm.collectScene)
-  ) {
-    taskForm.collectScene = availableScenes[0]?.value || "";
-  }
-  if (!availableScenes.length) {
-    taskForm.collectScene = "";
-  }
+  taskForm.platform = platform;
+  syncTaskTypeSelection(taskForm.taskType);
+};
+
+const handleTaskTypeChange = (taskType: string) => {
+  taskForm.taskType = taskType;
 };
 
 const handleSubmit = async () => {
@@ -671,7 +730,7 @@ const handleSubmit = async () => {
     const payload = {
       name: taskForm.name.trim(),
       platform: taskForm.platform,
-      collectScene: taskForm.collectScene,
+      taskType: taskForm.taskType,
       configData,
     };
 
@@ -693,7 +752,7 @@ const handleSubmit = async () => {
 };
 
 watch(
-  () => [taskForm.platform, taskForm.collectScene],
+  () => [taskForm.platform, taskForm.taskType],
   () => {
     if (!props.modelValue || hydratingForm.value) {
       return;
@@ -704,11 +763,7 @@ watch(
 );
 
 watch(
-  () => [
-    props.modelValue,
-    props.task,
-    props.catalog.platforms.length,
-  ],
+  () => [props.modelValue, props.task, props.catalog.platforms.length],
   ([visible]) => {
     if (visible) {
       loadTaskToForm();
@@ -785,6 +840,10 @@ watch(
   width: 100%;
 }
 
+.field-switch-control {
+  margin-bottom: 8px;
+}
+
 .capability-card {
   position: sticky;
   top: 0;
@@ -853,13 +912,6 @@ watch(
   line-height: 1.7;
 }
 
-.capability-list {
-  margin: 0;
-  padding-left: 18px;
-  color: var(--el-text-color-regular);
-  line-height: 1.7;
-}
-
 .capability-kv {
   display: flex;
   flex-direction: column;
@@ -875,23 +927,6 @@ watch(
   color: var(--el-text-color-primary);
   font-size: 12px;
   overflow-wrap: anywhere;
-}
-
-.capability-example {
-  padding: 12px;
-  border-radius: 12px;
-  background: var(--el-fill-color-light);
-}
-
-.capability-example__title {
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.capability-example__desc {
-  margin-top: 6px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.6;
 }
 
 .capability-example__code {

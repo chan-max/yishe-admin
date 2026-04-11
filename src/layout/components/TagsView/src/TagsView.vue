@@ -453,7 +453,8 @@ $prefix-cls: #{$namespace}-tags-view;
     color: var(--tags-view-tool-color);
     transition:
       color 0.2s ease,
-      background-color 0.2s ease;
+      background-color 0.2s ease,
+      transform 0.18s ease;
 
     &::before {
       position: absolute;
@@ -468,6 +469,7 @@ $prefix-cls: #{$namespace}-tags-view;
     &:hover {
       color: var(--tags-view-tool-hover-color);
       background: color-mix(in srgb, var(--tags-view-tool-hover-bg) 56%, transparent 44%);
+      transform: scale(1.06);
     }
 
     &--first {
@@ -505,7 +507,8 @@ $prefix-cls: #{$namespace}-tags-view;
       color 0.2s ease,
       background-color 0.2s ease,
       border-color 0.2s ease,
-      box-shadow 0.2s ease;
+      box-shadow 0.2s ease,
+      transform 0.18s ease;
 
     &--close {
       position: absolute;
@@ -529,6 +532,7 @@ $prefix-cls: #{$namespace}-tags-view;
       color: var(--tags-view-item-hover-color);
       background: color-mix(in srgb, var(--tags-view-item-hover-bg) 70%, transparent 30%);
       border-color: color-mix(in srgb, var(--tags-view-item-border-color) 42%, transparent 58%);
+      transform: scale(1.02);
 
       .#{$prefix-cls}__item--close {
         opacity: 1;

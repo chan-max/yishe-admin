@@ -4,12 +4,6 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">电商采集运行记录</div>
-              <div class="resource-toolbar__desc">
-                跟踪每次手动执行的状态、执行客户端和采集摘要，并支持批量清理历史运行。
-              </div>
-            </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
             </div>
@@ -19,9 +13,31 @@
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="平台">
-                  <el-select v-model="filters.platform" clearable placeholder="平台">
+                  <el-select
+                    v-model="filters.platform"
+                    clearable
+                    placeholder="平台"
+                    @change="handlePlatformFilterChange"
+                  >
                     <el-option
                       v-for="item in catalog.platforms"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="任务类型">
+                  <el-select
+                    v-model="filters.taskType"
+                    clearable
+                    filterable
+                    placeholder="任务类型"
+                  >
+                    <el-option
+                      v-for="item in availableTaskTypeOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value"
@@ -74,7 +90,7 @@
                   <div class="table-stack">
                     <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
                     <span class="table-meta-text">
-                      {{ getSceneLabel(catalog, row.platform, row.collectScene) }}
+                      {{ getTaskTypeLabel(catalog, row.platform, row.taskType) }}
                     </span>
                   </div>
                 </template>
@@ -174,7 +190,8 @@ import {
   getPlatformLabel,
   getRunStatusLabel,
   getRunStatusTagType,
-  getSceneLabel,
+  getTaskTypeLabel,
+  getTaskTypeSchemas,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectRunPage" });
@@ -192,8 +209,13 @@ const filters = reactive({
   pageNo: 1,
   pageSize: 10,
   platform: "",
+  taskType: "",
   status: "",
 });
+
+const availableTaskTypeOptions = computed(() =>
+  getTaskTypeSchemas(catalog, filters.platform),
+);
 
 const updateSelectedIds = (records: EcomPlatformCollectRun[] = []) => {
   selectedIds.value = Array.from(
@@ -222,7 +244,7 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectRun>>({
     { type: "checkbox", width: 48 },
     { title: "任务名称", field: "taskName", minWidth: 180, showOverflow: "tooltip" },
     {
-      title: "平台 / 场景",
+      title: "平台 / 任务类型",
       field: "platform",
       width: 160,
       slots: { default: "platformSceneSlot" },
@@ -309,9 +331,19 @@ const handleSearch = async () => {
   await loadList();
 };
 
+const handlePlatformFilterChange = () => {
+  if (
+    filters.taskType &&
+    !availableTaskTypeOptions.value.some((item) => item.value === filters.taskType)
+  ) {
+    filters.taskType = "";
+  }
+};
+
 const handleReset = async () => {
   filters.pageNo = 1;
   filters.platform = "";
+  filters.taskType = "";
   filters.status = "";
   await loadList();
 };
