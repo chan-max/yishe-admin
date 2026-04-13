@@ -654,6 +654,7 @@ onMounted(() => {
                           <el-select
                             v-model="platformConfigData[field.key]"
                             :placeholder="field.placeholder || '请选择'"
+                            :clearable="field.key === 'vendorId'"
                           >
                             <el-option
                               v-for="option in (field.key === 'vendorId' ? vendorOptions : field.options)"

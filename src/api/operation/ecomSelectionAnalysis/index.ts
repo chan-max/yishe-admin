@@ -5,20 +5,6 @@ export type EcomSelectionAnalysisType =
   | "custom_prompt_extract"
   | "pod_pattern_analysis";
 
-export interface EcomSelectionAnalysisTrace {
-  featureCode?: string;
-  executionMode?: string;
-  promptMode?: string;
-  promptTemplate?: string;
-  requestedModel?: string | null;
-  userPrompt?: string | null;
-  outputSchemaHint?: string | null;
-  methodSummary?: string | null;
-  resolvedPrompt?: string | null;
-  aiModelChain?: string[];
-  aiRawText?: string | null;
-}
-
 export interface EcomSelectionAnalysisOverview {
   summary?: string;
   confidence?: string;
@@ -38,11 +24,8 @@ export interface EcomSelectionAnalysisCustomResult {
   notes?: string[];
 }
 
-export interface EcomSelectionAnalysisResultData {
-  analysisType?: EcomSelectionAnalysisType | string;
-  generatedAt?: string;
+export interface EcomSelectionAnalysisOutput {
   overview?: EcomSelectionAnalysisOverview | null;
-  sourceStats?: Record<string, any> | null;
   hotKeywords?: Array<Record<string, any>>;
   recommendedProducts?: Array<Record<string, any>>;
   platformInsights?: Array<Record<string, any>>;
@@ -51,23 +34,17 @@ export interface EcomSelectionAnalysisResultData {
   nextActions?: string[];
   customResult?: EcomSelectionAnalysisCustomResult | null;
   resultNotes?: string[];
-  analysisTrace?: EcomSelectionAnalysisTrace | null;
 }
 
-export interface EcomSelectionAnalysisRunResultPreview {
-  overview?: EcomSelectionAnalysisOverview | null;
-  recommendedProductCount?: number;
-  customResult?: {
-    title?: string;
-    view?: string;
-    itemCount?: number;
-  } | null;
+export interface EcomSelectionAnalysisOutputPreview {
+  overviewSummary?: string | null;
+  resultCount?: number;
   errorMessage?: string | null;
 }
 
-export interface EcomSelectionAnalysisRunSummaryData {
-  sourceStats?: Record<string, any> | null;
-  resultPreview?: EcomSelectionAnalysisRunResultPreview | null;
+export interface EcomSelectionAnalysisRunSummary {
+  sourceSummary?: Record<string, any> | null;
+  outputPreview?: EcomSelectionAnalysisOutputPreview | null;
   message?: string | null;
 }
 
@@ -76,12 +53,20 @@ export interface EcomSelectionAnalysisTask {
   name: string;
   analysisType: EcomSelectionAnalysisType | string;
   sourceConfig?: Record<string, any> | null;
-  optionsData?: Record<string, any> | null;
+  analysisConfig?: Record<string, any> | null;
   creator?: string;
   lastRunAt?: string | null;
   lastRunId?: string | null;
   lastRunStatus?: string | null;
-  lastResultSummary?: Record<string, any> | null;
+  lastRunSummary?: {
+    runId?: string | null;
+    status?: string | null;
+    finishedAt?: string | null;
+    sourceSummary?: Record<string, any> | null;
+    overviewSummary?: string | null;
+    resultCount?: number;
+    errorMessage?: string | null;
+  } | null;
   userId?: number | null;
   createTime?: string;
   updateTime?: string;
@@ -96,14 +81,9 @@ export interface EcomSelectionAnalysisRun {
   analysisType: EcomSelectionAnalysisType | string;
   status: string;
   aiModel?: string | null;
-  sourceConfigSnapshot?: Record<string, any> | null;
-  optionsSnapshot?: Record<string, any> | null;
-  summaryData?: EcomSelectionAnalysisRunSummaryData | null;
-  sourceStatsData?: Record<string, any> | null;
-  sourceRecordIdsData?: string[] | null;
-  normalizedItemsData?: Array<Record<string, any>> | null;
-  resultData?: EcomSelectionAnalysisResultData | null;
-  resultPreview?: EcomSelectionAnalysisRunResultPreview | null;
+  sourceSnapshot?: Record<string, any> | null;
+  analysisConfigSnapshot?: Record<string, any> | null;
+  summary?: EcomSelectionAnalysisRunSummary | null;
   resultId?: string | null;
   startedAt?: string | null;
   finishedAt?: string | null;
@@ -111,8 +91,6 @@ export interface EcomSelectionAnalysisRun {
   userId?: number | null;
   createTime?: string;
   updateTime?: string;
-  result?: EcomSelectionAnalysisResult | null;
-  task?: EcomSelectionAnalysisTask | null;
 }
 
 export interface EcomSelectionAnalysisResult {
@@ -123,11 +101,9 @@ export interface EcomSelectionAnalysisResult {
   creator?: string;
   analysisType: EcomSelectionAnalysisType | string;
   analyzedAt?: string | null;
-  sourceStatsData?: Record<string, any> | null;
-  sourceRecordIdsData?: string[] | null;
-  normalizedItemsData?: Array<Record<string, any>> | null;
-  resultData?: EcomSelectionAnalysisResultData | null;
-  resultPreview?: EcomSelectionAnalysisRunResultPreview | null;
+  sourceSummary?: Record<string, any> | null;
+  sourceItems?: Array<Record<string, any>> | null;
+  output?: EcomSelectionAnalysisOutput | null;
   userId?: number | null;
   createTime?: string;
   updateTime?: string;
@@ -135,8 +111,6 @@ export interface EcomSelectionAnalysisResult {
   aiModel?: string | null;
   runFinishedAt?: string | null;
   runErrorMessage?: string | null;
-  run?: EcomSelectionAnalysisRun | null;
-  task?: EcomSelectionAnalysisTask | null;
 }
 
 export const getEcomSelectionAnalysisTaskList = (params?: Record<string, any>) => {

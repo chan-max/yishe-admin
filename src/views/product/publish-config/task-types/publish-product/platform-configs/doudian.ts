@@ -21,8 +21,7 @@ export const doudianPlatformConfig: PlatformConfig = {
       label: '绑定厂家',
       type: 'select',
       placeholder: '请选择厂家',
-      span: 24,
-      tooltip: '用于生成 productCode，格式为：素材码-厂家码'
+      span: 24
     },
     {
       key: 'appendImageUrls',

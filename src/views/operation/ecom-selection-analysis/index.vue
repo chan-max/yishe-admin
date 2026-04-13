@@ -86,11 +86,11 @@
                     <span>{{ getOptionsSummary(row) }}</span>
                     <span class="table-meta-text">
                       {{
-                        row.optionsData?.aiModel
-                          ? `模型：${row.optionsData?.aiModel}`
-                          : row.optionsData?.customPrompt
-                            ? "已设置自定义提示词"
-                            : "默认模型"
+                        row.analysisConfig?.customPrompt
+                          ? "已设置自定义提示词"
+                          : row.analysisConfig?.customOutputSchema
+                            ? "已设置输出结构"
+                            : "默认配置"
                       }}
                     </span>
                   </div>
@@ -221,9 +221,7 @@ import SelectionAnalysisTaskDialog from "./components/SelectionAnalysisTaskDialo
 import {
   createEmptyEcomCollectCatalog,
   formatDateTime,
-  formatListPreview,
   getAnalysisTypeLabel,
-  getPlatformLabel,
   getRunStatusLabel,
   getRunStatusTagType,
 } from "@/views/operation/ecom-data/shared";
@@ -275,13 +273,6 @@ const getSourceSummary = (task: EcomSelectionAnalysisTask) => {
     Array.isArray(sourceConfig.rawRecordIds) && sourceConfig.rawRecordIds.length
       ? `原始记录 ${sourceConfig.rawRecordIds.length} 条`
       : "",
-    Array.isArray(sourceConfig.platforms) && sourceConfig.platforms.length
-      ? `平台 ${formatListPreview(
-          sourceConfig.platforms.map((item: string) => getPlatformLabel(catalog, item)),
-          2,
-        )}`
-      : "",
-    sourceConfig.keyword ? `关键词 ${sourceConfig.keyword}` : "",
     sourceConfig.requireDetail ? "仅详情数据" : "",
     sourceConfig.limit ? `样本 ${sourceConfig.limit}` : "",
   ].filter(Boolean);
@@ -290,19 +281,11 @@ const getSourceSummary = (task: EcomSelectionAnalysisTask) => {
 };
 
 const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
-  const options = task.optionsData || {};
+  const options = task.analysisConfig || {};
   const parts = [
     options.topN ? `Top ${options.topN}` : "",
     options.targetMarket ? options.targetMarket : "",
-    Array.isArray(options.preferredPlatforms) && options.preferredPlatforms.length
-      ? `优先 ${formatListPreview(
-          options.preferredPlatforms.map((item: string) => getPlatformLabel(catalog, item)),
-          2,
-        )}`
-      : "",
-    options.targetPriceRange?.min != null || options.targetPriceRange?.max != null
-      ? `价格 ${options.targetPriceRange?.min ?? "-"} ~ ${options.targetPriceRange?.max ?? "-"}`
-      : "",
+    options.notes ? "含分析备注" : "",
   ].filter(Boolean);
 
   if (task.analysisType === "custom_prompt_extract") {
@@ -327,18 +310,18 @@ const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
 };
 
 const getResultSummary = (task: EcomSelectionAnalysisTask) => {
-  const summary = task.lastResultSummary || {};
+  const summary = task.lastRunSummary || {};
   return (
-    summary?.overview?.summary ||
-    (summary?.customResult?.itemCount
+    summary?.overviewSummary ||
+    (summary?.resultCount
       ? task.analysisType === "pod_pattern_analysis"
-        ? `已输出 ${summary.customResult.itemCount} 条图案结果`
-        : `已输出 ${summary.customResult.itemCount} 条自定义结果`
+        ? `已输出 ${summary.resultCount} 条图案结果`
+        : task.analysisType === "custom_prompt_extract"
+          ? `已输出 ${summary.resultCount} 条自定义结果`
+          : `已推荐 ${summary.resultCount} 个候选方向`
       : "") ||
     summary?.errorMessage ||
-    (Array.isArray(summary?.recommendedProducts) && summary.recommendedProducts.length
-      ? `已推荐 ${summary.recommendedProducts.length} 个候选方向`
-      : "-")
+    "-"
   );
 };
 
@@ -369,7 +352,7 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisTask>>({
     },
     {
       title: "分析配置",
-      field: "optionsData",
+      field: "analysisConfig",
       minWidth: 260,
       showOverflow: "tooltip",
       slots: { default: "optionsSlot" },
@@ -382,7 +365,7 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisTask>>({
     },
     {
       title: "结果摘要",
-      field: "lastResultSummary",
+      field: "lastRunSummary",
       minWidth: 260,
       showOverflow: "tooltip",
       slots: { default: "summarySlot" },

@@ -170,7 +170,7 @@
               <div class="detail-card__header">
                 <div>
                   <div class="detail-card__title">
-                    {{ currentDetail.task?.name || currentDetail.taskName || "-" }}
+                    {{ currentDetail.taskName || "-" }}
                   </div>
                   <div class="detail-card__subtitle">
                     {{ getSummaryText(currentDetail) }}
@@ -192,7 +192,7 @@
               <div class="metric-grid">
                 <div class="metric-card">
                   <span>样本数</span>
-                  <strong>{{ sourceStats.itemCount || 0 }}</strong>
+                  <strong>{{ sourceSummary.itemCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
                   <span>结果量</span>
@@ -200,11 +200,11 @@
                 </div>
                 <div class="metric-card">
                   <span>任务数</span>
-                  <strong>{{ sourceStats.taskCount || 0 }}</strong>
+                  <strong>{{ sourceSummary.taskCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>原始记录</span>
-                  <strong>{{ currentDetail.sourceRecordIdsData?.length || 0 }}</strong>
+                  <span>平台数</span>
+                  <strong>{{ sourceSummary.platformBreakdown?.length || 0 }}</strong>
                 </div>
               </div>
             </div>
@@ -218,7 +218,7 @@
                 </div>
                 <div class="stats-item">
                   <span>结果 ID</span>
-                  <strong>{{ currentDetail.result?.id || currentDetail.resultId || "-" }}</strong>
+                  <strong>{{ currentDetail.resultId || "-" }}</strong>
                 </div>
                 <div class="stats-item">
                   <span>开始时间</span>
@@ -230,11 +230,11 @@
                 </div>
               </div>
 
-              <div class="detail-mini-section" v-if="sourceStats.platformBreakdown?.length">
+              <div class="detail-mini-section" v-if="sourceSummary.platformBreakdown?.length">
                 <div class="detail-mini-section__title">平台分布</div>
                 <div class="chip-list">
                   <el-tag
-                    v-for="item in sourceStats.platformBreakdown"
+                    v-for="item in sourceSummary.platformBreakdown"
                     :key="`${item.platform}-${item.count}`"
                     size="small"
                   >
@@ -253,15 +253,15 @@
 
           <el-tabs>
             <el-tab-pane label="运行摘要">
-              <pre class="json-preview">{{ formatJson(currentDetail.summaryData) }}</pre>
+              <pre class="json-preview">{{ formatJson(currentDetail.summary) }}</pre>
             </el-tab-pane>
 
             <el-tab-pane label="数据源快照">
-              <pre class="json-preview">{{ formatJson(currentDetail.sourceConfigSnapshot) }}</pre>
+              <pre class="json-preview">{{ formatJson(currentDetail.sourceSnapshot) }}</pre>
             </el-tab-pane>
 
             <el-tab-pane label="分析参数快照">
-              <pre class="json-preview">{{ formatJson(currentDetail.optionsSnapshot) }}</pre>
+              <pre class="json-preview">{{ formatJson(currentDetail.analysisConfigSnapshot) }}</pre>
             </el-tab-pane>
 
             <el-tab-pane v-if="currentDetail.errorMessage" label="错误信息">
@@ -341,54 +341,31 @@ const taskOptions = computed(() =>
   tasks.value.map((item) => ({ value: item.id, label: item.name })),
 );
 
-const sourceStats = computed(() => {
-  return (
-    currentDetail.value?.sourceStatsData ||
-    currentDetail.value?.summaryData?.sourceStats ||
-    currentDetail.value?.resultData?.sourceStats ||
-    {}
-  );
+const sourceSummary = computed(() => {
+  return currentDetail.value?.summary?.sourceSummary || {};
 });
 
 const resultCount = computed(() => {
-  const customResultCount = Number(
-    currentDetail.value?.resultPreview?.customResult?.itemCount ||
-      currentDetail.value?.summaryData?.resultPreview?.customResult?.itemCount ||
-      0,
-  );
-  if (customResultCount > 0) {
-    return customResultCount;
-  }
-
-  return Number(
-    currentDetail.value?.resultPreview?.recommendedProductCount ||
-      currentDetail.value?.summaryData?.resultPreview?.recommendedProductCount ||
-      0,
-  );
+  return Number(currentDetail.value?.summary?.outputPreview?.resultCount || 0);
 });
 
 const getSummaryText = (row: EcomSelectionAnalysisRun) => {
-  const resultPreview = row.resultPreview || row.summaryData?.resultPreview;
-  const overviewSummary = String(resultPreview?.overview?.summary || "").trim();
+  const outputPreview = row.summary?.outputPreview;
+  const overviewSummary = String(outputPreview?.overviewSummary || "").trim();
   if (overviewSummary) {
     return overviewSummary;
   }
 
-  const customResultCount = Number(resultPreview?.customResult?.itemCount || 0);
-  if (customResultCount > 0) {
+  const resultCount = Number(outputPreview?.resultCount || 0);
+  if (resultCount > 0) {
     return row.analysisType === "pod_pattern_analysis"
-      ? `已输出 ${customResultCount} 条图案结果`
-      : `已输出 ${customResultCount} 条自定义结果`;
+      ? `已输出 ${resultCount} 条图案结果`
+      : row.analysisType === "custom_prompt_extract"
+        ? `已输出 ${resultCount} 条自定义结果`
+        : `已推荐 ${resultCount} 个候选方向`;
   }
 
-  const recommendedProductCount = Number(resultPreview?.recommendedProductCount || 0);
-  if (recommendedProductCount > 0) {
-    return `已推荐 ${recommendedProductCount} 个候选方向`;
-  }
-
-  const itemCount = Number(
-    row.sourceStatsData?.itemCount || row.summaryData?.sourceStats?.itemCount || 0,
-  );
+  const itemCount = Number(row.summary?.sourceSummary?.itemCount || 0);
   if (itemCount > 0) {
     return `样本 ${itemCount} 个`;
   }
@@ -405,17 +382,7 @@ const getSummaryText = (row: EcomSelectionAnalysisRun) => {
 };
 
 const getListResultCount = (row: EcomSelectionAnalysisRun) => {
-  const resultPreview = row.resultPreview || row.summaryData?.resultPreview;
-
-  if (
-    ["custom_prompt_extract", "pod_pattern_analysis"].includes(
-      String(row.analysisType || "").trim(),
-    )
-  ) {
-    return Number(resultPreview?.customResult?.itemCount || 0);
-  }
-
-  return Number(resultPreview?.recommendedProductCount || 0);
+  return Number(row.summary?.outputPreview?.resultCount || 0);
 };
 
 const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
@@ -450,14 +417,13 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
     },
     {
       title: "样本数",
-      field: "sourceStatsData",
+      field: "summary",
       width: 88,
-      formatter: ({ row }) =>
-        Number(row.sourceStatsData?.itemCount || row.summaryData?.sourceStats?.itemCount || 0),
+      formatter: ({ row }) => Number(row.summary?.sourceSummary?.itemCount || 0),
     },
     {
       title: "结果量",
-      field: "resultPreview",
+      field: "summary",
       width: 88,
       formatter: ({ row }) => getListResultCount(row),
     },

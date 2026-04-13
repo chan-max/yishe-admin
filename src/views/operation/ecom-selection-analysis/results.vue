@@ -168,11 +168,7 @@
               <div class="detail-card__header">
                 <div>
                   <div class="detail-card__title">
-                    {{
-                      currentDetail.task?.name ||
-                      currentDetail.taskName ||
-                      getAnalysisTypeLabel(currentDetail.analysisType)
-                    }}
+                    {{ currentDetail.taskName || getAnalysisTypeLabel(currentDetail.analysisType) }}
                   </div>
                   <div class="detail-card__subtitle">
                     {{ detailOverviewSummary }}
@@ -194,7 +190,7 @@
               <div class="metric-grid">
                 <div class="metric-card">
                   <span>样本数</span>
-                  <strong>{{ detailSourceStats.itemCount || 0 }}</strong>
+                  <strong>{{ detailSourceSummary.itemCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
                   <span>{{ resultCountLabel }}</span>
@@ -226,19 +222,19 @@
                 </div>
                 <div class="stats-item">
                   <span>任务数</span>
-                  <strong>{{ detailSourceStats.taskCount || 0 }}</strong>
+                  <strong>{{ detailSourceSummary.taskCount || 0 }}</strong>
                 </div>
                 <div class="stats-item">
                   <span>运行数</span>
-                  <strong>{{ detailSourceStats.runCount || 0 }}</strong>
+                  <strong>{{ detailSourceSummary.runCount || 0 }}</strong>
                 </div>
               </div>
 
-              <div class="detail-mini-section" v-if="detailSourceStats.platformBreakdown?.length">
+              <div class="detail-mini-section" v-if="detailSourceSummary.platformBreakdown?.length">
                 <div class="detail-mini-section__title">平台分布</div>
                 <div class="chip-list">
                   <el-tag
-                    v-for="item in detailSourceStats.platformBreakdown"
+                    v-for="item in detailSourceSummary.platformBreakdown"
                     :key="item.platform"
                     size="small"
                   >
@@ -286,20 +282,12 @@
               <el-empty v-else description="暂无结果预览" />
             </el-tab-pane>
 
-            <el-tab-pane label="来源样本">
+            <el-tab-pane label="来源商品">
               <pre class="json-preview">{{ formatJson(normalizedItems) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane label="分析轨迹">
-              <pre class="json-preview">{{ formatJson(analysisTrace) }}</pre>
-            </el-tab-pane>
-
             <el-tab-pane label="结果 JSON">
-              <pre class="json-preview">{{ formatJson(currentDetail.resultData) }}</pre>
-            </el-tab-pane>
-
-            <el-tab-pane label="完整 JSON">
-              <pre class="json-preview">{{ detailPreviewText }}</pre>
+              <pre class="json-preview">{{ formatJson(currentDetail.output) }}</pre>
             </el-tab-pane>
           </el-tabs>
         </template>
@@ -381,43 +369,31 @@ const taskOptions = computed(() =>
   tasks.value.map((item) => ({ value: item.id, label: item.name })),
 );
 
-const currentRun = computed(() => currentDetail.value?.run || null);
 const currentRunStatus = computed(
-  () =>
-    String(currentRun.value?.status || currentDetail.value?.runStatus || "").trim() || "success",
+  () => String(currentDetail.value?.runStatus || "").trim() || "success",
 );
 const currentRunErrorMessage = computed(
-  () =>
-    String(currentRun.value?.errorMessage || currentDetail.value?.runErrorMessage || "").trim() ||
-    "",
+  () => String(currentDetail.value?.runErrorMessage || "").trim() || "",
 );
-const currentAiModel = computed(
-  () => String(currentRun.value?.aiModel || currentDetail.value?.aiModel || "").trim() || "",
-);
+const currentAiModel = computed(() => String(currentDetail.value?.aiModel || "").trim() || "");
 
-const detailSourceStats = computed(() => {
-  return currentDetail.value?.sourceStatsData || currentDetail.value?.resultData?.sourceStats || {};
+const detailSourceSummary = computed(() => {
+  return currentDetail.value?.sourceSummary || {};
 });
 
 const recommendedProducts = computed(() => {
-  return Array.isArray(currentDetail.value?.resultData?.recommendedProducts)
-    ? currentDetail.value?.resultData?.recommendedProducts
+  return Array.isArray(currentDetail.value?.output?.recommendedProducts)
+    ? currentDetail.value?.output?.recommendedProducts
     : [];
 });
 
 const customResultItems = computed(() => {
-  const value = currentDetail.value?.resultData?.customResult?.items;
+  const value = currentDetail.value?.output?.customResult?.items;
   return Array.isArray(value) ? value : [];
 });
 
 const normalizedItems = computed(() => {
-  return Array.isArray(currentDetail.value?.normalizedItemsData)
-    ? currentDetail.value?.normalizedItemsData
-    : [];
-});
-
-const analysisTrace = computed(() => {
-  return currentDetail.value?.resultData?.analysisTrace || {};
+  return Array.isArray(currentDetail.value?.sourceItems) ? currentDetail.value?.sourceItems : [];
 });
 
 const resultCountLabel = computed(() =>
@@ -429,23 +405,20 @@ const resultCountValue = computed(() =>
     : customResultItems.value.length,
 );
 const supportMetricLabel = computed(() =>
-  currentDetail.value?.analysisType === "hot_selling_selection" ? "热门关键词" : "来源样本",
+  currentDetail.value?.analysisType === "hot_selling_selection" ? "热门关键词" : "来源商品",
 );
 const supportMetricValue = computed(() =>
   currentDetail.value?.analysisType === "hot_selling_selection"
-    ? Number(currentDetail.value?.resultData?.hotKeywords?.length || 0)
+    ? Number(currentDetail.value?.output?.hotKeywords?.length || 0)
     : normalizedItems.value.length,
 );
 
 const detailOverviewSummary = computed(
   () =>
-    currentDetail.value?.resultData?.overview?.summary ||
+    currentDetail.value?.output?.overview?.summary ||
     currentRunErrorMessage.value ||
     "暂无结论摘要",
 );
-
-const detailPreviewText = computed(() => formatJson(currentDetail.value || {}));
-
 const formatCustomResultCell = (value: unknown) => {
   if (value == null || value === "") {
     return "-";
@@ -457,25 +430,22 @@ const formatCustomResultCell = (value: unknown) => {
 };
 
 const getOverviewText = (row: EcomSelectionAnalysisResult) => {
-  const overviewSummary = String(row?.resultPreview?.overview?.summary || "").trim();
+  const overviewSummary = String(row?.output?.overview?.summary || "").trim();
   if (overviewSummary) {
     return overviewSummary;
   }
 
-  const customResultCount = Number(row?.resultPreview?.customResult?.itemCount || 0);
-  if (customResultCount > 0) {
+  const resultCount = getListResultCount(row);
+  if (resultCount > 0) {
     return row.analysisType === "pod_pattern_analysis"
-      ? `已输出 ${customResultCount} 条图案结果`
-      : `已输出 ${customResultCount} 条自定义结果`;
+      ? `已输出 ${resultCount} 条图案结果`
+      : row.analysisType === "custom_prompt_extract"
+        ? `已输出 ${resultCount} 条自定义结果`
+        : `已推荐 ${resultCount} 个候选方向`;
   }
 
-  const recommendedProductCount = Number(row?.resultPreview?.recommendedProductCount || 0);
-  if (recommendedProductCount > 0) {
-    return `已推荐 ${recommendedProductCount} 个候选方向`;
-  }
-
-  if (row?.sourceStatsData?.itemCount) {
-    return `样本 ${row.sourceStatsData.itemCount} 个`;
+  if (row?.sourceSummary?.itemCount) {
+    return `样本 ${row.sourceSummary.itemCount} 个`;
   }
 
   if (row.runErrorMessage) {
@@ -486,15 +456,11 @@ const getOverviewText = (row: EcomSelectionAnalysisResult) => {
 };
 
 const getListResultCount = (row: EcomSelectionAnalysisResult) => {
-  if (
-    ["custom_prompt_extract", "pod_pattern_analysis"].includes(
-      String(row.analysisType || "").trim(),
-    )
-  ) {
-    return Number(row?.resultPreview?.customResult?.itemCount || 0);
+  if (String(row.analysisType || "").trim() === "hot_selling_selection") {
+    return Number(row?.output?.recommendedProducts?.length || 0);
   }
 
-  return Number(row?.resultPreview?.recommendedProductCount || 0);
+  return Number(row?.output?.customResult?.items?.length || 0);
 };
 
 const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisResult>>({
@@ -529,13 +495,13 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisResult>>({
     },
     {
       title: "样本数",
-      field: "sourceStatsData",
+      field: "sourceSummary",
       width: 88,
-      formatter: ({ row }) => Number(row.sourceStatsData?.itemCount || 0),
+      formatter: ({ row }) => Number(row.sourceSummary?.itemCount || 0),
     },
     {
       title: "结果量",
-      field: "resultPreview",
+      field: "output",
       width: 88,
       formatter: ({ row }) => getListResultCount(row),
     },
