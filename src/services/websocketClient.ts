@@ -8,7 +8,19 @@ type WsStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconne
 
 const CLIENT_SOURCE = "管理后台";
 const HEARTBEAT_INTERVAL = 15_000;
-const HEARTBEAT_TIMEOUT = 10_000;
+const HEARTBEAT_TIMEOUT = 30_000;
+const WS_CLIENT_INFO_REFRESH_MS = 60_000;
+const WS_FINGERPRINT_VOLATILE_KEYS = new Set([
+  "timestamp",
+  "reportedAt",
+  "fetchedAt",
+  "updatedAt",
+  "lastCheckedAt",
+  "lastHeartbeatAt",
+  "lastActivity",
+  "lastPingAt",
+  "lastPongAt",
+]);
 
 // 获取 WebSocket 地址
 const getDefaultWsUrl = () => {
@@ -376,6 +388,8 @@ let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
 let heartbeatTimeout: ReturnType<typeof setTimeout> | null = null;
 let lastPingTimestamp: number | null = null;
 let intentionalDisconnect = false;
+let lastClientInfoFingerprint = "";
+let lastClientInfoEmittedAt = 0;
 
 function updateState(patch: Partial<WsState>) {
   Object.assign(wsState, patch);
@@ -402,15 +416,66 @@ function stopHeartbeat() {
   lastPingTimestamp = null;
 }
 
+function stableStringifyForWs(value: unknown): string {
+  if (value === null || value === undefined) {
+    return "null";
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringifyForWs(item)).join(",")}]`;
+  }
+
+  if (typeof value === "object") {
+    const source = value as Record<string, any>;
+    const keys = Object.keys(source).sort();
+    return `{${keys
+      .map((key) => `${JSON.stringify(key)}:${stableStringifyForWs(source[key])}`)
+      .join(",")}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function stripVolatileWsFieldsForFingerprint(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripVolatileWsFieldsForFingerprint(item));
+  }
+
+  if (value && typeof value === "object") {
+    const source = value as Record<string, any>;
+    return Object.keys(source).reduce<Record<string, unknown>>((result, key) => {
+      if (WS_FINGERPRINT_VOLATILE_KEYS.has(key)) {
+        return result;
+      }
+      result[key] = stripVolatileWsFieldsForFingerprint(source[key]);
+      return result;
+    }, {});
+  }
+
+  return value;
+}
+
+function buildWsFingerprint(value: unknown) {
+  return stableStringifyForWs(stripVolatileWsFieldsForFingerprint(value));
+}
+
 function scheduleHeartbeatTimeout() {
   clearHeartbeatTimeout();
   heartbeatTimeout = setTimeout(() => {
+    emitter.emit("log", { level: "warn", message: "[ws] heartbeat timeout" });
+
+    if (!socket || !socket.connected) {
+      updateState({
+        status: "error",
+        lastError: "Heartbeat timeout",
+      });
+      reconnect();
+      return;
+    }
+
     updateState({
-      status: "error",
       lastError: "Heartbeat timeout",
     });
-    emitter.emit("log", { level: "warn", message: "[ws] heartbeat timeout, reconnecting" });
-    reconnect();
   }, HEARTBEAT_TIMEOUT);
 }
 
@@ -437,6 +502,8 @@ function cleanupSocket() {
     socket.disconnect();
     socket = null;
   }
+  lastClientInfoFingerprint = "";
+  lastClientInfoEmittedAt = 0;
   stopHeartbeat();
 }
 
@@ -656,7 +723,18 @@ function serializeError(error: unknown) {
 
 function emitClientInfo() {
   if (!socket || !socket.connected) return;
-  socket.emit("client-info", JSON.parse(JSON.stringify(clientInfo)));
+  const payload = JSON.parse(JSON.stringify(clientInfo));
+  const fingerprint = buildWsFingerprint(payload);
+  const now = Date.now();
+  if (
+    fingerprint === lastClientInfoFingerprint &&
+    now - lastClientInfoEmittedAt < WS_CLIENT_INFO_REFRESH_MS
+  ) {
+    return;
+  }
+  socket.emit("client-info", payload);
+  lastClientInfoFingerprint = fingerprint;
+  lastClientInfoEmittedAt = now;
 }
 
 function connect(endpoint?: string) {
@@ -688,7 +766,6 @@ function connect(endpoint?: string) {
     query: buildQuery(),
     auth: {
       token: getAccessToken() || undefined,
-      clientInfo: JSON.parse(JSON.stringify(clientInfo)),
     },
   });
 

@@ -35,7 +35,12 @@
           <p class="tools-card__desc">{{ item.description }}</p>
 
           <div class="tools-card__actions">
-            <el-button type="primary" round :disabled="!item.downloadUrl" @click="handleDownload(item.downloadUrl)">
+            <el-button
+              type="primary"
+              round
+              :disabled="!item.downloadUrl"
+              @click="handleDownload(item.downloadUrl)"
+            >
               {{ item.actionText }}
             </el-button>
           </div>
@@ -67,7 +72,8 @@ const downloadCards: DownloadCard[] = [
     platform: "Windows",
     description: "与服务端长连接，桥接浏览器自动化与桌面能力。",
     actionText: "Windows 安装包",
-    downloadUrl: "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
     icon: "ep:monitor",
   },
   {
@@ -76,8 +82,29 @@ const downloadCards: DownloadCard[] = [
     platform: "macOS",
     description: "与服务端长连接，桥接浏览器自动化与桌面能力。",
     actionText: "macOS 安装包",
-    downloadUrl: "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
     icon: "mdi:apple",
+  },
+  {
+    key: "client-windows-with-plugins",
+    title: "客户端（内置插件）",
+    platform: "Windows",
+    description: "内置浏览器自动化端，并额外包含 PS 自动化端，适合一体化安装。",
+    actionText: "Windows 一体包",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client-with-plugins.exe",
+    icon: "ep:box",
+  },
+  {
+    key: "client-macos-with-plugins",
+    title: "客户端（内置插件）",
+    platform: "macOS",
+    description: "内置浏览器自动化端，适合一体化安装。",
+    actionText: "macOS 一体包",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client-with-plugins.dmg",
+    icon: "mdi:apple-keyboard-command",
   },
   {
     key: "ps-automation",
@@ -85,7 +112,8 @@ const downloadCards: DownloadCard[] = [
     platform: "Windows",
     description: "Photoshop 桥接与相关自动化任务。",
     actionText: "PS 端",
-    downloadUrl: "https://github.com/1s-design/yishe-ps/releases/latest/download/yishe-ps-windows.exe",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-ps/releases/latest/download/yishe-ps-windows.exe",
     icon: "ep:set-up",
   },
   {
@@ -94,7 +122,8 @@ const downloadCards: DownloadCard[] = [
     platform: "Windows",
     description: "独立承接浏览器自动化，与客户端解耦。",
     actionText: "Windows 包",
-    downloadUrl: "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-windows.exe",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-windows.exe",
     icon: "ep:connection",
   },
   {
@@ -103,7 +132,8 @@ const downloadCards: DownloadCard[] = [
     platform: "macOS",
     description: "独立承接浏览器自动化，与客户端解耦。",
     actionText: "macOS 包",
-    downloadUrl: "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-mac",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-mac",
     icon: "mdi:apple",
   },
   {
@@ -112,7 +142,8 @@ const downloadCards: DownloadCard[] = [
     platform: "Chrome / Edge",
     description: "解压后于扩展页「加载已解压的扩展程序」导入。",
     actionText: "插件 zip",
-    downloadUrl: "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
+    downloadUrl:
+      "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
     icon: "mdi:puzzle",
   },
 ];
@@ -279,5 +310,4 @@ function handleDownload(downloadUrl: string) {
   padding: 0 18px;
   border-radius: 12px;
 }
-
 </style>

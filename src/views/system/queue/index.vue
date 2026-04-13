@@ -2494,6 +2494,36 @@ function findQueueTaskIndexById(taskId: unknown) {
   );
 }
 
+function shouldIgnorePublishTaskRuntimeRegression(
+  row: QueueMessage,
+  nextStatus?: string,
+) {
+  const normalizedNextStatus = String(nextStatus || "").trim().toLowerCase();
+  if (!normalizedNextStatus) {
+    return false;
+  }
+
+  const currentDispatchMeta: any = getPublishDispatchMeta(row);
+  const currentStatus = String(row?.status || "").trim().toLowerCase();
+  const currentDispatchStatus = String(currentDispatchMeta?.status || "")
+    .trim()
+    .toLowerCase();
+
+  if (currentStatus === "completed" || currentDispatchStatus === "completed") {
+    return normalizedNextStatus !== "completed";
+  }
+
+  if (
+    currentStatus === "failed" ||
+    currentDispatchStatus === "failed" ||
+    currentDispatchStatus === "timeout"
+  ) {
+    return normalizedNextStatus !== "failed" && normalizedNextStatus !== "completed";
+  }
+
+  return false;
+}
+
 function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
   const normalizedTaskId = String(event?.taskId || "").trim();
   if (!normalizedTaskId) {
@@ -2503,6 +2533,9 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
   const taskIndex = findQueueTaskIndexById(normalizedTaskId);
   if (taskIndex >= 0) {
     const row = dataSource.value[taskIndex];
+    if (shouldIgnorePublishTaskRuntimeRegression(row, event.status)) {
+      return;
+    }
     const currentDispatchMeta: any = getPublishDispatchMeta(row);
     const nextRow: QueueMessage = {
       ...row,
