@@ -167,6 +167,12 @@ select {
     }
 }
 
+html.light {
+    .el-loading-mask {
+        background: color-mix(in srgb, var(--app-content-bg-color) 62%, transparent) !important;
+    }
+}
+
 @keyframes keyframes-blink {
     0% {
         opacity: 0.3;

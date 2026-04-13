@@ -43,7 +43,7 @@ export default defineComponent({
     return () => (
       <section class={[prefixCls, 'w-full h-full relative overflow-hidden']}>
         {renderBasic()}
-        <Backtop />
+        {/* <Backtop />  */}
       </section>
     )
   }

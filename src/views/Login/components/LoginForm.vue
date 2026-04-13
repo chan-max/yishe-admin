@@ -21,6 +21,7 @@
           <el-input
             v-model="loginData.loginForm.account"
             placeholder="请输入账号"
+            class="login-form__input"
             :prefix-icon="iconAvatar"
           />
         </el-form-item>
@@ -30,6 +31,7 @@
           <el-input
             v-model="loginData.loginForm.password"
             :placeholder="t('login.passwordPlaceholder')"
+            class="login-form__input"
             :prefix-icon="iconLock"
             show-password
             type="password"
@@ -163,9 +165,8 @@ import { ElLoading } from "element-plus";
 import LoginFormTitle from "./LoginFormTitle.vue";
 import type { RouteLocationNormalizedLoaded } from "vue-router";
 
-// import { useIcon } from "@/hooks/web/useIcon";
-
 import * as authUtil from "@/utils/auth";
+import { useIcon } from "@/hooks/web/useIcon";
 import { usePermissionStoreWithOut } from "@/store/modules/permission";
 import * as LoginApi from "@/api/login";
 import { LoginStateEnum, useFormValid, useLoginState } from "./useLogin";
@@ -177,8 +178,8 @@ defineOptions({ name: "LoginForm" });
 
 const { t } = useI18n();
 const message = useMessage();
-const iconAvatar = "ep:avatar";
-const iconLock = "ep:lock";
+const iconAvatar = useIcon({ icon: "ep:user", color: "#7c8aa5" });
+const iconLock = useIcon({ icon: "ep:lock", color: "#7c8aa5" });
 const formLogin = ref();
 const { validForm } = useFormValid(formLogin);
 const { getLoginState } = useLoginState();
@@ -375,6 +376,19 @@ onMounted(() => {
 .login-form {
   :deep(.el-form-item) {
     margin-bottom: 24px; /* 原来是 18px-22px，增加到 24px */
+  }
+
+  :deep(.login-form__input .el-input__wrapper) {
+    border-radius: 14px;
+    min-height: 46px;
+  }
+
+  :deep(.login-form__input .el-input__prefix-inner) {
+    color: #7c8aa5;
+  }
+
+  :deep(.login-form__input .el-input__prefix-inner svg) {
+    font-size: 16px;
   }
 }
 
