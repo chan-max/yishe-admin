@@ -13,10 +13,10 @@
       <div class="task-dialog-layout">
         <div class="task-dialog-main">
           <CompactNotice
-            v-if="!analysisRuns.length"
+            v-if="!availableAnalysisRuns.length"
             type="warning"
             title="还没有可选的分析运行"
-            description="建议先在选品分析模块执行一次分析任务，再从分析结果创建找同款任务。"
+            description="建议先在电商分析模块执行一次成功的“热门选品”分析，再从分析结果创建找同款任务。"
             class="task-dialog-alert"
           />
 
@@ -376,10 +376,18 @@ const submitting = ref(false);
 
 const currentTask = computed(() => props.task || null);
 
+const availableAnalysisRuns = computed(() =>
+  props.analysisRuns.filter(
+    (item) =>
+      item.analysisType === "hot_selling_selection" &&
+      item.status === "success",
+  ),
+);
+
 const analysisRunOptions = computed(() => {
   const map = new Map<string, string>();
 
-  props.analysisRuns.forEach((item) => {
+  availableAnalysisRuns.value.forEach((item) => {
     map.set(
       item.id,
       `${item.taskName || item.id} · ${getRunStatusLabel(item.status)} · ${formatDateTime(item.finishedAt || item.createTime)}`,

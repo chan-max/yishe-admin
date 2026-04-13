@@ -103,7 +103,7 @@
 
                 <template #summarySlot="{ row }">
                   <span class="table-meta-text">
-                    {{ row.summaryData?.message || row.errorMessage || "-" }}
+                    {{ getRunSummaryMessage(row) }}
                   </span>
                 </template>
 
@@ -161,8 +161,78 @@
       </template>
     </ListPageLayout>
 
-    <el-dialog v-model="detailVisible" title="运行详情" width="760px">
-      <pre class="json-preview">{{ detailContent }}</pre>
+    <el-dialog v-model="detailVisible" title="运行详情" width="760px" @closed="currentDetail = null">
+      <div v-if="currentDetail" class="run-detail">
+        <div class="run-detail__hero">
+          <div class="run-detail__hero-main">
+            <div class="run-detail__eyebrow">
+              {{ getPlatformLabel(catalog, currentDetail.platform) }} /
+              {{ getTaskTypeLabel(catalog, currentDetail.platform, currentDetail.taskType) }}
+            </div>
+            <div class="run-detail__title">
+              {{ currentDetail.taskName || "采集运行" }}
+            </div>
+            <div class="run-detail__summary">
+              {{ getRunSummaryMessage(currentDetail) }}
+            </div>
+          </div>
+          <el-tag size="small" :type="getRunStatusTagType(currentDetail.status)">
+            {{ getRunStatusLabel(currentDetail.status) }}
+          </el-tag>
+        </div>
+
+        <div class="run-detail__section">
+          <div class="run-detail__section-title">运行信息</div>
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="运行 ID">
+              <span class="mono">{{ currentDetail.id || "-" }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="任务 ID">
+              <span class="mono">{{ currentDetail.taskId || "-" }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="开始时间">
+              {{ formatDateTime(currentDetail.startedAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="结束时间">
+              {{ formatDateTime(currentDetail.finishedAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="执行机器">
+              <span class="mono">{{ currentDetail.assignedMachineCode || "-" }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="客户端 ID">
+              <span class="mono">{{ currentDetail.assignedClientId || "-" }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="命令 ID">
+              <span class="mono">{{ currentDetail.commandId || "-" }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="更新时间">
+              {{ formatDateTime(currentDetail.updateTime) }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <div class="run-detail__section">
+          <div class="run-detail__section-title">运行摘要</div>
+          <el-descriptions :column="2" border size="small">
+            <el-descriptions-item label="摘要消息">
+              {{ getRunSummaryMessage(currentDetail) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="记录数">
+              {{ getRunRecordsCount(currentDetail) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="截图数">
+              {{ getRunSnapshotCount(currentDetail) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="摘要更新时间">
+              {{ formatDateTime(currentDetail.summaryData?.updatedAt) }}
+            </el-descriptions-item>
+            <el-descriptions-item v-if="currentDetail.errorMessage" label="错误信息">
+              {{ currentDetail.errorMessage }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+      <el-empty v-else description="暂无运行详情" />
     </el-dialog>
   </ContentWrap>
 </template>
@@ -186,7 +256,6 @@ import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/comm
 import {
   createEmptyEcomCollectCatalog,
   formatDateTime,
-  formatJson,
   getPlatformLabel,
   getRunStatusLabel,
   getRunStatusTagType,
@@ -201,7 +270,7 @@ const total = ref(0);
 const list = ref<EcomPlatformCollectRun[]>([]);
 const selectedIds = ref<string[]>([]);
 const detailVisible = ref(false);
-const detailContent = ref("");
+const currentDetail = ref<EcomPlatformCollectRun | null>(null);
 
 const catalog = reactive(createEmptyEcomCollectCatalog());
 
@@ -221,6 +290,19 @@ const updateSelectedIds = (records: EcomPlatformCollectRun[] = []) => {
   selectedIds.value = Array.from(
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
+};
+
+const getRunSummaryMessage = (run: EcomPlatformCollectRun) =>
+  String(run.summaryData?.message || run.errorMessage || "-");
+
+const getRunRecordsCount = (run: EcomPlatformCollectRun) => {
+  const count = Number(run.summaryData?.recordsCount);
+  return Number.isFinite(count) && count >= 0 ? count : 0;
+};
+
+const getRunSnapshotCount = (run: EcomPlatformCollectRun) => {
+  const count = Number(run.summaryData?.snapshotCount);
+  return Number.isFinite(count) && count >= 0 ? count : 0;
 };
 
 const tableData = computed(() => {
@@ -266,7 +348,7 @@ const gridOptions = ref<VxeGridProps<EcomPlatformCollectRun>>({
       title: "记录数",
       field: "summaryData",
       width: 90,
-      formatter: ({ row }) => Number(row.summaryData?.recordsCount || 0),
+      formatter: ({ row }) => getRunRecordsCount(row),
     },
     {
       ...buildTimeColumn("开始时间", "startedAt", 180),
@@ -369,7 +451,7 @@ const handleOperationCommand = (command: string, row: EcomPlatformCollectRun) =>
 
 const openDetail = async (row: EcomPlatformCollectRun) => {
   const detail = await getEcomPlatformCollectRunDetail(row.id);
-  detailContent.value = formatJson(detail);
+  currentDetail.value = detail;
   detailVisible.value = true;
 };
 
@@ -448,17 +530,58 @@ onActivated(() => {
   gap: 4px;
 }
 
-.json-preview {
-  max-height: 560px;
-  overflow: auto;
-  margin: 0;
+.run-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.run-detail__hero,
+.run-detail__section {
   padding: 16px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-primary);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  background: var(--el-bg-color-overlay);
+}
+
+.run-detail__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.run-detail__hero-main {
+  min-width: 0;
+}
+
+.run-detail__eyebrow {
+  color: var(--el-color-primary);
   font-size: 12px;
-  line-height: 1.6;
-  white-space: pre-wrap;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.run-detail__title {
+  margin-top: 6px;
+  color: var(--el-text-color-primary);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.5;
   word-break: break-word;
+}
+
+.run-detail__summary {
+  margin-top: 8px;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.run-detail__section-title {
+  margin-bottom: 12px;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 600;
 }
 </style>

@@ -5,10 +5,9 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">热门选品分析任务</div>
+              <div class="resource-toolbar__title">电商分析任务</div>
               <div class="resource-toolbar__desc">
-                采集模块负责提供数据源，这里只负责定义分析范围、AI
-                参数与手动触发入口，保持和采集执行链路解耦。
+                采集模块负责提供数据源，这里只负责定义分析范围、AI 参数与手动触发入口；支持热门选品、POD 图案分析和自定义提示词分析。
               </div>
             </div>
             <div class="resource-toolbar__actions">
@@ -31,6 +30,8 @@
                 <el-form-item label="分析类型">
                   <el-select v-model="filters.analysisType" clearable placeholder="全部类型">
                     <el-option label="热门选品" value="hot_selling_selection" />
+                    <el-option label="POD 图案分析" value="pod_pattern_analysis" />
+                    <el-option label="自定义提示词分析" value="custom_prompt_extract" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -67,7 +68,13 @@
                   <div class="table-stack">
                     <span>{{ getOptionsSummary(row) }}</span>
                     <span class="table-meta-text">
-                      模型：{{ row.optionsData?.aiModel }}
+                      {{
+                        row.optionsData?.aiModel
+                          ? `模型：${row.optionsData?.aiModel}`
+                          : row.optionsData?.customPrompt
+                            ? "已设置自定义提示词"
+                            : "默认模型"
+                      }}
                     </span>
                   </div>
                 </template>
@@ -253,6 +260,24 @@ const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
       : "",
   ].filter(Boolean);
 
+  if (task.analysisType === "custom_prompt_extract") {
+    const customParts = [
+      options.customPrompt ? "自定义提示词" : "",
+      options.customOutputSchema ? "指定输出结构" : "",
+      options.targetMarket ? options.targetMarket : "",
+    ].filter(Boolean);
+    return customParts.join(" | ") || "使用默认自定义提示词配置";
+  }
+
+  if (task.analysisType === "pod_pattern_analysis") {
+    const podParts = [
+      options.notes ? "图案分析备注" : "",
+      options.customOutputSchema ? "指定输出结构" : "",
+      options.targetMarket ? options.targetMarket : "",
+    ].filter(Boolean);
+    return podParts.join(" | ") || "使用默认 POD 图案分析配置";
+  }
+
   return parts.join(" | ") || "使用默认热门选品参数";
 };
 
@@ -260,6 +285,11 @@ const getResultSummary = (task: EcomSelectionAnalysisTask) => {
   const summary = task.lastResultSummary || {};
   return (
     summary?.overview?.summary ||
+    (summary?.customResult?.itemCount
+      ? task.analysisType === "pod_pattern_analysis"
+        ? `已输出 ${summary.customResult.itemCount} 条图案结果`
+        : `已输出 ${summary.customResult.itemCount} 条自定义结果`
+      : "") ||
     summary?.errorMessage ||
     (Array.isArray(summary?.recommendedProducts) && summary.recommendedProducts.length
       ? `已推荐 ${summary.recommendedProducts.length} 个候选方向`

@@ -5,9 +5,9 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">热门选品分析结果</div>
+              <div class="resource-toolbar__title">电商分析结果</div>
               <div class="resource-toolbar__desc">
-                查看每次分析的样本规模、AI 输出和推荐商品，并可从结果直接进入“找同款”任务创建。
+                查看每次分析使用了哪些数据、采用了什么方法、提示词是什么，以及最终输出结果；热门选品结果还能继续进入“找同款”。
               </div>
             </div>
             <div class="resource-toolbar__actions">
@@ -42,6 +42,8 @@
                 <el-form-item label="分析类型">
                   <el-select v-model="filters.analysisType" clearable placeholder="全部类型">
                     <el-option label="热门选品" value="hot_selling_selection" />
+                    <el-option label="POD 图案分析" value="pod_pattern_analysis" />
+                    <el-option label="自定义提示词分析" value="custom_prompt_extract" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -107,7 +109,10 @@
                             <el-icon><View /></el-icon>
                             <span>详情</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="supply-match">
+                          <el-dropdown-item
+                            v-if="row.analysisType === 'hot_selling_selection'"
+                            command="supply-match"
+                          >
                             <el-icon><Link /></el-icon>
                             <span>创建找同款</span>
                           </el-dropdown-item>
@@ -167,7 +172,7 @@
               <div class="detail-card__header">
                 <div>
                   <div class="detail-card__title">
-                    {{ currentDetail.task?.name || currentDetail.taskName || "-" }}
+                    {{ currentDetail.task?.name || currentDetail.taskName || getAnalysisTypeLabel(currentDetail.analysisType) }}
                   </div>
                   <div class="detail-card__subtitle">
                     {{
@@ -180,6 +185,9 @@
                 <div class="detail-chip-row">
                   <el-tag size="small" :type="getRunStatusTagType(currentDetail.status)">
                     {{ getRunStatusLabel(currentDetail.status) }}
+                  </el-tag>
+                  <el-tag size="small" type="info">
+                    {{ getAnalysisTypeLabel(currentDetail.analysisType) }}
                   </el-tag>
                   <el-tag
                     v-if="currentDetail.resultData?.overview?.confidence"
@@ -200,12 +208,12 @@
                   <strong>{{ detailSourceStats.itemCount || 0 }}</strong>
                 </div>
                 <div class="overview-metric">
-                  <span>推荐商品</span>
-                  <strong>{{ recommendedProducts.length }}</strong>
+                  <span>{{ resultCountLabel }}</span>
+                  <strong>{{ resultCountValue }}</strong>
                 </div>
                 <div class="overview-metric">
-                  <span>热门关键词</span>
-                  <strong>{{ hotKeywords.length }}</strong>
+                  <span>{{ supportMetricLabel }}</span>
+                  <strong>{{ supportMetricValue }}</strong>
                 </div>
                 <div class="overview-metric">
                   <span>截图数</span>
@@ -292,17 +300,48 @@
                   </el-tag>
                 </div>
               </div>
+
+              <div class="detail-mini-section">
+                <div class="detail-mini-section__title">分析方法</div>
+                <div class="stats-list">
+                  <div class="stats-item">
+                    <span>提示词模式</span>
+                    <strong>{{ promptModeLabel }}</strong>
+                  </div>
+                  <div class="stats-item">
+                    <span>请求模型</span>
+                    <strong>{{ requestedModelLabel }}</strong>
+                  </div>
+                  <div class="stats-item">
+                    <span>实际模型</span>
+                    <strong>{{ currentDetail.aiModel || "-" }}</strong>
+                  </div>
+                  <div class="stats-item">
+                    <span>输出视图</span>
+                    <strong>{{ customResultViewLabel }}</strong>
+                  </div>
+                </div>
+                <div class="detail-text-group" v-if="analysisMethodSummary">
+                  <div class="detail-text-group__label">方法说明</div>
+                  <div class="detail-text-group__content">
+                    {{ analysisMethodSummary }}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="detail-toolbar">
+          <div class="detail-toolbar" v-if="currentDetail.analysisType === 'hot_selling_selection'">
             <el-button type="primary" @click="handleCreateSupplyMatchTask(currentDetail)">
               基于本次分析创建找同款任务
             </el-button>
           </div>
 
           <el-tabs>
-            <el-tab-pane :label="`推荐商品 (${recommendedProducts.length})`">
+            <el-tab-pane
+              v-if="currentDetail.analysisType === 'hot_selling_selection'"
+              :label="`推荐商品 (${recommendedProducts.length})`"
+            >
               <div v-if="recommendedProducts.length" class="recommend-list">
                 <div
                   v-for="item in recommendedProducts"
@@ -410,7 +449,10 @@
               <el-empty v-else description="暂无推荐商品" />
             </el-tab-pane>
 
-            <el-tab-pane :label="`热门关键词 (${hotKeywords.length})`">
+            <el-tab-pane
+              v-if="currentDetail.analysisType === 'hot_selling_selection'"
+              :label="`热门关键词 (${hotKeywords.length})`"
+            >
               <div v-if="hotKeywords.length" class="simple-card-grid">
                 <div v-for="item in hotKeywords" :key="item.keyword" class="simple-card">
                   <div class="simple-card__header">
@@ -433,7 +475,10 @@
               <el-empty v-else description="暂无热门关键词" />
             </el-tab-pane>
 
-            <el-tab-pane :label="`平台洞察 (${platformInsights.length})`">
+            <el-tab-pane
+              v-if="currentDetail.analysisType === 'hot_selling_selection'"
+              :label="`平台洞察 (${platformInsights.length})`"
+            >
               <div v-if="platformInsights.length" class="simple-card-grid">
                 <div
                   v-for="item in platformInsights"
@@ -468,6 +513,118 @@
                 </div>
               </div>
               <el-empty v-else description="暂无平台洞察" />
+            </el-tab-pane>
+
+            <el-tab-pane
+              v-if="showsStructuredResult"
+              :label="`${structuredResultTabLabel} (${customResultItems.length})`"
+            >
+              <div v-if="customResultNotes.length" class="detail-mini-section">
+                <div class="detail-mini-section__title">结果备注</div>
+                <div class="chip-list">
+                  <el-tag v-for="note in customResultNotes" :key="note" size="small" type="info">
+                    {{ note }}
+                  </el-tag>
+                </div>
+              </div>
+
+              <div v-if="customResultView === 'gallery' && customGalleryItems.length" class="custom-gallery">
+                <div
+                  v-for="item in customGalleryItems"
+                  :key="item.key"
+                  class="custom-gallery__card"
+                >
+                  <img :src="item.imageUrl" :alt="item.title || 'custom-result'" class="custom-gallery__image" />
+                  <div class="custom-gallery__meta">
+                    <div class="custom-gallery__title">{{ item.title || item.imageUrl }}</div>
+                    <el-link v-if="item.sourceUrl" :href="item.sourceUrl" target="_blank" type="primary">
+                      查看来源
+                    </el-link>
+                  </div>
+                </div>
+              </div>
+
+              <el-table
+                v-else-if="customResultItems.length && customResultColumns.length"
+                :data="customResultItems"
+                border
+                size="small"
+                class="custom-result-table"
+              >
+                <el-table-column
+                  v-for="column in customResultColumns"
+                  :key="column.key"
+                  :prop="column.key"
+                  :label="column.label"
+                  min-width="140"
+                  show-overflow-tooltip
+                >
+                  <template #default="{ row }">
+                    {{ formatCustomResultCell(row?.[column.key]) }}
+                  </template>
+                </el-table-column>
+              </el-table>
+
+              <div v-else-if="customResultItems.length" class="simple-card-grid">
+                <div
+                  v-for="(item, index) in customResultItems"
+                  :key="`custom-${index}`"
+                  class="simple-card"
+                >
+                  <pre class="json-preview json-preview--compact">{{ formatJson(item) }}</pre>
+                </div>
+              </div>
+
+              <el-empty v-else description="暂无自定义结果" />
+            </el-tab-pane>
+
+            <el-tab-pane label="分析过程">
+              <div class="analysis-trace-grid">
+                <div class="detail-card">
+                  <div class="detail-card__title">分析输入</div>
+                  <el-descriptions :column="2" border size="small">
+                    <el-descriptions-item label="分析类型">
+                      {{ getAnalysisTypeLabel(currentDetail.analysisType) }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="提示词模式">
+                      {{ promptModeLabel }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="请求模型">
+                      {{ requestedModelLabel }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="模型链路">
+                      {{ analysisModelChainText }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="样本数">
+                      {{ detailSourceStats.itemCount || normalizedItems.length || 0 }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="原始记录数">
+                      {{ currentDetail.sourceRecordIdsData?.length || 0 }}
+                    </el-descriptions-item>
+                  </el-descriptions>
+                </div>
+
+                <div class="detail-card">
+                  <div class="detail-card__title">提示词与结构</div>
+                  <div v-if="userPromptText" class="detail-text-group">
+                    <div class="detail-text-group__label">用户提示词</div>
+                    <pre class="json-preview json-preview--compact">{{ userPromptText }}</pre>
+                  </div>
+                  <div v-if="outputSchemaHintText" class="detail-text-group">
+                    <div class="detail-text-group__label">输出结构提示</div>
+                    <pre class="json-preview json-preview--compact">{{ outputSchemaHintText }}</pre>
+                  </div>
+                  <div class="detail-text-group">
+                    <div class="detail-text-group__label">最终提示词</div>
+                    <pre class="json-preview json-preview--compact">{{ resolvedPromptText }}</pre>
+                  </div>
+                </div>
+              </div>
+
+              <div class="detail-card" v-if="analysisRawResponseText">
+                <div class="detail-card__title">AI 原始响应</div>
+                <pre class="json-preview json-preview--compact">{{ analysisRawResponseText }}</pre>
+              </div>
             </el-tab-pane>
 
             <el-tab-pane :label="`源商品样本 (${normalizedItems.length})`">
@@ -612,9 +769,211 @@ const normalizedItems = computed(() => {
     : [];
 });
 
+const analysisTrace = computed(() => {
+  return currentDetail.value?.resultData?.analysisTrace || {};
+});
+
+const isStructuredResultAnalysis = (analysisType?: string | null) =>
+  ["custom_prompt_extract", "pod_pattern_analysis"].includes(
+    String(analysisType || "").trim(),
+  );
+
+const customResult = computed(() => {
+  return currentDetail.value?.resultData?.customResult || {};
+});
+
+const showsStructuredResult = computed(() =>
+  isStructuredResultAnalysis(currentDetail.value?.analysisType),
+);
+
+const customResultItems = computed(() => {
+  return Array.isArray(customResult.value?.items) ? customResult.value.items : [];
+});
+
+const customResultColumns = computed(() => {
+  if (Array.isArray(customResult.value?.columns) && customResult.value.columns.length) {
+    return customResult.value.columns.filter(
+      (item: any) => String(item?.key || "").trim() && String(item?.label || "").trim(),
+    );
+  }
+
+  const firstObject = customResultItems.value.find(
+    (item) => item && typeof item === "object" && !Array.isArray(item),
+  ) as Record<string, any> | undefined;
+  if (!firstObject) {
+    return [];
+  }
+
+  return Object.keys(firstObject)
+    .slice(0, 8)
+    .map((key) => ({ key, label: key }));
+});
+
+const customResultView = computed(() =>
+  String(customResult.value?.view || "").trim().toLowerCase() || "table",
+);
+
+const customResultViewLabel = computed(() => {
+  const map: Record<string, string> = {
+    gallery: "图片墙",
+    table: "表格",
+    list: "列表",
+    json: "JSON",
+  };
+  return map[customResultView.value] || "-";
+});
+
+const customResultNotes = computed(() => {
+  const notes = Array.isArray(customResult.value?.notes)
+    ? customResult.value.notes
+    : Array.isArray(currentDetail.value?.resultData?.resultNotes)
+      ? currentDetail.value?.resultData?.resultNotes
+      : [];
+  return notes.filter(Boolean);
+});
+
+const customGalleryItems = computed(() =>
+  customResultItems.value
+    .map((item: any, index) => {
+      const imageUrl = String(
+        item?.imageUrl ||
+          item?.url ||
+          item?.src ||
+          item?.image ||
+          item?.imageUrls?.[0] ||
+          "",
+      ).trim();
+      if (!imageUrl) {
+        return null;
+      }
+      return {
+        key: String(item?.id || item?.sourceUrl || imageUrl || index),
+        imageUrl,
+        title: String(item?.title || item?.name || item?.label || "").trim(),
+        sourceUrl: String(item?.sourceUrl || item?.url || "").trim(),
+      };
+    })
+    .filter(Boolean),
+);
+
+const requestedModelLabel = computed(() =>
+  String(
+    analysisTrace.value?.requestedModel ||
+      currentDetail.value?.optionsSnapshot?.aiModel ||
+      "",
+  ).trim() || "默认模型",
+);
+
+const promptModeLabel = computed(() =>
+  analysisTrace.value?.promptMode === "custom_prompt" ||
+  currentDetail.value?.analysisType === "custom_prompt_extract"
+    ? "用户自定义提示词"
+    : "系统模板",
+);
+
+const structuredResultTabLabel = computed(() => {
+  if (currentDetail.value?.analysisType === "pod_pattern_analysis") {
+    return "图案结果";
+  }
+  return "自定义结果";
+});
+
+const analysisMethodSummary = computed(() =>
+  String(
+    analysisTrace.value?.methodSummary ||
+      currentDetail.value?.resultData?.overview?.methodSummary ||
+      "",
+  ).trim(),
+);
+
+const analysisModelChainText = computed(() => {
+  const items = Array.isArray(analysisTrace.value?.aiModelChain)
+    ? analysisTrace.value.aiModelChain.filter(Boolean)
+    : [];
+  return items.length
+    ? items.join(" -> ")
+    : String(currentDetail.value?.aiModel || "").trim() || "-";
+});
+
+const userPromptText = computed(() =>
+  String(
+    analysisTrace.value?.userPrompt ||
+      currentDetail.value?.optionsSnapshot?.customPrompt ||
+      "",
+  ).trim(),
+);
+
+const outputSchemaHintText = computed(() =>
+  String(
+    analysisTrace.value?.outputSchemaHint ||
+      currentDetail.value?.optionsSnapshot?.customOutputSchema ||
+      "",
+  ).trim(),
+);
+
+const resolvedPromptText = computed(() =>
+  String(analysisTrace.value?.resolvedPrompt || "").trim() || "-",
+);
+
+const analysisRawResponseText = computed(() =>
+  String(analysisTrace.value?.aiRawText || "").trim(),
+);
+
+const resultCountLabel = computed(() =>
+  showsStructuredResult.value ? "结果条数" : "推荐商品",
+);
+
+const resultCountValue = computed(() =>
+  showsStructuredResult.value
+    ? customResultItems.value.length
+    : recommendedProducts.value.length,
+);
+
+const supportMetricLabel = computed(() =>
+  showsStructuredResult.value ? "输出视图" : "热门关键词",
+);
+
+const supportMetricValue = computed(() =>
+  showsStructuredResult.value
+    ? customResultViewLabel.value
+    : hotKeywords.value.length,
+);
+
 const detailPreviewText = computed(() => formatJson(currentDetail.value || {}));
 
+const formatCustomResultCell = (value: unknown) => {
+  if (value == null || value === "") {
+    return "-";
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean).join(" / ") || "-";
+  }
+  if (typeof value === "object") {
+    return formatJson(value);
+  }
+  return String(value);
+};
+
 const getOverviewText = (row: EcomSelectionAnalysisRun) => {
+  const overviewSummary = String(
+    row?.resultPreview?.overview?.summary || row?.resultData?.overview?.summary || "",
+  ).trim();
+  if (overviewSummary) {
+    return overviewSummary;
+  }
+
+  const customResultCount = Number(row?.resultPreview?.customResult?.itemCount || 0);
+  if (customResultCount > 0) {
+    return row.analysisType === "pod_pattern_analysis"
+      ? `已输出 ${customResultCount} 条图案结果`
+      : `已输出 ${customResultCount} 条自定义结果`;
+  }
+
+  const recommendedProductCount = Number(row?.resultPreview?.recommendedProductCount || 0);
+  if (recommendedProductCount > 0) {
+    return `已推荐 ${recommendedProductCount} 个候选方向`;
+  }
+
   if (row?.sourceStatsData?.itemCount) {
     return `样本 ${row.sourceStatsData.itemCount} 个`;
   }
@@ -628,6 +987,18 @@ const getOverviewText = (row: EcomSelectionAnalysisRun) => {
   }
 
   return "暂无摘要";
+};
+
+const getListResultCount = (row: EcomSelectionAnalysisRun) => {
+  if (
+    ["custom_prompt_extract", "pod_pattern_analysis"].includes(
+      String(row.analysisType || "").trim(),
+    )
+  ) {
+    return Number(row?.resultPreview?.customResult?.itemCount || 0);
+  }
+
+  return Number(row?.resultPreview?.recommendedProductCount || 0);
 };
 
 const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
@@ -667,13 +1038,10 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
       formatter: ({ row }) => Number(row.sourceStatsData?.itemCount || 0),
     },
     {
-      title: "推荐数",
-      field: "recommendedProducts",
+      title: "结果量",
+      field: "resultPreview",
       width: 88,
-      formatter: ({ row }) =>
-        Array.isArray(row.resultData?.recommendedProducts)
-          ? row.resultData?.recommendedProducts.length
-          : 0,
+      formatter: ({ row }) => getListResultCount(row),
     },
     {
       ...buildTimeColumn("开始时间", "startedAt", 180),
@@ -778,6 +1146,11 @@ const handleCreateSupplyMatchTask = async (
   sourceItemIds?: string[],
   productName?: string,
 ) => {
+  if (run.analysisType !== "hot_selling_selection") {
+    ElMessage.warning("只有“热门选品”分析结果可以继续创建找同款任务");
+    return;
+  }
+
   await router.push({
     name: "EcomSelectionSupplyMatchTaskPage",
     query: {
@@ -997,6 +1370,13 @@ onActivated(() => {
   margin-bottom: 14px;
 }
 
+.analysis-trace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
 .recommend-list,
 .source-item-list {
   display: grid;
@@ -1053,10 +1433,49 @@ onActivated(() => {
   gap: 8px;
 }
 
+.custom-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.custom-gallery__card {
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 14px;
+  background: var(--el-bg-color);
+}
+
+.custom-gallery__image {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: var(--el-fill-color-light);
+}
+
+.custom-gallery__meta {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 14px;
+}
+
+.custom-gallery__title {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
 .simple-card-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.custom-result-table {
+  width: 100%;
 }
 
 .source-item-card__meta {
@@ -1083,8 +1502,15 @@ onActivated(() => {
   word-break: break-word;
 }
 
+.json-preview--compact {
+  max-height: 320px;
+  padding: 12px 14px;
+  font-size: 12px;
+}
+
 @media (max-width: 1200px) {
   .detail-overview-grid,
+  .analysis-trace-grid,
   .simple-card-grid,
   .recommend-grid {
     grid-template-columns: 1fr;

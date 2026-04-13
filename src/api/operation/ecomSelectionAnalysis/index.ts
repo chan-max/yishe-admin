@@ -1,9 +1,74 @@
 import request from "@/config/axios";
 
+export type EcomSelectionAnalysisType =
+  | "hot_selling_selection"
+  | "custom_prompt_extract"
+  | "pod_pattern_analysis";
+
+export interface EcomSelectionAnalysisTrace {
+  featureCode?: string;
+  executionMode?: string;
+  promptMode?: string;
+  promptTemplate?: string;
+  requestedModel?: string | null;
+  userPrompt?: string | null;
+  outputSchemaHint?: string | null;
+  methodSummary?: string | null;
+  resolvedPrompt?: string | null;
+  aiModelChain?: string[];
+  aiRawText?: string | null;
+}
+
+export interface EcomSelectionAnalysisOverview {
+  summary?: string;
+  confidence?: string;
+  opportunityDirection?: string;
+  datasetAssessment?: string;
+  methodSummary?: string;
+}
+
+export interface EcomSelectionAnalysisCustomResult {
+  title?: string;
+  view?: "gallery" | "table" | "list" | "json" | string;
+  columns?: Array<{
+    key: string;
+    label: string;
+  }>;
+  items?: any[];
+  notes?: string[];
+}
+
+export interface EcomSelectionAnalysisResultData {
+  analysisType?: EcomSelectionAnalysisType | string;
+  generatedAt?: string;
+  overview?: EcomSelectionAnalysisOverview | null;
+  sourceStats?: Record<string, any> | null;
+  hotKeywords?: Array<Record<string, any>>;
+  recommendedProducts?: Array<Record<string, any>>;
+  platformInsights?: Array<Record<string, any>>;
+  selectionStrategy?: string[];
+  riskNotes?: string[];
+  nextActions?: string[];
+  customResult?: EcomSelectionAnalysisCustomResult | null;
+  resultNotes?: string[];
+  analysisTrace?: EcomSelectionAnalysisTrace | null;
+}
+
+export interface EcomSelectionAnalysisRunResultPreview {
+  overview?: EcomSelectionAnalysisOverview | null;
+  recommendedProductCount?: number;
+  customResult?: {
+    title?: string;
+    view?: string;
+    itemCount?: number;
+  } | null;
+  errorMessage?: string | null;
+}
+
 export interface EcomSelectionAnalysisTask {
   id: string;
   name: string;
-  analysisType: string;
+  analysisType: EcomSelectionAnalysisType | string;
   sourceConfig?: Record<string, any> | null;
   optionsData?: Record<string, any> | null;
   creator?: string;
@@ -22,7 +87,7 @@ export interface EcomSelectionAnalysisRun {
   taskId: string;
   taskName?: string;
   creator?: string;
-  analysisType: string;
+  analysisType: EcomSelectionAnalysisType | string;
   status: string;
   aiModel?: string | null;
   sourceConfigSnapshot?: Record<string, any> | null;
@@ -30,7 +95,8 @@ export interface EcomSelectionAnalysisRun {
   sourceStatsData?: Record<string, any> | null;
   sourceRecordIdsData?: string[] | null;
   normalizedItemsData?: Array<Record<string, any>> | null;
-  resultData?: Record<string, any> | null;
+  resultData?: EcomSelectionAnalysisResultData | null;
+  resultPreview?: EcomSelectionAnalysisRunResultPreview | null;
   startedAt?: string | null;
   finishedAt?: string | null;
   errorMessage?: string | null;

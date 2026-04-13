@@ -1,5 +1,5 @@
 <template>
-  <el-dialog :model-value="modelValue" :title="currentTask?.id ? '编辑选品分析任务' : '新建选品分析任务'" fullscreen append-to-body
+  <el-dialog :model-value="modelValue" :title="currentTask?.id ? '编辑电商分析任务' : '新建电商分析任务'" fullscreen append-to-body
     destroy-on-close class="selection-analysis-task-dialog" :close-on-click-modal="false"
     @update:model-value="emit('update:modelValue', $event)">
     <div class="task-dialog-shell">
@@ -15,9 +15,18 @@
             <el-row :gutter="20">
               <el-col :xs="24">
                 <el-form-item label="任务名称" required>
-                  <el-input v-model="taskForm.name" placeholder="例如：Amazon / Temu 无线耳机热门选品" />
+                  <el-input
+                    v-model="taskForm.name"
+                    :placeholder="
+                      isCustomPromptAnalysis
+                        ? '例如：多平台耳机商品图提取'
+                        : isPodPatternAnalysis
+                          ? '例如：POD 宠物印花图案分析'
+                        : '例如：Amazon / Temu 无线耳机热门选品'
+                    "
+                  />
                   <div class="form-hint">
-                    建议直接写清平台、品类和目标市场。当前版本默认执行“热门选品”分析，你主要配置数据源范围和分析偏好即可。
+                    建议直接写清平台、品类和目标目的。分析模块只负责定义数据范围和 AI 分析方式，不和采集执行链路耦合。
                   </div>
                 </el-form-item>
               </el-col>
@@ -80,7 +89,7 @@
                 </el-form-item>
               </el-col>
 
-              <el-col :xs="24" :lg="6">
+              <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="6">
                 <el-form-item label="输出 Top N">
                   <el-input-number v-model="taskForm.optionsData.topN" :min="1" :max="20" controls-position="right" />
                   <div class="form-hint">
@@ -100,10 +109,66 @@
 
               <el-col :xs="24" :lg="4">
                 <el-form-item label="分析类型">
-                  <el-input value="热门选品" disabled />
+                  <el-select v-model="taskForm.analysisType">
+                    <el-option
+                      v-for="item in analysisTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
                   <div class="form-hint">
-                    当前固定为“热门选品”：服务端会先归一化原始数据，再由 AI
-                    输出热门关键词、候选商品、平台洞察和下一步建议。
+                    {{
+                      isHotSellingAnalysis
+                        ? "热门选品会输出候选商品、关键词、平台洞察和下一步建议。"
+                        : isPodPatternAnalysis
+                          ? "POD 图案分析会优先使用图片、标题、卖点和规格，输出图案主题、视觉元素和裂变方向。"
+                          : "自定义提示词分析会严格根据你的提示词整理结构化结果，适合抽图、字段提取、比价摘要等场景。"
+                    }}
+                  </div>
+                </el-form-item>
+              </el-col>
+
+              <el-col v-if="isPodPatternAnalysis" :xs="24">
+                <CompactNotice
+                  type="info"
+                  title="POD 图案分析说明"
+                  description="这个模式会走系统模板，尽量保留 sourceItemId、imageUrl、sourceUrl、图案主题、视觉元素、配色和裂变方向，方便后续继续做印花提取、元素拆解和 AI 裂变。"
+                />
+              </el-col>
+
+              <el-col v-if="isCustomPromptAnalysis" :xs="24">
+                <el-form-item label="自定义提示词" required>
+                  <el-input
+                    v-model="taskForm.optionsData.customPrompt"
+                    type="textarea"
+                    :rows="5"
+                    placeholder="例如：整理出商品图，不要额外信息；如果有多张图，仅保留主图和来源链接"
+                  />
+                  <div class="form-hint">
+                    这是本次分析的最高优先级要求。服务端会先归一化采集样本，再调用 AI 按这个提示词输出结构化 JSON 结果。
+                  </div>
+                </el-form-item>
+              </el-col>
+
+              <el-col v-if="isCustomPromptAnalysis || isPodPatternAnalysis" :xs="24">
+                <el-form-item label="输出结构提示">
+                  <el-input
+                    v-model="taskForm.optionsData.customOutputSchema"
+                    type="textarea"
+                    :rows="4"
+                    :placeholder="
+                      isPodPatternAnalysis
+                        ? '例如：优先返回 gallery 视图，并保留 imageUrl、patternTheme、variationIdeas'
+                        : '例如：返回 { imageUrl, sourceUrl } 数组；优先使用 gallery 视图'
+                    "
+                  />
+                  <div class="form-hint">
+                    {{
+                      isPodPatternAnalysis
+                        ? "可选。用于约束图案分析结果更偏图片墙、表格或精简字段输出。"
+                        : "可选。用于告诉 AI 你希望结果更像表格、图片墙、列表还是纯 JSON，有助于后续展示更稳定。"
+                    }}
                   </div>
                 </el-form-item>
               </el-col>
@@ -184,7 +249,7 @@
                   </el-form-item>
                 </el-col>
 
-                <el-col :xs="24" :lg="12">
+                <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="12">
                   <el-form-item label="优先参考平台">
                     <el-select v-model="taskForm.optionsData.preferredPlatforms" multiple collapse-tags
                       collapse-tags-tooltip clearable placeholder="优先关注的平台">
@@ -197,7 +262,7 @@
                   </el-form-item>
                 </el-col>
 
-                <el-col :xs="24" :lg="12">
+                <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="12">
                   <el-form-item label="重点关键词">
                     <el-input v-model="focusKeywordsText" type="textarea" :rows="5"
                       placeholder="一行一个，例如：wireless earbuds" />
@@ -207,7 +272,7 @@
                   </el-form-item>
                 </el-col>
 
-                <el-col :xs="24" :lg="12">
+                <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="12">
                   <el-form-item label="排除关键词">
                     <el-input v-model="excludeKeywordsText" type="textarea" :rows="5"
                       placeholder="一行一个，例如：used / refurbished" />
@@ -217,7 +282,7 @@
                   </el-form-item>
                 </el-col>
 
-                <el-col :xs="24" :lg="6">
+                <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="6">
                   <el-form-item label="目标价格最低值">
                     <el-input-number v-model="taskForm.optionsData.targetPriceRange.min" :min="0" :step="1"
                       controls-position="right" />
@@ -225,7 +290,7 @@
                   </el-form-item>
                 </el-col>
 
-                <el-col :xs="24" :lg="6">
+                <el-col v-if="isHotSellingAnalysis" :xs="24" :lg="6">
                   <el-form-item label="目标价格最高值">
                     <el-input-number v-model="taskForm.optionsData.targetPriceRange.max" :min="0" :step="1"
                       controls-position="right" />
@@ -235,12 +300,24 @@
                   </el-form-item>
                 </el-col>
 
-                <el-col :xs="24">
+                <el-col v-if="isHotSellingAnalysis || isPodPatternAnalysis" :xs="24">
                   <el-form-item label="分析备注">
-                    <el-input v-model="taskForm.optionsData.notes" type="textarea" :rows="4"
-                      placeholder="补充你希望 AI 更关注的维度，例如材质、品牌空间、价格带策略等" />
+                    <el-input
+                      v-model="taskForm.optionsData.notes"
+                      type="textarea"
+                      :rows="4"
+                      :placeholder="
+                        isPodPatternAnalysis
+                          ? '补充你希望 AI 更关注的图案维度，例如节日主题、字标元素、适合 DTG 的简洁图案等'
+                          : '补充你希望 AI 更关注的维度，例如材质、品牌空间、价格带策略等'
+                      "
+                    />
                     <div class="form-hint">
-                      这里相当于补充提示词，不会改变样本筛选逻辑，但会影响 AI 输出时更关注的维度。
+                      {{
+                        isPodPatternAnalysis
+                          ? "这里相当于 POD 图案分析的补充提示，不改变样本筛选逻辑，但会影响图案主题、元素和裂变方向的判断。"
+                          : "这里相当于补充提示词，不会改变样本筛选逻辑，但会影响 AI 输出时更关注的维度。"
+                      }}
                     </div>
                   </el-form-item>
                 </el-col>
@@ -270,8 +347,8 @@
                 <strong>{{ parsedRawRecordIds.length }}</strong>
               </div>
               <div class="preview-metric">
-                <span class="preview-metric__label">TopN</span>
-                <strong>{{ taskForm.optionsData.topN }}</strong>
+                <span class="preview-metric__label">{{ previewFocusMetricLabel }}</span>
+                <strong>{{ previewFocusMetricValue }}</strong>
               </div>
             </div>
 
@@ -353,6 +430,8 @@ type AnalysisTaskForm = {
     };
     notes: string;
     aiModel: string;
+    customPrompt: string;
+    customOutputSchema: string;
   };
 };
 
@@ -394,6 +473,8 @@ const createDefaultForm = (): AnalysisTaskForm => ({
     },
     notes: "",
     aiModel: "",
+    customPrompt: "",
+    customOutputSchema: "",
   },
 });
 
@@ -405,6 +486,20 @@ const rawRecordIdsText = ref("");
 const advancedVisible = ref(false);
 
 const currentTask = computed(() => props.task || null);
+const analysisTypeOptions = [
+  { label: "热门选品", value: "hot_selling_selection" },
+  { label: "POD 图案分析", value: "pod_pattern_analysis" },
+  { label: "自定义提示词分析", value: "custom_prompt_extract" },
+];
+const isCustomPromptAnalysis = computed(
+  () => taskForm.analysisType === "custom_prompt_extract",
+);
+const isPodPatternAnalysis = computed(
+  () => taskForm.analysisType === "pod_pattern_analysis",
+);
+const isHotSellingAnalysis = computed(
+  () => taskForm.analysisType === "hot_selling_selection",
+);
 
 const buildOptionList = (
   baseOptions: Array<{ label: string; value: string }>,
@@ -476,7 +571,15 @@ const taskTypeOptions = computed(() =>
   buildOptionList(availableTaskTypeOptions.value, taskForm.sourceConfig.taskTypes, "任务类型"),
 );
 
-const canSubmit = computed(() => !!taskForm.name.trim());
+const canSubmit = computed(() => {
+  if (!taskForm.name.trim()) {
+    return false;
+  }
+  if (isCustomPromptAnalysis.value && !taskForm.optionsData.customPrompt.trim()) {
+    return false;
+  }
+  return true;
+});
 
 const hasExplicitScope = computed(() => {
   return !!(
@@ -524,6 +627,8 @@ const normalizedPayload = computed(() => ({
     },
     notes: taskForm.optionsData.notes.trim(),
     aiModel: taskForm.optionsData.aiModel.trim(),
+    customPrompt: taskForm.optionsData.customPrompt.trim(),
+    customOutputSchema: taskForm.optionsData.customOutputSchema.trim(),
   },
 }));
 
@@ -542,14 +647,36 @@ const advancedSummaryText = computed(() => {
     excludeKeywordsText.value.trim() ? "已设置排除词" : "",
     taskForm.optionsData.preferredPlatforms.length ? "已设置优先平台" : "",
     taskForm.optionsData.targetPriceRange.min != null ||
-      taskForm.optionsData.targetPriceRange.max != null
+    taskForm.optionsData.targetPriceRange.max != null
       ? "已设置价格带"
       : "",
     taskForm.optionsData.notes.trim() ? "已填写备注" : "",
+    taskForm.optionsData.customPrompt.trim() ? "已设置自定义提示词" : "",
+    taskForm.optionsData.customOutputSchema.trim() ? "已设置输出结构" : "",
     taskForm.optionsData.aiModel.trim() ? `模型 ${taskForm.optionsData.aiModel.trim()}` : "",
   ].filter(Boolean);
 
   return parts.length ? parts.join(" · ") : "默认使用推荐配置，如需更细粒度控制可展开设置。";
+});
+
+const previewFocusMetricLabel = computed(() => {
+  if (isCustomPromptAnalysis.value) {
+    return "自定义提示词";
+  }
+  if (isPodPatternAnalysis.value) {
+    return "图案分析";
+  }
+  return "TopN";
+});
+
+const previewFocusMetricValue = computed(() => {
+  if (isCustomPromptAnalysis.value) {
+    return taskForm.optionsData.customPrompt.trim() ? "已设置" : "未设置";
+  }
+  if (isPodPatternAnalysis.value) {
+    return taskForm.optionsData.notes.trim() ? "含补充要求" : "系统模板";
+  }
+  return String(taskForm.optionsData.topN);
 });
 
 const resetForm = () => {
@@ -573,6 +700,8 @@ const resetForm = () => {
   taskForm.optionsData.targetPriceRange.max = next.optionsData.targetPriceRange.max;
   taskForm.optionsData.notes = next.optionsData.notes;
   taskForm.optionsData.aiModel = next.optionsData.aiModel;
+  taskForm.optionsData.customPrompt = next.optionsData.customPrompt;
+  taskForm.optionsData.customOutputSchema = next.optionsData.customOutputSchema;
   focusKeywordsText.value = "";
   excludeKeywordsText.value = "";
   rawRecordIdsText.value = "";
@@ -622,6 +751,10 @@ const hydrateForm = (task?: EcomSelectionAnalysisTask | null) => {
       : null;
   taskForm.optionsData.notes = String(task.optionsData?.notes || "").trim();
   taskForm.optionsData.aiModel = String(task.optionsData?.aiModel || "").trim();
+  taskForm.optionsData.customPrompt = String(task.optionsData?.customPrompt || "").trim();
+  taskForm.optionsData.customOutputSchema = String(
+    task.optionsData?.customOutputSchema || "",
+  ).trim();
   focusKeywordsText.value = Array.isArray(task.optionsData?.focusKeywords)
     ? task.optionsData?.focusKeywords.filter(Boolean).join("\n")
     : "";
@@ -650,6 +783,8 @@ watch(
         taskForm.optionsData.targetPriceRange.min != null ||
         taskForm.optionsData.targetPriceRange.max != null ||
         taskForm.optionsData.notes.trim() ||
+        taskForm.optionsData.customPrompt.trim() ||
+        taskForm.optionsData.customOutputSchema.trim() ||
         taskForm.optionsData.aiModel.trim()
       );
     }
@@ -676,8 +811,13 @@ watch(
 );
 
 const handleSubmit = async () => {
-  if (!canSubmit.value) {
+  if (!taskForm.name.trim()) {
     ElMessage.warning("请先填写任务名称");
+    return;
+  }
+
+  if (isCustomPromptAnalysis.value && !taskForm.optionsData.customPrompt.trim()) {
+    ElMessage.warning("请填写自定义提示词");
     return;
   }
 

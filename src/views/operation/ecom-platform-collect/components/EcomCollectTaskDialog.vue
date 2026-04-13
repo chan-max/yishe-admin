@@ -55,6 +55,9 @@
                   <div v-if="selectedPlatform?.reason" class="form-hint">
                     {{ selectedPlatform.reason }}
                   </div>
+                  <div v-if="selectedPlatformAccessText" class="form-hint">
+                    {{ selectedPlatformAccessText }}
+                  </div>
                 </el-form-item>
               </el-col>
 
@@ -198,6 +201,26 @@
                 </div>
               </div>
 
+              <div v-if="selectedAccessTags.length" class="capability-block">
+                <div class="capability-block__label">访问限制</div>
+                <div class="capability-card__tags">
+                  <el-tag
+                    v-for="item in selectedAccessTags"
+                    :key="item.key"
+                    size="small"
+                    :type="item.type"
+                  >
+                    {{ item.label }}
+                  </el-tag>
+                </div>
+                <div
+                  v-if="selectedAccessNotes.length"
+                  class="capability-block__text capability-block__text--muted"
+                >
+                  {{ selectedAccessNotes.join("；") }}
+                </div>
+              </div>
+
               <div v-if="selectedTaskType" class="capability-block">
                 <div class="capability-block__label">执行标识</div>
                 <div class="capability-kv">
@@ -264,6 +287,9 @@ import {
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
 import {
+  buildCapabilityAccessSummary,
+  getCapabilityAccessLabel,
+  getCapabilityAccessTagType,
   getCapabilityStatusLabel,
   getCapabilityStatusTagType,
   getPlatformSchema,
@@ -380,6 +406,81 @@ const customerFeatureSummary = computed(() => {
   }
 
   return selectedScene.value?.description || "-";
+});
+
+const selectedPlatformAccessText = computed(() =>
+  buildCapabilityAccessSummary(selectedPlatform.value?.access).join(" · "),
+);
+
+const selectedAccess = computed(
+  () =>
+    selectedTaskType.value?.access ||
+    selectedScene.value?.access ||
+    selectedPlatform.value?.access ||
+    null,
+);
+
+const selectedAccessTags = computed(() => {
+  const access = selectedAccess.value;
+  if (!access) {
+    return [] as Array<{
+      key: string;
+      label: string;
+      type: "success" | "warning" | "danger" | "info";
+    }>;
+  }
+
+  return [
+    access.login
+      ? {
+          key: "login",
+          label:
+            access.loginLabel || getCapabilityAccessLabel("login", access.login),
+          type: getCapabilityAccessTagType("login", access.login),
+        }
+      : null,
+    access.captcha
+      ? {
+          key: "captcha",
+          label:
+            access.captchaLabel ||
+            getCapabilityAccessLabel("captcha", access.captcha),
+          type: getCapabilityAccessTagType("captcha", access.captcha),
+        }
+      : null,
+    access.antiBot
+      ? {
+          key: "antiBot",
+          label:
+            access.antiBotLabel ||
+            getCapabilityAccessLabel("antiBot", access.antiBot),
+          type: getCapabilityAccessTagType("antiBot", access.antiBot),
+        }
+      : null,
+  ].filter(
+    (
+      item,
+    ): item is {
+      key: string;
+      label: string;
+      type: "success" | "warning" | "danger" | "info";
+    } => !!item,
+  );
+});
+
+const selectedAccessNotes = computed(() => {
+  const notes = [
+    ...(Array.isArray(selectedPlatform.value?.access?.notes)
+      ? selectedPlatform.value?.access?.notes
+      : []),
+    ...(Array.isArray(selectedAccess.value?.notes)
+      ? selectedAccess.value?.notes
+      : []),
+  ]
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(notes));
 });
 
 const buildLiveRequestBody = (allowInvalid = false) => {
@@ -910,6 +1011,11 @@ watch(
 .capability-block__text {
   color: var(--el-text-color-regular);
   line-height: 1.7;
+}
+
+.capability-block__text--muted {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .capability-kv {

@@ -301,6 +301,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
+        path: "toolkit",
+        redirect: "/operation/toolkit",
+        name: "ExternalToolkitLegacy",
+        meta: {
+          hidden: true,
+          noTagsView: true,
+          canTo: true,
+        },
+      },
+      {
         path: "browser-automation",
         component: () => import("@/views/external/browser-automation/index.vue"),
         name: "ExternalBrowserAutomation",
@@ -453,13 +463,23 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
+        path: "capabilities",
+        component: () => import("@/views/operation/ecom-platform-collect/capabilities.vue"),
+        name: "EcomPlatformCollectCapabilityPage",
+        meta: {
+          title: "平台能力",
+          noCache: true,
+          order: 1,
+        },
+      },
+      {
         path: "tasks",
         component: () => import("@/views/operation/ecom-platform-collect/index.vue"),
         name: "EcomPlatformCollectTaskPage",
         meta: {
           title: "采集任务",
           noCache: true,
-          order: 1,
+          order: 2,
         },
       },
       {
@@ -469,7 +489,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "采集运行",
           noCache: true,
-          order: 2,
+          order: 3,
         },
       },
       {
@@ -479,7 +499,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "原始数据",
           noCache: true,
-          order: 3,
+          order: 4,
         },
       },
       {
@@ -489,7 +509,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "选品分析任务",
           noCache: true,
-          order: 4,
+          order: 5,
         },
       },
       {
@@ -499,7 +519,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "选品分析结果",
           noCache: true,
-          order: 5,
+          order: 6,
         },
       },
       {
@@ -509,7 +529,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "找同款任务",
           noCache: true,
-          order: 6,
+          order: 7,
         },
       },
       {
@@ -519,7 +539,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "找同款运行",
           noCache: true,
-          order: 7,
+          order: 8,
         },
       },
       {
@@ -529,7 +549,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "找同款结果",
           noCache: true,
-          order: 8,
+          order: 9,
         },
       },
     ],
@@ -546,6 +566,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
       alwaysShow: true,
     },
     children: [
+      {
+        path: "toolkit",
+        component: () => import("@/views/external/toolkit/index.vue"),
+        name: "OperationToolkit",
+        meta: {
+          title: "工具集",
+        },
+      },
       {
         path: "link-navigation",
         component: () => import("@/views/operation/link-navigation/index.vue"),

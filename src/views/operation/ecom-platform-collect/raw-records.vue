@@ -95,20 +95,11 @@
               >
                 <template #platformSceneSlot="{ row }">
                   <div class="table-stack">
-                    <span>{{ getPlatformLabel(catalog, row.platform) }}</span>
+                    <span>{{ getPlatformLabel(catalog, getRawPlatform(row)) }}</span>
                     <span class="table-meta-text">
-                      {{ getTaskTypeLabel(catalog, row.platform, row.taskType) }}
+                      {{ getTaskTypeLabel(catalog, getRawPlatform(row), getRawTaskType(row)) }}
                     </span>
                   </div>
-                </template>
-
-                <template #runStatusSlot="{ row }">
-                  <el-tag
-                    size="small"
-                    :type="getRunStatusTagType(getRawRunStatus(row))"
-                  >
-                    {{ getRunStatusLabel(getRawRunStatus(row)) }}
-                  </el-tag>
                 </template>
 
                 <template #summarySlot="{ row }">
@@ -211,11 +202,11 @@ import {
   createEmptyEcomCollectCatalog,
   formatDateTime,
   getPlatformLabel,
+  getRawFinishedAt,
+  getRawPlatform,
   getRawRecordsCount,
-  getRawRunStatus,
   getRawSummaryMessage,
-  getRunStatusLabel,
-  getRunStatusTagType,
+  getRawTaskType,
   getSnapshotCount,
   getTaskTypeLabel,
   getTaskTypeSchemas,
@@ -281,22 +272,22 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
   },
   columns: [
     { type: "checkbox", width: 48 },
-    { title: "任务名称", field: "taskName", minWidth: 160, showOverflow: "tooltip" },
+    {
+      title: "运行 ID",
+      field: "runId",
+      minWidth: 220,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => row.runId || "-",
+    },
     {
       title: "平台 / 任务类型",
-      field: "platform",
+      field: "collectData",
       width: 160,
       slots: { default: "platformSceneSlot" },
     },
     {
-      title: "运行状态",
-      field: "runStatus",
-      width: 110,
-      slots: { default: "runStatusSlot" },
-    },
-    {
       title: "执行摘要",
-      field: "summaryMessage",
+      field: "collectData",
       minWidth: 240,
       showOverflow: "tooltip",
       slots: { default: "summarySlot" },
@@ -313,14 +304,13 @@ const gridOptions = ref<VxeGridProps<EcomPlatformRawRecord>>({
     },
     {
       ...buildTimeColumn("完成时间", "finishedAt", 180),
-      formatter: ({ row }) => formatDateTime(row.finishedAt || row.run?.finishedAt),
+      formatter: ({ row }) => formatDateTime(getRawFinishedAt(row)),
     },
     {
       title: "截图数",
       field: "snapshotData",
       width: 80,
-      formatter: ({ row }) =>
-        Number(row.snapshotCount) || getSnapshotCount(row.snapshotData),
+      formatter: ({ row }) => getSnapshotCount(row.snapshotData || row.collectData),
     },
     buildOperationColumn("operationSlot", 120),
   ],

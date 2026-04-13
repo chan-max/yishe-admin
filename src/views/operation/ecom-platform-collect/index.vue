@@ -4,12 +4,15 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
-              <el-button size="small" type="primary" @click="openTaskDialog()">
-                新建任务
-              </el-button>
-            </div>
+          <div class="resource-toolbar__actions">
+            <el-button size="small" @click="loadData">刷新</el-button>
+            <el-button size="small" @click="router.push('/ecom-platform-collect/capabilities')">
+              平台能力
+            </el-button>
+            <el-button size="small" type="primary" @click="openTaskDialog()">
+              新建任务
+            </el-button>
+          </div>
           </div>
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
@@ -171,6 +174,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
@@ -196,6 +200,7 @@ import {
 
 defineOptions({ name: "EcomPlatformCollectTaskPage" });
 
+const router = useRouter();
 const loading = ref(false);
 const dialogVisible = ref(false);
 const currentTask = ref<EcomPlatformCollectTask | null>(null);

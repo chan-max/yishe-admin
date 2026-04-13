@@ -49,9 +49,15 @@
             <div class="supported-task-panel__head">
               <div>
                 <div class="section-title">执行环境</div>
-                <div class="muted">一个客户端可维护多个浏览器缓存环境，设为默认后可复用对应账号登录态。</div>
+                <div class="muted">
+                  一个客户端可维护多个浏览器缓存环境，设为默认后可复用对应账号登录态。
+                </div>
               </div>
-              <el-button type="primary" :disabled="!selectedClientId" @click="openCreateProfileDialog">
+              <el-button
+                type="primary"
+                :disabled="!selectedClientId"
+                @click="openCreateProfileDialog"
+              >
                 新增环境
               </el-button>
             </div>
@@ -145,7 +151,6 @@
               </vxe-grid>
             </div>
           </div>
-
         </section>
 
         <section v-else class="main-empty card">
@@ -486,165 +491,6 @@
                 </el-table>
               </div>
             </el-tab-pane>
-
-            <el-tab-pane label="工具集" name="smallFeature">
-              <div class="grid small-feature-grid">
-                <div class="card panel">
-                  <div class="small-feature-panel__head">
-                    <div>
-                      <div class="section-title">工具目录</div>
-                      <div class="muted">
-                        统一放置 Temu 登录、会话采集这类浏览器自动化工具。admin 端负责交互，客户端负责执行。
-                      </div>
-                    </div>
-                    <el-button
-                      :disabled="!selectedClientId"
-                      :loading="loadingMap.smallFeatures"
-                      @click="sendSmallFeatures"
-                    >
-                      刷新目录
-                    </el-button>
-                  </div>
-
-                  <div class="row wrap" style="margin-bottom: 12px">
-                    <el-tag v-if="currentProfileId" type="success" effect="plain">
-                      当前环境：{{ currentProfileName }} ({{ currentProfileId }})
-                    </el-tag>
-                    <el-tag v-else type="info" effect="plain">
-                      当前环境：未锁定，默认使用客户端活动环境
-                    </el-tag>
-                    <span class="muted">执行工具时会自动带上当前面板对应的环境。</span>
-                  </div>
-
-                  <div class="small-feature-layout">
-                    <div class="small-feature-list">
-                      <button
-                        v-for="feature in smallFeatureItems"
-                        :key="feature.key"
-                        type="button"
-                        class="small-feature-card"
-                        :class="{ 'is-active': selectedSmallFeatureKey === feature.key }"
-                        @click="selectedSmallFeatureKey = feature.key"
-                      >
-                        <div class="small-feature-card__head">
-                          <span class="small-feature-card__name">{{ feature.name }}</span>
-                          <span class="small-feature-card__category">
-                            {{ feature.category || "tool" }}
-                          </span>
-                        </div>
-                        <div class="small-feature-card__meta">
-                          {{ feature.platform || "browser-automation" }}
-                        </div>
-                        <div class="small-feature-card__desc">
-                          {{ feature.description || "暂无描述" }}
-                        </div>
-                      </button>
-                    </div>
-
-                    <div class="small-feature-detail">
-                      <template v-if="selectedSmallFeature">
-                        <div class="small-feature-detail__head">
-                          <div>
-                            <div class="small-feature-detail__title">
-                              {{ selectedSmallFeature.name }}
-                            </div>
-                            <div class="small-feature-detail__desc">
-                              {{ selectedSmallFeature.description || "暂无描述" }}
-                            </div>
-                          </div>
-                          <div class="small-feature-detail__badges">
-                            <el-tag size="small" effect="plain">
-                              {{ selectedSmallFeature.platform || "browser-automation" }}
-                            </el-tag>
-                            <el-tag size="small" effect="plain" type="warning">
-                              {{ selectedSmallFeature.category || "tool" }}
-                            </el-tag>
-                          </div>
-                        </div>
-
-                        <div
-                          v-if="selectedSmallFeature.tips?.length"
-                          class="small-feature-tips"
-                        >
-                          <div class="small-feature-tips__title">使用提示</div>
-                          <div
-                            v-for="tip in selectedSmallFeature.tips"
-                            :key="tip"
-                            class="small-feature-tips__item"
-                          >
-                            {{ tip }}
-                          </div>
-                        </div>
-
-                        <div v-if="normalizedSmallFeatureFields.length" class="stack">
-                          <SmallFeatureField
-                            v-for="field in normalizedSmallFeatureFields"
-                            :key="field.key"
-                            v-model="smallFeatureFormState[field.key]"
-                            :field="field"
-                            :error="smallFeatureFormErrors[field.key] || ''"
-                            @blur="validateSmallFeatureField(field)"
-                          />
-                        </div>
-                        <div v-else class="muted">当前工具无需额外参数，可以直接执行。</div>
-
-                        <div class="row wrap" style="margin-top: 16px">
-                          <el-button
-                            type="primary"
-                            :disabled="!selectedSmallFeature || !selectedClientId"
-                            :loading="loadingMap.runSmallFeature"
-                            @click="sendRunSmallFeature"
-                          >
-                            执行工具
-                          </el-button>
-                        </div>
-                      </template>
-
-                      <el-empty v-else description="请选择要执行的工具" />
-                    </div>
-                  </div>
-                </div>
-
-                <div class="card panel">
-                  <div class="section-title">执行结果</div>
-                  <div
-                    v-if="smallFeatureFeedback"
-                    class="debug-feedback"
-                    :data-success="smallFeatureFeedback.success"
-                  >
-                    <div class="debug-feedback__header">
-                      <el-tag
-                        :type="smallFeatureFeedback.success ? 'success' : 'danger'"
-                        size="small"
-                        effect="plain"
-                      >
-                        {{ smallFeatureFeedback.success ? "成功" : "失败" }}
-                      </el-tag>
-                      <span class="debug-feedback__message">{{ smallFeatureFeedback.message }}</span>
-                    </div>
-                    <div class="debug-feedback__meta">
-                      <span>功能：{{ selectedSmallFeature?.name || selectedSmallFeatureKey || "-" }}</span>
-                      <span v-if="smallFeatureFeedback.updatedAt">
-                        时间：{{ smallFeatureFeedback.updatedAt }}
-                      </span>
-                    </div>
-                    <div v-if="smallFeatureFeedback.suggestion" class="debug-feedback__hint">
-                      建议：{{ smallFeatureFeedback.suggestion }}
-                    </div>
-                    <div
-                      v-if="
-                        smallFeatureFeedback.detail &&
-                        smallFeatureFeedback.detail !== smallFeatureFeedback.message
-                      "
-                      class="debug-feedback__detail"
-                    >
-                      原始信息：{{ smallFeatureFeedback.detail }}
-                    </div>
-                  </div>
-                  <pre class="result">{{ smallFeatureResultText || "暂无结果" }}</pre>
-                </div>
-              </div>
-            </el-tab-pane>
           </el-tabs>
         </div>
       </el-dialog>
@@ -720,19 +566,16 @@ import {
   fetchBrowserAutomationPages,
   focusBrowserAutomationProfile,
   forceCloseBrowserAutomation,
-  getBrowserAutomationSmallFeatures,
   getBrowserAutomationTaskDetail,
   getBrowserAutomationTaskLogs,
   openBrowserAutomationLink,
   queryBrowserAutomationTasks,
-  runBrowserAutomationSmallFeature,
   switchBrowserAutomationProfile,
   updateBrowserAutomationProfile,
   type BrowserAutomationClientVO,
   type BrowserAutomationCommandResponse,
   type BrowserAutomationProfileInstanceSummary,
   type BrowserAutomationProfileSummary,
-  type BrowserAutomationSmallFeatureItem,
   type BrowserAutomationServiceStatus,
 } from "@/api/external/browserAutomation";
 import {
@@ -748,7 +591,6 @@ import { formatDate } from "@/utils/formatTime";
 import ExternalClientSidebar, {
   type ClientNodeItem,
 } from "../components/ExternalClientSidebar.vue";
-import SmallFeatureField from "./components/SmallFeatureField.vue";
 
 defineOptions({ name: "ExternalBrowserAutomation" });
 
@@ -777,11 +619,8 @@ const selectedClientId = ref("");
 const activeTab = ref("browser");
 const pageList = ref<Record<string, any>[]>([]);
 const taskList = ref<Record<string, any>[]>([]);
-const smallFeatureItems = ref<BrowserAutomationSmallFeatureItem[]>([]);
 const debugResult = ref("");
 const debugFeedback = ref<BrowserDebugFeedback | null>(null);
-const smallFeatureResultText = ref("");
-const smallFeatureFeedback = ref<BrowserDebugFeedback | null>(null);
 const detailText = ref("");
 const logsText = ref("");
 const detailVisible = ref(false);
@@ -790,7 +629,6 @@ const operationDialogVisible = ref(false);
 const profileDialogVisible = ref(false);
 const editingProfileId = ref<string | null>(null);
 const profileFormRef = ref<FormInstance>();
-const selectedSmallFeatureKey = ref("");
 
 const loadingMap = reactive<Record<string, boolean>>({
   checkStatus: false,
@@ -803,8 +641,6 @@ const loadingMap = reactive<Record<string, boolean>>({
   tasks: false,
   taskDetail: false,
   taskLogs: false,
-  smallFeatures: false,
-  runSmallFeature: false,
   openLink: false,
   createProfile: false,
   updateProfile: false,
@@ -829,8 +665,6 @@ const profileFormRules: FormRules = {
     },
   ],
 };
-const smallFeatureFormState = reactive<Record<string, any>>({});
-const smallFeatureFormErrors = reactive<Record<string, string>>({});
 const debugForm = reactive({
   pageIndex: 0,
   url: "",
@@ -984,9 +818,7 @@ const profileGridOptions = ref<VxeGridProps<any>>({
 const activeProfileId = computed(
   () =>
     String(
-      selectedDetails.value?.activeProfileId ||
-        selectedDetails.value?.activeProfile?.id ||
-        "",
+      selectedDetails.value?.activeProfileId || selectedDetails.value?.activeProfile?.id || "",
     ).trim() || "",
 );
 const activeProfile = computed(
@@ -1025,9 +857,7 @@ const operationDialogTitle = computed(() => {
 });
 const hasAnyConnectedProfile = computed(
   () =>
-    profileInstances.value.some(
-      (item) => item.connected === true || item.hasInstance === true,
-    ) ||
+    profileInstances.value.some((item) => item.connected === true || item.hasInstance === true) ||
     selectedDetails.value?.browserConnected === true ||
     selectedDetails.value?.hasInstance === true,
 );
@@ -1053,13 +883,6 @@ const canLoadCurrentProfilePages = computed(() => {
 const canDebugCurrentProfile = computed(() => canLoadCurrentProfilePages.value);
 const currentProfileStatusText = computed(() =>
   getProfileInstanceText(currentProfileInstance.value),
-);
-const selectedSmallFeature = computed(
-  () =>
-    smallFeatureItems.value.find((item) => item.key === selectedSmallFeatureKey.value) || null,
-);
-const normalizedSmallFeatureFields = computed(() =>
-  normalizeSmallFeatureFields(selectedSmallFeature.value),
 );
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   clients.value.map((client) => ({
@@ -1205,140 +1028,6 @@ const resetDebugOutput = () => {
   debugFeedback.value = null;
   debugResult.value = "";
 };
-const resetReactiveRecord = (
-  target: Record<string, any>,
-  nextValue: Record<string, any> = {},
-) => {
-  Object.keys(target).forEach((key) => {
-    delete target[key];
-  });
-  Object.entries(nextValue).forEach(([key, value]) => {
-    target[key] = value;
-  });
-};
-const normalizeSmallFeatureFields = (feature?: BrowserAutomationSmallFeatureItem | null) => {
-  return (feature?.fields || [])
-    .filter((field) => String(field?.key || "").trim() !== "profileId")
-    .map((field) => {
-    const type = String(field?.type || "text").trim() || "text";
-    return {
-      ...field,
-      component:
-        type === "boolean"
-          ? "switch"
-          : type === "password"
-            ? "password"
-            : type === "select"
-              ? "select"
-              : type === "array-text"
-                ? "array-text"
-                : "input",
-      inputType: type === "password" ? "password" : "text",
-    };
-  });
-};
-const buildDynamicDefaultState = (fields: Array<Record<string, any>> = []) => {
-  const nextState: Record<string, any> = {};
-  fields.forEach((field) => {
-    const key = String(field?.key || "").trim();
-    if (!key) return;
-    if (field.component === "switch") {
-      nextState[key] =
-        field.defaultValue !== undefined ? !!field.defaultValue : false;
-      return;
-    }
-    if (field.component === "array-text") {
-      nextState[key] = Array.isArray(field.defaultValue)
-        ? field.defaultValue.join("\n")
-        : typeof field.defaultValue === "string"
-          ? field.defaultValue
-          : "";
-      return;
-    }
-    nextState[key] = field.defaultValue ?? "";
-  });
-  return nextState;
-};
-const isMissingDynamicFieldValue = (field: Record<string, any>, value: unknown) => {
-  if (field.component === "switch") {
-    return value === undefined || value === null;
-  }
-  return !String(value ?? "").trim();
-};
-const validateDynamicField = (
-  field: Record<string, any>,
-  state: Record<string, any>,
-  errors: Record<string, string>,
-) => {
-  const key = String(field?.key || "").trim();
-  if (!key) return true;
-  if (field.required && isMissingDynamicFieldValue(field, state[key])) {
-    errors[key] = `请填写${field.label || key}`;
-    return false;
-  }
-  errors[key] = "";
-  return true;
-};
-const validateSmallFeatureField = (field: Record<string, any>) =>
-  validateDynamicField(field, smallFeatureFormState, smallFeatureFormErrors);
-const validateSmallFeatureForm = () => {
-  let valid = true;
-  normalizedSmallFeatureFields.value.forEach((field) => {
-    if (!validateDynamicField(field, smallFeatureFormState, smallFeatureFormErrors)) {
-      valid = false;
-    }
-  });
-  return valid;
-};
-const buildDynamicPayload = (fields: Array<Record<string, any>>, state: Record<string, any>) => {
-  const payload: Record<string, any> = {};
-  fields.forEach((field) => {
-    const key = String(field?.key || "").trim();
-    if (!key) return;
-    const rawValue = state[key];
-    if (field.component === "switch") {
-      payload[key] = !!rawValue;
-      return;
-    }
-    if (field.component === "array-text") {
-      const values = String(rawValue || "")
-        .split(/\r?\n|,|，/)
-        .map((item) => item.trim())
-        .filter(Boolean);
-      if (values.length) {
-        payload[key] = values;
-      }
-      return;
-    }
-    const normalized = String(rawValue ?? "").trim();
-    if (normalized) {
-      payload[key] = normalized;
-    }
-  });
-  return payload;
-};
-const syncSelectedSmallFeature = () => {
-  if (!smallFeatureItems.value.length) {
-    selectedSmallFeatureKey.value = "";
-    return;
-  }
-  if (
-    !smallFeatureItems.value.some((item) => item.key === selectedSmallFeatureKey.value)
-  ) {
-    selectedSmallFeatureKey.value = smallFeatureItems.value[0]?.key || "";
-  }
-};
-const initializeSmallFeatureFormState = () => {
-  resetReactiveRecord(
-    smallFeatureFormState,
-    buildDynamicDefaultState(normalizedSmallFeatureFields.value),
-  );
-  resetReactiveRecord(smallFeatureFormErrors, {});
-};
-const resetSmallFeatureOutput = () => {
-  smallFeatureFeedback.value = null;
-  smallFeatureResultText.value = "";
-};
 const normalizePageOption = (page: Record<string, any>, fallbackIndex: number) => {
   const rawIndex =
     typeof page?.index === "number"
@@ -1372,8 +1061,7 @@ const getPagesFromClient = (
     const instances = client?.uploader?.details?.instances;
     if (Array.isArray(instances)) {
       const matchedInstance = instances.find(
-        (item: Record<string, any>) =>
-          String(item?.profileId || "").trim() === normalizedProfileId,
+        (item: Record<string, any>) => String(item?.profileId || "").trim() === normalizedProfileId,
       );
       if (Array.isArray(matchedInstance?.pages)) {
         return matchedInstance.pages;
@@ -1423,26 +1111,20 @@ const handlePageRowClick = (row: Record<string, any>) => {
 const getPageRowClassName = ({ row }: { row: Record<string, any> }) => {
   return row?.index === debugForm.pageIndex ? "page-row-is-active" : "";
 };
-const getProfileInstanceText = (
-  instance?: BrowserAutomationProfileInstanceSummary | null,
-) => {
+const getProfileInstanceText = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
   if (!instance) return "未打开";
   if (instance.busy) return "执行中";
   if (instance.connected) return "已打开";
   if (instance.hasInstance || instance.connecting) return "连接中";
   return "未打开";
 };
-const getProfileInstanceTagType = (
-  instance?: BrowserAutomationProfileInstanceSummary | null,
-) => {
+const getProfileInstanceTagType = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
   if (instance?.busy) return "warning";
   if (instance?.connected) return "success";
   if (instance?.hasInstance || instance?.connecting) return "info";
   return "info";
 };
-const getProfileInstanceHint = (
-  instance?: BrowserAutomationProfileInstanceSummary | null,
-) => {
+const getProfileInstanceHint = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
   if (!instance) return "浏览器窗口未打开";
   if (instance.busy) {
     return instance.currentTaskId
@@ -1461,10 +1143,7 @@ const setOperationProfile = (profileId?: string | null) => {
   const normalizedProfileId = String(profileId || "").trim();
   browserForm.profileId = normalizedProfileId;
 };
-const openOperationPanelForProfile = (
-  profileId?: string | null,
-  port?: number | null,
-) => {
+const openOperationPanelForProfile = (profileId?: string | null, port?: number | null) => {
   setOperationProfile(profileId);
   const normalizedPort = normalizeBrowserPortValue({ port });
   if (normalizedPort) {
@@ -1646,8 +1325,7 @@ const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
       () => checkBrowserAutomationStatus(selectedClientId.value),
       "状态刷新命令已发送",
     );
-  if (kind === "close")
-    return sendCloseProfile(targetProfileId);
+  if (kind === "close") return sendCloseProfile(targetProfileId);
   return dispatch(
     "pages",
     () => fetchBrowserAutomationPages(selectedClientId.value, targetProfileId),
@@ -1745,39 +1423,6 @@ const sendTaskLogs = async (taskId: string) =>
     () => getBrowserAutomationTaskLogs(selectedClientId.value, taskId),
     "任务日志命令已发送",
   );
-const sendSmallFeatures = async () =>
-  selectedClientId.value &&
-  dispatch(
-    "smallFeatures",
-    () => getBrowserAutomationSmallFeatures(selectedClientId.value),
-    "工具目录请求已发送",
-  );
-const sendRunSmallFeature = async () => {
-  if (!selectedClientId.value) return;
-  if (!selectedSmallFeature.value) {
-    ElMessage.warning("请先选择要执行的工具");
-    return;
-  }
-  if (!validateSmallFeatureForm()) {
-    ElMessage.warning("请先完善工具参数");
-    return;
-  }
-
-  resetSmallFeatureOutput();
-  return dispatch(
-    "runSmallFeature",
-    () =>
-      runBrowserAutomationSmallFeature(selectedClientId.value, {
-        featureKey: selectedSmallFeature.value?.key,
-        ...(currentProfileId.value ? { profileId: currentProfileId.value } : {}),
-        ...buildDynamicPayload(
-          normalizedSmallFeatureFields.value,
-          smallFeatureFormState,
-        ),
-      }),
-    "工具执行命令已发送",
-  );
-};
 
 const onCommand = async (event: ServiceCommandResultEvent) => {
   if (normalizeBrowserAutomationKey(event.pluginKey || event.service) !== "browser-automation")
@@ -1804,21 +1449,6 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
     if (action === "taskLogs") {
       logsText.value = jsonText(data.logs || []);
       logsVisible.value = true;
-    }
-    if (action === "smallFeatures") {
-      smallFeatureItems.value = Array.isArray(data.items) ? data.items : [];
-      syncSelectedSmallFeature();
-    }
-    if (action === "runSmallFeature") {
-      smallFeatureFeedback.value = feedback;
-      smallFeatureResultText.value = jsonText({
-        action: feedback.action,
-        success: feedback.success,
-        message: feedback.message,
-        featureKey: data.featureKey || selectedSmallFeatureKey.value || null,
-        result: data.result || null,
-        updatedAt: feedback.updatedAt,
-      });
     }
   }
   if (event.success && (action === "createProfile" || action === "updateProfile")) {
@@ -1848,16 +1478,8 @@ watch(selectedClientId, (value) => {
   syncSelectedPages();
   syncDebugPageIndex();
   resetDebugOutput();
-  smallFeatureItems.value = [];
-  selectedSmallFeatureKey.value = "";
-  resetReactiveRecord(smallFeatureFormState, {});
-  resetReactiveRecord(smallFeatureFormErrors, {});
-  resetSmallFeatureOutput();
   browserForm.profileId = activeProfileId.value || "";
   if (!value) operationDialogVisible.value = false;
-  if (value && operationDialogVisible.value && activeTab.value === "smallFeature") {
-    void sendSmallFeatures();
-  }
 });
 
 watch(
@@ -1866,7 +1488,6 @@ watch(
     syncSelectedPages();
     syncDebugPageIndex();
     resetDebugOutput();
-    resetSmallFeatureOutput();
   },
   { immediate: true },
 );
@@ -1878,16 +1499,15 @@ watch(
       browserForm.profileId = "";
       return;
     }
-    if (!browserForm.profileId || !profileItems.value.some((item) => item.id === browserForm.profileId)) {
+    if (
+      !browserForm.profileId ||
+      !profileItems.value.some((item) => item.id === browserForm.profileId)
+    ) {
       browserForm.profileId = value;
     }
   },
   { immediate: true },
 );
-
-watch(selectedSmallFeatureKey, () => {
-  initializeSmallFeatureFormState();
-});
 
 watch(
   pageOptions,
@@ -1899,12 +1519,6 @@ watch(
 
 watch([operationDialogVisible, activeTab, canLoadCurrentProfilePages], ([visible, tab, ready]) => {
   if (!visible) return;
-  if (tab === "smallFeature") {
-    if (!smallFeatureItems.value.length && !loadingMap.smallFeatures && selectedClientId.value) {
-      void sendSmallFeatures();
-    }
-    return;
-  }
   if (!ready) return;
   if ((tab === "browser" || tab === "debug") && !pageOptions.value.length && !loadingMap.pages) {
     void sendSimple("pages");

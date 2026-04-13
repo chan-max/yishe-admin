@@ -12,11 +12,34 @@ export interface EcomPlatformCollectTask {
   updateTime?: string;
 }
 
-export interface EcomCollectTaskSnapshot {
-  name?: string;
-  platform?: string;
-  taskType?: string | null;
-  configData?: Record<string, any> | null;
+export type EcomCollectRunRecord = Record<string, any>;
+export type EcomCollectRunSnapshot = Record<string, any>;
+export type EcomCollectRunDebugMeta = Record<string, any>;
+
+export interface EcomCollectRunResultSummary extends Record<string, any> {
+  message?: string;
+  recordsCount?: number;
+  snapshotCount?: number;
+  updatedAt?: string;
+}
+
+export interface EcomCollectRunSummaryData extends Record<string, any> {
+  message?: string;
+  recordsCount?: number;
+  snapshotCount?: number;
+  updatedAt?: string;
+}
+
+export interface EcomCollectRunResultPackage<
+  RecordItem extends EcomCollectRunRecord = EcomCollectRunRecord,
+  SnapshotItem extends EcomCollectRunSnapshot = EcomCollectRunSnapshot,
+> extends Record<string, any> {
+  packageType?: string;
+  taskType?: string;
+  summary?: EcomCollectRunResultSummary | null;
+  records?: RecordItem[];
+  snapshots?: SnapshotItem[];
+  debugMeta?: EcomCollectRunDebugMeta | null;
 }
 
 export interface EcomPlatformCollectRun {
@@ -26,15 +49,13 @@ export interface EcomPlatformCollectRun {
   platform?: string;
   taskType?: string | null;
   status: string;
-  taskSnapshot?: EcomCollectTaskSnapshot | null;
   assignedClientId?: string | null;
   assignedMachineCode?: string | null;
   commandId?: string | null;
   startedAt?: string | null;
   finishedAt?: string | null;
-  summaryData?: Record<string, any> | null;
+  summaryData?: EcomCollectRunSummaryData | null;
   errorMessage?: string | null;
-  task?: EcomPlatformCollectTask | null;
   createTime?: string;
   updateTime?: string;
 }
@@ -42,22 +63,11 @@ export interface EcomPlatformCollectRun {
 export interface EcomPlatformRawRecord {
   id: string;
   taskId: string;
-  taskName?: string;
   runId: string;
-  platform?: string;
-  taskType?: string | null;
-  taskSnapshot?: EcomCollectTaskSnapshot | null;
-  runStatus?: string | null;
-  finishedAt?: string | null;
-  summaryData?: Record<string, any> | null;
-  summaryMessage?: string | null;
-  recordsCount?: number | null;
-  snapshotCount?: number | null;
   capturedAt?: string | null;
-  collectData?: Record<string, any> | null;
-  snapshotData?: any;
-  task?: EcomPlatformCollectTask | null;
-  run?: EcomPlatformCollectRun | null;
+  collectData?: EcomCollectRunResultPackage | null;
+  snapshotData?: any[] | null;
+  userId?: number | null;
   createTime?: string;
   updateTime?: string;
 }
@@ -93,6 +103,27 @@ export interface EcomCollectFieldSchema {
   options?: EcomCollectFieldOption[];
 }
 
+export interface EcomCollectOutputFieldSchema {
+  key: string;
+  label: string;
+  description?: string;
+  valueType?: string;
+  stability?: string;
+  examples?: any[];
+}
+
+export interface EcomCollectAccessSchema {
+  login?: string;
+  loginLabel?: string;
+  requiresLogin?: boolean;
+  canRunWithoutLogin?: boolean;
+  captcha?: string;
+  captchaLabel?: string;
+  antiBot?: string;
+  antiBotLabel?: string;
+  notes?: string[];
+}
+
 export interface EcomCollectSceneSchema {
   value: string;
   label: string;
@@ -103,10 +134,13 @@ export interface EcomCollectSceneSchema {
   verification?: string;
   verificationLabel?: string;
   reason?: string | null;
+  access?: EcomCollectAccessSchema;
   fields?: EcomCollectFieldSchema[];
   docs?: {
     overview?: string;
     notes?: string[];
+    packageFields?: EcomCollectOutputFieldSchema[];
+    recordFields?: EcomCollectOutputFieldSchema[];
     examples?: Array<{
       title?: string;
       description?: string;
@@ -129,10 +163,13 @@ export interface EcomCollectTaskTypeSchema {
   verification?: string;
   verificationLabel?: string;
   reason?: string | null;
+  access?: EcomCollectAccessSchema;
   fields?: EcomCollectFieldSchema[];
   docs?: {
     overview?: string;
     notes?: string[];
+    packageFields?: EcomCollectOutputFieldSchema[];
+    recordFields?: EcomCollectOutputFieldSchema[];
     examples?: Array<{
       title?: string;
       description?: string;
@@ -149,6 +186,7 @@ export interface EcomCollectPlatformSchema {
   statusLabel?: string;
   runnable?: boolean;
   reason?: string | null;
+  access?: EcomCollectAccessSchema;
   supportedScenes?: string[];
   supportedTaskTypes?: string[];
   scenes?: EcomCollectSceneSchema[];

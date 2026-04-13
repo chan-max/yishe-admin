@@ -153,10 +153,12 @@ export interface BrowserAutomationSmallFeatureFieldSchema {
   label: string;
   type?: string;
   required?: boolean;
+  requiredWhen?: Record<string, string | number | boolean>;
   placeholder?: string;
   description?: string;
   defaultValue?: unknown;
   options?: BrowserAutomationSmallFeatureFieldOption[];
+  visibleWhen?: Record<string, string | number | boolean>;
 }
 
 export interface BrowserAutomationSmallFeatureItem {

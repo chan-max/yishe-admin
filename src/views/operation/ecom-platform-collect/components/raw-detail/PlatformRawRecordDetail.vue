@@ -15,7 +15,7 @@ import JdRawRecordRenderer from "./platforms/JdRawRecordRenderer.vue";
 import AliexpressRawRecordRenderer from "./platforms/AliexpressRawRecordRenderer.vue";
 import SheinRawRecordRenderer from "./platforms/SheinRawRecordRenderer.vue";
 import DefaultRawRecordRenderer from "./platforms/DefaultRawRecordRenderer.vue";
-import { getPlatformLabel } from "../../shared";
+import { getPlatformLabel, getRawPlatform } from "../../shared";
 
 const props = defineProps<{
   record: EcomPlatformRawRecord;
@@ -42,11 +42,11 @@ const renderer = computed(
   () =>
     isRunPackageRecord.value
       ? RunPackageRawRenderer
-      : rendererMap[String(props.record.platform || "").trim()] || DefaultRawRecordRenderer,
+      : rendererMap[getRawPlatform(props.record)] || DefaultRawRecordRenderer,
 );
 
 const platformLabel = computed(() =>
-  getPlatformLabel(props.catalog, props.record.platform),
+  getPlatformLabel(props.catalog, getRawPlatform(props.record)),
 );
 
 const rendererProps = computed(() => {

@@ -11,8 +11,8 @@
       </div>
 
       <div class="home-hero__actions">
-        <el-button type="primary" @click="goTo('/external/browser-automation')">
-          浏览器自动化
+        <el-button type="primary" @click="goTo('/operation/toolkit')">
+          工具集
         </el-button>
         <el-button @click="goTo('/product/queue')">任务中心</el-button>
         <el-button @click="goTo('/system/ai-api-key')">AI API Key</el-button>
@@ -72,9 +72,16 @@ const shortcuts: ShortcutItem[] = [
     icon: "ep:tools",
   },
   {
+    key: "toolkit",
+    title: "工具集",
+    description: "按平台进入 Temu 等业务工具，先选客户端与环境再执行。",
+    route: "/operation/toolkit",
+    icon: "ep:box",
+  },
+  {
     key: "browser-automation",
     title: "浏览器自动化控制台",
-    description: "查看节点状态、连接控制和调试入口。",
+    description: "专注环境管理、浏览器连接与调试能力。",
     route: "/external/browser-automation",
     icon: "ep:connection",
   },

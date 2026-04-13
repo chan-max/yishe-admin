@@ -99,7 +99,7 @@ select {
     left: 50% !important;
     top: 50% !important;
     width: auto !important;
-    min-width: 48px;
+    min-width: 30px;
     height: auto !important;
     margin: 0 !important;
     transform: translate(-50%, -50%);
@@ -115,13 +115,13 @@ select {
 
     .loader {
         --color: #a5a5b0;
-        --size: 48px;
+        --size: 26px;
         width: var(--size);
         height: var(--size);
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(2, 1fr);
-        gap: 5px;
+        gap: 2px;
         margin: 0 auto;
     }
 
@@ -158,8 +158,8 @@ select {
     }
 
     .el-loading-text {
-        margin-top: 12px;
-        font-size: 12px;
+        margin-top: 6px;
+        font-size: 10px;
         font-weight: 600;
         letter-spacing: 0.02em;
         color: var(--el-text-color-primary);

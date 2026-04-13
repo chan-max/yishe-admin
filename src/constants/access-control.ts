@@ -80,9 +80,10 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
     ],
   },
   {
-    label: "运营协同",
+    label: "运营支持",
     options: [
       { key: "operation.ecom-platform-collect", label: "电商数据链路" },
+      { key: "external.toolkit", label: "工具集" },
       { key: "operation.link-navigation", label: "链接导航" },
       { key: "operation.shop", label: "店铺" },
       { key: "operation.vendor", label: "厂家" },
@@ -124,6 +125,8 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   CodeScriptSchedule: "content.code-script-schedule",
   RemotionVideoRecord: "content.remotion-video-record",
   ImageProcessingRecord: "content.image-processing-record",
+  OperationToolkit: "external.toolkit",
+  ExternalToolkitLegacy: "external.toolkit",
   ExternalBrowserAutomation: "external.browser-automation",
   ExternalPsAutomation: "external.ps-automation",
   ExternalGoogleArt: "external.google-art",

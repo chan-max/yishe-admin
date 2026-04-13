@@ -80,6 +80,57 @@ export function getUserSetting(data?: { key?: string }) {
   })
 }
 
+export interface UserPlatformSessionsQuery {
+  platform?: string
+  profileId?: string
+}
+
+export interface UserPlatformSessionsUpdatePayload {
+  platform: string
+  profileId?: string
+  data: Record<string, any>
+}
+
+export interface UserPlatformSessionActionPayload {
+  platform: string
+  profileId?: string
+}
+
+export function getPlatformSessions(data?: UserPlatformSessionsQuery) {
+  return request.post<Record<string, any>>({
+    url: '/user/getPlatformSessions',
+    data: data || {}
+  })
+}
+
+export function updatePlatformSessions(data: UserPlatformSessionsUpdatePayload) {
+  return request.post<Record<string, any>>({
+    url: '/user/updatePlatformSessions',
+    data
+  })
+}
+
+export function deletePlatformSession(data: UserPlatformSessionActionPayload) {
+  return request.post<Record<string, any>>({
+    url: '/user/deletePlatformSession',
+    data
+  })
+}
+
+export function validatePlatformSession(data: Required<UserPlatformSessionActionPayload>) {
+  return request.post<Record<string, any>>({
+    url: '/user/validatePlatformSession',
+    data
+  })
+}
+
+export function refreshPlatformSessionInfo(data: Required<UserPlatformSessionActionPayload>) {
+  return request.post<Record<string, any>>({
+    url: '/user/refreshPlatformSessionInfo',
+    data
+  })
+}
+
 export function updateUserSetting(data: { key?: string; data?: any; setting?: Record<string, any> }) {
   return request.post({
     url: '/user/updateSetting',

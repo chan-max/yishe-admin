@@ -855,6 +855,8 @@ html.dark .el-alert {
 }
 
 .el-message .el-message__content {
+  flex: 1;
+  min-width: 0;
   font-size: var(--ep-cover-font-size-sm);
   font-weight: 600;
   line-height: 1.45;
@@ -868,7 +870,8 @@ html.dark .el-alert {
 
 .el-message .el-message__closeBtn {
   position: static;
-  margin-left: 2px;
+  flex: 0 0 auto;
+  margin-left: auto;
   color: currentColor;
   opacity: 0.62;
   transition:
@@ -982,7 +985,6 @@ html.dark .el-alert {
 }
 
 .el-notification--success {
-  background: var(--ep-cover-feedback-success-bg);
   border-color: var(--ep-cover-feedback-success-border);
 }
 
@@ -1016,7 +1018,6 @@ html.dark .el-alert {
 }
 
 .el-notification--warning {
-  background: var(--ep-cover-feedback-warning-bg);
   border-color: var(--ep-cover-feedback-warning-border);
 }
 
@@ -1033,7 +1034,6 @@ html.dark .el-alert {
 }
 
 .el-notification--error {
-  background: var(--ep-cover-feedback-error-bg);
   border-color: var(--ep-cover-feedback-error-border);
 }
 

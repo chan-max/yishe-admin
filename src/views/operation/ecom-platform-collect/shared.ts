@@ -1,5 +1,7 @@
 import type {
+  EcomCollectAccessSchema,
   EcomCollectPlatformSchema,
+  EcomCollectRunResultPackage,
   EcomCollectSceneSchema,
   EcomCollectTaskTypeSchema,
   EcomPlatformCollectCatalog,
@@ -102,6 +104,7 @@ const buildFallbackTaskTypeSchema = (
     verification: scene.verification,
     verificationLabel: scene.verificationLabel,
     reason: scene.reason || null,
+    access: scene.access,
     fields: Array.isArray(scene.fields) ? scene.fields : [],
     docs: scene.docs,
   };
@@ -194,6 +197,82 @@ export const getVerificationLabel = (value?: string | null) => {
   return map[String(value || "")] || String(value || "-");
 };
 
+export const getCapabilityAccessLabel = (
+  type: "login" | "captcha" | "antiBot",
+  value?: string | null,
+) => {
+  const maps = {
+    login: {
+      none: "无需登录",
+      optional: "建议登录",
+      required: "需要登录",
+      unknown: "登录要求待确认",
+    },
+    captcha: {
+      none: "无明显验证码风险",
+      possible: "偶发验证码",
+      likely: "高概率验证码",
+      blocking: "当前会被验证码拦截",
+      unknown: "验证码风险待确认",
+    },
+    antiBot: {
+      low: "低风控",
+      medium: "中风控",
+      high: "高风控",
+      blocking: "强风控阻断",
+      unknown: "风控强度待确认",
+    },
+  } as const;
+
+  const normalizedValue = String(value || "").trim() as keyof (typeof maps)[typeof type];
+  return maps[type][normalizedValue] || String(value || "-");
+};
+
+export const getCapabilityAccessTagType = (
+  type: "login" | "captcha" | "antiBot",
+  value?: string | null,
+): "success" | "warning" | "danger" | "info" => {
+  const maps = {
+    login: {
+      none: "success",
+      optional: "warning",
+      required: "danger",
+      unknown: "info",
+    },
+    captcha: {
+      none: "success",
+      possible: "warning",
+      likely: "danger",
+      blocking: "danger",
+      unknown: "info",
+    },
+    antiBot: {
+      low: "success",
+      medium: "warning",
+      high: "danger",
+      blocking: "danger",
+      unknown: "info",
+    },
+  } as const;
+
+  const normalizedValue = String(value || "").trim() as keyof (typeof maps)[typeof type];
+  return maps[type][normalizedValue] || "info";
+};
+
+export const buildCapabilityAccessSummary = (
+  access?: EcomCollectAccessSchema | null,
+) => {
+  if (!access) {
+    return [] as string[];
+  }
+
+  return [
+    access.login ? getCapabilityAccessLabel("login", access.login) : "",
+    access.captcha ? getCapabilityAccessLabel("captcha", access.captcha) : "",
+    access.antiBot ? getCapabilityAccessLabel("antiBot", access.antiBot) : "",
+  ].filter(Boolean);
+};
+
 export const getRunStatusLabel = (value?: string | null) => {
   const map: Record<string, string> = {
     queued: "排队中",
@@ -232,12 +311,51 @@ export const formatJson = (value: any) => {
   }
 };
 
+export const getRawPackage = (
+  row: EcomPlatformRawRecord,
+): EcomCollectRunResultPackage => {
+  return row?.collectData && typeof row.collectData === "object"
+    ? row.collectData
+    : {};
+};
+
+export const getRawPackageSummary = (row: EcomPlatformRawRecord) => {
+  const collectPackage = getRawPackage(row);
+  return collectPackage?.summary && typeof collectPackage.summary === "object"
+    ? collectPackage.summary
+    : {};
+};
+
+export const getPlatformFromTaskType = (taskType?: string | null) => {
+  const normalizedTaskType = String(taskType || "").trim();
+  if (!normalizedTaskType) {
+    return "";
+  }
+  return normalizedTaskType.split(".")[0] || "";
+};
+
+export const getRawPlatform = (row: EcomPlatformRawRecord) => {
+  const collectPackage = getRawPackage(row);
+  const summary = getRawPackageSummary(row);
+  return (
+    String(collectPackage.platform || summary.platform || "").trim() ||
+    getPlatformFromTaskType(collectPackage.taskType || summary.taskType)
+  );
+};
+
+export const getRawTaskType = (row: EcomPlatformRawRecord) => {
+  const collectPackage = getRawPackage(row);
+  const summary = getRawPackageSummary(row);
+  return String(collectPackage.taskType || summary.taskType || "").trim();
+};
+
 export const getRawPackageRecords = (row: EcomPlatformRawRecord) => {
-  return Array.isArray(row?.collectData?.records) ? row.collectData.records : [];
+  const collectPackage = getRawPackage(row);
+  return Array.isArray(collectPackage.records) ? collectPackage.records : [];
 };
 
 export const getRawRecordsCount = (row: EcomPlatformRawRecord) => {
-  const explicitCount = Number(row?.recordsCount);
+  const explicitCount = Number(getRawPackageSummary(row)?.recordsCount);
   if (Number.isFinite(explicitCount) && explicitCount >= 0) {
     return explicitCount;
   }
@@ -259,19 +377,23 @@ export const getSnapshotCount = (value: any) => {
 };
 
 export const getRawSummaryMessage = (row: EcomPlatformRawRecord) => {
-  return String(
-    row?.summaryMessage ||
-      row?.collectData?.message ||
-      row?.collectData?.summary?.message ||
-      row?.summaryData?.message ||
-      row?.run?.summaryData?.message ||
-      "-",
-  );
+  const summary = getRawPackageSummary(row);
+  const message = String(summary.message || "").trim();
+  if (message) {
+    return message;
+  }
+  const recordsCount = getRawRecordsCount(row);
+  return recordsCount > 0 ? `共 ${recordsCount} 条记录` : "-";
 };
 
-export const getRawRunStatus = (row: EcomPlatformRawRecord) => {
+export const getRawFinishedAt = (row: EcomPlatformRawRecord) => {
+  const collectPackage = getRawPackage(row);
+  const summary = getRawPackageSummary(row);
   return String(
-    row?.runStatus || row?.collectData?.status || row?.run?.status || "",
+    (summary as Record<string, any>)?.finishedAt ||
+      (summary as Record<string, any>)?.updatedAt ||
+      (collectPackage as Record<string, any>)?.finishedAt ||
+      "",
   ).trim();
 };
 

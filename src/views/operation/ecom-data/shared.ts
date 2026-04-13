@@ -56,6 +56,8 @@ export const getRunStatusTagType = (value?: string | null) => {
 export const getAnalysisTypeLabel = (value?: string | null) => {
   const map: Record<string, string> = {
     hot_selling_selection: "热门选品",
+    custom_prompt_extract: "自定义提示词分析",
+    pod_pattern_analysis: "POD 图案分析",
   };
   return map[String(value || "")] || value || "-";
 };

@@ -14,13 +14,14 @@
 import { computed } from "vue";
 import type { EcomPlatformRawRecord } from "@/api/operation/ecomPlatformCollect";
 import GenericPlatformRawRenderer from "../GenericPlatformRawRenderer.vue";
+import { getRawPlatform } from "../../../shared";
 
 const props = defineProps<{
   record: EcomPlatformRawRecord;
   platformLabel?: string;
 }>();
 
-const platformLabel = computed(() => props.platformLabel || props.record.platform || "平台数据");
+const platformLabel = computed(() => props.platformLabel || getRawPlatform(props.record) || "平台数据");
 
 const detailFields = [
   { label: "店铺/卖家", paths: ["shopName", "sellerName", "brand"] },

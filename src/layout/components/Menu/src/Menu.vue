@@ -1,4 +1,5 @@
 <script lang="tsx">
+import type { VNode } from "vue";
 import { Icon } from "@/components/Icon";
 import { ElTooltip } from "element-plus";
 import { useDesign } from "@/hooks/web/useDesign";
@@ -62,6 +63,8 @@ export default defineComponent({
     clientNodeStore.ensureInitialized();
 
     const menuStatusRouteMap: Record<string, string> = {
+      "/operation/toolkit": "browser-automation",
+      "/external/toolkit": "browser-automation",
       "/external/browser-automation": "browser-automation",
       "/external/ps-automation": "ps-automation",
       "/external/google-art": "google-art",
@@ -105,7 +108,7 @@ export default defineComponent({
       }
     };
 
-    const renderMenuStatusHint = (dotNode: JSX.Element, title: string) => {
+    const renderMenuStatusHint = (dotNode: VNode, title: string) => {
       return (
         <ElTooltip
           content={title}
@@ -138,17 +141,24 @@ export default defineComponent({
     const resolveBrowserAutomationStatusTitle = (
       status: "available" | "degraded" | "offline",
       running: boolean,
+      routePath: string,
     ) => {
       if (running) {
-        return "当前有任务正在执行";
+        return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
+          ? "当前有工具任务正在执行"
+          : "当前有任务正在执行";
       }
 
       if (status === "available") {
-        return "浏览器自动化可用";
+        return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
+          ? "工具集可用"
+          : "浏览器自动化可用";
       }
 
       if (status === "offline") {
-        return "浏览器自动化不可用";
+        return routePath === "/operation/toolkit" || routePath === "/external/toolkit"
+          ? "工具集不可用"
+          : "浏览器自动化不可用";
       }
 
       const browserRuntimes = clientNodeStore.clients
@@ -196,6 +206,16 @@ export default defineComponent({
       const running = routeRunningMap.value[routePath];
 
       const titleMap: Record<string, Record<"available" | "degraded" | "offline", string>> = {
+        "/operation/toolkit": {
+          available: "工具集可用",
+          degraded: "工具集入口可见，但当前不可执行",
+          offline: "工具集不可用",
+        },
+        "/external/toolkit": {
+          available: "工具集可用",
+          degraded: "工具集入口可见，但当前不可执行",
+          offline: "工具集不可用",
+        },
         "/external/browser-automation": {
           available: "浏览器自动化可用",
           degraded: "浏览器自动化已连接，但当前不可执行",
@@ -221,8 +241,10 @@ export default defineComponent({
       const title =
         routePath === "/product/queue"
           ? publishTaskTooltipText.value
-          : routePath === "/external/browser-automation"
-            ? resolveBrowserAutomationStatusTitle(status, running)
+          : routePath === "/external/browser-automation" ||
+              routePath === "/operation/toolkit" ||
+              routePath === "/external/toolkit"
+            ? resolveBrowserAutomationStatusTitle(status, running, routePath)
             : running
               ? "当前有任务正在执行"
               : titleMap[routePath]?.[status];
