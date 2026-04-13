@@ -146,6 +146,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   EcomPlatformCollectRawPage: "operation.ecom-platform-collect",
   EcomSelectionAnalysisTaskPage: "operation.ecom-platform-collect",
   EcomSelectionAnalysisRunPage: "operation.ecom-platform-collect",
+  EcomSelectionAnalysisResultPage: "operation.ecom-platform-collect",
   EcomSelectionSupplyMatchTaskPage: "operation.ecom-platform-collect",
   EcomSelectionSupplyMatchRunPage: "operation.ecom-platform-collect",
   EcomSelectionSupplyMatchItemPage: "operation.ecom-platform-collect",

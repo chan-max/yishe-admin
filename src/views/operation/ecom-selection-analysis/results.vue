@@ -5,10 +5,9 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">选品分析运行</div>
+              <div class="resource-toolbar__title">选品分析结果</div>
               <div class="resource-toolbar__desc">
-                查看每次分析的运行状态、数据源快照、AI
-                模型和运行摘要；完整分析产物请在“选品分析结果”里查看。
+                展示每次分析真正落库的结果包，并保留从热门选品结果继续创建找同款任务的入口。
               </div>
             </div>
             <div class="resource-toolbar__actions">
@@ -18,7 +17,7 @@
 
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="8">
+              <el-col :xs="24" :sm="12" :md="8" :lg="7">
                 <el-form-item label="分析任务">
                   <el-select v-model="filters.taskId" clearable filterable placeholder="全部任务">
                     <el-option
@@ -30,13 +29,9 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" :lg="5">
-                <el-form-item label="运行状态">
-                  <el-select v-model="filters.status" clearable placeholder="全部状态">
-                    <el-option label="运行中" value="running" />
-                    <el-option label="成功" value="success" />
-                    <el-option label="失败" value="failed" />
-                  </el-select>
+              <el-col :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="运行 ID">
+                  <el-input v-model="filters.runId" clearable placeholder="运行 ID" />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
@@ -85,13 +80,13 @@
                 </template>
 
                 <template #statusSlot="{ row }">
-                  <el-tag size="small" :type="getRunStatusTagType(row.status)">
-                    {{ getRunStatusLabel(row.status) }}
+                  <el-tag size="small" :type="getRunStatusTagType(row.runStatus)">
+                    {{ getRunStatusLabel(row.runStatus) }}
                   </el-tag>
                 </template>
 
                 <template #summarySlot="{ row }">
-                  <span class="table-meta-text">{{ getSummaryText(row) }}</span>
+                  <span class="table-meta-text">{{ getOverviewText(row) }}</span>
                 </template>
 
                 <template #operationSlot="{ row }">
@@ -110,9 +105,12 @@
                             <el-icon><View /></el-icon>
                             <span>详情</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="results">
-                            <el-icon><List /></el-icon>
-                            <span>查看结果</span>
+                          <el-dropdown-item
+                            v-if="row.analysisType === 'hot_selling_selection'"
+                            command="supply-match"
+                          >
+                            <el-icon><Link /></el-icon>
+                            <span>创建找同款</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -151,17 +149,17 @@
       v-model="detailVisible"
       fullscreen
       destroy-on-close
-      class="analysis-run-detail-dialog"
-      title="分析运行详情"
+      class="analysis-result-detail-dialog"
+      title="分析结果详情"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="detail-shell">
         <template v-if="currentDetail">
           <CompactNotice
-            v-if="currentDetail.status === 'failed'"
+            v-if="currentRunStatus === 'failed'"
             type="danger"
-            title="本次分析运行失败"
-            :description="currentDetail.errorMessage || '请检查采集样本或 AI 配置后重试。'"
+            title="本次分析执行失败"
+            :description="currentRunErrorMessage || '请检查采集样本或 AI 模型配置后重试。'"
             class="detail-notice"
           />
 
@@ -170,21 +168,25 @@
               <div class="detail-card__header">
                 <div>
                   <div class="detail-card__title">
-                    {{ currentDetail.task?.name || currentDetail.taskName || "-" }}
+                    {{
+                      currentDetail.task?.name ||
+                      currentDetail.taskName ||
+                      getAnalysisTypeLabel(currentDetail.analysisType)
+                    }}
                   </div>
                   <div class="detail-card__subtitle">
-                    {{ getSummaryText(currentDetail) }}
+                    {{ detailOverviewSummary }}
                   </div>
                 </div>
                 <div class="detail-chip-row">
-                  <el-tag size="small" :type="getRunStatusTagType(currentDetail.status)">
-                    {{ getRunStatusLabel(currentDetail.status) }}
+                  <el-tag size="small" :type="getRunStatusTagType(currentRunStatus)">
+                    {{ getRunStatusLabel(currentRunStatus) }}
                   </el-tag>
                   <el-tag size="small" type="info">
                     {{ getAnalysisTypeLabel(currentDetail.analysisType) }}
                   </el-tag>
-                  <el-tag v-if="currentDetail.aiModel" size="small" type="info">
-                    {{ currentDetail.aiModel }}
+                  <el-tag v-if="currentAiModel" size="small" type="info">
+                    {{ currentAiModel }}
                   </el-tag>
                 </div>
               </div>
@@ -192,50 +194,52 @@
               <div class="metric-grid">
                 <div class="metric-card">
                   <span>样本数</span>
-                  <strong>{{ sourceStats.itemCount || 0 }}</strong>
+                  <strong>{{ detailSourceStats.itemCount || 0 }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>结果量</span>
-                  <strong>{{ resultCount }}</strong>
+                  <span>{{ resultCountLabel }}</span>
+                  <strong>{{ resultCountValue }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>任务数</span>
-                  <strong>{{ sourceStats.taskCount || 0 }}</strong>
+                  <span>{{ supportMetricLabel }}</span>
+                  <strong>{{ supportMetricValue }}</strong>
                 </div>
                 <div class="metric-card">
-                  <span>原始记录</span>
-                  <strong>{{ currentDetail.sourceRecordIdsData?.length || 0 }}</strong>
+                  <span>结果时间</span>
+                  <strong>{{
+                    formatDateTime(currentDetail.analyzedAt || currentDetail.runFinishedAt)
+                  }}</strong>
                 </div>
               </div>
             </div>
 
             <div class="detail-card">
-              <div class="detail-card__title">运行信息</div>
+              <div class="detail-card__title">结果摘要</div>
               <div class="stats-list">
                 <div class="stats-item">
-                  <span>运行 ID</span>
+                  <span>结果 ID</span>
                   <strong>{{ currentDetail.id || "-" }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>结果 ID</span>
-                  <strong>{{ currentDetail.result?.id || currentDetail.resultId || "-" }}</strong>
+                  <span>运行 ID</span>
+                  <strong>{{ currentDetail.runId || "-" }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>开始时间</span>
-                  <strong>{{ formatDateTime(currentDetail.startedAt) }}</strong>
+                  <span>任务数</span>
+                  <strong>{{ detailSourceStats.taskCount || 0 }}</strong>
                 </div>
                 <div class="stats-item">
-                  <span>结束时间</span>
-                  <strong>{{ formatDateTime(currentDetail.finishedAt) }}</strong>
+                  <span>运行数</span>
+                  <strong>{{ detailSourceStats.runCount || 0 }}</strong>
                 </div>
               </div>
 
-              <div class="detail-mini-section" v-if="sourceStats.platformBreakdown?.length">
+              <div class="detail-mini-section" v-if="detailSourceStats.platformBreakdown?.length">
                 <div class="detail-mini-section__title">平台分布</div>
                 <div class="chip-list">
                   <el-tag
-                    v-for="item in sourceStats.platformBreakdown"
-                    :key="`${item.platform}-${item.count}`"
+                    v-for="item in detailSourceStats.platformBreakdown"
+                    :key="item.platform"
                     size="small"
                   >
                     {{ item.platform }} · {{ item.count }}
@@ -245,27 +249,57 @@
             </div>
           </div>
 
-          <div class="detail-toolbar">
-            <el-button type="primary" @click="openResultsPage(currentDetail)">
-              查看本次分析结果
+          <div class="detail-toolbar" v-if="currentDetail.analysisType === 'hot_selling_selection'">
+            <el-button type="primary" @click="handleCreateSupplyMatchTask(currentDetail)">
+              基于本次分析创建找同款任务
             </el-button>
           </div>
 
           <el-tabs>
-            <el-tab-pane label="运行摘要">
-              <pre class="json-preview">{{ formatJson(currentDetail.summaryData) }}</pre>
+            <el-tab-pane label="结果预览">
+              <div v-if="recommendedProducts.length" class="simple-list">
+                <div
+                  v-for="item in recommendedProducts"
+                  :key="item.rank || item.productName"
+                  class="simple-card"
+                >
+                  <div class="simple-card__title">
+                    #{{ item.rank || "-" }} {{ item.productName || "-" }}
+                  </div>
+                  <div class="simple-card__text">{{ item.selectionReason || "-" }}</div>
+                </div>
+              </div>
+
+              <div v-else-if="customResultItems.length" class="simple-list">
+                <div
+                  v-for="(item, index) in customResultItems.slice(0, 12)"
+                  :key="item?.id || item?.sourceUrl || index"
+                  class="simple-card"
+                >
+                  <div class="simple-card__title">
+                    {{ item?.title || item?.name || item?.label || `结果 ${index + 1}` }}
+                  </div>
+                  <div class="simple-card__text">{{ formatCustomResultCell(item) }}</div>
+                </div>
+              </div>
+
+              <el-empty v-else description="暂无结果预览" />
             </el-tab-pane>
 
-            <el-tab-pane label="数据源快照">
-              <pre class="json-preview">{{ formatJson(currentDetail.sourceConfigSnapshot) }}</pre>
+            <el-tab-pane label="来源样本">
+              <pre class="json-preview">{{ formatJson(normalizedItems) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane label="分析参数快照">
-              <pre class="json-preview">{{ formatJson(currentDetail.optionsSnapshot) }}</pre>
+            <el-tab-pane label="分析轨迹">
+              <pre class="json-preview">{{ formatJson(analysisTrace) }}</pre>
             </el-tab-pane>
 
-            <el-tab-pane v-if="currentDetail.errorMessage" label="错误信息">
-              <pre class="json-preview">{{ currentDetail.errorMessage }}</pre>
+            <el-tab-pane label="结果 JSON">
+              <pre class="json-preview">{{ formatJson(currentDetail.resultData) }}</pre>
+            </el-tab-pane>
+
+            <el-tab-pane label="完整 JSON">
+              <pre class="json-preview">{{ detailPreviewText }}</pre>
             </el-tab-pane>
           </el-tabs>
         </template>
@@ -277,18 +311,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onActivated, onMounted, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, List, View } from "@element-plus/icons-vue";
+import { Delete, Link, View } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
 import {
-  batchDeleteEcomSelectionAnalysisRun,
-  deleteEcomSelectionAnalysisRun,
-  getEcomSelectionAnalysisRunDetail,
-  getEcomSelectionAnalysisRunList,
+  batchDeleteEcomSelectionAnalysisResult,
+  deleteEcomSelectionAnalysisResult,
+  getEcomSelectionAnalysisResultDetail,
+  getEcomSelectionAnalysisResultList,
   getEcomSelectionAnalysisTaskList,
-  type EcomSelectionAnalysisRun,
+  type EcomSelectionAnalysisResult,
   type EcomSelectionAnalysisTask,
 } from "@/api/operation/ecomSelectionAnalysis";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
@@ -303,27 +337,33 @@ import {
   getRunStatusTagType,
 } from "@/views/operation/ecom-data/shared";
 
-defineOptions({ name: "EcomSelectionAnalysisRunPage" });
+defineOptions({ name: "EcomSelectionAnalysisResultPage" });
 
+const route = useRoute();
 const router = useRouter();
 const loading = ref(false);
 const detailLoading = ref(false);
 const detailVisible = ref(false);
 const total = ref(0);
-const list = ref<EcomSelectionAnalysisRun[]>([]);
+const list = ref<EcomSelectionAnalysisResult[]>([]);
 const tasks = ref<EcomSelectionAnalysisTask[]>([]);
 const selectedIds = ref<string[]>([]);
-const currentDetail = ref<EcomSelectionAnalysisRun | null>(null);
+const currentDetail = ref<EcomSelectionAnalysisResult | null>(null);
 
 const filters = reactive({
   pageNo: 1,
   pageSize: 10,
   taskId: "",
-  status: "",
+  runId: "",
   analysisType: "",
 });
 
-const updateSelectedIds = (records: EcomSelectionAnalysisRun[] = []) => {
+const syncQueryToFilters = () => {
+  filters.taskId = String(route.query.taskId || "").trim();
+  filters.runId = String(route.query.runId || "").trim();
+};
+
+const updateSelectedIds = (records: EcomSelectionAnalysisResult[] = []) => {
   selectedIds.value = Array.from(
     new Set(records.map((item) => String(item.id || "").trim()).filter(Boolean)),
   );
@@ -341,85 +381,124 @@ const taskOptions = computed(() =>
   tasks.value.map((item) => ({ value: item.id, label: item.name })),
 );
 
-const sourceStats = computed(() => {
-  return (
-    currentDetail.value?.sourceStatsData ||
-    currentDetail.value?.summaryData?.sourceStats ||
-    currentDetail.value?.resultData?.sourceStats ||
-    {}
-  );
+const currentRun = computed(() => currentDetail.value?.run || null);
+const currentRunStatus = computed(
+  () =>
+    String(currentRun.value?.status || currentDetail.value?.runStatus || "").trim() || "success",
+);
+const currentRunErrorMessage = computed(
+  () =>
+    String(currentRun.value?.errorMessage || currentDetail.value?.runErrorMessage || "").trim() ||
+    "",
+);
+const currentAiModel = computed(
+  () => String(currentRun.value?.aiModel || currentDetail.value?.aiModel || "").trim() || "",
+);
+
+const detailSourceStats = computed(() => {
+  return currentDetail.value?.sourceStatsData || currentDetail.value?.resultData?.sourceStats || {};
 });
 
-const resultCount = computed(() => {
-  const customResultCount = Number(
-    currentDetail.value?.resultPreview?.customResult?.itemCount ||
-      currentDetail.value?.summaryData?.resultPreview?.customResult?.itemCount ||
-      0,
-  );
-  if (customResultCount > 0) {
-    return customResultCount;
+const recommendedProducts = computed(() => {
+  return Array.isArray(currentDetail.value?.resultData?.recommendedProducts)
+    ? currentDetail.value?.resultData?.recommendedProducts
+    : [];
+});
+
+const customResultItems = computed(() => {
+  const value = currentDetail.value?.resultData?.customResult?.items;
+  return Array.isArray(value) ? value : [];
+});
+
+const normalizedItems = computed(() => {
+  return Array.isArray(currentDetail.value?.normalizedItemsData)
+    ? currentDetail.value?.normalizedItemsData
+    : [];
+});
+
+const analysisTrace = computed(() => {
+  return currentDetail.value?.resultData?.analysisTrace || {};
+});
+
+const resultCountLabel = computed(() =>
+  currentDetail.value?.analysisType === "hot_selling_selection" ? "推荐商品" : "结果条数",
+);
+const resultCountValue = computed(() =>
+  currentDetail.value?.analysisType === "hot_selling_selection"
+    ? recommendedProducts.value.length
+    : customResultItems.value.length,
+);
+const supportMetricLabel = computed(() =>
+  currentDetail.value?.analysisType === "hot_selling_selection" ? "热门关键词" : "来源样本",
+);
+const supportMetricValue = computed(() =>
+  currentDetail.value?.analysisType === "hot_selling_selection"
+    ? Number(currentDetail.value?.resultData?.hotKeywords?.length || 0)
+    : normalizedItems.value.length,
+);
+
+const detailOverviewSummary = computed(
+  () =>
+    currentDetail.value?.resultData?.overview?.summary ||
+    currentRunErrorMessage.value ||
+    "暂无结论摘要",
+);
+
+const detailPreviewText = computed(() => formatJson(currentDetail.value || {}));
+
+const formatCustomResultCell = (value: unknown) => {
+  if (value == null || value === "") {
+    return "-";
   }
+  if (typeof value === "object") {
+    return formatJson(value);
+  }
+  return String(value);
+};
 
-  return Number(
-    currentDetail.value?.resultPreview?.recommendedProductCount ||
-      currentDetail.value?.summaryData?.resultPreview?.recommendedProductCount ||
-      0,
-  );
-});
-
-const getSummaryText = (row: EcomSelectionAnalysisRun) => {
-  const resultPreview = row.resultPreview || row.summaryData?.resultPreview;
-  const overviewSummary = String(resultPreview?.overview?.summary || "").trim();
+const getOverviewText = (row: EcomSelectionAnalysisResult) => {
+  const overviewSummary = String(row?.resultPreview?.overview?.summary || "").trim();
   if (overviewSummary) {
     return overviewSummary;
   }
 
-  const customResultCount = Number(resultPreview?.customResult?.itemCount || 0);
+  const customResultCount = Number(row?.resultPreview?.customResult?.itemCount || 0);
   if (customResultCount > 0) {
     return row.analysisType === "pod_pattern_analysis"
       ? `已输出 ${customResultCount} 条图案结果`
       : `已输出 ${customResultCount} 条自定义结果`;
   }
 
-  const recommendedProductCount = Number(resultPreview?.recommendedProductCount || 0);
+  const recommendedProductCount = Number(row?.resultPreview?.recommendedProductCount || 0);
   if (recommendedProductCount > 0) {
     return `已推荐 ${recommendedProductCount} 个候选方向`;
   }
 
-  const itemCount = Number(
-    row.sourceStatsData?.itemCount || row.summaryData?.sourceStats?.itemCount || 0,
-  );
-  if (itemCount > 0) {
-    return `样本 ${itemCount} 个`;
+  if (row?.sourceStatsData?.itemCount) {
+    return `样本 ${row.sourceStatsData.itemCount} 个`;
   }
 
-  if (row.errorMessage) {
-    return row.errorMessage;
-  }
-
-  if (row.status === "running") {
-    return "分析执行中";
+  if (row.runErrorMessage) {
+    return row.runErrorMessage;
   }
 
   return "暂无摘要";
 };
 
-const getListResultCount = (row: EcomSelectionAnalysisRun) => {
-  const resultPreview = row.resultPreview || row.summaryData?.resultPreview;
-
+const getListResultCount = (row: EcomSelectionAnalysisResult) => {
   if (
     ["custom_prompt_extract", "pod_pattern_analysis"].includes(
       String(row.analysisType || "").trim(),
     )
   ) {
-    return Number(resultPreview?.customResult?.itemCount || 0);
+    return Number(row?.resultPreview?.customResult?.itemCount || 0);
   }
 
-  return Number(resultPreview?.recommendedProductCount || 0);
+  return Number(row?.resultPreview?.recommendedProductCount || 0);
 };
 
-const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
-  ...(commonGridOptions as VxeGridProps<EcomSelectionAnalysisRun>),
+const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisResult>>({
+  ...(commonGridOptions as VxeGridProps<EcomSelectionAnalysisResult>),
   rowConfig: {
     ...(commonGridOptions as any).rowConfig,
     keyField: "id",
@@ -433,12 +512,12 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
     {
       title: "类型",
       field: "analysisType",
-      width: 120,
+      width: 110,
       slots: { default: "typeSlot" },
     },
     {
-      title: "状态",
-      field: "status",
+      title: "运行状态",
+      field: "runStatus",
       width: 100,
       slots: { default: "statusSlot" },
     },
@@ -452,8 +531,7 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
       title: "样本数",
       field: "sourceStatsData",
       width: 88,
-      formatter: ({ row }) =>
-        Number(row.sourceStatsData?.itemCount || row.summaryData?.sourceStats?.itemCount || 0),
+      formatter: ({ row }) => Number(row.sourceStatsData?.itemCount || 0),
     },
     {
       title: "结果量",
@@ -462,21 +540,18 @@ const gridOptions = ref<VxeGridProps<EcomSelectionAnalysisRun>>({
       formatter: ({ row }) => getListResultCount(row),
     },
     {
-      ...buildTimeColumn("开始时间", "startedAt", 180),
-      formatter: ({ cellValue }) => formatDateTime(cellValue as string),
-    },
-    {
-      ...buildTimeColumn("结束时间", "finishedAt", 180),
-      formatter: ({ cellValue }) => formatDateTime(cellValue as string),
+      ...buildTimeColumn("结果时间", "analyzedAt", 180),
+      formatter: ({ row }) =>
+        formatDateTime((row as EcomSelectionAnalysisResult).analyzedAt || row.runFinishedAt),
     },
     {
       title: "摘要",
       field: "summaryText",
-      minWidth: 240,
+      minWidth: 220,
       showOverflow: "tooltip",
       slots: { default: "summarySlot" },
     },
-    buildOperationColumn("operationSlot", 120),
+    buildOperationColumn("operationSlot", 132),
   ],
 });
 
@@ -489,7 +564,7 @@ const applyListData = (data: any) => {
 const loadList = async () => {
   loading.value = true;
   try {
-    const data = await getEcomSelectionAnalysisRunList(filters);
+    const data = await getEcomSelectionAnalysisResultList(filters);
     applyListData(data);
   } finally {
     loading.value = false;
@@ -499,11 +574,11 @@ const loadList = async () => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const [runData, taskData] = await Promise.all([
-      getEcomSelectionAnalysisRunList(filters),
+    const [resultData, taskData] = await Promise.all([
+      getEcomSelectionAnalysisResultList(filters),
       getEcomSelectionAnalysisTaskList({ pageNo: 1, pageSize: 100 }),
     ]);
-    applyListData(runData);
+    applyListData(resultData);
     tasks.value = Array.isArray(taskData?.list) ? taskData.list : [];
   } finally {
     loading.value = false;
@@ -518,26 +593,26 @@ const handleSearch = async () => {
 const handleReset = async () => {
   filters.pageNo = 1;
   filters.taskId = "";
-  filters.status = "";
+  filters.runId = "";
   filters.analysisType = "";
   await loadList();
 };
 
-const handleCheckboxChange = ({ records }: { records: EcomSelectionAnalysisRun[] }) => {
+const handleCheckboxChange = ({ records }: { records: EcomSelectionAnalysisResult[] }) => {
   updateSelectedIds(records);
 };
 
-const handleCheckboxAll = ({ records }: { records: EcomSelectionAnalysisRun[] }) => {
+const handleCheckboxAll = ({ records }: { records: EcomSelectionAnalysisResult[] }) => {
   updateSelectedIds(records);
 };
 
-const handleOperationCommand = (command: string, row: EcomSelectionAnalysisRun) => {
+const handleOperationCommand = (command: string, row: EcomSelectionAnalysisResult) => {
   switch (command) {
     case "detail":
       void openDetail(row);
       break;
-    case "results":
-      void openResultsPage(row);
+    case "supply-match":
+      void handleCreateSupplyMatchTask(row);
       break;
     case "delete":
       void handleDelete(row);
@@ -545,11 +620,11 @@ const handleOperationCommand = (command: string, row: EcomSelectionAnalysisRun) 
   }
 };
 
-const openDetail = async (row: EcomSelectionAnalysisRun) => {
+const openDetail = async (row: EcomSelectionAnalysisResult) => {
   detailVisible.value = true;
   detailLoading.value = true;
   try {
-    currentDetail.value = await getEcomSelectionAnalysisRunDetail(row.id);
+    currentDetail.value = await getEcomSelectionAnalysisResultDetail(row.id);
   } finally {
     detailLoading.value = false;
   }
@@ -559,25 +634,36 @@ const handleDetailClosed = () => {
   currentDetail.value = null;
 };
 
-const openResultsPage = async (row: EcomSelectionAnalysisRun) => {
+const handleCreateSupplyMatchTask = async (
+  result: EcomSelectionAnalysisResult,
+  sourceItemIds?: string[],
+  productName?: string,
+) => {
+  if (result.analysisType !== "hot_selling_selection") {
+    ElMessage.warning("只有“热门选品”分析结果可以继续创建找同款任务");
+    return;
+  }
+
   await router.push({
-    name: "EcomSelectionAnalysisResultPage",
+    name: "EcomSelectionSupplyMatchTaskPage",
     query: {
-      runId: row.id,
-      taskId: row.taskId,
+      analysisRunId: result.runId,
+      sourceItemIds:
+        Array.isArray(sourceItemIds) && sourceItemIds.length ? sourceItemIds.join(",") : "",
+      productName: productName || "",
     },
   });
 };
 
-const handleDelete = async (row: EcomSelectionAnalysisRun) => {
+const handleDelete = async (row: EcomSelectionAnalysisResult) => {
   try {
     await ElMessageBox.confirm(
-      "确认删除这条分析运行记录吗？将同步清理本次运行对应的分析结果。",
+      "确认删除这条分析结果吗？删除后将无法再基于它创建找同款任务。",
       "提示",
       { type: "warning" },
     );
-    await deleteEcomSelectionAnalysisRun(row.id);
-    ElMessage.success("分析运行已删除");
+    await deleteEcomSelectionAnalysisResult(row.id);
+    ElMessage.success("分析结果已删除");
     await loadList();
   } catch {}
 };
@@ -585,18 +671,25 @@ const handleDelete = async (row: EcomSelectionAnalysisRun) => {
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
-    await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 条分析运行记录吗？`,
-      "提示",
-      { type: "warning" },
-    );
-    await batchDeleteEcomSelectionAnalysisRun(selectedIds.value);
+    await ElMessageBox.confirm(`确认批量删除 ${selectedIds.value.length} 条分析结果吗？`, "提示", {
+      type: "warning",
+    });
+    await batchDeleteEcomSelectionAnalysisResult(selectedIds.value);
     ElMessage.success("批量删除成功");
     await loadList();
   } catch {}
 };
 
+watch(
+  () => route.query,
+  () => {
+    syncQueryToFilters();
+    void loadData();
+  },
+);
+
 onMounted(() => {
+  syncQueryToFilters();
   void loadData();
 });
 
@@ -631,14 +724,10 @@ onActivated(() => {
   line-height: 1.4;
 }
 
-.resource-toolbar__desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.table-meta-text {
+.resource-toolbar__desc,
+.table-meta-text,
+.detail-card__subtitle,
+.simple-card__text {
   color: var(--el-text-color-secondary);
 }
 
@@ -657,8 +746,9 @@ onActivated(() => {
   margin-bottom: 18px;
 }
 
-.detail-card {
-  padding: 18px;
+.detail-card,
+.simple-card {
+  padding: 16px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 14px;
   background: var(--el-bg-color);
@@ -668,26 +758,7 @@ onActivated(() => {
   background: var(--el-fill-color-lighter);
 }
 
-.detail-card__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.detail-card__title {
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.detail-card__subtitle {
-  margin-top: 6px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
+.detail-card__header,
 .detail-chip-row,
 .chip-list {
   display: flex;
@@ -695,71 +766,52 @@ onActivated(() => {
   gap: 8px;
 }
 
-.metric-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
+.detail-card__header {
+  justify-content: space-between;
 }
 
-.metric-card {
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-bg-color);
-}
-
-.metric-card span {
-  display: block;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.metric-card strong {
-  display: block;
-  margin-top: 6px;
+.detail-card__title,
+.simple-card__title {
   color: var(--el-text-color-primary);
-  font-size: 18px;
-  line-height: 1.3;
-  word-break: break-word;
+  font-size: 16px;
+  font-weight: 600;
 }
 
+.metric-grid,
 .stats-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-top: 14px;
 }
 
+.metric-card,
 .stats-item {
   padding: 12px;
   border-radius: 12px;
   background: var(--el-fill-color-light);
 }
 
+.metric-card span,
 .stats-item span {
   display: block;
   color: var(--el-text-color-secondary);
   font-size: 12px;
 }
 
+.metric-card strong,
 .stats-item strong {
   display: block;
   margin-top: 4px;
   color: var(--el-text-color-primary);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 18px;
+  line-height: 1.4;
   word-break: break-word;
 }
 
-.detail-mini-section {
+.detail-mini-section,
+.detail-toolbar {
   margin-top: 14px;
-}
-
-.detail-mini-section__title {
-  margin-bottom: 8px;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .detail-toolbar {
@@ -768,11 +820,16 @@ onActivated(() => {
   margin-bottom: 14px;
 }
 
+.simple-list {
+  display: grid;
+  gap: 12px;
+}
+
 .json-preview {
-  max-height: 560px;
+  max-height: 520px;
   overflow: auto;
   margin: 0;
-  padding: 16px;
+  padding: 14px;
   border-radius: 12px;
   border: 1px solid var(--el-border-color-lighter);
   background: var(--el-fill-color-light);
@@ -787,21 +844,16 @@ onActivated(() => {
   .detail-overview-grid {
     grid-template-columns: 1fr;
   }
-
-  .metric-grid,
-  .stats-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 768px) {
-  .detail-card__header {
-    flex-direction: column;
-  }
-
   .metric-grid,
   .stats-list {
     grid-template-columns: 1fr;
+  }
+
+  .detail-card__header {
+    flex-direction: column;
   }
 }
 </style>

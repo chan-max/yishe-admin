@@ -7,7 +7,8 @@
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">电商分析任务</div>
               <div class="resource-toolbar__desc">
-                采集模块负责提供数据源，这里只负责定义分析范围、AI 参数与手动触发入口；支持热门选品、POD 图案分析和自定义提示词分析。
+                采集模块负责提供数据源，这里只负责定义分析范围、AI
+                参数与手动触发入口；支持热门选品、POD 图案分析和自定义提示词分析。
               </div>
             </div>
             <div class="resource-toolbar__actions">
@@ -22,8 +23,12 @@
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
                 <el-form-item label="任务名称 / 创建人">
-                  <el-input v-model="filters.keyword" clearable placeholder="搜索任务名称 / 创建人"
-                    @keyup.enter="handleSearch" />
+                  <el-input
+                    v-model="filters.keyword"
+                    clearable
+                    placeholder="搜索任务名称 / 创建人"
+                    @keyup.enter="handleSearch"
+                  />
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12" :md="8" :lg="6">
@@ -40,7 +45,12 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
-              <el-button size="small" type="danger" :disabled="!selectedIds.length" @click="handleBatchDelete">
+              <el-button
+                size="small"
+                type="danger"
+                :disabled="!selectedIds.length"
+                @click="handleBatchDelete"
+              >
                 批量删除 ({{ selectedIds.length }})
               </el-button>
             </div>
@@ -49,11 +59,18 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid v-bind="gridOptions" :data="tableData" :loading="loading"
-                @checkbox-change="handleCheckboxChange" @checkbox-all="handleCheckboxAll">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="tableData"
+                :loading="loading"
+                @checkbox-change="handleCheckboxChange"
+                @checkbox-all="handleCheckboxAll"
+              >
                 <template #typeSlot="{ row }">
                   <el-tag size="small" type="info">
                     {{ getAnalysisTypeLabel(row.analysisType) }}
@@ -81,7 +98,11 @@
 
                 <template #lastRunSlot="{ row }">
                   <div class="table-stack">
-                    <el-tag v-if="row.lastRunStatus" size="small" :type="getRunStatusTagType(row.lastRunStatus)">
+                    <el-tag
+                      v-if="row.lastRunStatus"
+                      size="small"
+                      :type="getRunStatusTagType(row.lastRunStatus)"
+                    >
                       {{ getRunStatusLabel(row.lastRunStatus) }}
                     </el-tag>
                     <span v-else class="table-meta-text">未执行</span>
@@ -99,10 +120,19 @@
 
                 <template #operationSlot="{ row }">
                   <div class="flex justify-start">
-                    <el-dropdown class="operation-dropdown" placement="bottom-end" :disabled="!!triggeringTaskId"
-                      @command="(command) => handleOperationCommand(String(command), row)">
-                      <el-button type="primary" link size="small" class="operation-trigger-button"
-                        :loading="triggeringTaskId === row.id">
+                    <el-dropdown
+                      class="operation-dropdown"
+                      placement="bottom-end"
+                      :disabled="!!triggeringTaskId"
+                      @command="(command) => handleOperationCommand(String(command), row)"
+                    >
+                      <el-button
+                        type="primary"
+                        link
+                        size="small"
+                        class="operation-trigger-button"
+                        :loading="triggeringTaskId === row.id"
+                      >
                         操作
                       </el-button>
                       <template #dropdown>
@@ -119,7 +149,11 @@
                             </el-icon>
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
                             <el-icon>
                               <Delete />
                             </el-icon>
@@ -138,15 +172,26 @@
 
       <template #pagination>
         <div
-          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
-          <Pagination :total="total" v-model:page="filters.pageNo" v-model:limit="filters.pageSize"
-            @pagination="loadList" />
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
+            :total="total"
+            v-model:page="filters.pageNo"
+            v-model:limit="filters.pageSize"
+            @pagination="loadList"
+          />
         </div>
       </template>
     </ListPageLayout>
 
-    <SelectionAnalysisTaskDialog v-model="dialogVisible" :task="currentTask" :collect-catalog="catalog"
-      :collect-tasks="collectTasks" :collect-runs="collectRuns" @success="handleDialogSuccess" />
+    <SelectionAnalysisTaskDialog
+      v-model="dialogVisible"
+      :task="currentTask"
+      :collect-catalog="catalog"
+      :collect-tasks="collectTasks"
+      :collect-runs="collectRuns"
+      @success="handleDialogSuccess"
+    />
   </ContentWrap>
 </template>
 
@@ -232,9 +277,9 @@ const getSourceSummary = (task: EcomSelectionAnalysisTask) => {
       : "",
     Array.isArray(sourceConfig.platforms) && sourceConfig.platforms.length
       ? `平台 ${formatListPreview(
-        sourceConfig.platforms.map((item: string) => getPlatformLabel(catalog, item)),
-        2,
-      )}`
+          sourceConfig.platforms.map((item: string) => getPlatformLabel(catalog, item)),
+          2,
+        )}`
       : "",
     sourceConfig.keyword ? `关键词 ${sourceConfig.keyword}` : "",
     sourceConfig.requireDetail ? "仅详情数据" : "",
@@ -251,9 +296,9 @@ const getOptionsSummary = (task: EcomSelectionAnalysisTask) => {
     options.targetMarket ? options.targetMarket : "",
     Array.isArray(options.preferredPlatforms) && options.preferredPlatforms.length
       ? `优先 ${formatListPreview(
-        options.preferredPlatforms.map((item: string) => getPlatformLabel(catalog, item)),
-        2,
-      )}`
+          options.preferredPlatforms.map((item: string) => getPlatformLabel(catalog, item)),
+          2,
+        )}`
       : "",
     options.targetPriceRange?.min != null || options.targetPriceRange?.max != null
       ? `价格 ${options.targetPriceRange?.min ?? "-"} ~ ${options.targetPriceRange?.max ?? "-"}`
@@ -459,8 +504,8 @@ const handleTriggerTask = async (row: EcomSelectionAnalysisTask) => {
       type: result?.status === "failed" ? "warning" : "success",
       duration: 5000,
       message: result?.id
-        ? `结果记录：${result.id}${result.errorMessage ? `，${result.errorMessage}` : ""}`
-        : "任务已触发，请前往分析结果查看",
+        ? `运行记录：${result.id}${result.errorMessage ? `，${result.errorMessage}` : ""}`
+        : "任务已触发，请前往分析运行或分析结果查看",
     });
     await loadList();
   } catch (error: any) {
@@ -474,28 +519,28 @@ const handleTriggerTask = async (row: EcomSelectionAnalysisTask) => {
 const handleDelete = async (row: EcomSelectionAnalysisTask) => {
   try {
     await ElMessageBox.confirm(
-      `确认删除分析任务「${row.name}」吗？将同步清理关联分析结果记录。`,
+      `确认删除分析任务「${row.name}」吗？将同步清理关联分析运行和分析结果。`,
       "提示",
       { type: "warning" },
     );
     await deleteEcomSelectionAnalysisTask(row.id);
     ElMessage.success("分析任务已删除");
     await loadList();
-  } catch { }
+  } catch {}
 };
 
 const handleBatchDelete = async () => {
   if (!selectedIds.value.length) return;
   try {
     await ElMessageBox.confirm(
-      `确认批量删除 ${selectedIds.value.length} 个分析任务吗？将同步清理关联分析结果记录。`,
+      `确认批量删除 ${selectedIds.value.length} 个分析任务吗？将同步清理关联分析运行和分析结果。`,
       "提示",
       { type: "warning" },
     );
     await batchDeleteEcomSelectionAnalysisTask(selectedIds.value);
     ElMessage.success("批量删除成功");
     await loadList();
-  } catch { }
+  } catch {}
 };
 
 onMounted(() => {

@@ -517,9 +517,19 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/operation/ecom-selection-analysis/runs.vue"),
         name: "EcomSelectionAnalysisRunPage",
         meta: {
-          title: "选品分析结果",
+          title: "选品分析运行",
           noCache: true,
           order: 6,
+        },
+      },
+      {
+        path: "selection-analysis/results",
+        component: () => import("@/views/operation/ecom-selection-analysis/results.vue"),
+        name: "EcomSelectionAnalysisResultPage",
+        meta: {
+          title: "选品分析结果",
+          noCache: true,
+          order: 7,
         },
       },
       {
@@ -529,7 +539,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "找同款任务",
           noCache: true,
-          order: 7,
+          order: 8,
         },
       },
       {
@@ -539,7 +549,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "找同款运行",
           noCache: true,
-          order: 8,
+          order: 9,
         },
       },
       {
@@ -549,7 +559,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "找同款结果",
           noCache: true,
-          order: 9,
+          order: 10,
         },
       },
     ],
