@@ -55,6 +55,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
     label: "客户端功能",
     options: [
       { key: "external.browser-automation", label: "浏览器自动化" },
+      { key: "external.browser-plugin", label: "浏览器插件" },
       { key: "external.ps-automation", label: "PS 自动化" },
       { key: "external.google-art", label: "Google Art" },
     ],
@@ -128,6 +129,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   OperationToolkit: "external.toolkit",
   ExternalToolkitLegacy: "external.toolkit",
   ExternalBrowserAutomation: "external.browser-automation",
+  ExternalBrowserPlugin: "external.browser-plugin",
   ExternalPsAutomation: "external.ps-automation",
   ExternalGoogleArt: "external.google-art",
   AiTti: "ai.tti",

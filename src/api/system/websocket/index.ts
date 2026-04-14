@@ -238,6 +238,12 @@ export const disconnectWebsocketConnection = (clientId: string) => {
   });
 };
 
+export const removeWebsocketClientNode = (clientId: string) => {
+  return request.post<{ success: boolean; message: string; data?: { clientId: string } }>({
+    url: `/websocket/node/cleanup/${clientId}`,
+  });
+};
+
 export interface ServiceCommandDTO {
   clientId?: string;
   service?: string;
@@ -412,6 +418,20 @@ export const getPsdSetAutoDispatchRuntime = () => {
 export const startPublishTaskDispatch = (taskId: string, data?: DispatchPublishTaskDTO) => {
   return request.post<{ success: boolean; message: string; data?: any }>({
     url: `/websocket/publish-tasks/${taskId}/start`,
+    data,
+  });
+};
+
+export const stopPublishTaskDispatch = (taskId: string, data?: { reason?: string }) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/publish-tasks/${taskId}/stop`,
+    data,
+  });
+};
+
+export const resetPublishTaskDispatch = (taskId: string, data?: { reason?: string }) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/publish-tasks/${taskId}/reset`,
     data,
   });
 };

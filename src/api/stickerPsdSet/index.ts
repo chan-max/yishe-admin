@@ -1,7 +1,25 @@
 import request from '@/config/axios'
 
+export interface ActivePsdSetSummaryItem {
+  id: string
+  name?: string | null
+  status?: string | null
+  schedulerStatus?: string | null
+  assignedClientId?: string | null
+  assignedMachineCode?: string | null
+  updateTime?: string | null
+}
+
+export interface ActivePsdSetSummaryResponse {
+  total: number
+  items: ActivePsdSetSummaryItem[]
+  fetchedAt?: string | null
+}
+
 export const stickerPsdSetApi = {
   page: (data: any) => request.post({ url: '/sticker-psd-set/page', data }),
+  getActiveSummary: () =>
+    request.get<ActivePsdSetSummaryResponse>({ url: '/sticker-psd-set/runtime/active-summary' }),
   create: (data: any) => request.post({ url: '/sticker-psd-set', data }),
   batchCreate: (data: any) => request.post({ url: '/sticker-psd-set/batch', data }),
   generateProduct: (data: { id: string; promptId?: number | null }) =>

@@ -319,6 +319,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "browser-plugin",
+        component: () => import("@/views/external/browser-plugin/index.vue"),
+        name: "ExternalBrowserPlugin",
+        meta: {
+          title: "浏览器插件",
+        },
+      },
+      {
         path: "ps-automation",
         component: () => import("@/views/system/ps-console/index.vue"),
         name: "ExternalPsAutomation",

@@ -222,6 +222,13 @@ export interface ImageProcessingRecordChangedEvent {
   updatedAt?: string;
 }
 
+export interface AdminMessageEvent {
+  title: string;
+  message: string;
+  raw: any;
+  receivedAt: string;
+}
+
 const wsState = reactive<WsState>({
   endpoint: DEFAULT_WS_ENDPOINT,
   status: "idle",
@@ -364,6 +371,7 @@ export type WebsocketEvents = {
     psdSetId?: string;
     data?: Record<string, any>;
   };
+  adminMessage: AdminMessageEvent;
   "production-status": {
     status: string;
     message: string;
@@ -457,6 +465,62 @@ function stripVolatileWsFieldsForFingerprint(value: unknown): unknown {
 
 function buildWsFingerprint(value: unknown) {
   return stableStringifyForWs(stripVolatileWsFieldsForFingerprint(value));
+}
+
+function formatAdminMessageText(data: any) {
+  if (typeof data === "string") {
+    return data;
+  }
+
+  const preferredText =
+    data?.message ||
+    data?.text ||
+    data?.content ||
+    data?.description ||
+    data?.detail;
+  if (typeof preferredText === "string" && preferredText.trim()) {
+    return preferredText.trim();
+  }
+
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return String(data ?? "");
+  }
+}
+
+function buildAdminMessageEvent(data: any): AdminMessageEvent {
+  const receivedAt = new Date().toISOString();
+  const title =
+    (typeof data?.title === "string" && data.title.trim()) ||
+    (typeof data?.subject === "string" && data.subject.trim()) ||
+    "管理消息";
+  const message = formatAdminMessageText(data) || "收到一条新的管理消息";
+
+  return {
+    title,
+    message,
+    raw: data,
+    receivedAt,
+  };
+}
+
+function buildAdminMessageNotification(payload: AdminMessageEvent): GlobalNotificationEvent {
+  return {
+    id: `admin-message-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title: payload.title,
+    message: payload.message,
+    level: "info",
+    category: "message",
+    source: "admin-message",
+    sticky: false,
+    durationMs: 5000,
+    metadata: {
+      raw: payload.raw,
+    },
+    createdAt: payload.receivedAt,
+    updatedAt: payload.receivedAt,
+  };
 }
 
 function scheduleHeartbeatTimeout() {
@@ -573,9 +637,12 @@ function bindSocketEvents(currentSocket: Socket) {
       connectedAt: new Date().toISOString(),
       lastError: null,
       retryCount: 0,
-      connectionId: socketId,
+      connectionId: clientId,
     });
-    emitter.emit("log", { level: "info", message: `[ws] connected (id: ${socketId})` });
+    emitter.emit("log", {
+      level: "info",
+      message: `[ws] connected (socket: ${socketId}, connection: ${clientId})`,
+    });
     emitClientInfo();
     startHeartbeatLoop();
   });
@@ -652,6 +719,12 @@ function bindSocketEvents(currentSocket: Socket) {
   // 监听客户端连接状态响应
   currentSocket.on("my-client-status", (data: { hasClient: boolean }) => {
     emitter.emit("myClientStatus", { hasClient: data.hasClient });
+  });
+
+  currentSocket.on("admin-message", (data: any) => {
+    const payload = buildAdminMessageEvent(data);
+    emitter.emit("adminMessage", payload);
+    emitter.emit("globalNotification", buildAdminMessageNotification(payload));
   });
 
   // 监听开始制作套图的响应

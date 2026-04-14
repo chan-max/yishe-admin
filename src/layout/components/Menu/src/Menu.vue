@@ -25,7 +25,6 @@ import {
   type ClientPluginKey,
   useClientNodeStore,
 } from "@/store/modules/clientNode";
-import { type PsAutomationStatusEvent, websocketClient } from "@/services/websocketClient";
 
 const { getPrefixCls } = useDesign();
 const prefixCls = getPrefixCls("menu");
@@ -49,8 +48,8 @@ export default defineComponent({
     const {
       userAutoSchedulingEnabled,
       isAnyPsdSetProcessing,
+      processingTooltipText,
       refresh: refreshPsdSetRuntime,
-      setUserAutoSchedulingEnabled,
     } = usePsdSetRuntimeState();
     const {
       isAnyPublishTaskRunning,
@@ -58,7 +57,6 @@ export default defineComponent({
       tooltipText: publishTaskTooltipText,
       refresh: refreshPublishTaskRuntime,
     } = usePublishTaskRuntimeState();
-    let psdSetRuntimePollingTimer: ReturnType<typeof setInterval> | null = null;
     const clientNodeStore = useClientNodeStore();
     clientNodeStore.ensureInitialized();
 
@@ -69,6 +67,11 @@ export default defineComponent({
       "/external/ps-automation": "ps-automation",
       "/external/google-art": "google-art",
     };
+    const busyIndicatorDisabledRoutes = new Set([
+      "/operation/toolkit",
+      "/external/toolkit",
+      "/external/browser-automation",
+    ]);
 
     const routeStatusMap = computed<Record<string, "available" | "degraded" | "offline">>(() => {
       const result: Record<string, "available" | "degraded" | "offline"> = {};
@@ -86,6 +89,10 @@ export default defineComponent({
       const result: Record<string, boolean> = {};
 
       Object.entries(menuStatusRouteMap).forEach(([routePath, pluginKey]) => {
+        if (busyIndicatorDisabledRoutes.has(routePath)) {
+          result[routePath] = false;
+          return;
+        }
         result[routePath] = clientNodeStore.clients.some((client) => {
           if (!client.isOnline) return false;
           const serviceRuntime = getClientServiceRuntime(client, pluginKey as ClientPluginKey);
@@ -96,17 +103,6 @@ export default defineComponent({
 
       return result;
     });
-
-    const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
-      const autoSchedulingEnabled =
-        typeof event?.autoDispatchEnabled === "boolean"
-          ? event.autoDispatchEnabled
-          : event?.autoSchedulingEnabled;
-
-      if (typeof autoSchedulingEnabled === "boolean") {
-        setUserAutoSchedulingEnabled(autoSchedulingEnabled);
-      }
-    };
 
     const renderMenuStatusHint = (dotNode: VNode, title: string) => {
       return (
@@ -203,7 +199,9 @@ export default defineComponent({
       if (!status) {
         return undefined;
       }
-      const running = routeRunningMap.value[routePath];
+      const supportsRunningIndicator =
+        routePath !== "/external/ps-automation" && !busyIndicatorDisabledRoutes.has(routePath);
+      const running = supportsRunningIndicator ? routeRunningMap.value[routePath] : false;
 
       const titleMap: Record<string, Record<"available" | "degraded" | "offline", string>> = {
         "/operation/toolkit": {
@@ -288,7 +286,7 @@ export default defineComponent({
       }
 
       if (isAnyPsdSetProcessing.value) {
-        return renderRunningStatusDot("当前有套图正在制作", "psd");
+        return renderRunningStatusDot(processingTooltipText.value, "psd");
       }
 
       return renderMenuStatusHint(
@@ -408,41 +406,9 @@ export default defineComponent({
       { immediate: true },
     );
 
-    const stopPsdSetRuntimePolling = () => {
-      if (!psdSetRuntimePollingTimer) {
-        return;
-      }
-      clearInterval(psdSetRuntimePollingTimer);
-      psdSetRuntimePollingTimer = null;
-    };
-
-    watch(
-      isAnyPsdSetProcessing,
-      (running) => {
-        if (!running) {
-          stopPsdSetRuntimePolling();
-          return;
-        }
-        void refreshPsdSetRuntime();
-        if (psdSetRuntimePollingTimer) {
-          return;
-        }
-        psdSetRuntimePollingTimer = setInterval(() => {
-          void refreshPsdSetRuntime();
-        }, 3000);
-      },
-      { immediate: true },
-    );
-
     onMounted(() => {
       void refreshPsdSetRuntime();
       void refreshPublishTaskRuntime();
-      websocketClient.events.on("psAutomationStatus", handlePsAutomationStatus);
-    });
-
-    onUnmounted(() => {
-      stopPsdSetRuntimePolling();
-      websocketClient.events.off("psAutomationStatus", handlePsAutomationStatus);
     });
 
     return () => (
@@ -847,67 +813,15 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__link--running {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    box-shadow:
-      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 18%),
-      0 3px 12px rgb(var(--menu-running-rgb, 245 158 11) / 10%);
-  }
-
-  &__link--running::before {
-    position: absolute;
-    inset: 1px;
-    z-index: 0;
-    border-radius: calc(var(--left-menu-link-radius) - 1px);
-    background:
-      linear-gradient(
-        90deg,
-        rgb(var(--menu-running-rgb, 245 158 11) / 18%) 0%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 28%) 52%,
-        rgb(var(--menu-running-rgb, 245 158 11) / 18%) 100%
-      ),
-      repeating-linear-gradient(
-        -62deg,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 0 14px,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 20%) 14px 30px,
-        rgb(var(--menu-running-rgb, 245 158 11) / 10%) 30px 46px,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 46px 64px
-      );
-    background-size:
-      100% 100%,
-      160px 100%;
-    background-position:
-      0 0,
-      0 0;
-    content: "";
-    opacity: 0.98;
-    pointer-events: none;
-    animation:
-      queue-link-background-flow 1.55s linear infinite,
-      queue-link-background-pulse 2.05s ease-in-out infinite;
-  }
-
-  &__link--running::after {
-    position: absolute;
-    inset: 1px;
-    z-index: 0;
-    border-radius: calc(var(--left-menu-link-radius) - 1px);
     background: linear-gradient(
       90deg,
-      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 0%,
-      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 10%) 18%,
-      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 32%) 50%,
-      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 10%) 82%,
-      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 100%
+      rgb(var(--menu-running-rgb, 245 158 11) / 12%) 0%,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 16%) 52%,
+      rgb(var(--menu-running-rgb, 245 158 11) / 12%) 100%
     );
     box-shadow:
-      inset 0 0 0 1px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 20%),
-      inset 0 0 18px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 12%);
-    content: "";
-    opacity: 0.88;
-    pointer-events: none;
-    animation: queue-link-background-glow 1.85s ease-in-out infinite;
+      inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 18%),
+      0 3px 12px rgb(var(--menu-running-rgb, 245 158 11) / 8%);
   }
 
   &__link--running:not(.#{$prefix-cls}__link--active) {
@@ -917,38 +831,19 @@ $prefix-cls: #{$namespace}-menu;
   &__link--running:hover {
     box-shadow:
       inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 24%),
-      0 4px 14px rgb(var(--menu-running-rgb, 245 158 11) / 14%);
+      0 4px 14px rgb(var(--menu-running-rgb, 245 158 11) / 12%);
   }
 
   &__link--running.#{$prefix-cls}__link--active {
+    background: linear-gradient(
+      90deg,
+      rgb(var(--menu-running-rgb, 245 158 11) / 10%) 0%,
+      rgb(var(--menu-running-highlight-rgb, 251 191 36) / 12%) 52%,
+      rgb(var(--menu-running-rgb, 245 158 11) / 10%) 100%
+    );
     box-shadow:
       inset 0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 18%),
       0 0 0 1px rgb(var(--menu-running-rgb, 245 158 11) / 9%);
-  }
-
-  &__link--running.#{$prefix-cls}__link--active::before {
-    background:
-      linear-gradient(
-        90deg,
-        rgb(var(--menu-running-rgb, 245 158 11) / 11%) 0%,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 18%) 52%,
-        rgb(var(--menu-running-rgb, 245 158 11) / 11%) 100%
-      ),
-      repeating-linear-gradient(
-        -62deg,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 0 14px,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 14%) 14px 30px,
-        rgb(var(--menu-running-rgb, 245 158 11) / 7%) 30px 46px,
-        rgb(var(--menu-running-highlight-rgb, 251 191 36) / 0%) 46px 64px
-      );
-    opacity: 0.9;
-  }
-
-  &__link--running.#{$prefix-cls}__link--active::after {
-    box-shadow:
-      inset 0 0 0 1px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 14%),
-      inset 0 0 14px rgb(var(--menu-running-highlight-rgb, 251 191 36) / 8%);
-    opacity: 0.8;
   }
 
   &__link--running-queue {
@@ -1173,43 +1068,6 @@ $prefix-cls: #{$namespace}-menu;
     box-shadow:
       0 0 0 1px rgb(148 163 184 / 14%),
       0 0 10px rgb(148 163 184 / 16%);
-  }
-}
-
-@keyframes queue-link-background-pulse {
-  0%,
-  100% {
-    opacity: 0.88;
-    filter: saturate(0.98) brightness(0.99);
-  }
-  50% {
-    opacity: 1;
-    filter: saturate(1.14) brightness(1.07);
-  }
-}
-
-@keyframes queue-link-background-flow {
-  from {
-    background-position:
-      0 0,
-      0 0;
-  }
-  to {
-    background-position:
-      0 0,
-      160px 0;
-  }
-}
-
-@keyframes queue-link-background-glow {
-  0%,
-  100% {
-    opacity: 0.72;
-    filter: brightness(0.98);
-  }
-  50% {
-    opacity: 0.96;
-    filter: brightness(1.08);
   }
 }
 

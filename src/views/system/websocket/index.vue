@@ -5,10 +5,7 @@
         <div class="list-page-filter list-page-filter--flat">
           <div class="websocket-toolbar">
             <div class="websocket-toolbar__summary">
-              <div class="websocket-toolbar__title">远程连接</div>
-              <div class="websocket-toolbar__description">
-                {{ runtimeViewDescription }}
-              </div>
+
             </div>
 
             <div class="websocket-toolbar__meta">
@@ -105,21 +102,24 @@
 
                 <template #operation_default="{ row }">
                   <div class="flex justify-start">
-                    <el-dropdown class="operation-dropdown" placement="bottom-end" :disabled="!row.isOnline"
+                    <el-dropdown class="operation-dropdown" placement="bottom-end"
+                      :disabled="!hasAvailableOperations(row)"
                       @command="(command) => handleOperationCommand(command, row)">
                       <el-button type="primary" link size="small" class="operation-trigger-button">
                         操作
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item command="send-message">
+                          <el-dropdown-item v-if="row.isOnline" command="send-message">
                             <span>发送消息</span>
                           </el-dropdown-item>
-                          <el-dropdown-item v-if="canControlConnection(row)" command="control" divided>
-                            <span>操控</span>
-                          </el-dropdown-item>
-                          <el-dropdown-item command="disconnect" divided class="operation-menu-item--danger">
+                          <el-dropdown-item v-if="row.isOnline" command="disconnect" divided
+                            class="operation-menu-item--danger">
                             <span>强制断开</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item v-if="canDeleteClientNode(row)" command="delete"
+                            class="operation-menu-item--danger">
+                            <span>删除节点</span>
                           </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
@@ -132,101 +132,6 @@
         </div>
       </template>
     </ListPageLayout>
-
-    <el-dialog v-model="controlDialogVisible" title="连接操控" fullscreen :close-on-click-modal="false"
-      class="control-dialog">
-      <div class="control-dialog-content">
-        <div class="control-dialog-header">
-          <div class="control-connection-info">
-            <div class="connection-info-left">
-              <div class="connection-id">
-                <span class="label">连接 ID：</span>
-                <span class="value">{{ currentConnection?.id || "-" }}</span>
-              </div>
-              <div class="connection-meta">
-                <span class="meta-item">
-                  <Icon icon="ep:location" class="mr-4px" />
-                  {{ currentConnection?.ip || currentConnection?.clientInfo?.location?.ip || "-" }}
-                </span>
-                <span class="meta-item">
-                  <Icon icon="ep:clock" class="mr-4px" />
-                  {{
-                    currentConnection?.connectedAt ? formatPast(currentConnection.connectedAt) : "-"
-                  }}
-                </span>
-                <span class="meta-item" v-if="currentConnection?.namespace">
-                  <Icon icon="ep:folder" class="mr-4px" />
-                  {{ currentConnection.namespace }}
-                </span>
-                <span class="meta-item">
-                  <Icon icon="ep:connection" class="mr-4px" />
-                  {{ currentConnection?.isOnline ? "在线" : "断线" }}
-                </span>
-              </div>
-            </div>
-            <div class="connection-info-right">
-              <el-tag :type="getSourceTagType(currentConnection)" size="small">
-                {{ formatSourceLabel(currentConnection) }}
-              </el-tag>
-              <div class="connection-time" v-if="currentConnection?.connectedAt">
-                {{ formatDate(new Date(currentConnection.connectedAt)) }}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="control-dialog-body">
-          <vxe-grid v-if="currentConnection && canControlConnection(currentConnection)" v-bind="functionGridOptions"
-            :data="functionList" class="function-grid">
-            <template #icon_default="{ row }">
-              <div class="function-icon-cell">
-                <Icon :icon="row.icon" />
-              </div>
-            </template>
-
-            <template #schedule_default="{ row }">
-              <div v-if="row.schedule" class="schedule-status-cell">
-                <div class="schedule-status-row">
-                  <el-tag :type="row.schedule.enabled ? 'success' : 'info'" size="small">
-                    {{ row.schedule.enabled ? "已启用" : "已禁用" }}
-                  </el-tag>
-                  <span class="schedule-info-text">{{ formatSchedule(row.schedule) }}</span>
-                </div>
-                <div v-if="row.schedule.type" class="schedule-type-text">
-                  <el-tag :type="row.schedule.type === 'cron' ? 'primary' : 'success'" size="small" plain>
-                    {{ row.schedule.type === "cron" ? "固定时间点" : "间隔时间" }}
-                  </el-tag>
-                </div>
-              </div>
-              <span v-else class="text-gray-400">未设置</span>
-            </template>
-
-            <template #operation_default="{ row }">
-              <div class="flex justify-start">
-                <el-dropdown class="operation-dropdown" placement="bottom-end"
-                  @command="(command) => handleFunctionOperation(command, row)">
-                  <el-button type="primary" link size="small" class="operation-trigger-button">
-                    操作
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu class="operation-menu-compact">
-                      <el-dropdown-item command="open">
-                        <span>打开配置</span>
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </template>
-          </vxe-grid>
-
-          <el-empty v-else description="当前连接类型不支持操控功能" :image-size="100" />
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="controlDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
 
     <el-dialog v-model="sendMessageDialogVisible" title="发送消息" width="500px" align-center :close-on-click-modal="false">
       <el-form label-width="100px">
@@ -258,7 +163,6 @@
 
 <script lang="ts" setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch, watchEffect } from "vue";
-import { useRouter } from "vue-router";
 import type { VxeGridInstance, VxeGridProps } from "vxe-table";
 import { useWindowSize } from "@vueuse/core";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
@@ -268,7 +172,6 @@ import { useMessage } from "@/hooks/web/useMessage";
 import { formatDate, formatPast } from "@/utils/formatTime";
 import * as WebsocketApi from "@/api/system/websocket";
 import type {
-  ScheduledTask,
   TokenUserInfo,
   WebsocketClientInfo,
   WebsocketConnectionVO,
@@ -278,18 +181,6 @@ import { websocketClient } from "@/services/websocketClient";
 defineOptions({ name: "SystemWebsocketConnections" });
 
 type WebsocketConnectionRow = WebsocketConnectionVO;
-
-interface ExtensionFunctionItem {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  handler: () => void | Promise<void>;
-  scheduleCommand?: string;
-  schedule: ScheduledTask | null;
-}
-
-const router = useRouter();
 const message = useMessage();
 const gridRef = ref<VxeGridInstance>();
 const { height } = useWindowSize();
@@ -306,11 +197,9 @@ const isRefreshing = computed(() => runtimeLoading.value || nodeLoading.value);
 
 const sendMessageDialogVisible = ref(false);
 const sendMessageDialogLoading = ref(false);
-const controlDialogVisible = ref(false);
 const currentConnection = ref<WebsocketConnectionRow | null>(null);
 const messageContent = ref("");
 const messageEvent = ref("admin-message");
-const functionList = ref<ExtensionFunctionItem[]>([]);
 
 const adminWsStatus = computed(() => websocketClient.state.status);
 const adminConnectionId = computed(() => websocketClient.state.connectionId);
@@ -355,6 +244,14 @@ const isOtherAdminConnection = (row?: Partial<WebsocketConnectionRow> | null) =>
   return resolveConnectionSourceKey(row) === "admin" && !isCurrentAdminConnection(row);
 };
 
+const canDeleteClientNode = (row?: Partial<WebsocketConnectionRow> | null) => {
+  return !row?.isOnline && resolveConnectionSourceKey(row) === "client";
+};
+
+const hasAvailableOperations = (row?: Partial<WebsocketConnectionRow> | null) => {
+  return !!row?.isOnline || canDeleteClientNode(row);
+};
+
 const runtimeExtensionCount = computed(
   () =>
     runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "extension")
@@ -386,8 +283,7 @@ const adminConnectionRows = computed(() => {
   return Array.from(rowMap.values()).sort(compareAdminConnectionRows);
 });
 
-const runtimeViewDescription =
-  "当前页面直接展示统一连接列表，在线会话和离线客户端节点都会显示，方便管理员统一排查。";
+
 const runtimeEmptyDescription = "暂无可展示的连接记录";
 
 const formatStatusTime = (value?: string | null) => {
@@ -642,103 +538,14 @@ const refreshConnectionData = async () => {
   await Promise.allSettled([fetchRuntimeConnections(), fetchNodeConnections()]);
 };
 
-const formatSchedule = (task: ScheduledTask) => {
-  if (task.type === "cron") {
-    return task.schedule;
-  }
-  const hours = parseFloat(task.schedule);
-  if (hours >= 24) {
-    return `每 ${Math.floor(hours / 24)} 天`;
-  }
-  if (hours >= 1) {
-    return `每 ${hours} 小时`;
-  }
-  return `每 ${Math.floor(hours * 60)} 分钟`;
-};
-
-const initializeFunctionList = () => {
-  functionList.value = [
-    {
-      id: "browser-automation",
-      name: "浏览器自动化",
-      description: "打开浏览器自动化页面查看当前插件能力与运行时状态。",
-      icon: "ep:monitor",
-      handler: async () => {
-        await router.push("/external/browser-automation");
-      },
-      schedule: null,
-    },
-    {
-      id: "ps-automation",
-      name: "套图制作",
-      description: "打开套图制作页面查看 PS 自动化相关配置与状态。",
-      icon: "ep:picture-filled",
-      handler: async () => {
-        await router.push("/external/ps-automation");
-      },
-      schedule: null,
-    },
-    {
-      id: "google-art",
-      name: "Google Art",
-      description: "打开 Google Art 页面查看当前插件侧的运行能力。",
-      icon: "ep:brush-filled",
-      handler: async () => {
-        await router.push("/external/google-art");
-      },
-      schedule: null,
-    },
-  ];
-};
-
-const loadFunctionSchedule = async () => {
-  if (!currentConnection.value) return;
-
-  await Promise.all(
-    functionList.value.map(async (func) => {
-      if (!func.scheduleCommand) {
-        func.schedule = null;
-        return;
-      }
-      try {
-        const response = await WebsocketApi.getScheduleTask(
-          currentConnection.value!.id,
-          func.scheduleCommand,
-        );
-        func.schedule = response.data;
-      } catch {
-        func.schedule = null;
-      }
-    }),
-  );
-};
-
-const canControlConnection = (row?: Partial<WebsocketConnectionRow> | null) => {
-  return resolveConnectionSourceKey(row) === "extension";
-};
-
 const handleOperationCommand = (command: string, row: WebsocketConnectionRow) => {
   if (command === "send-message") {
     handleSendMessage(row);
-  } else if (command === "control") {
-    void handleControl(row);
   } else if (command === "disconnect") {
     void handleDisconnect(row);
+  } else if (command === "delete") {
+    void handleDeleteNode(row);
   }
-};
-
-const handleControl = async (row: WebsocketConnectionRow) => {
-  if (!row.isOnline) {
-    message.warning("离线连接暂时无法操控");
-    return;
-  }
-  if (!canControlConnection(row)) {
-    message.warning("当前连接类型不支持操控");
-    return;
-  }
-  currentConnection.value = row;
-  controlDialogVisible.value = true;
-  await loadFunctionSchedule();
 };
 
 const handleSendMessage = (row: WebsocketConnectionRow) => {
@@ -777,9 +584,32 @@ const handleDisconnect = async (row: WebsocketConnectionRow) => {
   }
 };
 
-const handleFunctionOperation = (command: string, row: ExtensionFunctionItem) => {
-  if (command === "open") {
-    void row.handler();
+const handleDeleteNode = async (row: WebsocketConnectionRow) => {
+  if (row.isOnline) {
+    message.warning("在线连接请先断开后再删除节点记录");
+    return;
+  }
+
+  if (!canDeleteClientNode(row)) {
+    message.warning("当前连接类型不支持删除节点记录");
+    return;
+  }
+
+  await message.confirm(
+    `确认删除离线节点 ${row.id} 吗？这只会删除数据库中的节点记录，用于清理断线后的僵尸连接；如果客户端重新上线，会自动重新创建节点记录。`,
+    "删除节点记录",
+  );
+
+  try {
+    const response = await WebsocketApi.removeWebsocketClientNode(row.id);
+    if (response.success) {
+      message.success(response.message || "节点记录已删除");
+      await refreshConnectionData();
+      return;
+    }
+    message.error(response.message || "节点删除失败");
+  } catch (error: any) {
+    message.error(error?.response?.data?.message || error?.message || "节点删除失败");
   }
 };
 
@@ -824,45 +654,6 @@ const handleConfirmSendMessage = async () => {
     sendMessageDialogLoading.value = false;
   }
 };
-
-const functionGridOptions = ref<VxeGridProps<any>>({
-  ...commonGridOptions,
-  maxHeight: null,
-  rowConfig: {
-    keyField: "id",
-    isHover: true,
-  },
-  columns: [
-    { type: "seq", width: 60, title: "序号", align: "center" },
-    {
-      field: "icon",
-      title: "",
-      width: 80,
-      align: "center",
-      slots: { default: "icon_default" },
-    },
-    {
-      field: "name",
-      title: "功能名称",
-      minWidth: 200,
-      showOverflow: "tooltip",
-    },
-    {
-      field: "description",
-      title: "功能描述",
-      minWidth: 260,
-      showOverflow: "tooltip",
-    },
-    {
-      field: "schedule",
-      title: "定时任务",
-      minWidth: 200,
-      align: "center",
-      slots: { default: "schedule_default" },
-    },
-    buildOperationColumn("operation_default"),
-  ],
-});
 
 const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
   ...commonGridOptions,
@@ -945,7 +736,6 @@ const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
 watchEffect(() => {
   const maxHeight = height.value - 240;
   runtimeGridOptions.value.maxHeight = maxHeight;
-  functionGridOptions.value.maxHeight = maxHeight;
 });
 
 watch(autoRefresh, (value) => {
@@ -961,7 +751,6 @@ watch(autoRefresh, (value) => {
 });
 
 onMounted(() => {
-  initializeFunctionList();
   void refreshConnectionData();
 });
 
@@ -1000,19 +789,7 @@ onBeforeUnmount(() => {
   flex: 1 1 320px;
 }
 
-.websocket-toolbar__title {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--el-text-color-primary);
-}
 
-.websocket-toolbar__description {
-  margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--el-text-color-secondary);
-}
 
 .websocket-toolbar__meta {
   display: flex;
@@ -1073,135 +850,6 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-}
-
-.control-dialog {
-  .el-dialog__body {
-    padding: 0;
-    height: calc(100vh - 120px);
-    overflow: hidden;
-  }
-}
-
-.control-dialog-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-.control-dialog-header {
-  padding: 12px 20px;
-  background: var(--el-bg-color-page);
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.control-connection-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-}
-
-.connection-info-left {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.connection-id {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-
-  .label {
-    color: var(--el-text-color-secondary);
-    font-weight: 500;
-  }
-
-  .value {
-    color: var(--el-text-color-primary);
-    font-family: "Monaco", "Menlo", monospace;
-    font-size: 11px;
-  }
-}
-
-.connection-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 11px;
-  color: var(--el-text-color-regular);
-
-  .meta-item {
-    display: flex;
-    align-items: center;
-  }
-}
-
-.connection-info-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.connection-time {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-
-.control-dialog-body {
-  flex: 1;
-  padding: 24px;
-  overflow-y: auto;
-  background: var(--el-bg-color);
-}
-
-.function-grid {
-  height: 100%;
-}
-
-.function-icon-cell {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--el-color-primary-light-9);
-  border-radius: 6px;
-  margin: 0 auto;
-
-  .iconify {
-    font-size: 20px;
-    color: var(--el-color-primary);
-  }
-}
-
-.schedule-status-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: center;
-
-  .schedule-status-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    .schedule-info-text {
-      font-size: 12px;
-      color: var(--el-text-color-regular);
-    }
-  }
-}
-
-.schedule-type-text {
-  display: flex;
-  justify-content: center;
 }
 
 @media (max-width: 768px) {

@@ -240,20 +240,46 @@ export class ClientControlService {
         | undefined
 
       if (enabled) {
-        const response = await WebsocketApi.triggerPsdSetAutoDispatch()
+        void WebsocketApi.triggerPsdSetAutoDispatch()
+          .then((response: any) => {
+            const result = {
+              success: !!response?.success,
+              dispatched: !!response?.dispatched,
+              reason: response?.reason,
+              message: response?.message
+            }
+
+            if (silent) {
+              return
+            }
+
+            if (!result.success) {
+              ElMessage.warning(result.message || '自动调度已开启，但立即触发分发失败')
+              return
+            }
+
+            if (result.reason === 'dispatch-failed') {
+              ElMessage.warning(result.message || '自动调度已开启，但本次立即分发未成功')
+            }
+          })
+          .catch((error: any) => {
+            console.error('[ClientControlService] 后台触发套图自动调度失败:', error)
+            if (!silent) {
+              ElMessage.warning(error?.message || '自动调度已开启，稍后将由服务端继续尝试分发')
+            }
+          })
+
         triggerResult = {
-          success: !!response?.success,
-          dispatched: !!response?.dispatched,
-          reason: response?.reason,
-          message: response?.message
+          success: true,
+          dispatched: false,
+          reason: 'triggering',
+          message: '已开启服务端自动调度，正在后台触发待处理套图'
         }
       }
 
       if (!silent) {
         if (!enabled) {
           ElMessage.success('已关闭服务端自动调度')
-        } else if (triggerResult?.dispatched) {
-          ElMessage.success(triggerResult.message || '已开启自动调度，并开始制作待处理套图')
         } else {
           ElMessage.success(triggerResult?.message || '已开启服务端自动调度')
         }

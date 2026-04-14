@@ -66,6 +66,22 @@ export interface PublishTaskRuntimeSummary {
   failed: number;
   total: number;
   active: number;
+  items?: PublishTaskRuntimeSummaryItem[];
+  fetchedAt?: string | null;
+}
+
+export interface PublishTaskRuntimeSummaryItem {
+  id: string;
+  taskType: string;
+  label?: string | null;
+  status?: string | null;
+  dispatchStatus?: string | null;
+  currentStep?: string | null;
+  lastError?: string | null;
+  assignedClientId?: string | null;
+  assignedMachineCode?: string | null;
+  profileId?: string | null;
+  updatedAt?: string | null;
 }
 
 export interface PublishTaskCapabilityFeature {

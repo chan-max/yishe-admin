@@ -80,7 +80,7 @@
                 type="primary"
                 :icon="Search"
                 :loading="loading"
-                @click="getList"
+                @click="() => getList()"
                 >搜索</el-button
               >
               <el-dropdown trigger="click" :disabled="!selectedIds.length">
@@ -230,7 +230,7 @@
                       <el-image
                         :src="url"
                         :preview-src-list="row.images"
-                        :initial-index="index"
+                        :initial-index="Number(index)"
                         :preview-teleported="true"
                         :hide-on-click-modal="false"
                         :lazy="true"
@@ -513,7 +513,7 @@
                   v-if="img"
                   :src="img"
                   :preview-src-list="detailImages"
-                  :initial-index="idx"
+                  :initial-index="Number(idx)"
                   :preview-teleported="true"
                   :hide-on-click-modal="false"
                   class="psd-set-detail-image"
@@ -1062,7 +1062,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="PS状态" width="88" align="center">
+              <el-table-column label="PS服务" width="88" align="center">
                 <template #default="{ row }">
                   <span
                     class="production-dispatch-dialog__state-text"
@@ -1185,10 +1185,17 @@ let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
 const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState();
-const { userAutoSchedulingEnabled, refreshUserAutoScheduling, setUserAutoSchedulingEnabled } =
-  usePsdSetRuntimeState();
+const {
+  userAutoSchedulingEnabled,
+  activePsdSets,
+  activePsdSetClientIds,
+  refreshActiveSummary: refreshPsdSetRuntimeSummary,
+  refreshUserAutoScheduling,
+  setUserAutoSchedulingEnabled,
+} = usePsdSetRuntimeState();
 
 function schedulePsdSetMenuRuntimeSync() {
+  void refreshPsdSetRuntimeSummary();
   void refreshClientNodes();
   void getList(true);
   void loadPsdSetSchedulerRuntime();
@@ -1197,6 +1204,7 @@ function schedulePsdSetMenuRuntimeSync() {
   }
   psdSetMenuRuntimeSyncTimer = setTimeout(() => {
     psdSetMenuRuntimeSyncTimer = null;
+    void refreshPsdSetRuntimeSummary();
     void refreshClientNodes();
     void getList(true);
     void loadPsdSetSchedulerRuntime();
@@ -2010,24 +2018,26 @@ function getClientDisplayName(client: any) {
   return client?.clientInfo?.machine?.code || client?.id || "-";
 }
 
-function isDispatchClientBusy(client: any) {
-  const psAutomation = client?.clientInfo?.psAutomation;
-  const service = getClientPhotoshopService(client);
-  return !!(
-    psAutomation?.running ||
-    psAutomation?.currentPsSetId ||
-    psAutomation?.currentPsSetName ||
-    service?.busy ||
-    service?.state === "busy" ||
-    service?.currentTaskId
+function getDispatchClientActivePsdSets(client: any) {
+  const clientId = String(client?.id || "").trim();
+  if (!clientId) {
+    return [];
+  }
+  return activePsdSets.value.filter(
+    (item) => String(item?.assignedClientId || "").trim() === clientId,
   );
+}
+
+function isDispatchClientBusy(client: any) {
+  const clientId = String(client?.id || "").trim();
+  return !!clientId && activePsdSetClientIds.value.includes(clientId);
 }
 
 function isDispatchClientExecutable(client: any) {
   const service = getClientPhotoshopService(client);
   if (!client?.isOnline || !service) return false;
   if (isDispatchClientBusy(client)) return false;
-  return !!(service.available || service.connected);
+  return service.available === true;
 }
 
 function getDispatchClientOnlineStatus(client: any) {
@@ -2040,56 +2050,67 @@ function getDispatchClientPsStatus(client: any) {
     return { text: "不可用", tone: "danger" };
   }
   if (!service) {
-    return { text: "未上报", tone: "muted" };
+    return { text: "未开启", tone: "muted" };
   }
   if (service.status === "error" || service.state === "error") {
     return { text: "异常", tone: "danger" };
   }
   if (service.available) {
-    return { text: "可用", tone: "success" };
+    return { text: "已开启", tone: "success" };
   }
   if (service.connected) {
     return { text: "未就绪", tone: "info" };
   }
-  return { text: "不可用", tone: "muted" };
+  return { text: "未开启", tone: "muted" };
 }
 
 function getDispatchClientProductionStatus(client: any) {
-  if (isDispatchClientBusy(client)) {
-    return { text: "制作中", tone: "warning" };
+  const activeItems = getDispatchClientActivePsdSets(client);
+  if (activeItems.length > 0) {
+    return {
+      text: activeItems.length > 1 ? `制作中(${activeItems.length})` : "制作中",
+      tone: "warning",
+    };
   }
-  if (!client?.isOnline) {
-    return { text: "空闲", tone: "muted" };
-  }
-  return { text: "空闲", tone: "success" };
+  return { text: "空闲", tone: isDispatchClientExecutable(client) ? "success" : "muted" };
 }
 
 const dispatchCandidateClients = computed(() =>
   clientNodes.value.filter((client) => {
+    if (!client?.isOnline) {
+      return false;
+    }
     const service = getClientPhotoshopService(client);
     return !!(service || client?.clientInfo?.psAutomation);
   }),
 );
 
 const dispatchClientRows = computed(() =>
-  dispatchCandidateClients.value.map((client) => {
-    const onlineStatus = getDispatchClientOnlineStatus(client);
-    const psStatus = getDispatchClientPsStatus(client);
-    const productionStatus = getDispatchClientProductionStatus(client);
-    return {
-      id: client.id,
-      client,
-      clientLabel: getClientDisplayName(client),
-      connectedAtLabel: formatTimestamp(client.connectedAt) || "-",
-      onlineStatusText: onlineStatus.text,
-      onlineStatusTone: onlineStatus.tone,
-      psStatusText: psStatus.text,
-      psStatusTone: psStatus.tone,
-      productionStatusText: productionStatus.text,
-      productionStatusTone: productionStatus.tone,
-      selectable: isDispatchClientExecutable(client),
-    };
-  }),
+  dispatchCandidateClients.value
+    .map((client) => {
+      const onlineStatus = getDispatchClientOnlineStatus(client);
+      const psStatus = getDispatchClientPsStatus(client);
+      const productionStatus = getDispatchClientProductionStatus(client);
+      return {
+        id: client.id,
+        client,
+        clientLabel: getClientDisplayName(client),
+        connectedAtLabel: formatTimestamp(client.connectedAt) || "-",
+        onlineStatusText: onlineStatus.text,
+        onlineStatusTone: onlineStatus.tone,
+        psStatusText: psStatus.text,
+        psStatusTone: psStatus.tone,
+        productionStatusText: productionStatus.text,
+        productionStatusTone: productionStatus.tone,
+        selectable: isDispatchClientExecutable(client),
+      };
+    })
+    .sort((a, b) => {
+      if (a.selectable !== b.selectable) {
+        return a.selectable ? -1 : 1;
+      }
+      return a.clientLabel.localeCompare(b.clientLabel, "zh-CN");
+    }),
 );
 
 const dispatchableClients = computed(() =>
@@ -2113,17 +2134,14 @@ const psdSetSchedulerMeta = computed(() =>
 async function openProductionDispatchDialog(row: any) {
   productionDispatchRow.value = row;
   selectedDispatchClientId.value = "";
+  productionDispatchLoading.value = true;
   productionDispatchDialogVisible.value = true;
-  await refreshClientNodes();
-  if (dispatchableClients.value.length === 1) {
-    selectedDispatchClientId.value = dispatchableClients.value[0].id;
-  }
 }
 
 async function handleOpenProductionDispatchDialog() {
   productionDispatchLoading.value = true;
   try {
-    await refreshClientNodes();
+    await Promise.all([refreshClientNodes(), refreshPsdSetRuntimeSummary()]);
     if (!selectedDispatchClientId.value && dispatchableClients.value.length === 1) {
       selectedDispatchClientId.value = dispatchableClients.value[0].id;
     }
@@ -2225,16 +2243,23 @@ function stopPsdSetActiveRuntimeRefresh() {
 }
 
 async function handleToggleUserAutoScheduling(enabled: boolean) {
+  const previousEnabled = userAutoSchedulingEnabled.value;
+  setUserAutoSchedulingEnabled(enabled);
   userAutoSchedulingLoading.value = true;
   try {
     const result = await ClientControlService.setPsAutomationUserAutoScheduling(enabled);
-    if (result.success) {
-      setUserAutoSchedulingEnabled(enabled);
-      if (enabled) {
-        await getList();
-      }
-      await loadPsdSetSchedulerRuntime();
+    if (!result.success) {
+      setUserAutoSchedulingEnabled(previousEnabled);
+      return;
     }
+
+    if (enabled) {
+      void refreshPsdSetRuntimeSummary();
+      schedulePsdSetRuntimeRefresh(120);
+    }
+    void loadPsdSetSchedulerRuntime();
+  } catch {
+    setUserAutoSchedulingEnabled(previousEnabled);
   } finally {
     userAutoSchedulingLoading.value = false;
   }
@@ -3001,6 +3026,14 @@ async function handleConfirmStartProduction() {
     productionDispatchDialogVisible.value = false;
 
     if (response?.success) {
+      applyPsdSetRuntimeUpdate(row.id, {
+        status: "processing",
+        message: response.message || "任务已分配，等待客户端执行",
+        progress: 0,
+        assignedClientId: String(response?.data?.clientId || selectedDispatchClientId.value).trim() || null,
+        assignedMachineCode: String(response?.data?.machineCode || "").trim() || null,
+        schedulerStatus: "assigned",
+      });
       schedulePsdSetMenuRuntimeSync();
       ElMessage.success(response.message || "制作任务已调度");
       await Promise.all([getList(), refreshClientNodes()]);
@@ -3013,56 +3046,6 @@ async function handleConfirmStartProduction() {
     startingProductionId.value = "";
   }
 }
-
-// 全局监听制作响应消息（用于处理客户端主动发送的响应，比如正在制作中）
-const globalResponseHandler = (data: {
-  success: boolean;
-  message?: string;
-  psdSetId?: string;
-  data?: Record<string, any>;
-}) => {
-  console.log("[psd-set] 全局收到制作响应:", data);
-  const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
-
-  // 如果 success 为 false，说明可能是正在制作中或其他错误
-  if (!data.success) {
-    const message = data.message || "开始制作失败";
-    console.log("[psd-set] 全局显示警告消息:", message);
-    ElMessage.warning(message);
-
-    // 如果指定了 psdSetId，清除对应的 startingProductionId，并确保行状态不误标为 processing
-    if (normalizedPsdSetId) {
-      if (normalizePsdSetId(startingProductionId.value) === normalizedPsdSetId) {
-        startingProductionId.value = "";
-      }
-      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-        status: "pending",
-        message,
-        schedulerStatus: "pending",
-      });
-      schedulePsdSetRuntimeRefresh(240);
-    }
-  } else {
-    // 如果成功，也清除对应的 startingProductionId
-    if (normalizedPsdSetId) {
-      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-        status: "processing",
-        message: data.message || "任务已分配，等待客户端执行",
-        progress: 0,
-        assignedClientId: String(data?.data?.clientId || "").trim() || null,
-        assignedMachineCode: String(data?.data?.machineCode || "").trim() || null,
-        schedulerStatus: "assigned",
-      });
-      schedulePsdSetRuntimeRefresh(320);
-    }
-    if (
-      normalizedPsdSetId &&
-      normalizePsdSetId(startingProductionId.value) === normalizedPsdSetId
-    ) {
-      startingProductionId.value = "";
-    }
-  }
-};
 
 // 监听客户端推送的制作状态（实时更新表格行）
 const productionStatusHandler = (data: {
@@ -3121,8 +3104,6 @@ watch(
 );
 
 onMounted(() => {
-  // 添加全局监听器
-  websocketClient.events.on("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.on("production-status", productionStatusHandler);
   void Promise.all([refreshUserAutoSchedulingSetting(), loadPsdSetSchedulerRuntime()]);
   psdSetSchedulerRuntimeTimer = setInterval(() => {
@@ -3131,8 +3112,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // 清理全局监听器
-  websocketClient.events.off("start-psd-set-production-response", globalResponseHandler);
   websocketClient.events.off("production-status", productionStatusHandler);
   stopPsdSetActiveRuntimeRefresh();
   if (psdSetMenuRuntimeSyncTimer) {
