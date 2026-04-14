@@ -81,7 +81,3 @@ export const disablePublishTaskAutoDispatch = async (currentSetting?: {
 
   return nextSetting;
 };
-
-export const triggerPublishTaskAutoDispatchNow = async () => {
-  return triggerPublishTaskAutoDispatch();
-};

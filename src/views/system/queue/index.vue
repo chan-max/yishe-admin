@@ -199,23 +199,6 @@
                 >
                   {{ publishTaskAutoDispatchEnabled ? "关闭自动执行" : "开启自动执行" }}
                 </el-button>
-                <el-button
-                  size="small"
-                  plain
-                  :disabled="publishTaskAutoDispatchEnabled"
-                  @click="openAutoDispatchTargetDialog"
-                >
-                  设置目标
-                </el-button>
-                <el-button
-                  size="small"
-                  type="primary"
-                  plain
-                  :loading="publishTaskAutoDispatchLoading"
-                  @click="handleTriggerPublishTaskAutoDispatch"
-                >
-                  立即触发自动调度
-                </el-button>
               </div>
             </div>
           </div>
@@ -691,81 +674,94 @@
       @open="handleOpenPublishDispatchDialog"
     >
       <div class="publish-dispatch-dialog__body">
-        <div v-if="publishDispatchDialogLoading" class="publish-dispatch-dialog__loading">
-          正在刷新执行环境...
+        <div class="publish-dispatch-dialog__panel">
+          <div class="publish-dispatch-dialog__panel-title">浏览器自动化节点</div>
+          <div v-if="publishDispatchDialogLoading" class="publish-dispatch-dialog__empty">
+            正在加载执行环境...
+          </div>
+          <div v-else-if="dispatchAvailableRows.length" class="publish-dispatch-dialog__table">
+            <el-table
+              :data="dispatchAvailableRows"
+              border
+              size="small"
+              row-key="optionKey"
+              :max-height="360"
+              class="publish-dispatch-dialog__table-main"
+              :row-class-name="getDispatchOptionRowClassName"
+              @row-click="handleDispatchOptionRowClick"
+            >
+              <el-table-column label="" width="54" align="center">
+                <template #default="{ row }">
+                  <el-radio
+                    :value="row.optionKey"
+                    v-model="selectedDispatchOptionKey"
+                    :disabled="!row.selectable"
+                    @click.stop
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="客户端节点" min-width="160" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="connectedAtLabel"
+                label="连接时间"
+                width="170"
+                show-overflow-tooltip
+              />
+              <el-table-column label="在线状态" width="96" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.onlineTag.type)"
+                  >
+                    {{ row.onlineTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="自动化服务" width="108" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.serviceTag.type)"
+                  >
+                    {{ row.serviceTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="profileLabel"
+                label="执行环境"
+                min-width="210"
+                show-overflow-tooltip
+              />
+              <el-table-column label="环境状态" width="96" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.profileTag.type)"
+                  >
+                    {{ row.profileTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="description"
+                label="说明"
+                min-width="260"
+                show-overflow-tooltip
+              />
+            </el-table>
+          </div>
+          <div v-else class="publish-dispatch-dialog__empty">
+            当前没有可执行的浏览器自动化节点。
+          </div>
         </div>
-        <div v-else-if="dispatchAvailableRows.length" class="publish-dispatch-table">
-          <el-table
-            :data="dispatchAvailableRows"
-            border
-            size="small"
-            row-key="optionKey"
-            :max-height="360"
-            class="publish-dispatch-table__main"
-            :row-class-name="getDispatchOptionRowClassName"
-            @row-click="handleDispatchOptionRowClick"
-          >
-            <el-table-column label="" width="54" align="center">
-              <template #default="{ row }">
-                <el-radio
-                  :value="row.optionKey"
-                  v-model="selectedDispatchOptionKey"
-                  :disabled="!row.selectable"
-                  @click.stop
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="客户端节点" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">
-                <div class="publish-dispatch-table__primary">{{ row.clientLabel }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="connectedAtLabel"
-              label="连接时间"
-              width="170"
-              show-overflow-tooltip
-            />
-            <el-table-column label="在线状态" width="96" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.onlineTag.type" size="small" effect="light">
-                  {{ row.onlineTag.text }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="自动化服务" width="108" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.serviceTag.type" size="small" effect="light">
-                  {{ row.serviceTag.text }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="profileLabel"
-              label="执行环境"
-              min-width="210"
-              show-overflow-tooltip
-            />
-            <el-table-column label="环境状态" width="96" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.profileTag.type" size="small" effect="light">
-                  {{ row.profileTag.text }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="description"
-              label="说明"
-              min-width="260"
-              show-overflow-tooltip
-            />
-          </el-table>
-        </div>
-
-        <el-empty v-else description="当前没有可执行的浏览器自动化节点" :image-size="72" />
       </div>
       <template #footer>
-        <div class="dialog-footer">
+        <div class="publish-dispatch-dialog__footer">
           <el-button
             :disabled="publishDispatchSubmitting"
             @click="publishDispatchDialogVisible = false"
@@ -793,80 +789,94 @@
       @open="handleOpenAutoDispatchTargetDialog"
     >
       <div class="publish-dispatch-dialog__body">
-        <div v-if="autoDispatchTargetDialogLoading" class="publish-dispatch-dialog__loading">
-          正在刷新自动调度环境...
+        <div class="publish-dispatch-dialog__panel">
+          <div class="publish-dispatch-dialog__panel-title">浏览器自动化节点</div>
+          <div v-if="autoDispatchTargetDialogLoading" class="publish-dispatch-dialog__empty">
+            正在加载自动调度环境...
+          </div>
+          <div v-else-if="autoDispatchRows.length" class="publish-dispatch-dialog__table">
+            <el-table
+              :data="autoDispatchRows"
+              border
+              size="small"
+              row-key="optionKey"
+              :max-height="360"
+              class="publish-dispatch-dialog__table-main"
+              :row-class-name="getDispatchOptionRowClassName"
+              @row-click="handleAutoDispatchOptionRowClick"
+            >
+              <el-table-column label="" width="54" align="center">
+                <template #default="{ row }">
+                  <el-radio
+                    :value="row.optionKey"
+                    v-model="selectedAutoDispatchOptionKey"
+                    :disabled="!row.selectable"
+                    @click.stop
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column label="客户端节点" min-width="160" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="connectedAtLabel"
+                label="连接时间"
+                width="170"
+                show-overflow-tooltip
+              />
+              <el-table-column label="在线状态" width="96" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.onlineTag.type)"
+                  >
+                    {{ row.onlineTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="自动化服务" width="108" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.serviceTag.type)"
+                  >
+                    {{ row.serviceTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="profileLabel"
+                label="自动调度环境"
+                min-width="210"
+                show-overflow-tooltip
+              />
+              <el-table-column label="环境状态" width="96" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.profileTag.type)"
+                  >
+                    {{ row.profileTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="description"
+                label="说明"
+                min-width="240"
+                show-overflow-tooltip
+              />
+            </el-table>
+          </div>
+          <div v-else class="publish-dispatch-dialog__empty">
+            当前没有可绑定的浏览器自动化节点。
+          </div>
         </div>
-        <div v-else-if="autoDispatchRows.length" class="publish-dispatch-table">
-          <el-table
-            :data="autoDispatchRows"
-            border
-            size="small"
-            row-key="optionKey"
-            :max-height="360"
-            class="publish-dispatch-table__main"
-            :row-class-name="getDispatchOptionRowClassName"
-            @row-click="handleAutoDispatchOptionRowClick"
-          >
-            <el-table-column label="" width="54" align="center">
-              <template #default="{ row }">
-                <el-radio
-                  :value="row.optionKey"
-                  v-model="selectedAutoDispatchOptionKey"
-                  :disabled="!row.selectable"
-                  @click.stop
-                />
-              </template>
-            </el-table-column>
-            <el-table-column label="客户端节点" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">
-                <div class="publish-dispatch-table__primary">{{ row.clientLabel }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="connectedAtLabel"
-              label="连接时间"
-              width="170"
-              show-overflow-tooltip
-            />
-            <el-table-column label="在线状态" width="96" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.onlineTag.type" size="small" effect="light">
-                  {{ row.onlineTag.text }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="自动化服务" width="108" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.serviceTag.type" size="small" effect="light">
-                  {{ row.serviceTag.text }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="profileLabel"
-              label="自动调度环境"
-              min-width="210"
-              show-overflow-tooltip
-            />
-            <el-table-column label="环境状态" width="96" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.profileTag.type" size="small" effect="light">
-                  {{ row.profileTag.text }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column
-              prop="description"
-              label="说明"
-              min-width="240"
-              show-overflow-tooltip
-            />
-          </el-table>
-        </div>
-        <el-empty v-else description="当前没有可绑定的浏览器自动化节点" :image-size="72" />
       </div>
       <template #footer>
-        <div class="dialog-footer">
+        <div class="publish-dispatch-dialog__footer">
           <el-button
             :disabled="autoDispatchTargetSubmitting"
             @click="autoDispatchTargetDialogVisible = false"
@@ -940,7 +950,6 @@ import {
   enablePublishTaskAutoDispatch,
   loadPublishTaskAutoDispatchSetting as fetchPublishTaskAutoDispatchSetting,
   type PublishTaskAutoDispatchSetting,
-  triggerPublishTaskAutoDispatchNow,
 } from "@/services/publishTaskAutoDispatch";
 import { formatDate } from "@/utils/formatTime";
 
@@ -1404,11 +1413,15 @@ const currentAutoDispatchRunningRows = computed(() =>
   }),
 );
 
+const onlineBrowserAutomationClients = computed(() =>
+  browserAutomationClients.value.filter((client) => !!client?.isOnline),
+);
+
 const dispatchClientCandidates = computed(() => {
   const taskType = dispatchTargetTask.value?.type;
   if (!taskType) return [];
 
-  return browserAutomationClients.value.map((client) => ({
+  return onlineBrowserAutomationClients.value.map((client) => ({
     client,
   }));
 });
@@ -1441,7 +1454,7 @@ const dispatchSelectableRows = computed(() =>
 );
 
 const autoDispatchRows = computed<DispatchOptionRow[]>(() =>
-  browserAutomationClients.value.flatMap((client) => {
+  onlineBrowserAutomationClients.value.flatMap((client) => {
     const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
     const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
     const onlineTag = getDispatchClientOnlineTag(client);
@@ -1490,7 +1503,9 @@ const selectedAutoDispatchRow = computed(
     autoDispatchRows.value.find((item) => item.optionKey === selectedAutoDispatchOptionKey.value) ||
     null,
 );
-const canConfirmAutoDispatchTarget = computed(() => !!selectedAutoDispatchRow.value?.selectable);
+const canConfirmAutoDispatchTarget = computed(
+  () => !autoDispatchTargetDialogLoading.value && !!selectedAutoDispatchRow.value?.selectable,
+);
 
 const selectedDispatchRow = computed(
   () =>
@@ -1511,7 +1526,9 @@ const selectedDispatchOptionKey = computed({
   },
 });
 
-const canConfirmPublishDispatch = computed(() => !!selectedDispatchRow.value?.selectable);
+const canConfirmPublishDispatch = computed(
+  () => !publishDispatchDialogLoading.value && !!selectedDispatchRow.value?.selectable,
+);
 
 watchEffect(() => {
   gridOptions.value.maxHeight = height.value - (showPublishDispatchPanel.value ? 320 : 292);
@@ -1590,6 +1607,22 @@ function handleAutoDispatchOptionRowClick(row?: DispatchOptionRow | null) {
     return;
   }
   selectedAutoDispatchOptionKey.value = row.optionKey;
+}
+
+function resolveDispatchStatusTextClass(type?: QueueTagType) {
+  if (type === "success") {
+    return "is-success";
+  }
+  if (type === "warning") {
+    return "is-warning";
+  }
+  if (type === "danger") {
+    return "is-danger";
+  }
+  if (type === "info" || type === "primary") {
+    return "is-info";
+  }
+  return "is-muted";
 }
 
 function getClientDispatchProfileInstances(client: any) {
@@ -2755,24 +2788,6 @@ async function handleTogglePublishAutoDispatch(enabled: boolean) {
   }
 }
 
-async function handleTriggerPublishTaskAutoDispatch() {
-  publishTaskAutoDispatchLoading.value = true;
-  try {
-    const response = await triggerPublishTaskAutoDispatchNow();
-    schedulePublishTaskMenuRuntimeSync();
-    if (response?.success === false) {
-      ElMessage.warning(response?.message || "触发自动调度失败");
-    } else {
-      ElMessage.success(response?.message || "已触发自动调度");
-    }
-    await refreshPublishDispatchPageState({ includeSchedulerRuntime: true });
-  } catch (error: any) {
-    ElMessage.error(error?.message || "触发自动调度失败");
-  } finally {
-    publishTaskAutoDispatchLoading.value = false;
-  }
-}
-
 function schedulePublishTaskListRefresh() {
   if (publishTaskRuntimeReloadTimer) {
     clearTimeout(publishTaskRuntimeReloadTimer);
@@ -3666,44 +3681,98 @@ onUnmounted(() => {
 .publish-dispatch-dialog__body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  min-height: 220px;
 }
 
-.publish-dispatch-dialog__loading {
-  min-height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--el-text-color-secondary);
+.publish-dispatch-dialog__panel {
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+}
+
+.publish-dispatch-dialog__panel-title {
+  margin-bottom: 12px;
+  color: var(--el-text-color-primary);
   font-size: 14px;
+  font-weight: 600;
 }
 
-.publish-dispatch-table {
-  display: flex;
-  flex-direction: column;
+.publish-dispatch-dialog__empty {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
-.publish-dispatch-table__main :deep(.el-table__row) {
+.publish-dispatch-dialog__table {
+  overflow: hidden;
+}
+
+.publish-dispatch-dialog__table :deep(.el-table) {
+  --el-table-row-hover-bg-color: transparent;
+  --el-table-current-row-bg-color: transparent;
+}
+
+.publish-dispatch-dialog__table :deep(.el-table td),
+.publish-dispatch-dialog__table :deep(.el-table th) {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.publish-dispatch-dialog__table :deep(.el-table__row) {
   cursor: pointer;
 }
 
-.publish-dispatch-table__main :deep(.el-table__row.is-disabled) {
+.publish-dispatch-dialog__table :deep(.el-table__row.is-disabled) {
   cursor: not-allowed;
 }
 
-.publish-dispatch-table__main :deep(.el-table__row.is-disabled td) {
-  color: var(--el-text-color-secondary);
-  background: color-mix(in srgb, var(--el-fill-color-light) 72%, white 28%);
+.publish-dispatch-dialog__table :deep(.el-table__row.is-disabled td) {
+  color: var(--el-text-color-placeholder);
 }
 
-.publish-dispatch-table__main :deep(.el-radio) {
+.publish-dispatch-dialog__table :deep(.el-radio) {
+  pointer-events: none;
   margin-right: 0;
 }
 
-.publish-dispatch-table__primary {
+.publish-dispatch-dialog__primary {
   color: var(--el-text-color-primary);
   font-weight: 600;
   line-height: 1.45;
+}
+
+.publish-dispatch-dialog__state-text {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.publish-dispatch-dialog__state-text.is-success {
+  color: #1f8f46;
+}
+
+.publish-dispatch-dialog__state-text.is-warning {
+  color: #b26a00;
+}
+
+.publish-dispatch-dialog__state-text.is-danger {
+  color: #d5485a;
+}
+
+.publish-dispatch-dialog__state-text.is-info {
+  color: #356dd1;
+}
+
+.publish-dispatch-dialog__state-text.is-muted {
+  color: var(--el-text-color-secondary);
+}
+
+.publish-dispatch-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
 }
 
 .publish-dispatch-dialog__summary {
@@ -4549,6 +4618,10 @@ onUnmounted(() => {
 }
 
 @media (max-width: 767px) {
+  .publish-dispatch-dialog__table :deep(.el-table) {
+    font-size: 12px;
+  }
+
   .publish-dispatch-dialog__client-list,
   .publish-dispatch-dialog__profile-grid {
     grid-template-columns: 1fr;
