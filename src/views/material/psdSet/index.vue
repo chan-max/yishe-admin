@@ -7,7 +7,13 @@
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="ID">
-                  <el-input v-model="queryParams.id" size="small" placeholder="套图ID" clearable @change="handleIdChange" />
+                  <el-input
+                    v-model="queryParams.id"
+                    size="small"
+                    placeholder="套图ID"
+                    clearable
+                    @change="handleIdChange"
+                  />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
@@ -23,7 +29,13 @@
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="状态">
-                  <el-select v-model="queryParams.status" size="small" placeholder="全部状态" clearable @change="getList">
+                  <el-select
+                    v-model="queryParams.status"
+                    size="small"
+                    placeholder="全部状态"
+                    clearable
+                    @change="getList"
+                  >
                     <el-option
                       v-for="item in statusOptions"
                       :key="item.value"
@@ -63,17 +75,36 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions psd-set-page__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="getList"
+                >搜索</el-button
+              >
               <el-dropdown trigger="click" :disabled="!selectedIds.length">
-                <el-button size="small" :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
+                <el-button
+                  size="small"
+                  :disabled="!selectedIds.length"
+                  :loading="batchUpdatingStatus"
+                >
                   批量改状态 ({{ selectedIds.length }})
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">待制作</el-dropdown-item>
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">制作中</el-dropdown-item>
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">已完成</el-dropdown-item>
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">失败</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')"
+                      >待制作</el-dropdown-item
+                    >
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')"
+                      >制作中</el-dropdown-item
+                    >
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')"
+                      >已完成</el-dropdown-item
+                    >
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')"
+                      >失败</el-dropdown-item
+                    >
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -95,13 +126,18 @@
               >
                 生成发布任务 ({{ selectedIds.length }})
               </el-button>
-              <el-button size="small" type="danger" @click="handleBatchDelete" :disabled="!selectedIds.length || loading">
+              <el-button
+                size="small"
+                type="danger"
+                @click="handleBatchDelete"
+                :disabled="!selectedIds.length || loading"
+              >
                 批量删除 ({{ selectedIds.length }})
               </el-button>
               <div class="psd-set-page__auto-dispatch">
                 <div class="psd-set-page__auto-dispatch-main">
                   <div class="psd-set-page__auto-dispatch-title">自动调度</div>
-  
+
                   <div
                     class="psd-set-page__auto-dispatch-runtime"
                     :class="`is-${psdSetSchedulerIndicator.tone}`"
@@ -117,7 +153,10 @@
                   </div>
                 </div>
                 <div class="psd-set-page__auto-dispatch-side">
-                  <span class="psd-set-page__auto-dispatch-status" :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
+                  <span
+                    class="psd-set-page__auto-dispatch-status"
+                    :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'"
+                  >
                     <span class="psd-set-page__auto-dispatch-dot" />
                     <span>{{ userAutoSchedulingEnabled ? "已开启" : "已关闭" }}</span>
                   </span>
@@ -137,188 +176,194 @@
       </template>
 
       <template #table>
-        <div class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body psd-set-page__table-body">
             <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="onSelectionChange"
-        @checkbox-all="onSelectionChange"
-      >
-        <template #idSlot="{ row }">
-          <div class="table-cell-copyable" @click="copyId(row.id)">
-            <span class="table-cell-id">{{ row.id }}</span>
-            <el-icon>
-              <DocumentCopy />
-            </el-icon>
-          </div>
-        </template>
-        <template #stickersCountSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <el-tag
-              :type="getStickersCount(row) > 1 ? 'success' : 'info'"
-              size="small"
-              effect="plain"
-              class="material-association-tag"
+              v-bind="gridOptions"
+              :data="dataSource"
+              :loading="loading"
+              @checkbox-change="onSelectionChange"
+              @checkbox-all="onSelectionChange"
             >
-              <span class="tag-text">{{
-                getStickersCount(row) === 1 ? "单素材" : `多素材(${getStickersCount(row)})`
-              }}</span>
-            </el-tag>
-          </div>
-        </template>
-        <template #statusSlot="{ row }">
-          <div class="status-cell">
-            <el-tag :type="statusTagType(row.status)" effect="plain" size="small">
-              {{ statusLabel(row.status) }}
-            </el-tag>
-          </div>
-        </template>
-        <template #imagesSlot="{ row }">
-          <div class="table-preview-stack">
-              <el-carousel
-                v-if="row.images && row.images.length > 0"
-                :interval="3000"
-                height="100px"
-                indicator-position="none"
-                :arrow="row.images.length > 1 ? 'always' : 'never'"
-                class="custom-carousel table-preview-carousel"
-              >
-                <el-carousel-item v-for="(url, index) in row.images" :key="index">
-                  <el-image
-                    :src="url"
-                    :preview-src-list="row.images"
-                    :initial-index="index"
-                    :preview-teleported="true"
-                    :hide-on-click-modal="false"
-                    :lazy="true"
-                    loading="lazy"
-                    class="w-full h-full object-contain rounded cursor-pointer"
-                    fit="contain"
-                  />
-                  <div class="table-preview-badge">
-                    {{ Number(index) + 1 }}/{{ row.images.length }}
-                  </div>
-                </el-carousel-item>
-              </el-carousel>
-
-              <span v-else class="table-preview-placeholder">无</span>
-
-              <el-tooltip
-                v-if="row.images && row.images.length > 0"
-                content="批量下载该套图的所有图片"
-                placement="top"
-              >
-                <el-button
-                  type="primary"
-                  link
-                  size="small"
-                  class="table-preview-action"
-                  @click.stop="handleDownloadPsdSetImages(row)"
-                >
-                  全部下载
-                </el-button>
-              </el-tooltip>
-          </div>
-        </template>
-        <template #configSlot="{ row }">
-          <div class="flex items-center gap-2">
-            <el-tag
-              v-if="row.stickerPsdSetConfig"
-              type="info"
-              size="small"
-              effect="plain"
-              class="cursor-pointer"
-                @click="() => handleViewConfig(row)"
-            >
-              已配置
-            </el-tag>
-            <span v-else class="table-cell-empty">未配置</span>
-          </div>
-        </template>
-        <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
-        <template #operationSlot="{ row }">
-          <el-dropdown class="operation-dropdown" placement="bottom-end">
-            <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-            <template #dropdown>
-              <div class="op-menu">
-                <div class="op-menu-item" @click="() => handleViewDetail(row)">
-                  <span class="op-menu-label">查看详情</span>
+              <template #idSlot="{ row }">
+                <div class="table-cell-copyable" @click="copyId(row.id)">
+                  <span class="table-cell-id">{{ row.id }}</span>
+                  <el-icon>
+                    <DocumentCopy />
+                  </el-icon>
                 </div>
-
-                <div class="op-menu-item" @click="() => handleEditConfigDirectly(row)">
-                  <span class="op-menu-label">编辑配置</span>
-                </div>
-
-                <div class="op-divider"></div>
-
-                <el-tooltip
-                  content="需要客户端连接"
-                  placement="right"
-                  :disabled="isClientConnected || startingProductionId === row.id"
-                >
-                  <div
-                    class="op-menu-item"
-                    @click="() => handleStartProduction(row)"
-                    :class="{
-                      'is-disabled': !isClientConnected || startingProductionId === row.id,
-                    }"
+              </template>
+              <template #stickersCountSlot="{ row }">
+                <div class="flex items-center gap-2">
+                  <el-tag
+                    :type="getStickersCount(row) > 1 ? 'success' : 'info'"
+                    size="small"
+                    effect="plain"
+                    class="material-association-tag"
                   >
-                    <span class="op-menu-label">开始制作</span>
-                  </div>
-                </el-tooltip>
-
-                <div class="op-divider"></div>
-
-                <div class="op-menu-section">
-                  <div class="op-menu-section-title">状态标记</div>
-                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'pending')">
-                    <span class="op-menu-label">待制作</span>
-                  </div>
-                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'processing')">
-                    <span class="op-menu-label">制作中</span>
-                  </div>
-                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'completed')">
-                    <span class="op-menu-label">已完成</span>
-                  </div>
-                  <div class="op-menu-item" @click="() => updateRowStatus(row, 'failed')">
-                    <span class="op-menu-label">失败</span>
-                  </div>
+                    <span class="tag-text">{{
+                      getStickersCount(row) === 1 ? "单素材" : `多素材(${getStickersCount(row)})`
+                    }}</span>
+                  </el-tag>
                 </div>
-
-                <div class="op-divider"></div>
-
-                <div
-                  class="op-menu-item"
-                  @click="() => handleToProduct(row)"
-                  :class="{ 'is-disabled': generatingProductId === row.id }"
-                >
-                  <span class="op-menu-label">生成产品</span>
+              </template>
+              <template #statusSlot="{ row }">
+                <div class="status-cell">
+                  <el-tag :type="statusTagType(row.status)" effect="plain" size="small">
+                    {{ statusLabel(row.status) }}
+                  </el-tag>
                 </div>
-                <div class="op-menu-item" @click="() => handleCreatePublishTask(row)">
-                  <span class="op-menu-label">生成发布任务</span>
-                </div>
-                <div class="op-menu-item" @click="() => handleViewPublishTasks(row)">
-                  <span class="op-menu-label">查看发布任务</span>
-                </div>
+              </template>
+              <template #imagesSlot="{ row }">
+                <div class="table-preview-stack">
+                  <el-carousel
+                    v-if="row.images && row.images.length > 0"
+                    :interval="3000"
+                    height="100px"
+                    indicator-position="none"
+                    :arrow="row.images.length > 1 ? 'always' : 'never'"
+                    class="custom-carousel table-preview-carousel"
+                  >
+                    <el-carousel-item v-for="(url, index) in row.images" :key="index">
+                      <el-image
+                        :src="url"
+                        :preview-src-list="row.images"
+                        :initial-index="index"
+                        :preview-teleported="true"
+                        :hide-on-click-modal="false"
+                        :lazy="true"
+                        loading="lazy"
+                        class="w-full h-full object-contain rounded cursor-pointer"
+                        fit="contain"
+                      />
+                      <div class="table-preview-badge">
+                        {{ Number(index) + 1 }}/{{ row.images.length }}
+                      </div>
+                    </el-carousel-item>
+                  </el-carousel>
 
-                <div class="op-divider"></div>
+                  <span v-else class="table-preview-placeholder">无</span>
 
-                <div class="op-menu-item danger" @click="() => handleDelete(row)">
-                  <span class="op-menu-label">删除</span>
+                  <el-tooltip
+                    v-if="row.images && row.images.length > 0"
+                    content="批量下载该套图的所有图片"
+                    placement="top"
+                  >
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
+                      class="table-preview-action"
+                      @click.stop="handleDownloadPsdSetImages(row)"
+                    >
+                      全部下载
+                    </el-button>
+                  </el-tooltip>
                 </div>
-              </div>
-            </template>
-          </el-dropdown>
-        </template>
+              </template>
+              <template #configSlot="{ row }">
+                <div class="flex items-center gap-2">
+                  <el-tag
+                    v-if="row.stickerPsdSetConfig"
+                    type="info"
+                    size="small"
+                    effect="plain"
+                    class="cursor-pointer"
+                    @click="() => handleViewConfig(row)"
+                  >
+                    已配置
+                  </el-tag>
+                  <span v-else class="table-cell-empty">未配置</span>
+                </div>
+              </template>
+              <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
+              <template #operationSlot="{ row }">
+                <el-dropdown class="operation-dropdown" placement="bottom-end">
+                  <el-button type="primary" link size="small" class="operation-trigger-button"
+                    >操作</el-button
+                  >
+                  <template #dropdown>
+                    <div class="op-menu">
+                      <div class="op-menu-item" @click="() => handleViewDetail(row)">
+                        <span class="op-menu-label">查看详情</span>
+                      </div>
+
+                      <div class="op-menu-item" @click="() => handleEditConfigDirectly(row)">
+                        <span class="op-menu-label">编辑配置</span>
+                      </div>
+
+                      <div class="op-divider"></div>
+
+                      <el-tooltip
+                        content="需要客户端连接"
+                        placement="right"
+                        :disabled="isClientConnected || startingProductionId === row.id"
+                      >
+                        <div
+                          class="op-menu-item"
+                          @click="() => handleStartProduction(row)"
+                          :class="{
+                            'is-disabled': !isClientConnected || startingProductionId === row.id,
+                          }"
+                        >
+                          <span class="op-menu-label">开始制作</span>
+                        </div>
+                      </el-tooltip>
+
+                      <div class="op-divider"></div>
+
+                      <div class="op-menu-section">
+                        <div class="op-menu-section-title">状态标记</div>
+                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'pending')">
+                          <span class="op-menu-label">待制作</span>
+                        </div>
+                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'processing')">
+                          <span class="op-menu-label">制作中</span>
+                        </div>
+                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'completed')">
+                          <span class="op-menu-label">已完成</span>
+                        </div>
+                        <div class="op-menu-item" @click="() => updateRowStatus(row, 'failed')">
+                          <span class="op-menu-label">失败</span>
+                        </div>
+                      </div>
+
+                      <div class="op-divider"></div>
+
+                      <div
+                        class="op-menu-item"
+                        @click="() => handleToProduct(row)"
+                        :class="{ 'is-disabled': generatingProductId === row.id }"
+                      >
+                        <span class="op-menu-label">生成产品</span>
+                      </div>
+                      <div class="op-menu-item" @click="() => handleCreatePublishTask(row)">
+                        <span class="op-menu-label">生成发布任务</span>
+                      </div>
+                      <div class="op-menu-item" @click="() => handleViewPublishTasks(row)">
+                        <span class="op-menu-label">查看发布任务</span>
+                      </div>
+
+                      <div class="op-divider"></div>
+
+                      <div class="op-menu-item danger" @click="() => handleDelete(row)">
+                        <span class="op-menu-label">删除</span>
+                      </div>
+                    </div>
+                  </template>
+                </el-dropdown>
+              </template>
             </vxe-grid>
           </div>
         </div>
       </template>
 
       <template #pagination>
-        <div class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+        <div
+          class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
           <pagination
             :total="total"
             v-model:page="queryParams.currentPage"
@@ -407,7 +452,11 @@
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">调度状态</span>
                 <span class="info-value">
-                  <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
+                  <el-tag
+                    :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)"
+                    size="small"
+                    effect="plain"
+                  >
                     {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
                   </el-tag>
                 </span>
@@ -422,11 +471,15 @@
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">执行进度</span>
-                <span class="info-value">{{ formatSchedulerProgress(detailData?.schedulerMeta?.progress) }}</span>
+                <span class="info-value">{{
+                  formatSchedulerProgress(detailData?.schedulerMeta?.progress)
+                }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">最近心跳</span>
-                <span class="info-value">{{ formatTimestamp(detailData?.schedulerMeta?.lastHeartbeatAt) }}</span>
+                <span class="info-value">{{
+                  formatTimestamp(detailData?.schedulerMeta?.lastHeartbeatAt)
+                }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">最后错误</span>
@@ -952,8 +1005,9 @@
 
     <el-dialog
       v-model="productionDispatchDialogVisible"
-      width="920px"
+      width="760px"
       title="开始制作"
+      align-center
       append-to-body
       destroy-on-close
       class="production-dispatch-dialog"
@@ -961,67 +1015,76 @@
       @closed="handleCloseProductionDispatchDialog"
     >
       <div class="production-dispatch-dialog__body">
-        <ExternalClientSidebar
-          class="production-dispatch-dialog__sidebar"
-          :items="dispatchClientItems"
-          :loading="productionDispatchLoading"
-          :selected-client-id="selectedDispatchClientId"
-          section-title="客户端节点"
-          empty-text="暂无在线 PS 节点"
-          @select="handleSelectDispatchClient"
-        />
-
-        <div class="production-dispatch-dialog__main">
-          <div class="production-dispatch-dialog__summary">
-            <div class="production-dispatch-dialog__title">
-              {{ productionDispatchRow?.name || "当前套图" }}
-            </div>
-            <div class="production-dispatch-dialog__subtitle">
-              请选择一个客户端节点执行当前套图制作。
-            </div>
+        <div class="production-dispatch-dialog__panel">
+          <div class="production-dispatch-dialog__panel-title">客户端节点</div>
+          <div v-if="productionDispatchLoading" class="production-dispatch-dialog__empty">
+            正在加载客户端节点...
           </div>
-
-          <div class="production-dispatch-dialog__panel">
-            <template v-if="selectedDispatchClient">
-              <div class="production-dispatch-dialog__panel-title">客户端信息</div>
-              <div class="production-dispatch-dialog__info">
-                <div class="production-dispatch-dialog__info-item">
-                  <span class="label">节点</span>
-                  <span class="value">{{ getClientDisplayName(selectedDispatchClient) }}</span>
-                </div>
-                <div class="production-dispatch-dialog__info-item">
-                  <span class="label">连接状态</span>
-                  <span class="value">{{ selectedDispatchClient.isOnline ? "在线" : "离线" }}</span>
-                </div>
-                <div class="production-dispatch-dialog__info-item">
-                  <span class="label">应用版本</span>
-                  <span class="value">{{ selectedDispatchClient.clientInfo?.appVersion || "-" }}</span>
-                </div>
-                <div class="production-dispatch-dialog__info-item">
-                  <span class="label">运行平台</span>
-                  <span class="value">{{ selectedDispatchClient.clientInfo?.machine?.platform || "-" }}</span>
-                </div>
-                <div class="production-dispatch-dialog__info-item">
-                  <span class="label">PS 服务</span>
-                  <span class="value">{{ getDispatchClientRuntimeText(selectedDispatchClient) }}</span>
-                </div>
-                <div class="production-dispatch-dialog__info-item">
-                  <span class="label">当前任务</span>
-                  <span class="value">{{ getDispatchClientCurrentTaskText(selectedDispatchClient) }}</span>
-                </div>
-                <div class="production-dispatch-dialog__info-item production-dispatch-dialog__info-item--full">
-                  <span class="label">说明</span>
-                  <span class="value">{{ getDispatchClientHintText(selectedDispatchClient) }}</span>
-                </div>
-              </div>
-            </template>
-            <template v-else>
-              <div class="production-dispatch-dialog__panel-title">请选择客户端</div>
-              <div class="production-dispatch-dialog__empty">
-                左侧会显示当前可手动执行套图制作的客户端节点，点击后即可开始制作。
-              </div>
-            </template>
+          <div v-else-if="dispatchClientRows.length" class="production-dispatch-dialog__table">
+            <el-table
+              :data="dispatchClientRows"
+              border
+              size="small"
+              row-key="id"
+              class="production-dispatch-dialog__table-main"
+              :row-class-name="resolveDispatchClientRowClassName"
+              @row-click="handleDispatchClientRowClick"
+            >
+              <el-table-column label="" width="54" align="center">
+                <template #default="{ row }">
+                  <el-radio
+                    v-model="selectedDispatchClientId"
+                    :value="row.id"
+                    :disabled="!row.selectable"
+                    @click.stop
+                  />
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="clientLabel"
+                label="客户端节点"
+                min-width="160"
+                show-overflow-tooltip
+              />
+              <el-table-column
+                prop="connectedAtLabel"
+                label="连接时间"
+                min-width="168"
+                show-overflow-tooltip
+              />
+              <el-table-column label="在线状态" width="88" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="production-dispatch-dialog__state-text"
+                    :class="`is-${row.onlineStatusTone}`"
+                  >
+                    {{ row.onlineStatusText }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="PS状态" width="88" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="production-dispatch-dialog__state-text"
+                    :class="`is-${row.psStatusTone}`"
+                  >
+                    {{ row.psStatusText }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="制作状态" width="96" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="production-dispatch-dialog__state-text"
+                    :class="`is-${row.productionStatusTone}`"
+                  >
+                    {{ row.productionStatusText }}
+                  </span>
+                </template>
+              </el-table-column>
+            </el-table>
           </div>
+          <div v-else class="production-dispatch-dialog__empty">暂无可选客户端节点。</div>
         </div>
       </div>
       <template #footer>
@@ -1030,7 +1093,7 @@
           <el-button
             type="primary"
             :loading="startingProductionId === productionDispatchRow?.id"
-            :disabled="!selectedDispatchClientId"
+            :disabled="!selectedDispatchClientId || !selectedDispatchClient"
             @click="handleConfirmStartProduction"
           >
             开始制作
@@ -1048,18 +1111,17 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, watchEffect } f
 import { ContentWrap } from "@/components/ContentWrap";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { useWindowSize } from "@vueuse/core";
-import {
-  Search,
-  DocumentCopy,
-  WarningFilled,
-  CircleCheck,
-} from "@element-plus/icons-vue";
+import { Search, DocumentCopy, WarningFilled, CircleCheck } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
 import { getPromptList } from "@/api/prompt";
-import { getPublishConfigListApi, createPublishTaskApi, regeneratePublishTaskApi } from "@/api/product/publishConfig";
+import {
+  getPublishConfigListApi,
+  createPublishTaskApi,
+  regeneratePublishTaskApi,
+} from "@/api/product/publishConfig";
 import request from "@/config/axios";
 import { isLocalConnected } from "@/stores/connectionStatus";
 import { websocketClient } from "@/services/websocketClient";
@@ -1077,10 +1139,12 @@ import {
 } from "@/services/autoDispatchSchedulerRuntime";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
-import { derivePublishTaskTypeByPlatform, getTaskTypeLabel, resolveTaskTypePlatform } from "@/config/task-types";
+import {
+  derivePublishTaskTypeByPlatform,
+  getTaskTypeLabel,
+  resolveTaskTypePlatform,
+} from "@/config/task-types";
 import { downloadImageEnhanced } from "@/common/download";
-import ExternalClientSidebar, { type ClientNodeItem } from "@/views/external/components/ExternalClientSidebar.vue";
-
 const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
@@ -1121,11 +1185,8 @@ let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
 const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState();
-const {
-  userAutoSchedulingEnabled,
-  refreshUserAutoScheduling,
-  setUserAutoSchedulingEnabled,
-} = usePsdSetRuntimeState();
+const { userAutoSchedulingEnabled, refreshUserAutoScheduling, setUserAutoSchedulingEnabled } =
+  usePsdSetRuntimeState();
 
 function schedulePsdSetMenuRuntimeSync() {
   void refreshClientNodes();
@@ -1164,7 +1225,7 @@ function formatPlatformName(platform?: string) {
 }
 
 function formatTaskTypeName(taskType?: string, platform?: string) {
-  return getTaskTypeLabel(taskType || derivePublishTaskTypeByPlatform(platform), platform)
+  return getTaskTypeLabel(taskType || derivePublishTaskTypeByPlatform(platform), platform);
 }
 
 function getPublishTaskStatusLabel(status?: string) {
@@ -1246,18 +1307,19 @@ const publishTasksGridOptions = computed(() => ({
   maxHeight: Math.max(height.value - 260, 360),
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
-    columns: [
-      { field: "id", title: "任务ID", minWidth: 240, showOverflow: true },
-      { field: "platform", title: "平台", width: 120, slots: { default: "taskPlatformSlot" } },
-      {
-        field: "uploader",
-        title: "创建人",
-        width: 140,
-        showOverflow: true,
-        formatter: ({ row }: any) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
-      },
-      { field: "status", title: "状态", width: 120, slots: { default: "taskStatusSlot" } },
-      { field: "description", title: "描述", minWidth: 280, showOverflow: true },
+  columns: [
+    { field: "id", title: "任务ID", minWidth: 240, showOverflow: true },
+    { field: "platform", title: "平台", width: 120, slots: { default: "taskPlatformSlot" } },
+    {
+      field: "uploader",
+      title: "创建人",
+      width: 140,
+      showOverflow: true,
+      formatter: ({ row }: any) =>
+        row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+    },
+    { field: "status", title: "状态", width: 120, slots: { default: "taskStatusSlot" } },
+    { field: "description", title: "描述", minWidth: 280, showOverflow: true },
     {
       field: "createdAt",
       title: "创建时间",
@@ -1467,11 +1529,7 @@ function normalizePsdSetRecord(record: any) {
   };
 }
 
-function resolvePsdSetProgressPercent(
-  progress?: number,
-  total?: number,
-  fallback?: number | null,
-) {
+function resolvePsdSetProgressPercent(progress?: number, total?: number, fallback?: number | null) {
   if (typeof progress !== "number") {
     return typeof fallback === "number" ? fallback : null;
   }
@@ -1485,7 +1543,9 @@ function resolvePsdSetRuntimeStatusMessage(status: string, message?: string, sch
   const currentStep = String(schedulerMeta?.currentStep || "").trim();
   if (
     currentStep &&
-    (status === "processing" || schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running")
+    (status === "processing" ||
+      schedulerMeta?.status === "assigned" ||
+      schedulerMeta?.status === "running")
   ) {
     return currentStep;
   }
@@ -1597,8 +1657,7 @@ function buildPsdSetRuntimeRecord(
     nextMeta.startedAt = null;
     nextMeta.finishedAt = null;
     nextMeta.lastError = null;
-    nextMeta.currentStep =
-      payload.message || currentMeta.currentStep || "等待客户端接收任务";
+    nextMeta.currentStep = payload.message || currentMeta.currentStep || "等待客户端接收任务";
   } else if (nextSchedulerStatus === "running") {
     nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
     nextMeta.finishedAt = null;
@@ -1730,8 +1789,7 @@ const detailSchedulerMetaFormatted = computed(() => {
   const schedulerMeta = detailData.value?.schedulerMeta;
   if (!schedulerMeta) return "";
   try {
-    const parsed =
-      typeof schedulerMeta === "string" ? JSON.parse(schedulerMeta) : schedulerMeta;
+    const parsed = typeof schedulerMeta === "string" ? JSON.parse(schedulerMeta) : schedulerMeta;
     return JSON.stringify(parsed, null, 2);
   } catch (e) {
     return String(schedulerMeta);
@@ -1751,8 +1809,7 @@ function getColumns() {
       title: "上传者",
       field: "uploader",
       width: 140,
-      formatter: ({ row }) =>
-        row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
+      formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
     { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
     {
@@ -1790,9 +1847,7 @@ function getColumns() {
     },
   ];
 
-  const operationColumn = [
-    buildOperationColumn("operationSlot"),
-  ];
+  const operationColumn = [buildOperationColumn("operationSlot")];
 
   return [...baseColumns, ...operationColumn];
 }
@@ -1830,7 +1885,9 @@ async function getList(silent = false) {
       startTime: queryParams.startTime || undefined,
       endTime: queryParams.endTime || undefined,
     });
-    dataSource.value = Array.isArray(res.list) ? res.list.map((item) => normalizePsdSetRecord(item)) : [];
+    dataSource.value = Array.isArray(res.list)
+      ? res.list.map((item) => normalizePsdSetRecord(item))
+      : [];
     total.value = res.total || 0;
   } finally {
     if (!silent) {
@@ -1942,7 +1999,11 @@ function getSchedulerAssignedLabel(row: any) {
 }
 
 function getClientPhotoshopService(client: any) {
-  return client?.clientInfo?.services?.["ps-automation"] || client?.clientInfo?.services?.photoshop || null;
+  return (
+    client?.clientInfo?.services?.["ps-automation"] ||
+    client?.clientInfo?.services?.photoshop ||
+    null
+  );
 }
 
 function getClientDisplayName(client: any) {
@@ -1962,11 +2023,6 @@ function isDispatchClientBusy(client: any) {
   );
 }
 
-function hasDispatchClientError(client: any) {
-  const service = getClientPhotoshopService(client);
-  return !!(service?.status === "error" || service?.state === "error");
-}
-
 function isDispatchClientExecutable(client: any) {
   const service = getClientPhotoshopService(client);
   if (!client?.isOnline || !service) return false;
@@ -1974,85 +2030,76 @@ function isDispatchClientExecutable(client: any) {
   return !!(service.available || service.connected);
 }
 
-function isDispatchClientVisible(client: any) {
-  const service = getClientPhotoshopService(client);
-  return !!(client?.isOnline && service);
+function getDispatchClientOnlineStatus(client: any) {
+  return client?.isOnline ? { text: "在线", tone: "success" } : { text: "离线", tone: "danger" };
 }
 
-function getDispatchClientRuntimeText(client: any) {
+function getDispatchClientPsStatus(client: any) {
   const service = getClientPhotoshopService(client);
-  if (!service) return "未上报";
-  if (service.available) return "可执行";
-  if (isDispatchClientBusy(client)) return "执行中";
-  if (hasDispatchClientError(client)) return "异常";
-  if (service.connected) return "已连接";
-  return "未就绪";
+  if (!client?.isOnline) {
+    return { text: "不可用", tone: "danger" };
+  }
+  if (!service) {
+    return { text: "未上报", tone: "muted" };
+  }
+  if (service.status === "error" || service.state === "error") {
+    return { text: "异常", tone: "danger" };
+  }
+  if (service.available) {
+    return { text: "可用", tone: "success" };
+  }
+  if (service.connected) {
+    return { text: "未就绪", tone: "info" };
+  }
+  return { text: "不可用", tone: "muted" };
 }
 
-function getDispatchClientCurrentTaskText(client: any) {
-  const psAutomation = client?.clientInfo?.psAutomation;
-  const service = getClientPhotoshopService(client);
-  return psAutomation?.currentPsSetName || psAutomation?.currentPsSetId || service?.currentTaskId || "-";
+function getDispatchClientProductionStatus(client: any) {
+  if (isDispatchClientBusy(client)) {
+    return { text: "制作中", tone: "warning" };
+  }
+  if (!client?.isOnline) {
+    return { text: "空闲", tone: "muted" };
+  }
+  return { text: "空闲", tone: "success" };
 }
 
-function getDispatchClientHintText(client: any) {
-  const service = getClientPhotoshopService(client);
-  if (!client?.isOnline) return "客户端离线，不能执行制作。";
-  if (!service) return "客户端未上报 PS 服务。";
-  if (isDispatchClientBusy(client)) return "该客户端当前正在处理其他套图任务。";
-  if (service.available) return "当前节点可直接执行套图制作。";
-  if (service.connected) return service.message || "客户端在线，但 Photoshop 还未进入可执行状态。";
-  return service.message || "当前节点尚未准备好执行制作。";
-}
-
-const dispatchVisibleClients = computed(() =>
-  clientNodes.value.filter((client) => isDispatchClientVisible(client))
-);
-
-const dispatchableClients = computed(() =>
-  dispatchVisibleClients.value.filter((client) => isDispatchClientExecutable(client))
-);
-
-const dispatchClientItems = computed<ClientNodeItem[]>(() =>
-  dispatchVisibleClients.value.map((client) => {
+const dispatchCandidateClients = computed(() =>
+  clientNodes.value.filter((client) => {
     const service = getClientPhotoshopService(client);
-    const executable = isDispatchClientExecutable(client);
-    const busy = isDispatchClientBusy(client);
+    return !!(service || client?.clientInfo?.psAutomation);
+  }),
+);
+
+const dispatchClientRows = computed(() =>
+  dispatchCandidateClients.value.map((client) => {
+    const onlineStatus = getDispatchClientOnlineStatus(client);
+    const psStatus = getDispatchClientPsStatus(client);
+    const productionStatus = getDispatchClientProductionStatus(client);
     return {
-      connectionId: client.id,
-      name: getClientDisplayName(client),
-      time: formatTimestamp(client.connectedAt),
-      metaLeft: client.clientInfo?.appVersion || "未知版本",
-      metaRight: client.clientInfo?.machine?.platform || "未知平台",
-      badges: [
-        { text: "在线", tone: "success" },
-        {
-          text: service?.available
-            ? "可执行"
-            : busy
-              ? "执行中"
-              : hasDispatchClientError(client)
-                ? "异常"
-                : service?.connected
-                  ? "已连接"
-                  : "未就绪",
-          tone: executable
-            ? "success"
-            : busy
-              ? "warning"
-              : hasDispatchClientError(client)
-                ? "danger"
-                : service?.connected
-                  ? "info"
-                  : "muted",
-        },
-      ],
+      id: client.id,
+      client,
+      clientLabel: getClientDisplayName(client),
+      connectedAtLabel: formatTimestamp(client.connectedAt) || "-",
+      onlineStatusText: onlineStatus.text,
+      onlineStatusTone: onlineStatus.tone,
+      psStatusText: psStatus.text,
+      psStatusTone: psStatus.tone,
+      productionStatusText: productionStatus.text,
+      productionStatusTone: productionStatus.tone,
+      selectable: isDispatchClientExecutable(client),
     };
   }),
 );
 
-const selectedDispatchClient = computed(() =>
-  dispatchVisibleClients.value.find((item) => item.id === selectedDispatchClientId.value) || null,
+const dispatchableClients = computed(() =>
+  dispatchCandidateClients.value.filter((client) => isDispatchClientExecutable(client)),
+);
+
+const selectedDispatchClient = computed(
+  () =>
+    dispatchCandidateClients.value.find((item) => item.id === selectedDispatchClientId.value) ||
+    null,
 );
 
 const psdSetSchedulerIndicator = computed(() =>
@@ -2093,6 +2140,24 @@ function handleCloseProductionDispatchDialog() {
 
 function handleSelectDispatchClient(clientId: string) {
   selectedDispatchClientId.value = clientId;
+}
+
+function handleDispatchClientRowClick(row: any) {
+  if (!row?.selectable) {
+    return;
+  }
+  handleSelectDispatchClient(row.id);
+}
+
+function resolveDispatchClientRowClassName({ row }: { row: any }) {
+  const classNames: string[] = [];
+  if (row?.id === selectedDispatchClientId.value) {
+    classNames.push("is-selected");
+  }
+  if (!row?.selectable) {
+    classNames.push("is-disabled");
+  }
+  return classNames.join(" ");
 }
 
 async function refreshUserAutoSchedulingSetting() {
@@ -2910,7 +2975,7 @@ async function handleConfirmStartProduction() {
   }
 
   if (!isDispatchClientExecutable(selectedDispatchClient.value)) {
-    return ElMessage.warning(getDispatchClientHintText(selectedDispatchClient.value));
+    return ElMessage.warning("所选客户端当前不可执行，请重新选择");
   }
 
   try {
@@ -2990,7 +3055,10 @@ const globalResponseHandler = (data: {
       });
       schedulePsdSetRuntimeRefresh(320);
     }
-    if (normalizedPsdSetId && normalizePsdSetId(startingProductionId.value) === normalizedPsdSetId) {
+    if (
+      normalizedPsdSetId &&
+      normalizePsdSetId(startingProductionId.value) === normalizedPsdSetId
+    ) {
       startingProductionId.value = "";
     }
   }
@@ -4014,78 +4082,89 @@ getList();
 }
 
 .production-dispatch-dialog__body {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 14px;
-  min-height: 360px;
-}
-
-.production-dispatch-dialog__sidebar,
-.production-dispatch-dialog__main {
-  min-width: 0;
-}
-
-.production-dispatch-dialog__main {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  min-height: 220px;
 }
 
-.production-dispatch-dialog__summary,
 .production-dispatch-dialog__panel {
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--el-bg-color);
 }
 
-.production-dispatch-dialog__title,
 .production-dispatch-dialog__panel-title {
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
-.production-dispatch-dialog__subtitle,
+.production-dispatch-dialog__panel-title {
+  margin-bottom: 12px;
+}
+
 .production-dispatch-dialog__empty {
-  margin-top: 6px;
   font-size: 12px;
   line-height: 1.6;
   color: var(--el-text-color-secondary);
 }
 
-.production-dispatch-dialog__selection {
-  margin-top: 10px;
+.production-dispatch-dialog__table {
+  overflow: hidden;
 }
 
-.production-dispatch-dialog__info {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 14px;
-  margin-top: 12px;
+.production-dispatch-dialog__table :deep(.el-table) {
+  --el-table-row-hover-bg-color: transparent;
+  --el-table-current-row-bg-color: transparent;
 }
 
-.production-dispatch-dialog__info-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+.production-dispatch-dialog__table :deep(.el-table td),
+.production-dispatch-dialog__table :deep(.el-table th) {
+  padding-top: 9px;
+  padding-bottom: 9px;
 }
 
-.production-dispatch-dialog__info-item--full {
-  grid-column: 1 / -1;
+.production-dispatch-dialog__table :deep(.el-table__row) {
+  cursor: pointer;
 }
 
-.production-dispatch-dialog__info-item .label {
-  font-size: 11px;
+.production-dispatch-dialog__table :deep(.el-table__row.is-disabled) {
+  cursor: not-allowed;
+}
+
+.production-dispatch-dialog__table :deep(.el-table__row.is-disabled td) {
+  color: var(--el-text-color-placeholder);
+}
+
+.production-dispatch-dialog__table :deep(.el-radio) {
+  pointer-events: none;
+}
+
+.production-dispatch-dialog__state-text {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.production-dispatch-dialog__state-text.is-success {
+  color: #1f8f46;
+}
+
+.production-dispatch-dialog__state-text.is-warning {
+  color: #b26a00;
+}
+
+.production-dispatch-dialog__state-text.is-danger {
+  color: #d5485a;
+}
+
+.production-dispatch-dialog__state-text.is-info {
+  color: #356dd1;
+}
+
+.production-dispatch-dialog__state-text.is-muted {
   color: var(--el-text-color-secondary);
-}
-
-.production-dispatch-dialog__info-item .value {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--el-text-color-primary);
-  word-break: break-word;
 }
 
 .production-dispatch-dialog__footer {
@@ -4106,9 +4185,8 @@ getList();
     justify-content: flex-start;
   }
 
-  .production-dispatch-dialog__body,
-  .production-dispatch-dialog__info {
-    grid-template-columns: 1fr;
+  .production-dispatch-dialog__table :deep(.el-table) {
+    font-size: 12px;
   }
 
   .publish-task-list-dialog :deep(.el-dialog__body) {
