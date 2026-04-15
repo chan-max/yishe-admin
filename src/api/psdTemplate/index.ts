@@ -6,63 +6,67 @@
  * @FilePath: /yishe-admin/src/api/psdTemplate/index.ts
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
  */
-import request from '@/config/axios'
+import request from "@/config/axios";
 
 export const psdTemplateApi = {
+  getPsdTemplateDetail: async (id: string) => {
+    return await request.get({ url: `/psd-template/${id}` });
+  },
 
   getPsdTemplatePage: async (data: any) => {
-    return await request.post({ url: `/psd-template/page`, data })
+    return await request.post({ url: `/psd-template/page`, data });
   },
 
   // 查询YiShe 模板详情
   getShopTemplate: async (id: number) => {
-    return await request.get({ url: `/shop/shop-template/get?id=` + id })
+    return await request.get({ url: `/shop/shop-template/get?id=` + id });
   },
 
   // 新增YiShe 模板
   createPsdTemplate: async (data) => {
     return await request.post({
-      url: `/psd-template/create`, data, 
-    })
+      url: `/psd-template/create`,
+      data,
+    });
   },
 
   // 修改YiShe 模板
   updatePsdTemplate: async (data) => {
-    return await request.post({ url: `/psd-template/update`, data, })
+    return await request.post({ url: `/psd-template/update`, data });
   },
 
   // 删除YiShe 模板
   deleteShopTemplate: async (data) => {
-    return await request.post({ url: `/psd-template/delete`, data })
+    return await request.post({ url: `/psd-template/delete`, data });
   },
 
   // AI补全PSD模板内容（根据缩略图分析）
   aiCompleteContent: async (id: string, prompt?: string) => {
-    return await request.post({ 
-      url: `/psd-template/ai-complete/${id}`, 
-      data: { prompt } 
-    })
+    return await request.post({
+      url: `/psd-template/ai-complete/${id}`,
+      data: { prompt },
+    });
   },
 
   // 批量移动PSD模板到文件夹
   batchMove: async (data: { ids: string[]; folderId: string | null }) => {
     return await request.post({
       url: `/psd-template/batch-move`,
-      data
-    })
+      data,
+    });
   },
 
   copyToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
     return await request.post({
       url: `/psd-template/copy-to-user`,
       data,
-    })
+    });
   },
 
   moveToUser: async (data: { ids: string[] | string; targetUserId: string }) => {
     return await request.post({
       url: `/psd-template/move-to-user`,
       data,
-    })
+    });
   },
-}
+};

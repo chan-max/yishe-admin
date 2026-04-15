@@ -5,6 +5,7 @@ export interface QueueMessage {
   queue: string;
   type: string;
   data: any;
+  taskRuntimeLog?: Record<string, any> | null;
   description?: string;
   priority?: number;
   delay?: number;

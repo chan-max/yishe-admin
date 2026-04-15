@@ -1,29 +1,31 @@
-import request from '@/config/axios'
+import request from "@/config/axios";
 
 export interface ActivePsdSetSummaryItem {
-  id: string
-  name?: string | null
-  status?: string | null
-  schedulerStatus?: string | null
-  assignedClientId?: string | null
-  assignedMachineCode?: string | null
-  updateTime?: string | null
+  id: string;
+  name?: string | null;
+  status?: string | null;
+  schedulerStatus?: string | null;
+  assignedClientId?: string | null;
+  assignedMachineCode?: string | null;
+  updateTime?: string | null;
 }
 
 export interface ActivePsdSetSummaryResponse {
-  total: number
-  items: ActivePsdSetSummaryItem[]
-  fetchedAt?: string | null
+  total: number;
+  items: ActivePsdSetSummaryItem[];
+  fetchedAt?: string | null;
 }
 
 export const stickerPsdSetApi = {
-  page: (data: any) => request.post({ url: '/sticker-psd-set/page', data }),
+  page: (data: any) => request.post({ url: "/sticker-psd-set/page", data }),
   getActiveSummary: () =>
-    request.get<ActivePsdSetSummaryResponse>({ url: '/sticker-psd-set/runtime/active-summary' }),
-  create: (data: any) => request.post({ url: '/sticker-psd-set', data }),
-  batchCreate: (data: any) => request.post({ url: '/sticker-psd-set/batch', data }),
+    request.get<ActivePsdSetSummaryResponse>({ url: "/sticker-psd-set/runtime/active-summary" }),
+  create: (data: any) => request.post({ url: "/sticker-psd-set", data }),
+  batchCreate: (data: any) => request.post({ url: "/sticker-psd-set/batch", data }),
+  batchCreateByPublishConfig: (data: { stickerIds: string[]; publishConfigIds: string[] }) =>
+    request.post({ url: "/sticker-psd-set/batch-by-publish-config", data }),
   generateProduct: (data: { id: string; promptId?: number | null }) =>
-    request.post({ url: '/sticker-psd-set/generate-product', data }),
+    request.post({ url: "/sticker-psd-set/generate-product", data }),
   getPublishTasks: (id: string) => request.get({ url: `/sticker-psd-set/publish-tasks/${id}` }),
   update: (id: string, data: any) => request.patch({ url: `/sticker-psd-set/${id}`, data }),
   updateStatus: (id: string, data: { status: string; statusMessage?: string }) =>
@@ -33,9 +35,10 @@ export const stickerPsdSetApi = {
   retry: (id: string, data?: { clientId?: string }) =>
     request.post({ url: `/sticker-psd-set/${id}/retry`, data }),
   remove: (id: string) => request.delete({ url: `/sticker-psd-set/${id}` }),
-  removeBatch: (ids: string[]) => request.post({ url: `/sticker-psd-set/delete-batch`, data: { ids } }),
+  removeBatch: (ids: string[]) =>
+    request.post({ url: `/sticker-psd-set/delete-batch`, data: { ids } }),
   // 根据ID查询贴纸详情
   getStickerById: (id: string) => request.get({ url: `/sticker/${id}` }),
   // 根据ID查询PSD模板详情
-  getPsdTemplateById: (id: string) => request.get({ url: `/psd-template/${id}` })
-}
+  getPsdTemplateById: (id: string) => request.get({ url: `/psd-template/${id}` }),
+};

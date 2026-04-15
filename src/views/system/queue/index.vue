@@ -506,7 +506,7 @@
       align-center
       class="queue-runtime-dialog"
     >
-      <div class="queue-runtime-window">
+      <div v-loading="runtimeLogDialogLoading" class="queue-runtime-window">
         <div class="queue-runtime-window__summary">
           <div class="queue-runtime-window__summary-item">
             <span class="queue-runtime-window__summary-label">任务 ID</span>
@@ -520,7 +520,15 @@
           </div>
           <div class="queue-runtime-window__summary-item">
             <span class="queue-runtime-window__summary-label">日志数</span>
-            <span class="queue-runtime-window__summary-value">{{ currentTaskLogs.length }}</span>
+            <span class="queue-runtime-window__summary-value">{{
+              currentTaskRuntime?.logCount ?? currentTaskLogs.length
+            }}</span>
+          </div>
+          <div class="queue-runtime-window__summary-item">
+            <span class="queue-runtime-window__summary-label">最后更新</span>
+            <span class="queue-runtime-window__summary-value">{{
+              formatLogTimestamp(currentTaskRuntime?.updatedAt || currentTaskRuntime?.lastLogTime)
+            }}</span>
           </div>
         </div>
 
@@ -575,9 +583,10 @@
         <div class="queue-runtime-dialog__footer">
           <div class="queue-runtime-dialog__footer-meta">
             <span>运行日志窗口</span>
-            <span>{{ currentTaskLogs.length }} 条记录</span>
+            <span>{{ currentTaskRuntime?.logCount ?? currentTaskLogs.length }} 条记录</span>
           </div>
-          <div class="queue-runtime-dialog__footer-actions">
+        <div class="queue-runtime-dialog__footer-actions">
+            <el-button @click="refreshRuntimeLogDialogDetail()">刷新日志</el-button>
             <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
           </div>
         </div>
@@ -1176,6 +1185,8 @@ const autoDispatchTargetProfileId = ref("");
 let publishTaskSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let publishTaskRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
 let publishTaskMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
+let runtimeLogDialogRefreshTimer: ReturnType<typeof setInterval> | null = null;
+let runtimeLogDialogRefreshing = false;
 
 // 对话框相关
 const dialogVisible = ref(false);
@@ -1227,7 +1238,10 @@ const dataDialogVisible = ref(false);
 const dataDialogLoading = ref(false);
 const currentTaskData = ref<any>({});
 const currentTaskId = ref<string>("");
+const currentTaskQueue = ref<string>("");
+const currentTaskRuntimeLog = ref<any>(null);
 const runtimeLogDialogVisible = ref(false);
+const runtimeLogDialogLoading = ref(false);
 const runtimeLogDataDialogVisible = ref(false);
 const runtimeLogDataDialogText = ref("");
 const runtimeLogDataDialogMeta = reactive({
@@ -1236,7 +1250,9 @@ const runtimeLogDataDialogMeta = reactive({
   message: "",
 });
 
-const currentTaskRuntime = computed(() => extractTaskRuntime(currentTaskData.value));
+const currentTaskRuntime = computed(() =>
+  extractTaskRuntime(currentTaskData.value, currentTaskRuntimeLog.value),
+);
 const currentTaskLogs = computed(() => {
   const logs = currentTaskRuntime.value?.logs;
   return Array.isArray(logs) ? logs : [];
@@ -2255,9 +2271,48 @@ function parseMaybeJson(value: any) {
   }
 }
 
-function extractTaskRuntime(data: any) {
+function normalizeTaskRuntimeLogRecord(value: any) {
+  const parsed = parseMaybeJson(value);
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+}
+
+function extractTaskRuntime(data: any, runtimeLog?: any) {
   if (!data || typeof data !== "object") {
-    return null;
+    const runtimeLogRecord = normalizeTaskRuntimeLogRecord(runtimeLog);
+    if (!runtimeLogRecord) {
+      return null;
+    }
+    return {
+      ...runtimeLogRecord,
+      logs: Array.isArray(runtimeLogRecord.logs) ? runtimeLogRecord.logs : [],
+    };
+  }
+
+  const runtimeLogRecord = normalizeTaskRuntimeLogRecord(runtimeLog);
+  if (runtimeLogRecord) {
+    const summary =
+      data.taskLogs && typeof data.taskLogs === "object" && !Array.isArray(data.taskLogs)
+        ? data.taskLogs
+        : {};
+    return {
+      source: runtimeLogRecord.source || summary.source || "uploader",
+      sourceId: runtimeLogRecord.sourceId || summary.sourceId || null,
+      platform: runtimeLogRecord.platform || summary.platform || null,
+      status: summary.status || runtimeLogRecord.status || null,
+      step: summary.step || summary.currentStep || runtimeLogRecord.step || null,
+      logCount:
+        typeof runtimeLogRecord.logCount === "number"
+          ? runtimeLogRecord.logCount
+          : Array.isArray(runtimeLogRecord.logs)
+            ? runtimeLogRecord.logs.length
+            : (Number(summary.logCount) || 0),
+      lastLogId: runtimeLogRecord.lastLogId || summary.lastLogId || null,
+      lastLogTime: runtimeLogRecord.lastLogTime || summary.lastLogTime || null,
+      lastLogLevel: runtimeLogRecord.lastLogLevel || summary.lastLogLevel || null,
+      lastLogMessage: runtimeLogRecord.lastLogMessage || summary.lastLogMessage || null,
+      updatedAt: runtimeLogRecord.updatedAt || summary.updatedAt || null,
+      logs: Array.isArray(runtimeLogRecord.logs) ? runtimeLogRecord.logs : [],
+    };
   }
 
   if (data.taskLogs && typeof data.taskLogs === "object") {
@@ -2294,7 +2349,13 @@ function extractTaskRuntime(data: any) {
 }
 
 function getTaskLogCount(row?: QueueMessage | null) {
-  const runtime = extractTaskRuntime(normalizeTaskDataRecord(row?.data));
+  const runtime = extractTaskRuntime(
+    normalizeTaskDataRecord(row?.data),
+    row?.taskRuntimeLog,
+  );
+  if (typeof runtime?.logCount === "number") {
+    return runtime.logCount;
+  }
   return Array.isArray(runtime?.logs) ? runtime.logs.length : 0;
 }
 
@@ -2530,22 +2591,99 @@ function handleEdit(row: QueueMessage) {
   statusDialogVisible.value = true;
 }
 
+function applyTaskDetailPayload(message: any, fallbackRow?: QueueMessage | null) {
+  const fallbackData = parseMaybeJson(fallbackRow?.data) ?? fallbackRow?.data ?? {};
+  const fallbackRuntimeLog =
+    normalizeTaskRuntimeLogRecord(fallbackRow?.taskRuntimeLog) ?? null;
+  const taskData = parseMaybeJson(message?.data);
+  const taskRuntimeLog = normalizeTaskRuntimeLogRecord(message?.taskRuntimeLog);
+
+  currentTaskData.value = taskData ?? fallbackData;
+  currentTaskRuntimeLog.value = taskRuntimeLog ?? fallbackRuntimeLog;
+}
+
+async function fetchTaskDetailPayload(
+  queue: string,
+  messageId: string,
+  options: {
+    fallbackRow?: QueueMessage | null;
+    silent?: boolean;
+  } = {},
+) {
+  const res = await getTaskDetail(queue, messageId);
+  const message =
+    res?.data && typeof res.data === "object" && !Array.isArray(res.data)
+      ? res.data
+      : res;
+  applyTaskDetailPayload(message, options.fallbackRow);
+  return message;
+}
+
+function stopRuntimeLogDialogAutoRefresh() {
+  if (runtimeLogDialogRefreshTimer) {
+    clearInterval(runtimeLogDialogRefreshTimer);
+    runtimeLogDialogRefreshTimer = null;
+  }
+  runtimeLogDialogRefreshing = false;
+}
+
+async function refreshRuntimeLogDialogDetail(options: { silent?: boolean } = {}) {
+  if (!runtimeLogDialogVisible.value) {
+    return;
+  }
+  if (runtimeLogDialogRefreshing) {
+    return;
+  }
+
+  const queue = currentTaskQueue.value.trim();
+  const messageId = currentTaskId.value.trim();
+  if (!queue || !messageId) {
+    return;
+  }
+
+  runtimeLogDialogRefreshing = true;
+  if (!options.silent) {
+    runtimeLogDialogLoading.value = true;
+  }
+
+  try {
+    await fetchTaskDetailPayload(queue, messageId, { silent: options.silent });
+  } catch (error) {
+    if (!options.silent) {
+      ElMessage.warning("运行日志获取失败，已显示最近一次日志快照");
+    }
+  } finally {
+    if (!options.silent) {
+      runtimeLogDialogLoading.value = false;
+    }
+    runtimeLogDialogRefreshing = false;
+  }
+}
+
+function startRuntimeLogDialogAutoRefresh() {
+  stopRuntimeLogDialogAutoRefresh();
+  runtimeLogDialogRefreshTimer = setInterval(() => {
+    void refreshRuntimeLogDialogDetail({ silent: true });
+  }, 2000);
+}
+
 // 查看数据，优先拉取详情，避免列表数据被裁剪或序列化后显示为空
 async function handleViewData(row: QueueMessage) {
   dataDialogVisible.value = true;
   dataDialogLoading.value = true;
   currentTaskData.value = {};
+  currentTaskRuntimeLog.value = null;
   currentTaskId.value = row.id;
+  currentTaskQueue.value = row.queue || row.type;
 
   try {
-    const res = await getTaskDetail(row.queue || row.type, row.id);
-    const responseData = res?.data && typeof res.data === "object" ? res.data : res;
-    const message = responseData?.data ?? responseData;
-    const taskData = parseMaybeJson(message?.data);
-
-    currentTaskData.value = taskData ?? parseMaybeJson(row?.data) ?? row?.data ?? {};
+    await fetchTaskDetailPayload(row.queue || row.type, row.id, {
+      fallbackRow: row,
+    });
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {};
+    currentTaskRuntimeLog.value =
+      normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
     ElMessage.warning("任务详情获取失败，已显示列表中的数据快照");
   } finally {
     dataDialogLoading.value = false;
@@ -2554,21 +2692,24 @@ async function handleViewData(row: QueueMessage) {
 
 async function handleViewRuntimeLogs(row: QueueMessage) {
   runtimeLogDialogVisible.value = true;
-  dataDialogLoading.value = true;
+  runtimeLogDialogLoading.value = true;
   currentTaskData.value = {};
+  currentTaskRuntimeLog.value =
+    normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
   currentTaskId.value = row.id;
+  currentTaskQueue.value = row.queue || row.type;
 
   try {
-    const res = await getTaskDetail(row.queue || row.type, row.id);
-    const responseData = res?.data && typeof res.data === "object" ? res.data : res;
-    const message = responseData?.data ?? responseData;
-    const taskData = parseMaybeJson(message?.data);
-    currentTaskData.value = taskData ?? parseMaybeJson(row?.data) ?? row?.data ?? {};
+    await fetchTaskDetailPayload(row.queue || row.type, row.id, {
+      fallbackRow: row,
+    });
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {};
+    currentTaskRuntimeLog.value =
+      normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
     ElMessage.warning("运行日志获取失败，已显示列表中的数据快照");
   } finally {
-    dataDialogLoading.value = false;
+    runtimeLogDialogLoading.value = false;
   }
 }
 
@@ -2925,6 +3066,27 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
     currentTaskData.value = {
       ...normalizeTaskDataRecord(currentTaskData.value),
       taskLogs: event.runtime,
+    };
+    currentTaskRuntimeLog.value = {
+      ...(normalizeTaskRuntimeLogRecord(currentTaskRuntimeLog.value) || {}),
+      source: event.runtime.source || currentTaskRuntimeLog.value?.source || "uploader",
+      sourceId: event.runtime.sourceId || currentTaskRuntimeLog.value?.sourceId || null,
+      platform: event.runtime.platform || currentTaskRuntimeLog.value?.platform || null,
+      logCount:
+        typeof event.runtime.logCount === "number"
+          ? event.runtime.logCount
+          : (currentTaskRuntimeLog.value?.logCount ?? 0),
+      lastLogId: event.runtime.lastLogId || currentTaskRuntimeLog.value?.lastLogId || null,
+      lastLogTime:
+        event.runtime.lastLogTime || currentTaskRuntimeLog.value?.lastLogTime || null,
+      lastLogLevel:
+        event.runtime.lastLogLevel || currentTaskRuntimeLog.value?.lastLogLevel || null,
+      lastLogMessage:
+        event.runtime.lastLogMessage || currentTaskRuntimeLog.value?.lastLogMessage || null,
+      updatedAt: event.runtime.updatedAt || currentTaskRuntimeLog.value?.updatedAt || null,
+      logs: Array.isArray(currentTaskRuntimeLog.value?.logs)
+        ? currentTaskRuntimeLog.value.logs
+        : [],
     };
   }
 
@@ -3340,6 +3502,16 @@ watch(autoDispatchRows, () => {
   syncAutoDispatchTargetSelection();
 });
 
+watch(runtimeLogDialogVisible, (visible) => {
+  if (visible) {
+    startRuntimeLogDialogAutoRefresh();
+    return;
+  }
+
+  stopRuntimeLogDialogAutoRefresh();
+  runtimeLogDialogLoading.value = false;
+});
+
 // 初始化
 onMounted(() => {
   void Promise.all([
@@ -3370,6 +3542,7 @@ onUnmounted(() => {
     clearTimeout(publishTaskRuntimeReloadTimer);
     publishTaskRuntimeReloadTimer = null;
   }
+  stopRuntimeLogDialogAutoRefresh();
   websocketClient.events.off("publishTaskRuntime", applyPublishTaskRuntimeEvent);
   websocketClient.events.off("serviceCommandResult", applyPublishTaskCommandResultEvent);
 });

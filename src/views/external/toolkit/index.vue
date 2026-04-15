@@ -20,7 +20,7 @@
       </section>
 
       <section class="toolkit-hero">
-        <div class="toolkit-hero__body">
+        <div class="toolkit-hero__card toolkit-hero__card--selectors">
           <div class="toolkit-hero__selectors">
             <div class="toolkit-hero__field">
               <div class="toolkit-hero__label">在线客户端</div>
@@ -49,14 +49,14 @@
             <div class="toolkit-hero__field">
               <div class="toolkit-hero__label">执行环境</div>
               <el-select
-                v-model="selectedProfileValue"
+                v-model="executionProfileSelectValue"
                 class="toolkit-hero__select"
                 size="small"
                 placeholder="请选择执行环境"
                 :loading="loadingMap.profiles"
               >
                 <el-option
-                  v-for="option in profileOptions"
+                  v-for="option in visibleExecutionProfileOptions"
                   :key="option.value"
                   :label="option.label"
                   :value="option.value"
@@ -69,12 +69,17 @@
               </el-select>
             </div>
           </div>
+        </div>
 
+        <div
+          v-if="selectedPlatformContextComponent"
+          class="toolkit-hero__card toolkit-hero__card--status"
+        >
           <component
             :is="selectedPlatformContextComponent"
-            v-if="selectedPlatformContextComponent"
             class="toolkit-hero__context"
             :profile-id="temuWorkspaceProfileId"
+            :profile-loading="isTemuExecutionProfileLoading"
             :session-record="temuWorkspaceSessionRecord"
             :platform-account-text="temuWorkspacePlatformAccountText"
             @open-session-center="openSessionCenter"
@@ -104,7 +109,7 @@
             </div>
             <div class="toolkit-center__summary-item">
               <span>执行环境</span>
-              <strong>{{ selectedEnvironmentLabel }}</strong>
+              <strong>{{ selectedExecutionEnvironmentText }}</strong>
             </div>
             <div class="toolkit-center__summary-item">
               <span>认证状态</span>
@@ -121,7 +126,7 @@
                 <div>
                   <div class="toolkit-form-panel__title">获取会话</div>
                   <div class="toolkit-form-panel__desc">
-                    当前环境 {{ selectedExecutionProfileId || "未选择" }}
+                    当前环境 {{ selectedExecutionProfileDisplayText }}
                   </div>
                 </div>
 
@@ -395,9 +400,9 @@ const {
   loading,
   refreshClients,
   clientOptions,
+  profileOptions,
   selectedClientId,
   selectedClientName,
-  profileOptions,
   selectedProfileValue,
   selectedProfile,
   effectiveProfileId,
@@ -547,8 +552,35 @@ const sessionAcquireModeLabel = computed(() =>
 const sessionAcquireSubmitText = computed(() =>
   sessionAcquireForm.acquireMode === "login" ? "登录后采集会话" : "采集当前环境会话",
 );
-const selectedExecutionProfileId = computed(
-  () => effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
+const isTemuExecutionProfileLoading = computed(
+  () =>
+    selectedPlatformKey.value === TEMU_PLATFORM_KEY &&
+    !!selectedClientId.value &&
+    loadingMap.profiles,
+);
+const executionProfileSelectValue = computed({
+  get: () => (isTemuExecutionProfileLoading.value ? "" : selectedProfileValue.value),
+  set: (value: string) => {
+    selectedProfileValue.value = String(value || ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE);
+  },
+});
+const visibleExecutionProfileOptions = computed(() =>
+  isTemuExecutionProfileLoading.value ? [] : profileOptions.value,
+);
+const selectedExecutionProfileId = computed(() =>
+  isTemuExecutionProfileLoading.value
+    ? ""
+    : effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
+);
+const selectedExecutionProfileDisplayText = computed(() =>
+  isTemuExecutionProfileLoading.value ? "" : selectedExecutionProfileId.value || "未选择",
+);
+const selectedExecutionEnvironmentText = computed(() =>
+  isTemuExecutionProfileLoading.value
+    ? ""
+    : selectedExecutionProfileId.value
+      ? selectedEnvironmentLabel.value
+      : "未选择",
 );
 const selectedExecutionStoredSession = computed(() => {
   const profileId = String(selectedExecutionProfileId.value || "").trim();
@@ -801,13 +833,6 @@ const resolveValidationLabel = (validation?: Record<string, any>) => {
   if (status === "fresh") return "待校验";
   if (status === "unsupported") return "暂不支持";
   return "未校验";
-};
-
-const resolveUserInfoLabel = (userInfo?: Record<string, any>) => {
-  const status = String(userInfo?.status || "").trim();
-  if (status === "success") return "已获取";
-  if (status === "failed") return "获取失败";
-  return "未获取";
 };
 
 const buildMallActionKey = (profileId?: string | null, mallId?: string | null) =>
@@ -1377,7 +1402,6 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
     }
 
     if (action === "runTool") {
-      const feedback = buildToolFeedback(event);
       const result = asPlainObject(data?.result);
 
       if (
@@ -1514,8 +1538,6 @@ onUnmounted(() => {
   padding-bottom: 8px;
 }
 
-.toolkit-platform-switch,
-.toolkit-hero,
 .toolkit-panel {
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
@@ -1525,17 +1547,30 @@ onUnmounted(() => {
 
 .toolkit-platform-switch {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 0 4px 2px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .toolkit-hero {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+}
+
+.toolkit-hero__card {
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-bg-color);
+  border-radius: 18px;
+  box-shadow: var(--el-box-shadow-light);
   padding: 10px 12px;
+}
+
+.toolkit-hero__card--selectors {
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .toolkit-platform-tabs__inner {
@@ -1548,14 +1583,29 @@ onUnmounted(() => {
 }
 
 .toolkit-platform-tabs__inner :deep(.el-tabs__nav-wrap::after) {
-  background-color: var(--el-border-color-light);
+  background-color: transparent;
 }
 
 .toolkit-platform-tabs__inner :deep(.el-tabs__item) {
-  height: 30px;
-  padding: 0 10px;
-  font-size: 12px;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 13px;
   font-weight: 600;
+  color: var(--el-text-color-secondary);
+  transition: color 0.2s ease;
+}
+
+.toolkit-platform-tabs__inner :deep(.el-tabs__item:hover) {
+  color: var(--el-color-primary);
+}
+
+.toolkit-platform-tabs__inner :deep(.el-tabs__item.is-active) {
+  color: var(--el-color-primary);
+}
+
+.toolkit-platform-tabs__inner :deep(.el-tabs__active-bar) {
+  height: 3px;
+  border-radius: 999px;
 }
 
 .toolkit-platform-tabs__actions {
@@ -1563,24 +1613,14 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-}
-
-.toolkit-hero__body {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
-  gap: 10px;
-  align-items: stretch;
-}
-
-.toolkit-hero__body > :only-child {
-  grid-column: 1 / -1;
+  padding-bottom: 3px;
 }
 
 .toolkit-hero__selectors {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-  align-content: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: end;
 }
 
 .toolkit-hero__field {
@@ -1600,8 +1640,6 @@ onUnmounted(() => {
 
 .toolkit-hero__context {
   min-width: 0;
-  padding-left: 10px;
-  border-left: 1px solid var(--el-border-color-light);
 }
 
 .toolkit-option__title {
@@ -1986,8 +2024,6 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1180px) {
-  .toolkit-hero__body,
-  .toolkit-hero__selectors,
   .toolkit-form--acquire,
   .toolkit-session-region__json-grid {
     grid-template-columns: minmax(0, 1fr);
@@ -2008,19 +2044,25 @@ onUnmounted(() => {
   }
 
   .toolkit-hero {
+    gap: 8px;
+  }
+
+  .toolkit-hero__card {
     padding: 12px;
   }
 
+  .toolkit-hero__selectors {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .toolkit-hero__context {
-    padding-left: 0;
-    border-left: 0;
-    border-top: 1px solid var(--el-border-color-light);
-    padding-top: 10px;
+    padding-top: 0;
   }
 
   .toolkit-platform-tabs__actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    padding-bottom: 0;
   }
 
   .toolkit-userinfo-panel__head {

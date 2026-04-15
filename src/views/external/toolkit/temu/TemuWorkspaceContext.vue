@@ -35,6 +35,7 @@ const emit = defineEmits<{
 
 const props = defineProps<{
   profileId?: string;
+  profileLoading?: boolean;
   sessionRecord?: Record<string, any> | null;
   platformAccountText?: string;
 }>();
@@ -95,8 +96,8 @@ const compactStatusFields = computed(() => [
   {
     key: "profile",
     label: "环境",
-    value: props.profileId || "未选择",
-    tone: props.profileId ? "default" : "warning",
+    value: props.profileLoading ? "" : props.profileId || "未选择",
+    tone: props.profileLoading ? "muted" : props.profileId ? "default" : "warning",
   },
   {
     key: "account",
@@ -183,27 +184,28 @@ const compactStatusFields = computed(() => [
 
 .temu-context-card__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 6px;
 }
 
 .temu-context-chip {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   min-width: 0;
-  min-height: 46px;
-  padding: 7px 9px;
+  min-height: 40px;
+  padding: 8px 10px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 10px;
-  background: var(--el-fill-color-blank);
+  background: var(--el-fill-color-light);
 }
 
 .temu-context-chip__label {
   color: var(--el-text-color-secondary);
-  font-size: 10px;
-  line-height: 1;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
 }
 
@@ -212,9 +214,11 @@ const compactStatusFields = computed(() => [
   font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
+  flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: right;
 }
 
 .temu-context-chip__value.is-success {
@@ -240,7 +244,7 @@ const compactStatusFields = computed(() => [
   }
 
   .temu-context-card__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .temu-context-card__actions {
