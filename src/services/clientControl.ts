@@ -240,55 +240,56 @@ export class ClientControlService {
         | undefined
 
       if (enabled) {
-        void WebsocketApi.triggerPsdSetAutoDispatch()
-          .then((response: any) => {
-            const result = {
-              success: !!response?.success,
-              dispatched: !!response?.dispatched,
-              reason: response?.reason,
-              message: response?.message
-            }
+        try {
+          const response: any = await WebsocketApi.triggerPsdSetAutoDispatch()
+          const data =
+            response?.data && typeof response.data === 'object' && !Array.isArray(response.data)
+              ? response.data
+              : response
 
-            if (silent) {
-              return
-            }
-
-            if (!result.success) {
-              ElMessage.warning(result.message || '自动调度已开启，但立即触发分发失败')
-              return
-            }
-
-            if (result.reason === 'dispatch-failed') {
-              ElMessage.warning(result.message || '自动调度已开启，但本次立即分发未成功')
-            }
-          })
-          .catch((error: any) => {
-            console.error('[ClientControlService] 后台触发套图自动调度失败:', error)
-            if (!silent) {
-              ElMessage.warning(error?.message || '自动调度已开启，稍后将由服务端继续尝试分发')
-            }
-          })
-
-        triggerResult = {
-          success: true,
-          dispatched: false,
-          reason: 'triggering',
-          message: '已开启服务端自动调度，正在后台触发待处理套图'
+          triggerResult = {
+            success: typeof data?.success === 'boolean' ? data.success : true,
+            dispatched: !!data?.dispatched,
+            reason: data?.reason,
+            message: data?.message
+          }
+        } catch (error: any) {
+          console.error('[ClientControlService] 后台触发套图自动调度失败:', error)
+          triggerResult = {
+            success: false,
+            dispatched: false,
+            reason: 'trigger-failed',
+            message: error?.message || '自动调度已开启，但立即触发失败，稍后服务端会继续轮询'
+          }
         }
       }
+
+      const resultMessage = !enabled
+        ? '已关闭服务端自动调度'
+        : triggerResult?.message || '已开启服务端自动调度'
 
       if (!silent) {
         if (!enabled) {
           ElMessage.success('已关闭服务端自动调度')
+        } else if (triggerResult?.reason === 'dispatched') {
+          ElMessage.success(triggerResult.message || '已开启服务端自动调度，并已自动分配待处理套图')
+        } else if (
+          triggerResult?.reason === 'no-pending' ||
+          triggerResult?.reason === 'no-client' ||
+          triggerResult?.reason === 'disabled'
+        ) {
+          ElMessage.info(resultMessage)
+        } else if (!triggerResult?.success || triggerResult?.reason === 'dispatch-failed') {
+          ElMessage.warning(resultMessage)
         } else {
-          ElMessage.success(triggerResult?.message || '已开启服务端自动调度')
+          ElMessage.success(resultMessage)
         }
       }
       return {
         success: true,
         dispatched: triggerResult?.dispatched,
         reason: triggerResult?.reason,
-        message: triggerResult?.message
+        message: resultMessage
       }
     } catch (error: any) {
       console.error('[ClientControlService] 设置用户调度开关失败:', error)

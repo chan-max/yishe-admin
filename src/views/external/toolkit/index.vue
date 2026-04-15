@@ -1,98 +1,156 @@
 <template>
   <ContentWrap :plain="true">
     <div class="toolkit-page">
-      <section class="toolkit-platform-switch">
-        <el-tabs v-model="selectedPlatformKey" class="toolkit-platform-tabs__inner">
-          <el-tab-pane
-            v-for="platform in toolkitPlatforms"
-            :key="platform.key"
-            :label="platform.label"
-            :name="platform.key"
-          />
-        </el-tabs>
-
-        <div class="toolkit-platform-tabs__actions">
-          <el-button text size="small" :loading="loading" @click="handleRefreshContext">
-            刷新
-          </el-button>
-          <el-button text size="small" @click="goToBrowserAutomation">环境管理</el-button>
-        </div>
-      </section>
-
-      <section class="toolkit-hero">
-        <div class="toolkit-hero__card toolkit-hero__card--selectors">
-          <div class="toolkit-hero__selectors">
-            <div class="toolkit-hero__field">
-              <div class="toolkit-hero__label">在线客户端</div>
-              <el-select
-                v-model="selectedClientId"
-                class="toolkit-hero__select"
-                size="small"
-                placeholder="请选择在线客户端"
-                :loading="loading"
-                clearable
-              >
-                <el-option
-                  v-for="option in clientOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                >
-                  <div class="toolkit-option">
-                    <div class="toolkit-option__title">{{ option.label }}</div>
-                    <div class="toolkit-option__meta">{{ option.meta || option.hint }}</div>
-                  </div>
-                </el-option>
-              </el-select>
+      <section v-if="!selectedPlatform" class="toolkit-platform-hub">
+        <div class="toolkit-platform-hub__head">
+          <div class="toolkit-platform-hub__main">
+            <div class="toolkit-platform-hub__title">工具集</div>
+            <div class="toolkit-platform-hub__desc">
+              选择一个工具集进入对应工作台。目前仅支持 Temu。
             </div>
+          </div>
 
-            <div class="toolkit-hero__field">
-              <div class="toolkit-hero__label">执行环境</div>
-              <el-select
-                v-model="executionProfileSelectValue"
-                class="toolkit-hero__select"
-                size="small"
-                placeholder="请选择执行环境"
-                :loading="loadingMap.profiles"
-              >
-                <el-option
-                  v-for="option in visibleExecutionProfileOptions"
-                  :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                >
-                  <div class="toolkit-option">
-                    <div class="toolkit-option__title">{{ option.label }}</div>
-                    <div class="toolkit-option__meta">{{ option.meta }}</div>
-                  </div>
-                </el-option>
-              </el-select>
-            </div>
+          <div class="toolkit-page-head__actions">
+            <el-button text size="small" :loading="loading" @click="handleRefreshContext">
+              刷新
+            </el-button>
+            <el-button text size="small" @click="goToBrowserAutomation">环境管理</el-button>
           </div>
         </div>
 
-        <div
-          v-if="selectedPlatformContextComponent"
-          class="toolkit-hero__card toolkit-hero__card--status"
-        >
-          <component
-            :is="selectedPlatformContextComponent"
-            class="toolkit-hero__context"
-            :profile-id="temuWorkspaceProfileId"
-            :profile-loading="isTemuExecutionProfileLoading"
-            :session-record="temuWorkspaceSessionRecord"
-            :platform-account-text="temuWorkspacePlatformAccountText"
-            @open-session-center="openSessionCenter"
-          />
+        <div class="toolkit-platform-grid">
+          <button
+            v-for="platform in toolkitPlatforms"
+            :key="platform.key"
+            type="button"
+            class="toolkit-platform-card"
+            @click="enterToolkitPlatform(platform.key)"
+          >
+            <span class="toolkit-platform-card__eyebrow">工具集</span>
+            <span class="toolkit-platform-card__title">{{ platform.label }}</span>
+            <span class="toolkit-platform-card__desc">{{ platform.description }}</span>
+            <span class="toolkit-platform-card__footer">
+              <el-tag size="small" effect="plain">已支持</el-tag>
+              <span class="toolkit-platform-card__enter">进入工具集</span>
+            </span>
+          </button>
         </div>
       </section>
 
-      <component
-        :is="selectedPlatformWorkspace"
-        v-if="selectedPlatformWorkspace"
-        :profile-id="temuWorkspaceProfileId"
-        :session-record="temuWorkspaceSessionRecord"
-      />
+      <template v-else>
+        <section class="toolkit-page-head">
+          <div class="toolkit-page-head__main">
+            <el-button
+              text
+              circle
+              size="small"
+              :icon="ArrowLeft"
+              class="toolkit-page-head__back"
+              title="返回工具集"
+              aria-label="返回工具集"
+              @click="leaveToolkitPlatform"
+            />
+
+            <div class="toolkit-page-head__content">
+              <div class="toolkit-page-head__title">{{ selectedPlatformLabel }} 工具集</div>
+            </div>
+          </div>
+
+          <div class="toolkit-page-head__actions">
+            <el-button text size="small" :loading="loading" @click="handleRefreshContext">
+              刷新
+            </el-button>
+            <el-button text size="small" @click="goToBrowserAutomation">环境管理</el-button>
+          </div>
+        </section>
+
+        <section class="toolkit-hero">
+          <div class="toolkit-hero__card toolkit-hero__card--selectors">
+            <div class="toolkit-hero__selectors">
+              <div class="toolkit-hero__field">
+                <div class="toolkit-hero__label">在线客户端</div>
+                <el-select
+                  v-model="selectedClientId"
+                  class="toolkit-hero__select"
+                  size="small"
+                  placeholder="请选择在线客户端"
+                  :loading="loading"
+                  clearable
+                >
+                  <el-option
+                    v-for="option in clientOptions"
+                    :key="option.value"
+                    :label="option.label"
+                    :value="option.value"
+                  >
+                    <div class="toolkit-option">
+                      <div class="toolkit-option__title">{{ option.label }}</div>
+                      <div class="toolkit-option__meta">{{ option.meta || option.hint }}</div>
+                    </div>
+                  </el-option>
+                </el-select>
+              </div>
+
+              <div class="toolkit-hero__field">
+                <div class="toolkit-hero__label">执行环境</div>
+                <el-select
+                  v-model="executionProfileSelectValue"
+                  class="toolkit-hero__select"
+                  size="small"
+                  placeholder="请选择执行环境"
+                  :loading="loadingMap.profiles"
+                >
+                  <el-option
+                    v-for="option in visibleExecutionProfileOptions"
+                    :key="option.value"
+                    :label="option.label"
+                    :value="option.value"
+                  >
+                    <div class="toolkit-option">
+                      <div class="toolkit-option__title">{{ option.label }}</div>
+                      <div class="toolkit-option__meta">{{ option.meta }}</div>
+                    </div>
+                  </el-option>
+                </el-select>
+              </div>
+            </div>
+          </div>
+
+          <div
+            v-if="selectedPlatformContextComponent"
+            class="toolkit-hero__card toolkit-hero__card--status"
+          >
+            <component
+              :is="selectedPlatformContextComponent"
+              class="toolkit-hero__context"
+              :profile-id="temuWorkspaceProfileId"
+              :profile-loading="isTemuExecutionProfileLoading"
+              :session-record="temuWorkspaceSessionRecord"
+              :platform-account-text="temuWorkspacePlatformAccountText"
+              :validation-loading="temuWorkspaceValidationLoading"
+              :acquire-loading="sessionToolRunning"
+              :acquire-disabled="sessionAcquireActionDisabled"
+              @acquire-session="quickAcquireCurrentSession"
+              @open-session-center="openSessionCenter"
+            />
+          </div>
+        </section>
+
+        <component
+          :is="selectedPlatformWorkspace"
+          v-if="selectedPlatformWorkspace"
+          :client-id="selectedClientId"
+          :profile-id="temuWorkspaceProfileId"
+          :session-record="temuWorkspaceSessionRecord"
+          :tool-items="temuWorkspaceTools"
+          :tools-loading="loadingMap.tools"
+          :running-feature-key="runningToolkitFeatureKey"
+          :tool-busy="loadingMap.runTool"
+          :tool-results="temuWorkspaceToolResults"
+          @refresh-tools="sendTools"
+          @run-tool="runWorkspaceTool"
+        />
+      </template>
 
       <el-dialog
         v-model="sessionCenterVisible"
@@ -150,8 +208,8 @@
                 <el-button
                   type="primary"
                   size="small"
-                  :loading="loadingMap.runTool"
-                  :disabled="!selectedClientId || !selectedExecutionProfileId"
+                  :loading="sessionToolRunning"
+                  :disabled="sessionAcquireActionDisabled"
                   @click="acquireCurrentSession"
                 >
                   {{ sessionAcquireSubmitText }}
@@ -359,11 +417,13 @@
 </template>
 
 <script setup lang="ts">
+import { ArrowLeft } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import type { BrowserAutomationCommandResponse } from "@/api/external/browserAutomation";
-import { getToolkitProfiles, runToolkitTool } from "@/api/external/toolkit";
+import type { ToolkitToolItem } from "@/api/external/toolkit";
+import { getToolkitProfiles, getToolkitTools, runToolkitTool } from "@/api/external/toolkit";
 import {
   deletePlatformSession,
   getPlatformSessions,
@@ -379,11 +439,15 @@ import { websocketClient, type ServiceCommandResultEvent } from "@/services/webs
 import { formatDate } from "@/utils/formatTime";
 import SmallFeatureField from "../browser-automation/components/SmallFeatureField.vue";
 import {
-  DEFAULT_TOOLKIT_PLATFORM_KEY,
   TOOLKIT_PLATFORM_REGISTRY,
   type ToolkitPlatformDefinition,
 } from "./platformRegistry";
 import { TEMU_PLATFORM_KEY, TEMU_SESSION_TOOL_KEY } from "./temu/platform";
+import {
+  resolveTemuValidationLabel as resolveValidationLabel,
+  resolveTemuValidationTagType as resolveValidationTagType,
+  resolveTemuWorkspaceAvailability,
+} from "./temu/temuWorkspace.helpers";
 
 defineOptions({ name: "OperationToolkit" });
 
@@ -393,6 +457,18 @@ interface ToolkitFeedback {
   detail: string | null;
   suggestion: string | null;
   updatedAt: string | null;
+}
+
+interface ToolkitToolExecutionRecord {
+  featureKey: string;
+  success: boolean;
+  message: string;
+  detail: string | null;
+  suggestion: string | null;
+  updatedAt: string | null;
+  result: any;
+  output: any;
+  rawEvent: ServiceCommandResultEvent;
 }
 
 const router = useRouter();
@@ -411,16 +487,19 @@ const {
   setProfilesPayload,
   resetProfiles,
 } = useBrowserAutomationExecutionContext();
-
-const selectedPlatformKey = ref(DEFAULT_TOOLKIT_PLATFORM_KEY);
+const selectedPlatformKey = ref("");
 const sessionCenterVisible = ref(false);
 const storedPlatformSession = ref<Record<string, any>>({});
 const storedSessionLoading = ref(false);
 const selectedStoredProfileId = ref("");
 const sessionDetailDialogVisible = ref(false);
 const userInfoCollapseNames = ref<string[]>([]);
+const toolkitTools = ref<ToolkitToolItem[]>([]);
+const runningToolkitFeatureKey = ref("");
+const toolkitToolResults = reactive<Record<string, ToolkitToolExecutionRecord>>({});
 const loadingMap = reactive({
   profiles: false,
+  tools: false,
   runTool: false,
 });
 const sessionActionState = reactive({
@@ -430,7 +509,9 @@ const sessionActionState = reactive({
   reacquire: "",
   applyMall: "",
 });
+const autoValidatedTemuSessions = reactive<Record<string, string>>({});
 const pending = reactive<Record<string, string>>({});
+const pendingRunToolFeatureKeys = reactive<Record<string, string>>({});
 
 const toolkitPlatforms = computed<ToolkitPlatformDefinition[]>(() => TOOLKIT_PLATFORM_REGISTRY);
 
@@ -447,6 +528,23 @@ const selectedPlatformWorkspace = computed(
 const sessionCenterDialogTitle = computed(() => `${selectedPlatformLabel.value} 会话与身份`);
 const selectedPlatformSupportsStoredSessions = computed(
   () => selectedPlatform.value?.supportsStoredSessions === true,
+);
+const temuWorkspaceTools = computed(() =>
+  toolkitTools.value.filter((item) => {
+    const platform = String(item?.platform || "").trim();
+    const featureKey = String(item?.key || "").trim();
+    return platform === TEMU_PLATFORM_KEY && featureKey !== TEMU_SESSION_TOOL_KEY;
+  }),
+);
+const temuWorkspaceToolResults = computed(() => toolkitToolResults);
+const sessionToolRunning = computed(
+  () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_TOOL_KEY,
+);
+const sessionAcquireActionDisabled = computed(
+  () =>
+    !selectedClientId.value ||
+    !selectedExecutionProfileId.value ||
+    (loadingMap.runTool && !sessionToolRunning.value),
 );
 
 const storedSessionRows = computed(() => {
@@ -598,6 +696,17 @@ const temuWorkspacePlatformAccountText = computed(() => {
   const userInfo = asPlainObject(record?.userInfo);
   return String(userInfo.accountId || record?.accountId || "").trim();
 });
+const temuWorkspaceValidationLoading = computed(
+  () =>
+    !!selectedExecutionProfileId.value &&
+    sessionActionState.validate === selectedExecutionProfileId.value,
+);
+const temuWorkspaceAvailability = computed(() =>
+  resolveTemuWorkspaceAvailability(temuWorkspaceSessionRecord.value, {
+    platformAccountText: temuWorkspacePlatformAccountText.value,
+    isValidating: temuWorkspaceValidationLoading.value,
+  }),
+);
 const selectedStoredSession = computed(() => temuWorkspaceSessionRecord.value);
 const currentEnvironmentValidation = computed(() =>
   asPlainObject(selectedExecutionStoredSession.value?.validation),
@@ -666,7 +775,7 @@ const sessionCenterSessionStatusLabel = computed(() => {
     return "未选择环境";
   }
 
-  return selectedExecutionStoredSession.value ? "已获取" : "未获取";
+  return temuWorkspaceAvailability.value.label;
 });
 
 const sessionCenterHeadline = computed(() => {
@@ -818,23 +927,6 @@ const collectPlatformAccountTexts = (value: any) => {
   );
 };
 
-const resolveValidationTagType = (validation?: Record<string, any>) => {
-  const status = String(validation?.status || "").trim();
-  if (status === "valid") return "success";
-  if (status === "invalid") return "danger";
-  if (status === "fresh") return "warning";
-  return "info";
-};
-
-const resolveValidationLabel = (validation?: Record<string, any>) => {
-  const status = String(validation?.status || "").trim();
-  if (status === "valid") return "有效";
-  if (status === "invalid") return "失效";
-  if (status === "fresh") return "待校验";
-  if (status === "unsupported") return "暂不支持";
-  return "未校验";
-};
-
 const buildMallActionKey = (profileId?: string | null, mallId?: string | null) =>
   `${String(profileId || "").trim()}::${String(mallId || "").trim()}`;
 
@@ -913,6 +1005,74 @@ const buildToolFeedback = (event: ServiceCommandResultEvent) => {
   } satisfies ToolkitFeedback;
 };
 
+const getToolkitArrayCandidates = (value: any) => {
+  const source = asPlainObject(value);
+  const result = asPlainObject(source?.result);
+  const data = asPlainObject(source?.data);
+
+  return [
+    Array.isArray(value) ? value : [],
+    Array.isArray(source?.items) ? source.items : [],
+    Array.isArray(source?.data) ? source.data : [],
+    Array.isArray(data?.items) ? data.items : [],
+    Array.isArray(result?.items) ? result.items : [],
+    Array.isArray(result?.data) ? result.data : [],
+  ];
+};
+
+const extractToolkitToolItems = (value: any): ToolkitToolItem[] => {
+  const matched = getToolkitArrayCandidates(value).find((items) => items.length > 0) || [];
+
+  return matched
+    .filter((item) => item && typeof item === "object")
+    .map((item) => item as ToolkitToolItem);
+};
+
+const extractToolkitToolResultPayload = (value: any) => {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    if (Object.prototype.hasOwnProperty.call(value, "result")) {
+      return (value as Record<string, any>).result;
+    }
+  }
+
+  return value;
+};
+
+const resetToolkitToolResults = () => {
+  Object.keys(toolkitToolResults).forEach((key) => delete toolkitToolResults[key]);
+};
+
+const buildToolkitToolExecutionRecord = (
+  event: ServiceCommandResultEvent,
+  featureKey: string,
+): ToolkitToolExecutionRecord => {
+  const feedback = buildToolFeedback(event);
+  const result = extractToolkitToolResultPayload(event.data);
+  const output =
+    result !== undefined && result !== null
+      ? result
+      : {
+          success: feedback.success,
+          message: feedback.message,
+          detail: feedback.detail,
+          suggestion: feedback.suggestion,
+          updatedAt: feedback.updatedAt,
+          featureKey,
+        };
+
+  return {
+    featureKey,
+    success: feedback.success,
+    message: feedback.message,
+    detail: feedback.detail,
+    suggestion: feedback.suggestion,
+    updatedAt: feedback.updatedAt,
+    result,
+    output,
+    rawEvent: event,
+  };
+};
+
 const syncStoredProfileSelection = (options: { preferExecutionProfile?: boolean } = {}) => {
   if (!storedSessionRows.value.length) {
     selectedStoredProfileId.value = "";
@@ -955,18 +1115,29 @@ const finish = (action?: string) => {
     loadingMap.profiles = false;
     return;
   }
+  if (action === "tools") {
+    loadingMap.tools = false;
+    return;
+  }
   if (action === "runTool") {
     loadingMap.runTool = false;
+    runningToolkitFeatureKey.value = "";
   }
 };
 
 const dispatchCommand = async (
-  action: "profiles" | "runTool",
+  action: "profiles" | "tools" | "runTool",
   requestor: () => Promise<BrowserAutomationCommandResponse>,
   sentMessage?: string,
+  options: {
+    featureKey?: string;
+  } = {},
 ) => {
   if (loadingMap[action]) return;
   loadingMap[action] = true;
+  if (action === "runTool") {
+    runningToolkitFeatureKey.value = String(options.featureKey || "").trim();
+  }
 
   try {
     const response = await requestor();
@@ -983,6 +1154,9 @@ const dispatchCommand = async (
     }
 
     pending[commandId] = action;
+    if (action === "runTool" && options.featureKey) {
+      pendingRunToolFeatureKeys[commandId] = options.featureKey;
+    }
     if (sentMessage) {
       ElMessage.success(sentMessage);
     }
@@ -995,6 +1169,10 @@ const dispatchCommand = async (
 const sendProfiles = async () =>
   selectedClientId.value &&
   dispatchCommand("profiles", () => getToolkitProfiles(selectedClientId.value));
+
+const sendTools = async () =>
+  selectedClientId.value &&
+  dispatchCommand("tools", () => getToolkitTools(selectedClientId.value));
 
 const buildMergedRegionSession = (
   nextCookies: Record<string, any>,
@@ -1019,6 +1197,10 @@ const buildTemuStoredSessionPayload = (sessionBundle: Record<string, any>, profi
   const currentProfile = asPlainObject(currentPlatform?.profiles?.[profileId]);
   const currentSession = asPlainObject(currentProfile?.session);
   const currentUserInfo = asPlainObject(currentProfile?.userInfo);
+  const sessionHeadersTemplate = asPlainObject(sessionBundle?.headersTemplate);
+  const nextGlobalHeaders = Object.keys(sessionHeadersTemplate).length
+    ? sessionHeadersTemplate
+    : asPlainObject(regionHeaders.global);
   const nextMallList =
     Array.isArray(sessionBundle?.mallList) && sessionBundle.mallList.length
       ? sessionBundle.mallList
@@ -1060,6 +1242,7 @@ const buildTemuStoredSessionPayload = (sessionBundle: Record<string, any>, profi
         accountId: nextAccountId,
         accountType: nextAccountType,
         mallList: nextMallList,
+        headersTemplate: nextGlobalHeaders,
         userInfo: nextUserInfo,
         updatedAt: collectedAt,
         validation: {
@@ -1070,7 +1253,7 @@ const buildTemuStoredSessionPayload = (sessionBundle: Record<string, any>, profi
         session: {
           global: buildMergedRegionSession(
             asPlainObject(sessionBundle?.cookies_global || sessionBundle?.cookies),
-            asPlainObject(regionHeaders.global || sessionBundle?.headersTemplate),
+            nextGlobalHeaders,
             asPlainObject(currentSession?.global),
             collectedAt,
           ),
@@ -1144,6 +1327,9 @@ const dispatchTemuSessionAcquire = async (
         ...(acquireMode === "login" ? { account, password } : {}),
       }),
     sentMessage,
+    {
+      featureKey: TEMU_SESSION_TOOL_KEY,
+    },
   );
 };
 
@@ -1176,6 +1362,61 @@ const acquireCurrentSession = async () => {
     sessionAcquireForm.acquireMode === "login"
       ? "Temu 登录后采集会话命令已发送"
       : "Temu 当前环境会话采集命令已发送",
+  );
+};
+
+const quickAcquireCurrentSession = async () => {
+  if (!selectedClientId.value) {
+    ElMessage.warning("请先选择在线客户端");
+    return;
+  }
+
+  const profileId = String(selectedExecutionProfileId.value || "").trim();
+  if (!profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  await dispatchTemuSessionAcquire(
+    profileId,
+    {
+      acquireMode: "direct",
+      collectRegionCookies: sessionAcquireForm.collectRegionCookies,
+      keepPageOpen: sessionAcquireForm.keepPageOpen,
+    },
+    "Temu 当前环境会话采集命令已发送",
+  );
+};
+
+const runWorkspaceTool = async (payload: {
+  featureKey: string;
+  payload: Record<string, any>;
+}) => {
+  if (!selectedClientId.value) {
+    ElMessage.warning("请先选择在线客户端");
+    return;
+  }
+
+  const featureKey = String(payload?.featureKey || "").trim();
+  if (!featureKey) {
+    ElMessage.warning("缺少工具标识");
+    return;
+  }
+  const featureName =
+    toolkitTools.value.find((item) => String(item?.key || "").trim() === featureKey)?.name ||
+    featureKey;
+
+  await dispatchCommand(
+    "runTool",
+    () =>
+      runToolkitTool(selectedClientId.value, {
+        featureKey,
+        ...(payload?.payload && typeof payload.payload === "object" ? payload.payload : {}),
+      }),
+    `${featureName} 命令已发送`,
+    {
+      featureKey,
+    },
   );
 };
 
@@ -1288,7 +1529,7 @@ const applyStoredMall = async (
   }
 };
 
-const validateStoredSession = async (profileId?: string) => {
+const validateStoredSession = async (profileId?: string, options: { silent?: boolean } = {}) => {
   const normalizedProfileId = String(
     profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
   ).trim();
@@ -1304,9 +1545,13 @@ const validateStoredSession = async (profileId?: string) => {
       profileId: normalizedProfileId,
     });
     await refreshStoredPlatformSessions();
-    ElMessage[result?.success ? "success" : "warning"](result?.message || "校验完成");
+    if (!options.silent || !result?.success) {
+      ElMessage[result?.success ? "success" : "warning"](result?.message || "校验完成");
+    }
   } catch (error: any) {
-    ElMessage.error(error?.message || "校验会话失败");
+    if (!options.silent) {
+      ElMessage.error(error?.message || "校验会话失败");
+    }
   } finally {
     sessionActionState.validate = "";
   }
@@ -1377,37 +1622,86 @@ const reacquireStoredSession = async (profileId?: string) => {
   }
 };
 
+const buildTemuAutoValidationCacheKey = (profileId: string) =>
+  `${String(selectedClientId.value || "").trim()}::${profileId}`;
+
+const buildTemuAutoValidationSignature = (profileId: string) => {
+  const record = asPlainObject(temuWorkspaceSessionRecord.value);
+  const validation = asPlainObject(record.validation);
+  return [
+    profileId,
+    String(record.updatedAt || "").trim(),
+    String(validation.status || "").trim(),
+    String(validation.checkedAt || "").trim(),
+    countObjectKeys(record?.session?.global?.cookies),
+  ].join("::");
+};
+
+const ensureTemuSessionValidated = async () => {
+  if (selectedPlatformKey.value !== TEMU_PLATFORM_KEY) {
+    return;
+  }
+
+  const profileId = String(selectedExecutionProfileId.value || "").trim();
+  if (!profileId || !temuWorkspaceAvailability.value.shouldAutoValidate) {
+    return;
+  }
+
+  const cacheKey = buildTemuAutoValidationCacheKey(profileId);
+  const signature = buildTemuAutoValidationSignature(profileId);
+  if (autoValidatedTemuSessions[cacheKey] === signature) {
+    return;
+  }
+
+  autoValidatedTemuSessions[cacheKey] = signature;
+  await validateStoredSession(profileId, { silent: true });
+};
+
 const onCommand = async (event: ServiceCommandResultEvent) => {
   if (normalizeBrowserAutomationKey(event.pluginKey || event.service) !== "browser-automation") {
     return;
   }
 
   const action = pending[event.commandId];
+  const pendingFeatureKey = String(pendingRunToolFeatureKeys[event.commandId] || "").trim();
   if (!action) {
     return;
   }
 
   delete pending[event.commandId];
+  delete pendingRunToolFeatureKeys[event.commandId];
   finish(action);
 
-  const data = asPlainObject(event.data);
+  const data = event.data;
+  const dataObject = asPlainObject(data);
   if (event.clientId === selectedClientId.value) {
     if (action === "profiles") {
       setProfilesPayload({
-        activeProfileId: data?.activeProfileId || null,
-        workspaceDir: data?.workspaceDir,
-        profilesRootDir: data?.profilesRootDir,
-        items: Array.isArray(data?.items) ? data.items : [],
+        activeProfileId: dataObject?.activeProfileId || null,
+        workspaceDir: dataObject?.workspaceDir,
+        profilesRootDir: dataObject?.profilesRootDir,
+        items: Array.isArray(dataObject?.items) ? dataObject.items : [],
       });
     }
 
+    if (action === "tools") {
+      toolkitTools.value = event.success ? extractToolkitToolItems(data) : [];
+    }
+
     if (action === "runTool") {
-      const result = asPlainObject(data?.result);
+      const result = asPlainObject(extractToolkitToolResultPayload(data));
+      const featureKey = String(
+        dataObject?.featureKey || result?.featureKey || pendingFeatureKey,
+      ).trim();
+
+      if (featureKey) {
+        toolkitToolResults[featureKey] = buildToolkitToolExecutionRecord(event, featureKey);
+      }
 
       if (
         event.success &&
         [TEMU_SESSION_TOOL_KEY, "temu-session-collect"].includes(
-          String(data?.featureKey || result?.featureKey || ""),
+          featureKey,
         )
       ) {
         const sessionBundle = asPlainObject(result?.sessionBundle);
@@ -1439,10 +1733,21 @@ const loadClients = async () => {
   await refreshClients();
 };
 
+const enterToolkitPlatform = (platformKey: string) => {
+  selectedPlatformKey.value = String(platformKey || "").trim();
+};
+
+const leaveToolkitPlatform = () => {
+  sessionCenterVisible.value = false;
+  sessionDetailDialogVisible.value = false;
+  selectedPlatformKey.value = "";
+};
+
 const handleRefreshContext = async () => {
   await loadClients();
   if (selectedClientId.value) {
     void sendProfiles();
+    void sendTools();
   }
   void refreshStoredPlatformSessions();
 };
@@ -1451,17 +1756,36 @@ const goToBrowserAutomation = () => {
   router.push("/external/browser-automation");
 };
 
+const temuAutoValidationWatchKey = computed(() => {
+  const record = asPlainObject(temuWorkspaceSessionRecord.value);
+  const validation = asPlainObject(record.validation);
+  return [
+    selectedPlatformKey.value,
+    String(selectedClientId.value || "").trim(),
+    String(selectedExecutionProfileId.value || "").trim(),
+    String(record.updatedAt || "").trim(),
+    String(validation.status || "").trim(),
+    String(validation.checkedAt || "").trim(),
+    countObjectKeys(record?.session?.global?.cookies),
+    temuWorkspaceValidationLoading.value ? "validating" : "idle",
+  ].join("::");
+});
+
 watch(
   selectedClientId,
   (value) => {
     resetProfiles();
     selectedProfileValue.value = ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE;
+    toolkitTools.value = [];
+    resetToolkitToolResults();
+    runningToolkitFeatureKey.value = "";
 
     if (!value) {
       return;
     }
 
     void sendProfiles();
+    void sendTools();
   },
   { immediate: false },
 );
@@ -1498,7 +1822,12 @@ watch(
 
 watch(
   selectedPlatformKey,
-  () => {
+  (value) => {
+    if (!value) {
+      sessionCenterVisible.value = false;
+      sessionDetailDialogVisible.value = false;
+    }
+
     void refreshStoredPlatformSessions();
   },
   { immediate: true },
@@ -1516,6 +1845,15 @@ watch(
   selectedExecutionProfileId,
   () => {
     syncStoredProfileSelection({ preferExecutionProfile: true });
+    resetToolkitToolResults();
+  },
+  { immediate: true },
+);
+
+watch(
+  temuAutoValidationWatchKey,
+  () => {
+    void ensureTemuSessionValidated();
   },
   { immediate: true },
 );
@@ -1523,6 +1861,10 @@ watch(
 onMounted(async () => {
   websocketClient.events.on("serviceCommandResult", onCommand);
   await loadClients();
+  if (selectedClientId.value) {
+    void sendProfiles();
+    void sendTools();
+  }
 });
 
 onUnmounted(() => {
@@ -1538,20 +1880,145 @@ onUnmounted(() => {
   padding-bottom: 8px;
 }
 
-.toolkit-panel {
+.toolkit-page-head,
+.toolkit-platform-hub__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toolkit-page-head {
+  padding: 2px 2px 0;
+}
+
+.toolkit-page-head__main,
+.toolkit-platform-hub__main {
+  min-width: 0;
+}
+
+.toolkit-page-head__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolkit-page-head__content {
+  min-width: 0;
+}
+
+.toolkit-page-head__back {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+}
+
+.toolkit-page-head__back :deep(.el-icon) {
+  font-size: 16px;
+}
+
+.toolkit-page-head__title {
+  color: var(--el-text-color-primary);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.toolkit-platform-hub__title {
+  color: var(--el-text-color-primary);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.toolkit-page-head__desc,
+.toolkit-platform-hub__desc {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.toolkit-page-head__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.toolkit-platform-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
   border-radius: 18px;
   box-shadow: var(--el-box-shadow-light);
 }
 
-.toolkit-platform-switch {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+.toolkit-platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
-  padding: 0 4px 2px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.toolkit-platform-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-blank);
+  border-radius: 16px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.toolkit-platform-card:hover {
+  border-color: var(--el-color-primary-light-7);
+  box-shadow: var(--el-box-shadow-light);
+  transform: translateY(-1px);
+}
+
+.toolkit-platform-card__eyebrow {
+  color: var(--el-text-color-placeholder);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.toolkit-platform-card__title {
+  color: var(--el-text-color-primary);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.toolkit-platform-card__desc {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.toolkit-platform-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.toolkit-platform-card__enter {
+  color: var(--el-color-primary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .toolkit-hero {
@@ -1571,49 +2038,6 @@ onUnmounted(() => {
 .toolkit-hero__card--selectors {
   padding-top: 12px;
   padding-bottom: 12px;
-}
-
-.toolkit-platform-tabs__inner {
-  flex: 1;
-  min-width: 0;
-}
-
-.toolkit-platform-tabs__inner :deep(.el-tabs__header) {
-  margin-bottom: 0;
-}
-
-.toolkit-platform-tabs__inner :deep(.el-tabs__nav-wrap::after) {
-  background-color: transparent;
-}
-
-.toolkit-platform-tabs__inner :deep(.el-tabs__item) {
-  height: 36px;
-  padding: 0 14px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--el-text-color-secondary);
-  transition: color 0.2s ease;
-}
-
-.toolkit-platform-tabs__inner :deep(.el-tabs__item:hover) {
-  color: var(--el-color-primary);
-}
-
-.toolkit-platform-tabs__inner :deep(.el-tabs__item.is-active) {
-  color: var(--el-color-primary);
-}
-
-.toolkit-platform-tabs__inner :deep(.el-tabs__active-bar) {
-  height: 3px;
-  border-radius: 999px;
-}
-
-.toolkit-platform-tabs__actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-  padding-bottom: 3px;
 }
 
 .toolkit-hero__selectors {
@@ -1854,17 +2278,53 @@ onUnmounted(() => {
   margin-top: 12px;
 }
 
+.toolkit-result-collapse :deep(.el-collapse-item__header),
+.toolkit-result-collapse :deep(.el-collapse-item__wrap) {
+  background: transparent;
+}
+
+.toolkit-result-collapse :deep(.el-collapse-item__header) {
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  border-bottom-color: var(--el-border-color-lighter);
+}
+
+.toolkit-result-collapse :deep(.el-collapse-item__wrap) {
+  border-bottom-color: var(--el-border-color-lighter);
+}
+
+.toolkit-result-collapse :deep(.el-collapse-item__content) {
+  padding-bottom: 0;
+  color: var(--el-text-color-primary);
+}
+
+.toolkit-session-region__json-box {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
 .toolkit-result-json,
 .toolkit-session-region__json-box pre {
   margin: 0;
   padding: 12px;
   border-radius: 12px;
-  background: var(--el-fill-color-darker);
-  color: var(--el-color-white);
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
   font-size: 12px;
   line-height: 1.65;
   overflow: auto;
   max-height: 280px;
+  font-family:
+    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo,
+    monospace;
+  word-break: break-word;
+}
+
+.toolkit-result-json {
+  margin-top: 10px;
 }
 
 .toolkit-session-card__actions {
@@ -2035,7 +2495,8 @@ onUnmounted(() => {
 }
 
 @media (max-width: 760px) {
-  .toolkit-platform-switch,
+  .toolkit-page-head,
+  .toolkit-platform-hub__head,
   .toolkit-panel__head,
   .toolkit-form-panel__head,
   .toolkit-session-card__head,
@@ -2059,10 +2520,18 @@ onUnmounted(() => {
     padding-top: 0;
   }
 
-  .toolkit-platform-tabs__actions {
+  .toolkit-page-head__actions {
     width: 100%;
     justify-content: flex-start;
-    padding-bottom: 0;
+  }
+
+  .toolkit-platform-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolkit-platform-card__footer {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .toolkit-userinfo-panel__head {

@@ -18,7 +18,12 @@
             class="temu-workspace__search"
             placeholder="搜索动作"
           />
-          <el-button text size="small" :loading="catalogLoading" @click="loadCatalog">
+          <el-button
+            text
+            size="small"
+            :loading="catalogLoading || !!toolsLoading"
+            @click="refreshWorkspaceActions"
+          >
             刷新目录
           </el-button>
         </div>
@@ -140,7 +145,7 @@
 
               <el-select
                 v-if="field.type === 'select'"
-                v-model="formState[field.key]"
+                v-model="activeActionState.formState[field.key]"
                 clearable
                 class="temu-field__control"
                 :placeholder="field.placeholder || `请选择${field.label}`"
@@ -155,22 +160,26 @@
 
               <el-input-number
                 v-else-if="field.type === 'number'"
-                v-model="formState[field.key]"
+                v-model="activeActionState.formState[field.key]"
                 class="temu-field__control"
                 :controls="false"
               />
 
               <el-input
                 v-else
-                v-model="formState[field.key]"
+                v-model="activeActionState.formState[field.key]"
                 :type="
-                  field.type === 'json' || field.type === 'textarea' || field.type.startsWith('array')
+                  field.type === 'json' ||
+                  field.type === 'textarea' ||
+                  field.type.startsWith('array')
                     ? 'textarea'
                     : 'text'
                 "
                 class="temu-field__control"
                 :autosize="
-                  field.type === 'json' || field.type === 'textarea' || field.type.startsWith('array')
+                  field.type === 'json' ||
+                  field.type === 'textarea' ||
+                  field.type.startsWith('array')
                     ? { minRows: field.rows || 3, maxRows: field.type === 'json' ? 14 : 8 }
                     : undefined
                 "
@@ -178,8 +187,8 @@
               />
 
               <div v-if="field.hint" class="temu-field__hint">{{ field.hint }}</div>
-              <div v-if="formErrors[field.key]" class="temu-field__error">
-                {{ formErrors[field.key] }}
+              <div v-if="activeActionState.formErrors[field.key]" class="temu-field__error">
+                {{ activeActionState.formErrors[field.key] }}
               </div>
             </div>
           </div>
@@ -192,8 +201,8 @@
             <el-button @click="resetFormState">重置参数</el-button>
             <el-button
               type="primary"
-              :loading="running"
-              :disabled="!canRunSelectedAction"
+              :loading="activeActionRunning"
+              :disabled="!canRunSelectedAction || (isAnyActionRunning && !activeActionRunning)"
               @click="runAction"
             >
               {{ canRunSelectedAction ? "执行动作" : runButtonLabel }}
@@ -204,106 +213,39 @@
         <div v-else class="temu-workspace__unsupported">
           当前动作已经接到目录里了，但前端还没有配置专用表单。后续可以继续把它可视化。
         </div>
+
+        <div v-if="activeActionResult" class="temu-workspace__result">
+          <div class="temu-workspace__result-head">
+            <div class="temu-workspace__result-title">
+              <span>原始结果</span>
+              <el-tag
+                size="small"
+                effect="plain"
+                :type="activeActionResult.success ? 'success' : 'danger'"
+              >
+                {{ activeActionResult.success ? "成功" : "失败" }}
+              </el-tag>
+            </div>
+
+            <div class="temu-workspace__result-tools">
+              <el-button text size="small" @click="copyText('原始结果', actionResultText)">
+                复制结果
+              </el-button>
+            </div>
+          </div>
+
+          <pre class="temu-workspace__json">{{ actionResultText }}</pre>
+        </div>
       </div>
     </section>
 
-    <div v-if="lastResult" class="temu-workspace__result">
-      <div class="temu-workspace__result-head">
-        <div class="temu-workspace__result-status">
-          <el-tag size="small" effect="plain" :type="lastResult.success ? 'success' : 'danger'">
-            {{ lastResult.success ? "成功" : "失败" }}
-          </el-tag>
-          <span>{{ lastResult.message || "动作已返回结果" }}</span>
-        </div>
-
-        <div class="temu-workspace__result-tools">
-          <el-button
-            v-if="lastResult.request?.url"
-            text
-            size="small"
-            @click="copyText('请求地址', String(lastResult.request?.url || ''))"
-          >
-            复制请求地址
-          </el-button>
-          <el-button
-            v-if="detectedResultUrl"
-            text
-            size="small"
-            @click="copyText('结果链接', detectedResultUrl)"
-          >
-            复制结果链接
-          </el-button>
-          <el-button text size="small" @click="copyText('结果 JSON', jsonText(lastResult.result))">
-            复制结果
-          </el-button>
-        </div>
-      </div>
-
-      <div v-if="resultFeedbackNotices.length" class="temu-workspace__feedback-list">
-        <el-alert
-          v-for="notice in resultFeedbackNotices"
-          :key="notice.key"
-          :title="notice.title"
-          :description="notice.message"
-          :type="notice.type"
-          :closable="false"
-          show-icon
-        />
-      </div>
-
-      <div v-if="resultInsightCards.length" class="temu-workspace__insights">
-        <div
-          v-for="card in resultInsightCards"
-          :key="card.key"
-          class="temu-insight-card"
-          :class="`is-${card.tone || 'default'}`"
-        >
-          <span>{{ card.label }}</span>
-          <strong>{{ card.value }}</strong>
-        </div>
-      </div>
-
-      <div v-if="recommendedNextActions.length" class="temu-workspace__next-panel">
-        <div class="temu-workspace__helper-label">推荐下一步</div>
-        <div class="temu-workspace__helper-actions">
-          <button
-            v-for="action in recommendedNextActions"
-            :key="action.key"
-            type="button"
-            class="temu-helper-chip temu-helper-chip--next"
-            @click="focusActionByKey(action.key, true)"
-          >
-            <span class="temu-helper-chip__title">{{ action.label }}</span>
-            <span class="temu-helper-chip__desc">{{ action.description }}</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="temu-workspace__result-meta">
-        <span>{{ lastResult.action || selectedAction?.key || "-" }}</span>
-        <span v-if="lastResult.region">区域 {{ lastResult.region }}</span>
-        <span v-if="lastResult.request?.status">HTTP {{ lastResult.request?.status }}</span>
-      </div>
-
-      <div v-if="lastResult.request?.url" class="temu-workspace__request-url">
-        {{ lastResult.request.url }}
-      </div>
-
-      <el-collapse v-model="collapseNames" class="temu-workspace__collapse">
-        <el-collapse-item name="result" title="结果摘要">
-          <pre class="temu-workspace__json">{{ jsonText(lastResult.result) }}</pre>
-        </el-collapse-item>
-        <el-collapse-item name="raw" title="原始返回">
-          <pre class="temu-workspace__json">{{ jsonText(lastResult.raw) }}</pre>
-        </el-collapse-item>
-      </el-collapse>
-    </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
   executeTemuAction,
   getTemuCatalog,
@@ -314,8 +256,8 @@ import {
 } from "@/api/external/toolkit/temu";
 import {
   ACTION_PRESETS,
-  NEXT_ACTION_MAP,
   REGION_LABELS,
+  TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
   type TemuActionField,
   type TemuFormSeedAction,
   type TemuIndexedCatalogAction,
@@ -326,10 +268,7 @@ import {
   buildDefaultFormState,
   buildFormPatchState,
   buildFormSeedActions,
-  buildResultInsightCards,
-  buildResultFeedbackNotices,
   countObjectKeys,
-  detectResultUrl,
   extractRequestErrorMessage,
   stringifyJson,
   validateAndNormalizeField,
@@ -337,12 +276,38 @@ import {
 
 defineOptions({ name: "ToolkitTemuWorkspace" });
 
+interface TemuActionWorkspaceState {
+  formState: Record<string, any>;
+  formErrors: Record<string, string>;
+  lastResult: TemuActionResponse | null;
+}
+
+interface TemuWorkspaceAction extends TemuCatalogAction {
+  executionType?: "api" | "tool";
+  featureKey?: string;
+}
+
+interface TemuWorkspaceActionGroup extends Omit<TemuCatalogGroup, "actions"> {
+  actions: TemuWorkspaceAction[];
+}
+
 const props = defineProps<{
+  clientId?: string;
   profileId?: string;
   sessionRecord?: Record<string, any> | null;
+  toolItems?: ToolkitToolItem[];
+  toolsLoading?: boolean;
+  runningFeatureKey?: string;
+  toolBusy?: boolean;
+  toolResults?: Record<string, any> | null;
 }>();
 
-const flattenCatalogActions = (groups: TemuCatalogGroup[] = []) =>
+const emit = defineEmits<{
+  (e: "refresh-tools"): void;
+  (e: "run-tool", payload: { featureKey: string; payload: Record<string, any> }): void;
+}>();
+
+const flattenCatalogActions = (groups: Array<{ actions: TemuCatalogAction[] }> = []) =>
   groups.flatMap((group) => group.actions);
 
 const resetReactiveRecord = (target: Record<string, any>, nextValue: Record<string, any> = {}) => {
@@ -353,15 +318,12 @@ const resetReactiveRecord = (target: Record<string, any>, nextValue: Record<stri
 };
 
 const catalogLoading = ref(false);
-const running = ref(false);
-const collapseNames = ref<string[]>(["result"]);
+const runningActionKey = ref("");
 const selectedCategoryKey = ref("");
 const selectedActionKey = ref("");
 const actionSearchKeyword = ref("");
 const catalog = ref<TemuCatalogGroup[]>([]);
-const lastResult = ref<TemuActionResponse | null>(null);
-const formState = reactive<Record<string, any>>({});
-const formErrors = reactive<Record<string, string>>({});
+const actionWorkspaceStates = reactive<Record<string, TemuActionWorkspaceState>>({});
 
 const sessionRecord = computed(() => asPlainObject(props.sessionRecord));
 const sessionData = computed(() => asPlainObject(sessionRecord.value?.session));
@@ -374,9 +336,75 @@ const hasUsableSession = computed(() => regionCookieCounts.value.global > 0);
 
 const normalizedSearchKeyword = computed(() => actionSearchKeyword.value.trim().toLowerCase());
 
+const publishDetailToolItem = computed<ToolkitToolItem | null>(() => {
+  const matched = (Array.isArray(props.toolItems) ? props.toolItems : []).find(
+    (item) => String(item?.key || "").trim() === TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
+  );
+  return matched || null;
+});
+
+const publishDetailToolAction = computed<TemuWorkspaceAction>(() => {
+  const item = publishDetailToolItem.value;
+  const rawName = String(item?.name || "").trim();
+  const label = rawName.replace(/^temu\s*/i, "").trim() || "根据商品spuId 获取 商品发布模板";
+  return {
+    key: TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
+    label,
+    description:
+      String(item?.description || "").trim() ||
+      "输入商品 spuId 后打开商品发布详情页，自动点击“提交”，并返回商品发布模板请求参数。",
+    endpoint: "__tool__",
+    method: "POST",
+    regionHints: ["global"],
+    status: "available",
+    executionType: "tool",
+    featureKey: TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
+  };
+});
+
+const mergedCatalog = computed<TemuWorkspaceActionGroup[]>(() => {
+  const groups = catalog.value.map((group) => ({
+    ...group,
+    actions: Array.isArray(group.actions) ? [...group.actions] : [],
+  }));
+
+  const targetGroup =
+    groups.find((group) => group.key === "goods") ||
+    (() => {
+      const nextGroup: TemuWorkspaceActionGroup = {
+        key: "goods",
+        label: "商品与上新",
+        description: "商品相关动作。",
+        actions: [],
+      };
+      groups.unshift(nextGroup);
+      return nextGroup;
+    })();
+
+  if (
+    !targetGroup.actions.some(
+      (action) => action.key === TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
+    )
+  ) {
+    const goodsDetailIndex = targetGroup.actions.findIndex((action) => action.key === "goods.detail");
+    if (goodsDetailIndex >= 0) {
+      targetGroup.actions.splice(goodsDetailIndex + 1, 0, publishDetailToolAction.value);
+    } else {
+      targetGroup.actions.push(publishDetailToolAction.value);
+    }
+  }
+
+  return groups;
+});
+
+const isToolAction = (action?: Pick<TemuWorkspaceAction, "key" | "executionType"> | null) =>
+  !!action &&
+  (action.executionType === "tool" ||
+    String(action.key || "").trim() === TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY);
+
 const catalogActionIndex = computed(() => {
   const actionMap = new Map<string, TemuIndexedCatalogAction>();
-  catalog.value.forEach((group) => {
+  mergedCatalog.value.forEach((group) => {
     group.actions.forEach((action) => {
       actionMap.set(action.key, {
         ...action,
@@ -391,10 +419,10 @@ const catalogActionIndex = computed(() => {
 const catalogGroups = computed(() => {
   const keyword = normalizedSearchKeyword.value;
   if (!keyword) {
-    return catalog.value;
+    return mergedCatalog.value;
   }
 
-  return catalog.value.reduce((result, group) => {
+  return mergedCatalog.value.reduce((result, group) => {
     const groupMatched = [group.label, group.description, group.key]
       .filter(Boolean)
       .some((item) => String(item).toLowerCase().includes(keyword));
@@ -416,7 +444,7 @@ const catalogGroups = computed(() => {
       });
     }
     return result;
-  }, [] as TemuCatalogGroup[]);
+  }, [] as TemuWorkspaceActionGroup[]);
 });
 
 const actionCategoryTabs = computed(() =>
@@ -429,7 +457,7 @@ const selectedCategoryActions = computed(() =>
   Array.isArray(selectedCategory.value?.actions) ? selectedCategory.value.actions : [],
 );
 const visibleActions = computed(() => flattenCatalogActions(actionCategoryTabs.value));
-const selectedAction = computed<TemuCatalogAction | null>(
+const selectedAction = computed<TemuWorkspaceAction | null>(
   () =>
     selectedCategoryActions.value.find((item) => item.key === selectedActionKey.value) ||
     visibleActions.value.find((item) => item.key === selectedActionKey.value) ||
@@ -437,6 +465,37 @@ const selectedAction = computed<TemuCatalogAction | null>(
 );
 const selectedActionPreset = computed(() =>
   selectedAction.value ? ACTION_PRESETS[selectedAction.value.key] || null : null,
+);
+const createActionWorkspaceState = (actionKey?: string | null): TemuActionWorkspaceState => {
+  const preset = ACTION_PRESETS[String(actionKey || "").trim()];
+  return {
+    formState: buildDefaultFormState(preset?.fields || []),
+    formErrors: {},
+    lastResult: null,
+  };
+};
+
+const ensureActionWorkspaceState = (actionKey?: string | null) => {
+  const normalizedKey = String(actionKey || "").trim();
+  if (!normalizedKey) {
+    return null;
+  }
+
+  if (!actionWorkspaceStates[normalizedKey]) {
+    actionWorkspaceStates[normalizedKey] = createActionWorkspaceState(normalizedKey);
+  }
+
+  return actionWorkspaceStates[normalizedKey];
+};
+
+const emptyActionWorkspaceState: TemuActionWorkspaceState = {
+  formState: {},
+  formErrors: {},
+  lastResult: null,
+};
+
+const activeActionState = computed(
+  () => ensureActionWorkspaceState(selectedAction.value?.key) || emptyActionWorkspaceState,
 );
 const visibleActionCount = computed(() => flattenCatalogActions(actionCategoryTabs.value).length);
 const availableActionCount = computed(
@@ -447,7 +506,7 @@ const availableActionCount = computed(
 );
 
 const formSeedActions = computed<TemuFormSeedAction[]>(() =>
-  buildFormSeedActions(selectedAction.value?.key, lastResult.value),
+  buildFormSeedActions(selectedAction.value?.key, activeActionState.value.lastResult),
 );
 const actionFeedbackNotices = computed(() =>
   buildActionFeedbackNotices({
@@ -459,26 +518,77 @@ const actionFeedbackNotices = computed(() =>
     hasFormSeeds: formSeedActions.value.length > 0,
   }),
 );
-const resultInsightCards = computed(() => buildResultInsightCards(lastResult.value));
-const resultFeedbackNotices = computed(() => buildResultFeedbackNotices(lastResult.value));
-const detectedResultUrl = computed(() => detectResultUrl(lastResult.value));
-const recommendedNextActions = computed(() => {
-  const actionKey = String(lastResult.value?.action || "").trim();
-  return (NEXT_ACTION_MAP[actionKey] || [])
-    .map((key) => catalogActionIndex.value.get(key))
-    .filter((item): item is TemuIndexedCatalogAction => !!item)
-    .filter((item) => item.status === "available" && !!ACTION_PRESETS[item.key]);
+const activeToolRecord = computed(() => {
+  if (!selectedAction.value || !isToolAction(selectedAction.value)) {
+    return null;
+  }
+
+  const toolResults = asPlainObject(props.toolResults);
+  const record = asPlainObject(toolResults[selectedAction.value.key]);
+  return Object.keys(record).length ? record : null;
 });
-const canRunSelectedAction = computed(
-  () =>
-    !!(
-      props.profileId &&
-      hasUsableSession.value &&
-      selectedAction.value?.endpoint &&
-      selectedActionPreset.value
-    ),
+const activeActionResult = computed<TemuActionResponse | null>(() => {
+  if (isToolAction(selectedAction.value)) {
+    const record = activeToolRecord.value;
+    if (!record) {
+      return null;
+    }
+
+    return {
+      success: record.success !== false,
+      action: selectedAction.value?.key,
+      message: String(record.message || "").trim(),
+      profileId: props.profileId,
+      result:
+        record.output !== undefined
+          ? record.output
+          : record.result !== undefined
+            ? record.result
+            : null,
+      raw:
+        record.result && typeof record.result === "object"
+          ? record.result
+          : record.output && typeof record.output === "object"
+            ? record.output
+            : null,
+    };
+  }
+
+  return activeActionState.value.lastResult;
+});
+const activeActionRunning = computed(
+  () => {
+    if (!selectedAction.value?.key) {
+      return false;
+    }
+
+    if (isToolAction(selectedAction.value)) {
+      return props.runningFeatureKey === selectedAction.value.key;
+    }
+
+    return runningActionKey.value === selectedAction.value.key;
+  },
 );
+const isAnyActionRunning = computed(() => !!runningActionKey.value || !!props.toolBusy);
+const actionResultText = computed(() => jsonText(activeActionResult.value ?? null));
+const canRunSelectedAction = computed(() => {
+  if (!selectedAction.value || !selectedActionPreset.value) {
+    return false;
+  }
+
+  if (isToolAction(selectedAction.value)) {
+    return !!(props.clientId && props.profileId && hasUsableSession.value);
+  }
+
+  return !!(props.profileId && hasUsableSession.value && selectedAction.value.endpoint);
+});
 const runButtonLabel = computed(() => {
+  if (isAnyActionRunning.value && !activeActionRunning.value) {
+    return "动作执行中";
+  }
+  if (isToolAction(selectedAction.value) && !props.clientId) {
+    return "先选择客户端";
+  }
   if (!props.profileId) {
     return "先选择环境";
   }
@@ -491,7 +601,7 @@ const runButtonLabel = computed(() => {
 const hasPresetForAction = (actionKey?: string | null) =>
   !!(actionKey && ACTION_PRESETS[actionKey]);
 
-const isRunnableAction = (action?: Pick<TemuCatalogAction, "key" | "status"> | null) =>
+const isRunnableAction = (action?: Pick<TemuWorkspaceAction, "key" | "status"> | null) =>
   !!(action && action.status === "available" && hasPresetForAction(action.key));
 
 const buildRegionOptions = (regionHints: TemuRegionKey[] = []) => {
@@ -542,31 +652,35 @@ const syncSelection = () => {
       (item) => item.status === "available" && hasPresetForAction(item.key),
     );
     const fallbackAction = actions.find((item) => hasPresetForAction(item.key));
-    selectedActionKey.value =
-      preferredAction?.key || fallbackAction?.key || actions[0]?.key || "";
+    selectedActionKey.value = preferredAction?.key || fallbackAction?.key || actions[0]?.key || "";
   }
 };
 
 const resetFormState = () => {
-  resetReactiveRecord(formState, buildDefaultFormState(selectedActionPreset.value?.fields || []));
-  resetReactiveRecord(formErrors, {});
+  const state = activeActionState.value;
+  resetReactiveRecord(
+    state.formState,
+    buildDefaultFormState(selectedActionPreset.value?.fields || []),
+  );
+  resetReactiveRecord(state.formErrors, {});
 };
 
 const jsonText = (value: any) => stringifyJson(value ?? null);
 
 const validateForm = () => {
+  const state = activeActionState.value;
   const parsed: Record<string, any> = {};
   let valid = true;
 
-  resetReactiveRecord(formErrors, {});
+  resetReactiveRecord(state.formErrors, {});
   (selectedActionPreset.value?.fields || []).forEach((field) => {
     try {
-      const normalizedValue = validateAndNormalizeField(field, formState[field.key]);
+      const normalizedValue = validateAndNormalizeField(field, state.formState[field.key]);
       if (normalizedValue !== undefined) {
         parsed[field.key] = normalizedValue;
       }
     } catch (error: any) {
-      formErrors[field.key] = error?.message || `请检查${field.label}`;
+      state.formErrors[field.key] = error?.message || `请检查${field.label}`;
       valid = false;
     }
   });
@@ -592,10 +706,11 @@ const focusActionByKey = (actionKey?: string | null, clearSearch = false) => {
 };
 
 const applyFormSeed = (seed: TemuFormSeedAction) => {
+  const state = activeActionState.value;
   const nextState = buildFormPatchState(selectedActionPreset.value?.fields || [], seed.patch);
   Object.entries(nextState).forEach(([key, value]) => {
-    formState[key] = value;
-    formErrors[key] = "";
+    state.formState[key] = value;
+    state.formErrors[key] = "";
   });
   ElMessage.success(`${seed.label} 已带入`);
 };
@@ -631,7 +746,22 @@ const loadCatalog = async () => {
   }
 };
 
+const refreshWorkspaceActions = async () => {
+  emit("refresh-tools");
+  await loadCatalog();
+};
+
 const runAction = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (!action || !selectedActionPreset.value) {
+    ElMessage.warning("当前动作暂未配置可执行表单");
+    return;
+  }
+  if (isToolAction(action) && !props.clientId) {
+    ElMessage.warning("请先选择在线客户端");
+    return;
+  }
   if (!props.profileId) {
     ElMessage.warning("请先选择在线客户端和执行环境");
     return;
@@ -640,8 +770,9 @@ const runAction = async () => {
     ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
     return;
   }
-  if (!selectedAction.value?.endpoint || !selectedActionPreset.value) {
-    ElMessage.warning("当前动作暂未配置可执行表单");
+
+  if (runningActionKey.value || props.toolBusy) {
+    ElMessage.warning("当前已有动作正在执行，请稍候");
     return;
   }
 
@@ -651,19 +782,26 @@ const runAction = async () => {
     return;
   }
 
-  running.value = true;
+  if (isToolAction(action)) {
+    emit("run-tool", {
+      featureKey: action.featureKey || action.key,
+      payload: selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    });
+    return;
+  }
+
+  runningActionKey.value = String(action.key || "").trim();
   try {
     const payload = selectedActionPreset.value.buildPayload(parsed, props.profileId);
-    const response = await executeTemuAction(selectedAction.value.endpoint, payload);
-    lastResult.value = response;
-    collapseNames.value = ["result"];
+    const response = await executeTemuAction(action.endpoint, payload);
+    state.lastResult = response;
     ElMessage[response?.success ? "success" : "warning"](
-      response?.message || `${selectedAction.value.label} 已返回结果`,
+      response?.message || `${action.label} 已返回结果`,
     );
   } catch (error: any) {
     ElMessage.error(extractRequestErrorMessage(error, "执行 Temu 动作失败"));
   } finally {
-    running.value = false;
+    runningActionKey.value = "";
   }
 };
 
@@ -679,14 +817,12 @@ watch(selectedCategoryKey, () => {
   syncSelection();
 });
 
-watch(selectedActionKey, () => {
-  resetFormState();
-});
-
 watch(
   () => props.profileId,
   () => {
-    lastResult.value = null;
+    Object.values(actionWorkspaceStates).forEach((state) => {
+      state.lastResult = null;
+    });
   },
 );
 
@@ -699,7 +835,7 @@ onMounted(() => {
 .temu-workspace {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .temu-workspace__toolbar,
@@ -712,11 +848,10 @@ onMounted(() => {
 }
 
 .temu-workspace__editor-desc,
-.temu-workspace__request-url,
 .temu-workspace__note,
 .temu-field__hint {
   margin-top: 4px;
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-regular);
   font-size: 12px;
   line-height: 1.65;
 }
@@ -729,36 +864,19 @@ onMounted(() => {
   gap: 8px;
 }
 
-.temu-workspace__action-shell,
-.temu-workspace__result {
-  padding: 9px 10px;
+.temu-workspace__action-shell {
+  padding: 12px;
   border-radius: 12px;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
-  box-shadow: var(--el-box-shadow-light);
 }
 
-.temu-insight-card {
-  padding: 8px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color);
-  background: var(--el-bg-color);
-}
-
-.temu-insight-card span {
-  display: block;
-  color: var(--el-text-color-secondary);
-  font-size: 11px;
-}
-
-.temu-insight-card strong {
-  display: block;
-  margin-top: 3px;
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.45;
-  word-break: break-word;
+.temu-workspace__result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .temu-workspace__section-title,
@@ -779,7 +897,7 @@ onMounted(() => {
 .temu-workspace__action-shell {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 14px;
 }
 
 .temu-workspace__counts {
@@ -798,8 +916,13 @@ onMounted(() => {
 .temu-workspace__feedback-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+}
+
+.temu-workspace__form-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .temu-workspace__helper-actions {
@@ -826,10 +949,10 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   min-width: max-content;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 999px;
-  border: 1px solid var(--el-border-color);
-  background: var(--el-fill-color-extra-light);
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-bg-color);
   color: var(--el-text-color-regular);
   cursor: pointer;
   transition:
@@ -847,8 +970,8 @@ onMounted(() => {
 .temu-category-tab em {
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-extra-light);
+  color: var(--el-text-color-regular);
   font-size: 10px;
   font-style: normal;
   line-height: 1.4;
@@ -860,13 +983,13 @@ onMounted(() => {
 }
 
 .temu-category-tab.is-active {
-  border-color: var(--el-color-primary-light-5);
-  background: var(--el-color-primary-light-9);
+  border-color: color-mix(in srgb, var(--el-color-primary) 35%, white);
+  background: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-bg-color));
   color: var(--el-color-primary);
 }
 
 .temu-category-tab.is-active em {
-  background: var(--el-bg-color);
+  background: color-mix(in srgb, var(--el-color-primary) 16%, white);
   color: var(--el-color-primary);
 }
 
@@ -877,14 +1000,12 @@ onMounted(() => {
   background: var(--el-bg-color);
   cursor: pointer;
   transition:
-    transform 0.18s ease,
     border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    background-color 0.18s ease;
 }
 
 .temu-function-button:hover,
 .temu-helper-chip:hover {
-  transform: translateY(-1px);
   border-color: var(--el-border-color-dark);
 }
 
@@ -896,15 +1017,13 @@ onMounted(() => {
 }
 
 .temu-function-button__meta,
-.temu-helper-chip__desc,
-.temu-workspace__result-meta {
-  color: var(--el-text-color-secondary);
-  font-size: 10px;
+.temu-helper-chip__desc {
+  color: var(--el-text-color-regular);
+  font-size: 11px;
   line-height: 1.55;
 }
 
-.temu-function-button.is-active .temu-function-button__label,
-.temu-helper-chip--next .temu-helper-chip__title {
+.temu-function-button.is-active .temu-function-button__label {
   color: var(--el-color-primary);
 }
 
@@ -913,21 +1032,17 @@ onMounted(() => {
   color: var(--el-color-primary);
 }
 
-.temu-workspace__action-grid,
-.temu-workspace__insights {
+.temu-workspace__action-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.temu-workspace__action-grid {
-  margin-top: 0;
+  gap: 10px;
 }
 
 .temu-function-button {
-  padding: 8px 9px;
+  padding: 10px 11px;
   border-radius: 10px;
   text-align: left;
+  background: var(--el-fill-color-blank);
 }
 
 .temu-function-button__head {
@@ -939,19 +1054,19 @@ onMounted(() => {
 
 .temu-function-button__status {
   flex-shrink: 0;
-  padding: 0 5px;
+  padding: 0 7px;
   border-radius: 999px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
+  background: var(--el-fill-color-extra-light);
+  color: var(--el-text-color-regular);
   font-size: 10px;
-  line-height: 18px;
+  line-height: 20px;
 }
 
 .temu-function-button__desc {
   display: -webkit-box;
-  margin-top: 5px;
+  margin-top: 7px;
   overflow: hidden;
-  color: var(--el-text-color-secondary);
+  color: var(--el-text-color-regular);
   font-size: 11px;
   line-height: 1.55;
   -webkit-box-orient: vertical;
@@ -961,13 +1076,17 @@ onMounted(() => {
 .temu-function-button__meta,
 .temu-helper-chip__desc {
   display: block;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 .temu-function-button.is-active {
-  border-color: var(--el-color-primary-light-5);
-  background: var(--el-color-primary-light-9);
-  box-shadow: inset 0 0 0 1px var(--el-color-primary-light-7);
+  border-color: color-mix(in srgb, var(--el-color-primary) 36%, white);
+  background: color-mix(in srgb, var(--el-color-primary) 8%, var(--el-bg-color));
+}
+
+.temu-function-button.is-active .temu-function-button__desc,
+.temu-function-button.is-active .temu-function-button__meta {
+  color: var(--el-text-color-primary);
 }
 
 .temu-function-button.is-disabled {
@@ -977,38 +1096,43 @@ onMounted(() => {
 
 .temu-workspace__editor,
 .temu-workspace__filter-empty {
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-light);
-  background: var(--el-fill-color-lighter);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
-.temu-workspace__helper-panel,
-.temu-workspace__next-panel {
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 12px;
-  background: var(--el-fill-color-extra-light);
-  border: 1px solid var(--el-border-color-light);
+.temu-workspace__editor::before,
+.temu-workspace__filter-empty::before {
+  content: "";
+  display: block;
+  margin-bottom: 14px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-workspace__editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.temu-workspace__helper-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .temu-helper-chip {
-  padding: 9px 11px;
-  border-radius: 12px;
+  padding: 9px 10px;
+  border-radius: 10px;
   max-width: 320px;
   text-align: left;
-}
-
-.temu-helper-chip--next {
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary-light-7);
+  background: var(--el-fill-color-extra-light);
 }
 
 .temu-workspace__form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .temu-field.is-wide {
@@ -1037,16 +1161,19 @@ onMounted(() => {
 }
 
 .temu-workspace__note {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: var(--el-fill-color-light);
+  padding-top: 10px;
+  border-top: 1px dashed var(--el-border-color);
+  border-radius: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-left: 0;
+  background: transparent;
 }
 
 .temu-workspace__runner {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 14px;
 }
 
 .temu-workspace__unsupported,
@@ -1056,55 +1183,35 @@ onMounted(() => {
   line-height: 1.75;
 }
 
-.temu-workspace__result-status,
-.temu-workspace__result-meta {
+.temu-workspace__result-title {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.temu-workspace__result-status {
   color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 700;
-}
-
-.temu-insight-card.is-accent {
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary-light-7);
-}
-
-.temu-insight-card.is-success {
-  background: var(--el-color-success-light-9);
-  border-color: var(--el-color-success-light-7);
-}
-
-.temu-insight-card.is-warning {
-  background: var(--el-color-warning-light-9);
-  border-color: var(--el-color-warning-light-7);
-}
-
-.temu-workspace__collapse {
-  margin-top: 12px;
 }
 
 .temu-workspace__json {
   margin: 0;
   padding: 12px;
   border-radius: 12px;
-  background: var(--el-fill-color-darker);
-  color: var(--el-color-white);
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-primary);
   font-size: 12px;
   line-height: 1.7;
   overflow: auto;
-  max-height: 360px;
+  max-height: 720px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family:
+    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 @media (max-width: 1280px) {
-  .temu-workspace__form,
-  .temu-workspace__action-grid,
-  .temu-workspace__insights {
+  .temu-workspace__action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1118,7 +1225,6 @@ onMounted(() => {
   }
 
   .temu-workspace__action-grid,
-  .temu-workspace__insights,
   .temu-workspace__form {
     grid-template-columns: minmax(0, 1fr);
   }

@@ -407,6 +407,12 @@ export interface AutoDispatchSchedulerRuntime {
   lastCycleFinishedAt?: string | null;
   lastHeartbeatAt?: string | null;
   lastError?: string | null;
+  lastDispatchAt?: string | null;
+  lastDispatchUserId?: string | null;
+  lastDispatchReason?: string | null;
+  lastDispatchMessage?: string | null;
+  lastDispatchSuccess?: boolean | null;
+  lastDispatchDispatched?: boolean | null;
 }
 
 export const getPsdSetAutoDispatchRuntime = () => {

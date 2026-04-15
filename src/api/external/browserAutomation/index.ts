@@ -152,6 +152,10 @@ export interface BrowserAutomationSmallFeatureFieldSchema {
   key: string;
   label: string;
   type?: string;
+  component?: string;
+  inputType?: string;
+  rows?: number;
+  switchLabel?: string;
   required?: boolean;
   requiredWhen?: Record<string, string | number | boolean>;
   placeholder?: string;

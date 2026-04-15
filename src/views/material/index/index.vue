@@ -628,22 +628,35 @@
 
         <el-dialog
           v-model="materialPublishConfigDialogVisible"
-          title="选择发布配置"
           fullscreen
           align-center
+          :destroy-on-close="false"
           class="material-publish-config-dialog"
           @close="handleCloseMaterialPublishConfigDialog"
         >
+          <template #header>
+            <div class="material-publish-config-dialog__header">
+              <div>
+                <div class="material-publish-config-dialog__header-title">创建发布任务</div>
+                <div class="material-publish-config-dialog__header-subtitle">
+                  已选择 {{ selectedMaterialsForPublishConfig.length }} 张素材，按发布配置创建任务
+                </div>
+              </div>
+            </div>
+          </template>
+
           <div
             v-loading="materialPublishConfigLoading"
             class="material-publish-config-dialog__body"
           >
-            <div class="material-publish-config-dialog__left">
-              <div class="material-publish-config-dialog__panel-head">
+            <div
+              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials"
+            >
+              <div class="material-publish-config-dialog__section-head">
                 <div>
-                  <div class="material-publish-config-dialog__panel-title">已选图片</div>
-                  <div class="material-publish-config-dialog__panel-desc">
-                    当前共 {{ selectedMaterialsForPublishConfig.length }} 张素材
+                  <div class="material-publish-config-dialog__section-title">已选图片</div>
+                  <div class="material-publish-config-dialog__section-desc">
+                    当前共 {{ selectedMaterialsForPublishConfig.length }} 张素材，可先确认格式与尺寸信息
                   </div>
                 </div>
                 <el-tag type="info" effect="plain"
@@ -651,37 +664,39 @@
                 >
               </div>
 
-              <div v-if="hasInvalidFormatMaterials" class="material-publish-config-dialog__warning">
-                所选素材中包含不符合格式要求的图片：{{
-                  invalidFormatMaterialsList.map((item) => item.name).join("、")
-                }}
-              </div>
+              <el-alert
+                v-if="hasInvalidFormatMaterials"
+                type="warning"
+                :closable="false"
+                show-icon
+                class="material-publish-config-dialog__warning"
+              >
+                <template #title>
+                  所选素材中有 {{ invalidFormatMaterialsList.length }} 张图片格式不符合要求：{{
+                    invalidFormatMaterialsList.map((item) => item.name).join("、")
+                  }}
+                </template>
+              </el-alert>
 
               <div class="material-publish-config-dialog__material-list">
                 <div
                   v-for="material in selectedMaterialsForPublishConfig"
                   :key="material.id"
                   class="material-publish-config-dialog__material-item"
+                  :class="{
+                    'material-publish-config-dialog__material-item--invalid':
+                      isMaterialFormatInvalid(material.id),
+                  }"
                 >
                   <div class="material-publish-config-dialog__material-preview">
                     <img
                       v-if="material.url"
                       :src="getFastPreviewImageUrl(material.url, { width: 220 })"
                       :alt="material.name || `素材${material.id}`"
+                      :title="material.name || `素材${material.id}`"
                     />
                     <div v-else class="material-publish-config-dialog__material-placeholder">
                       暂无预览
-                    </div>
-                  </div>
-                  <div class="material-publish-config-dialog__material-meta">
-                    <div class="material-publish-config-dialog__material-name">
-                      {{ material.name || `素材${material.id}` }}
-                    </div>
-                    <div class="material-publish-config-dialog__material-sub">
-                      {{ material.suffix || "未知格式" }}
-                      <span v-if="material.width && material.height">
-                        / {{ material.width }} × {{ material.height }}
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -694,33 +709,31 @@
               </div>
             </div>
 
-            <div class="material-publish-config-dialog__right">
-              <div class="material-publish-config-dialog__toolbar">
-                <div class="material-publish-config-dialog__stats">
-                  <div class="material-publish-config-dialog__stat">
-                    可选配置：{{ filteredMaterialPublishConfigs.length }}
-                  </div>
-                  <div class="material-publish-config-dialog__stat">
-                    已选配置：{{ materialPublishConfigSelectedIds.length }}
-                  </div>
-                  <div class="material-publish-config-dialog__stat">
-                    预计任务：{{ materialPublishConfigTaskCount }}
+            <div
+              class="material-publish-config-dialog__panel material-publish-config-dialog__panel--configs"
+            >
+              <div
+                class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs"
+              >
+                <div>
+                  <div class="material-publish-config-dialog__section-title">发布配置</div>
+                  <div class="material-publish-config-dialog__section-desc">
+                    仅展示已启用配置；未配置 PSD 模板的配置不可用
                   </div>
                 </div>
-                <div class="material-publish-config-dialog__actions">
+                <div class="material-publish-config-dialog__search">
                   <el-input
                     v-model="materialPublishConfigSearchText"
                     clearable
                     placeholder="搜索配置名称、任务类型或平台"
                     @input="materialPublishConfigCurrentPage = 1"
-                  />
-                  <el-tag
-                    v-if="materialPublishConfigSelectedNames.length"
-                    type="primary"
-                    effect="plain"
                   >
-                    {{ materialPublishConfigSelectedNames.join("、") }}
-                  </el-tag>
+                    <template #prefix>
+                      <el-icon>
+                        <Search />
+                      </el-icon>
+                    </template>
+                  </el-input>
                 </div>
               </div>
 
@@ -749,9 +762,19 @@
           <template #footer>
             <div class="material-publish-config-dialog__footer">
               <div class="material-publish-config-dialog__footer-info">
-                <span>素材 {{ ids.length }} 张</span>
-                <span>发布配置 {{ materialPublishConfigSelectedIds.length }} 个</span>
-                <span>预计生成 {{ materialPublishConfigTaskCount }} 条套图任务</span>
+                <span class="material-publish-config-dialog__footer-chip">素材 {{ ids.length }} 张</span>
+                <span class="material-publish-config-dialog__footer-chip">
+                  发布配置 {{ materialPublishConfigSelectedIds.length }} 个
+                </span>
+                <span class="material-publish-config-dialog__footer-chip">
+                  预计生成 {{ materialPublishConfigTaskCount }} 条套图任务
+                </span>
+                <span
+                  v-if="hasInvalidFormatMaterials"
+                  class="material-publish-config-dialog__footer-tip"
+                >
+                  当前存在格式不兼容素材，请处理后再开始制作
+                </span>
               </div>
               <div class="material-publish-config-dialog__footer-actions">
                 <el-button @click="handleCloseMaterialPublishConfigDialog">取消</el-button>
@@ -1573,39 +1596,43 @@
                   <div class="table-bilingual-cell">
                     <div
                       class="table-bilingual-cell__item"
-                      :class="{ 'bilingual-cell__item--empty': !row.name }"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.name }"
                       @click.stop="handleCopyText(row.name, '中文名称')"
                       role="button"
                     >
-                      <span class="bilingual-cell__label">中：</span>
+                      <span class="table-bilingual-cell__label">中：</span>
                       <el-tooltip
                         :content="row.name || '-'"
                         placement="top"
+                        effect="light"
+                        :show-after="500"
                         :disabled="!(row.name && row.name.length > 0)"
                         popper-class="text-cell-tooltip"
                       >
-                        <span class="bilingual-cell__content">{{ row.name || "-" }}</span>
+                        <span class="table-bilingual-cell__content">{{ row.name || "-" }}</span>
                       </el-tooltip>
-                      <el-icon v-if="row.name" class="bilingual-cell__icon">
+                      <el-icon v-if="row.name" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
                     <div
                       class="table-bilingual-cell__item"
-                      :class="{ 'bilingual-cell__item--empty': !row.nameEn }"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.nameEn }"
                       @click.stop="handleCopyText(row.nameEn, '英文名称')"
                       role="button"
                     >
-                      <span class="bilingual-cell__label">En:</span>
+                      <span class="table-bilingual-cell__label">En:</span>
                       <el-tooltip
                         :content="row.nameEn || '-'"
                         placement="top"
+                        effect="light"
+                        :show-after="500"
                         :disabled="!(row.nameEn && row.nameEn.length > 0)"
                         popper-class="text-cell-tooltip"
                       >
-                        <span class="bilingual-cell__content">{{ row.nameEn || "-" }}</span>
+                        <span class="table-bilingual-cell__content">{{ row.nameEn || "-" }}</span>
                       </el-tooltip>
-                      <el-icon v-if="row.nameEn" class="bilingual-cell__icon">
+                      <el-icon v-if="row.nameEn" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
@@ -1615,40 +1642,48 @@
                 <template #descriptionBilingualSlot="{ row }">
                   <div class="table-bilingual-cell">
                     <div
-                      class="table-bilingual-cell__item bilingual-cell__item--multiline"
-                      :class="{ 'bilingual-cell__item--empty': !row.description }"
+                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.description }"
                       @click.stop="handleCopyText(row.description, '中文描述')"
                       role="button"
                     >
-                      <span class="bilingual-cell__label">中：</span>
+                      <span class="table-bilingual-cell__label">中：</span>
                       <el-tooltip
                         :content="row.description || '-'"
                         placement="top"
+                        effect="light"
+                        :show-after="500"
                         :disabled="!(row.description && row.description.length > 0)"
                         popper-class="text-cell-tooltip"
                       >
-                        <span class="bilingual-cell__content">{{ row.description || "-" }}</span>
+                        <span class="table-bilingual-cell__content">
+                          {{ row.description || "-" }}
+                        </span>
                       </el-tooltip>
-                      <el-icon v-if="row.description" class="bilingual-cell__icon">
+                      <el-icon v-if="row.description" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
                     <div
-                      class="table-bilingual-cell__item bilingual-cell__item--multiline"
-                      :class="{ 'bilingual-cell__item--empty': !row.descriptionEn }"
+                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.descriptionEn }"
                       @click.stop="handleCopyText(row.descriptionEn, '英文描述')"
                       role="button"
                     >
-                      <span class="bilingual-cell__label">En:</span>
+                      <span class="table-bilingual-cell__label">En:</span>
                       <el-tooltip
                         :content="row.descriptionEn || '-'"
                         placement="top"
+                        effect="light"
+                        :show-after="500"
                         :disabled="!(row.descriptionEn && row.descriptionEn.length > 0)"
                         popper-class="text-cell-tooltip"
                       >
-                        <span class="bilingual-cell__content">{{ row.descriptionEn || "-" }}</span>
+                        <span class="table-bilingual-cell__content">
+                          {{ row.descriptionEn || "-" }}
+                        </span>
                       </el-tooltip>
-                      <el-icon v-if="row.descriptionEn" class="bilingual-cell__icon">
+                      <el-icon v-if="row.descriptionEn" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
@@ -1658,40 +1693,48 @@
                 <template #keywordsBilingualSlot="{ row }">
                   <div class="table-bilingual-cell">
                     <div
-                      class="table-bilingual-cell__item bilingual-cell__item--multiline"
-                      :class="{ 'bilingual-cell__item--empty': !row.keywords }"
+                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.keywords }"
                       @click.stop="handleCopyText(row.keywords, '中文关键词')"
                       role="button"
                     >
-                      <span class="bilingual-cell__label">中：</span>
+                      <span class="table-bilingual-cell__label">中：</span>
                       <el-tooltip
                         :content="row.keywords || '-'"
                         placement="top"
+                        effect="light"
+                        :show-after="500"
                         :disabled="!(row.keywords && row.keywords.length > 0)"
                         popper-class="text-cell-tooltip"
                       >
-                        <span class="bilingual-cell__content">{{ row.keywords || "-" }}</span>
+                        <span class="table-bilingual-cell__content">
+                          {{ row.keywords || "-" }}
+                        </span>
                       </el-tooltip>
-                      <el-icon v-if="row.keywords" class="bilingual-cell__icon">
+                      <el-icon v-if="row.keywords" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
                     <div
-                      class="table-bilingual-cell__item bilingual-cell__item--multiline"
-                      :class="{ 'bilingual-cell__item--empty': !row.keywordsEn }"
+                      class="table-bilingual-cell__item table-bilingual-cell__item--multiline"
+                      :class="{ 'table-bilingual-cell__item--empty': !row.keywordsEn }"
                       @click.stop="handleCopyText(row.keywordsEn, '英文关键词')"
                       role="button"
                     >
-                      <span class="bilingual-cell__label">En:</span>
+                      <span class="table-bilingual-cell__label">En:</span>
                       <el-tooltip
                         :content="row.keywordsEn || '-'"
                         placement="top"
+                        effect="light"
+                        :show-after="500"
                         :disabled="!(row.keywordsEn && row.keywordsEn.length > 0)"
                         popper-class="text-cell-tooltip"
                       >
-                        <span class="bilingual-cell__content">{{ row.keywordsEn || "-" }}</span>
+                        <span class="table-bilingual-cell__content">
+                          {{ row.keywordsEn || "-" }}
+                        </span>
                       </el-tooltip>
-                      <el-icon v-if="row.keywordsEn" class="bilingual-cell__icon">
+                      <el-icon v-if="row.keywordsEn" class="table-bilingual-cell__icon">
                         <DocumentCopy />
                       </el-icon>
                     </div>
@@ -3693,7 +3736,6 @@ const filteredMaterialPublishConfigs = computed(() => {
   const keyword = materialPublishConfigSearchText.value.trim().toLowerCase();
   return materialPublishConfigOptions.value
     .filter((item: any) => item?.isActive !== false)
-    .filter((item: any) => String(item?.templateBinding?.psdTemplateId || "").trim())
     .filter((item: any) => {
       if (!keyword) {
         return true;
@@ -3717,11 +3759,6 @@ const filteredMaterialPublishConfigs = computed(() => {
       );
     });
 });
-const materialPublishConfigSelectedNames = computed(() =>
-  materialPublishConfigSelectedIds.value
-    .map((id) => materialPublishConfigOptions.value.find((item: any) => item.id === id)?.name)
-    .filter(Boolean),
-);
 const materialPublishConfigDataSource = computed(() => {
   const start = (materialPublishConfigCurrentPage.value - 1) * materialPublishConfigPageSize.value;
   const end = start + materialPublishConfigPageSize.value;
@@ -3735,11 +3772,14 @@ const materialPublishConfigGridOptions = computed(() => ({
   height: 520,
   loading: false,
   rowConfig: { isHover: true, keyField: "id" },
+  rowClassName: ({ row }: any) =>
+    isMaterialPublishConfigUsable(row) ? "" : "material-publish-config-dialog__row--disabled",
   columnConfig: { resizable: true },
   checkboxConfig: {
     checkRowKeys: materialPublishConfigSelectedIds.value,
     highlight: true,
     trigger: "row" as const,
+    checkMethod: ({ row }: any) => isMaterialPublishConfigUsable(row),
   },
   columns: [
     { type: "checkbox" as any, width: 60, align: "center" as any },
@@ -3754,6 +3794,13 @@ const materialPublishConfigGridOptions = computed(() => ({
         ),
     },
     { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
+    {
+      field: "templateBindingStatus",
+      title: "状态",
+      width: 150,
+      formatter: ({ row }: any) =>
+        isMaterialPublishConfigUsable(row) ? "可用" : "未配置PSD模板，无法使用",
+    },
     { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
   ],
 }));
@@ -4631,7 +4678,14 @@ function handleCloseMaterialPublishConfigDialog() {
   materialPublishConfigCurrentPage.value = 1;
 }
 
+function isMaterialPublishConfigUsable(row: any) {
+  return Boolean(String(row?.templateBinding?.psdTemplateId || "").trim());
+}
+
 function handleMaterialPublishConfigCheckboxChange({ checked, row }) {
+  if (!isMaterialPublishConfigUsable(row)) {
+    return;
+  }
   if (checked) {
     if (!materialPublishConfigSelectedIds.value.includes(row.id)) {
       materialPublishConfigSelectedIds.value.push(row.id);
@@ -4644,7 +4698,9 @@ function handleMaterialPublishConfigCheckboxChange({ checked, row }) {
 }
 
 function handleMaterialPublishConfigCheckboxAllChange({ checked }) {
-  const currentPageIds = materialPublishConfigDataSource.value.map((item: any) => item.id);
+  const currentPageIds = materialPublishConfigDataSource.value
+    .filter((item: any) => isMaterialPublishConfigUsable(item))
+    .map((item: any) => item.id);
   if (checked) {
     currentPageIds.forEach((id: string) => {
       if (!materialPublishConfigSelectedIds.value.includes(id)) {
@@ -6524,168 +6580,6 @@ async function handleUrlUpload() {
   }
 }
 
-/* PC端优化 */
-.text-cell {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  background: rgba(64, 158, 255, 0.04);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    box-shadow 0.2s;
-  min-height: 28px;
-  position: relative;
-}
-
-.text-cell:hover {
-  background: rgba(64, 158, 255, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.25);
-}
-
-.text-cell--empty {
-  background: transparent;
-  cursor: default;
-  color: var(--el-text-color-placeholder);
-  box-shadow: none;
-}
-
-.text-cell__content {
-  flex: 1;
-  min-width: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-all;
-  font-size: 13px;
-  line-height: 1.3;
-  color: inherit;
-}
-
-.text-cell--long .text-cell__content {
-  -webkit-line-clamp: 3;
-}
-
-.text-cell__icon {
-  flex-shrink: 0;
-  font-size: 16px;
-  color: var(--el-color-primary);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.text-cell:not(.text-cell--empty):hover .text-cell__icon {
-  opacity: 1;
-}
-
-.text-cell--empty .text-cell__icon {
-  display: none;
-}
-
-.text-cell--empty .text-cell__content {
-  -webkit-line-clamp: 1;
-  color: var(--el-text-color-placeholder);
-}
-
-/* 双语单元格样式 */
-.bilingual-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 4px 0;
-}
-
-.bilingual-cell__item {
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  background: rgba(64, 158, 255, 0.04);
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    box-shadow 0.2s;
-  min-height: 26px;
-  position: relative;
-}
-
-.bilingual-cell__item:hover {
-  background: rgba(64, 158, 255, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(64, 158, 255, 0.25);
-}
-
-.bilingual-cell__item--en {
-  background: rgba(103, 194, 58, 0.04);
-}
-
-.bilingual-cell__item--en:hover {
-  background: rgba(103, 194, 58, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(103, 194, 58, 0.25);
-}
-
-.bilingual-cell__item--empty {
-  background: transparent;
-  cursor: default;
-  color: var(--el-text-color-placeholder);
-  box-shadow: none;
-}
-
-.bilingual-cell__label {
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--el-color-primary);
-  padding-top: 1px;
-  opacity: 0.8;
-}
-
-.bilingual-cell__item--en .bilingual-cell__label {
-  color: var(--el-color-success);
-}
-
-.bilingual-cell__content {
-  flex: 1;
-  min-width: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-all;
-  font-size: 13px;
-  line-height: 1.4;
-  color: inherit;
-}
-
-.bilingual-cell__icon {
-  flex-shrink: 0;
-  font-size: 16px;
-  color: var(--el-color-primary);
-  opacity: 0;
-  transition: opacity 0.2s;
-  margin-top: 2px;
-}
-
-.bilingual-cell__item--en .bilingual-cell__icon {
-  color: var(--el-color-success);
-}
-
-.bilingual-cell__item:not(.bilingual-cell__item--empty):hover .bilingual-cell__icon {
-  opacity: 1;
-}
-
-.bilingual-cell__item--empty .bilingual-cell__icon {
-  display: none;
-}
-
-.bilingual-cell__item--empty .bilingual-cell__content {
-  -webkit-line-clamp: 1;
-  color: var(--el-text-color-placeholder);
-}
-
 .material-dnd-grid :deep(.vxe-table--body tbody tr.is-dragging-row) {
   opacity: 0.6 !important;
   background: var(--el-color-primary-light-9) !important;
@@ -7302,99 +7196,139 @@ h1 {
     margin: 0;
     display: flex;
     flex-direction: column;
+    background: var(--el-dialog-bg-color, var(--el-bg-color));
+  }
+
+  :deep(.el-dialog__header) {
+    margin-right: 0;
+    padding: 16px 16px 0;
   }
 
   :deep(.el-dialog__body) {
     flex: 1;
     overflow: hidden;
-    padding: 0;
-    background: #f8fafc;
+    padding: 0 16px 16px;
+    background: var(--el-bg-color-page);
   }
 
   :deep(.el-dialog__footer) {
     flex-shrink: 0;
-    padding: 14px 20px 18px;
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
-    background: #fff;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    background: var(--el-dialog-bg-color, var(--el-bg-color));
   }
+}
+
+.material-publish-config-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.material-publish-config-dialog__header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.material-publish-config-dialog__header-subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
 .material-publish-config-dialog__body {
   display: grid;
-  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-  gap: 16px;
-  height: calc(100vh - 150px);
-  padding: 18px;
+  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+  gap: 12px;
+  height: 100%;
+  min-height: calc(100vh - 144px);
   box-sizing: border-box;
 }
 
-.material-publish-config-dialog__left,
-.material-publish-config-dialog__right {
+.material-publish-config-dialog__panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
   min-height: 0;
-  padding: 16px;
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.06);
+  padding: 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+  overflow: hidden;
 }
 
-.material-publish-config-dialog__panel-head,
-.material-publish-config-dialog__toolbar {
+.material-publish-config-dialog__section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
-.material-publish-config-dialog__panel-title {
-  color: #111827;
-  font-size: 16px;
+.material-publish-config-dialog__section-head--configs {
+  align-items: flex-end;
+}
+
+.material-publish-config-dialog__section-title {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
   font-weight: 600;
 }
 
-.material-publish-config-dialog__panel-desc {
+.material-publish-config-dialog__section-desc {
   margin-top: 4px;
-  color: #64748b;
-  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .material-publish-config-dialog__warning {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(248, 113, 113, 0.08);
-  color: #b91c1c;
-  font-size: 13px;
+  margin: 0;
+}
+
+.material-publish-config-dialog__warning :deep(.el-alert__title) {
   line-height: 1.6;
 }
 
 .material-publish-config-dialog__material-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 10px;
   min-height: 0;
   overflow: auto;
   padding-right: 4px;
+  align-content: start;
 }
 
 .material-publish-config-dialog__material-item {
-  display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
-  gap: 12px;
+  display: flex;
   align-items: center;
-  padding: 10px;
-  border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  justify-content: center;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--el-border-color-lighter);
+  overflow: hidden;
+}
+
+.material-publish-config-dialog__material-item--invalid {
+  border-color: var(--el-color-danger);
+  background: transparent;
 }
 
 .material-publish-config-dialog__material-preview {
-  width: 84px;
-  height: 84px;
+  width: 100%;
+  aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 12px;
-  background: #e2e8f0;
+  border-radius: 7px;
+  background: var(--el-fill-color-lighter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   img {
     width: 100%;
@@ -7410,57 +7344,46 @@ h1 {
   justify-content: center;
   width: 100%;
   height: 100%;
-  color: #94a3b8;
+  padding: 0 8px;
+  text-align: center;
+  color: var(--el-text-color-placeholder);
   font-size: 12px;
 }
 
-.material-publish-config-dialog__material-meta {
-  min-width: 0;
+.material-publish-config-dialog__search {
+  width: min(320px, 100%);
 }
 
-.material-publish-config-dialog__material-name {
-  color: #111827;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.material-publish-config-dialog__material-sub {
-  margin-top: 6px;
-  color: #64748b;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.material-publish-config-dialog__stats {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.material-publish-config-dialog__stat {
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.24);
-  color: #334155;
-  font-size: 13px;
-}
-
-.material-publish-config-dialog__actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  width: min(360px, 100%);
-}
-
-.material-publish-config-dialog__actions :deep(.el-input) {
+.material-publish-config-dialog__search :deep(.el-input) {
   width: 100%;
 }
 
 .material-publish-config-dialog__table {
   flex: 1;
   min-height: 0;
+}
+
+.material-publish-config-dialog__table
+  :deep(.material-publish-config-dialog__row--disabled .vxe-body--column) {
+  background: var(--el-fill-color-light);
+}
+
+.material-publish-config-dialog__table :deep(.material-publish-config-dialog__row--disabled .vxe-cell),
+.material-publish-config-dialog__table
+  :deep(.material-publish-config-dialog__row--disabled .vxe-cell--wrapper),
+.material-publish-config-dialog__table
+  :deep(.material-publish-config-dialog__row--disabled .vxe-cell--label) {
+  opacity: 0.58;
+}
+
+.material-publish-config-dialog__table
+  :deep(.material-publish-config-dialog__row--disabled:hover .vxe-body--column) {
+  background: var(--el-fill-color);
+}
+
+.material-publish-config-dialog__table
+  :deep(.material-publish-config-dialog__row--disabled .vxe-cell--checkbox.is--disabled) {
+  opacity: 0.5;
 }
 
 .material-publish-config-dialog__pagination,
@@ -7471,6 +7394,8 @@ h1 {
 
 .material-publish-config-dialog__pagination {
   justify-content: flex-end;
+  padding-top: 2px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .material-publish-config-dialog__footer {
@@ -7481,35 +7406,87 @@ h1 {
 
 .material-publish-config-dialog__footer-info {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
-  color: #64748b;
-  font-size: 13px;
+  min-width: 0;
+}
+
+.material-publish-config-dialog__footer-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+}
+
+.material-publish-config-dialog__footer-tip {
+  font-size: 12px;
+  color: var(--el-color-danger);
 }
 
 .material-publish-config-dialog__footer-actions {
   gap: 10px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 960px) {
+  .material-publish-config-dialog {
+    :deep(.el-dialog__body) {
+      overflow: auto;
+    }
+  }
+
   .material-publish-config-dialog__body {
     grid-template-columns: 1fr;
     height: auto;
+    min-height: auto;
   }
 
-  .material-publish-config-dialog__toolbar,
+  .material-publish-config-dialog__section-head--configs,
   .material-publish-config-dialog__footer {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .material-publish-config-dialog__actions {
+  .material-publish-config-dialog__search {
     width: 100%;
-    align-items: stretch;
   }
 
   .material-publish-config-dialog__footer-actions {
     justify-content: flex-end;
+  }
+
+  .material-publish-config-dialog__material-list {
+    max-height: 42vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .material-publish-config-dialog {
+    :deep(.el-dialog__header) {
+      padding: 12px 12px 0;
+    }
+
+    :deep(.el-dialog__body) {
+      padding: 0 12px 12px;
+    }
+
+    :deep(.el-dialog__footer) {
+      padding: 10px 12px 12px;
+    }
+  }
+
+  .material-publish-config-dialog__material-item {
+    min-width: 0;
+  }
+
+  .material-publish-config-dialog__material-preview {
+    width: 100%;
   }
 }
 </style>
@@ -8396,6 +8373,19 @@ h1 {
 .material-index-page {
   gap: 10px;
   padding: 8px 0 0;
+  --material-copy-hover-bg: var(--el-fill-color-light);
+  --material-copy-hover-border: var(--el-border-color);
+  --material-copy-hover-text: var(--el-color-primary);
+  --material-copy-hover-label: var(--el-text-color-primary);
+  --material-copy-hover-icon: var(--el-color-primary);
+}
+
+:global(html.dark) .material-index-page {
+  --material-copy-hover-bg: var(--el-fill-color);
+  --material-copy-hover-border: var(--el-border-color-light);
+  --material-copy-hover-text: var(--el-color-primary-light-3);
+  --material-copy-hover-label: var(--el-text-color-primary);
+  --material-copy-hover-icon: var(--el-color-primary-light-3);
 }
 
 .material-index-search-form {
@@ -8503,6 +8493,52 @@ h1 {
 .material-index-table-panel__body {
   padding: 0;
   overflow: hidden;
+}
+
+.material-index-page :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty)) {
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.material-index-page :deep(.table-bilingual-cell__content),
+.material-index-page :deep(.table-bilingual-cell__label),
+.material-index-page :deep(.table-bilingual-cell__icon) {
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.material-index-page
+  :deep(.table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover) {
+  background: var(--material-copy-hover-bg);
+  box-shadow: inset 0 0 0 1px var(--material-copy-hover-border);
+}
+
+.material-index-page
+  :deep(
+    .table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover
+      .table-bilingual-cell__content
+  ) {
+  color: var(--material-copy-hover-text);
+}
+
+.material-index-page
+  :deep(
+    .table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover
+      .table-bilingual-cell__label
+  ) {
+  color: var(--material-copy-hover-label);
+}
+
+.material-index-page
+  :deep(
+    .table-bilingual-cell__item:not(.table-bilingual-cell__item--empty):hover
+      .table-bilingual-cell__icon
+  ) {
+  color: var(--material-copy-hover-icon);
 }
 
 .material-index-pagination {

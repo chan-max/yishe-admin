@@ -56,6 +56,9 @@ export interface TemuIndexedCatalogAction {
   groupLabel: string;
 }
 
+export const TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY =
+  "temu-publish-detail-request-capture";
+
 export const REGION_LABELS: Record<TemuRegionKey, string> = {
   global: "全球站",
   us: "美国站",
@@ -65,6 +68,7 @@ export const REGION_LABELS: Record<TemuRegionKey, string> = {
 
 export const QUICK_ACTION_KEYS = [
   "goods.list",
+  "goods.detail",
   "activity.list",
   "finance.history",
   "goods.adjust-price.list",
@@ -109,11 +113,25 @@ const buildProfileRegionPayload = (parsed: Record<string, any>, profileId: strin
 });
 
 export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
+  [TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY]: {
+    fields: [
+      {
+        key: "spuId",
+        label: "SPU ID",
+        type: "text",
+        required: true,
+        placeholder: "请输入 spuId",
+        hint: "会进入商品发布详情页，自动点击“提交”，并返回商品发布模板的 product/edit 请求参数。",
+      },
+    ],
+    note: "当前动作会在客户端浏览器环境中执行，用于根据商品 spuId 获取商品发布模板请求参数。",
+    buildPayload: buildProfilePayload,
+  },
   "goods.list": {
     fields: [
       createRegionField(),
       { key: "page", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 50 },
+      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 20 },
       { key: "skcTopStatus", label: "在售状态", type: "number", placeholder: "例如 100" },
       {
         key: "skcIdList",
@@ -125,6 +143,22 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "skuIdList", label: "SKU ID 列表", type: "array-number" },
       { key: "catIdList", label: "类目 ID 列表", type: "array-number" },
     ],
+    note: "默认查询前 20 条，可按 SKC / SPU / SKU / 类目组合筛选。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "goods.detail": {
+    fields: [
+      createRegionField(),
+      {
+        key: "productId",
+        label: "SPU ID",
+        type: "number",
+        required: true,
+        placeholder: "请输入 productId / SPU ID",
+        hint: "接口地址为 /visage-agent-seller/product/query，按 productId 查询。",
+      },
+    ],
+    note: "适合在拿到 SPU 之后，继续查看单个商品的完整详情原始返回。",
     buildPayload: buildProfileRegionPayload,
   },
   "goods.lifecycle": {

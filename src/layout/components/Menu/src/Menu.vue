@@ -757,6 +757,7 @@ $prefix-cls: #{$namespace}-menu;
     line-height: 1.1;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 2px 0;
   }
 
   &__status-indicator {

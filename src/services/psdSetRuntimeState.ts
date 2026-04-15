@@ -120,13 +120,8 @@ const scheduleActiveSummaryRefresh = (delay = 160) => {
 }
 
 const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
-  const autoSchedulingEnabled =
-    typeof event?.autoDispatchEnabled === 'boolean'
-      ? event.autoDispatchEnabled
-      : event?.autoSchedulingEnabled
-
-  if (typeof autoSchedulingEnabled === 'boolean') {
-    userAutoSchedulingEnabled.value = autoSchedulingEnabled
+  if (typeof event?.autoSchedulingEnabled === 'boolean') {
+    userAutoSchedulingEnabled.value = event.autoSchedulingEnabled
   }
 }
 

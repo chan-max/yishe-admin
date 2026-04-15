@@ -1,12 +1,56 @@
 import type { PlatformHandler } from './types'
-import { normalizeTemuCategoryPath } from './shared'
+
+function isPlainRecord(value: unknown): value is Record<string, any> {
+  return !!value && Object.prototype.toString.call(value) === '[object Object]'
+}
+
+function toSerializablePlainObject(value: unknown): Record<string, any> | null {
+  if (!isPlainRecord(value)) {
+    return null
+  }
+
+  try {
+    const normalized = JSON.parse(JSON.stringify(value))
+    return isPlainRecord(normalized) ? normalized : null
+  } catch {
+    return null
+  }
+}
+
+function parseJsObjectLiteral(raw: string): Record<string, any> | null {
+  try {
+    const evaluated = new Function(`"use strict"; return (${raw});`)()
+    return toSerializablePlainObject(evaluated)
+  } catch {
+    return null
+  }
+}
+
+function normalizeTemuProductTemplate(input: unknown): Record<string, any> | null {
+  if (isPlainRecord(input)) {
+    return toSerializablePlainObject(input)
+  }
+
+  if (!input || typeof input !== 'string') {
+    return null
+  }
+
+  const raw = input.trim()
+  if (!raw) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(raw)
+    return toSerializablePlainObject(parsed)
+  } catch {
+    return parseJsObjectLiteral(raw)
+  }
+}
 
 function pickTemuConfigFields(configData: Record<string, any> = {}) {
   return {
-    account: configData?.account,
-    password: configData?.password,
-    needLogin: configData?.needLogin,
-    categoryPath: configData?.categoryPath
+    productTemplate: configData?.productTemplate
   }
 }
 
@@ -15,24 +59,17 @@ export const temuHandler: PlatformHandler = {
 
   validateConfig(configData) {
     const errors: string[] = []
-    const account = typeof configData?.account === 'string' ? configData.account.trim() : ''
-    const password = typeof configData?.password === 'string' ? configData.password.trim() : ''
-    const needLogin = configData?.needLogin === true
-    const rawCategoryPath = configData?.categoryPath
-    const normalizedCategoryPath = normalizeTemuCategoryPath(rawCategoryPath)
+    const rawProductTemplate = configData?.productTemplate
+    const hasProductTemplate =
+      rawProductTemplate !== undefined && rawProductTemplate !== null && String(rawProductTemplate).trim()
+    const normalizedProductTemplate = normalizeTemuProductTemplate(rawProductTemplate)
 
-    if (needLogin && !account) {
-      errors.push('开启登录后必须填写账号')
+    if (!hasProductTemplate) {
+      errors.push('商品模板不能为空')
     }
 
-    if (needLogin && !password) {
-      errors.push('开启登录后必须填写密码')
-    }
-
-    if (rawCategoryPath !== undefined && rawCategoryPath !== null && String(rawCategoryPath).trim()) {
-      if (normalizedCategoryPath.length === 0) {
-        errors.push('类目路径格式无效，请输入 JSON 数组或逐行填写类目')
-      }
+    if (hasProductTemplate && !normalizedProductTemplate) {
+      errors.push('商品模板格式无效，请输入合法 JSON 或 JS 对象')
     }
 
     return {
@@ -43,17 +80,12 @@ export const temuHandler: PlatformHandler = {
 
   formatConfigForSubmit(configData) {
     const formatted = pickTemuConfigFields(configData)
-    if (formatted.account !== undefined && formatted.account !== null) {
-      formatted.account = String(formatted.account).trim()
-    }
-    if (formatted.password !== undefined && formatted.password !== null) {
-      formatted.password = String(formatted.password).trim()
-    }
-    formatted.needLogin = formatted.needLogin === true
-    formatted.categoryPath = normalizeTemuCategoryPath(formatted.categoryPath)
+    const normalizedProductTemplate = normalizeTemuProductTemplate(formatted.productTemplate)
 
-    if (!formatted.categoryPath.length) {
-      delete formatted.categoryPath
+    if (normalizedProductTemplate) {
+      formatted.productTemplate = normalizedProductTemplate
+    } else {
+      delete formatted.productTemplate
     }
 
     return formatted
@@ -61,17 +93,9 @@ export const temuHandler: PlatformHandler = {
 
   formatConfigForEdit(configData) {
     const formatted = pickTemuConfigFields(configData)
-
-    if (formatted.account !== undefined && formatted.account !== null) {
-      formatted.account = String(formatted.account).trim()
-    }
-    if (formatted.password !== undefined && formatted.password !== null) {
-      formatted.password = String(formatted.password).trim()
-    }
-    formatted.needLogin = formatted.needLogin === true
-    formatted.categoryPath = (() => {
-      const nextValue = normalizeTemuCategoryPath(formatted.categoryPath)
-      return nextValue.length > 0 ? JSON.stringify(nextValue) : ''
+    formatted.productTemplate = (() => {
+      const nextValue = normalizeTemuProductTemplate(formatted.productTemplate)
+      return nextValue ? JSON.stringify(nextValue, null, 2) : ''
     })()
 
     return formatted
@@ -79,9 +103,9 @@ export const temuHandler: PlatformHandler = {
 
   getHints() {
     return [
-      '如需发布前自动处理登录，请开启“是否需要登录”并填写账号密码',
-      '类目路径建议直接填写 JSON 数组，例如：["厨房","毛巾"]',
-      '发布执行时会按数组顺序逐列匹配类目文字并点击'
+      'Temu 当前仅使用商品模板配置，登录与类目路径已暂时隐藏',
+      '商品模板支持 JSON 和合法 JS 对象字面量，保存后会统一转成标准对象',
+      '浏览器自动化侧的页面打开与后续动作暂未接入到这里'
     ]
   }
 }

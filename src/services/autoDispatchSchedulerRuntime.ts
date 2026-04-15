@@ -68,5 +68,15 @@ export const resolveAutoDispatchSchedulerMeta = (
     parts.push(`最近心跳 ${heartbeatText}`);
   }
 
+  const lastDispatchText = formatRuntimeTime(runtime.lastDispatchAt);
+  const lastDispatchMessage = String(runtime.lastDispatchMessage || "").trim();
+  if (lastDispatchMessage) {
+    parts.push(
+      lastDispatchText
+        ? `最近结果 ${lastDispatchText} ${lastDispatchMessage}`
+        : `最近结果 ${lastDispatchMessage}`,
+    );
+  }
+
   return parts.join(" · ");
 };

@@ -21,6 +21,319 @@ export const stringifyJson = (value: any) => {
   }
 };
 
+export type TemuWorkspaceAvailabilityState =
+  | "missing"
+  | "checking"
+  | "expired"
+  | "incomplete"
+  | "pending"
+  | "limited"
+  | "ready";
+
+export interface TemuWorkspaceAvailabilitySummary {
+  state: TemuWorkspaceAvailabilityState;
+  tone: "success" | "warning" | "danger" | "muted";
+  label: string;
+  detail: string;
+  accountText: string;
+  mallText: string;
+  identityText: string;
+  cookieSummary: string;
+  validationStatus: string;
+  validationLabel: string;
+  userInfoStatus: string;
+  userInfoLabel: string;
+  hasUsableSession: boolean;
+  hasGlobalCookie: boolean;
+  hasRegionalCookies: boolean;
+  hasIdentity: boolean;
+  hasMall: boolean;
+  canUse: boolean;
+  shouldAutoValidate: boolean;
+}
+
+export const resolveTemuValidationLabel = (validation?: Record<string, any>) => {
+  const status = String(validation?.status || "").trim();
+  if (status === "valid") return "有效";
+  if (status === "invalid") return "失效";
+  if (status === "fresh") return "待校验";
+  if (status === "unsupported") return "暂不支持";
+  return "未校验";
+};
+
+export const resolveTemuValidationTagType = (validation?: Record<string, any>) => {
+  const status = String(validation?.status || "").trim();
+  if (status === "valid") return "success";
+  if (status === "invalid") return "danger";
+  if (status === "fresh") return "warning";
+  return "info";
+};
+
+export const resolveTemuUserInfoLabel = (userInfoValue?: Record<string, any>) => {
+  const status = String(userInfoValue?.status || "").trim();
+  if (status === "success") return "已获取";
+  if (status === "failed") return "获取失败";
+  return "未获取";
+};
+
+const buildTemuAccountText = (
+  userInfo: Record<string, any>,
+  record: Record<string, any>,
+  fallbackAccountText = "",
+) => {
+  const accountId = String(
+    userInfo.accountId || record.accountId || fallbackAccountText || "",
+  ).trim();
+  const accountType = String(userInfo.accountType || record.accountType || "").trim();
+  return [accountId, accountType].filter(Boolean).join(" / ") || "-";
+};
+
+const buildTemuIdentityText = (accountText: string, mallText: string) => {
+  const parts = [
+    accountText && accountText !== "-" ? accountText : "",
+    mallText && mallText !== "未设置" ? mallText : "",
+  ].filter(Boolean);
+
+  return parts.join(" · ") || "身份信息待补全";
+};
+
+export const resolveTemuWorkspaceAvailability = (
+  sessionRecord?: Record<string, any> | null,
+  options: {
+    platformAccountText?: string;
+    isValidating?: boolean;
+  } = {},
+): TemuWorkspaceAvailabilitySummary => {
+  const record = asPlainObject(sessionRecord);
+  const session = asPlainObject(record.session);
+  const validation = asPlainObject(record.validation);
+  const userInfo = asPlainObject(record.userInfo);
+  const globalCookieCount = countObjectKeys(session?.global?.cookies);
+  const usCookieCount = countObjectKeys(session?.us?.cookies);
+  const euCookieCount = countObjectKeys(session?.eu?.cookies);
+  const hasGlobalCookie = globalCookieCount > 0;
+  const hasRegionalCookies = usCookieCount > 0 && euCookieCount > 0;
+  const hasUsableSession = hasGlobalCookie;
+  const validationStatus = String(validation.status || "").trim();
+  const validationLabel = resolveTemuValidationLabel(validation);
+  const userInfoStatus = String(userInfo.status || "").trim() || "missing";
+  const userInfoLabel = resolveTemuUserInfoLabel(userInfo);
+  const accountText = buildTemuAccountText(
+    userInfo,
+    record,
+    String(options.platformAccountText || "").trim(),
+  );
+  const mallId = String(userInfo.mallId || record.mallId || "").trim();
+  const mallName = String(userInfo.mallName || record.mallName || "").trim();
+  const mallText = mallName || mallId || "未设置";
+  const identityText = buildTemuIdentityText(accountText, mallText);
+  const cookieSummary = `G${globalCookieCount} / U${usCookieCount} / E${euCookieCount}`;
+  const hasIdentity = userInfoStatus === "success" || accountText !== "-";
+  const hasMall = !!mallId;
+  const missingInfoTexts = [
+    hasIdentity ? "" : "账号",
+    hasMall ? "" : "店铺",
+    userInfoStatus === "failed" ? "身份同步" : "",
+  ].filter(Boolean);
+  const missingRegions = [usCookieCount ? "" : "美区", euCookieCount ? "" : "欧区"].filter(Boolean);
+  const shouldAutoValidate =
+    hasUsableSession &&
+    !options.isValidating &&
+    !["valid", "invalid", "unsupported"].includes(validationStatus);
+
+  if (options.isValidating && hasUsableSession) {
+    return {
+      state: "checking",
+      tone: "warning",
+      label: "校验中",
+      detail: "正在确认当前环境是否可用，请稍候。",
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
+  if (!hasUsableSession) {
+    return {
+      state: "missing",
+      tone: "danger",
+      label: "不可用",
+      detail: "当前环境还没有可用会话，请先采集 Temu 会话。",
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
+  if (validationStatus === "invalid") {
+    return {
+      state: "expired",
+      tone: "danger",
+      label: "已过期",
+      detail: String(validation.message || "当前会话已失效，建议重新采集。"),
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
+  if (userInfoStatus === "failed" || missingInfoTexts.length) {
+    return {
+      state: "incomplete",
+      tone: "warning",
+      label: "信息待补全",
+      detail: missingInfoTexts.length
+        ? `当前还缺少 ${missingInfoTexts.join(" / ")} 信息，建议同步身份信息后再使用。`
+        : String(userInfo.message || "身份信息还未同步成功，请重新获取。"),
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
+  if (!validationStatus || validationStatus === "fresh") {
+    return {
+      state: "pending",
+      tone: "warning",
+      label: "待确认",
+      detail: String(validation.message || "会话已获取，正在等待可用性校验。"),
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
+  if (validationStatus === "unsupported") {
+    return {
+      state: "limited",
+      tone: "warning",
+      label: "待人工确认",
+      detail: "当前环境暂不支持自动校验，请以实际执行结果为准。",
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
+  if (!hasRegionalCookies) {
+    return {
+      state: "limited",
+      tone: "warning",
+      label: "部分可用",
+      detail: `${missingRegions.join(" / ")} 会话不完整，部分区域能力可能受限。`,
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: true,
+      shouldAutoValidate,
+    };
+  }
+
+  return {
+    state: "ready",
+    tone: "success",
+    label: "可用",
+    detail: "当前环境会话、身份与店铺信息完整，可直接使用。",
+    accountText,
+    mallText,
+    identityText,
+    cookieSummary,
+    validationStatus,
+    validationLabel,
+    userInfoStatus,
+    userInfoLabel,
+    hasUsableSession,
+    hasGlobalCookie,
+    hasRegionalCookies,
+    hasIdentity,
+    hasMall,
+    canUse: true,
+    shouldAutoValidate,
+  };
+};
+
 const toDisplayText = (value: any) => {
   if (value === undefined || value === null || value === "") {
     return "";
@@ -208,9 +521,14 @@ export const buildResultInsightCards = (
 
   switch (action) {
     case "goods.list":
+      const skuCount = items.reduce(
+        (count, item: any) => count + asArray(item?.skuList).length,
+        0,
+      );
       cards.push(
         buildInsightCard("total", "总商品数", result.total, "success"),
         buildInsightCard("items", "本页返回", items.length, "accent"),
+        buildInsightCard("sku-count", "SKU 汇总", skuCount),
         buildInsightCard("page", "当前页", result.page),
       );
       break;
@@ -766,6 +1084,26 @@ const extractSpuIdsFromLastResult = (action: string, result: Record<string, any>
   return [];
 };
 
+const extractProductIdsFromLastResult = (action: string, result: Record<string, any>) => {
+  if (action === "goods.list") {
+    return dedupeNumberArray(asArray(result.items).map((item: any) => item?.spuId));
+  }
+
+  if (action === "goods.lifecycle") {
+    return dedupeNumberArray(asArray(result.items).map((item: any) => item?.productId));
+  }
+
+  if (action === "activity.match") {
+    return dedupeNumberArray(asArray(result.products).map((item: any) => item?.productId));
+  }
+
+  if (action === "compliance.page-query") {
+    return dedupeNumberArray(asArray(result.items).map((item: any) => item?.spuId));
+  }
+
+  return [];
+};
+
 export const buildFormSeedActions = (
   actionKey?: string | null,
   response?: TemuActionResponse | null,
@@ -781,6 +1119,21 @@ export const buildFormSeedActions = (
   }
 
   switch (currentAction) {
+    case "goods.detail": {
+      const productIdList = extractProductIdsFromLastResult(lastAction, result);
+      if (productIdList.length) {
+        actions.push({
+          key: "goods-detail-from-last",
+          label: "带入首个 SPU",
+          description: `自动带入 SPU ${productIdList[0]}`,
+          patch: {
+            region: lastRegion,
+            productId: productIdList[0],
+          },
+        });
+      }
+      break;
+    }
     case "activity.match": {
       const firstSmall = asArray(result.smallActivities)[0];
       const firstBig = asArray(result.bigActivities)[0];

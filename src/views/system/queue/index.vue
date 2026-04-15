@@ -699,7 +699,7 @@
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleDispatchOptionRowClick"
             >
-              <el-table-column label="" width="54" align="center">
+              <el-table-column label="" width="48" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -709,7 +709,7 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="客户端节点" min-width="160" show-overflow-tooltip>
+              <el-table-column label="客户端节点" min-width="140" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
@@ -717,10 +717,10 @@
               <el-table-column
                 prop="connectedAtLabel"
                 label="连接时间"
-                width="170"
+                width="156"
                 show-overflow-tooltip
               />
-              <el-table-column label="在线状态" width="96" align="center">
+              <el-table-column label="在线状态" width="88" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -730,7 +730,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="自动化服务" width="108" align="center">
+              <el-table-column label="自动化服务" width="96" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -743,10 +743,10 @@
               <el-table-column
                 prop="profileLabel"
                 label="执行环境"
-                min-width="210"
+                min-width="180"
                 show-overflow-tooltip
               />
-              <el-table-column label="环境状态" width="96" align="center">
+              <el-table-column label="环境状态" width="88" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -759,7 +759,7 @@
               <el-table-column
                 prop="description"
                 label="说明"
-                min-width="260"
+                min-width="220"
                 show-overflow-tooltip
               />
             </el-table>
@@ -814,7 +814,7 @@
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleAutoDispatchOptionRowClick"
             >
-              <el-table-column label="" width="54" align="center">
+              <el-table-column label="" width="48" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -824,7 +824,7 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="客户端节点" min-width="160" show-overflow-tooltip>
+              <el-table-column label="客户端节点" min-width="140" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
@@ -832,10 +832,10 @@
               <el-table-column
                 prop="connectedAtLabel"
                 label="连接时间"
-                width="170"
+                width="156"
                 show-overflow-tooltip
               />
-              <el-table-column label="在线状态" width="96" align="center">
+              <el-table-column label="在线状态" width="88" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -845,7 +845,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="自动化服务" width="108" align="center">
+              <el-table-column label="自动化服务" width="96" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -858,10 +858,10 @@
               <el-table-column
                 prop="profileLabel"
                 label="自动调度环境"
-                min-width="210"
+                min-width="180"
                 show-overflow-tooltip
               />
-              <el-table-column label="环境状态" width="96" align="center">
+              <el-table-column label="环境状态" width="88" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -874,7 +874,7 @@
               <el-table-column
                 prop="description"
                 label="说明"
-                min-width="240"
+                min-width="210"
                 show-overflow-tooltip
               />
             </el-table>

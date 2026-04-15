@@ -9,36 +9,14 @@ export const temuPlatformConfig: PlatformConfig = {
   titleMaxLength: 60,
   fields: [
     {
-      key: 'account',
-      label: '账号',
-      type: 'input',
-      placeholder: '请输入 Temu 登录账号',
-      span: 12
-    },
-    {
-      key: 'password',
-      label: '密码',
-      type: 'input',
-      inputType: 'password',
-      placeholder: '请输入 Temu 登录密码',
-      span: 12
-    },
-    {
-      key: 'needLogin',
-      label: '是否需要登录',
-      type: 'switch',
-      defaultValue: false,
-      span: 12,
-      tooltip: '开启后，执行发布前会按模板提供的账号密码进行登录准备'
-    },
-    {
-      key: 'categoryPath',
-      label: '类目路径',
+      key: 'productTemplate',
+      label: '商品模板',
       type: 'textarea',
-      placeholder: '请输入类目数组，例如：[\"厨房\",\"毛巾\"]',
-      rows: 3,
+      placeholder:
+        '请输入 Temu 新建商品使用的 productTemplate，支持 JSON 或 JS 对象字面量，例如：{\n  productName: \"示例商品\",\n  productPropertyReqs: []\n}',
+      rows: 24,
       span: 24,
-      tooltip: '按类目级联顺序填写。保存后会转成数组，用于运行时逐列匹配点击'
+      tooltip: 'Temu 平台专属配置。支持 JSON 和合法 JS 对象字面量，保存后会统一转成标准对象。'
     }
   ]
 }
