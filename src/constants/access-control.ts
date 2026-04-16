@@ -39,7 +39,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "resource.font", label: "字体" },
       { key: "resource.psd", label: "PSD模板" },
       { key: "resource.story-script", label: "故事脚本" },
-      { key: "resource.sentence", label: "句子管理" },
+      { key: "resource.sentence", label: "文案管理" },
     ],
   },
   {

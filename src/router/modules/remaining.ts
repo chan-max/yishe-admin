@@ -155,7 +155,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "爬图素材",
+          title: "采集素材",
         },
       },
       {
@@ -222,7 +222,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "句子管理",
+          title: "文案管理",
         },
       },
     ],

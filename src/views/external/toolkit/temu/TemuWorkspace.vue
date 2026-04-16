@@ -352,7 +352,7 @@ const publishDetailToolAction = computed<TemuWorkspaceAction>(() => {
     label,
     description:
       String(item?.description || "").trim() ||
-      "输入商品 spuId 后打开商品发布详情页，自动点击“提交”，并返回商品发布模板请求参数。",
+      "输入商品 spuId 后打开商品发布详情页，自动点击“提交”，并返回商品发布模板请求里的 POST 参数。",
     endpoint: "__tool__",
     method: "POST",
     regionHints: ["global"],

@@ -4,6 +4,7 @@ import TemuWorkspaceContext from "./TemuWorkspaceContext.vue";
 
 export const TEMU_PLATFORM_KEY = "temu";
 export const TEMU_SESSION_TOOL_KEY = "temu-session-acquire";
+export const TEMU_SESSION_RESTORE_TOOL_KEY = "temu-session-restore";
 
 export const TEMU_TOOLKIT_PLATFORM = {
   key: TEMU_PLATFORM_KEY,

@@ -306,6 +306,13 @@
                 >
                   重新采集
                 </el-button>
+                <el-button
+                  size="small"
+                  :loading="sessionRestoreRunning"
+                  @click="restoreStoredSessionToCurrentEnvironment(selectedExecutionProfileId)"
+                >
+                  写入当前环境
+                </el-button>
                 <el-button size="small" @click="openSessionDetail(selectedExecutionProfileId)">
                   查看 Cookie / Header
                 </el-button>
@@ -442,7 +449,11 @@ import {
   TOOLKIT_PLATFORM_REGISTRY,
   type ToolkitPlatformDefinition,
 } from "./platformRegistry";
-import { TEMU_PLATFORM_KEY, TEMU_SESSION_TOOL_KEY } from "./temu/platform";
+import {
+  TEMU_PLATFORM_KEY,
+  TEMU_SESSION_RESTORE_TOOL_KEY,
+  TEMU_SESSION_TOOL_KEY,
+} from "./temu/platform";
 import {
   resolveTemuValidationLabel as resolveValidationLabel,
   resolveTemuValidationTagType as resolveValidationTagType,
@@ -539,6 +550,10 @@ const temuWorkspaceTools = computed(() =>
 const temuWorkspaceToolResults = computed(() => toolkitToolResults);
 const sessionToolRunning = computed(
   () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_TOOL_KEY,
+);
+const sessionRestoreRunning = computed(
+  () =>
+    loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_RESTORE_TOOL_KEY,
 );
 const sessionAcquireActionDisabled = computed(
   () =>
@@ -929,6 +944,34 @@ const collectPlatformAccountTexts = (value: any) => {
 
 const buildMallActionKey = (profileId?: string | null, mallId?: string | null) =>
   `${String(profileId || "").trim()}::${String(mallId || "").trim()}`;
+
+const buildTemuSessionRestorePayload = (record: any) => {
+  const normalizedRecord = asPlainObject(record);
+  const session = asPlainObject(normalizedRecord.session);
+  const userInfo = asPlainObject(normalizedRecord.userInfo);
+
+  return {
+    mallId: String(userInfo.mallId || normalizedRecord.mallId || "").trim(),
+    mallName: String(userInfo.mallName || normalizedRecord.mallName || "").trim(),
+    session: {
+      global: {
+        cookies: asPlainObject(session?.global?.cookies),
+        headers: asPlainObject(session?.global?.headers),
+        updatedAt: String(session?.global?.updatedAt || normalizedRecord.updatedAt || "").trim(),
+      },
+      us: {
+        cookies: asPlainObject(session?.us?.cookies),
+        headers: asPlainObject(session?.us?.headers),
+        updatedAt: String(session?.us?.updatedAt || normalizedRecord.updatedAt || "").trim(),
+      },
+      eu: {
+        cookies: asPlainObject(session?.eu?.cookies),
+        headers: asPlainObject(session?.eu?.headers),
+        updatedAt: String(session?.eu?.updatedAt || normalizedRecord.updatedAt || "").trim(),
+      },
+    },
+  };
+};
 
 const isSessionAcquireFieldVisible = (field: Record<string, any>) => {
   const visibleWhen = asPlainObject(field?.visibleWhen);
@@ -1620,6 +1663,50 @@ const reacquireStoredSession = async (profileId?: string) => {
   } finally {
     sessionActionState.reacquire = "";
   }
+};
+
+const restoreStoredSessionToCurrentEnvironment = async (profileId?: string) => {
+  const normalizedProfileId = String(
+    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
+  ).trim();
+  if (!selectedClientId.value) {
+    ElMessage.warning("请先选择在线客户端");
+    return;
+  }
+  if (!normalizedProfileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  const sessionRecord = selectedStoredSession.value;
+  if (!sessionRecord) {
+    ElMessage.warning("当前环境暂无可写入的 Temu 会话");
+    return;
+  }
+
+  const restorePayload = buildTemuSessionRestorePayload(sessionRecord);
+  const totalCookieCount =
+    countObjectKeys(restorePayload.session.global.cookies) +
+    countObjectKeys(restorePayload.session.us.cookies) +
+    countObjectKeys(restorePayload.session.eu.cookies);
+  if (!totalCookieCount) {
+    ElMessage.warning("当前存储会话没有可写入的 Cookie");
+    return;
+  }
+
+  await dispatchCommand(
+    "runTool",
+    () =>
+      runToolkitTool(selectedClientId.value, {
+        featureKey: TEMU_SESSION_RESTORE_TOOL_KEY,
+        profileId: normalizedProfileId,
+        ...restorePayload,
+      }),
+    "Temu 存储会话写入命令已发送",
+    {
+      featureKey: TEMU_SESSION_RESTORE_TOOL_KEY,
+    },
+  );
 };
 
 const buildTemuAutoValidationCacheKey = (profileId: string) =>
