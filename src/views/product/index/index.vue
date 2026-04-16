@@ -91,7 +91,6 @@
                 >新增</el-button
               >
               <el-button
-                v-admin-only
                 size="small"
                 type="danger"
                 :icon="Delete"

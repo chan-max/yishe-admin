@@ -34,7 +34,6 @@
               <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
               <el-button
                 size="small"
-                v-admin-only
                 type="danger"
                 :icon="Delete"
                 @click="handleDelete(null)"

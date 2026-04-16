@@ -37,7 +37,7 @@
             <div class="list-page-search-form__actions">
               <el-button type="primary" @click="getList" :icon="Search" :loading="loading">搜索</el-button>
               <el-button type="primary" :disabled="single" @click="handleAdd" :icon="Plus">新增</el-button>
-              <el-button v-admin-only type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">批量删除</el-button>
+              <el-button type="danger" :icon="Delete" :loading="deleteLoading" @click="handleDelete(null)">批量删除</el-button>
             </div>
           </el-form>
         </div>

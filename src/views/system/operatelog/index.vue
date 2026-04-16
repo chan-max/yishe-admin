@@ -33,7 +33,6 @@
               <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
               <el-button
                 size="small"
-                v-admin-only
                 type="danger"
                 :icon="Delete"
                 @click="handleClear"

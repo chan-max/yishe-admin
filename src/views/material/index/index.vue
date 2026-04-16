@@ -430,7 +430,6 @@
                 >下载 ({{ ids.length }})</el-button
               >
               <el-button
-                v-admin-only
                 size="small"
                 type="success"
                 :disabled="loading || !ids.length"
@@ -439,7 +438,6 @@
                 分享给用户({{ ids.length }})
               </el-button>
               <el-button
-                v-admin-only
                 size="small"
                 type="warning"
                 :disabled="loading || !ids.length"
@@ -457,7 +455,6 @@
                 选择发布配置({{ ids.length }})
               </el-button>
               <el-button
-                v-admin-only
                 size="small"
                 type="danger"
                 :icon="Delete"
