@@ -12,12 +12,21 @@ export function getImageProcessingMeta() {
   });
 }
 
-export async function createImageProcessingRecord(data: FormData) {
-  const response: any = await request.uploadOwned({
+export async function createImageProcessingRecord(data: {
+  title?: string;
+  taskType?: string;
+  imageUrl?: string;
+  processorId?: string;
+  operationsJson?: string;
+  sourceModule?: string;
+  sourceRecordId?: string;
+  sourceName?: string;
+}) {
+  const response: any = await request.postOwned({
     url: "/image-processing-record/create",
     data,
   });
-  return response?.data ?? response;
+  return response;
 }
 
 export function getImageProcessingRecordPage(params: {

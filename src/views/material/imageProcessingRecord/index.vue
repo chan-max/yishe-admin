@@ -40,6 +40,8 @@
                     placeholder="全部状态"
                     @change="getList"
                   >
+                    <el-option label="等待客户端" value="pending_client" />
+                    <el-option label="已派发" value="assigned" />
                     <el-option label="待处理" value="pending" />
                     <el-option label="处理中" value="processing" />
                     <el-option label="成功" value="success" />
@@ -85,7 +87,7 @@
                       :title="imageStatusTooltip"
                     />
                     <span class="image-processing-record-page__status-text">
-                      {{ imagesStatus.available ? "可用" : "不可用" }}
+                      {{ imagesStatus.available ? "服务可用" : "服务不可用" }}
                     </span>
                   </div>
                 </el-form-item>
@@ -520,14 +522,12 @@ const categoryOrderMap: Record<string, number> = {
   filter: 3,
   default: 9,
 };
+const ACTIVE_RECORD_STATUSES = new Set(["pending", "pending_client", "assigned", "processing"]);
 
 const imageStatusSummary = computed(() => {
   if (imagesStatus.loading && !imagesStatus.checked) return "检测中";
   if (!imagesStatus.checked) return "未检测";
-  if (imagesStatus.available) {
-    return imagesStatus.message || "服务可用";
-  }
-  return imagesStatus.message || "服务异常";
+  return imagesStatus.available ? "服务可用" : "服务不可用";
 });
 
 const imageStatusDetail = computed(() => {
@@ -552,7 +552,9 @@ const imageStatusTooltip = computed(() => {
 });
 
 let recordRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-let pendingRecordRefreshEvent: ImageProcessingRecordChangedEvent | null = null;
+let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
+const pendingRecordRefreshIds = new Set<string>();
+let pendingListRefresh = false;
 
 const createSourcePreview = computed(() => {
   return String(form.imageUrl || "").trim();
@@ -783,6 +785,8 @@ function handleCheckboxAll({ records }: any) {
 
 function getStatusLabel(status?: string) {
   const labelMap: Record<string, string> = {
+    pending_client: "等待客户端",
+    assigned: "已派发",
     pending: "待处理",
     processing: "处理中",
     success: "成功",
@@ -794,9 +798,127 @@ function getStatusLabel(status?: string) {
 
 function getStatusTagType(status?: string) {
   if (status === "success") return "success";
+  if (status === "pending_client" || status === "assigned") return "primary";
   if (status === "partial" || status === "processing") return "warning";
   if (status === "failed") return "danger";
   return "info";
+}
+
+function isActiveRecordStatus(status?: string) {
+  return ACTIVE_RECORD_STATUSES.has(String(status || ""));
+}
+
+function hasConnectedRealtimeChannel() {
+  return websocketClient.state.status === "connected";
+}
+
+function mergeRecordRow(nextRow: any) {
+  if (!nextRow?.id) {
+    return;
+  }
+
+  const targetRow = dataSource.value.find((item) => item.id === nextRow.id);
+  if (targetRow) {
+    Object.assign(targetRow, nextRow);
+  }
+
+  if (currentRow.value?.id === nextRow.id) {
+    currentRow.value = {
+      ...currentRow.value,
+      ...nextRow,
+    };
+  }
+}
+
+function stopProcessingPoll() {
+  if (processingPollTimer) {
+    clearTimeout(processingPollTimer);
+    processingPollTimer = null;
+  }
+}
+
+function scheduleProcessingPoll() {
+  stopProcessingPoll();
+
+  if (hasConnectedRealtimeChannel()) {
+    return;
+  }
+
+  const hasPendingRecord = dataSource.value.some((item) => isActiveRecordStatus(item?.status));
+  if (!hasPendingRecord) {
+    return;
+  }
+
+  processingPollTimer = setTimeout(() => {
+    void refreshActiveRows();
+  }, 3000);
+}
+
+async function refreshRecordRows(recordIds: string[]) {
+  const uniqueIds = Array.from(
+    new Set(recordIds.map((item) => String(item || "").trim()).filter(Boolean)),
+  );
+  if (!uniqueIds.length) {
+    return false;
+  }
+
+  let shouldReloadList = false;
+  const resultList = await Promise.allSettled(
+    uniqueIds.map((recordId) => getImageProcessingRecordDetail(recordId)),
+  );
+
+  resultList.forEach((result, index) => {
+    const recordId = uniqueIds[index];
+    const isVisibleRow = dataSource.value.some((item) => item.id === recordId);
+    const isCurrentDetail = currentRow.value?.id === recordId && detailVisible.value;
+
+    if (result.status !== "fulfilled") {
+      if (isVisibleRow || isCurrentDetail) {
+        shouldReloadList = true;
+      }
+      return;
+    }
+
+    const nextRow = result.value;
+    const nextStatus = String(nextRow?.status || "").trim();
+    if (queryParams.status && nextStatus && queryParams.status !== nextStatus) {
+      shouldReloadList = true;
+      return;
+    }
+
+    if (isVisibleRow || isCurrentDetail) {
+      mergeRecordRow(nextRow);
+    }
+  });
+
+  if (shouldReloadList) {
+    await getList();
+    return true;
+  }
+
+  return false;
+}
+
+async function refreshActiveRows() {
+  stopProcessingPoll();
+
+  const activeIds = dataSource.value
+    .filter((item) => isActiveRecordStatus(item?.status))
+    .map((item) => String(item?.id || ""))
+    .filter(Boolean);
+
+  if (!activeIds.length) {
+    return;
+  }
+
+  try {
+    const reloaded = await refreshRecordRows(activeIds);
+    if (!reloaded) {
+      scheduleProcessingPoll();
+    }
+  } catch {
+    scheduleProcessingPoll();
+  }
 }
 
 function getSourcePreview(row: any) {
@@ -1356,6 +1478,7 @@ async function loadMeta(silent = false) {
 }
 
 async function getList() {
+  stopProcessingPoll();
   loading.value = true;
   selectedRows.value = [];
   try {
@@ -1368,12 +1491,19 @@ async function getList() {
     ElMessage.error(error?.message || "获取图片处理记录失败");
   } finally {
     loading.value = false;
+    scheduleProcessingPoll();
   }
 }
 
-function scheduleRecordRefresh(event?: ImageProcessingRecordChangedEvent) {
+function scheduleRecordRefresh(
+  event?: ImageProcessingRecordChangedEvent & { forceListRefresh?: boolean },
+) {
   if (event?.recordId) {
-    pendingRecordRefreshEvent = event;
+    pendingRecordRefreshIds.add(String(event.recordId));
+  }
+
+  if (event?.forceListRefresh) {
+    pendingListRefresh = true;
   }
 
   if (recordRefreshTimer) {
@@ -1382,26 +1512,52 @@ function scheduleRecordRefresh(event?: ImageProcessingRecordChangedEvent) {
 
   recordRefreshTimer = setTimeout(async () => {
     recordRefreshTimer = null;
-    const latestEvent = pendingRecordRefreshEvent;
-    pendingRecordRefreshEvent = null;
-    await getList();
+    const recordIds = Array.from(pendingRecordRefreshIds);
+    pendingRecordRefreshIds.clear();
+    const shouldRefreshList = pendingListRefresh;
+    pendingListRefresh = false;
 
-    if (latestEvent?.recordId && currentRow.value?.id === latestEvent.recordId && detailVisible.value) {
-      try {
-        const result: any = await getImageProcessingRecordDetail(latestEvent.recordId);
-        await prepareDetailState(result);
-      } catch {
-        // ignore detail refresh failure to keep realtime updates lightweight
-      }
+    if (shouldRefreshList) {
+      await getList();
+      return;
+    }
+
+    const reloaded = await refreshRecordRows(recordIds);
+    if (!reloaded) {
+      scheduleProcessingPoll();
     }
   }, 280);
 }
 
 function handleImageProcessingRecordChanged(event: ImageProcessingRecordChangedEvent) {
-  if (!event?.recordId) {
+  const recordId = String(event?.recordId || "").trim();
+  if (!recordId) {
     return;
   }
-  scheduleRecordRefresh(event);
+
+  const isVisibleRow = dataSource.value.some((item) => item.id === recordId);
+  const isCurrentDetail = currentRow.value?.id === recordId && detailVisible.value;
+  if (!isVisibleRow && !isCurrentDetail) {
+    const canRefreshListForNewIncomingRow =
+      Number(queryParams.currentPage || 1) === 1 &&
+      !String(queryParams.keyword || "").trim() &&
+      (!queryParams.status || queryParams.status === String(event?.status || "").trim()) &&
+      (!queryParams.taskType || queryParams.taskType === String(event?.taskType || "").trim());
+
+    if (canRefreshListForNewIncomingRow) {
+      scheduleRecordRefresh({
+        ...event,
+        recordId,
+        forceListRefresh: true,
+      });
+    }
+    return;
+  }
+
+  scheduleRecordRefresh({
+    ...event,
+    recordId,
+  });
 }
 
 function openCreateDialog() {
@@ -1447,32 +1603,41 @@ async function submitCreate() {
       return;
     }
 
-    const payload = new FormData();
+    const payload: Record<string, string> = {
+      taskType: form.taskType,
+      imageUrl: String(form.imageUrl || "").trim(),
+    };
     if (String(form.title || "").trim()) {
-      payload.append("title", String(form.title).trim());
+      payload.title = String(form.title).trim();
     }
-    payload.append("taskType", form.taskType);
     if (String(form.sourceModule || "").trim()) {
-      payload.append("sourceModule", String(form.sourceModule).trim());
+      payload.sourceModule = String(form.sourceModule).trim();
     }
     if (String(form.sourceRecordId || "").trim()) {
-      payload.append("sourceRecordId", String(form.sourceRecordId).trim());
+      payload.sourceRecordId = String(form.sourceRecordId).trim();
     }
     if (String(form.sourceName || "").trim()) {
-      payload.append("sourceName", String(form.sourceName).trim());
+      payload.sourceName = String(form.sourceName).trim();
     }
     if (form.taskType === "process") {
-      payload.append("operationsJson", form.operationsJson);
+      payload.operationsJson = form.operationsJson;
     }
-
-    payload.append("imageUrl", String(form.imageUrl || "").trim());
 
     const result: any = await createImageProcessingRecord(payload);
     createVisible.value = false;
     await getList();
 
-    if (result?.status === "pending" || result?.status === "processing") {
-      ElMessage.success("任务已提交，正在后台处理中");
+    if (
+      result?.status === "pending_client" ||
+      result?.status === "assigned" ||
+      result?.status === "pending" ||
+      result?.status === "processing"
+    ) {
+      ElMessage.success(
+        result?.status === "pending_client"
+          ? "任务已提交，等待客户端接单"
+          : "任务已提交，正在后台处理中",
+      );
       return;
     }
 
@@ -1575,6 +1740,17 @@ function handleOperationCommand(command: string, row: any) {
   }
 }
 
+watch(
+  () => websocketClient.state.status,
+  () => {
+    if (hasConnectedRealtimeChannel()) {
+      stopProcessingPoll();
+      return;
+    }
+    scheduleProcessingPoll();
+  },
+);
+
 onMounted(async () => {
   websocketClient.events.on("imageProcessingRecordChanged", handleImageProcessingRecordChanged);
   await Promise.allSettled([loadMeta(), getList(), refreshServiceHealth("images")]);
@@ -1586,7 +1762,9 @@ onBeforeUnmount(() => {
     clearTimeout(recordRefreshTimer);
     recordRefreshTimer = null;
   }
-  pendingRecordRefreshEvent = null;
+  stopProcessingPoll();
+  pendingRecordRefreshIds.clear();
+  pendingListRefresh = false;
 });
 </script>
 

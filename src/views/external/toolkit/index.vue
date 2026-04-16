@@ -249,6 +249,15 @@
                   <el-button
                     text
                     size="small"
+                    :disabled="loadingMap.runTool && !temuWorkspaceRestoreLoading"
+                    :loading="temuWorkspaceRestoreLoading"
+                    @click="restoreStoredSessionToEnvironment(selectedExecutionProfileId)"
+                  >
+                    写入当前环境
+                  </el-button>
+                  <el-button
+                    text
+                    size="small"
                     type="danger"
                     :loading="sessionActionState.delete === selectedExecutionProfileId"
                     @click="deleteStoredSession(selectedExecutionProfileId)"
@@ -390,7 +399,11 @@ import { websocketClient, type ServiceCommandResultEvent } from "@/services/webs
 import { formatDate } from "@/utils/formatTime";
 import SmallFeatureField from "../browser-automation/components/SmallFeatureField.vue";
 import { TOOLKIT_PLATFORM_REGISTRY, type ToolkitPlatformDefinition } from "./platformRegistry";
-import { TEMU_PLATFORM_KEY, TEMU_SESSION_TOOL_KEY } from "./temu/platform";
+import {
+  TEMU_PLATFORM_KEY,
+  TEMU_SESSION_RESTORE_TOOL_KEY,
+  TEMU_SESSION_TOOL_KEY,
+} from "./temu/platform";
 import {
   resolveTemuValidationLabel as resolveValidationLabel,
   resolveTemuValidationTagType as resolveValidationTagType,
@@ -483,6 +496,9 @@ const temuWorkspaceTools = computed(() =>
 const temuWorkspaceToolResults = computed(() => toolkitToolResults);
 const sessionToolRunning = computed(
   () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_TOOL_KEY,
+);
+const temuWorkspaceRestoreLoading = computed(
+  () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_RESTORE_TOOL_KEY,
 );
 const sessionAcquireActionDisabled = computed(
   () =>
@@ -1418,6 +1434,45 @@ const quickAcquireCurrentSession = async () => {
       keepPageOpen: sessionAcquireForm.keepPageOpen,
     },
     "Temu 当前环境会话采集命令已发送",
+  );
+};
+
+const restoreStoredSessionToEnvironment = async (profileId?: string) => {
+  if (!selectedClientId.value) {
+    ElMessage.warning("请先选择在线客户端");
+    return;
+  }
+
+  const normalizedProfileId = String(profileId || selectedExecutionProfileId.value || "").trim();
+  if (!normalizedProfileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  const storedRecord =
+    storedSessionRows.value.find((item) => item.profileId === normalizedProfileId)?.record || null;
+  const session = asPlainObject(storedRecord?.session);
+
+  if (!Object.keys(session).length) {
+    ElMessage.warning("当前环境没有可恢复的已存储 Temu 会话");
+    return;
+  }
+
+  await dispatchCommand(
+    "runTool",
+    () =>
+      runToolkitTool(selectedClientId.value, {
+        featureKey: TEMU_SESSION_RESTORE_TOOL_KEY,
+        profileId: normalizedProfileId,
+        session,
+        keepPageOpen: false,
+        validateAfterRestore: false,
+        activatePage: false,
+      }),
+    "Temu 存储会话写入当前环境命令已发送",
+    {
+      featureKey: TEMU_SESSION_RESTORE_TOOL_KEY,
+    },
   );
 };
 

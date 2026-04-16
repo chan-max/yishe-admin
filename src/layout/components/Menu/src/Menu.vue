@@ -67,6 +67,8 @@ export default defineComponent({
       "/external/browser-automation": "browser-automation",
       "/external/ps-automation": "ps-automation",
       "/external/google-art": "google-art",
+      "/content/image-processing-record": "image-processing",
+      "/content/remotion-video-record": "video-template",
     };
     const busyIndicatorDisabledRoutes = new Set([
       "/operation/toolkit",
@@ -254,6 +256,11 @@ export default defineComponent({
           degraded: "Google Art 已连接，但当前不可执行",
           offline: "Google Art 不可用",
         },
+        "/content/image-processing-record": {
+          available: "图片处理服务可用",
+          degraded: "图片处理插件已连接，但当前不可执行",
+          offline: "图片处理服务不可用",
+        },
         "/product/queue": {
           available: "发布任务可执行",
           degraded: "发布任务可执行",
@@ -268,6 +275,8 @@ export default defineComponent({
               routePath === "/operation/toolkit" ||
               routePath === "/external/toolkit"
             ? resolveBrowserAutomationStatusTitle(status, running, routePath)
+            : routePath === "/content/image-processing-record" && running
+              ? "当前有图片任务正在执行"
             : running
               ? "当前有任务正在执行"
               : titleMap[routePath]?.[status];
@@ -285,10 +294,18 @@ export default defineComponent({
       );
     };
 
-    const renderServiceHealthDot = (route: AppRouteRecordRaw) => {
+    const renderServiceHealthDot = (route: AppRouteRecordRaw, routePath: string) => {
+      if (menuStatusRouteMap[routePath]) {
+        return undefined;
+      }
+
       const statusKey = route.meta?.serviceStatusKey;
       if (!isServiceHealthKey(statusKey)) {
         return undefined;
+      }
+
+      if (!!routeRunningMap.value[routePath]) {
+        return renderRunningStatusDot("当前有视频任务正在执行");
       }
 
       ensureServiceHealthInitialized(statusKey);
@@ -304,6 +321,9 @@ export default defineComponent({
 
     const isPsdSetRoute = (routePath: string) => routePath === "/product/psd-set";
     const isQueueRoute = (routePath: string) => routePath === "/product/queue";
+    const isImageProcessingRoute = (routePath: string) =>
+      routePath === "/content/image-processing-record";
+    const isRemotionRoute = (routePath: string) => routePath === "/content/remotion-video-record";
 
     const renderPsdSetAutoDot = (routePath: string) => {
       if (!isPsdSetRoute(routePath)) {
@@ -367,6 +387,12 @@ export default defineComponent({
         return isAnyPsdSetProcessing.value;
       }
       if (isQueueRoute(routePath)) {
+        return !!routeRunningMap.value[routePath];
+      }
+      if (isRemotionRoute(routePath)) {
+        return !!routeRunningMap.value[routePath];
+      }
+      if (isImageProcessingRoute(routePath)) {
         return !!routeRunningMap.value[routePath];
       }
       return false;
@@ -485,12 +511,12 @@ export default defineComponent({
                 >
                   <div class={`${prefixCls}__section-head`}>
                     <div class={`${prefixCls}__section-label`}>
-                      {route.meta?.icon ? (
+                    {route.meta?.icon ? (
                         <Icon class={`${prefixCls}__section-icon`} icon={route.meta.icon} />
                       ) : undefined}
                       <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
                     </div>
-                    {renderServiceHealthDot(route)}
+                    {renderServiceHealthDot(route, routePath)}
                   </div>
                 </button>
               );
@@ -551,7 +577,7 @@ export default defineComponent({
                           {renderAiConfigDot(childPath) ||
                             renderPsdSetAutoDot(childPath) ||
                             renderPublishTaskAutoBadge(childPath) ||
-                            renderServiceHealthDot(child) ||
+                            renderServiceHealthDot(child, childPath) ||
                             renderStatusDot(childPath)}
                         </button>
                       );
@@ -1020,6 +1046,7 @@ $prefix-cls: #{$namespace}-menu;
     box-shadow:
       0 0 0 1px rgb(148 163 184 / 12%),
       0 0 8px rgb(148 163 184 / 12%);
+      opacity:.1;
   }
 
   &__link:hover &__status-dot--offline,

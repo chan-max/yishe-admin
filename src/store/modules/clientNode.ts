@@ -9,7 +9,12 @@ import {
   type ServiceRuntimeEvent,
 } from "@/services/websocketClient";
 
-export type ClientPluginKey = "browser-automation" | "ps-automation" | "google-art";
+export type ClientPluginKey =
+  | "browser-automation"
+  | "ps-automation"
+  | "google-art"
+  | "image-processing"
+  | "video-template";
 export type ClientPluginSummary = "available" | "degraded" | "offline";
 
 const listenersBound = ref(false);
@@ -45,6 +50,10 @@ export const normalizeClientPluginKey = (value?: string | null) => {
     uploader: "browser-automation",
     browser: "browser-automation",
     photoshop: "ps-automation",
+    images: "image-processing",
+    "yishe-images": "image-processing",
+    remotion: "video-template",
+    "remotion-video": "video-template",
   };
   return aliasMap[normalized] || normalized;
 };
@@ -59,6 +68,14 @@ export const getClientServiceRuntime = (
   }
   if (pluginKey === "ps-automation") {
     return services["ps-automation"] || services.photoshop || null;
+  }
+  if (pluginKey === "video-template") {
+    return (
+      services["video-template"] || services.remotion || services["remotion-video"] || null
+    );
+  }
+  if (pluginKey === "image-processing") {
+    return services["image-processing"] || services.images || services["yishe-images"] || null;
   }
   return services["google-art"] || services.googleArt || null;
 };
@@ -97,9 +114,19 @@ export const useClientNodeStore = defineStore("client-node", () => {
       "browser-automation": "offline",
       "ps-automation": "offline",
       "google-art": "offline",
+      "image-processing": "offline",
+      "video-template": "offline",
     };
 
-    (["browser-automation", "ps-automation", "google-art"] as ClientPluginKey[]).forEach(
+    (
+      [
+        "browser-automation",
+        "ps-automation",
+        "google-art",
+        "image-processing",
+        "video-template",
+      ] as ClientPluginKey[]
+    ).forEach(
       (pluginKey) => {
         let pluginSummary: ClientPluginSummary = "offline";
 

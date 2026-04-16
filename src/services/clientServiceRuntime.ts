@@ -20,11 +20,15 @@ export function isClientServiceRuntimeAvailable(runtime?: ClientServiceRuntimeLi
 
 export function isClientServiceRuntimeBusy(runtime?: ClientServiceRuntimeLike): boolean {
   const safeRuntime = getClientServiceRuntimeSafe(runtime);
+  const activeJobsCount = Number(
+    safeRuntime.details?.activeJobsCount ?? safeRuntime.details?.queueCount ?? 0,
+  );
   return !!(
     safeRuntime.busy ||
     safeRuntime.state === "busy" ||
     safeRuntime.currentTaskId ||
-    safeRuntime.details?.currentExecution?.running
+    safeRuntime.details?.currentExecution?.running ||
+    (Number.isFinite(activeJobsCount) && activeJobsCount > 0)
   );
 }
 

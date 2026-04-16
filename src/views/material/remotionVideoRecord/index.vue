@@ -41,6 +41,9 @@
                     @change="getList"
                   >
                     <el-option label="待处理" value="pending" />
+                    <el-option label="等待客户端" value="pending_client" />
+                    <el-option label="已派发" value="assigned" />
+                    <el-option label="排队中" value="queued" />
                     <el-option label="处理中" value="processing" />
                     <el-option label="成功" value="success" />
                     <el-option label="失败" value="failed" />
@@ -58,23 +61,8 @@
                 <el-form-item label="服务状态">
                   <div class="remotion-record-page__status-bar">
                     <el-tag :type="remotionStatusTagType" size="small">
-                      Video Template 服务 {{ remotionStatusLabel }}
+                      {{ remotionStatusSummary }}
                     </el-tag>
-                    <div class="remotion-record-page__status-content">
-                      <span
-                        class="remotion-record-page__status-text"
-                        :title="remotionStatusSummary"
-                      >
-                        {{ remotionStatusSummary }}
-                      </span>
-                      <span
-                        v-if="remotionStatusDetail"
-                        class="remotion-record-page__status-detail"
-                        :title="remotionStatusDetail"
-                      >
-                        {{ remotionStatusDetail }}
-                      </span>
-                    </div>
                   </div>
                 </el-form-item>
               </el-col>
@@ -145,6 +133,22 @@
                   <el-tag :type="getStatusTagType(row.status)" effect="plain">{{
                     getStatusLabel(row.status)
                   }}</el-tag>
+                </template>
+                <template #progressSlot="{ row }">
+                  <div class="record-progress-cell">
+                    <el-progress
+                      v-if="typeof resolveRowProgress(row) === 'number'"
+                      :percentage="resolveRowProgress(row) || 0"
+                      :status="getProgressStatus(row)"
+                      :stroke-width="4"
+                    />
+                    <span v-else class="record-progress-placeholder">
+                      {{ getProgressPlaceholder(row) }}
+                    </span>
+                    <div v-if="getProgressMessage(row)" class="record-progress-message">
+                      {{ getProgressMessage(row) }}
+                    </div>
+                  </div>
                 </template>
                 <template #videoSlot="{ row }">
                   <div class="record-video-cell">
@@ -520,6 +524,13 @@
             <div><strong>标题：</strong>{{ currentRow.title || "-" }}</div>
             <div><strong>模板：</strong>{{ currentRow.templateName || currentRow.templateId }}</div>
             <div><strong>状态：</strong>{{ getStatusLabel(currentRow.status) }}</div>
+            <div><strong>进度：</strong>{{ getProgressDisplayText(currentRow) }}</div>
+            <div v-if="resolveRecordMachineCode(currentRow)">
+              <strong>执行客户端：</strong>{{ resolveRecordMachineCode(currentRow) }}
+            </div>
+            <div v-if="resolveQueueDetailText(currentRow)">
+              <strong>队列状态：</strong>{{ resolveQueueDetailText(currentRow) }}
+            </div>
             <div><strong>创建时间：</strong>{{ formatTimestamp(currentRow.createTime) }}</div>
             <div v-if="currentRow.url"><strong>COS地址：</strong>{{ currentRow.url }}</div>
             <div v-if="currentRow.remotionVideoUrl">
@@ -542,7 +553,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Delete, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
@@ -560,6 +571,7 @@ import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { refreshServiceHealth, useServiceHealthState } from "@/services/serviceHealthState";
+import { websocketClient, type RemotionVideoRecordStatusEvent } from "@/services/websocketClient";
 
 const { height } = useWindowSize();
 const loading = ref(false);
@@ -576,12 +588,13 @@ const submitLoading = ref(false);
 const currentRow = ref<any>(null);
 const remotionStatus = useServiceHealthState("videoTemplate");
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
-
-const remotionStatusLabel = computed(() => {
-  if (remotionStatus.loading && !remotionStatus.checked) return "检测中";
-  if (!remotionStatus.checked) return "未检测";
-  return remotionStatus.available ? "可用" : "不可用";
-});
+const ACTIVE_RECORD_STATUSES = new Set([
+  "pending",
+  "pending_client",
+  "assigned",
+  "queued",
+  "processing",
+]);
 
 const remotionStatusTagType = computed(() => {
   if (remotionStatus.loading && !remotionStatus.checked) return "warning";
@@ -592,21 +605,7 @@ const remotionStatusTagType = computed(() => {
 const remotionStatusSummary = computed(() => {
   if (remotionStatus.loading && !remotionStatus.checked) return "检测中";
   if (!remotionStatus.checked) return "未检测";
-  if (remotionStatus.available) {
-    return remotionStatus.message || "服务可用";
-  }
-  return remotionStatus.message || "服务异常";
-});
-
-const remotionStatusDetail = computed(() => {
-  const parts: string[] = [];
-  if (remotionStatus.baseUrl) {
-    parts.push(remotionStatus.baseUrl);
-  }
-  if (remotionStatus.timestamp) {
-    parts.push(formatHealthTime(remotionStatus.timestamp));
-  }
-  return parts.join(" | ");
+  return remotionStatus.available ? "服务可用" : "服务不可用";
 });
 
 const queryParams = reactive({
@@ -694,6 +693,12 @@ const gridOptions = computed(() => ({
     { title: "模板", field: "templateName", minWidth: 220, slots: { default: "templateSlot" } },
     { title: "状态", field: "status", width: 120, slots: { default: "statusSlot" } },
     {
+      title: "进度",
+      field: "responseData.progress",
+      minWidth: 260,
+      slots: { default: "progressSlot" },
+    },
+    {
       title: "上传者",
       field: "uploader",
       width: 140,
@@ -763,6 +768,9 @@ async function handleBatchDelete() {
 function getStatusLabel(status?: string) {
   const map: Record<string, string> = {
     pending: "待处理",
+    pending_client: "等待客户端",
+    assigned: "已派发",
+    queued: "排队中",
     processing: "处理中",
     success: "成功",
     failed: "失败",
@@ -773,8 +781,111 @@ function getStatusLabel(status?: string) {
 function getStatusTagType(status?: string) {
   if (status === "success") return "success";
   if (status === "failed") return "danger";
+  if (status === "queued") return "primary";
+  if (status === "assigned") return "warning";
   if (status === "processing") return "warning";
   return "info";
+}
+
+function isActiveRecordStatus(status?: string) {
+  return ACTIVE_RECORD_STATUSES.has(String(status || ""));
+}
+
+function hasConnectedRealtimeChannel() {
+  return websocketClient.state.status === "connected";
+}
+
+function normalizeProgressValue(progress: unknown) {
+  const numericValue = Number(progress);
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+  return Math.max(0, Math.min(100, Math.round(numericValue)));
+}
+
+function resolveRecordMachineCode(row: any) {
+  return String(
+    row?.responseData?.clientRuntime?.machineCode ||
+      row?.responseData?.machineCode ||
+      row?.responseData?.dispatch?.machineCode ||
+      "",
+  ).trim();
+}
+
+function resolveQueueAheadCount(row: any) {
+  const numericValue = Number(row?.responseData?.queueAheadCount);
+  return Number.isFinite(numericValue) ? Math.max(0, Math.round(numericValue)) : null;
+}
+
+function resolveQueueDetailText(row: any) {
+  const detailList: string[] = [];
+  const aheadCount = resolveQueueAheadCount(row);
+
+  if (row?.status === "queued") {
+    if (aheadCount === 0) {
+      detailList.push("即将开始");
+    } else if (aheadCount !== null) {
+      detailList.push(`前方 ${aheadCount} 个任务`);
+    }
+  }
+  if (row?.status === "processing") {
+    detailList.push("制作中");
+  }
+
+  return detailList.join(" · ");
+}
+
+function resolveRowProgress(row: any) {
+  const progress = normalizeProgressValue(row?.responseData?.progress);
+  if (progress !== null) {
+    return progress;
+  }
+  if (row?.status === "success") {
+    return 100;
+  }
+  if (row?.status === "processing") {
+    return 0;
+  }
+  return null;
+}
+
+function getProgressStatus(row: any) {
+  if (row?.status === "success") return "success";
+  if (row?.status === "failed") return "exception";
+  return undefined;
+}
+
+function getProgressPlaceholder(row: any) {
+  return getStatusLabel(row?.status);
+}
+
+function getProgressMessage(row: any) {
+  const placeholder = getProgressPlaceholder(row);
+  const queueDetailText = resolveQueueDetailText(row);
+  const machineMessage =
+    isActiveRecordStatus(row?.status) && resolveRecordMachineCode(row)
+      ? `机器 ${resolveRecordMachineCode(row)}`
+      : "";
+  const extraMessage = [queueDetailText, machineMessage].filter(Boolean).join(" · ");
+  const messageList = [row?.responseData?.message, row?.errorMessage, extraMessage];
+
+  for (const item of messageList) {
+    const message = String(item || "").trim();
+    if (message && message !== placeholder) {
+      return message;
+    }
+  }
+
+  return "";
+}
+
+function getProgressDisplayText(row: any) {
+  const progress = resolveRowProgress(row);
+  if (progress !== null) {
+    return `${progress}%`;
+  }
+  const message = getProgressMessage(row);
+  return message || getProgressPlaceholder(row);
 }
 
 function formatJson(value: any) {
@@ -822,15 +933,134 @@ function stopProcessingPoll() {
 
 function scheduleProcessingPoll() {
   stopProcessingPoll();
-  const hasPendingRecord = dataSource.value.some((item) =>
-    ["pending", "processing"].includes(String(item?.status || "")),
-  );
+  if (hasConnectedRealtimeChannel()) {
+    return;
+  }
+  const hasPendingRecord = dataSource.value.some((item) => isActiveRecordStatus(item?.status));
   if (!hasPendingRecord) {
     return;
   }
   processingPollTimer = setTimeout(() => {
+    void refreshActiveRows();
+  }, 3000);
+}
+
+function mergeRecordRow(nextRow: any) {
+  if (!nextRow?.id) {
+    return;
+  }
+
+  const targetRow = dataSource.value.find((item) => item.id === nextRow.id);
+  if (targetRow) {
+    Object.assign(targetRow, nextRow);
+  }
+
+  if (currentRow.value?.id === nextRow.id) {
+    currentRow.value = {
+      ...currentRow.value,
+      ...nextRow,
+    };
+  }
+}
+
+function applyRemotionVideoRecordStatusEvent(event: RemotionVideoRecordStatusEvent) {
+  const recordId = String(event?.recordId || "").trim();
+  if (!recordId) {
+    return;
+  }
+
+  const currentRowData =
+    dataSource.value.find((item) => item.id === recordId) ||
+    (currentRow.value?.id === recordId ? currentRow.value : null);
+
+  if (!currentRowData) {
+    return;
+  }
+
+  const nextStatus = String(event?.status || currentRowData?.status || "").trim();
+  if (queryParams.status && nextStatus && queryParams.status !== nextStatus) {
     void getList();
-  }, 5000);
+    return;
+  }
+
+  const responseData = {
+    ...(currentRowData?.responseData || {}),
+    ...(typeof event?.progress === "number" ? { progress: event.progress } : {}),
+    ...(event?.message ? { message: event.message } : {}),
+    ...(event?.reportedAt ? { reportedAt: event.reportedAt } : {}),
+    ...(event?.machineCode ? { machineCode: event.machineCode } : {}),
+    ...(event?.queueStatus ? { queueStatus: event.queueStatus } : {}),
+    ...(typeof event?.queuePosition === "number"
+      ? { queuePosition: event.queuePosition }
+      : {}),
+    ...(typeof event?.queueAheadCount === "number"
+      ? { queueAheadCount: event.queueAheadCount }
+      : {}),
+    ...(typeof event?.queueActiveCount === "number"
+      ? { queueActiveCount: event.queueActiveCount }
+      : {}),
+    ...(typeof event?.queueQueuedCount === "number"
+      ? { queueQueuedCount: event.queueQueuedCount }
+      : {}),
+    ...(typeof event?.queueProcessingCount === "number"
+      ? { queueProcessingCount: event.queueProcessingCount }
+      : {}),
+    ...(event?.localJobStatus ? { localJobStatus: event.localJobStatus } : {}),
+    ...(event?.createdAt ? { createdAt: event.createdAt } : {}),
+    ...(event?.startedAt ? { startedAt: event.startedAt } : {}),
+    ...(event?.completedAt ? { completedAt: event.completedAt } : {}),
+    ...(typeof event?.elapsedMs === "number" ? { elapsedMs: event.elapsedMs } : {}),
+    clientRuntime: {
+      clientId: event.clientId,
+      machineCode: event.machineCode || null,
+      reportedAt: event.reportedAt || new Date().toISOString(),
+    },
+  };
+
+  mergeRecordRow({
+    id: recordId,
+    status: nextStatus || currentRowData?.status,
+    remotionJobId: event?.remotionJobId ?? currentRowData?.remotionJobId ?? null,
+    remotionVideoUrl: event?.remotionVideoUrl ?? currentRowData?.remotionVideoUrl ?? null,
+    resultUrl: event?.resultUrl ?? currentRowData?.resultUrl ?? null,
+    url: event?.url ?? currentRowData?.url ?? null,
+    errorMessage:
+      event?.errorMessage ??
+      (nextStatus === "failed"
+        ? event?.message || currentRowData?.errorMessage || null
+        : (currentRowData?.errorMessage ?? null)),
+    responseData,
+  });
+
+  if (!hasConnectedRealtimeChannel()) {
+    scheduleProcessingPoll();
+  }
+}
+
+async function refreshActiveRows() {
+  stopProcessingPoll();
+  const activeIds = dataSource.value
+    .filter((item) => isActiveRecordStatus(item?.status))
+    .map((item) => String(item?.id || ""))
+    .filter(Boolean);
+
+  if (!activeIds.length) {
+    return;
+  }
+
+  try {
+    const resultList = await Promise.allSettled(
+      activeIds.map((recordId) => getRemotionVideoRecordDetail(recordId)),
+    );
+
+    resultList.forEach((result) => {
+      if (result.status === "fulfilled") {
+        mergeRecordRow(result.value);
+      }
+    });
+  } finally {
+    scheduleProcessingPoll();
+  }
 }
 
 function handleTemplateFilterChange() {
@@ -927,20 +1157,6 @@ async function submitGenerate() {
   } finally {
     submitLoading.value = false;
   }
-}
-
-function formatHealthTime(value: string) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
 }
 
 function getRemotionErrorMessage(error: any, fallback: string) {
@@ -1090,13 +1306,27 @@ function handleOperationCommand(command: string, row: any) {
 }
 
 onMounted(async () => {
+  websocketClient.events.on("remotionVideoRecordStatus", applyRemotionVideoRecordStatusEvent);
   resetForm();
   await Promise.allSettled([loadTemplates(), getList(), checkRemotionHealth()]);
 });
 
 onBeforeUnmount(() => {
+  websocketClient.events.off("remotionVideoRecordStatus", applyRemotionVideoRecordStatusEvent);
   stopProcessingPoll();
 });
+
+watch(
+  () => websocketClient.state.status,
+  (status) => {
+    if (status === "connected") {
+      stopProcessingPoll();
+      return;
+    }
+
+    scheduleProcessingPoll();
+  },
+);
 </script>
 
 <style scoped>
@@ -1162,11 +1392,45 @@ onBeforeUnmount(() => {
 .record-title-cell,
 .record-template-cell,
 .record-video-cell,
+.record-progress-cell,
 .detail-section {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.record-progress-placeholder,
+.record-progress-message {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--el-text-color-secondary);
+  word-break: break-word;
+}
+
+.record-progress-message {
+  min-height: 14px;
+}
+
+.record-progress-cell :deep(.el-progress) {
+  align-items: center;
+  gap: 6px;
+}
+
+.record-progress-cell :deep(.el-progress-bar__outer) {
+  background-color: rgba(15, 23, 42, 0.06);
+  border-radius: 999px;
+}
+
+.record-progress-cell :deep(.el-progress-bar__inner) {
+  border-radius: 999px;
+}
+
+.record-progress-cell :deep(.el-progress__text) {
+  min-width: 28px;
+  font-size: 10px !important;
+  font-weight: 500;
+  color: var(--el-text-color-secondary);
 }
 
 .record-title-text,

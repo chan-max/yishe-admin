@@ -222,6 +222,32 @@ export interface ImageProcessingRecordChangedEvent {
   updatedAt?: string;
 }
 
+export interface RemotionVideoRecordStatusEvent {
+  clientId: string;
+  machineCode?: string | null;
+  recordId: string;
+  remotionJobId?: string | null;
+  status?: string;
+  progress?: number | null;
+  message?: string | null;
+  errorMessage?: string | null;
+  remotionVideoUrl?: string | null;
+  resultUrl?: string | null;
+  url?: string | null;
+  queueStatus?: string | null;
+  queuePosition?: number | null;
+  queueAheadCount?: number | null;
+  queueActiveCount?: number | null;
+  queueQueuedCount?: number | null;
+  queueProcessingCount?: number | null;
+  localJobStatus?: string | null;
+  createdAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  elapsedMs?: number | null;
+  reportedAt?: string;
+}
+
 export interface AdminMessageEvent {
   title: string;
   message: string;
@@ -384,6 +410,7 @@ export type WebsocketEvents = {
   clientConnectionChanged: ClientConnectionChangedEvent;
   runtimeConnectionChanged: RuntimeConnectionChangedEvent;
   imageProcessingRecordChanged: ImageProcessingRecordChangedEvent;
+  remotionVideoRecordStatus: RemotionVideoRecordStatusEvent;
   psAutomationStatus: PsAutomationStatusEvent;
   publishTaskRuntime: PublishTaskRuntimeEvent;
   globalNotification: GlobalNotificationEvent;
@@ -473,11 +500,7 @@ function formatAdminMessageText(data: any) {
   }
 
   const preferredText =
-    data?.message ||
-    data?.text ||
-    data?.content ||
-    data?.description ||
-    data?.detail;
+    data?.message || data?.text || data?.content || data?.description || data?.detail;
   if (typeof preferredText === "string" && preferredText.trim()) {
     return preferredText.trim();
   }
@@ -759,6 +782,10 @@ function bindSocketEvents(currentSocket: Socket) {
 
   currentSocket.on("image-processing-record-changed", (data: ImageProcessingRecordChangedEvent) => {
     emitter.emit("imageProcessingRecordChanged", data);
+  });
+
+  currentSocket.on("remotion-video-record-status", (data: RemotionVideoRecordStatusEvent) => {
+    emitter.emit("remotionVideoRecordStatus", data);
   });
 
   currentSocket.on("ps-automation-status", (data: PsAutomationStatusEvent) => {
