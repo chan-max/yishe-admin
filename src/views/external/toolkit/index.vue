@@ -5,16 +5,6 @@
         <div class="toolkit-platform-hub__head">
           <div class="toolkit-platform-hub__main">
             <div class="toolkit-platform-hub__title">工具集</div>
-            <div class="toolkit-platform-hub__desc">
-              选择一个工具集进入对应工作台。目前仅支持 Temu。
-            </div>
-          </div>
-
-          <div class="toolkit-page-head__actions">
-            <el-button text size="small" :loading="loading" @click="handleRefreshContext">
-              刷新
-            </el-button>
-            <el-button text size="small" @click="goToBrowserAutomation">环境管理</el-button>
           </div>
         </div>
 
@@ -26,11 +16,9 @@
             class="toolkit-platform-card"
             @click="enterToolkitPlatform(platform.key)"
           >
-            <span class="toolkit-platform-card__eyebrow">工具集</span>
             <span class="toolkit-platform-card__title">{{ platform.label }}</span>
-            <span class="toolkit-platform-card__desc">{{ platform.description }}</span>
+            <span class="toolkit-platform-card__meta">平台工具集</span>
             <span class="toolkit-platform-card__footer">
-              <el-tag size="small" effect="plain">已支持</el-tag>
               <span class="toolkit-platform-card__enter">进入工具集</span>
             </span>
           </button>
@@ -55,101 +43,95 @@
               <div class="toolkit-page-head__title">{{ selectedPlatformLabel }} 工具集</div>
             </div>
           </div>
-
-          <div class="toolkit-page-head__actions">
-            <el-button text size="small" :loading="loading" @click="handleRefreshContext">
-              刷新
-            </el-button>
-            <el-button text size="small" @click="goToBrowserAutomation">环境管理</el-button>
-          </div>
         </section>
 
         <section class="toolkit-hero">
-          <div class="toolkit-hero__card toolkit-hero__card--selectors">
-            <div class="toolkit-hero__selectors">
-              <div class="toolkit-hero__field">
-                <div class="toolkit-hero__label">在线客户端</div>
+          <div class="toolkit-hero__card toolkit-hero__card--context">
+            <div class="toolkit-hero__context-shell">
+              <div class="toolkit-hero__context-control">
+                <div class="toolkit-hero__label">客户端 / 环境</div>
                 <el-select
-                  v-model="selectedClientId"
+                  v-model="toolkitExecutionSelectValue"
                   class="toolkit-hero__select"
                   size="small"
-                  placeholder="请选择在线客户端"
-                  :loading="loading"
+                  placeholder="请选择客户端和环境"
+                  :loading="loading || loadingMap.profiles"
                   clearable
                 >
                   <el-option
-                    v-for="option in clientOptions"
+                    v-for="option in toolkitExecutionOptions"
                     :key="option.value"
                     :label="option.label"
                     :value="option.value"
+                    :disabled="option.disabled"
                   >
                     <div class="toolkit-option">
-                      <div class="toolkit-option__title">{{ option.label }}</div>
-                      <div class="toolkit-option__meta">{{ option.meta || option.hint }}</div>
+                      <span class="toolkit-option__text">{{ option.clientLabel }}</span>
+                      <span class="toolkit-option__separator">/</span>
+                      <span class="toolkit-option__text">{{ option.environmentLabel }}</span>
                     </div>
                   </el-option>
                 </el-select>
               </div>
 
-              <div class="toolkit-hero__field">
-                <div class="toolkit-hero__label">执行环境</div>
-                <el-select
-                  v-model="executionProfileSelectValue"
-                  class="toolkit-hero__select"
-                  size="small"
-                  placeholder="请选择执行环境"
-                  :loading="loadingMap.profiles"
-                >
-                  <el-option
-                    v-for="option in visibleExecutionProfileOptions"
-                    :key="option.value"
-                    :label="option.label"
-                    :value="option.value"
-                  >
-                    <div class="toolkit-option">
-                      <div class="toolkit-option__title">{{ option.label }}</div>
-                      <div class="toolkit-option__meta">{{ option.meta }}</div>
-                    </div>
-                  </el-option>
-                </el-select>
+              <div v-if="selectedPlatformContextComponent" class="toolkit-hero__context-panel">
+                <component
+                  :is="selectedPlatformContextComponent"
+                  class="toolkit-hero__context"
+                  :profile-id="temuWorkspaceProfileId"
+                  :profile-loading="isTemuExecutionProfileLoading"
+                  :session-record="temuWorkspaceSessionRecord"
+                  :platform-account-text="temuWorkspacePlatformAccountText"
+                  :validation-loading="temuWorkspaceValidationLoading"
+                  :validation-checked-at-text="currentEnvironmentValidationCheckedAtText"
+                  :refresh-info-loading="temuWorkspaceRefreshInfoLoading"
+                  :acquire-loading="sessionToolRunning"
+                  :acquire-disabled="sessionAcquireActionDisabled"
+                  @acquire-session="quickAcquireCurrentSession"
+                  @validate-session="validateStoredSession(selectedExecutionProfileId)"
+                  @refresh-session-user-info="
+                    refreshStoredSessionUserInfo(selectedExecutionProfileId)
+                  "
+                  @open-session-center="openSessionCenter"
+                />
               </div>
             </div>
           </div>
-
-          <div
-            v-if="selectedPlatformContextComponent"
-            class="toolkit-hero__card toolkit-hero__card--status"
-          >
-            <component
-              :is="selectedPlatformContextComponent"
-              class="toolkit-hero__context"
-              :profile-id="temuWorkspaceProfileId"
-              :profile-loading="isTemuExecutionProfileLoading"
-              :session-record="temuWorkspaceSessionRecord"
-              :platform-account-text="temuWorkspacePlatformAccountText"
-              :validation-loading="temuWorkspaceValidationLoading"
-              :acquire-loading="sessionToolRunning"
-              :acquire-disabled="sessionAcquireActionDisabled"
-              @acquire-session="quickAcquireCurrentSession"
-              @open-session-center="openSessionCenter"
-            />
-          </div>
         </section>
 
-        <component
-          :is="selectedPlatformWorkspace"
+        <div
           v-if="selectedPlatformWorkspace"
-          :client-id="selectedClientId"
-          :profile-id="temuWorkspaceProfileId"
-          :session-record="temuWorkspaceSessionRecord"
-          :tool-items="temuWorkspaceTools"
-          :tools-loading="loadingMap.tools"
-          :running-feature-key="runningToolkitFeatureKey"
-          :tool-busy="loadingMap.runTool"
-          :tool-results="temuWorkspaceToolResults"
-          @refresh-tools="sendTools"
-          @run-tool="runWorkspaceTool"
-        />
+          class="toolkit-workspace-shell"
+          :class="{ 'is-locked': temuWorkspaceLocked }"
+        >
+          <div class="toolkit-workspace-shell__body">
+            <component
+              :is="selectedPlatformWorkspace"
+              :client-id="selectedClientId"
+              :profile-id="temuWorkspaceProfileId"
+              :session-record="temuWorkspaceSessionRecord"
+              :tool-items="temuWorkspaceTools"
+              :tools-loading="loadingMap.tools"
+              :running-feature-key="runningToolkitFeatureKey"
+              :tool-busy="loadingMap.runTool"
+              :tool-results="temuWorkspaceToolResults"
+              @refresh-tools="sendTools"
+              @run-tool="runWorkspaceTool"
+            />
+          </div>
+
+          <div v-if="temuWorkspaceLocked" class="toolkit-workspace-shell__mask">
+            <div class="toolkit-workspace-shell__mask-card">
+              <div class="toolkit-workspace-shell__mask-title">
+                <el-icon class="toolkit-workspace-shell__mask-icon"><WarningFilled /></el-icon>
+                <span>当前环境暂不可用</span>
+              </div>
+              <div class="toolkit-workspace-shell__mask-desc">
+                {{ temuWorkspaceLockText }}
+              </div>
+            </div>
+          </div>
+        </div>
       </template>
 
       <el-dialog
@@ -250,9 +232,9 @@
             <div v-else-if="selectedStoredSession" class="toolkit-session-card">
               <div class="toolkit-session-card__head">
                 <div>
-                  <div class="toolkit-session-card__title">认证信息</div>
+                  <div class="toolkit-session-card__title">当前环境会话</div>
                   <div class="toolkit-session-card__desc">
-                    {{ currentEnvironmentAccountText }}
+                    {{ temuWorkspaceAvailability.detail }}
                   </div>
                 </div>
 
@@ -264,170 +246,132 @@
                   >
                     {{ resolveValidationLabel(currentEnvironmentValidation) }}
                   </el-tag>
+                  <el-button
+                    text
+                    size="small"
+                    type="danger"
+                    :loading="sessionActionState.delete === selectedExecutionProfileId"
+                    @click="deleteStoredSession(selectedExecutionProfileId)"
+                  >
+                    删除会话
+                  </el-button>
                 </div>
               </div>
 
               <div class="toolkit-session-card__meta">
-                <div class="toolkit-meta-chip">
-                  <span>当前店铺</span>
-                  <strong>{{
-                    selectedStoredUserInfo.mallName || selectedStoredUserInfo.mallId || "未绑定"
-                  }}</strong>
-                </div>
-                <div class="toolkit-meta-chip">
-                  <span>Cookie</span>
-                  <strong>{{ currentEnvironmentCookieSummary }}</strong>
-                </div>
-                <div class="toolkit-meta-chip">
-                  <span>更新时间</span>
-                  <strong>{{ formatDateTime(selectedStoredSession.updatedAt) || "-" }}</strong>
-                </div>
-              </div>
-
-              <div class="toolkit-session-card__actions">
-                <el-button
-                  size="small"
-                  :loading="sessionActionState.refreshInfo === selectedExecutionProfileId"
-                  @click="refreshStoredSessionUserInfo(selectedExecutionProfileId)"
-                >
-                  同步身份信息
-                </el-button>
-                <el-button
-                  size="small"
-                  :loading="sessionActionState.validate === selectedExecutionProfileId"
-                  @click="validateStoredSession(selectedExecutionProfileId)"
-                >
-                  校验会话
-                </el-button>
-                <el-button
-                  size="small"
-                  :loading="sessionActionState.reacquire === selectedExecutionProfileId"
-                  @click="reacquireStoredSession(selectedExecutionProfileId)"
-                >
-                  重新采集
-                </el-button>
-                <el-button
-                  size="small"
-                  :loading="sessionRestoreRunning"
-                  @click="restoreStoredSessionToCurrentEnvironment(selectedExecutionProfileId)"
-                >
-                  写入当前环境
-                </el-button>
-                <el-button size="small" @click="openSessionDetail(selectedExecutionProfileId)">
-                  查看 Cookie / Header
-                </el-button>
-                <el-button
-                  text
-                  size="small"
-                  type="danger"
-                  :loading="sessionActionState.delete === selectedExecutionProfileId"
-                  @click="deleteStoredSession(selectedExecutionProfileId)"
-                >
-                  删除会话
-                </el-button>
-              </div>
-            </div>
-
-            <div v-if="showMallPanel" class="toolkit-userinfo-panel">
-              <div class="toolkit-userinfo-panel__head">
-                <div>
-                  <div class="toolkit-userinfo-panel__title">店铺信息</div>
-                  <div class="toolkit-userinfo-panel__desc">
-                    {{ mallPanelDescription }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="toolkit-mall-list">
                 <div
-                  v-for="row in selectedStoredMallRows.slice(0, 5)"
-                  :key="row.key"
-                  class="toolkit-mall-item"
-                  :class="{ 'is-current': row.isCurrent }"
+                  v-for="item in sessionCenterInfoChips"
+                  :key="item.label"
+                  class="toolkit-meta-chip"
                 >
-                  <div class="toolkit-mall-item__main">
-                    <div class="toolkit-mall-item__name">{{ row.mallName || "-" }}</div>
-                    <div class="toolkit-mall-item__meta">{{ row.mallId || "-" }}</div>
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                </div>
+              </div>
+
+              <div v-if="selectedStoredMallRows.length" class="toolkit-userinfo-panel">
+                <div class="toolkit-userinfo-panel__head">
+                  <div>
+                    <div class="toolkit-userinfo-panel__title">店铺信息</div>
+                    <div class="toolkit-userinfo-panel__desc">
+                      {{ mallPanelDescription }}
+                    </div>
                   </div>
-                  <div class="toolkit-mall-item__actions">
-                    <el-tag v-if="row.isCurrent" size="small" effect="plain" type="success">
-                      当前
-                    </el-tag>
-                    <el-button
-                      v-else
-                      text
-                      size="small"
-                      :loading="
-                        sessionActionState.applyMall ===
-                        buildMallActionKey(selectedExecutionProfileId, row.mallId)
-                      "
-                      @click="applyStoredMall(selectedExecutionProfileId, row)"
-                    >
-                      设为当前
-                    </el-button>
+                </div>
+
+                <div class="toolkit-mall-list">
+                  <div
+                    v-for="row in selectedStoredMallRows.slice(0, 5)"
+                    :key="row.key"
+                    class="toolkit-mall-item"
+                    :class="{ 'is-current': row.isCurrent }"
+                  >
+                    <div class="toolkit-mall-item__main">
+                      <div class="toolkit-mall-item__name">{{ row.mallName || "-" }}</div>
+                      <div class="toolkit-mall-item__meta">{{ row.mallId || "-" }}</div>
+                    </div>
+                    <div class="toolkit-mall-item__actions">
+                      <el-tag v-if="row.isCurrent" size="small" effect="plain" type="success">
+                        当前
+                      </el-tag>
+                      <el-button
+                        v-else
+                        text
+                        size="small"
+                        :loading="
+                          sessionActionState.applyMall ===
+                          buildMallActionKey(selectedExecutionProfileId, row.mallId)
+                        "
+                        @click="applyStoredMall(selectedExecutionProfileId, row)"
+                      >
+                        设为当前
+                      </el-button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <el-collapse
-              v-if="showUserInfoCollapse"
-              v-model="userInfoCollapseNames"
-              class="toolkit-result-collapse"
-            >
-              <el-collapse-item name="raw" title="查看原始身份信息">
-                <pre class="toolkit-result-json">{{ jsonText(selectedStoredUserInfo) }}</pre>
-              </el-collapse-item>
-            </el-collapse>
+              <div class="toolkit-session-sections">
+                <section class="toolkit-session-section">
+                  <div class="toolkit-session-section__head">
+                    <div class="toolkit-session-section__title">身份信息</div>
+                    <div class="toolkit-session-section__meta">
+                      {{ selectedStoredUserInfo.message }}
+                    </div>
+                  </div>
+                  <pre class="toolkit-result-json">{{ jsonText(selectedStoredUserInfo) }}</pre>
+                </section>
+
+                <section class="toolkit-session-section">
+                  <div class="toolkit-session-section__head">
+                    <div class="toolkit-session-section__title">Cookie / Header</div>
+                    <div class="toolkit-session-section__meta">当前环境各区域会话明细</div>
+                  </div>
+
+                  <div class="toolkit-session-dialog__regions">
+                    <section
+                      v-for="region in selectedSessionRegionCards"
+                      :key="region.key"
+                      class="toolkit-session-region"
+                    >
+                      <div class="toolkit-session-region__head">
+                        <div>
+                          <div class="toolkit-session-region__title">{{ region.label }}</div>
+                          <div class="toolkit-session-region__meta">
+                            Cookie {{ region.cookieCount }} 个 · Header {{ region.headerCount }} 个
+                          </div>
+                        </div>
+                        <span class="toolkit-session-region__time">
+                          {{ formatDateTime(region.updatedAt) || "-" }}
+                        </span>
+                      </div>
+
+                      <div class="toolkit-session-region__json-grid">
+                        <div class="toolkit-session-region__json-box">
+                          <div class="toolkit-session-region__json-title">Cookies</div>
+                          <pre>{{ jsonText(region.cookies) }}</pre>
+                        </div>
+                        <div class="toolkit-session-region__json-box">
+                          <div class="toolkit-session-region__json-title">Headers</div>
+                          <pre>{{ jsonText(region.headers) }}</pre>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </section>
+              </div>
+            </div>
           </section>
         </div>
       </el-dialog>
     </div>
   </ContentWrap>
-
-  <el-dialog v-model="sessionDetailDialogVisible" title="Temu 会话详情" fullscreen>
-    <template v-if="selectedStoredSession">
-      <div class="toolkit-session-dialog">
-        <div class="toolkit-session-dialog__regions">
-          <section
-            v-for="region in selectedSessionRegionCards"
-            :key="region.key"
-            class="toolkit-session-region"
-          >
-            <div class="toolkit-session-region__head">
-              <div>
-                <div class="toolkit-session-region__title">{{ region.label }}</div>
-                <div class="toolkit-session-region__meta">
-                  Cookie {{ region.cookieCount }} 个 · Header {{ region.headerCount }} 个
-                </div>
-              </div>
-              <span class="toolkit-session-region__time">
-                {{ formatDateTime(region.updatedAt) || "-" }}
-              </span>
-            </div>
-
-            <div class="toolkit-session-region__json-grid">
-              <div class="toolkit-session-region__json-box">
-                <div class="toolkit-session-region__json-title">Cookies</div>
-                <pre>{{ jsonText(region.cookies) }}</pre>
-              </div>
-              <div class="toolkit-session-region__json-box">
-                <div class="toolkit-session-region__json-title">Headers</div>
-                <pre>{{ jsonText(region.headers) }}</pre>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-    </template>
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft } from "@element-plus/icons-vue";
+import { ArrowLeft, WarningFilled } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
-import { useRouter } from "vue-router";
 import type { BrowserAutomationCommandResponse } from "@/api/external/browserAutomation";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import { getToolkitProfiles, getToolkitTools, runToolkitTool } from "@/api/external/toolkit";
@@ -445,15 +389,8 @@ import {
 import { websocketClient, type ServiceCommandResultEvent } from "@/services/websocketClient";
 import { formatDate } from "@/utils/formatTime";
 import SmallFeatureField from "../browser-automation/components/SmallFeatureField.vue";
-import {
-  TOOLKIT_PLATFORM_REGISTRY,
-  type ToolkitPlatformDefinition,
-} from "./platformRegistry";
-import {
-  TEMU_PLATFORM_KEY,
-  TEMU_SESSION_RESTORE_TOOL_KEY,
-  TEMU_SESSION_TOOL_KEY,
-} from "./temu/platform";
+import { TOOLKIT_PLATFORM_REGISTRY, type ToolkitPlatformDefinition } from "./platformRegistry";
+import { TEMU_PLATFORM_KEY, TEMU_SESSION_TOOL_KEY } from "./temu/platform";
 import {
   resolveTemuValidationLabel as resolveValidationLabel,
   resolveTemuValidationTagType as resolveValidationTagType,
@@ -482,7 +419,6 @@ interface ToolkitToolExecutionRecord {
   rawEvent: ServiceCommandResultEvent;
 }
 
-const router = useRouter();
 const {
   loading,
   refreshClients,
@@ -502,9 +438,7 @@ const selectedPlatformKey = ref("");
 const sessionCenterVisible = ref(false);
 const storedPlatformSession = ref<Record<string, any>>({});
 const storedSessionLoading = ref(false);
-const selectedStoredProfileId = ref("");
-const sessionDetailDialogVisible = ref(false);
-const userInfoCollapseNames = ref<string[]>([]);
+const storedSessionLoaded = ref(false);
 const toolkitTools = ref<ToolkitToolItem[]>([]);
 const runningToolkitFeatureKey = ref("");
 const toolkitToolResults = reactive<Record<string, ToolkitToolExecutionRecord>>({});
@@ -517,7 +451,6 @@ const sessionActionState = reactive({
   refreshInfo: "",
   validate: "",
   delete: "",
-  reacquire: "",
   applyMall: "",
 });
 const autoValidatedTemuSessions = reactive<Record<string, string>>({});
@@ -550,10 +483,6 @@ const temuWorkspaceTools = computed(() =>
 const temuWorkspaceToolResults = computed(() => toolkitToolResults);
 const sessionToolRunning = computed(
   () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_TOOL_KEY,
-);
-const sessionRestoreRunning = computed(
-  () =>
-    loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_RESTORE_TOOL_KEY,
 );
 const sessionAcquireActionDisabled = computed(
   () =>
@@ -680,6 +609,85 @@ const executionProfileSelectValue = computed({
 const visibleExecutionProfileOptions = computed(() =>
   isTemuExecutionProfileLoading.value ? [] : profileOptions.value,
 );
+const selectedClientOption = computed(
+  () => clientOptions.value.find((item) => item.value === selectedClientId.value) || null,
+);
+const toolkitExecutionOptions = computed(() => {
+  const switchClientOptions = clientOptions.value
+    .filter((option) => option.value !== selectedClientId.value)
+    .map((option) => ({
+      value: `client:${option.value}`,
+      label: `${option.label} / 切换客户端`,
+      clientLabel: option.label,
+      environmentLabel: "当前环境",
+      meta: option.meta || option.hint || "",
+      disabled: false,
+    }));
+
+  if (!selectedClientOption.value) {
+    return switchClientOptions;
+  }
+
+  const selectedClientLabel = selectedClientOption.value.label;
+  const selectedClientMeta =
+    selectedClientOption.value.meta || selectedClientOption.value.hint || "";
+  const currentClientProfileOptions = visibleExecutionProfileOptions.value.map((option) => {
+    const environmentLabel =
+      option.profile?.id || !option.isActiveOption ? option.label : "当前环境";
+
+    return {
+      value: `profile:${option.value}`,
+      label: `${selectedClientLabel} / ${environmentLabel}`,
+      clientLabel: selectedClientLabel,
+      environmentLabel,
+      meta: [selectedClientMeta, option.meta].filter(Boolean).join(" · "),
+      disabled: false,
+    };
+  });
+
+  return [...currentClientProfileOptions, ...switchClientOptions];
+});
+const toolkitExecutionSelectValue = computed({
+  get: () => {
+    const profileValue = String(
+      executionProfileSelectValue.value || ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE,
+    ).trim();
+    if (
+      profileValue &&
+      visibleExecutionProfileOptions.value.some((item) => item.value === profileValue)
+    ) {
+      return `profile:${profileValue}`;
+    }
+
+    return "";
+  },
+  set: (value: string) => {
+    const normalizedValue = String(value || "").trim();
+    if (!normalizedValue) {
+      selectedClientId.value = "";
+      return;
+    }
+
+    if (normalizedValue.startsWith("client:")) {
+      const nextClientId = normalizedValue.slice("client:".length).trim();
+      if (!nextClientId || nextClientId === selectedClientId.value) {
+        return;
+      }
+
+      selectedClientId.value = nextClientId;
+      return;
+    }
+
+    if (normalizedValue.startsWith("profile:")) {
+      const nextProfileValue = normalizedValue.slice("profile:".length).trim();
+      if (!nextProfileValue) {
+        return;
+      }
+
+      executionProfileSelectValue.value = nextProfileValue;
+    }
+  },
+});
 const selectedExecutionProfileId = computed(() =>
   isTemuExecutionProfileLoading.value
     ? ""
@@ -711,6 +719,11 @@ const temuWorkspacePlatformAccountText = computed(() => {
   const userInfo = asPlainObject(record?.userInfo);
   return String(userInfo.accountId || record?.accountId || "").trim();
 });
+const temuWorkspaceRefreshInfoLoading = computed(
+  () =>
+    !!selectedExecutionProfileId.value &&
+    sessionActionState.refreshInfo === selectedExecutionProfileId.value,
+);
 const temuWorkspaceValidationLoading = computed(
   () =>
     !!selectedExecutionProfileId.value &&
@@ -722,10 +735,40 @@ const temuWorkspaceAvailability = computed(() =>
     isValidating: temuWorkspaceValidationLoading.value,
   }),
 );
+const temuWorkspaceLocked = computed(() => {
+  if (
+    selectedPlatformKey.value !== TEMU_PLATFORM_KEY ||
+    !storedSessionLoaded.value ||
+    !selectedClientId.value ||
+    !selectedExecutionProfileId.value
+  ) {
+    return false;
+  }
+
+  return ["missing", "expired"].includes(temuWorkspaceAvailability.value.state);
+});
+const temuWorkspaceLockText = computed(() => {
+  if (!selectedClientId.value) {
+    return "请先选择在线客户端。";
+  }
+
+  if (!selectedExecutionProfileId.value) {
+    return "请先选择执行环境。";
+  }
+
+  return temuWorkspaceAvailability.value.detail || "当前环境会话暂不可用，请先处理会话状态。";
+});
 const selectedStoredSession = computed(() => temuWorkspaceSessionRecord.value);
 const currentEnvironmentValidation = computed(() =>
   asPlainObject(selectedExecutionStoredSession.value?.validation),
 );
+const currentEnvironmentValidationCheckedAtText = computed(() => {
+  if (temuWorkspaceValidationLoading.value) {
+    return "校验中";
+  }
+
+  return formatDateTime(currentEnvironmentValidation.value?.checkedAt) || "未校验";
+});
 
 const storedPlatformAccountText = computed(() => {
   const accountTexts = collectPlatformAccountTexts(storedPlatformSession.value);
@@ -806,13 +849,6 @@ const sessionCenterHeadline = computed(() => {
 
   return "这里只展示当前客户端当前环境的 Temu 会话与身份信息";
 });
-const currentEnvironmentAccountText = computed(() => {
-  if (selectedStoredAccountText.value && selectedStoredAccountText.value !== "-") {
-    return selectedStoredAccountText.value;
-  }
-
-  return "账号信息待同步";
-});
 const currentEnvironmentCookieSummary = computed(() => {
   const counts = selectedExecutionStoredSession.value?.cookieCounts;
   if (!counts) {
@@ -821,11 +857,39 @@ const currentEnvironmentCookieSummary = computed(() => {
 
   return `全球 ${counts.global} / 美区 ${counts.us} / 欧区 ${counts.eu}`;
 });
-const showMallPanel = computed(
-  () =>
-    selectedStoredMallRows.value.length > 1 ||
-    selectedStoredMallRows.value.some((item) => !item.isCurrent),
-);
+const sessionCenterInfoChips = computed(() => [
+  {
+    label: "账号",
+    value:
+      selectedStoredAccountText.value && selectedStoredAccountText.value !== "-"
+        ? selectedStoredAccountText.value
+        : "待同步",
+  },
+  {
+    label: "店铺",
+    value: selectedStoredUserInfo.value.mallName || selectedStoredUserInfo.value.mallId || "未绑定",
+  },
+  {
+    label: "Cookie",
+    value: currentEnvironmentCookieSummary.value,
+  },
+  {
+    label: "身份",
+    value: temuWorkspaceAvailability.value.userInfoLabel,
+  },
+  {
+    label: "校验",
+    value: resolveValidationLabel(currentEnvironmentValidation.value),
+  },
+  {
+    label: "上次校验",
+    value: currentEnvironmentValidationCheckedAtText.value,
+  },
+  {
+    label: "更新时间",
+    value: formatDateTime(selectedStoredSession.value?.updatedAt) || "-",
+  },
+]);
 const mallPanelDescription = computed(() => {
   const count = selectedStoredMallRows.value.length;
   if (!count) {
@@ -836,13 +900,6 @@ const mallPanelDescription = computed(() => {
   }
 
   return `已同步 ${count} 个店铺`;
-});
-const showUserInfoCollapse = computed(() => {
-  return (
-    selectedStoredUserInfo.value.status !== "missing" ||
-    selectedStoredMallRows.value.length > 0 ||
-    !!selectedStoredUserInfo.value.accountId
-  );
 });
 
 const selectedSessionRegionCards = computed(() => {
@@ -944,34 +1001,6 @@ const collectPlatformAccountTexts = (value: any) => {
 
 const buildMallActionKey = (profileId?: string | null, mallId?: string | null) =>
   `${String(profileId || "").trim()}::${String(mallId || "").trim()}`;
-
-const buildTemuSessionRestorePayload = (record: any) => {
-  const normalizedRecord = asPlainObject(record);
-  const session = asPlainObject(normalizedRecord.session);
-  const userInfo = asPlainObject(normalizedRecord.userInfo);
-
-  return {
-    mallId: String(userInfo.mallId || normalizedRecord.mallId || "").trim(),
-    mallName: String(userInfo.mallName || normalizedRecord.mallName || "").trim(),
-    session: {
-      global: {
-        cookies: asPlainObject(session?.global?.cookies),
-        headers: asPlainObject(session?.global?.headers),
-        updatedAt: String(session?.global?.updatedAt || normalizedRecord.updatedAt || "").trim(),
-      },
-      us: {
-        cookies: asPlainObject(session?.us?.cookies),
-        headers: asPlainObject(session?.us?.headers),
-        updatedAt: String(session?.us?.updatedAt || normalizedRecord.updatedAt || "").trim(),
-      },
-      eu: {
-        cookies: asPlainObject(session?.eu?.cookies),
-        headers: asPlainObject(session?.eu?.headers),
-        updatedAt: String(session?.eu?.updatedAt || normalizedRecord.updatedAt || "").trim(),
-      },
-    },
-  };
-};
 
 const isSessionAcquireFieldVisible = (field: Record<string, any>) => {
   const visibleWhen = asPlainObject(field?.visibleWhen);
@@ -1116,43 +1145,6 @@ const buildToolkitToolExecutionRecord = (
   };
 };
 
-const syncStoredProfileSelection = (options: { preferExecutionProfile?: boolean } = {}) => {
-  if (!storedSessionRows.value.length) {
-    selectedStoredProfileId.value = "";
-    return;
-  }
-
-  const preferredProfileId =
-    effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "";
-  if (options.preferExecutionProfile) {
-    if (!preferredProfileId) {
-      selectedStoredProfileId.value = "";
-      return;
-    }
-
-    const matched = storedSessionRows.value.find((item) => item.profileId === preferredProfileId);
-    selectedStoredProfileId.value = matched?.profileId || "";
-    return;
-  }
-
-  if (
-    selectedStoredProfileId.value &&
-    storedSessionRows.value.some((item) => item.profileId === selectedStoredProfileId.value)
-  ) {
-    return;
-  }
-
-  if (preferredProfileId) {
-    const matched = storedSessionRows.value.find((item) => item.profileId === preferredProfileId);
-    if (matched) {
-      selectedStoredProfileId.value = matched.profileId;
-      return;
-    }
-  }
-
-  selectedStoredProfileId.value = "";
-};
-
 const finish = (action?: string) => {
   if (action === "profiles") {
     loadingMap.profiles = false;
@@ -1214,8 +1206,7 @@ const sendProfiles = async () =>
   dispatchCommand("profiles", () => getToolkitProfiles(selectedClientId.value));
 
 const sendTools = async () =>
-  selectedClientId.value &&
-  dispatchCommand("tools", () => getToolkitTools(selectedClientId.value));
+  selectedClientId.value && dispatchCommand("tools", () => getToolkitTools(selectedClientId.value));
 
 const buildMergedRegionSession = (
   nextCookies: Record<string, any>,
@@ -1334,7 +1325,6 @@ const persistTemuSessionBundle = async (sessionBundle: Record<string, any>, prof
     platform: TEMU_PLATFORM_KEY,
     data: buildTemuStoredSessionPayload(sessionBundle, profileId),
   });
-  selectedStoredProfileId.value = profileId;
   await refreshStoredPlatformSessions();
 };
 
@@ -1431,10 +1421,7 @@ const quickAcquireCurrentSession = async () => {
   );
 };
 
-const runWorkspaceTool = async (payload: {
-  featureKey: string;
-  payload: Record<string, any>;
-}) => {
+const runWorkspaceTool = async (payload: { featureKey: string; payload: Record<string, any> }) => {
   if (!selectedClientId.value) {
     ElMessage.warning("请先选择在线客户端");
     return;
@@ -1466,7 +1453,7 @@ const runWorkspaceTool = async (payload: {
 const refreshStoredPlatformSessions = async () => {
   if (selectedPlatformKey.value !== TEMU_PLATFORM_KEY) {
     storedPlatformSession.value = {};
-    selectedStoredProfileId.value = "";
+    storedSessionLoaded.value = false;
     return;
   }
 
@@ -1474,7 +1461,7 @@ const refreshStoredPlatformSessions = async () => {
   try {
     const response = await getPlatformSessions({ platform: TEMU_PLATFORM_KEY });
     storedPlatformSession.value = asPlainObject(response);
-    syncStoredProfileSelection();
+    storedSessionLoaded.value = true;
   } catch (error: any) {
     ElMessage.error(error?.message || "获取已存储会话失败");
   } finally {
@@ -1482,25 +1469,7 @@ const refreshStoredPlatformSessions = async () => {
   }
 };
 
-const openSessionDetail = (profileId?: string) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
-  if (normalizedProfileId) {
-    selectedStoredProfileId.value = normalizedProfileId;
-  }
-
-  if (!selectedStoredSession.value) {
-    ElMessage.warning("暂无可查看的会话详情");
-    return;
-  }
-
-  sessionDetailDialogVisible.value = true;
-};
-
 const openSessionCenter = () => {
-  selectedStoredProfileId.value = String(selectedExecutionProfileId.value || "").trim();
-
   sessionCenterVisible.value = true;
 
   if (selectedPlatformSupportsStoredSessions.value) {
@@ -1509,9 +1478,7 @@ const openSessionCenter = () => {
 };
 
 const refreshStoredSessionUserInfo = async (profileId?: string) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
+  const normalizedProfileId = String(profileId || selectedExecutionProfileId.value || "").trim();
   if (!normalizedProfileId) {
     ElMessage.warning("请先选择要获取信息的会话");
     return;
@@ -1536,9 +1503,7 @@ const applyStoredMall = async (
   profileId?: string,
   mall?: { mallId?: string; mallName?: string },
 ) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
+  const normalizedProfileId = String(profileId || selectedExecutionProfileId.value || "").trim();
   const mallId = String(mall?.mallId || "").trim();
   const mallName = String(mall?.mallName || "").trim();
 
@@ -1573,9 +1538,7 @@ const applyStoredMall = async (
 };
 
 const validateStoredSession = async (profileId?: string, options: { silent?: boolean } = {}) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
+  const normalizedProfileId = String(profileId || selectedExecutionProfileId.value || "").trim();
   if (!normalizedProfileId) {
     ElMessage.warning("请先选择要校验的会话");
     return;
@@ -1601,9 +1564,7 @@ const validateStoredSession = async (profileId?: string, options: { silent?: boo
 };
 
 const deleteStoredSession = async (profileId?: string) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
+  const normalizedProfileId = String(profileId || selectedExecutionProfileId.value || "").trim();
   if (!normalizedProfileId) {
     ElMessage.warning("请先选择要删除的会话");
     return;
@@ -1632,81 +1593,6 @@ const deleteStoredSession = async (profileId?: string) => {
   } finally {
     sessionActionState.delete = "";
   }
-};
-
-const reacquireStoredSession = async (profileId?: string) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
-  if (!normalizedProfileId) {
-    ElMessage.warning("请先选择要重新获取的会话");
-    return;
-  }
-
-  if (!selectedClientId.value) {
-    ElMessage.warning("请先选择在线客户端");
-    return;
-  }
-
-  if (
-    !profileOptions.value.some((item) => item.value === normalizedProfileId) &&
-    normalizedProfileId !== activeProfile.value?.id
-  ) {
-    ElMessage.warning("当前客户端下未找到该执行环境，请先切换到对应客户端或环境");
-    return;
-  }
-
-  sessionActionState.reacquire = normalizedProfileId;
-  try {
-    selectedProfileValue.value = normalizedProfileId;
-    await dispatchTemuSessionAcquire(normalizedProfileId);
-  } finally {
-    sessionActionState.reacquire = "";
-  }
-};
-
-const restoreStoredSessionToCurrentEnvironment = async (profileId?: string) => {
-  const normalizedProfileId = String(
-    profileId || selectedExecutionProfileId.value || selectedStoredProfileId.value || "",
-  ).trim();
-  if (!selectedClientId.value) {
-    ElMessage.warning("请先选择在线客户端");
-    return;
-  }
-  if (!normalizedProfileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-
-  const sessionRecord = selectedStoredSession.value;
-  if (!sessionRecord) {
-    ElMessage.warning("当前环境暂无可写入的 Temu 会话");
-    return;
-  }
-
-  const restorePayload = buildTemuSessionRestorePayload(sessionRecord);
-  const totalCookieCount =
-    countObjectKeys(restorePayload.session.global.cookies) +
-    countObjectKeys(restorePayload.session.us.cookies) +
-    countObjectKeys(restorePayload.session.eu.cookies);
-  if (!totalCookieCount) {
-    ElMessage.warning("当前存储会话没有可写入的 Cookie");
-    return;
-  }
-
-  await dispatchCommand(
-    "runTool",
-    () =>
-      runToolkitTool(selectedClientId.value, {
-        featureKey: TEMU_SESSION_RESTORE_TOOL_KEY,
-        profileId: normalizedProfileId,
-        ...restorePayload,
-      }),
-    "Temu 存储会话写入命令已发送",
-    {
-      featureKey: TEMU_SESSION_RESTORE_TOOL_KEY,
-    },
-  );
 };
 
 const buildTemuAutoValidationCacheKey = (profileId: string) =>
@@ -1785,12 +1671,7 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
         toolkitToolResults[featureKey] = buildToolkitToolExecutionRecord(event, featureKey);
       }
 
-      if (
-        event.success &&
-        [TEMU_SESSION_TOOL_KEY, "temu-session-collect"].includes(
-          featureKey,
-        )
-      ) {
+      if (event.success && [TEMU_SESSION_TOOL_KEY, "temu-session-collect"].includes(featureKey)) {
         const sessionBundle = asPlainObject(result?.sessionBundle);
         const profileId = resolveCollectedProfileId(result);
         if (sessionBundle && profileId) {
@@ -1826,21 +1707,7 @@ const enterToolkitPlatform = (platformKey: string) => {
 
 const leaveToolkitPlatform = () => {
   sessionCenterVisible.value = false;
-  sessionDetailDialogVisible.value = false;
   selectedPlatformKey.value = "";
-};
-
-const handleRefreshContext = async () => {
-  await loadClients();
-  if (selectedClientId.value) {
-    void sendProfiles();
-    void sendTools();
-  }
-  void refreshStoredPlatformSessions();
-};
-
-const goToBrowserAutomation = () => {
-  router.push("/external/browser-automation");
 };
 
 const temuAutoValidationWatchKey = computed(() => {
@@ -1912,7 +1779,6 @@ watch(
   (value) => {
     if (!value) {
       sessionCenterVisible.value = false;
-      sessionDetailDialogVisible.value = false;
     }
 
     void refreshStoredPlatformSessions();
@@ -1921,17 +1787,8 @@ watch(
 );
 
 watch(
-  storedSessionRows,
-  () => {
-    syncStoredProfileSelection();
-  },
-  { deep: true },
-);
-
-watch(
   selectedExecutionProfileId,
   () => {
-    syncStoredProfileSelection({ preferExecutionProfile: true });
     resetToolkitToolResults();
   },
   { immediate: true },
@@ -2014,7 +1871,7 @@ onUnmounted(() => {
 
 .toolkit-platform-hub__title {
   color: var(--el-text-color-primary);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.3;
 }
@@ -2027,40 +1884,35 @@ onUnmounted(() => {
   line-height: 1.7;
 }
 
-.toolkit-page-head__actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
 .toolkit-platform-hub {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
-  border-radius: 18px;
+  border-radius: 16px;
   box-shadow: var(--el-box-shadow-light);
 }
 
 .toolkit-platform-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .toolkit-platform-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  padding: 16px;
+  gap: 6px;
+  flex: 0 0 190px;
+  width: 190px;
+  min-height: 96px;
+  padding: 12px;
   text-align: left;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-fill-color-blank);
-  border-radius: 16px;
+  border-radius: 14px;
   cursor: pointer;
   transition:
     border-color 0.2s ease,
@@ -2075,36 +1927,29 @@ onUnmounted(() => {
   transform: translateY(-1px);
 }
 
-.toolkit-platform-card__eyebrow {
-  color: var(--el-text-color-placeholder);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
 .toolkit-platform-card__title {
   color: var(--el-text-color-primary);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
 }
 
-.toolkit-platform-card__desc {
+.toolkit-platform-card__meta {
   color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .toolkit-platform-card__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 8px;
   margin-top: auto;
 }
 
 .toolkit-platform-card__enter {
   color: var(--el-color-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -2112,6 +1957,72 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.toolkit-workspace-shell {
+  position: relative;
+  min-width: 0;
+}
+
+.toolkit-workspace-shell.is-locked .toolkit-workspace-shell__body {
+  pointer-events: none;
+  user-select: none;
+  filter: saturate(0.72);
+}
+
+.toolkit-workspace-shell__body {
+  min-width: 0;
+}
+
+.toolkit-workspace-shell__mask {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: color-mix(in srgb, var(--el-bg-color) 72%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.toolkit-workspace-shell__mask-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 420px;
+  padding: 16px 18px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 14px;
+  background: var(--el-bg-color);
+  box-shadow: var(--el-box-shadow-light);
+  text-align: center;
+}
+
+.toolkit-workspace-shell__mask-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.toolkit-workspace-shell__mask-icon {
+  color: var(--el-color-warning);
+  font-size: 16px;
+}
+
+.toolkit-workspace-shell__mask-desc {
+  margin-top: 6px;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.7;
 }
 
 .toolkit-hero__card {
@@ -2127,44 +2038,75 @@ onUnmounted(() => {
   padding-bottom: 12px;
 }
 
-.toolkit-hero__selectors {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
-  align-items: end;
-}
-
-.toolkit-hero__field {
-  min-width: 0;
-}
-
 .toolkit-hero__label {
-  margin-bottom: 6px;
   color: var(--el-text-color-regular);
   font-size: 11px;
   font-weight: 600;
+
+  text-wrap: nowrap;
+  padding-right: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.toolkit-hero__card--context {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.toolkit-hero__context-shell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolkit-hero__context-control {
+  flex: 0 0 280px;
+  max-width: 320px;
+  min-width: 0;
+  display: flex;
 }
 
 .toolkit-hero__select {
   width: 100%;
 }
 
-.toolkit-hero__context {
+.toolkit-hero__context-panel {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
   min-width: 0;
 }
 
-.toolkit-option__title {
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 600;
+.toolkit-hero__context {
+  min-width: 0;
+  width: 100%;
 }
 
-.toolkit-option__meta {
-  margin-top: 2px;
-  color: var(--el-text-color-secondary);
+.toolkit-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.toolkit-option__text,
+.toolkit-option__separator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--el-text-color-primary);
   font-size: 12px;
-  line-height: 1.5;
-  white-space: normal;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.toolkit-option__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .toolkit-center {
@@ -2352,6 +2294,7 @@ onUnmounted(() => {
 
 .toolkit-session-card__tags {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 6px;
 }
@@ -2359,30 +2302,6 @@ onUnmounted(() => {
 .toolkit-session-region__time {
   color: var(--el-text-color-secondary);
   font-size: 12px;
-}
-
-.toolkit-result-collapse {
-  margin-top: 12px;
-}
-
-.toolkit-result-collapse :deep(.el-collapse-item__header),
-.toolkit-result-collapse :deep(.el-collapse-item__wrap) {
-  background: transparent;
-}
-
-.toolkit-result-collapse :deep(.el-collapse-item__header) {
-  color: var(--el-text-color-primary);
-  font-weight: 600;
-  border-bottom-color: var(--el-border-color-lighter);
-}
-
-.toolkit-result-collapse :deep(.el-collapse-item__wrap) {
-  border-bottom-color: var(--el-border-color-lighter);
-}
-
-.toolkit-result-collapse :deep(.el-collapse-item__content) {
-  padding-bottom: 0;
-  color: var(--el-text-color-primary);
 }
 
 .toolkit-session-region__json-box {
@@ -2405,19 +2324,12 @@ onUnmounted(() => {
   overflow: auto;
   max-height: 280px;
   font-family:
-    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo,
-    monospace;
+    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
   word-break: break-word;
 }
 
 .toolkit-result-json {
   margin-top: 10px;
-}
-
-.toolkit-session-card__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 .toolkit-session-card__meta {
@@ -2496,10 +2408,10 @@ onUnmounted(() => {
 }
 
 .toolkit-meta-chip {
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
-  border: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
 }
 
 .toolkit-meta-chip span {
@@ -2517,10 +2429,35 @@ onUnmounted(() => {
   word-break: break-word;
 }
 
-.toolkit-session-dialog {
+.toolkit-session-sections {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-top: 4px;
+}
+
+.toolkit-session-section {
+  padding-top: 14px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.toolkit-session-section__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.toolkit-session-section__title {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toolkit-session-section__meta {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .toolkit-session-dialog__regions {
@@ -2587,7 +2524,8 @@ onUnmounted(() => {
   .toolkit-panel__head,
   .toolkit-form-panel__head,
   .toolkit-session-card__head,
-  .toolkit-session-region__head {
+  .toolkit-session-region__head,
+  .toolkit-session-section__head {
     flex-direction: column;
   }
 
@@ -2599,26 +2537,23 @@ onUnmounted(() => {
     padding: 12px;
   }
 
-  .toolkit-hero__selectors {
-    grid-template-columns: minmax(0, 1fr);
+  .toolkit-hero__context-shell {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .toolkit-hero__context {
-    padding-top: 0;
-  }
-
-  .toolkit-page-head__actions {
-    width: 100%;
-    justify-content: flex-start;
+  .toolkit-hero__context-control {
+    flex-basis: auto;
+    max-width: none;
   }
 
   .toolkit-platform-grid {
-    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
   }
 
-  .toolkit-platform-card__footer {
-    align-items: flex-start;
-    flex-direction: column;
+  .toolkit-platform-card {
+    flex-basis: 100%;
+    width: 100%;
   }
 
   .toolkit-userinfo-panel__head {

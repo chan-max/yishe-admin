@@ -1,6 +1,6 @@
 <template>
   <section class="temu-context-card">
-    <div class="temu-context-card__head">
+    <div class="temu-context-card__summary">
       <div class="temu-context-status" :title="statusTitle">
         <span class="temu-context-dot" :class="`is-${statusTone}`" />
         <span class="temu-context-status__text" :class="`is-${statusTone}`">
@@ -8,18 +8,59 @@
         </span>
       </div>
 
-      <div class="temu-context-card__actions">
-        <el-button
-          type="primary"
-          size="small"
-          :loading="acquireLoading"
-          :disabled="acquireDisabled"
-          @click="emit('acquire-session')"
-        >
-          采集会话
-        </el-button>
-        <el-button size="small" @click="emit('open-session-center')">会话中心</el-button>
+      <div class="temu-context-meta">
+        <span class="temu-context-meta__label">账号</span>
+        <strong class="temu-context-meta__value">{{ accountText }}</strong>
       </div>
+
+      <div class="temu-context-meta">
+        <span class="temu-context-meta__label">店铺</span>
+        <strong class="temu-context-meta__value">{{ mallText }}</strong>
+      </div>
+
+      <div class="temu-context-meta">
+        <span class="temu-context-meta__label">Cookie</span>
+        <strong class="temu-context-meta__value">{{ cookieSummary }}</strong>
+      </div>
+
+      <div class="temu-context-meta temu-context-meta--time">
+        <span class="temu-context-meta__label">上次校验</span>
+        <strong
+          class="temu-context-meta__value temu-context-meta__value--time"
+          :class="{ 'is-muted': validationCheckedAtText === '未校验' }"
+        >
+          {{ validationCheckedAtText }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="temu-context-card__actions">
+      <el-button
+        type="primary"
+        size="small"
+        :loading="acquireLoading"
+        :disabled="acquireDisabled"
+        @click="emit('acquire-session')"
+      >
+        采集会话
+      </el-button>
+      <el-button
+        size="small"
+        :loading="validationLoading"
+        :disabled="!canValidate"
+        @click="emit('validate-session')"
+      >
+        校验会话
+      </el-button>
+      <el-button
+        size="small"
+        :loading="refreshInfoLoading"
+        :disabled="!canRefreshIdentity"
+        @click="emit('refresh-session-user-info')"
+      >
+        同步身份
+      </el-button>
+      <el-button size="small" @click="emit('open-session-center')">会话中心</el-button>
     </div>
   </section>
 </template>
@@ -32,6 +73,8 @@ defineOptions({ name: "ToolkitTemuWorkspaceContext" });
 
 const emit = defineEmits<{
   (e: "acquire-session"): void;
+  (e: "validate-session"): void;
+  (e: "refresh-session-user-info"): void;
   (e: "open-session-center"): void;
 }>();
 
@@ -41,6 +84,8 @@ const props = defineProps<{
   sessionRecord?: Record<string, any> | null;
   platformAccountText?: string;
   validationLoading?: boolean;
+  validationCheckedAtText?: string;
+  refreshInfoLoading?: boolean;
   acquireLoading?: boolean;
   acquireDisabled?: boolean;
 }>();
@@ -126,26 +171,39 @@ const statusMeta = computed(() => {
 const statusTone = computed(() => statusMeta.value.tone);
 const statusText = computed(() => statusMeta.value.text);
 const statusTitle = computed(() => statusMeta.value.title);
+const accountText = computed(() => availability.value.accountText || "-");
+const mallText = computed(() => availability.value.mallText || "未设置");
+const cookieSummary = computed(() => availability.value.cookieSummary || "-");
+const validationCheckedAtText = computed(() => props.validationCheckedAtText || "未校验");
+const canValidate = computed(() => !!props.profileId && availability.value.hasUsableSession);
+const canRefreshIdentity = computed(() => !!props.profileId && availability.value.hasUsableSession);
 </script>
 
 <style scoped lang="scss">
 .temu-context-card {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   min-width: 0;
 }
 
-.temu-context-card__head {
-  width: 100%;
+.temu-context-card__summary {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  align-content: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-width: 0;
 }
 
 .temu-context-card__actions {
+  flex: 0 0 auto;
+  align-self: center;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
   margin-left: auto;
@@ -154,45 +212,91 @@ const statusTitle = computed(() => statusMeta.value.title);
 .temu-context-status {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 0 2px;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 4px 8px 4px 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
+  background: var(--el-fill-color-blank);
+  white-space: nowrap;
+}
+
+.temu-context-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 999px;
+  background: var(--el-fill-color-blank);
+  white-space: nowrap;
+}
+
+.temu-context-meta__label {
+  display: inline-flex;
+  align-items: center;
+  color: var(--el-text-color-secondary);
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.temu-context-meta__value {
+  display: inline-flex;
+  align-items: center;
+  color: var(--el-text-color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  word-break: normal;
+}
+
+.temu-context-meta__value--time {
+  color: var(--el-color-primary);
+}
+
+.temu-context-meta__value--time.is-muted {
+  color: var(--el-text-color-secondary);
 }
 
 .temu-context-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
   background: var(--el-text-color-secondary);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--el-text-color-secondary) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-text-color-secondary) 14%, transparent);
 }
 
 .temu-context-dot.is-success {
   background: var(--el-color-success);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--el-color-success) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-success) 14%, transparent);
 }
 
 .temu-context-dot.is-warning {
   background: var(--el-color-warning);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--el-color-warning) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-warning) 14%, transparent);
 }
 
 .temu-context-dot.is-danger {
   background: var(--el-color-danger);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--el-color-danger) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-danger) 14%, transparent);
 }
 
 .temu-context-dot.is-muted {
   background: var(--el-text-color-secondary);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--el-text-color-secondary) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-text-color-secondary) 14%, transparent);
 }
 
 .temu-context-status__text {
+  display: inline-flex;
+  align-items: center;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -213,7 +317,7 @@ const statusTitle = computed(() => statusMeta.value.title);
 }
 
 @media (max-width: 768px) {
-  .temu-context-card__head {
+  .temu-context-card {
     flex-direction: column;
     align-items: stretch;
   }

@@ -2,13 +2,11 @@
   <div class="tools-page">
     <header class="tools-header">
       <h1 class="tools-header__title">工具</h1>
-      <p class="tools-header__desc">客户端与插件安装包集中入口；点击下方按钮在新窗口下载。</p>
     </header>
 
     <section class="tools-section" aria-labelledby="tools-downloads-heading">
       <div class="tools-section__head">
         <h2 id="tools-downloads-heading" class="tools-section__title">下载</h2>
-        <p class="tools-section__meta">未配置链接的项将保持灰色不可用。</p>
       </div>
 
       <div class="tools-grid">
@@ -16,14 +14,19 @@
           v-for="item in downloadCards"
           :key="item.key"
           class="tools-card"
-          :class="{ 'is-disabled': !item.downloadUrl }"
+          :class="{ 'is-disabled': !item.actions.some((action) => action.downloadUrl) }"
         >
           <div class="tools-card__top">
             <span class="tools-card__icon" aria-hidden="true">
               <Icon :icon="item.icon" />
             </span>
-            <el-tag size="small" effect="plain" round :type="item.downloadUrl ? 'success' : 'info'">
-              {{ item.downloadUrl ? "可用" : "未配置" }}
+            <el-tag
+              size="small"
+              effect="plain"
+              round
+              :type="item.actions.some((action) => action.downloadUrl) ? 'success' : 'info'"
+            >
+              {{ item.actions.some((action) => action.downloadUrl) ? "可用" : "未配置" }}
             </el-tag>
           </div>
 
@@ -36,12 +39,14 @@
 
           <div class="tools-card__actions">
             <el-button
+              v-for="action in item.actions"
+              :key="action.key"
               type="primary"
               round
-              :disabled="!item.downloadUrl"
-              @click="handleDownload(item.downloadUrl)"
+              :disabled="!action.downloadUrl"
+              @click="handleDownload(action.downloadUrl)"
             >
-              {{ item.actionText }}
+              {{ action.label }}
             </el-button>
           </div>
         </article>
@@ -60,91 +65,51 @@ interface DownloadCard {
   title: string;
   platform: string;
   description: string;
-  actionText: string;
-  downloadUrl: string;
   icon: string;
+  actions: Array<{
+    key: string;
+    label: string;
+    downloadUrl: string;
+  }>;
 }
 
 const downloadCards: DownloadCard[] = [
   {
-    key: "client-windows",
-    title: "客户端",
-    platform: "Windows",
-    description: "与服务端长连接，桥接浏览器自动化与桌面能力。",
-    actionText: "Windows 安装包",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
+    key: "client-unified",
+    title: "衣设客户端",
+    platform: "Windows / macOS",
+    description:
+      "统一版客户端，浏览器自动化已内置，直接下载对应系统安装包即可。",
     icon: "ep:monitor",
-  },
-  {
-    key: "client-macos",
-    title: "客户端",
-    platform: "macOS",
-    description: "与服务端长连接，桥接浏览器自动化与桌面能力。",
-    actionText: "macOS 安装包",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
-    icon: "mdi:apple",
-  },
-  {
-    key: "client-windows-with-plugins",
-    title: "客户端（内置插件）",
-    platform: "Windows",
-    description: "内置浏览器自动化端，并额外包含 PS 自动化端，适合一体化安装。",
-    actionText: "Windows 一体包",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client-with-plugins.exe",
-    icon: "ep:box",
-  },
-  {
-    key: "client-macos-with-plugins",
-    title: "客户端（内置插件）",
-    platform: "macOS",
-    description: "内置浏览器自动化端，适合一体化安装。",
-    actionText: "macOS 一体包",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client-with-plugins.dmg",
-    icon: "mdi:apple-keyboard-command",
-  },
-  {
-    key: "ps-automation",
-    title: "PS 自动化端",
-    platform: "Windows",
-    description: "Photoshop 桥接与相关自动化任务。",
-    actionText: "PS 端",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-ps/releases/latest/download/yishe-ps-windows.exe",
-    icon: "ep:set-up",
-  },
-  {
-    key: "browser-automation",
-    title: "浏览器自动化端",
-    platform: "Windows",
-    description: "独立承接浏览器自动化，与客户端解耦。",
-    actionText: "Windows 包",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-windows.exe",
-    icon: "ep:connection",
-  },
-  {
-    key: "browser-automation-macos",
-    title: "浏览器自动化端",
-    platform: "macOS",
-    description: "独立承接浏览器自动化，与客户端解耦。",
-    actionText: "macOS 包",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-auto-browser/releases/latest/download/yishe-auto-browser-mac",
-    icon: "mdi:apple",
+    actions: [
+      {
+        key: "windows",
+        label: "Windows 安装包",
+        downloadUrl:
+          "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.exe",
+      },
+      {
+        key: "macos",
+        label: "macOS 安装包",
+        downloadUrl:
+          "https://github.com/1s-design/yishe-client/releases/latest/download/yishe-client.dmg",
+      },
+    ],
   },
   {
     key: "chrome-extension",
     title: "YiShe 浏览器插件",
     platform: "Chrome / Edge",
-    description: "解压后于扩展页「加载已解压的扩展程序」导入。",
-    actionText: "插件 zip",
-    downloadUrl:
-      "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
+    description: "下载后解压，在扩展页通过“加载已解压的扩展程序”导入即可。",
     icon: "mdi:puzzle",
+    actions: [
+      {
+        key: "extension-zip",
+        label: "插件 zip",
+        downloadUrl:
+          "https://github.com/1s-design/yishe-extensions/releases/latest/download/yishe-extensions.zip",
+      },
+    ],
   },
 ];
 
@@ -178,14 +143,6 @@ function handleDownload(downloadUrl: string) {
   color: var(--el-text-color-primary);
 }
 
-.tools-header__desc {
-  margin: 8px 0 0;
-  font-size: 13px;
-  line-height: 1.65;
-  color: var(--el-text-color-secondary);
-  max-width: 48rem;
-}
-
 .tools-section {
   display: flex;
   flex-direction: column;
@@ -207,19 +164,13 @@ function handleDownload(downloadUrl: string) {
   color: var(--el-text-color-primary);
 }
 
-.tools-section__meta {
-  margin: 0;
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  line-height: 1.45;
-}
-
 .tools-grid {
   display: grid;
   width: 100%;
   /* auto-fit 收起空列，1fr 均分剩余宽度，行内卡片拉满整行 */
   gap: clamp(12px, 1.4vw, 18px);
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 360px));
+  justify-content: start;
 }
 
 .tools-card {
@@ -302,6 +253,9 @@ function handleDownload(downloadUrl: string) {
 .tools-card__actions {
   margin-top: auto;
   padding-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .tools-card__actions :deep(.el-button) {

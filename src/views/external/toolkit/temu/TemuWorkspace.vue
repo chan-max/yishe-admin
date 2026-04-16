@@ -228,6 +228,14 @@
             </div>
 
             <div class="temu-workspace__result-tools">
+              <el-button
+                v-if="canCopyPublishTemplate"
+                text
+                size="small"
+                @click="copyText('商品模板', publishTemplateText)"
+              >
+                复制商品模板
+              </el-button>
               <el-button text size="small" @click="copyText('原始结果', actionResultText)">
                 复制结果
               </el-button>
@@ -238,7 +246,6 @@
         </div>
       </div>
     </section>
-
   </section>
 </template>
 
@@ -386,7 +393,9 @@ const mergedCatalog = computed<TemuWorkspaceActionGroup[]>(() => {
       (action) => action.key === TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
     )
   ) {
-    const goodsDetailIndex = targetGroup.actions.findIndex((action) => action.key === "goods.detail");
+    const goodsDetailIndex = targetGroup.actions.findIndex(
+      (action) => action.key === "goods.detail",
+    );
     if (goodsDetailIndex >= 0) {
       targetGroup.actions.splice(goodsDetailIndex + 1, 0, publishDetailToolAction.value);
     } else {
@@ -556,21 +565,52 @@ const activeActionResult = computed<TemuActionResponse | null>(() => {
 
   return activeActionState.value.lastResult;
 });
-const activeActionRunning = computed(
-  () => {
-    if (!selectedAction.value?.key) {
-      return false;
-    }
+const activeActionRunning = computed(() => {
+  if (!selectedAction.value?.key) {
+    return false;
+  }
 
-    if (isToolAction(selectedAction.value)) {
-      return props.runningFeatureKey === selectedAction.value.key;
-    }
+  if (isToolAction(selectedAction.value)) {
+    return props.runningFeatureKey === selectedAction.value.key;
+  }
 
-    return runningActionKey.value === selectedAction.value.key;
-  },
-);
+  return runningActionKey.value === selectedAction.value.key;
+});
 const isAnyActionRunning = computed(() => !!runningActionKey.value || !!props.toolBusy);
 const actionResultText = computed(() => jsonText(activeActionResult.value ?? null));
+const resolvePublishTemplateValue = (result: TemuActionResponse | null) => {
+  if (
+    !result ||
+    String(result.action || "").trim() !== TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY
+  ) {
+    return null;
+  }
+
+  const resultValue = asPlainObject(result.result);
+  const rawValue = asPlainObject(result.raw);
+  const candidateContainers = [
+    resultValue,
+    asPlainObject(resultValue.data),
+    rawValue,
+    asPlainObject(rawValue.data),
+  ];
+
+  for (const container of candidateContainers) {
+    if (Object.prototype.hasOwnProperty.call(container, "postDataJson")) {
+      const postDataJson = container.postDataJson;
+      if (postDataJson !== undefined && postDataJson !== null) {
+        return postDataJson;
+      }
+    }
+  }
+
+  return null;
+};
+const publishTemplateText = computed(() => {
+  const value = resolvePublishTemplateValue(activeActionResult.value);
+  return value === null ? "" : jsonText(value);
+});
+const canCopyPublishTemplate = computed(() => !!publishTemplateText.value.trim());
 const canRunSelectedAction = computed(() => {
   if (!selectedAction.value || !selectedActionPreset.value) {
     return false;
@@ -999,14 +1039,19 @@ onMounted(() => {
   border: 1px solid var(--el-border-color);
   background: var(--el-bg-color);
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
   transition:
     border-color 0.18s ease,
-    background-color 0.18s ease;
+    background-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .temu-function-button:hover,
 .temu-helper-chip:hover {
   border-color: var(--el-border-color-dark);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
 }
 
 .temu-function-button__label,
@@ -1034,41 +1079,56 @@ onMounted(() => {
 
 .temu-workspace__action-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
   gap: 10px;
 }
 
 .temu-function-button {
-  padding: 10px 11px;
-  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 104px;
+  padding: 10px;
+  border-radius: 12px;
   text-align: left;
   background: var(--el-fill-color-blank);
+}
+
+.temu-function-button__label {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .temu-function-button__head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
 }
 
 .temu-function-button__status {
   flex-shrink: 0;
-  padding: 0 7px;
+  padding: 0 6px;
   border-radius: 999px;
   background: var(--el-fill-color-extra-light);
   color: var(--el-text-color-regular);
   font-size: 10px;
-  line-height: 20px;
+  line-height: 18px;
 }
 
 .temu-function-button__desc {
   display: -webkit-box;
-  margin-top: 7px;
+  margin-top: 6px;
   overflow: hidden;
   color: var(--el-text-color-regular);
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -1076,7 +1136,15 @@ onMounted(() => {
 .temu-function-button__meta,
 .temu-helper-chip__desc {
   display: block;
-  margin-top: 8px;
+  margin-top: auto;
+}
+
+.temu-function-button__meta {
+  padding-top: 8px;
+  color: var(--el-text-color-placeholder);
+  font-size: 10px;
+  line-height: 1.4;
+  word-break: break-all;
 }
 
 .temu-function-button.is-active {
@@ -1212,7 +1280,7 @@ onMounted(() => {
 
 @media (max-width: 1280px) {
   .temu-workspace__action-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 }
 
