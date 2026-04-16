@@ -1,11 +1,20 @@
 <template>
   <ContentWrap :plain="true">
-    <ListPageLayout class="prompt-page">
+    <ListPageLayout
+      class="prompt-page"
+      :sidebar-width="folderTreeCollapsed ? '28px' : '280px'"
+    >
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="12"
+                :md="10"
+                :lg="8"
+              >
                 <el-form-item label="提示词标题">
                   <el-input
                     v-model="queryParams.search"
@@ -13,15 +22,37 @@
                     placeholder="请输入提示词标题关键词"
                     clearable
                     @keyup.enter="getList"
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
             </el-row>
+
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList">搜索</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="getList"
+              >
+                搜索
+              </el-button>
               <el-button v-if="isAdmin" size="small" type="primary" :icon="Plus" @click="handleAdd">
                 添加提示词
+              </el-button>
+              <el-button
+                v-if="isAdmin"
+                size="small"
+                :loading="moveLoading"
+                :disabled="!ids.length || selectedFolderId === FOLDER_FILTER.ALL"
+                @click="handleBatchMoveToCurrentFolder"
+              >
+                移到当前分类({{ ids.length }})
               </el-button>
               <el-button
                 v-if="isAdmin"
@@ -29,8 +60,8 @@
                 type="danger"
                 :icon="Delete"
                 :loading="deleteLoading"
-                @click="handleDelete(null)"
                 :disabled="!ids.length"
+                @click="handleDelete(null)"
               >
                 批量删除({{ ids.length }})
               </el-button>
@@ -39,78 +70,121 @@
         </div>
       </template>
 
+      <template #sidebar>
+        <div class="list-page-panel list-page-panel--flat list-page-sidebar prompt-sidebar folder-sidebar-shell">
+          <div class="list-page-sidebar__body folder-sidebar-body">
+            <div v-show="!folderTreeCollapsed" class="folder-sidebar-tree">
+              <FolderTree
+                v-model="selectedFolderId"
+                width="100%"
+                :folder-category="FOLDER_CATEGORY"
+                :show-count="false"
+                @change="handleFolderChange"
+                @reloaded="handleFolderTreeReloaded"
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="folder-sidebar-toggle"
+            @click="folderTreeCollapsed = !folderTreeCollapsed"
+          >
+            <el-icon :size="14">
+              <DArrowRight v-if="folderTreeCollapsed" />
+              <DArrowLeft v-else />
+            </el-icon>
+          </button>
+        </div>
+      </template>
+
       <template #table>
         <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body">
             <div class="common-table">
-        <vxe-grid
-          v-bind="gridOptions"
-          :data="dataSource"
-          :loading="loading"
-          @checkbox-change="checkboxChange"
-          @checkbox-all="checkboxAllChange"
-        >
-          <template #operationDefaultSlot="{ row }">
-            <div class="flex justify-start">
-              <el-dropdown
-                trigger="click"
-                placement="bottom-end"
-                @command="(command) => handleOperationCommand(command, row)"
-                class="operation-dropdown"
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
               >
-                <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
-                <template #dropdown>
-                  <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item v-if="isAdmin" command="edit">编辑</el-dropdown-item>
-                    <el-dropdown-item v-if="isAdmin" command="delete" divided class="operation-menu-item--danger">删除</el-dropdown-item>
-                  </el-dropdown-menu>
+                <template #operationDefaultSlot="{ row }">
+                  <div class="flex justify-start">
+                    <el-dropdown
+                      trigger="click"
+                      placement="bottom-end"
+                      @command="(command) => handleOperationCommand(command, row)"
+                      class="operation-dropdown"
+                    >
+                      <el-button type="primary" link size="small" class="operation-trigger-button">
+                        操作
+                      </el-button>
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item v-if="isAdmin" command="edit">编辑</el-dropdown-item>
+                          <el-dropdown-item
+                            v-if="isAdmin"
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
+                            删除
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
                 </template>
-              </el-dropdown>
-            </div>
-          </template>
-          <template #titleSlot="{ row }">
-            <div class="prompt-title">
-              {{ row.title }}
-            </div>
-          </template>
-          <template #contentSlot="{ row }">
-            <div class="prompt-content">
-              {{ row.content }}
-            </div>
-          </template>
-          <template #descriptionSlot="{ row }">
-            <div class="text-wrap" style="max-width: 200px; word-break: break-all">
-              {{ row.description || "-" }}
-            </div>
-          </template>
-          <template #tagsSlot="{ row }">
-            <div class="tags-container">
-              <el-tag
-                v-for="tag in getTagsArray(row.tags)"
-                :key="tag"
-                size="small"
-                style="margin-right: 4px; margin-bottom: 4px"
-              >
-                {{ tag }}
-              </el-tag>
-              <span v-if="!row.tags">-</span>
-            </div>
-          </template>
-          <template #createdAtSlot="{ row }">
-            <span>{{ formatDateTime(row.createdAt) }}</span>
-          </template>
-          <template #updatedAtSlot="{ row }">
-            <span>{{ formatDateTime(row.updatedAt) }}</span>
-          </template>
-        </vxe-grid>
+
+                <template #titleSlot="{ row }">
+                  <div class="prompt-title">{{ row.title }}</div>
+                </template>
+
+                <template #contentSlot="{ row }">
+                  <div class="prompt-content">{{ row.content }}</div>
+                </template>
+
+                <template #descriptionSlot="{ row }">
+                  <div class="text-wrap prompt-description">{{ row.description || "-" }}</div>
+                </template>
+
+                <template #folderSlot="{ row }">
+                  <div class="prompt-folder">{{ row.folder || "未分组" }}</div>
+                </template>
+
+                <template #tagsSlot="{ row }">
+                  <div class="tags-container">
+                    <el-tag
+                      v-for="tag in getTagsArray(row.tags)"
+                      :key="tag"
+                      size="small"
+                      class="prompt-tag"
+                    >
+                      {{ tag }}
+                    </el-tag>
+                    <span v-if="!row.tags">-</span>
+                  </div>
+                </template>
+
+                <template #createdAtSlot="{ row }">
+                  <span>{{ formatDateTime(row.createdAt) }}</span>
+                </template>
+
+                <template #updatedAtSlot="{ row }">
+                  <span>{{ formatDateTime(row.updatedAt) }}</span>
+                </template>
+              </vxe-grid>
             </div>
           </div>
         </div>
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
-          <pagination
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
+          <Pagination
             :total="total"
             v-model:page="queryParams.currentPage"
             v-model:limit="queryParams.pageSize"
@@ -120,108 +194,134 @@
       </template>
     </ListPageLayout>
 
-  <!-- 新增/编辑对话框 -->
-  <el-dialog
-    :title="dialogTitle"
-    v-model="dialogVisible"
-    width="700px"
-    @close="dialogClose"
-    align-center
-  >
-    <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-      <el-row>
-        <el-col :span="24">
-          <el-form-item label="提示词标题" prop="title">
-            <el-input
-              v-model="form.title"
-              placeholder="请输入提示词标题"
-              maxlength="200"
-              show-word-limit
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24">
-          <el-form-item label="提示词内容" prop="content">
-            <el-input
-              v-model="form.content"
-              type="textarea"
-              :rows="8"
-              placeholder="请输入提示词内容"
-              maxlength="5000"
-              show-word-limit
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24">
-          <el-form-item label="描述" prop="description">
-            <el-input
-              v-model="form.description"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入描述（可选）"
-              maxlength="500"
-              show-word-limit
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="24">
-          <el-form-item label="标签" prop="tags">
-            <el-input
-              v-model="form.tags"
-              placeholder="请输入标签，多个标签用逗号分隔（可选）"
-              maxlength="200"
-              show-word-limit
-            />
-            <div style="color: #999; font-size: 12px; margin-top: 4px">
-              例如：AI,文本生成,内容创作
-            </div>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-    <template #footer>
-      <el-button @click="dialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitForm" :loading="submitLoading">
-        确定
-      </el-button>
-    </template>
-  </el-dialog>
+    <el-dialog
+      :title="dialogTitle"
+      v-model="dialogVisible"
+      width="700px"
+      @close="dialogClose"
+      align-center
+    >
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="提示词标题" prop="title">
+              <el-input
+                v-model="form.title"
+                placeholder="请输入提示词标题"
+                maxlength="200"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="所属文件夹">
+              <el-select
+                v-model="form.folderId"
+                placeholder="请选择文件夹"
+                filterable
+                :loading="folderOptionsLoading"
+              >
+                <el-option label="未分组" :value="FOLDER_FILTER.NOT_GROUP" />
+                <el-option
+                  v-for="folder in folderOptions"
+                  :key="folder.id"
+                  :label="folder.path || folder.name"
+                  :value="folder.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="提示词内容" prop="content">
+              <el-input
+                v-model="form.content"
+                type="textarea"
+                :rows="8"
+                placeholder="请输入提示词内容"
+                maxlength="5000"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="描述" prop="description">
+              <el-input
+                v-model="form.description"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入描述（可选）"
+                maxlength="500"
+                show-word-limit
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="24">
+            <el-form-item label="标签" prop="tags">
+              <el-input
+                v-model="form.tags"
+                placeholder="请输入标签，多个标签用逗号分隔（可选）"
+                maxlength="200"
+                show-word-limit
+              />
+              <div class="prompt-form-tip">例如：AI,文本生成,内容创作</div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm" :loading="submitLoading">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watchEffect, computed } from "vue";
+import { computed, onMounted, reactive, ref, watchEffect } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { DArrowLeft, DArrowRight, Delete, Plus, Search } from "@element-plus/icons-vue";
+import { useLocalStorage, useWindowSize } from "@vueuse/core";
 import {
-  Search,
-  Delete,
-  Plus,
-  Edit,
-} from "@element-plus/icons-vue";
-import {
-  getPromptList,
+  batchMovePrompt,
   createPrompt,
-  updatePrompt,
   deletePrompt,
+  getPromptList,
+  updatePrompt,
 } from "@/api/prompt";
+import { getStickerFolderList } from "@/api/material";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
+import FolderTree from "@/components/material/FolderTree.vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
-import { useWindowSize } from "@vueuse/core";
+import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 import { useUserStore } from "@/store/modules/user";
 
+defineOptions({ name: "AiPromptIndex" });
+
+const FOLDER_CATEGORY = "prompt";
+
 const userStore = useUserStore();
-
-// 判断是否为管理员
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
-
 const { height } = useWindowSize();
+
+const folderTreeCollapsed = useLocalStorage("prompt_folder_collapsed", false);
+const selectedFolderId = ref<string | null>(FOLDER_FILTER.ALL);
+const folderOptions = ref<any[]>([]);
+const folderOptionsLoading = ref(false);
 
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
   search: "",
+  folderId: FOLDER_FILTER.ALL as string | null | undefined,
 });
 
 const gridOptions = ref({
@@ -241,14 +341,22 @@ const gridOptions = ref({
     {
       title: "提示词内容",
       field: "content",
-      minWidth: 300,
+      minWidth: 440,
+      showOverflow: false,
+      className: "prompt-content-cell",
       slots: { default: "contentSlot" },
     },
     {
       title: "描述",
       field: "description",
-      minWidth: 200,
+      minWidth: 220,
       slots: { default: "descriptionSlot" },
+    },
+    {
+      title: "文件夹",
+      field: "folder",
+      minWidth: 180,
+      slots: { default: "folderSlot" },
     },
     {
       title: "标签",
@@ -278,30 +386,31 @@ const gridOptions = ref({
   ],
 } as any);
 
-// 监听窗口大小变化，动态调整表格高度
 watchEffect(() => {
-  gridOptions.value.maxHeight = height.value - 280;
+  gridOptions.value.maxHeight = height.value - 300;
 });
 
-const dataSource = ref([]);
+const dataSource = ref<any[]>([]);
 const loading = ref(false);
-const ids = ref([]);
+const ids = ref<number[]>([]);
 const total = ref(0);
 const formRef = ref();
 const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(false);
+const submitLoading = ref(false);
+const deleteLoading = ref(false);
+const moveLoading = ref(false);
+const editId = ref<number | null>(null);
+
 const form = ref({
   title: "",
   content: "",
   description: "",
   tags: "",
+  folderId: FOLDER_FILTER.NOT_GROUP as string | null,
 });
-const submitLoading = ref(false);
-const deleteLoading = ref(false);
-const editId = ref<string | null>(null);
 
-// 格式化日期时间
 function formatDateTime(dateStr: string) {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
@@ -315,16 +424,40 @@ function formatDateTime(dateStr: string) {
   });
 }
 
-// 获取标签数组
-function getTagsArray(tags: string) {
+function getTagsArray(tags?: string) {
   if (!tags) return [];
-  return tags.split(",").map((tag) => tag.trim()).filter((tag) => tag);
+  return tags
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag);
+}
+
+function getDefaultFormFolderId() {
+  return selectedFolderId.value && selectedFolderId.value !== FOLDER_FILTER.ALL
+    ? selectedFolderId.value
+    : FOLDER_FILTER.NOT_GROUP;
+}
+
+async function loadFolderOptions() {
+  folderOptionsLoading.value = true;
+  try {
+    const res = await getStickerFolderList({ folderCategory: FOLDER_CATEGORY });
+    folderOptions.value = Array.isArray(res) ? res : [];
+  } catch (error) {
+    console.error("获取文件夹列表失败:", error);
+    folderOptions.value = [];
+  } finally {
+    folderOptionsLoading.value = false;
+  }
 }
 
 async function getList() {
   loading.value = true;
   try {
-    const params = { ...queryParams };
+    const params = {
+      ...queryParams,
+      folderId: convertFolderIdToApiParam(queryParams.folderId),
+    };
     const res = await getPromptList(params);
     dataSource.value = res.list || [];
     total.value = res.total || 0;
@@ -337,6 +470,17 @@ async function getList() {
   }
 }
 
+function handleFolderChange(payload: { folderId: string | null }) {
+  selectedFolderId.value = payload.folderId || FOLDER_FILTER.ALL;
+  queryParams.folderId = payload.folderId || FOLDER_FILTER.ALL;
+  queryParams.currentPage = 1;
+  void getList();
+}
+
+function handleFolderTreeReloaded() {
+  void loadFolderOptions();
+}
+
 function handleAdd() {
   isEdit.value = false;
   dialogVisible.value = true;
@@ -346,42 +490,70 @@ function handleAdd() {
     content: "",
     description: "",
     tags: "",
+    folderId: getDefaultFormFolderId(),
   };
 }
-
-onMounted(getList);
 
 function checkboxChange(e) {
   const records = Array.isArray(e.records) ? e.records : [];
   const reserves = Array.isArray(e.reserves) ? e.reserves : [];
-  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
+  ids.value = [...records.map((item) => Number(item.id)), ...reserves.map((item) => Number(item.id))];
 }
 
 function checkboxAllChange(e) {
   const records = Array.isArray(e.records) ? e.records : [];
   const reserves = Array.isArray(e.reserves) ? e.reserves : [];
-  ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
+  ids.value = [...records.map((item) => Number(item.id)), ...reserves.map((item) => Number(item.id))];
 }
 
-function handleEdit(row) {
+function handleEdit(row: any) {
   isEdit.value = true;
   dialogVisible.value = true;
   dialogTitle.value = "编辑提示词";
-  editId.value = row.id;
+  editId.value = Number(row.id);
   form.value = {
     title: row.title || "",
     content: row.content || "",
     description: row.description || "",
     tags: row.tags || "",
+    folderId: row.folderId || FOLDER_FILTER.NOT_GROUP,
   };
 }
 
-function handleDelete(row?) {
-  let delIds = null;
+async function handleBatchMoveToCurrentFolder() {
+  if (!ids.value.length) {
+    ElMessage.warning("请选择要移动的提示词");
+    return;
+  }
+
+  if (selectedFolderId.value === FOLDER_FILTER.ALL) {
+    ElMessage.warning("请先在左侧选择一个目标分类");
+    return;
+  }
+
+  try {
+    moveLoading.value = true;
+    await batchMovePrompt({
+      ids: [...ids.value],
+      folderId: convertFolderIdToApiParam(selectedFolderId.value) as string | null,
+    });
+    ElMessage.success("已移动到当前分类");
+    await getList();
+  } catch (error) {
+    console.error("批量移动失败:", error);
+    ElMessage.error("批量移动失败");
+  } finally {
+    moveLoading.value = false;
+  }
+}
+
+function handleDelete(row?: any) {
+  let delIds: number[] = [];
   if (row) {
-    delIds = [row.id];
+    delIds = [Number(row.id)];
   } else if (!ids.value.length) {
-    return ElMessage.warning("请选择要删除的数据");
+    ElMessage.warning("请选择要删除的数据");
+    return;
   } else {
     delIds = [...ids.value];
   }
@@ -409,7 +581,6 @@ function handleDelete(row?) {
     .catch(() => {});
 }
 
-// 处理dropdown操作命令
 function handleOperationCommand(command: string, row: any) {
   switch (command) {
     case "edit":
@@ -436,38 +607,37 @@ const rules = {
   tags: [{ max: 200, message: "标签长度不能超过 200 个字符", trigger: "blur" }],
 };
 
-const dialogClose = () => {
+function dialogClose() {
   dialogVisible.value = false;
   submitLoading.value = false;
+  editId.value = null;
   formRef.value?.resetFields();
-};
+}
 
-const submitForm = async () => {
+async function submitForm() {
   if (!formRef.value) return;
 
   try {
     await formRef.value.validate();
     submitLoading.value = true;
 
-    if (isEdit.value) {
-      await updatePrompt(editId.value, {
-        title: form.value.title,
-        content: form.value.content,
-        description: form.value.description,
-        tags: form.value.tags,
-      });
+    const payload = {
+      title: form.value.title,
+      content: form.value.content,
+      description: form.value.description,
+      tags: form.value.tags,
+      folderId: form.value.folderId,
+    };
+
+    if (isEdit.value && editId.value !== null) {
+      await updatePrompt(editId.value, payload);
       ElMessage.success("更新成功");
     } else {
-      await createPrompt({
-        title: form.value.title,
-        content: form.value.content,
-        description: form.value.description,
-        tags: form.value.tags,
-      });
+      await createPrompt(payload);
       ElMessage.success("新增成功");
     }
 
-    getList();
+    await getList();
     dialogVisible.value = false;
   } catch (error) {
     console.error("提交失败:", error);
@@ -475,7 +645,12 @@ const submitForm = async () => {
   } finally {
     submitLoading.value = false;
   }
-};
+}
+
+onMounted(async () => {
+  await loadFolderOptions();
+  await getList();
+});
 </script>
 
 <style scoped>
@@ -497,55 +672,90 @@ const submitForm = async () => {
   padding-top: 10px;
 }
 
-/* 提示词标题样式 */
 .prompt-title {
   font-weight: 500;
   color: var(--el-text-color-primary);
-  max-width: 200px;
+  max-width: 220px;
   word-break: break-all;
 }
 
-/* 提示词内容样式 */
+:deep(.prompt-page .vxe-body--row) {
+  height: auto !important;
+}
+
+:deep(.prompt-page .common-table__body-cell) {
+  height: auto !important;
+}
+
+:deep(.prompt-page .prompt-content-cell) {
+  vertical-align: top !important;
+}
+
+:deep(.prompt-page .prompt-content-cell .vxe-cell),
+:deep(.prompt-page .prompt-content-cell .vxe-cell--wrapper),
+:deep(.prompt-page .prompt-content-cell .vxe-cell--label) {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
 .prompt-content {
-  max-width: 300px;
-  word-break: break-all;
-  line-height: 1.6;
-  font-size: 14px;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.55;
+  font-size: 12px;
   color: var(--el-text-color-regular);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* 标签容器 */
+.prompt-description {
+  max-width: 220px;
+  word-break: break-all;
+}
+
+.prompt-folder {
+  max-width: 180px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  word-break: break-all;
+}
+
 .tags-container {
-  max-width: 200px;
+  max-width: 220px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
 
-@media (max-width: 600px) {
-  .shrink-0 {
-    width: 100%;
-  }
-
-  .shrink-0 > * {
-    width: 100% !important;
-    min-width: 0 !important;
-    margin-bottom: 6px !important;
-  }
-
-  .el-input,
-  .el-select,
-  .el-button,
-  .el-date-editor {
-    width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
-  }
-
-  .prompt-content {
-    max-width: 100%;
-    margin: 0 4px;
-  }
+.prompt-tag {
+  margin-right: 4px;
+  margin-bottom: 4px;
 }
 
+.prompt-form-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+@media (max-width: 600px) {
+  .prompt-content,
+  .prompt-description,
+  .prompt-folder {
+    max-width: 100%;
+  }
+}
 </style>

@@ -38,15 +38,6 @@ export function extractBrowserAutomationSupportedTaskTypes(
   const safeRuntime = getBrowserAutomationRuntimeSafe(runtime);
   const list = [
     ...(Array.isArray(safeRuntime.supportedTaskTypes) ? safeRuntime.supportedTaskTypes : []),
-    ...(Array.isArray(safeRuntime.details?.supportedTaskTypes)
-      ? safeRuntime.details.supportedTaskTypes
-      : []),
-    ...(Array.isArray(safeRuntime.details?.executableTaskTypes)
-      ? safeRuntime.details.executableTaskTypes
-      : []),
-    ...(Array.isArray(safeRuntime.details?.capabilities)
-      ? safeRuntime.details.capabilities.map((item: any) => item?.taskType)
-      : []),
     ...BROWSER_AUTOMATION_EXECUTABLE_TASK_TYPES,
   ]
     .map((item) => String(item || "").trim())

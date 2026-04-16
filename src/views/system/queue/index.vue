@@ -584,7 +584,7 @@
             <span>运行日志窗口</span>
             <span>{{ currentTaskRuntime?.logCount ?? currentTaskLogs.length }} 条记录</span>
           </div>
-        <div class="queue-runtime-dialog__footer-actions">
+          <div class="queue-runtime-dialog__footer-actions">
             <el-button @click="refreshRuntimeLogDialogDetail()">刷新日志</el-button>
             <el-button @click="runtimeLogDialogVisible = false">关闭</el-button>
           </div>
@@ -682,23 +682,27 @@
       @open="handleOpenPublishDispatchDialog"
     >
       <div class="publish-dispatch-dialog__body">
-        <div class="publish-dispatch-dialog__panel">
+        <div
+          v-loading="publishDispatchDialogLoading"
+          :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
+          class="publish-dispatch-dialog__panel"
+        >
           <div class="publish-dispatch-dialog__panel-title">浏览器自动化节点</div>
-          <div v-if="publishDispatchDialogLoading" class="publish-dispatch-dialog__empty">
-            正在加载执行环境...
-          </div>
-          <div v-else-if="dispatchAvailableRows.length" class="publish-dispatch-dialog__table">
+          <div
+            v-if="!publishDispatchDialogLoading && dispatchAvailableRows.length"
+            class="publish-dispatch-dialog__table"
+          >
             <el-table
               :data="dispatchAvailableRows"
               border
               size="small"
               row-key="optionKey"
-              :max-height="360"
+              :max-height="332"
               class="publish-dispatch-dialog__table-main"
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleDispatchOptionRowClick"
             >
-              <el-table-column label="" width="48" align="center">
+              <el-table-column label="" width="44" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -708,7 +712,7 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="客户端节点" min-width="140" show-overflow-tooltip>
+              <el-table-column label="客户端节点" min-width="124" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
@@ -716,10 +720,10 @@
               <el-table-column
                 prop="connectedAtLabel"
                 label="连接时间"
-                width="156"
+                width="144"
                 show-overflow-tooltip
               />
-              <el-table-column label="在线状态" width="88" align="center">
+              <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -729,7 +733,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="自动化服务" width="96" align="center">
+              <el-table-column label="服务" width="82" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -742,10 +746,10 @@
               <el-table-column
                 prop="profileLabel"
                 label="执行环境"
-                min-width="180"
+                min-width="156"
                 show-overflow-tooltip
               />
-              <el-table-column label="环境状态" width="88" align="center">
+              <el-table-column label="环境" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -758,7 +762,7 @@
               <el-table-column
                 prop="description"
                 label="说明"
-                min-width="220"
+                min-width="180"
                 show-overflow-tooltip
               />
             </el-table>
@@ -797,23 +801,27 @@
       @open="handleOpenAutoDispatchTargetDialog"
     >
       <div class="publish-dispatch-dialog__body">
-        <div class="publish-dispatch-dialog__panel">
+        <div
+          v-loading="autoDispatchTargetDialogLoading"
+          :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
+          class="publish-dispatch-dialog__panel"
+        >
           <div class="publish-dispatch-dialog__panel-title">浏览器自动化节点</div>
-          <div v-if="autoDispatchTargetDialogLoading" class="publish-dispatch-dialog__empty">
-            正在加载自动调度环境...
-          </div>
-          <div v-else-if="autoDispatchRows.length" class="publish-dispatch-dialog__table">
+          <div
+            v-if="!autoDispatchTargetDialogLoading && autoDispatchRows.length"
+            class="publish-dispatch-dialog__table"
+          >
             <el-table
               :data="autoDispatchRows"
               border
               size="small"
               row-key="optionKey"
-              :max-height="360"
+              :max-height="332"
               class="publish-dispatch-dialog__table-main"
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleAutoDispatchOptionRowClick"
             >
-              <el-table-column label="" width="48" align="center">
+              <el-table-column label="" width="44" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -823,7 +831,7 @@
                   />
                 </template>
               </el-table-column>
-              <el-table-column label="客户端节点" min-width="140" show-overflow-tooltip>
+              <el-table-column label="客户端节点" min-width="124" show-overflow-tooltip>
                 <template #default="{ row }">
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
@@ -831,10 +839,10 @@
               <el-table-column
                 prop="connectedAtLabel"
                 label="连接时间"
-                width="156"
+                width="144"
                 show-overflow-tooltip
               />
-              <el-table-column label="在线状态" width="88" align="center">
+              <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -844,7 +852,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="自动化服务" width="96" align="center">
+              <el-table-column label="服务" width="82" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -857,10 +865,10 @@
               <el-table-column
                 prop="profileLabel"
                 label="自动调度环境"
-                min-width="180"
+                min-width="156"
                 show-overflow-tooltip
               />
-              <el-table-column label="环境状态" width="88" align="center">
+              <el-table-column label="环境" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -873,7 +881,7 @@
               <el-table-column
                 prop="description"
                 label="说明"
-                min-width="210"
+                min-width="180"
                 show-overflow-tooltip
               />
             </el-table>
@@ -1026,7 +1034,11 @@ const {
   refresh: refreshBrowserAutomationClients,
   getServiceRuntime: getBrowserAutomationRuntime,
 } = usePluginClientNodes("browser-automation", { includeOffline: true });
-const { refresh: refreshPublishTaskRuntime } = usePublishTaskRuntimeState();
+const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
+const {
+  refresh: refreshPublishTaskRuntime,
+  setAutoSchedulingEnabled: setPublishTaskAutoSchedulingEnabled,
+} = usePublishTaskRuntimeState();
 
 // 查询条件
 const queryParams = reactive({
@@ -2127,7 +2139,10 @@ function getExecutionStatusInfo(row: QueueMessage): ExecutionStatusInfo {
 
 function getQueueTaskDispatchTarget(row?: QueueMessage | null) {
   const meta = getPublishDispatchMeta(row);
-  const runtime = extractTaskRuntime(normalizeTaskDataRecord(row?.data));
+  const runtime = extractTaskRuntime(
+    normalizeTaskDataRecord(row?.data),
+    row?.taskRuntimeLog,
+  );
   const clientId = String(meta?.assignedClientId || runtime?.assignedClientId || "").trim() || null;
   const machineCode =
     String(meta?.assignedMachineCode || runtime?.assignedMachineCode || "").trim() || null;
@@ -2304,7 +2319,7 @@ function extractTaskRuntime(data: any, runtimeLog?: any) {
           ? runtimeLogRecord.logCount
           : Array.isArray(runtimeLogRecord.logs)
             ? runtimeLogRecord.logs.length
-            : (Number(summary.logCount) || 0),
+            : Number(summary.logCount) || 0,
       lastLogId: runtimeLogRecord.lastLogId || summary.lastLogId || null,
       lastLogTime: runtimeLogRecord.lastLogTime || summary.lastLogTime || null,
       lastLogLevel: runtimeLogRecord.lastLogLevel || summary.lastLogLevel || null,
@@ -2348,10 +2363,7 @@ function extractTaskRuntime(data: any, runtimeLog?: any) {
 }
 
 function getTaskLogCount(row?: QueueMessage | null) {
-  const runtime = extractTaskRuntime(
-    normalizeTaskDataRecord(row?.data),
-    row?.taskRuntimeLog,
-  );
+  const runtime = extractTaskRuntime(normalizeTaskDataRecord(row?.data), row?.taskRuntimeLog);
   if (typeof runtime?.logCount === "number") {
     return runtime.logCount;
   }
@@ -2590,10 +2602,29 @@ function handleEdit(row: QueueMessage) {
   statusDialogVisible.value = true;
 }
 
+function normalizeTaskDetailMessageResponse(payload: any) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload)
+  ) {
+    if ("success" in payload) {
+      if (payload.success === false) {
+        throw new Error(String(payload.message || "获取任务详情失败"));
+      }
+      return payload.data;
+    }
+
+    if ("data" in payload && !("id" in payload)) {
+      return payload.data;
+    }
+  }
+  return payload;
+}
+
 function applyTaskDetailPayload(message: any, fallbackRow?: QueueMessage | null) {
   const fallbackData = parseMaybeJson(fallbackRow?.data) ?? fallbackRow?.data ?? {};
-  const fallbackRuntimeLog =
-    normalizeTaskRuntimeLogRecord(fallbackRow?.taskRuntimeLog) ?? null;
+  const fallbackRuntimeLog = normalizeTaskRuntimeLogRecord(fallbackRow?.taskRuntimeLog) ?? null;
   const taskData = parseMaybeJson(message?.data);
   const taskRuntimeLog = normalizeTaskRuntimeLogRecord(message?.taskRuntimeLog);
 
@@ -2610,10 +2641,7 @@ async function fetchTaskDetailPayload(
   } = {},
 ) {
   const res = await getTaskDetail(queue, messageId);
-  const message =
-    res?.data && typeof res.data === "object" && !Array.isArray(res.data)
-      ? res.data
-      : res;
+  const message = normalizeTaskDetailMessageResponse(res?.data ?? res);
   applyTaskDetailPayload(message, options.fallbackRow);
   return message;
 }
@@ -2681,8 +2709,7 @@ async function handleViewData(row: QueueMessage) {
     });
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {};
-    currentTaskRuntimeLog.value =
-      normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
+    currentTaskRuntimeLog.value = normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
     ElMessage.warning("任务详情获取失败，已显示列表中的数据快照");
   } finally {
     dataDialogLoading.value = false;
@@ -2693,8 +2720,7 @@ async function handleViewRuntimeLogs(row: QueueMessage) {
   runtimeLogDialogVisible.value = true;
   runtimeLogDialogLoading.value = true;
   currentTaskData.value = {};
-  currentTaskRuntimeLog.value =
-    normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
+  currentTaskRuntimeLog.value = normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
   currentTaskId.value = row.id;
   currentTaskQueue.value = row.queue || row.type;
 
@@ -2704,8 +2730,7 @@ async function handleViewRuntimeLogs(row: QueueMessage) {
     });
   } catch (error) {
     currentTaskData.value = parseMaybeJson(row?.data) ?? row?.data ?? {};
-    currentTaskRuntimeLog.value =
-      normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
+    currentTaskRuntimeLog.value = normalizeTaskRuntimeLogRecord(row?.taskRuntimeLog) ?? null;
     ElMessage.warning("运行日志获取失败，已显示列表中的数据快照");
   } finally {
     runtimeLogDialogLoading.value = false;
@@ -2745,6 +2770,7 @@ function openAutoDispatchTargetDialog() {
 
 function applyPublishTaskAutoDispatchSettingState(setting: PublishTaskAutoDispatchSetting) {
   publishTaskAutoDispatchEnabled.value = !!setting.autoSchedulingEnabled;
+  setPublishTaskAutoSchedulingEnabled(!!setting.autoSchedulingEnabled);
   autoDispatchTargetClientId.value = String(setting.autoDispatchClientId || "").trim();
   autoDispatchTargetProfileId.value = String(setting.autoDispatchProfileId || "").trim();
 }
@@ -3076,10 +3102,8 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
           ? event.runtime.logCount
           : (currentTaskRuntimeLog.value?.logCount ?? 0),
       lastLogId: event.runtime.lastLogId || currentTaskRuntimeLog.value?.lastLogId || null,
-      lastLogTime:
-        event.runtime.lastLogTime || currentTaskRuntimeLog.value?.lastLogTime || null,
-      lastLogLevel:
-        event.runtime.lastLogLevel || currentTaskRuntimeLog.value?.lastLogLevel || null,
+      lastLogTime: event.runtime.lastLogTime || currentTaskRuntimeLog.value?.lastLogTime || null,
+      lastLogLevel: event.runtime.lastLogLevel || currentTaskRuntimeLog.value?.lastLogLevel || null,
       lastLogMessage:
         event.runtime.lastLogMessage || currentTaskRuntimeLog.value?.lastLogMessage || null,
       updatedAt: event.runtime.updatedAt || currentTaskRuntimeLog.value?.updatedAt || null,
@@ -3283,26 +3307,29 @@ function resetForm() {
 }
 
 // 更新数据
-function handleUpdateData(row: QueueMessage) {
-  currentDataUpdateRow.value = row;
-  // 确保 data 存在，如果不存在则使用空对象
-  const currentData = row.data || {};
-  const dataStrValue =
-    typeof currentData === "object" && currentData !== null
-      ? JSON.stringify(currentData, null, 2)
-      : String(currentData || "{}");
-
-  dataUpdateFormData.queue = row.queue;
-  dataUpdateFormData.messageId = row.id;
-  dataUpdateFormData.dataStr = dataStrValue;
+async function handleUpdateData(row: QueueMessage) {
   try {
-    dataUpdateFormData.dataObj =
-      typeof row.data === "string" ? JSON.parse(row.data) : row.data || {};
-  } catch (e) {
-    dataUpdateFormData.dataObj = {};
-  }
+    currentDataUpdateRow.value = row;
+    const detailQueue = row.queue || row.type;
+    const detailResponse = await getTaskDetail(detailQueue, row.id);
+    const detailMessage = normalizeTaskDetailMessageResponse(
+      detailResponse?.data ?? detailResponse,
+    );
+    const currentData = parseMaybeJson(detailMessage?.data) ?? detailMessage?.data ?? {};
+    const dataStrValue =
+      typeof currentData === "object" && currentData !== null
+        ? JSON.stringify(currentData, null, 2)
+        : String(currentData || "{}");
 
-  dataUpdateDialogVisible.value = true;
+    dataUpdateFormData.queue = detailQueue;
+    dataUpdateFormData.messageId = row.id;
+    dataUpdateFormData.dataStr = dataStrValue;
+    dataUpdateFormData.dataObj =
+      typeof currentData === "string" ? JSON.parse(currentData) : currentData || {};
+    dataUpdateDialogVisible.value = true;
+  } catch (e) {
+    ElMessage.error((e as Error)?.message || "获取任务详情失败");
+  }
 }
 
 // 提交数据更新
@@ -3457,7 +3484,7 @@ async function handleOperationCommand(command: string, row: QueueMessage) {
       await handleRegeneratePublishTask(row);
       break;
     case "updateData":
-      handleUpdateData(row);
+      await handleUpdateData(row);
       break;
     case "editStatus":
       handleEdit(row);
@@ -3853,21 +3880,22 @@ onUnmounted(() => {
 .publish-dispatch-dialog__body {
   display: flex;
   flex-direction: column;
-  min-height: 220px;
+  min-height: 204px;
 }
 
 .publish-dispatch-dialog__panel {
-  padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  background: var(--el-bg-color);
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 62%, transparent 38%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--el-bg-color) 94%, var(--el-fill-color-light) 6%);
+  min-height: 206px;
 }
 
 .publish-dispatch-dialog__panel-title {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   color: var(--el-text-color-primary);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .publish-dispatch-dialog__empty {
@@ -3883,12 +3911,19 @@ onUnmounted(() => {
 .publish-dispatch-dialog__table :deep(.el-table) {
   --el-table-row-hover-bg-color: transparent;
   --el-table-current-row-bg-color: transparent;
+  font-size: 12px;
 }
 
 .publish-dispatch-dialog__table :deep(.el-table td),
 .publish-dispatch-dialog__table :deep(.el-table th) {
-  padding-top: 9px;
-  padding-bottom: 9px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.publish-dispatch-dialog__table :deep(.el-table .cell) {
+  padding-left: 8px;
+  padding-right: 8px;
+  line-height: 1.35;
 }
 
 .publish-dispatch-dialog__table :deep(.el-table__row) {
@@ -3911,11 +3946,12 @@ onUnmounted(() => {
 .publish-dispatch-dialog__primary {
   color: var(--el-text-color-primary);
   font-weight: 600;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .publish-dispatch-dialog__state-text {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.2;
 }
@@ -3943,7 +3979,7 @@ onUnmounted(() => {
 .publish-dispatch-dialog__footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 

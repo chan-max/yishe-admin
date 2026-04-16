@@ -64,43 +64,6 @@ export function generateProductCode(data: { id: string }) {
   });
 }
 
-export function generateProductVideo(data: {
-  id: string;
-  replace?: boolean;
-  // 直接传递 yishe-videos 格式的参数（音频已包含在 resources 中）
-  resources: Array<{
-    type: 'image' | 'video' | 'audio';
-    url: string;
-    duration?: number;
-    transition?: 'none' | 'fade' | 'directional-left' | 'directional-right' | string;
-    transitionDuration?: number;
-    position?: string;
-    scaleMode?: 'fit' | 'fill' | 'crop';
-    startTime?: number;
-    volume?: number;
-  }>;
-  options: {
-    width?: number;
-    height?: number;
-    fps?: number;
-    videoCodec?: string;
-    audioCodec?: string;
-    backgroundColor?: string;
-    videoPreset?: string;
-    videoCrf?: number;
-    videoBitrate?: string;
-    audioBitrate?: string;
-    audioSampleRate?: number;
-    audioChannels?: number;
-  };
-}) {
-  return request.post({
-    url: '/product/generate-video',
-    method: 'post',
-    data,
-  });
-}
-
 // 获取商品的发布任务列表
 export function getProductPublishTasks(id: string) {
   return request.get({

@@ -6,9 +6,6 @@ import { useDesign } from "@/hooks/web/useDesign";
 import { useTagsViewStore } from "@/store/modules/tagsView";
 import { usePermissionStore } from "@/store/modules/permission";
 import { useUserStore } from "@/store/modules/user";
-import LockDialog from "./components/LockDialog.vue";
-import LockPage from "./components/LockPage.vue";
-import { useLockStore } from "@/store/modules/lock";
 
 defineOptions({ name: "UserInfo" });
 
@@ -47,10 +44,6 @@ const remainingTime = computed(() => {
   return "即将到期";
 });
 
-const lockStore = useLockStore();
-const getIsLock = computed(() => lockStore.getLockInfo?.isLock ?? false);
-const dialogVisible = ref<boolean>(false);
-
 function hasRouteByName(routes: AppRouteRecordRaw[] = [], routeName: string): boolean {
   return routes.some((route) => {
     if (String(route.name || "") === routeName) {
@@ -63,10 +56,6 @@ function hasRouteByName(routes: AppRouteRecordRaw[] = [], routeName: string): bo
 const canAccessProfile = computed(() =>
   hasRouteByName(permissionStore.getRouters, "PersonalSettings"),
 );
-
-const lockScreen = () => {
-  dialogVisible.value = true;
-};
 
 const loginOut = async () => {
   try {
@@ -118,10 +107,6 @@ const toProfile = async () => {
             <Icon icon="ep:user" class="ud-icon" />
             {{ t("common.profile") }}
           </ElDropdownItem>
-          <ElDropdownItem @click="lockScreen" class="ud-item">
-            <Icon icon="ep:lock" class="ud-icon" />
-            {{ t("lock.lockScreen") }}
-          </ElDropdownItem>
           <div class="ud-sep" />
           <ElDropdownItem @click="loginOut" class="ud-item ud-item--out">
             <Icon icon="ep:switch-button" class="ud-icon" />
@@ -131,13 +116,6 @@ const toProfile = async () => {
       </ElDropdownMenu>
     </template>
   </ElDropdown>
-
-  <LockDialog v-if="dialogVisible" v-model="dialogVisible" />
-  <teleport to="body">
-    <transition name="fade-bottom" mode="out-in">
-      <LockPage v-if="getIsLock" />
-    </transition>
-  </teleport>
 </template>
 
 <style scoped lang="scss">
@@ -296,11 +274,6 @@ const toProfile = async () => {
 
 :deep(.el-dropdown) {
   color: inherit;
-}
-
-.fade-bottom-init {
-  opacity: 0;
-  transform: translateY(-10%);
 }
 
 @media (max-width: 768px) {

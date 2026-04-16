@@ -3,7 +3,7 @@ import { getCodeScriptSandboxHealth } from "@/api/codeScript";
 import { getImageProcessingHealth } from "@/api/image-processing-record";
 import { getRemotionVideoHealth } from "@/api/remotion-video-record";
 
-export type ServiceHealthKey = "sandbox" | "remotion" | "images";
+export type ServiceHealthKey = "sandbox" | "videoTemplate" | "images";
 export type ServiceHealthTone = "available" | "degraded" | "offline";
 
 export interface ServiceHealthSnapshot {
@@ -45,7 +45,7 @@ const normalizeGenericErrorMessage = (error: any, fallback: string) => {
   return message || fallback;
 };
 
-const normalizeRemotionHealthMessage = (message: string, available: boolean) => {
+const normalizeVideoTemplateHealthMessage = (message: string, available: boolean) => {
   const normalized = String(message || "").trim();
   if (!normalized) {
     return available ? "服务健康检查通过" : "服务健康检查未通过";
@@ -53,7 +53,7 @@ const normalizeRemotionHealthMessage = (message: string, available: boolean) => 
   return normalized;
 };
 
-const normalizeRemotionErrorMessage = (error: any, fallback: string) => {
+const normalizeVideoTemplateErrorMessage = (error: any, fallback: string) => {
   const raw = String(error?.message || error || "").trim();
   const lower = raw.toLowerCase();
 
@@ -70,8 +70,8 @@ const normalizeRemotionErrorMessage = (error: any, fallback: string) => {
   if (lower.includes("not found")) {
     return "接口不存在";
   }
-  if (lower.includes("remotion")) {
-    return "Remotion 服务异常";
+  if (lower.includes("remotion") || lower.includes("video-template")) {
+    return "Video Template 服务异常";
   }
   return raw;
 };
@@ -127,14 +127,14 @@ const serviceHealthDefinitions: Record<ServiceHealthKey, ServiceHealthDefinition
       timestamp: new Date().toISOString(),
     }),
   },
-  remotion: {
-    label: "Remotion 服务",
+  videoTemplate: {
+    label: "Video Template 服务",
     request: getRemotionVideoHealth,
     mapSuccess: (payload) => {
       const normalized = normalizeStandardSuccess(payload);
       return {
         ...normalized,
-        message: normalizeRemotionHealthMessage(
+        message: normalizeVideoTemplateHealthMessage(
           String(payload?.message || ""),
           !!normalized.available,
         ),
@@ -143,7 +143,7 @@ const serviceHealthDefinitions: Record<ServiceHealthKey, ServiceHealthDefinition
     mapError: (error, current) => ({
       available: false,
       baseUrl: current.baseUrl || "未知地址",
-      message: normalizeRemotionErrorMessage(error, "Remotion 服务检测失败"),
+      message: normalizeVideoTemplateErrorMessage(error, "Video Template 服务检测失败"),
       timestamp: new Date().toISOString(),
     }),
   },
@@ -171,7 +171,7 @@ const serviceHealthDefinitions: Record<ServiceHealthKey, ServiceHealthDefinition
 
 export const serviceHealthStates = reactive<Record<ServiceHealthKey, ServiceHealthSnapshot>>({
   sandbox: createDefaultSnapshot("sandbox", serviceHealthDefinitions.sandbox.label),
-  remotion: createDefaultSnapshot("remotion", serviceHealthDefinitions.remotion.label),
+  videoTemplate: createDefaultSnapshot("videoTemplate", serviceHealthDefinitions.videoTemplate.label),
   images: createDefaultSnapshot("images", serviceHealthDefinitions.images.label),
 });
 

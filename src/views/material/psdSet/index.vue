@@ -1015,22 +1015,27 @@
       @closed="handleCloseProductionDispatchDialog"
     >
       <div class="production-dispatch-dialog__body">
-        <div class="production-dispatch-dialog__panel">
+        <div
+          v-loading="productionDispatchLoading"
+          :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
+          class="production-dispatch-dialog__panel"
+        >
           <div class="production-dispatch-dialog__panel-title">客户端节点</div>
-          <div v-if="productionDispatchLoading" class="production-dispatch-dialog__empty">
-            正在加载客户端节点...
-          </div>
-          <div v-else-if="dispatchClientRows.length" class="production-dispatch-dialog__table">
+          <div
+            v-if="!productionDispatchLoading && dispatchClientRows.length"
+            class="production-dispatch-dialog__table"
+          >
             <el-table
               :data="dispatchClientRows"
               border
               size="small"
               row-key="id"
+              :max-height="332"
               class="production-dispatch-dialog__table-main"
               :row-class-name="resolveDispatchClientRowClassName"
               @row-click="handleDispatchClientRowClick"
             >
-              <el-table-column label="" width="54" align="center">
+              <el-table-column label="" width="46" align="center">
                 <template #default="{ row }">
                   <el-radio
                     v-model="selectedDispatchClientId"
@@ -1043,16 +1048,16 @@
               <el-table-column
                 prop="clientLabel"
                 label="客户端节点"
-                min-width="160"
+                min-width="140"
                 show-overflow-tooltip
               />
               <el-table-column
                 prop="connectedAtLabel"
                 label="连接时间"
-                min-width="168"
+                min-width="150"
                 show-overflow-tooltip
               />
-              <el-table-column label="在线状态" width="88" align="center">
+              <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="production-dispatch-dialog__state-text"
@@ -1062,7 +1067,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="PS服务" width="88" align="center">
+              <el-table-column label="PS" width="72" align="center">
                 <template #default="{ row }">
                   <span
                     class="production-dispatch-dialog__state-text"
@@ -1072,7 +1077,7 @@
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column label="制作状态" width="96" align="center">
+              <el-table-column label="制作" width="82" align="center">
                 <template #default="{ row }">
                   <span
                     class="production-dispatch-dialog__state-text"
@@ -1149,6 +1154,7 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
+const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
 const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
 const batchUpdatingStatus = ref(false);
@@ -3030,7 +3036,8 @@ async function handleConfirmStartProduction() {
         status: "processing",
         message: response.message || "任务已分配，等待客户端执行",
         progress: 0,
-        assignedClientId: String(response?.data?.clientId || selectedDispatchClientId.value).trim() || null,
+        assignedClientId:
+          String(response?.data?.clientId || selectedDispatchClientId.value).trim() || null,
         assignedMachineCode: String(response?.data?.machineCode || "").trim() || null,
         schedulerStatus: "assigned",
       });
@@ -4063,24 +4070,25 @@ getList();
 .production-dispatch-dialog__body {
   display: flex;
   flex-direction: column;
-  min-height: 220px;
+  min-height: 204px;
 }
 
 .production-dispatch-dialog__panel {
-  padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  background: var(--el-bg-color);
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--el-border-color) 62%, transparent 38%);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--el-bg-color) 94%, var(--el-fill-color-light) 6%);
+  min-height: 206px;
 }
 
 .production-dispatch-dialog__panel-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--el-text-color-primary);
 }
 
 .production-dispatch-dialog__panel-title {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .production-dispatch-dialog__empty {
@@ -4096,12 +4104,19 @@ getList();
 .production-dispatch-dialog__table :deep(.el-table) {
   --el-table-row-hover-bg-color: transparent;
   --el-table-current-row-bg-color: transparent;
+  font-size: 12px;
 }
 
 .production-dispatch-dialog__table :deep(.el-table td),
 .production-dispatch-dialog__table :deep(.el-table th) {
-  padding-top: 9px;
-  padding-bottom: 9px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.production-dispatch-dialog__table :deep(.el-table .cell) {
+  padding-left: 8px;
+  padding-right: 8px;
+  line-height: 1.35;
 }
 
 .production-dispatch-dialog__table :deep(.el-table__row) {
@@ -4122,7 +4137,7 @@ getList();
 
 .production-dispatch-dialog__state-text {
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.2;
 }
 
@@ -4149,7 +4164,7 @@ getList();
 .production-dispatch-dialog__footer {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
 }
 

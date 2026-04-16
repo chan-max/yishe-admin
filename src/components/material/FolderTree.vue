@@ -217,6 +217,23 @@ function getDefaultCurrentKey() {
   return props.mode === "select" ? FOLDER_FILTER.NOT_GROUP : FOLDER_FILTER.ALL;
 }
 
+function getBindingLabel() {
+  switch ((props.folderCategory || "").toLowerCase()) {
+    case "prompt":
+      return "提示词";
+    case "fileresource":
+    case "file-resource":
+    case "file_resource":
+      return "资源";
+    case "fonttemplate":
+      return "字体模板";
+    case "psdtemplate":
+      return "PSD模板";
+    default:
+      return "素材";
+  }
+}
+
 function hasChildren(node: FolderNode) {
   return Array.isArray(node.children) && node.children.length > 0;
 }
@@ -427,7 +444,7 @@ async function handleCommand(command: string, data: any) {
   } else if (command === "delete") {
     try {
       await ElMessageBox.confirm(
-        `确定要删除文件夹 "${data.name}" 吗？\n删除后文件夹内的素材将移动到根目录。`,
+        `确定要删除文件夹 "${data.name}" 吗？\n删除后文件夹内的${getBindingLabel()}将移动到未分组。`,
         "警告",
         {
           confirmButtonText: "确定",

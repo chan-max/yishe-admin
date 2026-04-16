@@ -38,7 +38,7 @@
                 </template>
 
                 <template #platformSlot="{ row }">
-                  <el-tag size="small" :type="row.platform === 'feishu' ? 'success' : 'warning'">
+                  <el-tag size="small" >
                     {{ platformLabelMap[row.platform] || row.platform }}
                   </el-tag>
                 </template>

@@ -4,7 +4,9 @@ export interface QueueMessage {
   id: string;
   queue: string;
   type: string;
-  data: any;
+  // 列表接口默认返回轻量摘要；详情接口返回完整任务数据。
+  data?: any;
+  // 列表接口默认返回日志摘要；详情接口返回完整运行日志快照。
   taskRuntimeLog?: Record<string, any> | null;
   description?: string;
   priority?: number;

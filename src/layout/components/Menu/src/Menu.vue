@@ -53,6 +53,7 @@ export default defineComponent({
     } = usePsdSetRuntimeState();
     const {
       isAnyPublishTaskRunning,
+      autoSchedulingEnabled: publishTaskAutoSchedulingEnabled,
       menuStatusTone: publishTaskMenuStatusTone,
       tooltipText: publishTaskTooltipText,
       refresh: refreshPublishTaskRuntime,
@@ -130,6 +131,30 @@ export default defineComponent({
             variant ? `${prefixCls}__status-dot--running-${variant}` : undefined,
           ]}
         />,
+        title,
+      );
+    };
+
+    const renderAutoModeBadge = (
+      title: string,
+      options?: {
+        enabled?: boolean;
+        variant?: "queue" | "psd";
+        label?: string;
+      },
+    ) => {
+      return renderMenuStatusHint(
+        <span
+          class={[
+            `${prefixCls}__auto-badge`,
+            options?.enabled === false
+              ? `${prefixCls}__auto-badge--muted`
+              : `${prefixCls}__auto-badge--enabled`,
+            options?.variant ? `${prefixCls}__auto-badge--${options.variant}` : undefined,
+          ]}
+        >
+          {options?.label || (options?.enabled === false ? "手动" : "自动")}
+        </span>,
         title,
       );
     };
@@ -289,16 +314,36 @@ export default defineComponent({
         return renderRunningStatusDot(processingTooltipText.value, "psd");
       }
 
-      return renderMenuStatusHint(
-        <span
-          class={[
-            `${prefixCls}__psd-status-dot`,
-            userAutoSchedulingEnabled.value
-              ? `${prefixCls}__psd-status-dot--enabled`
-              : `${prefixCls}__psd-status-dot--muted`,
-          ]}
-        />,
+      return renderAutoModeBadge(
         userAutoSchedulingEnabled.value ? "自动处理已开启" : "自动处理未开启",
+        {
+          enabled: userAutoSchedulingEnabled.value,
+          variant: "psd",
+        },
+      );
+    };
+
+    const renderPublishTaskAutoBadge = (routePath: string) => {
+      if (!isQueueRoute(routePath)) {
+        return undefined;
+      }
+
+      if (routeRunningMap.value[routePath]) {
+        return renderRunningStatusDot(publishTaskTooltipText.value, "queue");
+      }
+
+      if (!publishTaskAutoSchedulingEnabled.value) {
+        return undefined;
+      }
+
+      return renderAutoModeBadge(
+        publishTaskMenuStatusTone.value === "offline"
+          ? "自动执行已开启，但当前发布任务暂不可执行"
+          : "自动执行已开启",
+        {
+          enabled: true,
+          variant: "queue",
+        },
       );
     };
 
@@ -505,6 +550,7 @@ export default defineComponent({
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
                           {renderAiConfigDot(childPath) ||
                             renderPsdSetAutoDot(childPath) ||
+                            renderPublishTaskAutoBadge(childPath) ||
                             renderServiceHealthDot(child) ||
                             renderStatusDot(childPath)}
                         </button>
@@ -774,43 +820,57 @@ $prefix-cls: #{$namespace}-menu;
     transition: none !important;
   }
 
-  &__psd-status-dot {
+  &__auto-badge {
     flex: none;
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     z-index: 1;
-    width: var(--left-menu-psd-dot-size);
-    height: var(--left-menu-psd-dot-size);
+    min-width: 28px;
+    height: 16px;
+    padding: 0 6px;
     margin-left: var(--left-menu-psd-dot-margin-left);
     border-radius: 999px;
-    background: rgb(148 163 184 / 88%);
-    box-shadow: 0 0 0 1px rgb(148 163 184 / 14%);
-  }
-
-  &__psd-status-dot::after {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    content: "";
-    opacity: 0;
-    transform: scale(1);
-  }
-
-  &__psd-status-dot--enabled {
-    background: #34d399;
+    border: 1px solid rgb(148 163 184 / 20%);
+    background: rgb(148 163 184 / 10%);
+    color: rgb(226 232 240 / 72%);
+    font-size: 8px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    text-indent: 0.04em;
     box-shadow:
-      0 0 0 1px rgb(52 211 153 / 22%),
-      0 0 9px rgb(52 211 153 / 28%);
-    animation: status-dot-breathe-available 2.2s ease-in-out infinite;
+      inset 0 1px 0 rgb(255 255 255 / 4%),
+      0 2px 6px rgb(15 23 42 / 12%);
+    backdrop-filter: blur(6px);
+    white-space: nowrap;
   }
 
-  &__psd-status-dot--enabled::after {
-    background: rgb(52 211 153 / 26%);
-    animation: status-dot-wave-available 2.2s ease-out infinite;
+  &__auto-badge--enabled {
+    color: rgb(255 247 237 / 94%);
   }
 
-  &__psd-status-dot--muted {
-    background: rgb(148 163 184 / 88%);
-    box-shadow: 0 0 0 1px rgb(148 163 184 / 12%);
+  &__auto-badge--psd.#{$prefix-cls}__auto-badge--enabled {
+    border-color: rgb(245 158 11 / 30%);
+    background: linear-gradient(135deg, rgb(245 158 11 / 26%) 0%, rgb(251 191 36 / 16%) 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 6%),
+      0 4px 12px rgb(245 158 11 / 14%);
+  }
+
+  &__auto-badge--queue.#{$prefix-cls}__auto-badge--enabled {
+    border-color: rgb(245 158 11 / 30%);
+    background: linear-gradient(135deg, rgb(245 158 11 / 26%) 0%, rgb(251 191 36 / 16%) 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 6%),
+      0 4px 12px rgb(245 158 11 / 14%);
+  }
+
+  &__auto-badge--muted {
+    border-color: rgb(148 163 184 / 16%);
+    background: rgb(148 163 184 / 8%);
+    color: rgb(203 213 225 / 56%);
   }
 
   &__link--running {
@@ -1146,7 +1206,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   .#{$prefix-cls}__status-dot,
-  .#{$prefix-cls}__psd-status-dot {
+  .#{$prefix-cls}__auto-badge {
     transform: scale(1.08);
   }
 }

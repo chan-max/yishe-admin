@@ -270,8 +270,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
           canTo: true,
           hidden: false,
           noTagsView: false,
-          title: "视频生成 (模板)",
-          serviceStatusKey: "remotion",
+          title: "视频模板",
+          serviceStatusKey: "videoTemplate",
         },
       },
       {

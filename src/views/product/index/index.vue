@@ -235,19 +235,6 @@
                           </el-icon>
                           <span>生成产品代码</span>
                         </el-dropdown-item>
-                        <el-dropdown-item
-                          command="generate-video"
-                          :disabled="
-                            generatingVideoId === row.id || !row.images || row.images.length === 0
-                          "
-                        >
-                          <el-icon>
-                            <VideoPlay />
-                          </el-icon>
-                          <span>{{
-                            generatingVideoId === row.id ? "视频生成中..." : "生成视频"
-                          }}</span>
-                        </el-dropdown-item>
                         <el-dropdown-item v-if="row.psdSetId" command="copy-images-from-psdset">
                           <el-icon>
                             <Picture />
@@ -1109,8 +1096,6 @@
       <div v-else class="text-center text-gray-400 py-8">暂无视频</div>
     </el-dialog>
 
-    <!-- 高级视频生成弹窗 (已抽离) -->
-    <VideoGenDialog v-model:visible="videoGenDialogVisible" :row="videoGenRow" @success="getList" />
     <el-dialog
       v-model="customModelDetailVisible"
       title="关联设计模型详情"
@@ -1976,7 +1961,6 @@ import { getDraftList } from "@/api/draft";
 import { createTask } from "@/api/system/queue";
 import { getDesignModel } from "@/api/designModel";
 import request from "@/config/axios";
-import VideoGenDialog from "./components/VideoGenDialog.vue";
 import { PRODUCT_CATEGORIES } from "@/config/product-categories";
 import { getPreviewImageUrl } from "@/utils/image";
 import FolderTree from "@/components/material/FolderTree.vue";
@@ -2209,9 +2193,6 @@ const existingImages = ref([]);
 const videoFileList = ref([]);
 const pendingVideoFiles = ref([]);
 const existingVideos = ref([]);
-const generatingVideoId = ref<string>("");
-const videoGenDialogVisible = ref(false);
-const videoGenRow = ref<any>(null);
 const deletingVideoKey = ref<string>("");
 const publishDialogVisible = ref(false);
 
@@ -2254,13 +2235,6 @@ async function handleFolderDrop(payload: { data: any }) {
   } finally {
     resetAfterDrop();
   }
-}
-
-// 打开视频生成对话框
-async function handleGenerateVideo(row: any) {
-  if (!row?.id) return;
-  videoGenRow.value = row;
-  videoGenDialogVisible.value = true;
 }
 
 const publishLoading = ref(false);
@@ -3253,9 +3227,6 @@ function handleOperationCommand(command: string, row: any) {
       break;
     case "copy-images-from-psdset":
       handleCopyImagesFromPsdSet(row);
-      break;
-    case "generate-video":
-      handleGenerateVideo(row);
       break;
     default:
       console.warn("未知的操作命令:", command);

@@ -58,7 +58,7 @@
                 <el-form-item label="服务状态">
                   <div class="remotion-record-page__status-bar">
                     <el-tag :type="remotionStatusTagType" size="small">
-                      Remotion 服务 {{ remotionStatusLabel }}
+                      Video Template 服务 {{ remotionStatusLabel }}
                     </el-tag>
                     <div class="remotion-record-page__status-content">
                       <span
@@ -468,10 +468,10 @@
               :closable="false"
               show-icon
               class="remotion-submit-alert"
-              title="Remotion 服务当前不可用，请先恢复服务后再提交制作任务"
+              title="Video Template 服务当前不可用，请先恢复服务后再提交制作任务"
             />
             <div class="remotion-submit-pipeline">
-              提交后会先创建记录，再由 Remotion 渲染视频，最后通过 design-server 上传到 COS 并回写结果。
+              提交后会先创建记录，再由 Video Template 客户端插件渲染视频，最后回写结果。
             </div>
             <pre>{{ form.inputPropsJson }}</pre>
           </div>
@@ -523,7 +523,7 @@
             <div><strong>创建时间：</strong>{{ formatTimestamp(currentRow.createTime) }}</div>
             <div v-if="currentRow.url"><strong>COS地址：</strong>{{ currentRow.url }}</div>
             <div v-if="currentRow.remotionVideoUrl">
-              <strong>Remotion地址：</strong>{{ currentRow.remotionVideoUrl }}
+              <strong>源地址：</strong>{{ currentRow.remotionVideoUrl }}
             </div>
             <div v-if="currentRow.errorMessage">
               <strong>失败信息：</strong>{{ currentRow.errorMessage }}
@@ -574,7 +574,7 @@ const createVisible = ref(false);
 const detailVisible = ref(false);
 const submitLoading = ref(false);
 const currentRow = ref<any>(null);
-const remotionStatus = useServiceHealthState("remotion");
+const remotionStatus = useServiceHealthState("videoTemplate");
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
 
 const remotionStatusLabel = computed(() => {
@@ -679,7 +679,7 @@ const canSubmitGenerate = computed(
 );
 const submitDisabledText = computed(() => {
   if (!form.templateId) return "请先选择模板";
-  if (remotionStatus.checked && !remotionStatus.available) return "Remotion 服务不可用";
+  if (remotionStatus.checked && !remotionStatus.available) return "Video Template 服务不可用";
   return "";
 });
 
@@ -791,12 +791,12 @@ async function loadTemplates() {
     templateOptions.value = Array.isArray(result) ? result : [];
   } catch (error: any) {
     templateOptions.value = [];
-    ElMessage.error(getRemotionErrorMessage(error, "获取 Remotion 模板失败"));
+    ElMessage.error(getRemotionErrorMessage(error, "获取 Video Template 模板失败"));
   }
 }
 
 async function checkRemotionHealth() {
-  await refreshServiceHealth("remotion");
+  await refreshServiceHealth("videoTemplate");
 }
 
 function resetTemplateFilters() {
@@ -889,7 +889,7 @@ async function submitGenerate() {
   try {
     await checkRemotionHealth();
     if (remotionStatus.checked && !remotionStatus.available) {
-      ElMessage.error("Remotion 服务不可用，请先恢复服务后再提交");
+      ElMessage.error("Video Template 服务不可用，请先恢复服务后再提交");
       return;
     }
 
@@ -960,8 +960,8 @@ function getRemotionErrorMessage(error: any, fallback: string) {
   if (lower.includes("not found")) {
     return "接口不存在";
   }
-  if (lower.includes("remotion")) {
-    return "Remotion 服务异常";
+  if (lower.includes("remotion") || lower.includes("video-template")) {
+    return "Video Template 服务异常";
   }
   return raw || fallback;
 }
