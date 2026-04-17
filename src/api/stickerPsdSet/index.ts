@@ -21,7 +21,18 @@ export const stickerPsdSetApi = {
   getActiveSummary: () =>
     request.get<ActivePsdSetSummaryResponse>({ url: "/sticker-psd-set/runtime/active-summary" }),
   create: (data: any) => request.post({ url: "/sticker-psd-set", data }),
-  batchCreate: (data: any) => request.post({ url: "/sticker-psd-set/batch", data }),
+  batchCreate: (data: {
+    stickerIds: string[];
+    psdTemplateIds: string[];
+    mergeSticker?: boolean;
+    configBindings?: Array<{
+      stickerId?: string;
+      stickerIds?: string[];
+      psdTemplateId: string;
+      psdTemplateConfig?: any;
+    }>;
+    meta?: any;
+  }) => request.post({ url: "/sticker-psd-set/batch", data }),
   batchCreateByPublishConfig: (data: { stickerIds: string[]; publishConfigIds: string[] }) =>
     request.post({ url: "/sticker-psd-set/batch-by-publish-config", data }),
   generateProduct: (data: { id: string; promptId?: number | null }) =>

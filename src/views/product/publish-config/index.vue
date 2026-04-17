@@ -175,6 +175,7 @@ const templateBindingHydrating = ref(false);
 const templateBindingSearchText = ref("");
 const templateBindingOptions = ref<any[]>([]);
 const selectedTemplateBinding = ref<any | null>(null);
+const templateBindingConfigText = ref("");
 
 // 动态平台配置
 const currentPlatformConfig = ref<TaskTypeConfig | null>(null);
@@ -194,6 +195,10 @@ const currentTemplateBindingId = computed(() =>
   String(selectedTemplateBinding.value?.id || "").trim(),
 );
 
+const templateBindingDefaultConfigText = computed(() =>
+  formatTemplateBindingConfig(selectedTemplateBinding.value?.psdTemplateConfig),
+);
+
 const templateBindingSelectValue = computed({
   get: () => currentTemplateBindingId.value || undefined,
   set: (value) => {
@@ -206,6 +211,7 @@ const templateBindingSelectValue = computed({
     const matched = templateBindingSelectOptions.value.find((item) => item.id === normalizedId);
     if (matched) {
       selectedTemplateBinding.value = matched;
+      templateBindingConfigText.value = formatTemplateBindingConfig(matched.psdTemplateConfig);
       return;
     }
 
@@ -383,6 +389,45 @@ function resetTemplateBindingState() {
   selectedTemplateBinding.value = null;
   templateBindingSearchText.value = "";
   templateBindingOptions.value = [];
+  templateBindingConfigText.value = "";
+}
+
+function formatTemplateBindingConfig(config: any): string {
+  if (config === undefined || config === null || config === "") {
+    return "";
+  }
+
+  if (typeof config === "string") {
+    return config.trim();
+  }
+
+  try {
+    return JSON.stringify(config, null, 2);
+  } catch {
+    return String(config);
+  }
+}
+
+function parseTemplateBindingConfigText(text: string): any {
+  if (!text || !text.trim()) return undefined;
+
+  const trimmedText = text.trim();
+  try {
+    return JSON.parse(trimmedText);
+  } catch {
+    try {
+      const func = new Function("return " + trimmedText);
+      const result = func();
+      if (typeof result === "object" && result !== null) {
+        return result;
+      }
+      throw new Error("解析结果不是对象");
+    } catch {
+      throw new Error(
+        'PSD 配置格式错误：请输入有效的 JSON 格式（如：{"images": []}）或 JS 对象格式（如：{images: []}）',
+      );
+    }
+  }
 }
 
 function normalizeTemplateBindingTemplate(template: any) {
@@ -395,6 +440,7 @@ function normalizeTemplateBindingTemplate(template: any) {
     name: String(template.name || "").trim(),
     thumbnail: String(template.thumbnail || template.preview || template.image || "").trim(),
     description: String(template.description || "").trim(),
+    psdTemplateConfig: template?.psdTemplateConfig ?? null,
     createTime:
       template?.createTime || template?.uploadTime || template?.createdAt || template?.updateTime,
     enabled: template.enabled !== false,
@@ -435,10 +481,16 @@ async function hydrateTemplateBinding(psdTemplateId?: string | null) {
       name: "模板信息加载失败",
       thumbnail: "",
       description: "",
+      psdTemplateConfig: null,
       createTime: "",
       enabled: false,
       missing: true,
     };
+    if (!templateBindingConfigText.value.trim()) {
+      templateBindingConfigText.value = formatTemplateBindingConfig(
+        selectedTemplateBinding.value?.psdTemplateConfig,
+      );
+    }
   } catch (error) {
     console.error("加载绑定模板详情失败:", error);
     selectedTemplateBinding.value = {
@@ -446,6 +498,7 @@ async function hydrateTemplateBinding(psdTemplateId?: string | null) {
       name: "模板不存在或无权访问",
       thumbnail: "",
       description: "",
+      psdTemplateConfig: null,
       createTime: "",
       enabled: false,
       missing: true,
@@ -499,6 +552,11 @@ function handleTemplateBindingDropdownVisibleChange(visible: boolean) {
 function clearTemplateBinding() {
   selectedTemplateBinding.value = null;
   templateBindingSearchText.value = "";
+  templateBindingConfigText.value = "";
+}
+
+function applyTemplateBindingDefaultConfig() {
+  templateBindingConfigText.value = templateBindingDefaultConfigText.value;
 }
 
 const handleAdd = () => {
@@ -558,6 +616,9 @@ const handleEdit = async (row: any) => {
   );
   resetTemplateBindingState();
   await hydrateTemplateBinding(row?.templateBinding?.psdTemplateId);
+  templateBindingConfigText.value = formatTemplateBindingConfig(
+    row?.templateBinding?.psdTemplateConfig ?? selectedTemplateBinding.value?.psdTemplateConfig,
+  );
   dialogVisible.value = true;
 };
 
@@ -645,7 +706,10 @@ const submitForm = async () => {
       titleConfig: parsedTitleConfig,
       configData: formattedConfigData,
       templateBinding: currentTemplateBindingId.value
-        ? { psdTemplateId: currentTemplateBindingId.value }
+        ? {
+            psdTemplateId: currentTemplateBindingId.value,
+            psdTemplateConfig: parseTemplateBindingConfigText(templateBindingConfigText.value),
+          }
         : undefined,
     };
 
@@ -905,6 +969,31 @@ onMounted(() => {
                     </div>
                   </el-option>
                 </el-select>
+              </el-form-item>
+              <el-form-item
+                v-if="currentTemplateBindingId"
+                label="PSD 配置"
+                class="publish-config-form-item--stacked"
+              >
+                <div class="publish-config-template-config-toolbar">
+                  <el-button
+                    size="small"
+                    text
+                    type="primary"
+                    @click="applyTemplateBindingDefaultConfig"
+                  >
+                    恢复模板默认配置
+                  </el-button>
+                </div>
+                <el-input
+                  v-model="templateBindingConfigText"
+                  type="textarea"
+                  :autosize="{ minRows: 8, maxRows: 18 }"
+                  placeholder='请输入完整 PSD 配置快照，支持 JSON 或 JS 对象格式，例如：{"images":[]}'
+                />
+                <div class="publish-config-field-note">
+                  这里保存的是当前任务配置专属的 PSD 参数快照；后续按发布配置创建套图时，后端会按“素材 + 模板 + 配置”自动归并复用。
+                </div>
               </el-form-item>
             </section>
 
@@ -1551,6 +1640,12 @@ onMounted(() => {
   color: var(--el-color-primary);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.publish-config-template-config-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
 .publish-config-url-list {

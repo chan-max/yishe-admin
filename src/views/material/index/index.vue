@@ -5212,8 +5212,12 @@ function buildPsdSetAutomationConfig() {
 }
 
 function buildPsdSetParams() {
-  // 构建配置映射：将详细配置弹窗中的配置信息传递到后台
-  const configMap: Record<string, any> = {};
+  const configBindings: Array<{
+    stickerId?: string;
+    stickerIds?: string[];
+    psdTemplateId: string;
+    psdTemplateConfig?: any;
+  }> = [];
   if (templateConfigList.value.length > 0) {
     templateConfigList.value.forEach((config) => {
       let psdInfo = null;
@@ -5225,8 +5229,30 @@ function buildPsdSetParams() {
         }
       }
 
-      // 使用配置项的ID作为key（在单素材模式下是 templateId_materialId，在合并模式下是 templateId）
-      configMap[config.id] = psdInfo;
+      const normalizedTemplateId = psdSetMergeSticker.value
+        ? String(config.id || "").trim()
+        : String(config.id || "").split("_")[0]?.trim();
+      if (!normalizedTemplateId) {
+        return;
+      }
+
+      if (psdSetMergeSticker.value) {
+        configBindings.push({
+          stickerIds: ids.value.map((id) => String(id)),
+          psdTemplateId: normalizedTemplateId,
+          psdTemplateConfig: psdInfo,
+        });
+        return;
+      }
+
+      configBindings.push({
+        stickerId:
+          config.materialId !== undefined && config.materialId !== null
+            ? String(config.materialId)
+            : undefined,
+        psdTemplateId: normalizedTemplateId,
+        psdTemplateConfig: psdInfo,
+      });
     });
   }
 
@@ -5236,7 +5262,7 @@ function buildPsdSetParams() {
     stickerIds: ids.value.map((id) => String(id)),
     psdTemplateIds: [...selectedPsdTemplateIds.value],
     mergeSticker: psdSetMergeSticker.value,
-    configMap: Object.keys(configMap).length > 0 ? configMap : undefined,
+    configBindings: configBindings.length > 0 ? configBindings : undefined,
     meta: automationConfig ? { automations: automationConfig } : undefined,
   };
 }
