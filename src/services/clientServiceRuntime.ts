@@ -2,7 +2,7 @@ import type { WebsocketConnectionVO } from "@/api/system/websocket";
 
 export type ClientServiceRuntimeLike = Record<string, any> | null | undefined;
 
-export type ClientServiceSummary = "available" | "degraded" | "offline";
+export type ClientServiceSummary = "available" | "offline";
 
 export function getClientServiceRuntimeSafe(
   runtime?: ClientServiceRuntimeLike,
@@ -50,28 +50,6 @@ export function resolveClientServiceSummary(
 
   if (isClientServiceRuntimeAvailable(safeRuntime)) {
     return "available";
-  }
-
-  if (!hasClientServiceRuntime(safeRuntime)) {
-    return "offline";
-  }
-
-  if (
-    safeRuntime.connected ||
-    safeRuntime.status === "error" ||
-    safeRuntime.state === "error" ||
-    safeRuntime.state === "busy" ||
-    safeRuntime.currentTaskId ||
-    safeRuntime.lastError ||
-    safeRuntime.message ||
-    safeRuntime.lastCheckedAt ||
-    safeRuntime.endpoint ||
-    safeRuntime.version ||
-    (Array.isArray(safeRuntime.supportedCommands) && safeRuntime.supportedCommands.length > 0) ||
-    (Array.isArray(safeRuntime.supportedTaskTypes) && safeRuntime.supportedTaskTypes.length > 0) ||
-    (safeRuntime.details && Object.keys(safeRuntime.details).length > 0)
-  ) {
-    return "degraded";
   }
 
   return "offline";

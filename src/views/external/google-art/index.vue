@@ -225,17 +225,9 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
     time: formatDateSafe(client.connectedAt),
     metaLeft: client.appVersion || "未知版本",
     metaRight: client.location?.ip || client.location?.city || "未知位置",
-    badges: [
-      { text: client.isOnline ? "在线" : "离线", tone: client.isOnline ? "success" : "muted" },
-      {
-        text: resolveAvailabilityText(client.googleArt),
-        tone: client.googleArt?.available
-          ? "success"
-          : client.googleArt?.connected
-            ? "warning"
-            : "muted",
-      },
-    ],
+    detail: client.workspaceDirectory
+      ? `工作目录: ${client.workspaceDirectory}`
+      : "工作目录: 未上报",
   })),
 );
 const availabilityTone = computed(() =>

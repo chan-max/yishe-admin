@@ -578,7 +578,6 @@ import { ElMessage } from "element-plus";
 import { formatDate } from "@/utils/formatTime";
 import { sendServiceCommand } from "@/api/system/websocket";
 import ExternalClientSidebar, {
-  type ClientNodeBadge,
   type ClientNodeItem,
 } from "@/views/external/components/ExternalClientSidebar.vue";
 import {
@@ -849,24 +848,15 @@ const selectedPsBridgeService = computed(() =>
 );
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   psClients.value.map((client) => {
-    const service = getPsBridgeService(client);
-    const badges: ClientNodeBadge[] = [
-      { text: client.isOnline ? "在线" : "离线", tone: client.isOnline ? "success" : "muted" },
-    ];
-
-    if (service) {
-      badges.push({ text: service.text, tone: service.level });
-    } else {
-      badges.push({ text: "未就绪", tone: "muted" });
-    }
-
     return {
       connectionId: client.id,
       name: client.clientInfo?.machine?.code || client.id,
       time: formatDateSafe(client.connectedAt || undefined),
       metaLeft: client.clientInfo?.appVersion || "未知版本",
       metaRight: client.clientInfo?.machine?.platform || "未知平台",
-      badges,
+      detail: client.clientInfo?.workspaceDirectory
+        ? `工作目录: ${client.clientInfo.workspaceDirectory}`
+        : "工作目录: 未上报",
     };
   }),
 );

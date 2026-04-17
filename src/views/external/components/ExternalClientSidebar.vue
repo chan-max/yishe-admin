@@ -23,15 +23,8 @@
           <span class="external-sidebar__meta">{{ item.metaLeft || '-' }}</span>
           <span class="external-sidebar__meta">{{ item.metaRight || '-' }}</span>
         </div>
-        <div v-if="item.badges?.length" class="external-sidebar__badges">
-          <span
-            v-for="badge in item.badges"
-            :key="`${item.connectionId}-${badge.text}`"
-            class="external-sidebar__badge"
-            :class="`is-${badge.tone}`"
-          >
-            {{ badge.text }}
-          </span>
+        <div v-if="item.detail" class="external-sidebar__detail" :title="item.detail">
+          {{ item.detail }}
         </div>
       </button>
     </div>
@@ -50,7 +43,7 @@ export interface ClientNodeItem {
   time?: string
   metaLeft?: string
   metaRight?: string
-  badges?: ClientNodeBadge[]
+  detail?: string
 }
 
 const props = withDefaults(defineProps<{
@@ -170,53 +163,14 @@ const emptyText = props.emptyText
   color: var(--el-text-color-secondary);
 }
 
-.external-sidebar__badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.external-sidebar__badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 22px;
-  max-width: 100%;
-  padding: 0 9px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--el-text-color-secondary);
+.external-sidebar__detail {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--el-text-color-regular);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.external-sidebar__badge.is-success {
-  border-color: var(--el-color-success-light-5);
-  background: var(--el-color-success-light-9);
-  color: var(--el-color-success);
-}
-
-.external-sidebar__badge.is-warning {
-  border-color: var(--el-color-warning-light-5);
-  background: var(--el-color-warning-light-9);
-  color: var(--el-color-warning);
-}
-
-.external-sidebar__badge.is-info {
-  border-color: var(--el-color-primary-light-5);
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.external-sidebar__badge.is-danger {
-  border-color: var(--el-color-danger-light-5);
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
 }
 
 @media (max-width: 1200px) {

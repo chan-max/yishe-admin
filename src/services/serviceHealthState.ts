@@ -4,7 +4,7 @@ import { getImageProcessingHealth } from "@/api/image-processing-record";
 import { getRemotionVideoHealth } from "@/api/remotion-video-record";
 
 export type ServiceHealthKey = "sandbox" | "videoTemplate" | "images";
-export type ServiceHealthTone = "available" | "degraded" | "offline";
+export type ServiceHealthTone = "available" | "offline";
 
 export interface ServiceHealthSnapshot {
   key: ServiceHealthKey;
@@ -282,16 +282,10 @@ export const useServiceHealthState = (key: ServiceHealthKey) => {
 };
 
 export const resolveServiceHealthTone = (snapshot: ServiceHealthSnapshot): ServiceHealthTone => {
-  if (snapshot.loading && !snapshot.checked) {
-    return "degraded";
-  }
   if (snapshot.available) {
     return "available";
   }
-  if (snapshot.checked) {
-    return "offline";
-  }
-  return "degraded";
+  return "offline";
 };
 
 export const resolveServiceHealthText = (snapshot: ServiceHealthSnapshot) => {

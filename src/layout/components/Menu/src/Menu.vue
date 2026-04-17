@@ -76,8 +76,8 @@ export default defineComponent({
       "/external/browser-automation",
     ]);
 
-    const routeStatusMap = computed<Record<string, "available" | "degraded" | "offline">>(() => {
-      const result: Record<string, "available" | "degraded" | "offline"> = {};
+    const routeStatusMap = computed<Record<string, "available" | "offline">>(() => {
+      const result: Record<string, "available" | "offline"> = {};
       Object.entries(menuStatusRouteMap).forEach(([routePath, pluginKey]) => {
         result[routePath] =
           clientNodeStore.pluginStatusMap[
@@ -162,7 +162,7 @@ export default defineComponent({
     };
 
     const resolveBrowserAutomationStatusTitle = (
-      status: "available" | "degraded" | "offline",
+      status: "available" | "offline",
       running: boolean,
       routePath: string,
     ) => {
@@ -223,10 +223,7 @@ export default defineComponent({
 
     const renderStatusDot = (routePath: string) => {
       const rawStatus = routeStatusMap.value[routePath];
-      const status =
-        routePath === "/content/image-processing-record" && rawStatus === "degraded"
-          ? "offline"
-          : rawStatus;
+      const status = rawStatus;
       if (!status) {
         return undefined;
       }
@@ -234,40 +231,37 @@ export default defineComponent({
         routePath !== "/external/ps-automation" && !busyIndicatorDisabledRoutes.has(routePath);
       const running = supportsRunningIndicator ? routeRunningMap.value[routePath] : false;
 
-      const titleMap: Record<string, Record<"available" | "degraded" | "offline", string>> = {
+      const titleMap: Record<string, Record<"available" | "offline", string>> = {
         "/operation/toolkit": {
           available: "工具集可用",
-          degraded: "工具集入口可见，但当前不可执行",
           offline: "工具集不可用",
         },
         "/external/toolkit": {
           available: "工具集可用",
-          degraded: "工具集入口可见，但当前不可执行",
           offline: "工具集不可用",
         },
         "/external/browser-automation": {
           available: "浏览器自动化可用",
-          degraded: "浏览器自动化已连接，但当前不可执行",
           offline: "浏览器自动化不可用",
         },
         "/external/ps-automation": {
           available: "套图制作可调用",
-          degraded: "PS 自动化已连接，但当前不可执行",
           offline: "PS 自动化不可用",
         },
         "/external/google-art": {
           available: "Google Art 可用",
-          degraded: "Google Art 已连接，但当前不可执行",
           offline: "Google Art 不可用",
         },
         "/content/image-processing-record": {
           available: "图片处理可用",
-          degraded: "图片处理不可用",
           offline: "图片处理不可用",
+        },
+        "/content/remotion-video-record": {
+          available: "视频模板可用",
+          offline: "视频模板不可用",
         },
         "/product/queue": {
           available: "发布任务可执行",
-          degraded: "发布任务可执行",
           offline: "发布任务暂不可执行",
         },
       };
@@ -381,7 +375,7 @@ export default defineComponent({
       }
 
       return renderMenuStatusHint(
-        <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--degraded`]} />,
+        <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--offline`]} />,
         `AI 配置未完成：${aiConfigState.reason}。点击进入 AI API Key 补充配置`,
       );
     };
@@ -993,20 +987,6 @@ $prefix-cls: #{$namespace}-menu;
     animation: status-dot-wave-available 2.2s ease-out infinite;
   }
 
-  &__status-dot--degraded {
-    background: #f59e0b;
-    box-shadow:
-      0 0 0 1px rgb(245 158 11 / 22%),
-      0 0 10px rgb(245 158 11 / 34%),
-      0 0 18px rgb(245 158 11 / 14%);
-    animation: status-dot-breathe-degraded 2.6s ease-in-out infinite;
-  }
-
-  &__status-dot--degraded::after {
-    background: rgb(245 158 11 / 24%);
-    animation: status-dot-wave-degraded 2.6s ease-out infinite;
-  }
-
   &__status-dot--running {
     background: rgb(var(--menu-running-rgb, 245 158 11) / 10%);
     box-shadow:
@@ -1117,35 +1097,6 @@ $prefix-cls: #{$namespace}-menu;
   }
 }
 
-@keyframes status-dot-breathe-degraded {
-  0%,
-  100% {
-    transform: scale(0.97);
-    box-shadow:
-      0 0 0 1px rgb(245 158 11 / 18%),
-      0 0 7px rgb(245 158 11 / 22%),
-      0 0 12px rgb(245 158 11 / 10%);
-  }
-  50% {
-    transform: scale(1.06);
-    box-shadow:
-      0 0 0 1px rgb(245 158 11 / 26%),
-      0 0 12px rgb(245 158 11 / 36%),
-      0 0 20px rgb(245 158 11 / 18%);
-  }
-}
-
-@keyframes status-dot-wave-degraded {
-  0% {
-    opacity: 0.34;
-    transform: scale(1);
-  }
-  75%,
-  100% {
-    opacity: 0;
-    transform: scale(2.4);
-  }
-}
 
 @keyframes status-dot-breathe-offline {
   0%,

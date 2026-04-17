@@ -71,27 +71,6 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col
-                class="list-page-search-form__col--narrow"
-                :xs="24"
-                :sm="24"
-                :md="24"
-                :lg="3"
-                :xl="2"
-              >
-                <el-form-item label="服务状态">
-                  <div class="image-processing-record-page__status-bar">
-                    <span
-                      class="image-processing-record-page__status-dot"
-                      :class="imageStatusDotClass"
-                      :title="imageStatusTooltip"
-                    />
-                    <span class="image-processing-record-page__status-text">
-                      {{ imageStatusSummary }}
-                    </span>
-                  </div>
-                </el-form-item>
-              </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button
@@ -114,14 +93,6 @@
                 @click="handleBatchDelete"
               >
                 批量删除({{ selectedRows.length }})
-              </el-button>
-              <el-button
-                size="small"
-                :icon="RefreshRight"
-                :loading="imagesStatus.loading || metaLoading"
-                @click="refreshPageMeta"
-              >
-                刷新状态
               </el-button>
             </div>
           </el-form>
@@ -435,7 +406,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, Plus, RefreshRight, Search } from "@element-plus/icons-vue";
+import { Delete, Plus, Search } from "@element-plus/icons-vue";
 import { useWindowSize } from "@vueuse/core";
 import { formatTimestamp } from "@/common/date";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
@@ -523,33 +494,6 @@ const categoryOrderMap: Record<string, number> = {
   default: 9,
 };
 const ACTIVE_RECORD_STATUSES = new Set(["pending", "pending_client", "assigned", "processing"]);
-
-const imageStatusSummary = computed(() => {
-  if (imagesStatus.loading && !imagesStatus.checked) return "检测中";
-  if (!imagesStatus.checked) return "未检测";
-  return imagesStatus.available ? "可用" : "不可用";
-});
-
-const imageStatusDetail = computed(() => {
-  const parts: string[] = [];
-  if (imagesStatus.baseUrl) {
-    parts.push(imagesStatus.baseUrl);
-  }
-  if (imagesStatus.timestamp) {
-    parts.push(formatHealthTime(imagesStatus.timestamp));
-  }
-  return parts.join(" | ");
-});
-
-const imageStatusDotClass = computed(() => {
-  if (imagesStatus.loading && !imagesStatus.checked) return "is-warning";
-  if (!imagesStatus.checked) return "is-info";
-  return imagesStatus.available ? "is-success" : "is-info";
-});
-
-const imageStatusTooltip = computed(() => {
-  return [imageStatusSummary.value, imageStatusDetail.value].filter(Boolean).join(" | ");
-});
 
 let recordRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let processingPollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1422,20 +1366,6 @@ function buildCreateRequestPreview() {
   };
 }
 
-function formatHealthTime(value: string) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
-
 watch(
   () => route.fullPath,
   () => {
@@ -1787,49 +1717,6 @@ onBeforeUnmount(() => {
 
 :deep(.image-processing-record-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
-}
-
-.image-processing-record-page__status-bar {
-  display: flex;
-  width: 100%;
-  min-height: 32px;
-  align-items: center;
-  gap: 6px;
-}
-
-.image-processing-record-page__status-dot {
-  display: inline-flex;
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--el-text-color-disabled);
-  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.12);
-}
-
-.image-processing-record-page__status-dot.is-success {
-  background: var(--el-color-success);
-  box-shadow: 0 0 0 3px rgba(103, 194, 58, 0.14);
-}
-
-.image-processing-record-page__status-dot.is-warning {
-  background: var(--el-color-warning);
-  box-shadow: 0 0 0 3px rgba(230, 162, 60, 0.14);
-}
-
-.image-processing-record-page__status-dot.is-danger {
-  background: var(--el-color-danger);
-  box-shadow: 0 0 0 3px rgba(245, 108, 108, 0.14);
-}
-
-.image-processing-record-page__status-dot.is-info {
-  background: var(--el-color-info);
-  box-shadow: 0 0 0 3px rgba(144, 147, 153, 0.14);
-}
-
-.image-processing-record-page__status-text {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.5;
 }
 
 .image-record-source-cell,

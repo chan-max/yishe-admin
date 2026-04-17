@@ -1,6 +1,9 @@
 import { computed, ref } from "vue";
 import { defineStore, storeToRefs } from "pinia";
-import { getMyWebsocketConnectionViews, type WebsocketConnectionVO } from "@/api/system/websocket";
+import {
+  getMyRuntimeWebsocketConnectionViews,
+  type WebsocketConnectionVO,
+} from "@/api/system/websocket";
 import { resolveClientServiceSummary } from "@/services/clientServiceRuntime";
 import {
   websocketClient,
@@ -15,7 +18,7 @@ export type ClientPluginKey =
   | "google-art"
   | "image-processing"
   | "video-template";
-export type ClientPluginSummary = "available" | "degraded" | "offline";
+export type ClientPluginSummary = "available" | "offline";
 
 const listenersBound = ref(false);
 
@@ -50,10 +53,6 @@ export const normalizeClientPluginKey = (value?: string | null) => {
     uploader: "browser-automation",
     browser: "browser-automation",
     photoshop: "ps-automation",
-    images: "image-processing",
-    "yishe-images": "image-processing",
-    remotion: "video-template",
-    "remotion-video": "video-template",
   };
   return aliasMap[normalized] || normalized;
 };
@@ -70,12 +69,10 @@ export const getClientServiceRuntime = (
     return services["ps-automation"] || services.photoshop || null;
   }
   if (pluginKey === "video-template") {
-    return (
-      services["video-template"] || services.remotion || services["remotion-video"] || null
-    );
+    return services["video-template"] || null;
   }
   if (pluginKey === "image-processing") {
-    return services["image-processing"] || services.images || services["yishe-images"] || null;
+    return services["image-processing"] || null;
   }
   return services["google-art"] || services.googleArt || null;
 };
@@ -102,7 +99,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
   const refresh = async () => {
     loading.value = true;
     try {
-      const response = await getMyWebsocketConnectionViews();
+      const response = await getMyRuntimeWebsocketConnectionViews();
       clients.value = resolveConnectionViews(response).sort(compareClientNodes);
     } finally {
       loading.value = false;
@@ -138,10 +135,6 @@ export const useClientNodeStore = defineStore("client-node", () => {
           if (runtimeSummary === "available") {
             pluginSummary = "available";
             return;
-          }
-
-          if (runtimeSummary === "degraded" && pluginSummary !== "available") {
-            pluginSummary = "degraded";
           }
         });
 
@@ -240,6 +233,8 @@ export const useClientNodeStore = defineStore("client-node", () => {
           clientInfo: {
             ...(previous?.clientInfo || {}),
             appVersion: event.client.appVersion ?? previous?.clientInfo?.appVersion,
+            workspaceDirectory:
+              event.client.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
             machine: event.client.machine ?? previous?.clientInfo?.machine,
             location: event.client.location ?? previous?.clientInfo?.location,
             services: {

@@ -6,7 +6,10 @@ import {
 } from "@/services/websocketClient";
 import { getAccessToken } from "@/utils/auth";
 import { isClientAuthorized as checkClientAuthApi } from "@/api/user";
-import { getMyWebsocketConnectionViews, type WebsocketConnectionVO } from "@/api/system/websocket";
+import {
+  getMyRuntimeWebsocketConnectionViews,
+  type WebsocketConnectionVO,
+} from "@/api/system/websocket";
 
 const CLIENT_SOURCE = "客户端";
 const CLIENT_REFRESH_POLL_INTERVAL_MS = 15_000;
@@ -89,7 +92,7 @@ export const refreshMyClients = async () => {
 
   clientRefreshLoading.value = true;
   try {
-    const response = await getMyWebsocketConnectionViews();
+    const response = await getMyRuntimeWebsocketConnectionViews();
     const clients = resolveConnectionViews(response);
     setMyClients(clients);
     return clients;
@@ -162,6 +165,8 @@ const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
       clientInfo: {
         ...(previous?.clientInfo || {}),
         appVersion: event.client?.appVersion ?? previous?.clientInfo?.appVersion,
+        workspaceDirectory:
+          event.client?.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
         machine: event.client?.machine ?? previous?.clientInfo?.machine,
         location: event.client?.location ?? previous?.clientInfo?.location,
         services: {
@@ -190,6 +195,8 @@ const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
     clientInfo: {
       ...(previous?.clientInfo || {}),
       appVersion: event.client?.appVersion ?? previous?.clientInfo?.appVersion,
+      workspaceDirectory:
+        event.client?.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
       machine: event.client?.machine ?? previous?.clientInfo?.machine,
       location: event.client?.location ?? previous?.clientInfo?.location,
       services: {

@@ -50,22 +50,6 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col
-                class="list-page-search-form__col--wide"
-                :xs="24"
-                :sm="24"
-                :md="8"
-                :lg="13"
-                :xl="14"
-              >
-                <el-form-item label="服务状态">
-                  <div class="remotion-record-page__status-bar">
-                    <el-tag :type="remotionStatusTagType" size="small">
-                      {{ remotionStatusSummary }}
-                    </el-tag>
-                  </div>
-                </el-form-item>
-              </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
               <el-button
@@ -85,13 +69,6 @@
                 @click="handleBatchDelete"
               >
                 批量删除({{ selectedRows.length }})
-              </el-button>
-              <el-button
-                size="small"
-                @click="checkRemotionHealth"
-                :loading="remotionStatus.loading"
-              >
-                刷新状态
               </el-button>
             </div>
           </el-form>
@@ -171,7 +148,7 @@
                       >
                         <span class="cell-play-icon"></span>
                       </div>
-                      <span v-if="!row.url" class="text-xs opacity-60">-</span>
+                      <span v-if="!row.url" class="cell-video-placeholder">-</span>
                     </div>
                   </div>
                 </template>
@@ -595,18 +572,6 @@ const ACTIVE_RECORD_STATUSES = new Set([
   "queued",
   "processing",
 ]);
-
-const remotionStatusTagType = computed(() => {
-  if (remotionStatus.loading && !remotionStatus.checked) return "warning";
-  if (!remotionStatus.checked) return "info";
-  return remotionStatus.available ? "success" : "danger";
-});
-
-const remotionStatusSummary = computed(() => {
-  if (remotionStatus.loading && !remotionStatus.checked) return "检测中";
-  if (!remotionStatus.checked) return "未检测";
-  return remotionStatus.available ? "服务可用" : "服务不可用";
-});
 
 const queryParams = reactive({
   currentPage: 1,
@@ -1415,10 +1380,17 @@ watch(
 .record-progress-cell :deep(.el-progress) {
   align-items: center;
   gap: 6px;
+  width: 100%;
+}
+
+.record-progress-cell :deep(.el-progress-bar) {
+  width: 100%;
+  border-radius: 999px;
+  background-color: var(--el-fill-color-dark);
 }
 
 .record-progress-cell :deep(.el-progress-bar__outer) {
-  background-color: rgba(15, 23, 42, 0.06);
+  background-color: var(--el-fill-color-darker);
   border-radius: 999px;
 }
 
@@ -1862,11 +1834,25 @@ watch(
 
 .cell-video-wrapper {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 160px;
   height: 90px;
   overflow: hidden;
   border-radius: 6px;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.cell-video-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1;
 }
 
 .cell-play-overlay {

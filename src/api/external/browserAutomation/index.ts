@@ -66,6 +66,7 @@ export interface BrowserAutomationClientVO {
   lastOnlineAt?: string | null;
   lastOfflineAt?: string | null;
   appVersion?: string | null;
+  workspaceDirectory?: string | null;
   machine?: {
     code?: string;
     platform?: string;

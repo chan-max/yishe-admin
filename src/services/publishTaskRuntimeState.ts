@@ -9,7 +9,7 @@ import { loadPublishTaskAutoDispatchSetting } from "@/services/publishTaskAutoDi
 import { useClientNodeStore } from "@/store/modules/clientNode";
 import { websocketClient, type PublishTaskRuntimeEvent } from "@/services/websocketClient";
 
-type MenuStatusTone = "available" | "degraded" | "offline";
+type MenuStatusTone = "available" | "offline";
 
 interface NormalizedPublishTaskRuntimeItem extends PublishTaskRuntimeSummaryItem {
   id: string;

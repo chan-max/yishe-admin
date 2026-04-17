@@ -708,6 +708,7 @@ const mapBrowserAutomationClient = (client: any): BrowserAutomationClientVO => (
   lastOnlineAt: client.lastOnlineAt,
   lastOfflineAt: client.lastOfflineAt,
   appVersion: client.clientInfo?.appVersion || null,
+  workspaceDirectory: client.clientInfo?.workspaceDirectory || null,
   machine: client.clientInfo?.machine || null,
   location: client.clientInfo?.location || null,
   uploader: (getServiceRuntime(client) as BrowserAutomationServiceStatus | null) || null,
@@ -903,17 +904,9 @@ const clientNodeItems = computed<ClientNodeItem[]>(() =>
     time: dateText(client.lastOnlineAt || client.connectedAt || client.lastOfflineAt),
     metaLeft: client.appVersion || "未知版本",
     metaRight: client.location?.ip || client.location?.city || "未知位置",
-    badges: [
-      { text: client.isOnline ? "在线" : "离线", tone: client.isOnline ? "success" : "muted" },
-      {
-        text: getBrowserAutomationServiceText(client.uploader),
-        tone: getBrowserAutomationServiceTone(client.uploader),
-      },
-      {
-        text: getBrowserAutomationBrowserText(client.uploader),
-        tone: getBrowserAutomationBrowserTone(client.uploader),
-      },
-    ],
+    detail: client.workspaceDirectory
+      ? `工作目录: ${client.workspaceDirectory}`
+      : "工作目录: 未上报",
   })),
 );
 

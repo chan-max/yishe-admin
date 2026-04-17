@@ -381,6 +381,10 @@ const formatClientInfo = (info?: WebsocketClientInfo) => {
     segments.push(`机器码: ${info.machine.code}`);
   }
 
+  if (info.workspaceDirectory) {
+    segments.push(`工作目录: ${info.workspaceDirectory}`);
+  }
+
   if (info.browser?.name) {
     segments.push(
       `浏览器: ${info.browser.name}${info.browser.version ? ` ${info.browser.version}` : ""}`,
@@ -721,6 +725,13 @@ const runtimeGridOptions = ref<VxeGridProps<WebsocketConnectionRow>>({
       minWidth: 460,
       showOverflow: "tooltip",
       slots: { default: "clientInfo_default" },
+    },
+    {
+      field: "workspaceDirectory",
+      title: "工作目录",
+      minWidth: 240,
+      showOverflow: "tooltip",
+      formatter: ({ row }) => row.clientInfo?.workspaceDirectory || "-",
     },
     {
       field: "query",

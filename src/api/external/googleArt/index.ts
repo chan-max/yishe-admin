@@ -1,4 +1,9 @@
-import { getMyWebsocketConnectionViews, sendServiceCommand, type ServiceCommandDTO, type WebsocketConnectionVO } from '@/api/system/websocket'
+import {
+  getMyRuntimeWebsocketConnectionViews,
+  sendServiceCommand,
+  type ServiceCommandDTO,
+  type WebsocketConnectionVO,
+} from '@/api/system/websocket'
 
 export interface GoogleArtServiceStatus {
   key?: string
@@ -26,6 +31,7 @@ export interface GoogleArtClientVO {
   connectedAt?: string | null
   lastOnlineAt?: string | null
   appVersion?: string | null
+  workspaceDirectory?: string | null
   machine?: {
     code?: string
     platform?: string
@@ -79,6 +85,7 @@ function mapConnectionToGoogleArtClient(connection: WebsocketConnectionVO): Goog
     connectedAt: connection.connectedAt,
     lastOnlineAt: connection.lastOnlineAt,
     appVersion: connection.clientInfo?.appVersion || null,
+    workspaceDirectory: connection.clientInfo?.workspaceDirectory || null,
     machine: connection.clientInfo?.machine || null,
     location: connection.clientInfo?.location || null,
     googleArt
@@ -86,7 +93,7 @@ function mapConnectionToGoogleArtClient(connection: WebsocketConnectionVO): Goog
 }
 
 export async function getGoogleArtClients() {
-  const list = await getMyWebsocketConnectionViews()
+  const list = await getMyRuntimeWebsocketConnectionViews()
   return (Array.isArray(list) ? list : [])
     .map(mapConnectionToGoogleArtClient)
     .filter((item) => {
