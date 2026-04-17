@@ -116,6 +116,7 @@
                 <div class="detail-card__title">应用信息</div>
                 <div class="detail-row"><span class="detail-key">客户端 ID</span><span class="detail-value detail-value--mono">{{ client.clientInfo?.clientId || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">来源标识</span><span class="detail-value">{{ client.clientInfo?.source || '-' }}</span></div>
+                <div class="detail-row"><span class="detail-key">工作目录</span><span class="detail-value detail-value--break">{{ client.clientInfo?.workspaceDirectory || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">扩展名称</span><span class="detail-value">{{ client.clientInfo?.extension?.name || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">扩展版本</span><span class="detail-value">{{ client.clientInfo?.extension?.version || client.clientInfo?.appVersion || '-' }}</span></div>
                 <div class="detail-row"><span class="detail-key">Manifest</span><span class="detail-value">{{ client.clientInfo?.extension?.manifestVersion || '-' }}</span></div>

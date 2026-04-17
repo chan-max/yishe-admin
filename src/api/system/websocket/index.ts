@@ -72,6 +72,7 @@ export interface TokenUserInfo {
 export interface WebsocketClientInfo {
   clientId?: string;
   source?: string;
+  workspaceDirectory?: string;
   app?: {
     name?: string;
     version?: string;
