@@ -48,7 +48,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "content.code-script", label: "代码脚本" },
       { key: "content.code-script-schedule", label: "脚本调度" },
       { key: "content.remotion-video-record", label: "视频模板(video-template)" },
-      { key: "content.image-processing-record", label: "图片处理(yishe-images)" },
+      { key: "content.image-processing-record", label: "图片处理(image-tool)" },
     ],
   },
   {

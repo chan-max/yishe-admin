@@ -79,7 +79,7 @@ const normalizeVideoTemplateErrorMessage = (error: any, fallback: string) => {
 const normalizeImagesHealthMessage = (message: string, available: boolean) => {
   const normalized = String(message || "").trim();
   if (!normalized) {
-    return available ? "服务健康检查通过" : "服务健康检查未通过";
+    return available ? "图片处理能力可执行" : "图片处理当前不可执行";
   }
   return normalized;
 };
@@ -90,19 +90,19 @@ const normalizeImagesErrorMessage = (error: any, fallback: string) => {
 
   if (!raw) return fallback;
   if (lower.includes("connection refused") || lower.includes("econnrefused")) {
-    return "服务未启动";
+    return "图片处理客户端未启动";
   }
   if (lower.includes("network error")) {
-    return "网络异常";
+    return "与图片处理客户端通信异常";
   }
   if (lower.includes("timeout")) {
-    return "请求超时";
+    return "图片处理状态检测超时";
   }
   if (lower.includes("not found")) {
     return "接口不存在";
   }
-  if (lower.includes("images")) {
-    return "图片处理服务异常";
+  if (lower.includes("images") || lower.includes("image-tool") || lower.includes("image processing")) {
+    return "图片处理能力异常";
   }
   return raw;
 };

@@ -157,7 +157,7 @@
                         v-if="row.url"
                         :id="'thumb-' + row.id"
                         :src="row.url"
-                        preload="none"
+                        preload="metadata"
                         class="cell-video-player"
                         muted
                         playsinline

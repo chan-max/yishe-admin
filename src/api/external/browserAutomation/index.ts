@@ -26,6 +26,7 @@ export interface BrowserAutomationProfileSummary {
   remark?: string;
   account?: string;
   platforms?: string[];
+  debugPort?: number | null;
   browserVersion?: string;
   loginSummary?: Record<string, any>;
   createdAt?: string | null;

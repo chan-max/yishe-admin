@@ -222,7 +222,11 @@ export default defineComponent({
     };
 
     const renderStatusDot = (routePath: string) => {
-      const status = routeStatusMap.value[routePath];
+      const rawStatus = routeStatusMap.value[routePath];
+      const status =
+        routePath === "/content/image-processing-record" && rawStatus === "degraded"
+          ? "offline"
+          : rawStatus;
       if (!status) {
         return undefined;
       }
@@ -257,9 +261,9 @@ export default defineComponent({
           offline: "Google Art 不可用",
         },
         "/content/image-processing-record": {
-          available: "图片处理服务可用",
-          degraded: "图片处理插件已连接，但当前不可执行",
-          offline: "图片处理服务不可用",
+          available: "图片处理可用",
+          degraded: "图片处理不可用",
+          offline: "图片处理不可用",
         },
         "/product/queue": {
           available: "发布任务可执行",
@@ -874,7 +878,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__auto-badge--enabled {
-    color: rgb(255 247 237 / 94%);
+    color: rgba(255, 140, 0, 0.94);
   }
 
   &__auto-badge--psd.#{$prefix-cls}__auto-badge--enabled {

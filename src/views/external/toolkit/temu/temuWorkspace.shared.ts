@@ -121,7 +121,6 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         type: "text",
         required: true,
         placeholder: "请输入 spuId",
-        hint: "会进入商品发布详情页，自动点击“提交”，并返回商品发布模板 product/edit 请求里的 POST 参数。",
       },
     ],
     note: "当前动作会在客户端浏览器环境中执行，用于根据商品 spuId 获取商品发布模板请求里的 POST 参数。",

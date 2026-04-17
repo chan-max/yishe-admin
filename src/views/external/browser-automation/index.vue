@@ -90,6 +90,10 @@
                   {{ row.instance?.pageCount ?? 0 }}
                 </template>
 
+                <template #userDataDir_default="{ row }">
+                  <span class="browser-env-path">{{ row.userDataDir || "-" }}</span>
+                </template>
+
                 <template #status_default="{ row }">
                   <span
                     class="profile-active-badge"
@@ -221,6 +225,9 @@
                   </div>
                   <div v-if="currentProfileId" class="muted">
                     当前操作环境：{{ currentProfileName }}，{{ currentProfileStatusText }}
+                  </div>
+                  <div v-if="currentProfileUserDataDir" class="muted browser-env-path">
+                    用户信息目录：{{ currentProfileUserDataDir }}
                   </div>
                   <div v-if="currentProfileId && !currentProfileConnected" class="muted">
                     当前环境的浏览器窗口尚未打开，请先点击“连接”打开对应环境后再获取页面或执行调试。
@@ -739,17 +746,12 @@ const profileInstanceMap = computed(
 const profileTableRows = computed(() =>
   profileItems.value.map((item) => {
     const instance = profileInstanceMap.value.get(String(item?.id || "").trim()) || null;
-    const connection = selectedDetails.value?.connection;
-    const isCurrentProfile =
-      String(item?.id || "").trim() &&
-      String(item?.id || "").trim() === String(activeProfileId.value || "").trim();
 
     return {
       ...item,
       instance,
-      port:
-        normalizeBrowserPortValue(instance) ??
-        (isCurrentProfile ? normalizeBrowserPortValue(connection) : null),
+      port: resolveProfilePort(String(item?.id || "").trim()),
+      userDataDir: resolveProfileUserDataDir(String(item?.id || "").trim()),
     };
   }),
 );
@@ -800,6 +802,15 @@ const profileGridOptions = ref<VxeGridProps<any>>({
       align: "left",
       headerAlign: "left",
       slots: { default: "pageCount_default" },
+    },
+    {
+      field: "userDataDir",
+      title: "用户信息目录",
+      minWidth: 320,
+      showOverflow: "tooltip",
+      align: "left",
+      headerAlign: "left",
+      slots: { default: "userDataDir_default" },
     },
     {
       field: "isActive",
@@ -884,6 +895,7 @@ const canDebugCurrentProfile = computed(() => canLoadCurrentProfilePages.value);
 const currentProfileStatusText = computed(() =>
   getProfileInstanceText(currentProfileInstance.value),
 );
+const currentProfileUserDataDir = computed(() => resolveProfileUserDataDir(currentProfileId.value));
 const clientNodeItems = computed<ClientNodeItem[]>(() =>
   clients.value.map((client) => ({
     connectionId: client.clientId,
@@ -920,6 +932,56 @@ function normalizeBrowserPortValue(source: any) {
     if (Number.isInteger(port) && port > 0) {
       return port;
     }
+  }
+
+  return null;
+}
+function resolveProfilePort(
+  profileId?: string | null,
+  fallbackPort?: number | null,
+) {
+  const normalizedProfileId = String(profileId || "").trim();
+  if (!normalizedProfileId) {
+    return normalizeBrowserPortValue({ port: fallbackPort });
+  }
+
+  const instance = profileInstanceMap.value.get(normalizedProfileId) || null;
+  const profile =
+    profileItems.value.find((item) => String(item?.id || "").trim() === normalizedProfileId) ||
+    null;
+  const isCurrentProfile =
+    normalizedProfileId === String(activeProfileId.value || "").trim();
+
+  return (
+    normalizeBrowserPortValue(instance) ??
+    normalizeBrowserPortValue(profile) ??
+    (isCurrentProfile ? normalizeBrowserPortValue(selectedDetails.value?.connection) : null) ??
+    normalizeBrowserPortValue({ port: fallbackPort })
+  );
+}
+function resolveProfileUserDataDir(profileId?: string | null) {
+  const normalizedProfileId = String(profileId || "").trim();
+  if (!normalizedProfileId) {
+    return null;
+  }
+
+  const instance = profileInstanceMap.value.get(normalizedProfileId) || null;
+  const instanceDir = toNullableText(instance?.userDataDir);
+  if (instanceDir) {
+    return instanceDir;
+  }
+
+  const profile =
+    profileItems.value.find((item) => String(item?.id || "").trim() === normalizedProfileId) ||
+    null;
+  const profileDir = toNullableText(profile?.userDataDir);
+  if (profileDir) {
+    return profileDir;
+  }
+
+  const connectionProfileId = String(selectedDetails.value?.connection?.profileId || "").trim();
+  if (connectionProfileId && connectionProfileId === normalizedProfileId) {
+    return toNullableText(selectedDetails.value?.connection?.userDataDir);
   }
 
   return null;
@@ -1145,7 +1207,7 @@ const setOperationProfile = (profileId?: string | null) => {
 };
 const openOperationPanelForProfile = (profileId?: string | null, port?: number | null) => {
   setOperationProfile(profileId);
-  const normalizedPort = normalizeBrowserPortValue({ port });
+  const normalizedPort = resolveProfilePort(profileId, port);
   if (normalizedPort) {
     browserForm.port = normalizedPort;
   }
@@ -1336,14 +1398,19 @@ const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
 const sendConnect = async (profileId?: string | null) => {
   if (!selectedClientId.value) return;
   const normalizedProfileId = String(profileId || browserForm.profileId || "").trim();
+  const resolvedPort = resolveProfilePort(normalizedProfileId, browserForm.port);
   if (normalizedProfileId) {
     browserForm.profileId = normalizedProfileId;
+  }
+  if (resolvedPort) {
+    browserForm.port = resolvedPort;
   }
   return dispatch(
     "connect",
     () =>
       connectBrowserAutomation(selectedClientId.value, {
         ...browserForm,
+        ...(resolvedPort ? { port: resolvedPort } : {}),
         ...(normalizedProfileId ? { profileId: normalizedProfileId } : {}),
       }),
     "连接命令已发送",
@@ -1374,7 +1441,10 @@ const sendForceClose = async () =>
   selectedClientId.value &&
   dispatch(
     "forceClose",
-    () => forceCloseBrowserAutomation(selectedClientId.value, { port: browserForm.port }),
+    () =>
+      forceCloseBrowserAutomation(selectedClientId.value, {
+        port: resolveProfilePort(currentProfileId.value, browserForm.port) || browserForm.port,
+      }),
     "强制关闭命令已发送",
   );
 const sendOpenLink = async () =>
@@ -1479,6 +1549,7 @@ watch(selectedClientId, (value) => {
   syncDebugPageIndex();
   resetDebugOutput();
   browserForm.profileId = activeProfileId.value || "";
+  browserForm.port = resolveProfilePort(browserForm.profileId, null) || 9222;
   if (!value) operationDialogVisible.value = false;
 });
 
@@ -1497,6 +1568,7 @@ watch(
   (value) => {
     if (!value) {
       browserForm.profileId = "";
+      browserForm.port = 9222;
       return;
     }
     if (
@@ -1504,6 +1576,7 @@ watch(
       !profileItems.value.some((item) => item.id === browserForm.profileId)
     ) {
       browserForm.profileId = value;
+      browserForm.port = resolveProfilePort(value, browserForm.port) || browserForm.port;
     }
   },
   { immediate: true },
@@ -1786,6 +1859,10 @@ onUnmounted(() => {
 .profile-grid :deep(.vxe-header--column),
 .profile-grid :deep(.vxe-body--column) {
   text-align: left;
+}
+
+.browser-env-path {
+  word-break: break-all;
 }
 
 .main-empty {

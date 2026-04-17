@@ -910,10 +910,13 @@ async function submitClipMaterialUserTransfer() {
       clipMaterialUserTransferAction.value === "copy"
         ? await copyFileResourceToUser(payload)
         : await moveFileResourceToUser(payload);
+    const result = res || {};
 
-    const successCount = Array.isArray(res?.list) ? res.list.length : Number(res?.total || 0);
-    const failedCount = Array.isArray(res?.failed) ? res.failed.length : 0;
-    const warningCount = Array.isArray(res?.warnings) ? res.warnings.length : 0;
+    const successCount = Array.isArray(result?.list)
+      ? result.list.length
+      : Number(result?.total || 0);
+    const failedCount = Array.isArray(result?.failed) ? result.failed.length : 0;
+    const warningCount = Array.isArray(result?.warnings) ? result.warnings.length : 0;
 
     if (successCount > 0) {
       ElNotification.success(
@@ -931,7 +934,7 @@ async function submitClipMaterialUserTransfer() {
     if (failedCount > 0) {
       ElNotification.warning({
         title: `${actionLabel}失败详情`,
-        message: res.failed
+        message: result.failed
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
           .join("；"),
@@ -942,7 +945,7 @@ async function submitClipMaterialUserTransfer() {
     if (warningCount > 0) {
       ElNotification.warning({
         title: `${actionLabel}完成，但有警告`,
-        message: res.warnings
+        message: result.warnings
           .slice(0, 3)
           .map((item: any) => `${item.id}: ${item.message}`)
           .join("；"),

@@ -87,7 +87,7 @@
                       :title="imageStatusTooltip"
                     />
                     <span class="image-processing-record-page__status-text">
-                      {{ imagesStatus.available ? "服务可用" : "服务不可用" }}
+                      {{ imageStatusSummary }}
                     </span>
                   </div>
                 </el-form-item>
@@ -527,7 +527,7 @@ const ACTIVE_RECORD_STATUSES = new Set(["pending", "pending_client", "assigned",
 const imageStatusSummary = computed(() => {
   if (imagesStatus.loading && !imagesStatus.checked) return "检测中";
   if (!imagesStatus.checked) return "未检测";
-  return imagesStatus.available ? "服务可用" : "服务不可用";
+  return imagesStatus.available ? "可用" : "不可用";
 });
 
 const imageStatusDetail = computed(() => {
@@ -544,7 +544,7 @@ const imageStatusDetail = computed(() => {
 const imageStatusDotClass = computed(() => {
   if (imagesStatus.loading && !imagesStatus.checked) return "is-warning";
   if (!imagesStatus.checked) return "is-info";
-  return imagesStatus.available ? "is-success" : "is-danger";
+  return imagesStatus.available ? "is-success" : "is-info";
 });
 
 const imageStatusTooltip = computed(() => {
@@ -720,7 +720,7 @@ const requestPreviewJson = computed(() => {
 
 const createSubmitHint = computed(() => {
   if (imagesStatus.checked && !imagesStatus.available) {
-    return "图片处理服务当前不可用，请稍后再试。";
+    return String(imagesStatus.message || "").trim() || "图片处理当前不可执行，请稍后再试。";
   }
   if (!/^https?:\/\//i.test(String(form.imageUrl || "").trim())) {
     return "请先输入有效的图片地址，再继续提交任务。";
@@ -1599,7 +1599,9 @@ async function submitCreate() {
   try {
     await refreshServiceHealth("images");
     if (imagesStatus.checked && !imagesStatus.available) {
-      ElMessage.error("图片处理服务不可用，请先恢复服务后再提交");
+      ElMessage.error(
+        String(imagesStatus.message || "").trim() || "图片处理当前不可执行，请先恢复后再提交",
+      );
       return;
     }
 
