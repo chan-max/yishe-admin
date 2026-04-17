@@ -975,6 +975,12 @@ onMounted(() => {
                 label="PSD 配置"
                 class="publish-config-form-item--stacked"
               >
+                <el-input
+                  v-model="templateBindingConfigText"
+                  type="textarea"
+                  :autosize="{ minRows: 8, maxRows: 18 }"
+                  placeholder='请输入完整 PSD 配置快照，支持 JSON 或 JS 对象格式，例如：{"images":[]}'
+                />
                 <div class="publish-config-template-config-toolbar">
                   <el-button
                     size="small"
@@ -984,15 +990,6 @@ onMounted(() => {
                   >
                     恢复模板默认配置
                   </el-button>
-                </div>
-                <el-input
-                  v-model="templateBindingConfigText"
-                  type="textarea"
-                  :autosize="{ minRows: 8, maxRows: 18 }"
-                  placeholder='请输入完整 PSD 配置快照，支持 JSON 或 JS 对象格式，例如：{"images":[]}'
-                />
-                <div class="publish-config-field-note">
-                  这里保存的是当前任务配置专属的 PSD 参数快照；后续按发布配置创建套图时，后端会按“素材 + 模板 + 配置”自动归并复用。
                 </div>
               </el-form-item>
             </section>
@@ -1644,7 +1641,7 @@ onMounted(() => {
 
 .publish-config-template-config-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   margin-bottom: 8px;
 }
 
