@@ -891,7 +891,6 @@
                 class="psd-set-content-container"
                 style="display: flex; gap: 16px; flex: 1; overflow: hidden"
               >
-                <!-- 文件夹树 -->
                 <div
                   class="psd-folder-tree-wrapper"
                   style="
@@ -947,7 +946,6 @@
                   </el-tree>
                 </div>
 
-                <!-- 模板列表 -->
                 <div
                   class="psd-template-list-container"
                   style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%"
@@ -6419,6 +6417,8 @@ async function handleUrlUpload() {
   display: flex;
   align-items: center;
   gap: 12px;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .section-title .selected-count {
@@ -6474,7 +6474,7 @@ async function handleUrlUpload() {
 .psd-set-footer-main {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
   flex-wrap: wrap;
 }
@@ -6485,7 +6485,7 @@ async function handleUrlUpload() {
   gap: 4px;
   color: var(--el-color-info);
   font-size: 12px;
-  min-width: 240px;
+  min-width: 0;
 }
 
 .psd-set-info :deep(.el-icon) {
@@ -6505,8 +6505,8 @@ async function handleUrlUpload() {
 .psd-set-info-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 2px 8px;
+  min-height: 22px;
+  padding: 1px 7px;
   border-radius: 999px;
   background: var(--el-color-info-light-9);
   color: var(--el-color-info-dark-2);
@@ -6591,6 +6591,20 @@ async function handleUrlUpload() {
     grid-template-columns: 1fr;
   }
 
+  .psd-set-content-container {
+    flex-direction: column;
+  }
+
+  .psd-folder-tree-wrapper {
+    width: 100%;
+    min-width: 0;
+    max-height: 180px;
+    padding-right: 0;
+    padding-bottom: 8px;
+    border-right: none;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
   .psd-set-footer {
     align-items: stretch;
   }
@@ -6604,6 +6618,7 @@ async function handleUrlUpload() {
     justify-content: flex-end;
     gap: 8px;
   }
+
 }
 
 .material-dnd-grid :deep(.vxe-table--body tbody tr.is-dragging-row) {
@@ -7227,19 +7242,19 @@ h1 {
 
   :deep(.el-dialog__header) {
     margin-right: 0;
-    padding: 16px 16px 0;
+    padding: 14px 16px 0;
   }
 
   :deep(.el-dialog__body) {
     flex: 1;
     overflow: hidden;
-    padding: 0 16px 16px;
+    padding: 0 16px 14px;
     background: var(--el-bg-color-page);
   }
 
   :deep(.el-dialog__footer) {
     flex-shrink: 0;
-    padding: 12px 16px 16px;
+    padding: 10px 16px 14px;
     border-top: 1px solid var(--el-border-color-lighter);
     background: var(--el-dialog-bg-color, var(--el-bg-color));
   }
@@ -7249,18 +7264,18 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
 }
 
 .material-publish-config-dialog__header-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
 .material-publish-config-dialog__header-subtitle {
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 12px;
   line-height: 1.5;
   color: var(--el-text-color-secondary);
@@ -7268,8 +7283,8 @@ h1 {
 
 .material-publish-config-dialog__body {
   display: grid;
-  grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 10px;
   height: 100%;
   min-height: calc(100vh - 144px);
   box-sizing: border-box;
@@ -7278,11 +7293,11 @@ h1 {
 .material-publish-config-dialog__panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
-  padding: 12px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 10px;
+  padding: 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
   background: var(--el-bg-color);
   overflow: hidden;
 }
@@ -7291,7 +7306,7 @@ h1 {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -7301,15 +7316,15 @@ h1 {
 
 .material-publish-config-dialog__section-title {
   color: var(--el-text-color-primary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .material-publish-config-dialog__section-desc {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .material-publish-config-dialog__warning {
@@ -7323,10 +7338,10 @@ h1 {
 .material-publish-config-dialog__material-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 10px;
+  gap: 8px;
   min-height: 0;
   overflow: auto;
-  padding-right: 4px;
+  padding-right: 2px;
   align-content: start;
 }
 
@@ -7335,7 +7350,7 @@ h1 {
   align-items: center;
   justify-content: center;
   padding: 0;
-  border-radius: 8px;
+  border-radius: 6px;
   background: transparent;
   border: 1px solid var(--el-border-color-lighter);
   overflow: hidden;
@@ -7350,7 +7365,7 @@ h1 {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 7px;
+  border-radius: 5px;
   background: var(--el-fill-color-lighter);
   display: flex;
   align-items: center;
@@ -7377,7 +7392,7 @@ h1 {
 }
 
 .material-publish-config-dialog__search {
-  width: min(320px, 100%);
+  width: min(280px, 100%);
 }
 
 .material-publish-config-dialog__search :deep(.el-input) {
@@ -7420,20 +7435,20 @@ h1 {
 
 .material-publish-config-dialog__pagination {
   justify-content: flex-end;
-  padding-top: 2px;
+  padding-top: 6px;
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .material-publish-config-dialog__footer {
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
 }
 
 .material-publish-config-dialog__footer-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -7441,8 +7456,8 @@ h1 {
 .material-publish-config-dialog__footer-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 2px 8px;
+  min-height: 22px;
+  padding: 1px 7px;
   border-radius: 999px;
   border: 1px solid var(--el-border-color-lighter);
   background: var(--el-fill-color-light);
@@ -7456,7 +7471,7 @@ h1 {
 }
 
 .material-publish-config-dialog__footer-actions {
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -7767,7 +7782,7 @@ h1 {
 .psd-set-dialog :deep(.el-dialog__body) {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-height: 520px;
   max-height: calc(100vh - 188px);
   overflow: hidden;
@@ -7778,22 +7793,22 @@ h1 {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(360px, 1.6fr) minmax(280px, 1.2fr);
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   overflow: hidden;
-  padding-right: 4px;
+  padding-right: 2px;
 }
 
 .psd-set-materials,
 .psd-set-templates {
-  border: 1px solid var(--el-border-color);
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   min-height: 220px;
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   overflow: hidden;
 }
 
@@ -7820,25 +7835,25 @@ h1 {
   min-height: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .psd-set-materials .thumb {
   position: relative;
-  min-height: 160px;
-  max-height: 188px;
+  min-height: 154px;
+  max-height: 180px;
   width: auto;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
+  border-radius: 5px;
   overflow: hidden;
   background: var(--el-fill-color-lighter);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 8px;
+  padding: 6px;
   transition: all 0.2s;
 }
 
@@ -7850,7 +7865,7 @@ h1 {
 .psd-set-materials .thumb-image-wrapper {
   position: relative;
   width: 100%;
-  height: 120px;
+  height: 114px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7893,7 +7908,7 @@ h1 {
 }
 
 .psd-set-materials .thumb-info-row {
-  margin-top: 6px;
+  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -7908,7 +7923,7 @@ h1 {
 }
 
 .psd-set-materials .thumb-action-row {
-  margin-top: 4px;
+  margin-top: 2px;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -7926,20 +7941,20 @@ h1 {
 .psd-set-template-toolbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .psd-set-template-toolbar .selected-count {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-color-primary);
   font-weight: 500;
-  padding: 4px 10px;
+  padding: 3px 8px;
   background: rgba(64, 158, 255, 0.1);
   border-radius: 4px;
-  border: 1px solid rgba(64, 158, 255, 0.3);
+  border: 1px solid rgba(64, 158, 255, 0.22);
   white-space: nowrap;
 }
 
@@ -7949,7 +7964,7 @@ h1 {
   max-height: calc(100vh - 320px);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   overflow: hidden;
 }
 
@@ -7960,7 +7975,7 @@ h1 {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .psd-set-templates .template-pagination {
@@ -7972,9 +7987,9 @@ h1 {
 }
 
 .psd-set-templates .template-item {
-  border: 1px solid var(--el-border-color);
-  border-radius: 8px;
-  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  padding: 10px;
   cursor: pointer;
   transition: all 0.2s;
   background: var(--el-bg-color);
@@ -7982,21 +7997,21 @@ h1 {
 
 .psd-set-templates .template-item.is-checked {
   border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 4px rgba(64, 158, 255, 0.3);
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.18);
   background: rgba(64, 158, 255, 0.06);
 }
 
 .psd-set-templates .template-content-wrapper {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
 }
 
 .psd-set-templates .template-thumbnail {
-  width: 80px;
-  height: 80px;
-  min-width: 80px;
-  border-radius: 6px;
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  border-radius: 5px;
   object-fit: cover;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-fill-color-lighter);
@@ -8008,7 +8023,7 @@ h1 {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .psd-set-templates .template-title-row {
@@ -8016,7 +8031,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 
 .psd-set-templates .template-title {
@@ -8032,31 +8047,31 @@ h1 {
 }
 
 .psd-set-templates .template-psd-info {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--el-text-color-regular);
-  line-height: 1.5;
-  margin-bottom: 4px;
-  padding: 6px 8px;
+  line-height: 1.4;
+  margin-bottom: 2px;
+  padding: 5px 8px;
   background: var(--el-fill-color-lighter);
   border-radius: 4px;
   border-left: 3px solid var(--el-color-primary);
 }
 
 .psd-set-templates .template-meta {
-  margin-top: 4px;
+  margin-top: 2px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   font-size: 12px;
   color: #909399;
   flex-wrap: wrap;
 }
 
 .psd-set-templates .template-paths {
-  margin-top: 6px;
+  margin-top: 2px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   font-size: 12px;
   color: #666;
 }
@@ -8102,8 +8117,8 @@ h1 {
 
 .psd-set-footer {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* PSD模板详情弹窗样式 */
@@ -8583,9 +8598,9 @@ h1 {
   height: calc(100vh - 120px);
 
   .batch-detail-config-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--el-border-color);
-    background: var(--el-fill-color-lighter);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--el-bg-color);
 
     .batch-detail-config-title {
       font-size: 16px;
@@ -8597,29 +8612,30 @@ h1 {
   .batch-detail-config-body {
     flex: 1;
     overflow: auto;
-    padding: 20px;
+    padding: 12px 16px 16px;
     background: var(--el-bg-color);
 
     .template-config-row {
       display: flex;
-      gap: 20px;
-      padding: 20px;
-      margin-bottom: 20px;
-      background: var(--el-bg-color-page);
-      border: 1px solid var(--el-border-color-light);
-      border-radius: 8px;
+      gap: 16px;
+      padding: 14px 0;
+      margin-bottom: 0;
+      background: transparent;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+
+      &:last-child {
+        border-bottom: none;
+      }
 
       .template-config-left {
-        width: 320px;
+        width: 280px;
         flex-shrink: 0;
 
         .template-config-header-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid var(--el-border-color-lighter);
+          margin-bottom: 10px;
 
           .template-name {
             font-size: 15px;
@@ -8631,14 +8647,14 @@ h1 {
         .template-config-images {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          gap: 10px;
 
           .config-image-item {
             .config-image-label {
-              font-size: 13px;
+              font-size: 12px;
               font-weight: 500;
               color: var(--el-text-color-regular);
-              margin-bottom: 8px;
+              margin-bottom: 6px;
             }
 
             .config-image-wrapper {
@@ -8647,9 +8663,9 @@ h1 {
               gap: 8px;
 
               .config-image {
-                width: 120px;
-                height: 120px;
-                border: 1px solid var(--el-border-color);
+                width: 108px;
+                height: 108px;
+                border: 1px solid var(--el-border-color-lighter);
                 border-radius: 4px;
                 object-fit: contain;
                 background: var(--el-fill-color-lighter);
@@ -8661,11 +8677,11 @@ h1 {
                 font-size: 12px;
                 padding: 40px 20px;
                 text-align: center;
-                border: 1px dashed var(--el-border-color);
+                border: 1px dashed var(--el-border-color-lighter);
                 border-radius: 4px;
                 background: var(--el-fill-color-lighter);
-                width: 120px;
-                height: 120px;
+                width: 108px;
+                height: 108px;
                 box-sizing: border-box;
               }
             }
@@ -8678,9 +8694,9 @@ h1 {
         min-width: 0;
 
         .config-editor-toolbar {
-          margin-bottom: 12px;
+          margin-bottom: 8px;
           display: flex;
-          justify-content: flex-end;
+          justify-content: flex-start;
           gap: 8px;
         }
 
@@ -8695,6 +8711,24 @@ h1 {
     }
   }
 }
+
+@media (max-width: 1024px) {
+  .batch-detail-config-content {
+    .batch-detail-config-body {
+      padding: 10px 12px 12px;
+
+      .template-config-row {
+        flex-direction: column;
+        gap: 12px;
+
+        .template-config-left {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
 </style>
 
 <style lang="less">

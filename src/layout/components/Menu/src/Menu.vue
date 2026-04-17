@@ -934,13 +934,13 @@ $prefix-cls: #{$namespace}-menu;
   &__link--running-queue {
     --menu-running-rgb: 245 158 11;
     --menu-running-highlight-rgb: 251 191 36;
-    --menu-running-text-color: rgb(255 244 214 / 92%);
+    --menu-running-text-color: rgb(146 64 14 / 96%);
   }
 
   &__link--running-psd {
     --menu-running-rgb: 234 179 8;
     --menu-running-highlight-rgb: 250 204 21;
-    --menu-running-text-color: rgb(255 249 214 / 92%);
+    --menu-running-text-color: rgb(133 77 14 / 96%);
   }
 
   &__status-dot {
@@ -1064,6 +1064,16 @@ $prefix-cls: #{$namespace}-menu;
       grid-template-columns: 1fr;
       padding-left: calc(var(--left-menu-links-padding-left) + 2px);
     }
+  }
+}
+
+:global(html.dark) {
+  .#{$prefix-cls}__link--running-queue {
+    --menu-running-text-color: rgb(255 244 214 / 92%);
+  }
+
+  .#{$prefix-cls}__link--running-psd {
+    --menu-running-text-color: rgb(255 249 214 / 92%);
   }
 }
 

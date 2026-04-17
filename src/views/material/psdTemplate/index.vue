@@ -1548,7 +1548,6 @@ const submitForm = async () => {
 
       // 如果有新的 PSD 文件，先上传并替换
       let url = form.value.url;
-      let key = form.value.key;
       if (form.value.file) {
         const userAccount =
           (userStore.user as any)?.account ||
@@ -1564,7 +1563,6 @@ const submitForm = async () => {
           entityId: form.value.id, // 编辑时使用现有 ID
           isThumbnail: false,
         });
-        key = cos.key;
         url = cos.url;
       }
 
@@ -1607,7 +1605,6 @@ const submitForm = async () => {
         keywords: form.value.keywords || "",
         windowsLocalPath: form.value.windowsLocalPath || "",
         url: url || undefined,
-        key: key || undefined,
         thumbnail: thumbnail || "", // 确保是字符串
         psdTemplateConfig: psdTemplateConfig,
         enabled: form.value.enabled !== undefined ? form.value.enabled : false,
@@ -1627,7 +1624,6 @@ const submitForm = async () => {
 
       // 上传PSD文件（如果存在）
       let url = "";
-      let key = "";
       const userAccount =
         userStore.user?.account || userStore.user?.shortName || userStore.user?.name || "anonymous";
       const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
@@ -1640,7 +1636,6 @@ const submitForm = async () => {
           // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
           isThumbnail: false,
         });
-        key = cos.key;
         url = cos.url;
       }
 
@@ -1676,7 +1671,6 @@ const submitForm = async () => {
         keywords: form.value.keywords || "",
         windowsLocalPath: form.value.windowsLocalPath || "",
         url: url || undefined,
-        key: key || undefined,
         thumbnail: thumbnail,
         file: null,
         userId: userStore.user?.id,
@@ -2102,7 +2096,6 @@ async function handleToggleEnabled(row: any) {
       keywords: row.keywords || "",
       windowsLocalPath: row.windowsLocalPath || "",
       url: row.url || undefined,
-      key: row.key || undefined,
       thumbnail: row.thumbnail || "",
       psdTemplateConfig: row.psdTemplateConfig,
       enabled: newEnabled,
