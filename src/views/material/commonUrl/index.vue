@@ -298,9 +298,9 @@ function getCategoryTagType(category: string) {
     '素材资源': 'success',
     '学习教程': 'warning',
     '在线工具': 'info',
-    '其他': 'default'
+    '其他': 'info'
   }
-  return typeMap[category] || 'default'
+  return typeMap[category] || 'info'
 }
 
 // 处理关键字字符串，转换为数组

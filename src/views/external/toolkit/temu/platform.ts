@@ -10,6 +10,7 @@ export const TEMU_TOOLKIT_PLATFORM = {
   key: TEMU_PLATFORM_KEY,
   label: "Temu",
   description: "Temu 业务工具、会话管理与后续服务端能力入口",
+  routePath: "/operation/toolkit/temu",
   workspaceTitle: "业务工作台",
   workspaceDescription: "会话由浏览器获取，业务动作尽量在服务端执行。",
   workspaceContextComponent: markRaw(TemuWorkspaceContext),

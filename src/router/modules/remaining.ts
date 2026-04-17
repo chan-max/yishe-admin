@@ -302,8 +302,18 @@ const remainingRouter: AppRouteRecordRaw[] = [
     children: [
       {
         path: "toolkit",
-        redirect: "/operation/toolkit",
+        redirect: "/operation/toolkit/temu",
         name: "ExternalToolkitLegacy",
+        meta: {
+          hidden: true,
+          noTagsView: true,
+          canTo: true,
+        },
+      },
+      {
+        path: "temu",
+        redirect: "/operation/toolkit/temu",
+        name: "ExternalTemuLegacy",
         meta: {
           hidden: true,
           noTagsView: true,
@@ -585,14 +595,6 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
     children: [
       {
-        path: "toolkit",
-        component: () => import("@/views/external/toolkit/index.vue"),
-        name: "OperationToolkit",
-        meta: {
-          title: "工具集",
-        },
-      },
-      {
         path: "link-navigation",
         component: () => import("@/views/operation/link-navigation/index.vue"),
         name: "OperationLinkNavigation",
@@ -622,6 +624,29 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "CommonUrlIndex",
         meta: {
           title: "网址管理",
+        },
+      },
+    ],
+  },
+  {
+    path: "/operation/toolkit",
+    component: Layout,
+    name: "OperationToolkitRoot",
+    redirect: "/operation/toolkit/temu",
+    meta: {
+      title: "工具集",
+      icon: "ep:box",
+      order: 7,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: "temu",
+        component: () => import("@/views/external/toolkit/index.vue"),
+        name: "OperationToolkitTemu",
+        meta: {
+          title: "Temu",
+          toolkitPlatform: "temu",
         },
       },
     ],

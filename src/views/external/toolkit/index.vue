@@ -5,6 +5,9 @@
         <div class="toolkit-platform-hub__head">
           <div class="toolkit-platform-hub__main">
             <div class="toolkit-platform-hub__title">工具集</div>
+            <div class="toolkit-platform-hub__desc">
+              统一管理各平台的小工具工作台、会话能力和执行环境。
+            </div>
           </div>
         </div>
 
@@ -17,7 +20,9 @@
             @click="enterToolkitPlatform(platform.key)"
           >
             <span class="toolkit-platform-card__title">{{ platform.label }}</span>
-            <span class="toolkit-platform-card__meta">平台工具集</span>
+            <span class="toolkit-platform-card__meta">
+              {{ platform.description || "平台工具集" }}
+            </span>
             <span class="toolkit-platform-card__footer">
               <span class="toolkit-platform-card__enter">进入工具集</span>
             </span>
@@ -28,19 +33,13 @@
       <template v-else>
         <section class="toolkit-page-head">
           <div class="toolkit-page-head__main">
-            <el-button
-              text
-              circle
-              size="small"
-              :icon="ArrowLeft"
-              class="toolkit-page-head__back"
-              title="返回工具集"
-              aria-label="返回工具集"
-              @click="leaveToolkitPlatform"
-            />
-
             <div class="toolkit-page-head__content">
-              <div class="toolkit-page-head__title">{{ selectedPlatformLabel }} 工具集</div>
+              <div class="toolkit-page-head__title">
+                {{ selectedPlatform?.workspaceTitle || `${selectedPlatformLabel} 工具集` }}
+              </div>
+              <div v-if="selectedPlatform?.workspaceDescription" class="toolkit-page-head__desc">
+                {{ selectedPlatform.workspaceDescription }}
+              </div>
             </div>
           </div>
         </section>
@@ -378,9 +377,10 @@
 </template>
 
 <script setup lang="ts">
-import { ArrowLeft, WarningFilled } from "@element-plus/icons-vue";
+import { WarningFilled } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import type { BrowserAutomationCommandResponse } from "@/api/external/browserAutomation";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import { getToolkitProfiles, getToolkitTools, runToolkitTool } from "@/api/external/toolkit";
@@ -411,6 +411,8 @@ import {
 } from "./temu/temuWorkspace.helpers";
 
 defineOptions({ name: "OperationToolkit" });
+
+const TOOLKIT_DEFAULT_ROUTE = "/operation/toolkit/temu";
 
 interface ToolkitFeedback {
   success: boolean;
@@ -447,7 +449,8 @@ const {
   setProfilesPayload,
   resetProfiles,
 } = useBrowserAutomationExecutionContext();
-const selectedPlatformKey = ref("");
+const route = useRoute();
+const router = useRouter();
 const sessionCenterVisible = ref(false);
 const storedPlatformSession = ref<Record<string, any>>({});
 const storedSessionLoading = ref(false);
@@ -471,6 +474,9 @@ const pending = reactive<Record<string, string>>({});
 const pendingRunToolFeatureKeys = reactive<Record<string, string>>({});
 
 const toolkitPlatforms = computed<ToolkitPlatformDefinition[]>(() => TOOLKIT_PLATFORM_REGISTRY);
+const selectedPlatformKey = computed(() =>
+  String(route.meta?.toolkitPlatform || "").trim(),
+);
 
 const selectedPlatform = computed(
   () => toolkitPlatforms.value.find((item) => item.key === selectedPlatformKey.value) || null,
@@ -1757,12 +1763,13 @@ const loadClients = async () => {
 };
 
 const enterToolkitPlatform = (platformKey: string) => {
-  selectedPlatformKey.value = String(platformKey || "").trim();
-};
-
-const leaveToolkitPlatform = () => {
-  sessionCenterVisible.value = false;
-  selectedPlatformKey.value = "";
+  const normalizedKey = String(platformKey || "").trim();
+  const targetRoute =
+    toolkitPlatforms.value.find((item) => item.key === normalizedKey)?.routePath ||
+    TOOLKIT_DEFAULT_ROUTE;
+  if (route.path !== targetRoute) {
+    void router.push(targetRoute);
+  }
 };
 
 const temuAutoValidationWatchKey = computed(() => {
@@ -1832,6 +1839,11 @@ watch(
 watch(
   selectedPlatformKey,
   (value) => {
+    if (value && !selectedPlatform.value) {
+      void router.replace(TOOLKIT_DEFAULT_ROUTE);
+      return;
+    }
+
     if (!value) {
       sessionCenterVisible.value = false;
     }

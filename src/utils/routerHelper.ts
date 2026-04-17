@@ -1,5 +1,5 @@
 import type { RouteLocationNormalized, Router, RouteRecordNormalized } from 'vue-router'
-import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, RouteRecordRaw, RouterView } from 'vue-router'
 import { isUrl } from '@/utils/is'
 import { cloneDeep, omit } from 'lodash-es'
 import qs from 'qs'
@@ -21,13 +21,15 @@ export const registerComponent = (componentPath: string) => {
 /* Layout */
 export const Layout = () => import('@/layout/Layout.vue')
 
+const ParentLayout = defineComponent({
+  name: 'ParentLayout',
+  setup() {
+    return () => h(RouterView)
+  }
+})
+
 export const getParentLayout = () => {
-  return () =>
-    new Promise((resolve) => {
-      resolve({
-        name: 'ParentLayout'
-      })
-    })
+  return ParentLayout
 }
 
 // 按照路由中meta下的rank等级升序来排序路由

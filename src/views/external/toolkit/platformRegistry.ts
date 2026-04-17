@@ -5,6 +5,7 @@ export interface ToolkitPlatformDefinition {
   key: string;
   label: string;
   description: string;
+  routePath?: string;
   workspaceTitle?: string;
   workspaceDescription?: string;
   workspaceContextComponent?: Component | null;

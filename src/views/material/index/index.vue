@@ -404,8 +404,9 @@
                 :icon="Search"
                 :loading="loading"
                 @click="getList"
-                >搜索</el-button
               >
+                搜索
+              </el-button>
               <el-button
                 size="small"
                 type="primary"
@@ -414,8 +415,9 @@
                     uploadModalVisible = true;
                   }
                 "
-                >上传</el-button
               >
+                上传
+              </el-button>
               <el-button
                 v-if="isAdmin"
                 size="small"
@@ -424,11 +426,12 @@
                     urlUploadModalVisible = true;
                   }
                 "
-                >URL上传</el-button
               >
-              <el-button size="small" @click="handleMultiDownload"
-                >下载 ({{ ids.length }})</el-button
-              >
+                URL上传
+              </el-button>
+              <el-button size="small" @click="handleMultiDownload">
+                下载 ({{ ids.length }})
+              </el-button>
               <el-button
                 size="small"
                 type="success"
@@ -445,13 +448,31 @@
               >
                 转移给用户({{ ids.length }})
               </el-button>
-              <el-button size="small" @click="() => openPsdSetDialog(false)"
-                >制作PS套图({{ ids.length }})</el-button
+              <el-button
+                size="small"
+                type="primary"
+                plain
+                :disabled="loading || !ids.length"
+                @click="() => openPsdSetDialog(false)"
               >
-              <el-button size="small" @click="() => openPsdSetDialog(true)"
-                >多图套图({{ ids.length }})</el-button
+                制作PS套图({{ ids.length }})
+              </el-button>
+              <el-button
+                size="small"
+                type="warning"
+                plain
+                :disabled="loading || !ids.length"
+                @click="() => openPsdSetDialog(true)"
               >
-              <el-button size="small" @click="openMaterialPublishConfigDialog">
+                多图套图({{ ids.length }})
+              </el-button>
+              <el-button
+                size="small"
+                type="success"
+                plain
+                :disabled="loading || !ids.length"
+                @click="openMaterialPublishConfigDialog"
+              >
                 选择发布配置({{ ids.length }})
               </el-button>
               <el-button
@@ -633,11 +654,21 @@
         >
           <template #header>
             <div class="material-publish-config-dialog__header">
-              <div>
-                <div class="material-publish-config-dialog__header-title">创建发布任务</div>
+              <div class="material-publish-config-dialog__header-main">
+                <div class="material-publish-config-dialog__header-eyebrow">批量任务创建</div>
+                <div class="material-publish-config-dialog__header-title">选择发布配置</div>
                 <div class="material-publish-config-dialog__header-subtitle">
-                  已选择 {{ selectedMaterialsForPublishConfig.length }} 张素材，按发布配置创建任务
+                  {{ materialPublishConfigHeaderSummary }}
                 </div>
+              </div>
+
+              <div class="material-publish-config-dialog__header-chips">
+                <span class="material-publish-config-dialog__header-chip">
+                  素材 {{ selectedMaterialsForPublishConfig.length }} 张
+                </span>
+                <span class="material-publish-config-dialog__header-chip">
+                  可用配置 {{ materialPublishConfigUsableCount }} 个
+                </span>
               </div>
             </div>
           </template>
@@ -646,19 +677,62 @@
             v-loading="materialPublishConfigLoading"
             class="material-publish-config-dialog__body"
           >
+            <div class="material-publish-config-dialog__overview">
+              <div class="material-publish-config-dialog__overview-step">
+                <span class="material-publish-config-dialog__overview-index">1</span>
+                <div>
+                  <div class="material-publish-config-dialog__overview-title">确认素材</div>
+                  <div class="material-publish-config-dialog__overview-desc">
+                    快速检查素材格式、尺寸和数量，避免提交后返工。
+                  </div>
+                </div>
+              </div>
+              <div class="material-publish-config-dialog__overview-step">
+                <span class="material-publish-config-dialog__overview-index">2</span>
+                <div>
+                  <div class="material-publish-config-dialog__overview-title">选择配置</div>
+                  <div class="material-publish-config-dialog__overview-desc">
+                    只展示已启用配置，未绑定 PSD 模板的配置会自动禁用。
+                  </div>
+                </div>
+              </div>
+              <div class="material-publish-config-dialog__overview-step">
+                <span class="material-publish-config-dialog__overview-index">3</span>
+                <div>
+                  <div class="material-publish-config-dialog__overview-title">创建任务</div>
+                  <div class="material-publish-config-dialog__overview-desc">
+                    提交后会按素材和配置组合创建套图任务，逻辑与现有流程保持一致。
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div
               class="material-publish-config-dialog__panel material-publish-config-dialog__panel--materials"
             >
               <div class="material-publish-config-dialog__section-head">
                 <div>
+                  <div class="material-publish-config-dialog__section-eyebrow">步骤 1</div>
                   <div class="material-publish-config-dialog__section-title">已选图片</div>
                   <div class="material-publish-config-dialog__section-desc">
                     当前共 {{ selectedMaterialsForPublishConfig.length }} 张素材，可先确认格式与尺寸信息
                   </div>
                 </div>
-                <el-tag type="info" effect="plain"
-                  >允许格式：{{ psdSetAllowedFormats.join("、") }}</el-tag
-                >
+                <div class="material-publish-config-dialog__tag-list">
+                  <el-tag
+                    :type="hasInvalidFormatMaterials ? 'warning' : 'success'"
+                    effect="plain"
+                  >
+                    {{
+                      hasInvalidFormatMaterials
+                        ? `${invalidFormatMaterialsList.length} 张格式需处理`
+                        : "格式检查通过"
+                    }}
+                  </el-tag>
+                  <el-tag type="info" effect="plain">
+                    允许格式：{{ psdSetAllowedFormats.join("、") }}
+                  </el-tag>
+                </div>
               </div>
 
               <el-alert
@@ -696,6 +770,15 @@
                       暂无预览
                     </div>
                   </div>
+
+                  <div class="material-publish-config-dialog__material-meta">
+                    <span class="material-publish-config-dialog__material-name">
+                      {{ material.name || `素材${material.id}` }}
+                    </span>
+                    <span class="material-publish-config-dialog__material-suffix">
+                      {{ getMaterialSuffix(material.id) || "未知格式" }}
+                    </span>
+                  </div>
                 </div>
 
                 <el-empty
@@ -713,24 +796,30 @@
                 class="material-publish-config-dialog__section-head material-publish-config-dialog__section-head--configs"
               >
                 <div>
+                  <div class="material-publish-config-dialog__section-eyebrow">步骤 2</div>
                   <div class="material-publish-config-dialog__section-title">发布配置</div>
                   <div class="material-publish-config-dialog__section-desc">
-                    仅展示已启用配置；未配置 PSD 模板的配置不可用
+                    已统一按配置名称、任务类型和平台搜索，未配置 PSD 模板的配置不可用
                   </div>
                 </div>
-                <div class="material-publish-config-dialog__search">
-                  <el-input
-                    v-model="materialPublishConfigSearchText"
-                    clearable
-                    placeholder="搜索配置名称、任务类型或平台"
-                    @input="materialPublishConfigCurrentPage = 1"
-                  >
-                    <template #prefix>
-                      <el-icon>
-                        <Search />
-                      </el-icon>
-                    </template>
-                  </el-input>
+                <div class="material-publish-config-dialog__section-tools">
+                  <el-tag type="success" effect="plain">
+                    可用 {{ materialPublishConfigUsableCount }} / {{ filteredMaterialPublishConfigs.length }}
+                  </el-tag>
+                  <div class="material-publish-config-dialog__search">
+                    <el-input
+                      v-model="materialPublishConfigSearchText"
+                      clearable
+                      placeholder="搜索配置名称、任务类型或平台"
+                      @input="materialPublishConfigCurrentPage = 1"
+                    >
+                      <template #prefix>
+                        <el-icon>
+                          <Search />
+                        </el-icon>
+                      </template>
+                    </el-input>
+                  </div>
                 </div>
               </div>
 
@@ -759,7 +848,9 @@
           <template #footer>
             <div class="material-publish-config-dialog__footer">
               <div class="material-publish-config-dialog__footer-info">
-                <span class="material-publish-config-dialog__footer-chip">素材 {{ ids.length }} 张</span>
+                <span class="material-publish-config-dialog__footer-chip">
+                  素材 {{ ids.length }} 张
+                </span>
                 <span class="material-publish-config-dialog__footer-chip">
                   发布配置 {{ materialPublishConfigSelectedIds.length }} 个
                 </span>
@@ -771,6 +862,12 @@
                   class="material-publish-config-dialog__footer-tip"
                 >
                   当前存在格式不兼容素材，请处理后再开始制作
+                </span>
+                <span
+                  v-else
+                  class="material-publish-config-dialog__footer-tip material-publish-config-dialog__footer-tip--muted"
+                >
+                  选好配置后即可直接创建任务，业务逻辑与原流程保持一致
                 </span>
               </div>
               <div class="material-publish-config-dialog__footer-actions">
@@ -785,7 +882,7 @@
                   "
                   @click="handleCreatePsdSetsByPublishConfig"
                 >
-                  开始制作
+                  创建发布任务
                 </el-button>
               </div>
             </div>
@@ -794,7 +891,6 @@
 
         <el-dialog
           v-model="psdSetDialogVisible"
-          title="制作PS套图"
           width="100%"
           style="height: 100%"
           align-center
@@ -802,20 +898,94 @@
           class="psd-set-dialog"
           @close="resetPsdSetState"
         >
-          <div class="psd-set-body" style="height: calc(100vh - 188px); display: flex; gap: 16px">
-            <div
-              class="psd-set-materials"
-              style="
-                width: 480px;
-                flex-shrink: 0;
-                display: flex;
-                flex-direction: column;
-                border-right: 1px solid var(--el-border-color-lighter);
-                padding-right: 16px;
-              "
-            >
-              <div class="section-title">已选择素材 ({{ ids.length }})</div>
-              <div class="thumbs" style="flex: 1; overflow-y: auto; padding-right: 4px">
+          <template #header>
+            <div class="psd-set-dialog__header">
+              <div class="psd-set-dialog__header-main">
+                <div class="psd-set-dialog__header-eyebrow">批量套图工作台</div>
+                <div class="psd-set-dialog__header-title">{{ psdSetDialogTitle }}</div>
+                <div class="psd-set-dialog__header-subtitle">
+                  {{ psdSetDialogSubtitle }}
+                </div>
+              </div>
+              <div class="psd-set-dialog__header-chips">
+                <span class="psd-set-dialog__header-chip">素材 {{ ids.length }} 张</span>
+                <span class="psd-set-dialog__header-chip">
+                  模板 {{ selectedPsdTemplateIds.length }} 个
+                </span>
+                <span class="psd-set-dialog__header-chip is-accent">
+                  预计 {{ psdSetTaskCount }} 条任务
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <div class="psd-set-intro">
+            <div class="psd-set-intro__step">
+              <span class="psd-set-intro__index">1</span>
+              <div>
+                <div class="psd-set-intro__title">确认素材</div>
+                <div class="psd-set-intro__desc">
+                  支持直接用素材尺寸和抠图属性反向筛选模板。
+                </div>
+              </div>
+            </div>
+            <div class="psd-set-intro__step">
+              <span class="psd-set-intro__index">2</span>
+              <div>
+                <div class="psd-set-intro__title">选择模板</div>
+                <div class="psd-set-intro__desc">
+                  支持文件夹、尺寸、抠图模式和跨页勾选。
+                </div>
+              </div>
+            </div>
+            <div class="psd-set-intro__step">
+              <span class="psd-set-intro__index">3</span>
+              <div>
+                <div class="psd-set-intro__title">补充动作</div>
+                <div class="psd-set-intro__desc">
+                  可选详细配置或完成后自动执行后续动作。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="psd-set-body">
+            <div class="psd-set-materials">
+              <div class="psd-set-panel__head">
+                <div>
+                  <div class="psd-set-panel__eyebrow">步骤 1</div>
+                  <div class="section-title">已选择素材 ({{ ids.length }})</div>
+                  <div class="psd-set-panel__desc">
+                    可直接按当前素材的尺寸和抠图属性筛选模板。
+                  </div>
+                </div>
+                <div class="psd-set-panel__tags">
+                  <el-tag
+                    :type="hasInvalidFormatMaterials ? 'warning' : 'success'"
+                    effect="plain"
+                  >
+                    {{
+                      hasInvalidFormatMaterials
+                        ? `${invalidFormatMaterialsList.length} 张格式需处理`
+                        : "格式检查通过"
+                    }}
+                  </el-tag>
+                </div>
+              </div>
+              <el-alert
+                v-if="hasInvalidFormatMaterials"
+                type="warning"
+                :closable="false"
+                show-icon
+                class="psd-set-panel__alert"
+              >
+                <template #title>
+                  当前有 {{ invalidFormatMaterialsList.length }} 张素材格式不兼容：{{
+                    invalidFormatMaterialsList.map((item) => item.name).join("、")
+                  }}
+                </template>
+              </el-alert>
+              <div class="thumbs">
                 <div
                   v-for="id in ids"
                   :key="id"
@@ -876,43 +1046,31 @@
                 </div>
               </div>
             </div>
-            <div
-              class="psd-set-templates"
-              style="flex: 1; display: flex; flex-direction: column; min-width: 0"
-            >
-              <div class="section-title">
-                选择PSD模板 (可多选，支持跨页勾选)
-                <span v-if="psdSetTemplatePageParams.total > 0" class="template-count-info">
-                  (共 {{ psdSetTemplatePageParams.total }} 个)
-                </span>
+            <div class="psd-set-templates">
+              <div class="psd-set-panel__head">
+                <div>
+                  <div class="psd-set-panel__eyebrow">步骤 2</div>
+                  <div class="section-title">
+                    选择PSD模板 (可多选，支持跨页勾选)
+                    <span v-if="psdSetTemplatePageParams.total > 0" class="template-count-info">
+                      (共 {{ psdSetTemplatePageParams.total }} 个)
+                    </span>
+                  </div>
+                  <div class="psd-set-panel__desc">
+                    模板列表会保留当前筛选条件和勾选状态，方便连续操作。
+                  </div>
+                </div>
+                <div class="psd-set-panel__tags">
+                  <el-tag type="primary" effect="plain">
+                    已选 {{ selectedPsdTemplateIds.length }} 个
+                  </el-tag>
+                  <el-tag type="info" effect="plain">预计 {{ psdSetTaskCount }} 条任务</el-tag>
+                </div>
               </div>
 
-              <div
-                class="psd-set-content-container"
-                style="display: flex; gap: 16px; flex: 1; overflow: hidden"
-              >
-                <div
-                  class="psd-folder-tree-wrapper"
-                  style="
-                    width: 220px;
-                    min-width: 220px;
-                    border-right: 1px solid var(--el-border-color-lighter);
-                    padding-right: 12px;
-                    display: flex;
-                    flex-direction: column;
-                    height: 100%;
-                  "
-                >
-                  <div
-                    style="
-                      margin-bottom: 12px;
-                      font-weight: 500;
-                      font-size: 14px;
-                      color: var(--el-text-color-primary);
-                    "
-                  >
-                    文件夹
-                  </div>
+              <div class="psd-set-content-container">
+                <div class="psd-folder-tree-wrapper">
+                  <div class="psd-folder-tree-wrapper__title">文件夹</div>
                   <el-tree
                     ref="psdFolderTreeRef"
                     :data="psdFolderTreeData"
@@ -924,20 +1082,16 @@
                     :current-node-key="selectedPsdFolderId"
                     @node-click="handlePsdFolderNodeClick"
                     class="psd-folder-tree"
-                    style="flex: 1; overflow-y: auto"
                   >
                     <template #default="{ data }">
-                      <div
-                        class="custom-tree-node"
-                        style="display: flex; align-items: center; gap: 6px; font-size: 13px"
-                      >
+                      <div class="custom-tree-node">
                         <el-icon
                           v-if="data.isRoot || data.id === '__root__'"
-                          style="color: var(--el-color-primary)"
+                          class="custom-tree-node__icon custom-tree-node__icon--root"
                         >
                           <Files />
                         </el-icon>
-                        <el-icon v-else>
+                        <el-icon v-else class="custom-tree-node__icon">
                           <Folder />
                         </el-icon>
                         <span class="node-label">{{ data.name }}</span>
@@ -946,16 +1100,13 @@
                   </el-tree>
                 </div>
 
-                <div
-                  class="psd-template-list-container"
-                  style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%"
-                >
+                <div class="psd-template-list-container">
                   <div class="psd-set-template-toolbar">
                     <el-input
                       v-model="psdSetTemplateSearchText"
                       placeholder="搜索"
                       clearable
-                      style="flex: 1; max-width: 300px"
+                      class="psd-set-template-toolbar__search"
                     >
                       <template #prefix>
                         <el-icon>
@@ -1026,7 +1177,8 @@
                       {{ isAllPsdTemplatesSelected ? "取消全选" : "全选" }}
                     </el-button>
                     <el-button
-                      type="primary"
+                      type="success"
+                      plain
                       size="default"
                       :icon="Edit"
                       @click="handlePsdTemplateDetailConfig"
@@ -1037,7 +1189,7 @@
                       已选中 {{ selectedPsdTemplateIds.length }} 个
                     </span>
                   </div>
-                  <div class="template-list-wrapper" style="max-height: none; flex: 1">
+                  <div class="template-list-wrapper">
                     <div class="template-list" v-loading="psdSetTemplatesLoading">
                       <div
                         v-for="tpl in filteredPsdSetTemplates"
@@ -1139,8 +1291,6 @@
           <template #footer>
             <div class="psd-set-footer">
               <div class="psd-set-footer-main">
-                <div style="flex: 1"></div>
-
                 <div class="psd-set-info">
                   <el-icon>
                     <InfoFilled />
@@ -1173,9 +1323,9 @@
                   </el-tag>
                 </div>
 
-                <div style="display: flex; gap: 8px; align-items: center">
+                <div class="psd-set-footer-actions">
                   <el-button @click="psdSetDialogVisible = false">取消</el-button>
-                  <el-button @click="psdSetAutomationDialogVisible = true">
+                  <el-button plain @click="psdSetAutomationDialogVisible = true">
                     完成后动作{{
                       enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : ""
                     }}
@@ -1219,21 +1369,38 @@
 
         <el-dialog
           v-model="psdSetAutomationDialogVisible"
-          title="完成后自动执行"
           fullscreen
           align-center
           class="psd-set-automation-dialog"
         >
+          <template #header>
+            <div class="psd-set-automation-dialog__header">
+              <div>
+                <div class="psd-set-automation-dialog__eyebrow">可选增强</div>
+                <div class="psd-set-automation-dialog__title">完成后自动执行</div>
+                <div class="psd-set-automation-dialog__subtitle">
+                  套图成功后可继续自动生成商品或创建发布任务，不影响当前制作主流程。
+                </div>
+              </div>
+            </div>
+          </template>
           <div class="psd-set-automation-dialog-body">
+            <div class="psd-set-automation-dialog__intro">
+              勾选需要的动作即可，只有启用后的字段会参与提交。
+            </div>
             <div
               v-for="action in psdSetAutomationActions"
               :key="action.key"
               class="psd-set-automation-item"
+              :class="{ 'is-active': action.enabled }"
             >
               <div class="psd-set-automation-head">
                 <el-checkbox v-model="action.enabled">
                   {{ action.label }}
                 </el-checkbox>
+                <el-tag :type="action.enabled ? 'success' : 'info'" effect="plain">
+                  {{ action.enabled ? "已启用" : "未启用" }}
+                </el-tag>
                 <span class="psd-set-automation-key">{{ action.key }}</span>
               </div>
               <div class="psd-set-automation-desc">{{ action.description }}</div>
@@ -3041,8 +3208,6 @@ import {
   Delete,
   Plus,
   Search,
-  TopRight,
-  Upload,
   Loading,
   Check,
   More,
@@ -3050,14 +3215,12 @@ import {
   ArrowRight,
   ArrowLeft,
   Edit,
-  Download,
   Picture,
   MagicStick,
   Key,
   Document,
   Warning,
   PictureFilled,
-  Grid,
   DocumentCopy,
   RefreshLeft,
   Folder,
@@ -3762,6 +3925,16 @@ const materialPublishConfigDataSource = computed(() => {
 const materialPublishConfigTaskCount = computed(
   () => ids.value.length * materialPublishConfigSelectedIds.value.length,
 );
+const materialPublishConfigUsableCount = computed(
+  () =>
+    filteredMaterialPublishConfigs.value.filter((item: any) => isMaterialPublishConfigUsable(item))
+      .length,
+);
+const materialPublishConfigHeaderSummary = computed(() =>
+  hasInvalidFormatMaterials.value
+    ? `已选择 ${selectedMaterialsForPublishConfig.value.length} 张素材，其中 ${invalidFormatMaterialsList.value.length} 张需要先处理格式`
+    : `已选择 ${selectedMaterialsForPublishConfig.value.length} 张素材，按发布配置直接创建任务`,
+);
 const materialPublishConfigGridOptions = computed(() => ({
   ...commonGridOptions,
   height: 520,
@@ -3853,6 +4026,14 @@ const invalidFormatMaterialsList = computed(() => {
 
   return invalidList;
 });
+const psdSetDialogTitle = computed(() =>
+  psdSetMergeSticker.value ? "多图套图工作台" : "PS 套图工作台",
+);
+const psdSetDialogSubtitle = computed(() =>
+  psdSetMergeSticker.value
+    ? "多张素材会按当前队列逻辑合并匹配模板，更适合拼图和组合场景。"
+    : "单素材会按模板批量生成套图，适合常规铺量和标准化出图。",
+);
 
 // 处理上传
 
@@ -6442,6 +6623,142 @@ async function handleUrlUpload() {
   grid-column: 1 / -1;
 }
 
+.psd-set-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.psd-set-dialog__header-main {
+  min-width: 0;
+}
+
+.psd-set-dialog__header-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--el-color-primary);
+}
+
+.psd-set-dialog__header-title {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-dialog__header-subtitle {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-set-dialog__header-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.psd-set-dialog__header-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.psd-set-dialog__header-chip.is-accent {
+  background: rgba(24, 160, 88, 0.1);
+  border-color: rgba(24, 160, 88, 0.18);
+  color: #188058;
+}
+
+.psd-set-intro {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.psd-set-intro__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.02));
+  border: 1px solid rgba(64, 158, 255, 0.14);
+}
+
+.psd-set-intro__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--el-color-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.psd-set-intro__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-intro__desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-set-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.psd-set-panel__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--el-color-primary);
+}
+
+.psd-set-panel__desc {
+  margin-top: -6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
+
+.psd-set-panel__tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.psd-set-panel__alert {
+  margin: 0;
+}
+
 .psd-set-mode-inline {
   display: flex;
   align-items: center;
@@ -6477,6 +6794,14 @@ async function handleUrlUpload() {
   gap: 8px;
   width: 100%;
   flex-wrap: wrap;
+}
+
+.psd-set-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .psd-set-info {
@@ -6522,13 +6847,50 @@ async function handleUrlUpload() {
 .psd-set-automation-dialog-body {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+}
+
+.psd-set-automation-dialog__header {
+  width: 100%;
+}
+
+.psd-set-automation-dialog__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--el-color-primary);
+}
+
+.psd-set-automation-dialog__title {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-automation-dialog__subtitle,
+.psd-set-automation-dialog__intro {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .psd-set-automation-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
+.psd-set-automation-item.is-active {
+  border-color: rgba(24, 160, 88, 0.24);
+  background: linear-gradient(135deg, rgba(24, 160, 88, 0.08), rgba(24, 160, 88, 0.02));
+  box-shadow: 0 8px 24px rgba(24, 160, 88, 0.08);
 }
 
 .psd-set-automation-head {
@@ -6587,6 +6949,10 @@ async function handleUrlUpload() {
 }
 
 @media (max-width: 960px) {
+  .psd-set-intro {
+    grid-template-columns: 1fr;
+  }
+
   .psd-set-body {
     grid-template-columns: 1fr;
   }
@@ -7266,6 +7632,37 @@ h1 {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
+  flex-wrap: wrap;
+}
+
+.material-publish-config-dialog__header-main {
+  min-width: 0;
+}
+
+.material-publish-config-dialog__header-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--el-color-primary);
+}
+
+.material-publish-config-dialog__header-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.material-publish-config-dialog__header-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  border: 1px solid var(--el-border-color-lighter);
 }
 
 .material-publish-config-dialog__header-title {
@@ -7283,11 +7680,55 @@ h1 {
 
 .material-publish-config-dialog__body {
   display: grid;
-  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: 12px;
   height: 100%;
   min-height: calc(100vh - 144px);
   box-sizing: border-box;
+}
+
+.material-publish-config-dialog__overview {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.material-publish-config-dialog__overview-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.02));
+  border: 1px solid rgba(64, 158, 255, 0.14);
+}
+
+.material-publish-config-dialog__overview-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--el-color-primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.material-publish-config-dialog__overview-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.material-publish-config-dialog__overview-desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
 }
 
 .material-publish-config-dialog__panel {
@@ -7295,10 +7736,11 @@ h1 {
   flex-direction: column;
   gap: 8px;
   min-height: 0;
-  padding: 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-bg-color);
+  padding: 14px;
+  border: 1px solid rgba(64, 158, 255, 0.08);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--el-bg-color), var(--el-fill-color-extra-light));
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
   overflow: hidden;
 }
 
@@ -7320,11 +7762,27 @@ h1 {
   font-weight: 600;
 }
 
+.material-publish-config-dialog__section-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--el-color-primary);
+}
+
 .material-publish-config-dialog__section-desc {
   margin-top: 2px;
   color: var(--el-text-color-secondary);
   font-size: 12px;
   line-height: 1.4;
+}
+
+.material-publish-config-dialog__tag-list,
+.material-publish-config-dialog__section-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .material-publish-config-dialog__warning {
@@ -7337,8 +7795,8 @@ h1 {
 
 .material-publish-config-dialog__material-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 10px;
   min-height: 0;
   overflow: auto;
   padding-right: 2px;
@@ -7347,25 +7805,34 @@ h1 {
 
 .material-publish-config-dialog__material-item {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   padding: 0;
-  border-radius: 6px;
-  background: transparent;
+  border-radius: 12px;
+  background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   overflow: hidden;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.material-publish-config-dialog__material-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(64, 158, 255, 0.16);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.06);
 }
 
 .material-publish-config-dialog__material-item--invalid {
   border-color: var(--el-color-danger);
-  background: transparent;
+  box-shadow: 0 0 0 1px rgba(245, 108, 108, 0.12);
 }
 
 .material-publish-config-dialog__material-preview {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 5px;
+  border-radius: 0;
   background: var(--el-fill-color-lighter);
   display: flex;
   align-items: center;
@@ -7389,6 +7856,34 @@ h1 {
   text-align: center;
   color: var(--el-text-color-placeholder);
   font-size: 12px;
+}
+
+.material-publish-config-dialog__material-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--el-fill-color-extra-light);
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.material-publish-config-dialog__material-name {
+  min-width: 0;
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-publish-config-dialog__material-suffix {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  text-transform: uppercase;
 }
 
 .material-publish-config-dialog__search {
@@ -7470,6 +7965,10 @@ h1 {
   color: var(--el-color-danger);
 }
 
+.material-publish-config-dialog__footer-tip--muted {
+  color: var(--el-text-color-secondary);
+}
+
 .material-publish-config-dialog__footer-actions {
   gap: 8px;
   flex-shrink: 0;
@@ -7486,6 +7985,10 @@ h1 {
     grid-template-columns: 1fr;
     height: auto;
     min-height: auto;
+  }
+
+  .material-publish-config-dialog__overview {
+    grid-template-columns: 1fr;
   }
 
   .material-publish-config-dialog__section-head--configs,
@@ -7790,10 +8293,11 @@ h1 {
 
 .psd-set-body {
   flex: 1;
+  height: calc(100vh - 188px);
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(360px, 1.6fr) minmax(280px, 1.2fr);
-  gap: 12px;
+  grid-template-columns: minmax(260px, 0.88fr) minmax(0, 1.72fr);
+  gap: 14px;
   width: 100%;
   overflow: hidden;
   padding-right: 2px;
@@ -7801,15 +8305,66 @@ h1 {
 
 .psd-set-materials,
 .psd-set-templates {
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  padding: 12px;
+  border: 1px solid rgba(64, 158, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px;
   min-height: 220px;
   max-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
   overflow: hidden;
+  background: linear-gradient(180deg, var(--el-bg-color), var(--el-fill-color-extra-light));
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.psd-set-content-container {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.psd-folder-tree-wrapper {
+  width: 180px;
+  min-width: 180px;
+  border-right: 1px solid var(--el-border-color-lighter);
+  padding-right: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.psd-folder-tree-wrapper__title {
+  margin-bottom: 12px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+}
+
+.psd-folder-tree {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.custom-tree-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.custom-tree-node__icon--root {
+  color: var(--el-color-primary);
+}
+
+.psd-template-list-container {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .psd-set-materials .format-tip {
@@ -7835,26 +8390,37 @@ h1 {
   min-height: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .psd-set-materials .thumb {
   position: relative;
-  min-height: 154px;
-  max-height: 180px;
-  width: auto;
+  min-height: 136px;
+  max-height: 152px;
+  width: calc(50% - 4px);
+  min-width: 108px;
+  max-width: 132px;
   border: 1px solid var(--el-border-color-light);
-  border-radius: 5px;
+  border-radius: 12px;
   overflow: hidden;
-  background: var(--el-fill-color-lighter);
+  background: var(--el-bg-color);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 6px;
-  transition: all 0.2s;
+  padding: 8px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.psd-set-materials .thumb:hover {
+  transform: translateY(-1px);
+  border-color: rgba(64, 158, 255, 0.18);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
 .psd-set-materials .thumb.thumb-invalid-format {
@@ -7865,7 +8431,7 @@ h1 {
 .psd-set-materials .thumb-image-wrapper {
   position: relative;
   width: 100%;
-  height: 114px;
+  height: 92px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -7942,9 +8508,14 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
-  padding-bottom: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.psd-set-template-toolbar__search {
+  flex: 1;
+  max-width: 260px;
 }
 
 .psd-set-template-toolbar .selected-count {
@@ -7988,17 +8559,27 @@ h1 {
 
 .psd-set-templates .template-item {
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  padding: 10px;
+  border-radius: 14px;
+  padding: 12px;
   cursor: pointer;
-  transition: all 0.2s;
-  background: var(--el-bg-color);
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+  background: linear-gradient(180deg, var(--el-bg-color), var(--el-fill-color-extra-light));
+}
+
+.psd-set-templates .template-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(64, 158, 255, 0.18);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.06);
 }
 
 .psd-set-templates .template-item.is-checked {
   border-color: var(--el-color-primary);
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.18);
-  background: rgba(64, 158, 255, 0.06);
+  background: linear-gradient(180deg, rgba(64, 158, 255, 0.08), rgba(64, 158, 255, 0.03));
 }
 
 .psd-set-templates .template-content-wrapper {
@@ -8011,7 +8592,7 @@ h1 {
   width: 72px;
   height: 72px;
   min-width: 72px;
-  border-radius: 5px;
+  border-radius: 10px;
   object-fit: cover;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-fill-color-lighter);
