@@ -521,10 +521,7 @@ export const buildResultInsightCards = (
 
   switch (action) {
     case "goods.list":
-      const skuCount = items.reduce(
-        (count, item: any) => count + asArray(item?.skuList).length,
-        0,
-      );
+      const skuCount = items.reduce((count, item: any) => count + asArray(item?.skuList).length, 0);
       cards.push(
         buildInsightCard("total", "总商品数", result.total, "success"),
         buildInsightCard("items", "本页返回", items.length, "accent"),
@@ -1333,6 +1330,40 @@ export const buildFormSeedActions = (
           });
         }
       }
+      break;
+    case "goods.real-picture.submit":
+      if (lastAction === "goods.real-picture.list" && asArray(result.items).length) {
+        const firstItem = asArray(result.items)[0];
+        if (firstItem?.spuId) {
+          actions.push({
+            key: "real-picture-submit-from-list",
+            label: "带入首个异常单",
+            description: `自动填入 SPU ${firstItem.spuId} 及关联的 goodsId / skuIdList`,
+            patch: {
+              region: lastRegion,
+              spuId: firstItem.spuId,
+              goodsId: firstItem.goodsId,
+              skuIdList: firstItem.skuIdList,
+              isSameSku: firstItem.isSameSku ? 1 : 0,
+              existingLabelImageList: firstItem.labelImageList,
+            },
+          });
+        }
+      }
+
+      actions.push({
+        key: "real-picture-submit-example",
+        label: "载入图片模板",
+        description: "放入最小示例，方便直接改成你的 HTTP 图片地址",
+        patch: {
+          region: "global",
+          imageUrls: ["https://example.com/demo-1.jpg"],
+          positionImageUrls: {
+            1: ["https://example.com/demo-1.jpg"],
+            2: ["https://example.com/demo-2.jpg"],
+          },
+        },
+      });
       break;
     case "jit.open":
       if (

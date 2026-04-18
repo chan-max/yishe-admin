@@ -38,6 +38,52 @@ export interface TemuActionResponse<TResult = Record<string, any>> {
   raw?: Record<string, any> | null;
 }
 
+export type TemuTaskRunStatus = "queued" | "running" | "completed" | "failed";
+export type TemuTaskRunLogLevel = "info" | "success" | "warning" | "error";
+
+export interface TemuTaskRunOperator {
+  id: number;
+  account?: string;
+  name?: string;
+}
+
+export interface TemuTaskRunLogEntry {
+  time: string;
+  level: TemuTaskRunLogLevel | string;
+  message: string;
+  detail?: any;
+}
+
+export interface TemuTaskRunSummary {
+  id: number;
+  actionKey: string;
+  actionLabel: string;
+  status: TemuTaskRunStatus | string;
+  profileId?: string | null;
+  region?: TemuRegionKey | null;
+  errorText?: string | null;
+  durationMs?: number | null;
+  startedAt?: string | Date | null;
+  finishedAt?: string | Date | null;
+  createdAt?: string | Date | null;
+  updatedAt?: string | Date | null;
+  uploader?: TemuTaskRunOperator | null;
+}
+
+export interface TemuTaskRunDetail extends TemuTaskRunSummary {
+  message?: string;
+  params?: Record<string, any> | null;
+  result?: TemuActionResponse | Record<string, any> | null;
+  logs?: TemuTaskRunLogEntry[];
+}
+
+export interface TemuTaskRunPagePayload {
+  list: TemuTaskRunSummary[];
+  total: number;
+  currentPage: number;
+  pageSize: number;
+}
+
 export const getTemuCatalog = () => {
   return request.get<TemuCatalogPayload>({
     url: "/temu/catalog",
@@ -51,5 +97,43 @@ export const executeTemuAction = <TResult = Record<string, any>>(
   return request.post<TemuActionResponse<TResult>>({
     url: endpoint,
     data,
+  });
+};
+
+export const createTemuTaskRun = (data: {
+  actionKey: string;
+  payload?: Record<string, any>;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/create",
+    data,
+  });
+};
+
+export const getTemuTaskRunPage = (data: {
+  currentPage?: number;
+  pageSize?: number;
+  actionKey?: string;
+  status?: string;
+  profileId?: string;
+  region?: TemuRegionKey;
+}) => {
+  return request.post<TemuTaskRunPagePayload>({
+    url: "/temu/task-run/page",
+    data,
+  });
+};
+
+export const getTemuTaskRun = (id: number | string) => {
+  return request.get<TemuTaskRunDetail | null>({
+    url: "/temu/task-run/get",
+    params: { id },
+  });
+};
+
+export const retryTemuTaskRun = (id: number | string) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/retry",
+    data: { id },
   });
 };

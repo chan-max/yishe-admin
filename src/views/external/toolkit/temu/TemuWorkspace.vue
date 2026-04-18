@@ -60,8 +60,13 @@
         >
           <span class="temu-function-button__head">
             <span class="temu-function-button__label">{{ action.label }}</span>
-            <span class="temu-function-button__status">
-              {{ action.status === "available" ? "可用" : "规划中" }}
+            <span class="temu-function-button__badges">
+              <span v-if="isToolAction(action)" class="temu-function-button__runtime">
+                需浏览器
+              </span>
+              <span class="temu-function-button__status">
+                {{ action.status === "available" ? "可用" : "规划中" }}
+              </span>
             </span>
           </span>
           <span class="temu-function-button__desc">
@@ -86,11 +91,17 @@
           <div>
             <div class="temu-workspace__editor-title">{{ selectedAction.label }}</div>
             <div class="temu-workspace__editor-desc">{{ selectedAction.description }}</div>
+            <div v-if="isToolAction(selectedAction)" class="temu-workspace__editor-runtime-hint">
+              该动作需要客户端浏览器参与执行。
+            </div>
           </div>
 
           <div class="temu-workspace__editor-tags">
             <el-tag size="small" effect="plain">
               {{ selectedAction.key }}
+            </el-tag>
+            <el-tag v-if="isToolAction(selectedAction)" size="small" effect="plain" type="warning">
+              需浏览器
             </el-tag>
             <el-tag
               size="small"
@@ -214,7 +225,7 @@
           当前动作已经接到目录里了，但前端还没有配置专用表单。后续可以继续把它可视化。
         </div>
 
-        <div v-if="activeActionResult" class="temu-workspace__result">
+        <div v-if="showInlineActionResult" class="temu-workspace__result">
           <div class="temu-workspace__result-head">
             <div class="temu-workspace__result-title">
               <span>原始结果</span>
@@ -244,22 +255,259 @@
 
           <pre class="temu-workspace__json">{{ actionResultText }}</pre>
         </div>
+
+        <div class="temu-workspace__task-panel">
+          <div class="temu-workspace__task-head">
+            <div>
+              <div class="temu-workspace__result-title">
+                <span>执行记录</span>
+                <el-tag size="small" effect="plain">{{ taskRunTotal }}</el-tag>
+              </div>
+              <div class="temu-workspace__editor-desc">
+                Temu 服务端动作会先创建执行记录，再异步执行；运行中的记录会自动刷新。
+              </div>
+            </div>
+
+            <div class="temu-workspace__task-tools">
+              <el-checkbox v-model="onlyCurrentActionRuns">仅当前动作</el-checkbox>
+              <el-button
+                text
+                size="small"
+                :loading="taskRunLoading || taskRunDetailLoading"
+                @click="refreshTaskRuns"
+              >
+                刷新记录
+              </el-button>
+            </div>
+          </div>
+
+          <el-table
+            v-loading="taskRunLoading"
+            :data="taskRunList"
+            border
+            stripe
+            row-key="id"
+            highlight-current-row
+            class="temu-workspace__task-table"
+          >
+            <el-table-column prop="id" label="#" width="76" />
+            <el-table-column label="动作" min-width="180" show-overflow-tooltip>
+              <template #default="{ row }">
+                <div class="temu-workspace__task-action-cell">
+                  <span>{{ row.actionLabel }}</span>
+                  <small>{{ row.actionKey }}</small>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="112" align="center">
+              <template #default="{ row }">
+                <el-tag size="small" effect="plain" :type="resolveTaskRunStatusTagType(row.status)">
+                  {{ resolveTaskRunStatusLabel(row.status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="环境" min-width="140" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ row.profileId || "-" }}
+              </template>
+            </el-table-column>
+            <el-table-column label="区域" width="110" align="center">
+              <template #default="{ row }">
+                {{ resolveRegionLabel(row.region) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="耗时" width="110" align="center">
+              <template #default="{ row }">
+                {{ formatDuration(row.durationMs) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="创建时间" width="176" align="center">
+              <template #default="{ row }">
+                {{ formatDateTime(row.createdAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="失败原因" min-width="220" show-overflow-tooltip>
+              <template #default="{ row }">
+                {{ row.errorText || "-" }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150" align="center" fixed="right">
+              <template #default="{ row }">
+                <el-button text size="small" @click.stop="openTaskRunDetail(row.id)"
+                  >详情</el-button
+                >
+                <el-button
+                  text
+                  size="small"
+                  :loading="retryingTaskRunId === row.id"
+                  @click.stop="retryTaskRunById(row.id)"
+                >
+                  重跑
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div v-if="!taskRunList.length && !taskRunLoading" class="temu-workspace__filter-empty">
+            当前条件下还没有 Temu 执行记录。
+          </div>
+
+          <div v-if="taskRunTotal > taskRunPageSize" class="temu-workspace__task-pagination">
+            <el-pagination
+              v-model:current-page="taskRunPage"
+              v-model:page-size="taskRunPageSize"
+              background
+              layout="total, prev, pager, next"
+              :page-sizes="[10, 20, 30]"
+              :total="taskRunTotal"
+            />
+          </div>
+        </div>
       </div>
     </section>
+
+    <el-dialog
+      v-model="taskRunDetailVisible"
+      fullscreen
+      append-to-body
+      class="temu-workspace__task-dialog"
+      :title="activeTaskRunDetail ? `记录详情 #${activeTaskRunDetail.id}` : '记录详情'"
+    >
+      <div v-loading="taskRunDetailLoading" class="temu-workspace__task-dialog-body">
+        <div
+          v-if="activeTaskRunDetail"
+          class="temu-workspace__task-detail temu-workspace__task-detail--dialog"
+        >
+          <div class="temu-workspace__task-detail-head">
+            <div>
+              <div class="temu-workspace__result-title">
+                <span>{{ activeTaskRunDetail.actionLabel }}</span>
+                <el-tag
+                  size="small"
+                  effect="plain"
+                  :type="resolveTaskRunStatusTagType(activeTaskRunDetail.status)"
+                >
+                  {{ resolveTaskRunStatusLabel(activeTaskRunDetail.status) }}
+                </el-tag>
+              </div>
+              <div class="temu-workspace__editor-desc">
+                {{ activeTaskRunDetail.message || "当前记录暂无附加说明。" }}
+              </div>
+            </div>
+
+            <div class="temu-workspace__task-tools">
+              <el-button text size="small" @click="copyText('任务参数', taskRunParamsText)">
+                复制参数
+              </el-button>
+              <el-button text size="small" @click="copyText('任务日志', taskRunLogsText)">
+                复制日志
+              </el-button>
+              <el-button text size="small" @click="copyText('任务结果', taskRunResultText)">
+                复制结果
+              </el-button>
+              <el-button
+                text
+                size="small"
+                :loading="retryingTaskRunId === activeTaskRunDetail.id"
+                @click="retryTaskRunById(activeTaskRunDetail.id)"
+              >
+                重跑
+              </el-button>
+            </div>
+          </div>
+
+          <div class="temu-workspace__task-meta-list">
+            <div class="temu-task-meta-row">
+              <span>记录编号</span>
+              <strong>#{{ activeTaskRunDetail.id }}</strong>
+            </div>
+            <div class="temu-task-meta-row">
+              <span>环境</span>
+              <strong>{{ activeTaskRunDetail.profileId || "-" }}</strong>
+            </div>
+            <div class="temu-task-meta-row">
+              <span>区域</span>
+              <strong>{{ resolveRegionLabel(activeTaskRunDetail.region) }}</strong>
+            </div>
+            <div class="temu-task-meta-row">
+              <span>开始时间</span>
+              <strong>{{ formatDateTime(activeTaskRunDetail.startedAt) }}</strong>
+            </div>
+            <div class="temu-task-meta-row">
+              <span>结束时间</span>
+              <strong>{{ formatDateTime(activeTaskRunDetail.finishedAt) }}</strong>
+            </div>
+            <div class="temu-task-meta-row">
+              <span>耗时</span>
+              <strong>{{ formatDuration(activeTaskRunDetail.durationMs) }}</strong>
+            </div>
+          </div>
+
+          <div class="temu-workspace__task-detail-section">
+            <div class="temu-workspace__section-title">执行日志</div>
+            <div v-if="taskRunLogEntries.length" class="temu-task-log-list">
+              <div
+                v-for="(entry, index) in taskRunLogEntries"
+                :key="`${activeTaskRunDetail.id}-${index}-${entry.time}`"
+                class="temu-task-log-item"
+              >
+                <div class="temu-task-log-item__head">
+                  <span class="temu-task-log-item__time">{{ formatDateTime(entry.time) }}</span>
+                  <el-tag size="small" effect="plain" :type="resolveTaskRunLogTagType(entry.level)">
+                    {{ resolveTaskRunLogLabel(entry.level) }}
+                  </el-tag>
+                </div>
+                <div class="temu-task-log-item__message">{{ entry.message }}</div>
+                <pre
+                  v-if="entry.detail !== undefined"
+                  class="temu-workspace__json temu-workspace__json--compact"
+                  >{{ jsonText(entry.detail) }}</pre
+                >
+              </div>
+            </div>
+            <div v-else class="temu-workspace__unsupported">当前记录暂无执行日志。</div>
+          </div>
+
+          <div class="temu-workspace__task-json-grid">
+            <div class="temu-workspace__task-detail-section">
+              <div class="temu-workspace__section-title">请求参数</div>
+              <pre class="temu-workspace__json temu-workspace__json--compact">{{
+                taskRunParamsText
+              }}</pre>
+            </div>
+
+            <div class="temu-workspace__task-detail-section">
+              <div class="temu-workspace__section-title">任务结果</div>
+              <pre class="temu-workspace__json temu-workspace__json--compact">{{
+                taskRunResultText
+              }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="temu-workspace__unsupported">正在加载记录详情...</div>
+      </div>
+    </el-dialog>
   </section>
 </template>
 
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
-  executeTemuAction,
+  createTemuTaskRun,
   getTemuCatalog,
+  getTemuTaskRun,
+  getTemuTaskRunPage,
+  retryTemuTaskRun,
   type TemuActionResponse,
   type TemuCatalogAction,
   type TemuCatalogGroup,
   type TemuRegionKey,
+  type TemuTaskRunDetail,
+  type TemuTaskRunLogEntry,
+  type TemuTaskRunSummary,
 } from "@/api/external/toolkit/temu";
 import {
   ACTION_PRESETS,
@@ -331,6 +579,19 @@ const selectedActionKey = ref("");
 const actionSearchKeyword = ref("");
 const catalog = ref<TemuCatalogGroup[]>([]);
 const actionWorkspaceStates = reactive<Record<string, TemuActionWorkspaceState>>({});
+const taskRunLoading = ref(false);
+const taskRunDetailLoading = ref(false);
+const taskRunPage = ref(1);
+const taskRunPageSize = ref(10);
+const taskRunTotal = ref(0);
+const onlyCurrentActionRuns = ref(true);
+const taskRunList = ref<TemuTaskRunSummary[]>([]);
+const taskRunDetailVisible = ref(false);
+const activeTaskRunId = ref<number | null>(null);
+const activeTaskRunDetail = ref<TemuTaskRunDetail | null>(null);
+const retryingTaskRunId = ref<number | null>(null);
+const taskRunPollingBusy = ref(false);
+let taskRunPollTimer: number | null = null;
 
 const sessionRecord = computed(() => asPlainObject(props.sessionRecord));
 const sessionData = computed(() => asPlainObject(sessionRecord.value?.session));
@@ -577,6 +838,9 @@ const activeActionRunning = computed(() => {
   return runningActionKey.value === selectedAction.value.key;
 });
 const isAnyActionRunning = computed(() => !!runningActionKey.value || !!props.toolBusy);
+const showInlineActionResult = computed(
+  () => !!activeActionResult.value && isToolAction(selectedAction.value),
+);
 const actionResultText = computed(() => jsonText(activeActionResult.value ?? null));
 const resolvePublishTemplateValue = (result: TemuActionResponse | null) => {
   if (
@@ -611,6 +875,22 @@ const publishTemplateText = computed(() => {
   return value === null ? "" : jsonText(value);
 });
 const canCopyPublishTemplate = computed(() => !!publishTemplateText.value.trim());
+const taskRunActionKeyFilter = computed(() =>
+  onlyCurrentActionRuns.value ? String(selectedAction.value?.key || "").trim() : "",
+);
+const taskRunLogEntries = computed<TemuTaskRunLogEntry[]>(() =>
+  Array.isArray(activeTaskRunDetail.value?.logs) ? activeTaskRunDetail.value.logs : [],
+);
+const taskRunParamsText = computed(() => jsonText(activeTaskRunDetail.value?.params ?? null));
+const taskRunResultText = computed(() => jsonText(activeTaskRunDetail.value?.result ?? null));
+const taskRunLogsText = computed(() => jsonText(taskRunLogEntries.value));
+const hasRunningTaskRuns = computed(() => {
+  const listHasRunning = taskRunList.value.some((item) =>
+    ["queued", "running"].includes(String(item.status || "").trim()),
+  );
+  const detailStatus = String(activeTaskRunDetail.value?.status || "").trim();
+  return listHasRunning || ["queued", "running"].includes(detailStatus);
+});
 const canRunSelectedAction = computed(() => {
   if (!selectedAction.value || !selectedActionPreset.value) {
     return false;
@@ -706,6 +986,89 @@ const resetFormState = () => {
 };
 
 const jsonText = (value: any) => stringifyJson(value ?? null);
+const resolveRegionLabel = (region?: string | null) => {
+  const normalizedRegion = String(region || "").trim() as TemuRegionKey;
+  return REGION_LABELS[normalizedRegion] || region || "-";
+};
+
+const resolveTaskRunStatusLabel = (status?: string | null) => {
+  const normalizedStatus = String(status || "").trim();
+  if (normalizedStatus === "completed") return "已完成";
+  if (normalizedStatus === "failed") return "失败";
+  if (normalizedStatus === "running") return "执行中";
+  return "待执行";
+};
+
+const resolveTaskRunStatusTagType = (status?: string | null) => {
+  const normalizedStatus = String(status || "").trim();
+  if (normalizedStatus === "completed") return "success";
+  if (normalizedStatus === "failed") return "danger";
+  if (normalizedStatus === "running") return "warning";
+  return "info";
+};
+
+const resolveTaskRunLogLabel = (level?: string | null) => {
+  const normalizedLevel = String(level || "").trim();
+  if (normalizedLevel === "success") return "成功";
+  if (normalizedLevel === "warning") return "提醒";
+  if (normalizedLevel === "error") return "错误";
+  return "信息";
+};
+
+const resolveTaskRunLogTagType = (level?: string | null) => {
+  const normalizedLevel = String(level || "").trim();
+  if (normalizedLevel === "success") return "success";
+  if (normalizedLevel === "warning") return "warning";
+  if (normalizedLevel === "error") return "danger";
+  return "info";
+};
+
+const formatDateTime = (value?: string | Date | null) => {
+  if (!value) {
+    return "-";
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
+
+const formatDuration = (durationMs?: number | null) => {
+  const normalizedDuration = Number(durationMs);
+  if (!Number.isFinite(normalizedDuration) || normalizedDuration < 0) {
+    return "-";
+  }
+
+  if (normalizedDuration < 1000) {
+    return `${normalizedDuration}ms`;
+  }
+
+  return `${(normalizedDuration / 1000).toFixed(normalizedDuration >= 10000 ? 0 : 1)}s`;
+};
+
+const syncTaskRunResultToWorkspace = (detail?: TemuTaskRunDetail | null) => {
+  const actionKey = String(detail?.actionKey || "").trim();
+  if (!actionKey || actionKey === TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY) {
+    return;
+  }
+
+  const state = ensureActionWorkspaceState(actionKey);
+  const result = asPlainObject(detail?.result);
+  if (!state || typeof result.success !== "boolean") {
+    return;
+  }
+
+  state.lastResult = result as TemuActionResponse;
+};
 
 const validateForm = () => {
   const state = activeActionState.value;
@@ -773,6 +1136,172 @@ const copyText = async (label: string, text: string) => {
   }
 };
 
+const stopTaskRunPolling = () => {
+  if (taskRunPollTimer !== null) {
+    window.clearInterval(taskRunPollTimer);
+    taskRunPollTimer = null;
+  }
+};
+
+const ensureTaskRunPolling = () => {
+  if (!hasRunningTaskRuns.value) {
+    stopTaskRunPolling();
+    return;
+  }
+
+  if (taskRunPollTimer !== null) {
+    return;
+  }
+
+  taskRunPollTimer = window.setInterval(() => {
+    void pollTaskRuns();
+  }, 2500);
+};
+
+const loadTaskRunDetail = async (id: number, options: { silent?: boolean } = {}) => {
+  if (!id) {
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    return null;
+  }
+
+  if (!options.silent) {
+    taskRunDetailLoading.value = true;
+  }
+
+  try {
+    const detail = await getTemuTaskRun(id);
+    activeTaskRunId.value = detail?.id ? Number(detail.id) : null;
+    activeTaskRunDetail.value = detail || null;
+    syncTaskRunResultToWorkspace(detail);
+    return detail;
+  } catch (error: any) {
+    if (!options.silent) {
+      ElMessage.error(extractRequestErrorMessage(error, "获取执行记录详情失败"));
+    }
+    return null;
+  } finally {
+    if (!options.silent) {
+      taskRunDetailLoading.value = false;
+    }
+  }
+};
+
+const loadTaskRuns = async (options: { silent?: boolean } = {}) => {
+  if (!options.silent) {
+    taskRunLoading.value = true;
+  }
+
+  try {
+    const response = await getTemuTaskRunPage({
+      currentPage: taskRunPage.value,
+      pageSize: taskRunPageSize.value,
+      ...(taskRunActionKeyFilter.value ? { actionKey: taskRunActionKeyFilter.value } : {}),
+    });
+
+    taskRunList.value = Array.isArray(response?.list) ? response.list : [];
+    taskRunTotal.value = Number(response?.total || 0);
+
+    if (!taskRunList.value.length) {
+      activeTaskRunId.value = null;
+      activeTaskRunDetail.value = null;
+      taskRunDetailVisible.value = false;
+      return;
+    }
+
+    if (!activeTaskRunId.value) {
+      return;
+    }
+
+    const hasActiveTaskRun = taskRunList.value.some((item) => item.id === activeTaskRunId.value);
+    if (!hasActiveTaskRun) {
+      activeTaskRunId.value = null;
+      activeTaskRunDetail.value = null;
+      taskRunDetailVisible.value = false;
+      return;
+    }
+
+    if (!taskRunDetailVisible.value) {
+      return;
+    }
+
+    const shouldRefreshDetail =
+      !activeTaskRunDetail.value ||
+      activeTaskRunDetail.value.id !== activeTaskRunId.value ||
+      (activeTaskRunDetail.value.status &&
+        ["queued", "running"].includes(String(activeTaskRunDetail.value.status).trim()));
+
+    if (shouldRefreshDetail) {
+      await loadTaskRunDetail(activeTaskRunId.value, { silent: true });
+    }
+  } catch (error: any) {
+    if (!options.silent) {
+      ElMessage.error(extractRequestErrorMessage(error, "获取 Temu 执行记录失败"));
+    }
+  } finally {
+    if (!options.silent) {
+      taskRunLoading.value = false;
+    }
+  }
+};
+
+const pollTaskRuns = async () => {
+  if (taskRunPollingBusy.value) {
+    return;
+  }
+
+  taskRunPollingBusy.value = true;
+  try {
+    await loadTaskRuns({ silent: true });
+  } finally {
+    taskRunPollingBusy.value = false;
+    ensureTaskRunPolling();
+  }
+};
+
+const openTaskRunDetail = async (id: number) => {
+  if (!id) {
+    return;
+  }
+
+  activeTaskRunId.value = id;
+  if (!activeTaskRunDetail.value || activeTaskRunDetail.value.id !== id) {
+    activeTaskRunDetail.value = null;
+  }
+  taskRunDetailVisible.value = true;
+  await loadTaskRunDetail(id);
+};
+
+const refreshTaskRuns = async () => {
+  await loadTaskRuns();
+};
+
+const retryTaskRunById = async (id: number) => {
+  if (!id) {
+    return;
+  }
+
+  retryingTaskRunId.value = id;
+  try {
+    const detail = await retryTemuTaskRun(id);
+    const keepDetailVisible = taskRunDetailVisible.value;
+    activeTaskRunId.value = keepDetailVisible ? Number(detail?.id || 0) || null : null;
+    activeTaskRunDetail.value = keepDetailVisible ? detail || null : null;
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    await loadTaskRuns();
+    if (keepDetailVisible && detail?.id) {
+      taskRunDetailVisible.value = true;
+    }
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建重跑记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "重跑 Temu 任务失败"));
+  } finally {
+    retryingTaskRunId.value = null;
+  }
+};
+
 const loadCatalog = async () => {
   catalogLoading.value = true;
   try {
@@ -789,6 +1318,7 @@ const loadCatalog = async () => {
 const refreshWorkspaceActions = async () => {
   emit("refresh-tools");
   await loadCatalog();
+  await refreshTaskRuns();
 };
 
 const runAction = async () => {
@@ -812,7 +1342,7 @@ const runAction = async () => {
   }
 
   if (runningActionKey.value || props.toolBusy) {
-    ElMessage.warning("当前已有动作正在执行，请稍候");
+    ElMessage.warning("当前动作正在提交，请稍候");
     return;
   }
 
@@ -833,13 +1363,20 @@ const runAction = async () => {
   runningActionKey.value = String(action.key || "").trim();
   try {
     const payload = selectedActionPreset.value.buildPayload(parsed, props.profileId);
-    const response = await executeTemuAction(action.endpoint, payload);
-    state.lastResult = response;
-    ElMessage[response?.success ? "success" : "warning"](
-      response?.message || `${action.label} 已返回结果`,
-    );
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建 ${action.label} 执行记录 #${detail.id}`);
   } catch (error: any) {
-    ElMessage.error(extractRequestErrorMessage(error, "执行 Temu 动作失败"));
+    ElMessage.error(extractRequestErrorMessage(error, "创建 Temu 执行记录失败"));
   } finally {
     runningActionKey.value = "";
   }
@@ -858,6 +1395,38 @@ watch(selectedCategoryKey, () => {
 });
 
 watch(
+  () => `${selectedActionKey.value}|${onlyCurrentActionRuns.value}`,
+  () => {
+    taskRunPage.value = 1;
+    taskRunDetailVisible.value = false;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    void loadTaskRuns();
+  },
+  { immediate: true },
+);
+
+watch(taskRunPage, (currentPage, previousPage) => {
+  if (currentPage === previousPage) {
+    return;
+  }
+  void loadTaskRuns();
+});
+
+watch(taskRunPageSize, (pageSize, previousPageSize) => {
+  if (pageSize === previousPageSize) {
+    return;
+  }
+
+  if (taskRunPage.value !== 1) {
+    taskRunPage.value = 1;
+    return;
+  }
+
+  void loadTaskRuns();
+});
+
+watch(
   () => props.profileId,
   () => {
     Object.values(actionWorkspaceStates).forEach((state) => {
@@ -866,8 +1435,29 @@ watch(
   },
 );
 
+watch(
+  hasRunningTaskRuns,
+  () => {
+    ensureTaskRunPolling();
+  },
+  { immediate: true },
+);
+
+watch([taskRunDetailVisible, taskRunDetailLoading], ([visible, loading]) => {
+  if (visible || loading) {
+    return;
+  }
+
+  activeTaskRunId.value = null;
+  activeTaskRunDetail.value = null;
+});
+
 onMounted(() => {
   void loadCatalog();
+});
+
+onBeforeUnmount(() => {
+  stopTaskRunPolling();
 });
 </script>
 
@@ -876,11 +1466,42 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  --temu-runtime-badge-bg: var(--el-color-warning-light-9);
+  --temu-runtime-badge-border: var(--el-color-warning-light-5);
+  --temu-runtime-badge-text: var(--el-color-warning-dark-2);
+  --temu-runtime-badge-active-bg: var(--el-color-warning-light-8);
+  --temu-runtime-badge-active-border: var(--el-color-warning-light-4);
+  --temu-runtime-badge-active-text: var(--el-color-warning-dark-2);
+  --temu-runtime-hint-bg: var(--el-color-warning-light-9);
+  --temu-runtime-hint-border: var(--el-color-warning-light-7);
+  --temu-runtime-hint-text: var(--el-color-warning-dark-2);
+}
+
+:global(html.dark) .temu-workspace {
+  --temu-runtime-badge-bg: color-mix(in srgb, var(--el-color-warning) 18%, var(--el-bg-color));
+  --temu-runtime-badge-border: color-mix(in srgb, var(--el-color-warning) 44%, transparent);
+  --temu-runtime-badge-text: color-mix(in srgb, var(--el-color-warning) 82%, white);
+  --temu-runtime-badge-active-bg: color-mix(
+    in srgb,
+    var(--el-color-warning) 24%,
+    var(--el-bg-color)
+  );
+  --temu-runtime-badge-active-border: color-mix(in srgb, var(--el-color-warning) 58%, transparent);
+  --temu-runtime-badge-active-text: color-mix(in srgb, var(--el-color-warning) 92%, white);
+  --temu-runtime-hint-bg: color-mix(
+    in srgb,
+    var(--el-color-warning) 12%,
+    var(--el-fill-color-extra-light)
+  );
+  --temu-runtime-hint-border: color-mix(in srgb, var(--el-color-warning) 36%, transparent);
+  --temu-runtime-hint-text: color-mix(in srgb, var(--el-color-warning) 86%, white);
 }
 
 .temu-workspace__toolbar,
 .temu-workspace__editor-head,
-.temu-workspace__result-head {
+.temu-workspace__result-head,
+.temu-workspace__task-head,
+.temu-workspace__task-detail-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -898,10 +1519,16 @@ onMounted(() => {
 
 .temu-workspace__editor-tags,
 .temu-workspace__result-tools,
-.temu-workspace__toolbar-side {
+.temu-workspace__toolbar-side,
+.temu-workspace__task-tools {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.temu-workspace__task-tools :deep(.el-checkbox) {
+  margin-right: 0;
 }
 
 .temu-workspace__action-shell {
@@ -915,6 +1542,14 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-workspace__task-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--el-border-color-lighter);
 }
@@ -1077,6 +1712,12 @@ onMounted(() => {
   color: var(--el-color-primary);
 }
 
+.temu-function-button.is-active .temu-function-button__runtime {
+  border-color: var(--temu-runtime-badge-active-border);
+  background: var(--temu-runtime-badge-active-bg);
+  color: var(--temu-runtime-badge-active-text);
+}
+
 .temu-workspace__action-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
@@ -1112,14 +1753,33 @@ onMounted(() => {
   gap: 6px;
 }
 
+.temu-function-button__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.temu-function-button__runtime,
 .temu-function-button__status {
   flex-shrink: 0;
   padding: 0 6px;
   border-radius: 999px;
-  background: var(--el-fill-color-extra-light);
-  color: var(--el-text-color-regular);
+  border: 1px solid transparent;
   font-size: 10px;
   line-height: 18px;
+}
+
+.temu-function-button__status {
+  background: var(--el-fill-color-extra-light);
+  color: var(--el-text-color-regular);
+}
+
+.temu-function-button__runtime {
+  border-color: var(--temu-runtime-badge-border);
+  background: var(--temu-runtime-badge-bg);
+  color: var(--temu-runtime-badge-text);
+  font-weight: 600;
 }
 
 .temu-function-button__desc {
@@ -1181,6 +1841,20 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.temu-workspace__editor-runtime-hint {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border: 1px solid var(--temu-runtime-hint-border);
+  border-radius: 999px;
+  background: var(--temu-runtime-hint-bg);
+  color: var(--temu-runtime-hint-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
 }
 
 .temu-workspace__helper-panel {
@@ -1264,8 +1938,8 @@ onMounted(() => {
 .temu-workspace__json {
   margin: 0;
   padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  border: 0;
   background: var(--el-fill-color-light);
   color: var(--el-text-color-primary);
   font-size: 12px;
@@ -1278,6 +1952,133 @@ onMounted(() => {
     "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
+.temu-workspace__json--compact {
+  max-height: 360px;
+  padding: 10px;
+  font-size: 11px;
+}
+
+.temu-workspace__task-action-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.temu-workspace__task-action-cell small {
+  color: var(--el-text-color-placeholder);
+  font-size: 10px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.temu-workspace__task-pagination {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.temu-workspace__task-dialog :deep(.el-dialog__header) {
+  padding: 18px 24px 0;
+}
+
+.temu-workspace__task-dialog :deep(.el-dialog__body) {
+  padding: 18px 24px 24px;
+}
+
+.temu-workspace__task-dialog-body {
+  min-height: 180px;
+}
+
+.temu-workspace__task-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.temu-workspace__task-detail--dialog {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.temu-workspace__task-meta-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 24px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-task-meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.temu-task-meta-row span {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.temu-task-meta-row strong {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.temu-workspace__task-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.temu-workspace__task-json-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.temu-task-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-task-log-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: transparent;
+}
+
+.temu-task-log-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.temu-task-log-item__time {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.temu-task-log-item__message {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
 @media (max-width: 1280px) {
   .temu-workspace__action-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -1287,7 +2088,9 @@ onMounted(() => {
 @media (max-width: 768px) {
   .temu-workspace__toolbar,
   .temu-workspace__editor-head,
-  .temu-workspace__result-head {
+  .temu-workspace__result-head,
+  .temu-workspace__task-head,
+  .temu-workspace__task-detail-head {
     flex-direction: column;
     align-items: stretch;
   }
@@ -1297,12 +2100,17 @@ onMounted(() => {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .temu-workspace__task-json-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .temu-workspace__search {
     width: 100%;
   }
 
   .temu-workspace__toolbar-side,
   .temu-workspace__result-tools,
+  .temu-workspace__task-tools,
   .temu-workspace__runner {
     width: 100%;
   }
@@ -1310,6 +2118,12 @@ onMounted(() => {
   .temu-workspace__runner {
     justify-content: stretch;
     flex-direction: column;
+  }
+
+  .temu-workspace__task-dialog :deep(.el-dialog__header),
+  .temu-workspace__task-dialog :deep(.el-dialog__body) {
+    padding-right: 16px;
+    padding-left: 16px;
   }
 }
 </style>

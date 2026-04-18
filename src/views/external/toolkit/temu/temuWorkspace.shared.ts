@@ -56,8 +56,7 @@ export interface TemuIndexedCatalogAction {
   groupLabel: string;
 }
 
-export const TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY =
-  "temu-publish-detail-request-capture";
+export const TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY = "temu-publish-detail-request-capture";
 
 export const REGION_LABELS: Record<TemuRegionKey, string> = {
   global: "全球站",
@@ -69,9 +68,11 @@ export const REGION_LABELS: Record<TemuRegionKey, string> = {
 export const QUICK_ACTION_KEYS = [
   "goods.list",
   "goods.detail",
+  "goods.modify-price",
   "activity.list",
   "finance.history",
   "goods.adjust-price.list",
+  "goods.real-picture.list",
   "jit.list-all",
   "goods.category-search",
 ] as const;
@@ -86,7 +87,8 @@ export const NEXT_ACTION_MAP: Record<string, string[]> = {
   "goods.category-search": ["goods.expected-place.list"],
   "goods.expected-place.list": ["goods.expected-place.update"],
   "goods.adjust-price.list": ["goods.adjust-price.reject"],
-  "goods.lifecycle": ["jit.open", "jit.stock.update"],
+  "goods.lifecycle": ["goods.modify-price", "jit.open", "jit.stock.update"],
+  "goods.real-picture.list": ["goods.real-picture.submit"],
   "jit.list": ["jit.open", "jit.stock.update"],
   "jit.list-all": ["jit.open", "jit.stock.update"],
   "compliance.page-query": ["compliance.detail"],
@@ -426,5 +428,137 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "reason", label: "不调整原因", type: "text", defaultValue: "我就不调整" },
     ],
     buildPayload: buildProfileRegionPayload,
+  },
+  "goods.modify-price": {
+    fields: [
+      createRegionField(),
+      {
+        key: "priceOrderId",
+        label: "核价单号",
+        type: "number",
+        required: true,
+        placeholder: "请输入 priceOrderId",
+      },
+      {
+        key: "supplierResult",
+        label: "核价动作",
+        type: "select",
+        required: true,
+        defaultValue: 1,
+        options: [
+          { label: "确认报价", value: 1 },
+          { label: "重新报价", value: 2 },
+          { label: "放弃报价", value: 3 },
+        ],
+      },
+      {
+        key: "items",
+        label: "SKU 报价 JSON",
+        type: "json",
+        rows: 8,
+        hint: 'supplierResult 为 1/2 时填写，例如：[{"productSkuId":978123456789,"price":1299}]',
+      },
+      {
+        key: "bargainReasonList",
+        label: "议价原因 JSON",
+        type: "json",
+        rows: 6,
+        hint: "可选，直接透传官方 bargainReasonList 结构。",
+      },
+    ],
+    note: "最小可跑参数是 priceOrderId + supplierResult。确认/重新报价时需要补 items，放弃报价时只传 priceOrderId 即可。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "goods.real-picture.list": {
+    fields: [
+      createRegionField(),
+      { key: "page", label: "页码", type: "number", defaultValue: 1 },
+      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 20 },
+      {
+        key: "checkTypeList",
+        label: "异常类型列表",
+        type: "array-number",
+        hint: "例如 135；支持换行、逗号、中文逗号分隔",
+      },
+      {
+        key: "rapidScreenStatusList",
+        label: "快速筛选状态",
+        type: "array-number",
+        hint: "例如 1 待传图、4 异常",
+      },
+      { key: "goodsStatusList", label: "商品状态列表", type: "array-number" },
+      { key: "blackWordTypeList", label: "敏感词类型列表", type: "array-number" },
+      { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
+    ],
+    note: "用于查询待处理的实拍图异常单。通常先查列表，再把结果里的 spuId / skuIdList 带到“提交实拍图”。",
+    buildPayload: buildProfileRegionPayload,
+  },
+  "goods.real-picture.submit": {
+    fields: [
+      createRegionField(),
+      {
+        key: "spuId",
+        label: "SPU ID",
+        type: "number",
+        required: true,
+        placeholder: "优先只填 spuId，后端会尝试自动补足 goodsId / skuIdList",
+      },
+      {
+        key: "imageUrls",
+        label: "通用图片地址",
+        type: "array-string",
+        hint: "会同时补到 position 1 和 position 2，支持多个 HTTP 图片地址。",
+      },
+      {
+        key: "positionImageUrls",
+        label: "按位置分组图片 JSON",
+        type: "json",
+        rows: 8,
+        hint: '更精细时使用，例如：{"1":["https://a.jpg"],"2":["https://b.jpg"]}',
+      },
+      {
+        key: "appendToExisting",
+        label: "保留已有标签图",
+        type: "select",
+        defaultValue: 1,
+        options: [
+          { label: "保留并追加", value: 1 },
+          { label: "仅使用本次图片", value: 0 },
+        ],
+      },
+      { key: "goodsId", label: "goodsId", type: "number", hint: "自动解析失败时再手动填写" },
+      { key: "skuIdList", label: "SKU ID 列表", type: "array-number" },
+      {
+        key: "isSameSku",
+        label: "是否同款同图",
+        type: "select",
+        options: [
+          { label: "否", value: 0 },
+          { label: "是", value: 1 },
+        ],
+      },
+      {
+        key: "existingLabelImageList",
+        label: "已有标签图 JSON",
+        type: "json",
+        rows: 6,
+        hint: '完全手动模式时可传，例如：[{"position":1,"image":"https://..."}]',
+      },
+      { key: "confirmType", label: "confirmType", type: "number", defaultValue: 4 },
+    ],
+    note: "最简流程只需要 spuId + 图片地址。后端会先下载 HTTP 图片，再上传到 Temu，最后自动提交 upload_new。",
+    buildPayload: (parsed, profileId) => ({
+      profileId,
+      region: (parsed.region as TemuRegionKey) || "global",
+      ...Object.fromEntries(
+        Object.entries(parsed).filter(
+          ([key]) => !["region", "appendToExisting", "isSameSku"].includes(key),
+        ),
+      ),
+      ...(parsed.appendToExisting !== undefined
+        ? { appendToExisting: Number(parsed.appendToExisting) === 1 }
+        : {}),
+      ...(parsed.isSameSku !== undefined ? { isSameSku: Number(parsed.isSameSku) === 1 } : {}),
+    }),
   },
 };
