@@ -168,6 +168,7 @@ const handleBatchDelete = () => {
 
 // Dialog
 const dialogVisible = ref(false);
+const temuTemplateInspectorVisible = ref(false);
 const dialogTitle = ref("");
 const formRef = ref();
 const submitLoading = ref(false);
@@ -199,6 +200,16 @@ const currentTemplateBindingId = computed(() =>
 const templateBindingDefaultConfigText = computed(() =>
   formatTemplateBindingConfig(selectedTemplateBinding.value?.psdTemplateConfig),
 );
+
+const temuProductTemplateValue = computed({
+  get: () => String(platformConfigData.value?.productTemplate || ""),
+  set: (value: string) => {
+    platformConfigData.value = {
+      ...(platformConfigData.value || {}),
+      productTemplate: value,
+    };
+  },
+});
 
 const templateBindingSelectValue = computed({
   get: () => currentTemplateBindingId.value || undefined,
@@ -349,6 +360,10 @@ function isTemuProductTemplateField(field: { key?: string; type?: string }) {
   );
 }
 
+function openTemuTemplateInspector() {
+  temuTemplateInspectorVisible.value = true;
+}
+
 // 监听任务类型变化，更新配置字段
 watch(
   () => form.taskType,
@@ -363,6 +378,12 @@ watch(
   },
   { immediate: true },
 );
+
+watch(dialogVisible, (value) => {
+  if (!value) {
+    temuTemplateInspectorVisible.value = false;
+  }
+});
 
 const baseTaskTypeOptions = getAllTaskTypes();
 
@@ -584,6 +605,7 @@ const handleAdd = () => {
   titleConfigForm.avoidWords = [];
   platformConfigData.value = {};
   currentPlatformConfig.value = null;
+  temuTemplateInspectorVisible.value = false;
   resetTemplateBindingState();
   dialogVisible.value = true;
 };
@@ -621,6 +643,7 @@ const handleEdit = async (row: any) => {
     form.taskType,
     formatTaskTypeConfigForEdit(form.taskType, row.configData || {}),
   );
+  temuTemplateInspectorVisible.value = false;
   resetTemplateBindingState();
   await hydrateTemplateBinding(row?.templateBinding?.psdTemplateId);
   templateBindingConfigText.value = formatTemplateBindingConfig(
@@ -731,6 +754,7 @@ const submitForm = async () => {
       ElMessage.success("创建成功");
     }
     dialogVisible.value = false;
+    temuTemplateInspectorVisible.value = false;
     getList();
   } catch (err: any) {
     console.error(err);
@@ -1046,33 +1070,26 @@ onMounted(() => {
                         />
 
                         <template v-else-if="field.type === 'textarea'">
-                          <div
-                            v-if="isTemuProductTemplateField(field)"
-                            class="publish-config-temu-template-layout"
-                          >
-                            <div class="publish-config-temu-template-layout__editor">
-                              <el-input
-                                v-model="platformConfigData[field.key]"
-                                type="textarea"
-                                :rows="field.rows || 3"
-                                :placeholder="field.placeholder"
-                              />
-                            </div>
-                            <div class="publish-config-temu-template-layout__inspector">
-                              <TemuProductTemplateInspector
-                                :model-value="platformConfigData[field.key]"
-                                @update:modelValue="platformConfigData[field.key] = $event"
-                              />
-                            </div>
-                          </div>
-
                           <el-input
-                            v-else
                             v-model="platformConfigData[field.key]"
                             type="textarea"
                             :rows="field.rows || 3"
                             :placeholder="field.placeholder"
                           />
+
+                          <div
+                            v-if="isTemuProductTemplateField(field)"
+                            class="publish-config-temu-template-actions"
+                          >
+                            <el-button
+                              size="small"
+                              type="primary"
+                              plain
+                              @click="openTemuTemplateInspector"
+                            >
+                              辅助模板解析
+                            </el-button>
+                          </div>
                         </template>
 
                         <div v-else-if="field.type === 'url-list'">
@@ -1307,6 +1324,18 @@ onMounted(() => {
         </div>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="temuTemplateInspectorVisible"
+      title="辅助模板解析"
+      :fullscreen="true"
+      append-to-body
+      class="publish-config-temu-inspector-dialog"
+    >
+      <div class="publish-config-temu-inspector">
+        <TemuProductTemplateInspector :model-value="temuProductTemplateValue" />
+      </div>
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -1322,6 +1351,10 @@ onMounted(() => {
 
 :deep(.publish-config-page .list-page-filter--flat) {
   padding-bottom: 10px;
+}
+
+:deep(.publish-config-temu-inspector-dialog .el-dialog__body) {
+  padding: 14px 16px 16px;
 }
 
 :deep(.publish-config-page .common-table .vxe-body--column),
@@ -1642,37 +1675,15 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-.publish-config-temu-template-layout {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  align-items: stretch;
-  width: 100%;
-}
-
-.publish-config-temu-template-layout__editor,
-.publish-config-temu-template-layout__inspector {
-  min-width: 0;
-}
-
-.publish-config-temu-template-layout__inspector {
+.publish-config-temu-template-actions {
   display: flex;
+  justify-content: flex-start;
+  margin-top: 8px;
 }
 
-.publish-config-temu-template-layout__inspector > * {
-  flex: 1 1 auto;
-}
-
-.publish-config-temu-template-layout__editor :deep(.el-textarea),
-.publish-config-temu-template-layout__editor :deep(.el-textarea__inner) {
-  width: 100%;
-}
-
-.publish-config-temu-template-layout__editor :deep(.el-textarea__inner) {
-  min-height: 560px;
-  font-family:
-    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
-  line-height: 1.5;
+.publish-config-temu-inspector {
+  height: calc(100vh - 72px);
+  min-height: 0;
 }
 
 .publish-config-field-note {
@@ -1764,12 +1775,9 @@ onMounted(() => {
     justify-content: flex-end;
   }
 
-  .publish-config-temu-template-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .publish-config-temu-template-layout__editor :deep(.el-textarea__inner) {
-    min-height: 360px;
+  .publish-config-temu-inspector {
+    height: auto;
+    min-height: calc(100vh - 72px);
   }
 }
 </style>

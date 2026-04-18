@@ -177,49 +177,50 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 
 <style scoped lang="less">
 .temu-tree-node {
-  --temu-accent: #2563eb;
-  --temu-accent-line: rgba(37, 99, 235, 0.28);
+  --temu-accent: #1d4ed8;
+  --temu-accent-line: rgba(29, 78, 216, 0.2);
   position: relative;
-  padding-left: 14px;
+  padding-left: 18px;
 }
 
 .temu-tree-node.depth-1 {
-  --temu-accent: #3b82f6;
-  --temu-accent-line: rgba(59, 130, 246, 0.24);
+  --temu-accent: #2563eb;
+  --temu-accent-line: rgba(37, 99, 235, 0.18);
 }
 
 .temu-tree-node.depth-2 {
-  --temu-accent: #60a5fa;
-  --temu-accent-line: rgba(96, 165, 250, 0.22);
+  --temu-accent: #3b82f6;
+  --temu-accent-line: rgba(59, 130, 246, 0.16);
 }
 
 .temu-tree-node.depth-3 {
-  --temu-accent: #93c5fd;
-  --temu-accent-line: rgba(147, 197, 253, 0.2);
+  --temu-accent: #60a5fa;
+  --temu-accent-line: rgba(96, 165, 250, 0.14);
 }
 
 .temu-tree-node::before {
   content: "";
   position: absolute;
-  left: 5px;
-  top: 8px;
+  left: 7px;
+  top: 7px;
   bottom: 0;
-  width: 2px;
+  width: 1px;
   border-radius: 999px;
   background: var(--temu-accent-line);
 }
 
 .temu-tree-node__body {
-  padding: 4px 0 6px;
+  min-width: 0;
+  padding: 3px 0 4px;
   border-bottom: 1px solid
-    color-mix(in srgb, var(--temu-accent) 12%, var(--el-border-color-lighter));
+    color-mix(in srgb, var(--temu-accent) 10%, var(--el-border-color-lighter));
 }
 
 .temu-tree-node__row {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 4px 6px;
+  gap: 3px 6px;
   min-width: 0;
   line-height: 1.45;
 }
@@ -228,11 +229,12 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
   font-size: 11px;
   color: var(--temu-accent);
   padding: 0;
+  font-weight: 600;
 }
 
 .temu-tree-node__label {
   font-size: 12px;
-  color: var(--el-text-color-primary);
+  color: color-mix(in srgb, var(--temu-accent) 72%, var(--el-text-color-primary));
   font-weight: 600;
 }
 
@@ -257,7 +259,7 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 .temu-tree-node__source,
 .temu-tree-node__desc,
 .temu-tree-node__error {
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 11px;
   line-height: 1.45;
 }
@@ -271,7 +273,7 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 }
 
 .temu-tree-node__source code {
-  color: var(--el-text-color-secondary);
+  color: color-mix(in srgb, var(--temu-accent) 58%, var(--el-text-color-secondary));
   word-break: break-all;
 }
 
@@ -296,13 +298,13 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 }
 
 .temu-tree-node__children {
-  margin-top: 6px;
+  margin-top: 4px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .temu-tree-node__children > .temu-tree-node:last-child::before {
-  bottom: 12px;
+  bottom: 8px;
 }
 </style>
