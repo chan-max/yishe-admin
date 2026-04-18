@@ -63,6 +63,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
   {
     label: "AI创作",
     options: [
+      { key: "ai.assistant", label: "智能助手" },
       { key: "ai.tti", label: "AI文字生成图片" },
       { key: "ai.tts", label: "AI文字转语音" },
       { key: "ai.agent", label: "Agent 控制台" },
@@ -135,6 +136,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   ExternalBrowserPlugin: "external.browser-plugin",
   ExternalPsAutomation: "external.ps-automation",
   ExternalGoogleArt: "external.google-art",
+  AiAssistant: "ai.assistant",
   AiTti: "ai.tti",
   AiTts: "ai.tts",
   AiAgentConsole: "ai.agent",

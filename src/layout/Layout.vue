@@ -1,9 +1,9 @@
 <script lang="tsx">
 import { computed, defineComponent, provide, ref, watch } from 'vue'
-import { Backtop } from '@/components/Backtop'
 import { useRenderLayout } from './components/useRenderLayout'
 import { useAppStore } from '@/store/modules/app'
 import { useDesign } from '@/hooks/web/useDesign'
+import AiAssistantLauncher from '@/components/AiAssistant/AiAssistantLauncher.vue'
 
 const { getPrefixCls } = useDesign()
 const prefixCls = getPrefixCls('layout')
@@ -43,7 +43,7 @@ export default defineComponent({
     return () => (
       <section class={[prefixCls, 'w-full h-full relative overflow-hidden']}>
         {renderBasic()}
-        {/* <Backtop />  */}
+        <AiAssistantLauncher />
       </section>
     )
   }

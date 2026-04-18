@@ -16,7 +16,7 @@ import UnoCSS from 'unocss/vite'
 export function createVitePlugins(root = process.cwd()) {
   const skipAutoImportDts = process.env.SKIP_VITE_DTS_WRITE === 'true'
   const skipProgressCache = process.env.SKIP_VITE_PROGRESS_CACHE === 'true'
-  const generatedTypesDir = resolve(root, 'types/generated')
+  const generatedTypesDir = resolve(root, 'types/vite-generated')
 
   // 路径查找
   function pathResolve(dir: string) {

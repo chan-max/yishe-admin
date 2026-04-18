@@ -358,7 +358,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/ai",
     component: Layout,
     name: "AiService",
-    redirect: "/ai/tti",
+    redirect: "/ai/assistant",
     meta: {
       title: "AI创作",
       icon: "ep:cpu",
@@ -366,6 +366,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
       alwaysShow: true,
     },
     children: [
+      {
+        path: "assistant",
+        component: () => import("@/views/ai/assistant/index.vue"),
+        name: "AiAssistant",
+        meta: {
+          title: "智能助手",
+        },
+      },
       {
         path: "tti",
         component: () => import("@/views/ai/tti.vue"),
@@ -387,7 +395,8 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/ai/agent/index.vue"),
         name: "AiAgentConsole",
         meta: {
-          title: "Agent 控制台",
+          title: "Agent 调试台",
+          hidden: true,
         },
       },
       {
