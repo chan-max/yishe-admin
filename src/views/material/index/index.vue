@@ -891,8 +891,7 @@
 
         <el-dialog
           v-model="psdSetDialogVisible"
-          width="100%"
-          style="height: 100%"
+          fullscreen
           align-center
           :destroy-on-close="true"
           class="psd-set-dialog"
@@ -1288,83 +1287,77 @@
               </div>
             </div>
           </div>
-          <template #footer>
-            <div class="psd-set-footer">
-              <div class="psd-set-footer-main">
-                <div class="psd-set-info">
-                  <el-icon>
-                    <InfoFilled />
-                  </el-icon>
-                  <div class="psd-set-info-content">
-                    <span class="psd-set-info-chip">
-                      {{
-                        psdSetMergeSticker
-                          ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
-                          : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务`
-                      }}
-                    </span>
-                    <span class="psd-set-info-chip psd-set-info-chip--subtle">
-                      允许的图片格式：{{ allowedFormatsForSelectedTemplates.join("、") }}
-                    </span>
-                    <span class="psd-set-info-chip psd-set-info-chip--subtle">
-                      自动化动作：{{
-                        enabledPsdSetAutomationCount
-                          ? enabledPsdSetAutomationKeys.join("、")
-                          : "未启用"
-                      }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="psd-set-mode-inline">
-                  <span class="psd-set-mode-label">生成方式:</span>
-                  <el-tag :type="psdSetMergeSticker ? 'success' : 'primary'" size="large">
-                    {{ psdSetMergeSticker ? "合并素材 × 模板" : "单素材 × 模板" }}
-                  </el-tag>
-                </div>
-
-                <div class="psd-set-footer-actions">
-                  <el-button @click="psdSetDialogVisible = false">取消</el-button>
-                  <el-button plain @click="psdSetAutomationDialogVisible = true">
-                    完成后动作{{
-                      enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : ""
+          <div class="psd-set-footer">
+            <div class="psd-set-footer-main">
+              <div class="psd-set-info">
+                <el-icon>
+                  <InfoFilled />
+                </el-icon>
+                <div class="psd-set-info-content">
+                  <span class="psd-set-info-chip">
+                    {{
+                      psdSetMergeSticker
+                        ? `合并生成，每个模板各生成 1 条，共 ${psdSetTaskCount} 条套图任务`
+                        : `将生成 ${ids.length} × ${selectedPsdTemplateIds.length} = ${psdSetTaskCount} 条套图任务`
                     }}
-                  </el-button>
+                  </span>
+                  <span class="psd-set-info-chip psd-set-info-chip--subtle">
+                    允许的图片格式：{{ allowedFormatsForSelectedTemplates.join("、") }}
+                  </span>
+                  <span class="psd-set-info-chip psd-set-info-chip--subtle">
+                    自动化动作：{{
+                      enabledPsdSetAutomationCount ? enabledPsdSetAutomationKeys.join("、") : "未启用"
+                    }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="psd-set-mode-inline">
+                <span class="psd-set-mode-label">生成方式:</span>
+                <el-tag :type="psdSetMergeSticker ? 'success' : 'primary'" size="large">
+                  {{ psdSetMergeSticker ? "合并素材 × 模板" : "单素材 × 模板" }}
+                </el-tag>
+              </div>
+
+              <div class="psd-set-footer-actions">
+                <el-button @click="psdSetDialogVisible = false">取消</el-button>
+                <el-button plain @click="psdSetAutomationDialogVisible = true">
+                  完成后动作{{ enabledPsdSetAutomationCount ? `(${enabledPsdSetAutomationCount})` : "" }}
+                </el-button>
+                <el-button
+                  type="info"
+                  :disabled="!ids.length || !selectedPsdTemplateIds.length"
+                  @click="showPsdSetParams"
+                  >查看发送参数</el-button
+                >
+                <el-tooltip
+                  v-if="hasInvalidFormatMaterials"
+                  :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map((m) => m.name).join('、')}），请移除后重试`"
+                  placement="top"
+                >
                   <el-button
-                    type="info"
-                    :disabled="!ids.length || !selectedPsdTemplateIds.length"
-                    @click="showPsdSetParams"
-                    >查看发送参数</el-button
-                  >
-                  <el-tooltip
-                    v-if="hasInvalidFormatMaterials"
-                    :content="`所选素材中包含不符合格式要求的图片（${invalidFormatMaterialsList.map((m) => m.name).join('、')}），请移除后重试`"
-                    placement="top"
-                  >
-                    <el-button
-                      type="primary"
-                      :disabled="
-                        !ids.length || !selectedPsdTemplateIds.length || hasInvalidFormatMaterials
-                      "
-                      :loading="psdSetSubmitting"
-                      @click="handleCreatePsdSets"
-                    >
-                      开始制作
-                    </el-button>
-                  </el-tooltip>
-                  <el-button
-                    v-else
                     type="primary"
-                    :disabled="!ids.length || !selectedPsdTemplateIds.length"
+                    :disabled="
+                      !ids.length || !selectedPsdTemplateIds.length || hasInvalidFormatMaterials
+                    "
                     :loading="psdSetSubmitting"
                     @click="handleCreatePsdSets"
                   >
                     开始制作
                   </el-button>
-                </div>
+                </el-tooltip>
+                <el-button
+                  v-else
+                  type="primary"
+                  :disabled="!ids.length || !selectedPsdTemplateIds.length"
+                  :loading="psdSetSubmitting"
+                  @click="handleCreatePsdSets"
+                >
+                  开始制作
+                </el-button>
               </div>
             </div>
-          </template>
+          </div>
         </el-dialog>
 
         <el-dialog
@@ -6623,6 +6616,34 @@ async function handleUrlUpload() {
   grid-column: 1 / -1;
 }
 
+.psd-set-dialog {
+  :deep(.el-dialog) {
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--el-dialog-bg-color, var(--el-bg-color));
+  }
+
+  :deep(.el-dialog__header) {
+    flex-shrink: 0;
+    margin-right: 0;
+    padding: 14px 16px 12px;
+  }
+
+  :deep(.el-dialog__body) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 0 16px 16px;
+    overflow: hidden;
+    background: var(--el-bg-color-page);
+  }
+}
+
 .psd-set-dialog__header {
   display: flex;
   align-items: flex-start;
@@ -6786,6 +6807,9 @@ async function handleUrlUpload() {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex-shrink: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 .psd-set-footer-main {
@@ -6976,9 +7000,10 @@ async function handleUrlUpload() {
   }
 
   .psd-set-dialog :deep(.el-dialog__body) {
-    max-height: calc(100vh - 120px);
+    padding: 0 12px 12px;
   }
 
+  .psd-set-footer-actions,
   .footer-actions {
     width: 100%;
     justify-content: flex-end;
@@ -8282,18 +8307,8 @@ h1 {
   line-height: 1.5;
 }
 
-.psd-set-dialog :deep(.el-dialog__body) {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 520px;
-  max-height: calc(100vh - 188px);
-  overflow: hidden;
-}
-
 .psd-set-body {
   flex: 1;
-  height: calc(100vh - 188px);
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(260px, 0.88fr) minmax(0, 1.72fr);
