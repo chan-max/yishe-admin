@@ -474,9 +474,7 @@ const pending = reactive<Record<string, string>>({});
 const pendingRunToolFeatureKeys = reactive<Record<string, string>>({});
 
 const toolkitPlatforms = computed<ToolkitPlatformDefinition[]>(() => TOOLKIT_PLATFORM_REGISTRY);
-const selectedPlatformKey = computed(() =>
-  String(route.meta?.toolkitPlatform || "").trim(),
-);
+const selectedPlatformKey = computed(() => String(route.meta?.toolkitPlatform || "").trim());
 
 const selectedPlatform = computed(
   () => toolkitPlatforms.value.find((item) => item.key === selectedPlatformKey.value) || null,
@@ -2123,12 +2121,13 @@ onUnmounted(() => {
 
 .toolkit-hero__context-shell {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
 .toolkit-hero__context-control {
-  flex: 0 0 280px;
+  flex: 0 1 280px;
   max-width: 320px;
   min-width: 0;
   display: flex;
@@ -2139,7 +2138,7 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__context-panel {
-  flex: 1 1 auto;
+  flex: 1 1 420px;
   display: flex;
   align-items: center;
   min-width: 0;

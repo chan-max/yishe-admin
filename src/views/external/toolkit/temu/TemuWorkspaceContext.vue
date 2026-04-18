@@ -182,31 +182,34 @@ const canRefreshIdentity = computed(() => !!props.profileId && availability.valu
 <style scoped lang="scss">
 .temu-context-card {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 10px 12px;
   min-width: 0;
 }
 
 .temu-context-card__summary {
-  flex: 1 1 auto;
+  flex: 1 1 420px;
   display: flex;
   align-items: center;
   align-content: center;
   flex-wrap: wrap;
   gap: 6px 12px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .temu-context-card__actions {
-  flex: 0 0 auto;
-  align-self: center;
+  flex: 0 1 auto;
+  align-self: flex-start;
   display: flex;
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
   justify-content: flex-end;
   margin-left: auto;
+  max-width: 100%;
 }
 
 .temu-context-status {
@@ -224,18 +227,22 @@ const canRefreshIdentity = computed(() => !!props.profileId && availability.valu
 .temu-context-meta {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 5px;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   padding: 4px 8px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 999px;
   background: var(--el-fill-color-blank);
-  white-space: nowrap;
+  white-space: normal;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .temu-context-meta__label {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   color: var(--el-text-color-secondary);
   font-size: 10px;
   line-height: 1;
@@ -245,12 +252,13 @@ const canRefreshIdentity = computed(() => !!props.profileId && availability.valu
 .temu-context-meta__value {
   display: inline-flex;
   align-items: center;
+  min-width: 0;
   color: var(--el-text-color-primary);
   font-size: 11px;
   font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-  word-break: normal;
+  line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .temu-context-meta__value--time {
