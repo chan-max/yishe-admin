@@ -29,6 +29,7 @@ import {
 import { getVendorList, type Vendor } from "@/api/vendor";
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
 import { psdTemplateApi } from "@/api/psdTemplate";
+import TemuProductTemplateInspector from "./components/platform-inspectors/TemuProductTemplateInspector.vue";
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -340,6 +341,14 @@ function getUrlListItemError(fieldKey: string, index: number) {
   return invalidItem ? "仅支持 http/https URL" : "";
 }
 
+function isTemuProductTemplateField(field: { key?: string; type?: string }) {
+  return (
+    resolveTaskTypePlatform(form.taskType) === "temu" &&
+    String(field?.key || "").trim() === "productTemplate" &&
+    field?.type === "textarea"
+  );
+}
+
 // 监听任务类型变化，更新配置字段
 watch(
   () => form.taskType,
@@ -518,9 +527,7 @@ async function loadTemplateBindingTemplates(searchKeyword = "") {
       enabled: true,
     });
     templateBindingOptions.value = Array.isArray(res?.list)
-      ? res.list
-          .map((item: any) => normalizeTemplateBindingTemplate(item))
-          .filter(Boolean)
+      ? res.list.map((item: any) => normalizeTemplateBindingTemplate(item)).filter(Boolean)
       : [];
   } catch (error) {
     console.error("加载套图模板失败:", error);
@@ -929,11 +936,7 @@ onMounted(() => {
                   >
                     <div class="publish-config-template-option">
                       <div class="publish-config-template-option__preview">
-                        <el-image
-                          v-if="template.thumbnail"
-                          :src="template.thumbnail"
-                          fit="cover"
-                        />
+                        <el-image v-if="template.thumbnail" :src="template.thumbnail" fit="cover" />
                         <div v-else class="publish-config-template-option__preview-placeholder">
                           暂无图
                         </div>
@@ -943,12 +946,7 @@ onMounted(() => {
                           <span class="publish-config-template-option__name">
                             {{ template.name || "未命名模板" }}
                           </span>
-                          <el-tag
-                            v-if="template.missing"
-                            size="small"
-                            type="danger"
-                            effect="plain"
-                          >
+                          <el-tag v-if="template.missing" size="small" type="danger" effect="plain">
                             不可用
                           </el-tag>
                         </div>
@@ -1007,12 +1005,6 @@ onMounted(() => {
                 </div>
 
                 <template v-if="currentPlatformConfig && form.taskType">
-                  <div class="publish-config-platform__summary">
-                    <span>{{ currentPlatformConfig.description }}</span>
-                    <span>目标平台：{{ currentPlatformConfig.platformLabel }}</span>
-                    <span>图片：{{ currentPlatformConfig.supportImage ? "支持" : "不支持" }}</span>
-                    <span>视频：{{ currentPlatformConfig.supportVideo ? "支持" : "不支持" }}</span>
-                  </div>
                   <div
                     v-if="platformImageLimitTip"
                     class="publish-config-field-note publish-config-platform__notice"
@@ -1053,13 +1045,35 @@ onMounted(() => {
                           :placeholder="field.placeholder"
                         />
 
-                        <el-input
-                          v-else-if="field.type === 'textarea'"
-                          v-model="platformConfigData[field.key]"
-                          type="textarea"
-                          :rows="field.rows || 3"
-                          :placeholder="field.placeholder"
-                        />
+                        <template v-else-if="field.type === 'textarea'">
+                          <div
+                            v-if="isTemuProductTemplateField(field)"
+                            class="publish-config-temu-template-layout"
+                          >
+                            <div class="publish-config-temu-template-layout__editor">
+                              <el-input
+                                v-model="platformConfigData[field.key]"
+                                type="textarea"
+                                :rows="field.rows || 3"
+                                :placeholder="field.placeholder"
+                              />
+                            </div>
+                            <div class="publish-config-temu-template-layout__inspector">
+                              <TemuProductTemplateInspector
+                                :model-value="platformConfigData[field.key]"
+                                @update:modelValue="platformConfigData[field.key] = $event"
+                              />
+                            </div>
+                          </div>
+
+                          <el-input
+                            v-else
+                            v-model="platformConfigData[field.key]"
+                            type="textarea"
+                            :rows="field.rows || 3"
+                            :placeholder="field.placeholder"
+                          />
+                        </template>
 
                         <div v-else-if="field.type === 'url-list'">
                           <div class="publish-config-url-list">
@@ -1139,6 +1153,18 @@ onMounted(() => {
                           <span v-if="field.tooltip" class="publish-config-switch__hint">{{
                             field.tooltip
                           }}</span>
+                        </div>
+
+                        <div
+                          v-if="
+                            field.tooltip &&
+                            field.type !== 'url-list' &&
+                            field.type !== 'switch' &&
+                            !(field.type === 'select' && field.key === 'vendorId')
+                          "
+                          class="publish-config-field-tip"
+                        >
+                          {{ field.tooltip }}
                         </div>
                       </el-form-item>
                     </el-col>
@@ -1281,7 +1307,6 @@ onMounted(() => {
         </div>
       </template>
     </el-dialog>
-
   </ContentWrap>
 </template>
 
@@ -1456,7 +1481,8 @@ onMounted(() => {
   width: 100% !important;
 }
 
-.publish-config-fields-row :deep(.publish-config-field-col--full .el-form-item__content > .el-textarea) {
+.publish-config-fields-row
+  :deep(.publish-config-field-col--full .el-form-item__content > .el-textarea) {
   width: min(100%, 760px);
 }
 
@@ -1574,19 +1600,6 @@ onMounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-.publish-config-platform__summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  margin-bottom: 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--el-fill-color-extra-light);
-  border: 1px dashed var(--el-border-color);
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
 .publish-config-platform__notice {
   margin-bottom: 12px;
 }
@@ -1627,6 +1640,39 @@ onMounted(() => {
   font-size: 12px;
   line-height: 1.6;
   color: var(--el-text-color-secondary);
+}
+
+.publish-config-temu-template-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.publish-config-temu-template-layout__editor,
+.publish-config-temu-template-layout__inspector {
+  min-width: 0;
+}
+
+.publish-config-temu-template-layout__inspector {
+  display: flex;
+}
+
+.publish-config-temu-template-layout__inspector > * {
+  flex: 1 1 auto;
+}
+
+.publish-config-temu-template-layout__editor :deep(.el-textarea),
+.publish-config-temu-template-layout__editor :deep(.el-textarea__inner) {
+  width: 100%;
+}
+
+.publish-config-temu-template-layout__editor :deep(.el-textarea__inner) {
+  min-height: 560px;
+  font-family:
+    "SFMono-Regular", "JetBrains Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  line-height: 1.5;
 }
 
 .publish-config-field-note {
@@ -1716,6 +1762,14 @@ onMounted(() => {
 
   .publish-config-dialog__footer-actions {
     justify-content: flex-end;
+  }
+
+  .publish-config-temu-template-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .publish-config-temu-template-layout__editor :deep(.el-textarea__inner) {
+    min-height: 360px;
   }
 }
 </style>
