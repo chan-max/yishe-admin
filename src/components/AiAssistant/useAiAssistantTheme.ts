@@ -62,9 +62,15 @@ export const useAiAssistantTheme = () => {
       "--ai-primary": primary,
       "--ai-primary-soft": withAlpha(primary, isDark.value ? 0.14 : 0.08),
       "--ai-primary-soft-strong": withAlpha(primary, isDark.value ? 0.18 : 0.12),
-      "--ai-text": "var(--el-text-color-primary)",
-      "--ai-text-secondary": "var(--el-text-color-regular)",
-      "--ai-text-tertiary": "var(--el-text-color-secondary)",
+      "--ai-text": isDark.value
+        ? "color-mix(in srgb, var(--el-text-color-primary) 90%, #ffffff 10%)"
+        : "var(--el-text-color-primary)",
+      "--ai-text-secondary": isDark.value
+        ? "color-mix(in srgb, var(--el-text-color-primary) 72%, #ffffff 28%)"
+        : "var(--el-text-color-regular)",
+      "--ai-text-tertiary": isDark.value
+        ? "color-mix(in srgb, var(--el-text-color-primary) 58%, #ffffff 42%)"
+        : "var(--el-text-color-secondary)",
       "--ai-page-bg": "var(--app-content-bg-color)",
       "--ai-shell-bg":
         "color-mix(in srgb, var(--app-content-surface-color) 82%, var(--app-content-bg-color) 18%)",
@@ -82,7 +88,9 @@ export const useAiAssistantTheme = () => {
       "--ai-border-strong-color":
         "color-mix(in srgb, var(--app-content-border-color) 78%, var(--ai-primary) 22%)",
       "--ai-user-bubble-bg": withAlpha(primary, isDark.value ? 0.14 : 0.08),
-      "--ai-assistant-bubble-bg": "transparent",
+      "--ai-assistant-bubble-bg": isDark.value
+        ? "color-mix(in srgb, var(--app-content-surface-color) 70%, var(--app-content-surface-muted-color) 30%)"
+        : "transparent",
       "--ai-tool-bubble-bg": "var(--app-content-surface-muted-color)",
       "--ai-assistant-avatar-bg":
         "color-mix(in srgb, var(--app-content-surface-color) 84%, var(--ai-primary) 16%)",

@@ -49,6 +49,13 @@ export interface AiAssistantToolDefinition {
   category: string;
   readOnly: boolean;
   runtime: string;
+  plannerEnabled?: boolean;
+  executionMode?: "read_only" | "safe_write" | "confirm_required";
+  riskLevel?: "low" | "medium" | "high";
+  requiresBrowser?: boolean;
+  confirmRequired?: boolean;
+  idempotent?: boolean;
+  tags?: string[];
   inputSchema: AiAssistantToolInputSchema;
   examples?: string[];
   exampleCases?: AiAssistantToolExampleCase[];

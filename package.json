@@ -1,6 +1,6 @@
 {
   "name": "yishe-admin",
-  "version": "0.0.26",
+  "version": "0.0.27",
   "description": "基于vue3、vite4、element-plus、typesScript",
   "author": "jc",
   "private": false,
@@ -74,7 +74,7 @@
     "leven": "^4.0.0",
     "lodash": "^4.17.21",
     "lodash-es": "^4.17.21",
-    "markdown-it": "^14.1.0",
+    "marked": "^17.0.6",
     "markmap-common": "^0.16.0",
     "markmap-lib": "^0.16.1",
     "markmap-toolbar": "^0.17.0",

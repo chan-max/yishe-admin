@@ -145,7 +145,12 @@
                 </div>
 
                 <div v-else class="ai-assistant-panel__message-text">
-                  {{ getBubbleContent(item) }}
+                  <template v-if="getBubbleItem(item).role === 'assistant'">
+                    <MarkdownView :content="getBubbleContent(item)" />
+                  </template>
+                  <template v-else>
+                    {{ getBubbleContent(item) }}
+                  </template>
                 </div>
               </template>
             </BubbleList>
@@ -186,6 +191,11 @@
               <Tag :color="selectedToolHasError ? 'error' : 'processing'">
                 {{ selectedToolHasError ? "执行异常" : "执行完成" }}
               </Tag>
+              <Tag v-if="selectedToolMeta?.riskLevel">
+                风险 {{ formatRiskLevel(selectedToolMeta.riskLevel) }}
+              </Tag>
+              <Tag v-if="selectedToolMeta?.requiresBrowser">需要浏览器</Tag>
+              <Tag v-if="selectedToolMeta?.confirmRequired" color="warning">需要确认</Tag>
               <Tag>{{ formatTime(selectedToolMessage.createdAt) }}</Tag>
             </div>
           </div>
@@ -202,6 +212,11 @@
           :items="toolThoughtItems"
           :collapsible="{ expandedKeys: ['summary'] }"
         />
+
+        <div class="ai-assistant-panel__detail-block">
+          <div class="ai-assistant-panel__detail-block-title">结构化结果</div>
+          <AiAssistantStructuredResult :value="selectedToolMessage.toolResult || {}" />
+        </div>
 
         <div class="ai-assistant-panel__detail-block">
           <div class="ai-assistant-panel__detail-block-title">工具入参</div>
@@ -230,7 +245,7 @@
         <div class="ai-assistant-panel__capability-meta">
           <Tag>{{ capabilityCount }} 项能力</Tag>
           <Tag>服务端执行</Tag>
-          <Tag>只读能力</Tag>
+          <Tag>结构化能力目录</Tag>
         </div>
       </div>
 
@@ -272,7 +287,14 @@
                 <div class="ai-assistant-panel__capability-item-tags">
                   <Tag>{{ tool.runtime === "server" ? "服务端" : tool.runtime }}</Tag>
                   <Tag>{{ tool.readOnly ? "只读" : "可执行" }}</Tag>
+                  <Tag :color="tool.riskLevel === 'high' ? 'error' : tool.riskLevel === 'medium' ? 'warning' : 'success'">
+                    风险 {{ formatRiskLevel(tool.riskLevel) }}
+                  </Tag>
+                  <Tag v-if="tool.requiresBrowser">需要浏览器</Tag>
+                  <Tag v-if="tool.confirmRequired" color="warning">需确认</Tag>
+                  <Tag v-if="tool.idempotent">幂等</Tag>
                   <Tag>{{ summarizeInputSchema(tool.inputSchema) }}</Tag>
+                  <Tag v-for="tag in tool.tags || []" :key="`${tool.name}:${tag}`">{{ tag }}</Tag>
                 </div>
 
                 <div
@@ -358,6 +380,9 @@
                         class="ai-assistant-panel__capability-case-input"
                         >{{ formatJson(caseItem.input) }}</pre
                       >
+                      <Button size="small" type="text" @click="applyExamplePrompt(caseItem.prompt)">
+                        使用此案例
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -392,6 +417,8 @@ import type {
   AiAssistantToolExampleCase,
   AiAssistantToolSchemaProperty,
 } from "@/api/aiAssistant";
+import MarkdownView from "@/components/MarkdownView/index.vue";
+import AiAssistantStructuredResult from "./AiAssistantStructuredResult.vue";
 import {
   useAiAssistantRuntime,
   type AssistantBubbleItem,
@@ -555,6 +582,22 @@ const selectedToolHasError = computed(() => {
   return !!String((result as Record<string, any>).error || "").trim();
 });
 
+const selectedToolMeta = computed<AiAssistantToolDefinition | null>(() => {
+  const toolKey = selectedToolMessage.value?.toolKey;
+  if (!toolKey) {
+    return null;
+  }
+
+  for (const group of capabilityGroups.value) {
+    const matched = group.tools.find((tool) => tool.name === toolKey);
+    if (matched) {
+      return matched;
+    }
+  }
+
+  return null;
+});
+
 const toolThoughtItems = computed<ThoughtChainItem[]>(() => {
   const current = selectedToolMessage.value;
   if (!current) {
@@ -627,6 +670,16 @@ const buildPageContext = (): AiAssistantPageContext => {
 };
 
 const formatTime = (value: string) => dayjs(value).format("MM-DD HH:mm");
+
+const formatRiskLevel = (value?: AiAssistantToolDefinition["riskLevel"]) => {
+  if (value === "high") {
+    return "高";
+  }
+  if (value === "medium") {
+    return "中";
+  }
+  return "低";
+};
 
 const formatJson = (value: unknown) => {
   return JSON.stringify(value ?? {}, null, 2);
@@ -865,6 +918,10 @@ const getToolExampleCases = (tool: AiAssistantToolDefinition): AiAssistantToolEx
   }
 
   return [];
+};
+
+const applyExamplePrompt = (prompt: string) => {
+  draft.value = String(prompt || "").trim();
 };
 
 const buildToolBubbleActions = (item: unknown): ActionItem[] => {
@@ -1197,7 +1254,7 @@ watch(
 
   &__message-text {
     font-size: 13px;
-    line-height: 1.75;
+    line-height: 1.6;
     color: var(--ai-text);
     white-space: pre-wrap;
     word-break: break-word;
@@ -1212,7 +1269,7 @@ watch(
 
   &__tool-summary {
     font-size: 13px;
-    line-height: 1.7;
+    line-height: 1.6;
     color: var(--ai-text);
     white-space: pre-wrap;
   }
@@ -1712,10 +1769,16 @@ watch(
 :deep(.ant-bubble .ant-bubble-content) {
   border: 0;
   box-shadow: none;
+  color: var(--ai-text);
 }
 
 :deep(.ant-bubble .ant-bubble-content-wrapper) {
   max-width: 100%;
+}
+
+:deep(.ant-bubble .ant-bubble-content-wrapper),
+:deep(.ant-bubble .ant-bubble-content-wrapper *) {
+  color: inherit;
 }
 
 :deep(.ant-bubble .ant-avatar) {
