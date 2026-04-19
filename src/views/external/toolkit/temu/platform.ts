@@ -11,7 +11,6 @@ export const TEMU_TOOLKIT_PLATFORM = {
   label: "Temu",
   description: "Temu 业务工具、会话管理与后续服务端能力入口",
   routePath: "/operation/toolkit/temu",
-  workspaceTitle: "业务工作台",
   workspaceDescription: "",
   workspaceContextComponent: markRaw(TemuWorkspaceContext),
   supportsStoredSessions: true,

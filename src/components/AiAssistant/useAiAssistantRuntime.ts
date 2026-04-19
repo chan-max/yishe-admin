@@ -2,35 +2,16 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import { useXAgent, useXChat } from "ant-design-x-vue";
-import {
-  AiAssistantApi,
-  type AiAssistantChatResult,
-  type AiAssistantMessage,
-  type AiAssistantPageContext,
+import type {
+  AiAssistantChatResult,
+  AiAssistantMessage,
+  AiAssistantPageContext,
 } from "@/api/aiAssistant";
 import { useAiAssistantStore } from "@/store/modules/aiAssistant";
 
-const unwrapPayload = <T = any>(payload: any): T => {
-  if (payload && typeof payload === "object" && "data" in payload) {
-    return payload.data as T;
-  }
-  return payload as T;
-};
-
-const normalizeChatResult = (payload: any): AiAssistantChatResult | null => {
-  const data = unwrapPayload<any>(payload);
-  if (!data || typeof data !== "object" || !Array.isArray(data.messages)) {
-    return null;
-  }
-  return data as AiAssistantChatResult;
-};
-
 const resolveErrorMessage = (error: any) => {
   return String(
-    error?.message ||
-      error?.response?.data?.message ||
-      error?.response?.data?.msg ||
-      "发送失败",
+    error?.message || error?.response?.data?.message || error?.response?.data?.msg || "发送失败",
   ).trim();
 };
 
@@ -60,6 +41,7 @@ type AiAssistantRequestPayload = {
   message: AssistantMessageBatch;
   plainText: string;
   pageContext: AiAssistantPageContext;
+  conversationId: number | null;
 };
 
 const toDisplayMessage = (message: AiAssistantMessage | DisplayMessage): DisplayMessage => ({
@@ -71,9 +53,11 @@ const createLocalMessage = (
   role: AiAssistantMessage["role"],
   content: string,
   pageContext: AiAssistantPageContext,
+  conversationId: number | null,
   extra: Partial<DisplayMessage> = {},
 ): DisplayMessage => ({
   id,
+  conversationId,
   role,
   content,
   routePath: pageContext.routePath || null,
@@ -90,10 +74,14 @@ const createLocalMessage = (
 export const useAiAssistantRuntime = () => {
   const aiAssistantStore = useAiAssistantStore();
   const {
+    conversations,
+    activeConversation,
+    activeConversationId,
     messages: persistedMessages,
     capabilityCatalog,
     loadingHistory,
     capabilityCatalogLoading,
+    conversationsLoading,
   } = storeToRefs(aiAssistantStore);
 
   let tempMessageId = -1;
@@ -101,10 +89,11 @@ export const useAiAssistantRuntime = () => {
     role: AiAssistantMessage["role"],
     content: string,
     pageContext: AiAssistantPageContext,
+    conversationId: number | null,
     extra: Partial<DisplayMessage> = {},
   ) => {
     tempMessageId -= 1;
-    return createLocalMessage(tempMessageId, role, content, pageContext, extra);
+    return createLocalMessage(tempMessageId, role, content, pageContext, conversationId, extra);
   };
 
   const [agent] = useXAgent<
@@ -114,14 +103,18 @@ export const useAiAssistantRuntime = () => {
   >({
     request: async (info, callbacks) => {
       try {
-        const payload = await AiAssistantApi.chat(info.plainText, info.pageContext);
-        const result = normalizeChatResult(payload);
+        const result = (await aiAssistantStore.sendMessage(
+          info.plainText,
+          info.pageContext,
+          info.conversationId,
+        )) as AiAssistantChatResult | null;
+
         if (!result) {
           throw new Error("AI 助手返回格式异常");
         }
 
-        aiAssistantStore.mergeMessages(result.messages);
-
+        const nextConversationId =
+          Number(result.conversation?.id || info.conversationId || 0) || null;
         const nextBatch = result.messages
           .filter((item) => item.role !== "user")
           .map((item) => toDisplayMessage(item));
@@ -134,6 +127,7 @@ export const useAiAssistantRuntime = () => {
                   "assistant",
                   result.reply || "已完成处理",
                   info.pageContext,
+                  nextConversationId,
                 ),
               ],
         ]);
@@ -145,11 +139,7 @@ export const useAiAssistantRuntime = () => {
     },
   });
 
-  const {
-    onRequest,
-    parsedMessages,
-    setMessages,
-  } = useXChat<
+  const { onRequest, parsedMessages, setMessages } = useXChat<
     AssistantMessageBatch,
     AssistantBubbleItem,
     AiAssistantRequestPayload,
@@ -174,19 +164,22 @@ export const useAiAssistantRuntime = () => {
       })),
     requestPlaceholder: (batch) => {
       const pageContext = batch[0]?.pageContext || {};
+      const conversationId = batch[0]?.conversationId || null;
       return [
-        createTempMessage("assistant", "", pageContext, {
+        createTempMessage("assistant", "", pageContext, conversationId, {
           loading: true,
         }),
       ];
     },
     requestFallback: (batch, info) => {
       const pageContext = batch[0]?.pageContext || {};
+      const conversationId = batch[0]?.conversationId || null;
       return [
         createTempMessage(
           "assistant",
           resolveErrorMessage(info.error),
           pageContext,
+          conversationId,
         ),
       ];
     },
@@ -214,7 +207,37 @@ export const useAiAssistantRuntime = () => {
   };
 
   const loadAll = async (force = false) => {
-    await aiAssistantStore.loadMessages(force);
+    await aiAssistantStore.loadConversations(force);
+    if (!activeConversationId.value) {
+      setMessages([]);
+      return;
+    }
+
+    await aiAssistantStore.loadMessages(activeConversationId.value, force);
+    syncHistoryMessages();
+  };
+
+  const switchConversation = async (conversationId: number | null) => {
+    await aiAssistantStore.activateConversation(conversationId, true);
+    if (!aiAssistantStore.activeConversationId) {
+      setMessages([]);
+      return;
+    }
+    syncHistoryMessages();
+  };
+
+  const createConversation = async (title?: string) => {
+    const conversation = await aiAssistantStore.createConversation(title);
+    setMessages([]);
+    return conversation;
+  };
+
+  const deleteConversation = async (conversationId: number) => {
+    await aiAssistantStore.deleteConversation(conversationId);
+    if (!aiAssistantStore.activeConversationId) {
+      setMessages([]);
+      return;
+    }
     syncHistoryMessages();
   };
 
@@ -223,7 +246,7 @@ export const useAiAssistantRuntime = () => {
   };
 
   const clearHistory = async () => {
-    await aiAssistantStore.clearMessages();
+    await aiAssistantStore.clearMessages(activeConversationId.value);
     setMessages([]);
   };
 
@@ -236,19 +259,27 @@ export const useAiAssistantRuntime = () => {
     onRequest({
       plainText: normalizedText,
       pageContext,
-      message: [createTempMessage("user", normalizedText, pageContext)],
+      conversationId: activeConversationId.value,
+      message: [createTempMessage("user", normalizedText, pageContext, activeConversationId.value)],
     });
   };
 
   return {
+    conversations,
+    activeConversation,
+    activeConversationId,
     capabilityCatalog,
     loadingHistory,
     capabilityCatalogLoading,
+    conversationsLoading,
     bubbleItems,
     messageCount,
     sending,
     loadAll,
     loadCapabilityCatalog,
+    switchConversation,
+    createConversation,
+    deleteConversation,
     clearHistory,
     sendMessage,
     syncHistoryMessages,

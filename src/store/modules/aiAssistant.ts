@@ -1,149 +1,331 @@
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
 import {
   AiAssistantApi,
   type AiAssistantCapabilityCatalog,
   type AiAssistantChatResult,
+  type AiAssistantConversation,
   type AiAssistantMessage,
   type AiAssistantPageContext,
-  type AiAssistantToolDefinition
-} from '@/api/aiAssistant'
+  type AiAssistantToolDefinition,
+} from "@/api/aiAssistant";
 
 const unwrapPayload = <T = any>(payload: any): T => {
-  if (payload && typeof payload === 'object' && 'data' in payload) {
-    return payload.data as T
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return payload.data as T;
   }
-  return payload as T
-}
+  return payload as T;
+};
+
+const toConversationId = (value: unknown) => {
+  const normalized = Number(value);
+  return Number.isFinite(normalized) && normalized > 0 ? Math.floor(normalized) : null;
+};
+
+const sortConversations = (items: AiAssistantConversation[]) => {
+  return [...items].sort((left, right) => {
+    const leftTime = new Date(
+      left.lastMessageAt || left.updatedAt || left.createdAt || 0,
+    ).getTime();
+    const rightTime = new Date(
+      right.lastMessageAt || right.updatedAt || right.createdAt || 0,
+    ).getTime();
+    return rightTime - leftTime || right.id - left.id;
+  });
+};
+
+const normalizeConversation = (payload: any): AiAssistantConversation | null => {
+  const data = unwrapPayload<any>(payload);
+  if (!data || typeof data !== "object" || typeof data.id !== "number") {
+    return null;
+  }
+  return data as AiAssistantConversation;
+};
+
+const normalizeConversations = (payload: any): AiAssistantConversation[] => {
+  const data = unwrapPayload<any>(payload);
+  return Array.isArray(data) ? (data as AiAssistantConversation[]) : [];
+};
 
 const normalizeMessages = (payload: any): AiAssistantMessage[] => {
-  const data = unwrapPayload<any>(payload)
-  return Array.isArray(data) ? data : []
-}
+  const data = unwrapPayload<any>(payload);
+  return Array.isArray(data) ? (data as AiAssistantMessage[]) : [];
+};
 
 const normalizeTools = (payload: any): AiAssistantToolDefinition[] => {
-  const data = unwrapPayload<any>(payload)
-  return Array.isArray(data?.tools) ? data.tools : []
-}
+  const data = unwrapPayload<any>(payload);
+  return Array.isArray(data?.tools) ? data.tools : [];
+};
 
 const normalizeCapabilityCatalog = (payload: any): AiAssistantCapabilityCatalog | null => {
-  const data = unwrapPayload<any>(payload)
-  if (!data || typeof data !== 'object' || !Array.isArray(data.groups)) {
-    return null
+  const data = unwrapPayload<any>(payload);
+  if (!data || typeof data !== "object" || !Array.isArray(data.groups)) {
+    return null;
   }
-  return data as AiAssistantCapabilityCatalog
-}
+  return data as AiAssistantCapabilityCatalog;
+};
 
 const normalizeChatResult = (payload: any): AiAssistantChatResult | null => {
-  const data = unwrapPayload<any>(payload)
-  if (!data || typeof data !== 'object' || !Array.isArray(data.messages)) {
-    return null
+  const data = unwrapPayload<any>(payload);
+  if (!data || typeof data !== "object" || !Array.isArray(data.messages)) {
+    return null;
   }
-  return data as AiAssistantChatResult
-}
+  return data as AiAssistantChatResult;
+};
 
-export const useAiAssistantStore = defineStore('aiAssistant', {
+export const useAiAssistantStore = defineStore("aiAssistant", {
   state: () => ({
+    conversations: [] as AiAssistantConversation[],
+    activeConversationId: null as number | null,
     messages: [] as AiAssistantMessage[],
     tools: [] as AiAssistantToolDefinition[],
     capabilityCatalog: null as AiAssistantCapabilityCatalog | null,
+    conversationsLoading: false,
     loadingHistory: false,
     toolsLoading: false,
     capabilityCatalogLoading: false,
     sending: false,
-    loadedHistory: false,
+    loadedConversations: false,
+    loadedHistoryConversationId: null as number | null,
     loadedTools: false,
-    loadedCapabilityCatalog: false
+    loadedCapabilityCatalog: false,
   }),
   getters: {
-    messageCount: (state) => state.messages.length
+    messageCount: (state) => state.messages.length,
+    activeConversation: (state) =>
+      state.conversations.find((item) => item.id === state.activeConversationId) || null,
   },
   actions: {
     mergeMessages(nextMessages: AiAssistantMessage[]) {
-      const messageMap = new Map<number, AiAssistantMessage>()
-      ;[...this.messages, ...nextMessages].forEach((item) => {
-        if (!item || typeof item.id !== 'number') {
-          return
+      const messageMap = new Map<number, AiAssistantMessage>();
+      [...this.messages, ...nextMessages].forEach((item) => {
+        if (!item || typeof item.id !== "number") {
+          return;
         }
-        messageMap.set(item.id, item)
-      })
-      this.messages = Array.from(messageMap.values()).sort((left, right) => left.id - right.id)
+        messageMap.set(item.id, item);
+      });
+      this.messages = Array.from(messageMap.values()).sort((left, right) => left.id - right.id);
     },
 
-    async loadMessages(force = false) {
-      if (this.loadingHistory) {
-        return
+    upsertConversation(conversation: AiAssistantConversation) {
+      const next = this.conversations.filter((item) => item.id !== conversation.id);
+      next.unshift(conversation);
+      this.conversations = sortConversations(next);
+    },
+
+    setActiveConversation(conversationId?: number | null) {
+      const normalizedId = toConversationId(conversationId);
+      if (this.activeConversationId === normalizedId) {
+        return;
       }
-      if (this.loadedHistory && !force) {
-        return
+      this.activeConversationId = normalizedId;
+      this.messages = [];
+      this.loadedHistoryConversationId = null;
+    },
+
+    async loadConversations(force = false) {
+      if (this.conversationsLoading) {
+        return;
+      }
+      if (this.loadedConversations && !force) {
+        return;
       }
 
-      this.loadingHistory = true
+      this.conversationsLoading = true;
       try {
-        const payload = await AiAssistantApi.getMessages()
-        this.messages = normalizeMessages(payload)
-        this.loadedHistory = true
+        const payload = await AiAssistantApi.getConversations();
+        this.conversations = sortConversations(normalizeConversations(payload));
+        this.loadedConversations = true;
+
+        const activeExists = this.conversations.some(
+          (item) => item.id === this.activeConversationId,
+        );
+        if (!activeExists) {
+          this.activeConversationId = this.conversations[0]?.id || null;
+          this.messages = [];
+          this.loadedHistoryConversationId = null;
+        }
       } finally {
-        this.loadingHistory = false
+        this.conversationsLoading = false;
+      }
+    },
+
+    async loadMessages(conversationId?: number | null, force = false) {
+      const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
+      if (!targetConversationId) {
+        this.messages = [];
+        this.loadedHistoryConversationId = null;
+        return;
+      }
+      if (this.loadingHistory) {
+        return;
+      }
+      if (this.loadedHistoryConversationId === targetConversationId && !force) {
+        return;
+      }
+
+      this.loadingHistory = true;
+      this.activeConversationId = targetConversationId;
+      this.messages = [];
+      try {
+        const payload = await AiAssistantApi.getMessages(80, targetConversationId);
+        this.messages = normalizeMessages(payload);
+        this.loadedHistoryConversationId = targetConversationId;
+      } finally {
+        this.loadingHistory = false;
+      }
+    },
+
+    async activateConversation(conversationId?: number | null, force = false) {
+      const targetConversationId = toConversationId(conversationId);
+      this.setActiveConversation(targetConversationId);
+      await this.loadMessages(targetConversationId, force);
+    },
+
+    async createConversation(title?: string) {
+      const payload = await AiAssistantApi.createConversation(title);
+      const conversation = normalizeConversation(payload);
+      if (!conversation) {
+        return null;
+      }
+
+      this.upsertConversation(conversation);
+      this.activeConversationId = conversation.id;
+      this.messages = [];
+      this.loadedHistoryConversationId = conversation.id;
+      return conversation;
+    },
+
+    async deleteConversation(conversationId: number) {
+      const targetConversationId = toConversationId(conversationId);
+      if (!targetConversationId) {
+        return;
+      }
+
+      await AiAssistantApi.deleteConversation(targetConversationId);
+      this.conversations = this.conversations.filter((item) => item.id !== targetConversationId);
+
+      if (this.activeConversationId === targetConversationId) {
+        const nextConversationId = this.conversations[0]?.id || null;
+        this.activeConversationId = nextConversationId;
+        this.messages = [];
+        this.loadedHistoryConversationId = null;
+        if (nextConversationId) {
+          await this.loadMessages(nextConversationId, true);
+        }
       }
     },
 
     async loadTools(force = false) {
       if (this.toolsLoading) {
-        return
+        return;
       }
       if (this.loadedTools && !force) {
-        return
+        return;
       }
 
-      this.toolsLoading = true
+      this.toolsLoading = true;
       try {
-        const payload = await AiAssistantApi.getTools()
-        this.tools = normalizeTools(payload)
-        this.loadedTools = true
+        const payload = await AiAssistantApi.getTools();
+        this.tools = normalizeTools(payload);
+        this.loadedTools = true;
       } finally {
-        this.toolsLoading = false
+        this.toolsLoading = false;
       }
     },
 
     async loadCapabilityCatalog(force = false) {
       if (this.capabilityCatalogLoading) {
-        return
+        return;
       }
       if (this.loadedCapabilityCatalog && !force) {
-        return
+        return;
       }
 
-      this.capabilityCatalogLoading = true
+      this.capabilityCatalogLoading = true;
       try {
-        const payload = await AiAssistantApi.getCapabilityCatalog()
-        this.capabilityCatalog = normalizeCapabilityCatalog(payload)
-        this.loadedCapabilityCatalog = true
+        const payload = await AiAssistantApi.getCapabilityCatalog();
+        this.capabilityCatalog = normalizeCapabilityCatalog(payload);
+        this.loadedCapabilityCatalog = true;
       } finally {
-        this.capabilityCatalogLoading = false
+        this.capabilityCatalogLoading = false;
       }
     },
 
-    async clearMessages() {
-      await AiAssistantApi.clearMessages()
-      this.messages = []
-      this.loadedHistory = true
-    },
+    async clearMessages(conversationId?: number | null) {
+      const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
+      await AiAssistantApi.clearMessages(targetConversationId);
 
-    async sendMessage(message: string, pageContext?: AiAssistantPageContext) {
-      this.sending = true
-      try {
-        const payload = await AiAssistantApi.chat(message, pageContext)
-        const result = normalizeChatResult(payload)
-        if (result?.messages?.length) {
-          this.mergeMessages(result.messages)
-        } else {
-          await this.loadMessages(true)
+      if (targetConversationId) {
+        if (this.activeConversationId === targetConversationId) {
+          this.messages = [];
+          this.loadedHistoryConversationId = targetConversationId;
         }
-        this.loadedHistory = true
-        return result
-      } finally {
-        this.sending = false
+
+        this.conversations = sortConversations(
+          this.conversations.map((item) =>
+            item.id === targetConversationId
+              ? {
+                  ...item,
+                  messageCount: 0,
+                  lastMessageAt: null,
+                  updatedAt: new Date().toISOString(),
+                }
+              : item,
+          ),
+        );
+        return;
       }
-    }
-  }
-})
+
+      this.messages = [];
+      this.loadedHistoryConversationId = this.activeConversationId;
+      this.conversations = this.conversations.map((item) => ({
+        ...item,
+        messageCount: 0,
+        lastMessageAt: null,
+        updatedAt: new Date().toISOString(),
+      }));
+    },
+
+    async sendMessage(
+      message: string,
+      pageContext?: AiAssistantPageContext,
+      conversationId?: number | null,
+    ) {
+      this.sending = true;
+      try {
+        const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
+        const payload = await AiAssistantApi.chat(message, pageContext, targetConversationId);
+        const result = normalizeChatResult(payload);
+
+        if (result?.conversation) {
+          this.upsertConversation(result.conversation);
+          this.activeConversationId = result.conversation.id;
+        }
+
+        if (result?.messages?.length) {
+          const resultConversationId = toConversationId(
+            result.conversation?.id ?? targetConversationId ?? this.activeConversationId,
+          );
+
+          if (
+            resultConversationId &&
+            this.activeConversationId === resultConversationId &&
+            this.loadedHistoryConversationId === resultConversationId
+          ) {
+            this.mergeMessages(result.messages);
+          } else {
+            this.messages = [...result.messages].sort((left, right) => left.id - right.id);
+          }
+
+          this.loadedHistoryConversationId = resultConversationId;
+        } else {
+          await this.loadMessages(result?.conversation?.id || targetConversationId, true);
+        }
+
+        return result;
+      } finally {
+        this.sending = false;
+      }
+    },
+  },
+});

@@ -1,99 +1,140 @@
-import request from '@/config/axios'
+import request from "@/config/axios";
 
 export interface AiAssistantPageContext {
-  routePath?: string
-  fullPath?: string
-  routeName?: string
-  routeTitle?: string
-  query?: Record<string, any>
-  params?: Record<string, any>
+  routePath?: string;
+  fullPath?: string;
+  routeName?: string;
+  routeTitle?: string;
+  query?: Record<string, any>;
+  params?: Record<string, any>;
+}
+
+export interface AiAssistantConversation {
+  id: number;
+  title: string;
+  messageCount: number;
+  lastMessageAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AiAssistantToolDefinition {
-  name: string
-  label: string
-  description: string
-  category: string
-  readOnly: boolean
-  runtime: string
-  inputSchema: Record<string, any>
-  examples?: string[]
+  name: string;
+  label: string;
+  description: string;
+  category: string;
+  readOnly: boolean;
+  runtime: string;
+  inputSchema: Record<string, any>;
+  examples?: string[];
 }
 
 export interface AiAssistantCapabilityGroup {
-  key: string
-  label: string
-  description: string
-  tools: AiAssistantToolDefinition[]
+  key: string;
+  label: string;
+  description: string;
+  tools: AiAssistantToolDefinition[];
 }
 
 export interface AiAssistantCapabilityCatalog {
-  total: number
-  summary: string
-  groups: AiAssistantCapabilityGroup[]
+  total: number;
+  summary: string;
+  groups: AiAssistantCapabilityGroup[];
 }
 
 export interface AiAssistantMessage {
-  id: number
-  role: 'user' | 'assistant' | 'tool'
-  content: string
-  routePath: string | null
-  routeTitle: string | null
-  pageContext: AiAssistantPageContext | null
-  toolKey: string | null
-  toolLabel: string | null
-  toolInput: Record<string, any> | null
-  toolResult: Record<string, any> | null
-  createdAt: string
+  id: number;
+  conversationId: number | null;
+  role: "user" | "assistant" | "tool";
+  content: string;
+  routePath: string | null;
+  routeTitle: string | null;
+  pageContext: AiAssistantPageContext | null;
+  toolKey: string | null;
+  toolLabel: string | null;
+  toolInput: Record<string, any> | null;
+  toolResult: Record<string, any> | null;
+  createdAt: string;
 }
 
 export interface AiAssistantChatResult {
-  reply: string
+  conversation: AiAssistantConversation;
+  reply: string;
   toolCalls: Array<{
-    tool: string
-    reason: string
-    input: Record<string, any>
-  }>
-  messages: AiAssistantMessage[]
+    tool: string;
+    reason: string;
+    input: Record<string, any>;
+  }>;
+  messages: AiAssistantMessage[];
 }
 
 export const AiAssistantApi = {
-  getMessages: async (limit = 80) => {
-    return request.get<AiAssistantMessage[]>({
-      url: '/ai-assistant/messages',
-      params: {
-        limit
-      }
-    })
+  getConversations: async () => {
+    return request.get<AiAssistantConversation[]>({
+      url: "/ai-assistant/conversations",
+    });
   },
 
-  clearMessages: async () => {
+  createConversation: async (title?: string) => {
+    return request.post<AiAssistantConversation>({
+      url: "/ai-assistant/conversations",
+      data: {
+        title,
+      },
+    });
+  },
+
+  deleteConversation: async (conversationId: number) => {
     return request.delete({
-      url: '/ai-assistant/messages'
-    })
+      url: `/ai-assistant/conversations/${conversationId}`,
+    });
+  },
+
+  getMessages: async (limit = 80, conversationId?: number | null) => {
+    return request.get<AiAssistantMessage[]>({
+      url: "/ai-assistant/messages",
+      params: {
+        limit,
+        conversationId: conversationId || undefined,
+      },
+    });
+  },
+
+  clearMessages: async (conversationId?: number | null) => {
+    return request.delete({
+      url: "/ai-assistant/messages",
+      params: {
+        conversationId: conversationId || undefined,
+      },
+    });
   },
 
   getTools: async () => {
     return request.get<{
-      tools: AiAssistantToolDefinition[]
+      tools: AiAssistantToolDefinition[];
     }>({
-      url: '/ai-assistant/tools'
-    })
+      url: "/ai-assistant/tools",
+    });
   },
 
   getCapabilityCatalog: async () => {
     return request.get<AiAssistantCapabilityCatalog>({
-      url: '/ai-assistant/capabilities'
-    })
+      url: "/ai-assistant/capabilities",
+    });
   },
 
-  chat: async (message: string, pageContext?: AiAssistantPageContext) => {
+  chat: async (
+    message: string,
+    pageContext?: AiAssistantPageContext,
+    conversationId?: number | null,
+  ) => {
     return request.post<AiAssistantChatResult>({
-      url: '/ai-assistant/chat',
+      url: "/ai-assistant/chat",
       data: {
         message,
-        pageContext
-      }
-    })
-  }
-}
+        pageContext,
+        conversationId: conversationId || undefined,
+      },
+    });
+  },
+};
