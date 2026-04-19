@@ -1,233 +1,316 @@
 <template>
-  <div class="hot-search-container">
-    <div class="header">
-      <div class="title-section">
-        <span class="title">热搜</span>
-        <span v-if="lastUpdateTime" class="update-time">
-          更新时间：{{ formatUpdateTime(lastUpdateTime) }}
-        </span>
-      </div>
-      <el-button size="small" text @click="refreshData" :loading="loading">
-        刷新
-      </el-button>
-    </div>
-
-    <div class="content-section" v-loading="loading">
-        <!-- 所有平台的热搜数据 -->
-        <div
-          v-for="platform in platformsWithData"
-          :key="platform.key"
-          class="platform-section"
-        >
-          <div class="platform-header">
-            <span class="platform-name">{{ platform.label }}</span>
-          </div>
-
-          <div class="hotsearch-list">
-              <div
-                v-for="(item, index) in getPlatformData(platform.key)"
-                :key="index"
-                class="hotsearch-item"
-                :class="{ 'is-hot': index < 5 }"
-              >
-              <div class="item-rank">{{ index + 1 }}</div>
-              <div class="item-content">
-                <div class="item-title">{{ getTitle(item) }}</div>
-              </div>
-            </div>
+  <div class="hot-search-page">
+    <ContentWrap plain>
+      <div class="hot-search-page__header">
+        <div class="hot-search-page__title-wrap">
+          <div class="hot-search-page__title">热搜</div>
+          <div v-if="lastUpdateTime" class="hot-search-page__meta">
+            最近更新 {{ formatUpdateTime(lastUpdateTime) }}
           </div>
         </div>
+        <el-button :loading="loading" size="small" @click="refreshData">
+          刷新
+        </el-button>
+      </div>
+    </ContentWrap>
 
-        <div v-if="!hasAnyData" class="empty">暂无热搜数据</div>
+    <div v-loading="loading" class="hot-search-page__content">
+      <template v-if="platformSections.length">
+        <section
+          v-for="platform in platformSections"
+          :key="platform.key"
+          class="platform-block"
+        >
+          <header class="platform-block__header">
+            <div class="platform-block__title-wrap">
+              <div class="platform-block__title">{{ platform.label }}</div>
+              <div class="platform-block__sub">
+                {{ platform.items.length }} 条
+                <span v-if="platform.timestamp">
+                  · {{ formatUpdateTime(platform.timestamp) }}
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <div class="platform-block__list">
+            <a
+              v-for="(item, index) in platform.items"
+              :key="`${platform.key}-${index}-${item.title}`"
+              class="hot-item"
+              :class="{ 'is-top': index < 3 }"
+              :href="item.url || undefined"
+              :target="item.url ? '_blank' : undefined"
+              :rel="item.url ? 'noreferrer noopener' : undefined"
+            >
+              <div class="hot-item__rank">{{ item.rank }}</div>
+              <div class="hot-item__content">
+                <div class="hot-item__title-row">
+                  <div class="hot-item__title">{{ item.title }}</div>
+                  <span v-if="item.tag" class="hot-item__tag">{{ item.tag }}</span>
+                </div>
+                <div v-if="item.hotText || item.subText" class="hot-item__meta">
+                  <span v-if="item.hotText" class="hot-item__hot">{{ item.hotText }}</span>
+                  <span v-if="item.subText" class="hot-item__sub">{{ item.subText }}</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </section>
+      </template>
+
+      <el-empty
+        v-else
+        :image-size="88"
+        description="暂无热搜数据"
+        class="hot-search-page__empty"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { getAllHotsearch } from '@/api/hotsearch'
-import type { HotsearchItem } from '@/api/hotsearch'
+import ContentWrap from '@/components/ContentWrap/src/ContentWrap.vue'
+import { getAllHotsearch, refreshHotsearch } from '@/api/hotsearch'
+import type { HotsearchData, HotsearchItem, HotsearchResponse } from '@/api/hotsearch'
 
-interface Platform {
+defineOptions({ name: 'HotSearch' })
+
+interface PlatformConfig {
   key: string
   label: string
-  icon: string
+  limit?: number
 }
 
-const loading = ref(false)
-const hotsearchData = ref<Record<string, any>>({})
-const lastUpdateTime = ref<string>('')
+interface NormalizedHotItem {
+  title: string
+  rank: number
+  hotText: string
+  subText: string
+  tag: string
+  url: string
+}
 
-/**
- * 平台配置说明
- * key: 后端返回的数据中的 key（平台名称）
- * label: 前端显示的平台名称
- * icon: 平台图标
- * 
- * 后端数据结构：
- * {
- *   success: true,
- *   data: {
- *     weibo: {
- *       key: "0",
- *       data: [...], // 热搜数据数组
- *       timestamp: "2025-10-27T14:31:55.252Z",
- *       expireAt: "2025-10-28T14:31:55.252Z",
- *       category: "hotsearch",
- *       platform: "weibo",
- *       platformIndex: "0"
- *     },
- *     // 其他平台...
- *   },
- *   timestamp: "2025-10-27T14:31:55.252Z"
- * }
- * 
- * 平台对应关系：
- * weibo - 微博 - 有 title, hot(数值), rank, label, icon
- * douyin - 抖音 - 有 title, hot(数值), rank, video_count, label
- * ks - 快手 - 有 title, hot(字符串，如"1326.9万"), rank, tag, cover, icon
- * toutiao - 今日头条 - 有 title, hot(字符串，如"35587688"), rank, tag, cover, icon, url
- * bilibili - 哔哩哔哩 - 有 title, hot(数值), rank, icon, keyword, url
- * zhihu - 知乎 - 有 title, hot, rank, icon, type, uuid
- * douban - 豆瓣 - 有 title, hot, rank, subtitle, type, url, id（hot为浏览数字符串）
- * music - 酷狗音乐 - 有 title, songName, artist, rank, duration, url, isNew, hot
- */
-const platforms: Platform[] = [
-  { key: 'weibo', label: '微博', icon: 'ep:s-promotion' },
-  { key: 'douyin', label: '抖音', icon: 'ep:video-camera' },
-  { key: 'ks', label: '快手', icon: 'ep:video-camera-filled' },
-  { key: 'toutiao', label: '今日头条', icon: 'ep:document' },
-  { key: 'bilibili', label: '哔哩哔哩', icon: 'ep:video-play' },
-  { key: 'zhihu', label: '知乎', icon: 'ep:question-filled' },
-  { key: 'douban', label: '豆瓣', icon: 'ep:star' },
-  { key: 'music', label: '酷狗音乐', icon: 'ep:microphone' }
+interface PlatformSection {
+  key: string
+  label: string
+  timestamp: string
+  items: NormalizedHotItem[]
+}
+
+const platformConfigs: PlatformConfig[] = [
+  { key: 'weibo', label: '微博', limit: 10 },
+  { key: 'douyin', label: '抖音', limit: 16 },
+  { key: 'ks', label: '快手', limit: 16 },
+  { key: 'toutiao', label: '今日头条', limit: 16 },
+  { key: 'bilibili', label: '哔哩哔哩', limit: 16 },
+  { key: 'zhihu', label: '知乎', limit: 16 },
+  { key: 'douban', label: '豆瓣', limit: 16 },
+  { key: 'music', label: '酷狗音乐', limit: 16 }
 ]
 
-const hasAnyData = computed(() => {
-  return Object.keys(hotsearchData.value).length > 0
-})
+const loading = ref(false)
+const hotsearchData = ref<Record<string, HotsearchData>>({})
+const lastUpdateTime = ref('')
 
-const platformsWithData = computed(() => {
-  return platforms.filter(platform => {
-    const platformData = hotsearchData.value[platform.key]
-    // 后端数据结构：platformData.data 是热搜数据数组
-    return platformData && platformData.data && Array.isArray(platformData.data) && platformData.data.length > 0
-  })
-})
+const platformSections = computed<PlatformSection[]>(() => {
+  return platformConfigs
+    .map((platform) => {
+      const data = hotsearchData.value[platform.key]
+      const items = Array.isArray(data?.data) ? data.data : []
+      const normalizedItems = items
+        .map((item, index) => normalizeItem(item, index))
+        .filter((item) => item.title)
+        .slice(0, platform.limit ?? items.length)
 
-const getPlatformData = (platformKey: string) => {
-  const platformData = hotsearchData.value[platformKey]
-  // 后端数据结构：platformData.data 是热搜数据数组
-  const items = platformData?.data || []
-  
-  // 微博只显示前10条
-  if (platformKey === 'weibo') {
-    return items.slice(0, 10)
-  }
-  
-  return items
-}
-
-/**
- * 获取热搜标题
- * 不同平台使用不同的字段名表示标题
- */
-const getTitle = (item: HotsearchItem) => {
-  return item.title || item.word || item.name || item.songName || '未知'
-}
-
-/**
- * 获取热度值
- * 不同平台的热度表示方式不同：
- * - 微博/抖音：直接是数字或字符串
- * - 豆瓣：使用 subtitle 显示"xxx篇内容 · xxx次浏览"
- * - 酷狗音乐：使用 hot 字段显示"新入榜"等标签
- */
-const getHot = (item: HotsearchItem) => {
-  // 不同平台的热度字段可能不同，兼容各种格式
-  const hot = item.hot || item.hotValue || item.num || ''
-  // 豆瓣的特殊处理：显示浏览数
-  if (item.subtitle) {
-    return item.subtitle
-  }
-  // 酷狗的特殊处理：显示热度标签
-  if (item.isNew && item.hot) {
-    return item.hot
-  }
-  return hot
-}
-
-const fetchData = async () => {
-  loading.value = true
-  try {
-    const res = await getAllHotsearch()
-    if (res.success && res.data) {
-      hotsearchData.value = res.data as Record<string, any>
-      
-      // 计算最新的更新时间
-      const timestamps: string[] = []
-      Object.values(hotsearchData.value).forEach((platformData: any) => {
-        // 后端数据结构：platformData.timestamp 是每个平台的更新时间
-        if (platformData.timestamp) {
-          timestamps.push(platformData.timestamp)
-        }
-      })
-      
-      if (timestamps.length > 0) {
-        // 找到最新的时间戳
-        lastUpdateTime.value = timestamps.sort().pop() || ''
+      return {
+        key: platform.key,
+        label: data?.name || platform.label,
+        timestamp: data?.timestamp || '',
+        items: normalizedItems
       }
-      
+    })
+    .filter((platform) => platform.items.length > 0)
+})
+
+const normalizeResponseData = (payload: HotsearchResponse | Record<string, any> | undefined) => {
+  if (!payload || typeof payload !== 'object') {
+    return {}
+  }
+
+  const source = 'data' in payload && payload.data && typeof payload.data === 'object'
+    ? payload.data
+    : payload
+
+  if (!source || typeof source !== 'object' || Array.isArray(source)) {
+    return {}
+  }
+
+  return Object.entries(source).reduce<Record<string, HotsearchData>>((result, [key, value]) => {
+    if (!value || typeof value !== 'object') {
+      return result
+    }
+
+    const current = value as Record<string, any>
+    const items = Array.isArray(current.data)
+      ? current.data
+      : Array.isArray(current.list)
+        ? current.list
+        : []
+
+    result[key] = {
+      key: String(current.key || key),
+      data: items,
+      timestamp: String(current.timestamp || current.updatedAt || ''),
+      expireAt: String(current.expireAt || ''),
+      category: current.category,
+      platform: String(current.platform || key),
+      name: String(current.name || current.label || key),
+      platformIndex: String(current.platformIndex || '')
+    }
+    return result
+  }, {})
+}
+
+const normalizeItem = (item: HotsearchItem, index: number): NormalizedHotItem => {
+  const title = String(
+    item.title ||
+      item.word ||
+      item.name ||
+      item.songName ||
+      item.keyword ||
+      item.desc ||
+      ''
+  ).trim()
+
+  const hotText = formatHot(item)
+  const subText = String(item.subtitle || item.note || item.artist || item.icon_desc || '').trim()
+  const tag = String(item.label || item.tag || item.type || item.flag || '').trim()
+  const url = String(item.url || item.scheme || item.word_scheme || '').trim()
+  const rank = Number(item.rank || index + 1)
+
+  return {
+    title,
+    rank: Number.isFinite(rank) && rank > 0 ? rank : index + 1,
+    hotText,
+    subText,
+    tag,
+    url
+  }
+}
+
+const formatHot = (item: HotsearchItem) => {
+  if (item.subtitle) {
+    return ''
+  }
+
+  const value = item.hot ?? item.hotValue ?? item.num ?? item.video_count ?? ''
+  if (value === null || value === undefined || value === '') {
+    return ''
+  }
+
+  if (typeof value === 'number') {
+    return `热度 ${value.toLocaleString()}`
+  }
+
+  const text = String(value).trim()
+  if (!text) {
+    return ''
+  }
+
+  if (/^\d+$/.test(text)) {
+    return `热度 ${Number(text).toLocaleString()}`
+  }
+
+  return text
+}
+
+const refreshLastUpdateTime = (data: Record<string, HotsearchData>) => {
+  const timestamps = Object.values(data)
+    .map((item) => item.timestamp)
+    .filter(Boolean)
+    .sort()
+
+  lastUpdateTime.value = timestamps.at(-1) || ''
+}
+
+const fetchData = async (options?: { silent?: boolean; keepLoading?: boolean }) => {
+  if (!options?.keepLoading) {
+    loading.value = true
+  }
+
+  try {
+    const response = await getAllHotsearch()
+    const normalized = normalizeResponseData(response)
+    hotsearchData.value = normalized
+    refreshLastUpdateTime(normalized)
+
+    if (!options?.silent) {
       ElMessage.success('热搜数据已更新')
     }
   } catch (error) {
-    ElMessage.error('获取热搜数据失败')
     console.error('获取热搜数据失败:', error)
+    if (!options?.silent) {
+      ElMessage.error('获取热搜数据失败')
+    }
+  } finally {
+    if (!options?.keepLoading) {
+      loading.value = false
+    }
+  }
+}
+
+const refreshData = async () => {
+  loading.value = true
+  try {
+    await refreshHotsearch()
+    await fetchData({ silent: true, keepLoading: true })
+    ElMessage.success('热搜数据已刷新')
+  } catch (error) {
+    console.error('刷新热搜数据失败:', error)
+    ElMessage.error('刷新热搜数据失败')
   } finally {
     loading.value = false
   }
 }
 
-const refreshData = () => {
-  fetchData()
-}
-
-/**
- * 格式化更新时间显示
- * @param timestamp ISO时间字符串
- * @returns 格式化后的时间字符串
- */
 const formatUpdateTime = (timestamp: string) => {
-  if (!timestamp) return ''
-  
+  if (!timestamp) {
+    return ''
+  }
+
   const date = new Date(timestamp)
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  
-  // 计算时间差
+  if (Number.isNaN(date.getTime())) {
+    return timestamp
+  }
+
+  const diff = Date.now() - date.getTime()
   const minutes = Math.floor(diff / (1000 * 60))
   const hours = Math.floor(diff / (1000 * 60 * 60))
   const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  
+
   if (minutes < 1) {
     return '刚刚'
-  } else if (minutes < 60) {
-    return `${minutes}分钟前`
-  } else if (hours < 24) {
-    return `${hours}小时前`
-  } else if (days < 7) {
-    return `${days}天前`
-  } else {
-    // 超过7天显示具体日期
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
   }
+  if (minutes < 60) {
+    return `${minutes} 分钟前`
+  }
+  if (hours < 24) {
+    return `${hours} 小时前`
+  }
+  if (days < 7) {
+    return `${days} 天前`
+  }
+
+  return date.toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 onMounted(() => {
@@ -235,153 +318,189 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="less">
-.hot-search-container {
-  padding: 12px 16px;
-  
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    
-    .title-section {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      
-      .title {
-        font-size: 16px;
-        font-weight: 600;
-        color: #303133;
-      }
-      
-      .update-time {
-        font-size: 12px;
-        color: #909399;
-        font-weight: 400;
-      }
-    }
-  }
-  
-  .content-section {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
+<style scoped lang="scss">
+.hot-search-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 100%;
+}
 
-    .platform-section {
-      border: 1px solid #e8e9ec;
-      border-radius: 6px;
-      padding: 10px;
-      background: #fafbfc;
+.hot-search-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 2px;
+}
 
-      .platform-header {
-        font-size: 14px;
-        font-weight: 600;
-        color: #303133;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid #f0f1f3;
-      }
+.hot-search-page__title-wrap {
+  min-width: 0;
+}
 
-      .hotsearch-list {
-        .hotsearch-item {
-          display: flex;
-          align-items: flex-start;
-          gap: 6px;
-          padding: 3px 0;
-          
-          &.is-hot {
-            .item-rank {
-              color: #f56c6c;
-              font-weight: 600;
-              font-size: 12px;
-            }
-            
-            .item-content {
-              .item-title {
-                color: #303133;
-                font-weight: 500;
-                font-size: 13px;
-              }
-            }
-          }
+.hot-search-page__title {
+  color: var(--el-text-color-primary);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
 
-          .item-rank {
-            min-width: 18px;
-            font-size: 11px;
-            font-weight: 500;
-            color: #9ea3b0;
-            flex-shrink: 0;
-          }
+.hot-search-page__meta {
+  margin-top: 6px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
 
-          .item-content {
-            flex: 1;
-            min-width: 0;
-            
-            .item-title {
-              margin-bottom: 2px;
-              word-break: break-word;
-              line-height: 1.4;
-              color: #606266;
-              font-size: 12px;
-            }
+.hot-search-page__content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
 
-            .item-meta {
-              font-size: 10px;
-              color: #909399;
-              
-              .item-hot {
-                color: #f56c6c;
-                font-weight: 500;
-              }
+.platform-block {
+  overflow: hidden;
+  border: 1px solid var(--app-content-border-color);
+  border-radius: 18px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--app-content-surface-muted-color) 72%, transparent 28%) 0%,
+      var(--app-content-surface-color) 100%
+    );
+  box-shadow: var(--app-content-shadow);
+}
 
-              .item-label {
-                color: #909399;
-                padding: 1px 4px;
-                background: #f5f7fa;
-                border-radius: 2px;
-              }
-            }
-          }
-        }
-      }
-    }
+.platform-block__header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-content-border-color) 78%, transparent 22%);
+}
 
-    .empty {
-      text-align: center;
-      color: #9ea3b0;
-      padding: 20px;
-      grid-column: 1 / -1;
-    }
+.platform-block__title {
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.platform-block__sub {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.platform-block__list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px 10px;
+}
+
+.hot-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 11px 10px;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    background-color var(--el-transition-duration-fast),
+    transform var(--el-transition-duration-fast);
+
+  &:hover {
+    background: color-mix(in srgb, var(--el-fill-color-light) 82%, transparent 18%);
   }
 }
 
-// 移动端适配
+.hot-item__rank {
+  display: flex;
+  width: 24px;
+  min-width: 24px;
+  justify-content: center;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.hot-item.is-top .hot-item__rank {
+  color: var(--el-color-primary);
+}
+
+.hot-item__content {
+  min-width: 0;
+  flex: 1;
+}
+
+.hot-item__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.hot-item__title {
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.hot-item__tag {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--el-color-primary-light-9) 88%, transparent 12%);
+  color: var(--el-color-primary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.hot-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hot-item__hot {
+  color: var(--el-color-danger);
+}
+
+.hot-search-page__empty {
+  grid-column: 1 / -1;
+  padding: 48px 0 18px;
+  border: 1px dashed var(--app-content-border-color);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--app-content-surface-muted-color) 65%, transparent 35%);
+}
+
 @media (max-width: 768px) {
-  .hot-search-container {
-    padding: 8px;
-    
-    .content-section {
-      grid-template-columns: 1fr;
-      gap: 10px;
+  .hot-search-page__header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 
-      .platform-section {
-        .platform-header {
-          font-size: 13px;
-          margin-bottom: 6px;
-        }
+  .hot-search-page__content {
+    grid-template-columns: 1fr;
+  }
 
-        .hotsearch-item {
-          font-size: 12px;
+  .platform-block {
+    border-radius: 16px;
+  }
 
-          .item-rank {
-            min-width: 18px;
-            font-size: 11px;
-          }
-        }
-      }
-    }
+  .platform-block__header {
+    padding: 14px 14px 10px;
+  }
+
+  .platform-block__list {
+    padding: 4px 8px 8px;
   }
 }
 </style>

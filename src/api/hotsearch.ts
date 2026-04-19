@@ -28,6 +28,9 @@ export interface HotsearchData {
   category?: string
   platform: string
   platformIndex: string
+  name?: string
+  success?: boolean
+  error?: string
 }
 
 export interface HotsearchResponse {
@@ -36,11 +39,19 @@ export interface HotsearchResponse {
   timestamp?: string
   message?: string
   count?: number
+  summary?: Record<string, any>
 }
 
 /**
- * 获取所有平台的热搜数据
+ * 获取当前热搜数据
  */
 export const getAllHotsearch = () => {
-  return request.post<HotsearchResponse>({ url: '/data/category/hotsearch' })
+  return request.get<HotsearchResponse>({ url: '/hotsearch/current' })
+}
+
+/**
+ * 刷新热搜缓存
+ */
+export const refreshHotsearch = () => {
+  return request.post<HotsearchResponse>({ url: '/hotsearch/refresh' })
 }
