@@ -20,6 +20,19 @@ export interface AiAssistantToolDefinition {
   examples?: string[]
 }
 
+export interface AiAssistantCapabilityGroup {
+  key: string
+  label: string
+  description: string
+  tools: AiAssistantToolDefinition[]
+}
+
+export interface AiAssistantCapabilityCatalog {
+  total: number
+  summary: string
+  groups: AiAssistantCapabilityGroup[]
+}
+
 export interface AiAssistantMessage {
   id: number
   role: 'user' | 'assistant' | 'tool'
@@ -65,6 +78,12 @@ export const AiAssistantApi = {
       tools: AiAssistantToolDefinition[]
     }>({
       url: '/ai-assistant/tools'
+    })
+  },
+
+  getCapabilityCatalog: async () => {
+    return request.get<AiAssistantCapabilityCatalog>({
+      url: '/ai-assistant/capabilities'
     })
   },
 

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import {
   AiAssistantApi,
+  type AiAssistantCapabilityCatalog,
   type AiAssistantChatResult,
   type AiAssistantMessage,
   type AiAssistantPageContext,
@@ -24,6 +25,14 @@ const normalizeTools = (payload: any): AiAssistantToolDefinition[] => {
   return Array.isArray(data?.tools) ? data.tools : []
 }
 
+const normalizeCapabilityCatalog = (payload: any): AiAssistantCapabilityCatalog | null => {
+  const data = unwrapPayload<any>(payload)
+  if (!data || typeof data !== 'object' || !Array.isArray(data.groups)) {
+    return null
+  }
+  return data as AiAssistantCapabilityCatalog
+}
+
 const normalizeChatResult = (payload: any): AiAssistantChatResult | null => {
   const data = unwrapPayload<any>(payload)
   if (!data || typeof data !== 'object' || !Array.isArray(data.messages)) {
@@ -36,11 +45,14 @@ export const useAiAssistantStore = defineStore('aiAssistant', {
   state: () => ({
     messages: [] as AiAssistantMessage[],
     tools: [] as AiAssistantToolDefinition[],
+    capabilityCatalog: null as AiAssistantCapabilityCatalog | null,
     loadingHistory: false,
     toolsLoading: false,
+    capabilityCatalogLoading: false,
     sending: false,
     loadedHistory: false,
-    loadedTools: false
+    loadedTools: false,
+    loadedCapabilityCatalog: false
   }),
   getters: {
     messageCount: (state) => state.messages.length
@@ -90,6 +102,24 @@ export const useAiAssistantStore = defineStore('aiAssistant', {
         this.loadedTools = true
       } finally {
         this.toolsLoading = false
+      }
+    },
+
+    async loadCapabilityCatalog(force = false) {
+      if (this.capabilityCatalogLoading) {
+        return
+      }
+      if (this.loadedCapabilityCatalog && !force) {
+        return
+      }
+
+      this.capabilityCatalogLoading = true
+      try {
+        const payload = await AiAssistantApi.getCapabilityCatalog()
+        this.capabilityCatalog = normalizeCapabilityCatalog(payload)
+        this.loadedCapabilityCatalog = true
+      } finally {
+        this.capabilityCatalogLoading = false
       }
     },
 
