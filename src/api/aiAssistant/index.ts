@@ -18,6 +18,30 @@ export interface AiAssistantConversation {
   updatedAt: string;
 }
 
+export interface AiAssistantToolSchemaProperty {
+  type?: string | string[];
+  label?: string;
+  description?: string;
+  enum?: any[];
+  default?: any;
+  example?: any;
+  aliases?: string[];
+  items?: Record<string, any>;
+}
+
+export interface AiAssistantToolExampleCase {
+  title: string;
+  prompt: string;
+  description?: string;
+  input?: Record<string, any>;
+}
+
+export interface AiAssistantToolInputSchema {
+  type?: string;
+  required?: string[];
+  properties?: Record<string, AiAssistantToolSchemaProperty>;
+}
+
 export interface AiAssistantToolDefinition {
   name: string;
   label: string;
@@ -25,8 +49,9 @@ export interface AiAssistantToolDefinition {
   category: string;
   readOnly: boolean;
   runtime: string;
-  inputSchema: Record<string, any>;
+  inputSchema: AiAssistantToolInputSchema;
   examples?: string[];
+  exampleCases?: AiAssistantToolExampleCase[];
 }
 
 export interface AiAssistantCapabilityGroup {

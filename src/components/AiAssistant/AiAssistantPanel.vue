@@ -276,11 +276,90 @@
                 </div>
 
                 <div
-                  v-if="tool.examples?.length"
-                  class="ai-assistant-panel__capability-item-examples"
+                  v-if="getToolInputFields(tool).length"
+                  class="ai-assistant-panel__capability-item-section"
                 >
-                  <span>示例提问</span>
-                  <span>{{ tool.examples.join(" / ") }}</span>
+                  <div class="ai-assistant-panel__capability-item-section-title">参数说明</div>
+
+                  <div class="ai-assistant-panel__capability-param-list">
+                    <div
+                      v-for="item in getToolInputFields(tool)"
+                      :key="`${tool.name}:${item.key}`"
+                      class="ai-assistant-panel__capability-param-item"
+                    >
+                      <div class="ai-assistant-panel__capability-param-head">
+                        <div class="ai-assistant-panel__capability-param-title">
+                          <span>{{ item.field.label || item.key }}</span>
+                          <code>{{ item.key }}</code>
+                        </div>
+
+                        <div class="ai-assistant-panel__capability-param-tags">
+                          <Tag>{{ formatSchemaType(item.field.type) }}</Tag>
+                          <Tag v-if="item.required" color="error">必填</Tag>
+                        </div>
+                      </div>
+
+                      <div class="ai-assistant-panel__capability-param-desc">
+                        {{ item.field.description || "无额外说明" }}
+                      </div>
+
+                      <div
+                        v-if="
+                          item.field.aliases?.length ||
+                          item.field.enum?.length ||
+                          item.field.default !== undefined ||
+                          item.field.example !== undefined
+                        "
+                        class="ai-assistant-panel__capability-param-meta"
+                      >
+                        <span v-if="item.field.aliases?.length">
+                          别名：{{ item.field.aliases.join(" / ") }}
+                        </span>
+                        <span v-if="item.field.enum?.length">
+                          枚举：{{ formatSchemaEnum(item.field.enum) }}
+                        </span>
+                        <span v-if="item.field.default !== undefined">
+                          默认值：{{ formatSchemaValue(item.field.default) }}
+                        </span>
+                        <span v-if="item.field.example !== undefined">
+                          示例值：{{ formatSchemaValue(item.field.example) }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  v-if="getToolExampleCases(tool).length"
+                  class="ai-assistant-panel__capability-item-section"
+                >
+                  <div class="ai-assistant-panel__capability-item-section-title">使用案例</div>
+
+                  <div class="ai-assistant-panel__capability-case-list">
+                    <div
+                      v-for="(caseItem, caseIndex) in getToolExampleCases(tool)"
+                      :key="`${tool.name}:case:${caseIndex}`"
+                      class="ai-assistant-panel__capability-case-item"
+                    >
+                      <div class="ai-assistant-panel__capability-case-title">
+                        {{ caseItem.title || `示例 ${caseIndex + 1}` }}
+                      </div>
+                      <div class="ai-assistant-panel__capability-case-prompt">
+                        {{ caseItem.prompt }}
+                      </div>
+                      <div
+                        v-if="caseItem.description"
+                        class="ai-assistant-panel__capability-case-desc"
+                      >
+                        {{ caseItem.description }}
+                      </div>
+                      <pre
+                        v-if="caseItem.input && Object.keys(caseItem.input).length"
+                        class="ai-assistant-panel__capability-case-input"
+                        >{{ formatJson(caseItem.input) }}</pre
+                      >
+                    </div>
+                  </div>
                 </div>
               </article>
             </div>
@@ -307,7 +386,12 @@ import { Avatar, Button, Drawer, Popconfirm, Tabs, Tag } from "ant-design-vue";
 import { Actions, BubbleList, Conversations, Sender, ThoughtChain } from "ant-design-x-vue";
 import type { ActionItem, ThoughtChainItem } from "ant-design-x-vue";
 import { ElMessage } from "element-plus";
-import type { AiAssistantPageContext } from "@/api/aiAssistant";
+import type {
+  AiAssistantPageContext,
+  AiAssistantToolDefinition,
+  AiAssistantToolExampleCase,
+  AiAssistantToolSchemaProperty,
+} from "@/api/aiAssistant";
 import {
   useAiAssistantRuntime,
   type AssistantBubbleItem,
@@ -709,6 +793,12 @@ const handleHeroAction = async ({ key }: { key: string }) => {
   }
 };
 
+type ToolInputFieldItem = {
+  key: string;
+  field: AiAssistantToolSchemaProperty;
+  required: boolean;
+};
+
 const summarizeInputSchema = (value: Record<string, any> | null | undefined) => {
   const properties =
     value && typeof value === "object" && value.properties && typeof value.properties === "object"
@@ -720,6 +810,61 @@ const summarizeInputSchema = (value: Record<string, any> | null | undefined) => 
   }
 
   return `参数：${properties.join("、")}`;
+};
+
+const getToolInputFields = (tool: AiAssistantToolDefinition): ToolInputFieldItem[] => {
+  const properties =
+    tool.inputSchema &&
+    typeof tool.inputSchema === "object" &&
+    tool.inputSchema.properties &&
+    typeof tool.inputSchema.properties === "object"
+      ? tool.inputSchema.properties
+      : {};
+  const requiredSet = new Set(
+    Array.isArray(tool.inputSchema?.required) ? tool.inputSchema.required : [],
+  );
+
+  return Object.entries(properties).map(([key, field]) => ({
+    key,
+    field: (field || {}) as AiAssistantToolSchemaProperty,
+    required: requiredSet.has(key),
+  }));
+};
+
+const formatSchemaType = (value: AiAssistantToolSchemaProperty["type"]) => {
+  if (Array.isArray(value)) {
+    return value.join(" / ");
+  }
+  return String(value || "any");
+};
+
+const formatSchemaValue = (value: unknown) => {
+  if (Array.isArray(value)) {
+    return value.join(" / ");
+  }
+  if (value && typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  return String(value);
+};
+
+const formatSchemaEnum = (values: unknown[] | undefined) => {
+  return Array.isArray(values) ? values.map((value) => formatSchemaValue(value)).join(" / ") : "";
+};
+
+const getToolExampleCases = (tool: AiAssistantToolDefinition): AiAssistantToolExampleCase[] => {
+  if (Array.isArray(tool.exampleCases) && tool.exampleCases.length) {
+    return tool.exampleCases;
+  }
+
+  if (Array.isArray(tool.examples) && tool.examples.length) {
+    return tool.examples.map((prompt, index) => ({
+      title: `示例 ${index + 1}`,
+      prompt,
+    }));
+  }
+
+  return [];
 };
 
 const buildToolBubbleActions = (item: unknown): ActionItem[] => {
@@ -1354,17 +1499,108 @@ watch(
     gap: 8px;
   }
 
-  &__capability-item-examples {
+  &__capability-item-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__capability-item-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text);
+  }
+
+  &__capability-param-list,
+  &__capability-case-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__capability-param-item,
+  &__capability-case-item {
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--ai-panel-soft-bg);
+  }
+
+  &__capability-param-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  &__capability-param-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+    color: var(--ai-text);
+    font-size: 12px;
+    font-weight: 600;
+
+    code {
+      padding: 1px 6px;
+      border-radius: 999px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--ai-text-secondary);
+      background: color-mix(in srgb, var(--ai-text) 6%, transparent 94%);
+    }
+  }
+
+  &__capability-param-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  &__capability-param-desc,
+  &__capability-case-desc {
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--ai-text-secondary);
+  }
+
+  &__capability-param-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     font-size: 12px;
     line-height: 1.7;
     color: var(--ai-text-secondary);
+  }
 
-    span:first-child {
-      color: var(--ai-text-tertiary);
-    }
+  &__capability-case-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text);
+  }
+
+  &__capability-case-prompt {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--ai-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__capability-case-input {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--ai-text) 4%, transparent 96%);
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--ai-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 }
 
@@ -1680,6 +1916,15 @@ watch(
     &__detail-block {
       margin-top: 14px;
       padding-top: 12px;
+    }
+
+    &__capability-param-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    &__capability-param-tags {
+      justify-content: flex-start;
     }
 
     &__capability-item {
