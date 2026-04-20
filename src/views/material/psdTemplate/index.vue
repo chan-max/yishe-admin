@@ -1436,8 +1436,8 @@ function handleAdd() {
     windowsLocalPath: "",
     thumbnail: "",
     thumbnailFile: null,
-    psdTemplateConfig: null,
-    psdTemplateConfigText: "",
+    psdTemplateConfig: createDefaultPsdTemplateConfig(),
+    psdTemplateConfigText: stringifyPsdTemplateConfig(createDefaultPsdTemplateConfig()),
     enabled: false, // 默认不可用
     size: 0,
     suitableSizesArray: [],
@@ -2045,6 +2045,24 @@ function parsePsdInfoText(text: string): any {
       );
     }
   }
+}
+
+function createDefaultPsdTemplateConfig() {
+  return {
+    psd_path: "",
+    smart_objects: [
+      {
+        image_path: "",
+        resize_mode: "cover",
+        tile_size: 512,
+      },
+    ],
+    verbose: true,
+  };
+}
+
+function stringifyPsdTemplateConfig(config: any) {
+  return JSON.stringify(config, null, 2);
 }
 
 // 查看psd模板配置

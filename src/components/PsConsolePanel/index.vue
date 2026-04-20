@@ -15,16 +15,6 @@
         <el-button type="primary" :disabled="!selectedClient" @click="operationDialogVisible = true"
           >打开操作面板</el-button
         >
-        <el-button
-          :disabled="!selectedClient"
-          @click="handleSelectedClientCommand('refreshRuntime')"
-          >刷新服务</el-button
-        >
-        <el-button
-          :disabled="!selectedClient"
-          @click="handleSelectedClientCommand('health', {}, 'maintenance')"
-          >检测服务</el-button
-        >
         <el-button type="primary" @click="refreshClients">刷新节点</el-button>
       </div>
     </div>
@@ -49,20 +39,10 @@
                 {{ selectedClientDisplayName }}
               </div>
             </div>
-            <div class="ops-panel__actions" v-if="selectedClient">
-              <el-button @click="handleSelectedClientCommand('refreshRuntime')">刷新状态</el-button>
-              <el-button @click="handleSelectedClientCommand('health', {}, 'maintenance')"
-                >健康检测</el-button
-              >
-            </div>
           </div>
 
           <template v-if="selectedClient">
             <div class="compact-info compact-info--grid">
-              <div class="compact-info__item">
-                <span class="compact-info__label">客户端</span>
-                <span class="compact-info__value">{{ selectedClientDisplayName }}</span>
-              </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">整体</span>
                 <span class="compact-info__value">
@@ -102,12 +82,6 @@
                   selectedPsBridgeService?.version || "-"
                 }}</span>
               </div>
-              <div class="compact-info__item compact-info__item--full">
-                <span class="compact-info__label">说明</span>
-                <span class="compact-info__value">{{
-                  selectedPsBridgeService?.message || "-"
-                }}</span>
-              </div>
               <div class="compact-info__item">
                 <span class="compact-info__label">服务地址</span>
                 <span class="compact-info__value">{{
@@ -130,6 +104,12 @@
                 <span class="compact-info__label">支持命令</span>
                 <span class="compact-info__value">{{
                   formatListSafe(selectedPsBridgeService?.supportedCommands)
+                }}</span>
+              </div>
+              <div class="compact-info__item compact-info__item--full">
+                <span class="compact-info__label">说明</span>
+                <span class="compact-info__value">{{
+                  selectedPsBridgeService?.message || "-"
                 }}</span>
               </div>
               <div class="compact-info__item compact-info__item--full">
@@ -162,7 +142,6 @@
                 <div class="ops-panel__head">
                   <div>
                     <div class="ops-panel__title">服务控制</div>
-                    <div class="ops-panel__sub">通过 ws 链路触发当前节点的 Photoshop 服务</div>
                   </div>
                 </div>
 
@@ -184,13 +163,6 @@
                       inactive-text="优雅关闭"
                     />
                   </div>
-                </div>
-                <div class="field-block">
-                  <label>PSD 套图 ID</label>
-                  <el-input
-                    v-model="serviceForm.psdSetId"
-                    placeholder="用于远程触发当前客户端执行 processPsdSet"
-                  />
                 </div>
 
                 <div class="button-row button-row--service-grid">
@@ -239,12 +211,6 @@
                     "
                     >关闭 Photoshop</el-button
                   >
-                  <el-button
-                    type="primary"
-                    :loading="loadingMap.processPsdSet"
-                    @click="handleProcessPsdSet"
-                    >执行 PSD 套图</el-button
-                  >
                 </div>
               </div>
 
@@ -252,7 +218,6 @@
                 <div class="ops-panel__head">
                   <div>
                     <div class="ops-panel__title">服务详情</div>
-                    <div class="ops-panel__sub">当前节点最新上报的运行状态</div>
                   </div>
                 </div>
 
@@ -331,7 +296,7 @@
                     <el-input v-model="analyzeForm.psdPath" placeholder="D:\\path\\to\\file.psd" />
                   </div>
 
-                  <div class="button-row wrap">
+                  <div class="button-row button-row--analysis wrap">
                     <el-button
                       type="primary"
                       :loading="loadingMap.analyzePsd"
@@ -342,6 +307,20 @@
                       :disabled="!analysisResult"
                       @click="copyJson(analysisResult, '分析结果已复制')"
                       >复制 JSON</el-button
+                    >
+                    <el-button
+                      :disabled="!analysisResult"
+                      :type="analysisViewMode === 'detail' ? 'primary' : 'default'"
+                      plain
+                      @click="analysisViewMode = 'detail'"
+                      >分析详情</el-button
+                    >
+                    <el-button
+                      :disabled="!analysisResult"
+                      :type="analysisViewMode === 'compact' ? 'primary' : 'default'"
+                      plain
+                      @click="analysisViewMode = 'compact'"
+                      >精简信息</el-button
                     >
                   </div>
                 </div>
@@ -372,17 +351,78 @@
                     }}</span>
                   </div>
                 </div>
+
+                <div
+                  v-if="analysisViewMode === 'compact' && compactArtboardPreviews.length"
+                  class="analysis-preview-list"
+                >
+                  <div
+                    v-for="artboard in compactArtboardPreviews"
+                    :key="artboard.key"
+                    class="analysis-preview-card"
+                  >
+                    <div class="analysis-preview-card__head">
+                      <div class="analysis-preview-card__title">{{ artboard.name || "未命名画板" }}</div>
+                      <div class="analysis-preview-card__meta">
+                        {{ artboard.sizeLabel }} · {{ artboard.smartObjectCount }} 个智能对象
+                      </div>
+                    </div>
+                    <div class="analysis-preview-stage">
+                      <div
+                        class="analysis-preview-artboard"
+                        :style="{
+                          width: `${artboard.canvasWidth}px`,
+                          height: `${artboard.canvasHeight}px`,
+                        }"
+                      >
+                        <div
+                          v-for="item in artboard.smartObjects"
+                          :key="item.key"
+                          class="analysis-preview-object"
+                          :style="{
+                            left: `${item.left}px`,
+                            top: `${item.top}px`,
+                            width: `${item.width}px`,
+                            height: `${item.height}px`,
+                          }"
+                        >
+                          <span class="analysis-preview-object__label">{{ item.name }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="artboard.smartObjects.length" class="analysis-preview-legend">
+                      <div
+                        v-for="item in artboard.smartObjects"
+                        :key="`${item.key}-meta`"
+                        class="analysis-preview-legend__item"
+                      >
+                        <span class="analysis-preview-legend__name">{{ item.name }}</span>
+                        <span class="analysis-preview-legend__meta">
+                          {{ item.meta }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="ops-panel">
                 <div class="ops-panel__head">
                   <div>
-                    <div class="ops-panel__title">分析结果</div>
-                    <div class="ops-panel__sub">保留完整 JSON，便于和 yishe-ps 输出对齐</div>
+                    <div class="ops-panel__title">{{
+                      analysisViewMode === "compact" ? "精简信息" : "分析结果"
+                    }}</div>
+                    <div class="ops-panel__sub">{{
+                      analysisViewMode === "compact"
+                        ? "只保留画板层级与画板下的智能对象关键信息"
+                        : "保留完整 JSON，便于和 yishe-ps 输出对齐"
+                    }}</div>
                   </div>
                 </div>
                 <pre class="result">{{
-                  analysisResult ? jsonText(analysisResult) : "暂无分析结果"
+                  analysisResult
+                    ? jsonText(analysisViewMode === "compact" ? compactAnalysisResult : analysisResult)
+                    : "暂无分析结果"
                 }}</pre>
               </div>
             </div>
@@ -592,6 +632,7 @@ import { formatDate } from "@/utils/formatTime";
 import { sendServiceCommand } from "@/api/system/websocket";
 import ExternalClientSidebar, {
   type ClientNodeItem,
+  type ClientNodeBadge,
 } from "@/views/external/components/ExternalClientSidebar.vue";
 import {
   websocketClient,
@@ -609,8 +650,7 @@ type PsCommandAction =
   | "stopPhotoshop"
   | "restartPhotoshop"
   | "analyzePsd"
-  | "debugProcess"
-  | "processPsdSet";
+  | "debugProcess";
 
 type CommandMode = "production" | "debug" | "maintenance";
 
@@ -652,6 +692,7 @@ const {
 const selectedClientId = ref("");
 const activeTab = ref("service");
 const operationDialogVisible = ref(false);
+const analysisViewMode = ref<"detail" | "compact">("detail");
 const latestCommandResult = ref<ServiceCommandResultEvent | Record<string, any> | null>(null);
 const analysisResult = ref<Record<string, any> | null>(null);
 const processResult = ref<Record<string, any> | null>(null);
@@ -665,7 +706,6 @@ const loadingMap = reactive<Record<PsCommandAction, boolean>>({
   restartPhotoshop: false,
   analyzePsd: false,
   debugProcess: false,
-  processPsdSet: false,
 });
 
 const pendingActions = reactive<Record<string, PsCommandAction>>({});
@@ -673,7 +713,6 @@ const pendingActions = reactive<Record<string, PsCommandAction>>({});
 const serviceForm = reactive({
   startTimeout: 30,
   forceStop: false,
-  psdSetId: "",
 });
 
 const analyzeForm = reactive({
@@ -883,6 +922,108 @@ const analysisDocumentInfo = computed<Record<string, any>>(
 const analysisStatistics = computed<Record<string, any>>(
   () => analysisResult.value?.statistics || {},
 );
+const compactAnalysisResult = computed(() => {
+  const result = analysisResult.value;
+  if (!result) {
+    return null;
+  }
+
+  const artboards = Array.isArray(result.artboards) ? result.artboards : [];
+  return {
+    file_info: result.file_info || null,
+    document_info: result.document_info || null,
+    statistics: {
+      artboard_count: result.statistics?.artboard_count ?? artboards.length,
+      total_smart_objects: result.statistics?.total_smart_objects ?? 0,
+    },
+    artboards: artboards.map((artboard: Record<string, any>) => ({
+      name: artboard.name || "",
+      path: artboard.path || "",
+      visible: artboard.visible ?? true,
+      position: artboard.position || null,
+      size: artboard.size || null,
+      smart_object_count:
+        artboard.smart_object_count ??
+        (Array.isArray(artboard.smart_objects) ? artboard.smart_objects.length : 0),
+      smart_objects: Array.isArray(artboard.smart_objects)
+        ? artboard.smart_objects.map((item: Record<string, any>) => ({
+            name: item.name || "",
+            path: item.path || "",
+            visible: item.visible ?? true,
+            position: item.position || null,
+            size: item.size || null,
+            smart_object: item.smart_object || null,
+          }))
+        : [],
+    })),
+  };
+});
+const compactArtboardPreviews = computed(() => {
+  const compact = compactAnalysisResult.value;
+  if (!compact || !Array.isArray(compact.artboards)) {
+    return [];
+  }
+
+  const maxCanvasWidth = 320;
+  const maxCanvasHeight = 220;
+  const minObjectSize = 18;
+
+  return compact.artboards.map((artboard: Record<string, any>, artboardIndex: number) => {
+    const width = Math.max(1, Number(artboard.size?.width) || Number(compact.document_info?.width) || 1);
+    const height = Math.max(1, Number(artboard.size?.height) || Number(compact.document_info?.height) || 1);
+    const scale = Math.min(maxCanvasWidth / width, maxCanvasHeight / height, 1);
+    const canvasWidth = Math.max(120, Math.round(width * scale));
+    const canvasHeight = Math.max(90, Math.round(height * scale));
+
+    const smartObjects = Array.isArray(artboard.smart_objects)
+      ? artboard.smart_objects.map((item: Record<string, any>, index: number) => {
+          const rawLeft =
+            Number(item.position?.relative_left) ||
+            Number(item.position?.relative_x) ||
+            Number(item.position?.left) ||
+            Number(item.position?.x) ||
+            0;
+          const rawTop =
+            Number(item.position?.relative_top) ||
+            Number(item.position?.relative_y) ||
+            Number(item.position?.top) ||
+            Number(item.position?.y) ||
+            0;
+          const rawWidth = Number(item.size?.width) || 0;
+          const rawHeight = Number(item.size?.height) || 0;
+
+          const hasRealSize = rawWidth > 0 && rawHeight > 0;
+          const scaledWidth = hasRealSize ? Math.max(minObjectSize, Math.round(rawWidth * scale)) : minObjectSize;
+          const scaledHeight = hasRealSize ? Math.max(minObjectSize, Math.round(rawHeight * scale)) : minObjectSize;
+          const maxLeft = Math.max(0, canvasWidth - scaledWidth);
+          const maxTop = Math.max(0, canvasHeight - scaledHeight);
+          const left = Math.min(maxLeft, Math.max(0, Math.round(rawLeft * scale)));
+          const top = Math.min(maxTop, Math.max(0, Math.round(rawTop * scale)));
+
+          return {
+            key: `${artboardIndex}-${index}-${item.path || item.name || "smart-object"}`,
+            name: item.name || `智能对象 ${index + 1}`,
+            left,
+            top,
+            width: scaledWidth,
+            height: scaledHeight,
+            meta: `${Math.max(0, Math.round(rawLeft))}, ${Math.max(0, Math.round(rawTop))} · ${Math.max(0, Math.round(rawWidth))} x ${Math.max(0, Math.round(rawHeight))}`,
+          };
+        })
+      : [];
+
+    return {
+      key: `${artboardIndex}-${artboard.path || artboard.name || "artboard"}`,
+      name: artboard.name || `画板 ${artboardIndex + 1}`,
+      sizeLabel: `${Math.round(width)} x ${Math.round(height)}`,
+      smartObjectCount:
+        Number(artboard.smart_object_count) || (Array.isArray(artboard.smart_objects) ? artboard.smart_objects.length : 0),
+      canvasWidth,
+      canvasHeight,
+      smartObjects,
+    };
+  });
+});
 const processPayloadPreview = computed(() => jsonText(buildProcessRequest(false)));
 
 const jsonText = (value: any) => {
@@ -951,7 +1092,6 @@ const resolveActionText = (value?: string | null) => {
     restartPhotoshop: "重启 Photoshop",
     analyzePsd: "分析 PSD",
     debugProcess: "调试处理",
-    processPsdSet: "执行 PSD 套图",
   };
   return actionMap[String(value || "").trim()] || String(value || "-");
 };
@@ -1060,6 +1200,7 @@ watch(selectedClientId, (value, previousValue) => {
     return;
   }
   activeTab.value = "service";
+  analysisViewMode.value = "detail";
   analysisResult.value = null;
   processResult.value = null;
   latestCommandResult.value = null;
@@ -1149,14 +1290,6 @@ const dispatchPsCommand = async (
     pushCommandLog(action, "error", message, client.id);
     ElMessage.error(message);
   }
-};
-
-const handleSelectedClientCommand = async (
-  action: "refreshRuntime" | "health",
-  payload: Record<string, any> = {},
-  mode: CommandMode = "production",
-) => {
-  await dispatchPsCommand(action, payload, mode);
 };
 
 const addSmartObject = () => {
@@ -1254,6 +1387,7 @@ const handleAnalyzePsd = async () => {
   }
 
   analyzeForm.psdPath = psdPath;
+  analysisViewMode.value = "detail";
   analysisResult.value = null;
   await dispatchPsCommand("analyzePsd", { psdPath }, "debug");
 };
@@ -1268,17 +1402,6 @@ const handleDebugProcess = async () => {
     pushCommandLog("debugProcess", "error", message, selectedClient.value?.id);
     ElMessage.warning(message);
   }
-};
-
-const handleProcessPsdSet = async () => {
-  const psdSetId = stripQuotes(serviceForm.psdSetId);
-  if (!psdSetId) {
-    ElMessage.warning("请填写 PSD 套图 ID");
-    return;
-  }
-
-  serviceForm.psdSetId = psdSetId;
-  await dispatchPsCommand("processPsdSet", { psdSetId }, "production");
 };
 
 const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
@@ -1510,7 +1633,7 @@ onUnmounted(() => {
 
 .ops-panel,
 .ops-sidebar:deep(.external-sidebar) {
-  padding: 12px;
+  padding: 10px;
 }
 
 .ops-sidebar:deep(.external-sidebar) {
@@ -1524,9 +1647,9 @@ onUnmounted(() => {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .ops-panel__title {
@@ -1617,13 +1740,14 @@ onUnmounted(() => {
 }
 
 .ps-operation-dialog :deep(.el-dialog__header) {
-  padding: 18px 20px 14px;
+  padding: 12px 14px 10px;
   border-bottom: 1px solid var(--el-border-color-lighter);
 }
 
 .ps-operation-dialog :deep(.el-dialog) {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .ps-operation-dialog :deep(.el-dialog__body) {
@@ -1635,9 +1759,9 @@ onUnmounted(() => {
 }
 
 .operation-shell {
-  height: calc(100vh - 64px);
+  height: 100%;
   min-height: 0;
-  padding: 16px 20px 20px;
+  padding: 10px 12px 12px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1655,25 +1779,30 @@ onUnmounted(() => {
 .operation-tabs:deep(.el-tabs__header) {
   order: 0;
   flex: 0 0 auto;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
 }
 
 .operation-tabs:deep(.el-tabs__content) {
   order: 1;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
+}
+
+.operation-tabs:deep(.el-tab-pane) {
+  height: 100%;
   overflow: auto;
 }
 
 .operation-grid {
   display: grid;
-  grid-template-columns: minmax(360px, 520px) minmax(0, 1fr);
+  grid-template-columns: minmax(520px, 1.4fr) minmax(320px, 0.8fr);
   gap: 12px;
   align-items: start;
 }
 
 .operation-grid--service {
-  grid-template-columns: minmax(420px, 560px) minmax(320px, 1fr);
+  grid-template-columns: minmax(560px, 1.5fr) minmax(280px, 0.7fr);
   gap: 16px;
 }
 
@@ -1741,6 +1870,10 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
+.button-row--analysis {
+  margin-bottom: 8px;
+}
+
 .button-row--service-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1793,11 +1926,117 @@ onUnmounted(() => {
   color: var(--el-text-color-primary);
 }
 
+.analysis-preview-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.analysis-preview-card {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.analysis-preview-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.analysis-preview-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.analysis-preview-card__meta {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.analysis-preview-stage {
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 10px;
+  padding: 12px;
+  overflow: auto;
+}
+
+.analysis-preview-artboard {
+  position: relative;
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  background:
+    linear-gradient(to right, var(--el-fill-color-light) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--el-fill-color-light) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-color: var(--el-bg-color);
+  flex: 0 0 auto;
+}
+
+.analysis-preview-object {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--el-color-primary);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+  min-width: 18px;
+  min-height: 18px;
+  padding: 4px 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+}
+
+.analysis-preview-object__label {
+  font-size: 10px;
+  line-height: 1.2;
+  color: var(--el-text-color-primary);
+  word-break: break-word;
+}
+
+.analysis-preview-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.analysis-preview-legend__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.analysis-preview-legend__name {
+  color: var(--el-text-color-primary);
+  font-weight: 500;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.analysis-preview-legend__meta {
+  color: var(--el-text-color-secondary);
+  text-align: right;
+  white-space: nowrap;
+}
+
 .result {
   margin: 0;
   padding: 12px;
   min-height: 220px;
-  max-height: calc(100vh - 280px);
+  max-height: min(100%, calc(100vh - 260px));
   overflow: auto;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 10px;
@@ -1820,7 +2059,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   min-height: 220px;
-  max-height: calc(100vh - 280px);
+  max-height: min(100%, calc(100vh - 260px));
   overflow: auto;
 }
 
@@ -1950,7 +2189,21 @@ onUnmounted(() => {
   }
 
   .operation-shell {
-    padding: 12px;
+    padding: 8px;
+  }
+
+  .analysis-preview-list {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-preview-legend__item {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .analysis-preview-legend__meta {
+    text-align: left;
+    white-space: normal;
   }
 }
 </style>
