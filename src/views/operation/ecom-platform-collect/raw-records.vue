@@ -162,10 +162,10 @@
     <el-dialog
       v-model="jsonDialogVisible"
       title="完整 JSON"
-      width="80vw"
+      fullscreen
       append-to-body
       destroy-on-close
-      class="ecom-raw-detail-dialog ecom-raw-detail-dialog--sheet"
+      class="ecom-raw-detail-dialog ecom-raw-detail-dialog--fullscreen"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="ecom-raw-detail-dialog__body">
@@ -639,11 +639,6 @@ onActivated(() => {
   font-size: 12px;
   line-height: 1.6;
   word-break: break-word;
-}
-
-:deep(.ecom-raw-detail-dialog--sheet .el-dialog__body) {
-  max-height: 70vh;
-  overflow: auto;
 }
 
 @media (max-width: 768px) {
