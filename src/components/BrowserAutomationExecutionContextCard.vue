@@ -1,9 +1,9 @@
 <template>
-  <div class="execution-card">
-    <div class="execution-card__head">
+  <div class="rounded-5 border border-slate-200 bg-white shadow-sm">
+    <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
       <div>
-        <div class="execution-card__title">{{ title }}</div>
-        <div v-if="description" class="execution-card__desc">{{ description }}</div>
+        <div class="text-4 text-slate-900 font-600 leading-tight">{{ title }}</div>
+        <div v-if="description" class="mt-1 text-3.5 text-slate-500 leading-6">{{ description }}</div>
       </div>
 
       <el-button text size="small" :loading="loading" @click="refreshClients">
@@ -11,7 +11,7 @@
       </el-button>
     </div>
 
-    <el-form label-position="top" class="execution-card__form">
+    <el-form label-position="top" class="px-5 py-5">
       <el-row :gutter="16">
         <el-col :xs="24" :lg="12">
           <el-form-item label="客户端节点" required>
@@ -28,9 +28,9 @@
                 :label="item.label"
                 :value="item.value"
               >
-                <div class="execution-option">
+                <div class="flex flex-col gap-1">
                   <span>{{ item.label }}</span>
-                  <span class="execution-option__meta">{{ item.meta || item.hint }}</span>
+                  <span class="text-3 text-slate-500">{{ item.meta || item.hint }}</span>
                 </div>
               </el-option>
             </el-select>
@@ -53,13 +53,13 @@
                 :label="item.label"
                 :value="item.value"
               >
-                <div class="execution-option">
+                <div class="flex flex-col gap-1">
                   <span>{{ item.label }}</span>
-                  <span class="execution-option__meta">{{ item.meta }}</span>
+                  <span class="text-3 text-slate-500">{{ item.meta }}</span>
                 </div>
               </el-option>
             </el-select>
-            <div class="execution-card__hint">
+            <div class="mt-1.5 text-3 text-slate-500 leading-5.5">
               不选时默认由该客户端使用当前活动浏览器环境执行。
             </div>
           </el-form-item>
@@ -69,9 +69,9 @@
       <el-row :gutter="16">
         <el-col :xs="24" :lg="24">
           <el-form-item :label="taskType ? '执行标识' : '目标平台'">
-            <div class="execution-card__meta-box">
+            <div class="flex flex-col gap-1.5 rounded-3 bg-slate-50 px-3 py-3 text-slate-700">
               <span>{{ platform || "-" }}</span>
-              <code v-if="taskType">{{ taskType }}</code>
+              <code v-if="taskType" class="text-3.5 text-slate-500 overflow-wrap-anywhere">{{ taskType }}</code>
             </div>
           </el-form-item>
         </el-col>
@@ -218,69 +218,19 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.execution-card {
-  padding: 18px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 14px;
-  background: var(--el-bg-color);
+:deep(.el-form-item) {
+  margin-bottom: 18px;
 }
 
-.execution-card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
+:deep(.el-form-item__label) {
+  padding-bottom: 8px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.execution-card__title {
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.execution-card__desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.execution-card__hint {
-  margin-top: 6px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
-.execution-card__form :deep(.el-select),
-.execution-card__form :deep(.el-input) {
+:deep(.el-select),
+:deep(.el-input) {
   width: 100%;
-}
-
-.execution-option {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.execution-option__meta {
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.execution-card__meta-box {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-height: 40px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-regular);
-}
-
-.execution-card__meta-box code {
-  overflow-wrap: anywhere;
 }
 </style>

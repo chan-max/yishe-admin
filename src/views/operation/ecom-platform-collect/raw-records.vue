@@ -118,9 +118,13 @@
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item command="detail">
+                          <el-dropdown-item command="json">
                             <el-icon><View /></el-icon>
-                            <span>详情</span>
+                            <span>查看 JSON</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="snapshots">
+                            <el-icon><Picture /></el-icon>
+                            <span>查看截图</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="delete"
@@ -156,20 +160,57 @@
     </ListPageLayout>
 
     <el-dialog
-      v-model="detailVisible"
-      fullscreen
+      v-model="jsonDialogVisible"
+      title="完整 JSON"
+      width="80vw"
+      append-to-body
       destroy-on-close
-      :title="detailTitle"
-      class="ecom-raw-detail-dialog"
+      class="ecom-raw-detail-dialog ecom-raw-detail-dialog--sheet"
       @closed="handleDetailClosed"
     >
       <div v-loading="detailLoading" class="ecom-raw-detail-dialog__body">
-        <PlatformRawRecordDetail
+        <JsonPrettyViewer
           v-if="currentDetail"
-          :record="currentDetail"
-          :catalog="catalog"
+          :value="currentDetail.collectData || {}"
+          :deep="8"
+          :show-double-quotes="false"
+          :show-length="true"
         />
         <el-empty v-else description="暂无详情数据" />
+      </div>
+    </el-dialog>
+
+    <el-dialog
+      v-model="snapshotDialogVisible"
+      title="执行截图"
+      fullscreen
+      append-to-body
+      destroy-on-close
+      class="ecom-raw-detail-dialog ecom-raw-detail-dialog--fullscreen"
+      @closed="handleDetailClosed"
+    >
+      <div v-loading="detailLoading" class="ecom-raw-detail-dialog__body">
+        <div v-if="snapshotItems.length" class="raw-detail-snapshot-grid">
+          <div
+            v-for="snapshot in snapshotItems"
+            :key="`${snapshot.url || snapshot.path || snapshot.key || ''}`"
+            class="raw-detail-snapshot-card"
+          >
+            <el-image
+              v-if="snapshot.url"
+              :src="snapshot.url"
+              fit="cover"
+              preview-teleported
+              :preview-src-list="snapshotUrls"
+              class="raw-detail-snapshot-image"
+            />
+            <div v-else class="raw-detail-snapshot-placeholder">本地截图未上传</div>
+            <div class="raw-detail-snapshot-meta">
+              <div>{{ formatDateTime(snapshot.createdAt) }}</div>
+            </div>
+          </div>
+        </div>
+        <el-empty v-else description="暂无执行截图" />
       </div>
     </el-dialog>
   </ContentWrap>
@@ -179,7 +220,7 @@
 import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { Delete, View } from "@element-plus/icons-vue";
+import { Delete, Picture, View } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
 import {
   batchDeleteEcomPlatformRawRecord,
@@ -188,10 +229,10 @@ import {
   getEcomPlatformRawRecordList,
   type EcomPlatformRawRecord,
 } from "@/api/operation/ecomPlatformCollect";
+import JsonPrettyViewer from "@/components/JsonPrettyViewer.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
-import PlatformRawRecordDetail from "./components/raw-detail/PlatformRawRecordDetail.vue";
 import {
   createEmptyEcomCollectCatalog,
   formatDateTime,
@@ -206,18 +247,19 @@ import {
   getTaskTypeSchemas,
   loadEcomCollectCatalog,
 } from "./shared";
+import { normalizeSnapshotItems } from "./components/raw-detail/helpers";
 
 defineOptions({ name: "EcomPlatformCollectRawPage" });
 
 const route = useRoute();
 const loading = ref(false);
 const detailLoading = ref(false);
-const detailVisible = ref(false);
-const detailTitle = ref("原始数据详情");
 const total = ref(0);
 const list = ref<EcomPlatformRawRecord[]>([]);
 const currentDetail = ref<EcomPlatformRawRecord | null>(null);
 const selectedIds = ref<string[]>([]);
+const jsonDialogVisible = ref(false);
+const snapshotDialogVisible = ref(false);
 
 const catalog = reactive(createEmptyEcomCollectCatalog());
 
@@ -384,8 +426,11 @@ const handleCheckboxAll = ({ records }: { records: EcomPlatformRawRecord[] }) =>
 
 const handleOperationCommand = (command: string, row: EcomPlatformRawRecord) => {
   switch (command) {
-    case "detail":
-      void openDetail(row);
+    case "json":
+      void openDetail(row, "json");
+      break;
+    case "snapshots":
+      void openDetail(row, "snapshots");
       break;
     case "delete":
       void handleDelete(row);
@@ -393,10 +438,10 @@ const handleOperationCommand = (command: string, row: EcomPlatformRawRecord) => 
   }
 };
 
-const openDetail = async (row: EcomPlatformRawRecord) => {
+const openDetail = async (row: EcomPlatformRawRecord, mode: "json" | "snapshots") => {
   detailLoading.value = true;
-  detailVisible.value = true;
-  detailTitle.value = `原始数据详情 · ${row.runId || row.id}`;
+  jsonDialogVisible.value = mode === "json";
+  snapshotDialogVisible.value = mode === "snapshots";
   try {
     const detail = await getEcomPlatformRawRecordDetail(row.id);
     currentDetail.value = {
@@ -411,7 +456,19 @@ const openDetail = async (row: EcomPlatformRawRecord) => {
 const handleDetailClosed = () => {
   currentDetail.value = null;
   detailLoading.value = false;
+  jsonDialogVisible.value = false;
+  snapshotDialogVisible.value = false;
 };
+
+const snapshotItems = computed(() =>
+  currentDetail.value
+    ? normalizeSnapshotItems(currentDetail.value.snapshotData || currentDetail.value.collectData)
+    : [],
+);
+
+const snapshotUrls = computed(() =>
+  snapshotItems.value.map((item) => String(item.url || "").trim()).filter(Boolean),
+);
 
 const handleDelete = async (row: EcomPlatformRawRecord) => {
   try {
@@ -519,25 +576,83 @@ onActivated(() => {
     monospace;
 }
 
-:deep(.ecom-raw-detail-dialog.el-dialog.is-fullscreen) {
+:deep(.ecom-raw-detail-dialog .el-dialog__header) {
+  margin-right: 0;
+  padding: 16px 20px 10px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.ecom-raw-detail-dialog .el-dialog__body) {
+  padding: 16px 20px 20px;
+}
+
+:deep(.ecom-raw-detail-dialog--fullscreen.el-dialog.is-fullscreen) {
   width: 100vw !important;
   max-width: 100vw !important;
   height: 100vh !important;
   margin: 0 !important;
 }
 
-:deep(.ecom-raw-detail-dialog .el-dialog__header) {
-  padding: 14px 18px 10px;
-}
-
-:deep(.ecom-raw-detail-dialog .el-dialog__body) {
-  height: calc(100vh - 52px);
-  padding: 0 18px 18px;
-  overflow: hidden;
+:deep(.ecom-raw-detail-dialog--fullscreen .el-dialog__body) {
+  height: calc(100vh - 58px);
+  overflow: auto;
 }
 
 .ecom-raw-detail-dialog__body {
-  height: 100%;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.raw-detail-snapshot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.raw-detail-snapshot-card {
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+}
+
+.raw-detail-snapshot-image {
+  width: 100%;
+  height: 160px;
+}
+
+.raw-detail-snapshot-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 160px;
+  color: var(--el-text-color-placeholder);
+  font-size: 13px;
+}
+
+.raw-detail-snapshot-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+:deep(.ecom-raw-detail-dialog--sheet .el-dialog__body) {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+@media (max-width: 768px) {
+  :deep(.ecom-raw-detail-dialog .el-dialog__header) {
+    padding: 14px 16px 10px;
+  }
+
+  :deep(.ecom-raw-detail-dialog .el-dialog__body) {
+    padding: 12px 16px 16px;
+  }
 }
 </style>

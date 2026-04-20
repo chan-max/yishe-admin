@@ -10,6 +10,7 @@ export interface NormalizedSnapshotItem {
   key?: string | null;
   label?: string | null;
   path?: string | null;
+  createdAt?: string | null;
 }
 
 const PATH_SEGMENT_REGEXP = /([^[.\]]+)|\[(\d+)\]/g;
@@ -139,6 +140,9 @@ export const normalizeSnapshotItems = (value: unknown) => {
     const key = String(record.key || record.cosKey || "").trim();
     const path = String(record.path || record.filePath || record.localPath || "").trim();
     const label = String(record.stage || record.name || record.label || "").trim();
+    const createdAt = String(
+      record.createdAt || record.createTime || record.capturedAt || record.timestamp || "",
+    ).trim();
     const uniqueKey = url || path || key;
     if (uniqueKey && !visited.has(uniqueKey)) {
       visited.add(uniqueKey);
@@ -147,6 +151,7 @@ export const normalizeSnapshotItems = (value: unknown) => {
         key: key || null,
         label: label || null,
         path: path || null,
+        createdAt: createdAt || null,
       });
     }
 
