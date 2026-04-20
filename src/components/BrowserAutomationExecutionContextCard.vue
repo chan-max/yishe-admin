@@ -1,9 +1,9 @@
 <template>
-  <div class="rounded-5 border border-slate-200 bg-white shadow-sm">
-    <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+  <div class="execution-context-card">
+    <div v-if="title || description" class="execution-context-card__header">
       <div>
-        <div class="text-4 text-slate-900 font-600 leading-tight">{{ title }}</div>
-        <div v-if="description" class="mt-1 text-3.5 text-slate-500 leading-6">{{ description }}</div>
+        <div class="execution-context-card__title">{{ title }}</div>
+        <div v-if="description" class="execution-context-card__description">{{ description }}</div>
       </div>
 
       <el-button text size="small" :loading="loading" @click="refreshClients">
@@ -11,7 +11,7 @@
       </el-button>
     </div>
 
-    <el-form label-position="top" class="px-5 py-5">
+    <el-form label-position="top" class="execution-context-card__form">
       <el-row :gutter="16">
         <el-col :xs="24" :lg="12">
           <el-form-item label="客户端节点" required>
@@ -28,9 +28,9 @@
                 :label="item.label"
                 :value="item.value"
               >
-                <div class="flex flex-col gap-1">
+                <div class="execution-context-card__option">
                   <span>{{ item.label }}</span>
-                  <span class="text-3 text-slate-500">{{ item.meta || item.hint }}</span>
+                  <span class="execution-context-card__option-meta">{{ item.meta || item.hint }}</span>
                 </div>
               </el-option>
             </el-select>
@@ -53,13 +53,13 @@
                 :label="item.label"
                 :value="item.value"
               >
-                <div class="flex flex-col gap-1">
+                <div class="execution-context-card__option">
                   <span>{{ item.label }}</span>
-                  <span class="text-3 text-slate-500">{{ item.meta }}</span>
+                  <span class="execution-context-card__option-meta">{{ item.meta }}</span>
                 </div>
               </el-option>
             </el-select>
-            <div class="mt-1.5 text-3 text-slate-500 leading-5.5">
+            <div class="execution-context-card__hint">
               不选时默认由该客户端使用当前活动浏览器环境执行。
             </div>
           </el-form-item>
@@ -69,9 +69,9 @@
       <el-row :gutter="16">
         <el-col :xs="24" :lg="24">
           <el-form-item :label="taskType ? '执行标识' : '目标平台'">
-            <div class="flex flex-col gap-1.5 rounded-3 bg-slate-50 px-3 py-3 text-slate-700">
+            <div class="execution-context-card__meta-box">
               <span>{{ platform || "-" }}</span>
-              <code v-if="taskType" class="text-3.5 text-slate-500 overflow-wrap-anywhere">{{ taskType }}</code>
+              <code v-if="taskType" class="execution-context-card__meta-code">{{ taskType }}</code>
             </div>
           </el-form-item>
         </el-col>
@@ -218,13 +218,71 @@ watch(
 </script>
 
 <style scoped lang="scss">
+.execution-context-card {
+}
+
+.execution-context-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 0 16px;
+}
+
+.execution-context-card__title {
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.execution-context-card__description {
+  margin-top: 4px;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.execution-context-card__form {
+  padding: 0;
+}
+
+.execution-context-card__option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.execution-context-card__option-meta,
+.execution-context-card__hint,
+.execution-context-card__meta-code {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.execution-context-card__hint {
+  margin-top: 6px;
+}
+
+.execution-context-card__meta-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--el-text-color-primary);
+}
+
+.execution-context-card__meta-code {
+  overflow-wrap: anywhere;
+}
+
 :deep(.el-form-item) {
   margin-bottom: 18px;
 }
 
 :deep(.el-form-item__label) {
   padding-bottom: 8px;
-  color: #0f172a;
+  color: var(--el-text-color-primary);
   font-size: 13px;
   font-weight: 500;
 }
