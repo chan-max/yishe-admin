@@ -426,6 +426,7 @@ onBeforeUnmount(() => {
 .image-preview-container {
   flex: 1 1 auto;
   width: 0;
+  min-width: min(100%, 640px);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -722,8 +723,8 @@ onBeforeUnmount(() => {
 }
 
 .operation-container {
-  flex: 0 0 clamp(268px, 24vw, 300px);
-  width: clamp(268px, 24vw, 300px);
+  flex: 0 0 clamp(224px, 20vw, 280px);
+  width: clamp(224px, 20vw, 280px);
   min-width: 0;
   min-height: 0;
   max-height: 100%;
@@ -869,7 +870,7 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1360px) {
   .multi-image-upload-container {
     flex-direction: column;
     height: 100%;
@@ -880,9 +881,15 @@ onBeforeUnmount(() => {
   .operation-container {
     width: 100%;
     flex-basis: auto;
+    min-width: 0;
     max-height: none;
     overflow: visible;
     padding-right: 0;
+  }
+
+  .image-preview-container {
+    width: 100%;
+    min-width: 0;
   }
 }
 

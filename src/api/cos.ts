@@ -11,50 +11,8 @@ import { generateUUID } from '@/utils'
 import { buildCOSKey, extractCOSFilename, extractCOSObjectKey } from '@/utils/cosPath'
 import COS from 'cos-js-sdk-v5'
 import { saveAs } from 'file-saver'
-import request from '@/config/axios'
-import * as CryptoJS from 'crypto-js'
 
 let _cos = null
-let _cosConfig = null
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-// 解密函数（使用 AES-256-CBC）
-const decryptConfig = (encryptedString: string) => {
-  const SECRET_KEY = '1s';
-  
-  try {
-    // 使用 AES-256-CBC 解密
-    const decrypted = CryptoJS.AES.decrypt(encryptedString, SECRET_KEY, {
-      mode: CryptoJS.mode.CBC,
-      padding: CryptoJS.pad.Pkcs7
-    });
-    
-    // 转换为字符串
-    const decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
-    
-    if (!decryptedString) {
-      throw new Error('解密失败：返回结果为空');
-    }
-    
-    // 解析 JSON 对象
-    const config = JSON.parse(decryptedString);
-    
-    return config;
-  } catch (error: any) {
-    throw new Error(`解密配置失败: ${error?.message || '未知错误'}`)
-  }
-}
-
-const extractEncryptedConfig = (payload: any): string => {
-  if (typeof payload === 'string') {
-    return payload
-  }
-  if (payload && typeof payload.data === 'string') {
-    return payload.data
-  }
-  throw new Error('COS配置响应格式无效')
-}
 
 // 初始化COS配置，只在项目启动时调用一次
 export const initCOS = async () => {
@@ -62,34 +20,23 @@ export const initCOS = async () => {
     return _cos
   }
 
-  let lastError: any = null
-
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
-    try {
-      const res = await request.post({
-        url: '/getBasicConfig'
-      })
-
-      const encryptedConfig = extractEncryptedConfig(res)
-      _cosConfig = decryptConfig(encryptedConfig)
-
-      _cos = new COS({
-        SecretId: _cosConfig.SecretId,
-        SecretKey: _cosConfig.SecretKey,
-        Bucket: _cosConfig.Bucket,
-        Region: _cosConfig.Region
-      } as any)
-
-      return _cos
-    } catch (error: any) {
-      lastError = error
-      if (attempt < 3) {
-        await sleep(500 * attempt)
-      }
+  const configStore = {
+    cos: {
+      SecretId: 'AKIDMdmaMD0uiNwkVH0gTJFKXaXJyV4hHmAL',
+      SecretKey: 'HPdigqyzpgTNICCQnK0ZF6zrrpkbL4un',
+      Bucket: '1s-1257307499',
+      Region: 'ap-beijing'
     }
   }
 
-  throw lastError
+  _cos = new COS({
+    SecretId: configStore.cos.SecretId,
+    SecretKey: configStore.cos.SecretKey,
+    Bucket: configStore.cos.Bucket,
+    Region: configStore.cos.Region
+  } as any)
+
+  return _cos
 }
 
 export const getCOS = () => {
