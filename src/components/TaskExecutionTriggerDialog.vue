@@ -1,0 +1,90 @@
+<template>
+  <el-dialog
+    :model-value="modelValue"
+    title="选择执行环境"
+    width="760px"
+    append-to-body
+    destroy-on-close
+    :close-on-click-modal="!submitting"
+    :close-on-press-escape="!submitting"
+    @update:model-value="emit('update:modelValue', $event)"
+  >
+    <BrowserAutomationExecutionContextCard
+      v-model="executionContext"
+      :platform="platform"
+      :task-type="taskType"
+      title="浏览器自动化执行环境"
+      description="执行环境只在本次运行时生效，不会写入任务配置。"
+    />
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button :disabled="submitting" @click="emit('update:modelValue', false)">取消</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleConfirm">开始执行</el-button>
+      </div>
+    </template>
+  </el-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, watch } from "vue";
+import { ElMessage } from "element-plus";
+import BrowserAutomationExecutionContextCard from "@/components/BrowserAutomationExecutionContextCard.vue";
+import {
+  createDefaultBrowserAutomationExecutionContext,
+  normalizeBrowserAutomationExecutionContext,
+  type BrowserAutomationExecutionContext,
+} from "@/views/operation/ecom-data/shared";
+
+const props = withDefaults(
+  defineProps<{
+    modelValue: boolean;
+    platform?: string;
+    taskType?: string;
+    submitting?: boolean;
+  }>(),
+  {
+    platform: "",
+    taskType: "",
+    submitting: false,
+  },
+);
+
+const emit = defineEmits<{
+  (e: "update:modelValue", value: boolean): void;
+  (e: "confirm", value: BrowserAutomationExecutionContext): void;
+}>();
+
+const executionContext = ref(createDefaultBrowserAutomationExecutionContext());
+
+watch(
+  () => props.modelValue,
+  (visible) => {
+    if (visible) {
+      executionContext.value = createDefaultBrowserAutomationExecutionContext();
+    }
+  },
+);
+
+const handleConfirm = () => {
+  const normalizedContext = normalizeBrowserAutomationExecutionContext(
+    executionContext.value,
+  );
+  if (!String(normalizedContext.clientId || "").trim()) {
+    ElMessage.warning("请先选择浏览器自动化执行环境");
+    return;
+  }
+  emit(
+    "confirm",
+    normalizedContext,
+  );
+};
+</script>
+
+<style scoped lang="scss">
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+</style>

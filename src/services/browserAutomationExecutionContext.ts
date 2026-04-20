@@ -40,6 +40,19 @@ export const createEmptyBrowserAutomationProfilesPayload =
     items: [],
   });
 
+export const normalizeBrowserAutomationProfilesPayload = (
+  payload?: Partial<BrowserAutomationProfilesPayload> | Record<string, any> | null,
+): BrowserAutomationProfilesPayload => ({
+  activeProfileId: payload?.activeProfileId || payload?.activeProfile?.id || null,
+  workspaceDir: payload?.workspaceDir,
+  profilesRootDir: payload?.profilesRootDir,
+  items: Array.isArray(payload?.items)
+    ? payload.items
+    : Array.isArray((payload as Record<string, any> | null | undefined)?.profiles)
+      ? ((payload as Record<string, any>).profiles as BrowserAutomationProfileSummary[])
+      : [],
+});
+
 const formatTimeText = (value?: string | null) =>
   value ? formatDate(new Date(value), "YYYY-MM-DD HH:mm") : "";
 
@@ -209,16 +222,16 @@ export function useBrowserAutomationExecutionContext() {
 
   const syncClientSelection = () => {
     if (
-      !selectedClientId.value ||
+      selectedClientId.value &&
       !clients.value.some((item) => item.clientId === selectedClientId.value)
     ) {
-      selectedClientId.value = clients.value[0]?.clientId || "";
+      selectedClientId.value = "";
     }
   };
 
   const syncProfileSelection = () => {
     if (
-      selectedProfileValue.value !== ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE &&
+      selectedProfileValue.value &&
       profileItems.value.some(
         (item) => String(item?.id || "").trim() === selectedProfileValue.value,
       )
@@ -226,34 +239,17 @@ export function useBrowserAutomationExecutionContext() {
       return;
     }
 
-    const activeProfileId = String(activeProfile.value?.id || "").trim();
-    if (activeProfileId) {
-      selectedProfileValue.value = activeProfileId;
-      return;
-    }
-
-    const firstProfileId = String(profileItems.value[0]?.id || "").trim();
-    if (firstProfileId) {
-      selectedProfileValue.value = firstProfileId;
-      return;
-    }
-
-    selectedProfileValue.value = ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE;
+    selectedProfileValue.value = "";
   };
 
   const setProfilesPayload = (payload?: Partial<BrowserAutomationProfilesPayload> | null) => {
-    profilePayload.value = {
-      activeProfileId: payload?.activeProfileId || null,
-      workspaceDir: payload?.workspaceDir,
-      profilesRootDir: payload?.profilesRootDir,
-      items: Array.isArray(payload?.items) ? payload.items : [],
-    };
+    profilePayload.value = normalizeBrowserAutomationProfilesPayload(payload);
     syncProfileSelection();
   };
 
   const resetProfiles = () => {
     setProfilesPayload(createEmptyBrowserAutomationProfilesPayload());
-    selectedProfileValue.value = ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE;
+    selectedProfileValue.value = "";
   };
 
   watch(clients, () => {

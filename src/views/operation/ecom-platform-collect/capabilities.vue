@@ -362,7 +362,6 @@ import { computed, onActivated, onMounted, reactive, ref } from "vue";
 import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import CompactNotice from "@/components/CompactNotice/index.vue";
 import {
-  getEcomPlatformCollectCatalog,
   type EcomCollectOutputFieldSchema,
   type EcomCollectPlatformSchema,
   type EcomCollectTaskTypeSchema,
@@ -380,6 +379,7 @@ import {
   getCapabilityStatusLabel,
   getCapabilityStatusTagType,
   getTaskTypeSchemas,
+  loadEcomCollectCatalog,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectCapabilityPage" });
@@ -547,7 +547,7 @@ const getFieldTagType = (stability?: string | null) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const data = await getEcomPlatformCollectCatalog();
+    const data = await loadEcomCollectCatalog();
     catalog.platforms = Array.isArray(data?.platforms) ? data.platforms : [];
     catalog.meta = data?.meta || catalog.meta;
     catalog.generatedAt = data?.generatedAt || null;

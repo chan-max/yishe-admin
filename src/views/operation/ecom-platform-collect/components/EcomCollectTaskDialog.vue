@@ -15,8 +15,8 @@
           <CompactNotice
             v-if="!catalog.platforms.length"
             type="warning"
-            title="先连接客户端并同步能力"
-            description="当前还没有可用的电商采集能力。"
+            title="当前还没有平台定义"
+            description="请先让服务端完成平台目录同步，浏览器自动化环境会在执行任务时再单独选择。"
             class="task-dialog-alert"
           />
 
@@ -55,9 +55,6 @@
                   <div v-if="selectedPlatform?.reason" class="form-hint">
                     {{ selectedPlatform.reason }}
                   </div>
-                  <div v-if="selectedPlatformAccessText" class="form-hint">
-                    {{ selectedPlatformAccessText }}
-                  </div>
                 </el-form-item>
               </el-col>
 
@@ -95,7 +92,11 @@
                 :xs="24"
                 :lg="resolveFieldLgSpan(field)"
               >
-                <el-form-item :label="field.label" :required="field.required">
+                <el-form-item
+                  v-if="field.component !== 'switch'"
+                  :label="field.label"
+                  :required="field.required"
+                >
                   <el-select
                     v-if="field.component === 'select'"
                     :model-value="getFieldValue(field)"
@@ -111,13 +112,6 @@
                       :value="option.value"
                     />
                   </el-select>
-
-                  <el-switch
-                    v-else-if="field.component === 'switch'"
-                    class="field-switch-control"
-                    :model-value="!!getFieldValue(field)"
-                    @update:model-value="setFieldValue(field, $event)"
-                  />
 
                   <el-input-number
                     v-else-if="field.component === 'input-number'"
@@ -162,6 +156,40 @@
                     </div>
                   </div>
                 </el-form-item>
+
+                <el-form-item
+                  v-else
+                  class="task-dialog-form-item--switch"
+                  :required="field.required"
+                >
+                  <div class="field-toggle-panel">
+                    <div class="field-toggle-panel__main">
+                      <div class="field-toggle-panel__title">
+                        {{ field.label }}
+                      </div>
+                      <div
+                        v-if="field.description || (field.examples && field.examples.length)"
+                        class="field-toggle-panel__desc"
+                      >
+                        <div v-if="field.description">{{ field.description }}</div>
+                        <div
+                          v-if="field.examples && field.examples.length"
+                          class="form-hint__examples"
+                        >
+                          例如：{{ field.examples.map(formatExample).join(" / ") }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="field-toggle-panel__action">
+                      <el-switch
+                        class="field-switch-control"
+                        :model-value="!!getFieldValue(field)"
+                        @update:model-value="setFieldValue(field, $event)"
+                      />
+                    </div>
+                  </div>
+                </el-form-item>
               </el-col>
             </el-row>
 
@@ -176,59 +204,17 @@
                 用于保留当前任务类型 schema 尚未覆盖的配置；留空则只保存已建模字段。
               </div>
             </el-form-item>
+
           </el-form>
         </div>
 
         <div class="task-dialog-side">
           <div class="capability-card">
             <div class="capability-card__header">
-              <div class="capability-card__title">实时参数</div>
-              <div class="capability-card__tags" v-if="selectedPlatform">
-                <el-tag
-                  size="small"
-                  :type="getCapabilityStatusTagType(selectedPlatform.status)"
-                >
-                  {{ getCapabilityStatusLabel(selectedPlatform.status) }}
-                </el-tag>
-              </div>
+              <div class="capability-card__title">请求预览</div>
             </div>
 
-            <div v-if="selectedPlatform" class="capability-card__body">
-              <div v-if="selectedTaskType" class="capability-block">
-                <div class="capability-block__label">当前功能</div>
-                <div class="capability-block__text">
-                  {{ customerFeatureSummary }}
-                </div>
-              </div>
-
-              <div v-if="selectedAccessTags.length" class="capability-block">
-                <div class="capability-block__label">访问限制</div>
-                <div class="capability-card__tags">
-                  <el-tag
-                    v-for="item in selectedAccessTags"
-                    :key="item.key"
-                    size="small"
-                    :type="item.type"
-                  >
-                    {{ item.label }}
-                  </el-tag>
-                </div>
-                <div
-                  v-if="selectedAccessNotes.length"
-                  class="capability-block__text capability-block__text--muted"
-                >
-                  {{ selectedAccessNotes.join("；") }}
-                </div>
-              </div>
-
-              <div v-if="selectedTaskType" class="capability-block">
-                <div class="capability-block__label">执行标识</div>
-                <div class="capability-kv">
-                  <span>任务类型</span>
-                  <code>{{ selectedTaskType.value }}</code>
-                </div>
-              </div>
-
+            <div class="capability-card__body">
               <div class="capability-block">
                 <div class="capability-block__label">请求体</div>
                 <pre class="capability-example__code">{{
@@ -247,10 +233,6 @@
               <div v-if="liveRequestPreviewError" class="capability-warning">
                 {{ liveRequestPreviewError }}
               </div>
-            </div>
-
-            <div v-else class="capability-card__placeholder">
-              暂无参数
             </div>
           </div>
         </div>
@@ -287,11 +269,7 @@ import {
   type EcomPlatformCollectTask,
 } from "@/api/operation/ecomPlatformCollect";
 import {
-  buildCapabilityAccessSummary,
-  getCapabilityAccessLabel,
-  getCapabilityAccessTagType,
   getCapabilityStatusLabel,
-  getCapabilityStatusTagType,
   getPlatformSchema,
   getSceneSchema,
   getTaskTypeSchema,
@@ -385,103 +363,6 @@ const canSubmit = computed(
     selectedTaskType.value.runnable !== false &&
     (!selectedScene.value || selectedScene.value.runnable !== false),
 );
-
-const customerFeatureSummary = computed(() => {
-  if (selectedTaskType.value?.description) {
-    return selectedTaskType.value.description;
-  }
-  if (selectedTaskType.value?.docs?.overview) {
-    return selectedTaskType.value.docs.overview;
-  }
-
-  const sceneValue = selectedScene.value?.value;
-  if (sceneValue === "search") {
-    return "按关键词获取商品列表数据。";
-  }
-  if (sceneValue === "product_detail") {
-    return "获取单个商品的详情信息。";
-  }
-  if (sceneValue === "shop_hot_products") {
-    return "获取店铺热门商品列表。";
-  }
-
-  return selectedScene.value?.description || "-";
-});
-
-const selectedPlatformAccessText = computed(() =>
-  buildCapabilityAccessSummary(selectedPlatform.value?.access).join(" · "),
-);
-
-const selectedAccess = computed(
-  () =>
-    selectedTaskType.value?.access ||
-    selectedScene.value?.access ||
-    selectedPlatform.value?.access ||
-    null,
-);
-
-const selectedAccessTags = computed(() => {
-  const access = selectedAccess.value;
-  if (!access) {
-    return [] as Array<{
-      key: string;
-      label: string;
-      type: "success" | "warning" | "danger" | "info";
-    }>;
-  }
-
-  return [
-    access.login
-      ? {
-          key: "login",
-          label:
-            access.loginLabel || getCapabilityAccessLabel("login", access.login),
-          type: getCapabilityAccessTagType("login", access.login),
-        }
-      : null,
-    access.captcha
-      ? {
-          key: "captcha",
-          label:
-            access.captchaLabel ||
-            getCapabilityAccessLabel("captcha", access.captcha),
-          type: getCapabilityAccessTagType("captcha", access.captcha),
-        }
-      : null,
-    access.antiBot
-      ? {
-          key: "antiBot",
-          label:
-            access.antiBotLabel ||
-            getCapabilityAccessLabel("antiBot", access.antiBot),
-          type: getCapabilityAccessTagType("antiBot", access.antiBot),
-        }
-      : null,
-  ].filter(
-    (
-      item,
-    ): item is {
-      key: string;
-      label: string;
-      type: "success" | "warning" | "danger" | "info";
-    } => !!item,
-  );
-});
-
-const selectedAccessNotes = computed(() => {
-  const notes = [
-    ...(Array.isArray(selectedPlatform.value?.access?.notes)
-      ? selectedPlatform.value?.access?.notes
-      : []),
-    ...(Array.isArray(selectedAccess.value?.notes)
-      ? selectedAccess.value?.notes
-      : []),
-  ]
-    .map((item) => String(item || "").trim())
-    .filter(Boolean);
-
-  return Array.from(new Set(notes));
-});
 
 const buildLiveRequestBody = (allowInvalid = false) => {
   return {
@@ -935,14 +816,54 @@ watch(
   padding-bottom: 8px;
 }
 
+.task-dialog-form :deep(.task-dialog-form-item--switch .el-form-item__content) {
+  display: block;
+  line-height: normal;
+}
+
 .task-dialog-form :deep(.el-input),
 .task-dialog-form :deep(.el-select),
 .task-dialog-form :deep(.el-input-number) {
   width: 100%;
 }
 
+.field-toggle-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 44px;
+}
+
+.field-toggle-panel__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-toggle-panel__title {
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.field-toggle-panel__desc {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.field-toggle-panel__action {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+}
+
 .field-switch-control {
-  margin-bottom: 8px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .capability-card {

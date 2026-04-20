@@ -201,7 +201,6 @@ import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
 import {
-  getEcomPlatformCollectCatalog,
   getEcomPlatformCollectRunList,
   getEcomPlatformCollectTaskList,
   type EcomPlatformCollectRun,
@@ -224,6 +223,7 @@ import {
   getAnalysisTypeLabel,
   getRunStatusLabel,
   getRunStatusTagType,
+  loadEcomCollectCatalog,
 } from "@/views/operation/ecom-data/shared";
 
 defineOptions({ name: "EcomSelectionAnalysisTaskPage" });
@@ -408,7 +408,7 @@ const loadData = async () => {
   loading.value = true;
   try {
     const [catalogData, taskListData, collectTaskData, collectRunData] = await Promise.all([
-      getEcomPlatformCollectCatalog(),
+      loadEcomCollectCatalog(),
       getEcomSelectionAnalysisTaskList(filters),
       getEcomPlatformCollectTaskList({ pageNo: 1, pageSize: 100 }),
       getEcomPlatformCollectRunList({ pageNo: 1, pageSize: 100 }),

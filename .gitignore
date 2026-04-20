@@ -8,3 +8,5 @@ auto-*.d.ts
 types/generated
 .idea
 .history
+target
+*.map

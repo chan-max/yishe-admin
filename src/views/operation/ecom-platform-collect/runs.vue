@@ -3,12 +3,6 @@
     <ListPageLayout class="ecom-collect-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="resource-toolbar">
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
-            </div>
-          </div>
-
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="5">
@@ -62,6 +56,7 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" @click="loadData">刷新</el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -245,7 +240,6 @@ import type { VxeGridProps } from "vxe-table";
 import {
   batchDeleteEcomPlatformCollectRun,
   deleteEcomPlatformCollectRun,
-  getEcomPlatformCollectCatalog,
   getEcomPlatformCollectRunDetail,
   getEcomPlatformCollectRunList,
   type EcomPlatformCollectRun,
@@ -261,6 +255,7 @@ import {
   getRunStatusTagType,
   getTaskTypeLabel,
   getTaskTypeSchemas,
+  loadEcomCollectCatalog,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectRunPage" });
@@ -398,7 +393,7 @@ const loadData = async () => {
   loading.value = true;
   try {
     const [catalogData, listData] = await Promise.all([
-      getEcomPlatformCollectCatalog(),
+      loadEcomCollectCatalog(),
       getEcomPlatformCollectRunList(filters),
     ]);
     applyCatalog(catalogData);
@@ -515,6 +510,19 @@ onActivated(() => {
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+}
+
+.resource-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.resource-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .resource-toolbar__desc {

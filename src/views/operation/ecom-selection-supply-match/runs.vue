@@ -4,12 +4,6 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">找同款运行记录</div>
-              <div class="resource-toolbar__desc">
-                跟踪浏览器自动化端的执行状态、回传结果数量和供货匹配摘要，并支持一键跳转到结果页。
-              </div>
-            </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
             </div>
@@ -628,20 +622,6 @@ onActivated(() => {
 
 :deep(.ecom-data-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
-}
-
-.resource-toolbar__title {
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.resource-toolbar__desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.6;
 }
 
 .table-meta-text {

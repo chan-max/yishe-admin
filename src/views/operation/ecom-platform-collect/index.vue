@@ -3,18 +3,6 @@
     <ListPageLayout class="ecom-collect-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="resource-toolbar">
-          <div class="resource-toolbar__actions">
-            <el-button size="small" @click="loadData">刷新</el-button>
-            <el-button size="small" @click="router.push('/ecom-platform-collect/capabilities')">
-              平台能力
-            </el-button>
-            <el-button size="small" type="primary" @click="openTaskDialog()">
-              新建任务
-            </el-button>
-          </div>
-          </div>
-
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
@@ -66,6 +54,10 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" @click="loadData">刷新</el-button>
+              <el-button size="small" type="primary" @click="openTaskDialog()">
+                新建任务
+              </el-button>
               <el-button
                 size="small"
                 type="danger"
@@ -100,7 +92,9 @@
                 </template>
 
                 <template #configSlot="{ row }">
-                  <span class="table-meta-text">{{ getTaskConfigSummary(row) }}</span>
+                  <div class="table-stack">
+                    <span class="table-meta-text">{{ getTaskConfigSummary(row) }}</span>
+                  </div>
                 </template>
 
                 <template #operationSlot="{ row }">
@@ -169,19 +163,25 @@
       :task="currentTask"
       @success="handleDialogSuccess"
     />
+
+    <TaskExecutionTriggerDialog
+      v-model="triggerDialogVisible"
+      :platform="triggerTaskRecord?.platform || ''"
+      :task-type="triggerTaskRecord?.taskType || ''"
+      :submitting="triggeringTaskId === (triggerTaskRecord?.id || '')"
+      @confirm="handleTriggerConfirm"
+    />
   </ContentWrap>
 </template>
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox, ElNotification } from "element-plus";
 import { Delete, Edit, VideoPlay } from "@element-plus/icons-vue";
 import type { VxeGridProps } from "vxe-table";
 import {
   batchDeleteEcomPlatformCollectTask,
   deleteEcomPlatformCollectTask,
-  getEcomPlatformCollectCatalog,
   getEcomPlatformCollectTaskList,
   triggerEcomPlatformCollectTask,
   type EcomPlatformCollectTask,
@@ -189,6 +189,7 @@ import {
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
+import TaskExecutionTriggerDialog from "@/components/TaskExecutionTriggerDialog.vue";
 import EcomCollectTaskDialog from "./components/EcomCollectTaskDialog.vue";
 import {
   createEmptyEcomCollectCatalog,
@@ -196,14 +197,16 @@ import {
   getPlatformLabel,
   getTaskTypeLabel,
   getTaskTypeSchemas,
+  loadEcomCollectCatalog,
 } from "./shared";
 
 defineOptions({ name: "EcomPlatformCollectTaskPage" });
 
-const router = useRouter();
 const loading = ref(false);
 const dialogVisible = ref(false);
+const triggerDialogVisible = ref(false);
 const currentTask = ref<EcomPlatformCollectTask | null>(null);
+const triggerTaskRecord = ref<EcomPlatformCollectTask | null>(null);
 const list = ref<EcomPlatformCollectTask[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
@@ -319,7 +322,7 @@ const loadData = async () => {
   loading.value = true;
   try {
     const [catalogData, listData] = await Promise.all([
-      getEcomPlatformCollectCatalog(),
+      loadEcomCollectCatalog(),
       getEcomPlatformCollectTaskList(filters),
     ]);
     applyCatalog(catalogData);
@@ -372,7 +375,8 @@ const handleCheckboxAll = ({ records }: { records: EcomPlatformCollectTask[] }) 
 const handleOperationCommand = (command: string, row: EcomPlatformCollectTask) => {
   switch (command) {
     case "trigger":
-      void handleTriggerTask(row);
+      triggerTaskRecord.value = row;
+      triggerDialogVisible.value = true;
       break;
     case "edit":
       openTaskDialog(row);
@@ -383,7 +387,11 @@ const handleOperationCommand = (command: string, row: EcomPlatformCollectTask) =
   }
 };
 
-const handleTriggerTask = async (row: EcomPlatformCollectTask) => {
+const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
+  const row = triggerTaskRecord.value;
+  if (!row) {
+    return;
+  }
   if (triggeringTaskId.value) {
     return;
   }
@@ -397,8 +405,12 @@ const handleTriggerTask = async (row: EcomPlatformCollectTask) => {
   });
 
   try {
-    const result = await triggerEcomPlatformCollectTask(row.id);
+    const result = await triggerEcomPlatformCollectTask(row.id, {
+      executionContext,
+    });
     loadingMessage.close();
+    triggerDialogVisible.value = false;
+    triggerTaskRecord.value = null;
 
     if (result?.success === false) {
       ElNotification({
@@ -488,6 +500,19 @@ onActivated(() => {
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
+}
+
+.resource-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.resource-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .resource-toolbar__desc {

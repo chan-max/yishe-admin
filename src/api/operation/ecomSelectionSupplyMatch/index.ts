@@ -6,6 +6,7 @@ export interface EcomSelectionSupplyMatchTask {
   matchType: string;
   sourceConfig?: Record<string, any> | null;
   optionsData?: Record<string, any> | null;
+  executionContext?: Record<string, any> | null;
   creator?: string;
   lastRunAt?: string | null;
   lastRunId?: string | null;
@@ -71,6 +72,36 @@ export interface EcomSelectionSupplyMatchItem {
   updateTime?: string;
 }
 
+export interface EcomSelectionSupplyMatchCatalogPlatform {
+  value: string;
+  label: string;
+  runnable?: boolean;
+  reason?: string | null;
+  supportsSearch?: boolean;
+  supportsDetail?: boolean;
+  access?: Record<string, any> | null;
+  sourceClientId?: string | null;
+  sourceMachineCode?: string | null;
+  sourceUpdatedAt?: string | null;
+}
+
+export interface EcomSelectionSupplyMatchCatalog {
+  matchTypes: Array<{ value: string; label: string }>;
+  supplierPlatforms: EcomSelectionSupplyMatchCatalogPlatform[];
+  meta?: {
+    capabilityClientCount?: number;
+    onlineCapabilityClientCount?: number;
+    generatedAt?: string | null;
+    source?: string | null;
+  };
+}
+
+export const getEcomSelectionSupplyMatchCatalog = () => {
+  return request.get<EcomSelectionSupplyMatchCatalog>({
+    url: "/ecom-selection-supply-match/catalog",
+  });
+};
+
 export const getEcomSelectionSupplyMatchTaskList = (params?: Record<string, any>) => {
   return request.get<{
     list: EcomSelectionSupplyMatchTask[];
@@ -131,9 +162,13 @@ export const batchDeleteEcomSelectionSupplyMatchTask = (ids: string[]) => {
   });
 };
 
-export const triggerEcomSelectionSupplyMatchTask = (id: string) => {
+export const triggerEcomSelectionSupplyMatchTask = (
+  id: string,
+  data?: Record<string, any>,
+) => {
   return request.post<EcomSelectionSupplyMatchRun>({
     url: `/ecom-selection-supply-match/task/${id}/trigger`,
+    data,
   });
 };
 

@@ -4,12 +4,6 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">找同款任务</div>
-              <div class="resource-toolbar__desc">
-                服务端负责调度与结果持久化，客户端浏览器自动化负责真正执行供货搜索、详情采集和截图上传。
-              </div>
-            </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
               <el-button size="small" type="primary" @click="openTaskDialog()">
@@ -175,6 +169,14 @@
       :preset-source-item-ids="presetSourceItemIds"
       @success="handleDialogSuccess"
     />
+
+    <TaskExecutionTriggerDialog
+      v-model="triggerDialogVisible"
+      :platform="triggerTaskRecord?.optionsData?.supplierPlatforms?.[0] || ''"
+      task-type="supply_match"
+      :submitting="triggeringTaskId === (triggerTaskRecord?.id || '')"
+      @confirm="handleTriggerConfirm"
+    />
   </ContentWrap>
 </template>
 
@@ -198,6 +200,7 @@ import {
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
+import TaskExecutionTriggerDialog from "@/components/TaskExecutionTriggerDialog.vue";
 import SupplyMatchTaskDialog from "./components/SupplyMatchTaskDialog.vue";
 import {
   formatDateTime,
@@ -220,6 +223,8 @@ const total = ref(0);
 const selectedIds = ref<string[]>([]);
 const analysisRuns = ref<EcomSelectionAnalysisRun[]>([]);
 const triggeringTaskId = ref("");
+const triggerDialogVisible = ref(false);
+const triggerTaskRecord = ref<EcomSelectionSupplyMatchTask | null>(null);
 const presetAnalysisRunId = ref("");
 const presetSourceItemIds = ref<string[]>([]);
 
@@ -253,6 +258,9 @@ const getSourceSummary = (task: EcomSelectionSupplyMatchTask) => {
       : "",
     Array.isArray(sourceConfig.rawRecordIds) && sourceConfig.rawRecordIds.length
       ? `原始记录 ${sourceConfig.rawRecordIds.length} 个`
+      : "",
+    Array.isArray(sourceConfig.keywordSeeds) && sourceConfig.keywordSeeds.length
+      ? `关键词种子 ${sourceConfig.keywordSeeds.length} 个`
       : "",
   ].filter(Boolean);
 
@@ -429,7 +437,8 @@ const handleCheckboxAll = ({ records }: { records: EcomSelectionSupplyMatchTask[
 const handleOperationCommand = (command: string, row: EcomSelectionSupplyMatchTask) => {
   switch (command) {
     case "trigger":
-      void handleTriggerTask(row);
+      triggerTaskRecord.value = row;
+      triggerDialogVisible.value = true;
       break;
     case "edit":
       openTaskDialog(row);
@@ -440,7 +449,11 @@ const handleOperationCommand = (command: string, row: EcomSelectionSupplyMatchTa
   }
 };
 
-const handleTriggerTask = async (row: EcomSelectionSupplyMatchTask) => {
+const handleTriggerConfirm = async (executionContext: Record<string, any>) => {
+  const row = triggerTaskRecord.value;
+  if (!row) {
+    return;
+  }
   if (triggeringTaskId.value) {
     return;
   }
@@ -454,8 +467,12 @@ const handleTriggerTask = async (row: EcomSelectionSupplyMatchTask) => {
   });
 
   try {
-    const result = await triggerEcomSelectionSupplyMatchTask(row.id);
+    const result = await triggerEcomSelectionSupplyMatchTask(row.id, {
+      executionContext,
+    });
     loadingMessage.close();
+    triggerDialogVisible.value = false;
+    triggerTaskRecord.value = null;
     ElNotification({
       title: result?.status === "failed" ? "任务启动失败" : "已提交执行",
       type: result?.status === "failed" ? "warning" : "success",
@@ -534,20 +551,6 @@ onActivated(() => {
 
 :deep(.ecom-data-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
-}
-
-.resource-toolbar__title {
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.resource-toolbar__desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.6;
 }
 
 .table-stack {

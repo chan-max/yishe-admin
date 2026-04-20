@@ -1,5 +1,6 @@
 import type {
   EcomCollectAccessSchema,
+  EcomCollectFieldSchema,
   EcomCollectPlatformSchema,
   EcomCollectRunResultPackage,
   EcomCollectSceneSchema,
@@ -7,6 +8,7 @@ import type {
   EcomPlatformCollectCatalog,
   EcomPlatformRawRecord,
 } from "@/api/operation/ecomPlatformCollect";
+import { getEcomPlatformCollectCatalog } from "@/api/operation/ecomPlatformCollect";
 import { formatDate } from "@/utils/formatTime";
 
 export const buildDefaultTaskTypeValue = (
@@ -38,6 +40,140 @@ export const createEmptyEcomCollectCatalog = (): EcomPlatformCollectCatalog => (
     source: "browser-automation-runtime",
   },
 });
+
+const toTitleCase = (value: string) =>
+  value
+    .split(/[_\-.]+/)
+    .filter(Boolean)
+    .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+    .join(" ");
+
+const cloneFieldSchemas = (
+  fields: EcomCollectFieldSchema[] = [],
+): EcomCollectFieldSchema[] =>
+  fields.map((field) => ({
+    ...field,
+    options: Array.isArray(field.options)
+      ? field.options.map((option) => ({ ...option }))
+      : undefined,
+  }));
+
+const buildHeuristicTaskFields = (
+  taskTypeValue?: string | null,
+  collectSceneValue?: string | null,
+): EcomCollectFieldSchema[] => {
+  const normalizedTaskType = String(taskTypeValue || "").trim().toLowerCase();
+  const normalizedScene = String(collectSceneValue || "").trim().toLowerCase();
+  const key = normalizedScene || normalizedTaskType.split(".").slice(1).join(".") || normalizedTaskType;
+
+  const urlField: EcomCollectFieldSchema = {
+    key: "targetUrl",
+    label: "目标链接",
+    component: "input",
+    valueType: "url",
+    required: true,
+    placeholder: "请输入商品、店铺、榜单或活动页链接",
+    description: "运行时直接访问该链接并开始采集。",
+    examples: ["https://www.amazon.com/dp/B0EXAMPLE"],
+  };
+
+  const keywordField: EcomCollectFieldSchema = {
+    key: "keyword",
+    label: "关键词",
+    component: "input",
+    valueType: "string",
+    required: true,
+    placeholder: "请输入主关键词",
+    description: "用于搜索、榜单或推荐页采集的核心查询词。",
+    examples: ["wireless earbuds"],
+  };
+
+  const keywordsField: EcomCollectFieldSchema = {
+    key: "keywords",
+    label: "关键词列表",
+    component: "array-text",
+    valueType: "string[]",
+    placeholder: "每行一个关键词，或使用逗号分隔",
+    description: "可批量输入多个关键词；未填写主关键词时可自动取第一项作为 keyword。",
+    examples: [["wireless earbuds", "bluetooth headphones"]],
+  };
+
+  const maxPagesField: EcomCollectFieldSchema = {
+    key: "maxPages",
+    label: "最大页数",
+    component: "input-number",
+    valueType: "integer",
+    min: 1,
+    max: 100,
+    defaultValue: 2,
+    placeholder: "限制分页抓取范围",
+    description: "用于控制采集翻页深度，避免单次任务过重。",
+  };
+
+  const maxItemsField: EcomCollectFieldSchema = {
+    key: "maxItems",
+    label: "最大条数",
+    component: "input-number",
+    valueType: "integer",
+    min: 1,
+    max: 500,
+    defaultValue: 50,
+    placeholder: "限制记录条数",
+    description: "达到该数量后停止采集。",
+  };
+
+  const sortField: EcomCollectFieldSchema = {
+    key: "sort",
+    label: "排序方式",
+    component: "input",
+    valueType: "string",
+    placeholder: "例如：sales / newest / price_asc",
+    description: "可选的排序或榜单类型参数，具体由自动化端解释。",
+  };
+
+  const sellerField: EcomCollectFieldSchema = {
+    key: "sellerKeyword",
+    label: "店铺关键词",
+    component: "input",
+    valueType: "string",
+    placeholder: "可选，便于缩小店铺范围",
+    description: "适用于店铺搜索、店铺热门商品等场景。",
+  };
+
+  if (
+    key.includes("detail") ||
+    key.includes("product") ||
+    key.includes("item") ||
+    key.includes("goods")
+  ) {
+    return cloneFieldSchemas([urlField]);
+  }
+
+  if (key.includes("shop")) {
+    return cloneFieldSchemas([urlField, maxItemsField, maxPagesField, sortField]);
+  }
+
+  if (key.includes("search") || key.includes("keyword") || key.includes("list")) {
+    return cloneFieldSchemas([
+      keywordField,
+      keywordsField,
+      sellerField,
+      maxPagesField,
+      maxItemsField,
+      sortField,
+    ]);
+  }
+
+  return cloneFieldSchemas([keywordField, keywordsField, urlField, maxPagesField, maxItemsField]);
+};
+
+export const loadEcomCollectCatalog = async (): Promise<EcomPlatformCollectCatalog> => {
+  const data = await getEcomPlatformCollectCatalog();
+  return {
+    ...data,
+    platforms: Array.isArray(data?.platforms) ? data.platforms : [],
+  };
+};
 
 export const getPlatformLabel = (
   catalog: EcomPlatformCollectCatalog,
@@ -105,7 +241,10 @@ const buildFallbackTaskTypeSchema = (
     verificationLabel: scene.verificationLabel,
     reason: scene.reason || null,
     access: scene.access,
-    fields: Array.isArray(scene.fields) ? scene.fields : [],
+    fields:
+      Array.isArray(scene.fields) && scene.fields.length
+        ? cloneFieldSchemas(scene.fields)
+        : buildHeuristicTaskFields(value, scene.value),
     docs: scene.docs,
   };
 };
@@ -119,7 +258,13 @@ export const getTaskTypeSchemas = (
     return [] as EcomCollectTaskTypeSchema[];
   }
   if (Array.isArray(platform.taskTypes) && platform.taskTypes.length) {
-    return platform.taskTypes;
+    return platform.taskTypes.map((taskType) => ({
+      ...taskType,
+      fields:
+        Array.isArray(taskType.fields) && taskType.fields.length
+          ? cloneFieldSchemas(taskType.fields)
+          : buildHeuristicTaskFields(taskType.value, taskType.collectScene),
+    }));
   }
   if (Array.isArray(platform.scenes)) {
     return platform.scenes.map((scene) => buildFallbackTaskTypeSchema(platform, scene));

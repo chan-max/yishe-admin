@@ -225,8 +225,16 @@ export const useUserStore = defineStore('admin-user', {
     },
 
     initWebsocket() {
+      const resolveInfraWsUrl = () => {
+        if (import.meta.env.DEV && typeof window !== 'undefined') {
+          const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+          return `${wsProtocol}://${window.location.host}/infra/ws`
+        }
+        return (import.meta.env.VITE_BASE_URL + '/infra/ws').replace('http', 'ws')
+      }
+
       const server = ref(
-        (import.meta.env.VITE_BASE_URL + '/infra/ws').replace('http', 'ws') +
+        resolveInfraWsUrl() +
         '?token=' +
         getRefreshToken() // 使用 getRefreshToken() 方法，而不使用 getAccessToken() 方法的原因：WebSocket 无法方便的刷新访问令牌
       ) // WebSocket 服务地址

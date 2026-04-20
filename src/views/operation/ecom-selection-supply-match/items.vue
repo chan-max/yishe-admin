@@ -4,13 +4,6 @@
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
           <div class="resource-toolbar">
-            <div class="resource-toolbar__meta">
-              <div class="resource-toolbar__title">找同款结果</div>
-              <div class="resource-toolbar__desc">
-                聚合展示来源商品、供货商品、对比得分和截图快照，方便你做二次人工筛选或交给 AI
-                继续分析。
-              </div>
-            </div>
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
             </div>
@@ -412,7 +405,7 @@ const taskOptions = computed(() =>
 );
 
 const supplierPlatformOptions = computed(() => {
-  const values = new Set<string>(["1688"]);
+  const values = new Set<string>();
   if (filters.supplierPlatform) {
     values.add(filters.supplierPlatform);
   }
@@ -592,20 +585,6 @@ onActivated(() => {
 
 :deep(.ecom-data-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
-}
-
-.resource-toolbar__title {
-  color: var(--el-text-color-primary);
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
-.resource-toolbar__desc {
-  margin-top: 4px;
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-  line-height: 1.6;
 }
 
 .sidebar-card {

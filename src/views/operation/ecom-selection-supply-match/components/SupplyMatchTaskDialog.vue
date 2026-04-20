@@ -13,10 +13,9 @@
       <div class="task-dialog-layout">
         <div class="task-dialog-main">
           <CompactNotice
-            v-if="!availableAnalysisRuns.length"
-            type="warning"
-            title="还没有可选的分析运行"
-            description="建议先在电商分析模块执行一次成功的“热门选品”分析，再从分析结果创建找同款任务。"
+            type="info"
+            title="支持独立运行，也支持复用历史数据"
+            description="可以直接填写关键词种子独立执行；也可以复用之前的分析运行或原始记录。找同款不再强依赖热门选品分析。"
             class="task-dialog-alert"
           />
 
@@ -32,7 +31,7 @@
             <el-row :gutter="20">
               <el-col :xs="24" :lg="16">
                 <el-form-item label="任务名称" required>
-                  <el-input v-model="taskForm.name" placeholder="例如：热门耳机 1688 找同款" />
+                  <el-input v-model="taskForm.name" placeholder="例如：热门耳机 多平台找同款" />
                   <div class="form-hint">
                     建议写清来源品类和目标供货平台，后续回看历史任务时会更容易定位。
                   </div>
@@ -91,6 +90,20 @@
               </el-col>
 
               <el-col :xs="24" :lg="12">
+                <el-form-item label="关键词 / 标题种子">
+                  <el-input
+                    v-model="keywordSeedsText"
+                    type="textarea"
+                    :rows="5"
+                    placeholder="一行一个关键词或商品标题，例如：无线蓝牙耳机"
+                  />
+                  <div class="form-hint">
+                    不依赖历史分析也可以直接运行。服务端会把这些种子转成独立来源商品，再由客户端执行供货搜索和详情补抓。
+                  </div>
+                </el-form-item>
+              </el-col>
+
+              <el-col :xs="24" :lg="12">
                 <el-form-item label="供货平台">
                   <el-select
                     v-model="taskForm.optionsData.supplierPlatforms"
@@ -99,16 +112,24 @@
                     collapse-tags-tooltip
                     clearable
                     placeholder="请选择供货平台"
+                    :loading="catalogLoading"
                   >
                     <el-option
                       v-for="item in supplierPlatformOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value"
+                      :disabled="item.disabled"
                     />
                   </el-select>
                   <div class="form-hint">
-                    目前默认优先 1688。后续新增义乌购、Alibaba 等供货源时，也会继续挂在这里扩展。
+                    供货平台来自客户端浏览器自动化能力上报；新增平台后这里会自动出现，不再前端写死。
+                  </div>
+                  <div
+                    v-if="!supplierPlatformOptions.length"
+                    class="form-hint"
+                  >
+                    当前还没有上报可用于找同款的供货平台能力，请先连接并同步浏览器自动化客户端。
                   </div>
                 </el-form-item>
               </el-col>
@@ -233,6 +254,7 @@
                 </el-form-item>
               </el-col>
             </el-row>
+
           </el-form>
         </div>
 
@@ -301,6 +323,8 @@ import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 import {
   createEcomSelectionSupplyMatchTask,
+  getEcomSelectionSupplyMatchCatalog,
+  type EcomSelectionSupplyMatchCatalog,
   updateEcomSelectionSupplyMatchTask,
   type EcomSelectionSupplyMatchTask,
 } from "@/api/operation/ecomSelectionSupplyMatch";
@@ -319,6 +343,7 @@ type SupplyMatchTaskForm = {
     analysisRunId: string;
     sourceItemIds: string[];
     rawRecordIds: string[];
+    keywordSeeds: string[];
   };
   optionsData: {
     supplierPlatforms: string[];
@@ -346,7 +371,10 @@ const emit = defineEmits<{
   (e: "success"): void;
 }>();
 
-const supplierPlatformOptions = [{ label: "1688", value: "1688" }];
+const catalog = ref<EcomSelectionSupplyMatchCatalog>({
+  matchTypes: [{ label: "找同款", value: "supply_match" }],
+  supplierPlatforms: [],
+});
 
 const createDefaultForm = (): SupplyMatchTaskForm => ({
   name: "",
@@ -355,9 +383,10 @@ const createDefaultForm = (): SupplyMatchTaskForm => ({
     analysisRunId: "",
     sourceItemIds: [],
     rawRecordIds: [],
+    keywordSeeds: [],
   },
   optionsData: {
-    supplierPlatforms: ["1688"],
+    supplierPlatforms: [],
     maxSourceItems: 5,
     maxMatchesPerSource: 5,
     maxDetailPerSource: 3,
@@ -372,7 +401,27 @@ const createDefaultForm = (): SupplyMatchTaskForm => ({
 const taskForm = reactive(createDefaultForm());
 const sourceItemIdsText = ref("");
 const rawRecordIdsText = ref("");
+const keywordSeedsText = ref("");
 const submitting = ref(false);
+const catalogLoading = ref(false);
+const supplierPlatformOptions = computed(() =>
+  (catalog.value.supplierPlatforms || []).map((item) => ({
+    label: item.label || item.value,
+    value: item.value,
+    disabled: item.runnable === false,
+  })),
+);
+const defaultSupplierPlatforms = computed(() => {
+  const runnablePlatforms = supplierPlatformOptions.value
+    .filter((item) => item.disabled !== true)
+    .map((item) => item.value);
+  if (runnablePlatforms.length) {
+    return runnablePlatforms.slice(0, 1);
+  }
+  return supplierPlatformOptions.value.length
+    ? [supplierPlatformOptions.value[0].value]
+    : [];
+});
 
 const currentTask = computed(() => props.task || null);
 
@@ -404,11 +453,16 @@ const analysisRunOptions = computed(() => {
 
 const parsedSourceItemIds = computed(() => parseTextareaList(sourceItemIdsText.value));
 const parsedRawRecordIds = computed(() => parseTextareaList(rawRecordIdsText.value));
+const parsedKeywordSeeds = computed(() => parseTextareaList(keywordSeedsText.value));
 
 const canSubmit = computed(() => {
   return !!(
     taskForm.name.trim() &&
-    (taskForm.sourceConfig.analysisRunId || parsedRawRecordIds.value.length)
+    (
+      taskForm.sourceConfig.analysisRunId ||
+      parsedRawRecordIds.value.length ||
+      parsedKeywordSeeds.value.length
+    )
   );
 });
 
@@ -423,6 +477,7 @@ const normalizedPayload = computed(() => ({
     analysisRunId: String(taskForm.sourceConfig.analysisRunId || "").trim(),
     sourceItemIds: parsedSourceItemIds.value,
     rawRecordIds: parsedRawRecordIds.value,
+    keywordSeeds: parsedKeywordSeeds.value,
   },
   optionsData: {
     supplierPlatforms: taskForm.optionsData.supplierPlatforms,
@@ -439,6 +494,38 @@ const normalizedPayload = computed(() => ({
 
 const requestPreviewText = computed(() => JSON.stringify(normalizedPayload.value, null, 2));
 
+const ensureSupplierPlatformsSelected = () => {
+  const allowedValues = new Set(
+    supplierPlatformOptions.value.map((item) => String(item.value || "").trim()),
+  );
+  const selectedValues = Array.isArray(taskForm.optionsData.supplierPlatforms)
+    ? taskForm.optionsData.supplierPlatforms
+        .map((item) => String(item || "").trim())
+        .filter((item) => allowedValues.has(item))
+    : [];
+
+  taskForm.optionsData.supplierPlatforms = selectedValues.length
+    ? selectedValues
+    : [...defaultSupplierPlatforms.value];
+};
+
+const loadCatalog = async () => {
+  catalogLoading.value = true;
+  try {
+    const data = await getEcomSelectionSupplyMatchCatalog();
+    catalog.value = {
+      matchTypes: Array.isArray(data?.matchTypes) && data.matchTypes.length
+        ? data.matchTypes
+        : [{ label: "找同款", value: "supply_match" }],
+      supplierPlatforms: Array.isArray(data?.supplierPlatforms) ? data.supplierPlatforms : [],
+      meta: data?.meta || {},
+    };
+    ensureSupplierPlatformsSelected();
+  } finally {
+    catalogLoading.value = false;
+  }
+};
+
 const resetForm = () => {
   const next = createDefaultForm();
   taskForm.name = next.name;
@@ -446,7 +533,7 @@ const resetForm = () => {
   taskForm.sourceConfig.analysisRunId = next.sourceConfig.analysisRunId;
   taskForm.sourceConfig.sourceItemIds = [...next.sourceConfig.sourceItemIds];
   taskForm.sourceConfig.rawRecordIds = [...next.sourceConfig.rawRecordIds];
-  taskForm.optionsData.supplierPlatforms = [...next.optionsData.supplierPlatforms];
+  taskForm.optionsData.supplierPlatforms = [...defaultSupplierPlatforms.value];
   taskForm.optionsData.maxSourceItems = next.optionsData.maxSourceItems;
   taskForm.optionsData.maxMatchesPerSource = next.optionsData.maxMatchesPerSource;
   taskForm.optionsData.maxDetailPerSource = next.optionsData.maxDetailPerSource;
@@ -457,6 +544,7 @@ const resetForm = () => {
   taskForm.optionsData.notes = next.optionsData.notes;
   sourceItemIdsText.value = "";
   rawRecordIdsText.value = "";
+  keywordSeedsText.value = "";
 };
 
 const hydrateForm = (task?: EcomSelectionSupplyMatchTask | null) => {
@@ -468,7 +556,7 @@ const hydrateForm = (task?: EcomSelectionSupplyMatchTask | null) => {
     taskForm.sourceConfig.analysisRunId = String(task.sourceConfig?.analysisRunId || "").trim();
     taskForm.optionsData.supplierPlatforms = Array.isArray(task.optionsData?.supplierPlatforms)
       ? task.optionsData?.supplierPlatforms.filter(Boolean)
-      : ["1688"];
+      : [...defaultSupplierPlatforms.value];
     taskForm.optionsData.maxSourceItems = Number(task.optionsData?.maxSourceItems || 5);
     taskForm.optionsData.maxMatchesPerSource = Number(task.optionsData?.maxMatchesPerSource || 5);
     taskForm.optionsData.maxDetailPerSource = Number(task.optionsData?.maxDetailPerSource || 3);
@@ -485,6 +573,10 @@ const hydrateForm = (task?: EcomSelectionSupplyMatchTask | null) => {
     rawRecordIdsText.value = Array.isArray(task.sourceConfig?.rawRecordIds)
       ? task.sourceConfig?.rawRecordIds.filter(Boolean).join("\n")
       : "";
+    keywordSeedsText.value = Array.isArray(task.sourceConfig?.keywordSeeds)
+      ? task.sourceConfig?.keywordSeeds.filter(Boolean).join("\n")
+      : "";
+    ensureSupplierPlatformsSelected();
     return;
   }
 
@@ -494,12 +586,14 @@ const hydrateForm = (task?: EcomSelectionSupplyMatchTask | null) => {
   if (Array.isArray(props.presetSourceItemIds) && props.presetSourceItemIds.length) {
     sourceItemIdsText.value = props.presetSourceItemIds.filter(Boolean).join("\n");
   }
+  ensureSupplierPlatformsSelected();
 };
 
 watch(
   () => props.modelValue,
-  (visible) => {
+  async (visible) => {
     if (visible) {
+      await loadCatalog();
       hydrateForm(props.task || null);
     }
   },
@@ -512,8 +606,12 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (!taskForm.sourceConfig.analysisRunId && !parsedRawRecordIds.value.length) {
-    ElMessage.warning("请至少选择一个分析运行或填写原始记录 ID");
+  if (
+    !taskForm.sourceConfig.analysisRunId &&
+    !parsedRawRecordIds.value.length &&
+    !parsedKeywordSeeds.value.length
+  ) {
+    ElMessage.warning("请至少选择分析运行、填写原始记录 ID，或填写关键词种子");
     return;
   }
 

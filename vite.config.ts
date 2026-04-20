@@ -15,6 +15,7 @@ function pathResolve(dir: string) {
 export default defineConfig(({ mode }: ConfigEnv) => {
     const env = loadEnv(mode, root, '')
     const scssVariablesEntry = pathToFileURL(pathResolve('src/styles/variables.scss')).href
+    const proxyTarget = (env.VITE_BASE_URL || '').replace(/\/$/, '')
     return {
         base: env.VITE_BASE_PATH,
         root: root,
@@ -23,15 +24,24 @@ export default defineConfig(({ mode }: ConfigEnv) => {
             port: Number(env.VITE_PORT) || 5173, // 端口号
             host: "0.0.0.0",
             open: env.VITE_OPEN === 'true',
-            // 本地跨域代理. 目前注释的原因：暂时没有用途，server 端已经支持跨域
-            // proxy: {
-            //   ['/api']: {
-            //     target: env.VITE_BASE_URL,
-            //     ws: false,
-            //     changeOrigin: true,
-            //     rewrite: (path) => path.replace(new RegExp(`^/api`), ''),
-            //   },
-            // },
+            proxy: proxyTarget
+              ? {
+                  ['/api']: {
+                    target: proxyTarget,
+                    changeOrigin: true,
+                  },
+                  ['/infra/ws']: {
+                    target: proxyTarget,
+                    changeOrigin: true,
+                    ws: true,
+                  },
+                  ['/socket.io']: {
+                    target: proxyTarget,
+                    changeOrigin: true,
+                    ws: true,
+                  },
+                }
+              : undefined,
         },
         // 项目使用的vite插件。 单独提取到build/vite/plugin中管理
         plugins: createVitePlugins(root),

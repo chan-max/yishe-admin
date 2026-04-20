@@ -78,6 +78,10 @@ body,
     color: var(--el-text-color-primary);
 }
 
+.el-overlay-dialog{
+  background-color: rgba(var(--app-content-bg-color), 0.5); /* 0.5 是透明度 */
+}
+
 body {
     transition:
         background-color var(--transition-time-02),

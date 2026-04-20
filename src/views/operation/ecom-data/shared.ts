@@ -1,6 +1,8 @@
 import type { EcomPlatformCollectCatalog } from "@/api/operation/ecomPlatformCollect";
 import { formatDate } from "@/utils/formatTime";
 
+export { loadEcomCollectCatalog } from "@/views/operation/ecom-platform-collect/shared";
+
 export const createEmptyEcomCollectCatalog = (): EcomPlatformCollectCatalog => ({
   platforms: [],
   meta: {
@@ -10,6 +12,44 @@ export const createEmptyEcomCollectCatalog = (): EcomPlatformCollectCatalog => (
     source: "browser-automation-runtime",
   },
 });
+
+export interface BrowserAutomationExecutionContext {
+  executorType: "browser_automation";
+  clientId?: string;
+  profileId?: string;
+  notes?: string;
+}
+
+export const createDefaultBrowserAutomationExecutionContext =
+  (): BrowserAutomationExecutionContext => ({
+    executorType: "browser_automation",
+    clientId: "",
+    profileId: "",
+    notes: "",
+  });
+
+export const normalizeBrowserAutomationExecutionContext = (
+  value?: Record<string, any> | null,
+): BrowserAutomationExecutionContext => {
+  const next = createDefaultBrowserAutomationExecutionContext();
+  next.clientId = String(value?.clientId || "").trim();
+  next.profileId = String(value?.profileId || "").trim();
+  next.notes = String(value?.notes || "").trim();
+
+  return next;
+};
+
+export const formatBrowserAutomationExecutionContextSummary = (
+  value?: Record<string, any> | null,
+) => {
+  const context = normalizeBrowserAutomationExecutionContext(value);
+  const parts = [
+    context.clientId ? `客户端 ${context.clientId}` : "",
+    context.profileId ? `环境 ${context.profileId}` : "",
+  ].filter(Boolean);
+
+  return parts.join(" | ") || "浏览器自动化环境待定";
+};
 
 export const formatDateTime = (value?: string | Date | null) => {
   return value ? formatDate(new Date(value)) : "-";

@@ -6,6 +6,7 @@ export interface EcomPlatformCollectTask {
   platform: string;
   taskType?: string | null;
   configData?: Record<string, any> | null;
+  executionContext?: Record<string, any> | null;
   creator?: string;
   userId?: number | null;
   createTime?: string;
@@ -283,7 +284,10 @@ export const batchDeleteEcomPlatformCollectTask = (ids: string[]) => {
   });
 };
 
-export const triggerEcomPlatformCollectTask = (id: string) => {
+export const triggerEcomPlatformCollectTask = (
+  id: string,
+  data?: Record<string, any>,
+) => {
   return request.post<{
     success: boolean;
     message?: string;
@@ -293,6 +297,7 @@ export const triggerEcomPlatformCollectTask = (id: string) => {
     };
   }>({
     url: `/ecom-platform-collect/task/${id}/trigger`,
+    data,
   });
 };
 

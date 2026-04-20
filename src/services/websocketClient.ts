@@ -29,6 +29,12 @@ const getDefaultWsUrl = () => {
     return explicitUrl;
   }
 
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const { protocol, host } = window.location;
+    const wsProtocol = protocol === "https:" ? "wss:" : "ws:";
+    return `${wsProtocol}//${host}/ws`;
+  }
+
   const baseUrl = (import.meta.env.VITE_BASE_URL as string | undefined) ?? "";
   if (baseUrl) {
     const normalizedBase = baseUrl.replace(/\/$/, "");

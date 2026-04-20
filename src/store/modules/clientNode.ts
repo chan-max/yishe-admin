@@ -1,7 +1,7 @@
 import { computed, ref } from "vue";
 import { defineStore, storeToRefs } from "pinia";
 import {
-  getMyRuntimeWebsocketConnectionViews,
+  getMyWebsocketConnectionViews,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
 import { resolveClientServiceSummary } from "@/services/clientServiceRuntime";
@@ -99,7 +99,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
   const refresh = async () => {
     loading.value = true;
     try {
-      const response = await getMyRuntimeWebsocketConnectionViews();
+      const response = await getMyWebsocketConnectionViews();
       clients.value = resolveConnectionViews(response).sort(compareClientNodes);
     } finally {
       loading.value = false;

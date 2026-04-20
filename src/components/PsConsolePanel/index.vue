@@ -185,6 +185,13 @@
                     />
                   </div>
                 </div>
+                <div class="field-block">
+                  <label>PSD 套图 ID</label>
+                  <el-input
+                    v-model="serviceForm.psdSetId"
+                    placeholder="用于远程触发当前客户端执行 processPsdSet"
+                  />
+                </div>
 
                 <div class="button-row button-row--service-grid">
                   <el-button
@@ -231,6 +238,12 @@
                       )
                     "
                     >关闭 Photoshop</el-button
+                  >
+                  <el-button
+                    type="primary"
+                    :loading="loadingMap.processPsdSet"
+                    @click="handleProcessPsdSet"
+                    >执行 PSD 套图</el-button
                   >
                 </div>
               </div>
@@ -596,7 +609,8 @@ type PsCommandAction =
   | "stopPhotoshop"
   | "restartPhotoshop"
   | "analyzePsd"
-  | "debugProcess";
+  | "debugProcess"
+  | "processPsdSet";
 
 type CommandMode = "production" | "debug" | "maintenance";
 
@@ -651,6 +665,7 @@ const loadingMap = reactive<Record<PsCommandAction, boolean>>({
   restartPhotoshop: false,
   analyzePsd: false,
   debugProcess: false,
+  processPsdSet: false,
 });
 
 const pendingActions = reactive<Record<string, PsCommandAction>>({});
@@ -658,6 +673,7 @@ const pendingActions = reactive<Record<string, PsCommandAction>>({});
 const serviceForm = reactive({
   startTimeout: 30,
   forceStop: false,
+  psdSetId: "",
 });
 
 const analyzeForm = reactive({
@@ -935,6 +951,7 @@ const resolveActionText = (value?: string | null) => {
     restartPhotoshop: "重启 Photoshop",
     analyzePsd: "分析 PSD",
     debugProcess: "调试处理",
+    processPsdSet: "执行 PSD 套图",
   };
   return actionMap[String(value || "").trim()] || String(value || "-");
 };
@@ -1251,6 +1268,17 @@ const handleDebugProcess = async () => {
     pushCommandLog("debugProcess", "error", message, selectedClient.value?.id);
     ElMessage.warning(message);
   }
+};
+
+const handleProcessPsdSet = async () => {
+  const psdSetId = stripQuotes(serviceForm.psdSetId);
+  if (!psdSetId) {
+    ElMessage.warning("请填写 PSD 套图 ID");
+    return;
+  }
+
+  serviceForm.psdSetId = psdSetId;
+  await dispatchPsCommand("processPsdSet", { psdSetId }, "production");
 };
 
 const handleServiceRuntime = (event: ServiceRuntimeEvent) => {
