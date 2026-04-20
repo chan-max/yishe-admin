@@ -401,6 +401,7 @@ import SmallFeatureField from "../browser-automation/components/SmallFeatureFiel
 import { TOOLKIT_PLATFORM_REGISTRY, type ToolkitPlatformDefinition } from "./platformRegistry";
 import {
   TEMU_PLATFORM_KEY,
+  TEMU_SESSION_COLLECT_TOOL_KEY,
   TEMU_SESSION_RESTORE_TOOL_KEY,
   TEMU_SESSION_TOOL_KEY,
 } from "./temu/platform";
@@ -472,6 +473,8 @@ const sessionActionState = reactive({
 const autoValidatedTemuSessions = reactive<Record<string, string>>({});
 const pending = reactive<Record<string, string>>({});
 const pendingRunToolFeatureKeys = reactive<Record<string, string>>({});
+const pendingTimeoutHandles = new Map<string, ReturnType<typeof setTimeout>>();
+const TOOLKIT_RUN_TOOL_TIMEOUT_MS = 90_000;
 
 const toolkitPlatforms = computed<ToolkitPlatformDefinition[]>(() => TOOLKIT_PLATFORM_REGISTRY);
 const selectedPlatformKey = computed(() => String(route.meta?.toolkitPlatform || "").trim());
@@ -494,12 +497,20 @@ const temuWorkspaceTools = computed(() =>
   toolkitTools.value.filter((item) => {
     const platform = String(item?.platform || "").trim();
     const featureKey = String(item?.key || "").trim();
-    return platform === TEMU_PLATFORM_KEY && featureKey !== TEMU_SESSION_TOOL_KEY;
+    return (
+      platform === TEMU_PLATFORM_KEY &&
+      featureKey !== TEMU_SESSION_TOOL_KEY &&
+      featureKey !== TEMU_SESSION_COLLECT_TOOL_KEY
+    );
   }),
 );
 const temuWorkspaceToolResults = computed(() => toolkitToolResults);
 const sessionToolRunning = computed(
-  () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_TOOL_KEY,
+  () =>
+    loadingMap.runTool &&
+    [TEMU_SESSION_TOOL_KEY, TEMU_SESSION_COLLECT_TOOL_KEY].includes(
+      runningToolkitFeatureKey.value,
+    ),
 );
 const temuWorkspaceRestoreLoading = computed(
   () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_RESTORE_TOOL_KEY,
@@ -614,6 +625,7 @@ const sessionAcquireModeLabel = computed(() =>
 const sessionAcquireSubmitText = computed(() =>
   sessionAcquireForm.acquireMode === "login" ? "登录后采集会话" : "采集当前环境会话",
 );
+const TOOLKIT_ACTIVE_ENVIRONMENT_VALUE = "environment:active";
 const isTemuExecutionProfileLoading = computed(
   () =>
     selectedPlatformKey.value === TEMU_PLATFORM_KEY &&
@@ -623,7 +635,7 @@ const isTemuExecutionProfileLoading = computed(
 const executionProfileSelectValue = computed({
   get: () => (isTemuExecutionProfileLoading.value ? "" : selectedProfileValue.value),
   set: (value: string) => {
-    selectedProfileValue.value = String(value || ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE);
+    selectedProfileValue.value = String(value || "").trim();
   },
 });
 const visibleExecutionProfileOptions = computed(() =>
@@ -652,11 +664,13 @@ const toolkitExecutionOptions = computed(() => {
   const selectedClientMeta =
     selectedClientOption.value.meta || selectedClientOption.value.hint || "";
   const currentClientProfileOptions = visibleExecutionProfileOptions.value.map((option) => {
-    const environmentLabel =
-      option.profile?.id || !option.isActiveOption ? option.label : "当前环境";
+    const isCurrentEnvironmentOption = Boolean(option.isActiveOption);
+    const environmentLabel = isCurrentEnvironmentOption ? "当前环境" : option.label;
 
     return {
-      value: `profile:${option.value}`,
+      value: isCurrentEnvironmentOption
+        ? TOOLKIT_ACTIVE_ENVIRONMENT_VALUE
+        : `profile:${option.value}`,
       label: `${selectedClientLabel} / ${environmentLabel}`,
       clientLabel: selectedClientLabel,
       environmentLabel,
@@ -669,14 +683,22 @@ const toolkitExecutionOptions = computed(() => {
 });
 const toolkitExecutionSelectValue = computed({
   get: () => {
-    const profileValue = String(
-      executionProfileSelectValue.value || ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE,
-    ).trim();
+    const profileValue = String(executionProfileSelectValue.value || "").trim();
+    if (profileValue) {
+      if (profileValue === ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE) {
+        return TOOLKIT_ACTIVE_ENVIRONMENT_VALUE;
+      }
+      if (visibleExecutionProfileOptions.value.some((item) => item.value === profileValue)) {
+        return `profile:${profileValue}`;
+      }
+      return "";
+    }
+
     if (
-      profileValue &&
-      visibleExecutionProfileOptions.value.some((item) => item.value === profileValue)
+      selectedClientId.value &&
+      visibleExecutionProfileOptions.value.some((item) => item.isActiveOption)
     ) {
-      return `profile:${profileValue}`;
+      return TOOLKIT_ACTIVE_ENVIRONMENT_VALUE;
     }
 
     return "";
@@ -695,6 +717,11 @@ const toolkitExecutionSelectValue = computed({
       }
 
       selectedClientId.value = nextClientId;
+      return;
+    }
+
+    if (normalizedValue === TOOLKIT_ACTIVE_ENVIRONMENT_VALUE) {
+      selectedProfileValue.value = ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE;
       return;
     }
 
@@ -1180,6 +1207,19 @@ const finish = (action?: string) => {
   }
 };
 
+const clearPendingTimeout = (commandId?: string) => {
+  const normalizedCommandId = String(commandId || "").trim();
+  if (!normalizedCommandId) {
+    return;
+  }
+
+  const timer = pendingTimeoutHandles.get(normalizedCommandId);
+  if (timer) {
+    clearTimeout(timer);
+    pendingTimeoutHandles.delete(normalizedCommandId);
+  }
+};
+
 const dispatchCommand = async (
   action: "profiles" | "tools" | "runTool",
   requestor: () => Promise<BrowserAutomationCommandResponse>,
@@ -1211,6 +1251,22 @@ const dispatchCommand = async (
     pending[commandId] = action;
     if (action === "runTool" && options.featureKey) {
       pendingRunToolFeatureKeys[commandId] = options.featureKey;
+    }
+    if (action === "runTool") {
+      const featureLabel = String(options.featureKey || "工具").trim() || "工具";
+      const timer = setTimeout(() => {
+        if (!pending[commandId]) {
+          clearPendingTimeout(commandId);
+          return;
+        }
+
+        delete pending[commandId];
+        delete pendingRunToolFeatureKeys[commandId];
+        clearPendingTimeout(commandId);
+        finish("runTool");
+        ElMessage.error(`${featureLabel} 执行超时，请检查客户端日志或浏览器自动化服务状态`);
+      }, TOOLKIT_RUN_TOOL_TIMEOUT_MS);
+      pendingTimeoutHandles.set(commandId, timer);
     }
     if (sentMessage) {
       ElMessage.success(sentMessage);
@@ -1386,6 +1442,35 @@ const dispatchTemuSessionAcquire = async (
   );
 };
 
+const dispatchTemuCurrentSessionCollect = async (
+  profileId: string,
+  options?: {
+    collectRegionCookies?: boolean;
+    keepPageOpen?: boolean;
+  },
+  sentMessage = "Temu 当前环境会话采集命令已发送",
+) => {
+  if (!selectedClientId.value) {
+    ElMessage.warning("请先选择在线客户端");
+    return;
+  }
+
+  await dispatchCommand(
+    "runTool",
+    () =>
+      runToolkitTool(selectedClientId.value, {
+        featureKey: TEMU_SESSION_COLLECT_TOOL_KEY,
+        profileId,
+        collectRegionCookies: options?.collectRegionCookies !== false,
+        keepPageOpen: options?.keepPageOpen !== false,
+      }),
+    sentMessage,
+    {
+      featureKey: TEMU_SESSION_COLLECT_TOOL_KEY,
+    },
+  );
+};
+
 const acquireCurrentSession = async () => {
   const profileId = String(selectedExecutionProfileId.value || "").trim();
   if (!profileId) {
@@ -1406,15 +1491,13 @@ const acquireCurrentSession = async () => {
   await dispatchTemuSessionAcquire(
     profileId,
     {
-      acquireMode: sessionAcquireForm.acquireMode as "direct" | "login",
+      acquireMode: "login",
       account: sessionAcquireForm.account,
       password: sessionAcquireForm.password,
       collectRegionCookies: sessionAcquireForm.collectRegionCookies,
       keepPageOpen: sessionAcquireForm.keepPageOpen,
     },
-    sessionAcquireForm.acquireMode === "login"
-      ? "Temu 登录后采集会话命令已发送"
-      : "Temu 当前环境会话采集命令已发送",
+    "Temu 登录后采集会话命令已发送",
   );
 };
 
@@ -1430,10 +1513,9 @@ const quickAcquireCurrentSession = async () => {
     return;
   }
 
-  await dispatchTemuSessionAcquire(
+  await dispatchTemuCurrentSessionCollect(
     profileId,
     {
-      acquireMode: "direct",
       collectRegionCookies: sessionAcquireForm.collectRegionCookies,
       keepPageOpen: sessionAcquireForm.keepPageOpen,
     },
@@ -1700,6 +1782,7 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
     return;
   }
 
+  clearPendingTimeout(event.commandId);
   delete pending[event.commandId];
   delete pendingRunToolFeatureKeys[event.commandId];
   finish(action);
@@ -1730,7 +1813,10 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
         toolkitToolResults[featureKey] = buildToolkitToolExecutionRecord(event, featureKey);
       }
 
-      if (event.success && [TEMU_SESSION_TOOL_KEY, "temu-session-collect"].includes(featureKey)) {
+      if (
+        event.success &&
+        [TEMU_SESSION_TOOL_KEY, TEMU_SESSION_COLLECT_TOOL_KEY].includes(featureKey)
+      ) {
         const sessionBundle = asPlainObject(result?.sessionBundle);
         const profileId = resolveCollectedProfileId(result);
         if (sessionBundle && profileId) {
@@ -1789,7 +1875,7 @@ watch(
   selectedClientId,
   (value) => {
     resetProfiles();
-    selectedProfileValue.value = ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE;
+    selectedProfileValue.value = "";
     toolkitTools.value = [];
     resetToolkitToolResults();
     runningToolkitFeatureKey.value = "";

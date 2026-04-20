@@ -107,7 +107,7 @@ export function useBrowserAutomationExecutionContext() {
   } = usePluginClientNodes("browser-automation");
 
   const selectedClientId = ref("");
-  const selectedProfileValue = ref(ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE);
+  const selectedProfileValue = ref("");
   const profilePayload = ref<BrowserAutomationProfilesPayload>(
     createEmptyBrowserAutomationProfilesPayload(),
   );

@@ -21,6 +21,10 @@
         :model-value="modelValue"
         class="small-feature-field__control"
         :placeholder="field.placeholder || `请选择${field.label}`"
+        :multiple="!!field.multiple"
+        :collapse-tags="!!field.multiple"
+        collapse-tags-tooltip
+        clearable
         @update:model-value="handleInput"
         @blur="emit('blur')"
       >

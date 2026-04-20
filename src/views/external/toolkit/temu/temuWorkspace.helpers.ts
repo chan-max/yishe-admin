@@ -382,7 +382,13 @@ export const buildDefaultFormState = (fields: TemuActionField[] = []) => {
 
 export const formatFieldValueForForm = (field: TemuActionField, value: any) => {
   if (value === undefined || value === null || value === "") {
-    return field.type === "number" ? undefined : "";
+    if (field.type === "number") {
+      return undefined;
+    }
+    if (field.type === "select" && field.multiple) {
+      return [];
+    }
+    return "";
   }
 
   if (field.type === "json") {
@@ -391,6 +397,10 @@ export const formatFieldValueForForm = (field: TemuActionField, value: any) => {
 
   if (field.type === "array-number" || field.type === "array-string") {
     return Array.isArray(value) ? value.join("\n") : String(value);
+  }
+
+  if (field.type === "select" && field.multiple) {
+    return Array.isArray(value) ? value : [value];
   }
 
   return value;
@@ -458,6 +468,22 @@ export const validateAndNormalizeField = (field: TemuActionField, value: any) =>
       .split(/\r?\n|,|，/)
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  if (field.type === "select" && field.multiple) {
+    const values = Array.isArray(value) ? value : [value];
+    return values
+      .map((item) => {
+        if (item === undefined || item === null || item === "") {
+          return null;
+        }
+        const normalized =
+          typeof item === "string" && /^-?\d+(\.\d+)?$/.test(item.trim())
+            ? Number(item)
+            : item;
+        return normalized;
+      })
+      .filter((item) => item !== null);
   }
 
   return rawText;

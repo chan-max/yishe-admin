@@ -15,6 +15,7 @@ export interface TemuActionField {
   rows?: number;
   defaultValue?: any;
   options?: TemuFieldOption[];
+  multiple?: boolean;
 }
 
 export interface TemuActionPreset {
@@ -486,7 +487,20 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         type: "array-number",
         hint: "例如 1 待传图、4 异常",
       },
-      { key: "goodsStatusList", label: "商品状态列表", type: "array-number" },
+      {
+        key: "goodsStatusList",
+        label: "商品状态列表",
+        type: "select",
+        multiple: true,
+        options: [
+          { label: "在售中", value: 1 },
+          { label: "未发布到站点", value: 2 },
+          { label: "已下架", value: 3 },
+          { label: "已终止", value: 4 },
+          { label: "已删除", value: 5 },
+        ],
+        hint: "可多选；不选则默认不过滤商品状态。",
+      },
       { key: "blackWordTypeList", label: "敏感词类型列表", type: "array-number" },
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
     ],
