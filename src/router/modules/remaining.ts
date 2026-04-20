@@ -390,15 +390,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "AI文字转语音",
         },
       },
-      {
-        path: "agent",
-        component: () => import("@/views/ai/agent/index.vue"),
-        name: "AiAgentConsole",
-        meta: {
-          title: "Agent 调试台",
-          hidden: true,
-        },
-      },
+      // Agent 调试台已被智能助手覆盖，先停用独立路由入口。
+      // {
+      //   path: "agent",
+      //   component: () => import("@/views/ai/agent/index.vue"),
+      //   name: "AiAgentConsole",
+      //   meta: {
+      //     title: "Agent 调试台",
+      //     hidden: true,
+      //   },
+      // },
       {
         path: "prompt",
         component: () => import("@/views/material/prompt/index.vue"),
@@ -892,15 +893,16 @@ const remainingRouter: AppRouteRecordRaw[] = [
       noTagsView: true,
     },
   },
-  {
-    path: "/ai/generation/agent",
-    redirect: "/ai/agent",
-    name: "AiGenerationAgentCompat",
-    meta: {
-      hidden: true,
-      noTagsView: true,
-    },
-  },
+  // Agent 调试台兼容路由先一并停用，避免继续访问旧入口。
+  // {
+  //   path: "/ai/generation/agent",
+  //   redirect: "/ai/agent",
+  //   name: "AiGenerationAgentCompat",
+  //   meta: {
+  //     hidden: true,
+  //     noTagsView: true,
+  //   },
+  // },
   {
     path: "/shop",
     redirect: "/operation/shop",

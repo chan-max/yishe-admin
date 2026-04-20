@@ -26,6 +26,37 @@ const markdown = new Marked({
 
 markdown.use({
   renderer: {
+    image(token) {
+      const rawHref = String(token.href || "").trim()
+      const rawText = String(token.text || "").trim()
+      const rawTitle = String(token.title || "").trim()
+
+      if (!rawHref) {
+        return rawText || ""
+      }
+
+      const alt = rawText || rawTitle || "image"
+      const caption = rawTitle || rawText
+
+      return [
+        '<figure class="markdown-view__image-block">',
+        `<img class="markdown-view__image" src="${rawHref}" alt="${alt}" loading="lazy" />`,
+        caption ? `<figcaption class="markdown-view__image-caption">${caption}</figcaption>` : "",
+        '</figure>'
+      ].join('')
+    },
+    link(token) {
+      const rawHref = String(token.href || "").trim()
+      const rawTitle = String(token.title || "").trim()
+      const text = token.text || rawHref
+
+      if (!rawHref) {
+        return text
+      }
+
+      const titleAttr = rawTitle ? ` title="${rawTitle}"` : ''
+      return `<a href="${rawHref}" target="_blank" rel="noopener noreferrer nofollow"${titleAttr}>${text}</a>`
+    },
     code(token) {
       const rawCode = String(token.text || '')
       const language = String(token.lang || '').trim().toLowerCase()
@@ -141,6 +172,38 @@ onBeforeUnmount(() => {
 
   a {
     color: var(--ai-primary, var(--el-color-primary));
+  }
+
+  :deep(.markdown-view__image-block) {
+    display: block;
+    margin: 10px 0 12px;
+    max-width: min(360px, 100%);
+  }
+
+  :deep(.markdown-view__image) {
+    display: block;
+    width: auto !important;
+    height: auto !important;
+    max-width: min(360px, 100%) !important;
+    max-height: 320px !important;
+    border: 1px solid var(--ai-line, var(--el-border-color-light));
+    border-radius: 14px;
+    background: var(--ai-surface-soft, var(--el-fill-color-light));
+    object-fit: contain;
+    overflow: hidden;
+  }
+
+  :deep(img) {
+    max-width: min(360px, 100%) !important;
+    max-height: 320px !important;
+    height: auto !important;
+  }
+
+  :deep(.markdown-view__image-caption) {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ai-text-secondary, var(--el-text-color-secondary));
   }
 
   strong,

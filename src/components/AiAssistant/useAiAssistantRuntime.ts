@@ -9,6 +9,8 @@ import type {
 } from "@/api/aiAssistant";
 import { useAiAssistantStore } from "@/store/modules/aiAssistant";
 
+type AssistantToolCall = AiAssistantChatResult["toolCalls"][number];
+
 const resolveErrorMessage = (error: any) => {
   return String(
     error?.message || error?.response?.data?.message || error?.response?.data?.msg || "发送失败",
@@ -17,6 +19,7 @@ const resolveErrorMessage = (error: any) => {
 
 export type DisplayMessage = AiAssistantMessage & {
   loading?: boolean;
+  toolCalls?: AssistantToolCall[];
 };
 
 export type AssistantMessageBatch = DisplayMessage[];
@@ -30,6 +33,7 @@ export type AssistantBubbleItem = {
   toolKey: string | null;
   toolInput: DisplayMessage["toolInput"];
   toolResult: DisplayMessage["toolResult"];
+  toolCalls?: AssistantToolCall[];
   routeTitle: string | null;
   routePath: string | null;
   loading: boolean;
@@ -46,7 +50,24 @@ type AiAssistantRequestPayload = {
 
 const toDisplayMessage = (message: AiAssistantMessage | DisplayMessage): DisplayMessage => ({
   ...message,
+  toolCalls: Array.isArray((message as DisplayMessage).toolCalls)
+    ? (message as DisplayMessage).toolCalls
+    : [],
 });
+
+const buildToolCallSummaryContent = (toolCalls: AssistantToolCall[]) => {
+  if (!toolCalls.length) {
+    return "无";
+  }
+
+  return toolCalls
+    .map((item) => {
+      const tool = String(item.tool || "").trim() || "unknown.tool";
+      const reason = String(item.reason || "").trim();
+      return reason ? `${tool}\n${reason}` : tool;
+    })
+    .join("\n\n");
+};
 
 const createLocalMessage = (
   id: number,
@@ -96,6 +117,88 @@ export const useAiAssistantRuntime = () => {
     return createLocalMessage(tempMessageId, role, content, pageContext, conversationId, extra);
   };
 
+  const createToolCallSummaryMessage = (
+    toolCalls: AssistantToolCall[],
+    pageContext: AiAssistantPageContext,
+    conversationId: number | null,
+    createdAt?: string,
+  ) =>
+    createTempMessage("tool", buildToolCallSummaryContent(toolCalls), pageContext, conversationId, {
+      createdAt: createdAt || new Date().toISOString(),
+      toolKey: "__tool_call_summary__",
+      toolLabel: "工具调用",
+      toolCalls,
+    });
+
+  const buildDisplayMessages = (
+    messages: Array<AiAssistantMessage | DisplayMessage>,
+    pageContext: AiAssistantPageContext,
+    conversationId: number | null,
+    fallbackToolCalls: AssistantToolCall[] = [],
+  ) => {
+    const normalizedMessages = messages.map((item) => toDisplayMessage(item));
+    const displayMessages: DisplayMessage[] = [];
+    let pendingToolMessages: DisplayMessage[] = [];
+
+    const flushToolSummary = (
+      assistantMessage?: DisplayMessage | null,
+      explicitToolCalls: AssistantToolCall[] = [],
+    ) => {
+      const derivedToolCalls = pendingToolMessages
+        .map((item) => {
+          const tool = String(item.toolKey || item.toolLabel || "").trim();
+          if (!tool) {
+            return null;
+          }
+          return {
+            tool,
+            reason: String(item.content || "").trim(),
+            input: item.toolInput || {},
+          };
+        })
+        .filter(Boolean) as AssistantToolCall[];
+
+      const toolCalls = explicitToolCalls.length
+        ? explicitToolCalls
+        : derivedToolCalls.length
+          ? derivedToolCalls
+          : [];
+
+      displayMessages.push(
+        createToolCallSummaryMessage(
+          toolCalls,
+          assistantMessage?.pageContext || pageContext,
+          assistantMessage?.conversationId ?? conversationId,
+          assistantMessage?.createdAt,
+        ),
+      );
+      pendingToolMessages = [];
+    };
+
+    normalizedMessages.forEach((item) => {
+      if (item.role === "user") {
+        pendingToolMessages = [];
+        displayMessages.push(item);
+        return;
+      }
+
+      if (item.role === "tool") {
+        pendingToolMessages.push(item);
+        return;
+      }
+
+      if (item.role === "assistant") {
+        flushToolSummary(item, item.toolCalls || fallbackToolCalls);
+        displayMessages.push(item);
+        return;
+      }
+
+      displayMessages.push(item);
+    });
+
+    return displayMessages;
+  };
+
   const [agent] = useXAgent<
     AssistantMessageBatch,
     AiAssistantRequestPayload,
@@ -115,22 +218,27 @@ export const useAiAssistantRuntime = () => {
 
         const nextConversationId =
           Number(result.conversation?.id || info.conversationId || 0) || null;
-        const nextBatch = result.messages
-          .filter((item) => item.role !== "user")
-          .map((item) => toDisplayMessage(item));
+        const nextBatch = buildDisplayMessages(
+          result.messages,
+          info.pageContext,
+          nextConversationId,
+          result.toolCalls || [],
+        ).filter((item) => item.role !== "user");
 
-        callbacks.onSuccess([
+        callbacks.onSuccess(
           nextBatch.length
-            ? nextBatch
+            ? nextBatch.map((item) => [item])
             : [
-                createTempMessage(
-                  "assistant",
-                  result.reply || "已完成处理",
-                  info.pageContext,
-                  nextConversationId,
-                ),
+                [
+                  createTempMessage(
+                    "assistant",
+                    result.reply || "已完成处理",
+                    info.pageContext,
+                    nextConversationId,
+                  ),
+                ],
               ],
-        ]);
+        );
       } catch (error: any) {
         const message = resolveErrorMessage(error);
         ElMessage.error(message);
@@ -156,6 +264,7 @@ export const useAiAssistantRuntime = () => {
         toolKey: item.toolKey,
         toolInput: item.toolInput,
         toolResult: item.toolResult,
+        toolCalls: item.toolCalls || [],
         routeTitle: item.routeTitle,
         routePath: item.routePath,
         loading: !!item.loading,
@@ -198,7 +307,11 @@ export const useAiAssistantRuntime = () => {
 
   const syncHistoryMessages = () => {
     setMessages(
-      persistedMessages.value.map((item) => ({
+      buildDisplayMessages(
+        persistedMessages.value,
+        {},
+        activeConversationId.value,
+      ).map((item) => ({
         id: `history_${item.id}`,
         message: [toDisplayMessage(item)],
         status: "success" as const,

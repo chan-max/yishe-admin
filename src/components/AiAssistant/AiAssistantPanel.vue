@@ -104,7 +104,23 @@
           class="ai-assistant-panel__stream"
         >
           <template v-if="!(loadingHistory && !bubbleItems.length)">
-            <div v-if="!bubbleItems.length" class="ai-assistant-panel__empty">开始对话</div>
+            <div v-if="!bubbleItems.length" class="ai-assistant-panel__empty">
+              <Welcome
+                variant="borderless"
+                class="ai-assistant-panel__welcome"
+                :icon="renderAssistantAvatar()"
+                title="智能助手"
+                :description="welcomeDescription"
+              />
+
+              <Prompts
+                class="ai-assistant-panel__welcome-prompts"
+                title="快捷开始"
+                :items="starterPromptItems"
+                :wrap="true"
+                @item-click="handleStarterPromptClick"
+              />
+            </div>
 
             <BubbleList
               v-else
@@ -403,12 +419,24 @@ import {
   ApiOutlined,
   AppstoreOutlined,
   CopyOutlined,
+  DatabaseOutlined,
   DeleteOutlined,
+  FileSearchOutlined,
   PlusOutlined,
+  PictureOutlined,
   ReloadOutlined,
+  ShopOutlined,
 } from "@ant-design/icons-vue";
 import { Avatar, Button, Drawer, Popconfirm, Tabs, Tag } from "ant-design-vue";
-import { Actions, BubbleList, Conversations, Sender, ThoughtChain } from "ant-design-x-vue";
+import {
+  Actions,
+  BubbleList,
+  Conversations,
+  Prompts,
+  Sender,
+  ThoughtChain,
+  Welcome,
+} from "ant-design-x-vue";
 import type { ActionItem, ThoughtChainItem } from "ant-design-x-vue";
 import { ElMessage } from "element-plus";
 import type {
@@ -521,6 +549,53 @@ const capabilitySummary = computed(() => {
 
 const capabilityCount = computed(() => capabilityCatalog.value?.total || 0);
 
+const welcomeDescription = computed(() => {
+  return activeConversationId.value
+    ? "从查询开始，逐步扩展到执行、确认和结果追踪。"
+    : "可以先从任务、图库、采集素材、商品、店铺、Temu 记录这些高频问题开始。";
+});
+
+const starterPromptItems = computed(() => [
+  {
+    key: "running-tasks",
+    icon: h(AppstoreOutlined),
+    label: "查看运行中任务",
+    description: "快速确认当前还有哪些任务在执行",
+  },
+  {
+    key: "latest-gallery",
+    icon: h(PictureOutlined),
+    label: "看看图库最新图片",
+    description: "直接查看最近入库的图库素材",
+  },
+  {
+    key: "crawler-count",
+    icon: h(DatabaseOutlined),
+    label: "统计采集素材",
+    description: "查询采集素材总量或最近新增数量",
+  },
+  {
+    key: "shops",
+    icon: h(ShopOutlined),
+    label: "查看店铺信息",
+    description: "查询当前用户可见的店铺列表和详情",
+  },
+  {
+    key: "publish",
+    icon: h(FileSearchOutlined),
+    label: "查看发布任务",
+    description: "快速查询发布任务记录和状态",
+  },
+]);
+
+const starterPromptTextMap: Record<string, string> = {
+  "running-tasks": "我有哪些任务正在执行",
+  "latest-gallery": "给我图库最近图片的信息",
+  "crawler-count": "统计一下采集素材总数",
+  shops: "看看我有哪些店铺",
+  publish: "看看最近的发布任务",
+};
+
 const renderAssistantAvatar = () =>
   h(
     Avatar,
@@ -559,7 +634,7 @@ const bubbleRoles = computed<Record<string, any>>(() => {
     },
     tool: {
       placement: "start",
-      variant: "outlined",
+      variant: "borderless",
       shape: "corner",
       avatar: () =>
         h(
@@ -924,6 +999,16 @@ const applyExamplePrompt = (prompt: string) => {
   draft.value = String(prompt || "").trim();
 };
 
+const handleStarterPromptClick = ({ data }: { data: { key: string } }) => {
+  const prompt = starterPromptTextMap[String(data?.key || "").trim()];
+  if (!prompt) {
+    return;
+  }
+
+  draft.value = prompt;
+  handleSubmit();
+};
+
 const buildToolBubbleActions = (item: unknown): ActionItem[] => {
   const bubbleItem = getBubbleItem(item);
   return [
@@ -1217,18 +1302,21 @@ watch(
 
   &__empty {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     justify-content: center;
-    min-height: 240px;
-    width: 100%;
+    gap: 18px;
+    min-height: 320px;
+    width: min(760px, 100%);
     margin: 0 auto;
   }
 
-  &__empty {
-    color: var(--ai-text-secondary);
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+  &__welcome {
+    padding: 8px 0;
+  }
+
+  &__welcome-prompts {
+    width: 100%;
   }
 
   &__bubble-list {
@@ -1250,6 +1338,16 @@ watch(
     flex-wrap: wrap;
     font-size: 11px;
     color: var(--ai-text-tertiary);
+
+    :deep(.ant-tag) {
+      padding-inline: 5px;
+      min-height: 16px;
+      font-size: 9px;
+      line-height: 14px;
+      color: var(--ai-text-tertiary);
+      background: color-mix(in srgb, var(--ai-primary) 4%, var(--ai-panel-bg) 96%);
+      border-color: color-mix(in srgb, var(--ai-primary) 8%, var(--ai-border-color) 92%);
+    }
   }
 
   &__message-text {
@@ -1265,17 +1363,25 @@ watch(
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--ai-primary) 4%, transparent 96%);
   }
 
   &__tool-summary {
-    font-size: 13px;
-    line-height: 1.6;
-    color: var(--ai-text);
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ai-text-secondary);
     white-space: pre-wrap;
   }
 
   &__inline-actions {
     margin-left: -6px;
+
+    :deep(.ant-btn) {
+      font-size: 11px;
+      color: var(--ai-text-tertiary);
+    }
   }
 
   &__bubble-loading {
@@ -1368,9 +1474,9 @@ watch(
   }
 
   &__tool-avatar {
-    background: var(--ai-primary-soft);
-    border-color: color-mix(in srgb, var(--ai-primary) 14%, var(--ai-border-color) 86%);
-    color: var(--ai-primary);
+    background: color-mix(in srgb, var(--ai-primary) 8%, transparent 92%);
+    border-color: transparent;
+    color: color-mix(in srgb, var(--ai-primary) 72%, var(--ai-text-secondary) 28%);
   }
 
   &__composer {
@@ -1448,29 +1554,29 @@ watch(
   }
 
   &__capability-head {
-    margin-bottom: 20px;
+    margin-bottom: 14px;
   }
 
   &__capability-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--ai-text);
     letter-spacing: -0.02em;
   }
 
   &__capability-summary {
-    margin-top: 8px;
+    margin-top: 6px;
     max-width: 780px;
-    font-size: 13px;
-    line-height: 1.7;
+    font-size: 12px;
+    line-height: 1.6;
     color: var(--ai-text-secondary);
   }
 
   &__capability-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 12px;
+    gap: 6px;
+    margin-top: 10px;
   }
 
   &__capability-empty {
@@ -1484,30 +1590,35 @@ watch(
   &__capability-groups {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
   }
 
   &__capability-group {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
+    padding: 12px 14px 0;
+    border-radius: 16px;
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    border-left: 4px solid #3b82f6;
+    background: rgba(59, 130, 246, 0.06);
   }
 
   &__capability-group-head {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   &__capability-group-title {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
-    color: var(--ai-text);
+    color: #2563eb;
   }
 
   &__capability-group-desc {
-    font-size: 12px;
-    line-height: 1.7;
+    font-size: 11px;
+    line-height: 1.55;
     color: var(--ai-text-secondary);
   }
 
@@ -1518,68 +1629,69 @@ watch(
   &__capability-item {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--ai-border-color);
+    gap: 8px;
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(59, 130, 246, 0.18);
   }
 
   &__capability-item-main {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   &__capability-item-title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--ai-text);
   }
 
   &__capability-item-key {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 11px;
-    line-height: 1.6;
-    color: var(--ai-text-tertiary);
+    font-size: 10px;
+    line-height: 1.45;
+    color: #2563eb;
     word-break: break-all;
   }
 
   &__capability-item-desc {
     max-width: 820px;
-    font-size: 13px;
-    line-height: 1.75;
+    font-size: 12px;
+    line-height: 1.6;
     color: var(--ai-text-secondary);
   }
 
   &__capability-item-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
 
   &__capability-item-section {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   &__capability-item-section-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    color: var(--ai-text);
+    color: #2563eb;
   }
 
   &__capability-param-list,
   &__capability-case-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
   }
 
   &__capability-param-item,
   &__capability-case-item {
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: var(--ai-panel-soft-bg);
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.16);
+    background: rgba(59, 130, 246, 0.05);
   }
 
   &__capability-param-head {
@@ -1596,17 +1708,17 @@ watch(
     gap: 8px;
     min-width: 0;
     color: var(--ai-text);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
 
     code {
       padding: 1px 6px;
       border-radius: 999px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 11px;
+      font-size: 10px;
       line-height: 1.5;
-      color: var(--ai-text-secondary);
-      background: color-mix(in srgb, var(--ai-text) 6%, transparent 94%);
+      color: #1d4ed8;
+      background: rgba(59, 130, 246, 0.1);
     }
   }
 
@@ -1619,42 +1731,42 @@ watch(
 
   &__capability-param-desc,
   &__capability-case-desc {
-    font-size: 12px;
-    line-height: 1.7;
+    font-size: 11px;
+    line-height: 1.6;
     color: var(--ai-text-secondary);
   }
 
   &__capability-param-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    font-size: 12px;
-    line-height: 1.7;
+    gap: 8px;
+    font-size: 11px;
+    line-height: 1.55;
     color: var(--ai-text-secondary);
   }
 
   &__capability-case-title {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--ai-text);
   }
 
   &__capability-case-prompt {
-    margin-top: 6px;
-    font-size: 13px;
-    line-height: 1.75;
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.6;
     color: var(--ai-text);
     white-space: pre-wrap;
     word-break: break-word;
   }
 
   &__capability-case-input {
-    margin: 10px 0 0;
-    padding: 10px 12px;
+    margin: 8px 0 0;
+    padding: 8px 10px;
     border-radius: 12px;
-    background: color-mix(in srgb, var(--ai-text) 4%, transparent 96%);
-    font-size: 11px;
-    line-height: 1.7;
+    background: rgba(59, 130, 246, 0.08);
+    font-size: 10px;
+    line-height: 1.6;
     color: var(--ai-text-secondary);
     white-space: pre-wrap;
     word-break: break-word;
@@ -1690,6 +1802,57 @@ watch(
 :deep(.ant-drawer-title),
 :deep(.ant-drawer-close) {
   color: var(--ai-text);
+}
+
+:deep(.ai-assistant-panel__capability-drawer .ant-tag) {
+  margin-inline-end: 0;
+  padding-inline: 8px;
+  min-height: 22px;
+  border-radius: 999px;
+  font-size: 11px;
+  line-height: 20px;
+  border-color: rgba(59, 130, 246, 0.18);
+  background: rgba(59, 130, 246, 0.08);
+  color: #1d4ed8;
+}
+
+:deep(.ai-assistant-panel__welcome .ant-welcome-title) {
+  font-size: 26px;
+  line-height: 1.2;
+  color: var(--ai-text);
+}
+
+:deep(.ai-assistant-panel__welcome .ant-welcome-description) {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ai-text-secondary);
+}
+
+:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-title) {
+  font-size: 12px;
+  color: var(--ai-text-tertiary);
+}
+
+:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-item) {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--ai-primary) 10%, var(--ai-border-color) 90%);
+  background: color-mix(in srgb, var(--ai-primary) 3%, var(--ai-panel-bg) 97%);
+}
+
+:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-item:hover) {
+  background: color-mix(in srgb, var(--ai-primary) 6%, var(--ai-panel-bg) 94%);
+  border-color: color-mix(in srgb, var(--ai-primary) 18%, var(--ai-border-color) 82%);
+}
+
+:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-label) {
+  font-size: 12px;
+  color: var(--ai-text);
+}
+
+:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-desc) {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--ai-text-secondary);
 }
 
 :deep(.ant-btn-default) {

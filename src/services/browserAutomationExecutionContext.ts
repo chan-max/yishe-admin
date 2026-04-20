@@ -42,16 +42,20 @@ export const createEmptyBrowserAutomationProfilesPayload =
 
 export const normalizeBrowserAutomationProfilesPayload = (
   payload?: Partial<BrowserAutomationProfilesPayload> | Record<string, any> | null,
-): BrowserAutomationProfilesPayload => ({
-  activeProfileId: payload?.activeProfileId || payload?.activeProfile?.id || null,
-  workspaceDir: payload?.workspaceDir,
-  profilesRootDir: payload?.profilesRootDir,
-  items: Array.isArray(payload?.items)
-    ? payload.items
-    : Array.isArray((payload as Record<string, any> | null | undefined)?.profiles)
-      ? ((payload as Record<string, any>).profiles as BrowserAutomationProfileSummary[])
-      : [],
-});
+): BrowserAutomationProfilesPayload => {
+  const rawPayload = (payload || {}) as Record<string, any>;
+
+  return {
+    activeProfileId: rawPayload.activeProfileId || rawPayload.activeProfile?.id || null,
+    workspaceDir: rawPayload.workspaceDir,
+    profilesRootDir: rawPayload.profilesRootDir,
+    items: Array.isArray(rawPayload.items)
+      ? rawPayload.items
+      : Array.isArray(rawPayload.profiles)
+        ? (rawPayload.profiles as BrowserAutomationProfileSummary[])
+        : [],
+  };
+};
 
 const formatTimeText = (value?: string | null) =>
   value ? formatDate(new Date(value), "YYYY-MM-DD HH:mm") : "";
