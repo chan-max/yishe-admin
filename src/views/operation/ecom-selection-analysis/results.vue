@@ -6,12 +6,6 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">选品分析结果</div>
-              <div class="resource-toolbar__desc">
-                展示每次分析真正落库的结果包，并保留从热门选品结果继续创建找同款任务的入口。
-              </div>
-            </div>
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
             </div>
           </div>
 

@@ -6,16 +6,6 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">电商分析任务</div>
-              <div class="resource-toolbar__desc">
-                采集模块负责提供数据源，这里只负责定义分析范围、AI
-                参数与手动触发入口；支持热门选品、POD 图案分析和自定义提示词分析。
-              </div>
-            </div>
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
-              <el-button size="small" type="primary" @click="openTaskDialog()">
-                新建任务
-              </el-button>
             </div>
           </div>
 
@@ -45,6 +35,9 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="openTaskDialog()">
+                新建任务
+              </el-button>
               <el-button
                 size="small"
                 type="danger"

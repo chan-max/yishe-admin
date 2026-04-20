@@ -3,12 +3,6 @@
     <ListPageLayout class="ecom-data-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="resource-toolbar">
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
-            </div>
-          </div>
-
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">

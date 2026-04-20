@@ -3,15 +3,6 @@
     <ListPageLayout class="ecom-data-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="resource-toolbar">
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
-              <el-button size="small" type="primary" @click="openTaskDialog()">
-                新建任务
-              </el-button>
-            </div>
-          </div>
-
           <el-form :model="filters" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col :xs="24" :sm="12" :md="8" :lg="8">
@@ -36,6 +27,9 @@
             <div class="list-page-search-form__actions">
               <el-button size="small" type="primary" @click="handleSearch">查询</el-button>
               <el-button size="small" @click="handleReset">重置</el-button>
+              <el-button size="small" type="primary" @click="openTaskDialog()">
+                新建任务
+              </el-button>
               <el-button
                 size="small"
                 type="danger"

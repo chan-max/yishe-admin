@@ -6,13 +6,6 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__meta">
               <div class="resource-toolbar__title">选品分析运行</div>
-              <div class="resource-toolbar__desc">
-                查看每次分析的运行状态、数据源快照、AI
-                模型和运行摘要；完整分析产物请在“选品分析结果”里查看。
-              </div>
-            </div>
-            <div class="resource-toolbar__actions">
-              <el-button size="small" @click="loadData">刷新</el-button>
             </div>
           </div>
 
