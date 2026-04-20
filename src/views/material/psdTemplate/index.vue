@@ -424,7 +424,6 @@
     >
       <div class="psd-template-dialog-layout">
         <div class="psd-template-dialog-main">
-          <!-- 基础信息 -->
           <div class="dialog-section dialog-section-basic">
             <div class="dialog-section-title">基础信息</div>
             <el-form
@@ -434,7 +433,7 @@
               label-width="100px"
               class="psd-template-form"
             >
-              <el-row :gutter="20">
+              <el-row :gutter="16">
                 <el-col :span="12">
                   <el-form-item label="模板名称" prop="name">
                     <el-input v-model="form.name" placeholder="请输入模板名称" />
@@ -451,7 +450,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="20">
+              <el-row :gutter="16">
                 <el-col :span="24">
                   <el-form-item label="关键词" prop="keywords">
                     <el-input
@@ -462,7 +461,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="20">
+              <el-row :gutter="16">
                 <el-col :span="24">
                   <el-form-item label="描述" prop="description">
                     <el-input
@@ -475,7 +474,7 @@
                 </el-col>
               </el-row>
 
-              <el-row :gutter="20">
+              <el-row :gutter="16">
                 <el-col :span="24">
                   <el-form-item label="本地路径" prop="windowsLocalPath">
                     <el-input
@@ -488,15 +487,14 @@
             </el-form>
           </div>
 
-          <!-- PSD 文件与缩略图 -->
           <div class="dialog-section dialog-section-assets">
-            <div class="dialog-section-title">PSD 文件与缩略图</div>
-            <el-row :gutter="20">
-              <el-col :span="12">
-                <el-form :model="form" label-width="100px">
-                  <el-form-item label="PSD 文件" prop="file">
+            <div class="dialog-section-title">文件</div>
+            <div class="asset-layout">
+              <el-form :model="form" label-width="92px" class="psd-template-form asset-form">
+                <el-form-item label="PSD 文件" prop="file" class="asset-form-item">
+                  <div class="asset-block">
                     <el-upload
-                      style="width: 100%"
+                      class="psd-file-upload"
                       action="#"
                       :limit="1"
                       :file-list="fileList"
@@ -514,9 +512,8 @@
                       </template>
                     </el-upload>
                     <div v-if="psdFileInfo" class="asset-file-meta">
-                      <div class="asset-file-meta__title">已选 PSD 文件</div>
                       <div class="asset-file-meta__grid">
-                        <div class="asset-file-meta__item">
+                        <div class="asset-file-meta__item asset-file-meta__item--full">
                           <span class="asset-file-meta__label">文件名</span>
                           <span class="asset-file-meta__value">{{ psdFileInfo.name }}</span>
                         </div>
@@ -526,9 +523,7 @@
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">像素尺寸</span>
-                          <span class="asset-file-meta__value">{{
-                            psdFileInfo.dimensionsLabel
-                          }}</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.dimensionsLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">格式</span>
@@ -536,30 +531,23 @@
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">颜色模式</span>
-                          <span class="asset-file-meta__value">{{
-                            psdFileInfo.colorModeLabel
-                          }}</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.colorModeLabel }}</span>
                         </div>
                         <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">色深 / 通道</span>
-                          <span class="asset-file-meta__value"
-                            >{{ psdFileInfo.depthLabel }} / {{ psdFileInfo.channelLabel }}</span
-                          >
+                          <span class="asset-file-meta__value">{{ psdFileInfo.depthLabel }} / {{ psdFileInfo.channelLabel }}</span>
                         </div>
-                        <div class="asset-file-meta__item asset-file-meta__item--full">
+                        <div class="asset-file-meta__item">
                           <span class="asset-file-meta__label">修改时间</span>
-                          <span class="asset-file-meta__value">{{
-                            psdFileInfo.modifiedAtLabel
-                          }}</span>
+                          <span class="asset-file-meta__value">{{ psdFileInfo.modifiedAtLabel }}</span>
                         </div>
                       </div>
                     </div>
-                  </el-form-item>
-                </el-form>
-              </el-col>
-              <el-col :span="12">
-                <el-form :model="form" label-width="100px">
-                  <el-form-item label="缩略图">
+                  </div>
+                </el-form-item>
+
+                <el-form-item label="缩略图" class="asset-form-item">
+                  <div class="asset-block">
                     <div class="thumbnail-upload-container">
                       <input
                         ref="thumbnailInputRef"
@@ -613,48 +601,38 @@
                         v-if="thumbnailFileInfo"
                         class="asset-file-meta asset-file-meta--thumbnail"
                       >
-                        <div class="asset-file-meta__title">已选缩略图</div>
                         <div class="asset-file-meta__grid">
-                          <div class="asset-file-meta__item">
+                          <div class="asset-file-meta__item asset-file-meta__item--full">
                             <span class="asset-file-meta__label">文件名</span>
                             <span class="asset-file-meta__value">{{ thumbnailFileInfo.name }}</span>
                           </div>
                           <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">类型</span>
-                            <span class="asset-file-meta__value">{{
-                              thumbnailFileInfo.typeLabel
-                            }}</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.typeLabel }}</span>
                           </div>
                           <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">大小</span>
-                            <span class="asset-file-meta__value">{{
-                              thumbnailFileInfo.sizeLabel
-                            }}</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.sizeLabel }}</span>
                           </div>
                           <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">像素尺寸</span>
-                            <span class="asset-file-meta__value">{{
-                              thumbnailFileInfo.dimensionsLabel
-                            }}</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.dimensionsLabel }}</span>
                           </div>
-                          <div class="asset-file-meta__item asset-file-meta__item--full">
+                          <div class="asset-file-meta__item">
                             <span class="asset-file-meta__label">修改时间</span>
-                            <span class="asset-file-meta__value">{{
-                              thumbnailFileInfo.modifiedAtLabel
-                            }}</span>
+                            <span class="asset-file-meta__value">{{ thumbnailFileInfo.modifiedAtLabel }}</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </el-form-item>
-                </el-form>
-              </el-col>
-            </el-row>
+                  </div>
+                </el-form-item>
+              </el-form>
+            </div>
           </div>
 
-          <!-- 适用尺寸 -->
           <div class="dialog-section dialog-section-sizes">
-            <div class="dialog-section-title">适用尺寸</div>
+            <div class="dialog-section-title">适用范围</div>
             <el-form :model="form" label-width="100px" class="psd-template-form">
               <el-form-item label="选择尺寸" prop="suitableSizes">
                 <el-select
@@ -698,9 +676,8 @@
             </el-form>
           </div>
 
-          <!-- PSD 模板配置 -->
           <div class="dialog-section dialog-section-config">
-            <div class="dialog-section-title">PSD 模板配置</div>
+            <div class="dialog-section-title">模板配置</div>
             <el-form :model="form" label-width="100px" class="psd-template-form">
               <el-form-item label="配置内容" prop="psdTemplateConfig">
                 <el-input
@@ -718,11 +695,6 @@
 
       <template #footer>
         <div class="psd-template-dialog-footer">
-          <div class="footer-left">
-            <span class="footer-tip"
-              >填写完成后请点击“确定”保存，表单验证未通过会在对应项下方提示。</span
-            >
-          </div>
           <div class="footer-right">
             <el-button @click="dialogVisible = false">取消</el-button>
             <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
@@ -2057,6 +2029,12 @@ function createDefaultPsdTemplateConfig() {
         tile_size: 512,
       },
     ],
+    color_layers: [
+      {
+        layer_path: "",
+        color: "#FFFFFF",
+      },
+    ],
     verbose: true,
   };
 }
@@ -2275,6 +2253,11 @@ function handleCutoutModesChange(values: string[]) {
     margin: 0;
   }
 
+  :deep(.el-dialog__header) {
+    padding: 16px 20px 10px;
+    margin-right: 0;
+  }
+
   :deep(.el-dialog__body) {
     flex: 1;
     min-height: 0;
@@ -2283,9 +2266,8 @@ function handleCutoutModesChange(values: string[]) {
   }
 
   :deep(.el-dialog__footer) {
-    padding: 12px 20px 14px;
+    padding: 10px 20px 14px;
     border-top: 1px solid var(--el-border-color-lighter);
-    background: var(--el-bg-color);
   }
 }
 
@@ -2297,23 +2279,22 @@ function handleCutoutModesChange(values: string[]) {
 
 .psd-template-dialog-main {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   grid-template-areas:
     "basic assets"
     "sizes config";
-  gap: 14px;
+  gap: 12px 16px;
   width: 100%;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  height: 100%;
+  overflow: auto;
 }
 
 .dialog-section {
-  background: var(--el-bg-color-overlay);
-  border-radius: 8px;
-  padding: 14px 16px 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--el-border-color-extra-light);
   min-height: 0;
 }
 
@@ -2321,7 +2302,8 @@ function handleCutoutModesChange(values: string[]) {
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  line-height: 1.2;
 }
 
 .dialog-section-basic {
@@ -2341,9 +2323,36 @@ function handleCutoutModesChange(values: string[]) {
 }
 
 .psd-template-form {
-  :deep(.el-form-item) {
-    margin-bottom: 10px;
+  :deep(.el-form-item__label) {
+    color: var(--el-text-color-secondary);
   }
+
+  :deep(.el-form-item) {
+    margin-bottom: 12px;
+  }
+
+  :deep(.el-form-item:last-child) {
+    margin-bottom: 0;
+  }
+}
+
+.asset-layout {
+  min-width: 0;
+}
+
+.asset-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.asset-form-item {
+  margin-bottom: 0 !important;
+}
+
+.asset-block {
+  width: 100%;
+  min-width: 0;
 }
 
 .size-select {
@@ -2469,13 +2478,8 @@ function handleCutoutModesChange(values: string[]) {
 .psd-template-dialog-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   width: 100%;
-}
-
-.psd-template-dialog-footer .footer-tip {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
 }
 
 .psd-template-dialog-footer .footer-right {
@@ -2496,7 +2500,7 @@ function handleCutoutModesChange(values: string[]) {
       "assets"
       "sizes"
       "config";
-    overflow-y: auto;
+    height: auto;
   }
 }
 
@@ -2572,23 +2576,15 @@ function handleCutoutModesChange(values: string[]) {
 }
 
 .asset-file-meta {
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid var(--el-border-color-lighter);
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-extra-light);
   border-radius: 8px;
-  background: var(--el-fill-color-extra-light);
-
-  &__title {
-    margin-bottom: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-  }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 12px;
+    gap: 8px 12px;
   }
 
   &__item {
@@ -2617,6 +2613,10 @@ function handleCutoutModesChange(values: string[]) {
 
 .thumbnail-upload-container {
   width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 
   .thumbnail-upload-placeholder {
     width: 120px;
@@ -2629,13 +2629,11 @@ function handleCutoutModesChange(values: string[]) {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s;
-    background: var(--el-fill-color-lighter);
     padding: 8px;
     box-sizing: border-box;
 
     &:hover {
       border-color: var(--el-color-primary);
-      background: var(--el-color-primary-light-9);
     }
 
     .upload-icon {
@@ -2672,7 +2670,6 @@ function handleCutoutModesChange(values: string[]) {
     border-radius: 6px;
     overflow: hidden;
     cursor: pointer;
-    background: var(--el-fill-color-lighter);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2693,8 +2690,7 @@ function handleCutoutModesChange(values: string[]) {
       justify-content: center;
       gap: 4px;
       padding: 4px;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.4);
 
       .el-button {
         padding: 4px 8px;
@@ -2706,6 +2702,12 @@ function handleCutoutModesChange(values: string[]) {
       }
     }
   }
+
+  .asset-file-meta--thumbnail {
+    flex: 1;
+    min-width: min(260px, 100%);
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 768px) {
@@ -2713,6 +2715,10 @@ function handleCutoutModesChange(values: string[]) {
     &__grid {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+
+  .thumbnail-upload-container {
+    flex-direction: column;
   }
 }
 </style>

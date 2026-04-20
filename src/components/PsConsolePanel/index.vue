@@ -549,6 +549,54 @@
                       </div>
                     </div>
                   </div>
+                  <div class="subsection-head">
+                    <div class="subsection-title">颜色图层配置</div>
+                    <el-button size="small" @click="addColorLayer">添加颜色图层</el-button>
+                  </div>
+                  <div class="smart-object-list">
+                    <div
+                      v-for="(item, index) in processForm.colorLayers"
+                      :key="`color-layer-${index}`"
+                      class="smart-object-card"
+                    >
+                      <div class="smart-object-card__head">
+                        <div class="smart-object-card__title">颜色图层 #{{ index + 1 }}</div>
+                        <el-button
+                          link
+                          type="danger"
+                          :disabled="processForm.colorLayers.length <= 1"
+                          @click="removeColorLayer(index)"
+                          >删除</el-button
+                        >
+                      </div>
+                      <div class="form-grid">
+                        <div class="field-block">
+                          <label>图层路径</label>
+                          <el-input
+                            v-model="item.layerPath"
+                            placeholder="画板 1\\Deskmat\\Deskmat Color 或完整路径"
+                          />
+                        </div>
+                        <div class="field-block">
+                          <label>图层名称</label>
+                          <el-input
+                            v-model="item.layerName"
+                            placeholder="可选，未填路径时可按名称匹配"
+                          />
+                        </div>
+                      </div>
+                      <div class="form-grid">
+                        <div class="field-block">
+                          <label>目标颜色</label>
+                          <el-color-picker v-model="item.color" show-alpha="false" />
+                        </div>
+                        <div class="field-block">
+                          <label>HEX</label>
+                          <el-input v-model="item.color" placeholder="#FFFFFF" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="button-row wrap">
                     <el-button
                       type="primary"
@@ -672,6 +720,12 @@ interface SmartObjectForm {
   customOptionsText: string;
 }
 
+interface ColorLayerForm {
+  layerName: string;
+  layerPath: string;
+  color: string;
+}
+
 interface CommandLogItem {
   id: string;
   time: string;
@@ -739,12 +793,19 @@ const createSmartObject = (): SmartObjectForm => ({
   customOptionsText: "",
 });
 
+const createColorLayer = (): ColorLayerForm => ({
+  layerName: "",
+  layerPath: "",
+  color: "#FFFFFF",
+});
+
 const processForm = reactive({
   psdPath: "",
   exportDir: "",
   outputFilename: "",
   verbose: true,
   smartObjects: [createSmartObject()],
+  colorLayers: [createColorLayer()],
 });
 
 const customTemplateOptions = [
@@ -1320,6 +1381,17 @@ const removeSmartObject = (index: number) => {
   processForm.smartObjects.splice(index, 1);
 };
 
+const addColorLayer = () => {
+  processForm.colorLayers.push(createColorLayer());
+};
+
+const removeColorLayer = (index: number) => {
+  if (processForm.colorLayers.length <= 1) {
+    return;
+  }
+  processForm.colorLayers.splice(index, 1);
+};
+
 const applyCustomOptionsTemplate = (index: number, templateKey: string) => {
   const target = processForm.smartObjects[index];
   if (!target) {
@@ -1334,54 +1406,108 @@ const buildProcessRequest = (strict = true) => {
   if (strict && !psdPath) {
     throw new Error("请填写 PSD 路径");
   }
+  const preserveEmptyStructure = !strict;
 
-  const smartObjects = processForm.smartObjects.map((item, index) => {
-    const imagePath = normalizeWindowsPath(item.imagePath);
-    if (strict && !imagePath) {
-      throw new Error(`智能对象 #${index + 1} 的素材图片路径不能为空`);
-    }
-
-    const payload: Record<string, any> = {
-      image_path: imagePath,
-      resize_mode: item.resizeMode || "contain",
-      tile_size: Math.max(64, Number(item.tileSize) || 512),
-    };
-
-    const smartObjectName = stripQuotes(item.smartObjectName);
-    if (smartObjectName) {
-      payload.smart_object_name = smartObjectName;
-    }
-
-    if (payload.resize_mode === "custom") {
+  const smartObjects = processForm.smartObjects
+    .map((item, index) => {
+      const imagePath = normalizeWindowsPath(item.imagePath);
+      const smartObjectName = stripQuotes(item.smartObjectName);
       const customOptionsText = item.customOptionsText.trim();
-      if (strict && !customOptionsText) {
-        throw new Error(`智能对象 #${index + 1} 使用 custom 模式时必须填写 custom_options`);
+      const hasCustomOptions = customOptionsText.length > 0;
+      const hasMeaningfulConfig =
+        !!imagePath ||
+        !!smartObjectName ||
+        hasCustomOptions ||
+        item.resizeMode !== "contain" ||
+        Math.max(64, Number(item.tileSize) || 512) !== 512;
+      const isEffectivelyEmpty = !hasMeaningfulConfig;
+
+      if (strict && isEffectivelyEmpty) {
+        return null;
       }
-      if (customOptionsText) {
-        try {
-          payload.custom_options = JSON.parse(customOptionsText);
-        } catch (error: any) {
-          if (strict) {
-            throw new Error(
-              `智能对象 #${index + 1} 的 custom_options 不是有效 JSON: ${error?.message || error}`,
-            );
+
+      if (strict && !imagePath) {
+        throw new Error(`智能对象 #${index + 1} 的素材图片路径不能为空`);
+      }
+
+      const payload: Record<string, any> = {
+        image_path: imagePath,
+        resize_mode: item.resizeMode || "contain",
+        tile_size: Math.max(64, Number(item.tileSize) || 512),
+      };
+
+      if (smartObjectName) {
+        payload.smart_object_name = smartObjectName;
+      }
+
+      if (payload.resize_mode === "custom") {
+        if (strict && !customOptionsText) {
+          throw new Error(`智能对象 #${index + 1} 使用 custom 模式时必须填写 custom_options`);
+        }
+        if (customOptionsText) {
+          try {
+            payload.custom_options = JSON.parse(customOptionsText);
+          } catch (error: any) {
+            if (strict) {
+              throw new Error(
+                `智能对象 #${index + 1} 的 custom_options 不是有效 JSON: ${error?.message || error}`,
+              );
+            }
           }
         }
       }
-    }
 
-    return payload;
-  });
+      return payload;
+    })
+    .filter(Boolean) as Record<string, any>[];
 
-  if (strict && !smartObjects.length) {
-    throw new Error("至少需要配置一个智能对象");
+  const colorLayers = processForm.colorLayers
+    .map((item, index) => {
+      const layerPath = stripQuotes(item.layerPath);
+      const layerName = stripQuotes(item.layerName);
+      const color = String(item.color || "").trim();
+      const isEffectivelyEmpty = !layerPath && !layerName && !color;
+
+      if (strict && isEffectivelyEmpty) {
+        return null;
+      }
+
+      if (strict && !color) {
+        throw new Error(`颜色图层 #${index + 1} 的颜色不能为空`);
+      }
+
+      const payload: Record<string, any> = {
+        color,
+      };
+
+      if (layerPath) {
+        payload.layer_path = layerPath;
+      }
+
+      if (layerName) {
+        payload.layer_name = layerName;
+      }
+
+      return payload;
+    })
+    .filter(Boolean) as Record<string, any>[];
+
+  if (strict && !smartObjects.length && !colorLayers.length) {
+    throw new Error("至少需要配置一个智能对象或一个颜色图层");
   }
 
   const request: Record<string, any> = {
     psd_path: psdPath,
-    smart_objects: smartObjects,
     verbose: !!processForm.verbose,
   };
+
+  if (smartObjects.length || preserveEmptyStructure) {
+    request.smart_objects = smartObjects;
+  }
+
+  if (colorLayers.length || preserveEmptyStructure) {
+    request.color_layers = colorLayers;
+  }
 
   const exportDir = normalizeWindowsPath(processForm.exportDir);
   if (exportDir) {
