@@ -300,8 +300,13 @@
                     <el-button
                       type="primary"
                       :loading="loadingMap.analyzePsd"
-                      @click="handleAnalyzePsd"
-                      >开始分析</el-button
+                      @click="handleAnalyzePsd('static')"
+                      >静态分析</el-button
+                    >
+                    <el-button
+                      :loading="loadingMap.runtimeAnalyzePsd"
+                      @click="handleAnalyzePsd('runtime')"
+                      >运行时探测</el-button
                     >
                     <el-button
                       :disabled="!analysisResult"
@@ -349,6 +354,10 @@
                     <span class="compact-info__value">{{
                       analysisStatistics.total_layers ?? 0
                     }}</span>
+                  </div>
+                  <div class="compact-info__item compact-info__item--full">
+                    <span class="compact-info__label">分析来源</span>
+                    <span class="compact-info__value">{{ analysisSourceLabel }}</span>
                   </div>
                 </div>
 
@@ -414,8 +423,8 @@
                     }}</div>
                     <div class="ops-panel__sub">{{
                       analysisViewMode === "compact"
-                        ? "只保留画板层级与画板下的智能对象关键信息"
-                        : "保留完整 JSON，便于和 yishe-ps 输出对齐"
+                        ? `只保留画板层级与画板下的智能对象关键信息 · ${analysisSourceLabel}`
+                        : `保留完整 JSON，便于和 yishe-ps 输出对齐 · ${analysisSourceLabel}`
                     }}</div>
                   </div>
                 </div>
@@ -650,6 +659,7 @@ type PsCommandAction =
   | "stopPhotoshop"
   | "restartPhotoshop"
   | "analyzePsd"
+  | "runtimeAnalyzePsd"
   | "debugProcess";
 
 type CommandMode = "production" | "debug" | "maintenance";
@@ -693,6 +703,7 @@ const selectedClientId = ref("");
 const activeTab = ref("service");
 const operationDialogVisible = ref(false);
 const analysisViewMode = ref<"detail" | "compact">("detail");
+const analysisExecutionMode = ref<"static" | "runtime">("static");
 const latestCommandResult = ref<ServiceCommandResultEvent | Record<string, any> | null>(null);
 const analysisResult = ref<Record<string, any> | null>(null);
 const processResult = ref<Record<string, any> | null>(null);
@@ -705,6 +716,7 @@ const loadingMap = reactive<Record<PsCommandAction, boolean>>({
   stopPhotoshop: false,
   restartPhotoshop: false,
   analyzePsd: false,
+  runtimeAnalyzePsd: false,
   debugProcess: false,
 });
 
@@ -922,6 +934,9 @@ const analysisDocumentInfo = computed<Record<string, any>>(
 const analysisStatistics = computed<Record<string, any>>(
   () => analysisResult.value?.statistics || {},
 );
+const analysisSourceLabel = computed(() =>
+  analysisExecutionMode.value === "runtime" ? "运行时探测" : "静态分析",
+);
 const compactAnalysisResult = computed(() => {
   const result = analysisResult.value;
   if (!result) {
@@ -1091,6 +1106,7 @@ const resolveActionText = (value?: string | null) => {
     stopPhotoshop: "关闭 Photoshop",
     restartPhotoshop: "重启 Photoshop",
     analyzePsd: "分析 PSD",
+    runtimeAnalyzePsd: "运行时分析 PSD",
     debugProcess: "调试处理",
   };
   return actionMap[String(value || "").trim()] || String(value || "-");
@@ -1201,6 +1217,7 @@ watch(selectedClientId, (value, previousValue) => {
   }
   activeTab.value = "service";
   analysisViewMode.value = "detail";
+  analysisExecutionMode.value = "static";
   analysisResult.value = null;
   processResult.value = null;
   latestCommandResult.value = null;
@@ -1379,7 +1396,7 @@ const buildProcessRequest = (strict = true) => {
   return request;
 };
 
-const handleAnalyzePsd = async () => {
+const handleAnalyzePsd = async (mode: "static" | "runtime" = "static") => {
   const psdPath = normalizeWindowsPath(analyzeForm.psdPath);
   if (!psdPath) {
     ElMessage.warning("请填写 PSD 文件路径");
@@ -1388,8 +1405,9 @@ const handleAnalyzePsd = async () => {
 
   analyzeForm.psdPath = psdPath;
   analysisViewMode.value = "detail";
+  analysisExecutionMode.value = mode;
   analysisResult.value = null;
-  await dispatchPsCommand("analyzePsd", { psdPath }, "debug");
+  await dispatchPsCommand(mode === "runtime" ? "runtimeAnalyzePsd" : "analyzePsd", { psdPath }, "debug");
 };
 
 const handleDebugProcess = async () => {
@@ -1436,7 +1454,7 @@ const handleServiceCommandResult = async (event: ServiceCommandResultEvent) => {
   latestCommandResult.value = event;
   pushCommandLog(action, event.success ? "success" : "error", message, event.clientId);
 
-  if (action === "analyzePsd") {
+  if (action === "analyzePsd" || action === "runtimeAnalyzePsd") {
     analysisResult.value = event.success && event.data ? event.data : null;
   }
 
