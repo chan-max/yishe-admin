@@ -961,7 +961,7 @@ $prefix-cls: #{$namespace}-menu;
   &__link--running-psd {
     --menu-running-rgb: 234 179 8;
     --menu-running-highlight-rgb: 250 204 21;
-    --menu-running-text-color: rgb(133 77 14 / 96%);
+    --menu-running-text-color: #111111;
   }
 
   &__status-dot {
@@ -1094,7 +1094,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   .#{$prefix-cls}__link--running-psd {
-    --menu-running-text-color: rgb(255 249 214 / 92%);
+    --menu-running-text-color: #f5f7fa;
   }
 }
 
