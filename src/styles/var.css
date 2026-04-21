@@ -14,7 +14,7 @@ html.light {
   --left-menu-bg-color: #f7f9fc;
   --left-menu-bg-light-color: #ffffff;
   --left-menu-bg-active-color: var(--el-color-primary-light-9);
-  --left-menu-text-color: #3c4553;
+  --left-menu-text-color: #2d3846;
   --left-menu-text-active-color: var(--el-color-primary);
   --left-menu-collapse-bg-active-color: var(--el-color-primary-light-9);
   --left-menu-border-color: #d9e1ec;
@@ -23,7 +23,7 @@ html.light {
   --left-menu-icon-color: #6f7f96;
   --left-menu-title-color: #162033;
   --left-menu-arrow-color: #8090a6;
-  --left-menu-link-text-color: #5b677b;
+  --left-menu-link-text-color: #3c4553;
   --left-menu-link-hover-color: #21304b;
   --left-menu-link-hover-bg: var(--el-color-primary-light-9);
   --left-menu-link-active-bg: var(--el-color-primary-light-8);
