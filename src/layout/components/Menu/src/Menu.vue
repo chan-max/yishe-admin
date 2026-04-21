@@ -935,15 +935,15 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__link--running-queue {
-    --menu-running-rgb: 245 158 11;
-    --menu-running-highlight-rgb: 251 191 36;
-    --menu-running-text-color: rgb(146 64 14 / 96%);
+    --menu-running-rgb: 234 179 8;
+    --menu-running-highlight-rgb: 250 204 21;
+    --menu-running-text-color: rgb(234 179 8 / 98%);
   }
 
   &__link--running-psd {
     --menu-running-rgb: 234 179 8;
     --menu-running-highlight-rgb: 250 204 21;
-    --menu-running-text-color: #111111;
+    --menu-running-text-color: rgb(234 179 8 / 98%);
   }
 
   &__status-dot {
@@ -1019,8 +1019,8 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   &__status-dot--running-queue {
-    --menu-running-rgb: 245 158 11;
-    --menu-running-highlight-rgb: 251 191 36;
+    --menu-running-rgb: 234 179 8;
+    --menu-running-highlight-rgb: 250 204 21;
   }
 
   &__status-dot--running-psd {
@@ -1072,11 +1072,11 @@ $prefix-cls: #{$namespace}-menu;
 
 :global(html.dark) {
   .#{$prefix-cls}__link--running-queue {
-    --menu-running-text-color: rgb(255 244 214 / 92%);
+    --menu-running-text-color: rgb(250 204 21 / 98%);
   }
 
   .#{$prefix-cls}__link--running-psd {
-    --menu-running-text-color: #f5f7fa;
+    --menu-running-text-color: rgb(250 204 21 / 98%);
   }
 }
 
