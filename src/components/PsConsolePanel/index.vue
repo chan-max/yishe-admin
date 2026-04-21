@@ -588,7 +588,7 @@
                       <div class="form-grid">
                         <div class="field-block">
                           <label>目标颜色</label>
-                          <el-color-picker v-model="item.color" show-alpha="false" />
+                          <el-color-picker v-model="item.color" :show-alpha="false" />
                         </div>
                         <div class="field-block">
                           <label>HEX</label>
@@ -684,6 +684,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { useLocalStorage } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 import { formatDate } from "@/utils/formatTime";
 import { sendServiceCommand } from "@/api/system/websocket";
@@ -776,13 +777,20 @@ const loadingMap = reactive<Record<PsCommandAction, boolean>>({
 
 const pendingActions = reactive<Record<string, PsCommandAction>>({});
 
-const serviceForm = reactive({
+const serviceFormStorage = useLocalStorage("ps_console_panel_service_form", {
   startTimeout: 30,
   forceStop: false,
 });
+const serviceForm = reactive({
+  startTimeout: serviceFormStorage.value?.startTimeout ?? 30,
+  forceStop: serviceFormStorage.value?.forceStop ?? false,
+});
 
-const analyzeForm = reactive({
+const analyzeFormStorage = useLocalStorage("ps_console_panel_analyze_form", {
   psdPath: "",
+});
+const analyzeForm = reactive({
+  psdPath: analyzeFormStorage.value?.psdPath ?? "",
 });
 
 const createSmartObject = (): SmartObjectForm => ({
@@ -799,7 +807,7 @@ const createColorLayer = (): ColorLayerForm => ({
   color: "#FFFFFF",
 });
 
-const processForm = reactive({
+const processFormStorage = useLocalStorage("ps_console_panel_process_form", {
   psdPath: "",
   exportDir: "",
   outputFilename: "",
@@ -807,6 +815,64 @@ const processForm = reactive({
   smartObjects: [createSmartObject()],
   colorLayers: [createColorLayer()],
 });
+const processForm = reactive({
+  psdPath: processFormStorage.value?.psdPath ?? "",
+  exportDir: processFormStorage.value?.exportDir ?? "",
+  outputFilename: processFormStorage.value?.outputFilename ?? "",
+  verbose: processFormStorage.value?.verbose ?? true,
+  smartObjects: Array.isArray(processFormStorage.value?.smartObjects)
+    ? processFormStorage.value.smartObjects
+    : [createSmartObject()],
+  colorLayers: Array.isArray(processFormStorage.value?.colorLayers)
+    ? processFormStorage.value.colorLayers
+    : [createColorLayer()],
+});
+
+if (!Array.isArray(processForm.smartObjects) || !processForm.smartObjects.length) {
+  processForm.smartObjects = [createSmartObject()];
+}
+
+if (!Array.isArray(processForm.colorLayers) || !processForm.colorLayers.length) {
+  processForm.colorLayers = [createColorLayer()];
+}
+
+watch(
+  serviceForm,
+  (value) => {
+    serviceFormStorage.value = {
+      startTimeout: Number(value.startTimeout) || 30,
+      forceStop: !!value.forceStop,
+    };
+  },
+  { deep: true },
+);
+
+watch(
+  analyzeForm,
+  (value) => {
+    analyzeFormStorage.value = {
+      psdPath: String(value.psdPath || ""),
+    };
+  },
+  { deep: true },
+);
+
+watch(
+  processForm,
+  (value) => {
+    processFormStorage.value = JSON.parse(
+      JSON.stringify({
+        psdPath: String(value.psdPath || ""),
+        exportDir: String(value.exportDir || ""),
+        outputFilename: String(value.outputFilename || ""),
+        verbose: !!value.verbose,
+        smartObjects: Array.isArray(value.smartObjects) ? value.smartObjects : [createSmartObject()],
+        colorLayers: Array.isArray(value.colorLayers) ? value.colorLayers : [createColorLayer()],
+      }),
+    );
+  },
+  { deep: true },
+);
 
 const customTemplateOptions = [
   { key: "px-contain", label: "像素 contain" },
