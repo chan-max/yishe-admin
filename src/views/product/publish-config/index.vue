@@ -314,6 +314,18 @@ function normalizePublishConfigData(taskType: string, value: Record<string, any>
   const platformConfig = getTaskTypeConfig(taskType);
   if (platformConfig?.fields?.length) {
     platformConfig.fields.forEach((field) => {
+      const currentValue = normalized[field.key];
+      if (
+        field.defaultValue !== undefined &&
+        (currentValue === undefined || currentValue === null || currentValue === "")
+      ) {
+        normalized[field.key] = Array.isArray(field.defaultValue)
+          ? [...field.defaultValue]
+          : typeof field.defaultValue === "object" && field.defaultValue !== null
+            ? JSON.parse(JSON.stringify(field.defaultValue))
+            : field.defaultValue;
+      }
+
       if (field.type === "url-list" && !Array.isArray(normalized[field.key])) {
         normalized[field.key] = normalized[field.key] ? [String(normalized[field.key])] : [];
       }
@@ -618,36 +630,37 @@ const handleEdit = async (row: any) => {
   form.description = row.description;
   form.isActive = row.isActive;
 
+  const configData = row.configData || {};
   titleConfigForm.mode =
-    row.titleConfig?.mode === "fixed" || row.titleConfig?.fixedTitle ? "fixed" : "ai";
-  titleConfigForm.fixedTitle = row.titleConfig?.fixedTitle || "";
-  titleConfigForm.templateContent = row.titleTemplate || "";
+    configData.titleConfig?.mode === "fixed" || configData.titleConfig?.fixedTitle ? "fixed" : "ai";
+  titleConfigForm.fixedTitle = configData.titleConfig?.fixedTitle || "";
+  titleConfigForm.templateContent = configData.titleTemplate || "";
   titleConfigForm.maxLength =
-    typeof row.titleConfig?.maxLength === "number" ? row.titleConfig.maxLength : undefined;
-  titleConfigForm.style = row.titleConfig?.style || "";
-  titleConfigForm.tone = row.titleConfig?.tone || "";
+    typeof configData.titleConfig?.maxLength === "number" ? configData.titleConfig.maxLength : undefined;
+  titleConfigForm.style = configData.titleConfig?.style || "";
+  titleConfigForm.tone = configData.titleConfig?.tone || "";
   titleConfigForm.includeEmoji =
-    typeof row.titleConfig?.includeEmoji === "boolean" ? row.titleConfig.includeEmoji : null;
-  titleConfigForm.requiredKeywords = Array.isArray(row.titleConfig?.requiredKeywords)
-    ? row.titleConfig.requiredKeywords
-    : Array.isArray(row.titleConfig?.keywords)
-      ? row.titleConfig.keywords
+    typeof configData.titleConfig?.includeEmoji === "boolean" ? configData.titleConfig.includeEmoji : null;
+  titleConfigForm.requiredKeywords = Array.isArray(configData.titleConfig?.requiredKeywords)
+    ? configData.titleConfig.requiredKeywords
+    : Array.isArray(configData.titleConfig?.keywords)
+      ? configData.titleConfig.keywords
       : [];
-  titleConfigForm.avoidWords = Array.isArray(row.titleConfig?.avoidWords)
-    ? row.titleConfig.avoidWords
+  titleConfigForm.avoidWords = Array.isArray(configData.titleConfig?.avoidWords)
+    ? configData.titleConfig.avoidWords
     : [];
 
   // 加载任务类型配置数据
   currentPlatformConfig.value = getTaskTypeConfig(form.taskType);
   platformConfigData.value = normalizePublishConfigData(
     form.taskType,
-    formatTaskTypeConfigForEdit(form.taskType, row.configData || {}),
+    formatTaskTypeConfigForEdit(form.taskType, configData),
   );
   temuTemplateInspectorVisible.value = false;
   resetTemplateBindingState();
-  await hydrateTemplateBinding(row?.templateBinding?.psdTemplateId);
+  await hydrateTemplateBinding(configData?.templateBinding?.psdTemplateId);
   templateBindingConfigText.value = formatTemplateBindingConfig(
-    row?.templateBinding?.psdTemplateConfig ?? selectedTemplateBinding.value?.psdTemplateConfig,
+    configData?.templateBinding?.psdTemplateConfig ?? selectedTemplateBinding.value?.psdTemplateConfig,
   );
   dialogVisible.value = true;
 };
@@ -732,15 +745,17 @@ const submitForm = async () => {
       platform: resolvedPlatform,
       description: form.description,
       isActive: form.isActive,
-      titleTemplate: titleConfigForm.templateContent?.trim() || undefined,
-      titleConfig: parsedTitleConfig,
-      configData: formattedConfigData,
-      templateBinding: currentTemplateBindingId.value
-        ? {
-            psdTemplateId: currentTemplateBindingId.value,
-            psdTemplateConfig: parseTemplateBindingConfigText(templateBindingConfigText.value),
-          }
-        : undefined,
+      configData: {
+        ...formattedConfigData,
+        titleTemplate: titleConfigForm.templateContent?.trim() || undefined,
+        titleConfig: parsedTitleConfig,
+        templateBinding: currentTemplateBindingId.value
+          ? {
+              psdTemplateId: currentTemplateBindingId.value,
+              psdTemplateConfig: parseTemplateBindingConfigText(templateBindingConfigText.value),
+            }
+          : undefined,
+      },
     };
 
     // 执行任务类型特定的提交前钩子

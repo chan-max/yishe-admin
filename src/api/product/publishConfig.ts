@@ -6,11 +6,6 @@ export type PublishConfig = {
   taskType?: string;
   platform: string;
   configData: any;
-  templateBinding?: {
-    psdTemplateId?: string;
-    psdTemplateConfig?: any;
-    [key: string]: any;
-  } | null;
   description: string;
   isActive: boolean;
   createTime: string;

@@ -4851,7 +4851,7 @@ function handleCloseMaterialPublishConfigDialog() {
 }
 
 function isMaterialPublishConfigUsable(row: any) {
-  return Boolean(String(row?.templateBinding?.psdTemplateId || "").trim());
+  return Boolean(String(row?.configData?.templateBinding?.psdTemplateId || "").trim());
 }
 
 function handleMaterialPublishConfigCheckboxChange({ checked, row }) {

@@ -3365,7 +3365,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
 
   try {
     await ElMessageBox.confirm(
-      "将基于当前套图信息和任务配置重新生成这条任务的发布数据，是否继续？",
+      "将基于当前套图信息和任务配置重新生成这条任务的发布数据，不会重新执行任务，是否继续？",
       "重新生成发布数据",
       {
         type: "warning",
@@ -3376,7 +3376,7 @@ async function handleRegeneratePublishTask(row: QueueMessage) {
 
     loading.value = true;
     await regeneratePublishTaskApi(taskId);
-    ElMessage.success("已触发重新生成");
+    ElMessage.success("发布数据已重新生成");
     await getList();
     await refreshStats();
   } catch (error: any) {

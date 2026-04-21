@@ -63,9 +63,7 @@ export default defineComponent({
 
     const menuStatusRouteMap: Record<string, string> = {
       "/operation/toolkit": "browser-automation",
-      "/operation/toolkit/temu": "browser-automation",
       "/external/toolkit": "browser-automation",
-      "/external/temu": "browser-automation",
       "/external/browser-automation": "browser-automation",
       "/external/ps-automation": "ps-automation",
       "/external/google-art": "google-art",
@@ -172,8 +170,6 @@ export default defineComponent({
         return routePath === "/operation/toolkit" ||
           routePath === "/external/toolkit"
           ? "当前有工具任务正在执行"
-          : routePath === "/operation/toolkit/temu" || routePath === "/external/temu"
-            ? "当前有 Temu 工具任务正在执行"
           : "当前有任务正在执行";
       }
 
@@ -181,8 +177,6 @@ export default defineComponent({
         return routePath === "/operation/toolkit" ||
           routePath === "/external/toolkit"
           ? "工具集可用"
-          : routePath === "/operation/toolkit/temu" || routePath === "/external/temu"
-            ? "Temu 工具可用"
           : "浏览器自动化可用";
       }
 
@@ -190,8 +184,6 @@ export default defineComponent({
         return routePath === "/operation/toolkit" ||
           routePath === "/external/toolkit"
           ? "工具集不可用"
-          : routePath === "/operation/toolkit/temu" || routePath === "/external/temu"
-            ? "Temu 工具不可用"
           : "浏览器自动化不可用";
       }
 
@@ -251,14 +243,6 @@ export default defineComponent({
           available: "工具集可用",
           offline: "工具集不可用",
         },
-        "/operation/toolkit/temu": {
-          available: "Temu 工具可用",
-          offline: "Temu 工具不可用",
-        },
-        "/external/temu": {
-          available: "Temu 工具可用",
-          offline: "Temu 工具不可用",
-        },
         "/external/browser-automation": {
           available: "浏览器自动化可用",
           offline: "浏览器自动化不可用",
@@ -290,9 +274,7 @@ export default defineComponent({
           ? publishTaskTooltipText.value
           : routePath === "/external/browser-automation" ||
               routePath === "/operation/toolkit" ||
-              routePath === "/external/toolkit" ||
-              routePath === "/operation/toolkit/temu" ||
-              routePath === "/external/temu"
+              routePath === "/external/toolkit"
             ? resolveBrowserAutomationStatusTitle(status, running, routePath)
             : routePath === "/content/image-processing-record" && running
               ? "当前有图片任务正在执行"
