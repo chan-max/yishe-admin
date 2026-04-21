@@ -745,11 +745,11 @@
               </el-table-column>
               <el-table-column
                 prop="profileLabel"
-                label="执行环境"
-                min-width="156"
+                label="执行方式"
+                min-width="120"
                 show-overflow-tooltip
               />
-              <el-table-column label="环境" width="76" align="center">
+              <el-table-column label="执行" width="76" align="center">
                 <template #default="{ row }">
                   <span
                     class="publish-dispatch-dialog__state-text"
@@ -943,7 +943,7 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { useUserStore } from "@/store/modules/user";
 import { TASK_TYPE_OPTIONS } from "@/config/task-types";
-import { usePluginClientNodes } from "@/services/clientNodeState";
+import { useClientNodeState } from "@/services/clientNodeState";
 import {
   getBrowserAutomationRuntimeHint,
   isBrowserAutomationRuntimeBusy as isBrowserAutomationRuntimeBusyByRuntime,
@@ -967,6 +967,7 @@ import {
   loadPublishTaskAutoDispatchSetting as fetchPublishTaskAutoDispatchSetting,
   type PublishTaskAutoDispatchSetting,
 } from "@/services/publishTaskAutoDispatch";
+import { getClientServiceRuntime } from "@/store/modules/clientNode";
 import { formatDate } from "@/utils/formatTime";
 
 type QueueTagType = "success" | "warning" | "info" | "primary" | "danger";
@@ -1029,11 +1030,12 @@ interface DispatchOptionRow {
 }
 
 const userStore = useUserStore();
-const {
-  clients: browserAutomationClients,
-  refresh: refreshBrowserAutomationClients,
-  getServiceRuntime: getBrowserAutomationRuntime,
-} = usePluginClientNodes("browser-automation", { includeOffline: true });
+const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState();
+const getBrowserAutomationRuntime = (client?: Record<string, any> | null) =>
+  getClientServiceRuntime(client, "browser-automation");
+const browserAutomationClients = computed(() =>
+  clientNodes.value.filter((client) => !!getBrowserAutomationRuntime(client)),
+);
 const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
 const {
   refresh: refreshPublishTaskRuntime,
@@ -1440,87 +1442,105 @@ const currentAutoDispatchRunningRows = computed(() =>
   }),
 );
 
-const onlineBrowserAutomationClients = computed(() =>
-  browserAutomationClients.value.filter((client) => !!client?.isOnline),
+const dispatchClientCandidates = computed(() =>
+  clientNodes.value.filter((client) => {
+    if (!client?.isOnline) {
+      return false;
+    }
+    return !!getBrowserAutomationRuntime(client);
+  }),
 );
-
-const dispatchClientCandidates = computed(() => {
-  const taskType = dispatchTargetTask.value?.type;
-  if (!taskType) return [];
-
-  return onlineBrowserAutomationClients.value.map((client) => ({
-    client,
-  }));
-});
 
 const dispatchAvailableRows = computed<ManualDispatchOptionRow[]>(() => {
   const taskType = dispatchTargetTask.value?.type;
-  return dispatchClientCandidates.value.flatMap((item) => {
-    const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(item.client));
-    const onlineTag = getDispatchClientOnlineTag(item.client);
-    const serviceTag = getDispatchClientServiceTag(item.client);
-    const options = resolveManualDispatchProfileOptions(item.client, taskType);
+  return dispatchClientCandidates.value
+    .map((client) => {
+      const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
+      const onlineTag = getDispatchClientOnlineTag(client);
+      const serviceTag = getDispatchClientServiceTag(client);
+      const taskState = getClientTaskTypeState(client, taskType);
+      const defaultOption = {
+        profileId: null,
+        label: "默认环境",
+        description: taskState.text,
+        enabled: taskState.enabled,
+        connected: !!getBrowserAutomationRuntime(client)?.available,
+        busy: isBrowserAutomationClientBusy(client),
+      } satisfies DispatchProfileOption;
 
-    return options.map((option) => ({
-      optionKey: buildDispatchOptionKey(item.client.id, option.profileId),
-      clientId: String(item.client.id || "").trim(),
-      clientLabel: formatClientNodeName(item.client),
-      connectedAtLabel,
-      onlineTag,
-      serviceTag,
-      profileId: option.profileId,
-      profileLabel: option.label,
-      profileTag: getDispatchProfileTag(item.client, option, taskType),
-      description: option.description,
-      selectable: option.enabled,
-    }));
-  });
+      return {
+        optionKey: buildDispatchOptionKey(client.id, null),
+        clientId: String(client.id || "").trim(),
+        clientLabel: formatClientNodeName(client),
+        connectedAtLabel,
+        onlineTag,
+        serviceTag,
+        profileId: null,
+        profileLabel: "默认环境",
+        profileTag: getDispatchProfileTag(client, defaultOption, taskType),
+        description: taskState.text,
+        selectable: taskState.enabled,
+      };
+    })
+    .sort((a, b) => {
+      if (a.selectable !== b.selectable) {
+        return a.selectable ? -1 : 1;
+      }
+      return a.clientLabel.localeCompare(b.clientLabel, "zh-CN");
+    });
 });
 const dispatchSelectableRows = computed(() =>
   dispatchAvailableRows.value.filter((item) => item.selectable),
 );
 
 const autoDispatchRows = computed<DispatchOptionRow[]>(() =>
-  onlineBrowserAutomationClients.value.flatMap((client) => {
-    const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
-    const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
-    const onlineTag = getDispatchClientOnlineTag(client);
-    const serviceTag = getDispatchClientServiceTag(client);
-    const profileOptions = resolveAutoDispatchTargetProfileOptions(client);
-    const clientReady = !!(client?.isOnline && (runtime?.available || runtime?.connected));
+  dispatchClientCandidates.value
+    .flatMap((client) => {
+      const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
+      const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
+      const onlineTag = getDispatchClientOnlineTag(client);
+      const serviceTag = getDispatchClientServiceTag(client);
+      const profileOptions = resolveAutoDispatchTargetProfileOptions(client);
+      const clientReady = !!(client?.isOnline && (runtime?.available || runtime?.connected));
 
-    if (!profileOptions.length) {
-      return [
-        {
-          optionKey: `${String(client?.id || "").trim()}::__unavailable__`,
-          clientId: String(client?.id || "").trim(),
-          clientLabel: formatClientNodeName(client),
-          connectedAtLabel,
-          onlineTag,
-          serviceTag,
-          profileId: null,
-          profileLabel: "无可绑定环境",
-          profileTag: getAutoDispatchUnavailableTag(client),
-          description: resolveAutoDispatchUnavailableReason(client),
-          selectable: false,
-        },
-      ];
-    }
+      if (!profileOptions.length) {
+        return [
+          {
+            optionKey: `${String(client?.id || "").trim()}::__unavailable__`,
+            clientId: String(client?.id || "").trim(),
+            clientLabel: formatClientNodeName(client),
+            connectedAtLabel,
+            onlineTag,
+            serviceTag,
+            profileId: null,
+            profileLabel: "无可绑定环境",
+            profileTag: getAutoDispatchUnavailableTag(client),
+            description: resolveAutoDispatchUnavailableReason(client),
+            selectable: false,
+          },
+        ];
+      }
 
-    return profileOptions.map((option) => ({
-      optionKey: buildDispatchOptionKey(client.id, option.profileId),
-      clientId: String(client.id || "").trim(),
-      clientLabel: formatClientNodeName(client),
-      connectedAtLabel,
-      onlineTag,
-      serviceTag,
-      profileId: option.profileId,
-      profileLabel: option.label,
-      profileTag: getAutoDispatchProfileTag(client, option),
-      description: clientReady ? option.description : resolveAutoDispatchUnavailableReason(client),
-      selectable: clientReady && !!option.profileId,
-    }));
-  }),
+      return profileOptions.map((option) => ({
+        optionKey: buildDispatchOptionKey(client.id, option.profileId),
+        clientId: String(client.id || "").trim(),
+        clientLabel: formatClientNodeName(client),
+        connectedAtLabel,
+        onlineTag,
+        serviceTag,
+        profileId: option.profileId,
+        profileLabel: option.label,
+        profileTag: getAutoDispatchProfileTag(client, option),
+        description: clientReady ? option.description : resolveAutoDispatchUnavailableReason(client),
+        selectable: clientReady && !!option.profileId,
+      }));
+    })
+    .sort((a, b) => {
+      if (a.selectable !== b.selectable) {
+        return a.selectable ? -1 : 1;
+      }
+      return a.clientLabel.localeCompare(b.clientLabel, "zh-CN");
+    }),
 );
 const autoDispatchSelectableRows = computed(() =>
   autoDispatchRows.value.filter((item) => item.selectable),
@@ -1821,96 +1841,6 @@ function formatDispatchProfileLabel(profileId: string, profile?: Record<string, 
   const profileName =
     String(profile?.name || profile?.profileName || profileId).trim() || profileId;
   return `${profileName}${profileId ? ` (${profileId})` : ""}`;
-}
-
-function resolveManualDispatchProfileOptions(
-  client: any,
-  taskType?: string,
-): DispatchProfileOption[] {
-  const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
-  const runtimeHint = getBrowserAutomationRuntimeHint(runtime);
-  const normalizedTaskType = String(taskType || "").trim();
-  const isOnline = !!client?.isOnline;
-  const serviceReady = !!(runtime?.available || runtime?.connected);
-  const taskSupported = normalizedTaskType ? supportsTaskType(client, normalizedTaskType) : false;
-  const profileInstances = getClientDispatchProfileInstances(client);
-  const profiles = getClientDispatchProfiles(client);
-  const profileMap = new Map(
-    profiles
-      .map((item: any) => [normalizeDispatchProfileId(item?.id), item] as const)
-      .filter(([profileId]) => !!profileId),
-  );
-  const instanceMap = new Map(
-    profileInstances
-      .map((item: any) => [normalizeDispatchProfileId(item?.profileId), item] as const)
-      .filter(([profileId]) => !!profileId),
-  );
-  const orderedProfileIds = Array.from(
-    new Set(
-      [...profileInstances, ...profiles]
-        .map((item: any) => normalizeDispatchProfileId(item?.profileId || item?.id))
-        .filter(Boolean),
-    ),
-  ) as string[];
-
-  const unavailableReason = !normalizedTaskType
-    ? "任务类型未知"
-    : !isOnline
-      ? "客户端离线"
-      : !serviceReady
-        ? runtimeHint
-          ? `自动化服务不可用，${runtimeHint}`
-          : "自动化服务不可用"
-        : !taskSupported
-          ? "当前节点不支持该任务类型"
-          : "";
-
-  if (!orderedProfileIds.length) {
-    const busy = isBrowserAutomationRuntimeBusyByRuntime(runtime);
-    return [
-      {
-        profileId: null,
-        label: "默认环境",
-        description:
-          unavailableReason ||
-          (busy ? "默认环境正在执行任务" : "当前客户端未上报环境列表，将按默认环境执行"),
-        enabled: !unavailableReason && !busy,
-        connected: !!runtime?.available,
-        busy,
-      },
-    ];
-  }
-
-  return orderedProfileIds.map((profileId) => {
-    const profile = profileMap.get(profileId) || instanceMap.get(profileId) || null;
-    const instance = instanceMap.get(profileId) || null;
-    const busy = instance?.busy === true;
-    const connected = instance?.connected === true || instance?.hasInstance === true;
-    const pageCount = typeof instance?.pageCount === "number" ? Number(instance.pageCount) : null;
-
-    let description = unavailableReason;
-    if (!description) {
-      if (busy) {
-        description = instance?.currentTaskId
-          ? `当前执行中，任务 ${instance.currentTaskId}`
-          : "当前环境正在执行任务";
-      } else if (connected) {
-        description =
-          pageCount !== null ? `浏览器已打开，当前 ${pageCount} 个页面` : "浏览器已打开";
-      } else {
-        description = "浏览器未打开，执行时会自动拉起";
-      }
-    }
-
-    return {
-      profileId,
-      label: formatDispatchProfileLabel(profileId, profile),
-      description,
-      enabled: !unavailableReason && !busy,
-      connected,
-      busy,
-    } satisfies DispatchProfileOption;
-  });
 }
 
 function resolveClientDispatchProfileOptions(
@@ -2745,7 +2675,8 @@ function openPublishDispatchDialog(row: QueueMessage) {
   }
 
   dispatchTargetTask.value = row;
-  syncDispatchProfileSelection();
+  selectedDispatchClientId.value = "";
+  selectedDispatchProfileId.value = "";
   publishDispatchDialogVisible.value = true;
 }
 
@@ -2784,7 +2715,7 @@ async function refreshPublishDispatchPageState(
 ) {
   const tasks: Promise<any>[] = [getList(), refreshStats(), refreshPublishTaskRuntime()];
   if (options.includeBrowserClients !== false) {
-    tasks.push(refreshBrowserAutomationClients());
+    tasks.push(refreshClientNodes());
   }
   if (options.includeAutoDispatchSetting) {
     tasks.push(loadPublishTaskAutoDispatchSettingState());
@@ -2798,7 +2729,7 @@ async function refreshPublishDispatchPageState(
 async function handleOpenPublishDispatchDialog() {
   publishDispatchDialogLoading.value = true;
   try {
-    await Promise.all([refreshBrowserAutomationClients(), refreshPublishTaskRuntime()]);
+    await Promise.all([refreshClientNodes(), refreshPublishTaskRuntime()]);
     syncDispatchProfileSelection();
   } finally {
     publishDispatchDialogLoading.value = false;
@@ -2808,10 +2739,7 @@ async function handleOpenPublishDispatchDialog() {
 async function handleOpenAutoDispatchTargetDialog() {
   autoDispatchTargetDialogLoading.value = true;
   try {
-    await Promise.all([
-      refreshBrowserAutomationClients(),
-      loadPublishTaskAutoDispatchSettingState(),
-    ]);
+    await Promise.all([refreshClientNodes(), loadPublishTaskAutoDispatchSettingState()]);
     syncAutoDispatchTargetSelection();
   } finally {
     autoDispatchTargetDialogLoading.value = false;
@@ -2824,15 +2752,15 @@ async function handleConfirmPublishDispatch() {
   }
   const selectedRow = selectedDispatchRow.value;
   if (!selectedRow) {
-    ElMessage.warning("请选择一个执行环境");
+    ElMessage.warning("请选择一个客户端节点");
     return;
   }
   if (!selectedRow.selectable) {
-    ElMessage.warning("请选择一个可执行环境");
+    ElMessage.warning("请选择一个可执行节点");
     return;
   }
 
-  const selectedClient = browserAutomationClients.value.find(
+  const selectedClient = dispatchClientCandidates.value.find(
     (client) => client.id === selectedRow.clientId,
   );
   if (
@@ -2845,9 +2773,7 @@ async function handleConfirmPublishDispatch() {
 
   try {
     await ElMessageBox.confirm(
-      selectedRow.profileId
-        ? `确认将发布任务分配到客户端 ${formatClientNodeName(selectedClient)} 的环境 ${selectedRow.profileLabel} 执行吗？`
-        : `确认由客户端 ${formatClientNodeName(selectedClient)} 开始执行该发布任务吗？`,
+      `确认由客户端 ${formatClientNodeName(selectedClient)} 开始执行该发布任务吗？`,
       "开始执行确认",
       {
         confirmButtonText: "确定",
@@ -2863,14 +2789,9 @@ async function handleConfirmPublishDispatch() {
   try {
     await startPublishTaskDispatch(dispatchTargetTask.value.id, {
       clientId: selectedRow.clientId,
-      ...(selectedRow.profileId ? { profileId: selectedRow.profileId } : {}),
     });
     schedulePublishTaskMenuRuntimeSync();
-    ElMessage.success(
-      selectedRow.profileId
-        ? `发布任务已分配到环境 ${selectedRow.profileLabel} 执行`
-        : "发布任务已分配到客户端执行",
-    );
+    ElMessage.success("发布任务已分配到客户端执行");
     publishDispatchDialogVisible.value = false;
     await refreshPublishDispatchPageState();
   } catch (error: any) {
@@ -3543,7 +3464,7 @@ onMounted(() => {
   void Promise.all([
     getList(),
     refreshStats(),
-    refreshBrowserAutomationClients(),
+    refreshClientNodes(),
     loadPublishTaskAutoDispatchSettingState(),
     loadPublishTaskSchedulerRuntime(),
     refreshPublishTaskRuntime(),
