@@ -127,9 +127,9 @@ onBeforeUnmount(() => {
 <style lang="scss">
 .markdown-view {
   font-family: PingFang SC;
-  font-size: 0.95rem;
+  font-size: 13px;
   font-weight: 400;
-  line-height: 1.5rem;
+  line-height: 1.6;
   letter-spacing: 0;
   text-align: left;
   color: var(--markdown-text-color, var(--ai-text, var(--el-text-color-primary, #1f2329)));
@@ -147,21 +147,23 @@ onBeforeUnmount(() => {
     border-radius: 6px;
     padding-top: 20px;
     width: auto;
+    max-width: 100%;
+    overflow-x: auto;
 
     @media screen and (min-width: 1536px) {
-      width: 960px;
+      max-width: 640px;
     }
 
     @media screen and (max-width: 1536px) and (min-width: 1024px) {
-      width: calc(100vw - 400px - 64px - 32px * 2);
+      max-width: calc(100vw - 400px - 64px - 32px * 2);
     }
 
     @media screen and (max-width: 1024px) and (min-width: 768px) {
-      width: calc(100vw - 32px * 2);
+      max-width: calc(100vw - 32px * 2);
     }
 
     @media screen and (max-width: 768px) {
-      width: calc(100vw - 16px * 2);
+      max-width: calc(100vw - 16px * 2);
     }
   }
 
@@ -176,33 +178,33 @@ onBeforeUnmount(() => {
 
   :deep(.markdown-view__image-block) {
     display: block;
-    margin: 10px 0 12px;
-    max-width: min(360px, 100%);
+    margin: 8px 0 10px;
+    max-width: min(240px, 100%);
   }
 
   :deep(.markdown-view__image) {
     display: block;
     width: auto !important;
     height: auto !important;
-    max-width: min(360px, 100%) !important;
-    max-height: 320px !important;
+    max-width: min(240px, 100%) !important;
+    max-height: 200px !important;
     border: 1px solid var(--ai-line, var(--el-border-color-light));
-    border-radius: 14px;
+    border-radius: 10px;
     background: var(--ai-surface-soft, var(--el-fill-color-light));
     object-fit: contain;
     overflow: hidden;
   }
 
   :deep(img) {
-    max-width: min(360px, 100%) !important;
-    max-height: 320px !important;
+    max-width: min(240px, 100%) !important;
+    max-height: 200px !important;
     height: auto !important;
   }
 
   :deep(.markdown-view__image-caption) {
     margin-top: 6px;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 11px;
+    line-height: 1.5;
     color: var(--ai-text-secondary, var(--el-text-color-secondary));
   }
 

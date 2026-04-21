@@ -105,71 +105,60 @@
         >
           <template v-if="!(loadingHistory && !bubbleItems.length)">
             <div v-if="!bubbleItems.length" class="ai-assistant-panel__empty">
-              <Welcome
-                variant="borderless"
-                class="ai-assistant-panel__welcome"
-                :icon="renderAssistantAvatar()"
-                title="智能助手"
-                :description="welcomeDescription"
-              />
-
-              <Prompts
-                class="ai-assistant-panel__welcome-prompts"
-                title="快捷开始"
-                :items="starterPromptItems"
-                :wrap="true"
-                @item-click="handleStarterPromptClick"
-              />
+              <div class="ai-assistant-panel__empty-message">
+                What do you want from me !!!
+              </div>
             </div>
 
-            <BubbleList
-              v-else
-              class="ai-assistant-panel__bubble-list"
-              :items="bubbleItems"
-              :roles="bubbleRoles"
-              :auto-scroll="false"
-            >
-              <template #header="{ item }">
-                <div class="ai-assistant-panel__bubble-meta">
-                  <span>{{ roleLabelMap[getBubbleItem(item).role] }}</span>
-                  <span>{{ getBubbleTime(item) }}</span>
-                  <Tag v-if="getBubbleToolLabel(item)">{{ getBubbleToolLabel(item) }}</Tag>
-                </div>
-              </template>
-
-              <template #message="{ item }">
-                <div v-if="isToolBubble(item)" class="ai-assistant-panel__tool-message">
-                  <div class="ai-assistant-panel__tool-summary">
-                    {{ getBubbleContent(item) }}
+            <div v-else class="ai-assistant-panel__bubble-list-wrapper">
+              <BubbleList
+                class="ai-assistant-panel__bubble-list"
+                :items="bubbleItems"
+                :roles="bubbleRoles"
+                :auto-scroll="false"
+              >
+                <template #header="{ item }">
+                  <div class="ai-assistant-panel__bubble-meta">
+                    <span>{{ roleLabelMap[getBubbleItem(item).role] }}</span>
+                    <span>{{ getBubbleTime(item) }}</span>
+                    <Tag v-if="getBubbleToolLabel(item)">{{ getBubbleToolLabel(item) }}</Tag>
                   </div>
-                  <Actions
-                    class="ai-assistant-panel__inline-actions"
-                    :items="buildToolBubbleActions(item)"
-                    variant="borderless"
-                    @click="handleToolBubbleAction"
-                  />
-                </div>
+                </template>
 
-                <div
-                  v-else-if="isBubbleLoading(item)"
-                  v-loading="true"
-                  element-loading-text="正在处理中"
-                  element-loading-background="transparent"
-                  class="ai-assistant-panel__bubble-loading"
-                >
-                  <span class="ai-assistant-panel__bubble-loading-placeholder">AI</span>
-                </div>
+                <template #message="{ item }">
+                  <div v-if="isToolBubble(item)" class="ai-assistant-panel__tool-message">
+                    <div class="ai-assistant-panel__tool-summary">
+                      {{ getBubbleContent(item) }}
+                    </div>
+                    <Actions
+                      class="ai-assistant-panel__inline-actions"
+                      :items="buildToolBubbleActions(item)"
+                      variant="borderless"
+                      @click="handleToolBubbleAction"
+                    />
+                  </div>
 
-                <div v-else class="ai-assistant-panel__message-text">
-                  <template v-if="getBubbleItem(item).role === 'assistant'">
-                    <MarkdownView :content="getBubbleContent(item)" />
-                  </template>
-                  <template v-else>
-                    {{ getBubbleContent(item) }}
-                  </template>
-                </div>
-              </template>
-            </BubbleList>
+                  <div
+                    v-else-if="isBubbleLoading(item)"
+                    v-loading="true"
+                    element-loading-text="正在处理中"
+                    element-loading-background="transparent"
+                    class="ai-assistant-panel__bubble-loading"
+                  >
+                    <span class="ai-assistant-panel__bubble-loading-placeholder">AI</span>
+                  </div>
+
+                  <div v-else class="ai-assistant-panel__message-text">
+                    <template v-if="getBubbleItem(item).role === 'assistant'">
+                      <MarkdownView :content="getBubbleContent(item)" />
+                    </template>
+                    <template v-else>
+                      {{ getBubbleContent(item) }}
+                    </template>
+                  </div>
+                </template>
+              </BubbleList>
+            </div>
 
             <div ref="chatEndRef" class="ai-assistant-panel__stream-anchor" />
           </template>
@@ -417,25 +406,18 @@ import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import {
   ApiOutlined,
-  AppstoreOutlined,
   CopyOutlined,
-  DatabaseOutlined,
   DeleteOutlined,
-  FileSearchOutlined,
   PlusOutlined,
-  PictureOutlined,
   ReloadOutlined,
-  ShopOutlined,
 } from "@ant-design/icons-vue";
 import { Avatar, Button, Drawer, Popconfirm, Tabs, Tag } from "ant-design-vue";
 import {
   Actions,
   BubbleList,
   Conversations,
-  Prompts,
   Sender,
   ThoughtChain,
-  Welcome,
 } from "ant-design-x-vue";
 import type { ActionItem, ThoughtChainItem } from "ant-design-x-vue";
 import { ElMessage } from "element-plus";
@@ -531,7 +513,7 @@ const heroActionItems = computed<ActionItem[]>(() => {
     {
       key: "capabilities",
       label: "能力",
-      icon: h(AppstoreOutlined),
+      icon: h(ApiOutlined),
     },
     {
       key: "refresh",
@@ -548,53 +530,6 @@ const capabilitySummary = computed(() => {
 });
 
 const capabilityCount = computed(() => capabilityCatalog.value?.total || 0);
-
-const welcomeDescription = computed(() => {
-  return activeConversationId.value
-    ? "从查询开始，逐步扩展到执行、确认和结果追踪。"
-    : "可以先从任务、图库、采集素材、商品、店铺、Temu 记录这些高频问题开始。";
-});
-
-const starterPromptItems = computed(() => [
-  {
-    key: "running-tasks",
-    icon: h(AppstoreOutlined),
-    label: "查看运行中任务",
-    description: "快速确认当前还有哪些任务在执行",
-  },
-  {
-    key: "latest-gallery",
-    icon: h(PictureOutlined),
-    label: "看看图库最新图片",
-    description: "直接查看最近入库的图库素材",
-  },
-  {
-    key: "crawler-count",
-    icon: h(DatabaseOutlined),
-    label: "统计采集素材",
-    description: "查询采集素材总量或最近新增数量",
-  },
-  {
-    key: "shops",
-    icon: h(ShopOutlined),
-    label: "查看店铺信息",
-    description: "查询当前用户可见的店铺列表和详情",
-  },
-  {
-    key: "publish",
-    icon: h(FileSearchOutlined),
-    label: "查看发布任务",
-    description: "快速查询发布任务记录和状态",
-  },
-]);
-
-const starterPromptTextMap: Record<string, string> = {
-  "running-tasks": "我有哪些任务正在执行",
-  "latest-gallery": "给我图库最近图片的信息",
-  "crawler-count": "统计一下采集素材总数",
-  shops: "看看我有哪些店铺",
-  publish: "看看最近的发布任务",
-};
 
 const renderAssistantAvatar = () =>
   h(
@@ -999,16 +934,6 @@ const applyExamplePrompt = (prompt: string) => {
   draft.value = String(prompt || "").trim();
 };
 
-const handleStarterPromptClick = ({ data }: { data: { key: string } }) => {
-  const prompt = starterPromptTextMap[String(data?.key || "").trim()];
-  if (!prompt) {
-    return;
-  }
-
-  draft.value = prompt;
-  handleSubmit();
-};
-
 const buildToolBubbleActions = (item: unknown): ActionItem[] => {
   const bubbleItem = getBubbleItem(item);
   return [
@@ -1120,7 +1045,6 @@ watch(
     min-height: 0;
     height: 100%;
     background: transparent;
-    overflow: hidden;
   }
 
   &__side {
@@ -1129,6 +1053,7 @@ watch(
     flex-shrink: 0;
     width: 280px;
     min-height: 0;
+    height: 100%;
     padding-right: 4px;
     border-right: 1px solid var(--ai-border-color);
   }
@@ -1247,9 +1172,9 @@ watch(
   &__main {
     display: flex;
     flex-direction: column;
+    flex: 1;
     min-height: 0;
     position: relative;
-    width: 100%;
     overflow: hidden;
   }
 
@@ -1291,44 +1216,55 @@ watch(
   }
 
   &__stream {
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
-    padding: 6px 0 18px;
+    padding: 6px 0 8px;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
-    scroll-padding-bottom: 120px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__bubble-list-wrapper {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__bubble-list {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    margin: 0 auto;
+
+    :deep(.ant-bubble-list) {
+      max-height: 100%;
+    }
   }
 
   &__empty {
     display: flex;
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
-    gap: 18px;
-    min-height: 320px;
-    width: min(760px, 100%);
-    margin: 0 auto;
-  }
-
-  &__welcome {
-    padding: 8px 0;
-  }
-
-  &__welcome-prompts {
+    min-height: 280px;
     width: 100%;
+    flex: 1;
   }
 
-  &__bubble-list {
-    height: auto;
-    min-height: 100%;
-    width: 100%;
-    margin: 0 auto;
+  &__empty-message {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ai-text-secondary);
+    letter-spacing: -0.02em;
   }
 
   &__stream-anchor {
     width: 100%;
     height: 1px;
+    flex-shrink: 0;
   }
 
   &__bubble-meta {
@@ -1356,6 +1292,11 @@ watch(
     color: var(--ai-text);
     white-space: pre-wrap;
     word-break: break-word;
+
+    :deep(.markdown-view) {
+      font-size: 13px;
+      line-height: 1.6;
+    }
   }
 
   &__tool-message {
@@ -1480,13 +1421,11 @@ watch(
   }
 
   &__composer {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
-    margin-top: auto;
+    position: relative;
+    z-index: 10;
     flex-shrink: 0;
-    padding: 10px 0 env(safe-area-inset-bottom, 0px);
-    background: linear-gradient(180deg, transparent 0%, var(--ai-panel-bg) 22%);
+    padding: 8px 0 env(safe-area-inset-bottom, 0px);
+    background: var(--ai-panel-bg);
   }
 
   &__composer-inner {
@@ -1822,39 +1761,6 @@ watch(
   color: var(--ai-text);
 }
 
-:deep(.ai-assistant-panel__welcome .ant-welcome-description) {
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--ai-text-secondary);
-}
-
-:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-title) {
-  font-size: 12px;
-  color: var(--ai-text-tertiary);
-}
-
-:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-item) {
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--ai-primary) 10%, var(--ai-border-color) 90%);
-  background: color-mix(in srgb, var(--ai-primary) 3%, var(--ai-panel-bg) 97%);
-}
-
-:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-item:hover) {
-  background: color-mix(in srgb, var(--ai-primary) 6%, var(--ai-panel-bg) 94%);
-  border-color: color-mix(in srgb, var(--ai-primary) 18%, var(--ai-border-color) 82%);
-}
-
-:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-label) {
-  font-size: 12px;
-  color: var(--ai-text);
-}
-
-:deep(.ai-assistant-panel__welcome-prompts .ant-prompts-desc) {
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--ai-text-secondary);
-}
-
 :deep(.ant-btn-default) {
   border-color: var(--ai-border-strong-color);
 }
@@ -1942,6 +1848,18 @@ watch(
 :deep(.ant-bubble .ant-bubble-content-wrapper),
 :deep(.ant-bubble .ant-bubble-content-wrapper *) {
   color: inherit;
+}
+
+:deep(.ant-bubble .ant-bubble-content) {
+  max-width: 520px;
+}
+
+:deep(.ant-bubble .markdown-view img),
+:deep(.ant-bubble .markdown-view__image) {
+  max-width: 240px !important;
+  max-height: 200px !important;
+  width: auto !important;
+  height: auto !important;
 }
 
 :deep(.ant-bubble .ant-avatar) {
