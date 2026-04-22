@@ -2029,12 +2029,6 @@ function createDefaultPsdTemplateConfig() {
         tile_size: 512,
       },
     ],
-    color_layers: [
-      {
-        layer_path: "",
-        color: "#FFFFFF",
-      },
-    ],
     verbose: true,
   };
 }

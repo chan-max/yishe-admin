@@ -549,54 +549,7 @@
                       </div>
                     </div>
                   </div>
-                  <div class="subsection-head">
-                    <div class="subsection-title">颜色图层配置</div>
-                    <el-button size="small" @click="addColorLayer">添加颜色图层</el-button>
-                  </div>
-                  <div class="smart-object-list">
-                    <div
-                      v-for="(item, index) in processForm.colorLayers"
-                      :key="`color-layer-${index}`"
-                      class="smart-object-card"
-                    >
-                      <div class="smart-object-card__head">
-                        <div class="smart-object-card__title">颜色图层 #{{ index + 1 }}</div>
-                        <el-button
-                          link
-                          type="danger"
-                          :disabled="processForm.colorLayers.length <= 1"
-                          @click="removeColorLayer(index)"
-                          >删除</el-button
-                        >
-                      </div>
-                      <div class="form-grid">
-                        <div class="field-block">
-                          <label>图层路径</label>
-                          <el-input
-                            v-model="item.layerPath"
-                            placeholder="画板 1\\Deskmat\\Deskmat Color 或完整路径"
-                          />
-                        </div>
-                        <div class="field-block">
-                          <label>图层名称</label>
-                          <el-input
-                            v-model="item.layerName"
-                            placeholder="可选，未填路径时可按名称匹配"
-                          />
-                        </div>
-                      </div>
-                      <div class="form-grid">
-                        <div class="field-block">
-                          <label>目标颜色</label>
-                          <el-color-picker v-model="item.color" :show-alpha="false" />
-                        </div>
-                        <div class="field-block">
-                          <label>HEX</label>
-                          <el-input v-model="item.color" placeholder="#FFFFFF" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <!-- 颜色图层调试配置已临时停用 -->
                   <div class="button-row wrap">
                     <el-button
                       type="primary"
@@ -721,12 +674,6 @@ interface SmartObjectForm {
   customOptionsText: string;
 }
 
-interface ColorLayerForm {
-  layerName: string;
-  layerPath: string;
-  color: string;
-}
-
 interface CommandLogItem {
   id: string;
   time: string;
@@ -801,19 +748,12 @@ const createSmartObject = (): SmartObjectForm => ({
   customOptionsText: "",
 });
 
-const createColorLayer = (): ColorLayerForm => ({
-  layerName: "",
-  layerPath: "",
-  color: "#FFFFFF",
-});
-
 const processFormStorage = useLocalStorage("ps_console_panel_process_form", {
   psdPath: "",
   exportDir: "",
   outputFilename: "",
   verbose: true,
   smartObjects: [createSmartObject()],
-  colorLayers: [createColorLayer()],
 });
 const processForm = reactive({
   psdPath: processFormStorage.value?.psdPath ?? "",
@@ -823,17 +763,10 @@ const processForm = reactive({
   smartObjects: Array.isArray(processFormStorage.value?.smartObjects)
     ? processFormStorage.value.smartObjects
     : [createSmartObject()],
-  colorLayers: Array.isArray(processFormStorage.value?.colorLayers)
-    ? processFormStorage.value.colorLayers
-    : [createColorLayer()],
 });
 
 if (!Array.isArray(processForm.smartObjects) || !processForm.smartObjects.length) {
   processForm.smartObjects = [createSmartObject()];
-}
-
-if (!Array.isArray(processForm.colorLayers) || !processForm.colorLayers.length) {
-  processForm.colorLayers = [createColorLayer()];
 }
 
 watch(
@@ -867,7 +800,6 @@ watch(
         outputFilename: String(value.outputFilename || ""),
         verbose: !!value.verbose,
         smartObjects: Array.isArray(value.smartObjects) ? value.smartObjects : [createSmartObject()],
-        colorLayers: Array.isArray(value.colorLayers) ? value.colorLayers : [createColorLayer()],
       }),
     );
   },
@@ -910,13 +842,18 @@ const getPhotoshopService = (client: any) =>
 const isPsServiceBusy = (client: any, service?: any) => {
   const runtime = service || getPhotoshopService(client);
   const psAutomation = client?.clientInfo?.psAutomation || {};
+  const psQueueCount = Number(psAutomation?.queueCount ?? 0);
+  const runtimeQueueCount = Number(
+    runtime?.details?.activeJobsCount ?? runtime?.details?.queueCount ?? 0,
+  );
+  const currentTaskId = String(runtime?.currentTaskId || "").trim();
   return !!(
-    psAutomation?.running ||
-    psAutomation?.currentPsSetId ||
-    psAutomation?.currentPsSetName ||
-    runtime?.busy ||
+    psAutomation?.running === true ||
+    (Number.isFinite(psQueueCount) && psQueueCount > 0) ||
+    runtime?.busy === true ||
     runtime?.state === "busy" ||
-    runtime?.currentTaskId
+    !!currentTaskId ||
+    (Number.isFinite(runtimeQueueCount) && runtimeQueueCount > 0)
   );
 };
 
@@ -1447,17 +1384,6 @@ const removeSmartObject = (index: number) => {
   processForm.smartObjects.splice(index, 1);
 };
 
-const addColorLayer = () => {
-  processForm.colorLayers.push(createColorLayer());
-};
-
-const removeColorLayer = (index: number) => {
-  if (processForm.colorLayers.length <= 1) {
-    return;
-  }
-  processForm.colorLayers.splice(index, 1);
-};
-
 const applyCustomOptionsTemplate = (index: number, templateKey: string) => {
   const target = processForm.smartObjects[index];
   if (!target) {
@@ -1527,39 +1453,8 @@ const buildProcessRequest = (strict = true) => {
     })
     .filter(Boolean) as Record<string, any>[];
 
-  const colorLayers = processForm.colorLayers
-    .map((item, index) => {
-      const layerPath = stripQuotes(item.layerPath);
-      const layerName = stripQuotes(item.layerName);
-      const color = String(item.color || "").trim();
-      const isEffectivelyEmpty = !layerPath && !layerName && !color;
-
-      if (strict && isEffectivelyEmpty) {
-        return null;
-      }
-
-      if (strict && !color) {
-        throw new Error(`颜色图层 #${index + 1} 的颜色不能为空`);
-      }
-
-      const payload: Record<string, any> = {
-        color,
-      };
-
-      if (layerPath) {
-        payload.layer_path = layerPath;
-      }
-
-      if (layerName) {
-        payload.layer_name = layerName;
-      }
-
-      return payload;
-    })
-    .filter(Boolean) as Record<string, any>[];
-
-  if (strict && !smartObjects.length && !colorLayers.length) {
-    throw new Error("至少需要配置一个智能对象或一个颜色图层");
+  if (strict && !smartObjects.length) {
+    throw new Error("至少需要配置一个智能对象");
   }
 
   const request: Record<string, any> = {
@@ -1569,10 +1464,6 @@ const buildProcessRequest = (strict = true) => {
 
   if (smartObjects.length || preserveEmptyStructure) {
     request.smart_objects = smartObjects;
-  }
-
-  if (colorLayers.length || preserveEmptyStructure) {
-    request.color_layers = colorLayers;
   }
 
   const exportDir = normalizeWindowsPath(processForm.exportDir);
