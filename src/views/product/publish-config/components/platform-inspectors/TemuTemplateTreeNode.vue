@@ -1,71 +1,88 @@
 <template>
-  <div class="temu-tree-node" :class="[`depth-${depthClass}`]">
-    <div class="temu-tree-node__body">
+  <div
+    class="temu-tree-node"
+    :class="{
+      'temu-tree-node--branch': hasChildren,
+      'temu-tree-node--leaf': !hasChildren,
+    }"
+  >
+    <div class="temu-tree-node__main">
       <div class="temu-tree-node__row">
-        <code class="temu-tree-node__key">{{ node.displayKey }}</code>
-        <span class="temu-tree-node__label">{{ node.label }}</span>
-        <span class="temu-tree-node__meta">{{ node.typeLabel }}</span>
-        <span class="temu-tree-node__preview">{{ node.preview }}</span>
-        <el-button
-          v-if="canEdit && !editing"
-          link
-          type="primary"
-          size="small"
-          class="temu-tree-node__edit-trigger"
-          @click="startEdit"
+        <button
+          v-if="hasChildren"
+          type="button"
+          class="temu-tree-node__toggle"
+          :class="{ 'is-expanded': expanded }"
+          @click="toggleExpanded"
         >
-          编辑
-        </el-button>
-      </div>
+          <span class="temu-tree-node__toggle-arrow">&gt;</span>
+        </button>
+        <span v-else class="temu-tree-node__toggle-spacer"></span>
 
-      <div class="temu-tree-node__source">
-        <span>源字段</span>
-        <code>{{ node.sourcePath }}</code>
-      </div>
+        <div class="temu-tree-node__body">
+          <div class="temu-tree-node__title-row">
+            <code class="temu-tree-node__key">{{ node.displayKey }}</code>
+            <span class="temu-tree-node__label">{{ node.label }}</span>
+            <span class="temu-tree-node__meta">{{ node.typeLabel }}</span>
+          </div>
 
-      <div v-if="showDescription" class="temu-tree-node__desc">
-        {{ node.description }}
-      </div>
+          <div class="temu-tree-node__sub-row">
+            <code class="temu-tree-node__source" :title="node.sourcePath">{{ node.sourcePath }}</code>
+            <span v-if="hasChildren" class="temu-tree-node__preview">
+              {{ node.preview }}
+            </span>
+            <span v-else-if="showLeafPreview" class="temu-tree-node__value-preview">
+              {{ node.preview }}
+            </span>
+          </div>
 
-      <div v-if="editing" class="temu-tree-node__editor">
-        <el-switch
-          v-if="node.valueType === 'boolean'"
-          v-model="draftBoolean"
-          inline-prompt
-          active-text="true"
-          inactive-text="false"
-        />
+          <div v-if="showDescription" class="temu-tree-node__desc">
+            {{ node.description }}
+          </div>
 
-        <el-input
-          v-else-if="isStringEditor"
-          v-model="draftText"
-          :type="isLongText ? 'textarea' : 'text'"
-          :rows="isLongText ? 3 : undefined"
-          size="small"
-          placeholder="输入新值"
-        />
+          <div v-if="canRenderEditor" class="temu-tree-node__editor">
+            <el-switch
+              v-if="node.valueType === 'boolean'"
+              v-model="draftBoolean"
+              inline-prompt
+              active-text="true"
+              inactive-text="false"
+              @change="handleBooleanChange"
+            />
 
-        <el-input
-          v-else-if="node.valueType === 'number'"
-          v-model="draftText"
-          size="small"
-          placeholder="输入数字"
-        />
+            <template v-else>
+              <div class="temu-tree-node__editor-row">
+                <el-input
+                  v-model="draftText"
+                  :type="isLongText ? 'textarea' : 'text'"
+                  :rows="isLongText ? 2 : undefined"
+                  size="small"
+                  :placeholder="node.valueType === 'number' ? '输入数字' : '输入字段值'"
+                />
 
-        <div v-if="editorError" class="temu-tree-node__error">
-          {{ editorError }}
-        </div>
+                <div v-if="isDirty" class="temu-tree-node__editor-actions">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    :disabled="!!editorError"
+                    @click="applyEdit"
+                  >
+                    应用
+                  </el-button>
+                  <el-button size="small" text @click="resetDraft">重置</el-button>
+                </div>
+              </div>
 
-        <div class="temu-tree-node__editor-actions">
-          <el-button size="small" type="primary" :disabled="!!editorError" @click="applyEdit">
-            应用
-          </el-button>
-          <el-button size="small" text @click="cancelEdit">取消</el-button>
+              <div v-if="editorError" class="temu-tree-node__error">
+                {{ editorError }}
+              </div>
+            </template>
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="hasChildren" class="temu-tree-node__children">
+    <div v-if="hasChildren && expanded" class="temu-tree-node__children">
       <TemuTemplateTreeNode
         v-for="child in node.children"
         :key="child.id"
@@ -92,23 +109,46 @@ const props = defineProps<{
   editableSourcePaths?: string[];
 }>();
 
-const editing = ref(false);
 const draftText = ref("");
 const draftBoolean = ref(false);
+const expanded = ref(props.node.depth < 2 || props.node.children.length <= 2);
 
 const hasChildren = computed(() => props.node.children.length > 0);
-const showDescription = computed(() => !!props.node.description && !hasChildren.value);
-const depthClass = computed(() => Math.min(props.node.depth, 3));
-const isStringEditor = computed(() => props.node.valueType === "string");
-const canEdit = computed(
-  () =>
-    props.node.editable &&
-    Array.isArray(props.editableSourcePaths) &&
-    props.editableSourcePaths.includes(props.node.sourcePath),
-);
+const editableSourcePaths = computed(() => props.editableSourcePaths || []);
+const canEdit = computed(() => {
+  // 节点自身可编辑还不够，外层还可以进一步限制允许改动的 sourcePath 白名单。
+  if (!props.node.editable) {
+    return false;
+  }
+
+  if (!editableSourcePaths.value.length) {
+    return true;
+  }
+
+  return editableSourcePaths.value.includes(props.node.sourcePath);
+});
+const canRenderEditor = computed(() => !hasChildren.value && canEdit.value);
+const showLeafPreview = computed(() => !hasChildren.value && !canEdit.value);
+const showDescription = computed(() => {
+  if (!props.node.description) {
+    return false;
+  }
+
+  return !hasChildren.value || props.node.depth === 0;
+});
 const isLongText = computed(
   () => props.node.valueType === "string" && String(props.node.rawValue || "").length > 48,
 );
+const rawTextValue = computed(() =>
+  props.node.rawValue === null || props.node.rawValue === undefined ? "" : String(props.node.rawValue),
+);
+const isDirty = computed(() => {
+  if (!canRenderEditor.value || props.node.valueType === "boolean") {
+    return false;
+  }
+
+  return draftText.value !== rawTextValue.value;
+});
 const editorError = computed(() => {
   if (props.node.valueType !== "number") {
     return "";
@@ -124,33 +164,34 @@ const editorError = computed(() => {
 watch(
   () => props.node.rawValue,
   (value) => {
+    // 外部模板文本被其他节点更新后，这里同步草稿态，避免局部编辑器显示旧值。
     draftText.value = value === null || value === undefined ? "" : String(value);
     draftBoolean.value = Boolean(value);
   },
   { immediate: true },
 );
 
-function startEdit() {
-  draftText.value =
-    props.node.rawValue === null || props.node.rawValue === undefined
-      ? ""
-      : String(props.node.rawValue);
-  draftBoolean.value = Boolean(props.node.rawValue);
-  editing.value = true;
+function toggleExpanded() {
+  expanded.value = !expanded.value;
 }
 
-function cancelEdit() {
-  editing.value = false;
+function resetDraft() {
+  draftText.value = rawTextValue.value;
 }
 
-function applyEdit() {
-  if (!canEdit.value || props.node.valueType === null) {
+function handleBooleanChange(value: string | number | boolean) {
+  if (!canEdit.value) {
     return;
   }
 
-  if (props.node.valueType === "boolean") {
-    emit("update-node", { sourcePath: props.node.sourcePath, value: draftBoolean.value });
-    editing.value = false;
+  emit("update-node", {
+    sourcePath: props.node.sourcePath,
+    value: Boolean(value),
+  });
+}
+
+function applyEdit() {
+  if (!canRenderEditor.value || props.node.valueType === null || !isDirty.value) {
     return;
   }
 
@@ -162,12 +203,10 @@ function applyEdit() {
       sourcePath: props.node.sourcePath,
       value: Number(String(draftText.value || "").trim()),
     });
-    editing.value = false;
     return;
   }
 
   emit("update-node", { sourcePath: props.node.sourcePath, value: draftText.value });
-  editing.value = false;
 }
 
 function forwardUpdate(payload: { sourcePath: string; value: string | number | boolean }) {
@@ -177,134 +216,184 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 
 <style scoped lang="less">
 .temu-tree-node {
-  --temu-accent: #1d4ed8;
-  --temu-accent-line: rgba(29, 78, 216, 0.2);
-  position: relative;
-  padding-left: 18px;
-}
-
-.temu-tree-node.depth-1 {
-  --temu-accent: #2563eb;
-  --temu-accent-line: rgba(37, 99, 235, 0.18);
-}
-
-.temu-tree-node.depth-2 {
-  --temu-accent: #3b82f6;
-  --temu-accent-line: rgba(59, 130, 246, 0.16);
-}
-
-.temu-tree-node.depth-3 {
-  --temu-accent: #60a5fa;
-  --temu-accent-line: rgba(96, 165, 250, 0.14);
-}
-
-.temu-tree-node::before {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: 7px;
-  bottom: 0;
-  width: 1px;
-  border-radius: 999px;
-  background: var(--temu-accent-line);
-}
-
-.temu-tree-node__body {
   min-width: 0;
-  padding: 3px 0 4px;
-  border-bottom: 1px solid
-    color-mix(in srgb, var(--temu-accent) 10%, var(--el-border-color-lighter));
+}
+
+.temu-tree-node__main {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-bg-color);
 }
 
 .temu-tree-node__row {
   display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 3px 6px;
-  min-width: 0;
-  line-height: 1.45;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
 }
 
-.temu-tree-node__key {
-  font-size: 11px;
-  color: var(--temu-accent);
+.temu-tree-node__toggle,
+.temu-tree-node__toggle-spacer {
+  flex: 0 0 20px;
+  width: 20px;
+}
+
+.temu-tree-node__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
   padding: 0;
-  font-weight: 600;
-}
-
-.temu-tree-node__label {
-  font-size: 12px;
-  color: color-mix(in srgb, var(--temu-accent) 72%, var(--el-text-color-primary));
-  font-weight: 600;
-}
-
-.temu-tree-node__meta {
-  font-size: 11px;
-  color: color-mix(in srgb, var(--temu-accent) 74%, #64748b);
-}
-
-.temu-tree-node__preview {
-  min-width: 0;
-  font-size: 12px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  background: var(--el-bg-color);
   color: var(--el-text-color-secondary);
-  word-break: break-word;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
 }
 
-.temu-tree-node__edit-trigger {
-  margin-left: auto;
-  padding: 0;
-  min-height: auto;
+.temu-tree-node__toggle:hover {
+  border-color: var(--el-color-primary-light-5);
 }
 
-.temu-tree-node__source,
-.temu-tree-node__desc,
-.temu-tree-node__error {
-  margin-top: 3px;
+.temu-tree-node__toggle-arrow {
+  display: inline-flex;
   font-size: 11px;
-  line-height: 1.45;
+  font-weight: 700;
+  transform-origin: center;
+  transition: transform 0.2s ease;
 }
 
-.temu-tree-node__source {
+.temu-tree-node__toggle.is-expanded .temu-tree-node__toggle-arrow {
+  transform: rotate(90deg);
+}
+
+.temu-tree-node__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.temu-tree-node__title-row {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 6px;
-  color: var(--el-text-color-placeholder);
+  min-width: 0;
 }
 
-.temu-tree-node__source code {
-  color: color-mix(in srgb, var(--temu-accent) 58%, var(--el-text-color-secondary));
-  word-break: break-all;
+.temu-tree-node__key {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--el-fill-color-light);
+  color: var(--el-color-primary);
+  font-size: 11px;
+  font-weight: 600;
 }
 
-.temu-tree-node__desc {
+.temu-tree-node__label {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.temu-tree-node__meta {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.temu-tree-node__sub-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.temu-tree-node__source {
+  display: inline-block;
+  max-width: min(100%, 420px);
+  overflow: hidden;
   color: var(--el-text-color-placeholder);
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-tree-node__preview,
+.temu-tree-node__value-preview {
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
+  word-break: break-word;
 }
 
 .temu-tree-node__editor {
-  margin-top: 6px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-top: 2px;
+}
+
+.temu-tree-node__editor-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.temu-tree-node__editor-row :deep(.el-input),
+.temu-tree-node__editor-row :deep(.el-textarea) {
+  flex: 1;
+}
+
+.temu-tree-node__desc {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
 }
 
 .temu-tree-node__editor-actions {
   display: flex;
-  gap: 6px;
+  flex-shrink: 0;
+  gap: 8px;
 }
 
 .temu-tree-node__error {
+  font-size: 11px;
+  line-height: 1.4;
   color: var(--el-color-danger);
 }
 
 .temu-tree-node__children {
-  margin-top: 4px;
+  margin-left: 11px;
+  padding-left: 12px;
+  border-left: 1px solid var(--el-border-color);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
-.temu-tree-node__children > .temu-tree-node:last-child::before {
-  bottom: 8px;
+@media (max-width: 768px) {
+  .temu-tree-node__row {
+    padding: 8px;
+  }
+
+  .temu-tree-node__editor-row {
+    flex-direction: column;
+  }
+
+  .temu-tree-node__children {
+    margin-left: 9px;
+    padding-left: 10px;
+  }
 }
 </style>

@@ -201,6 +201,7 @@ const templateBindingDefaultConfigText = computed(() =>
   formatTemplateBindingConfig(selectedTemplateBinding.value?.psdTemplateConfig),
 );
 
+// 检查器编辑的是模板原文，这里直接把树编辑结果回写到 platformConfigData.productTemplate。
 const temuProductTemplateValue = computed({
   get: () => String(platformConfigData.value?.productTemplate || ""),
   set: (value: string) => {
@@ -1348,7 +1349,7 @@ onMounted(() => {
       class="publish-config-temu-inspector-dialog"
     >
       <div class="publish-config-temu-inspector">
-        <TemuProductTemplateInspector :model-value="temuProductTemplateValue" />
+        <TemuProductTemplateInspector v-model="temuProductTemplateValue" />
       </div>
     </el-dialog>
   </ContentWrap>

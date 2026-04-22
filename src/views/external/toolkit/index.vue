@@ -870,6 +870,33 @@ const temuWorkspaceLockText = computed(() => {
   return temuWorkspaceAvailability.value.detail || "当前环境会话暂不可用，请先处理会话状态。";
 });
 const selectedStoredSession = computed(() => temuWorkspaceSessionRecord.value);
+const resolveTemuStoredCredentialValue = (
+  record: Record<string, any> | null | undefined,
+  key: "account" | "password",
+) => {
+  const normalizedRecord = asPlainObject(record);
+  const session = asPlainObject(normalizedRecord?.session);
+  return String(session?.[key] || normalizedRecord?.[key] || "").trim();
+};
+const syncTemuSessionAcquireCredentialsFromStoredSession = (profileId?: string) => {
+  // “登录并获取”优先回显当前环境最近一次保存的凭证，减少重复输入。
+  if (selectedPlatformKey.value !== TEMU_PLATFORM_KEY) {
+    return;
+  }
+
+  const normalizedProfileId = String(profileId || selectedExecutionProfileId.value || "").trim();
+  if (!normalizedProfileId) {
+    sessionAcquireForm.account = "";
+    sessionAcquireForm.password = "";
+    return;
+  }
+
+  const record = asPlainObject(
+    storedSessionRows.value.find((item) => item.profileId === normalizedProfileId)?.record || null,
+  );
+  sessionAcquireForm.account = resolveTemuStoredCredentialValue(record, "account");
+  sessionAcquireForm.password = resolveTemuStoredCredentialValue(record, "password");
+};
 const currentEnvironmentValidation = computed(() =>
   asPlainObject(selectedExecutionStoredSession.value?.validation),
 );
@@ -1368,13 +1395,27 @@ const buildMergedRegionSession = (
   };
 };
 
-const buildTemuStoredSessionPayload = (sessionBundle: Record<string, any>, profileId: string) => {
+const buildTemuStoredSessionPayload = (
+  sessionBundle: Record<string, any>,
+  profileId: string,
+  credentials?: {
+    account?: string;
+    password?: string;
+  },
+) => {
+  // Admin 端回写结构与发布端实时回写保持一致，避免两边对同一份 Temu session 读出不同结果。
   const collectedAt = String(sessionBundle?.collectedAt || new Date().toISOString()).trim();
   const regionHeaders = asPlainObject(sessionBundle?.regionHeaders);
   const currentPlatform = asPlainObject(storedPlatformSession.value);
   const currentProfile = asPlainObject(currentPlatform?.profiles?.[profileId]);
   const currentSession = asPlainObject(currentProfile?.session);
   const currentUserInfo = asPlainObject(currentProfile?.userInfo);
+  const storedAccount = String(
+    credentials?.account ?? currentSession?.account ?? currentProfile?.account ?? "",
+  ).trim();
+  const storedPassword = String(
+    credentials?.password ?? currentSession?.password ?? currentProfile?.password ?? "",
+  ).trim();
   const sessionHeadersTemplate = asPlainObject(sessionBundle?.headersTemplate);
   const nextGlobalHeaders = Object.keys(sessionHeadersTemplate).length
     ? sessionHeadersTemplate
@@ -1429,6 +1470,8 @@ const buildTemuStoredSessionPayload = (sessionBundle: Record<string, any>, profi
           checkedAt: collectedAt,
         },
         session: {
+          account: storedAccount,
+          password: storedPassword,
           global: buildMergedRegionSession(
             asPlainObject(sessionBundle?.cookies_global || sessionBundle?.cookies),
             nextGlobalHeaders,
@@ -1464,10 +1507,17 @@ const resolveCollectedProfileId = (result: Record<string, any>) => {
   return candidates.map((item) => String(item || "").trim()).find(Boolean) || "";
 };
 
-const persistTemuSessionBundle = async (sessionBundle: Record<string, any>, profileId: string) => {
+const persistTemuSessionBundle = async (
+  sessionBundle: Record<string, any>,
+  profileId: string,
+  credentials?: {
+    account?: string;
+    password?: string;
+  },
+) => {
   await updatePlatformSessions({
     platform: TEMU_PLATFORM_KEY,
-    data: buildTemuStoredSessionPayload(sessionBundle, profileId),
+    data: buildTemuStoredSessionPayload(sessionBundle, profileId, credentials),
   });
   await refreshStoredPlatformSessions();
 };
@@ -1663,6 +1713,8 @@ const refreshStoredPlatformSessions = async () => {
   if (selectedPlatformKey.value !== TEMU_PLATFORM_KEY) {
     storedPlatformSession.value = {};
     storedSessionLoaded.value = false;
+    sessionAcquireForm.account = "";
+    sessionAcquireForm.password = "";
     return;
   }
 
@@ -1671,6 +1723,7 @@ const refreshStoredPlatformSessions = async () => {
     const response = await getPlatformSessions({ platform: TEMU_PLATFORM_KEY });
     storedPlatformSession.value = asPlainObject(response);
     storedSessionLoaded.value = true;
+    syncTemuSessionAcquireCredentialsFromStoredSession();
   } catch (error: any) {
     ElMessage.error(error?.message || "获取已存储会话失败");
   } finally {
@@ -1913,9 +1966,19 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
       ) {
         const sessionBundle = asPlainObject(result?.sessionBundle);
         const profileId = resolveCollectedProfileId(result);
+        const acquireMode = String(result?.acquireMode || dataObject?.acquireMode || "").trim();
         if (sessionBundle && profileId) {
           try {
-            await persistTemuSessionBundle(sessionBundle, profileId);
+            await persistTemuSessionBundle(
+              sessionBundle,
+              profileId,
+              featureKey === TEMU_SESSION_TOOL_KEY && acquireMode === "login"
+                ? {
+                    account: sessionAcquireForm.account,
+                    password: sessionAcquireForm.password,
+                  }
+                : undefined,
+            );
           } catch (error: any) {
             ElMessage.warning(`会话获取成功，但自动存储失败：${error?.message || "未知错误"}`);
           }
@@ -2021,13 +2084,9 @@ watch(
 
 watch(
   () => sessionAcquireForm.acquireMode,
-  (mode) => {
+  () => {
     sessionAcquireErrors.account = "";
     sessionAcquireErrors.password = "";
-    if (mode !== "login") {
-      sessionAcquireForm.account = "";
-      sessionAcquireForm.password = "";
-    }
   },
 );
 
@@ -2070,6 +2129,7 @@ watch(
   selectedExecutionProfileId,
   () => {
     resetToolkitToolResults();
+    syncTemuSessionAcquireCredentialsFromStoredSession();
   },
   { immediate: true },
 );

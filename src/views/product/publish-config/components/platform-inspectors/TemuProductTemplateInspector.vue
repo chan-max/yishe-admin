@@ -1,19 +1,7 @@
 <template>
   <div class="publish-config-temu-parser">
-    <div class="publish-config-temu-parser__header">
-      <div>
-        <div class="publish-config-temu-parser__title">当前模板结构</div>
-        <div class="publish-config-temu-parser__desc">
-          按接近 JSON 的层级方式展示当前 Temu 商品模板，方便查看字段结构、字段说明和源字段路径。
-        </div>
-      </div>
-      <el-tag size="small" effect="plain" :type="resolveStatusTagType(analysis.status)">
-        {{ analysis.statusText }}
-      </el-tag>
-    </div>
-
     <div v-if="analysis.rawEmpty" class="publish-config-temu-parser__placeholder">
-      录入 Temu 商品模板后，这里会显示层级结构、数组数量和字段说明。
+      录入 Temu 商品模板后，这里会以可编辑层级结构显示字段。
     </div>
 
     <template v-else-if="analysis.status === 'error'">
@@ -23,32 +11,12 @@
     </template>
 
     <template v-else>
-      <div class="publish-config-temu-parser__summary">
-        <div
-          v-for="item in analysis.summaryItems"
-          :key="item.key"
-          class="publish-config-temu-parser__summary-item"
-        >
-          <span>{{ item.label }}</span>
-          <strong>{{ item.value }}</strong>
-        </div>
-      </div>
-
-      <div class="publish-config-temu-parser__tip">
-        当前先用于辅助查看，字段编辑会按后续白名单逐步开放。
-      </div>
-
-      <div v-if="analysis.unknownFieldKeys.length" class="publish-config-temu-parser__tip">
-        暂未收录说明的字段：
-        {{ analysis.unknownFieldKeys.join("、") }}
-      </div>
-
       <div class="publish-config-temu-parser__tree">
         <TemuTemplateTreeNode
           v-for="node in analysis.tree"
           :key="node.id"
           :node="node"
-          :editable-source-paths="editableSourcePaths"
+          :editable-source-paths="props.editableSourcePaths"
           @update-node="handleNodeUpdate"
         />
       </div>
@@ -75,18 +43,8 @@ const props = defineProps<{
   editableSourcePaths?: string[];
 }>();
 
+// 模板文本每次重新解析为树，保证外部文本修改和树内编辑始终是同一份数据。
 const analysis = computed(() => analyzeTemuProductTemplate(props.modelValue));
-const editableSourcePaths = computed(() => props.editableSourcePaths || []);
-
-function resolveStatusTagType(status?: string) {
-  if (status === "success") {
-    return "success";
-  }
-  if (status === "error") {
-    return "danger";
-  }
-  return "info";
-}
 
 function handleNodeUpdate(payload: { sourcePath: string; value: string | number | boolean }) {
   const nextText = updateTemuProductTemplateValue(
@@ -107,71 +65,33 @@ function handleNodeUpdate(payload: { sourcePath: string; value: string | number 
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   box-sizing: border-box;
 }
 
-.publish-config-temu-parser__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 0 0 10px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-}
-
-.publish-config-temu-parser__title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--el-text-color-primary);
-}
-
-.publish-config-temu-parser__desc {
-  margin-top: 3px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--el-text-color-secondary);
-}
-
-.publish-config-temu-parser__summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: 8px 12px;
-}
-
-.publish-config-temu-parser__summary-item {
-  min-width: 0;
-}
-
-.publish-config-temu-parser__summary-item span {
-  display: block;
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-.publish-config-temu-parser__summary-item strong {
-  display: block;
-  margin-top: 2px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-}
-
 .publish-config-temu-parser__placeholder,
-.publish-config-temu-parser__tip,
 .publish-config-temu-parser__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 96px;
+  padding: 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
   font-size: 12px;
-  line-height: 1.45;
+  line-height: 1.6;
+  text-align: center;
 }
 
-.publish-config-temu-parser__placeholder,
-.publish-config-temu-parser__tip {
+.publish-config-temu-parser__placeholder {
   color: var(--el-text-color-secondary);
 }
 
 .publish-config-temu-parser__error {
   color: var(--el-color-danger);
+  border-color: var(--el-color-danger-light-7);
+  background: var(--el-color-danger-light-9);
 }
 
 .publish-config-temu-parser__tree {
@@ -179,19 +99,9 @@ function handleNodeUpdate(payload: { sourcePath: string; value: string | number 
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
   padding: 0;
   overflow: auto;
-  padding-right: 4px;
-}
-
-@media (max-width: 768px) {
-  .publish-config-temu-parser__header {
-    flex-direction: column;
-  }
-
-  .publish-config-temu-parser__summary {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  padding-right: 2px;
 }
 </style>
