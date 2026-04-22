@@ -745,7 +745,7 @@
               </el-table-column>
               <el-table-column
                 prop="profileLabel"
-                label="执行方式"
+                label="支持环境"
                 min-width="120"
                 show-overflow-tooltip
               />
@@ -1454,39 +1454,51 @@ const dispatchClientCandidates = computed(() =>
 const dispatchAvailableRows = computed<ManualDispatchOptionRow[]>(() => {
   const taskType = dispatchTargetTask.value?.type;
   return dispatchClientCandidates.value
-    .map((client) => {
+    .flatMap((client) => {
       const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
       const onlineTag = getDispatchClientOnlineTag(client);
       const serviceTag = getDispatchClientServiceTag(client);
       const taskState = getClientTaskTypeState(client, taskType);
-      const defaultOption = {
-        profileId: null,
-        label: "默认环境",
-        description: taskState.text,
-        enabled: taskState.enabled,
-        connected: !!getBrowserAutomationRuntime(client)?.available,
-        busy: isBrowserAutomationClientBusy(client),
-      } satisfies DispatchProfileOption;
+      const profileOptions = resolveClientDispatchProfileOptions(client, taskType);
+      const concreteOptions = profileOptions.filter((item) => !item.isAuto);
+      const effectiveOptions = concreteOptions.length
+        ? concreteOptions
+        : profileOptions.length
+          ? profileOptions
+          : [
+              {
+                profileId: null,
+                label: "无可用环境",
+                description: taskState.text,
+                enabled: false,
+                connected: !!getBrowserAutomationRuntime(client)?.available,
+                busy: isBrowserAutomationClientBusy(client),
+              } satisfies DispatchProfileOption,
+            ];
 
-      return {
-        optionKey: buildDispatchOptionKey(client.id, null),
+      return effectiveOptions.map((option) => ({
+        optionKey: buildDispatchOptionKey(client.id, option.profileId),
         clientId: String(client.id || "").trim(),
         clientLabel: formatClientNodeName(client),
         connectedAtLabel,
         onlineTag,
         serviceTag,
-        profileId: null,
-        profileLabel: "默认环境",
-        profileTag: getDispatchProfileTag(client, defaultOption, taskType),
-        description: taskState.text,
-        selectable: taskState.enabled,
-      };
+        profileId: option.profileId,
+        profileLabel: option.label,
+        profileTag: getDispatchProfileTag(client, option, taskType),
+        description: taskState.enabled ? option.description : taskState.text,
+        selectable: taskState.enabled && option.enabled,
+      }));
     })
     .sort((a, b) => {
       if (a.selectable !== b.selectable) {
         return a.selectable ? -1 : 1;
       }
-      return a.clientLabel.localeCompare(b.clientLabel, "zh-CN");
+      const clientCompare = a.clientLabel.localeCompare(b.clientLabel, "zh-CN");
+      if (clientCompare !== 0) {
+        return clientCompare;
+      }
+      return a.profileLabel.localeCompare(b.profileLabel, "zh-CN");
     });
 });
 const dispatchSelectableRows = computed(() =>
@@ -1841,6 +1853,14 @@ function formatDispatchProfileLabel(profileId: string, profile?: Record<string, 
   const profileName =
     String(profile?.name || profile?.profileName || profileId).trim() || profileId;
   return `${profileName}${profileId ? ` (${profileId})` : ""}`;
+}
+
+function extractRequestErrorMessage(error: any, fallback = "操作失败") {
+  return (
+    error?.response?.data?.message ||
+    error?.message ||
+    fallback
+  );
 }
 
 function resolveClientDispatchProfileOptions(
@@ -2789,13 +2809,14 @@ async function handleConfirmPublishDispatch() {
   try {
     await startPublishTaskDispatch(dispatchTargetTask.value.id, {
       clientId: selectedRow.clientId,
+      profileId: selectedRow.profileId || undefined,
     });
     schedulePublishTaskMenuRuntimeSync();
     ElMessage.success("发布任务已分配到客户端执行");
     publishDispatchDialogVisible.value = false;
     await refreshPublishDispatchPageState();
   } catch (error: any) {
-    ElMessage.error(error?.message || "发布任务分发失败");
+    ElMessage.error(extractRequestErrorMessage(error, "发布任务分发失败"));
   } finally {
     publishDispatchSubmitting.value = false;
   }
