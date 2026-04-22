@@ -46,17 +46,23 @@ export default defineComponent({
 
         <div class="tool-header-right flex h-full min-w-0 items-center justify-end">
           <GlobalNotificationToastStack />
-          <AdminDataScopeSwitch />
+          {!mobile.value ? <AdminDataScopeSwitch /> : undefined}
           <GlobalNotificationCenter />
-          <ToolLauncherDropdown />
-          <div class="client-status-wrapper">
-            <ClientStatus />
-          </div>
-          <div class="custom-hover tool-header-theme-switch flex h-[var(--top-header-action-size)] items-center rounded-999px">
-            <ThemeSwitch />
-          </div>
+          {!mobile.value ? <ToolLauncherDropdown /> : undefined}
+          {!mobile.value ? (
+            <div class="client-status-wrapper">
+              <ClientStatus />
+            </div>
+          ) : undefined}
+          {!mobile.value ? (
+            <div class="custom-hover tool-header-theme-switch flex h-[var(--top-header-action-size)] items-center rounded-999px">
+              <ThemeSwitch />
+            </div>
+          ) : undefined}
           {screenfull.value ? (
-            <Screenfull class="custom-hover" color="var(--top-header-text-color)" />
+            !mobile.value ? (
+              <Screenfull class="custom-hover" color="var(--top-header-text-color)" />
+            ) : undefined
           ) : undefined}
           <UserInfo />
         </div>
@@ -154,8 +160,8 @@ $prefix-cls: #{$namespace}-tool-header;
   }
 
   .tool-header-right {
-    gap: 6px;
-    padding-left: 6px;
+    gap: 4px;
+    padding-left: 4px;
   }
 
   .client-status-wrapper {
@@ -166,7 +172,7 @@ $prefix-cls: #{$namespace}-tool-header;
 @media (max-width: 640px) {
   .#{$prefix-cls} {
     padding-left: 8px;
-    padding-right: 6px;
+    padding-right: 4px;
   }
 
   .tool-header-left {
@@ -174,8 +180,8 @@ $prefix-cls: #{$namespace}-tool-header;
   }
 
   .tool-header-right {
-    gap: 5px;
-    padding-left: 4px;
+    gap: 2px;
+    padding-left: 2px;
   }
 }
 </style>

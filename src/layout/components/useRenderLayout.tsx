@@ -86,7 +86,7 @@ export const useRenderLayout = ({
                   "bg-[var(--top-header-bg-color)] border-b border-[color:color-mix(in_srgb,var(--top-tool-border-color)_38%,transparent_62%)] shadow-none",
                 ]}
               />
-              {tagsView.value ? <TagsView /> : undefined}
+              {tagsView.value && !mobile.value ? <TagsView /> : undefined}
             </div>
 
             <AppView />

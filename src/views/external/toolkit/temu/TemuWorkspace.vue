@@ -4,11 +4,6 @@
       <div class="temu-workspace__toolbar">
         <div class="temu-workspace__toolbar-main">
           <div class="temu-workspace__section-title">业务动作</div>
-          <div class="temu-workspace__counts">
-            <span>{{ actionCategoryTabs.length }} 类</span>
-            <span>{{ visibleActionCount }} 动作</span>
-            <span>{{ availableActionCount }} 可执行</span>
-          </div>
         </div>
 
         <div class="temu-workspace__toolbar-side">
@@ -71,9 +66,6 @@
           </span>
           <span class="temu-function-button__desc">
             {{ action.description || "当前动作暂无额外说明" }}
-          </span>
-          <span class="temu-function-button__meta">
-            {{ action.key }}
           </span>
         </button>
       </div>
@@ -273,6 +265,16 @@
               <el-button
                 text
                 size="small"
+                type="danger"
+                :disabled="!hasSelectedTaskRuns"
+                :loading="batchDeletingTaskRuns"
+                @click="deleteSelectedTaskRuns"
+              >
+                批量删除
+              </el-button>
+              <el-button
+                text
+                size="small"
                 :loading="taskRunLoading || taskRunDetailLoading"
                 @click="refreshTaskRuns"
               >
@@ -281,61 +283,50 @@
             </div>
           </div>
 
-          <el-table
-            v-loading="taskRunLoading"
-            :data="taskRunList"
-            border
-            stripe
-            row-key="id"
-            highlight-current-row
-            class="temu-workspace__task-table"
-          >
-            <el-table-column prop="id" label="#" width="76" />
-            <el-table-column label="动作" min-width="180" show-overflow-tooltip>
-              <template #default="{ row }">
+          <div class="common-table">
+            <vxe-grid
+              v-bind="taskRunGridOptions"
+              :data="taskRunList"
+              :loading="taskRunLoading"
+              class="temu-workspace__task-table"
+              @checkbox-change="onTaskRunSelectionChange"
+              @checkbox-all="onTaskRunSelectionChange"
+            >
+              <template #taskRunActionSlot="{ row }">
                 <div class="temu-workspace__task-action-cell">
                   <span>{{ row.actionLabel }}</span>
                   <small>{{ row.actionKey }}</small>
                 </div>
               </template>
-            </el-table-column>
-            <el-table-column label="状态" width="112" align="center">
-              <template #default="{ row }">
+
+              <template #taskRunStatusSlot="{ row }">
                 <el-tag size="small" effect="plain" :type="resolveTaskRunStatusTagType(row.status)">
                   {{ resolveTaskRunStatusLabel(row.status) }}
                 </el-tag>
               </template>
-            </el-table-column>
-            <el-table-column label="环境" min-width="140" show-overflow-tooltip>
-              <template #default="{ row }">
+
+              <template #taskRunProfileSlot="{ row }">
                 {{ row.profileId || "-" }}
               </template>
-            </el-table-column>
-            <el-table-column label="区域" width="110" align="center">
-              <template #default="{ row }">
+
+              <template #taskRunRegionSlot="{ row }">
                 {{ resolveRegionLabel(row.region) }}
               </template>
-            </el-table-column>
-            <el-table-column label="耗时" width="110" align="center">
-              <template #default="{ row }">
+
+              <template #taskRunDurationSlot="{ row }">
                 {{ formatDuration(row.durationMs) }}
               </template>
-            </el-table-column>
-            <el-table-column label="创建时间" width="176" align="center">
-              <template #default="{ row }">
+
+              <template #taskRunCreatedAtSlot="{ row }">
                 {{ formatDateTime(row.createdAt) }}
               </template>
-            </el-table-column>
-            <el-table-column label="失败原因" min-width="220" show-overflow-tooltip>
-              <template #default="{ row }">
+
+              <template #taskRunErrorSlot="{ row }">
                 {{ row.errorText || "-" }}
               </template>
-            </el-table-column>
-            <el-table-column label="操作" width="150" align="center" fixed="right">
-              <template #default="{ row }">
-                <el-button text size="small" @click.stop="openTaskRunDetail(row.id)"
-                  >详情</el-button
-                >
+
+              <template #taskRunOperationSlot="{ row }">
+                <el-button text size="small" @click.stop="openTaskRunDetail(row.id)">详情</el-button>
                 <el-button
                   text
                   size="small"
@@ -344,9 +335,18 @@
                 >
                   重跑
                 </el-button>
+                <el-button
+                  text
+                  size="small"
+                  type="danger"
+                  :loading="deletingTaskRunId === row.id"
+                  @click.stop="deleteTaskRunById(row.id)"
+                >
+                  删除
+                </el-button>
               </template>
-            </el-table-column>
-          </el-table>
+            </vxe-grid>
+          </div>
 
           <div v-if="!taskRunList.length && !taskRunLoading" class="temu-workspace__filter-empty">
             当前条件下还没有 Temu 执行记录。
@@ -412,6 +412,15 @@
                 @click="retryTaskRunById(activeTaskRunDetail.id)"
               >
                 重跑
+              </el-button>
+              <el-button
+                text
+                size="small"
+                type="danger"
+                :loading="deletingTaskRunId === activeTaskRunDetail.id"
+                @click="deleteTaskRunById(activeTaskRunDetail.id)"
+              >
+                删除
               </el-button>
             </div>
           </div>
@@ -492,11 +501,14 @@
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import type { VxeGridProps } from "vxe-table";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
+  batchDeleteTemuTaskRuns,
   createTemuTaskRun,
+  deleteTemuTaskRun,
   getTemuCatalog,
   getTemuTaskRun,
   getTemuTaskRunPage,
@@ -509,6 +521,7 @@ import {
   type TemuTaskRunLogEntry,
   type TemuTaskRunSummary,
 } from "@/api/external/toolkit/temu";
+import { commonGridOptions } from "@/common/table";
 import {
   ACTION_PRESETS,
   REGION_LABELS,
@@ -586,12 +599,86 @@ const taskRunPageSize = ref(10);
 const taskRunTotal = ref(0);
 const onlyCurrentActionRuns = ref(true);
 const taskRunList = ref<TemuTaskRunSummary[]>([]);
+const selectedTaskRunIds = ref<number[]>([]);
 const taskRunDetailVisible = ref(false);
 const activeTaskRunId = ref<number | null>(null);
 const activeTaskRunDetail = ref<TemuTaskRunDetail | null>(null);
 const retryingTaskRunId = ref<number | null>(null);
+const deletingTaskRunId = ref<number | null>(null);
+const batchDeletingTaskRuns = ref(false);
 const taskRunPollingBusy = ref(false);
 let taskRunPollTimer: number | null = null;
+
+const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
+  ...(commonGridOptions as VxeGridProps<TemuTaskRunSummary>),
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "id",
+  },
+  checkboxConfig: {
+    reserve: true,
+  },
+  columns: [
+    { type: "checkbox", width: 48 },
+    { title: "#", field: "id", width: 76 },
+    {
+      title: "动作",
+      field: "actionLabel",
+      minWidth: 180,
+      slots: { default: "taskRunActionSlot" },
+    },
+    {
+      title: "状态",
+      field: "status",
+      width: 112,
+      align: "center",
+      slots: { default: "taskRunStatusSlot" },
+    },
+    {
+      title: "环境",
+      field: "profileId",
+      minWidth: 140,
+      showOverflow: "tooltip",
+      slots: { default: "taskRunProfileSlot" },
+    },
+    {
+      title: "区域",
+      field: "region",
+      width: 110,
+      align: "center",
+      slots: { default: "taskRunRegionSlot" },
+    },
+    {
+      title: "耗时",
+      field: "durationMs",
+      width: 110,
+      align: "center",
+      slots: { default: "taskRunDurationSlot" },
+    },
+    {
+      title: "创建时间",
+      field: "createdAt",
+      width: 176,
+      align: "center",
+      slots: { default: "taskRunCreatedAtSlot" },
+    },
+    {
+      title: "失败原因",
+      field: "errorText",
+      minWidth: 220,
+      showOverflow: "tooltip",
+      slots: { default: "taskRunErrorSlot" },
+    },
+    {
+      title: "操作",
+      field: "operation",
+      width: 210,
+      fixed: "right",
+      align: "center",
+      slots: { default: "taskRunOperationSlot" },
+    },
+  ],
+});
 
 const sessionRecord = computed(() => asPlainObject(props.sessionRecord));
 const sessionData = computed(() => asPlainObject(sessionRecord.value?.session));
@@ -884,6 +971,7 @@ const taskRunLogEntries = computed<TemuTaskRunLogEntry[]>(() =>
 const taskRunParamsText = computed(() => jsonText(activeTaskRunDetail.value?.params ?? null));
 const taskRunResultText = computed(() => jsonText(activeTaskRunDetail.value?.result ?? null));
 const taskRunLogsText = computed(() => jsonText(taskRunLogEntries.value));
+const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
     ["queued", "running"].includes(String(item.status || "").trim()),
@@ -1201,6 +1289,9 @@ const loadTaskRuns = async (options: { silent?: boolean } = {}) => {
 
     taskRunList.value = Array.isArray(response?.list) ? response.list : [];
     taskRunTotal.value = Number(response?.total || 0);
+    selectedTaskRunIds.value = selectedTaskRunIds.value.filter((id) =>
+      taskRunList.value.some((item) => item.id === id),
+    );
 
     if (!taskRunList.value.length) {
       activeTaskRunId.value = null;
@@ -1276,6 +1367,12 @@ const refreshTaskRuns = async () => {
   await loadTaskRuns();
 };
 
+const onTaskRunSelectionChange = ({ records }: { records: TemuTaskRunSummary[] }) => {
+  selectedTaskRunIds.value = (Array.isArray(records) ? records : [])
+    .map((item) => Number(item?.id || 0))
+    .filter((id) => Number.isInteger(id) && id > 0);
+};
+
 const retryTaskRunById = async (id: number) => {
   if (!id) {
     return;
@@ -1299,6 +1396,73 @@ const retryTaskRunById = async (id: number) => {
     ElMessage.error(extractRequestErrorMessage(error, "重跑 Temu 任务失败"));
   } finally {
     retryingTaskRunId.value = null;
+  }
+};
+
+const deleteTaskRunById = async (id: number) => {
+  if (!id) {
+    return;
+  }
+
+  await ElMessageBox.confirm(`确认删除执行记录 #${id} 吗？`, "删除记录", {
+    type: "warning",
+  });
+
+  deletingTaskRunId.value = id;
+  try {
+    await deleteTemuTaskRun(id);
+    selectedTaskRunIds.value = selectedTaskRunIds.value.filter((item) => item !== id);
+    if (activeTaskRunId.value === id) {
+      activeTaskRunId.value = null;
+      activeTaskRunDetail.value = null;
+      taskRunDetailVisible.value = false;
+    }
+    if (taskRunList.value.length === 1 && taskRunPage.value > 1) {
+      taskRunPage.value -= 1;
+    }
+    await loadTaskRuns();
+    ElMessage.success(`执行记录 #${id} 已删除`);
+  } catch (error: any) {
+    if (error !== "cancel") {
+      ElMessage.error(extractRequestErrorMessage(error, "删除 Temu 执行记录失败"));
+    }
+  } finally {
+    deletingTaskRunId.value = null;
+  }
+};
+
+const deleteSelectedTaskRuns = async () => {
+  const deleteIds = selectedTaskRunIds.value.filter((id) => Number.isInteger(id) && id > 0);
+  if (!deleteIds.length) {
+    ElMessage.warning("请先选择要删除的执行记录");
+    return;
+  }
+
+  await ElMessageBox.confirm(`确认删除选中的 ${deleteIds.length} 条执行记录吗？`, "批量删除", {
+    type: "warning",
+  });
+
+  batchDeletingTaskRuns.value = true;
+  try {
+    const result = await batchDeleteTemuTaskRuns(deleteIds);
+    const deletedIds = Array.isArray(result?.ids) ? result.ids : deleteIds;
+    selectedTaskRunIds.value = selectedTaskRunIds.value.filter((id) => !deletedIds.includes(id));
+    if (activeTaskRunId.value && deletedIds.includes(activeTaskRunId.value)) {
+      activeTaskRunId.value = null;
+      activeTaskRunDetail.value = null;
+      taskRunDetailVisible.value = false;
+    }
+    if (deleteIds.length >= taskRunList.value.length && taskRunPage.value > 1) {
+      taskRunPage.value -= 1;
+    }
+    await loadTaskRuns();
+    ElMessage.success(`已删除 ${Number(result?.deletedCount || deletedIds.length)} 条执行记录`);
+  } catch (error: any) {
+    if (error !== "cancel") {
+      ElMessage.error(extractRequestErrorMessage(error, "批量删除 Temu 执行记录失败"));
+    }
+  } finally {
+    batchDeletingTaskRuns.value = false;
   }
 };
 
@@ -1532,8 +1696,8 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__action-shell {
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
 }
@@ -1558,34 +1722,24 @@ onBeforeUnmount(() => {
 .temu-workspace__helper-label,
 .temu-workspace__editor-title {
   color: var(--el-text-color-primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
 .temu-workspace__toolbar-main {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 4px 8px;
 }
 
 .temu-workspace__action-shell {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-}
-
-.temu-workspace__counts {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  color: var(--el-text-color-secondary);
-  font-size: 10px;
+  gap: 10px;
 }
 
 .temu-workspace__search {
-  width: 190px;
+  width: 168px;
 }
 
 .temu-workspace__feedback-list {
@@ -1613,18 +1767,18 @@ onBeforeUnmount(() => {
 
 .temu-workspace__category-tabs {
   display: flex;
-  gap: 6px;
+  gap: 4px;
   overflow-x: auto;
-  padding-bottom: 2px;
+  padding-bottom: 1px;
   scrollbar-width: thin;
 }
 
 .temu-category-tab {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   min-width: max-content;
-  padding: 5px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
   border: 1px solid var(--el-border-color-light);
   background: var(--el-bg-color);
@@ -1637,19 +1791,19 @@ onBeforeUnmount(() => {
 }
 
 .temu-category-tab span {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
 }
 
 .temu-category-tab em {
-  padding: 0 5px;
+  padding: 0 4px;
   border-radius: 999px;
   background: var(--el-fill-color-extra-light);
   color: var(--el-text-color-regular);
-  font-size: 10px;
+  font-size: 9px;
   font-style: normal;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .temu-category-tab:hover {
@@ -1720,17 +1874,17 @@ onBeforeUnmount(() => {
 
 .temu-workspace__action-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 220px));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
 }
 
 .temu-function-button {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  min-height: 104px;
-  padding: 10px;
-  border-radius: 12px;
+  min-height: 72px;
+  padding: 8px;
+  border-radius: 10px;
   text-align: left;
   background: var(--el-fill-color-blank);
 }
@@ -1739,9 +1893,9 @@ onBeforeUnmount(() => {
   display: -webkit-box;
   overflow: hidden;
   color: var(--el-text-color-primary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  line-height: 1.4;
+  line-height: 1.3;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -1757,17 +1911,17 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 4px;
+  gap: 3px;
 }
 
 .temu-function-button__runtime,
 .temu-function-button__status {
   flex-shrink: 0;
-  padding: 0 6px;
+  padding: 0 5px;
   border-radius: 999px;
   border: 1px solid transparent;
-  font-size: 10px;
-  line-height: 18px;
+  font-size: 9px;
+  line-height: 16px;
 }
 
 .temu-function-button__status {
@@ -1784,27 +1938,13 @@ onBeforeUnmount(() => {
 
 .temu-function-button__desc {
   display: -webkit-box;
-  margin-top: 6px;
+  margin-top: 4px;
   overflow: hidden;
   color: var(--el-text-color-regular);
-  font-size: 11px;
-  line-height: 1.45;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.temu-function-button__meta,
-.temu-helper-chip__desc {
-  display: block;
-  margin-top: auto;
-}
-
-.temu-function-button__meta {
-  padding-top: 8px;
-  color: var(--el-text-color-placeholder);
   font-size: 10px;
-  line-height: 1.4;
-  word-break: break-all;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
 .temu-function-button.is-active {
@@ -2081,7 +2221,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 1280px) {
   .temu-workspace__action-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(144px, 1fr));
   }
 }
 

@@ -137,3 +137,21 @@ export const retryTemuTaskRun = (id: number | string) => {
     data: { id },
   });
 };
+
+export const deleteTemuTaskRun = (id: number | string) => {
+  return request.delete<{ id: number }>({
+    url: `/temu/task-run/${encodeURIComponent(String(id))}`,
+    params: { id },
+  });
+};
+
+export const batchDeleteTemuTaskRuns = (ids: Array<number | string>) => {
+  return request.post<{ ids: number[]; deletedCount: number }>({
+    url: "/temu/task-run/batch-delete",
+    data: {
+      ids: (Array.isArray(ids) ? ids : [])
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0),
+    },
+  });
+};

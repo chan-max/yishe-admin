@@ -1197,7 +1197,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   .#{$prefix-cls}__link-text {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .#{$prefix-cls}__status-dot,
@@ -1227,7 +1227,7 @@ $prefix-cls: #{$namespace}-menu;
   }
 
   .#{$prefix-cls}__section-title {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .#{$prefix-cls}__links {

@@ -60,7 +60,9 @@
       >
         同步身份
       </el-button>
-      <el-button size="small" @click="emit('open-session-center')">会话中心</el-button>
+      <el-button size="small" :disabled="!hasSelectedProfile" @click="emit('open-session-center')">
+        会话中心
+      </el-button>
     </div>
   </section>
 </template>
@@ -175,14 +177,17 @@ const accountText = computed(() => availability.value.accountText || "-");
 const mallText = computed(() => availability.value.mallText || "未设置");
 const cookieSummary = computed(() => availability.value.cookieSummary || "-");
 const validationCheckedAtText = computed(() => props.validationCheckedAtText || "未校验");
-const canValidate = computed(() => !!props.profileId && availability.value.hasUsableSession);
-const canRefreshIdentity = computed(() => !!props.profileId && availability.value.hasUsableSession);
+const hasSelectedProfile = computed(() => !!props.profileId);
+const canValidate = computed(() => hasSelectedProfile.value && availability.value.hasUsableSession);
+const canRefreshIdentity = computed(
+  () => hasSelectedProfile.value && availability.value.hasUsableSession,
+);
 </script>
 
 <style scoped lang="scss">
 .temu-context-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px 12px;

@@ -193,7 +193,8 @@ export function useBrowserAutomationExecutionContext() {
     if (!profileItems.value.length) {
       return [
         {
-          value: ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE,
+          value:
+            String(activeProfile.value?.id || "").trim() || ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE,
           label: activeProfile.value ? buildProfileLabel(activeProfile.value) : "当前活动环境",
           meta: activeProfile.value
             ? buildProfileMeta(activeProfile.value, { active: true })
@@ -234,6 +235,10 @@ export function useBrowserAutomationExecutionContext() {
   };
 
   const syncProfileSelection = () => {
+    if (selectedProfileValue.value === ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE) {
+      return;
+    }
+
     if (
       selectedProfileValue.value &&
       profileItems.value.some(

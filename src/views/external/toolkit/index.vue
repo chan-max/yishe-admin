@@ -31,19 +31,6 @@
       </section>
 
       <template v-else>
-        <section class="toolkit-page-head">
-          <div class="toolkit-page-head__main">
-            <div class="toolkit-page-head__content">
-              <div class="toolkit-page-head__title">
-                {{ selectedPlatform?.workspaceTitle || `${selectedPlatformLabel} 工具集` }}
-              </div>
-              <div v-if="selectedPlatform?.workspaceDescription" class="toolkit-page-head__desc">
-                {{ selectedPlatform.workspaceDescription }}
-              </div>
-            </div>
-          </div>
-        </section>
-
         <section class="toolkit-hero">
           <div class="toolkit-hero__card toolkit-hero__card--context">
             <div class="toolkit-hero__context-shell">
@@ -54,7 +41,7 @@
                   class="toolkit-hero__select"
                   size="small"
                   placeholder="请选择客户端和环境"
-                  :loading="loading || loadingMap.profiles"
+                  :loading="loadingMap.profiles"
                   clearable
                 >
                   <el-option
@@ -63,13 +50,7 @@
                     :label="option.label"
                     :value="option.value"
                     :disabled="option.disabled"
-                  >
-                    <div class="toolkit-option">
-                      <span class="toolkit-option__text">{{ option.clientLabel }}</span>
-                      <span class="toolkit-option__separator">/</span>
-                      <span class="toolkit-option__text">{{ option.environmentLabel }}</span>
-                    </div>
-                  </el-option>
+                  />
                 </el-select>
               </div>
 
@@ -383,7 +364,7 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { BrowserAutomationCommandResponse } from "@/api/external/browserAutomation";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
-import { getToolkitProfiles, getToolkitTools, runToolkitTool } from "@/api/external/toolkit";
+import { getToolkitTools, runToolkitTool } from "@/api/external/toolkit";
 import {
   deletePlatformSession,
   getPlatformSessions,
@@ -441,6 +422,7 @@ const {
   clientOptions,
   profileOptions,
   selectedClientId,
+  selectedClient,
   selectedClientName,
   selectedProfileValue,
   selectedProfile,
@@ -475,6 +457,7 @@ const pending = reactive<Record<string, string>>({});
 const pendingRunToolFeatureKeys = reactive<Record<string, string>>({});
 const pendingTimeoutHandles = new Map<string, ReturnType<typeof setTimeout>>();
 const TOOLKIT_RUN_TOOL_TIMEOUT_MS = 90_000;
+const TOOLKIT_COMMAND_TIMEOUT_MS = 20_000;
 
 const toolkitPlatforms = computed<ToolkitPlatformDefinition[]>(() => TOOLKIT_PLATFORM_REGISTRY);
 const selectedPlatformKey = computed(() => String(route.meta?.toolkitPlatform || "").trim());
@@ -626,21 +609,14 @@ const sessionAcquireSubmitText = computed(() =>
   sessionAcquireForm.acquireMode === "login" ? "登录后采集会话" : "采集当前环境会话",
 );
 const TOOLKIT_ACTIVE_ENVIRONMENT_VALUE = "environment:active";
-const isTemuExecutionProfileLoading = computed(
-  () =>
-    selectedPlatformKey.value === TEMU_PLATFORM_KEY &&
-    !!selectedClientId.value &&
-    loadingMap.profiles,
-);
+const isTemuExecutionProfileLoading = computed(() => false);
 const executionProfileSelectValue = computed({
-  get: () => (isTemuExecutionProfileLoading.value ? "" : selectedProfileValue.value),
+  get: () => selectedProfileValue.value,
   set: (value: string) => {
     selectedProfileValue.value = String(value || "").trim();
   },
 });
-const visibleExecutionProfileOptions = computed(() =>
-  isTemuExecutionProfileLoading.value ? [] : profileOptions.value,
-);
+const visibleExecutionProfileOptions = computed(() => profileOptions.value);
 const selectedClientOption = computed(
   () => clientOptions.value.find((item) => item.value === selectedClientId.value) || null,
 );
@@ -665,7 +641,10 @@ const toolkitExecutionOptions = computed(() => {
     selectedClientOption.value.meta || selectedClientOption.value.hint || "";
   const currentClientProfileOptions = visibleExecutionProfileOptions.value.map((option) => {
     const isCurrentEnvironmentOption = Boolean(option.isActiveOption);
-    const environmentLabel = isCurrentEnvironmentOption ? "当前环境" : option.label;
+    const baseEnvironmentLabel = option.label || "未命名环境";
+    const environmentLabel = isCurrentEnvironmentOption
+      ? `${baseEnvironmentLabel}（当前环境）`
+      : baseEnvironmentLabel;
 
     return {
       value: isCurrentEnvironmentOption
@@ -736,19 +715,15 @@ const toolkitExecutionSelectValue = computed({
   },
 });
 const selectedExecutionProfileId = computed(() =>
-  isTemuExecutionProfileLoading.value
-    ? ""
-    : effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
+  effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
 );
 const selectedExecutionProfileDisplayText = computed(() =>
-  isTemuExecutionProfileLoading.value ? "" : selectedExecutionProfileId.value || "未选择",
+  selectedExecutionProfileId.value || "未选择",
 );
 const selectedExecutionEnvironmentText = computed(() =>
-  isTemuExecutionProfileLoading.value
-    ? ""
-    : selectedExecutionProfileId.value
-      ? selectedEnvironmentLabel.value
-      : "未选择",
+  selectedExecutionProfileId.value
+    ? selectedEnvironmentLabel.value
+    : "未选择",
 );
 const selectedExecutionStoredSession = computed(() => {
   const profileId = String(selectedExecutionProfileId.value || "").trim();
@@ -1252,22 +1227,30 @@ const dispatchCommand = async (
     if (action === "runTool" && options.featureKey) {
       pendingRunToolFeatureKeys[commandId] = options.featureKey;
     }
-    if (action === "runTool") {
-      const featureLabel = String(options.featureKey || "工具").trim() || "工具";
-      const timer = setTimeout(() => {
-        if (!pending[commandId]) {
-          clearPendingTimeout(commandId);
-          return;
-        }
-
-        delete pending[commandId];
-        delete pendingRunToolFeatureKeys[commandId];
+    const timeoutMs = action === "runTool" ? TOOLKIT_RUN_TOOL_TIMEOUT_MS : TOOLKIT_COMMAND_TIMEOUT_MS;
+    const timeoutLabel =
+      action === "profiles"
+        ? "环境列表"
+        : action === "tools"
+          ? "工具目录"
+          : String(options.featureKey || "工具").trim() || "工具";
+    const timeoutMessage =
+      action === "runTool"
+        ? `${timeoutLabel} 执行超时，请检查客户端日志或浏览器自动化服务状态`
+        : `${timeoutLabel} 加载超时，请检查客户端在线状态或浏览器自动化服务状态`;
+    const timer = setTimeout(() => {
+      if (!pending[commandId]) {
         clearPendingTimeout(commandId);
-        finish("runTool");
-        ElMessage.error(`${featureLabel} 执行超时，请检查客户端日志或浏览器自动化服务状态`);
-      }, TOOLKIT_RUN_TOOL_TIMEOUT_MS);
-      pendingTimeoutHandles.set(commandId, timer);
-    }
+        return;
+      }
+
+      delete pending[commandId];
+      delete pendingRunToolFeatureKeys[commandId];
+      clearPendingTimeout(commandId);
+      finish(action);
+      ElMessage.error(timeoutMessage);
+    }, timeoutMs);
+    pendingTimeoutHandles.set(commandId, timer);
     if (sentMessage) {
       ElMessage.success(sentMessage);
     }
@@ -1276,10 +1259,6 @@ const dispatchCommand = async (
     ElMessage.error(error?.message || "命令发送失败");
   }
 };
-
-const sendProfiles = async () =>
-  selectedClientId.value &&
-  dispatchCommand("profiles", () => getToolkitProfiles(selectedClientId.value));
 
 const sendTools = async () =>
   selectedClientId.value && dispatchCommand("tools", () => getToolkitTools(selectedClientId.value));
@@ -1790,15 +1769,6 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
   const data = event.data;
   const dataObject = asPlainObject(data);
   if (event.clientId === selectedClientId.value) {
-    if (action === "profiles") {
-      setProfilesPayload({
-        activeProfileId: dataObject?.activeProfileId || null,
-        workspaceDir: dataObject?.workspaceDir,
-        profilesRootDir: dataObject?.profilesRootDir,
-        items: Array.isArray(dataObject?.items) ? dataObject.items : [],
-      });
-    }
-
     if (action === "tools") {
       toolkitTools.value = event.success ? extractToolkitToolItems(data) : [];
     }
@@ -1884,10 +1854,45 @@ watch(
       return;
     }
 
-    void sendProfiles();
     void sendTools();
   },
   { immediate: false },
+);
+
+watch(
+  () => selectedClient.value?.runtime?.details,
+  (details) => {
+    const dataObject = asPlainObject(details);
+    setProfilesPayload({
+      activeProfileId:
+        String(dataObject?.activeProfileId || dataObject?.activeProfile?.id || "").trim() || null,
+      workspaceDir: dataObject?.workspaceDir,
+      profilesRootDir: dataObject?.profilesRootDir,
+      items: Array.isArray(dataObject?.profiles) ? dataObject.profiles : [],
+    });
+  },
+  { immediate: true, deep: true },
+);
+
+watch(
+  [selectedClientId, visibleExecutionProfileOptions],
+  ([clientId, options]) => {
+    if (!String(clientId || "").trim()) {
+      return;
+    }
+
+    if (String(selectedProfileValue.value || "").trim()) {
+      return;
+    }
+
+    const activeOption = (Array.isArray(options) ? options : []).find((item) => item.isActiveOption);
+    if (!activeOption) {
+      return;
+    }
+
+    selectedProfileValue.value = String(activeOption.value || "").trim();
+  },
+  { immediate: true, deep: true },
 );
 
 watch(
@@ -1957,7 +1962,6 @@ onMounted(async () => {
   websocketClient.events.on("serviceCommandResult", onCommand);
   await loadClients();
   if (selectedClientId.value) {
-    void sendProfiles();
     void sendTools();
   }
 });
