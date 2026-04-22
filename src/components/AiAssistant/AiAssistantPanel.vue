@@ -98,12 +98,17 @@
               @confirm="clearChatHistory"
             >
               <Button
+                class="ai-assistant-panel__hero-icon-button"
                 danger
                 type="text"
                 size="small"
+                aria-label="清空记录"
+                title="清空记录"
                 :disabled="!activeConversationId || !messageCount"
               >
-                清空记录
+                <template #icon>
+                  <DeleteOutlined />
+                </template>
               </Button>
             </Popconfirm>
           </div>
@@ -413,7 +418,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, h, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import dayjs from "dayjs";
 import {
@@ -744,15 +749,42 @@ const scrollToBottom = async (behavior: ScrollBehavior = "auto") => {
     scrollFrameId = requestAnimationFrame(() => {
       const anchor = chatEndRef.value;
       const stream = streamRef.value;
+      const scrollTargets: HTMLElement[] = [];
+
+      if (stream) {
+        scrollTargets.push(stream);
+
+        const nestedScrollableNodes = Array.from(
+          stream.querySelectorAll<HTMLElement>("*"),
+        ).filter((node) => {
+          if (!(node instanceof HTMLElement)) {
+            return false;
+          }
+
+          const style = window.getComputedStyle(node);
+          const overflowY = style.overflowY;
+          const canScroll =
+            overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
+          return canScroll && node.scrollHeight > node.clientHeight + 4;
+        });
+
+        nestedScrollableNodes.forEach((node) => {
+          if (!scrollTargets.includes(node)) {
+            scrollTargets.push(node);
+          }
+        });
+      }
+
       if (anchor) {
         anchor.scrollIntoView({ block: "end", behavior });
       }
-      if (stream) {
-        stream.scrollTo({
-          top: stream.scrollHeight,
+
+      scrollTargets.forEach((target) => {
+        target.scrollTo({
+          top: target.scrollHeight,
           behavior,
         });
-      }
+      });
     });
   });
 };
@@ -1035,6 +1067,10 @@ onMounted(async () => {
   await scrollToBottom();
 });
 
+onActivated(async () => {
+  await scrollToBottom();
+});
+
 onBeforeUnmount(() => {
   if (scrollFrameId) {
     cancelAnimationFrame(scrollFrameId);
@@ -1049,6 +1085,7 @@ watch(
     selectedToolMessage.value = null;
     toolDetailOpen.value = false;
     await nextTick();
+    await scrollToBottom();
   },
 );
 
@@ -1059,6 +1096,26 @@ watch(
       .join("|"),
   async () => {
     await scrollToBottom();
+  },
+  {
+    flush: "post",
+  },
+);
+
+watch(
+  () => ({
+    loading: loadingHistory.value,
+    count: bubbleItems.value.length,
+  }),
+  async (current, previous) => {
+    if (!current.loading && current.count > 0) {
+      await scrollToBottom();
+      return;
+    }
+
+    if (previous?.loading && !current.loading) {
+      await scrollToBottom();
+    }
   },
   {
     flush: "post",
@@ -1259,6 +1316,16 @@ watch(
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+  }
+
+  &__hero-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
   }
 
   &__stream {

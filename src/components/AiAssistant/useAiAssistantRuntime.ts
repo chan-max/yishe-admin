@@ -144,6 +144,12 @@ export const useAiAssistantRuntime = () => {
       assistantMessage?: DisplayMessage | null,
       explicitToolCalls: AssistantToolCall[] = [],
     ) => {
+      if (pendingToolMessages.length) {
+        displayMessages.push(...pendingToolMessages);
+        pendingToolMessages = [];
+        return;
+      }
+
       const derivedToolCalls = pendingToolMessages
         .map((item) => {
           const tool = String(item.toolKey || item.toolLabel || "").trim();
@@ -164,6 +170,10 @@ export const useAiAssistantRuntime = () => {
           ? derivedToolCalls
           : [];
 
+      if (!toolCalls.length) {
+        return;
+      }
+
       displayMessages.push(
         createToolCallSummaryMessage(
           toolCalls,
@@ -172,7 +182,6 @@ export const useAiAssistantRuntime = () => {
           assistantMessage?.createdAt,
         ),
       );
-      pendingToolMessages = [];
     };
 
     normalizedMessages.forEach((item) => {
