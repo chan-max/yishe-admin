@@ -190,6 +190,14 @@
 
               <div class="toolkit-runner">
                 <el-button
+                  size="small"
+                  :loading="sessionActionState.saveCredential === selectedExecutionProfileId"
+                  :disabled="!selectedExecutionProfileId"
+                  @click="saveTemuCredentials()"
+                >
+                  保存账号密码
+                </el-button>
+                <el-button
                   type="primary"
                   size="small"
                   :loading="sessionToolRunning"
@@ -530,6 +538,7 @@ const sessionActionState = reactive({
   validate: "",
   delete: "",
   applyMall: "",
+  saveCredential: "",
 });
 const autoValidatedTemuSessions = reactive<Record<string, string>>({});
 const pending = reactive<Record<string, string>>({});
@@ -1382,6 +1391,8 @@ const buildTemuStoredSessionPayload = (
   return {
     profiles: {
       [profileId]: {
+        account: storedAccount,
+        password: storedPassword,
         mallId: nextMallId,
         mallName: nextMallName,
         accountId: nextAccountId,
@@ -1396,8 +1407,6 @@ const buildTemuStoredSessionPayload = (
           checkedAt: collectedAt,
         },
         session: {
-          account: storedAccount,
-          password: storedPassword,
           global: buildMergedRegionSession(
             asPlainObject(sessionBundle?.cookies_global || sessionBundle?.cookies),
             nextGlobalHeaders,
@@ -1446,6 +1455,67 @@ const persistTemuSessionBundle = async (
     data: buildTemuStoredSessionPayload(sessionBundle, profileId, credentials),
   });
   await refreshStoredPlatformSessions();
+};
+
+const saveTemuCredentials = async (profileId?: string | Event | null) => {
+  const normalizedProfileId =
+    typeof profileId === "string"
+      ? profileId.trim()
+      : String(selectedExecutionProfileId.value || "").trim();
+  if (!normalizedProfileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  const account = String(sessionAcquireForm.account || "").trim();
+  const password = String(sessionAcquireForm.password || "").trim();
+  let valid = true;
+
+  if (!account) {
+    sessionAcquireErrors.account = "请填写账号";
+    valid = false;
+  }
+
+  if (!password) {
+    sessionAcquireErrors.password = "请填写密码";
+    valid = false;
+  }
+
+  if (!valid) {
+    return;
+  }
+
+  const currentRecord = asPlainObject(
+    storedSessionRows.value.find((item) => item.profileId === normalizedProfileId)?.record || null,
+  );
+  const currentValidation = asPlainObject(currentRecord?.validation);
+  const savedAt = new Date().toISOString();
+
+  sessionActionState.saveCredential = normalizedProfileId;
+  try {
+    await updatePlatformSessions({
+      platform: TEMU_PLATFORM_KEY,
+      profileId: normalizedProfileId,
+      data: {
+        account,
+        password,
+        updatedAt: savedAt,
+        validation: Object.keys(currentValidation).length
+          ? currentValidation
+          : {
+              status: "draft",
+              message: "账号密码已保存，等待采集会话",
+              checkedAt: "",
+            },
+      },
+    });
+    await refreshStoredPlatformSessions();
+    ElMessage.success("账号密码已保存");
+  } catch (error: any) {
+    ElMessage.error(error?.message || "保存账号密码失败");
+  } finally {
+    sessionActionState.saveCredential = "";
+  }
 };
 
 const dispatchTemuSessionAcquire = async (
@@ -2506,6 +2576,7 @@ onUnmounted(() => {
 .toolkit-runner {
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--el-border-color-lighter);
