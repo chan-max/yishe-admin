@@ -40,20 +40,124 @@ export const createEmptyBrowserAutomationProfilesPayload =
     items: [],
   });
 
+const normalizeProfileString = (value: unknown) => String(value || "").trim();
+
+const isPlainProfileRecord = (value: unknown): value is Record<string, any> =>
+  !!value && typeof value === "object" && !Array.isArray(value);
+
+const hasBrowserAutomationProfileSignal = (source: Record<string, any>) =>
+  [
+    source.name,
+    source.account,
+    source.remark,
+    source.browserVersion,
+    source.userDataDir,
+    source.createdAt,
+    source.updatedAt,
+    source.lastUsedAt,
+  ].some((item) => !!normalizeProfileString(item)) ||
+  Array.isArray(source.platforms) ||
+  typeof source.debugPort === "number" ||
+  source.exists === true ||
+  source.isActive === true ||
+  isPlainProfileRecord(source.loginSummary);
+
+const hasObviousNonProfileShape = (source: Record<string, any>) =>
+  [
+    "clientId",
+    "machine",
+    "location",
+    "nodeStatus",
+    "runtime",
+    "services",
+    "connection",
+    "instances",
+    "pages",
+  ].some((key) => key in source);
+
+const normalizeBrowserAutomationProfileItem = (
+  value: unknown,
+): BrowserAutomationProfileSummary | null => {
+  if (!isPlainProfileRecord(value)) {
+    return null;
+  }
+
+  const profileId = normalizeProfileString(value.id);
+  if (!profileId) {
+    return null;
+  }
+
+  if (!hasBrowserAutomationProfileSignal(value) && hasObviousNonProfileShape(value)) {
+    return null;
+  }
+
+  const platforms = Array.isArray(value.platforms)
+    ? value.platforms.map((item) => normalizeProfileString(item)).filter(Boolean)
+    : undefined;
+  const loginSummary = isPlainProfileRecord(value.loginSummary) ? value.loginSummary : undefined;
+
+  return {
+    id: profileId,
+    name: normalizeProfileString(value.name) || undefined,
+    remark: normalizeProfileString(value.remark) || undefined,
+    account: normalizeProfileString(value.account) || undefined,
+    platforms,
+    debugPort: typeof value.debugPort === "number" ? value.debugPort : null,
+    browserVersion: normalizeProfileString(value.browserVersion) || undefined,
+    loginSummary,
+    createdAt: normalizeProfileString(value.createdAt) || null,
+    updatedAt: normalizeProfileString(value.updatedAt) || null,
+    lastUsedAt: normalizeProfileString(value.lastUsedAt) || null,
+    userDataDir: normalizeProfileString(value.userDataDir) || undefined,
+    exists: value.exists === true,
+    isActive: value.isActive === true,
+  };
+};
+
+const normalizeBrowserAutomationProfileItems = (
+  items: unknown,
+): BrowserAutomationProfileSummary[] => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const profileMap = new Map<string, BrowserAutomationProfileSummary>();
+
+  items.forEach((item) => {
+    const normalizedItem = normalizeBrowserAutomationProfileItem(item);
+    if (!normalizedItem?.id || profileMap.has(normalizedItem.id)) {
+      return;
+    }
+
+    profileMap.set(normalizedItem.id, normalizedItem);
+  });
+
+  return Array.from(profileMap.values());
+};
+
 export const normalizeBrowserAutomationProfilesPayload = (
   payload?: Partial<BrowserAutomationProfilesPayload> | Record<string, any> | null,
 ): BrowserAutomationProfilesPayload => {
   const rawPayload = (payload || {}) as Record<string, any>;
+  const normalizedActiveProfile = normalizeBrowserAutomationProfileItem(rawPayload.activeProfile);
+  const normalizedActiveProfileId =
+    normalizeProfileString(rawPayload.activeProfileId) || normalizedActiveProfile?.id || null;
+  const normalizedItems = normalizeBrowserAutomationProfileItems(
+    Array.isArray(rawPayload.items) ? rawPayload.items : rawPayload.profiles,
+  );
+
+  if (
+    normalizedActiveProfile &&
+    !normalizedItems.some((item) => item.id === normalizedActiveProfile.id)
+  ) {
+    normalizedItems.unshift(normalizedActiveProfile);
+  }
 
   return {
-    activeProfileId: rawPayload.activeProfileId || rawPayload.activeProfile?.id || null,
+    activeProfileId: normalizedActiveProfileId,
     workspaceDir: rawPayload.workspaceDir,
     profilesRootDir: rawPayload.profilesRootDir,
-    items: Array.isArray(rawPayload.items)
-      ? rawPayload.items
-      : Array.isArray(rawPayload.profiles)
-        ? (rawPayload.profiles as BrowserAutomationProfileSummary[])
-        : [],
+    items: normalizedItems,
   };
 };
 

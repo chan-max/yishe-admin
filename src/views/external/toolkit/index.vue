@@ -35,23 +35,45 @@
           <div class="toolkit-hero__card toolkit-hero__card--context">
             <div class="toolkit-hero__context-shell">
               <div class="toolkit-hero__context-control">
-                <div class="toolkit-hero__label">客户端 / 环境</div>
-                <el-select
-                  v-model="toolkitExecutionSelectValue"
-                  class="toolkit-hero__select"
-                  size="small"
-                  placeholder="请选择客户端和环境"
-                  :loading="loadingMap.profiles"
-                  clearable
-                >
-                  <el-option
-                    v-for="option in toolkitExecutionOptions"
-                    :key="option.value"
-                    :label="option.label"
-                    :value="option.value"
-                    :disabled="option.disabled"
-                  />
-                </el-select>
+                <div class="toolkit-hero__control-group">
+                  <div class="toolkit-hero__label">客户端</div>
+                  <el-select
+                    v-model="selectedClientId"
+                    class="toolkit-hero__select"
+                    size="small"
+                    placeholder="请选择客户端"
+                    :loading="loading"
+                    clearable
+                    filterable
+                  >
+                    <el-option
+                      v-for="option in clientOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </div>
+
+                <div class="toolkit-hero__control-group">
+                  <div class="toolkit-hero__label">环境</div>
+                  <el-select
+                    v-model="executionProfileSelectValue"
+                    class="toolkit-hero__select"
+                    size="small"
+                    placeholder="请选择环境"
+                    :loading="loadingMap.profiles"
+                    :disabled="!selectedClientId"
+                    clearable
+                  >
+                    <el-option
+                      v-for="option in visibleExecutionProfileOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </div>
               </div>
 
               <div v-if="selectedPlatformContextComponent" class="toolkit-hero__context-panel">
@@ -299,7 +321,9 @@
                       {{ row.sessionStatusLabel }}
                     </el-tag>
                   </div>
-                  <div class="toolkit-session-overview__cell toolkit-session-overview__cell--actions">
+                  <div
+                    class="toolkit-session-overview__cell toolkit-session-overview__cell--actions"
+                  >
                     <el-button
                       text
                       size="small"
@@ -546,9 +570,7 @@ const temuWorkspaceToolResults = computed(() => toolkitToolResults);
 const sessionToolRunning = computed(
   () =>
     loadingMap.runTool &&
-    [TEMU_SESSION_TOOL_KEY, TEMU_SESSION_COLLECT_TOOL_KEY].includes(
-      runningToolkitFeatureKey.value,
-    ),
+    [TEMU_SESSION_TOOL_KEY, TEMU_SESSION_COLLECT_TOOL_KEY].includes(runningToolkitFeatureKey.value),
 );
 const temuWorkspaceRestoreLoading = computed(
   () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_RESTORE_TOOL_KEY,
@@ -565,7 +587,9 @@ const storedSessionRows = computed(() => {
   const currentProfileMap = new Map(
     (Array.isArray(profileOptions.value) ? profileOptions.value : [])
       .map((item) => [String(item?.value || "").trim(), item] as const)
-      .filter(([profileId]) => !!profileId && profileId !== ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE),
+      .filter(
+        ([profileId]) => !!profileId && profileId !== ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE,
+      ),
   );
 
   return Object.entries(profiles)
@@ -574,13 +598,14 @@ const storedSessionRows = computed(() => {
       const validation = asPlainObject(record.validation);
       const currentProfile = currentProfileMap.get(String(profileId || "").trim()) || null;
       const profileExists = !!currentProfile;
-      const validationStatus = String(validation.status || "").trim().toLowerCase();
-      const sessionStatus =
-        !profileExists
-          ? "invalid_environment"
-          : ["invalid", "failed", "expired"].includes(validationStatus)
-            ? "invalid"
-            : "valid";
+      const validationStatus = String(validation.status || "")
+        .trim()
+        .toLowerCase();
+      const sessionStatus = !profileExists
+        ? "invalid_environment"
+        : ["invalid", "failed", "expired"].includes(validationStatus)
+          ? "invalid"
+          : "valid";
 
       return {
         profileId,
@@ -697,7 +722,6 @@ const sessionAcquireModeLabel = computed(() =>
 const sessionAcquireSubmitText = computed(() =>
   sessionAcquireForm.acquireMode === "login" ? "登录后采集会话" : "采集当前环境会话",
 );
-const TOOLKIT_ACTIVE_ENVIRONMENT_VALUE = "environment:active";
 const isTemuExecutionProfileLoading = computed(() => false);
 const executionProfileSelectValue = computed({
   get: () => selectedProfileValue.value,
@@ -706,113 +730,14 @@ const executionProfileSelectValue = computed({
   },
 });
 const visibleExecutionProfileOptions = computed(() => profileOptions.value);
-const selectedClientOption = computed(
-  () => clientOptions.value.find((item) => item.value === selectedClientId.value) || null,
+const selectedExecutionProfileId = computed(
+  () => effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
 );
-const toolkitExecutionOptions = computed(() => {
-  const switchClientOptions = clientOptions.value
-    .filter((option) => option.value !== selectedClientId.value)
-    .map((option) => ({
-      value: `client:${option.value}`,
-      label: `${option.label} / 切换客户端`,
-      clientLabel: option.label,
-      environmentLabel: "当前环境",
-      meta: option.meta || option.hint || "",
-      disabled: false,
-    }));
-
-  if (!selectedClientOption.value) {
-    return switchClientOptions;
-  }
-
-  const selectedClientLabel = selectedClientOption.value.label;
-  const selectedClientMeta =
-    selectedClientOption.value.meta || selectedClientOption.value.hint || "";
-  const currentClientProfileOptions = visibleExecutionProfileOptions.value.map((option) => {
-    const isCurrentEnvironmentOption = Boolean(option.isActiveOption);
-    const baseEnvironmentLabel = option.label || "未命名环境";
-    const environmentLabel = isCurrentEnvironmentOption
-      ? `${baseEnvironmentLabel}（当前环境）`
-      : baseEnvironmentLabel;
-
-    return {
-      value: isCurrentEnvironmentOption
-        ? TOOLKIT_ACTIVE_ENVIRONMENT_VALUE
-        : `profile:${option.value}`,
-      label: `${selectedClientLabel} / ${environmentLabel}`,
-      clientLabel: selectedClientLabel,
-      environmentLabel,
-      meta: [selectedClientMeta, option.meta].filter(Boolean).join(" · "),
-      disabled: false,
-    };
-  });
-
-  return [...currentClientProfileOptions, ...switchClientOptions];
-});
-const toolkitExecutionSelectValue = computed({
-  get: () => {
-    const profileValue = String(executionProfileSelectValue.value || "").trim();
-    if (profileValue) {
-      if (profileValue === ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE) {
-        return TOOLKIT_ACTIVE_ENVIRONMENT_VALUE;
-      }
-      if (visibleExecutionProfileOptions.value.some((item) => item.value === profileValue)) {
-        return `profile:${profileValue}`;
-      }
-      return "";
-    }
-
-    if (
-      selectedClientId.value &&
-      visibleExecutionProfileOptions.value.some((item) => item.isActiveOption)
-    ) {
-      return TOOLKIT_ACTIVE_ENVIRONMENT_VALUE;
-    }
-
-    return "";
-  },
-  set: (value: string) => {
-    const normalizedValue = String(value || "").trim();
-    if (!normalizedValue) {
-      selectedClientId.value = "";
-      return;
-    }
-
-    if (normalizedValue.startsWith("client:")) {
-      const nextClientId = normalizedValue.slice("client:".length).trim();
-      if (!nextClientId || nextClientId === selectedClientId.value) {
-        return;
-      }
-
-      selectedClientId.value = nextClientId;
-      return;
-    }
-
-    if (normalizedValue === TOOLKIT_ACTIVE_ENVIRONMENT_VALUE) {
-      selectedProfileValue.value = ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE;
-      return;
-    }
-
-    if (normalizedValue.startsWith("profile:")) {
-      const nextProfileValue = normalizedValue.slice("profile:".length).trim();
-      if (!nextProfileValue) {
-        return;
-      }
-
-      executionProfileSelectValue.value = nextProfileValue;
-    }
-  },
-});
-const selectedExecutionProfileId = computed(() =>
-  effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
-);
-const selectedExecutionProfileDisplayText = computed(() =>
-  selectedExecutionProfileId.value || "未选择",
+const selectedExecutionProfileDisplayText = computed(
+  () => selectedExecutionProfileId.value || "未选择",
 );
 const selectedExecutionEnvironmentText = computed(() =>
-  selectedExecutionProfileId.value
-    ? selectedEnvironmentLabel.value
-    : "未选择",
+  selectedExecutionProfileId.value ? selectedEnvironmentLabel.value : "未选择",
 );
 const selectedExecutionStoredSession = computed(() => {
   const profileId = String(selectedExecutionProfileId.value || "").trim();
@@ -1343,7 +1268,8 @@ const dispatchCommand = async (
     if (action === "runTool" && options.featureKey) {
       pendingRunToolFeatureKeys[commandId] = options.featureKey;
     }
-    const timeoutMs = action === "runTool" ? TOOLKIT_RUN_TOOL_TIMEOUT_MS : TOOLKIT_COMMAND_TIMEOUT_MS;
+    const timeoutMs =
+      action === "runTool" ? TOOLKIT_RUN_TOOL_TIMEOUT_MS : TOOLKIT_COMMAND_TIMEOUT_MS;
     const timeoutLabel =
       action === "profiles"
         ? "环境列表"
@@ -1865,11 +1791,9 @@ const deleteInvalidStoredSessions = async () => {
   }
 
   try {
-    await ElMessageBox.confirm(
-      `确认清理 ${rows.length} 条无效环境会话吗？`,
-      "清理无效环境",
-      { type: "warning" },
-    );
+    await ElMessageBox.confirm(`确认清理 ${rows.length} 条无效环境会话吗？`, "清理无效环境", {
+      type: "warning",
+    });
   } catch {
     return;
   }
@@ -2050,13 +1974,7 @@ watch(
   () => selectedClient.value?.runtime?.details,
   (details) => {
     const dataObject = asPlainObject(details);
-    setProfilesPayload({
-      activeProfileId:
-        String(dataObject?.activeProfileId || dataObject?.activeProfile?.id || "").trim() || null,
-      workspaceDir: dataObject?.workspaceDir,
-      profilesRootDir: dataObject?.profilesRootDir,
-      items: Array.isArray(dataObject?.profiles) ? dataObject.profiles : [],
-    });
+    setProfilesPayload(dataObject);
   },
   { immediate: true, deep: true },
 );
@@ -2072,7 +1990,9 @@ watch(
       return;
     }
 
-    const activeOption = (Array.isArray(options) ? options : []).find((item) => item.isActiveOption);
+    const activeOption = (Array.isArray(options) ? options : []).find(
+      (item) => item.isActiveOption,
+    );
     if (!activeOption) {
       return;
     }
@@ -2405,6 +2325,18 @@ onUnmounted(() => {
   max-width: 320px;
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.toolkit-hero__control-group {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.toolkit-hero__control-group .toolkit-hero__label {
+  padding-right: 0;
+  margin-bottom: 6px;
 }
 
 .toolkit-hero__select {
