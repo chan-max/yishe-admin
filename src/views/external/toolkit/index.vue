@@ -195,6 +195,15 @@
               <div class="toolkit-panel__actions">
                 <el-button
                   text
+                  type="danger"
+                  :disabled="!invalidStoredSessionRows.length"
+                  :loading="sessionActionState.delete === '__invalid__'"
+                  @click="deleteInvalidStoredSessions"
+                >
+                  清理无效环境
+                </el-button>
+                <el-button
+                  text
                   :loading="storedSessionLoading"
                   @click="refreshStoredPlatformSessions"
                 >
@@ -255,6 +264,52 @@
                 >
                   <span>{{ item.label }}</span>
                   <strong>{{ item.value }}</strong>
+                </div>
+              </div>
+
+              <div v-if="storedSessionRows.length" class="toolkit-session-overview">
+                <div class="toolkit-session-overview__head">
+                  <span>环境</span>
+                  <span>店铺</span>
+                  <span>状态</span>
+                  <span>操作</span>
+                </div>
+                <div
+                  v-for="row in storedSessionRows"
+                  :key="row.profileId"
+                  class="toolkit-session-overview__row"
+                  :class="{ 'is-current': row.profileId === selectedExecutionProfileId }"
+                >
+                  <div class="toolkit-session-overview__cell toolkit-session-overview__cell--env">
+                    <span class="toolkit-session-overview__primary">{{ row.profileLabel }}</span>
+                    <el-tag
+                      v-if="row.profileId === selectedExecutionProfileId"
+                      size="small"
+                      effect="plain"
+                      type="success"
+                    >
+                      当前
+                    </el-tag>
+                  </div>
+                  <div class="toolkit-session-overview__cell">
+                    {{ row.mallName || row.mallId || "-" }}
+                  </div>
+                  <div class="toolkit-session-overview__cell">
+                    <el-tag size="small" effect="plain" :type="row.sessionStatusTagType">
+                      {{ row.sessionStatusLabel }}
+                    </el-tag>
+                  </div>
+                  <div class="toolkit-session-overview__cell toolkit-session-overview__cell--actions">
+                    <el-button
+                      text
+                      size="small"
+                      type="danger"
+                      :loading="sessionActionState.delete === row.profileId"
+                      @click="deleteStoredSession(row.profileId)"
+                    >
+                      删除
+                    </el-button>
+                  </div>
                 </div>
               </div>
 
@@ -507,16 +562,47 @@ const sessionAcquireActionDisabled = computed(
 
 const storedSessionRows = computed(() => {
   const profiles = asPlainObject(storedPlatformSession.value?.profiles);
+  const currentProfileMap = new Map(
+    (Array.isArray(profileOptions.value) ? profileOptions.value : [])
+      .map((item) => [String(item?.value || "").trim(), item] as const)
+      .filter(([profileId]) => !!profileId && profileId !== ACTIVE_BROWSER_AUTOMATION_PROFILE_VALUE),
+  );
 
   return Object.entries(profiles)
     .map(([profileId, value]) => {
       const record = asPlainObject(value);
+      const validation = asPlainObject(record.validation);
+      const currentProfile = currentProfileMap.get(String(profileId || "").trim()) || null;
+      const profileExists = !!currentProfile;
+      const validationStatus = String(validation.status || "").trim().toLowerCase();
+      const sessionStatus =
+        !profileExists
+          ? "invalid_environment"
+          : ["invalid", "failed", "expired"].includes(validationStatus)
+            ? "invalid"
+            : "valid";
+
       return {
         profileId,
+        profileLabel: currentProfile?.label || String(profileId || "").trim() || "未命名环境",
         mallId: String(record.mallId || "").trim(),
         mallName: String(record.mallName || "").trim(),
         updatedAt: String(record.updatedAt || "").trim(),
-        validation: asPlainObject(record.validation),
+        validation,
+        profileExists,
+        sessionStatus,
+        sessionStatusLabel:
+          sessionStatus === "invalid_environment"
+            ? "无效环境"
+            : sessionStatus === "invalid"
+              ? "失效"
+              : "正常",
+        sessionStatusTagType:
+          sessionStatus === "invalid_environment"
+            ? "warning"
+            : sessionStatus === "invalid"
+              ? "danger"
+              : "success",
         cookieCounts: {
           global: countObjectKeys(record?.session?.global?.cookies),
           us: countObjectKeys(record?.session?.us?.cookies),
@@ -531,6 +617,9 @@ const storedSessionRows = computed(() => {
       return rightTime - leftTime;
     });
 });
+const invalidStoredSessionRows = computed(() =>
+  storedSessionRows.value.filter((item) => item.sessionStatus === "invalid_environment"),
+);
 
 const sessionAcquireForm = reactive({
   acquireMode: "direct",
@@ -1715,6 +1804,41 @@ const deleteStoredSession = async (profileId?: string) => {
   }
 };
 
+const deleteInvalidStoredSessions = async () => {
+  const rows = invalidStoredSessionRows.value;
+  if (!rows.length) {
+    ElMessage.warning("当前没有可清理的无效环境会话");
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认清理 ${rows.length} 条无效环境会话吗？`,
+      "清理无效环境",
+      { type: "warning" },
+    );
+  } catch {
+    return;
+  }
+
+  sessionActionState.delete = "__invalid__";
+  try {
+    for (const row of rows) {
+      await deletePlatformSession({
+        platform: selectedPlatformKey.value,
+        profileId: row.profileId,
+      });
+    }
+
+    ElMessage.success(`已清理 ${rows.length} 条无效环境会话`);
+    await refreshStoredPlatformSessions();
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "清理无效环境会话失败"));
+  } finally {
+    sessionActionState.delete = "";
+  }
+};
+
 const buildTemuAutoValidationCacheKey = (profileId: string) =>
   `${String(selectedClientId.value || "").trim()}::${profileId}`;
 
@@ -2442,6 +2566,64 @@ onUnmounted(() => {
   border-top: 1px solid var(--el-border-color-lighter);
 }
 
+.toolkit-session-overview {
+  margin-top: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--el-bg-color);
+}
+
+.toolkit-session-overview__head,
+.toolkit-session-overview__row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(160px, 1fr) 140px 88px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+}
+
+.toolkit-session-overview__head {
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.toolkit-session-overview__row {
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.toolkit-session-overview__row.is-current {
+  background: color-mix(in srgb, var(--el-color-success) 6%, var(--el-bg-color));
+}
+
+.toolkit-session-overview__cell {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+}
+
+.toolkit-session-overview__cell--env {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toolkit-session-overview__cell--actions {
+  justify-content: flex-end;
+}
+
+.toolkit-session-overview__primary {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 .toolkit-session-card {
   display: flex;
   flex-direction: column;
@@ -2723,6 +2905,19 @@ onUnmounted(() => {
 
   .toolkit-mall-item__actions {
     justify-content: flex-end;
+  }
+
+  .toolkit-session-overview__head {
+    display: none;
+  }
+
+  .toolkit-session-overview__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .toolkit-session-overview__cell--actions {
+    justify-content: flex-start;
   }
 }
 </style>

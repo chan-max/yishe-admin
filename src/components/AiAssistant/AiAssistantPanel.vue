@@ -1,7 +1,15 @@
 <template>
   <div class="ai-assistant-panel">
+    <div
+      v-if="mobileSideVisible"
+      class="ai-assistant-panel__mobile-mask"
+      @click="closeMobileSide"
+    />
     <div class="ai-assistant-panel__shell">
-      <aside class="ai-assistant-panel__side">
+      <aside
+        class="ai-assistant-panel__side"
+        :class="{ 'is-mobile-visible': mobileSideVisible }"
+      >
         <div class="ai-assistant-panel__side-head">
           <div class="ai-assistant-panel__side-brand">
             <div class="ai-assistant-panel__side-brand-mark">AI</div>
@@ -72,6 +80,10 @@
           </div>
 
           <div class="ai-assistant-panel__hero-actions">
+            <Button class="ai-assistant-panel__mobile-side-trigger" size="small" @click="openMobileSide">
+              会话
+            </Button>
+
             <Actions
               v-if="heroActionItems.length"
               :items="heroActionItems"
@@ -465,7 +477,9 @@ const chatEndRef = ref<HTMLDivElement | null>(null);
 const capabilityDrawerOpen = ref(false);
 const toolDetailOpen = ref(false);
 const selectedToolMessage = ref<DisplayMessage | null>(null);
+const mobileSideVisible = ref(false);
 let scrollFrameId = 0;
+let resizeCleanup: (() => void) | null = null;
 
 const roleLabelMap: Record<"user" | "assistant" | "tool", string> = {
   user: "你",
@@ -748,6 +762,14 @@ const refreshAll = async () => {
   await scrollToBottom();
 };
 
+const openMobileSide = () => {
+  mobileSideVisible.value = true;
+};
+
+const closeMobileSide = () => {
+  mobileSideVisible.value = false;
+};
+
 const openCapabilityDrawer = async () => {
   capabilityDrawerOpen.value = true;
   await loadCapabilityCatalog();
@@ -797,6 +819,7 @@ const handleCreateConversation = async () => {
     selectedToolMessage.value = null;
     toolDetailOpen.value = false;
     sideTab.value = "conversations";
+    closeMobileSide();
     await scrollToBottom();
   } catch (error: any) {
     console.error("创建 AI 助手会话失败:", error);
@@ -842,6 +865,7 @@ const handleConversationChange = async (value: string) => {
   selectedToolMessage.value = null;
   toolDetailOpen.value = false;
   await switchConversation(conversationId);
+  closeMobileSide();
   await scrollToBottom();
 };
 
@@ -999,6 +1023,14 @@ const copyText = async (value: string, successMessage: string) => {
 };
 
 onMounted(async () => {
+  const handleResize = () => {
+    if (window.innerWidth > 960) {
+      mobileSideVisible.value = false;
+    }
+  };
+  window.addEventListener("resize", handleResize);
+  resizeCleanup = () => window.removeEventListener("resize", handleResize);
+
   await loadAll();
   await scrollToBottom();
 });
@@ -1007,6 +1039,8 @@ onBeforeUnmount(() => {
   if (scrollFrameId) {
     cancelAnimationFrame(scrollFrameId);
   }
+  resizeCleanup?.();
+  resizeCleanup = null;
 });
 
 watch(
@@ -1039,6 +1073,14 @@ watch(
   color: var(--ai-text);
   background: transparent;
 
+  &__mobile-mask {
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(2px);
+  }
+
   &__shell {
     display: flex;
     gap: 24px;
@@ -1051,26 +1093,30 @@ watch(
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    width: 280px;
+    width: 240px;
     min-height: 0;
     height: 100%;
     padding-right: 4px;
     border-right: 1px solid var(--ai-border-color);
   }
 
+  &__mobile-side-trigger {
+    display: none;
+  }
+
   &__side-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
     flex-shrink: 0;
-    padding: 6px 0 12px;
+    padding: 8px 0 10px;
   }
 
   &__side-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
   }
 
@@ -1078,13 +1124,13 @@ watch(
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
     background: var(--ai-primary-soft);
     color: var(--ai-primary);
     font-family: var(--ai-avatar-font);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.06em;
     border: 1px solid color-mix(in srgb, var(--ai-primary) 16%, var(--ai-border-color) 84%);
@@ -1096,7 +1142,7 @@ watch(
 
   &__side-brand-title {
     color: var(--ai-text);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     line-height: 1.3;
   }
@@ -1104,7 +1150,7 @@ watch(
   &__side-brand-meta {
     margin-top: 2px;
     color: var(--ai-text-tertiary);
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.4;
   }
 
@@ -1125,9 +1171,9 @@ watch(
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 180px;
+    min-height: 160px;
     color: var(--ai-text-tertiary);
-    font-size: 12px;
+    font-size: 11px;
   }
 
   &__conversation-list {
@@ -1139,33 +1185,33 @@ watch(
   &__side-stack {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   &__side-card {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 12px 0;
+    gap: 5px;
+    padding: 10px 0;
     border-top: 1px solid var(--ai-border-color);
   }
 
   &__side-card-label {
     color: var(--ai-text-tertiary);
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.4;
   }
 
   &__side-card-title {
     color: var(--ai-text);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
   }
 
   &__side-card-text {
     color: var(--ai-text-secondary);
-    font-size: 12px;
+    font-size: 11px;
     line-height: 1.6;
   }
 
@@ -1785,12 +1831,13 @@ watch(
 }
 
 :deep(.ant-tabs-nav) {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 :deep(.ant-tabs-tab) {
   padding-top: 0;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
+  font-size: 12px;
 }
 
 :deep(.ai-assistant-panel__conversation-list.ant-conversations) {
@@ -1804,13 +1851,14 @@ watch(
 }
 
 :deep(.ai-assistant-panel__conversation-list .ant-conversations-item) {
-  min-height: 40px;
-  padding-inline: 12px;
-  border-radius: 12px;
+  min-height: 36px;
+  padding-inline: 10px;
+  border-radius: 10px;
 }
 
 :deep(.ai-assistant-panel__conversation-list .ant-conversations-label) {
   color: var(--ai-text);
+  font-size: 12px;
 }
 
 :deep(.ant-float-btn-body) {
@@ -1994,20 +2042,38 @@ watch(
     min-height: 100%;
 
     &__shell {
-      gap: 16px;
-      flex-direction: column;
+      gap: 0;
     }
 
     &__side {
-      width: 100%;
-      padding-right: 0;
-      padding-bottom: 12px;
-      border-right: 0;
-      border-bottom: 1px solid var(--ai-border-color);
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 30;
+      width: min(320px, calc(100vw - 32px));
+      padding: 16px 14px 14px;
+      background: var(--ai-panel-bg);
+      border-right: 1px solid var(--ai-border-color);
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.18);
+      transform: translateX(calc(-100% - 20px));
+      transition: transform 0.22s ease;
+    }
+
+    &__side.is-mobile-visible {
+      transform: translateX(0);
     }
 
     &__side-section {
-      max-height: 240px;
+      max-height: none;
+    }
+
+    &__main {
+      width: 100%;
+    }
+
+    &__mobile-side-trigger {
+      display: inline-flex;
     }
 
     &__hero {
@@ -2031,7 +2097,7 @@ watch(
     }
 
     &__shell {
-      gap: 12px;
+      gap: 0;
     }
 
     &__hero {
@@ -2081,7 +2147,7 @@ watch(
   }
 
   :deep(.ai-assistant-panel__conversation-list) {
-    max-height: 220px;
+    max-height: none;
   }
 
   .ai-assistant-panel__empty {

@@ -1,6 +1,6 @@
 <template>
   <section class="temu-context-card">
-    <div class="temu-context-card__summary">
+    <div class="temu-context-card__summary" :class="{ 'is-visible': showSummary || !isMobile }">
       <div class="temu-context-status" :title="statusTitle">
         <span class="temu-context-dot" :class="`is-${statusTone}`" />
         <span class="temu-context-status__text" :class="`is-${statusTone}`">
@@ -36,6 +36,15 @@
 
     <div class="temu-context-card__actions">
       <el-button
+        v-if="isMobile"
+        size="small"
+        :type="showSummary ? 'default' : 'primary'"
+        @click="toggleSummary"
+      >
+        {{ showSummary ? '收起详情' : '查看详情' }}
+      </el-button>
+      
+      <el-button
         type="primary"
         size="small"
         :loading="acquireLoading"
@@ -68,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { resolveTemuWorkspaceAvailability } from "./temuWorkspace.helpers";
 
 defineOptions({ name: "ToolkitTemuWorkspaceContext" });
@@ -91,6 +100,26 @@ const props = defineProps<{
   acquireLoading?: boolean;
   acquireDisabled?: boolean;
 }>();
+
+const isMobile = ref(false);
+const showSummary = ref(false);
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+onMounted(() => {
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile);
+});
+
+const toggleSummary = () => {
+  showSummary.value = !showSummary.value;
+};
 
 const availability = computed(() =>
   resolveTemuWorkspaceAvailability(props.sessionRecord, {
@@ -333,11 +362,68 @@ const canRefreshIdentity = computed(
   .temu-context-card {
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+  }
+
+  .temu-context-card__summary {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 8px;
+    border: 1px solid var(--el-border-color-lighter);
+  }
+
+  .temu-context-card__summary.is-visible {
+    display: flex;
+  }
+
+  .temu-context-status,
+  .temu-context-meta {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .temu-context-card__actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: stretch;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .temu-context-card__actions .el-button {
+    flex: 1 1 auto;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .temu-context-card__actions .el-button {
+    flex: 1 1 45%;
+    min-height: 40px;
+  }
+
+  .temu-context-status {
+    padding: 6px 10px;
+  }
+
+  .temu-context-status__text {
+    font-size: 12px;
+  }
+
+  .temu-context-dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  .temu-context-meta__label {
+    font-size: 11px;
+  }
+
+  .temu-context-meta__value {
+    font-size: 12px;
   }
 }
 </style>
