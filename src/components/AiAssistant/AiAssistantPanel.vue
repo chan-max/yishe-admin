@@ -2260,7 +2260,6 @@ watch(
     z-index: 10;
     flex-shrink: 0;
     padding: 8px 0 env(safe-area-inset-bottom, 0px);
-    background: var(--ai-panel-bg);
   }
 
   &__composer-inner {
