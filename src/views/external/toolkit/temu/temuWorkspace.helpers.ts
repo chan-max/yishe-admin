@@ -56,6 +56,7 @@ export const resolveTemuValidationLabel = (validation?: Record<string, any>) => 
   const status = String(validation?.status || "").trim();
   if (status === "valid") return "有效";
   if (status === "invalid") return "失效";
+  if (status === "incomplete") return "不完整";
   if (status === "fresh") return "待校验";
   if (status === "unsupported") return "暂不支持";
   return "未校验";
@@ -65,6 +66,7 @@ export const resolveTemuValidationTagType = (validation?: Record<string, any>) =
   const status = String(validation?.status || "").trim();
   if (status === "valid") return "success";
   if (status === "invalid") return "danger";
+  if (status === "incomplete") return "warning";
   if (status === "fresh") return "warning";
   return "info";
 };
@@ -213,6 +215,32 @@ export const resolveTemuWorkspaceAvailability = (
     };
   }
 
+  if (validationStatus === "incomplete") {
+    return {
+      state: "incomplete",
+      tone: "warning",
+      label: "需重采",
+      detail: String(
+        validation.message || "当前会话不是完整采集结果，请重新执行 Temu 全量采集。",
+      ),
+      accountText,
+      mallText,
+      identityText,
+      cookieSummary,
+      validationStatus,
+      validationLabel,
+      userInfoStatus,
+      userInfoLabel,
+      hasUsableSession,
+      hasGlobalCookie,
+      hasRegionalCookies,
+      hasIdentity,
+      hasMall,
+      canUse: false,
+      shouldAutoValidate,
+    };
+  }
+
   if (userInfoStatus === "failed" || missingInfoTexts.length) {
     return {
       state: "incomplete",
@@ -289,10 +317,10 @@ export const resolveTemuWorkspaceAvailability = (
 
   if (!hasRegionalCookies) {
     return {
-      state: "limited",
+      state: "incomplete",
       tone: "warning",
-      label: "部分可用",
-      detail: `${missingRegions.join(" / ")} 会话不完整，部分区域能力可能受限。`,
+      label: "需重采",
+      detail: `${missingRegions.join(" / ")} 会话缺失，当前环境不是完整采集结果，请重新执行 Temu 全量采集。`,
       accountText,
       mallText,
       identityText,
@@ -306,7 +334,7 @@ export const resolveTemuWorkspaceAvailability = (
       hasRegionalCookies,
       hasIdentity,
       hasMall,
-      canUse: true,
+      canUse: false,
       shouldAutoValidate,
     };
   }

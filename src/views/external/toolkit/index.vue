@@ -614,6 +614,8 @@ const storedSessionRows = computed(() => {
         ? "invalid_environment"
         : ["invalid", "failed", "expired"].includes(validationStatus)
           ? "invalid"
+          : validationStatus === "incomplete"
+            ? "incomplete"
           : "valid";
 
       return {
@@ -630,12 +632,16 @@ const storedSessionRows = computed(() => {
             ? "无效环境"
             : sessionStatus === "invalid"
               ? "失效"
+              : sessionStatus === "incomplete"
+                ? "不完整"
               : "正常",
         sessionStatusTagType:
           sessionStatus === "invalid_environment"
             ? "warning"
             : sessionStatus === "invalid"
               ? "danger"
+              : sessionStatus === "incomplete"
+                ? "warning"
               : "success",
         cookieCounts: {
           global: countObjectKeys(record?.session?.global?.cookies),
@@ -790,7 +796,7 @@ const temuWorkspaceLocked = computed(() => {
     return false;
   }
 
-  return ["missing", "expired"].includes(temuWorkspaceAvailability.value.state);
+  return !temuWorkspaceAvailability.value.canUse;
 });
 const temuWorkspaceLockText = computed(() => {
   if (!selectedClientId.value) {
@@ -807,10 +813,18 @@ const selectedStoredSession = computed(() => temuWorkspaceSessionRecord.value);
 const resolveTemuStoredCredentialValue = (
   record: Record<string, any> | null | undefined,
   key: "account" | "password",
+  profileId?: string,
 ) => {
   const normalizedRecord = asPlainObject(record);
   const session = asPlainObject(normalizedRecord?.session);
-  return String(session?.[key] || normalizedRecord?.[key] || "").trim();
+  const normalizedProfileId = String(profileId || "").trim();
+  const platformCredentialRecord =
+    normalizedProfileId && selectedPlatformKey.value === TEMU_PLATFORM_KEY
+      ? asPlainObject(asPlainObject(storedPlatformSession.value?.credentials)?.[normalizedProfileId])
+      : {};
+  return String(
+    session?.[key] || normalizedRecord?.[key] || platformCredentialRecord?.[key] || "",
+  ).trim();
 };
 const syncTemuSessionAcquireCredentialsFromStoredSession = (profileId?: string) => {
   // “登录并获取”优先回显当前环境最近一次保存的凭证，减少重复输入。
@@ -828,8 +842,16 @@ const syncTemuSessionAcquireCredentialsFromStoredSession = (profileId?: string) 
   const record = asPlainObject(
     storedSessionRows.value.find((item) => item.profileId === normalizedProfileId)?.record || null,
   );
-  sessionAcquireForm.account = resolveTemuStoredCredentialValue(record, "account");
-  sessionAcquireForm.password = resolveTemuStoredCredentialValue(record, "password");
+  sessionAcquireForm.account = resolveTemuStoredCredentialValue(
+    record,
+    "account",
+    normalizedProfileId,
+  );
+  sessionAcquireForm.password = resolveTemuStoredCredentialValue(
+    record,
+    "password",
+    normalizedProfileId,
+  );
 };
 const currentEnvironmentValidation = computed(() =>
   asPlainObject(selectedExecutionStoredSession.value?.validation),
@@ -1403,7 +1425,7 @@ const buildTemuStoredSessionPayload = (
         updatedAt: collectedAt,
         validation: {
           status: "fresh",
-          message: "会话已更新，建议重新校验",
+          message: "会话已完成全量采集，建议重新校验",
           checkedAt: collectedAt,
         },
         session: {
@@ -1840,12 +1862,14 @@ const deleteStoredSession = async (profileId?: string) => {
 
   sessionActionState.delete = normalizedProfileId;
   try {
-    await deletePlatformSession({
+    const result = await deletePlatformSession({
       platform: TEMU_PLATFORM_KEY,
       profileId: normalizedProfileId,
     });
     await refreshStoredPlatformSessions();
-    ElMessage.success("会话已删除");
+    ElMessage.success(
+      result?.credentialsPreserved ? "会话已删除，账号密码已保留" : "会话已删除",
+    );
   } catch (error: any) {
     ElMessage.error(error?.message || "删除会话失败");
   } finally {

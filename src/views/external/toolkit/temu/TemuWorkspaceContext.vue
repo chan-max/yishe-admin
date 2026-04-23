@@ -187,7 +187,7 @@ const statusMeta = computed(() => {
   if (availability.value.state === "limited") {
     return {
       tone: availability.value.tone,
-      text: "部分可用",
+      text: "需重采",
       title: availability.value.detail,
     };
   }
