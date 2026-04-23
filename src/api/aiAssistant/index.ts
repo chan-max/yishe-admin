@@ -9,6 +9,13 @@ export interface AiAssistantPageContext {
   params?: Record<string, any>;
 }
 
+export interface AiAssistantPersona {
+  key: string;
+  name: string;
+  description: string;
+  isDefault: boolean;
+}
+
 export interface AiAssistantConversation {
   id: number;
   title: string;
@@ -16,6 +23,7 @@ export interface AiAssistantConversation {
   lastMessageAt: string | null;
   createdAt: string;
   updatedAt: string;
+  persona: AiAssistantPersona;
 }
 
 export interface AiAssistantToolSchemaProperty {
@@ -68,6 +76,21 @@ export interface AiAssistantCapabilityGroup {
   tools: AiAssistantToolDefinition[];
 }
 
+export interface AiAssistantAttachment {
+  kind: "image" | "file";
+  name: string;
+  url: string;
+  mimeType?: string | null;
+  size?: number | null;
+}
+
+export interface AiAssistantUploadTarget {
+  key: string;
+  bucket: string;
+  region: string;
+  url: string;
+}
+
 export interface AiAssistantCapabilityCatalog {
   total: number;
   summary: string;
@@ -79,6 +102,7 @@ export interface AiAssistantMessage {
   conversationId: number | null;
   role: "user" | "assistant" | "tool";
   content: string;
+  attachments: AiAssistantAttachment[];
   routePath: string | null;
   routeTitle: string | null;
   pageContext: AiAssistantPageContext | null;
@@ -107,11 +131,27 @@ export const AiAssistantApi = {
     });
   },
 
-  createConversation: async (title?: string) => {
+  getPersonas: async () => {
+    return request.get<AiAssistantPersona[]>({
+      url: "/ai-assistant/personas",
+    });
+  },
+
+  createConversation: async (title?: string, personaKey?: string) => {
     return request.post<AiAssistantConversation>({
       url: "/ai-assistant/conversations",
       data: {
         title,
+        personaKey,
+      },
+    });
+  },
+
+  updateConversationPersona: async (conversationId: number, personaKey: string) => {
+    return request.patch<AiAssistantConversation>({
+      url: `/ai-assistant/conversations/${conversationId}/persona`,
+      data: {
+        personaKey,
       },
     });
   },
@@ -155,8 +195,18 @@ export const AiAssistantApi = {
     });
   },
 
+  createAttachmentUploadTarget: async (filename: string) => {
+    return request.post<AiAssistantUploadTarget>({
+      url: "/ai-assistant/attachments/upload-target",
+      data: {
+        filename,
+      },
+    });
+  },
+
   chat: async (
     message: string,
+    attachments?: AiAssistantAttachment[],
     pageContext?: AiAssistantPageContext,
     conversationId?: number | null,
   ) => {
@@ -164,8 +214,30 @@ export const AiAssistantApi = {
       url: "/ai-assistant/chat",
       data: {
         message,
+        attachments,
         pageContext,
         conversationId: conversationId || undefined,
+      },
+    });
+  },
+
+  executeTool: async (
+    tool: string,
+    input?: Record<string, any>,
+    pageContext?: AiAssistantPageContext,
+    conversationId?: number | null,
+    reason?: string,
+    confirmed?: boolean,
+  ) => {
+    return request.post<AiAssistantChatResult>({
+      url: "/ai-assistant/tools/execute",
+      data: {
+        tool,
+        input,
+        pageContext,
+        conversationId: conversationId || undefined,
+        reason,
+        confirmed,
       },
     });
   },

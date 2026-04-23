@@ -3,6 +3,7 @@ import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import { useXAgent, useXChat } from "ant-design-x-vue";
 import type {
+  AiAssistantAttachment,
   AiAssistantChatResult,
   AiAssistantMessage,
   AiAssistantPageContext,
@@ -33,6 +34,7 @@ export type AssistantBubbleItem = {
   toolKey: string | null;
   toolInput: DisplayMessage["toolInput"];
   toolResult: DisplayMessage["toolResult"];
+  attachments: AiAssistantAttachment[];
   toolCalls?: AssistantToolCall[];
   routeTitle: string | null;
   routePath: string | null;
@@ -88,6 +90,7 @@ const createLocalMessage = (
   toolLabel: null,
   toolInput: null,
   toolResult: null,
+  attachments: [],
   createdAt: new Date().toISOString(),
   ...extra,
 });
@@ -96,13 +99,16 @@ export const useAiAssistantRuntime = () => {
   const aiAssistantStore = useAiAssistantStore();
   const {
     conversations,
+    personas,
     activeConversation,
     activeConversationId,
     messages: persistedMessages,
     capabilityCatalog,
     loadingHistory,
+    personasLoading,
     capabilityCatalogLoading,
     conversationsLoading,
+    sending: storeSending,
   } = storeToRefs(aiAssistantStore);
 
   let tempMessageId = -1;
@@ -217,6 +223,7 @@ export const useAiAssistantRuntime = () => {
       try {
         const result = (await aiAssistantStore.sendMessage(
           info.plainText,
+          info.message[0]?.attachments || [],
           info.pageContext,
           info.conversationId,
         )) as AiAssistantChatResult | null;
@@ -273,6 +280,7 @@ export const useAiAssistantRuntime = () => {
         toolKey: item.toolKey,
         toolInput: item.toolInput,
         toolResult: item.toolResult,
+        attachments: item.attachments || [],
         toolCalls: item.toolCalls || [],
         routeTitle: item.routeTitle,
         routePath: item.routePath,
@@ -312,15 +320,11 @@ export const useAiAssistantRuntime = () => {
   });
 
   const messageCount = computed(() => bubbleItems.value.length);
-  const sending = computed(() => agent.value.isRequesting());
+  const sending = computed(() => agent.value.isRequesting() || storeSending.value);
 
   const syncHistoryMessages = () => {
     setMessages(
-      buildDisplayMessages(
-        persistedMessages.value,
-        {},
-        activeConversationId.value,
-      ).map((item) => ({
+      buildDisplayMessages(persistedMessages.value, {}, activeConversationId.value).map((item) => ({
         id: `history_${item.id}`,
         message: [toDisplayMessage(item)],
         status: "success" as const,
@@ -329,6 +333,7 @@ export const useAiAssistantRuntime = () => {
   };
 
   const loadAll = async (force = false) => {
+    await aiAssistantStore.loadPersonas(force);
     await aiAssistantStore.loadConversations(force);
     if (!activeConversationId.value) {
       setMessages([]);
@@ -348,8 +353,8 @@ export const useAiAssistantRuntime = () => {
     syncHistoryMessages();
   };
 
-  const createConversation = async (title?: string) => {
-    const conversation = await aiAssistantStore.createConversation(title);
+  const createConversationWithPersona = async (title?: string, personaKey?: string) => {
+    const conversation = await aiAssistantStore.createConversation(title, personaKey);
     setMessages([]);
     return conversation;
   };
@@ -372,38 +377,95 @@ export const useAiAssistantRuntime = () => {
     setMessages([]);
   };
 
-  const sendMessage = (plainText: string, pageContext: AiAssistantPageContext) => {
+  const loadPersonas = async (force = false) => {
+    await aiAssistantStore.loadPersonas(force);
+  };
+
+  const updateConversationPersona = async (conversationId: number, personaKey: string) => {
+    return aiAssistantStore.updateConversationPersona(conversationId, personaKey);
+  };
+
+  const sendMessage = (
+    plainText: string,
+    attachments: AiAssistantAttachment[] = [],
+    pageContext: AiAssistantPageContext,
+    conversationId?: number | null,
+  ) => {
     const normalizedText = String(plainText || "").trim();
-    if (!normalizedText || sending.value) {
+    if ((!normalizedText && !attachments.length) || sending.value) {
       return;
     }
+
+    const targetConversationId = conversationId ?? activeConversationId.value;
 
     onRequest({
       plainText: normalizedText,
       pageContext,
-      conversationId: activeConversationId.value,
-      message: [createTempMessage("user", normalizedText, pageContext, activeConversationId.value)],
+      conversationId: targetConversationId,
+      message: [
+        createTempMessage("user", normalizedText, pageContext, targetConversationId, {
+          attachments,
+        }),
+      ],
     });
+  };
+
+  const executeTool = async (
+    tool: string,
+    input?: Record<string, any> | null,
+    pageContext: AiAssistantPageContext = {},
+    conversationId?: number | null,
+    options?: {
+      reason?: string;
+      confirmed?: boolean;
+    },
+  ) => {
+    const normalizedTool = String(tool || "").trim();
+    if (!normalizedTool || sending.value) {
+      return null;
+    }
+
+    const result = await aiAssistantStore.executeTool(
+      normalizedTool,
+      input || {},
+      pageContext,
+      conversationId ?? activeConversationId.value,
+      options?.reason,
+      options?.confirmed,
+    );
+
+    if (!aiAssistantStore.activeConversationId) {
+      setMessages([]);
+      return result || null;
+    }
+
+    syncHistoryMessages();
+    return result || null;
   };
 
   return {
     conversations,
+    personas,
     activeConversation,
     activeConversationId,
     capabilityCatalog,
     loadingHistory,
+    personasLoading,
     capabilityCatalogLoading,
     conversationsLoading,
     bubbleItems,
     messageCount,
     sending,
     loadAll,
+    loadPersonas,
     loadCapabilityCatalog,
     switchConversation,
-    createConversation,
+    createConversation: createConversationWithPersona,
     deleteConversation,
+    updateConversationPersona,
     clearHistory,
     sendMessage,
+    executeTool,
     syncHistoryMessages,
   };
 };

@@ -6,10 +6,7 @@
       @click="closeMobileSide"
     />
     <div class="ai-assistant-panel__shell">
-      <aside
-        class="ai-assistant-panel__side"
-        :class="{ 'is-mobile-visible': mobileSideVisible }"
-      >
+      <aside class="ai-assistant-panel__side" :class="{ 'is-mobile-visible': mobileSideVisible }">
         <div class="ai-assistant-panel__side-head">
           <div class="ai-assistant-panel__side-brand">
             <div class="ai-assistant-panel__side-brand-mark">AI</div>
@@ -19,15 +16,13 @@
             </div>
           </div>
 
-          <Button type="text" size="small" :disabled="sending" @click="handleCreateConversation">
-            <template #icon>
-              <PlusOutlined />
-            </template>
-          </Button>
+          <el-button text size="small" :disabled="sending" @click="handleCreateConversation">
+            <el-icon><PlusOutlined /></el-icon>
+          </el-button>
         </div>
 
-        <Tabs v-model:activeKey="sideTab" size="small" class="ai-assistant-panel__side-tabs">
-          <Tabs.TabPane key="conversations" tab="会话">
+        <el-tabs v-model="sideTab" class="ai-assistant-panel__side-tabs">
+          <el-tab-pane label="会话" name="conversations">
             <div
               v-loading="conversationsLoading"
               element-loading-text="正在加载会话"
@@ -44,14 +39,13 @@
                 v-else
                 :items="conversationItems"
                 :active-key="activeConversationKey"
-                :menu="buildConversationMenu"
                 class="ai-assistant-panel__conversation-list"
                 @active-change="handleConversationChange"
               />
             </div>
-          </Tabs.TabPane>
+          </el-tab-pane>
 
-          <Tabs.TabPane key="workspace" tab="空间">
+          <el-tab-pane label="空间" name="workspace">
             <div class="ai-assistant-panel__side-stack">
               <section class="ai-assistant-panel__side-card">
                 <div class="ai-assistant-panel__side-card-label">当前会话</div>
@@ -62,27 +56,56 @@
               </section>
 
               <section class="ai-assistant-panel__side-card">
+                <div class="ai-assistant-panel__side-card-label">
+                  {{ activeConversationId ? "当前角色" : "新会话默认角色" }}
+                </div>
+                <div class="ai-assistant-panel__side-card-title">
+                  {{ selectedPersona?.name || "默认助手" }}
+                </div>
+                <div class="ai-assistant-panel__side-card-text">
+                  {{ selectedPersona?.description || "服务端内置通用助手" }}
+                </div>
+
+                <el-button
+                  size="small"
+                  :loading="personasLoading && !selectedPersona"
+                  @click="openPersonaDialog"
+                >
+                  切换角色
+                </el-button>
+              </section>
+
+              <section class="ai-assistant-panel__side-card">
                 <div class="ai-assistant-panel__side-card-label">能力</div>
                 <div class="ai-assistant-panel__side-card-title">{{ capabilityCount }} 项</div>
                 <div class="ai-assistant-panel__side-card-text">服务端可调用能力</div>
-                <Button size="small" @click="openCapabilityDrawer">查看清单</Button>
+                <el-button size="small" @click="openCapabilityDrawer">查看清单</el-button>
               </section>
             </div>
-          </Tabs.TabPane>
-        </Tabs>
+          </el-tab-pane>
+        </el-tabs>
       </aside>
 
       <section class="ai-assistant-panel__main">
         <header class="ai-assistant-panel__hero">
           <div class="ai-assistant-panel__hero-main">
-            <div class="ai-assistant-panel__hero-title">{{ activeConversationTitle }}</div>
+            <div class="ai-assistant-panel__hero-title-row">
+              <div class="ai-assistant-panel__hero-title">{{ activeConversationTitle }}</div>
+              <el-tag v-if="selectedPersona?.name" effect="plain" round>{{
+                selectedPersona.name
+              }}</el-tag>
+            </div>
             <div class="ai-assistant-panel__hero-subtitle">{{ activeConversationSubtitle }}</div>
           </div>
 
           <div class="ai-assistant-panel__hero-actions">
-            <Button class="ai-assistant-panel__mobile-side-trigger" size="small" @click="openMobileSide">
+            <el-button
+              class="ai-assistant-panel__mobile-side-trigger"
+              size="small"
+              @click="openMobileSide"
+            >
               会话
-            </Button>
+            </el-button>
 
             <Actions
               v-if="heroActionItems.length"
@@ -91,26 +114,25 @@
               @click="handleHeroAction"
             />
 
-            <Popconfirm
+            <el-popconfirm
               title="确定清空当前聊天记录吗？"
-              ok-text="清空"
-              cancel-text="取消"
+              confirm-button-text="清空"
+              cancel-button-text="取消"
               @confirm="clearChatHistory"
             >
-              <Button
-                class="ai-assistant-panel__hero-icon-button"
-                danger
-                type="text"
-                size="small"
-                aria-label="清空记录"
-                title="清空记录"
-                :disabled="!activeConversationId || !messageCount"
-              >
-                <template #icon>
-                  <DeleteOutlined />
-                </template>
-              </Button>
-            </Popconfirm>
+              <template #reference>
+                <el-button
+                  class="ai-assistant-panel__hero-icon-button"
+                  text
+                  size="small"
+                  aria-label="清空记录"
+                  title="清空记录"
+                  :disabled="!activeConversationId || !messageCount"
+                >
+                  <el-icon><DeleteOutlined /></el-icon>
+                </el-button>
+              </template>
+            </el-popconfirm>
           </div>
         </header>
 
@@ -122,9 +144,7 @@
         >
           <template v-if="!(loadingHistory && !bubbleItems.length)">
             <div v-if="!bubbleItems.length" class="ai-assistant-panel__empty">
-              <div class="ai-assistant-panel__empty-message">
-                What do you want from me !!!
-              </div>
+              <div class="ai-assistant-panel__empty-message">done is better than perfect</div>
             </div>
 
             <div v-else class="ai-assistant-panel__bubble-list-wrapper">
@@ -138,7 +158,9 @@
                   <div class="ai-assistant-panel__bubble-meta">
                     <span>{{ roleLabelMap[getBubbleItem(item).role] }}</span>
                     <span>{{ getBubbleTime(item) }}</span>
-                    <Tag v-if="getBubbleToolLabel(item)">{{ getBubbleToolLabel(item) }}</Tag>
+                    <el-tag v-if="getBubbleToolLabel(item)" effect="plain" round>{{
+                      getBubbleToolLabel(item)
+                    }}</el-tag>
                   </div>
                 </template>
 
@@ -166,6 +188,29 @@
                   </div>
 
                   <div v-else class="ai-assistant-panel__message-text">
+                    <div
+                      v-if="getBubbleAttachments(item).length"
+                      class="ai-assistant-panel__message-attachments"
+                    >
+                      <div
+                        v-for="(attachment, index) in getBubbleAttachments(item)"
+                        :key="`${getBubbleItem(item).key}:${attachment.url}:${index}`"
+                        class="ai-assistant-panel__message-attachment"
+                        :class="{ 'is-image': attachment.kind === 'image' }"
+                      >
+                        <template v-if="attachment.kind === 'image'">
+                          <img :src="attachment.url" :alt="attachment.name" />
+                          <a :href="attachment.url" target="_blank" rel="noreferrer">
+                            {{ attachment.name }}
+                          </a>
+                        </template>
+                        <template v-else>
+                          <a :href="attachment.url" target="_blank" rel="noreferrer">
+                            {{ attachment.name }}
+                          </a>
+                        </template>
+                      </div>
+                    </div>
                     <template v-if="getBubbleItem(item).role === 'assistant'">
                       <MarkdownView :content="getBubbleContent(item)" />
                     </template>
@@ -183,23 +228,78 @@
 
         <div class="ai-assistant-panel__composer">
           <div class="ai-assistant-panel__composer-inner">
+            <div v-if="pendingAttachments.length" class="ai-assistant-panel__composer-attachments">
+              <div
+                v-for="(attachment, index) in pendingAttachments"
+                :key="`${attachment.url}:${index}`"
+                class="ai-assistant-panel__composer-attachment"
+              >
+                <img
+                  v-if="attachment.kind === 'image'"
+                  :src="attachment.url"
+                  :alt="attachment.name"
+                />
+                <span>{{ attachment.name }}</span>
+                <button type="button" @click="removePendingAttachment(index)">×</button>
+              </div>
+            </div>
+
             <Sender
               :value="draft"
-              :send-disabled="!draft.trim() || sending"
+              :send-disabled="
+                (!draft.trim() && !pendingAttachments.length) || sending || attachmentUploading
+              "
               :placeholder="senderPlaceholder"
               :auto-size="{ minRows: 3, maxRows: 6 }"
               @change="handleDraftChange"
               @submit="handleSubmit"
-            />
+            >
+              <template #prefix>
+                <button
+                  type="button"
+                  class="ai-assistant-panel__sender-prefix-button"
+                  :disabled="sending || attachmentUploading"
+                  @click="openAttachmentPicker"
+                >
+                  <LoadingOutlined
+                    v-if="attachmentUploading"
+                    class="ai-assistant-panel__spin-icon"
+                  />
+                  <PaperClipOutlined v-else />
+                </button>
+              </template>
+
+              <template #actions>
+                <button
+                  type="button"
+                  class="ai-assistant-panel__sender-submit-button"
+                  :disabled="
+                    (!draft.trim() && !pendingAttachments.length) || sending || attachmentUploading
+                  "
+                  @click="handleSubmit"
+                >
+                  发送
+                </button>
+              </template>
+            </Sender>
           </div>
         </div>
       </section>
     </div>
 
-    <Drawer
-      v-model:open="toolDetailOpen"
-      placement="right"
-      width="100%"
+    <input
+      ref="attachmentInputRef"
+      class="ai-assistant-panel__attachment-input"
+      type="file"
+      multiple
+      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.md,.csv,.json,.zip"
+      @change="handleAttachmentChange"
+    />
+
+    <el-drawer
+      v-model="toolDetailOpen"
+      direction="rtl"
+      size="100%"
       title="执行详情"
       class="ai-assistant-panel__detail-drawer"
     >
@@ -210,15 +310,35 @@
               {{ selectedToolMessage.toolLabel || "工具执行详情" }}
             </div>
             <div class="ai-assistant-panel__detail-meta">
-              <Tag :color="selectedToolHasError ? 'error' : 'processing'">
-                {{ selectedToolHasError ? "执行异常" : "执行完成" }}
-              </Tag>
-              <Tag v-if="selectedToolMeta?.riskLevel">
+              <el-tag
+                :type="
+                  selectedToolPendingConfirmation
+                    ? 'warning'
+                    : selectedToolHasError
+                      ? 'danger'
+                      : 'primary'
+                "
+                effect="plain"
+                round
+              >
+                {{
+                  selectedToolPendingConfirmation
+                    ? "等待确认"
+                    : selectedToolHasError
+                      ? "执行异常"
+                      : "执行完成"
+                }}
+              </el-tag>
+              <el-tag v-if="selectedToolMeta?.riskLevel" effect="plain" round>
                 风险 {{ formatRiskLevel(selectedToolMeta.riskLevel) }}
-              </Tag>
-              <Tag v-if="selectedToolMeta?.requiresBrowser">需要浏览器</Tag>
-              <Tag v-if="selectedToolMeta?.confirmRequired" color="warning">需要确认</Tag>
-              <Tag>{{ formatTime(selectedToolMessage.createdAt) }}</Tag>
+              </el-tag>
+              <el-tag v-if="selectedToolMeta?.requiresBrowser" effect="plain" round
+                >需要浏览器</el-tag
+              >
+              <el-tag v-if="selectedToolMeta?.confirmRequired" type="warning" effect="plain" round
+                >需要确认</el-tag
+              >
+              <el-tag effect="plain" round>{{ formatTime(selectedToolMessage.createdAt) }}</el-tag>
             </div>
           </div>
 
@@ -250,24 +370,32 @@
           <pre>{{ formatJson(selectedToolMessage.toolResult) }}</pre>
         </div>
       </template>
-    </Drawer>
+    </el-drawer>
 
-    <Drawer
-      v-model:open="capabilityDrawerOpen"
-      placement="right"
-      width="100%"
+    <el-drawer
+      v-model="capabilityDrawerOpen"
+      direction="rtl"
+      size="100%"
       title="AI 能力清单"
       class="ai-assistant-panel__capability-drawer"
     >
       <div class="ai-assistant-panel__capability-head">
-        <div class="ai-assistant-panel__capability-title">AI 能力清单</div>
-        <div class="ai-assistant-panel__capability-summary">
-          {{ capabilitySummary }}
-        </div>
-        <div class="ai-assistant-panel__capability-meta">
-          <Tag>{{ capabilityCount }} 项能力</Tag>
-          <Tag>服务端执行</Tag>
-          <Tag>结构化能力目录</Tag>
+        <div class="ai-assistant-panel__capability-title-row">
+          <div class="ai-assistant-panel__capability-title-block">
+            <div class="ai-assistant-panel__capability-title">AI 能力清单</div>
+            <div class="ai-assistant-panel__capability-summary">
+              {{ capabilitySummary }}
+            </div>
+          </div>
+
+          <div class="ai-assistant-panel__capability-meta">
+            <span class="ai-assistant-panel__capability-meta-item">
+              <strong>{{ capabilityCount }}</strong>
+              <span>项能力</span>
+            </span>
+            <span class="ai-assistant-panel__capability-meta-item">服务端执行</span>
+            <span class="ai-assistant-panel__capability-meta-item">结构化能力目录</span>
+          </div>
         </div>
       </div>
 
@@ -290,8 +418,13 @@
             class="ai-assistant-panel__capability-group"
           >
             <div class="ai-assistant-panel__capability-group-head">
-              <div class="ai-assistant-panel__capability-group-title">{{ group.label }}</div>
-              <div class="ai-assistant-panel__capability-group-desc">{{ group.description }}</div>
+              <div class="ai-assistant-panel__capability-group-main">
+                <div class="ai-assistant-panel__capability-group-title">{{ group.label }}</div>
+                <div class="ai-assistant-panel__capability-group-desc">{{ group.description }}</div>
+              </div>
+              <div class="ai-assistant-panel__capability-group-meta">
+                {{ group.tools.length }} 项
+              </div>
             </div>
 
             <div class="ai-assistant-panel__capability-list">
@@ -300,23 +433,49 @@
                 :key="tool.name"
                 class="ai-assistant-panel__capability-item"
               >
-                <div class="ai-assistant-panel__capability-item-main">
-                  <div class="ai-assistant-panel__capability-item-title">{{ tool.label }}</div>
-                  <div class="ai-assistant-panel__capability-item-key">{{ tool.name }}</div>
-                  <div class="ai-assistant-panel__capability-item-desc">{{ tool.description }}</div>
-                </div>
+                <div class="ai-assistant-panel__capability-item-head">
+                  <div class="ai-assistant-panel__capability-item-main">
+                    <div class="ai-assistant-panel__capability-item-title">{{ tool.label }}</div>
+                    <div class="ai-assistant-panel__capability-item-key">{{ tool.name }}</div>
+                    <div class="ai-assistant-panel__capability-item-desc">
+                      {{ tool.description }}
+                    </div>
+                  </div>
 
-                <div class="ai-assistant-panel__capability-item-tags">
-                  <Tag>{{ tool.runtime === "server" ? "服务端" : tool.runtime }}</Tag>
-                  <Tag>{{ tool.readOnly ? "只读" : "可执行" }}</Tag>
-                  <Tag :color="tool.riskLevel === 'high' ? 'error' : tool.riskLevel === 'medium' ? 'warning' : 'success'">
-                    风险 {{ formatRiskLevel(tool.riskLevel) }}
-                  </Tag>
-                  <Tag v-if="tool.requiresBrowser">需要浏览器</Tag>
-                  <Tag v-if="tool.confirmRequired" color="warning">需确认</Tag>
-                  <Tag v-if="tool.idempotent">幂等</Tag>
-                  <Tag>{{ summarizeInputSchema(tool.inputSchema) }}</Tag>
-                  <Tag v-for="tag in tool.tags || []" :key="`${tool.name}:${tag}`">{{ tag }}</Tag>
+                  <div class="ai-assistant-panel__capability-item-tags">
+                    <el-tag effect="plain" round>{{
+                      tool.runtime === "server" ? "服务端" : tool.runtime
+                    }}</el-tag>
+                    <el-tag effect="plain" round>{{ tool.readOnly ? "只读" : "可执行" }}</el-tag>
+                    <el-tag
+                      :type="
+                        tool.riskLevel === 'high'
+                          ? 'danger'
+                          : tool.riskLevel === 'medium'
+                            ? 'warning'
+                            : 'success'
+                      "
+                      effect="plain"
+                      round
+                    >
+                      风险 {{ formatRiskLevel(tool.riskLevel) }}
+                    </el-tag>
+                    <el-tag v-if="tool.requiresBrowser" effect="plain" round>需要浏览器</el-tag>
+                    <el-tag v-if="tool.confirmRequired" type="warning" effect="plain" round
+                      >需确认</el-tag
+                    >
+                    <el-tag v-if="tool.idempotent" effect="plain" round>幂等</el-tag>
+                    <el-tag effect="plain" round>{{
+                      summarizeInputSchema(tool.inputSchema)
+                    }}</el-tag>
+                    <el-tag
+                      v-for="tag in tool.tags || []"
+                      :key="`${tool.name}:${tag}`"
+                      effect="plain"
+                      round
+                      >{{ tag }}</el-tag
+                    >
+                  </div>
                 </div>
 
                 <div
@@ -338,8 +497,12 @@
                         </div>
 
                         <div class="ai-assistant-panel__capability-param-tags">
-                          <Tag>{{ formatSchemaType(item.field.type) }}</Tag>
-                          <Tag v-if="item.required" color="error">必填</Tag>
+                          <el-tag effect="plain" round>{{
+                            formatSchemaType(item.field.type)
+                          }}</el-tag>
+                          <el-tag v-if="item.required" type="danger" effect="plain" round
+                            >必填</el-tag
+                          >
                         </div>
                       </div>
 
@@ -402,9 +565,9 @@
                         class="ai-assistant-panel__capability-case-input"
                         >{{ formatJson(caseItem.input) }}</pre
                       >
-                      <Button size="small" type="text" @click="applyExamplePrompt(caseItem.prompt)">
+                      <el-button size="small" text @click="applyExamplePrompt(caseItem.prompt)">
                         使用此案例
-                      </Button>
+                      </el-button>
                     </div>
                   </div>
                 </div>
@@ -413,7 +576,66 @@
           </section>
         </div>
       </div>
-    </Drawer>
+    </el-drawer>
+
+    <el-dialog
+      v-model="personaDialogOpen"
+      title="选择对话角色"
+      width="100vw"
+      :show-close="true"
+      :close-on-click-modal="true"
+      class="ai-assistant-panel__persona-modal"
+    >
+      <div
+        v-loading="personasLoading && !personas.length"
+        element-loading-text="正在加载角色"
+        class="ai-assistant-panel__persona-modal-body"
+      >
+        <div class="ai-assistant-panel__persona-modal-hero">
+          <div class="ai-assistant-panel__persona-modal-summary">
+            {{ activeConversationId ? "切换当前会话角色" : "设置新会话默认角色" }}
+          </div>
+          <div class="ai-assistant-panel__persona-modal-current">
+            <span class="ai-assistant-panel__persona-modal-current-label">当前选择</span>
+            <span class="ai-assistant-panel__persona-modal-current-name">
+              {{ selectedPersona?.name || "默认助手" }}
+            </span>
+            <span class="ai-assistant-panel__persona-modal-current-desc">
+              {{ selectedPersona?.description || "服务端内置通用助手" }}
+            </span>
+          </div>
+        </div>
+
+        <div v-if="personas.length" class="ai-assistant-panel__persona-list">
+          <button
+            v-for="persona in personas"
+            :key="persona.key"
+            type="button"
+            class="ai-assistant-panel__persona-option"
+            :class="{
+              'is-active': selectedPersonaKey === persona.key,
+              'is-loading': updatingPersonaKey === persona.key,
+            }"
+            :disabled="updatingPersonaKey === persona.key"
+            @click="handlePersonaSelect(persona.key)"
+          >
+            <span class="ai-assistant-panel__persona-option-main">
+              <span class="ai-assistant-panel__persona-option-head">
+                <span class="ai-assistant-panel__persona-option-name">
+                  {{ persona.name }}
+                </span>
+                <span v-if="persona.isDefault" class="ai-assistant-panel__persona-option-badge">
+                  默认
+                </span>
+              </span>
+              <span class="ai-assistant-panel__persona-option-desc">
+                {{ persona.description }}
+              </span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -425,25 +647,25 @@ import {
   ApiOutlined,
   CopyOutlined,
   DeleteOutlined,
+  LoadingOutlined,
+  PaperClipOutlined,
   PlusOutlined,
   ReloadOutlined,
 } from "@ant-design/icons-vue";
-import { Avatar, Button, Drawer, Popconfirm, Tabs, Tag } from "ant-design-vue";
-import {
-  Actions,
-  BubbleList,
-  Conversations,
-  Sender,
-  ThoughtChain,
-} from "ant-design-x-vue";
+import { Actions, BubbleList, Conversations, Sender, ThoughtChain } from "ant-design-x-vue";
 import type { ActionItem, ThoughtChainItem } from "ant-design-x-vue";
-import { ElMessage } from "element-plus";
+import { Avatar, Modal } from "ant-design-vue";
+import { ElMessage, ElPopconfirm } from "element-plus";
 import type {
+  AiAssistantAttachment,
   AiAssistantPageContext,
+  AiAssistantPersona,
   AiAssistantToolDefinition,
   AiAssistantToolExampleCase,
   AiAssistantToolSchemaProperty,
 } from "@/api/aiAssistant";
+import { AiAssistantApi } from "@/api/aiAssistant";
+import { uploadToCOS } from "@/api/cos";
 import MarkdownView from "@/components/MarkdownView/index.vue";
 import AiAssistantStructuredResult from "./AiAssistantStructuredResult.vue";
 import {
@@ -457,9 +679,11 @@ defineOptions({ name: "AiAssistantPanel" });
 const route = useRoute();
 const {
   conversations,
+  personas,
   activeConversation,
   activeConversationId,
   loadingHistory,
+  personasLoading,
   capabilityCatalog,
   capabilityCatalogLoading,
   conversationsLoading,
@@ -471,12 +695,20 @@ const {
   switchConversation,
   createConversation,
   deleteConversation,
+  updateConversationPersona,
   clearHistory,
   sendMessage,
+  executeTool,
 } = useAiAssistantRuntime();
 
 const draft = ref("");
+const pendingAttachments = ref<AiAssistantAttachment[]>([]);
+const attachmentUploading = ref(false);
+const attachmentInputRef = ref<HTMLInputElement | null>(null);
 const sideTab = ref("conversations");
+const preferredPersonaKey = ref("");
+const updatingPersonaKey = ref("");
+const personaDialogOpen = ref(false);
 const streamRef = ref<HTMLDivElement | null>(null);
 const chatEndRef = ref<HTMLDivElement | null>(null);
 const capabilityDrawerOpen = ref(false);
@@ -506,25 +738,97 @@ const activeConversationTitle = computed(() => {
 });
 
 const activeConversationSubtitle = computed(() => {
+  const personaName = activeConversation.value?.persona?.name || selectedPersona.value?.name || "";
   if (activeConversation.value?.lastMessageAt) {
-    return `最近更新 ${formatTime(activeConversation.value.lastMessageAt)}`;
+    return personaName
+      ? `${personaName} · 最近更新 ${formatTime(activeConversation.value.lastMessageAt)}`
+      : `最近更新 ${formatTime(activeConversation.value.lastMessageAt)}`;
   }
-  return activeConversationId.value ? "当前会话尚未开始" : "可直接新建或发送消息";
+  if (activeConversationId.value) {
+    return personaName ? `${personaName} · 当前会话尚未开始` : "当前会话尚未开始";
+  }
+  return personaName ? `${personaName} · 可直接新建或发送消息` : "可直接新建或发送消息";
 });
 
 const activeConversationKey = computed(() => {
   return activeConversationId.value ? String(activeConversationId.value) : "";
 });
 
+const buildConversationLabel = (item: { id: number; title?: string | null }) => {
+  const title = item.title || "新会话";
+
+  return h("span", { class: "ai-assistant-panel__conversation-label-row" }, [
+    h(
+      "span",
+      {
+        class: "ai-assistant-panel__conversation-label-text",
+        title,
+      },
+      title,
+    ),
+    h(
+      ElPopconfirm,
+      {
+        title: "确定删除该会话吗？",
+        confirmButtonText: "删除",
+        cancelButtonText: "取消",
+        onConfirm: async () => {
+          await handleDeleteConversation(item.id);
+        },
+      },
+      {
+        reference: () =>
+          h(
+            "button",
+            {
+              type: "button",
+              class: "ai-assistant-panel__conversation-delete-button",
+              title: "删除会话",
+              "aria-label": "删除会话",
+              onClick: (event: MouseEvent) => {
+                event.stopPropagation();
+              },
+              onMousedown: (event: MouseEvent) => {
+                event.stopPropagation();
+              },
+            },
+            [h(DeleteOutlined)],
+          ),
+      },
+    ),
+  ]);
+};
+
 const conversationItems = computed(() => {
   return conversations.value.map((item) => ({
     key: String(item.id),
-    label: item.title || "新会话",
+    label: buildConversationLabel(item),
   }));
 });
 
+const defaultPersona = computed<AiAssistantPersona | null>(() => {
+  return personas.value.find((item) => item.isDefault) || personas.value[0] || null;
+});
+
+const selectedPersonaKey = computed(() => {
+  return (
+    activeConversation.value?.persona?.key ||
+    preferredPersonaKey.value ||
+    defaultPersona.value?.key ||
+    ""
+  );
+});
+
+const selectedPersona = computed<AiAssistantPersona | null>(() => {
+  const targetKey = selectedPersonaKey.value;
+  return personas.value.find((item) => item.key === targetKey) || defaultPersona.value;
+});
+
 const senderPlaceholder = computed(() => {
-  return activeConversationId.value ? "输入问题后直接发送" : "输入问题后创建新会话";
+  const personaName = selectedPersona.value?.name || "默认助手";
+  return activeConversationId.value
+    ? `以「${personaName}」身份发送消息`
+    : `以「${personaName}」创建新会话并发送`;
 });
 
 const heroActionItems = computed<ActionItem[]>(() => {
@@ -603,12 +907,36 @@ const bubbleRoles = computed<Record<string, any>>(() => {
   };
 });
 
-const selectedToolHasError = computed(() => {
-  const result = selectedToolMessage.value?.toolResult;
-  if (!result || typeof result !== "object") {
+const isToolPendingConfirmation = (toolResult: unknown) => {
+  if (!toolResult || typeof toolResult !== "object") {
     return false;
   }
-  return !!String((result as Record<string, any>).error || "").trim();
+  return (toolResult as Record<string, any>).pendingConfirmation === true;
+};
+
+const isToolExecutionError = (toolResult: unknown) => {
+  if (!toolResult || typeof toolResult !== "object") {
+    return false;
+  }
+
+  const source = toolResult as Record<string, any>;
+  if (source.pendingConfirmation === true) {
+    return false;
+  }
+
+  if (source.success === false) {
+    return true;
+  }
+
+  return !!String(source.error || "").trim();
+};
+
+const selectedToolPendingConfirmation = computed(() => {
+  return isToolPendingConfirmation(selectedToolMessage.value?.toolResult);
+});
+
+const selectedToolHasError = computed(() => {
+  return isToolExecutionError(selectedToolMessage.value?.toolResult);
 });
 
 const selectedToolMeta = computed<AiAssistantToolDefinition | null>(() => {
@@ -638,7 +966,11 @@ const toolThoughtItems = computed<ThoughtChainItem[]>(() => {
       key: "summary",
       title: current.toolLabel || "工具执行",
       description: current.content,
-      status: selectedToolHasError.value ? "error" : "success",
+      status: selectedToolPendingConfirmation.value
+        ? "pending"
+        : selectedToolHasError.value
+          ? "error"
+          : "success",
     },
   ];
 
@@ -656,11 +988,17 @@ const toolThoughtItems = computed<ThoughtChainItem[]>(() => {
     items.push({
       key: "result",
       title: "工具结果",
-      description: selectedToolHasError.value
-        ? "检测到错误字段"
-        : summarizeJson(current.toolResult),
+      description: selectedToolPendingConfirmation.value
+        ? "等待用户确认后才能继续执行"
+        : selectedToolHasError.value
+          ? "检测到错误字段"
+          : summarizeJson(current.toolResult),
       content: formatJson(current.toolResult),
-      status: selectedToolHasError.value ? "error" : "success",
+      status: selectedToolPendingConfirmation.value
+        ? "pending"
+        : selectedToolHasError.value
+          ? "error"
+          : "success",
     });
   }
 
@@ -668,7 +1006,7 @@ const toolThoughtItems = computed<ThoughtChainItem[]>(() => {
 });
 
 const detailActionItems = computed<ActionItem[]>(() => {
-  return [
+  const items: ActionItem[] = [
     {
       key: "copy-summary",
       label: "复制摘要",
@@ -685,6 +1023,19 @@ const detailActionItems = computed<ActionItem[]>(() => {
       icon: h(CopyOutlined),
     },
   ];
+
+  if (
+    selectedToolPendingConfirmation.value &&
+    selectedToolMessage.value?.toolKey &&
+    selectedToolMessage.value?.toolInput
+  ) {
+    items.unshift({
+      key: "confirm-execute",
+      label: sending.value ? "执行中..." : "确认执行",
+    });
+  }
+
+  return items;
 });
 
 const buildPageContext = (): AiAssistantPageContext => {
@@ -717,6 +1068,8 @@ const formatJson = (value: unknown) => {
 const getBubbleItem = (item: unknown) => item as AssistantBubbleItem;
 
 const getBubbleContent = (item: unknown) => getBubbleItem(item).content;
+
+const getBubbleAttachments = (item: unknown) => getBubbleItem(item).attachments || [];
 
 const getBubbleToolLabel = (item: unknown) => getBubbleItem(item).toolLabel;
 
@@ -754,19 +1107,19 @@ const scrollToBottom = async (behavior: ScrollBehavior = "auto") => {
       if (stream) {
         scrollTargets.push(stream);
 
-        const nestedScrollableNodes = Array.from(
-          stream.querySelectorAll<HTMLElement>("*"),
-        ).filter((node) => {
-          if (!(node instanceof HTMLElement)) {
-            return false;
-          }
+        const nestedScrollableNodes = Array.from(stream.querySelectorAll<HTMLElement>("*")).filter(
+          (node) => {
+            if (!(node instanceof HTMLElement)) {
+              return false;
+            }
 
-          const style = window.getComputedStyle(node);
-          const overflowY = style.overflowY;
-          const canScroll =
-            overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
-          return canScroll && node.scrollHeight > node.clientHeight + 4;
-        });
+            const style = window.getComputedStyle(node);
+            const overflowY = style.overflowY;
+            const canScroll =
+              overflowY === "auto" || overflowY === "scroll" || overflowY === "overlay";
+            return canScroll && node.scrollHeight > node.clientHeight + 4;
+          },
+        );
 
         nestedScrollableNodes.forEach((node) => {
           if (!scrollTargets.includes(node)) {
@@ -807,8 +1160,77 @@ const openCapabilityDrawer = async () => {
   await loadCapabilityCatalog();
 };
 
+const openPersonaDialog = () => {
+  personaDialogOpen.value = true;
+};
+
 const handleDraftChange = (value: string) => {
   draft.value = value;
+};
+
+const openAttachmentPicker = () => {
+  if (sending.value || attachmentUploading.value) {
+    return;
+  }
+  attachmentInputRef.value?.click();
+};
+
+const removePendingAttachment = (index: number) => {
+  pendingAttachments.value.splice(index, 1);
+};
+
+const uploadAttachmentFile = async (file: File): Promise<AiAssistantAttachment> => {
+  const normalizedType = String(file.type || "").toLowerCase();
+  const isImage = normalizedType.startsWith("image/");
+  const uploadTargetPayload = await AiAssistantApi.createAttachmentUploadTarget(
+    file.name || "file",
+  );
+  const uploadTarget = (uploadTargetPayload as any)?.data || uploadTargetPayload;
+  const uploaded = await uploadToCOS({
+    file,
+    key: uploadTarget.key,
+  });
+
+  return {
+    kind: isImage ? "image" : "file",
+    name: file.name || "未命名附件",
+    url: uploaded.url,
+    mimeType: normalizedType || null,
+    size: Number.isFinite(file.size) ? file.size : null,
+  };
+};
+
+const handleAttachmentChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement | null;
+  const files = Array.from(input?.files || []);
+  if (!files.length) {
+    return;
+  }
+
+  attachmentUploading.value = true;
+  try {
+    const uploadedList: AiAssistantAttachment[] = [];
+    for (const file of files.slice(0, 8)) {
+      if (file.size > 20 * 1024 * 1024) {
+        ElMessage.warning(`${file.name} 超过 20MB，已跳过`);
+        continue;
+      }
+      uploadedList.push(await uploadAttachmentFile(file));
+    }
+
+    pendingAttachments.value = [...pendingAttachments.value, ...uploadedList].slice(0, 8);
+    if (uploadedList.length) {
+      ElMessage.success(`已添加 ${uploadedList.length} 个附件`);
+    }
+  } catch (error: any) {
+    console.error("上传 AI 助手附件失败:", error);
+    ElMessage.error(error?.message || "附件上传失败");
+  } finally {
+    attachmentUploading.value = false;
+    if (input) {
+      input.value = "";
+    }
+  }
 };
 
 const clearChatHistory = async () => {
@@ -832,21 +1254,70 @@ const openToolDetail = (item: AssistantBubbleItem | DisplayMessage) => {
   toolDetailOpen.value = true;
 };
 
-const handleSubmit = async () => {
-  const message = draft.value.trim();
-  if (!message) {
-    ElMessage.warning("请输入查询内容");
+const handlePersonaSelect = async (personaKey: string) => {
+  if (!personaKey || personaKey === selectedPersonaKey.value) {
     return;
   }
 
+  preferredPersonaKey.value = personaKey;
+  if (!activeConversationId.value) {
+    ElMessage.success("新会话默认角色已更新");
+    return;
+  }
+
+  try {
+    updatingPersonaKey.value = personaKey;
+    await updateConversationPersona(activeConversationId.value, personaKey);
+    personaDialogOpen.value = false;
+    ElMessage.success("当前会话角色已切换");
+  } catch (error: any) {
+    console.error("切换 AI 助手会话角色失败:", error);
+    ElMessage.error(error?.message || "切换角色失败");
+  } finally {
+    updatingPersonaKey.value = "";
+  }
+};
+
+const handleSubmit = async () => {
+  const message = draft.value.trim();
+  const attachments = [...pendingAttachments.value];
+  if (!message && !attachments.length) {
+    ElMessage.warning("请输入内容或添加附件");
+    return;
+  }
+
+  const pageContext = buildPageContext();
   draft.value = "";
-  sendMessage(message, buildPageContext());
-  await scrollToBottom("smooth");
+  pendingAttachments.value = [];
+
+  try {
+    let targetConversationId = activeConversationId.value;
+    if (!targetConversationId) {
+      const conversation = await createConversation(
+        undefined,
+        selectedPersonaKey.value || defaultPersona.value?.key,
+      );
+      targetConversationId = conversation?.id || null;
+      if (!targetConversationId) {
+        throw new Error("创建会话失败");
+      }
+      sideTab.value = "conversations";
+      closeMobileSide();
+    }
+
+    sendMessage(message, attachments, pageContext, targetConversationId);
+    await scrollToBottom("smooth");
+  } catch (error: any) {
+    draft.value = message;
+    pendingAttachments.value = attachments;
+    console.error("发送 AI 助手消息失败:", error);
+    ElMessage.error(error?.message || "发送失败");
+  }
 };
 
 const handleCreateConversation = async () => {
   try {
-    await createConversation();
+    await createConversation(undefined, selectedPersonaKey.value || defaultPersona.value?.key);
     draft.value = "";
     selectedToolMessage.value = null;
     toolDetailOpen.value = false;
@@ -870,22 +1341,6 @@ const handleDeleteConversation = async (conversationId: number) => {
     console.error("删除 AI 助手会话失败:", error);
     ElMessage.error(error?.message || "删除会话失败");
   }
-};
-
-const buildConversationMenu = (conversation: { key: string }) => {
-  return {
-    items: [
-      {
-        key: `delete:${conversation.key}`,
-        label: "删除会话",
-        icon: h(DeleteOutlined),
-        danger: true,
-        onClick: () => {
-          handleDeleteConversation(Number(conversation.key));
-        },
-      },
-    ],
-  };
 };
 
 const handleConversationChange = async (value: string) => {
@@ -992,7 +1447,7 @@ const applyExamplePrompt = (prompt: string) => {
 
 const buildToolBubbleActions = (item: unknown): ActionItem[] => {
   const bubbleItem = getBubbleItem(item);
-  return [
+  const items: ActionItem[] = [
     {
       key: `detail:${bubbleItem.key}`,
       label: "查看详情",
@@ -1002,9 +1457,31 @@ const buildToolBubbleActions = (item: unknown): ActionItem[] => {
       label: "复制摘要",
     },
   ];
+
+  if (
+    isToolPendingConfirmation(bubbleItem.toolResult) &&
+    bubbleItem.toolKey &&
+    bubbleItem.toolInput
+  ) {
+    items.unshift({
+      key: `confirm:${bubbleItem.key}`,
+      label: sending.value ? "执行中..." : "确认执行",
+    });
+  }
+
+  return items;
 };
 
 const handleToolBubbleAction = async ({ key }: { key: string }) => {
+  if (key.startsWith("confirm:")) {
+    const targetKey = key.slice("confirm:".length);
+    const target = bubbleItems.value.find((item) => item.key === targetKey);
+    if (target) {
+      await confirmToolExecution(target.rawMessage);
+    }
+    return;
+  }
+
   if (key.startsWith("detail:")) {
     const targetKey = key.slice("detail:".length);
     const target = bubbleItems.value.find((item) => item.key === targetKey);
@@ -1023,9 +1500,79 @@ const handleToolBubbleAction = async ({ key }: { key: string }) => {
   }
 };
 
+const confirmToolExecution = async (message?: DisplayMessage | null) => {
+  const current = message || selectedToolMessage.value;
+  const toolKey = String(current?.toolKey || "").trim();
+  if (sending.value) {
+    return;
+  }
+  if (
+    !current ||
+    !toolKey ||
+    !current.toolInput ||
+    !isToolPendingConfirmation(current.toolResult)
+  ) {
+    return;
+  }
+
+  const toolLabel = current.toolLabel || toolKey;
+  const runExecution = async () => {
+    const result = await executeTool(
+      toolKey,
+      current.toolInput,
+      buildPageContext(),
+      current.conversationId ?? activeConversationId.value,
+      {
+        reason: `用户确认执行 ${toolLabel}`,
+        confirmed: true,
+      },
+    );
+
+    const latestToolMessage =
+      result?.messages
+        ?.slice()
+        .reverse()
+        .find((item) => item.role === "tool") || null;
+    if (latestToolMessage) {
+      selectedToolMessage.value = latestToolMessage as DisplayMessage;
+      toolDetailOpen.value = true;
+      if (isToolExecutionError(latestToolMessage.toolResult)) {
+        ElMessage.warning("工具已执行，但返回异常结果，请查看详情");
+      } else {
+        ElMessage.success("工具已确认执行");
+      }
+    } else {
+      ElMessage.success("工具已确认执行");
+    }
+
+    await scrollToBottom("smooth");
+  };
+
+  Modal.confirm({
+    title: `确认执行${toolLabel}？`,
+    content: "该动作会直接向浏览器自动化客户端下发控制命令。",
+    okText: "确认执行",
+    cancelText: "取消",
+    async onOk() {
+      try {
+        await runExecution();
+      } catch (error: any) {
+        console.error("确认执行 AI 工具失败:", error);
+        ElMessage.error(error?.message || "执行失败");
+        throw error;
+      }
+    },
+  });
+};
+
 const handleDetailAction = async ({ key }: { key: string }) => {
   const current = selectedToolMessage.value;
   if (!current) {
+    return;
+  }
+
+  if (key === "confirm-execute") {
+    await confirmToolExecution(current);
     return;
   }
 
@@ -1064,6 +1611,7 @@ onMounted(async () => {
   resizeCleanup = () => window.removeEventListener("resize", handleResize);
 
   await loadAll();
+  preferredPersonaKey.value = selectedPersonaKey.value || defaultPersona.value?.key || "";
   await scrollToBottom();
 });
 
@@ -1084,8 +1632,33 @@ watch(
   async () => {
     selectedToolMessage.value = null;
     toolDetailOpen.value = false;
+    personaDialogOpen.value = false;
+    if (activeConversation.value?.persona?.key) {
+      preferredPersonaKey.value = activeConversation.value.persona.key;
+    }
     await nextTick();
     await scrollToBottom();
+  },
+);
+
+watch(
+  () => activeConversation.value?.persona?.key || "",
+  (personaKey) => {
+    if (personaKey) {
+      preferredPersonaKey.value = personaKey;
+    }
+  },
+);
+
+watch(
+  () => personas.value.map((item) => `${item.key}:${item.isDefault}`).join("|"),
+  () => {
+    if (!preferredPersonaKey.value) {
+      preferredPersonaKey.value = defaultPersona.value?.key || "";
+    }
+  },
+  {
+    immediate: true,
   },
 );
 
@@ -1122,6 +1695,8 @@ watch(
   },
 );
 </script>
+
+<style lang="scss" scoped src="./AiAssistantAntdxCover.scss"></style>
 
 <style lang="scss" scoped>
 .ai-assistant-panel {
@@ -1272,6 +1847,84 @@ watch(
     line-height: 1.6;
   }
 
+  &__persona-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  &__persona-option {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-height: 112px;
+    padding: 14px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 42%, transparent 58%);
+    color: var(--ai-text);
+    cursor: pointer;
+    text-align: left;
+    transition:
+      border-color 0.18s ease,
+      background-color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  &__persona-option:hover {
+    border-color: color-mix(in srgb, var(--ai-primary) 30%, var(--ai-border-color) 70%);
+    background: color-mix(in srgb, var(--ai-primary) 8%, var(--ai-panel-soft-bg) 92%);
+  }
+
+  &__persona-option.is-active {
+    border-color: color-mix(in srgb, var(--ai-primary) 42%, var(--ai-border-color) 58%);
+    background: color-mix(in srgb, var(--ai-primary) 10%, var(--ai-panel-soft-bg) 90%);
+  }
+
+  &__persona-option:disabled,
+  &__persona-option.is-loading {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  &__persona-option-main {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__persona-option-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  &__persona-option-name {
+    color: var(--ai-text);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  &__persona-option-desc {
+    color: var(--ai-text-secondary);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  &__persona-option-badge {
+    flex-shrink: 0;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ai-primary) 12%, transparent 88%);
+    color: var(--ai-primary);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
   &__main {
     display: flex;
     flex-direction: column;
@@ -1293,6 +1946,14 @@ watch(
 
   &__hero-main {
     min-width: 0;
+  }
+
+  &__hero-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex-wrap: wrap;
   }
 
   &__hero-title {
@@ -1368,10 +2029,11 @@ watch(
   }
 
   &__empty-message {
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 400;
     color: var(--ai-text-secondary);
     letter-spacing: -0.02em;
+    opacity: 0.02;
   }
 
   &__stream-anchor {
@@ -1388,7 +2050,7 @@ watch(
     font-size: 11px;
     color: var(--ai-text-tertiary);
 
-    :deep(.ant-tag) {
+    :deep(.el-tag) {
       padding-inline: 5px;
       min-height: 16px;
       font-size: 9px;
@@ -1407,8 +2069,53 @@ watch(
     word-break: break-word;
 
     :deep(.markdown-view) {
-      font-size: 13px;
-      line-height: 1.6;
+      --markdown-font-size: 12px;
+      --markdown-line-height: 1.56;
+      --markdown-letter-spacing: -0.01em;
+      --markdown-paragraph-gap: 4px;
+      --markdown-block-gap: 8px;
+      --markdown-heading-gap-top: 14px;
+      --markdown-heading-gap-bottom: 6px;
+      --markdown-list-indent: 16px;
+      --markdown-code-font-size: 11px;
+      --markdown-code-line-height: 1.56;
+      --markdown-image-max-width: min(220px, 100%);
+      font-size: var(--markdown-font-size);
+      line-height: var(--markdown-line-height);
+    }
+  }
+
+  &__message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  &__message-attachment {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: min(220px, 100%);
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 48%, transparent 52%);
+
+    img {
+      width: 100%;
+      max-width: 180px;
+      max-height: 140px;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    a {
+      color: var(--ai-text);
+      font-size: 12px;
+      line-height: 1.5;
+      text-decoration: none;
+      word-break: break-word;
     }
   }
 
@@ -1546,6 +2253,134 @@ watch(
     margin: 0 auto;
   }
 
+  &__composer-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  &__composer-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: min(240px, 100%);
+    padding: 6px 10px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 52%, transparent 48%);
+
+    img {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    span {
+      min-width: 0;
+      font-size: 12px;
+      color: var(--ai-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: var(--ai-text-tertiary);
+      cursor: pointer;
+    }
+  }
+
+  &__attachment-input {
+    display: none;
+  }
+
+  &__sender-prefix-button,
+  &__sender-submit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: transparent;
+    color: var(--ai-text-secondary);
+    cursor: pointer;
+    transition:
+      color 0.18s ease,
+      background-color 0.18s ease,
+      opacity 0.18s ease;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+  }
+
+  &__spin-icon {
+    animation: ai-assistant-panel-spin 0.9s linear infinite;
+  }
+
+  &__sender-prefix-button {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 12px;
+    font-size: 15px;
+
+    &:not(:disabled):hover {
+      color: var(--ai-primary);
+      background: color-mix(in srgb, var(--ai-primary) 8%, transparent 92%);
+    }
+  }
+
+  &__sender-submit-button {
+    min-width: 40px;
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--ai-primary) 76%, #0f172a 24%);
+    border-radius: 12px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #ffffff 10%, transparent 90%) 0%,
+        transparent 100%
+      ),
+      var(--ai-primary);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+
+    &:not(:disabled):hover {
+      background:
+        linear-gradient(
+          180deg,
+          color-mix(in srgb, #ffffff 14%, transparent 86%) 0%,
+          transparent 100%
+        ),
+        color-mix(in srgb, var(--ai-primary) 92%, #0f172a 8%);
+      color: #ffffff;
+    }
+
+    &:disabled {
+      border-color: color-mix(in srgb, var(--ai-border-color) 88%, transparent 12%);
+      background: color-mix(in srgb, var(--ai-panel-soft-bg) 78%, var(--ai-panel-bg) 22%);
+      color: var(--ai-text-tertiary);
+      opacity: 1;
+    }
+  }
+
   &__detail-head {
     display: flex;
     align-items: flex-start;
@@ -1603,32 +2438,84 @@ watch(
   &__capability-body {
     position: relative;
     min-height: 260px;
+    width: 100%;
   }
 
   &__capability-head {
-    margin-bottom: 14px;
+    width: 100%;
+    margin: 0 0 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ai-border-color) 88%, transparent 12%);
+  }
+
+  &__capability-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  &__capability-title-block {
+    flex: 1;
+    min-width: 0;
   }
 
   &__capability-title {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 600;
     color: var(--ai-text);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
 
   &__capability-summary {
-    margin-top: 6px;
-    max-width: 780px;
-    font-size: 12px;
-    line-height: 1.6;
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.75;
     color: var(--ai-text-secondary);
   }
 
   &__capability-meta {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px 14px;
+    min-width: 220px;
+    padding-top: 4px;
+  }
+
+  &__capability-meta-item {
+    display: inline-flex;
+    align-items: center;
     gap: 6px;
-    margin-top: 10px;
+    color: var(--ai-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: nowrap;
+
+    strong {
+      color: var(--ai-text);
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1;
+    }
+  }
+
+  &__capability-meta-item + .ai-assistant-panel__capability-meta-item {
+    position: relative;
+    padding-left: 14px;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--ai-border-color) 70%, var(--ai-text-tertiary) 30%);
+      transform: translateY(-50%);
+    }
   }
 
   &__capability-empty {
@@ -1642,74 +2529,118 @@ watch(
   &__capability-groups {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 24px;
+    width: 100%;
   }
 
   &__capability-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px 0;
-    border-radius: 16px;
-    border: 1px solid rgba(59, 130, 246, 0.18);
-    border-left: 4px solid #3b82f6;
-    background: rgba(59, 130, 246, 0.06);
+    gap: 18px;
+    padding: 22px 24px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 86%, transparent 14%);
+    border-radius: 24px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ai-panel-soft-bg) 58%, transparent 42%) 0%,
+        transparent 100%
+      ),
+      var(--ai-panel-bg);
+  }
+
+  &__capability-group + .ai-assistant-panel__capability-group {
+    padding-top: 22px;
   }
 
   &__capability-group-head {
     display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  &__capability-group-main {
+    display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    min-width: 0;
   }
 
   &__capability-group-title {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
-    color: #2563eb;
+    color: var(--ai-text);
   }
 
   &__capability-group-desc {
-    font-size: 11px;
-    line-height: 1.55;
+    font-size: 12px;
+    line-height: 1.7;
     color: var(--ai-text-secondary);
   }
 
+  &__capability-group-meta {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 82%, transparent 18%);
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--ai-text-tertiary);
+    background: transparent;
+  }
+
   &__capability-list {
-    border-top: 1px solid var(--ai-border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   &__capability-item {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px 0;
-    border-bottom: 1px dashed rgba(59, 130, 246, 0.18);
+    gap: 16px;
+    padding: 20px 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--ai-border-color) 82%, transparent 18%);
+  }
+
+  &__capability-item:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  &__capability-item-head {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
   }
 
   &__capability-item-main {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+    min-width: 0;
   }
 
   &__capability-item-title {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
+    line-height: 1.45;
     color: var(--ai-text);
   }
 
   &__capability-item-key {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    font-size: 10px;
-    line-height: 1.45;
-    color: #2563eb;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--ai-text-tertiary);
     word-break: break-all;
   }
 
   &__capability-item-desc {
-    max-width: 820px;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 13px;
+    line-height: 1.7;
     color: var(--ai-text-secondary);
   }
 
@@ -1717,39 +2648,51 @@ watch(
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    max-width: none;
   }
 
   &__capability-item-section {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
+    padding-top: 14px;
+    border-top: 1px dashed color-mix(in srgb, var(--ai-border-color) 74%, transparent 26%);
   }
 
   &__capability-item-section-title {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    color: #2563eb;
+    color: var(--ai-text);
   }
 
   &__capability-param-list,
   &__capability-case-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
   }
 
   &__capability-param-item,
   &__capability-case-item {
-    padding: 10px 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(59, 130, 246, 0.16);
-    background: rgba(59, 130, 246, 0.05);
+    padding: 16px 18px;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 42%, transparent 58%);
+  }
+
+  &__capability-param-item {
+    display: grid;
+    grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+    gap: 10px 22px;
+    align-items: flex-start;
   }
 
   &__capability-param-head {
     display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    justify-content: space-between;
     gap: 10px;
   }
 
@@ -1760,17 +2703,15 @@ watch(
     gap: 8px;
     min-width: 0;
     color: var(--ai-text);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
 
     code {
-      padding: 1px 6px;
-      border-radius: 999px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 10px;
-      line-height: 1.5;
-      color: #1d4ed8;
-      background: rgba(59, 130, 246, 0.1);
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--ai-text-tertiary);
+      background: transparent;
     }
   }
 
@@ -1778,330 +2719,119 @@ watch(
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 
   &__capability-param-desc,
   &__capability-case-desc {
-    font-size: 11px;
-    line-height: 1.6;
+    font-size: 12px;
+    line-height: 1.7;
     color: var(--ai-text-secondary);
   }
 
   &__capability-param-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 8px 16px;
     font-size: 11px;
-    line-height: 1.55;
-    color: var(--ai-text-secondary);
+    line-height: 1.7;
+    color: var(--ai-text-tertiary);
   }
 
   &__capability-case-title {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: var(--ai-text);
   }
 
   &__capability-case-prompt {
-    margin-top: 4px;
-    font-size: 12px;
-    line-height: 1.6;
+    margin-top: 6px;
+    padding-left: 12px;
+    border-left: 2px solid color-mix(in srgb, var(--ai-border-color) 72%, var(--ai-primary) 28%);
+    font-size: 13px;
+    line-height: 1.7;
     color: var(--ai-text);
     white-space: pre-wrap;
     word-break: break-word;
   }
 
   &__capability-case-input {
-    margin: 8px 0 0;
-    padding: 8px 10px;
-    border-radius: 12px;
-    background: rgba(59, 130, 246, 0.08);
-    font-size: 10px;
-    line-height: 1.6;
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ai-panel-bg) 86%, var(--ai-panel-soft-bg) 14%);
+    font-size: 11px;
+    line-height: 1.7;
     color: var(--ai-text-secondary);
     white-space: pre-wrap;
     word-break: break-word;
   }
-}
 
-:deep(.ant-drawer-content),
-:deep(.ant-drawer-header) {
-  background: var(--ai-panel-bg);
-}
+  &__persona-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: calc(100vh - 140px);
+  }
 
-:deep(.ai-assistant-panel__detail-drawer .ant-drawer-content-wrapper) {
-  width: 100% !important;
-  max-width: 100% !important;
-}
+  &__persona-modal-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+    gap: 16px;
+    align-items: stretch;
+  }
 
-:deep(.ai-assistant-panel__capability-drawer .ant-drawer-content-wrapper) {
-  width: 100% !important;
-  max-width: 100% !important;
-}
+  &__persona-modal-summary {
+    color: var(--ai-text-secondary);
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 18px 20px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    border-radius: 18px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ai-panel-soft-bg) 52%, transparent 48%) 0%,
+        transparent 100%
+      ),
+      var(--ai-panel-bg);
+  }
 
-:deep(.ant-drawer-body) {
-  padding: 16px;
-  color: var(--ai-text);
-  background: var(--ai-panel-bg);
-}
+  &__persona-modal-current {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px;
+    border: 1px solid color-mix(in srgb, var(--ai-primary) 22%, var(--ai-border-color) 78%);
+    border-radius: 18px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ai-primary) 8%, transparent 92%) 0%,
+        transparent 100%
+      ),
+      var(--ai-panel-bg);
+  }
 
-:deep(.ant-drawer-header) {
-  padding: 14px 16px;
-  border-bottom-color: var(--ai-border-color);
-}
+  &__persona-modal-current-label {
+    color: var(--ai-text-tertiary);
+    font-size: 11px;
+    line-height: 1.4;
+  }
 
-:deep(.ant-drawer-title),
-:deep(.ant-drawer-close) {
-  color: var(--ai-text);
-}
+  &__persona-modal-current-name {
+    color: var(--ai-text);
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
 
-:deep(.ai-assistant-panel__capability-drawer .ant-tag) {
-  margin-inline-end: 0;
-  padding-inline: 8px;
-  min-height: 22px;
-  border-radius: 999px;
-  font-size: 11px;
-  line-height: 20px;
-  border-color: rgba(59, 130, 246, 0.18);
-  background: rgba(59, 130, 246, 0.08);
-  color: #1d4ed8;
-}
-
-:deep(.ai-assistant-panel__welcome .ant-welcome-title) {
-  font-size: 26px;
-  line-height: 1.2;
-  color: var(--ai-text);
-}
-
-:deep(.ant-btn-default) {
-  border-color: var(--ai-border-strong-color);
-}
-
-:deep(.ant-btn) {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: var(--ai-radius-sm);
-  font-size: 12px;
-  box-shadow: none;
-}
-
-:deep(.ant-tabs) {
-  min-height: 0;
-}
-
-:deep(.ant-tabs-content-holder),
-:deep(.ant-tabs-content),
-:deep(.ant-tabs-tabpane) {
-  height: 100%;
-  min-height: 0;
-}
-
-:deep(.ant-tabs-nav) {
-  margin-bottom: 8px;
-}
-
-:deep(.ant-tabs-tab) {
-  padding-top: 0;
-  padding-bottom: 6px;
-  font-size: 12px;
-}
-
-:deep(.ai-assistant-panel__conversation-list.ant-conversations) {
-  min-height: 0;
-  height: 100%;
-  padding: 0;
-}
-
-:deep(.ai-assistant-panel__conversation-list .ant-conversations-list) {
-  padding-inline: 2px;
-}
-
-:deep(.ai-assistant-panel__conversation-list .ant-conversations-item) {
-  min-height: 36px;
-  padding-inline: 10px;
-  border-radius: 10px;
-}
-
-:deep(.ai-assistant-panel__conversation-list .ant-conversations-label) {
-  color: var(--ai-text);
-  font-size: 12px;
-}
-
-:deep(.ant-float-btn-body) {
-  box-shadow: none;
-}
-
-:deep(.ant-bubble) {
-  max-width: 100%;
-}
-
-:deep(.ant-bubble-content) {
-  border-radius: 16px;
-  padding: 12px 14px;
-}
-
-:deep(.ant-bubble-end .ant-bubble-content) {
-  background: var(--ai-user-bubble-bg);
-  border: 1px solid color-mix(in srgb, var(--ai-primary) 16%, var(--ai-border-color) 84%);
-}
-
-:deep(.ant-bubble:not(.ant-bubble-end) .ant-bubble-content) {
-  background: var(--ai-assistant-bubble-bg);
-}
-
-:deep(.ant-bubble .ant-bubble-content) {
-  border: 0;
-  box-shadow: none;
-  color: var(--ai-text);
-}
-
-:deep(.ant-bubble .ant-bubble-content-wrapper) {
-  max-width: 100%;
-}
-
-:deep(.ant-bubble .ant-bubble-content-wrapper),
-:deep(.ant-bubble .ant-bubble-content-wrapper *) {
-  color: inherit;
-}
-
-:deep(.ant-bubble .ant-bubble-content) {
-  max-width: 520px;
-}
-
-:deep(.ant-bubble .markdown-view img),
-:deep(.ant-bubble .markdown-view__image) {
-  max-width: 240px !important;
-  max-height: 200px !important;
-  width: auto !important;
-  height: auto !important;
-}
-
-:deep(.ant-bubble .ant-avatar) {
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: none;
-}
-
-:deep(.ant-bubble .ant-bubble-avatar) {
-  display: inline-flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 2px;
-}
-
-:deep(.ant-bubble-list) {
-  padding-right: 2px;
-  min-height: 100%;
-}
-
-:deep(.ant-sender) {
-  width: 100%;
-  flex-shrink: 0;
-  border: 1px solid var(--ai-border-color);
-  border-radius: 20px;
-  background: var(--ai-composer-bg);
-  box-shadow: none;
-}
-
-:deep(.ant-sender-content) {
-  padding: 12px 14px;
-  gap: 10px;
-  align-items: flex-end;
-}
-
-:deep(.ant-sender-input) {
-  display: flex;
-  align-items: flex-start;
-  min-height: 44px;
-}
-
-:deep(.ant-sender-input textarea) {
-  min-height: 44px;
-  max-height: 132px;
-  padding: 10px 0 !important;
-  overflow-y: auto !important;
-  box-sizing: border-box;
-  color: var(--ai-text) !important;
-  font-size: 13px;
-  line-height: 24px;
-}
-
-:deep(.ant-sender-input textarea::placeholder) {
-  color: var(--ai-text-tertiary) !important;
-}
-
-:deep(.ant-sender-actions-list) {
-  align-items: center;
-}
-
-:deep(.ant-sender-actions) {
-  align-self: flex-end;
-  padding-bottom: 4px;
-}
-
-:deep(.ant-sender-actions .ant-btn) {
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  padding: 0;
-}
-
-:deep(.ant-sender-actions .ant-btn-primary) {
-  background: var(--ai-primary);
-}
-
-:deep(.ant-tag) {
-  margin-inline-end: 0;
-  border-radius: 999px;
-  font-size: 12px;
-  line-height: 20px;
-  color: var(--ai-text);
-  background: color-mix(in srgb, var(--ai-primary) 8%, var(--ai-panel-bg) 92%);
-  border-color: color-mix(in srgb, var(--ai-primary) 16%, var(--ai-border-color) 84%);
-}
-
-:deep(.ant-actions) {
-  color: var(--ai-text-secondary);
-}
-
-:deep(.ant-actions-item) {
-  color: inherit;
-}
-
-:deep(.ant-actions-item:hover) {
-  color: var(--ai-text);
-}
-
-:deep(.ant-thought-chain-item-header),
-:deep(.ant-thought-chain-item-content-box),
-:deep(.ant-thought-chain-item-footer) {
-  border-color: var(--ai-border-color);
-  background: var(--ai-panel-soft-bg);
-  box-shadow: none;
-}
-
-:deep(.ant-thought-chain-item-header),
-:deep(.ant-thought-chain-item-content-box) {
-  border-radius: var(--ai-radius-md);
-}
-
-:deep(.ant-thought-chain-item-title),
-:deep(.ant-thought-chain-item-desc),
-:deep(.ant-thought-chain-item-content),
-:deep(.ant-thought-chain-item-extra) {
-  color: var(--ai-text);
-}
-
-:deep(.ant-thought-chain-item-desc) {
-  color: var(--ai-text-secondary);
+  &__persona-modal-current-desc {
+    color: var(--ai-text-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+  }
 }
 
 @media (max-width: 960px) {
@@ -2195,31 +2925,80 @@ watch(
       padding-top: 12px;
     }
 
+    &__capability-head {
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+    }
+
+    &__capability-title-row,
+    &__capability-group-head,
+    &__capability-item-head,
     &__capability-param-head {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    &__capability-meta {
+      justify-content: flex-start;
+      min-width: 0;
+      padding-top: 0;
+    }
+
+    &__capability-meta-item + .ai-assistant-panel__capability-meta-item {
+      padding-left: 0;
+
+      &::before {
+        display: none;
+      }
     }
 
     &__capability-param-tags {
       justify-content: flex-start;
     }
 
-    &__capability-item {
-      padding: 14px 0;
+    &__capability-item-tags {
+      justify-content: flex-start;
+      max-width: none;
     }
-  }
 
-  :deep(.ant-drawer-body) {
-    padding: 12px;
-  }
+    &__capability-group {
+      padding: 18px 16px;
+      border-radius: 18px;
+    }
 
-  :deep(.ai-assistant-panel__conversation-list) {
-    max-height: none;
+    &__persona-list {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__persona-modal-hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__capability-item {
+      padding: 16px 0;
+    }
+
+    &__capability-param-item {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
   }
 
   .ai-assistant-panel__empty {
     min-height: 200px;
     font-size: 22px;
+  }
+}
+</style>
+
+<style lang="scss" scoped>
+@keyframes ai-assistant-panel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

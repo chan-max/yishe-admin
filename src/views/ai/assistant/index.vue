@@ -19,8 +19,10 @@ defineOptions({
 <style scoped>
 .ai-assistant-page {
   --ai-assistant-page-height: calc(
-    100vh - var(--top-tool-height) - var(--tags-view-height) - var(--app-content-padding) - var(--app-content-padding)
+    100vh - var(--top-tool-height) - var(--tags-view-height) - var(--app-content-padding) -
+      var(--app-content-padding)
   );
+  width: 100%;
   height: var(--ai-assistant-page-height);
   min-height: 0;
   display: flex;

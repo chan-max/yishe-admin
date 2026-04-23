@@ -4,8 +4,10 @@ import {
   type AiAssistantCapabilityCatalog,
   type AiAssistantChatResult,
   type AiAssistantConversation,
+  type AiAssistantAttachment,
   type AiAssistantMessage,
   type AiAssistantPageContext,
+  type AiAssistantPersona,
   type AiAssistantToolDefinition,
 } from "@/api/aiAssistant";
 
@@ -51,6 +53,11 @@ const normalizeMessages = (payload: any): AiAssistantMessage[] => {
   return Array.isArray(data) ? (data as AiAssistantMessage[]) : [];
 };
 
+const normalizePersonas = (payload: any): AiAssistantPersona[] => {
+  const data = unwrapPayload<any>(payload);
+  return Array.isArray(data) ? (data as AiAssistantPersona[]) : [];
+};
+
 const normalizeTools = (payload: any): AiAssistantToolDefinition[] => {
   const data = unwrapPayload<any>(payload);
   return Array.isArray(data?.tools) ? data.tools : [];
@@ -75,16 +82,19 @@ const normalizeChatResult = (payload: any): AiAssistantChatResult | null => {
 export const useAiAssistantStore = defineStore("aiAssistant", {
   state: () => ({
     conversations: [] as AiAssistantConversation[],
+    personas: [] as AiAssistantPersona[],
     activeConversationId: null as number | null,
     messages: [] as AiAssistantMessage[],
     tools: [] as AiAssistantToolDefinition[],
     capabilityCatalog: null as AiAssistantCapabilityCatalog | null,
     conversationsLoading: false,
+    personasLoading: false,
     loadingHistory: false,
     toolsLoading: false,
     capabilityCatalogLoading: false,
     sending: false,
     loadedConversations: false,
+    loadedPersonas: false,
     loadedHistoryConversationId: null as number | null,
     loadedTools: false,
     loadedCapabilityCatalog: false,
@@ -149,6 +159,24 @@ export const useAiAssistantStore = defineStore("aiAssistant", {
       }
     },
 
+    async loadPersonas(force = false) {
+      if (this.personasLoading) {
+        return;
+      }
+      if (this.loadedPersonas && !force) {
+        return;
+      }
+
+      this.personasLoading = true;
+      try {
+        const payload = await AiAssistantApi.getPersonas();
+        this.personas = normalizePersonas(payload);
+        this.loadedPersonas = true;
+      } finally {
+        this.personasLoading = false;
+      }
+    },
+
     async loadMessages(conversationId?: number | null, force = false) {
       const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
       if (!targetConversationId) {
@@ -181,8 +209,8 @@ export const useAiAssistantStore = defineStore("aiAssistant", {
       await this.loadMessages(targetConversationId, force);
     },
 
-    async createConversation(title?: string) {
-      const payload = await AiAssistantApi.createConversation(title);
+    async createConversation(title?: string, personaKey?: string) {
+      const payload = await AiAssistantApi.createConversation(title, personaKey);
       const conversation = normalizeConversation(payload);
       if (!conversation) {
         return null;
@@ -192,6 +220,28 @@ export const useAiAssistantStore = defineStore("aiAssistant", {
       this.activeConversationId = conversation.id;
       this.messages = [];
       this.loadedHistoryConversationId = conversation.id;
+      return conversation;
+    },
+
+    async updateConversationPersona(conversationId: number, personaKey: string) {
+      const targetConversationId = toConversationId(conversationId);
+      if (!targetConversationId) {
+        return null;
+      }
+
+      const payload = await AiAssistantApi.updateConversationPersona(
+        targetConversationId,
+        personaKey,
+      );
+      const conversation = normalizeConversation(payload);
+      if (!conversation) {
+        return null;
+      }
+
+      this.upsertConversation(conversation);
+      if (this.activeConversationId === conversation.id) {
+        this.activeConversationId = conversation.id;
+      }
       return conversation;
     },
 
@@ -288,13 +338,71 @@ export const useAiAssistantStore = defineStore("aiAssistant", {
 
     async sendMessage(
       message: string,
+      attachments?: AiAssistantAttachment[],
       pageContext?: AiAssistantPageContext,
       conversationId?: number | null,
     ) {
       this.sending = true;
       try {
         const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
-        const payload = await AiAssistantApi.chat(message, pageContext, targetConversationId);
+        const payload = await AiAssistantApi.chat(
+          message,
+          attachments || [],
+          pageContext,
+          targetConversationId,
+        );
+        const result = normalizeChatResult(payload);
+
+        if (result?.conversation) {
+          this.upsertConversation(result.conversation);
+          this.activeConversationId = result.conversation.id;
+        }
+
+        if (result?.messages?.length) {
+          const resultConversationId = toConversationId(
+            result.conversation?.id ?? targetConversationId ?? this.activeConversationId,
+          );
+
+          if (
+            resultConversationId &&
+            this.activeConversationId === resultConversationId &&
+            this.loadedHistoryConversationId === resultConversationId
+          ) {
+            this.mergeMessages(result.messages);
+          } else {
+            this.messages = [...result.messages].sort((left, right) => left.id - right.id);
+          }
+
+          this.loadedHistoryConversationId = resultConversationId;
+        } else {
+          await this.loadMessages(result?.conversation?.id || targetConversationId, true);
+        }
+
+        return result;
+      } finally {
+        this.sending = false;
+      }
+    },
+
+    async executeTool(
+      tool: string,
+      input?: Record<string, any> | null,
+      pageContext?: AiAssistantPageContext,
+      conversationId?: number | null,
+      reason?: string,
+      confirmed?: boolean,
+    ) {
+      this.sending = true;
+      try {
+        const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
+        const payload = await AiAssistantApi.executeTool(
+          tool,
+          input || {},
+          pageContext,
+          targetConversationId,
+          reason,
+          confirmed,
+        );
         const result = normalizeChatResult(payload);
 
         if (result?.conversation) {

@@ -1,0 +1,635 @@
+.ai-assistant-panel {
+  :deep(.el-button),
+  :deep(.ant-btn) {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    box-shadow: none;
+    transition:
+      border-color 0.18s ease,
+      background-color 0.18s ease,
+      color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  :deep(.el-button:hover),
+  :deep(.ant-btn:hover) {
+    transform: translateY(-1px);
+  }
+
+  :deep(.el-button:not(.is-text):not(.is-link):not(.el-button--primary)),
+  :deep(.ant-btn-default) {
+    border-color: var(--ai-border-strong-color);
+    background: color-mix(
+      in srgb,
+      var(--ai-panel-bg) 86%,
+      var(--ai-panel-soft-bg) 14%
+    );
+  }
+
+  :deep(.el-button:not(.is-text):not(.is-link):not(.el-button--primary):hover),
+  :deep(.ant-btn-default:hover) {
+    border-color: color-mix(
+      in srgb,
+      var(--ai-primary) 34%,
+      var(--ai-border-color) 66%
+    );
+    color: var(--ai-primary);
+    background: color-mix(
+      in srgb,
+      var(--ai-primary) 6%,
+      var(--ai-panel-soft-bg) 94%
+    );
+  }
+
+  :deep(.el-button--primary),
+  :deep(.ant-btn-primary) {
+    border-color: color-mix(in srgb, var(--ai-primary) 82%, #0f172a 18%);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #ffffff 10%, transparent 90%) 0%,
+        transparent 100%
+      ),
+      var(--ai-primary);
+    box-shadow: 0 10px 18px
+      color-mix(in srgb, var(--ai-primary) 18%, transparent 82%);
+  }
+
+  :deep(.el-button--primary:hover),
+  :deep(.ant-btn-primary:hover) {
+    border-color: var(--ai-primary);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #ffffff 14%, transparent 86%) 0%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--ai-primary) 92%, #0f172a 8%);
+  }
+
+  :deep(.el-drawer) {
+    background: var(--ai-panel-bg);
+  }
+
+  :deep(.el-drawer__header) {
+    background: var(--ai-panel-bg);
+  }
+
+  :deep(.ai-assistant-panel__detail-drawer),
+  :deep(.ai-assistant-panel__capability-drawer) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  :deep(.el-drawer__header) {
+    padding: 14px 16px;
+    margin-bottom: 0;
+    border-bottom-color: var(--ai-border-color);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ai-primary) 4%, transparent 96%) 0%,
+        transparent 100%
+      ),
+      var(--ai-panel-bg);
+  }
+
+  :deep(.ai-assistant-panel__capability-drawer .el-drawer__header) {
+    padding: 18px 24px;
+  }
+
+  :deep(.el-drawer__body) {
+    padding: 16px;
+    color: var(--ai-text);
+    background: var(--ai-panel-bg);
+  }
+
+  :deep(.ai-assistant-panel__capability-drawer .el-drawer__body) {
+    padding: 24px 28px 36px;
+  }
+
+  :deep(.el-drawer__title),
+  :deep(.el-drawer__close-btn) {
+    color: var(--ai-text);
+  }
+
+  :deep(.el-drawer__close-btn:hover) {
+    color: var(--ai-primary);
+    background: color-mix(in srgb, var(--ai-primary) 8%, transparent 92%);
+  }
+
+  :deep(.ai-assistant-panel__persona-modal .el-dialog) {
+    min-height: calc(100vh - 24px);
+    overflow: hidden;
+    border-radius: 22px;
+    border: 1px solid
+      color-mix(in srgb, var(--ai-border-color) 82%, transparent 18%);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ai-panel-soft-bg) 42%, transparent 58%) 0%,
+        transparent 100%
+      ),
+      var(--ai-panel-bg);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12);
+  }
+
+  :deep(.ai-assistant-panel__persona-modal) {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto;
+  }
+
+  :deep(.ai-assistant-panel__persona-modal .el-dialog__header) {
+    padding: 20px 24px 0;
+    margin-right: 0;
+    background: transparent;
+  }
+
+  :deep(.ai-assistant-panel__persona-modal .el-dialog__title) {
+    color: var(--ai-text);
+  }
+
+  :deep(.ai-assistant-panel__persona-modal .el-dialog__body) {
+    padding: 18px 24px 24px;
+  }
+
+  :deep(.ai-assistant-panel__persona-modal .el-dialog__headerbtn) {
+    right: 18px;
+    top: 16px;
+  }
+
+  :deep(
+    .ai-assistant-panel__persona-modal
+      .el-dialog__headerbtn:hover
+      .el-dialog__close
+  ) {
+    color: var(--ai-primary);
+    background: color-mix(in srgb, var(--ai-primary) 8%, transparent 92%);
+  }
+
+  :deep(.el-tabs) {
+    min-height: 0;
+  }
+
+  :deep(.el-tabs__content),
+  :deep(.el-tab-pane) {
+    height: 100%;
+    min-height: 0;
+  }
+
+  :deep(.el-tabs__header) {
+    margin-bottom: 8px;
+  }
+
+  :deep(.el-tabs__nav-wrap::after) {
+    height: 1px;
+    background-color: color-mix(
+      in srgb,
+      var(--ai-border-color) 88%,
+      transparent 12%
+    );
+  }
+
+  :deep(.el-tabs__item) {
+    height: 34px;
+    font-size: 12px;
+    color: var(--ai-text-secondary);
+  }
+
+  :deep(.el-tabs__item.is-active) {
+    color: var(--ai-text);
+  }
+
+  :deep(.el-tabs__active-bar) {
+    background-color: color-mix(
+      in srgb,
+      var(--ai-primary) 84%,
+      var(--ai-text) 16%
+    );
+  }
+
+  :deep(.ai-assistant-panel__conversation-list.ant-conversations) {
+    min-height: 0;
+    height: 100%;
+    padding: 0;
+  }
+
+  :deep(.ai-assistant-panel__conversation-list .ant-conversations-list) {
+    padding-inline: 2px;
+  }
+
+  :deep(.ai-assistant-panel__conversation-list .ant-conversations-item) {
+    min-height: 42px;
+    margin-bottom: 6px;
+    padding-inline: 12px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  :deep(.ai-assistant-panel__conversation-list .ant-conversations-item:hover) {
+    border-color: color-mix(
+      in srgb,
+      var(--ai-border-color) 78%,
+      var(--ai-primary) 22%
+    );
+    background: color-mix(
+      in srgb,
+      var(--ai-panel-soft-bg) 74%,
+      transparent 26%
+    );
+  }
+
+  :deep(.ai-assistant-panel__conversation-list .ant-conversations-item-active) {
+    border-color: color-mix(
+      in srgb,
+      var(--ai-primary) 32%,
+      var(--ai-border-color) 68%
+    );
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--ai-primary) 12%, transparent 88%) 0%,
+        transparent 100%
+      ),
+      color-mix(in srgb, var(--ai-panel-soft-bg) 82%, transparent 18%);
+  }
+
+  :deep(.ai-assistant-panel__conversation-list .ant-conversations-label) {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    color: var(--ai-text);
+    font-size: 12px;
+  }
+
+  :deep(.ai-assistant-panel__conversation-label-row) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  :deep(.ai-assistant-panel__conversation-label-text) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  :deep(.ai-assistant-panel__conversation-delete-button) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ai-text-tertiary);
+    cursor: pointer;
+    opacity: 0.56;
+    transition:
+      color 0.18s ease,
+      background-color 0.18s ease,
+      opacity 0.18s ease;
+  }
+
+  :deep(.ai-assistant-panel__conversation-delete-button:hover) {
+    color: color-mix(in srgb, var(--el-color-danger) 72%, var(--ai-text) 28%);
+    background: color-mix(in srgb, var(--el-color-danger) 8%, transparent 92%);
+    opacity: 1;
+  }
+
+  :deep(.ai-assistant-panel__conversation-delete-button .anticon) {
+    font-size: 11px;
+  }
+
+  :deep(
+    .ai-assistant-panel__conversation-list
+      .ant-conversations-item:hover
+      .ai-assistant-panel__conversation-delete-button
+  ),
+  :deep(
+    .ai-assistant-panel__conversation-list
+      .ant-conversations-item-active
+      .ai-assistant-panel__conversation-delete-button
+  ) {
+    opacity: 0.92;
+  }
+
+  :deep(.ant-bubble) {
+    max-width: 100%;
+  }
+
+  :deep(.ant-bubble-content) {
+    padding: 13px 15px;
+    border-radius: 20px;
+  }
+
+  :deep(.ant-bubble-end .ant-bubble-content) {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #ffffff 10%, transparent 90%) 0%,
+        transparent 100%
+      ),
+      var(--ai-user-bubble-bg);
+    border: 1px solid
+      color-mix(in srgb, var(--ai-primary) 16%, var(--ai-border-color) 84%);
+    box-shadow: 0 10px 20px
+      color-mix(in srgb, var(--ai-primary) 10%, transparent 90%);
+  }
+
+  :deep(.ant-bubble:not(.ant-bubble-end) .ant-bubble-content) {
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ai-panel-soft-bg) 70%, transparent 30%) 0%,
+        transparent 100%
+      ),
+      var(--ai-assistant-bubble-bg);
+    border: 1px solid
+      color-mix(in srgb, var(--ai-border-color) 88%, transparent 12%);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  }
+
+  :deep(.ant-bubble .ant-bubble-content) {
+    max-width: 580px;
+    color: var(--ai-text);
+    box-shadow: none;
+  }
+
+  :deep(.ant-bubble .ant-bubble-content-wrapper) {
+    max-width: 100%;
+  }
+
+  :deep(.ant-bubble .ant-bubble-content-wrapper),
+  :deep(.ant-bubble .ant-bubble-content-wrapper *) {
+    color: inherit;
+  }
+
+  :deep(.ant-bubble .markdown-view img),
+  :deep(.ant-bubble .markdown-view__image) {
+    max-width: 240px !important;
+    max-height: 200px !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  :deep(.ant-bubble .ant-avatar) {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+  }
+
+  :deep(.ant-bubble .ant-bubble-avatar) {
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 2px;
+  }
+
+  :deep(.ant-bubble-list) {
+    min-height: 100%;
+    padding-right: 2px;
+  }
+
+  :deep(.ant-sender) {
+    width: 100%;
+    flex-shrink: 0;
+    border: 1px solid var(--ai-border-color);
+    border-radius: 24px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, #ffffff 6%, transparent 94%) 0%,
+        transparent 100%
+      ),
+      var(--ai-composer-bg);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  :deep(.ant-sender:focus-within) {
+    border-color: color-mix(
+      in srgb,
+      var(--ai-primary) 34%,
+      var(--ai-border-color) 66%
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.24),
+      0 0 0 3px color-mix(in srgb, var(--ai-primary) 9%, transparent 91%);
+  }
+
+  :deep(.ant-sender-content) {
+    padding: 12px 14px;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  :deep(.ant-sender-input) {
+    display: flex;
+    align-items: flex-start;
+    min-height: 44px;
+  }
+
+  :deep(.ant-sender-input textarea) {
+    min-height: 44px;
+    max-height: 132px;
+    padding: 10px 0 !important;
+    overflow-y: auto !important;
+    box-sizing: border-box;
+    color: var(--ai-text) !important;
+    font-size: 13px;
+    line-height: 23px;
+  }
+
+  :deep(.ant-sender-input textarea::placeholder) {
+    color: var(--ai-text-tertiary) !important;
+  }
+
+  :deep(.ant-sender-actions-list) {
+    align-items: center;
+  }
+
+  :deep(.ant-sender-actions) {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    padding-top: 6px;
+    padding-bottom: 0;
+  }
+
+  :deep(.ant-sender-actions .ant-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 14px;
+    line-height: 1;
+    box-shadow: none;
+    transform: none;
+  }
+
+  :deep(.ant-sender-actions .ant-btn:hover) {
+    transform: none;
+  }
+
+  :deep(.ant-sender-actions .ant-btn .anticon),
+  :deep(.ant-sender-actions .ant-btn .anticon svg) {
+    display: block;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+  }
+
+  :deep(.ant-sender-prefix) {
+    display: flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 0 4px 0 0;
+    border-radius: 14px;
+    background: color-mix(
+      in srgb,
+      var(--ai-panel-soft-bg) 62%,
+      transparent 38%
+    );
+  }
+
+  :deep(.ant-sender-actions-list) {
+    gap: 4px;
+  }
+
+  :deep(.el-tag) {
+    margin-inline-end: 0;
+    padding-inline: 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    line-height: 22px;
+    color: var(--ai-text);
+    background: color-mix(
+      in srgb,
+      var(--ai-primary) 8%,
+      var(--ai-panel-bg) 92%
+    );
+    border-color: color-mix(
+      in srgb,
+      var(--ai-primary) 16%,
+      var(--ai-border-color) 84%
+    );
+  }
+
+  :deep(.ant-actions) {
+    color: var(--ai-text-secondary);
+  }
+
+  :deep(.ant-actions-item) {
+    min-height: 28px;
+    padding: 0 8px;
+    border-radius: 10px;
+    color: inherit;
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease;
+  }
+
+  :deep(.ant-actions-item:hover) {
+    color: var(--ai-text);
+    background: color-mix(
+      in srgb,
+      var(--ai-panel-soft-bg) 78%,
+      transparent 22%
+    );
+  }
+
+  :deep(.ant-thought-chain-item-header),
+  :deep(.ant-thought-chain-item-content-box),
+  :deep(.ant-thought-chain-item-footer) {
+    border-color: var(--ai-border-color);
+    background: var(--ai-panel-soft-bg);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
+  }
+
+  :deep(.ant-thought-chain-item-header),
+  :deep(.ant-thought-chain-item-content-box) {
+    border-radius: var(--ai-radius-md);
+  }
+
+  :deep(.ant-thought-chain-item-title),
+  :deep(.ant-thought-chain-item-desc),
+  :deep(.ant-thought-chain-item-content),
+  :deep(.ant-thought-chain-item-extra) {
+    color: var(--ai-text);
+  }
+
+  :deep(.ant-thought-chain-item-desc) {
+    color: var(--ai-text-secondary);
+  }
+}
+
+@media (max-width: 640px) {
+  .ai-assistant-panel {
+    :deep(.ai-assistant-panel__persona-modal) {
+      width: 100vw !important;
+      max-width: 100vw !important;
+      margin: 0;
+    }
+
+    :deep(.ai-assistant-panel__persona-modal .el-dialog) {
+      min-height: 100vh;
+      border-radius: 0;
+      border: 0;
+    }
+
+    :deep(.ai-assistant-panel__persona-modal .el-dialog__header) {
+      padding: 16px 16px 0;
+    }
+
+    :deep(.ai-assistant-panel__persona-modal .el-dialog__body) {
+      padding: 14px 16px 18px;
+    }
+
+    :deep(.el-drawer__body) {
+      padding: 12px;
+    }
+
+    :deep(.ai-assistant-panel__capability-drawer .el-drawer__header) {
+      padding: 16px 12px;
+    }
+
+    :deep(.ai-assistant-panel__capability-drawer .el-drawer__body) {
+      padding: 16px 12px 24px;
+    }
+
+    :deep(.ai-assistant-panel__conversation-list) {
+      max-height: none;
+    }
+
+    :deep(.ant-bubble .ant-bubble-content) {
+      max-width: 100%;
+    }
+  }
+}

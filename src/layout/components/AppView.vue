@@ -1,28 +1,28 @@
 <script lang="ts" setup>
-import { useTagsViewStore } from '@/store/modules/tagsView'
-import { useAppStore } from '@/store/modules/app'
-import { Icon } from '@/components/Icon'
-import { useFullscreen } from '@vueuse/core'
+import { useTagsViewStore } from "@/store/modules/tagsView";
+import { useAppStore } from "@/store/modules/app";
+import { Icon } from "@/components/Icon";
+import { useFullscreen } from "@vueuse/core";
 
-defineOptions({ name: 'AppView' })
+defineOptions({ name: "AppView" });
 
-const appStore = useAppStore()
-const tagsViewStore = useTagsViewStore()
+const appStore = useAppStore();
+const tagsViewStore = useTagsViewStore();
 
-const footer = computed(() => appStore.getFooter)
-const getCaches = computed((): string[] => tagsViewStore.getCachedViews)
+const footer = computed(() => appStore.getFooter);
+const getCaches = computed((): string[] => tagsViewStore.getCachedViews);
 
 // 全屏功能
-const appViewRef = ref<HTMLElement | null>(null)
-const { toggle: toggleFullscreen, isFullscreen } = useFullscreen(appViewRef)
+const appViewRef = ref<HTMLElement | null>(null);
+const { toggle: toggleFullscreen, isFullscreen } = useFullscreen(appViewRef);
 
 // 无感刷新
-const routerAlive = ref(true)
+const routerAlive = ref(true);
 const reload = () => {
-  routerAlive.value = false
-  nextTick(() => (routerAlive.value = true))
-}
-provide('reload', reload)
+  routerAlive.value = false;
+  nextTick(() => (routerAlive.value = true));
+};
+provide("reload", reload);
 </script>
 
 <template>
@@ -33,8 +33,8 @@ provide('reload', reload)
       'p-[var(--app-content-padding)] w-full bg-[var(--app-content-bg-color)] relative',
       {
         '!min-h-[calc(100vh-var(--top-tool-height)-var(--tags-view-height)-var(--app-footer-height))] pb-0':
-          footer
-      }
+          footer,
+      },
     ]"
   >
     <!-- 全屏按钮 - 角标风格 -->

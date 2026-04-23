@@ -474,6 +474,7 @@ import {
   TEMU_SESSION_TOOL_KEY,
 } from "./temu/platform";
 import {
+  extractRequestErrorMessage,
   resolveTemuValidationLabel as resolveValidationLabel,
   resolveTemuValidationTagType as resolveValidationTagType,
   resolveTemuWorkspaceAvailability,
@@ -502,6 +503,8 @@ interface ToolkitToolExecutionRecord {
   output: any;
   rawEvent: ServiceCommandResultEvent;
 }
+
+type ToolkitSessionStatusTagType = "success" | "warning" | "danger";
 
 const {
   loading,
@@ -635,14 +638,15 @@ const storedSessionRows = computed(() => {
               : sessionStatus === "incomplete"
                 ? "不完整"
               : "正常",
-        sessionStatusTagType:
+        sessionStatusTagType: (
           sessionStatus === "invalid_environment"
             ? "warning"
             : sessionStatus === "invalid"
               ? "danger"
               : sessionStatus === "incomplete"
                 ? "warning"
-              : "success",
+                : "success"
+        ) as ToolkitSessionStatusTagType,
         cookieCounts: {
           global: countObjectKeys(record?.session?.global?.cookies),
           us: countObjectKeys(record?.session?.us?.cookies),
