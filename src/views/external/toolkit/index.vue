@@ -2419,8 +2419,8 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__context-control {
-  flex: 0 1 280px;
-  max-width: 320px;
+  flex: 0 1 420px;
+  max-width: 460px;
   min-width: 0;
   display: flex;
   flex-wrap: wrap;
@@ -2428,7 +2428,7 @@ onUnmounted(() => {
 }
 
 .toolkit-hero__control-group {
-  flex: 1 1 120px;
+  flex: 1 1 180px;
   min-width: 0;
 }
 

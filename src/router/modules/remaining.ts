@@ -659,6 +659,22 @@ const remainingRouter: AppRouteRecordRaw[] = [
           toolkitPlatform: "temu",
         },
       },
+      {
+        path: "doudian",
+        component: () => import("@/views/external/toolkit/doudian/index.vue"),
+        name: "OperationToolkitDoudian",
+        meta: {
+          title: "抖店",
+        },
+      },
+      {
+        path: "kuaishou-shop",
+        component: () => import("@/views/external/toolkit/kuaishou-shop/index.vue"),
+        name: "OperationToolkitKuaishouShop",
+        meta: {
+          title: "快手小店",
+        },
+      },
     ],
   },
   {

@@ -130,6 +130,8 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   OperationToolkitRoot: "external.toolkit",
   OperationToolkit: "external.toolkit",
   OperationToolkitTemu: "external.toolkit",
+  OperationToolkitDoudian: "external.toolkit",
+  OperationToolkitKuaishouShop: "external.toolkit",
   ExternalToolkitLegacy: "external.toolkit",
   ExternalTemuLegacy: "external.toolkit",
   ExternalBrowserAutomation: "external.browser-automation",
