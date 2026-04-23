@@ -114,25 +114,17 @@
               @click="handleHeroAction"
             />
 
-            <el-popconfirm
-              title="确定清空当前聊天记录吗？"
-              confirm-button-text="清空"
-              cancel-button-text="取消"
-              @confirm="clearChatHistory"
+            <el-button
+              class="ai-assistant-panel__hero-icon-button"
+              text
+              size="small"
+              aria-label="清空记录"
+              title="清空记录"
+              :disabled="!activeConversationId || !messageCount"
+              @click="confirmClearChatHistory"
             >
-              <template #reference>
-                <el-button
-                  class="ai-assistant-panel__hero-icon-button"
-                  text
-                  size="small"
-                  aria-label="清空记录"
-                  title="清空记录"
-                  :disabled="!activeConversationId || !messageCount"
-                >
-                  <el-icon><DeleteOutlined /></el-icon>
-                </el-button>
-              </template>
-            </el-popconfirm>
+              <el-icon><DeleteOutlined /></el-icon>
+            </el-button>
           </div>
         </header>
 
@@ -655,7 +647,7 @@ import {
 import { Actions, BubbleList, Conversations, Sender, ThoughtChain } from "ant-design-x-vue";
 import type { ActionItem, ThoughtChainItem } from "ant-design-x-vue";
 import { Avatar, Modal } from "ant-design-vue";
-import { ElMessage, ElPopconfirm } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import type {
   AiAssistantAttachment,
   AiAssistantPageContext,
@@ -767,34 +759,21 @@ const buildConversationLabel = (item: { id: number; title?: string | null }) => 
       title,
     ),
     h(
-      ElPopconfirm,
+      "button",
       {
-        title: "确定删除该会话吗？",
-        confirmButtonText: "删除",
-        cancelButtonText: "取消",
-        onConfirm: async () => {
-          await handleDeleteConversation(item.id);
+        type: "button",
+        class: "ai-assistant-panel__conversation-delete-button",
+        title: "删除会话",
+        "aria-label": "删除会话",
+        onClick: async (event: MouseEvent) => {
+          event.stopPropagation();
+          await confirmDeleteConversation(item.id);
+        },
+        onMousedown: (event: MouseEvent) => {
+          event.stopPropagation();
         },
       },
-      {
-        reference: () =>
-          h(
-            "button",
-            {
-              type: "button",
-              class: "ai-assistant-panel__conversation-delete-button",
-              title: "删除会话",
-              "aria-label": "删除会话",
-              onClick: (event: MouseEvent) => {
-                event.stopPropagation();
-              },
-              onMousedown: (event: MouseEvent) => {
-                event.stopPropagation();
-              },
-            },
-            [h(DeleteOutlined)],
-          ),
-      },
+      [h(DeleteOutlined)],
     ),
   ]);
 };
@@ -852,7 +831,14 @@ const capabilitySummary = computed(() => {
   return capabilityCatalog.value?.summary || "这里展示的是当前 AI 助手已经接入并可调用的全部能力。";
 });
 
-const capabilityCount = computed(() => capabilityCatalog.value?.total || 0);
+const capabilityCount = computed(() => {
+  const explicitTotal = Number(capabilityCatalog.value?.total || 0);
+  if (explicitTotal > 0) {
+    return explicitTotal;
+  }
+
+  return capabilityGroups.value.reduce((sum, group) => sum + (group.tools?.length || 0), 0);
+});
 
 const renderAssistantAvatar = () =>
   h(
@@ -1233,6 +1219,34 @@ const handleAttachmentChange = async (event: Event) => {
   }
 };
 
+const confirmDeleteConversation = async (conversationId: number) => {
+  try {
+    await ElMessageBox.confirm("确定删除该会话吗？", "删除确认", {
+      confirmButtonText: "删除",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+  } catch {
+    return;
+  }
+
+  await handleDeleteConversation(conversationId);
+};
+
+const confirmClearChatHistory = async () => {
+  try {
+    await ElMessageBox.confirm("确定清空当前聊天记录吗？", "清空确认", {
+      confirmButtonText: "清空",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+  } catch {
+    return;
+  }
+
+  await clearChatHistory();
+};
+
 const clearChatHistory = async () => {
   if (!activeConversationId.value) {
     return;
@@ -1611,6 +1625,7 @@ onMounted(async () => {
   resizeCleanup = () => window.removeEventListener("resize", handleResize);
 
   await loadAll();
+  await loadCapabilityCatalog();
   preferredPersonaKey.value = selectedPersonaKey.value || defaultPersona.value?.key || "";
   await scrollToBottom();
 });
