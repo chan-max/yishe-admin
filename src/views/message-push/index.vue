@@ -3,8 +3,8 @@
     <ListPageLayout class="message-push-page">
       <template #filter>
         <div class="list-page-filter list-page-filter--flat">
-          <div class="list-page-filter__row">
-            <div class="list-page-search-form__actions ml-auto">
+          <div class="list-page-filter__row message-push-toolbar">
+            <div class="list-page-search-form__actions message-push-toolbar__actions">
               <el-button
                 size="small"
                 :disabled="loading || deleteLoading"
@@ -35,7 +35,7 @@
                   <div class="message-push-name-cell">
                     <span>{{ row.name }}</span>
                     <el-tag
-                      v-if="Number(row.id) === Number(messagePushSetting.defaultMessagePushId)"
+                      v-if="Number(row.id) === Number(messagePushSetting.defaultChannelId)"
                       size="small"
                       type="primary"
                       effect="light"
@@ -134,8 +134,8 @@ const dialogRef = ref();
 const defaultDialogRef = ref();
 const testDialogRef = ref();
 const messagePushSetting = ref<UserMessagePushSetting>({
-  messagePushEnabled: true,
-  defaultMessagePushId: null,
+  enabled: true,
+  defaultChannelId: null,
   defaultMessagePush: null,
 });
 
@@ -191,8 +191,8 @@ const getList = async () => {
 const loadMessagePushSetting = async () => {
   const data = await getMessagePushSetting();
   messagePushSetting.value = data || {
-    messagePushEnabled: true,
-    defaultMessagePushId: null,
+    enabled: true,
+    defaultChannelId: null,
     defaultMessagePush: null,
   };
 };
@@ -218,8 +218,8 @@ const openTestDialog = (row: MessagePushConfig) => {
 
 const handleMessagePushSettingSaved = async (payload: UserMessagePushSetting) => {
   messagePushSetting.value = payload || {
-    messagePushEnabled: true,
-    defaultMessagePushId: null,
+    enabled: true,
+    defaultChannelId: null,
     defaultMessagePush: null,
   };
   await getList();
@@ -287,12 +287,45 @@ onMounted(() => {
   min-width: 0;
 }
 
+.message-push-name-cell span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-push-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 32px;
+}
+
+.message-push-toolbar__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.message-push-toolbar__actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
 :deep(.message-push-page .list-page-filter--flat) {
-  gap: 10px;
-  padding-bottom: 10px;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+:deep(.message-push-page .list-page-filter__row) {
+  width: 100%;
+}
+
+:deep(.message-push-page .list-page-table-panel__body) {
+  padding-top: 0;
 }
 
 :deep(.message-push-page .list-page-table-panel__pagination--flat) {
-  padding-top: 10px;
+  padding-top: 12px;
 }
 </style>

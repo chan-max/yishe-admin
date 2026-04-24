@@ -59,6 +59,14 @@ export type AssistantBubbleItem = {
   status: "local" | "loading" | "success" | "error";
 };
 
+type AssistantEventTrailItem = {
+  event: string;
+  label: string;
+  time: string;
+  summary: string;
+  payload?: Record<string, any> | null;
+};
+
 type AiAssistantRequestPayload = {
   message: AssistantMessageBatch;
   plainText: string;
@@ -80,7 +88,9 @@ const toDisplayMessage = (message: AiAssistantMessage | DisplayMessage): Display
       : null,
   eventTrail: Array.isArray((message as DisplayMessage).eventTrail)
     ? (message as DisplayMessage).eventTrail
-    : [],
+    : Array.isArray((message as AiAssistantMessage).runTrace?.events)
+      ? ((message as AiAssistantMessage).runTrace?.events as DisplayMessage["eventTrail"])
+      : [],
 });
 
 const buildToolCallSummaryContent = (toolCalls: AssistantToolCall[]) => {
@@ -189,15 +199,7 @@ export const useAiAssistantRuntime = () => {
     conversationsLoading,
     sending: storeSending,
   } = storeToRefs(aiAssistantStore);
-  const liveEventTrail = ref<
-    Array<{
-      event: string;
-      label: string;
-      time: string;
-      summary: string;
-      payload?: Record<string, any> | null;
-    }>
-  >([]);
+  const liveEventTrail = ref<AssistantEventTrailItem[]>([]);
 
   let tempMessageId = -1;
   const createTempMessage = (
@@ -324,12 +326,24 @@ export const useAiAssistantRuntime = () => {
           },
         );
         let streamedMessages: DisplayMessage[] = [assistantMessage];
+        let emitFrameId = 0;
 
         const emitBatch = () => {
-          callbacks.onUpdate(streamedMessages.map((item) => toDisplayMessage(item)));
+          if (emitFrameId) {
+            return;
+          }
+
+          emitFrameId = window.requestAnimationFrame(() => {
+            emitFrameId = 0;
+            callbacks.onUpdate(streamedMessages.map((item) => toDisplayMessage(item)));
+          });
         };
 
         const appendTrail = (event: string, data: Record<string, any> = {}) => {
+          if (event === "assistant.reasoning.delta" || event === "assistant.answer.delta") {
+            return;
+          }
+
           const nextTrail = [
             ...(assistantMessage.eventTrail || []),
             {
@@ -345,6 +359,22 @@ export const useAiAssistantRuntime = () => {
             eventTrail: nextTrail,
           };
           liveEventTrail.value = [...nextTrail];
+        };
+
+        const replaceAssistantBubble = () => {
+          const assistantId = String(assistantMessage.id);
+          const targetIndex = streamedMessages.findIndex(
+            (item) => item.role === "assistant" && String(item.id) === assistantId,
+          );
+
+          if (targetIndex >= 0) {
+            streamedMessages = streamedMessages.map((item, index) =>
+              index === targetIndex ? assistantMessage : item,
+            );
+            return;
+          }
+
+          streamedMessages = [...streamedMessages, assistantMessage];
         };
 
         const applyResultToStore = (result: AiAssistantChatResult) => {
@@ -383,13 +413,6 @@ export const useAiAssistantRuntime = () => {
               const data = payload.data || {};
               appendTrail(event, data);
 
-              const syncAssistantBubble = () => {
-                streamedMessages = [
-                  ...streamedMessages.filter((item) => item.role !== "assistant"),
-                  assistantMessage,
-                ];
-              };
-
               if (event === "conversation.updated" && data.conversation) {
                 aiAssistantStore.upsertConversation(data.conversation);
                 aiAssistantStore.activeConversationId = data.conversation.id;
@@ -399,7 +422,7 @@ export const useAiAssistantRuntime = () => {
                   conversationId: currentConversationId,
                 };
                 streamedMessages = streamedMessages.map((item) =>
-                  item.role === "assistant"
+                  item.role === "assistant" && String(item.id) === String(assistantMessage.id)
                     ? {
                         ...item,
                         conversationId: currentConversationId,
@@ -418,7 +441,7 @@ export const useAiAssistantRuntime = () => {
                   streamStage: String(data.stage || ""),
                   content: assistantMessage.content || String(data.message || ""),
                 };
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
@@ -429,7 +452,7 @@ export const useAiAssistantRuntime = () => {
                   loading: true,
                   streamStage: assistantMessage.streamStage || "planning",
                 };
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
@@ -441,7 +464,7 @@ export const useAiAssistantRuntime = () => {
                   loading: true,
                   streamStage: "reasoning",
                 };
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
@@ -453,7 +476,7 @@ export const useAiAssistantRuntime = () => {
                   loading: true,
                   streamStage: "answering",
                 };
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
@@ -466,7 +489,7 @@ export const useAiAssistantRuntime = () => {
                       ? data.usage
                       : null,
                 };
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
@@ -476,14 +499,17 @@ export const useAiAssistantRuntime = () => {
                   ...assistantMessage,
                   loading: false,
                 };
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
 
               if (event === "tool.completed" && data.execution?.message) {
                 streamedMessages = [
-                  ...streamedMessages.filter((item) => item.role !== "assistant"),
+                  ...streamedMessages.filter(
+                    (item) =>
+                      !(item.role === "assistant" && String(item.id) === String(assistantMessage.id)),
+                  ),
                   toDisplayMessage(data.execution.message as AiAssistantMessage),
                   assistantMessage,
                 ];
@@ -494,12 +520,12 @@ export const useAiAssistantRuntime = () => {
               if (event === "chat.result" && data.result) {
                 finalResult = data.result as AiAssistantChatResult;
                 applyResultToStore(finalResult);
-                syncAssistantBubble();
+                replaceAssistantBubble();
                 emitBatch();
                 return;
               }
 
-              syncAssistantBubble();
+              replaceAssistantBubble();
               emitBatch();
             },
           },
@@ -535,6 +561,10 @@ export const useAiAssistantRuntime = () => {
         ElMessage.error(message);
         callbacks.onError(new Error(message));
         liveEventTrail.value = [];
+      } finally {
+        if (emitFrameId) {
+          window.cancelAnimationFrame(emitFrameId);
+        }
       }
     },
   });

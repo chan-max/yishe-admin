@@ -113,6 +113,18 @@ export interface AiAssistantMessage {
   toolLabel: string | null;
   toolInput: Record<string, any> | null;
   toolResult: Record<string, any> | null;
+  runTrace?: {
+    status?: string;
+    startedAt?: string;
+    finishedAt?: string;
+    events?: Array<{
+      event: string;
+      label: string;
+      time: string;
+      summary: string;
+      payload?: Record<string, any> | null;
+    }>;
+  } | null;
   createdAt: string;
 }
 

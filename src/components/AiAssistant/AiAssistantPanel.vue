@@ -133,42 +133,9 @@
           v-loading="loadingHistory && !bubbleItems.length"
           element-loading-text="正在加载聊天记录"
           class="ai-assistant-panel__stream"
+          @scroll.passive="handleStreamScroll"
         >
           <template v-if="!(loadingHistory && !bubbleItems.length)">
-            <div v-if="liveEventTrail.length" class="ai-assistant-panel__live-trail">
-              <div class="ai-assistant-panel__live-trail-head">
-                <div class="ai-assistant-panel__live-trail-title">实时运行轨迹</div>
-                <div class="ai-assistant-panel__live-trail-meta">
-                  {{ liveEventTrail.length }} 条事件
-                </div>
-              </div>
-
-              <div class="ai-assistant-panel__live-trail-list">
-                <div
-                  v-for="(eventItem, index) in liveEventTrail"
-                  :key="`live-event:${index}:${eventItem.time}`"
-                  class="ai-assistant-panel__live-trail-item"
-                >
-                  <div class="ai-assistant-panel__live-trail-item-head">
-                    <span class="ai-assistant-panel__live-trail-item-label">
-                      {{ eventItem.label }}
-                    </span>
-                    <span class="ai-assistant-panel__live-trail-item-time">
-                      {{ formatEventTime(eventItem.time) }}
-                    </span>
-                  </div>
-                  <div class="ai-assistant-panel__live-trail-item-summary">
-                    {{ eventItem.summary }}
-                  </div>
-                  <pre
-                    v-if="shouldShowEventPayload(eventItem.event)"
-                    class="ai-assistant-panel__live-trail-item-payload"
-                    >{{ formatJson(eventItem.payload || {}) }}</pre
-                  >
-                </div>
-              </div>
-            </div>
-
             <div v-if="!bubbleItems.length" class="ai-assistant-panel__empty">
               <div class="ai-assistant-panel__empty-message">done is better than perfect</div>
             </div>
@@ -238,30 +205,80 @@
                       </div>
                     </div>
                     <template v-if="getBubbleItem(item).role === 'assistant'">
-                      <div
-                        v-if="getBubbleReasoning(item)"
+                      <details
+                        v-if="shouldShowReasoning(item)"
                         class="ai-assistant-panel__reasoning-block"
+                        :open="isReasoningExpanded(item)"
+                        @toggle="handleReasoningToggle(item, $event)"
                       >
-                        <div class="ai-assistant-panel__reasoning-title">
-                          {{ getBubbleStageLabel(item) }}
-                        </div>
+                        <summary class="ai-assistant-panel__reasoning-summary">
+                          <span class="ai-assistant-panel__reasoning-title">
+                            {{ getBubbleStageLabel(item) }}
+                          </span>
+                          <span class="ai-assistant-panel__reasoning-meta">
+                            {{ getReasoningMetaText(item) }}
+                          </span>
+                        </summary>
                         <div class="ai-assistant-panel__reasoning-text">
                           {{ getBubbleReasoning(item) }}
                         </div>
+                      </details>
+                      <div
+                        v-if="shouldUseLightweightRender(item)"
+                        class="ai-assistant-panel__message-text-streaming"
+                      >
+                        {{ getBubbleContent(item) }}
                       </div>
-                      <MarkdownView :content="getBubbleContent(item)" />
+                      <MarkdownView v-else :content="getBubbleContent(item)" />
                       <div
                         v-if="getBubbleUsageText(item)"
                         class="ai-assistant-panel__usage-text"
                       >
                         {{ getBubbleUsageText(item) }}
                       </div>
+                      <div
+                        v-if="shouldShowLiveEventStrip(item)"
+                        class="ai-assistant-panel__event-strip"
+                      >
+                        <div class="ai-assistant-panel__event-strip-head">
+                          <span class="ai-assistant-panel__event-strip-title">
+                            {{ getLiveEventStripTitle(item) }}
+                          </span>
+                          <span class="ai-assistant-panel__event-strip-meta">
+                            {{ getBubbleEventTrail(item).length }} 条
+                          </span>
+                        </div>
+                        <div class="ai-assistant-panel__event-strip-list">
+                          <div
+                            v-for="(eventItem, index) in getVisibleLiveEvents(item)"
+                            :key="`${getBubbleItem(item).key}:live:${index}`"
+                            class="ai-assistant-panel__event-strip-item"
+                          >
+                            <span class="ai-assistant-panel__event-strip-item-label">
+                              {{ eventItem.label }}
+                            </span>
+                            <span class="ai-assistant-panel__event-strip-item-summary">
+                              {{ eventItem.summary }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                       <details
-                        v-if="getBubbleEventTrail(item).length"
+                        v-if="shouldShowCollapsedEventTrail(item)"
                         class="ai-assistant-panel__event-trail"
                       >
                         <summary class="ai-assistant-panel__event-trail-summary">
-                          运行轨迹 {{ getBubbleEventTrail(item).length }} 条
+                          <span class="ai-assistant-panel__event-trail-summary-main">
+                            <span class="ai-assistant-panel__event-trail-summary-title">
+                              运行轨迹
+                            </span>
+                            <span class="ai-assistant-panel__event-trail-summary-meta">
+                              {{ getBubbleEventTrail(item).length }} 条事件
+                            </span>
+                          </span>
+                          <span class="ai-assistant-panel__event-trail-summary-hint">
+                            展开
+                          </span>
                         </summary>
                         <div class="ai-assistant-panel__event-trail-list">
                           <div
@@ -300,6 +317,15 @@
             <div ref="chatEndRef" class="ai-assistant-panel__stream-anchor" />
           </template>
         </div>
+
+        <button
+          v-if="showScrollToBottomButton"
+          type="button"
+          class="ai-assistant-panel__scroll-to-bottom"
+          @click="handleScrollToBottomClick"
+        >
+          回到底部
+        </button>
 
         <div class="ai-assistant-panel__composer">
           <div class="ai-assistant-panel__composer-inner">
@@ -763,7 +789,6 @@ const {
   capabilityCatalogLoading,
   conversationsLoading,
   bubbleItems,
-  liveEventTrail,
   messageCount,
   sending,
   loadAll,
@@ -791,8 +816,12 @@ const capabilityDrawerOpen = ref(false);
 const toolDetailOpen = ref(false);
 const selectedToolMessage = ref<DisplayMessage | null>(null);
 const mobileSideVisible = ref(false);
+const autoScrollPinned = ref(true);
+const showScrollToBottomButton = ref(false);
+const expandedReasoningKeys = ref<string[]>([]);
 let scrollFrameId = 0;
 let resizeCleanup: (() => void) | null = null;
+const STREAM_FOLLOW_THRESHOLD = 80;
 
 const roleLabelMap: Record<"user" | "assistant" | "tool", string> = {
   user: "你",
@@ -1179,6 +1208,9 @@ const getBubbleUsageText = (item: unknown) => {
 };
 
 const getBubbleEventTrail = (item: unknown) => getBubbleItem(item).eventTrail || [];
+const getVisibleLiveEvents = (item: unknown) => getBubbleEventTrail(item).slice(-3);
+
+const getBubbleKey = (item: unknown) => getBubbleItem(item).key;
 
 const formatEventTime = (value: string) => dayjs(value).format("HH:mm:ss");
 
@@ -1207,6 +1239,49 @@ const isBubblePureLoading = (item: unknown) => {
     !(bubbleItem.eventTrail?.length || 0);
 };
 
+const shouldShowReasoning = (item: unknown) => {
+  return !!String(getBubbleItem(item).reasoning || "").trim();
+};
+
+const shouldShowLiveEventStrip = (item: unknown) => {
+  const bubbleItem = getBubbleItem(item);
+  return bubbleItem.role === "assistant" && !!bubbleItem.loading && getBubbleEventTrail(item).length > 0;
+};
+
+const shouldShowCollapsedEventTrail = (item: unknown) => {
+  const bubbleItem = getBubbleItem(item);
+  return (
+    bubbleItem.role === "assistant" &&
+    !bubbleItem.loading &&
+    getBubbleEventTrail(item).length > 0
+  );
+};
+
+const getLiveEventStripTitle = (item: unknown) => {
+  const events = getBubbleEventTrail(item);
+  const latest = events[events.length - 1];
+  return latest?.label || "处理中";
+};
+
+const isReasoningExpanded = (item: unknown) => {
+  return expandedReasoningKeys.value.includes(getBubbleKey(item));
+};
+
+const getReasoningMetaText = (item: unknown) => {
+  const reasoning = getBubbleReasoning(item).trim();
+  const stage = getBubbleStageLabel(item);
+  if (!reasoning) {
+    return stage;
+  }
+
+  return `${stage} · ${reasoning.length} 字`;
+};
+
+const shouldUseLightweightRender = (item: unknown) => {
+  const bubbleItem = getBubbleItem(item);
+  return bubbleItem.role === "assistant" && !!bubbleItem.loading;
+};
+
 const summarizeJson = (value: unknown) => {
   if (!value || typeof value !== "object") {
     return "无结构化内容";
@@ -1218,6 +1293,20 @@ const summarizeJson = (value: unknown) => {
   }
 
   return `包含 ${keys.length} 个字段：${keys.slice(0, 5).join("、")}${keys.length > 5 ? " 等" : ""}`;
+};
+
+const updateScrollFollowState = () => {
+  const target = streamRef.value;
+  if (!target) {
+    autoScrollPinned.value = true;
+    showScrollToBottomButton.value = false;
+    return;
+  }
+
+  const distanceToBottom = Math.max(0, target.scrollHeight - target.scrollTop - target.clientHeight);
+  const isNearBottom = distanceToBottom <= STREAM_FOLLOW_THRESHOLD;
+  autoScrollPinned.value = isNearBottom;
+  showScrollToBottomButton.value = !isNearBottom;
 };
 
 const scrollToBottom = async (behavior: ScrollBehavior = "auto") => {
@@ -1266,8 +1355,36 @@ const scrollToBottom = async (behavior: ScrollBehavior = "auto") => {
           behavior,
         });
       });
+      updateScrollFollowState();
     });
   });
+};
+
+const handleStreamScroll = () => {
+  updateScrollFollowState();
+};
+
+const handleScrollToBottomClick = async () => {
+  autoScrollPinned.value = true;
+  showScrollToBottomButton.value = false;
+  await scrollToBottom("smooth");
+};
+
+const handleReasoningToggle = (item: unknown, event: Event) => {
+  const target = event.target as HTMLDetailsElement | null;
+  const key = getBubbleKey(item);
+  if (!key || !target) {
+    return;
+  }
+
+  if (target.open) {
+    if (!expandedReasoningKeys.value.includes(key)) {
+      expandedReasoningKeys.value = [...expandedReasoningKeys.value, key];
+    }
+    return;
+  }
+
+  expandedReasoningKeys.value = expandedReasoningKeys.value.filter((itemKey) => itemKey !== key);
 };
 
 const refreshAll = async () => {
@@ -1770,6 +1887,7 @@ onMounted(async () => {
   await loadCapabilityCatalog();
   preferredPersonaKey.value = selectedPersonaKey.value || defaultPersona.value?.key || "";
   await scrollToBottom();
+  updateScrollFollowState();
 });
 
 onActivated(async () => {
@@ -1790,6 +1908,9 @@ watch(
     selectedToolMessage.value = null;
     toolDetailOpen.value = false;
     personaDialogOpen.value = false;
+    expandedReasoningKeys.value = [];
+    autoScrollPinned.value = true;
+    showScrollToBottomButton.value = false;
     if (activeConversation.value?.persona?.key) {
       preferredPersonaKey.value = activeConversation.value.persona.key;
     }
@@ -1825,7 +1946,13 @@ watch(
       .map((item) => `${item.key}:${item.status}:${item.loading}:${item.content.length}`)
       .join("|"),
   async () => {
-    await scrollToBottom();
+    if (autoScrollPinned.value) {
+      await scrollToBottom();
+      return;
+    }
+
+    await nextTick();
+    updateScrollFollowState();
   },
   {
     flush: "post",
@@ -1839,18 +1966,29 @@ watch(
   }),
   async (current, previous) => {
     if (!current.loading && current.count > 0) {
-      await scrollToBottom();
+      if (autoScrollPinned.value) {
+        await scrollToBottom();
+      } else {
+        await nextTick();
+        updateScrollFollowState();
+      }
       return;
     }
 
     if (previous?.loading && !current.loading) {
-      await scrollToBottom();
+      if (autoScrollPinned.value) {
+        await scrollToBottom();
+      } else {
+        await nextTick();
+        updateScrollFollowState();
+      }
     }
   },
   {
     flush: "post",
   },
 );
+
 </script>
 
 <style lang="scss" scoped src="./AiAssistantAntdxCover.scss"></style>
@@ -2219,11 +2357,13 @@ watch(
   }
 
   &__message-text {
+    min-width: 0;
     font-size: 13px;
     line-height: 1.6;
     color: var(--ai-text);
     white-space: pre-wrap;
     word-break: break-word;
+    contain: layout style;
 
     :deep(.markdown-view) {
       --markdown-font-size: 12px;
@@ -2240,6 +2380,22 @@ watch(
       font-size: var(--markdown-font-size);
       line-height: var(--markdown-line-height);
     }
+
+    :deep(pre) {
+      max-height: 320px;
+      overflow: auto;
+    }
+
+    :deep(img) {
+      max-height: 220px;
+      object-fit: cover;
+    }
+  }
+
+  &__message-text-streaming {
+    min-height: 24px;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   &__message-attachments {
@@ -2278,20 +2434,43 @@ watch(
 
   &__reasoning-block {
     margin-bottom: 12px;
-    padding: 12px 14px;
     border-radius: 14px;
     background: color-mix(in srgb, var(--ai-panel-soft-bg) 78%, transparent 22%);
     border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    overflow: hidden;
+  }
+
+  &__reasoning-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+
+  &__reasoning-summary::-webkit-details-marker {
+    display: none;
   }
 
   &__reasoning-title {
-    margin-bottom: 6px;
     font-size: 12px;
     font-weight: 600;
     color: var(--ai-text-secondary);
   }
 
+  &__reasoning-meta {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--ai-text-tertiary);
+  }
+
   &__reasoning-text {
+    max-height: 180px;
+    padding: 0 14px 12px;
+    overflow: auto;
     font-size: 12px;
     line-height: 1.6;
     color: var(--ai-text-secondary);
@@ -2306,99 +2485,83 @@ watch(
     color: var(--ai-text-tertiary);
   }
 
-  &__live-trail {
-    margin-bottom: 14px;
-    padding: 12px;
-    border-radius: 18px;
-    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
-    background: color-mix(in srgb, var(--ai-panel-soft-bg) 72%, transparent 28%);
+  &__event-strip {
+    margin-top: 10px;
+    padding: 8px 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--ai-border-color) 78%, transparent 22%);
   }
 
-  &__live-trail-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-
-  &__live-trail-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--ai-text);
-  }
-
-  &__live-trail-meta {
-    font-size: 12px;
-    color: var(--ai-text-tertiary);
-  }
-
-  &__live-trail-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 260px;
-    overflow: auto;
-  }
-
-  &__live-trail-item {
-    padding: 10px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--ai-panel-bg) 76%, transparent 24%);
-    border: 1px solid color-mix(in srgb, var(--ai-border-color) 78%, transparent 22%);
-  }
-
-  &__live-trail-item-head {
+  &__event-strip-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
   }
 
-  &__live-trail-item-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ai-text);
-  }
-
-  &__live-trail-item-time {
+  &__event-strip-title {
     font-size: 11px;
+    font-weight: 500;
+    color: var(--ai-text-secondary);
+  }
+
+  &__event-strip-meta {
+    font-size: 10px;
     color: var(--ai-text-tertiary);
   }
 
-  &__live-trail-item-summary {
-    font-size: 12px;
-    line-height: 1.55;
-    color: var(--ai-text-secondary);
-    white-space: pre-wrap;
-    word-break: break-word;
+  &__event-strip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
-  &__live-trail-item-payload {
-    margin: 8px 0 0;
-    padding: 8px 10px;
-    font-size: 11px;
-    line-height: 1.55;
-    border-radius: 10px;
-    overflow: auto;
+  &__event-strip-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  &__event-strip-item-label {
+    position: relative;
+    flex-shrink: 0;
+    padding-left: 10px;
+    color: var(--ai-text-tertiary);
+    font-weight: 500;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 6px;
+      left: 0;
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--ai-primary) 56%, var(--ai-text-tertiary) 44%);
+    }
+  }
+
+  &__event-strip-item-summary {
     color: var(--ai-text-secondary);
-    background: color-mix(in srgb, var(--ai-panel-soft-bg) 52%, transparent 48%);
+    word-break: break-word;
   }
 
   &__event-trail {
     margin-top: 12px;
-    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
-    border-radius: 14px;
-    background: color-mix(in srgb, var(--ai-panel-soft-bg) 64%, transparent 36%);
+    border-top: 1px solid color-mix(in srgb, var(--ai-border-color) 78%, transparent 22%);
+    background: transparent;
     overflow: hidden;
   }
 
   &__event-trail-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     cursor: pointer;
-    padding: 10px 12px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 8px 0 0;
     color: var(--ai-text-secondary);
     user-select: none;
     list-style: none;
@@ -2408,18 +2571,39 @@ watch(
     display: none;
   }
 
+  &__event-trail-summary-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  &__event-trail-summary-title {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ai-text-secondary);
+  }
+
+  &__event-trail-summary-meta,
+  &__event-trail-summary-hint {
+    font-size: 10px;
+    color: var(--ai-text-tertiary);
+  }
+
+  &__event-trail[open] &__event-trail-summary-hint {
+    color: var(--ai-text-secondary);
+  }
+
   &__event-trail-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 0 12px 12px;
+    gap: 6px;
+    padding: 8px 0 0;
   }
 
   &__event-trail-item {
-    padding: 10px;
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--ai-panel-bg) 72%, transparent 28%);
-    border: 1px solid color-mix(in srgb, var(--ai-border-color) 78%, transparent 22%);
+    padding-left: 10px;
+    border-left: 1px solid color-mix(in srgb, var(--ai-border-color) 72%, transparent 28%);
   }
 
   &__event-trail-item-head {
@@ -2431,19 +2615,19 @@ watch(
   }
 
   &__event-trail-item-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ai-text);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--ai-text-secondary);
   }
 
   &__event-trail-item-time {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--ai-text-tertiary);
   }
 
   &__event-trail-item-summary {
-    font-size: 12px;
-    line-height: 1.55;
+    font-size: 10px;
+    line-height: 1.5;
     color: var(--ai-text-secondary);
     white-space: pre-wrap;
     word-break: break-word;
@@ -2452,12 +2636,13 @@ watch(
   &__event-trail-item-payload {
     margin: 8px 0 0;
     padding: 8px 10px;
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.55;
-    border-radius: 10px;
-    overflow: auto;
+    border-radius: 8px;
     color: var(--ai-text-secondary);
-    background: color-mix(in srgb, var(--ai-panel-soft-bg) 52%, transparent 48%);
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 36%, transparent 64%);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   &__tool-message {
@@ -2517,6 +2702,23 @@ watch(
     min-height: 64px;
     opacity: 0;
     user-select: none;
+  }
+
+  &__scroll-to-bottom {
+    position: absolute;
+    right: 20px;
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    z-index: 12;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 70%, transparent 30%);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ai-panel-bg) 92%, transparent 8%);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+    color: var(--ai-text);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
   }
 
   &__assistant-avatar,

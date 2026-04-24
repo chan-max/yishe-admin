@@ -190,8 +190,8 @@ export interface UserMessagePushSummary {
 }
 
 export interface UserMessagePushSetting {
-  messagePushEnabled: boolean;
-  defaultMessagePushId: number | null;
+  enabled: boolean;
+  defaultChannelId: number | null;
   defaultMessagePush: UserMessagePushSummary | null;
 }
 
@@ -217,8 +217,8 @@ export function getMessagePushSetting() {
 }
 
 export function updateMessagePushSetting(data: {
-  messagePushEnabled?: boolean;
-  defaultMessagePushId?: number | null;
+  enabled?: boolean;
+  defaultChannelId?: number | null;
 }) {
   return request.post<UserMessagePushSetting>({
     url: "/user/updateMessagePushSetting",
