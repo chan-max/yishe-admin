@@ -957,7 +957,8 @@
                     {{ result.success ? "发布成功" : "发布失败" }}
                   </div>
                   <div
-                    class="text-xs text-[var(--el-text-color-secondary)] mt-1 max-w-[180px] break-words"
+                    class="text-xs mt-1 max-w-[180px] break-words"
+                    :class="getPublishMessageClass(result)"
                   >
                     {{ result.message }}
                   </div>
@@ -2957,6 +2958,20 @@ function formatPublishMessage(result: any) {
     }
   }
   return result.message || "未知错误";
+}
+
+function getPublishMessageClass(result: any) {
+  const loginStatus = result?.data?.loginStatus;
+  if (loginStatus === "not_logged_in") {
+    return "text-red-400";
+  }
+  if (loginStatus === "logged_in") {
+    return "text-green-400";
+  }
+  if (loginStatus === "error") {
+    return "text-red-400";
+  }
+  return result?.success ? "text-green-400" : "text-red-400";
 }
 
 // 关闭发布弹窗

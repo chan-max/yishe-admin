@@ -34,6 +34,7 @@ function parseSerializableObject(value: any) {
 function pickTemuConfigFields(configData: Record<string, any> = {}) {
   return {
     vendorId: configData?.vendorId,
+    supId: configData?.supId,
     productTemplate: configData?.productTemplate,
     templateImageBindings: configData?.templateImageBindings,
   };
@@ -91,6 +92,10 @@ export const temuHandler: PlatformHandler = {
       formatted.vendorId = undefined;
     }
 
+    if (formatted.supId !== undefined && formatted.supId !== null) {
+      formatted.supId = String(formatted.supId).trim() || undefined;
+    }
+
     if (normalizedProductTemplate) {
       formatted.productTemplate = normalizedProductTemplate;
     } else {
@@ -110,6 +115,9 @@ export const temuHandler: PlatformHandler = {
     const formatted = pickTemuConfigFields(configData);
     if (formatted.vendorId !== undefined && formatted.vendorId !== null && formatted.vendorId !== '') {
       formatted.vendorId = Number(formatted.vendorId);
+    }
+    if (formatted.supId !== undefined && formatted.supId !== null) {
+      formatted.supId = String(formatted.supId).trim();
     }
     formatted.productTemplate = (() => {
       const nextValue = normalizeTemuProductTemplate(formatted.productTemplate);

@@ -18,6 +18,8 @@
           :node="node"
           :editable-source-paths="props.editableSourcePaths"
           @update-node="handleNodeUpdate"
+          @add-array-item="handleArrayItemAdd"
+          @remove-array-item="handleArrayItemRemove"
         />
       </div>
     </template>
@@ -27,7 +29,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import {
+  addTemuProductTemplateArrayItem,
   analyzeTemuProductTemplate,
+  removeTemuProductTemplateArrayItem,
   updateTemuProductTemplateValue,
 } from "../../task-types/publish-product/platform-handlers/temu-template";
 import TemuTemplateTreeNode from "./TemuTemplateTreeNode.vue";
@@ -51,6 +55,24 @@ function handleNodeUpdate(payload: { sourcePath: string; value: string | number 
     props.modelValue,
     payload.sourcePath,
     payload.value,
+  );
+  if (nextText) {
+    emit("update:modelValue", nextText);
+  }
+}
+
+function handleArrayItemAdd(payload: { sourcePath: string }) {
+  const nextText = addTemuProductTemplateArrayItem(props.modelValue, payload.sourcePath);
+  if (nextText) {
+    emit("update:modelValue", nextText);
+  }
+}
+
+function handleArrayItemRemove(payload: { sourcePath: string; index: number }) {
+  const nextText = removeTemuProductTemplateArrayItem(
+    props.modelValue,
+    payload.sourcePath,
+    payload.index,
   );
   if (nextText) {
     emit("update:modelValue", nextText);

@@ -67,8 +67,12 @@
                   <el-button
                     v-for="tool in platformTools"
                     :key="tool.key"
+                    class="toolkit-placeholder-workspace__action-button"
+                    :class="{
+                      'is-running': runningFeatureKey === tool.key,
+                    }"
+                    :style="platformActionButtonStyle"
                     size="small"
-                    :type="runningFeatureKey === tool.key ? 'primary' : 'default'"
                     :loading="runningFeatureKey === tool.key"
                     @click="runFeature(tool.key)"
                   >
@@ -101,6 +105,7 @@
 <script setup lang="ts">
 import { ElMessage } from "element-plus";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import type { CSSProperties } from "vue";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import { getToolkitTools, runToolkitTool } from "@/api/external/toolkit";
 import { useBrowserAutomationExecutionContext } from "@/services/browserAutomationExecutionContext";
@@ -132,6 +137,31 @@ const pendingRunCommandId = ref("");
 const lastRunResult = ref<Record<string, any> | null>(null);
 const lastRunSuccess = ref(false);
 const lastRunSummary = ref("");
+
+const platformActionThemes: Record<
+  string,
+  {
+    color: string;
+  }
+> = {
+  doudian: {
+    color: "#fe2c55",
+  },
+  kuaishou_shop: {
+    color: "#ff6a00",
+  },
+};
+
+const platformActionButtonStyle = computed<CSSProperties>(() => {
+  const theme = platformActionThemes[props.platformKey];
+  if (!theme) {
+    return {};
+  }
+
+  return {
+    "--toolkit-action-color": theme.color,
+  } as CSSProperties;
+});
 
 const extractToolkitToolResultPayload = (value: any) => {
   if (value && typeof value === "object" && !Array.isArray(value)) {
@@ -428,6 +458,29 @@ onUnmounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.toolkit-placeholder-workspace__action-button {
+  --toolkit-action-color: var(--el-color-primary);
+
+  color: #fff;
+  border: 0;
+  background: var(--toolkit-action-color);
+}
+
+.toolkit-placeholder-workspace__action-button:hover,
+.toolkit-placeholder-workspace__action-button:focus {
+  color: #fff;
+  border: 0;
+  background: var(--toolkit-action-color);
+  filter: brightness(1.05);
+}
+
+.toolkit-placeholder-workspace__action-button:active,
+.toolkit-placeholder-workspace__action-button.is-running {
+  color: #fff;
+  background: var(--toolkit-action-color);
+  filter: brightness(0.96);
 }
 
 .toolkit-placeholder-workspace__result {

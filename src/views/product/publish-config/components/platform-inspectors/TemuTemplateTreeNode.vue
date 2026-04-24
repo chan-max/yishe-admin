@@ -24,6 +24,26 @@
             <code class="temu-tree-node__key">{{ node.displayKey }}</code>
             <span class="temu-tree-node__label">{{ node.label }}</span>
             <span class="temu-tree-node__meta">{{ node.typeLabel }}</span>
+            <el-button
+              v-if="isArrayNode"
+              size="small"
+              text
+              type="primary"
+              class="temu-tree-node__inline-action"
+              @click.stop="addArrayItem"
+            >
+              添加元素
+            </el-button>
+            <el-button
+              v-if="isArrayItemNode"
+              size="small"
+              text
+              type="danger"
+              class="temu-tree-node__inline-action"
+              @click.stop="removeArrayItem"
+            >
+              删除元素
+            </el-button>
           </div>
 
           <div class="temu-tree-node__sub-row">
@@ -89,6 +109,8 @@
         :node="child"
         :editable-source-paths="editableSourcePaths"
         @update-node="forwardUpdate"
+        @add-array-item="forwardAddArrayItem"
+        @remove-array-item="forwardRemoveArrayItem"
       />
     </div>
   </div>
@@ -102,6 +124,8 @@ defineOptions({ name: "TemuTemplateTreeNode" });
 
 const emit = defineEmits<{
   (e: "update-node", payload: { sourcePath: string; value: string | number | boolean }): void;
+  (e: "add-array-item", payload: { sourcePath: string }): void;
+  (e: "remove-array-item", payload: { sourcePath: string; index: number }): void;
 }>();
 
 const props = defineProps<{
@@ -111,9 +135,19 @@ const props = defineProps<{
 
 const draftText = ref("");
 const draftBoolean = ref(false);
-const expanded = ref(props.node.depth < 2 || props.node.children.length <= 2);
+const expanded = ref(true);
 
 const hasChildren = computed(() => props.node.children.length > 0);
+const isArrayNode = computed(() => props.node.typeLabel === "数组");
+const arrayItemInfo = computed(() => {
+  const match = String(props.node.sourcePath || "").match(/^(.*)\[(\d+)\]$/);
+  if (!match) return null;
+  return {
+    sourcePath: match[1],
+    index: Number(match[2]),
+  };
+});
+const isArrayItemNode = computed(() => !!arrayItemInfo.value);
 const editableSourcePaths = computed(() => props.editableSourcePaths || []);
 const canEdit = computed(() => {
   // 节点自身可编辑还不够，外层还可以进一步限制允许改动的 sourcePath 白名单。
@@ -212,6 +246,23 @@ function applyEdit() {
 function forwardUpdate(payload: { sourcePath: string; value: string | number | boolean }) {
   emit("update-node", payload);
 }
+
+function addArrayItem() {
+  emit("add-array-item", { sourcePath: props.node.sourcePath });
+}
+
+function removeArrayItem() {
+  if (!arrayItemInfo.value) return;
+  emit("remove-array-item", arrayItemInfo.value);
+}
+
+function forwardAddArrayItem(payload: { sourcePath: string }) {
+  emit("add-array-item", payload);
+}
+
+function forwardRemoveArrayItem(payload: { sourcePath: string; index: number }) {
+  emit("remove-array-item", payload);
+}
 </script>
 
 <style scoped lang="less">
@@ -221,15 +272,16 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 
 .temu-tree-node__main {
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
+  border-left: 3px solid var(--el-color-primary-light-7);
+  border-radius: 7px;
   background: var(--el-bg-color);
 }
 
 .temu-tree-node__row {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: 6px;
+  padding: 6px 8px;
 }
 
 .temu-tree-node__toggle,
@@ -273,7 +325,7 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .temu-tree-node__title-row {
@@ -298,6 +350,12 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
   line-height: 1.4;
   color: var(--el-text-color-primary);
   font-weight: 600;
+}
+
+.temu-tree-node__inline-action {
+  height: 20px;
+  padding: 0 4px;
+  font-size: 11px;
 }
 
 .temu-tree-node__meta {
@@ -374,12 +432,12 @@ function forwardUpdate(payload: { sourcePath: string; value: string | number | b
 }
 
 .temu-tree-node__children {
-  margin-left: 11px;
-  padding-left: 12px;
-  border-left: 1px solid var(--el-border-color);
+  margin-left: 10px;
+  padding: 4px 0 0 14px;
+  border-left: 1px dashed var(--el-border-color);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 @media (max-width: 768px) {

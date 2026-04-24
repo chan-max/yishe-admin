@@ -7,165 +7,89 @@
             <el-row :gutter="12" class="list-page-search-form__row">
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="ID">
-                  <el-input
-                    v-model="queryParams.id"
-                    size="small"
-                    placeholder="套图ID"
-                    clearable
-                    @change="handleIdChange"
-                  />
+                  <el-input v-model="queryParams.id" size="small" placeholder="套图ID" clearable
+                    @change="handleIdChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="关键词">
-                  <el-input
-                    v-model="queryParams.keyword"
-                    size="small"
-                    placeholder="名称 / 描述 / 关键词"
-                    clearable
-                    @change="handleKeywordChange"
-                  />
+                  <el-input v-model="queryParams.keyword" size="small" placeholder="名称 / 描述 / 关键词" clearable
+                    @change="handleKeywordChange" />
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="状态">
-                  <el-select
-                    v-model="queryParams.status"
-                    size="small"
-                    placeholder="全部状态"
-                    clearable
-                    @change="getList"
-                  >
-                    <el-option
-                      v-for="item in statusOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
+                  <el-select v-model="queryParams.status" size="small" placeholder="全部状态" clearable @change="getList">
+                    <el-option v-for="item in statusOptions" :key="item.value" :label="item.label"
+                      :value="item.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="排序方式">
                   <el-select v-model="queryParams.sortingFields" size="small" @change="getList">
-                    <el-option
-                      v-for="item in sortTypeOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
+                    <el-option v-for="item in sortTypeOptions" :key="item.value" :label="item.label"
+                      :value="item.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="7">
                 <el-form-item label="创建时间">
-                  <el-date-picker
-                    v-model="dateRange"
-                    size="small"
-                    type="datetimerange"
-                    range-separator="至"
-                    start-placeholder="开始时间"
-                    end-placeholder="结束时间"
-                    format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DD HH:mm:ss"
-                    :shortcuts="dateShortcuts"
-                    @change="handleDateRangeChange"
-                  />
+                  <el-date-picker v-model="dateRange" size="small" type="datetimerange" range-separator="至"
+                    start-placeholder="开始时间" end-placeholder="结束时间" format="YYYY-MM-DD HH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss" :shortcuts="dateShortcuts" @change="handleDateRangeChange" />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions psd-set-page__actions">
-              <el-button
-                size="small"
-                type="primary"
-                :icon="Search"
-                :loading="loading"
-                @click="() => getList()"
-                >搜索</el-button
-              >
+              <el-button size="small" type="primary" :icon="Search" :loading="loading"
+                @click="() => getList()">搜索</el-button>
               <el-dropdown trigger="click" :disabled="!selectedIds.length">
-                <el-button
-                  size="small"
-                  :disabled="!selectedIds.length"
-                  :loading="batchUpdatingStatus"
-                >
+                <el-button size="small" :disabled="!selectedIds.length" :loading="batchUpdatingStatus">
                   批量改状态 ({{ selectedIds.length }})
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu class="operation-menu-compact">
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')"
-                      >待制作</el-dropdown-item
-                    >
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')"
-                      >制作中</el-dropdown-item
-                    >
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')"
-                      >已完成</el-dropdown-item
-                    >
-                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')"
-                      >失败</el-dropdown-item
-                    >
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('pending')">待制作</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('processing')">制作中</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('completed')">已完成</el-dropdown-item>
+                    <el-dropdown-item @click="() => handleBatchUpdateStatus('failed')">失败</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
-              <el-button
-                size="small"
-                type="success"
-                :disabled="!selectedIds.length"
-                :loading="batchGeneratingProducts"
-                @click="handleBatchGenerateProduct"
-              >
+              <el-button size="small" type="success" :disabled="!selectedIds.length" :loading="batchGeneratingProducts"
+                @click="handleBatchGenerateProduct">
                 生成产品 ({{ selectedIds.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="primary"
-                :disabled="!selectedIds.length"
-                :loading="publishConfigSubmitting"
-                @click="handleBatchCreatePublishTask"
-              >
+              <el-button size="small" type="primary" :disabled="!selectedIds.length" :loading="publishConfigSubmitting"
+                @click="handleBatchCreatePublishTask">
                 生成发布任务 ({{ selectedIds.length }})
               </el-button>
-              <el-button
-                size="small"
-                type="danger"
-                @click="handleBatchDelete"
-                :disabled="!selectedIds.length || loading"
-              >
+              <el-button size="small" type="danger" @click="handleBatchDelete"
+                :disabled="!selectedIds.length || loading">
                 批量删除 ({{ selectedIds.length }})
               </el-button>
               <div class="psd-set-page__auto-dispatch">
                 <div class="psd-set-page__auto-dispatch-main">
                   <div class="psd-set-page__auto-dispatch-title">自动调度</div>
 
-                  <div
-                    class="psd-set-page__auto-dispatch-runtime"
-                    :class="`is-${psdSetSchedulerIndicator.tone}`"
-                  >
+                  <div class="psd-set-page__auto-dispatch-runtime" :class="`is-${psdSetSchedulerIndicator.tone}`">
                     <span class="psd-set-page__auto-dispatch-runtime-dot" />
                     <span>{{ psdSetSchedulerIndicator.text }}</span>
-                    <span
-                      v-if="psdSetSchedulerMeta"
-                      class="psd-set-page__auto-dispatch-runtime-meta"
-                    >
+                    <span v-if="psdSetSchedulerMeta" class="psd-set-page__auto-dispatch-runtime-meta">
                       {{ psdSetSchedulerMeta }}
                     </span>
                   </div>
                 </div>
                 <div class="psd-set-page__auto-dispatch-side">
-                  <span
-                    class="psd-set-page__auto-dispatch-status"
-                    :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'"
-                  >
+                  <span class="psd-set-page__auto-dispatch-status"
+                    :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
                     <span class="psd-set-page__auto-dispatch-dot" />
                     <span>{{ userAutoSchedulingEnabled ? "已开启" : "已关闭" }}</span>
                   </span>
-                  <el-button
-                    size="small"
-                    :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
+                  <el-button size="small" :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
                     :loading="userAutoSchedulingLoading"
-                    @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)"
-                  >
+                    @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
                     {{ userAutoSchedulingEnabled ? "关闭自动调度" : "开启自动调度" }}
                   </el-button>
                 </div>
@@ -177,16 +101,10 @@
 
       <template #table>
         <div
-          class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
-        >
+          class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body psd-set-page__table-body">
-            <vxe-grid
-              v-bind="gridOptions"
-              :data="dataSource"
-              :loading="loading"
-              @checkbox-change="onSelectionChange"
-              @checkbox-all="onSelectionChange"
-            >
+            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="onSelectionChange"
+              @checkbox-all="onSelectionChange">
               <template #idSlot="{ row }">
                 <div class="table-cell-copyable" @click="copyId(row.id)">
                   <span class="table-cell-id">{{ row.id }}</span>
@@ -197,15 +115,11 @@
               </template>
               <template #stickersCountSlot="{ row }">
                 <div class="flex items-center gap-2">
-                  <el-tag
-                    :type="getStickersCount(row) > 1 ? 'success' : 'info'"
-                    size="small"
-                    effect="plain"
-                    class="material-association-tag"
-                  >
+                  <el-tag :type="getStickersCount(row) > 1 ? 'success' : 'info'" size="small" effect="plain"
+                    class="material-association-tag">
                     <span class="tag-text">{{
                       getStickersCount(row) === 1 ? "单素材" : `多素材(${getStickersCount(row)})`
-                    }}</span>
+                      }}</span>
                   </el-tag>
                 </div>
               </template>
@@ -218,46 +132,27 @@
               </template>
               <template #imagesSlot="{ row }">
                 <div class="table-preview-stack">
-                  <el-carousel
-                    v-if="row.images && row.images.length > 0"
-                    :interval="3000"
-                    height="100px"
-                    indicator-position="none"
-                    :arrow="row.images.length > 1 ? 'always' : 'never'"
-                    class="custom-carousel table-preview-carousel"
-                  >
+                  <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="112px"
+                    indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
+                    class="custom-carousel table-preview-carousel">
                     <el-carousel-item v-for="(url, index) in row.images" :key="index">
-                      <el-image
-                        :src="url"
-                        :preview-src-list="row.images"
-                        :initial-index="Number(index)"
-                        :preview-teleported="true"
-                        :hide-on-click-modal="false"
-                        :lazy="true"
-                        loading="lazy"
-                        class="w-full h-full object-contain rounded cursor-pointer"
-                        fit="contain"
-                      />
+                      <el-image :src="url" :preview-src-list="row.images" :initial-index="Number(index)"
+                        :preview-teleported="true" :hide-on-click-modal="false" :lazy="true" loading="lazy"
+                        class="table-preview-image" fit="contain" @load="handlePreviewImageLoad(url, $event)" />
                       <div class="table-preview-badge">
                         {{ Number(index) + 1 }}/{{ row.images.length }}
+                      </div>
+                      <div class="table-preview-dimensions">
+                        {{ getPreviewImageDimensions(url) }}
                       </div>
                     </el-carousel-item>
                   </el-carousel>
 
                   <span v-else class="table-preview-placeholder">无</span>
 
-                  <el-tooltip
-                    v-if="row.images && row.images.length > 0"
-                    content="批量下载该套图的所有图片"
-                    placement="top"
-                  >
-                    <el-button
-                      type="primary"
-                      link
-                      size="small"
-                      class="table-preview-action"
-                      @click.stop="handleDownloadPsdSetImages(row)"
-                    >
+                  <el-tooltip v-if="row.images && row.images.length > 0" content="批量下载该套图的所有图片" placement="top">
+                    <el-button type="primary" link size="small" class="table-preview-action"
+                      @click.stop="handleDownloadPsdSetImages(row)">
                       全部下载
                     </el-button>
                   </el-tooltip>
@@ -265,14 +160,8 @@
               </template>
               <template #configSlot="{ row }">
                 <div class="flex items-center gap-2">
-                  <el-tag
-                    v-if="row.stickerPsdSetConfig"
-                    type="info"
-                    size="small"
-                    effect="plain"
-                    class="cursor-pointer"
-                    @click="() => handleViewConfig(row)"
-                  >
+                  <el-tag v-if="row.stickerPsdSetConfig" type="info" size="small" effect="plain" class="cursor-pointer"
+                    @click="() => handleViewConfig(row)">
                     已配置
                   </el-tag>
                   <span v-else class="table-cell-empty">未配置</span>
@@ -281,9 +170,7 @@
               <!-- 关联信息插槽：合并显示贴纸详情和PSD模板详情 -->
               <template #operationSlot="{ row }">
                 <el-dropdown class="operation-dropdown" placement="bottom-end">
-                  <el-button type="primary" link size="small" class="operation-trigger-button"
-                    >操作</el-button
-                  >
+                  <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
                   <template #dropdown>
                     <div class="op-menu">
                       <div class="op-menu-item" @click="() => handleViewDetail(row)">
@@ -296,18 +183,11 @@
 
                       <div class="op-divider"></div>
 
-                      <el-tooltip
-                        content="需要客户端连接"
-                        placement="right"
-                        :disabled="isClientConnected || startingProductionId === row.id"
-                      >
-                        <div
-                          class="op-menu-item"
-                          @click="() => handleStartProduction(row)"
-                          :class="{
-                            'is-disabled': !isClientConnected || startingProductionId === row.id,
-                          }"
-                        >
+                      <el-tooltip content="需要客户端连接" placement="right"
+                        :disabled="isClientConnected || startingProductionId === row.id">
+                        <div class="op-menu-item" @click="() => handleStartProduction(row)" :class="{
+                          'is-disabled': !isClientConnected || startingProductionId === row.id,
+                        }">
                           <span class="op-menu-label">开始制作</span>
                         </div>
                       </el-tooltip>
@@ -332,11 +212,8 @@
 
                       <div class="op-divider"></div>
 
-                      <div
-                        class="op-menu-item"
-                        @click="() => handleToProduct(row)"
-                        :class="{ 'is-disabled': generatingProductId === row.id }"
-                      >
+                      <div class="op-menu-item" @click="() => handleToProduct(row)"
+                        :class="{ 'is-disabled': generatingProductId === row.id }">
                         <span class="op-menu-label">生成产品</span>
                       </div>
                       <div class="op-menu-item" @click="() => handleCreatePublishTask(row)">
@@ -362,26 +239,15 @@
 
       <template #pagination>
         <div
-          class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
-        >
-          <pagination
-            :total="total"
-            v-model:page="queryParams.currentPage"
-            v-model:limit="queryParams.pageSize"
-            @pagination="getList"
-          />
+          class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
+            @pagination="getList" />
         </div>
       </template>
     </ListPageLayout>
 
-    <el-dialog
-      v-model="detailDialogVisible"
-      fullscreen
-      :show-close="true"
-      :destroy-on-close="false"
-      class="psd-set-detail-dialog"
-      @closed="handleCloseDetailDialog"
-    >
+    <el-dialog v-model="detailDialogVisible" fullscreen :show-close="true" :destroy-on-close="false"
+      class="psd-set-detail-dialog" @closed="handleCloseDetailDialog">
       <template #header>
         <div class="psd-set-detail-header">
           <div>
@@ -391,7 +257,7 @@
           <div class="psd-set-detail-header__tags" v-if="detailData">
             <el-tag :type="statusTagType(detailData.status)" effect="plain">{{
               statusLabel(detailData.status)
-            }}</el-tag>
+              }}</el-tag>
             <el-tag type="info" effect="plain">图片 {{ detailImages.length }}</el-tag>
             <el-tag type="info" effect="plain">素材 {{ detailStickers.length }}</el-tag>
             <el-tag type="warning" effect="plain">自动任务 {{ detailAutomationCount }}</el-tag>
@@ -410,7 +276,7 @@
                 <span class="info-label">套图ID</span>
                 <span class="info-value cursor-pointer" @click="copyId(detailData.id)">{{
                   detailData.id || "-"
-                }}</span>
+                  }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">状态</span>
@@ -425,13 +291,13 @@
                   detailData?.uploader?.name ||
                   detailData?.userId ||
                   "-"
-                }}</span>
+                  }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">制作耗时</span>
                 <span class="info-value">{{
                   formatProcessingTime(detailData.processingTime)
-                }}</span>
+                  }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">创建时间</span>
@@ -452,11 +318,7 @@
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">调度状态</span>
                 <span class="info-value">
-                  <el-tag
-                    :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)"
-                    size="small"
-                    effect="plain"
-                  >
+                  <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
                     {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
                   </el-tag>
                 </span>
@@ -473,13 +335,13 @@
                 <span class="info-label">执行进度</span>
                 <span class="info-value">{{
                   formatSchedulerProgress(detailData?.schedulerMeta?.progress)
-                }}</span>
+                  }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">最近心跳</span>
                 <span class="info-value">{{
                   formatTimestamp(detailData?.schedulerMeta?.lastHeartbeatAt)
-                }}</span>
+                  }}</span>
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">最后错误</span>
@@ -509,17 +371,9 @@
             </div>
             <div class="psd-set-detail-image-grid">
               <div v-for="(img, idx) in detailImages" :key="idx" class="psd-set-detail-image-card">
-                <el-image
-                  v-if="img"
-                  :src="img"
-                  :preview-src-list="detailImages"
-                  :initial-index="Number(idx)"
-                  :preview-teleported="true"
-                  :hide-on-click-modal="false"
-                  class="psd-set-detail-image"
-                  fit="contain"
-                  loading="lazy"
-                />
+                <el-image v-if="img" :src="img" :preview-src-list="detailImages" :initial-index="Number(idx)"
+                  :preview-teleported="true" :hide-on-click-modal="false" class="psd-set-detail-image" fit="contain"
+                  loading="lazy" />
               </div>
               <span v-if="!detailImages.length" class="text-gray-400 text-sm">无套图图片</span>
             </div>
@@ -532,25 +386,17 @@
             </div>
             <div v-if="detailStickers.length" class="detail-sticker-list">
               <div v-for="sticker in detailStickers" :key="sticker.id" class="detail-sticker-card">
-                <el-image
-                  v-if="sticker.url"
-                  :src="sticker.url"
+                <el-image v-if="sticker.url" :src="sticker.url"
                   :preview-src-list="detailStickers.map((s) => s.url).filter(Boolean)"
-                  :initial-index="detailStickers.findIndex((s) => s.id === sticker.id)"
-                  :preview-teleported="true"
-                  :hide-on-click-modal="false"
-                  fit="contain"
-                  class="detail-thumb-image"
-                />
+                  :initial-index="detailStickers.findIndex((s) => s.id === sticker.id)" :preview-teleported="true"
+                  :hide-on-click-modal="false" fit="contain" class="detail-thumb-image" />
                 <span v-else class="text-gray-400 text-xs">无图</span>
                 <div class="detail-sticker-meta">
-                  <div
-                    v-if="sticker.id"
-                    class="detail-sticker-id cursor-pointer"
-                    @click="copyId(sticker.id)"
-                  >
+                  <div v-if="sticker.id" class="detail-sticker-id cursor-pointer" @click="copyId(sticker.id)">
                     ID: {{ sticker.id }}
-                    <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                    <el-icon class="copy-icon">
+                      <DocumentCopy />
+                    </el-icon>
                   </div>
                   <div class="detail-sticker-name">{{ sticker.name || "未命名贴纸" }}</div>
                   <div class="detail-sticker-desc">{{ sticker.description || "-" }}</div>
@@ -568,27 +414,18 @@
               <span class="detail-label">PSD模板</span>
             </div>
             <div v-if="detailData.psdTemplate" class="psd-set-detail-side-card">
-              <el-image
-                v-if="detailData.psdTemplate.thumbnail"
-                :src="
-                  getPreviewImageUrl(detailData.psdTemplate.thumbnail, {
-                    width: 360,
-                    quality: 80,
-                    format: 'webp',
-                  })
-                "
-                :preview-src-list="[detailData.psdTemplate.thumbnail]"
-                :preview-teleported="true"
-                :hide-on-click-modal="false"
-                fit="contain"
-                class="psd-set-detail-template-image"
-              />
-              <div
-                class="detail-sticker-id cursor-pointer"
-                @click="copyId(detailData.psdTemplate.id)"
-              >
+              <el-image v-if="detailData.psdTemplate.thumbnail" :src="getPreviewImageUrl(detailData.psdTemplate.thumbnail, {
+                width: 360,
+                quality: 80,
+                format: 'webp',
+              })
+                " :preview-src-list="[detailData.psdTemplate.thumbnail]" :preview-teleported="true"
+                :hide-on-click-modal="false" fit="contain" class="psd-set-detail-template-image" />
+              <div class="detail-sticker-id cursor-pointer" @click="copyId(detailData.psdTemplate.id)">
                 ID: {{ detailData.psdTemplate.id || "-" }}
-                <el-icon class="copy-icon"><DocumentCopy /></el-icon>
+                <el-icon class="copy-icon">
+                  <DocumentCopy />
+                </el-icon>
               </div>
               <div class="detail-sticker-name">
                 {{ detailData.psdTemplate.name || "未命名模板" }}
@@ -596,18 +433,18 @@
               <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || "-" }}</div>
               <div class="psd-set-detail-meta-list">
                 <div>
-                  <span class="info-label">关键词</span
-                  ><span class="info-value">{{ detailData.psdTemplate.keywords || "-" }}</span>
+                  <span class="info-label">关键词</span><span class="info-value">{{ detailData.psdTemplate.keywords || "-"
+                    }}</span>
                 </div>
                 <div>
-                  <span class="info-label">云资源</span
-                  ><span class="info-value break-all">{{ detailData.psdTemplate.url || "-" }}</span>
+                  <span class="info-label">云资源</span><span class="info-value break-all">{{ detailData.psdTemplate.url ||
+                    "-"
+                    }}</span>
                 </div>
                 <div>
-                  <span class="info-label">本地路径</span
-                  ><span class="info-value break-all">{{
+                  <span class="info-label">本地路径</span><span class="info-value break-all">{{
                     detailData.psdTemplate.windowsLocalPath || "-"
-                  }}</span>
+                    }}</span>
                 </div>
               </div>
             </div>
@@ -631,7 +468,7 @@
                 <span class="info-label">发布任务</span>
                 <span class="info-value">{{
                   detailPublishTaskCount ? `${detailPublishTaskCount} 条` : "暂无"
-                }}</span>
+                  }}</span>
               </div>
             </div>
           </section>
@@ -639,19 +476,12 @@
           <section class="psd-set-detail-panel">
             <div class="detail-header">
               <span class="detail-label">套图配置</span>
-              <el-button
-                v-if="detailData?.stickerPsdSetConfig"
-                type="info"
-                size="small"
-                @click="configPreviewMode = !configPreviewMode"
-              >
+              <el-button v-if="detailData?.stickerPsdSetConfig" type="info" size="small"
+                @click="configPreviewMode = !configPreviewMode">
                 {{ configPreviewMode ? "收起" : "展开" }}
               </el-button>
             </div>
-            <div
-              v-if="configPreviewMode && detailData?.stickerPsdSetConfig"
-              class="config-preview-container"
-            >
+            <div v-if="configPreviewMode && detailData?.stickerPsdSetConfig" class="config-preview-container">
               <pre class="config-preview">{{ formattedConfig }}</pre>
             </div>
             <div v-else-if="detailData?.stickerPsdSetConfig" class="config-display">
@@ -684,13 +514,7 @@
     </el-dialog>
 
     <!-- 编辑配置对话框 -->
-    <el-dialog
-      v-model="configEditDialogVisible"
-      title="编辑配置信息"
-      width="60%"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="configEditDialogVisible" title="编辑配置信息" width="60%" align-center :destroy-on-close="true">
       <div v-loading="configEditDialogLoading" class="config-edit-dialog-content">
         <div v-if="configEditDialogData" class="config-edit-info">
           <div class="config-edit-info-item">
@@ -703,14 +527,9 @@
           </div>
         </div>
         <div class="config-editor-container">
-          <el-input
-            v-model="configEditDialogValue"
-            type="textarea"
-            :rows="16"
+          <el-input v-model="configEditDialogValue" type="textarea" :rows="16"
             placeholder='请输入JSON格式的配置信息，例如：&#10;{&#10;  "key1": "value1",&#10;  "key2": "value2"&#10;}'
-            class="config-textarea"
-            @input="handleConfigInputChange"
-          />
+            class="config-textarea" @input="handleConfigInputChange" />
           <div v-if="configEditDialogError" class="config-error">
             <el-icon>
               <WarningFilled />
@@ -734,13 +553,7 @@
     </el-dialog>
 
     <!-- 查看配置对话框 -->
-    <el-dialog
-      v-model="configViewDialogVisible"
-      title="查看配置信息"
-      width="60%"
-      align-center
-      :destroy-on-close="true"
-    >
+    <el-dialog v-model="configViewDialogVisible" title="查看配置信息" width="60%" align-center :destroy-on-close="true">
       <div v-loading="configViewDialogLoading" class="config-view-dialog-content">
         <div v-if="configViewDialogData" class="config-view-info">
           <div class="config-view-info-item">
@@ -761,24 +574,14 @@
       </div>
       <template #footer>
         <el-button @click="configViewDialogVisible = false">关闭</el-button>
-        <el-button
-          v-if="configViewDialogData?.stickerPsdSetConfig"
-          type="primary"
-          @click="handleEditFromView"
-        >
+        <el-button v-if="configViewDialogData?.stickerPsdSetConfig" type="primary" @click="handleEditFromView">
           编辑配置
         </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="generateProductDialogVisible"
-      fullscreen
-      :show-close="true"
-      :destroy-on-close="false"
-      class="generate-product-dialog"
-      @close="handleCloseGenerateProductDialog"
-    >
+    <el-dialog v-model="generateProductDialogVisible" fullscreen :show-close="true" :destroy-on-close="false"
+      class="generate-product-dialog" @close="handleCloseGenerateProductDialog">
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
@@ -795,19 +598,10 @@
           <div class="generate-product-panel-title">基础配置</div>
           <el-form label-position="top">
             <el-form-item label="AI 提示词">
-              <el-select
-                v-model="generateProductForm.promptId"
-                filterable
-                clearable
-                placeholder="请选择提示词"
-                class="w-full"
-              >
-                <el-option
-                  v-for="item in generateProductPromptOptions"
-                  :key="item.id"
-                  :label="item.title"
-                  :value="item.id"
-                >
+              <el-select v-model="generateProductForm.promptId" filterable clearable placeholder="请选择提示词"
+                class="w-full">
+                <el-option v-for="item in generateProductPromptOptions" :key="item.id" :label="item.title"
+                  :value="item.id">
                   <div class="generate-product-option">
                     <span>{{ item.title }}</span>
                     <span class="generate-product-option-id">#{{ item.id }}</span>
@@ -825,25 +619,15 @@
       <template #footer>
         <div class="generate-product-dialog-footer">
           <el-button @click="handleCloseGenerateProductDialog">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="generateProductSubmitting"
-            @click="handleSubmitGenerateProduct"
-          >
+          <el-button type="primary" :loading="generateProductSubmitting" @click="handleSubmitGenerateProduct">
             确定生成产品
           </el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="publishConfigDialogVisible"
-      fullscreen
-      :show-close="true"
-      :destroy-on-close="false"
-      class="generate-product-dialog publish-config-dialog"
-      @close="handleClosePublishConfigDialog"
-    >
+    <el-dialog v-model="publishConfigDialogVisible" fullscreen :show-close="true" :destroy-on-close="false"
+      class="generate-product-dialog publish-config-dialog" @close="handleClosePublishConfigDialog">
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
@@ -855,10 +639,7 @@
         </div>
       </template>
 
-      <div
-        v-loading="publishConfigDialogLoading"
-        class="generate-product-dialog-body publish-config-dialog-body"
-      >
+      <div v-loading="publishConfigDialogLoading" class="generate-product-dialog-body publish-config-dialog-body">
         <div class="generate-product-panel generate-product-panel--wide publish-config-panel-wrap">
           <div class="publish-config-toolbar">
             <div class="publish-config-toolbar__stats">
@@ -882,13 +663,8 @@
               </div>
             </div>
             <div class="publish-config-toolbar__actions">
-              <el-input
-                v-model="publishConfigSearchText"
-                placeholder="搜索任务配置名称、任务类型或平台..."
-                clearable
-                @input="publishConfigCurrentPage = 1"
-                class="publish-config-search"
-              />
+              <el-input v-model="publishConfigSearchText" placeholder="搜索任务配置名称、任务类型或平台..." clearable
+                @input="publishConfigCurrentPage = 1" class="publish-config-search" />
               <el-tag v-if="publishConfigSelectedNames.length" type="primary" effect="plain">
                 {{ publishConfigSelectedNames.join("、") }}
               </el-tag>
@@ -896,24 +672,15 @@
           </div>
 
           <div class="common-table publish-config-grid-wrap">
-            <vxe-grid
-              v-bind="publishConfigGridOptions"
-              :data="publishConfigDataSource"
+            <vxe-grid v-bind="publishConfigGridOptions" :data="publishConfigDataSource"
               @checkbox-change="handlePublishConfigCheckboxChange"
-              @checkbox-all="handlePublishConfigCheckboxAllChange"
-            />
+              @checkbox-all="handlePublishConfigCheckboxAllChange" />
           </div>
 
           <div class="publish-config-pagination">
-            <el-pagination
-              v-model:current-page="publishConfigCurrentPage"
-              v-model:page-size="publishConfigPageSize"
-              :total="filteredPublishConfigs.length"
-              :page-sizes="[10, 20, 50, 100]"
-              layout="total, sizes, prev, pager, next"
-              size="small"
-              background
-            />
+            <el-pagination v-model:current-page="publishConfigCurrentPage" v-model:page-size="publishConfigPageSize"
+              :total="filteredPublishConfigs.length" :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next" size="small" background />
           </div>
         </div>
       </div>
@@ -921,24 +688,15 @@
       <template #footer>
         <div class="generate-product-dialog-footer">
           <el-button @click="handleClosePublishConfigDialog">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="publishConfigSubmitting"
-            @click="handleSubmitCreatePublishTask"
-          >
+          <el-button type="primary" :loading="publishConfigSubmitting" @click="handleSubmitCreatePublishTask">
             确定生成发布任务
           </el-button>
         </div>
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="publishTasksVisible"
-      fullscreen
-      :show-close="true"
-      :destroy-on-close="false"
-      class="publish-task-list-dialog"
-    >
+    <el-dialog v-model="publishTasksVisible" fullscreen :show-close="true" :destroy-on-close="false"
+      class="publish-task-list-dialog">
       <template #header>
         <div class="generate-product-dialog-header">
           <div>
@@ -954,26 +712,14 @@
         <div class="publish-task-list-toolbar">
           <div class="publish-task-list-toolbar__stats">
             <el-tag type="info" effect="plain">总数 {{ publishTasks.length }}</el-tag>
-            <el-tag type="success" effect="plain"
-              >完成 {{ publishTaskStatusCount.completed }}</el-tag
-            >
-            <el-tag type="warning" effect="plain"
-              >处理中 {{ publishTaskStatusCount.processing }}</el-tag
-            >
+            <el-tag type="success" effect="plain">完成 {{ publishTaskStatusCount.completed }}</el-tag>
+            <el-tag type="warning" effect="plain">处理中 {{ publishTaskStatusCount.processing }}</el-tag>
             <el-tag type="danger" effect="plain">失败 {{ publishTaskStatusCount.failed }}</el-tag>
           </div>
         </div>
 
-        <el-empty
-          v-if="!publishTasksLoading && publishTasks.length === 0"
-          description="暂无发布任务"
-        />
-        <vxe-grid
-          v-else
-          v-bind="publishTasksGridOptions"
-          :data="publishTasks"
-          class="publish-task-list-grid"
-        >
+        <el-empty v-if="!publishTasksLoading && publishTasks.length === 0" description="暂无发布任务" />
+        <vxe-grid v-else v-bind="publishTasksGridOptions" :data="publishTasks" class="publish-task-list-grid">
           <template #taskPlatformSlot="{ row }">
             <el-tag size="small" effect="plain">{{ formatPlatformName(row.platform) }}</el-tag>
           </template>
@@ -987,12 +733,8 @@
             <span v-else class="text-gray-400">-</span>
           </template>
           <template #taskActionSlot="{ row }">
-            <el-button
-              link
-              type="primary"
-              :disabled="publishTasksLoading || row.status === 'processing'"
-              @click="handleRegeneratePublishTask(row)"
-            >
+            <el-button link type="primary" :disabled="publishTasksLoading || row.status === 'processing'"
+              @click="handleRegeneratePublishTask(row)">
               重新生成发布数据
             </el-button>
           </template>
@@ -1003,86 +745,42 @@
       </template>
     </el-dialog>
 
-    <el-dialog
-      v-model="productionDispatchDialogVisible"
-      width="760px"
-      title="开始制作"
-      align-center
-      append-to-body
-      destroy-on-close
-      class="production-dispatch-dialog"
-      @open="handleOpenProductionDispatchDialog"
-      @closed="handleCloseProductionDispatchDialog"
-    >
+    <el-dialog v-model="productionDispatchDialogVisible" width="760px" title="开始制作" align-center append-to-body
+      destroy-on-close class="production-dispatch-dialog" @open="handleOpenProductionDispatchDialog"
+      @closed="handleCloseProductionDispatchDialog">
       <div class="production-dispatch-dialog__body">
-        <div
-          v-loading="productionDispatchLoading"
-          :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
-          class="production-dispatch-dialog__panel"
-        >
+        <div v-loading="productionDispatchLoading" :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
+          class="production-dispatch-dialog__panel">
           <div class="production-dispatch-dialog__panel-title">客户端节点</div>
-          <div
-            v-if="!productionDispatchLoading && dispatchClientRows.length"
-            class="production-dispatch-dialog__table"
-          >
-            <el-table
-              :data="dispatchClientRows"
-              border
-              size="small"
-              row-key="id"
-              :max-height="332"
-              class="production-dispatch-dialog__table-main"
-              :row-class-name="resolveDispatchClientRowClassName"
-              @row-click="handleDispatchClientRowClick"
-            >
+          <div v-if="!productionDispatchLoading && dispatchClientRows.length" class="production-dispatch-dialog__table">
+            <el-table :data="dispatchClientRows" border size="small" row-key="id" :max-height="332"
+              class="production-dispatch-dialog__table-main" :row-class-name="resolveDispatchClientRowClassName"
+              @row-click="handleDispatchClientRowClick">
               <el-table-column label="" width="46" align="center">
                 <template #default="{ row }">
-                  <el-radio
-                    v-model="selectedDispatchClientId"
-                    :value="row.id"
-                    :disabled="!row.selectable"
-                    @click.stop
-                  />
+                  <el-radio v-model="selectedDispatchClientId" :value="row.id" :disabled="!row.selectable"
+                    @click.stop />
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="clientLabel"
-                label="客户端节点"
-                min-width="140"
-                show-overflow-tooltip
-              />
-              <el-table-column
-                prop="connectedAtLabel"
-                label="连接时间"
-                min-width="150"
-                show-overflow-tooltip
-              />
+              <el-table-column prop="clientLabel" label="客户端节点" min-width="140" show-overflow-tooltip />
+              <el-table-column prop="connectedAtLabel" label="连接时间" min-width="150" show-overflow-tooltip />
               <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
-                  <span
-                    class="production-dispatch-dialog__state-text"
-                    :class="`is-${row.onlineStatusTone}`"
-                  >
+                  <span class="production-dispatch-dialog__state-text" :class="`is-${row.onlineStatusTone}`">
                     {{ row.onlineStatusText }}
                   </span>
                 </template>
               </el-table-column>
               <el-table-column label="PS" width="72" align="center">
                 <template #default="{ row }">
-                  <span
-                    class="production-dispatch-dialog__state-text"
-                    :class="`is-${row.psStatusTone}`"
-                  >
+                  <span class="production-dispatch-dialog__state-text" :class="`is-${row.psStatusTone}`">
                     {{ row.psStatusText }}
                   </span>
                 </template>
               </el-table-column>
               <el-table-column label="制作" width="82" align="center">
                 <template #default="{ row }">
-                  <span
-                    class="production-dispatch-dialog__state-text"
-                    :class="`is-${row.productionStatusTone}`"
-                  >
+                  <span class="production-dispatch-dialog__state-text" :class="`is-${row.productionStatusTone}`">
                     {{ row.productionStatusText }}
                   </span>
                 </template>
@@ -1095,12 +793,8 @@
       <template #footer>
         <div class="production-dispatch-dialog__footer">
           <el-button @click="productionDispatchDialogVisible = false">取消</el-button>
-          <el-button
-            type="primary"
-            :loading="startingProductionId === productionDispatchRow?.id"
-            :disabled="!selectedDispatchClientId || !selectedDispatchClient"
-            @click="handleConfirmStartProduction"
-          >
+          <el-button type="primary" :loading="startingProductionId === productionDispatchRow?.id"
+            :disabled="!selectedDispatchClientId || !selectedDispatchClient" @click="handleConfirmStartProduction">
             开始制作
           </el-button>
         </div>
@@ -1154,6 +848,7 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
+const previewImageDimensions = reactive<Record<string, { width: number; height: number }>>({});
 const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
 const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
@@ -1937,6 +1632,22 @@ function formatProcessingTime(seconds: any): string {
   return `${hours}小时${minutes}分${secs.toFixed(2)}秒`;
 }
 
+function handlePreviewImageLoad(url: string, event: Event) {
+  const image = event?.target as HTMLImageElement | null;
+  const width = Number(image?.naturalWidth || 0);
+  const height = Number(image?.naturalHeight || 0);
+  if (!url || width <= 0 || height <= 0) {
+    return;
+  }
+
+  previewImageDimensions[url] = { width, height };
+}
+
+function getPreviewImageDimensions(url: string) {
+  const dimensions = previewImageDimensions[url];
+  return dimensions ? `${dimensions.width} × ${dimensions.height}` : "加载中";
+}
+
 // 批量下载套图图片（与商品页面逻辑一致）
 async function handleDownloadPsdSetImages(row: any) {
   if (!row || !Array.isArray(row.images) || !row.images.length) {
@@ -2598,7 +2309,7 @@ function handleDelete(row) {
       ElMessage.success("删除成功");
       getList();
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 function handleBatchDelete() {
@@ -2616,7 +2327,7 @@ function handleBatchDelete() {
       selectedIds.value = [];
       getList();
     })
-    .catch(() => {});
+    .catch(() => { });
 }
 
 async function handleBatchUpdateStatus(status: string) {
@@ -3476,7 +3187,7 @@ getList();
   gap: 10px;
 }
 
-.psd-set-detail-meta-list > div {
+.psd-set-detail-meta-list>div {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -3693,37 +3404,153 @@ getList();
 }
 
 /* 操作下拉菜单样式 */
-/* 轮播样式 */
-.custom-carousel {
-  position: relative;
-  padding: 0 20px;
+/* 套图图片预览 */
+.table-preview-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
 }
 
-.custom-carousel :deep(.el-carousel__container) {
-  margin: 0 -20px;
+.table-preview-carousel {
+  width: 160px;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 250, 0.96)),
+    var(--el-fill-color-lighter);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.table-preview-carousel:hover {
+  border-color: rgba(64, 158, 255, 0.45);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.13);
+}
+
+.table-preview-carousel :deep(.el-carousel__container) {
+  width: 100%;
+}
+
+.table-preview-carousel :deep(.el-carousel__item) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-preview-image {
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.table-preview-image :deep(.el-image__inner) {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.table-preview-image :deep(.el-image__placeholder),
+.table-preview-image :deep(.el-image__error) {
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+}
+
+.table-preview-badge {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
+  min-width: 24px;
+
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.58);
+  color: #fff;
+  font-size: 9px;
+  line-height: 14px;
+  height: 16px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
+.table-preview-dimensions {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  z-index: 2;
+  max-width: calc(100% - 16px);
+  height: 13px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--el-text-color-secondary);
+  font-size: 9px;
+  line-height: 13px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  backdrop-filter: blur(6px);
+}
+
+.table-preview-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 112px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 12px;
+  color: var(--el-text-color-placeholder);
+  background: var(--el-fill-color-lighter);
+  font-size: 12px;
+}
+
+.table-preview-action {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(64, 158, 255, 0.08);
 }
 
 .custom-carousel :deep(.el-carousel__arrow) {
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
   width: 24px;
   height: 24px;
+  background-color: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.custom-carousel:hover :deep(.el-carousel__arrow) {
+  opacity: 1;
 }
 
 .custom-carousel :deep(.el-carousel__arrow):hover {
-  background-color: rgba(0, 0, 0, 0.5);
+  transform: translateY(-50%) scale(1.04);
 }
 
 .custom-carousel :deep(.el-carousel__arrow) i {
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .custom-carousel :deep(.el-carousel__arrow--left) {
-  left: 0;
+  left: 8px;
 }
 
 .custom-carousel :deep(.el-carousel__arrow--right) {
-  right: 0;
+  right: 8px;
 }
 
 /* 素材关联标签样式 */
@@ -3922,8 +3749,7 @@ getList();
   color: var(--el-text-color-secondary);
 }
 
-.generate-product-panel {
-}
+.generate-product-panel {}
 
 .generate-product-panel--wide {
   width: 100%;

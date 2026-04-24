@@ -263,9 +263,7 @@ const NESTED_FIELD_META: Record<string, TemuFieldMeta> = {
   language: { label: "语言", description: "语言代码。" },
 };
 
-const MAX_ARRAY_CHILDREN = 2;
-const MAX_OBJECT_CHILDREN = 8;
-const MAX_TREE_DEPTH = 4;
+const MAX_TREE_DEPTH = 12;
 
 function isPlainRecord(value: unknown): value is Record<string, any> {
   return !!value && Object.prototype.toString.call(value) === "[object Object]";
@@ -501,30 +499,6 @@ function buildArrayItemLabel(value: Record<string, any>, index: number) {
   return markers[0] ? `第 ${index + 1} 项 · ${truncateText(markers[0], 28)}` : `第 ${index + 1} 项`;
 }
 
-function buildOverflowNode(
-  path: string,
-  hiddenCount: number,
-  hiddenKind: "array" | "object",
-  depth: number,
-): TemuTemplateTreeNode {
-  return {
-    id: `${path}::__overflow__`,
-    key: "__overflow__",
-    sourcePath: path,
-    depth,
-    label: hiddenKind === "array" ? `其余 ${hiddenCount} 项` : `其余 ${hiddenCount} 个字段`,
-    displayKey: "...",
-    typeLabel: hiddenKind === "array" ? "数组" : "对象",
-    preview: hiddenKind === "array" ? "为节省空间未展开" : "字段较多，已折叠",
-    description: "",
-    known: true,
-    editable: false,
-    valueType: null,
-    rawValue: null,
-    children: [],
-  };
-}
-
 function resolveEditableValueType(value: unknown): TemuEditableValueType {
   if (typeof value === "string") {
     return "string";
@@ -574,8 +548,7 @@ function buildTreeNode(
 
   if (Array.isArray(value)) {
     const children: TemuTemplateTreeNode[] = [];
-    const visibleItems = value.slice(0, MAX_ARRAY_CHILDREN);
-    visibleItems.forEach((item, index) => {
+    value.forEach((item, index) => {
       const childPath = `${options.path}[${index}]`;
       if (isPlainRecord(item)) {
         children.push(
@@ -611,17 +584,6 @@ function buildTreeNode(
       });
     });
 
-    if (value.length > visibleItems.length) {
-      children.push(
-        buildOverflowNode(
-          options.path,
-          value.length - visibleItems.length,
-          "array",
-          options.depth + 1,
-        ),
-      );
-    }
-
     const childHints = buildChildHints(meta);
     const preview = childHints.length
       ? `${summary.summary}；常见字段：${childHints.slice(0, 4).join("、")}`
@@ -647,8 +609,7 @@ function buildTreeNode(
 
   if (isPlainRecord(value)) {
     const entries = Object.entries(value);
-    const visibleEntries = options.depth === 0 ? entries : entries.slice(0, MAX_OBJECT_CHILDREN);
-    const children = visibleEntries.map(([childKey, childValue]) =>
+    const children = entries.map(([childKey, childValue]) =>
       buildTreeNode(childValue, {
         path: `${options.path}.${childKey}`,
         key: childKey,
@@ -656,17 +617,6 @@ function buildTreeNode(
         depth: options.depth + 1,
       }),
     );
-
-    if (entries.length > visibleEntries.length) {
-      children.push(
-        buildOverflowNode(
-          options.path,
-          entries.length - visibleEntries.length,
-          "object",
-          options.depth + 1,
-        ),
-      );
-    }
 
     return {
       id: options.path,
@@ -782,6 +732,62 @@ export function updateTemuProductTemplateValue(
 
   const cloned = JSON.parse(JSON.stringify(normalized));
   setValueByPath(cloned, pathTokens, value);
+  return JSON.stringify(cloned, null, 2);
+}
+
+function createDefaultArrayItemValue(arrayValue: unknown[]) {
+  const sample = arrayValue.find((item) => item !== null && item !== undefined);
+  if (isPlainRecord(sample)) {
+    return Object.keys(sample).reduce<Record<string, any>>((acc, key) => {
+      const sampleValue = sample[key];
+      if (Array.isArray(sampleValue)) acc[key] = [];
+      else if (isPlainRecord(sampleValue)) acc[key] = {};
+      else if (typeof sampleValue === "number") acc[key] = 0;
+      else if (typeof sampleValue === "boolean") acc[key] = false;
+      else acc[key] = "";
+      return acc;
+    }, {});
+  }
+  if (typeof sample === "number") return 0;
+  if (typeof sample === "boolean") return false;
+  if (Array.isArray(sample)) return [];
+  return "";
+}
+
+function getValueByPath(target: Record<string, any> | any[], pathTokens: Array<string | number>) {
+  let cursor: any = target;
+  for (const token of pathTokens) {
+    if (cursor === undefined || cursor === null) {
+      return undefined;
+    }
+    cursor = cursor[token];
+  }
+  return cursor;
+}
+
+export function addTemuProductTemplateArrayItem(input: unknown, sourcePath: string): string | null {
+  const normalized = normalizeTemuProductTemplate(input);
+  if (!normalized) return null;
+  const pathTokens = parseTemuSourcePath(sourcePath);
+  const cloned = JSON.parse(JSON.stringify(normalized));
+  const arrayValue = getValueByPath(cloned, pathTokens);
+  if (!Array.isArray(arrayValue)) return null;
+  arrayValue.push(createDefaultArrayItemValue(arrayValue));
+  return JSON.stringify(cloned, null, 2);
+}
+
+export function removeTemuProductTemplateArrayItem(
+  input: unknown,
+  sourcePath: string,
+  index: number,
+): string | null {
+  const normalized = normalizeTemuProductTemplate(input);
+  if (!normalized) return null;
+  const pathTokens = parseTemuSourcePath(sourcePath);
+  const cloned = JSON.parse(JSON.stringify(normalized));
+  const arrayValue = getValueByPath(cloned, pathTokens);
+  if (!Array.isArray(arrayValue) || index < 0 || index >= arrayValue.length) return null;
+  arrayValue.splice(index, 1);
   return JSON.stringify(cloned, null, 2);
 }
 

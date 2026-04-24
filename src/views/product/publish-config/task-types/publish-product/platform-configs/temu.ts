@@ -16,6 +16,14 @@ export const temuPlatformConfig: PlatformConfig = {
       span: 24
     },
     {
+      key: 'supId',
+      label: 'Sup ID',
+      type: 'input',
+      placeholder: '请输入 Sup ID',
+      span: 24,
+      tooltip: '仅用于配置存储，当前发布流程暂不使用。'
+    },
+    {
       key: 'productTemplate',
       label: '商品模板',
       type: 'textarea',
