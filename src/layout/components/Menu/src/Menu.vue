@@ -12,6 +12,10 @@ import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import { usePublishTaskRuntimeState } from "@/services/publishTaskRuntimeState";
 import { isClientServiceRuntimeBusy } from "@/services/clientServiceRuntime";
 import { aiConfigState, refreshAiConfigState } from "@/services/aiConfigState";
+import {
+  messagePushMenuState,
+  refreshMessagePushMenuState,
+} from "@/services/messagePushState";
 import { getBrowserAutomationRuntimeHint } from "@/services/browserAutomationRuntime";
 import {
   ensureServiceHealthInitialized,
@@ -141,7 +145,7 @@ export default defineComponent({
       title: string,
       options?: {
         enabled?: boolean;
-        variant?: "queue" | "psd";
+        variant?: "queue" | "psd" | "message";
         label?: string;
       },
     ) => {
@@ -383,6 +387,25 @@ export default defineComponent({
       );
     };
 
+    const renderMessagePushBadge = (routePath: string) => {
+      if (routePath !== "/system/message-push" || !messagePushMenuState.initialized) {
+        return undefined;
+      }
+
+      const enabled = messagePushMenuState.enabled;
+      const channelText = messagePushMenuState.defaultChannelName
+        ? `，默认渠道：${messagePushMenuState.defaultChannelName}`
+        : messagePushMenuState.defaultChannelId
+          ? `，默认渠道 ID：${messagePushMenuState.defaultChannelId}`
+          : "，未绑定默认渠道";
+
+      return renderAutoModeBadge(enabled ? `消息推送已开启${channelText}` : "消息推送已关闭", {
+        enabled,
+        variant: "message",
+        label: enabled ? "开" : "关",
+      });
+    };
+
     const isMenuLinkRunning = (routePath: string) => {
       if (isPsdSetRoute(routePath)) {
         return isAnyPsdSetProcessing.value;
@@ -426,6 +449,7 @@ export default defineComponent({
     };
 
     const shouldTrackAiConfig = computed(() => hasRoutePath(routers.value, "/system/ai-api-key"));
+    const shouldTrackMessagePush = computed(() => hasRoutePath(routers.value, "/system/message-push"));
 
     const hasActiveChild = (route: AppRouteRecordRaw) => {
       const routePath = getRoutePath(route);
@@ -478,6 +502,16 @@ export default defineComponent({
       { immediate: true },
     );
 
+    watch(
+      shouldTrackMessagePush,
+      (enabled) => {
+        if (enabled) {
+          void refreshMessagePushMenuState();
+        }
+      },
+      { immediate: true },
+    );
+
     onMounted(() => {
       void refreshPsdSetRuntime();
       void refreshPublishTaskRuntime();
@@ -517,7 +551,7 @@ export default defineComponent({
                       ) : undefined}
                       <span class={`${prefixCls}__section-title`}>{route.meta?.title}</span>
                     </div>
-                    {renderServiceHealthDot(route, routePath)}
+                    {renderMessagePushBadge(routePath) || renderServiceHealthDot(route, routePath)}
                   </div>
                 </button>
               );
@@ -576,6 +610,7 @@ export default defineComponent({
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
                           {renderAiConfigDot(childPath) ||
+                            renderMessagePushBadge(childPath) ||
                             renderPsdSetAutoDot(childPath) ||
                             renderPublishTaskAutoBadge(childPath) ||
                             renderServiceHealthDot(child, childPath) ||
@@ -892,6 +927,15 @@ $prefix-cls: #{$namespace}-menu;
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 6%),
       0 4px 12px rgb(245 158 11 / 14%);
+  }
+
+  &__auto-badge--message.#{$prefix-cls}__auto-badge--enabled {
+    border-color: rgb(34 197 94 / 30%);
+    background: linear-gradient(135deg, rgb(34 197 94 / 24%) 0%, rgb(16 185 129 / 14%) 100%);
+    color: rgb(134 239 172 / 94%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 6%),
+      0 4px 12px rgb(34 197 94 / 12%);
   }
 
   &__auto-badge--muted {

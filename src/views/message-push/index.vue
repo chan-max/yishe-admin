@@ -123,6 +123,7 @@ import {
 } from "@/api/messagePush";
 import { getMessagePushSetting, type UserMessagePushSetting } from "@/api/user";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
+import { syncMessagePushMenuState } from "@/services/messagePushState";
 import MessagePushDialog from "./components/MessagePushDialog.vue";
 import MessagePushDefaultDialog from "./components/MessagePushDefaultDialog.vue";
 import MessagePushTestDialog from "./components/MessagePushTestDialog.vue";
@@ -195,6 +196,7 @@ const loadMessagePushSetting = async () => {
     defaultChannelId: null,
     defaultMessagePush: null,
   };
+  syncMessagePushMenuState(messagePushSetting.value);
 };
 
 const refreshPageData = async () => {
@@ -222,6 +224,7 @@ const handleMessagePushSettingSaved = async (payload: UserMessagePushSetting) =>
     defaultChannelId: null,
     defaultMessagePush: null,
   };
+  syncMessagePushMenuState(messagePushSetting.value);
   await getList();
 };
 
