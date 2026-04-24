@@ -6,9 +6,6 @@
           <div class="resource-toolbar">
             <div class="resource-toolbar__actions">
               <el-button size="small" @click="loadData">刷新</el-button>
-              <el-button size="small" type="primary" @click="openExpressionDialog">
-                利润表达式
-              </el-button>
             </div>
           </div>
 
@@ -216,121 +213,6 @@
     </ListPageLayout>
 
     <el-dialog
-      v-model="expressionDialogVisible"
-      width="920px"
-      destroy-on-close
-      title="利润表达式管理"
-      class="profit-expression-dialog"
-    >
-      <div class="expression-dialog-shell">
-        <div class="expression-form-card">
-          <el-form label-position="top">
-            <el-row :gutter="16">
-              <el-col :xs="24" :md="8">
-                <el-form-item label="平台">
-                  <el-select
-                    v-model="expressionForm.platform"
-                    clearable
-                    filterable
-                    placeholder="请选择平台"
-                  >
-                    <el-option
-                      v-for="item in expressionPlatformOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :xs="24" :md="16">
-                <el-form-item label="利润表达式">
-                  <el-input
-                    v-model="expressionForm.expression"
-                    type="textarea"
-                    :rows="3"
-                    placeholder="例如：x-y-18*z（x=售价 y=进货价 z=重量）"
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <div class="expression-hint">
-              表达式变量说明：x 售价，y 进货价，z 重量。保存接口会按平台保存或更新当前表达式。
-            </div>
-
-            <div class="expression-form-actions">
-              <el-button type="primary" :loading="expressionSubmitting" @click="handleSaveExpression">
-                {{ editingExpressionId ? "更新表达式" : "保存表达式" }}
-              </el-button>
-              <el-button @click="handleResetExpressionForm">清空</el-button>
-            </div>
-          </el-form>
-        </div>
-
-        <div class="expression-list-card">
-          <div class="expression-list-toolbar">
-            <div class="expression-list-toolbar__title">已保存表达式</div>
-            <div class="expression-list-toolbar__actions">
-              <el-select
-                v-model="expressionFilters.platform"
-                clearable
-                filterable
-                placeholder="全部平台"
-                style="width: 180px"
-              >
-                <el-option
-                  v-for="item in expressionPlatformOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </el-select>
-              <el-button size="small" type="primary" @click="loadExpressionList">查询</el-button>
-              <el-button size="small" @click="handleResetExpressionFilters">重置</el-button>
-            </div>
-          </div>
-
-          <el-table :data="expressionList" border stripe v-loading="expressionLoading">
-            <el-table-column label="平台" prop="platform" min-width="140" />
-            <el-table-column label="表达式" min-width="260">
-              <template #default="{ row }">
-                <div class="expression-cell">
-                  <span>{{ row.expression || "-" }}</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="更新时间" min-width="180">
-              <template #default="{ row }">
-                {{ formatDateTime(row.updateTime || row.createTime) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="220" fixed="right">
-              <template #default="{ row }">
-                <div class="expression-row-actions">
-                  <el-button link type="primary" @click="handleEditExpression(row)">编辑</el-button>
-                  <el-button link type="primary" @click="handleCopyExpression(row.expression)">
-                    复制
-                  </el-button>
-                  <el-button link type="danger" @click="handleDeleteExpression(row)">删除</el-button>
-                </div>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <div class="expression-pagination">
-            <Pagination
-              :total="expressionTotal"
-              v-model:page="expressionFilters.current"
-              v-model:limit="expressionFilters.size"
-              @pagination="loadExpressionList"
-            />
-          </div>
-        </div>
-      </div>
-    </el-dialog>
-
-    <el-dialog
       v-model="detailVisible"
       width="1180px"
       destroy-on-close
@@ -468,7 +350,6 @@
 <script setup lang="ts">
 import { computed, onActivated, onMounted, reactive, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
 import {
   getEcomSelectionSupplyMatchItemDetail,
   getEcomSelectionSupplyMatchItemList,
@@ -478,12 +359,6 @@ import {
   type EcomSelectionSupplyMatchRun,
   type EcomSelectionSupplyMatchTask,
 } from "@/api/operation/ecomSelectionSupplyMatch";
-import {
-  deleteProfitExpression,
-  getProfitExpressionPage,
-  saveOrUpdateProfitExpression,
-  type ProfitExpression,
-} from "@/api/profitExpression";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
@@ -497,7 +372,6 @@ import {
   getSnapshotUrl,
   normalizeSnapshotList,
 } from "@/views/operation/ecom-data/shared";
-import { copyToClipboard } from "@/utils/clipboard";
 
 defineOptions({ name: "EcomSelectionSupplyMatchItemPage" });
 
@@ -510,12 +384,6 @@ const list = ref<EcomSelectionSupplyMatchItem[]>([]);
 const tasks = ref<EcomSelectionSupplyMatchTask[]>([]);
 const activeRun = ref<EcomSelectionSupplyMatchRun | null>(null);
 const currentDetail = ref<EcomSelectionSupplyMatchItem | null>(null);
-const expressionDialogVisible = ref(false);
-const expressionLoading = ref(false);
-const expressionSubmitting = ref(false);
-const expressionList = ref<ProfitExpression[]>([]);
-const expressionTotal = ref(0);
-const editingExpressionId = ref<number | null>(null);
 
 const filters = reactive({
   pageNo: 1,
@@ -524,17 +392,6 @@ const filters = reactive({
   runId: "",
   supplierPlatform: "",
   keyword: "",
-});
-
-const expressionFilters = reactive({
-  current: 1,
-  size: 10,
-  platform: "",
-});
-
-const expressionForm = reactive({
-  platform: "",
-  expression: "",
 });
 
 const syncQueryToFilters = () => {
@@ -555,40 +412,6 @@ const supplierPlatformOptions = computed(() => {
   list.value.forEach((item) => {
     if (item.supplierPlatform) {
       values.add(item.supplierPlatform);
-    }
-  });
-  return Array.from(values).map((value) => ({ value, label: value }));
-});
-
-const expressionPlatformOptions = computed(() => {
-  const values = new Set<string>();
-  if (filters.supplierPlatform) {
-    values.add(filters.supplierPlatform);
-  }
-  if (expressionFilters.platform) {
-    values.add(expressionFilters.platform);
-  }
-  if (expressionForm.platform) {
-    values.add(expressionForm.platform);
-  }
-  list.value.forEach((item) => {
-    if (item.supplierPlatform) {
-      values.add(item.supplierPlatform);
-    }
-  });
-  tasks.value.forEach((item) => {
-    const platforms = item.optionsData?.supplierPlatforms;
-    if (Array.isArray(platforms)) {
-      platforms.forEach((platform) => {
-        if (platform) {
-          values.add(String(platform));
-        }
-      });
-    }
-  });
-  expressionList.value.forEach((item) => {
-    if (item.platform) {
-      values.add(item.platform);
     }
   });
   return Array.from(values).map((value) => ({ value, label: value }));
@@ -713,98 +536,6 @@ const handleReset = async () => {
   await loadList();
 };
 
-const handleResetExpressionForm = () => {
-  editingExpressionId.value = null;
-  expressionForm.platform = filters.supplierPlatform || expressionFilters.platform || "";
-  expressionForm.expression = "";
-};
-
-const handleResetExpressionFilters = async () => {
-  expressionFilters.current = 1;
-  expressionFilters.platform = filters.supplierPlatform || "";
-  await loadExpressionList();
-};
-
-const loadExpressionList = async () => {
-  expressionLoading.value = true;
-  try {
-    const data = await getProfitExpressionPage({
-      current: expressionFilters.current,
-      size: expressionFilters.size,
-      platform: expressionFilters.platform || undefined,
-    });
-    expressionList.value = Array.isArray(data?.records) ? data.records : [];
-    expressionTotal.value = Number(data?.total || 0);
-  } finally {
-    expressionLoading.value = false;
-  }
-};
-
-const openExpressionDialog = async () => {
-  expressionDialogVisible.value = true;
-  expressionFilters.current = 1;
-  expressionFilters.platform = filters.supplierPlatform || "";
-  expressionForm.platform = filters.supplierPlatform || "";
-  editingExpressionId.value = null;
-  expressionForm.expression = "";
-  await loadExpressionList();
-};
-
-const handleSaveExpression = async () => {
-  const platform = String(expressionForm.platform || "").trim();
-  const expression = String(expressionForm.expression || "").trim();
-  if (!platform) {
-    ElMessage.warning("请先选择平台");
-    return;
-  }
-  if (!expression) {
-    ElMessage.warning("请先填写利润表达式");
-    return;
-  }
-
-  expressionSubmitting.value = true;
-  try {
-    await saveOrUpdateProfitExpression({ platform, expression });
-    ElMessage.success(editingExpressionId.value ? "表达式已更新" : "表达式已保存");
-    editingExpressionId.value = null;
-    expressionForm.expression = "";
-    expressionFilters.current = 1;
-    expressionFilters.platform = platform;
-    await loadExpressionList();
-  } finally {
-    expressionSubmitting.value = false;
-  }
-};
-
-const handleEditExpression = (row: ProfitExpression) => {
-  editingExpressionId.value = row.id;
-  expressionForm.platform = String(row.platform || "").trim();
-  expressionForm.expression = String(row.expression || "").trim();
-};
-
-const handleCopyExpression = async (expression: string) => {
-  await copyToClipboard(String(expression || "").trim(), "表达式已复制", "复制表达式失败");
-};
-
-const handleDeleteExpression = async (row: ProfitExpression) => {
-  try {
-    await ElMessageBox.confirm(
-      `确认删除平台「${row.platform || "-"}」的利润表达式吗？`,
-      "提示",
-      { type: "warning" },
-    );
-    await deleteProfitExpression(row.id);
-    ElMessage.success("表达式已删除");
-    if (editingExpressionId.value === row.id) {
-      handleResetExpressionForm();
-    }
-    if (expressionList.value.length === 1 && expressionFilters.current > 1) {
-      expressionFilters.current -= 1;
-    }
-    await loadExpressionList();
-  } catch {}
-};
-
 const openDetail = async (row: EcomSelectionSupplyMatchItem) => {
   detailVisible.value = true;
   detailLoading.value = true;
@@ -924,68 +655,6 @@ onActivated(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.resource-toolbar__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.expression-dialog-shell {
-  display: grid;
-  gap: 16px;
-}
-
-.expression-form-card,
-.expression-list-card {
-  padding: 16px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 14px;
-  background: var(--el-bg-color);
-}
-
-.expression-form-actions,
-.expression-row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.expression-hint {
-  margin-top: -4px;
-  margin-bottom: 14px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.expression-list-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.expression-list-toolbar__title {
-  color: var(--el-text-color-primary);
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.expression-list-toolbar__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.expression-cell {
-  word-break: break-word;
-}
-
-.expression-pagination {
-  margin-top: 14px;
 }
 
 .detail-shell {
@@ -1120,11 +789,6 @@ onActivated(() => {
   .sidebar-metrics,
   .detail-meta-grid {
     grid-template-columns: 1fr;
-  }
-
-  .expression-list-toolbar {
-    align-items: stretch;
-    flex-direction: column;
   }
 }
 </style>

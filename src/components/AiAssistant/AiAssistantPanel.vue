@@ -135,6 +135,40 @@
           class="ai-assistant-panel__stream"
         >
           <template v-if="!(loadingHistory && !bubbleItems.length)">
+            <div v-if="liveEventTrail.length" class="ai-assistant-panel__live-trail">
+              <div class="ai-assistant-panel__live-trail-head">
+                <div class="ai-assistant-panel__live-trail-title">实时运行轨迹</div>
+                <div class="ai-assistant-panel__live-trail-meta">
+                  {{ liveEventTrail.length }} 条事件
+                </div>
+              </div>
+
+              <div class="ai-assistant-panel__live-trail-list">
+                <div
+                  v-for="(eventItem, index) in liveEventTrail"
+                  :key="`live-event:${index}:${eventItem.time}`"
+                  class="ai-assistant-panel__live-trail-item"
+                >
+                  <div class="ai-assistant-panel__live-trail-item-head">
+                    <span class="ai-assistant-panel__live-trail-item-label">
+                      {{ eventItem.label }}
+                    </span>
+                    <span class="ai-assistant-panel__live-trail-item-time">
+                      {{ formatEventTime(eventItem.time) }}
+                    </span>
+                  </div>
+                  <div class="ai-assistant-panel__live-trail-item-summary">
+                    {{ eventItem.summary }}
+                  </div>
+                  <pre
+                    v-if="shouldShowEventPayload(eventItem.event)"
+                    class="ai-assistant-panel__live-trail-item-payload"
+                    >{{ formatJson(eventItem.payload || {}) }}</pre
+                  >
+                </div>
+              </div>
+            </div>
+
             <div v-if="!bubbleItems.length" class="ai-assistant-panel__empty">
               <div class="ai-assistant-panel__empty-message">done is better than perfect</div>
             </div>
@@ -170,7 +204,7 @@
                   </div>
 
                   <div
-                    v-else-if="isBubbleLoading(item)"
+                    v-else-if="isBubblePureLoading(item)"
                     v-loading="true"
                     element-loading-text="正在处理中"
                     element-loading-background="transparent"
@@ -204,7 +238,56 @@
                       </div>
                     </div>
                     <template v-if="getBubbleItem(item).role === 'assistant'">
+                      <div
+                        v-if="getBubbleReasoning(item)"
+                        class="ai-assistant-panel__reasoning-block"
+                      >
+                        <div class="ai-assistant-panel__reasoning-title">
+                          {{ getBubbleStageLabel(item) }}
+                        </div>
+                        <div class="ai-assistant-panel__reasoning-text">
+                          {{ getBubbleReasoning(item) }}
+                        </div>
+                      </div>
                       <MarkdownView :content="getBubbleContent(item)" />
+                      <div
+                        v-if="getBubbleUsageText(item)"
+                        class="ai-assistant-panel__usage-text"
+                      >
+                        {{ getBubbleUsageText(item) }}
+                      </div>
+                      <details
+                        v-if="getBubbleEventTrail(item).length"
+                        class="ai-assistant-panel__event-trail"
+                      >
+                        <summary class="ai-assistant-panel__event-trail-summary">
+                          运行轨迹 {{ getBubbleEventTrail(item).length }} 条
+                        </summary>
+                        <div class="ai-assistant-panel__event-trail-list">
+                          <div
+                            v-for="(eventItem, index) in getBubbleEventTrail(item)"
+                            :key="`${getBubbleItem(item).key}:event:${index}`"
+                            class="ai-assistant-panel__event-trail-item"
+                          >
+                            <div class="ai-assistant-panel__event-trail-item-head">
+                              <span class="ai-assistant-panel__event-trail-item-label">
+                                {{ eventItem.label }}
+                              </span>
+                              <span class="ai-assistant-panel__event-trail-item-time">
+                                {{ formatEventTime(eventItem.time) }}
+                              </span>
+                            </div>
+                            <div class="ai-assistant-panel__event-trail-item-summary">
+                              {{ eventItem.summary }}
+                            </div>
+                            <pre
+                              v-if="shouldShowEventPayload(eventItem.event)"
+                              class="ai-assistant-panel__event-trail-item-payload"
+                              >{{ formatJson(eventItem.payload || {}) }}</pre
+                            >
+                          </div>
+                        </div>
+                      </details>
                     </template>
                     <template v-else>
                       {{ getBubbleContent(item) }}
@@ -680,6 +763,7 @@ const {
   capabilityCatalogLoading,
   conversationsLoading,
   bubbleItems,
+  liveEventTrail,
   messageCount,
   sending,
   loadAll,
@@ -1024,16 +1108,7 @@ const detailActionItems = computed<ActionItem[]>(() => {
   return items;
 });
 
-const buildPageContext = (): AiAssistantPageContext => {
-  return {
-    routePath: route.path,
-    fullPath: route.fullPath,
-    routeName: route.name ? String(route.name) : "",
-    routeTitle: currentRouteTitle.value,
-    query: route.query,
-    params: route.params,
-  };
-};
+const buildPageContext = (): AiAssistantPageContext => ({});
 
 const formatTime = (value: string) => dayjs(value).format("MM-DD HH:mm");
 
@@ -1061,9 +1136,76 @@ const getBubbleToolLabel = (item: unknown) => getBubbleItem(item).toolLabel;
 
 const getBubbleTime = (item: unknown) => formatTime(getBubbleItem(item).createdAt);
 
+const getBubbleReasoning = (item: unknown) => String(getBubbleItem(item).reasoning || "");
+
+const getBubbleStageLabel = (item: unknown) => {
+  const stage = String(getBubbleItem(item).streamStage || "");
+  if (stage === "planning") {
+    return "正在规划";
+  }
+  if (stage === "reasoning") {
+    return "思考过程";
+  }
+  if (stage === "answering") {
+    return "正在回答";
+  }
+  if (stage === "fallback") {
+    return "兜底回复";
+  }
+  return "处理中";
+};
+
+const getBubbleUsageText = (item: unknown) => {
+  const usage = getBubbleItem(item).usage;
+  if (!usage || typeof usage !== "object") {
+    return "";
+  }
+
+  const total = Number((usage as Record<string, any>).total_tokens || 0);
+  const prompt = Number((usage as Record<string, any>).prompt_tokens || 0);
+  const completion = Number((usage as Record<string, any>).completion_tokens || 0);
+  const reasoning = Number(
+    (usage as Record<string, any>).completion_tokens_details?.reasoning_tokens || 0,
+  );
+
+  const parts = [
+    prompt > 0 ? `输入 ${prompt}` : "",
+    completion > 0 ? `输出 ${completion}` : "",
+    total > 0 ? `合计 ${total}` : "",
+    reasoning > 0 ? `思考 ${reasoning}` : "",
+  ].filter(Boolean);
+
+  return parts.length ? `Token：${parts.join(" · ")}` : "";
+};
+
+const getBubbleEventTrail = (item: unknown) => getBubbleItem(item).eventTrail || [];
+
+const formatEventTime = (value: string) => dayjs(value).format("HH:mm:ss");
+
+const shouldShowEventPayload = (event: string) => {
+  return [
+    "assistant.plan",
+    "assistant.usage",
+    "tool.pending",
+    "tool.completed",
+    "chat.result",
+  ].includes(String(event || ""));
+};
+
 const isToolBubble = (item: unknown) => getBubbleItem(item).role === "tool";
 
 const isBubbleLoading = (item: unknown) => !!getBubbleItem(item).loading;
+
+const isBubblePureLoading = (item: unknown) => {
+  if (!isBubbleLoading(item)) {
+    return false;
+  }
+
+  const bubbleItem = getBubbleItem(item);
+  return !String(bubbleItem.content || "").trim() &&
+    !String(bubbleItem.reasoning || "").trim() &&
+    !(bubbleItem.eventTrail?.length || 0);
+};
 
 const summarizeJson = (value: unknown) => {
   if (!value || typeof value !== "object") {
@@ -2132,6 +2274,190 @@ watch(
       text-decoration: none;
       word-break: break-word;
     }
+  }
+
+  &__reasoning-block {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 78%, transparent 22%);
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+  }
+
+  &__reasoning-title {
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text-secondary);
+  }
+
+  &__reasoning-text {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ai-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__usage-text {
+    margin-top: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ai-text-tertiary);
+  }
+
+  &__live-trail {
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 18px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 72%, transparent 28%);
+  }
+
+  &__live-trail-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  &__live-trail-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ai-text);
+  }
+
+  &__live-trail-meta {
+    font-size: 12px;
+    color: var(--ai-text-tertiary);
+  }
+
+  &__live-trail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 260px;
+    overflow: auto;
+  }
+
+  &__live-trail-item {
+    padding: 10px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--ai-panel-bg) 76%, transparent 24%);
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 78%, transparent 22%);
+  }
+
+  &__live-trail-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  &__live-trail-item-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text);
+  }
+
+  &__live-trail-item-time {
+    font-size: 11px;
+    color: var(--ai-text-tertiary);
+  }
+
+  &__live-trail-item-summary {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ai-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__live-trail-item-payload {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.55;
+    border-radius: 10px;
+    overflow: auto;
+    color: var(--ai-text-secondary);
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 52%, transparent 48%);
+  }
+
+  &__event-trail {
+    margin-top: 12px;
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 84%, transparent 16%);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 64%, transparent 36%);
+    overflow: hidden;
+  }
+
+  &__event-trail-summary {
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text-secondary);
+    user-select: none;
+    list-style: none;
+  }
+
+  &__event-trail-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  &__event-trail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+
+  &__event-trail-item {
+    padding: 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--ai-panel-bg) 72%, transparent 28%);
+    border: 1px solid color-mix(in srgb, var(--ai-border-color) 78%, transparent 22%);
+  }
+
+  &__event-trail-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  &__event-trail-item-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ai-text);
+  }
+
+  &__event-trail-item-time {
+    font-size: 11px;
+    color: var(--ai-text-tertiary);
+  }
+
+  &__event-trail-item-summary {
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--ai-text-secondary);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__event-trail-item-payload {
+    margin: 8px 0 0;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.55;
+    border-radius: 10px;
+    overflow: auto;
+    color: var(--ai-text-secondary);
+    background: color-mix(in srgb, var(--ai-panel-soft-bg) 52%, transparent 48%);
   }
 
   &__tool-message {

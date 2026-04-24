@@ -1,4 +1,7 @@
 import request from "@/config/axios";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { getAccessToken } from "@/utils/auth";
+import { config } from "@/config/axios/config";
 
 export interface AiAssistantPageContext {
   routePath?: string;
@@ -124,6 +127,11 @@ export interface AiAssistantChatResult {
   messages: AiAssistantMessage[];
 }
 
+export interface AiAssistantChatStreamEvent {
+  event: string;
+  data: any;
+}
+
 export const AiAssistantApi = {
   getConversations: async () => {
     return request.get<AiAssistantConversation[]>({
@@ -217,6 +225,61 @@ export const AiAssistantApi = {
         attachments,
         pageContext,
         conversationId: conversationId || undefined,
+      },
+    });
+  },
+
+  chatStream: async (
+    message: string,
+    attachments: AiAssistantAttachment[] | undefined,
+    pageContext: AiAssistantPageContext | undefined,
+    conversationId: number | null | undefined,
+    options: {
+      enableThinking?: boolean;
+      thinkingBudget?: number;
+      includeUsage?: boolean;
+      signal: AbortSignal;
+      onEvent: (event: AiAssistantChatStreamEvent) => void;
+      onError?: (error: any) => void;
+      onClose?: () => void;
+    },
+  ) => {
+    const token = getAccessToken();
+    return fetchEventSource(`${config.base_url}/ai-assistant/chat-stream`, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      openWhenHidden: true,
+      signal: options.signal,
+      body: JSON.stringify({
+        message,
+        attachments,
+        pageContext,
+        conversationId: conversationId || undefined,
+        enableThinking: options.enableThinking,
+        thinkingBudget: options.thinkingBudget,
+        includeUsage: options.includeUsage !== false,
+      }),
+      onmessage(event) {
+        let parsed: any = {};
+        try {
+          parsed = event.data ? JSON.parse(event.data) : {};
+        } catch {
+          parsed = {};
+        }
+        options.onEvent({
+          event: event.event || "message",
+          data: parsed,
+        });
+      },
+      onerror(error) {
+        options.onError?.(error);
+        throw error;
+      },
+      onclose() {
+        options.onClose?.();
       },
     });
   },
