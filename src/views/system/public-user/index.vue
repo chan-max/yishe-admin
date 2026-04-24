@@ -12,7 +12,11 @@
                     size="small"
                     placeholder="请输入用户账号"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
@@ -23,15 +27,30 @@
                     size="small"
                     placeholder="请输入用户姓名"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
-              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
-              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="handleSearch"
+                >搜索</el-button
+              >
+              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery"
+                >重置</el-button
+              >
+              <el-button size="small" type="primary" :icon="Plus" @click="handleAdd"
+                >新增</el-button
+              >
               <el-button
                 size="small"
                 type="danger"
@@ -47,7 +66,9 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid
@@ -68,6 +89,16 @@
                   </el-tag>
                 </template>
 
+                <template #ownerUserDefaultSlot="{ row }">
+                  <span>
+                    {{
+                      row.ownerUser?.name && row.ownerUser?.account
+                        ? `${row.ownerUser.name} (${row.ownerUser.account})`
+                        : row.ownerUser?.name || row.ownerUser?.account || "-"
+                    }}
+                  </span>
+                </template>
+
                 <template #operationDefaultSlot="{ row }">
                   <div class="flex justify-start">
                     <el-dropdown
@@ -75,17 +106,21 @@
                       @command="(command) => handleOperationCommand(command, row)"
                       class="operation-dropdown"
                     >
-                      <el-button type="primary" link size="small" class="operation-trigger-button">操作</el-button>
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
                           <el-dropdown-item command="edit">
                             <span>编辑</span>
                           </el-dropdown-item>
-                          <template v-if="userStore.user?.isAdmin">
-                            <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
-                              <span>删除</span>
-                            </el-dropdown-item>
-                          </template>
+                          <el-dropdown-item
+                            command="delete"
+                            divided
+                            class="operation-menu-item--danger"
+                          >
+                            <span>删除</span>
+                          </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -98,7 +133,9 @@
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
           <pagination
             :total="total"
             v-model:page="queryParams.currentPage"
@@ -280,6 +317,15 @@ const gridOptions = ref({
     },
     { title: "用户账号", field: "account", minWidth: 120, className: "font-bold" },
     { title: "用户姓名", field: "name", minWidth: 120 },
+    {
+      title: "归属用户",
+      field: "ownerUser",
+      minWidth: 180,
+      showOverflow: true,
+      slots: {
+        default: "ownerUserDefaultSlot",
+      },
+    },
     { title: "手机号码", field: "phone", width: 120 },
     { title: "邮箱地址", field: "email", minWidth: 150, showOverflow: true },
     {
@@ -413,11 +459,7 @@ function handleOperationCommand(command, row) {
 
 // 删除用户
 function handleDelete(row?) {
-  if (deleteLoading.value) return
-  const userStore = useUserStore();
-  if (!userStore.user?.isAdmin) {
-    return ElMessage.warning("无权限：仅管理员可执行删除操作");
-  }
+  if (deleteLoading.value) return;
   let delIds: string[] = [];
   if (row) {
     delIds = [row.id];
@@ -434,7 +476,7 @@ function handleDelete(row?) {
   })
     .then(async () => {
       try {
-        deleteLoading.value = true
+        deleteLoading.value = true;
         for (const id of delIds) {
           await deletePublicUser(id);
         }
@@ -443,7 +485,7 @@ function handleDelete(row?) {
       } catch (error) {
         ElMessage.error("删除失败");
       } finally {
-        deleteLoading.value = false
+        deleteLoading.value = false;
       }
     })
     .catch(() => {});
@@ -451,9 +493,9 @@ function handleDelete(row?) {
 
 // 提交表单
 async function handleSubmit() {
-  if (submitLoading.value) return
+  if (submitLoading.value) return;
   try {
-    submitLoading.value = true
+    submitLoading.value = true;
     await formRef.value.validate();
 
     const submitData = { ...formData };
@@ -480,7 +522,7 @@ async function handleSubmit() {
   } catch (error) {
     ElMessage.error("操作失败");
   } finally {
-    submitLoading.value = false
+    submitLoading.value = false;
   }
 }
 
