@@ -85,6 +85,10 @@
                             <el-icon><Edit /></el-icon>
                             <span>编辑</span>
                           </el-dropdown-item>
+                          <el-dropdown-item command="products">
+                            <el-icon><Goods /></el-icon>
+                            <span>商品</span>
+                          </el-dropdown-item>
                           <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
                             <el-icon><Delete /></el-icon>
                             <span>删除</span>
@@ -107,7 +111,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { Goods } from "@element-plus/icons-vue";
 import type { VendorProductItem } from "@/api/vendor";
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from "@/common/table";
 import { batchDeleteVendor, deleteVendor, getVendorList } from "@/api/vendor";
@@ -119,6 +125,7 @@ const loading = ref(false);
 const list = ref<any[]>([]);
 const dialogRef = ref();
 const selectedIds = ref<number[]>([]);
+const router = useRouter();
 
 const updateSelectedIds = (records: any[]) => {
   selectedIds.value = (records || [])
@@ -180,6 +187,9 @@ const handleOperationCommand = (command: string, row: any) => {
   switch (command) {
     case "edit":
       openDialog(row.id);
+      break;
+    case "products":
+      router.push({ path: "/operation/vendor-product", query: { vendorId: row.id } });
       break;
     case "delete":
       handleDelete(row.id);

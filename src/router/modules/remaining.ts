@@ -625,7 +625,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         component: () => import("@/views/vendor/index.vue"),
         name: "VendorIndex",
         meta: {
-          title: "厂家管理",
+          title: "供应商管理",
+        },
+      },
+      {
+        path: "vendor-product",
+        component: () => import("@/views/vendor-product/index.vue"),
+        name: "VendorProductIndex",
+        meta: {
+          title: "供应商商品",
         },
       },
       {

@@ -15,10 +15,17 @@ export interface Vendor {
 }
 
 export interface VendorProductItem {
+  id?: number
+  vendorId?: number
   name: string
   model?: string
   size?: string
   price?: number | null
+  unit?: string
+  remark?: string
+  vendor?: Vendor
+  createTime?: string
+  updateTime?: string
 }
 
 export const getVendorList = () => request.get({ url: '/operations/vendor' })
@@ -34,3 +41,17 @@ export const deleteVendor = (id: number) => request.delete({ url: `/operations/v
 
 export const batchDeleteVendor = (ids: number[]) =>
   request.post({ url: '/operations/vendor/batch-delete', data: { ids } })
+
+export const getVendorProductList = () => request.get({ url: '/operations/vendor/products/list' })
+
+export const getVendorProductsByVendor = (vendorId: number) =>
+  request.get({ url: `/operations/vendor/${vendorId}/products` })
+
+export const createVendorProduct = (data: VendorProductItem) =>
+  request.post({ url: '/operations/vendor/products', data })
+
+export const updateVendorProduct = (id: number, data: VendorProductItem) =>
+  request.patch({ url: `/operations/vendor/products/${id}`, data })
+
+export const deleteVendorProduct = (id: number) =>
+  request.delete({ url: `/operations/vendor/products/${id}` })
