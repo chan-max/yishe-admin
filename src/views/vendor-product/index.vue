@@ -10,6 +10,15 @@
                   <el-option v-for="vendor in vendors" :key="vendor.id" :label="vendor.name" :value="vendor.id" />
                 </el-select>
                 <el-button size="small" type="primary" @click="openDialog()">新增供应商商品</el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  plain
+                  :disabled="!selectedIds.length"
+                  @click="handleBatchDelete"
+                >
+                  批量删除
+                </el-button>
               </div>
             </div>
           </div>
@@ -20,7 +29,13 @@
         <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body">
             <div class="common-table">
-              <vxe-grid v-bind="gridOptions" :data="filteredList" :loading="loading">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="filteredList"
+                :loading="loading"
+                @checkbox-change="handleCheckboxChange"
+                @checkbox-all="handleCheckboxAll"
+              >
                 <template #vendorSlot="{ row }">
                   <span>{{ row.vendor?.name || getVendorName(row.vendorId) }}</span>
                 </template>
@@ -102,6 +117,7 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { buildOperationColumn, buildTimeColumn, commonGridOptions } from '@/common/table'
 import {
+  batchDeleteVendorProduct,
   createVendorProduct,
   deleteVendorProduct,
   getVendorList,
@@ -121,6 +137,7 @@ const formRef = ref<FormInstance>()
 const list = ref<VendorProductItem[]>([])
 const vendors = ref<Vendor[]>([])
 const queryVendorId = ref<number | undefined>()
+const selectedIds = ref<number[]>([])
 
 const createEmptyForm = (): VendorProductItem => ({
   vendorId: undefined,
@@ -147,7 +164,11 @@ const filteredList = computed(() => {
 const gridOptions = ref({
   ...commonGridOptions,
   rowConfig: { keyField: 'id' },
+  checkboxConfig: {
+    reserve: true
+  },
   columns: [
+    { type: 'checkbox', width: 48 },
     { title: 'ID', field: 'id', width: 80 },
     { title: '供应商', field: 'vendorId', minWidth: 180, slots: { default: 'vendorSlot' } },
     { title: '商品名称', field: 'name', minWidth: 160 },
@@ -163,6 +184,12 @@ const gridOptions = ref({
 
 const getVendorName = (vendorId?: number) => vendors.value.find((item) => Number(item.id) === Number(vendorId))?.name || '-'
 
+const updateSelectedIds = (records: VendorProductItem[] = []) => {
+  selectedIds.value = (records || [])
+    .map((item) => Number(item.id))
+    .filter((id) => Number.isInteger(id) && id > 0)
+}
+
 const resetForm = () => {
   Object.assign(formData, createEmptyForm())
   formRef.value?.clearValidate()
@@ -174,6 +201,7 @@ const loadData = async () => {
     const [vendorData, productData] = await Promise.all([getVendorList(), getVendorProductList()])
     vendors.value = Array.isArray(vendorData) ? vendorData : []
     list.value = Array.isArray(productData) ? productData : []
+    selectedIds.value = []
   } finally {
     loading.value = false
   }
@@ -208,6 +236,28 @@ const handleDelete = async (id?: number) => {
     await ElMessageBox.confirm('确认删除该供应商商品吗？', '提示', { type: 'warning' })
     await deleteVendorProduct(id)
     ElMessage.success('删除成功')
+    await loadData()
+  } catch {}
+}
+
+const handleCheckboxChange = ({ records }: any) => {
+  updateSelectedIds(records)
+}
+
+const handleCheckboxAll = ({ records }: any) => {
+  updateSelectedIds(records)
+}
+
+const handleBatchDelete = async () => {
+  if (!selectedIds.value.length) return
+  try {
+    await ElMessageBox.confirm(
+      `确认批量删除 ${selectedIds.value.length} 个供应商商品吗？`,
+      '提示',
+      { type: 'warning' }
+    )
+    await batchDeleteVendorProduct(selectedIds.value)
+    ElMessage.success('批量删除成功')
     await loadData()
   } catch {}
 }

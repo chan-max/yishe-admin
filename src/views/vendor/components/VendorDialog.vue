@@ -89,75 +89,6 @@
         </el-row>
       </div>
 
-      <div class="vendor-form__section">
-        <div class="vendor-form__section-header">
-          <div class="vendor-form__section-title mb-0">商品信息</div>
-          <el-button type="primary" plain @click="addProduct">新增商品</el-button>
-        </div>
-
-        <div v-if="formData.products.length" class="vendor-product-list">
-          <div v-for="(product, productIndex) in formData.products" :key="product.localKey" class="vendor-product-card">
-            <div class="vendor-product-card__header">
-              <div class="vendor-product-card__title">商品 {{ productIndex + 1 }}</div>
-              <el-button type="danger" link @click="removeProduct(productIndex)">删除商品</el-button>
-            </div>
-
-            <el-row :gutter="20">
-              <el-col :xs="24" :md="8">
-                <el-form-item :label="`商品名称 ${productIndex + 1}`" label-width="120px">
-                  <el-input v-model="product.name" placeholder="例如：鼠标垫、圆鼠标垫" />
-                </el-form-item>
-              </el-col>
-            </el-row>
-
-            <div class="vendor-product-card__subheader">
-              <div class="vendor-product-card__subtitle">型号与价格</div>
-              <el-button type="primary" link @click="addVariant(productIndex)">新增型号</el-button>
-            </div>
-
-            <div v-if="product.variants.length" class="vendor-product-card__variants">
-              <div
-                v-for="(variant, variantIndex) in product.variants"
-                :key="variant.localKey"
-                class="vendor-product-card__variant"
-              >
-                <el-row :gutter="16">
-                  <el-col :xs="24" :md="7">
-                    <el-form-item :label="variantIndex === 0 ? '型号' : ' '" label-width="72px">
-                      <el-input v-model="variant.model" placeholder="例如：标准款、加厚款" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :md="7">
-                    <el-form-item :label="variantIndex === 0 ? '尺寸' : ' '" label-width="72px">
-                      <el-input v-model="variant.size" placeholder="可留空，例如：240x200mm" />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :md="7">
-                    <el-form-item :label="variantIndex === 0 ? '价格' : ' '" label-width="72px">
-                      <el-input-number
-                        v-model="variant.price"
-                        :min="0"
-                        :precision="2"
-                        :step="0.1"
-                        :controls="false"
-                        class="w-full"
-                        placeholder="请输入价格"
-                      />
-                    </el-form-item>
-                  </el-col>
-                  <el-col :xs="24" :md="3" class="vendor-product-card__variant-action">
-                    <el-button type="danger" link @click="removeVariant(productIndex, variantIndex)">删除</el-button>
-                  </el-col>
-                </el-row>
-              </div>
-            </div>
-
-            <el-empty v-else description="先为这个商品添加型号、尺寸和价格" :image-size="68" />
-          </div>
-        </div>
-
-        <el-empty v-else description="还没有录入商品，点击右上角新增商品" :image-size="88" />
-      </div>
     </el-form>
     <template #footer>
       <el-button @click="handleCancel">取消</el-button>
@@ -171,7 +102,6 @@ import type { UploadProps, UploadUserFile } from 'element-plus'
 import { computed, reactive, ref, unref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import type { VendorProductItem } from '@/api/vendor'
 import { createVendor, getVendorDetail, updateVendor } from '@/api/vendor'
 import { createImageViewer } from '@/components/ImageViewer'
 import { uploadToCOS } from '@/api/cos'
@@ -187,75 +117,6 @@ const formRef = ref()
 const imageFileList = ref<UploadUserFile[]>([])
 const existingImages = ref<string[]>([])
 
-type ProductVariantFormItem = {
-  localKey: string
-  model: string
-  size: string
-  price: number | null
-}
-
-type ProductFormItem = {
-  localKey: string
-  name: string
-  variants: ProductVariantFormItem[]
-}
-
-const createLocalKey = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-
-const createEmptyVariant = (): ProductVariantFormItem => ({
-  localKey: createLocalKey(),
-  model: '',
-  size: '',
-  price: null
-})
-
-const createEmptyProduct = (): ProductFormItem => ({
-  localKey: createLocalKey(),
-  name: '',
-  variants: [createEmptyVariant()]
-})
-
-const buildProductFormList = (
-  products?: VendorProductItem[]
-): ProductFormItem[] => {
-  const groupedProducts = new Map<string, ProductFormItem>()
-
-  ;(products || []).forEach((item) => {
-    const productName = String(item?.name || '').trim()
-    const groupKey = productName || createLocalKey()
-    const existingProduct =
-      groupedProducts.get(groupKey) ||
-      ({
-        localKey: createLocalKey(),
-        name: productName,
-        variants: []
-      } as ProductFormItem)
-
-    existingProduct.variants.push({
-      localKey: createLocalKey(),
-      model: String(item?.model || '').trim(),
-      size: String(item?.size || '').trim(),
-      price: item?.price === undefined || item?.price === null ? null : Number(item.price)
-    })
-
-    groupedProducts.set(groupKey, existingProduct)
-  })
-
-  return Array.from(groupedProducts.values())
-}
-
-const flattenProducts = (products: ProductFormItem[]): VendorProductItem[] =>
-  products.flatMap((product) =>
-    product.variants
-      .map((variant) => ({
-        name: String(product.name || '').trim(),
-        model: String(variant.model || '').trim(),
-        size: String(variant.size || '').trim(),
-        price: variant.price === undefined || variant.price === null ? null : Number(variant.price)
-      }))
-      .filter((item) => item.name || item.model || item.size || item.price !== null)
-  )
-
 const formData = reactive({
   id: undefined as number | undefined,
   code: '',
@@ -264,8 +125,7 @@ const formData = reactive({
   contactName: '',
   contactPhone: '',
   address: '',
-  images: [] as string[],
-  products: [] as ProductFormItem[]
+  images: [] as string[]
 })
 
 const formRules = {
@@ -301,7 +161,6 @@ const resetForm = () => {
   formData.contactPhone = ''
   formData.address = ''
   formData.images = []
-  formData.products = []
   existingImages.value = []
   imageFileList.value = []
 }
@@ -317,11 +176,9 @@ const open = async (id?: number) => {
   try {
     const data = await getVendorDetail(id)
     const images = Array.isArray(data?.images) ? data.images : []
-    const products = buildProductFormList(Array.isArray(data?.products) ? data.products : [])
     Object.assign(formData, {
       ...data,
-      images,
-      products
+      images
     })
     existingImages.value = [...images]
     imageFileList.value = buildExistingFileList(images)
@@ -384,53 +241,6 @@ const handleCancel = () => {
   resetForm()
 }
 
-const addProduct = () => {
-  formData.products.push(createEmptyProduct())
-}
-
-const removeProduct = (productIndex: number) => {
-  formData.products.splice(productIndex, 1)
-}
-
-const addVariant = (productIndex: number) => {
-  formData.products[productIndex]?.variants.push(createEmptyVariant())
-}
-
-const removeVariant = (productIndex: number, variantIndex: number) => {
-  const variants = formData.products[productIndex]?.variants
-  if (!variants) return
-  variants.splice(variantIndex, 1)
-  if (!variants.length) {
-    variants.push(createEmptyVariant())
-  }
-}
-
-const validateProducts = () => {
-  const normalizedProducts = flattenProducts(formData.products)
-
-  if (!normalizedProducts.length) return true
-
-  const hasMissingProductName = normalizedProducts.some((item) => !item.name)
-  if (hasMissingProductName) {
-    ElMessage.warning('请先填写商品名称')
-    return false
-  }
-
-  const hasMissingModel = normalizedProducts.some((item) => !item.model)
-  if (hasMissingModel) {
-    ElMessage.warning('请为每个商品填写型号')
-    return false
-  }
-
-  const hasMissingPrice = normalizedProducts.some((item) => item.price === null || Number.isNaN(Number(item.price)))
-  if (hasMissingPrice) {
-    ElMessage.warning('请为每个型号填写价格')
-    return false
-  }
-
-  return true
-}
-
 const uploadPendingImages = async () => {
   const uploadedUrls = new Map<UploadUserFile, string>()
 
@@ -462,15 +272,13 @@ const submitForm = async () => {
 
   await form.validate(async (valid) => {
     if (!valid) return
-    if (!validateProducts()) return
 
     formLoading.value = true
     try {
       const images = await uploadPendingImages()
       const payload = {
         ...formData,
-        images,
-        products: flattenProducts(formData.products)
+        images
       }
 
       if (payload.id) {
@@ -516,9 +324,7 @@ defineExpose({ open })
   color: var(--el-text-color-primary);
 }
 
-.vendor-form__section-header,
-.vendor-product-card__header,
-.vendor-product-card__subheader {
+.vendor-form__section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -545,53 +351,6 @@ defineExpose({ open })
 
 .vendor-form :deep(.el-textarea__inner) {
   min-height: 140px;
-}
-
-.vendor-product-list {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.vendor-product-card {
-  padding: 16px;
-  border: 1px solid var(--app-content-border-color);
-  border-radius: 12px;
-  background: var(--app-content-surface-muted-color);
-}
-
-.vendor-product-card__header {
-  margin-bottom: 18px;
-}
-
-.vendor-product-card__title,
-.vendor-product-card__subtitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.vendor-product-card__subheader {
-  margin: 4px 0 12px;
-}
-
-.vendor-product-card__variants {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.vendor-product-card__variant {
-  padding: 14px 14px 0;
-  border-radius: 10px;
-  background: var(--app-content-surface-color);
-  border: 1px solid var(--app-content-border-color);
-}
-
-.vendor-product-card__variant-action {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
 }
 
 .vendor-image-upload :deep(.el-upload--picture-card),

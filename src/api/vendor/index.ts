@@ -55,3 +55,6 @@ export const updateVendorProduct = (id: number, data: VendorProductItem) =>
 
 export const deleteVendorProduct = (id: number) =>
   request.delete({ url: `/operations/vendor/products/${id}` })
+
+export const batchDeleteVendorProduct = (ids: number[]) =>
+  request.post({ url: '/operations/vendor/products/batch-delete', data: { ids } })
