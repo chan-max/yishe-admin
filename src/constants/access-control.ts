@@ -15,7 +15,6 @@ export interface MenuAccessGroup {
 export const ADMIN_ONLY_MENU_KEYS = new Set([
   "system.user",
   "system.company",
-  "system.public-user",
   "system.websocket",
   "system.operatelog",
 ]);
@@ -99,7 +98,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "system.message-push", label: "消息推送" },
       { key: "system.user", label: "用户管理", adminOnly: true },
       { key: "system.company", label: "公司管理", adminOnly: true },
-      { key: "system.public-user", label: "开放用户管理", adminOnly: true },
+      { key: "system.public-user", label: "开放用户管理" },
       { key: "system.websocket", label: "远程连接", adminOnly: true },
       { key: "system.operatelog", label: "操作日志", adminOnly: true },
     ],
@@ -130,6 +129,8 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   OperationToolkitRoot: "external.toolkit",
   OperationToolkit: "external.toolkit",
   OperationToolkitTemu: "external.toolkit",
+  OperationToolkitDoudian: "external.toolkit",
+  OperationToolkitKuaishouShop: "external.toolkit",
   ExternalToolkitLegacy: "external.toolkit",
   ExternalTemuLegacy: "external.toolkit",
   ExternalBrowserAutomation: "external.browser-automation",
