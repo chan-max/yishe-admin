@@ -713,8 +713,8 @@
       align-center
       :destroy-on-close="true"
     >
-      <div style="margin-bottom: 16px; color: #888; font-size: 15px">
-        <span style="color: #f56c6c; font-size: 13px"> 注意：需要模板有缩略图才能进行AI分析 </span>
+      <div style="margin-bottom: 16px; font-size: 15px; color: #888">
+        <span style="font-size: 13px; color: #f56c6c"> 注意：需要模板有缩略图才能进行AI分析 </span>
       </div>
       <el-input
         v-model="aiGenPrompt"
@@ -722,7 +722,7 @@
         :rows="6"
         placeholder="例如：【T恤、男装、短袖】或【儿童地毯、地垫、游戏垫、房间装饰】。重点描述商品名称和相关的类别/兼容性关键词，方便搜索。"
         :autosize="{ minRows: 6, maxRows: 10 }"
-        style="font-size: 16px; min-height: 120px; width: 100%; resize: vertical"
+        style="width: 100%; min-height: 120px; font-size: 16px; resize: vertical"
       />
       <template #footer>
         <el-button @click="aiGenDialogVisible = false">取消</el-button>
@@ -2271,7 +2271,7 @@ function handleCutoutModesChange(values: string[]) {
   grid-template-areas:
     "basic assets"
     "sizes config";
-  gap: 12px 16px;
+  gap: 16px 20px;
   width: 100%;
   min-width: 0;
   min-height: 0;
@@ -2280,8 +2280,8 @@ function handleCutoutModesChange(values: string[]) {
 }
 
 .dialog-section {
-  border-radius: 10px;
-  padding: 12px 14px;
+  border-radius: 8px;
+  padding: 16px 18px;
   border: 1px solid var(--el-border-color-extra-light);
   min-height: 0;
 }
@@ -2290,7 +2290,7 @@ function handleCutoutModesChange(values: string[]) {
   font-size: 14px;
   font-weight: 600;
   color: var(--el-text-color-primary);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   line-height: 1.2;
 }
 
@@ -2311,16 +2311,30 @@ function handleCutoutModesChange(values: string[]) {
 }
 
 .psd-template-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
   :deep(.el-form-item__label) {
     color: var(--el-text-color-secondary);
   }
 
   :deep(.el-form-item) {
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
 
-  :deep(.el-form-item:last-child) {
-    margin-bottom: 0;
+  :deep(.el-form-item__content) {
+    min-width: 0;
+  }
+
+  :deep(.el-input),
+  :deep(.el-select),
+  :deep(.el-textarea) {
+    width: 100%;
+  }
+
+  :deep(.el-row) {
+    row-gap: 16px;
   }
 }
 
@@ -2331,7 +2345,7 @@ function handleCutoutModesChange(values: string[]) {
 .asset-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: 20px;
 }
 
 .asset-form-item {
@@ -2339,8 +2353,15 @@ function handleCutoutModesChange(values: string[]) {
 }
 
 .asset-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
   min-width: 0;
+
+  .asset-file-meta {
+    margin-top: 0;
+  }
 }
 
 .size-select {
@@ -2603,7 +2624,7 @@ function handleCutoutModesChange(values: string[]) {
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 16px;
   flex-wrap: wrap;
 
   .thumbnail-upload-placeholder {
