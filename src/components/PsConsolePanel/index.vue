@@ -457,7 +457,7 @@
                   </div>
                   <div class="field-block">
                     <label>导出目录</label>
-                    <el-input v-model="processForm.exportDir" placeholder="留空则使用默认 output" />
+                    <el-input v-model="processForm.exportDir" placeholder="由客户端自动使用工作目录\\psd-test" disabled />
                   </div>
                   <div class="form-grid">
                     <div class="field-block">

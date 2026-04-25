@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ContentWrap :plain="true">
     <ListPageLayout
       class="psd-template-page"
@@ -413,37 +413,6 @@
         </div>
       </template>
     </ListPageLayout>
-
-    <div v-if="psdTemplateSaveTasks.length" class="psd-template-save-task-panel">
-      <div class="psd-template-save-task-panel__head">
-        <div>
-          <div class="psd-template-save-task-panel__title">
-            <span class="psd-template-save-task-panel__pulse" />
-            模板上传任务
-          </div>
-          <div class="psd-template-save-task-panel__desc">
-            {{ runningPsdTemplateSaveTaskCount ? "正在后台上传，关闭弹窗不会中断任务。" : "上传任务已处理完成。" }}
-          </div>
-        </div>
-        <el-button size="small" text @click="clearFinishedPsdTemplateSaveTasks">清理完成项</el-button>
-      </div>
-      <div class="psd-template-save-task-list">
-        <div
-          v-for="task in psdTemplateSaveTasks"
-          :key="task.id"
-          class="psd-template-save-task"
-          :class="`is-${task.status}`"
-        >
-          <div class="psd-template-save-task__main">
-            <div class="psd-template-save-task__name">{{ task.name || "未命名模板" }}</div>
-            <div class="psd-template-save-task__stage">{{ task.stage }}</div>
-          </div>
-          <el-tag :type="getPsdTemplateSaveTaskTagType(task.status)" size="small" effect="plain">
-            {{ getPsdTemplateSaveTaskStatusText(task.status) }}
-          </el-tag>
-        </div>
-      </div>
-    </div>
 
     <el-dialog
       :title="dialogTitle"
@@ -913,6 +882,11 @@ import {
 import { useFolderRowDrag } from "@/hooks/useFolderRowDrag";
 import { FOLDER_FILTER, convertFolderIdToApiParam } from "@/constants/folder";
 import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
+import {
+  createGlobalUploadTask,
+  updateGlobalUploadTask,
+  type GlobalUploadTask,
+} from "@/services/globalUploadTasks";
 
 const userStore = useUserStore();
 const isAdmin = computed(() => userStore.user?.isAdmin ?? false);
@@ -1103,60 +1077,6 @@ const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
 const submitLoading = ref(false);
-
-type PsdTemplateSaveTaskStatus = "running" | "success" | "error";
-type PsdTemplateSaveTask = {
-  id: string;
-  name: string;
-  status: PsdTemplateSaveTaskStatus;
-  stage: string;
-  startedAt: number;
-  error?: string;
-};
-const psdTemplateSaveTasks = ref<PsdTemplateSaveTask[]>([]);
-const runningPsdTemplateSaveTaskCount = computed(
-  () => psdTemplateSaveTasks.value.filter((task) => task.status === "running").length,
-);
-
-const getPsdTemplateSaveTaskTagType = (status: PsdTemplateSaveTaskStatus) => {
-  if (status === "success") return "success";
-  if (status === "error") return "danger";
-  return "primary";
-};
-
-const getPsdTemplateSaveTaskStatusText = (status: PsdTemplateSaveTaskStatus) => {
-  if (status === "success") return "已完成";
-  if (status === "error") return "失败";
-  return "进行中";
-};
-
-const clearFinishedPsdTemplateSaveTasks = () => {
-  psdTemplateSaveTasks.value = psdTemplateSaveTasks.value.filter(
-    (task) => task.status === "running",
-  );
-};
-
-const updatePsdTemplateSaveTask = (
-  taskId: string,
-  patch: Partial<Omit<PsdTemplateSaveTask, "id" | "startedAt">>,
-) => {
-  psdTemplateSaveTasks.value = psdTemplateSaveTasks.value.map((task) =>
-    task.id === taskId ? { ...task, ...patch } : task,
-  );
-};
-
-const createPsdTemplateSaveTask = (name: string) => {
-  const task: PsdTemplateSaveTask = {
-    id: `psd-template-save-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    name,
-    status: "running",
-    stage: "等待上传",
-    startedAt: Date.now(),
-  };
-  psdTemplateSaveTasks.value = [task, ...psdTemplateSaveTasks.value].slice(0, 8);
-  return task;
-};
-
 type PsdTemplateUserTransferAction = "copy" | "move";
 type PsdTemplateUserTransferUserOption = {
   id: string;
@@ -1628,7 +1548,7 @@ const buildPsdTemplateSubmitSnapshot = () => {
 };
 
 const runPsdTemplateSaveTask = async (
-  task: PsdTemplateSaveTask,
+  task: GlobalUploadTask,
   snapshot: ReturnType<typeof buildPsdTemplateSubmitSnapshot>,
 ) => {
   try {
@@ -1636,7 +1556,7 @@ const runPsdTemplateSaveTask = async (
     let thumbnail = snapshot.thumbnail;
 
     if (snapshot.file) {
-      updatePsdTemplateSaveTask(task.id, { stage: "正在上传 PSD 文件" });
+      updateGlobalUploadTask(task.id, { stage: "正在上传 PSD 文件", progress: 30 });
       const cos = await uploadToCOS({
         file: snapshot.file,
         category: "psd-template",
@@ -1649,7 +1569,7 @@ const runPsdTemplateSaveTask = async (
     }
 
     if (snapshot.thumbnailFile) {
-      updatePsdTemplateSaveTask(task.id, { stage: "正在上传缩略图" });
+      updateGlobalUploadTask(task.id, { stage: "正在上传缩略图", progress: 65 });
       const thumbnailCos = await uploadToCOS({
         file: snapshot.thumbnailFile,
         category: "psd-template",
@@ -1661,8 +1581,9 @@ const runPsdTemplateSaveTask = async (
       thumbnail = thumbnailCos.url;
     }
 
-    updatePsdTemplateSaveTask(task.id, {
+    updateGlobalUploadTask(task.id, {
       stage: snapshot.isEdit ? "正在保存模板" : "正在创建模板",
+      progress: 85,
     });
 
     if (snapshot.isEdit) {
@@ -1698,7 +1619,7 @@ const runPsdTemplateSaveTask = async (
       });
     }
 
-    updatePsdTemplateSaveTask(task.id, { status: "success", stage: "已完成" });
+    updateGlobalUploadTask(task.id, { status: "success", stage: "已完成", progress: 100 });
     ElNotification.success({
       title: snapshot.isEdit ? "PSD模板已更新" : "PSD模板已创建",
       message: snapshot.name || "未命名模板",
@@ -1708,7 +1629,7 @@ const runPsdTemplateSaveTask = async (
   } catch (error: any) {
     const message = error?.message || "操作失败，请重试";
     console.error("PSD模板后台保存失败:", error);
-    updatePsdTemplateSaveTask(task.id, { status: "error", stage: message, error: message });
+    updateGlobalUploadTask(task.id, { status: "error", stage: message, error: message, progress: 100 });
     ElNotification.error({
       title: "PSD模板上传失败",
       message,
@@ -1722,7 +1643,11 @@ const submitForm = async () => {
   try {
     await formRef.value.validate();
     const snapshot = buildPsdTemplateSubmitSnapshot();
-    const task = createPsdTemplateSaveTask(snapshot.name);
+    const task = createGlobalUploadTask(snapshot.name, {
+      source: "PSD模板",
+      stage: "等待上传 PSD 模板",
+      progress: 5,
+    });
 
     dialogVisible.value = false;
     ElNotification.info({
@@ -2671,122 +2596,6 @@ function handleCutoutModesChange(values: string[]) {
     line-height: 1.5;
     color: var(--el-text-color-primary);
     word-break: break-word;
-  }
-}
-
-.psd-template-save-task-panel {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 3000;
-  width: min(420px, calc(100vw - 32px));
-  max-height: min(420px, calc(100vh - 80px));
-  overflow: hidden;
-  padding: 14px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 12px;
-  background: var(--el-bg-color);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-}
-
-.psd-template-save-task-panel__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.psd-template-save-task-panel__title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--el-text-color-primary);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.psd-template-save-task-panel__pulse {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--el-color-primary);
-  box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.45);
-  animation: psd-template-upload-pulse 1.5s ease-out infinite;
-}
-
-.psd-template-save-task-panel__desc {
-  margin-top: 3px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-}
-
-.psd-template-save-task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 300px;
-  overflow: auto;
-}
-
-.psd-template-save-task {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 10px;
-  background: var(--el-fill-color-extra-light);
-}
-
-.psd-template-save-task.is-running {
-  border-color: var(--el-color-primary-light-5);
-  background: var(--el-color-primary-light-9);
-  box-shadow: inset 3px 0 0 var(--el-color-primary);
-}
-
-.psd-template-save-task.is-success {
-  border-color: var(--el-color-success-light-5);
-  background: var(--el-color-success-light-9);
-}
-
-.psd-template-save-task.is-error {
-  border-color: var(--el-color-danger-light-5);
-  background: var(--el-color-danger-light-9);
-}
-
-.psd-template-save-task__main {
-  min-width: 0;
-}
-
-.psd-template-save-task__name {
-  color: var(--el-text-color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.psd-template-save-task__stage {
-  margin-top: 3px;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  word-break: break-word;
-}
-
-@keyframes psd-template-upload-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.45);
-  }
-
-  70% {
-    box-shadow: 0 0 0 8px rgba(64, 158, 255, 0);
-  }
-
-  100% {
-    box-shadow: 0 0 0 0 rgba(64, 158, 255, 0);
   }
 }
 

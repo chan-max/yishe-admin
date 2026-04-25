@@ -5,6 +5,7 @@ import { useDesign } from '@/hooks/web/useDesign'
 import { CACHE_KEY, useCache } from '@/hooks/web/useCache'
 import routerSearch from '@/components/RouterSearch/index.vue'
 import ToolWindowHost from '@/components/ToolWindowHost/index.vue'
+import GlobalUploadTaskPanel from '@/components/GlobalUploadTaskPanel.vue'
 
 defineOptions({ name: 'APP' })
 
@@ -30,6 +31,7 @@ setDefaultTheme()
     <RouterView :class="greyMode ? `${prefixCls}-grey-mode` : ''" />
     <routerSearch />
     <ToolWindowHost />
+    <GlobalUploadTaskPanel />
   </ConfigGlobal>
 </template>
 <style lang="scss">
