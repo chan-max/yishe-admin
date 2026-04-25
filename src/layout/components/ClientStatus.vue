@@ -143,17 +143,9 @@ import {
   startWebSocketConnection,
 } from "@/stores/connectionStatus";
 import { websocketClient } from "@/services/websocketClient";
-import { useMyRuntimeConnectionStoreRefs } from "@/store/modules/myRuntimeConnection";
 import { formatPast } from "@/utils/formatTime";
-import { resolveRuntimeConnectionSourceKey } from "@/utils/websocketConnection";
 
 defineOptions({ name: "ClientStatus" });
-
-const {
-  store: runtimeStore,
-  connections: runtimeConnections,
-  loading: runtimeLoading,
-} = useMyRuntimeConnectionStoreRefs();
 
 const popoverVisible = ref(false);
 const clientDialogVisible = ref(false);
@@ -165,24 +157,11 @@ const onlineClientCount = computed(
 const offlineClientCount = computed(
   () => myClients.value.filter((client) => !client.isOnline).length,
 );
-const extensionCount = computed(
-  () =>
-    runtimeConnections.value.filter(
-      (item) => resolveRuntimeConnectionSourceKey(item) === "extension",
-    ).length,
-);
-const adminCount = computed(
-  () =>
-    runtimeConnections.value.filter((item) => resolveRuntimeConnectionSourceKey(item) === "admin")
-      .length,
-);
-const clientRuntimeCount = computed(
-  () =>
-    runtimeConnections.value.filter((item) => resolveRuntimeConnectionSourceKey(item) === "client")
-      .length,
-);
-const runtimeTotalCount = computed(() => runtimeConnections.value.length);
-const isRefreshing = computed(() => clientRefreshLoading.value || runtimeLoading.value);
+const extensionCount = computed(() => 0);
+const adminCount = computed(() => (isRemoteConnected.value ? 1 : 0));
+const clientRuntimeCount = computed(() => onlineClientCount.value);
+const runtimeTotalCount = computed(() => adminCount.value + clientRuntimeCount.value);
+const isRefreshing = computed(() => clientRefreshLoading.value);
 const triggerSummaryText = computed(() => {
   const nodeText = clientRecordCount.value
     ? `节点 ${onlineClientCount.value}/${clientRecordCount.value}`
@@ -213,7 +192,7 @@ const clientNodeMeta = computed(() => {
   return `${offlineClientCount.value} 个节点离线`;
 });
 const extensionStatusText = computed(() => `${extensionCount.value} 个连接`);
-const extensionStatusMeta = computed(() => (extensionCount.value > 0 ? "在线中" : "暂无插件连接"));
+const extensionStatusMeta = computed(() => "进入远程连接页查看");
 
 let timers: { localTimer: number; remoteTimer: number } | null = null;
 
@@ -269,7 +248,7 @@ function reconnectRemote() {
 }
 
 async function refreshAllStatuses() {
-  await Promise.allSettled([refreshMyClients(), runtimeStore.refresh()]);
+  await refreshMyClients();
 }
 
 function handleClientDialogVisibleChange(value: boolean) {
@@ -281,7 +260,6 @@ function handleClientDialogVisibleChange(value: boolean) {
 
 onMounted(() => {
   timers = startConnectionChecks();
-  void refreshAllStatuses();
 });
 
 onUnmounted(() => {

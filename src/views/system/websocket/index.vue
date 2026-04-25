@@ -189,11 +189,9 @@ const autoRefresh = ref(false);
 const refreshTimer = ref<number | null>(null);
 const refreshInterval = 10_000;
 
-const runtimeConnections = ref<WebsocketConnectionRow[]>([]);
-const nodeConnections = ref<WebsocketConnectionRow[]>([]);
-const runtimeLoading = ref(false);
-const nodeLoading = ref(false);
-const isRefreshing = computed(() => runtimeLoading.value || nodeLoading.value);
+const connectionRows = ref<WebsocketConnectionRow[]>([]);
+const connectionLoading = ref(false);
+const isRefreshing = computed(() => connectionLoading.value);
 
 const sendMessageDialogVisible = ref(false);
 const sendMessageDialogLoading = ref(false);
@@ -221,11 +219,6 @@ const adminWsStatusTag = computed(() => {
   }
 });
 
-const nodeOnlineCount = computed(() => nodeConnections.value.filter((row) => row.isOnline).length);
-const nodeOfflineCount = computed(
-  () => nodeConnections.value.filter((row) => !row.isOnline).length,
-);
-
 const resolveConnectionSourceKey = (row?: Partial<WebsocketConnectionRow> | null) => {
   const source = String(row?.clientSource || row?.clientInfo?.source || "").trim();
   if (source === "yishe-extension") return "extension";
@@ -252,37 +245,37 @@ const hasAvailableOperations = (row?: Partial<WebsocketConnectionRow> | null) =>
   return !!row?.isOnline || canDeleteClientNode(row);
 };
 
+const nodeOnlineCount = computed(
+  () =>
+    connectionRows.value.filter(
+      (row) => resolveConnectionSourceKey(row) === "client" && row.isOnline,
+    ).length,
+);
+const nodeOfflineCount = computed(
+  () =>
+    connectionRows.value.filter(
+      (row) => resolveConnectionSourceKey(row) === "client" && !row.isOnline,
+    ).length,
+);
 const runtimeExtensionCount = computed(
   () =>
-    runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "extension")
-      .length,
+    connectionRows.value.filter(
+      (row) => row.isOnline && resolveConnectionSourceKey(row) === "extension",
+    ).length,
 );
 const runtimeClientCount = computed(
   () =>
-    runtimeConnections.value.filter((row) => resolveConnectionSourceKey(row) === "client").length,
+    connectionRows.value.filter(
+      (row) => row.isOnline && resolveConnectionSourceKey(row) === "client",
+    ).length,
 );
 const runtimeCurrentAdminCount = computed(
-  () => runtimeConnections.value.filter((row) => isCurrentAdminConnection(row)).length,
+  () => connectionRows.value.filter((row) => row.isOnline && isCurrentAdminConnection(row)).length,
 );
 const runtimeOtherAdminCount = computed(
-  () => runtimeConnections.value.filter((row) => isOtherAdminConnection(row)).length,
+  () => connectionRows.value.filter((row) => row.isOnline && isOtherAdminConnection(row)).length,
 );
-const adminConnectionRows = computed(() => {
-  const rowMap = new Map<string, WebsocketConnectionRow>();
-
-  for (const row of runtimeConnections.value) {
-    rowMap.set(row.id, row);
-  }
-
-  for (const row of nodeConnections.value) {
-    if (!rowMap.has(row.id)) {
-      rowMap.set(row.id, row);
-    }
-  }
-
-  return Array.from(rowMap.values()).sort(compareAdminConnectionRows);
-});
-
+const adminConnectionRows = computed(() => connectionRows.value);
 
 const runtimeEmptyDescription = "暂无可展示的连接记录";
 
@@ -464,18 +457,6 @@ const resolveListResponse = (response: unknown) => {
   return [];
 };
 
-const compareNodeConnections = (a: WebsocketConnectionRow, b: WebsocketConnectionRow) => {
-  if (!!a.isOnline !== !!b.isOnline) {
-    return a.isOnline ? -1 : 1;
-  }
-  const aTime = a.lastOnlineAt || a.lastOfflineAt || a.connectedAt || "";
-  const bTime = b.lastOnlineAt || b.lastOfflineAt || b.connectedAt || "";
-  if (aTime !== bTime) {
-    return aTime > bTime ? -1 : 1;
-  }
-  return String(a.id || "").localeCompare(String(b.id || ""));
-};
-
 const getRuntimePriority = (row: WebsocketConnectionRow) => {
   if (resolveConnectionSourceKey(row) === "extension") return 0;
   if (isOtherAdminConnection(row)) return 1;
@@ -485,61 +466,41 @@ const getRuntimePriority = (row: WebsocketConnectionRow) => {
 };
 
 const compareRuntimeConnections = (a: WebsocketConnectionRow, b: WebsocketConnectionRow) => {
+  if (!!a.isOnline !== !!b.isOnline) {
+    return a.isOnline ? -1 : 1;
+  }
   const priorityDiff = getRuntimePriority(a) - getRuntimePriority(b);
   if (priorityDiff !== 0) {
     return priorityDiff;
   }
-  const aTime = a.connectedAt || "";
-  const bTime = b.connectedAt || "";
-  return aTime > bTime ? -1 : 1;
-};
-
-const compareAdminConnectionRows = (a: WebsocketConnectionRow, b: WebsocketConnectionRow) => {
-  if (!!a.isOnline !== !!b.isOnline) {
-    return a.isOnline ? -1 : 1;
+  const aTime = a.lastOnlineAt || a.connectedAt || a.lastOfflineAt || "";
+  const bTime = b.lastOnlineAt || b.connectedAt || b.lastOfflineAt || "";
+  if (aTime !== bTime) {
+    return aTime > bTime ? -1 : 1;
   }
-
-  return a.isOnline ? compareRuntimeConnections(a, b) : compareNodeConnections(a, b);
+  return String(a.id || "").localeCompare(String(b.id || ""));
 };
 
-const fetchRuntimeConnections = async () => {
-  runtimeLoading.value = true;
+const fetchConnectionViews = async () => {
+  connectionLoading.value = true;
   try {
-    const response = await WebsocketApi.getRuntimeWebsocketConnectionViews();
-    runtimeConnections.value = resolveListResponse(response)
+    const response = await WebsocketApi.getWebsocketConnectionViews();
+    connectionRows.value = resolveListResponse(response)
       .map((item) => ({
         ...item,
-        isOnline: item.isOnline !== false,
-        nodeStatus: item.nodeStatus || "online",
+        isOnline: item.isOnline === true,
+        nodeStatus: item.nodeStatus || (item.isOnline === true ? "online" : "offline"),
       }))
       .sort(compareRuntimeConnections);
   } catch (error: any) {
-    message.error(error?.message ?? "获取运行时连接失败");
+    message.error(error?.message ?? "获取远程连接失败");
   } finally {
-    runtimeLoading.value = false;
-  }
-};
-
-const fetchNodeConnections = async () => {
-  nodeLoading.value = true;
-  try {
-    const response = await WebsocketApi.getWebsocketConnectionViews();
-    nodeConnections.value = resolveListResponse(response)
-      .map((item) => ({
-        ...item,
-        isOnline: item.isOnline !== false,
-        nodeStatus: item.nodeStatus || (item.isOnline ? "online" : "offline"),
-      }))
-      .sort(compareNodeConnections);
-  } catch (error: any) {
-    message.error(error?.message ?? "获取客户端节点失败");
-  } finally {
-    nodeLoading.value = false;
+    connectionLoading.value = false;
   }
 };
 
 const refreshConnectionData = async () => {
-  await Promise.allSettled([fetchRuntimeConnections(), fetchNodeConnections()]);
+  await fetchConnectionViews();
 };
 
 const handleOperationCommand = (command: string, row: WebsocketConnectionRow) => {

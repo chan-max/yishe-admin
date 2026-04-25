@@ -19,6 +19,7 @@ export type ClientPluginKey =
   | "image-processing"
   | "video-template";
 export type ClientPluginSummary = "available" | "offline";
+type ClientNodeRefreshOptions = { summary?: boolean };
 
 const listenersBound = ref(false);
 
@@ -81,6 +82,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
   const clients = ref<WebsocketConnectionVO[]>([]);
   const loading = ref(false);
   const initialized = ref(false);
+  const detailLevel = ref<"none" | "summary" | "full">("none");
 
   const replaceClient = (
     clientId: string,
@@ -96,11 +98,13 @@ export const useClientNodeStore = defineStore("client-node", () => {
     clients.value = [updater(undefined), ...clients.value].sort(compareClientNodes);
   };
 
-  const refresh = async () => {
+  const refresh = async (options: ClientNodeRefreshOptions = {}) => {
     loading.value = true;
     try {
-      const response = await getMyWebsocketConnectionViews();
+      const summary = options.summary === true;
+      const response = await getMyWebsocketConnectionViews({ summary });
       clients.value = resolveConnectionViews(response).sort(compareClientNodes);
+      detailLevel.value = summary ? "summary" : "full";
     } finally {
       loading.value = false;
     }
@@ -215,6 +219,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
       return;
     }
 
+    const eventClient = event.client as any;
     replaceClient(
       clientId,
       (previous) =>
@@ -234,7 +239,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
             ...(previous?.clientInfo || {}),
             appVersion: event.client.appVersion ?? previous?.clientInfo?.appVersion,
             workspaceDirectory:
-              event.client.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
+              eventClient.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
             machine: event.client.machine ?? previous?.clientInfo?.machine,
             location: event.client.location ?? previous?.clientInfo?.location,
             services: {
@@ -277,16 +282,21 @@ export const useClientNodeStore = defineStore("client-node", () => {
     );
   };
 
-  const ensureInitialized = () => {
-    if (initialized.value) return;
-    initialized.value = true;
+  const ensureInitialized = (options: ClientNodeRefreshOptions = {}) => {
     if (!listenersBound.value) {
       listenersBound.value = true;
       websocketClient.events.on("serviceRuntime", handleServiceRuntime);
       websocketClient.events.on("clientConnectionChanged", handleClientConnectionChanged);
       websocketClient.events.on("psAutomationStatus", handlePsAutomationStatus);
     }
-    void refresh();
+    if (!initialized.value) {
+      initialized.value = true;
+      void refresh(options);
+      return;
+    }
+    if (options.summary !== true && detailLevel.value !== "full") {
+      void refresh(options);
+    }
   };
 
   return {

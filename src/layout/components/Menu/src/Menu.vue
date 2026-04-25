@@ -63,7 +63,7 @@ export default defineComponent({
       refresh: refreshPublishTaskRuntime,
     } = usePublishTaskRuntimeState();
     const clientNodeStore = useClientNodeStore();
-    clientNodeStore.ensureInitialized();
+    clientNodeStore.ensureInitialized({ summary: true });
 
     const menuStatusRouteMap: Record<string, string> = {
       "/operation/toolkit": "browser-automation",

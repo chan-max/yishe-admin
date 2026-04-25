@@ -253,7 +253,7 @@ const ensureInitialized = () => {
 export function usePublishTaskRuntimeState() {
   ensureInitialized();
   const clientNodeStore = useClientNodeStore();
-  clientNodeStore.ensureInitialized();
+  clientNodeStore.ensureInitialized({ summary: true });
 
   const activeTaskNames = computed(() =>
     activeTasks.value

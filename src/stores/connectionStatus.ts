@@ -92,7 +92,7 @@ export const refreshMyClients = async () => {
 
   clientRefreshLoading.value = true;
   try {
-    const response = await getMyWebsocketConnectionViews();
+    const response = await getMyWebsocketConnectionViews({ summary: true });
     const clients = resolveConnectionViews(response);
     setMyClients(clients);
     return clients;
@@ -149,6 +149,7 @@ const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
   }
 
   if (event.action === "removed") {
+    const eventClient = event.client as any;
     replaceMyClient(clientId, (previous) => ({
       ...(previous || {
         id: clientId,
@@ -166,7 +167,7 @@ const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
         ...(previous?.clientInfo || {}),
         appVersion: event.client?.appVersion ?? previous?.clientInfo?.appVersion,
         workspaceDirectory:
-          event.client?.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
+          eventClient?.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
         machine: event.client?.machine ?? previous?.clientInfo?.machine,
         location: event.client?.location ?? previous?.clientInfo?.location,
         services: {
@@ -180,6 +181,7 @@ const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
     return;
   }
 
+  const eventClient = event.client as any;
   replaceMyClient(clientId, (previous) => ({
     ...(previous || {
       id: clientId,
@@ -196,7 +198,7 @@ const handleClientConnectionChanged = (event: ClientConnectionChangedEvent) => {
       ...(previous?.clientInfo || {}),
       appVersion: event.client?.appVersion ?? previous?.clientInfo?.appVersion,
       workspaceDirectory:
-        event.client?.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
+        eventClient?.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
       machine: event.client?.machine ?? previous?.clientInfo?.machine,
       location: event.client?.location ?? previous?.clientInfo?.location,
       services: {

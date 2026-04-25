@@ -4,6 +4,7 @@ const MY_CONNECTION_VIEW_REFRESH_INTERVAL_MS = 3_000;
 
 interface ConnectionViewRequestOptions {
   force?: boolean;
+  summary?: boolean;
 }
 
 function cloneConnectionViewResponse<T>(payload: T): T {
@@ -24,34 +25,59 @@ function cloneConnectionViewResponse<T>(payload: T): T {
   return payload;
 }
 
-function createDedupedPostRequest<T>(requester: () => Promise<T>, intervalMs: number) {
-  let lastResolvedAt = 0;
-  let lastResolvedValue: T | null = null;
-  let inFlightRequest: Promise<T> | null = null;
+function createDedupedPostRequest<T>(
+  requester: (options: ConnectionViewRequestOptions) => Promise<T>,
+  intervalMs: number,
+) {
+  const stateMap = new Map<
+    string,
+    {
+      lastResolvedAt: number;
+      lastResolvedValue: T | null;
+      inFlightRequest: Promise<T> | null;
+    }
+  >();
 
   return async (options: ConnectionViewRequestOptions = {}): Promise<T> => {
     const forceRefresh = options.force === true;
+    const cacheKey = options.summary === true ? "summary" : "full";
     const now = Date.now();
+    const state =
+      stateMap.get(cacheKey) ||
+      ({
+        lastResolvedAt: 0,
+        lastResolvedValue: null,
+        inFlightRequest: null,
+      } as {
+        lastResolvedAt: number;
+        lastResolvedValue: T | null;
+        inFlightRequest: Promise<T> | null;
+      });
+    stateMap.set(cacheKey, state);
 
-    if (!forceRefresh && inFlightRequest) {
-      return inFlightRequest;
+    if (!forceRefresh && state.inFlightRequest) {
+      return state.inFlightRequest;
     }
 
-    if (!forceRefresh && lastResolvedValue !== null && now - lastResolvedAt < intervalMs) {
-      return cloneConnectionViewResponse(lastResolvedValue);
+    if (
+      !forceRefresh &&
+      state.lastResolvedValue !== null &&
+      now - state.lastResolvedAt < intervalMs
+    ) {
+      return cloneConnectionViewResponse(state.lastResolvedValue);
     }
 
-    inFlightRequest = requester()
+    state.inFlightRequest = requester(options)
       .then((response) => {
-        lastResolvedValue = response;
-        lastResolvedAt = Date.now();
+        state.lastResolvedValue = response;
+        state.lastResolvedAt = Date.now();
         return cloneConnectionViewResponse(response);
       })
       .finally(() => {
-        inFlightRequest = null;
+        state.inFlightRequest = null;
       });
 
-    return inFlightRequest;
+    return state.inFlightRequest;
   };
 }
 
@@ -217,7 +243,11 @@ export const getRuntimeWebsocketConnectionViews = () => {
 };
 
 const fetchMyWebsocketConnectionViews = createDedupedPostRequest(
-  () => request.post<WebsocketConnectionVO[]>({ url: "/websocket/my-connections-view" }),
+  (options) =>
+    request.post<WebsocketConnectionVO[]>({
+      url: "/websocket/my-connections-view",
+      data: options.summary === true ? { summary: true } : undefined,
+    }),
   MY_CONNECTION_VIEW_REFRESH_INTERVAL_MS,
 );
 
