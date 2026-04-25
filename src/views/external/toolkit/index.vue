@@ -791,12 +791,15 @@ const temuWorkspaceAvailability = computed(() =>
   }),
 );
 const temuWorkspaceLocked = computed(() => {
-  if (
-    selectedPlatformKey.value !== TEMU_PLATFORM_KEY ||
-    !storedSessionLoaded.value ||
-    !selectedClientId.value ||
-    !selectedExecutionProfileId.value
-  ) {
+  if (selectedPlatformKey.value !== TEMU_PLATFORM_KEY) {
+    return false;
+  }
+
+  if (!selectedClientId.value || !selectedExecutionProfileId.value) {
+    return true;
+  }
+
+  if (!storedSessionLoaded.value) {
     return false;
   }
 
