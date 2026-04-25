@@ -144,6 +144,45 @@ export interface AiAssistantChatStreamEvent {
   data: any;
 }
 
+export interface AiAssistantRunEventItem {
+  id?: number;
+  runId?: string;
+  event: string;
+  label: string;
+  time: string;
+  summary: string;
+  payload?: Record<string, any> | null;
+  messageId?: number;
+  conversationId?: number | null;
+}
+
+export interface AiAssistantRunEventsResult {
+  runId: string;
+  total: number;
+  events: AiAssistantRunEventItem[];
+}
+
+export interface AiAssistantRun {
+  id: number;
+  runId: string;
+  conversationId: number | null;
+  status: string;
+  goalText: string;
+  pendingQuestion: string | null;
+  pendingPayload?: Record<string, any> | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  cancelledAt: string | null;
+  lastEventAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AiAssistantRunListResult {
+  total: number;
+  items: AiAssistantRun[];
+}
+
 export const AiAssistantApi = {
   getConversations: async () => {
     return request.get<AiAssistantConversation[]>({
@@ -257,7 +296,7 @@ export const AiAssistantApi = {
     },
   ) => {
     const token = getAccessToken();
-    return fetchEventSource(`${config.base_url}/ai-assistant/chat-stream`, {
+    return fetchEventSource(`${config.base_url}/ai-assistant/runs/stream`, {
       method: "post",
       headers: {
         "Content-Type": "application/json",
@@ -266,6 +305,63 @@ export const AiAssistantApi = {
       openWhenHidden: true,
       signal: options.signal,
       body: JSON.stringify({
+        message,
+        attachments,
+        pageContext,
+        conversationId: conversationId || undefined,
+        enableThinking: options.enableThinking,
+        thinkingBudget: options.thinkingBudget,
+        includeUsage: options.includeUsage !== false,
+      }),
+      onmessage(event) {
+        let parsed: any = {};
+        try {
+          parsed = event.data ? JSON.parse(event.data) : {};
+        } catch {
+          parsed = {};
+        }
+        options.onEvent({
+          event: event.event || "message",
+          data: parsed,
+        });
+      },
+      onerror(error) {
+        options.onError?.(error);
+        throw error;
+      },
+      onclose() {
+        options.onClose?.();
+      },
+    });
+  },
+
+  continueRunStream: async (
+    runId: string,
+    message: string,
+    attachments: AiAssistantAttachment[] | undefined,
+    pageContext: AiAssistantPageContext | undefined,
+    conversationId: number | null | undefined,
+    options: {
+      enableThinking?: boolean;
+      thinkingBudget?: number;
+      includeUsage?: boolean;
+      signal: AbortSignal;
+      onEvent: (event: AiAssistantChatStreamEvent) => void;
+      onError?: (error: any) => void;
+      onClose?: () => void;
+    },
+  ) => {
+    const token = getAccessToken();
+    return fetchEventSource(`${config.base_url}/ai-assistant/runs/${runId}/input-stream`, {
+      method: "post",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      openWhenHidden: true,
+      signal: options.signal,
+      body: JSON.stringify({
+        runId,
         message,
         attachments,
         pageContext,
@@ -314,6 +410,65 @@ export const AiAssistantApi = {
         reason,
         confirmed,
       },
+    });
+  },
+
+  confirmRunTool: async (
+    runId: string,
+    tool?: string,
+    input?: Record<string, any>,
+    pageContext?: AiAssistantPageContext,
+    conversationId?: number | null,
+    reason?: string,
+  ) => {
+    return request.post<AiAssistantChatResult>({
+      url: `/ai-assistant/runs/${runId}/confirm`,
+      data: {
+        runId,
+        tool,
+        input,
+        pageContext,
+        conversationId: conversationId || undefined,
+        reason,
+        confirmed: true,
+      },
+    });
+  },
+
+  getRunEvents: async (runId: string, conversationId?: number | null, limit = 100) => {
+    return request.get<AiAssistantRunEventsResult>({
+      url: `/ai-assistant/runs/${runId}/events`,
+      params: {
+        conversationId: conversationId || undefined,
+        limit,
+      },
+    });
+  },
+
+  getRuns: async (params?: {
+    conversationId?: number | null;
+    status?: string;
+    limit?: number;
+  }) => {
+    return request.get<AiAssistantRunListResult>({
+      url: "/ai-assistant/runs",
+      params: {
+        conversationId: params?.conversationId || undefined,
+        status: params?.status || undefined,
+        limit: params?.limit,
+      },
+    });
+  },
+
+  getRun: async (runId: string) => {
+    return request.get<AiAssistantRun>({
+      url: `/ai-assistant/runs/${runId}`,
+    });
+  },
+
+  cancelRun: async (runId: string) => {
+    return request.post({
+      url: `/ai-assistant/runs/${runId}/cancel`,
     });
   },
 };

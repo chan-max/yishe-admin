@@ -135,6 +135,18 @@ const summarizeStreamEvent = (event: string, data: Record<string, any>) => {
   if (event === "conversation.updated") {
     return `会话 #${data?.conversation?.id || "-"} 已更新`;
   }
+  if (event === "run.started") {
+    return String(data?.message || "任务已开始");
+  }
+  if (event === "run.waiting_user") {
+    return String(data?.question || data?.pendingTask?.question || "等待你补充信息");
+  }
+  if (event === "run.completed") {
+    return "任务已完成";
+  }
+  if (event === "run.cancelled") {
+    return "任务已取消";
+  }
   if (event === "assistant.status") {
     return String(data?.message || data?.stage || "状态更新");
   }
@@ -153,6 +165,12 @@ const summarizeStreamEvent = (event: string, data: Record<string, any>) => {
   if (event === "assistant.usage") {
     return `Token 合计 ${Number(data?.usage?.total_tokens || 0) || "-"}`;
   }
+  if (event === "user.input_required") {
+    return String(data?.question || "需要你补充信息后继续");
+  }
+  if (event === "user.confirmation_required") {
+    return String(data?.message || `需要确认后执行 ${String(data?.label || data?.tool || "")}`);
+  }
   if (event === "tool.pending") {
     return `准备执行工具 ${String(data?.toolCall?.tool || "")}`;
   }
@@ -170,12 +188,20 @@ const summarizeStreamEvent = (event: string, data: Record<string, any>) => {
 
 const labelStreamEvent = (event: string) => {
   const map: Record<string, string> = {
+    "run.started": "任务开始",
+    "run.waiting_user": "等待补充",
+    "run.completed": "任务完成",
+    "run.cancelled": "任务取消",
     "conversation.updated": "会话更新",
     "assistant.status": "助手状态",
     "assistant.plan": "规划结果",
+    "assistant.decision": "决策结果",
+    "assistant.pending_task": "待继续任务",
     "assistant.reasoning.delta": "思考增量",
     "assistant.answer.delta": "回复增量",
     "assistant.usage": "用量统计",
+    "user.input_required": "需要补充",
+    "user.confirmation_required": "需要确认",
     "tool.pending": "工具准备",
     "tool.completed": "工具完成",
     "chat.result": "最终结果",
@@ -311,6 +337,7 @@ export const useAiAssistantRuntime = () => {
   >({
     request: async (info, callbacks) => {
       const ctrl = new AbortController();
+      let emitFrameId = 0;
       callbacks.onStream?.(ctrl);
       try {
         let currentConversationId = info.conversationId ?? null;
@@ -326,7 +353,6 @@ export const useAiAssistantRuntime = () => {
           },
         );
         let streamedMessages: DisplayMessage[] = [assistantMessage];
-        let emitFrameId = 0;
 
         const emitBatch = () => {
           if (emitFrameId) {
@@ -762,6 +788,39 @@ export const useAiAssistantRuntime = () => {
     return result || null;
   };
 
+  const confirmRunTool = async (
+    runId: string,
+    tool?: string,
+    input?: Record<string, any> | null,
+    pageContext: AiAssistantPageContext = {},
+    conversationId?: number | null,
+    reason?: string,
+  ) => {
+    const normalizedRunId = String(runId || "").trim();
+    if (!normalizedRunId || sending.value) {
+      return null;
+    }
+
+    const result = await aiAssistantStore.confirmRunTool(
+      normalizedRunId,
+      tool,
+      input || {},
+      pageContext,
+      conversationId ?? activeConversationId.value,
+      reason,
+    );
+
+    if (!aiAssistantStore.activeConversationId) {
+      setMessages([]);
+      liveEventTrail.value = [];
+      return result || null;
+    }
+
+    syncHistoryMessages();
+    liveEventTrail.value = [];
+    return result || null;
+  };
+
   return {
     conversations,
     personas,
@@ -786,6 +845,7 @@ export const useAiAssistantRuntime = () => {
     clearHistory,
     sendMessage,
     executeTool,
+    confirmRunTool,
     syncHistoryMessages,
   };
 };

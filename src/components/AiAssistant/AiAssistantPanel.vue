@@ -231,6 +231,30 @@
                       </div>
                       <MarkdownView v-else :content="getBubbleContent(item)" />
                       <div
+                        v-if="getPendingInputPrompt(item)"
+                        class="ai-assistant-panel__input-required"
+                      >
+                        <div class="ai-assistant-panel__input-required-title">
+                          需要补充信息
+                        </div>
+                        <div class="ai-assistant-panel__input-required-question">
+                          {{ getPendingInputPrompt(item) }}
+                        </div>
+                        <div
+                          v-if="getPendingInputFields(item).length"
+                          class="ai-assistant-panel__input-required-fields"
+                        >
+                          <el-tag
+                            v-for="field in getPendingInputFields(item)"
+                            :key="`${getBubbleItem(item).key}:missing:${field}`"
+                            effect="plain"
+                            round
+                          >
+                            {{ field }}
+                          </el-tag>
+                        </div>
+                      </div>
+                      <div
                         v-if="getBubbleUsageText(item)"
                         class="ai-assistant-panel__usage-text"
                       >
@@ -800,6 +824,7 @@ const {
   clearHistory,
   sendMessage,
   executeTool,
+  confirmRunTool,
 } = useAiAssistantRuntime();
 
 const draft = ref("");
@@ -1137,7 +1162,14 @@ const detailActionItems = computed<ActionItem[]>(() => {
   return items;
 });
 
-const buildPageContext = (): AiAssistantPageContext => ({});
+const buildPageContext = (): AiAssistantPageContext => ({
+  routePath: route.path,
+  fullPath: route.fullPath,
+  routeName: route.name ? String(route.name) : undefined,
+  routeTitle: currentRouteTitle.value,
+  query: { ...route.query },
+  params: { ...route.params },
+});
 
 const formatTime = (value: string) => dayjs(value).format("MM-DD HH:mm");
 
@@ -1208,6 +1240,62 @@ const getBubbleUsageText = (item: unknown) => {
 };
 
 const getBubbleEventTrail = (item: unknown) => getBubbleItem(item).eventTrail || [];
+
+const getPendingInputEventPayload = (item: unknown) => {
+  const eventTrail = getBubbleEventTrail(item);
+  const matched = [...eventTrail]
+    .reverse()
+    .find((eventItem) =>
+      ["user.input_required", "run.waiting_user", "assistant.pending_task"].includes(
+        String(eventItem.event || ""),
+      ),
+    );
+  const payload = matched?.payload && typeof matched.payload === "object" ? matched.payload : {};
+  const pendingTask =
+    payload.pendingTask && typeof payload.pendingTask === "object"
+      ? (payload.pendingTask as Record<string, any>)
+      : {};
+  return {
+    payload: payload as Record<string, any>,
+    pendingTask,
+  };
+};
+
+const getPendingInputPrompt = (item: unknown) => {
+  const { payload, pendingTask } = getPendingInputEventPayload(item);
+  return String(payload.question || pendingTask.question || "").trim();
+};
+
+const getPendingInputFields = (item: unknown) => {
+  const { payload, pendingTask } = getPendingInputEventPayload(item);
+  const fields = Array.isArray(payload.missingFields)
+    ? payload.missingFields
+    : Array.isArray(pendingTask.missingFields)
+      ? pendingTask.missingFields
+      : [];
+  return fields.map((field) => String(field || "").trim()).filter(Boolean);
+};
+
+const getBubbleRunId = (item: unknown) => {
+  const bubbleItem = getBubbleItem(item);
+  const toolResult = bubbleItem.toolResult && typeof bubbleItem.toolResult === "object"
+    ? (bubbleItem.toolResult as Record<string, any>)
+    : {};
+  const toolResultRunId = String(toolResult.runId || "").trim();
+  if (toolResultRunId) {
+    return toolResultRunId;
+  }
+
+  const eventTrail = getBubbleEventTrail(item);
+  const matched = [...eventTrail]
+    .reverse()
+    .find((eventItem) => {
+      const payload = eventItem.payload && typeof eventItem.payload === "object" ? eventItem.payload : {};
+      return !!String((payload as Record<string, any>).runId || "").trim();
+    });
+  const payload = matched?.payload && typeof matched.payload === "object" ? matched.payload : {};
+  return String((payload as Record<string, any>).runId || "").trim();
+};
 const getVisibleLiveEvents = (item: unknown) => getBubbleEventTrail(item).slice(-3);
 
 const getBubbleKey = (item: unknown) => getBubbleItem(item).key;
@@ -1790,16 +1878,26 @@ const confirmToolExecution = async (message?: DisplayMessage | null) => {
 
   const toolLabel = current.toolLabel || toolKey;
   const runExecution = async () => {
-    const result = await executeTool(
-      toolKey,
-      current.toolInput,
-      buildPageContext(),
-      current.conversationId ?? activeConversationId.value,
-      {
-        reason: `用户确认执行 ${toolLabel}`,
-        confirmed: true,
-      },
-    );
+    const runId = getBubbleRunId(current);
+    const result = runId
+      ? await confirmRunTool(
+          runId,
+          toolKey,
+          current.toolInput,
+          buildPageContext(),
+          current.conversationId ?? activeConversationId.value,
+          `用户确认执行 ${toolLabel}`,
+        )
+      : await executeTool(
+          toolKey,
+          current.toolInput,
+          buildPageContext(),
+          current.conversationId ?? activeConversationId.value,
+          {
+            reason: `用户确认执行 ${toolLabel}`,
+            confirmed: true,
+          },
+        );
 
     const latestToolMessage =
       result?.messages
@@ -2483,6 +2581,37 @@ watch(
     font-size: 12px;
     line-height: 1.5;
     color: var(--ai-text-tertiary);
+  }
+
+  &__input-required {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--el-color-warning) 34%, var(--ai-border-color) 66%);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--el-color-warning-light-9) 72%, var(--ai-panel-bg) 28%);
+  }
+
+  &__input-required-title {
+    color: var(--el-color-warning-dark-2);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  &__input-required-question {
+    color: var(--ai-text);
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  &__input-required-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 
   &__event-strip {

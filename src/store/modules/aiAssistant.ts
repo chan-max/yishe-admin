@@ -435,5 +435,57 @@ export const useAiAssistantStore = defineStore("aiAssistant", {
         this.sending = false;
       }
     },
+
+    async confirmRunTool(
+      runId: string,
+      tool?: string,
+      input?: Record<string, any> | null,
+      pageContext?: AiAssistantPageContext,
+      conversationId?: number | null,
+      reason?: string,
+    ) {
+      this.sending = true;
+      try {
+        const targetConversationId = toConversationId(conversationId ?? this.activeConversationId);
+        const payload = await AiAssistantApi.confirmRunTool(
+          runId,
+          tool,
+          input || {},
+          pageContext,
+          targetConversationId,
+          reason,
+        );
+        const result = normalizeChatResult(payload);
+
+        if (result?.conversation) {
+          this.upsertConversation(result.conversation);
+          this.activeConversationId = result.conversation.id;
+        }
+
+        if (result?.messages?.length) {
+          const resultConversationId = toConversationId(
+            result.conversation?.id ?? targetConversationId ?? this.activeConversationId,
+          );
+
+          if (
+            resultConversationId &&
+            this.activeConversationId === resultConversationId &&
+            this.loadedHistoryConversationId === resultConversationId
+          ) {
+            this.mergeMessages(result.messages);
+          } else {
+            this.messages = [...result.messages].sort((left, right) => left.id - right.id);
+          }
+
+          this.loadedHistoryConversationId = resultConversationId;
+        } else {
+          await this.loadMessages(result?.conversation?.id || targetConversationId, true);
+        }
+
+        return result;
+      } finally {
+        this.sending = false;
+      }
+    },
   },
 });
