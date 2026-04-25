@@ -76,7 +76,7 @@ interface DownloadCard {
 const downloadCards: DownloadCard[] = [
   {
     key: "client-unified",
-    title: "衣设客户端",
+    title: "YiShe 客户端",
     platform: "Windows / macOS",
     description:
       "统一版客户端，浏览器自动化已内置，直接下载对应系统安装包即可。",
