@@ -12,7 +12,7 @@ import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import { formatTime } from "@/utils";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
-import { useDebounceFn, useWindowSize } from "@vueuse/core";
+import { useWindowSize } from "@vueuse/core";
 import {
   getAllTaskTypes,
   getTaskTypeConfig,
@@ -172,12 +172,17 @@ const temuTemplateInspectorVisible = ref(false);
 const dialogTitle = ref("");
 const formRef = ref();
 const submitLoading = ref(false);
-const templateBindingLoading = ref(false);
 const templateBindingHydrating = ref(false);
-const templateBindingSearchText = ref("");
-const templateBindingOptions = ref<any[]>([]);
 const selectedTemplateBinding = ref<any | null>(null);
 const templateBindingConfigText = ref("");
+const templateBindingDialogVisible = ref(false);
+const templateBindingDialogLoading = ref(false);
+const templateBindingDialogSearchText = ref("");
+const templateBindingDialogPage = ref(1);
+const templateBindingDialogPageSize = ref(12);
+const templateBindingDialogTotal = ref(0);
+const templateBindingDialogRows = ref<any[]>([]);
+const templateBindingDialogTableHeight = computed(() => Math.max(420, height.value - 188));
 
 // 动态平台配置
 const currentPlatformConfig = ref<TaskTypeConfig | null>(null);
@@ -209,26 +214,6 @@ const temuProductTemplateValue = computed({
       ...(platformConfigData.value || {}),
       productTemplate: value,
     };
-  },
-});
-
-const templateBindingSelectValue = computed({
-  get: () => currentTemplateBindingId.value || undefined,
-  set: (value) => {
-    const normalizedId = String(value || "").trim();
-    if (!normalizedId) {
-      clearTemplateBinding();
-      return;
-    }
-
-    const matched = templateBindingSelectOptions.value.find((item) => item.id === normalizedId);
-    if (matched) {
-      selectedTemplateBinding.value = matched;
-      templateBindingConfigText.value = formatTemplateBindingConfig(matched.psdTemplateConfig);
-      return;
-    }
-
-    hydrateTemplateBinding(normalizedId);
   },
 });
 
@@ -430,9 +415,8 @@ const rules = {
 
 function resetTemplateBindingState() {
   selectedTemplateBinding.value = null;
-  templateBindingSearchText.value = "";
-  templateBindingOptions.value = [];
   templateBindingConfigText.value = "";
+  templateBindingDialogVisible.value = false;
 }
 
 function formatTemplateBindingConfig(config: any): string {
@@ -491,24 +475,6 @@ function normalizeTemplateBindingTemplate(template: any) {
   };
 }
 
-const templateBindingSelectOptions = computed(() => {
-  const map = new Map<string, any>();
-
-  if (selectedTemplateBinding.value?.id) {
-    map.set(selectedTemplateBinding.value.id, selectedTemplateBinding.value);
-  }
-
-  templateBindingOptions.value.forEach((template) => {
-    const normalized = normalizeTemplateBindingTemplate(template);
-    if (!normalized?.id || map.has(normalized.id)) {
-      return;
-    }
-    map.set(normalized.id, normalized);
-  });
-
-  return Array.from(map.values());
-});
-
 async function hydrateTemplateBinding(psdTemplateId?: string | null) {
   const normalizedId = String(psdTemplateId || "").trim();
   if (!normalizedId) {
@@ -551,48 +517,70 @@ async function hydrateTemplateBinding(psdTemplateId?: string | null) {
   }
 }
 
-async function loadTemplateBindingTemplates(searchKeyword = "") {
-  templateBindingLoading.value = true;
+async function loadTemplateBindingDialogTemplates() {
+  templateBindingDialogLoading.value = true;
   try {
     const res: any = await psdTemplateApi.getPsdTemplatePage({
-      currentPage: 1,
-      pageSize: 20,
-      searchKeyword: searchKeyword || undefined,
+      currentPage: templateBindingDialogPage.value,
+      pageSize: templateBindingDialogPageSize.value,
+      searchKeyword: templateBindingDialogSearchText.value.trim() || undefined,
       enabled: true,
     });
-    templateBindingOptions.value = Array.isArray(res?.list)
-      ? res.list.map((item: any) => normalizeTemplateBindingTemplate(item)).filter(Boolean)
-      : [];
+    const list = Array.isArray(res) ? res : Array.isArray(res?.list) ? res.list : [];
+    templateBindingDialogRows.value = list
+      .map((item: any) => normalizeTemplateBindingTemplate(item))
+      .filter(Boolean);
+    templateBindingDialogTotal.value = Number(res?.total ?? list.length);
   } catch (error) {
     console.error("加载套图模板失败:", error);
     ElMessage.error("加载套图模板失败");
   } finally {
-    templateBindingLoading.value = false;
+    templateBindingDialogLoading.value = false;
   }
 }
 
-const debouncedLoadTemplateBindingTemplates = useDebounceFn((keyword: string) => {
-  templateBindingSearchText.value = keyword.trim();
-  loadTemplateBindingTemplates(templateBindingSearchText.value);
-}, 300);
-
-function handleTemplateBindingRemoteSearch(keyword: string) {
-  debouncedLoadTemplateBindingTemplates(keyword || "");
+function openTemplateBindingDialog() {
+  templateBindingDialogVisible.value = true;
+  templateBindingDialogPage.value = 1;
+  loadTemplateBindingDialogTemplates();
 }
 
-function handleTemplateBindingDropdownVisibleChange(visible: boolean) {
-  if (!visible) {
+function handleTemplateBindingDialogSearch() {
+  templateBindingDialogPage.value = 1;
+  loadTemplateBindingDialogTemplates();
+}
+
+function resetTemplateBindingDialogSearch() {
+  templateBindingDialogSearchText.value = "";
+  templateBindingDialogPage.value = 1;
+  loadTemplateBindingDialogTemplates();
+}
+
+function handleTemplateBindingDialogPageChange(page: number) {
+  templateBindingDialogPage.value = page;
+  loadTemplateBindingDialogTemplates();
+}
+
+function handleTemplateBindingDialogSizeChange(size: number) {
+  templateBindingDialogPageSize.value = size;
+  templateBindingDialogPage.value = 1;
+  loadTemplateBindingDialogTemplates();
+}
+
+function selectTemplateBinding(template: any) {
+  const normalized = normalizeTemplateBindingTemplate(template);
+  if (!normalized?.id) {
+    ElMessage.warning("模板数据异常，无法选择");
     return;
   }
 
-  if (!templateBindingSelectOptions.value.length) {
-    loadTemplateBindingTemplates(templateBindingSearchText.value.trim());
-  }
+  selectedTemplateBinding.value = normalized;
+  templateBindingConfigText.value = formatTemplateBindingConfig(normalized.psdTemplateConfig);
+  templateBindingDialogVisible.value = false;
 }
 
 function clearTemplateBinding() {
   selectedTemplateBinding.value = null;
-  templateBindingSearchText.value = "";
   templateBindingConfigText.value = "";
 }
 
@@ -637,11 +625,15 @@ const handleEdit = async (row: any) => {
   titleConfigForm.fixedTitle = configData.titleConfig?.fixedTitle || "";
   titleConfigForm.templateContent = configData.titleTemplate || "";
   titleConfigForm.maxLength =
-    typeof configData.titleConfig?.maxLength === "number" ? configData.titleConfig.maxLength : undefined;
+    typeof configData.titleConfig?.maxLength === "number"
+      ? configData.titleConfig.maxLength
+      : undefined;
   titleConfigForm.style = configData.titleConfig?.style || "";
   titleConfigForm.tone = configData.titleConfig?.tone || "";
   titleConfigForm.includeEmoji =
-    typeof configData.titleConfig?.includeEmoji === "boolean" ? configData.titleConfig.includeEmoji : null;
+    typeof configData.titleConfig?.includeEmoji === "boolean"
+      ? configData.titleConfig.includeEmoji
+      : null;
   titleConfigForm.requiredKeywords = Array.isArray(configData.titleConfig?.requiredKeywords)
     ? configData.titleConfig.requiredKeywords
     : Array.isArray(configData.titleConfig?.keywords)
@@ -661,7 +653,8 @@ const handleEdit = async (row: any) => {
   resetTemplateBindingState();
   await hydrateTemplateBinding(configData?.templateBinding?.psdTemplateId);
   templateBindingConfigText.value = formatTemplateBindingConfig(
-    configData?.templateBinding?.psdTemplateConfig ?? selectedTemplateBinding.value?.psdTemplateConfig,
+    configData?.templateBinding?.psdTemplateConfig ??
+      selectedTemplateBinding.value?.psdTemplateConfig,
   );
   dialogVisible.value = true;
 };
@@ -954,29 +947,19 @@ onMounted(() => {
                   <div class="publish-config-panel__title">套图模板</div>
                 </div>
               </div>
-              <el-form-item label="套图模板">
-                <el-select
-                  v-model="templateBindingSelectValue"
-                  filterable
-                  remote
-                  clearable
-                  reserve-keyword
-                  placeholder="搜索并选择套图模板"
-                  class="publish-config-template-select"
-                  popper-class="publish-config-template-select-dropdown"
-                  :loading="templateBindingLoading || templateBindingHydrating"
-                  @visible-change="handleTemplateBindingDropdownVisibleChange"
-                  :remote-method="handleTemplateBindingRemoteSearch"
-                >
-                  <el-option
-                    v-for="template in templateBindingSelectOptions"
-                    :key="template.id"
-                    :label="template.name || template.id"
-                    :value="template.id"
+              <el-form-item label="套图模板" class="publish-config-form-item--stacked">
+                <div class="publish-config-template-binding">
+                  <div
+                    v-if="currentTemplateBindingId"
+                    class="publish-config-template-binding__selected"
                   >
                     <div class="publish-config-template-option">
                       <div class="publish-config-template-option__preview">
-                        <el-image v-if="template.thumbnail" :src="template.thumbnail" fit="cover" />
+                        <el-image
+                          v-if="selectedTemplateBinding?.thumbnail"
+                          :src="selectedTemplateBinding.thumbnail"
+                          fit="cover"
+                        />
                         <div v-else class="publish-config-template-option__preview-placeholder">
                           暂无图
                         </div>
@@ -984,29 +967,68 @@ onMounted(() => {
                       <div class="publish-config-template-option__main">
                         <div class="publish-config-template-option__name-row">
                           <span class="publish-config-template-option__name">
-                            {{ template.name || "未命名模板" }}
+                            {{ selectedTemplateBinding?.name || "未命名模板" }}
                           </span>
-                          <el-tag v-if="template.missing" size="small" type="danger" effect="plain">
+                          <el-tag
+                            v-if="selectedTemplateBinding?.missing"
+                            size="small"
+                            type="danger"
+                            effect="plain"
+                          >
                             不可用
                           </el-tag>
+                          <el-tag v-else size="small" type="success" effect="plain">已选择</el-tag>
                         </div>
-                        <div class="publish-config-template-option__id">ID：{{ template.id }}</div>
+                        <div class="publish-config-template-option__id">
+                          ID：{{ selectedTemplateBinding?.id }}
+                        </div>
                         <div
-                          v-if="template.createTime"
+                          v-if="selectedTemplateBinding?.createTime"
                           class="publish-config-template-option__meta"
                         >
-                          上传时间：{{ formatTime(template.createTime, "yyyy-MM-dd HH:mm") }}
+                          上传时间：{{
+                            formatTime(selectedTemplateBinding.createTime, "yyyy-MM-dd HH:mm")
+                          }}
                         </div>
                         <div
-                          v-if="template.description"
+                          v-if="selectedTemplateBinding?.description"
                           class="publish-config-template-option__desc"
                         >
-                          {{ template.description }}
+                          {{ selectedTemplateBinding.description }}
                         </div>
                       </div>
                     </div>
-                  </el-option>
-                </el-select>
+                    <div class="publish-config-template-binding__actions">
+                      <el-button
+                        size="small"
+                        type="primary"
+                        :loading="templateBindingHydrating"
+                        @click="openTemplateBindingDialog"
+                      >
+                        更换模板
+                      </el-button>
+                      <el-button
+                        size="small"
+                        :disabled="templateBindingHydrating"
+                        @click="clearTemplateBinding"
+                      >
+                        清空
+                      </el-button>
+                    </div>
+                  </div>
+                  <div v-else class="publish-config-template-binding__empty">
+                    <div class="publish-config-template-binding__empty-text">
+                      未绑定套图模板，发布任务会按当前任务配置直接执行。
+                    </div>
+                    <el-button
+                      type="primary"
+                      :loading="templateBindingHydrating"
+                      @click="openTemplateBindingDialog"
+                    >
+                      选择套图模板
+                    </el-button>
+                  </div>
+                </div>
               </el-form-item>
               <el-form-item
                 v-if="currentTemplateBindingId"
@@ -1342,6 +1364,132 @@ onMounted(() => {
     </el-dialog>
 
     <el-dialog
+      v-model="templateBindingDialogVisible"
+      title="选择套图模板"
+      :fullscreen="true"
+      append-to-body
+      class="publish-config-template-picker-dialog"
+    >
+      <div class="publish-config-template-picker">
+        <div class="publish-config-template-picker__toolbar">
+          <el-input
+            v-model="templateBindingDialogSearchText"
+            clearable
+            placeholder="搜索模板名称、描述或 ID"
+            class="publish-config-template-picker__search"
+            @keyup.enter="handleTemplateBindingDialogSearch"
+            @clear="resetTemplateBindingDialogSearch"
+          />
+          <div class="publish-config-template-picker__toolbar-actions">
+            <el-button
+              type="primary"
+              :loading="templateBindingDialogLoading"
+              @click="handleTemplateBindingDialogSearch"
+            >
+              搜索
+            </el-button>
+            <el-button
+              :disabled="templateBindingDialogLoading"
+              @click="resetTemplateBindingDialogSearch"
+            >
+              重置
+            </el-button>
+          </div>
+        </div>
+
+        <div class="publish-config-template-picker__body common-table">
+          <vxe-table
+            border="inner"
+            size="mini"
+            :height="templateBindingDialogTableHeight"
+            :loading="templateBindingDialogLoading"
+            :data="templateBindingDialogRows"
+            empty-text="没有找到可用套图模板"
+            row-id="id"
+            header-cell-class-name="common-table__header-cell"
+            cell-class-name="common-table__body-cell"
+            class="publish-config-template-picker__table"
+          >
+            <vxe-column title="预览" field="thumbnail" width="132">
+              <template #default="{ row }">
+                <div class="publish-config-template-table-preview">
+                  <el-image v-if="row.thumbnail" :src="row.thumbnail" fit="cover" />
+                  <div v-else class="publish-config-template-table-preview__placeholder">
+                    暂无图
+                  </div>
+                </div>
+              </template>
+            </vxe-column>
+
+            <vxe-column title="模板信息" field="name" min-width="320">
+              <template #default="{ row }">
+                <div class="publish-config-template-table-info">
+                  <div class="publish-config-template-table-info__name-row">
+                    <span class="publish-config-template-table-info__name">
+                      {{ row.name || "未命名模板" }}
+                    </span>
+                    <el-tag
+                      v-if="currentTemplateBindingId === row.id"
+                      size="small"
+                      type="success"
+                      effect="plain"
+                    >
+                      当前
+                    </el-tag>
+                  </div>
+                  <div class="publish-config-template-table-info__id">ID：{{ row.id }}</div>
+                  <div v-if="row.description" class="publish-config-template-table-info__desc">
+                    {{ row.description }}
+                  </div>
+                </div>
+              </template>
+            </vxe-column>
+
+            <vxe-column title="上传时间" field="createTime" width="180">
+              <template #default="{ row }">
+                <span v-if="row.createTime">
+                  {{ formatTime(row.createTime, "yyyy-MM-dd HH:mm") }}
+                </span>
+                <span v-else>-</span>
+              </template>
+            </vxe-column>
+
+            <vxe-column title="操作" width="110" fixed="right" align="center">
+              <template #default="{ row }">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :plain="currentTemplateBindingId !== row.id"
+                  @click="selectTemplateBinding(row)"
+                >
+                  {{ currentTemplateBindingId === row.id ? "已选择" : "选择" }}
+                </el-button>
+              </template>
+            </vxe-column>
+          </vxe-table>
+        </div>
+      </div>
+      <template #footer>
+        <div class="publish-config-template-picker__footer">
+          <div class="publish-config-template-picker__total">
+            共 {{ templateBindingDialogTotal }} 个模板
+          </div>
+          <el-pagination
+            v-model:current-page="templateBindingDialogPage"
+            v-model:page-size="templateBindingDialogPageSize"
+            background
+            layout="sizes, prev, pager, next, jumper"
+            :page-sizes="[12, 24, 48]"
+            :total="templateBindingDialogTotal"
+            @current-change="handleTemplateBindingDialogPageChange"
+            @size-change="handleTemplateBindingDialogSizeChange"
+          />
+          <el-button @click="templateBindingDialogVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <el-dialog
       v-model="temuTemplateInspectorVisible"
       title="辅助模板解析"
       :fullscreen="true"
@@ -1371,6 +1519,32 @@ onMounted(() => {
 
 :deep(.publish-config-temu-inspector-dialog .el-dialog__body) {
   padding: 14px 16px 16px;
+}
+
+:deep(.publish-config-template-picker-dialog) {
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.publish-config-template-picker-dialog .el-dialog__header) {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.publish-config-template-picker-dialog .el-dialog__body) {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  background: var(--el-fill-color-light);
+  overflow: hidden;
+}
+
+:deep(.publish-config-template-picker-dialog .el-dialog__footer) {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-top: 1px solid var(--el-border-color-lighter);
 }
 
 :deep(.publish-config-page .common-table .vxe-body--column),
@@ -1474,10 +1648,6 @@ onMounted(() => {
   }
 }
 
-.publish-config-template-select {
-  width: min(100%, 520px);
-}
-
 .publish-config-panel {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color);
@@ -1554,7 +1724,7 @@ onMounted(() => {
   padding: 14px;
   box-sizing: border-box;
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--el-bg-color);
   transition:
     border-color 0.2s ease,
@@ -1567,7 +1737,7 @@ onMounted(() => {
   height: 60px;
   flex: 0 0 60px;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid var(--el-border-color-lighter);
   background: var(--el-fill-color);
 }
@@ -1625,6 +1795,161 @@ onMounted(() => {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+.publish-config-template-binding {
+  width: min(100%, 760px);
+}
+
+.publish-config-template-binding__selected {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.publish-config-template-binding__actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 14px;
+}
+
+.publish-config-template-binding__empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  box-sizing: border-box;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  background: var(--el-fill-color-blank);
+}
+
+.publish-config-template-binding__empty-text {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.publish-config-template-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 12px 16px;
+  box-sizing: border-box;
+}
+
+.publish-config-template-picker__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.publish-config-template-picker__search {
+  width: min(100%, 460px);
+}
+
+.publish-config-template-picker__toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.publish-config-template-picker__body {
+  flex: 1;
+  min-height: 0;
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.publish-config-template-picker__table {
+  :deep(.vxe-cell) {
+    line-height: 1.4;
+  }
+
+  :deep(.vxe-body--row.row--hover) {
+    background: var(--el-fill-color-light);
+  }
+}
+
+.publish-config-template-table-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color);
+}
+
+.publish-config-template-table-preview :deep(img) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.publish-config-template-table-preview__placeholder {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+}
+
+.publish-config-template-table-info {
+  min-width: 0;
+  padding: 4px 0;
+}
+
+.publish-config-template-table-info__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.publish-config-template-table-info__name {
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.publish-config-template-table-info__id,
+.publish-config-template-table-info__desc {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.publish-config-template-table-info__id {
+  word-break: break-all;
+}
+
+.publish-config-template-table-info__desc {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.publish-config-template-picker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.publish-config-template-picker__total {
+  margin-right: auto;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
 }
 
 .publish-config-panel__header {
@@ -1774,12 +2099,33 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .publish-config-template-select {
+  .publish-config-ai-grid__side {
+    grid-template-columns: 1fr;
+  }
+
+  .publish-config-template-binding__selected,
+  .publish-config-template-binding__empty,
+  .publish-config-template-picker__toolbar,
+  .publish-config-template-picker__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .publish-config-template-binding__selected {
+    display: flex;
+  }
+
+  .publish-config-template-binding__actions,
+  .publish-config-template-picker__toolbar-actions {
+    justify-content: flex-start;
+  }
+
+  .publish-config-template-picker__search {
     width: 100%;
   }
 
-  .publish-config-ai-grid__side {
-    grid-template-columns: 1fr;
+  .publish-config-template-picker__total {
+    margin-right: 0;
   }
 
   .publish-config-dialog__footer {
@@ -1794,42 +2140,6 @@ onMounted(() => {
   .publish-config-temu-inspector {
     height: auto;
     min-height: calc(100vh - 72px);
-  }
-}
-</style>
-<style lang="less">
-.publish-config-template-select-dropdown {
-  .el-select-dropdown__item {
-    display: block;
-    height: auto !important;
-    min-height: 108px;
-    padding: 0 !important;
-    line-height: normal !important;
-    white-space: normal !important;
-  }
-
-  .el-select-dropdown__item > span {
-    display: block;
-    width: 100%;
-    white-space: normal;
-  }
-
-  .el-select-dropdown__item.is-selected {
-    font-weight: 400;
-  }
-
-  .el-select-dropdown__item.is-hovering,
-  .el-select-dropdown__item.hover {
-    background: var(--el-fill-color-light);
-  }
-
-  .el-select-dropdown__item.is-hovering .publish-config-template-option,
-  .el-select-dropdown__item.hover .publish-config-template-option,
-  .el-select-dropdown__item.selected .publish-config-template-option,
-  .el-select-dropdown__item.is-selected .publish-config-template-option {
-    border-color: var(--el-color-primary-light-7);
-    background: var(--el-fill-color-light);
-    box-shadow: var(--el-box-shadow-lighter);
   }
 }
 </style>
