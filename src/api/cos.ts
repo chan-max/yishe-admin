@@ -9,10 +9,53 @@
 
 import { generateUUID } from '@/utils'
 import { buildCOSKey, extractCOSFilename, extractCOSObjectKey } from '@/utils/cosPath'
+import request from '@/config/axios'
 import COS from 'cos-js-sdk-v5'
+import CryptoJS from 'crypto-js'
 import { saveAs } from 'file-saver'
 
 let _cos = null
+
+type BackendCOSConfig = {
+  SecretId: string
+  SecretKey: string
+  Bucket: string
+  Region: string
+}
+
+const COS_CONFIG_SECRET = '1s'
+
+const decryptBackendCOSConfig = (encryptedConfig: unknown): BackendCOSConfig => {
+  const encryptedText = String(encryptedConfig || '').trim()
+  if (!encryptedText) {
+    throw new Error('后端 COS 配置为空')
+  }
+
+  const decrypted = CryptoJS.AES.decrypt(encryptedText, COS_CONFIG_SECRET).toString(CryptoJS.enc.Utf8)
+  if (!decrypted) {
+    throw new Error('后端 COS 配置解密失败')
+  }
+
+  const config = JSON.parse(decrypted) as Partial<BackendCOSConfig>
+  if (!config.SecretId || !config.SecretKey || !config.Bucket || !config.Region) {
+    throw new Error('后端 COS 配置不完整')
+  }
+
+  return {
+    SecretId: config.SecretId,
+    SecretKey: config.SecretKey,
+    Bucket: config.Bucket,
+    Region: config.Region
+  }
+}
+
+const fetchBackendCOSConfig = async () => {
+  const encryptedConfig = await request.post<string>({
+    url: '/getBasicConfig',
+    data: {}
+  })
+  return decryptBackendCOSConfig(encryptedConfig)
+}
 
 // 初始化COS配置，只在项目启动时调用一次
 export const initCOS = async () => {
@@ -20,20 +63,13 @@ export const initCOS = async () => {
     return _cos
   }
 
-  const configStore = {
-    cos: {
-      SecretId: 'AKIDMdmaMD0uiNwkVH0gTJFKXaXJyV4hHmAL',
-      SecretKey: 'HPdigqyzpgTNICCQnK0ZF6zrrpkbL4un',
-      Bucket: '1s-1257307499',
-      Region: 'ap-beijing'
-    }
-  }
+  const cosConfig = await fetchBackendCOSConfig()
 
   _cos = new COS({
-    SecretId: configStore.cos.SecretId,
-    SecretKey: configStore.cos.SecretKey,
-    Bucket: configStore.cos.Bucket,
-    Region: configStore.cos.Region
+    SecretId: cosConfig.SecretId,
+    SecretKey: cosConfig.SecretKey,
+    Bucket: cosConfig.Bucket,
+    Region: cosConfig.Region
   } as any)
 
   return _cos
@@ -63,7 +99,9 @@ export async function uploadToCOS({
   account,
   userId,
   entityId,
-  isThumbnail
+  isThumbnail,
+  bucket,
+  region
 }: {
   file: File
   key?: string
@@ -72,6 +110,8 @@ export async function uploadToCOS({
   userId?: string | number
   entityId?: string | number
   isThumbnail?: boolean
+  bucket?: string
+  region?: string
 }) {
   // 确保 COS 已初始化
   if (!_cos) {
@@ -89,7 +129,7 @@ export async function uploadToCOS({
     throw new Error('文件对象不能为空')
   }
   
-  if (!(file instanceof File) && !(file instanceof Blob)) {
+  if (typeof file !== 'object' || typeof (file as Blob).size !== 'number') {
     throw new Error('文件对象类型不正确')
   }
   
@@ -117,8 +157,8 @@ export async function uploadToCOS({
     const res = await cos.uploadFile({
       Key: String(finalKey),
       Body: file,
-      Bucket: cos.options.Bucket,
-      Region: cos.options.Region
+      Bucket: bucket || cos.options.Bucket,
+      Region: region || cos.options.Region
     })
     return {
       url: `https://${res.Location}`,
@@ -183,16 +223,6 @@ export async function copyCOSObject(sourceUrl, targetKey = null) {
       }
     )
   })
-}
-
-function removeProtocol(url) {
-  if (url.startsWith('http://')) {
-    return url.replace('http://', '')
-  }
-
-  if (url.startsWith('https://')) {
-    return url.replace('https://', '')
-  }
 }
 
 export function downloadCOSFile(key) {

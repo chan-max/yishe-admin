@@ -431,15 +431,14 @@
     <el-dialog
       v-model="uploadModalVisible"
       title="文件资源上传"
-      width="100%"
-      style="height: 100%"
-      align-center
+      width="calc(100vw - 32px)"
+      top="16px"
       :footer="false"
       :destroy-on-close="true"
       class="clip-material-upload-dialog"
       @close="uploadModalClose"
     >
-      <div style="height: 100%">
+      <div class="clip-material-upload-dialog__content">
         <clip-material-upload @single-file-uploaded="singleFileUploaded" />
       </div>
     </el-dialog>
@@ -1324,8 +1323,10 @@ function handleOperationCommand(command: string, row: any) {
 :deep(.clip-material-upload-dialog) {
   .el-dialog {
     display: flex;
+    width: calc(100vw - 32px) !important;
     max-width: calc(100vw - 32px);
     height: calc(100vh - 32px);
+    max-height: calc(100vh - 32px);
     flex-direction: column;
     margin: 16px auto !important;
     border-radius: 18px;
@@ -1352,6 +1353,42 @@ function handleOperationCommand(command: string, row: any) {
     flex: 1;
     min-height: 0;
   }
+}
+
+:global(.clip-material-upload-dialog.el-dialog) {
+  display: flex;
+  width: calc(100vw - 32px) !important;
+  max-width: calc(100vw - 32px);
+  height: calc(100vh - 32px);
+  max-height: calc(100vh - 32px);
+  flex-direction: column;
+  margin-top: 16px !important;
+  margin-bottom: 16px !important;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+:global(.clip-material-upload-dialog.el-dialog .el-dialog__header) {
+  padding: 18px 24px 16px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
+:global(.clip-material-upload-dialog.el-dialog .el-dialog__body) {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 12px 14px 14px;
+  overflow: hidden;
+  background: var(--el-bg-color-page);
+}
+
+.clip-material-upload-dialog__content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 .clip-material-sidebar {
@@ -1499,11 +1536,22 @@ function handleOperationCommand(command: string, row: any) {
   color: var(--el-text-color-secondary);
 }
 
+@media (max-width: 1360px) {
+  :deep(.clip-material-upload-dialog) {
+    .el-dialog__body {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  }
+}
+
 @media (max-width: 1024px) {
   :deep(.clip-material-upload-dialog) {
     .el-dialog {
+      width: calc(100vw - 12px) !important;
       max-width: calc(100vw - 12px);
       height: calc(100vh - 12px);
+      max-height: calc(100vh - 12px);
       margin: 6px auto !important;
       border-radius: 14px;
     }
@@ -1515,6 +1563,24 @@ function handleOperationCommand(command: string, row: any) {
     .el-dialog__body {
       padding: 12px;
     }
+  }
+
+  :global(.clip-material-upload-dialog.el-dialog) {
+    width: calc(100vw - 12px) !important;
+    max-width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+    max-height: calc(100vh - 12px);
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+    border-radius: 14px;
+  }
+
+  :global(.clip-material-upload-dialog.el-dialog .el-dialog__header) {
+    padding: 14px 16px;
+  }
+
+  :global(.clip-material-upload-dialog.el-dialog .el-dialog__body) {
+    padding: 12px;
   }
 
   .clip-material-sidebar__body {

@@ -2224,15 +2224,14 @@
     <el-dialog
       v-model="uploadModalVisible"
       title="素材上传"
-      width="100%"
-      style="height: 100%"
-      align-center
+      width="calc(100vw - 32px)"
+      top="16px"
       :footer="false"
       :destroy-on-close="true"
       class="material-upload-dialog"
       @close="uploadModalClose"
     >
-      <div style="height: 100%">
+      <div class="material-upload-dialog__content">
         <list-upload
           :current-upload-info="currentUploadInfo"
           @single-file-uploaded="singleFileUploaded"
@@ -7875,12 +7874,43 @@ h1 {
 
 .material-upload-dialog :deep(.el-dialog) {
   display: flex;
+  width: calc(100vw - 32px) !important;
   max-width: calc(100vw - 32px);
   height: calc(100vh - 32px);
+  max-height: calc(100vh - 32px);
   flex-direction: column;
   margin: 16px auto !important;
   border-radius: 18px;
   overflow: hidden;
+}
+
+:global(.material-upload-dialog.el-dialog) {
+  display: flex;
+  width: calc(100vw - 32px) !important;
+  max-width: calc(100vw - 32px);
+  height: calc(100vh - 32px);
+  max-height: calc(100vh - 32px);
+  flex-direction: column;
+  margin-top: 16px !important;
+  margin-bottom: 16px !important;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+:global(.material-upload-dialog.el-dialog .el-dialog__header) {
+  padding: 18px 24px 16px;
+  margin-right: 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
+}
+
+:global(.material-upload-dialog.el-dialog .el-dialog__body) {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  padding: 12px 14px 14px;
+  overflow: hidden;
+  background: var(--el-bg-color-page);
 }
 
 .material-upload-dialog :deep(.el-dialog__header) {
@@ -7901,6 +7931,13 @@ h1 {
 
 .material-upload-dialog :deep(.el-dialog__body > div) {
   flex: 1;
+  min-height: 0;
+}
+
+.material-upload-dialog__content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
@@ -7995,6 +8032,13 @@ h1 {
 }
 
 /* 响应式布局 */
+@media (max-width: 1360px) {
+  .material-upload-dialog :deep(.el-dialog__body) {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
 @media (max-width: 1200px) {
   .edit-material-body {
     padding: 16px;
@@ -8013,10 +8057,30 @@ h1 {
   }
 
   .material-upload-dialog :deep(.el-dialog) {
+    width: calc(100vw - 12px) !important;
     max-width: calc(100vw - 12px);
     height: calc(100vh - 12px);
+    max-height: calc(100vh - 12px);
     margin: 6px auto !important;
     border-radius: 14px;
+  }
+
+  :global(.material-upload-dialog.el-dialog) {
+    width: calc(100vw - 12px) !important;
+    max-width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+    max-height: calc(100vh - 12px);
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+    border-radius: 14px;
+  }
+
+  :global(.material-upload-dialog.el-dialog .el-dialog__header) {
+    padding: 14px 16px;
+  }
+
+  :global(.material-upload-dialog.el-dialog .el-dialog__body) {
+    padding: 12px;
   }
 
   .material-upload-dialog :deep(.el-dialog__header) {

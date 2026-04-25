@@ -414,11 +414,42 @@
       </template>
     </ListPageLayout>
 
+    <div v-if="psdTemplateSaveTasks.length" class="psd-template-save-task-panel">
+      <div class="psd-template-save-task-panel__head">
+        <div>
+          <div class="psd-template-save-task-panel__title">
+            <span class="psd-template-save-task-panel__pulse" />
+            模板上传任务
+          </div>
+          <div class="psd-template-save-task-panel__desc">
+            {{ runningPsdTemplateSaveTaskCount ? "正在后台上传，关闭弹窗不会中断任务。" : "上传任务已处理完成。" }}
+          </div>
+        </div>
+        <el-button size="small" text @click="clearFinishedPsdTemplateSaveTasks">清理完成项</el-button>
+      </div>
+      <div class="psd-template-save-task-list">
+        <div
+          v-for="task in psdTemplateSaveTasks"
+          :key="task.id"
+          class="psd-template-save-task"
+          :class="`is-${task.status}`"
+        >
+          <div class="psd-template-save-task__main">
+            <div class="psd-template-save-task__name">{{ task.name || "未命名模板" }}</div>
+            <div class="psd-template-save-task__stage">{{ task.stage }}</div>
+          </div>
+          <el-tag :type="getPsdTemplateSaveTaskTagType(task.status)" size="small" effect="plain">
+            {{ getPsdTemplateSaveTaskStatusText(task.status) }}
+          </el-tag>
+        </div>
+      </div>
+    </div>
+
     <el-dialog
       :title="dialogTitle"
       v-model="dialogVisible"
       fullscreen
-      :destroy-on-close="true"
+      :destroy-on-close="false"
       class="psd-template-fullscreen-dialog"
       @close="dialogClose"
     >
@@ -697,7 +728,9 @@
         <div class="psd-template-dialog-footer">
           <div class="footer-right">
             <el-button @click="dialogVisible = false">取消</el-button>
-            <el-button type="primary" @click="submitForm" :loading="submitLoading">确定</el-button>
+            <el-button type="primary" @click="submitForm" :loading="submitLoading">
+              {{ isEdit ? "保存并后台上传" : "创建并后台上传" }}
+            </el-button>
           </div>
         </div>
       </template>
@@ -1070,6 +1103,60 @@ const dialogTitle = ref("");
 const dialogVisible = ref(false);
 const isEdit = ref(true);
 const submitLoading = ref(false);
+
+type PsdTemplateSaveTaskStatus = "running" | "success" | "error";
+type PsdTemplateSaveTask = {
+  id: string;
+  name: string;
+  status: PsdTemplateSaveTaskStatus;
+  stage: string;
+  startedAt: number;
+  error?: string;
+};
+const psdTemplateSaveTasks = ref<PsdTemplateSaveTask[]>([]);
+const runningPsdTemplateSaveTaskCount = computed(
+  () => psdTemplateSaveTasks.value.filter((task) => task.status === "running").length,
+);
+
+const getPsdTemplateSaveTaskTagType = (status: PsdTemplateSaveTaskStatus) => {
+  if (status === "success") return "success";
+  if (status === "error") return "danger";
+  return "primary";
+};
+
+const getPsdTemplateSaveTaskStatusText = (status: PsdTemplateSaveTaskStatus) => {
+  if (status === "success") return "已完成";
+  if (status === "error") return "失败";
+  return "进行中";
+};
+
+const clearFinishedPsdTemplateSaveTasks = () => {
+  psdTemplateSaveTasks.value = psdTemplateSaveTasks.value.filter(
+    (task) => task.status === "running",
+  );
+};
+
+const updatePsdTemplateSaveTask = (
+  taskId: string,
+  patch: Partial<Omit<PsdTemplateSaveTask, "id" | "startedAt">>,
+) => {
+  psdTemplateSaveTasks.value = psdTemplateSaveTasks.value.map((task) =>
+    task.id === taskId ? { ...task, ...patch } : task,
+  );
+};
+
+const createPsdTemplateSaveTask = (name: string) => {
+  const task: PsdTemplateSaveTask = {
+    id: `psd-template-save-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    status: "running",
+    stage: "等待上传",
+    startedAt: Date.now(),
+  };
+  psdTemplateSaveTasks.value = [task, ...psdTemplateSaveTasks.value].slice(0, 8);
+  return task;
+};
+
 type PsdTemplateUserTransferAction = "copy" | "move";
 type PsdTemplateUserTransferUserOption = {
   id: string;
@@ -1508,166 +1595,148 @@ function checkboxAllChange(e) {
   ids.value = e.records.map((item) => item.id);
 }
 
-const submitForm = async () => {
-  submitLoading.value = true;
-  await formRef.value.validate().finally(() => {
-    submitLoading.value = false;
-  });
+const buildPsdTemplateSubmitSnapshot = () => {
+  let psdTemplateConfig = null;
+  if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
+    psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
+  }
 
+  return {
+    isEdit: isEdit.value,
+    id: form.value.id,
+    file: form.value.file as File | null,
+    thumbnailFile: form.value.thumbnailFile as File | null,
+    name: form.value.name,
+    description: form.value.description || "",
+    keywords: form.value.keywords || "",
+    windowsLocalPath: form.value.windowsLocalPath || "",
+    url: form.value.url || "",
+    thumbnail: form.value.thumbnail || "",
+    psdTemplateConfig,
+    enabled: form.value.enabled !== undefined ? form.value.enabled : false,
+    size: form.value.size,
+    suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(",") : "",
+    cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(",") : "",
+    userId: userStore.user?.id,
+    userAccount:
+      (userStore.user as any)?.account ||
+      userStore.user?.shortName ||
+      userStore.user?.name ||
+      "anonymous",
+    uploadUserId: (userStore.user as any)?.id || (userStore as any).userInfo?.id,
+  };
+};
+
+const runPsdTemplateSaveTask = async (
+  task: PsdTemplateSaveTask,
+  snapshot: ReturnType<typeof buildPsdTemplateSubmitSnapshot>,
+) => {
   try {
-    if (isEdit.value) {
-      submitLoading.value = true;
+    let url = snapshot.url;
+    let thumbnail = snapshot.thumbnail;
 
-      // 如果有新的 PSD 文件，先上传并替换
-      let url = form.value.url;
-      if (form.value.file) {
-        const userAccount =
-          (userStore.user as any)?.account ||
-          userStore.user?.shortName ||
-          userStore.user?.name ||
-          "anonymous";
-        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
-        const cos = await uploadToCOS({
-          file: form.value.file,
-          category: "psd-template",
-          account: userAccount,
-          userId,
-          entityId: form.value.id, // 编辑时使用现有 ID
-          isThumbnail: false,
-        });
-        url = cos.url;
-      }
-
-      // 如果有新的缩略图文件，先上传
-      let thumbnail = form.value.thumbnail;
-      if (form.value.thumbnailFile) {
-        const userAccount =
-          (userStore.user as any)?.account ||
-          userStore.user?.shortName ||
-          userStore.user?.name ||
-          "anonymous";
-        const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
-        const thumbnailCos = await uploadToCOS({
-          file: form.value.thumbnailFile,
-          category: "psd-template",
-          account: userAccount,
-          userId,
-          entityId: form.value.id, // 编辑时使用现有 ID
-          isThumbnail: true,
-        });
-        thumbnail = thumbnailCos.url; // 直接存储URL字符串
-      }
-
-      // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
-      let psdTemplateConfig = null;
-      if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
-        try {
-          psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
-        } catch (e: any) {
-          ElMessage.error(e.message || "psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式");
-          submitLoading.value = false;
-          return;
-        }
-      }
-
-      await psdTemplateApi.updatePsdTemplate({
-        id: form.value.id,
-        name: form.value.name,
-        description: form.value.description || "",
-        keywords: form.value.keywords || "",
-        windowsLocalPath: form.value.windowsLocalPath || "",
-        url: url || undefined,
-        thumbnail: thumbnail || "", // 确保是字符串
-        psdTemplateConfig: psdTemplateConfig,
-        enabled: form.value.enabled !== undefined ? form.value.enabled : false,
-        size: form.value.size,
-        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(",") : "",
-        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(",") : "",
+    if (snapshot.file) {
+      updatePsdTemplateSaveTask(task.id, { stage: "正在上传 PSD 文件" });
+      const cos = await uploadToCOS({
+        file: snapshot.file,
+        category: "psd-template",
+        account: snapshot.userAccount,
+        userId: snapshot.uploadUserId,
+        entityId: snapshot.isEdit ? snapshot.id : undefined,
+        isThumbnail: false,
       });
-      ElMessage.success("更新成功");
-      // 释放预览URL
-      if (thumbnailPreviewUrl.value) {
-        URL.revokeObjectURL(thumbnailPreviewUrl.value);
-        thumbnailPreviewUrl.value = "";
-      }
-      getList();
-    } else {
-      submitLoading.value = true;
-
-      // 上传PSD文件（如果存在）
-      let url = "";
-      const userAccount =
-        userStore.user?.account || userStore.user?.shortName || userStore.user?.name || "anonymous";
-      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
-      if (form.value.file) {
-        const cos = await uploadToCOS({
-          file: form.value.file,
-          category: "psd-template",
-          account: userAccount,
-          userId,
-          // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
-          isThumbnail: false,
-        });
-        url = cos.url;
-      }
-
-      // 上传缩略图（如果有）
-      let thumbnail = "";
-      if (form.value.thumbnailFile) {
-        const thumbnailCos = await uploadToCOS({
-          file: form.value.thumbnailFile,
-          category: "psd-template",
-          account: userAccount,
-          userId,
-          // 新增时没有 ID，先上传，创建后再更新路径（如果需要）
-          isThumbnail: true,
-        });
-        thumbnail = thumbnailCos.url; // 直接存储URL字符串
-      }
-
-      // 处理psdTemplateConfig：将文本转换为JSON对象（支持JSON和JS对象格式）
-      let psdTemplateConfig = null;
-      if (form.value.psdTemplateConfigText && form.value.psdTemplateConfigText.trim()) {
-        try {
-          psdTemplateConfig = parsePsdInfoText(form.value.psdTemplateConfigText);
-        } catch (e: any) {
-          ElMessage.error(e.message || "psd模板配置格式错误，请输入有效的JSON或JavaScript对象格式");
-          submitLoading.value = false;
-          return;
-        }
-      }
-
-      await psdTemplateApi.createPsdTemplate({
-        name: form.value.name,
-        description: form.value.description || "",
-        keywords: form.value.keywords || "",
-        windowsLocalPath: form.value.windowsLocalPath || "",
-        url: url || undefined,
-        thumbnail: thumbnail,
-        file: null,
-        userId: userStore.user?.id,
-        psdTemplateConfig: psdTemplateConfig,
-        enabled: form.value.enabled !== undefined ? form.value.enabled : false,
-        size: form.value.size,
-        suitableSizes: form.value.suitableSizesArray ? form.value.suitableSizesArray.join(",") : "",
-        cutoutModes: form.value.cutoutModesArray ? form.value.cutoutModesArray.join(",") : "",
-      });
-      ElMessage.success("添加成功");
-      // 释放预览URL
-      if (thumbnailPreviewUrl.value) {
-        URL.revokeObjectURL(thumbnailPreviewUrl.value);
-        thumbnailPreviewUrl.value = "";
-      }
-      getList();
+      url = cos.url;
     }
 
+    if (snapshot.thumbnailFile) {
+      updatePsdTemplateSaveTask(task.id, { stage: "正在上传缩略图" });
+      const thumbnailCos = await uploadToCOS({
+        file: snapshot.thumbnailFile,
+        category: "psd-template",
+        account: snapshot.userAccount,
+        userId: snapshot.uploadUserId,
+        entityId: snapshot.isEdit ? snapshot.id : undefined,
+        isThumbnail: true,
+      });
+      thumbnail = thumbnailCos.url;
+    }
+
+    updatePsdTemplateSaveTask(task.id, {
+      stage: snapshot.isEdit ? "正在保存模板" : "正在创建模板",
+    });
+
+    if (snapshot.isEdit) {
+      await psdTemplateApi.updatePsdTemplate({
+        id: snapshot.id,
+        name: snapshot.name,
+        description: snapshot.description,
+        keywords: snapshot.keywords,
+        windowsLocalPath: snapshot.windowsLocalPath,
+        url: url || undefined,
+        thumbnail: thumbnail || "",
+        psdTemplateConfig: snapshot.psdTemplateConfig,
+        enabled: snapshot.enabled,
+        size: snapshot.size,
+        suitableSizes: snapshot.suitableSizes,
+        cutoutModes: snapshot.cutoutModes,
+      });
+    } else {
+      await psdTemplateApi.createPsdTemplate({
+        name: snapshot.name,
+        description: snapshot.description,
+        keywords: snapshot.keywords,
+        windowsLocalPath: snapshot.windowsLocalPath,
+        url: url || undefined,
+        thumbnail,
+        file: null,
+        userId: snapshot.userId,
+        psdTemplateConfig: snapshot.psdTemplateConfig,
+        enabled: snapshot.enabled,
+        size: snapshot.size,
+        suitableSizes: snapshot.suitableSizes,
+        cutoutModes: snapshot.cutoutModes,
+      });
+    }
+
+    updatePsdTemplateSaveTask(task.id, { status: "success", stage: "已完成" });
+    ElNotification.success({
+      title: snapshot.isEdit ? "PSD模板已更新" : "PSD模板已创建",
+      message: snapshot.name || "未命名模板",
+      duration: 3500,
+    });
+    await getList();
+  } catch (error: any) {
+    const message = error?.message || "操作失败，请重试";
+    console.error("PSD模板后台保存失败:", error);
+    updatePsdTemplateSaveTask(task.id, { status: "error", stage: message, error: message });
+    ElNotification.error({
+      title: "PSD模板上传失败",
+      message,
+      duration: 6000,
+    });
+  }
+};
+
+const submitForm = async () => {
+  submitLoading.value = true;
+  try {
+    await formRef.value.validate();
+    const snapshot = buildPsdTemplateSubmitSnapshot();
+    const task = createPsdTemplateSaveTask(snapshot.name);
+
     dialogVisible.value = false;
-  } catch (e) {
-    console.error("提交失败:", e);
-    ElMessage.error("操作失败，请重试");
+    ElNotification.info({
+      title: "已开始后台上传",
+      message: "上传进度会显示在右下角任务面板，可继续操作页面。",
+      duration: 4500,
+    });
+    void runPsdTemplateSaveTask(task, snapshot);
+  } catch (error: any) {
+    if (error?.message) {
+      ElMessage.error(error.message || "表单校验失败");
+    }
   } finally {
     submitLoading.value = false;
-    dialogVisible.value = false;
   }
 };
 
@@ -2602,6 +2671,122 @@ function handleCutoutModesChange(values: string[]) {
     line-height: 1.5;
     color: var(--el-text-color-primary);
     word-break: break-word;
+  }
+}
+
+.psd-template-save-task-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 3000;
+  width: min(420px, calc(100vw - 32px));
+  max-height: min(420px, calc(100vh - 80px));
+  overflow: hidden;
+  padding: 14px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  background: var(--el-bg-color);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.psd-template-save-task-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.psd-template-save-task-panel__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.psd-template-save-task-panel__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--el-color-primary);
+  box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.45);
+  animation: psd-template-upload-pulse 1.5s ease-out infinite;
+}
+
+.psd-template-save-task-panel__desc {
+  margin-top: 3px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.psd-template-save-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.psd-template-save-task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.psd-template-save-task.is-running {
+  border-color: var(--el-color-primary-light-5);
+  background: var(--el-color-primary-light-9);
+  box-shadow: inset 3px 0 0 var(--el-color-primary);
+}
+
+.psd-template-save-task.is-success {
+  border-color: var(--el-color-success-light-5);
+  background: var(--el-color-success-light-9);
+}
+
+.psd-template-save-task.is-error {
+  border-color: var(--el-color-danger-light-5);
+  background: var(--el-color-danger-light-9);
+}
+
+.psd-template-save-task__main {
+  min-width: 0;
+}
+
+.psd-template-save-task__name {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.psd-template-save-task__stage {
+  margin-top: 3px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+@keyframes psd-template-upload-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(64, 158, 255, 0.45);
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px rgba(64, 158, 255, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(64, 158, 255, 0);
   }
 }
 

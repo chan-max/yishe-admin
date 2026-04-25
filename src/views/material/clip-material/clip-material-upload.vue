@@ -170,24 +170,28 @@
             </el-upload>
           </div>
 
-          <el-button
-            class="w-full"
-            type="primary"
-            :disabled="totalCount === 0"
-            @click="handleUpload"
-          >
-            上传
-          </el-button>
+          <div class="action-button-row">
+            <el-button
+              class="w-full"
+              type="primary"
+              :disabled="totalCount === 0"
+              @click="handleUpload"
+            >
+              上传
+            </el-button>
+          </div>
 
-          <el-button
-            class="w-full"
-            type="danger"
-            plain
-            :disabled="totalCount === 0"
-            @click="handleClear"
-          >
-            清空
-          </el-button>
+          <div class="action-button-row">
+            <el-button
+              class="w-full"
+              type="danger"
+              plain
+              :disabled="totalCount === 0"
+              @click="handleClear"
+            >
+              清空
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -385,7 +389,7 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
       tags: fileItem.tags,
       url: cosResult.url,
       isPublic: true,
-      userId: userStore.userInfo?.id,
+      userId: (userStore.user as any)?.id || (userStore as any).userInfo?.id,
     };
 
     const result = await createFileResource(materialData);
@@ -837,6 +841,11 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 .action-stack :deep(.el-button) {
   width: 100%;
   justify-content: center;
+  margin-left: 0;
+}
+
+.action-button-row {
+  width: 100%;
 }
 
 .local-select {
@@ -856,9 +865,9 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 @media (max-width: 1360px) {
   .multi-file-upload-container {
     flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden auto;
+    height: auto;
+    min-height: 100%;
+    overflow: visible;
   }
 
   .operation-container {
@@ -873,14 +882,25 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
   .file-preview-container {
     width: 100%;
     min-width: 0;
+    flex: none;
+    overflow: visible;
+  }
+
+  .file-preview-list {
+    flex: none;
+    overflow: visible;
   }
 }
 
 @media (max-width: 768px) {
+  .multi-file-upload-container {
+    gap: 10px;
+  }
+
   .file-preview-container,
   .operation-card {
-    padding: 14px;
-    border-radius: 16px;
+    padding: 10px;
+    border-radius: 12px;
   }
 
   .file-preview-list {
@@ -890,6 +910,11 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  .empty-state {
+    min-height: 280px;
+    padding: 28px 16px;
   }
 }
 </style>

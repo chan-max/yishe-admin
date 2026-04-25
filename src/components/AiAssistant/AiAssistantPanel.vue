@@ -1522,6 +1522,8 @@ const uploadAttachmentFile = async (file: File): Promise<AiAssistantAttachment> 
   const uploaded = await uploadToCOS({
     file,
     key: uploadTarget.key,
+    bucket: uploadTarget.bucket,
+    region: uploadTarget.region,
   });
 
   return {
