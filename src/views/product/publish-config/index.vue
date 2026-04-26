@@ -29,6 +29,7 @@ import {
 import { getVendorList, type Vendor } from "@/api/vendor";
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
 import { psdTemplateApi } from "@/api/psdTemplate";
+import { getPromptList } from "@/api/prompt";
 import TemuProductTemplateInspector from "./components/platform-inspectors/TemuProductTemplateInspector.vue";
 
 const userStore = useUserStore();
@@ -183,6 +184,9 @@ const templateBindingDialogPageSize = ref(12);
 const templateBindingDialogTotal = ref(0);
 const templateBindingDialogRows = ref<any[]>([]);
 const templateBindingDialogTableHeight = computed(() => Math.max(420, height.value - 188));
+const titlePromptPickerValue = ref<string | number | null>(null);
+const titlePromptPickerLoading = ref(false);
+const titlePromptOptions = ref<any[]>([]);
 
 // 动态平台配置
 const currentPlatformConfig = ref<TaskTypeConfig | null>(null);
@@ -326,6 +330,51 @@ function ensureUrlListField(fieldKey: string) {
   if (!Array.isArray(currentValue)) {
     platformConfigData.value[fieldKey] = currentValue ? [String(currentValue)] : [];
   }
+}
+
+async function loadTitlePromptOptions() {
+  if (titlePromptPickerLoading.value || titlePromptOptions.value.length > 0) {
+    return;
+  }
+
+  titlePromptPickerLoading.value = true;
+  try {
+    const res = await getPromptList({
+      currentPage: 1,
+      pageSize: 1000,
+    });
+    titlePromptOptions.value = Array.isArray((res as any)?.list) ? (res as any).list : [];
+  } catch (error) {
+    console.error("加载标题提示词失败:", error);
+    ElMessage.error("加载标题提示词失败");
+  } finally {
+    titlePromptPickerLoading.value = false;
+  }
+}
+
+function handleTitlePromptDropdownVisible(visible: boolean) {
+  if (visible) {
+    loadTitlePromptOptions();
+  }
+}
+
+function handleTitlePromptSelect(promptId: string | number | null) {
+  const selectedPrompt = titlePromptOptions.value.find(
+    (item: any) => String(item.id) === String(promptId || ""),
+  );
+  const content = String(selectedPrompt?.content || "").trim();
+
+  if (!content) {
+    if (promptId) {
+      ElMessage.warning("该提示词内容为空，无法填入标题模板");
+    }
+    titlePromptPickerValue.value = null;
+    return;
+  }
+
+  titleConfigForm.templateContent = content;
+  titlePromptPickerValue.value = null;
+  ElMessage.success("已将提示词内容填入标题模板");
 }
 
 function addUrlListItem(fieldKey: string) {
@@ -958,7 +1007,12 @@ onMounted(() => {
                         <el-image
                           v-if="selectedTemplateBinding?.thumbnail"
                           :src="selectedTemplateBinding.thumbnail"
+                          :preview-src-list="[selectedTemplateBinding.thumbnail]"
+                          :initial-index="0"
+                          preview-teleported
+                          hide-on-click-modal
                           fit="cover"
+                          class="publish-config-template-option__image"
                         />
                         <div v-else class="publish-config-template-option__preview-placeholder">
                           暂无图
@@ -1278,6 +1332,36 @@ onMounted(() => {
                       label="标题模板"
                       class="publish-config-ai-grid__editor publish-config-form-item--stacked"
                     >
+                      <div class="publish-config-title-prompt-picker">
+                        <el-select
+                          v-model="titlePromptPickerValue"
+                          filterable
+                          clearable
+                          :loading="titlePromptPickerLoading"
+                          placeholder="选择 AI 提示词填入下方"
+                          @visible-change="handleTitlePromptDropdownVisible"
+                          @change="handleTitlePromptSelect"
+                        >
+                          <el-option
+                            v-for="prompt in titlePromptOptions"
+                            :key="prompt.id"
+                            :label="prompt.title || `提示词 ${prompt.id}`"
+                            :value="prompt.id"
+                          >
+                            <div class="publish-config-title-prompt-option">
+                              <span class="publish-config-title-prompt-option__title">
+                                {{ prompt.title || `提示词 ${prompt.id}` }}
+                              </span>
+                              <span
+                                v-if="prompt.description"
+                                class="publish-config-title-prompt-option__desc"
+                              >
+                                {{ prompt.description }}
+                              </span>
+                            </div>
+                          </el-option>
+                        </el-select>
+                      </div>
                       <el-input
                         v-model="titleConfigForm.templateContent"
                         type="textarea"
@@ -1413,7 +1497,16 @@ onMounted(() => {
             <vxe-column title="预览" field="thumbnail" width="132">
               <template #default="{ row }">
                 <div class="publish-config-template-table-preview">
-                  <el-image v-if="row.thumbnail" :src="row.thumbnail" fit="cover" />
+                  <el-image
+                    v-if="row.thumbnail"
+                    :src="row.thumbnail"
+                    :preview-src-list="[row.thumbnail]"
+                    :initial-index="0"
+                    preview-teleported
+                    hide-on-click-modal
+                    fit="cover"
+                    class="publish-config-template-table-preview__image"
+                  />
                   <div v-else class="publish-config-template-table-preview__placeholder">
                     暂无图
                   </div>
@@ -1742,6 +1835,12 @@ onMounted(() => {
   background: var(--el-fill-color);
 }
 
+.publish-config-template-option__image {
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+}
+
 .publish-config-template-option__preview :deep(img) {
   width: 100%;
   height: 100%;
@@ -1890,6 +1989,12 @@ onMounted(() => {
   background: var(--el-fill-color);
 }
 
+.publish-config-template-table-preview__image {
+  width: 100%;
+  height: 100%;
+  cursor: zoom-in;
+}
+
 .publish-config-template-table-preview :deep(img) {
   width: 100%;
   height: 100%;
@@ -2007,6 +2112,41 @@ onMounted(() => {
     display: block;
     align-items: flex-start;
   }
+}
+
+.publish-config-title-prompt-picker {
+  width: min(100%, 420px);
+  margin-bottom: 8px;
+}
+
+.publish-config-title-prompt-picker :deep(.el-select) {
+  width: 100%;
+}
+
+.publish-config-title-prompt-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.publish-config-title-prompt-option__title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-config-title-prompt-option__desc {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .publish-config-field-tip {

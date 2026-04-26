@@ -1037,8 +1037,9 @@ onMounted(async () => {
 
 .file-log-sidebar {
   display: flex;
-  height: 100%;
-  min-height: 560px;
+  height: min(640px, calc(100vh - 250px));
+  min-height: 360px;
+  max-height: min(640px, calc(100vh - 250px));
   flex-direction: column;
   overflow: hidden;
 }
@@ -1323,7 +1324,12 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
-  .file-log-sidebar,
+  .file-log-sidebar {
+    height: min(460px, calc(100vh - 220px));
+    min-height: 320px;
+    max-height: min(460px, calc(100vh - 220px));
+  }
+
   .file-log-table-panel {
     min-height: 420px;
   }

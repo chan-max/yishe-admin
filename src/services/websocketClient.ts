@@ -9,6 +9,8 @@ type WsStatus = "idle" | "connecting" | "connected" | "reconnecting" | "disconne
 const CLIENT_SOURCE = "管理后台";
 const HEARTBEAT_INTERVAL = 15_000;
 const HEARTBEAT_TIMEOUT = 30_000;
+const WS_STALE_RECONNECT_MS = 75_000;
+const WS_RECOVERY_DEBOUNCE_MS = 5_000;
 const WS_CLIENT_INFO_REFRESH_MS = 60_000;
 const WS_FINGERPRINT_VOLATILE_KEYS = new Set([
   "timestamp",
@@ -431,6 +433,9 @@ let lastPingTimestamp: number | null = null;
 let intentionalDisconnect = false;
 let lastClientInfoFingerprint = "";
 let lastClientInfoEmittedAt = 0;
+let lastAuthToken: string | undefined;
+let lastRecoveryAt = 0;
+let recoveryListenersBound = false;
 
 function updateState(patch: Partial<WsState>) {
   Object.assign(wsState, patch);
@@ -455,6 +460,56 @@ function stopHeartbeat() {
   clearHeartbeatInterval();
   clearHeartbeatTimeout();
   lastPingTimestamp = null;
+}
+
+function isPageHidden() {
+  return typeof document !== "undefined" && document.visibilityState === "hidden";
+}
+
+function refreshSocketAuth() {
+  const token = getAccessToken() || undefined;
+  lastAuthToken = token;
+  if (socket) {
+    socket.auth = token ? { token } : {};
+  }
+  return token;
+}
+
+function recoverConnection(reason: string) {
+  if (intentionalDisconnect) {
+    return;
+  }
+  const now = Date.now();
+  if (now - lastRecoveryAt < WS_RECOVERY_DEBOUNCE_MS) {
+    return;
+  }
+  lastRecoveryAt = now;
+  emitter.emit("log", {
+    level: "warn",
+    message: `[ws] recover connection: ${reason}`,
+  });
+  reconnect();
+}
+
+function ensureConnectionFresh(reason: string) {
+  if (intentionalDisconnect) {
+    return;
+  }
+  const token = getAccessToken() || undefined;
+  if (!token) {
+    disconnect();
+    return;
+  }
+  const lastPongAt = wsState.lastPongAt ? Date.parse(wsState.lastPongAt) : 0;
+  const stale =
+    wsState.status === "connected" &&
+    (!lastPongAt || Date.now() - lastPongAt > WS_STALE_RECONNECT_MS);
+  const tokenChanged = lastAuthToken !== token;
+  if (!socket || !socket.connected || stale || tokenChanged) {
+    recoverConnection(
+      tokenChanged ? `${reason}:token_changed` : stale ? `${reason}:stale` : reason,
+    );
+  }
 }
 
 function stableStringifyForWs(value: unknown): string {
@@ -557,18 +612,23 @@ function scheduleHeartbeatTimeout() {
   heartbeatTimeout = setTimeout(() => {
     emitter.emit("log", { level: "warn", message: "[ws] heartbeat timeout" });
 
+    if (isPageHidden()) {
+      return;
+    }
+
     if (!socket || !socket.connected) {
       updateState({
         status: "error",
         lastError: "Heartbeat timeout",
       });
-      reconnect();
+      recoverConnection("heartbeat_timeout_disconnected");
       return;
     }
 
     updateState({
       lastError: "Heartbeat timeout",
     });
+    recoverConnection("heartbeat_timeout_no_pong");
   }, HEARTBEAT_TIMEOUT);
 }
 
@@ -656,11 +716,37 @@ function bindClientInfoListeners() {
   }
 }
 
+function bindConnectionRecoveryListeners() {
+  if (recoveryListenersBound || typeof window === "undefined") {
+    return;
+  }
+  recoveryListenersBound = true;
+
+  window.addEventListener("focus", () => ensureConnectionFresh("window_focus"));
+  window.addEventListener("online", () => ensureConnectionFresh("browser_online"));
+  window.addEventListener("storage", (event) => {
+    if (!event.key || event.key.includes("ACCESS_TOKEN")) {
+      ensureConnectionFresh("token_storage_changed");
+    }
+  });
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (!isPageHidden()) {
+        scheduleClientInfoSync();
+        ensureConnectionFresh("visibility_visible");
+      }
+    });
+  }
+}
+
 bindClientInfoListeners();
+bindConnectionRecoveryListeners();
 
 function bindSocketEvents(currentSocket: Socket) {
   currentSocket.on("connect", () => {
     const socketId = currentSocket.id;
+    lastAuthToken = getAccessToken() || undefined;
     updateState({
       status: "connected",
       connectedAt: new Date().toISOString(),
@@ -710,6 +796,19 @@ function bindSocketEvents(currentSocket: Socket) {
     });
   });
 
+  currentSocket.on("auth-error", (data: any) => {
+    const message = data?.message || data?.reason || "登录状态已失效，请重新登录";
+    emitter.emit("log", {
+      level: "error",
+      message: `[ws] auth-error: ${message}`,
+    });
+    updateState({
+      status: "error",
+      lastError: message,
+    });
+    disconnect();
+  });
+
   currentSocket.on("error", (error) => {
     emitter.emit("log", { level: "error", message: `[ws] error: ${serializeError(error)}` });
     updateState({
@@ -719,6 +818,7 @@ function bindSocketEvents(currentSocket: Socket) {
   });
 
   currentSocket.io.on("reconnect_attempt", (attempt) => {
+    refreshSocketAuth();
     emitter.emit("log", { level: "info", message: `[ws] reconnect attempt #${attempt}` });
     updateState({
       status: "reconnecting",
@@ -846,8 +946,12 @@ function emitClientInfo() {
 function connect(endpoint?: string) {
   const targetEndpoint = endpoint || wsState.endpoint || DEFAULT_WS_ENDPOINT;
   wsState.endpoint = targetEndpoint;
+  const token = getAccessToken() || undefined;
 
   if (socket && socket.connected) {
+    if (lastAuthToken !== token) {
+      recoverConnection("connect_token_changed");
+    }
     return;
   }
 
@@ -861,6 +965,7 @@ function connect(endpoint?: string) {
   });
 
   syncClientInfoSnapshot();
+  lastAuthToken = token;
 
   socket = io(targetEndpoint, {
     transports: ["websocket"],
@@ -870,9 +975,7 @@ function connect(endpoint?: string) {
     reconnectionDelayMax: 12_000,
     timeout: 8000,
     query: buildQuery(),
-    auth: {
-      token: getAccessToken() || undefined,
-    },
+    auth: token ? { token } : undefined,
   });
 
   bindSocketEvents(socket);
