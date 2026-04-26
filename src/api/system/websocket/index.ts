@@ -304,6 +304,27 @@ export const sendServiceCommand = (data: ServiceCommandDTO) => {
   });
 };
 
+export interface ClientLogQueryDTO {
+  clientId: string;
+  action?: "list" | "tail" | "search" | "delete";
+  file?: string;
+  startDate?: string;
+  endDate?: string;
+  keyword?: string;
+  module?: string;
+  level?: string;
+  lines?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+export const queryClientLog = (data: ClientLogQueryDTO) => {
+  return request.post<{ success: boolean; message: string; data?: any; commandId?: string }>({
+    url: "/websocket/client-log/query",
+    data,
+  });
+};
+
 // 定时任务相关接口
 export interface ScheduledTask {
   clientId: string;

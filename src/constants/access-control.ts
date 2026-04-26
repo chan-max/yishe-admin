@@ -17,6 +17,7 @@ export const ADMIN_ONLY_MENU_KEYS = new Set([
   "system.company",
   "system.websocket",
   "system.operatelog",
+  "system.file-log",
 ]);
 
 export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
@@ -104,6 +105,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "system.public-user", label: "开放用户管理" },
       { key: "system.websocket", label: "远程连接", adminOnly: true },
       { key: "system.operatelog", label: "操作日志", adminOnly: true },
+      { key: "system.file-log", label: "系统日志", adminOnly: true },
     ],
   },
   {
@@ -174,5 +176,6 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   PublicUser: "system.public-user",
   SystemWebsocketConnections: "system.websocket",
   SystemOperateLog: "system.operatelog",
+  SystemFileLog: "system.file-log",
   PersonalSettings: "personal.settings",
 };

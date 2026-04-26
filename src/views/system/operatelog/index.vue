@@ -5,32 +5,74 @@
         <div class="list-page-filter list-page-filter--flat">
           <el-form :model="queryParams" label-position="top" class="list-page-search-form">
             <el-row :gutter="12" class="list-page-search-form__row">
-              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="5" :xl="4">
-                <el-form-item label="用户名">
-                  <el-input
-                    v-model="queryParams.userName"
+              <el-col
+                class="list-page-search-form__col--base"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="5"
+                :xl="4"
+              >
+                <el-form-item label="操作用户">
+                  <el-select
+                    v-model="queryParams.userId"
                     size="small"
-                    placeholder="请输入用户名"
+                    filterable
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
-                  />
+                    placeholder="请选择操作用户"
+                    :loading="userOptionsLoading"
+                    @visible-change="handleUserSelectVisibleChange"
+                    @clear="getList"
+                  >
+                    <el-option
+                      v-for="item in userOptions"
+                      :key="item.id"
+                      :label="item.label"
+                      :value="item.id"
+                    >
+                      <div class="operate-log-user-option">
+                        <span>{{ item.label }}</span>
+                        <span class="operate-log-user-option__id">ID：{{ item.id }}</span>
+                      </div>
+                    </el-option>
+                  </el-select>
                 </el-form-item>
               </el-col>
-              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6" :xl="5">
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="12"
+                :md="8"
+                :lg="6"
+                :xl="5"
+              >
                 <el-form-item label="操作内容">
                   <el-input
                     v-model="queryParams.action"
                     size="small"
                     placeholder="请输入操作内容"
                     clearable
-                    @change="(val) => { if (!val) getList(); }"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
                   />
                 </el-form-item>
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="handleSearch">搜索</el-button>
-              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery">重置</el-button>
+              <el-button
+                size="small"
+                type="primary"
+                :icon="Search"
+                :loading="loading"
+                @click="handleSearch"
+                >搜索</el-button
+              >
+              <el-button size="small" :icon="Refresh" :disabled="loading" @click="resetQuery"
+                >重置</el-button
+              >
               <el-button
                 size="small"
                 type="danger"
@@ -46,7 +88,9 @@
       </template>
 
       <template #table>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat"
+        >
           <div class="list-page-table-panel__body">
             <div class="common-table">
               <vxe-grid ref="gridRef" v-bind="gridOptions" :data="dataSource" :loading="loading">
@@ -78,7 +122,9 @@
       </template>
 
       <template #pagination>
-        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+        <div
+          class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat"
+        >
           <pagination
             :total="total"
             v-model:page="queryParams.currentPage"
@@ -99,6 +145,7 @@ import { useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { Search, Delete, Refresh } from "@element-plus/icons-vue";
 import { getOperateLogPage, clearOperateLog, type OperateLogVO } from "@/api/system/operatelog";
+import { getUserList } from "@/api/user";
 import { useUserStore } from "@/store/modules/user";
 import Pagination from "@/components/Pagination/index.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
@@ -107,7 +154,7 @@ import ListPageLayout from "@/components/ListPageLayout/index.vue";
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
-  userName: "",
+  userId: undefined as number | undefined,
   action: "",
 });
 
@@ -115,6 +162,9 @@ const gridRef = ref();
 const dataSource = ref<OperateLogVO[]>([]);
 const total = ref(0);
 const loading = ref(false);
+const userOptionsLoading = ref(false);
+const userOptionsLoaded = ref(false);
+const userOptions = ref<Array<{ id: number; label: string }>>([]);
 
 const gridOptions = ref({
   ...commonGridOptions,
@@ -194,13 +244,44 @@ function formatUserAgent(ua?: string): string {
   return ua;
 }
 
+async function loadUserOptions() {
+  if (userOptionsLoaded.value || userOptionsLoading.value) {
+    return;
+  }
+
+  userOptionsLoading.value = true;
+  try {
+    const res = await getUserList({
+      currentPage: 1,
+      pageSize: 1000,
+    });
+    const list = Array.isArray(res?.list) ? res.list : [];
+    userOptions.value = list.map((item: any) => ({
+      id: Number(item.id),
+      label: item.name || item.account || `用户 #${item.id}`,
+    }));
+    userOptionsLoaded.value = true;
+  } catch (error) {
+    console.error("加载用户列表失败:", error);
+    ElMessage.error("加载用户列表失败");
+  } finally {
+    userOptionsLoading.value = false;
+  }
+}
+
+function handleUserSelectVisibleChange(visible: boolean) {
+  if (visible) {
+    loadUserOptions();
+  }
+}
+
 async function getList() {
   loading.value = true;
   try {
     const res = await getOperateLogPage({
       currentPage: queryParams.currentPage,
       pageSize: queryParams.pageSize,
-      userName: queryParams.userName || undefined,
+      userId: queryParams.userId || undefined,
       action: queryParams.action || undefined,
     });
 
@@ -225,7 +306,7 @@ async function getList() {
 function resetQuery() {
   queryParams.currentPage = 1;
   queryParams.pageSize = 20;
-  queryParams.userName = "";
+  queryParams.userId = undefined;
   queryParams.action = "";
   getList();
 }
@@ -273,6 +354,7 @@ function handleSearch() {
 }
 
 onMounted(() => {
+  loadUserOptions();
   getList();
 });
 </script>
@@ -294,5 +376,17 @@ onMounted(() => {
 
 :deep(.operate-log-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.operate-log-user-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.operate-log-user-option__id {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 </style>

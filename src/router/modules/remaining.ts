@@ -780,6 +780,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           requiresAdmin: true,
         },
       },
+      {
+        path: "file-log",
+        component: () => import("@/views/system/file-log/index.vue"),
+        name: "SystemFileLog",
+        meta: {
+          title: "系统日志",
+          requiresAdmin: true,
+        },
+      },
     ],
   },
   {
@@ -1129,6 +1138,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/system/audit/operatelog",
     redirect: "/system/operatelog",
     name: "SystemAuditOperatelogCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/audit/file-log",
+    redirect: "/system/file-log",
+    name: "SystemAuditFileLogCompat",
     meta: {
       hidden: true,
       noTagsView: true,
