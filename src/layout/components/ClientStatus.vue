@@ -144,11 +144,18 @@ import {
 } from "@/stores/connectionStatus";
 import { websocketClient } from "@/services/websocketClient";
 import { formatPast } from "@/utils/formatTime";
+import { useMyRuntimeConnectionStoreRefs } from "@/store/modules/myRuntimeConnection";
+import { resolveRuntimeConnectionSourceKey } from "@/utils/websocketConnection";
 
 defineOptions({ name: "ClientStatus" });
 
 const popoverVisible = ref(false);
 const clientDialogVisible = ref(false);
+const {
+  store: runtimeConnectionStore,
+  connections: runtimeConnections,
+  loading: runtimeConnectionLoading,
+} = useMyRuntimeConnectionStoreRefs();
 const hasClientRecords = computed(() => myClients.value.length > 0);
 const clientRecordCount = computed(() => myClients.value.length);
 const onlineClientCount = computed(
@@ -157,11 +164,22 @@ const onlineClientCount = computed(
 const offlineClientCount = computed(
   () => myClients.value.filter((client) => !client.isOnline).length,
 );
-const extensionCount = computed(() => 0);
-const adminCount = computed(() => (isRemoteConnected.value ? 1 : 0));
-const clientRuntimeCount = computed(() => onlineClientCount.value);
+const onlineRuntimeConnections = computed(() =>
+  runtimeConnections.value.filter((connection) => connection.isOnline !== false),
+);
+const runtimeConnectionCountBySource = (source: "extension" | "admin" | "client") =>
+  onlineRuntimeConnections.value.filter(
+    (connection) => resolveRuntimeConnectionSourceKey(connection) === source,
+  ).length;
+const extensionCount = computed(() => runtimeConnectionCountBySource("extension"));
+const adminCount = computed(() =>
+  Math.max(runtimeConnectionCountBySource("admin"), isRemoteConnected.value ? 1 : 0),
+);
+const clientRuntimeCount = computed(() =>
+  Math.max(runtimeConnectionCountBySource("client"), onlineClientCount.value),
+);
 const runtimeTotalCount = computed(() => adminCount.value + clientRuntimeCount.value);
-const isRefreshing = computed(() => clientRefreshLoading.value);
+const isRefreshing = computed(() => clientRefreshLoading.value || runtimeConnectionLoading.value);
 const triggerSummaryText = computed(() => {
   const nodeText = clientRecordCount.value
     ? `节点 ${onlineClientCount.value}/${clientRecordCount.value}`
@@ -192,14 +210,21 @@ const clientNodeMeta = computed(() => {
   return `${offlineClientCount.value} 个节点离线`;
 });
 const extensionStatusText = computed(() => `${extensionCount.value} 个连接`);
-const extensionStatusMeta = computed(() => "进入远程连接页查看");
+const extensionStatusMeta = computed(() =>
+  extensionCount.value > 0 ? "当前账号在线" : "进入远程连接页查看",
+);
 
 let timers: { localTimer: number; remoteTimer: number } | null = null;
+let runtimeRefreshTimer: ReturnType<typeof setInterval> | null = null;
 
 const remoteStatusText = computed(() => `${adminCount.value} 个连接`);
 
 const remoteStatusMeta = computed(() => {
   if (isRemoteConnected.value) {
+    if (adminCount.value > 1) {
+      return `含当前页面 ${adminCount.value} 个在线`;
+    }
+
     return websocketClient.state.connectedAt
       ? formatPast(websocketClient.state.connectedAt)
       : "连接正常";
@@ -248,7 +273,7 @@ function reconnectRemote() {
 }
 
 async function refreshAllStatuses() {
-  await refreshMyClients();
+  await Promise.all([refreshMyClients(), runtimeConnectionStore.refresh()]);
 }
 
 function handleClientDialogVisibleChange(value: boolean) {
@@ -260,11 +285,21 @@ function handleClientDialogVisibleChange(value: boolean) {
 
 onMounted(() => {
   timers = startConnectionChecks();
+  void runtimeConnectionStore.refresh();
+  runtimeRefreshTimer = setInterval(() => {
+    if (websocketClient.state.status === "connected") {
+      void runtimeConnectionStore.refresh();
+    }
+  }, 15_000);
 });
 
 onUnmounted(() => {
   if (timers) {
     clearConnectionChecks(timers);
+  }
+  if (runtimeRefreshTimer) {
+    clearInterval(runtimeRefreshTimer);
+    runtimeRefreshTimer = null;
   }
 });
 </script>
