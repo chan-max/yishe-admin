@@ -794,6 +794,52 @@ html.dark .el-alert {
   background: var(--ep-cover-soft-bg);
 }
 
+@media (max-width: 640px) {
+  .el-pagination {
+    width: 100%;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .el-pagination__sizes,
+  .el-pagination__jump {
+    display: none !important;
+  }
+
+  .el-pagination button,
+  .el-pagination .el-pager li {
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .el-pagination {
+    flex-wrap: nowrap;
+  }
+
+  .el-pagination__total {
+    display: none !important;
+  }
+
+  .el-pagination button,
+  .el-pagination .el-pager li {
+    min-width: 26px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .el-pagination .el-pager {
+    display: flex;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+}
+
 .el-dropdown-menu,
 .el-select-dropdown__list,
 .el-cascader-panel,

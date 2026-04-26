@@ -1,18 +1,24 @@
 <!-- 基于 ruoyi-vue3 的 Pagination 重构，核心是简化无用的属性，并使用 ts 重写 -->
 <template>
-  <el-pagination
-    v-show="total > 0"
-    v-model:current-page="currentPage"
-    v-model:page-size="pageSize"
-    :background="true"
-    :page-sizes="[10, 20, 30, 50, 100]"
-    :pager-count="pagerCount"
-    :total="total"
-    class="float-right mb-15px mt-15px"
-    layout="total, sizes, prev, pager, next, jumper"
-    @size-change="handleSizeChange"
-    @current-change="handleCurrentChange"
-  />
+  <div v-show="total > 0" class="yishe-pagination">
+    <div v-if="isMobile" class="yishe-pagination__summary">
+      <span>共 {{ total }} 条</span>
+      <span>{{ currentPage }} / {{ pageCount || 1 }} 页</span>
+    </div>
+    <el-pagination
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      :background="true"
+      :page-sizes="[10, 20, 30, 50, 100]"
+      :pager-count="responsivePagerCount"
+      :small="isMobile"
+      :total="total"
+      class="yishe-pagination__control"
+      :layout="responsiveLayout"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
+  </div>
 </template>
 <script lang="ts" setup>
 defineOptions({ name: 'Pagination' })
@@ -42,6 +48,47 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:page', 'update:limit', 'pagination'])
+
+const windowWidth = ref(typeof window === 'undefined' ? 1200 : window.innerWidth)
+const updateWindowWidth = () => {
+  if (typeof window !== 'undefined') {
+    windowWidth.value = window.innerWidth
+  }
+}
+
+onMounted(() => {
+  updateWindowWidth()
+  window.addEventListener('resize', updateWindowWidth, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateWindowWidth)
+})
+
+const isMobile = computed(() => windowWidth.value <= 640)
+const responsiveLayout = computed(() => {
+  if (windowWidth.value <= 420) {
+    return 'prev, pager, next'
+  }
+  if (windowWidth.value <= 640) {
+    return 'prev, pager, next'
+  }
+  if (windowWidth.value <= 900) {
+    return 'total, sizes, prev, pager, next'
+  }
+  return 'total, sizes, prev, pager, next, jumper'
+})
+const responsivePagerCount = computed(() => {
+  if (windowWidth.value <= 900) {
+    return 5
+  }
+  return props.pagerCount
+})
+const pageCount = computed(() => {
+  const limit = Number(pageSize.value) || 1
+  return Math.max(1, Math.ceil((Number(props.total) || 0) / limit))
+})
+
 const currentPage = computed({
   get() {
     return props.page
@@ -74,22 +121,62 @@ const handleCurrentChange = (val) => {
 }
 </script>
 <style scoped lang="scss">
+.yishe-pagination {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 15px 0;
+  min-width: 0;
+}
+
+.yishe-pagination__summary {
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.yishe-pagination__control {
+  max-width: 100%;
+}
+
 :deep(.el-pagination) {
   flex-wrap: wrap;
   justify-content: flex-end;
   row-gap: 8px;
+  max-width: 100%;
 }
 
 @media (max-width: 768px) {
+  .yishe-pagination {
+    align-items: stretch;
+  }
+
   :deep(.el-pagination) {
     justify-content: flex-start;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  .yishe-pagination {
+    margin: 10px 0;
+    gap: 6px;
+  }
+
+  .yishe-pagination__summary {
+    display: flex;
+  }
+
   :deep(.el-pagination) {
     width: 100%;
-    gap: 6px 8px;
+    justify-content: center;
+    gap: 6px;
   }
 
   :deep(.el-pagination .btn-prev),
@@ -99,8 +186,31 @@ const handleCurrentChange = (val) => {
   }
 
   :deep(.el-pagination__sizes),
+  :deep(.el-pagination__total),
   :deep(.el-pagination__jump) {
     margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 420px) {
+  :deep(.el-pagination) {
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  :deep(.el-pagination .btn-prev),
+  :deep(.el-pagination .btn-next),
+  :deep(.el-pagination .el-pager li) {
+    min-width: 26px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+  }
+
+  :deep(.el-pagination .el-pager) {
+    display: flex;
+    min-width: 0;
+    flex: 0 1 auto;
   }
 }
 </style>
