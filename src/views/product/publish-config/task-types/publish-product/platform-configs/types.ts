@@ -1,7 +1,7 @@
 export interface FieldConfig {
   key: string
   label: string
-  type: 'input' | 'textarea' | 'select' | 'switch' | 'number' | 'radio' | 'url-list'
+  type: 'input' | 'textarea' | 'select' | 'switch' | 'number' | 'radio' | 'url-list' | 'vendor-products'
   inputType?: 'text' | 'password'
   placeholder?: string
   options?: Array<{ label: string; value: any }>

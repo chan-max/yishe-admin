@@ -16,11 +16,15 @@ export interface Vendor {
 
 export interface VendorProductItem {
   id?: number
+  code?: string | null
   vendorId?: number
   name: string
   model?: string
   size?: string
+  productSize?: string
+  packageSize?: string
   price?: number | null
+  images?: string[]
   unit?: string
   remark?: string
   vendor?: Vendor

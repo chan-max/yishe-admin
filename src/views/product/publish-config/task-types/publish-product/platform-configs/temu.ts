@@ -16,6 +16,13 @@ export const temuPlatformConfig: PlatformConfig = {
       span: 24
     },
     {
+      key: 'vendorProductMappings',
+      label: 'SKU供应商商品',
+      type: 'vendor-products',
+      span: 24,
+      tooltip: '按顺序选择供应商商品，对应 productSkcReqs[0].productSkuReqs 的 SKU 顺序；保存时会固化商品编码快照。'
+    },
+    {
       key: 'supId',
       label: 'Sup ID',
       type: 'input',

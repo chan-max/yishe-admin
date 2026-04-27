@@ -34,6 +34,9 @@ function parseSerializableObject(value: any) {
 function pickTemuConfigFields(configData: Record<string, any> = {}) {
   return {
     vendorId: configData?.vendorId,
+    vendorCode: configData?.vendorCode,
+    vendorName: configData?.vendorName,
+    vendorProductMappings: configData?.vendorProductMappings,
     supId: configData?.supId,
     productTemplate: configData?.productTemplate,
     templateImageBindings: configData?.templateImageBindings,
@@ -75,6 +78,15 @@ export const temuHandler: PlatformHandler = {
       errors.push('绑定厂家无效');
     }
 
+    const mappings = Array.isArray(configData?.vendorProductMappings)
+      ? configData.vendorProductMappings
+      : [];
+    mappings.forEach((item: any, index: number) => {
+      if (!String(item?.code || '').trim()) {
+        errors.push(`第 ${index + 1} 个供应商商品缺少编码快照`);
+      }
+    });
+
     return {
       valid: errors.length === 0,
       errors,
@@ -91,6 +103,26 @@ export const temuHandler: PlatformHandler = {
     } else {
       formatted.vendorId = undefined;
     }
+
+    formatted.vendorCode = String(formatted.vendorCode || '').trim() || undefined;
+    formatted.vendorName = String(formatted.vendorName || '').trim() || undefined;
+    formatted.vendorProductMappings = Array.isArray(formatted.vendorProductMappings)
+      ? formatted.vendorProductMappings
+          .map((item: any, index: number) => ({
+            vendorProductId:
+              item?.vendorProductId === undefined || item?.vendorProductId === null || item?.vendorProductId === ''
+                ? undefined
+                : Number(item.vendorProductId),
+            code: String(item?.code || '').trim(),
+            name: String(item?.name || '').trim(),
+            model: String(item?.model || '').trim(),
+            size: String(item?.size || '').trim(),
+            productSize: String(item?.productSize || '').trim(),
+            packageSize: String(item?.packageSize || '').trim(),
+            sort: index + 1,
+          }))
+          .filter((item: any) => item.code)
+      : [];
 
     if (formatted.supId !== undefined && formatted.supId !== null) {
       formatted.supId = String(formatted.supId).trim() || undefined;
@@ -116,6 +148,18 @@ export const temuHandler: PlatformHandler = {
     if (formatted.vendorId !== undefined && formatted.vendorId !== null && formatted.vendorId !== '') {
       formatted.vendorId = Number(formatted.vendorId);
     }
+    formatted.vendorCode = String(formatted.vendorCode || '').trim();
+    formatted.vendorName = String(formatted.vendorName || '').trim();
+    formatted.vendorProductMappings = Array.isArray(formatted.vendorProductMappings)
+      ? formatted.vendorProductMappings.map((item: any, index: number) => ({
+          ...item,
+          vendorProductId:
+            item?.vendorProductId === undefined || item?.vendorProductId === null || item?.vendorProductId === ''
+              ? undefined
+              : Number(item.vendorProductId),
+          sort: Number(item?.sort) || index + 1,
+        }))
+      : [];
     if (formatted.supId !== undefined && formatted.supId !== null) {
       formatted.supId = String(formatted.supId).trim();
     }
@@ -135,7 +179,8 @@ export const temuHandler: PlatformHandler = {
     return [
       "Temu 当前仅使用商品模板配置，登录与类目路径已暂时隐藏",
       "商品模板支持 JSON 和合法 JS 对象字面量，保存后会统一转成标准对象",
-      "支持绑定厂家；客户端发布时会优先使用显式 productCode，否则按“素材码-厂家码”兜底生成",
+      "SKC 货号使用“素材码-厂家码”，SKU 货号按顺序使用“素材码-供应商商品码”",
+      "供应商商品映射会保存编码快照，后续发布不再实时查询供应商商品编码",
       "图片字段建议通过“图片索引绑定”声明，由客户端在发布时按上传结果回填到模板",
       "浏览器自动化侧的页面打开与后续动作暂未接入到这里",
     ];
