@@ -1627,6 +1627,11 @@
                 <template #previewDefaultSlot="{ row }">
                   <div class="table-preview-stack">
                     <div class="preview-image-wrapper">
+                      <div
+                        v-if="isCustomMaterial(row)"
+                        class="preview-custom-corner"
+                        title="定制素材"
+                      ></div>
                       <img
                         v-if="row._imageLoaded"
                         :key="`preview-${row.id}-${row.url}`"
@@ -3557,6 +3562,11 @@ function materialRowClassName({ row }: any) {
   }
   return "";
 }
+
+function isCustomMaterial(row: any) {
+  return row?.isCustom === true || row?.isCustom === "true" || row?.isCustom === 1;
+}
+
 const single = ref(false);
 const multiple = ref(true);
 const total = ref(0);
@@ -6344,11 +6354,46 @@ async function handleUrlUpload() {
   position: relative;
   width: 120px;
   min-height: 80px;
-
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
+}
+
+.preview-custom-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  pointer-events: none;
+}
+
+.preview-custom-corner::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-top: 34px solid #facc15;
+  border-right: 34px solid transparent;
+}
+
+.preview-custom-corner::after {
+  content: "定制";
+  position: absolute;
+  top: 7px;
+  left: -6px;
+  width: 42px;
+  color: #7c2d12;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  transform: rotate(-45deg);
+  transform-origin: center;
 }
 
 .preview-image {
