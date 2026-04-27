@@ -2827,6 +2827,31 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () =>
+    activePsdSets.value
+      .map((item: any) =>
+        [
+          normalizePsdSetId(item?.id),
+          String(item?.status || "").trim(),
+          String(item?.schedulerStatus || "").trim(),
+          String(item?.updateTime || "").trim(),
+        ].join(":"),
+      )
+      .join("|"),
+  (fingerprint) => {
+    if (!fingerprint) {
+      return;
+    }
+
+    void getList(true);
+    void loadPsdSetSchedulerRuntime();
+    if (detailDialogVisible.value && detailData.value?.id) {
+      void loadPsdSetDetailById(detailData.value.id, true);
+    }
+  },
+);
+
 onMounted(() => {
   websocketClient.events.on("production-status", productionStatusHandler);
   void Promise.all([refreshUserAutoSchedulingSetting(), loadPsdSetSchedulerRuntime()]);

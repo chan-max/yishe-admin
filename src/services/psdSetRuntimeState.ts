@@ -15,9 +15,11 @@ const activePsdSetIds = ref<string[]>([])
 let initialized = false
 let activeSummaryRefreshPromise: Promise<void> | null = null
 let activeSummaryPollingTimer: ReturnType<typeof setInterval> | null = null
+let activeSummaryPollingMs = 0
 let activeSummaryRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
 const ACTIVE_PSD_SET_POLLING_MS = 5000
+const IDLE_PSD_SET_POLLING_MS = 3000
 
 const normalizePsdSetId = (value: unknown) => String(value || '').trim()
 
@@ -43,22 +45,24 @@ const normalizeActivePsdSetItem = (item: any): ActivePsdSetSummaryItem | null =>
 }
 
 const syncActiveSummaryPolling = () => {
-  const shouldPoll = activePsdSetIds.value.length > 0 || activePsdSets.value.length > 0
-  if (!shouldPoll) {
-    if (activeSummaryPollingTimer) {
-      clearInterval(activeSummaryPollingTimer)
-      activeSummaryPollingTimer = null
-    }
+  const nextPollingMs =
+    activePsdSetIds.value.length > 0 || activePsdSets.value.length > 0
+      ? ACTIVE_PSD_SET_POLLING_MS
+      : IDLE_PSD_SET_POLLING_MS
+
+  if (activeSummaryPollingTimer && activeSummaryPollingMs === nextPollingMs) {
     return
   }
 
   if (activeSummaryPollingTimer) {
-    return
+    clearInterval(activeSummaryPollingTimer)
+    activeSummaryPollingTimer = null
   }
 
+  activeSummaryPollingMs = nextPollingMs
   activeSummaryPollingTimer = setInterval(() => {
     void refreshActiveSummary(true)
-  }, ACTIVE_PSD_SET_POLLING_MS)
+  }, nextPollingMs)
 }
 
 const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | null) => {
@@ -123,6 +127,23 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
   if (typeof event?.autoSchedulingEnabled === 'boolean') {
     userAutoSchedulingEnabled.value = event.autoSchedulingEnabled
   }
+
+  const psdSetId = normalizePsdSetId(event?.currentPsSetId)
+  if (event?.running && psdSetId) {
+    if (!activePsdSetIds.value.includes(psdSetId)) {
+      activePsdSetIds.value = Array.from(new Set([...activePsdSetIds.value, psdSetId]))
+      syncActiveSummaryPolling()
+    }
+    scheduleActiveSummaryRefresh(80)
+    return
+  }
+
+  if (!event?.running && psdSetId) {
+    activePsdSetIds.value = activePsdSetIds.value.filter((id) => id !== psdSetId)
+    activePsdSets.value = activePsdSets.value.filter((item) => item.id !== psdSetId)
+    syncActiveSummaryPolling()
+    scheduleActiveSummaryRefresh(180)
+  }
 }
 
 const handleProductionStatus = (event: {
@@ -163,6 +184,7 @@ const ensureInitialized = () => {
   websocketClient.events.on('production-status', handleProductionStatus)
   void refreshUserAutoScheduling()
   void refreshActiveSummary(true)
+  syncActiveSummaryPolling()
 }
 
 export function usePsdSetRuntimeState() {
