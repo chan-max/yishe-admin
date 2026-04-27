@@ -208,6 +208,7 @@
                       <el-image
                         v-if="row.thumbnail"
                         :src="
+                         row.thumbnail || 
                           getPreviewImageUrl(row.thumbnail, {
                             width: 150,
                             height: 150,
