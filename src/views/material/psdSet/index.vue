@@ -823,7 +823,7 @@ import {
 } from "@/api/product/publishConfig";
 import request from "@/config/axios";
 import { isLocalConnected } from "@/stores/connectionStatus";
-import { websocketClient } from "@/services/websocketClient";
+import { websocketClient, type PsAutomationStatusEvent } from "@/services/websocketClient";
 import { useClientNodeState } from "@/services/clientNodeState";
 import { ClientControlService } from "@/services/clientControl";
 import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
@@ -1212,6 +1212,16 @@ function normalizePsdSetId(value: unknown) {
   return String(value || "").trim();
 }
 
+type PsdSetRuntimeUpdatePayload = {
+  status?: string;
+  message?: string;
+  progress?: number;
+  total?: number;
+  assignedClientId?: string | null;
+  assignedMachineCode?: string | null;
+  schedulerStatus?: string;
+};
+
 function normalizePsdSetSchedulerMeta(value: any) {
   if (!value) {
     return null;
@@ -1306,15 +1316,7 @@ function findPsdSetRowIndexById(psdSetId: unknown) {
 
 function buildPsdSetRuntimeRecord(
   target: any,
-  payload: {
-    status?: string;
-    message?: string;
-    progress?: number;
-    total?: number;
-    assignedClientId?: string | null;
-    assignedMachineCode?: string | null;
-    schedulerStatus?: string;
-  },
+  payload: PsdSetRuntimeUpdatePayload,
 ) {
   if (!target || typeof target !== "object") {
     return target;
@@ -1394,22 +1396,66 @@ function buildPsdSetRuntimeRecord(
   };
 }
 
+function isPsdSetRuntimePayloadActive(payload: PsdSetRuntimeUpdatePayload) {
+  const status = String(payload.status || "").trim();
+  const schedulerStatus = String(payload.schedulerStatus || "").trim();
+  return (
+    status === "processing" ||
+    status === "running" ||
+    schedulerStatus === "assigned" ||
+    schedulerStatus === "running"
+  );
+}
+
+function rememberPsdSetRuntimeOverlay(psdSetId: string, payload: PsdSetRuntimeUpdatePayload) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return;
+  }
+
+  psdSetRuntimeOverlayMap.value = {
+    ...psdSetRuntimeOverlayMap.value,
+    [normalizedId]: {
+      payload,
+      expiresAt: isPsdSetRuntimePayloadActive(payload)
+        ? Date.now() + PSD_SET_RUNTIME_ACTIVE_OVERLAY_TTL_MS
+        : Date.now() + PSD_SET_RUNTIME_TERMINAL_OVERLAY_TTL_MS,
+    },
+  };
+}
+
+function getPsdSetRuntimeOverlay(psdSetId: unknown) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  const overlay = normalizedId ? psdSetRuntimeOverlayMap.value[normalizedId] : null;
+  if (!overlay) {
+    return null;
+  }
+
+  if (overlay.expiresAt && overlay.expiresAt <= Date.now()) {
+    const nextMap = { ...psdSetRuntimeOverlayMap.value };
+    delete nextMap[normalizedId];
+    psdSetRuntimeOverlayMap.value = nextMap;
+    return null;
+  }
+
+  return overlay;
+}
+
+function mergePsdSetRuntimeOverlay(record: any) {
+  const overlay = getPsdSetRuntimeOverlay(record?.id);
+  return overlay ? buildPsdSetRuntimeRecord(record, overlay.payload) : record;
+}
+
 function applyPsdSetRuntimeUpdate(
   psdSetId: unknown,
-  payload: {
-    status?: string;
-    message?: string;
-    progress?: number;
-    total?: number;
-    assignedClientId?: string | null;
-    assignedMachineCode?: string | null;
-    schedulerStatus?: string;
-  },
+  payload: PsdSetRuntimeUpdatePayload,
 ) {
   const normalizedId = normalizePsdSetId(psdSetId);
   if (!normalizedId) {
     return;
   }
+
+  rememberPsdSetRuntimeOverlay(normalizedId, payload);
 
   const rowIndex = findPsdSetRowIndexById(normalizedId);
   if (rowIndex >= 0) {
@@ -1455,6 +1501,11 @@ let configValidateTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let psdSetRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetActiveRuntimeTimer: ReturnType<typeof setInterval> | null = null;
+const PSD_SET_RUNTIME_ACTIVE_OVERLAY_TTL_MS = 10 * 60 * 1000;
+const PSD_SET_RUNTIME_TERMINAL_OVERLAY_TTL_MS = 10000;
+const psdSetRuntimeOverlayMap = ref<
+  Record<string, { payload: PsdSetRuntimeUpdatePayload; expiresAt: number | null }>
+>({});
 
 // 查看配置对话框相关状态
 const configViewDialogVisible = ref(false);
@@ -1595,7 +1646,7 @@ async function getList(silent = false) {
       endTime: queryParams.endTime || undefined,
     });
     dataSource.value = Array.isArray(res.list)
-      ? res.list.map((item) => normalizePsdSetRecord(item))
+      ? res.list.map((item) => mergePsdSetRuntimeOverlay(normalizePsdSetRecord(item)))
       : [];
     total.value = res.total || 0;
   } finally {
@@ -2778,6 +2829,8 @@ const productionStatusHandler = (data: {
   message?: string;
   progress?: number;
   total?: number;
+  assignedClientId?: string | null;
+  assignedMachineCode?: string | null;
 }) => {
   try {
     const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
@@ -2788,6 +2841,8 @@ const productionStatusHandler = (data: {
       message: data.message,
       progress: data.progress,
       total: data.total,
+      assignedClientId: data.assignedClientId,
+      assignedMachineCode: data.assignedMachineCode,
     });
 
     schedulePsdSetRuntimeRefresh(
@@ -2795,6 +2850,37 @@ const productionStatusHandler = (data: {
     );
   } catch (e) {
     console.error("处理 production-status 事件失败", e);
+  }
+};
+
+const psAutomationStatusHandler = (data: PsAutomationStatusEvent) => {
+  try {
+    const normalizedPsdSetId = normalizePsdSetId(data?.currentPsSetId);
+    if (!normalizedPsdSetId) return;
+
+    if (data.running) {
+      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
+        status: "processing",
+        message: String(data.currentStep || "").trim() || "客户端处理中",
+        progress: typeof data.progress === "number" ? data.progress : 0,
+        assignedClientId: String(data.clientId || "").trim() || null,
+        schedulerStatus: "running",
+      });
+      schedulePsdSetRuntimeRefresh(1200);
+      return;
+    }
+
+    if (data.lastError) {
+      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
+        status: "failed",
+        message: data.lastError,
+        assignedClientId: String(data.clientId || "").trim() || null,
+        schedulerStatus: "failed",
+      });
+      schedulePsdSetRuntimeRefresh(360);
+    }
+  } catch (e) {
+    console.error("处理 ps-automation-status 事件失败", e);
   }
 };
 
@@ -2854,6 +2940,7 @@ watch(
 
 onMounted(() => {
   websocketClient.events.on("production-status", productionStatusHandler);
+  websocketClient.events.on("psAutomationStatus", psAutomationStatusHandler);
   void Promise.all([refreshUserAutoSchedulingSetting(), loadPsdSetSchedulerRuntime()]);
   psdSetSchedulerRuntimeTimer = setInterval(() => {
     void loadPsdSetSchedulerRuntime();
@@ -2862,6 +2949,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   websocketClient.events.off("production-status", productionStatusHandler);
+  websocketClient.events.off("psAutomationStatus", psAutomationStatusHandler);
   stopPsdSetActiveRuntimeRefresh();
   if (psdSetMenuRuntimeSyncTimer) {
     clearTimeout(psdSetMenuRuntimeSyncTimer);

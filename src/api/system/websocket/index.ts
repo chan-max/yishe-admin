@@ -198,6 +198,7 @@ export interface WebsocketClientInfo {
     queueCount?: number;
     currentPsSetId?: string | null;
     currentPsSetName?: string | null;
+    currentStep?: string | null;
     progress?: number | null;
     lastError?: string | null;
     lastHeartbeatAt?: string | null;

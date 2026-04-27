@@ -153,6 +153,7 @@ export interface PsAutomationStatusEvent {
   queueCount?: number;
   currentPsSetId?: string | null;
   currentPsSetName?: string | null;
+  currentStep?: string | null;
   progress?: number | null;
   lastError?: string | null;
   lastHeartbeatAt?: string | null;
@@ -412,6 +413,10 @@ export type WebsocketEvents = {
     psdSetId?: string;
     progress?: number;
     total?: number;
+    clientId?: string;
+    machineCode?: string;
+    assignedClientId?: string | null;
+    assignedMachineCode?: string | null;
   };
   serviceRuntime: ServiceRuntimeEvent;
   serviceCommandResult: ServiceCommandResultEvent;
@@ -865,7 +870,7 @@ function bindSocketEvents(currentSocket: Socket) {
   // 监听制作状态消息（客户端正在制作中时返回的消息）
   currentSocket.on(
     "production-status",
-    (data: { status: string; message: string; psdSetId?: string }) => {
+    (data: WebsocketEvents["production-status"]) => {
       emitter.emit("production-status", data);
     },
   );

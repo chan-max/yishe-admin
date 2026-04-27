@@ -7,9 +7,15 @@ import {
 import { getUserSetting } from '@/api/user'
 import { websocketClient, type PsAutomationStatusEvent } from '@/services/websocketClient'
 
+type RealtimeActivePsdSetSummaryItem = ActivePsdSetSummaryItem & {
+  runtimeExpiresAt: number
+}
+
 const userAutoSchedulingEnabled = ref(false)
 const settingLoaded = ref(false)
 const activeSummaryLoaded = ref(false)
+const serverActivePsdSets = ref<ActivePsdSetSummaryItem[]>([])
+const realtimeActivePsdSetMap = ref<Record<string, RealtimeActivePsdSetSummaryItem>>({})
 const activePsdSets = ref<ActivePsdSetSummaryItem[]>([])
 const activePsdSetIds = ref<string[]>([])
 let initialized = false
@@ -20,8 +26,10 @@ let activeSummaryRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
 const ACTIVE_PSD_SET_POLLING_MS = 5000
 const IDLE_PSD_SET_POLLING_MS = 3000
+const REALTIME_ACTIVE_PSD_SET_TTL_MS = 10 * 60 * 1000
 
 const normalizePsdSetId = (value: unknown) => String(value || '').trim()
+const normalizeRuntimeTime = (value: unknown) => String(value || '').trim() || new Date().toISOString()
 
 const getResponseData = <T = any>(response: any): T => {
   return response?.data?.data || response?.data || response || ({} as T)
@@ -65,17 +73,92 @@ const syncActiveSummaryPolling = () => {
   }, nextPollingMs)
 }
 
-const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | null) => {
-  const source = Array.isArray(payload?.items) ? payload?.items : []
-  const nextItems = source
-    .map((item) => normalizeActivePsdSetItem(item))
-    .filter((item): item is ActivePsdSetSummaryItem => !!item)
+const syncMergedActiveSummary = () => {
+  const now = Date.now()
+  const realtimeItems = Object.values(realtimeActivePsdSetMap.value).filter(
+    (item) => item.runtimeExpiresAt > now,
+  )
+  if (realtimeItems.length !== Object.keys(realtimeActivePsdSetMap.value).length) {
+    realtimeActivePsdSetMap.value = realtimeItems.reduce(
+      (result, item) => {
+        result[item.id] = item
+        return result
+      },
+      {} as Record<string, RealtimeActivePsdSetSummaryItem>,
+    )
+  }
+
+  const mergedMap = new Map<string, ActivePsdSetSummaryItem>()
+  serverActivePsdSets.value.forEach((item) => {
+    if (item?.id) {
+      mergedMap.set(item.id, item)
+    }
+  })
+  realtimeItems.forEach((item) => {
+    if (item?.id) {
+      const runtimeItem: ActivePsdSetSummaryItem = {
+        id: item.id,
+        name: item.name,
+        status: item.status,
+        schedulerStatus: item.schedulerStatus,
+        assignedClientId: item.assignedClientId,
+        assignedMachineCode: item.assignedMachineCode,
+        updateTime: item.updateTime,
+      }
+      mergedMap.set(item.id, {
+        ...(mergedMap.get(item.id) || {}),
+        ...runtimeItem,
+      })
+    }
+  })
+
+  const nextItems = Array.from(mergedMap.values())
   const nextIds = nextItems.map((item) => item.id)
 
   activePsdSets.value = nextItems
   activePsdSetIds.value = nextIds
   activeSummaryLoaded.value = true
   syncActiveSummaryPolling()
+}
+
+const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | null) => {
+  const source = Array.isArray(payload?.items) ? payload?.items : []
+  serverActivePsdSets.value = source
+    .map((item) => normalizeActivePsdSetItem(item))
+    .filter((item): item is ActivePsdSetSummaryItem => !!item)
+  syncMergedActiveSummary()
+}
+
+const upsertRealtimeActivePsdSet = (
+  psdSetId: string,
+  patch: Partial<ActivePsdSetSummaryItem> = {},
+) => {
+  const id = normalizePsdSetId(psdSetId)
+  if (!id) return
+  const previous = realtimeActivePsdSetMap.value[id]
+  realtimeActivePsdSetMap.value = {
+    ...realtimeActivePsdSetMap.value,
+    [id]: {
+      id,
+      name: patch.name ?? previous?.name ?? null,
+      status: patch.status ?? previous?.status ?? 'processing',
+      schedulerStatus: patch.schedulerStatus ?? previous?.schedulerStatus ?? 'running',
+      assignedClientId: patch.assignedClientId ?? previous?.assignedClientId ?? null,
+      assignedMachineCode: patch.assignedMachineCode ?? previous?.assignedMachineCode ?? null,
+      updateTime: patch.updateTime ?? previous?.updateTime ?? new Date().toISOString(),
+      runtimeExpiresAt: Date.now() + REALTIME_ACTIVE_PSD_SET_TTL_MS,
+    },
+  }
+  syncMergedActiveSummary()
+}
+
+const removeRealtimeActivePsdSet = (psdSetId: string) => {
+  const id = normalizePsdSetId(psdSetId)
+  if (!id || !realtimeActivePsdSetMap.value[id]) return
+  const nextMap = { ...realtimeActivePsdSetMap.value }
+  delete nextMap[id]
+  realtimeActivePsdSetMap.value = nextMap
+  syncMergedActiveSummary()
 }
 
 const refreshUserAutoScheduling = async () => {
@@ -130,18 +213,19 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
 
   const psdSetId = normalizePsdSetId(event?.currentPsSetId)
   if (event?.running && psdSetId) {
-    if (!activePsdSetIds.value.includes(psdSetId)) {
-      activePsdSetIds.value = Array.from(new Set([...activePsdSetIds.value, psdSetId]))
-      syncActiveSummaryPolling()
-    }
+    upsertRealtimeActivePsdSet(psdSetId, {
+      name: String(event.currentPsSetName || '').trim() || null,
+      status: 'processing',
+      schedulerStatus: 'running',
+      assignedClientId: String(event.clientId || '').trim() || null,
+      updateTime: normalizeRuntimeTime(event.lastHeartbeatAt || event.updatedAt),
+    })
     scheduleActiveSummaryRefresh(80)
     return
   }
 
   if (!event?.running && psdSetId) {
-    activePsdSetIds.value = activePsdSetIds.value.filter((id) => id !== psdSetId)
-    activePsdSets.value = activePsdSets.value.filter((item) => item.id !== psdSetId)
-    syncActiveSummaryPolling()
+    removeRealtimeActivePsdSet(psdSetId)
     scheduleActiveSummaryRefresh(180)
   }
 }
@@ -149,14 +233,24 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
 const handleProductionStatus = (event: {
   psdSetId?: string
   status?: string
+  clientId?: string
+  machineCode?: string
+  assignedClientId?: string | null
+  assignedMachineCode?: string | null
 }) => {
   const psdSetId = normalizePsdSetId(event?.psdSetId)
   const status = String(event?.status || '').trim().toLowerCase()
 
   if (status === 'processing' || status === 'running' || status === 'assigned') {
-    if (psdSetId && !activePsdSetIds.value.includes(psdSetId)) {
-      activePsdSetIds.value = Array.from(new Set([...activePsdSetIds.value, psdSetId]))
-      syncActiveSummaryPolling()
+    if (psdSetId) {
+      upsertRealtimeActivePsdSet(psdSetId, {
+        status: 'processing',
+        schedulerStatus: 'running',
+        assignedClientId: String(event.assignedClientId || event.clientId || '').trim() || null,
+        assignedMachineCode:
+          String(event.assignedMachineCode || event.machineCode || '').trim() || null,
+        updateTime: new Date().toISOString(),
+      })
     }
     scheduleActiveSummaryRefresh(140)
     return
@@ -169,9 +263,7 @@ const handleProductionStatus = (event: {
     status === 'timeout'
   ) {
     if (psdSetId) {
-      activePsdSetIds.value = activePsdSetIds.value.filter((id) => id !== psdSetId)
-      activePsdSets.value = activePsdSets.value.filter((item) => item.id !== psdSetId)
-      syncActiveSummaryPolling()
+      removeRealtimeActivePsdSet(psdSetId)
     }
     scheduleActiveSummaryRefresh(240)
   }
