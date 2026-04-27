@@ -13,6 +13,8 @@ export interface TemuActionField {
   placeholder?: string;
   hint?: string;
   rows?: number;
+  min?: number;
+  max?: number;
   defaultValue?: any;
   options?: TemuFieldOption[];
   multiple?: boolean;
@@ -69,6 +71,7 @@ export const REGION_LABELS: Record<TemuRegionKey, string> = {
 export const QUICK_ACTION_KEYS = [
   "goods.list",
   "goods.detail",
+  "goods.price-review.list",
   "goods.modify-price",
   "activity.list",
   "finance.history",
@@ -89,6 +92,7 @@ export const NEXT_ACTION_MAP: Record<string, string[]> = {
   "goods.expected-place.list": ["goods.expected-place.update"],
   "goods.adjust-price.list": ["goods.adjust-price.reject"],
   "goods.lifecycle": ["goods.modify-price", "jit.open", "jit.stock.update"],
+  "goods.price-review.list": ["goods.modify-price"],
   "goods.real-picture.list": ["goods.real-picture.submit"],
   "jit.list": ["jit.open", "jit.stock.update"],
   "jit.list-all": ["jit.open", "jit.stock.update"],
@@ -102,6 +106,16 @@ const createRegionField = (defaultValue: TemuRegionKey = "global"): TemuActionFi
   type: "select",
   defaultValue,
   hint: "优先使用该区域会话；若该区域会话不完整，后端会尽量回退到全球站会话。",
+});
+
+const createPageSizeField = (defaultValue = 100): TemuActionField => ({
+  key: "pageSize",
+  label: "每页数量",
+  type: "number",
+  defaultValue,
+  min: 1,
+  max: 1000,
+  hint: "最大 1000；数量越大接口响应越慢，批量处理建议先小范围试跑。",
 });
 
 const buildProfilePayload = (parsed: Record<string, any>, profileId: string) => ({
@@ -133,7 +147,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
     fields: [
       createRegionField(),
       { key: "page", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 20 },
+      createPageSizeField(20),
       { key: "skcTopStatus", label: "在售状态", type: "number", placeholder: "例如 100" },
       {
         key: "skcIdList",
@@ -178,7 +192,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         ],
       },
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 100 },
+      createPageSizeField(100),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
       { key: "supplierTodoTypeList", label: "待办类型列表", type: "array-number" },
       { key: "secondarySelectStatusList", label: "次级状态列表", type: "array-number" },
@@ -191,6 +205,16 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "timeBegin", label: "开始时间戳", type: "number" },
       { key: "timeEnd", label: "结束时间戳", type: "number" },
     ],
+    buildPayload: buildProfileRegionPayload,
+  },
+  "goods.price-review.list": {
+    fields: [
+      createRegionField(),
+      { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
+      createPageSizeField(10),
+    ],
+    note:
+      "获取待核价商品列表；筛选条件固定为 priceReviewStatusList=[0,1,2,3]、removeStatus=0、secondarySelectStatusList=[7]、supplierTodoTypeList=[1]，页码和每页数量可调整。",
     buildPayload: buildProfileRegionPayload,
   },
   "activity.list": {
@@ -267,7 +291,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
     fields: [
       { key: "taskType", label: "任务类型", type: "number", required: true, defaultValue: 19 },
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 100 },
+      createPageSizeField(100),
     ],
     buildPayload: buildProfilePayload,
   },
@@ -301,7 +325,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       createRegionField(),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number", required: true },
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 100 },
+      createPageSizeField(100),
       { key: "type", label: "查询类型", type: "number", defaultValue: 2 },
     ],
     buildPayload: buildProfileRegionPayload,
@@ -390,7 +414,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       },
       { key: "expectReceiveAreaConfigType", label: "目标区域类型", type: "number" },
       { key: "pageNumber", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 1000 },
+      createPageSizeField(1000),
     ],
     buildPayload: buildProfileRegionPayload,
   },
@@ -474,7 +498,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
     fields: [
       createRegionField(),
       { key: "page", label: "页码", type: "number", defaultValue: 1 },
-      { key: "pageSize", label: "每页数量", type: "number", defaultValue: 20 },
+      createPageSizeField(20),
       {
         key: "checkTypeList",
         label: "异常类型列表",

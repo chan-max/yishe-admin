@@ -166,6 +166,8 @@
                 v-model="activeActionState.formState[field.key]"
                 class="temu-field__control"
                 :controls="false"
+                :min="field.min"
+                :max="field.max"
               />
 
               <el-input
@@ -246,6 +248,94 @@
           </div>
 
           <pre class="temu-workspace__json">{{ actionResultText }}</pre>
+        </div>
+
+        <div v-if="activePriceReviewPreviewRows.length" class="temu-workspace__result-preview">
+          <div class="temu-workspace__result-head">
+            <div class="temu-workspace__result-title">
+              <span>待核价列表预览</span>
+              <el-tag size="small" effect="plain">{{ activePriceReviewPreviewRows.length }}</el-tag>
+            </div>
+            <div class="temu-workspace__editor-desc">
+              仅展示核价提交会用到的关键字段；完整接口返回仍可在执行记录详情里查看。
+            </div>
+          </div>
+
+          <div class="common-table">
+            <vxe-grid
+              v-bind="priceReviewPreviewGridOptions"
+              :data="activePriceReviewPreviewRows"
+              class="temu-workspace__preview-table"
+            >
+              <template #priceReviewImageSlot="{ row }">
+                <el-image
+                  v-if="row.imageUrl && row.imageUrl !== '-'"
+                  class="temu-workspace__preview-image"
+                  :src="row.imageUrl"
+                  :preview-src-list="[row.imageUrl]"
+                  preview-teleported
+                  fit="cover"
+                />
+                <span v-else>-</span>
+              </template>
+
+              <template #priceReviewProductSlot="{ row }">
+                <div class="temu-workspace__preview-product">
+                  <span>{{ row.productName }}</span>
+                  <small>{{ row.categoryName }}</small>
+                </div>
+              </template>
+
+              <template #priceReviewSubmitStatusSlot="{ row }">
+                <div v-if="row.submitStatus !== '-'" class="temu-workspace__submit-status">
+                  <el-tag
+                    size="small"
+                    effect="plain"
+                    :type="row.submitStatus === '成功' ? 'success' : 'danger'"
+                  >
+                    {{ row.submitStatus }}
+                  </el-tag>
+                  <small>{{ row.submitMessage }}</small>
+                </div>
+                <span v-else>-</span>
+              </template>
+
+              <template #priceReviewValiditySlot="{ row }">
+                <el-tag
+                  size="small"
+                  effect="plain"
+                  :type="row.invalid ? 'info' : 'success'"
+                >
+                  {{ row.invalid ? row.invalidReason : "可操作" }}
+                </el-tag>
+              </template>
+
+              <template #priceReviewOperationSlot="{ row }">
+                <div class="temu-workspace__preview-actions">
+                  <el-button
+                    text
+                    size="small"
+                    type="primary"
+                    :loading="priceReviewSubmittingKey === `${row.rowKey}:confirm`"
+                    :disabled="!canSubmitPriceReviewRow(row) || row.invalid"
+                    @click="submitPriceReviewRow(row, 'confirm')"
+                  >
+                    确认核价
+                  </el-button>
+                  <el-button
+                    text
+                    size="small"
+                    type="danger"
+                    :loading="priceReviewSubmittingKey === `${row.rowKey}:abandon`"
+                    :disabled="!row.rawPriceOrderId || row.invalid"
+                    @click="submitPriceReviewRow(row, 'abandon')"
+                  >
+                    不核价
+                  </el-button>
+                </div>
+              </template>
+            </vxe-grid>
+          </div>
         </div>
 
         <div class="temu-workspace__task-panel">
@@ -452,6 +542,91 @@
             </div>
           </div>
 
+          <div
+            v-if="taskRunPriceReviewPreviewRows.length"
+            class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
+          >
+            <div class="temu-workspace__section-title">
+              任务结果列表
+              <el-tag size="small" effect="plain">{{ taskRunPriceReviewPreviewRows.length }}</el-tag>
+            </div>
+            <div class="common-table">
+              <vxe-grid
+                v-bind="priceReviewPreviewGridOptions"
+                :data="taskRunPriceReviewPreviewRows"
+                class="temu-workspace__preview-table"
+              >
+                <template #priceReviewImageSlot="{ row }">
+                  <el-image
+                    v-if="row.imageUrl && row.imageUrl !== '-'"
+                    class="temu-workspace__preview-image"
+                    :src="row.imageUrl"
+                    :preview-src-list="[row.imageUrl]"
+                    preview-teleported
+                    fit="cover"
+                  />
+                  <span v-else>-</span>
+                </template>
+
+                <template #priceReviewProductSlot="{ row }">
+                  <div class="temu-workspace__preview-product">
+                    <span>{{ row.productName }}</span>
+                    <small>{{ row.categoryName }}</small>
+                  </div>
+                </template>
+
+                <template #priceReviewSubmitStatusSlot="{ row }">
+                  <div v-if="row.submitStatus !== '-'" class="temu-workspace__submit-status">
+                    <el-tag
+                      size="small"
+                      effect="plain"
+                      :type="row.submitStatus === '成功' ? 'success' : 'danger'"
+                    >
+                      {{ row.submitStatus }}
+                    </el-tag>
+                    <small>{{ row.submitMessage }}</small>
+                  </div>
+                  <span v-else>-</span>
+                </template>
+
+                <template #priceReviewValiditySlot="{ row }">
+                  <el-tag
+                    size="small"
+                    effect="plain"
+                    :type="row.invalid ? 'info' : 'success'"
+                  >
+                    {{ row.invalid ? row.invalidReason : "可操作" }}
+                  </el-tag>
+                </template>
+
+                <template #priceReviewOperationSlot="{ row }">
+                  <div class="temu-workspace__preview-actions">
+                    <el-button
+                      text
+                      size="small"
+                      type="primary"
+                      :loading="priceReviewSubmittingKey === `${row.rowKey}:confirm`"
+                      :disabled="!canSubmitPriceReviewRow(row) || row.invalid"
+                      @click="submitPriceReviewRow(row, 'confirm')"
+                    >
+                      确认核价
+                    </el-button>
+                    <el-button
+                      text
+                      size="small"
+                      type="danger"
+                      :loading="priceReviewSubmittingKey === `${row.rowKey}:abandon`"
+                      :disabled="!row.rawPriceOrderId || row.invalid"
+                      @click="submitPriceReviewRow(row, 'abandon')"
+                    >
+                      不核价
+                    </el-button>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+
           <div class="temu-workspace__task-detail-section">
             <div class="temu-workspace__section-title">执行日志</div>
             <div v-if="taskRunLogEntries.length" class="temu-task-log-list">
@@ -509,6 +684,7 @@ import {
   batchDeleteTemuTaskRuns,
   createTemuTaskRun,
   deleteTemuTaskRun,
+  executeTemuAction,
   getTemuCatalog,
   getTemuTaskRun,
   getTemuTaskRunPage,
@@ -559,6 +735,41 @@ interface TemuWorkspaceActionGroup extends Omit<TemuCatalogGroup, "actions"> {
   actions: TemuWorkspaceAction[];
 }
 
+interface PriceReviewPreviewRow {
+  rowKey: string;
+  imageUrl: string;
+  productName: string;
+  categoryName: string;
+  priceOrderId: string;
+  rawPriceOrderId: number;
+  spuId: string;
+  skcId: string;
+  skuId: string;
+  rawSkuId: number;
+  skcExtCode: string;
+  skuExtCode: string;
+  skuProperties: string;
+  currentPrice: string;
+  rawCurrentPrice: number | null;
+  suggestPrice: string;
+  rawSuggestPrice: number | null;
+  priceDifference: string;
+  priceDifferenceRatio: string;
+  times: string;
+  invalid: boolean;
+  invalidReason: string;
+  submitStatus: string;
+  submitMessage: string;
+}
+
+interface PriceReviewSubmitMark {
+  status: "success" | "failed";
+  action: "confirm" | "abandon";
+  message: string;
+  time: string;
+  markInvalid?: boolean;
+}
+
 const props = defineProps<{
   clientId?: string;
   profileId?: string;
@@ -607,6 +818,8 @@ const retryingTaskRunId = ref<number | null>(null);
 const deletingTaskRunId = ref<number | null>(null);
 const batchDeletingTaskRuns = ref(false);
 const taskRunPollingBusy = ref(false);
+const priceReviewSubmittingKey = ref("");
+const priceReviewSubmitMarks = reactive<Record<string, PriceReviewSubmitMark>>({});
 let taskRunPollTimer: number | null = null;
 
 const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
@@ -676,6 +889,85 @@ const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
       fixed: "right",
       align: "center",
       slots: { default: "taskRunOperationSlot" },
+    },
+  ],
+});
+
+const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<PriceReviewPreviewRow>),
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "rowKey",
+  },
+  maxHeight: 640,
+  columns: [
+    {
+      title: "图片",
+      field: "imageUrl",
+      width: 76,
+      align: "center",
+      slots: { default: "priceReviewImageSlot" },
+    },
+    {
+      title: "商品",
+      field: "productName",
+      minWidth: 260,
+      showOverflow: "tooltip",
+      slots: { default: "priceReviewProductSlot" },
+    },
+    {
+      title: "核价单号",
+      field: "priceOrderId",
+      minWidth: 150,
+      showOverflow: "tooltip",
+    },
+    { title: "SPU", field: "spuId", minWidth: 130, showOverflow: "tooltip" },
+    { title: "SKC", field: "skcId", minWidth: 130, showOverflow: "tooltip" },
+    { title: "SKU", field: "skuId", minWidth: 130, showOverflow: "tooltip" },
+    {
+      title: "SKC货号",
+      field: "skcExtCode",
+      minWidth: 140,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "SKU货号",
+      field: "skuExtCode",
+      minWidth: 150,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "SKU属性",
+      field: "skuProperties",
+      minWidth: 180,
+      showOverflow: "tooltip",
+    },
+    { title: "当前价", field: "currentPrice", width: 100, align: "right" },
+    { title: "建议价", field: "suggestPrice", width: 100, align: "right" },
+    { title: "差价", field: "priceDifference", width: 100, align: "right" },
+    { title: "降幅", field: "priceDifferenceRatio", width: 92, align: "right" },
+    { title: "次数", field: "times", width: 80, align: "center" },
+    {
+      title: "有效性",
+      field: "invalidReason",
+      width: 96,
+      align: "center",
+      slots: { default: "priceReviewValiditySlot" },
+    },
+    {
+      title: "处理状态",
+      field: "submitStatus",
+      minWidth: 170,
+      showOverflow: "tooltip",
+      slots: { default: "priceReviewSubmitStatusSlot" },
+    },
+    {
+      title: "操作",
+      field: "operation",
+      width: 168,
+      fixed: "right",
+      align: "center",
+      slots: { default: "priceReviewOperationSlot" },
     },
   ],
 });
@@ -854,13 +1146,6 @@ const emptyActionWorkspaceState: TemuActionWorkspaceState = {
 const activeActionState = computed(
   () => ensureActionWorkspaceState(selectedAction.value?.key) || emptyActionWorkspaceState,
 );
-const visibleActionCount = computed(() => flattenCatalogActions(actionCategoryTabs.value).length);
-const availableActionCount = computed(
-  () =>
-    flattenCatalogActions(actionCategoryTabs.value).filter(
-      (action) => action.status === "available" && !!ACTION_PRESETS[action.key],
-    ).length,
-);
 
 const formSeedActions = computed<TemuFormSeedAction[]>(() =>
   buildFormSeedActions(selectedAction.value?.key, activeActionState.value.lastResult),
@@ -913,6 +1198,151 @@ const activeActionResult = computed<TemuActionResponse | null>(() => {
 
   return activeActionState.value.lastResult;
 });
+const toDisplayText = (value: any) => {
+  const normalized = String(value ?? "").trim();
+  return normalized || "-";
+};
+const formatCentPrice = (value: any) => {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return toDisplayText(value);
+  }
+  return (numericValue / 100).toFixed(2);
+};
+const formatPercent = (value: any) => {
+  if (value === undefined || value === null || value === "") {
+    return "-";
+  }
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return toDisplayText(value);
+  }
+  return `${(numericValue * 100).toFixed(2)}%`;
+};
+const firstTextFromArray = (value: any) => {
+  if (!Array.isArray(value)) {
+    return "";
+  }
+  return String(value.find((item) => String(item || "").trim()) || "").trim();
+};
+const toFiniteNumberOrNull = (value: any) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+};
+const extractSkuProperties = (sku: Record<string, any>) => {
+  const propertyList = Array.isArray(sku?.productPropertyList) ? sku.productPropertyList : [];
+  const values = propertyList
+    .map((item: any) => String(item?.value || "").trim())
+    .filter(Boolean);
+  return values.length ? values.join(" / ") : "-";
+};
+const resolvePriceReviewImageUrl = (
+  sku: Record<string, any>,
+  skc: Record<string, any>,
+  item: Record<string, any>,
+) =>
+  toDisplayText(
+    sku?.skuPreviewImage ||
+      firstTextFromArray(skc?.previewImgUrlList) ||
+      firstTextFromArray(item?.carouselImageUrlList),
+  );
+const resolvePriceReviewCategoryName = (item: Record<string, any>) => {
+  const fullCategoryName = Array.isArray(item?.fullCategoryName)
+    ? item.fullCategoryName.map((name: any) => String(name || "").trim()).filter(Boolean)
+    : [];
+  return toDisplayText(fullCategoryName.length ? fullCategoryName.join(" / ") : item?.leafCategoryName);
+};
+const buildPriceReviewSubmitMessage = (mark?: PriceReviewSubmitMark) => {
+  if (!mark) {
+    return "-";
+  }
+  const actionText = mark.action === "confirm" ? "确认核价" : "不核价";
+  return `${actionText} · ${mark.message || mark.time}`;
+};
+const isPriceReviewSkuInvalid = (sku: Record<string, any>) => {
+  return sku?.priceReviewStatus !== 1;
+};
+const buildPriceReviewPreviewRows = (
+  response?: TemuActionResponse | Record<string, any> | null,
+): PriceReviewPreviewRow[] => {
+  const action = String(response?.action || "").trim();
+  if (action !== "goods.price-review.list") {
+    return [];
+  }
+
+  const result = asPlainObject(response?.result);
+  const items = Array.isArray(result.items) ? result.items : [];
+  const rows: PriceReviewPreviewRow[] = [];
+
+  items.forEach((item: any, itemIndex: number) => {
+    const spuId = item?.productId;
+    const productName = item?.productName;
+    const categoryName = resolvePriceReviewCategoryName(item);
+    const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
+    skcList.forEach((skc: any, skcIndex: number) => {
+      const skcId = skc?.skcId;
+      const extCode = skc?.extCode;
+      const reviewList = Array.isArray(skc?.supplierPriceReviewInfoList)
+        ? skc.supplierPriceReviewInfoList
+        : [];
+      reviewList.forEach((review: any, reviewIndex: number) => {
+        const skuList = Array.isArray(review?.productSkuList) ? review.productSkuList : [];
+        skuList.forEach((sku: any, skuIndex: number) => {
+          const skuId = sku?.skuId;
+          const priceOrderId = toFiniteNumberOrNull(review?.priceOrderId);
+          const suggestPrice = toFiniteNumberOrNull(review?.suggestSupplyPrice);
+          const currentPrice = toFiniteNumberOrNull(review?.supplyPrice);
+          const rowKey = [
+              review?.priceOrderId,
+              spuId,
+              skcId,
+              skuId,
+              itemIndex,
+              skcIndex,
+              reviewIndex,
+              skuIndex,
+            ].join("-");
+          const submitMark = priceReviewSubmitMarks[rowKey];
+          const invalid = isPriceReviewSkuInvalid(sku) || !!submitMark?.markInvalid;
+          rows.push({
+            rowKey,
+            imageUrl: resolvePriceReviewImageUrl(sku, skc, item),
+            productName: toDisplayText(productName),
+            categoryName,
+            priceOrderId: toDisplayText(review?.priceOrderId),
+            rawPriceOrderId: priceOrderId || 0,
+            spuId: toDisplayText(spuId),
+            skcId: toDisplayText(skcId),
+            skuId: toDisplayText(skuId),
+            rawSkuId: toFiniteNumberOrNull(skuId) || 0,
+            skcExtCode: toDisplayText(extCode),
+            skuExtCode: toDisplayText(sku?.extCode),
+            skuProperties: extractSkuProperties(sku),
+            currentPrice: formatCentPrice(review?.supplyPrice),
+            rawCurrentPrice: currentPrice,
+            suggestPrice: formatCentPrice(review?.suggestSupplyPrice),
+            rawSuggestPrice: suggestPrice,
+            priceDifference: formatCentPrice(review?.priceDifference),
+            priceDifferenceRatio: formatPercent(review?.priceDifferenceRatio),
+            times: toDisplayText(review?.times),
+            invalid,
+            invalidReason: invalid ? (submitMark?.markInvalid ? "已处理" : "已作废") : "",
+            submitStatus: submitMark ? (submitMark.status === "success" ? "成功" : "失败") : "-",
+            submitMessage: buildPriceReviewSubmitMessage(submitMark),
+          });
+        });
+      });
+    });
+  });
+
+  return rows;
+};
+const activePriceReviewPreviewRows = computed(() =>
+  buildPriceReviewPreviewRows(activeActionResult.value),
+);
 const activeActionRunning = computed(() => {
   if (!selectedAction.value?.key) {
     return false;
@@ -971,6 +1401,9 @@ const taskRunLogEntries = computed<TemuTaskRunLogEntry[]>(() =>
 const taskRunParamsText = computed(() => jsonText(activeTaskRunDetail.value?.params ?? null));
 const taskRunResultText = computed(() => jsonText(activeTaskRunDetail.value?.result ?? null));
 const taskRunLogsText = computed(() => jsonText(taskRunLogEntries.value));
+const taskRunPriceReviewPreviewRows = computed(() =>
+  buildPriceReviewPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
+);
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
@@ -1367,6 +1800,114 @@ const refreshTaskRuns = async () => {
   await loadTaskRuns();
 };
 
+const canSubmitPriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
+  !!(row?.rawPriceOrderId && row.rawSkuId && row.rawSuggestPrice !== null);
+
+const buildSinglePriceReviewPayload = (
+  row: PriceReviewPreviewRow,
+  mode: "confirm" | "abandon",
+) => {
+  const basePayload = {
+    profileId: props.profileId,
+    region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+    priceOrderId: row.rawPriceOrderId,
+  };
+
+  if (mode === "abandon") {
+    return {
+      ...basePayload,
+      supplierResult: 3,
+    };
+  }
+
+  return {
+    ...basePayload,
+    supplierResult: 1,
+    items: [
+      {
+        productSkuId: row.rawSkuId,
+        price: row.rawSuggestPrice,
+      },
+    ],
+    bargainReasonList: [],
+  };
+};
+
+const submitPriceReviewRow = async (
+  row: PriceReviewPreviewRow,
+  mode: "confirm" | "abandon",
+) => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  if (mode === "confirm" && !canSubmitPriceReviewRow(row)) {
+    ElMessage.warning("当前行缺少核价单号、SKU 或建议价，无法确认核价");
+    return;
+  }
+
+  if (row.invalid) {
+    ElMessage.warning(`当前 SKU ${row.skuId} 已作废，无需操作`);
+    return;
+  }
+
+  if (mode === "abandon" && !row.rawPriceOrderId) {
+    ElMessage.warning("当前行缺少核价单号，无法不核价");
+    return;
+  }
+
+  const actionText = mode === "confirm" ? "确认核价" : "不核价";
+  const submitKey = `${row.rowKey}:${mode}`;
+  priceReviewSubmittingKey.value = submitKey;
+  try {
+    await ElMessageBox.confirm(
+      `确认对 SKU ${row.skuId} 执行${actionText}吗？`,
+      actionText,
+      {
+        type: mode === "confirm" ? "warning" : "error",
+        confirmButtonText: actionText,
+        cancelButtonText: "取消",
+      },
+    );
+
+    const response = await executeTemuAction(
+      "/temu/goods/modify-price",
+      buildSinglePriceReviewPayload(row, mode),
+    );
+    priceReviewSubmitMarks[row.rowKey] = {
+      status: response?.success ? "success" : "failed",
+      action: mode,
+      message: String(response?.message || "").trim() || (response?.success ? "提交成功" : "提交失败"),
+      time: formatDateTime(new Date()),
+      markInvalid: !!response?.success,
+    };
+
+    if (response?.success) {
+      ElMessage.success(`${actionText}成功`);
+    } else {
+      ElMessage.error(String(response?.message || "").trim() || `${actionText}失败`);
+    }
+  } catch (error: any) {
+    if (error !== "cancel") {
+      priceReviewSubmitMarks[row.rowKey] = {
+        status: "failed",
+        action: mode,
+        message: extractRequestErrorMessage(error, `${actionText}提交失败`),
+        time: formatDateTime(new Date()),
+      };
+      ElMessage.error(extractRequestErrorMessage(error, `${actionText}提交失败`));
+    }
+  } finally {
+    priceReviewSubmittingKey.value = "";
+  }
+};
+
 const onTaskRunSelectionChange = ({ records }: { records: TemuTaskRunSummary[] }) => {
   selectedTaskRunIds.value = (Array.isArray(records) ? records : [])
     .map((item) => Number(item?.id || 0))
@@ -1406,6 +1947,8 @@ const deleteTaskRunById = async (id: number) => {
 
   await ElMessageBox.confirm(`确认删除执行记录 #${id} 吗？`, "删除记录", {
     type: "warning",
+    confirmButtonText: "删除",
+    cancelButtonText: "取消",
   });
 
   deletingTaskRunId.value = id;
@@ -1440,6 +1983,8 @@ const deleteSelectedTaskRuns = async () => {
 
   await ElMessageBox.confirm(`确认删除选中的 ${deleteIds.length} 条执行记录吗？`, "批量删除", {
     type: "warning",
+    confirmButtonText: "删除",
+    cancelButtonText: "取消",
   });
 
   batchDeletingTaskRuns.value = true;
@@ -1708,6 +2253,77 @@ onBeforeUnmount(() => {
   gap: 10px;
   padding-top: 12px;
   border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-workspace__result-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-workspace__task-preview-section {
+  gap: 10px;
+}
+
+.temu-workspace__preview-table {
+  width: 100%;
+}
+
+.temu-workspace__preview-image {
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-lighter);
+  background: var(--el-fill-color-light);
+}
+
+.temu-workspace__preview-product {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.temu-workspace__preview-product span,
+.temu-workspace__preview-product small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__preview-product span {
+  color: var(--el-text-color-primary);
+}
+
+.temu-workspace__preview-product small {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.temu-workspace__preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.temu-workspace__submit-status {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.temu-workspace__submit-status small {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .temu-workspace__task-panel {

@@ -467,6 +467,12 @@ export const validateAndNormalizeField = (field: TemuActionField, value: any) =>
     if (!Number.isFinite(numericValue)) {
       throw new Error(`${field.label} 需要是数字`);
     }
+    if (field.min !== undefined && numericValue < field.min) {
+      throw new Error(`${field.label} 不能小于 ${field.min}`);
+    }
+    if (field.max !== undefined && numericValue > field.max) {
+      throw new Error(`${field.label} 不能大于 ${field.max}`);
+    }
     return numericValue;
   }
 
@@ -584,9 +590,20 @@ export const buildResultInsightCards = (
       );
       break;
     case "goods.lifecycle":
+    case "goods.price-review.list":
       cards.push(
-        buildInsightCard("mode", "查询模式", result.mode, "accent"),
-        buildInsightCard("total", "总条数", result.total, "success"),
+        buildInsightCard(
+          "mode",
+          action === "goods.price-review.list" ? "列表类型" : "查询模式",
+          action === "goods.price-review.list" ? "待核价" : result.mode,
+          "accent",
+        ),
+        buildInsightCard(
+          "total",
+          action === "goods.price-review.list" ? "待核价总数" : "总条数",
+          result.total,
+          "success",
+        ),
         buildInsightCard("items", "本页返回", items.length),
         buildInsightCard("pairs", "SKC/SPU 对", asArray(result.skcSpuList).length, "accent"),
       );
@@ -1128,7 +1145,7 @@ const extractSpuIdsFromLastResult = (action: string, result: Record<string, any>
     return dedupeNumberArray(asArray(result.items).map((item: any) => item?.spuId));
   }
 
-  if (action === "goods.lifecycle") {
+  if (action === "goods.lifecycle" || action === "goods.price-review.list") {
     return dedupeNumberArray(asArray(result.items).map((item: any) => item?.productId));
   }
 
@@ -1140,7 +1157,7 @@ const extractProductIdsFromLastResult = (action: string, result: Record<string, 
     return dedupeNumberArray(asArray(result.items).map((item: any) => item?.spuId));
   }
 
-  if (action === "goods.lifecycle") {
+  if (action === "goods.lifecycle" || action === "goods.price-review.list") {
     return dedupeNumberArray(asArray(result.items).map((item: any) => item?.productId));
   }
 
