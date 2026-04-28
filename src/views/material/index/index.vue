@@ -1625,16 +1625,12 @@
                   <TableRowDragHandle />
                 </template>
                 <template #previewDefaultSlot="{ row }">
-                  <div class="table-preview-stack">
-                    <div
-                      class="preview-image-wrapper"
-                      :class="{ 'preview-image-wrapper--custom': isCustomMaterial(row) }"
-                    >
-                      <div
-                        v-if="isCustomMaterial(row)"
-                        class="preview-custom-corner"
-                        title="定制素材"
-                      ></div>
+                  <div
+                    class="table-preview-stack"
+                    :class="{ 'table-preview-stack--custom': isCustomMaterial(row) }"
+                  >
+                    <span v-if="isCustomMaterial(row)" class="preview-custom-corner">可定制</span>
+                    <div class="preview-image-wrapper">
                       <img
                         v-if="row._imageLoaded"
                         :key="`preview-${row.id}-${row.url}`"
@@ -2088,6 +2084,12 @@
                                 @click="() => handleOperationCommand('copy', row)"
                               >
                                 复制
+                              </div>
+                              <div
+                                class="op-submenu-item"
+                                @click="() => handleOperationCommand('copy-origin-url', row)"
+                              >
+                                复制原始链接
                               </div>
                               <div
                                 v-if="!similarSearchDisabled"
@@ -5930,6 +5932,9 @@ function handleOperationCommand(command: string, row: any) {
     case "copy":
       handleCopy(row);
       break;
+    case "copy-origin-url":
+      handleCopyText(row?.url || "", "图片链接");
+      break;
     case "copy-to-user":
       openStickerUserTransferDialog("copy", row);
       break;
@@ -6363,46 +6368,33 @@ async function handleUrlUpload() {
   border-radius: 4px;
 }
 
-.preview-image-wrapper--custom {
-  border: 1px solid rgba(245, 158, 11, 0.42);
-  background:
-    linear-gradient(135deg, rgba(255, 251, 235, 0.92), rgba(255, 255, 255, 0.72));
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+.table-preview-stack--custom {
+  position: relative;
+  padding-top: 20px;
 }
 
 .preview-custom-corner {
   position: absolute;
-  top: -1px;
-  left: -1px;
-  z-index: 2;
-  width: 30px;
-  height: 30px;
-  pointer-events: none;
-  filter: drop-shadow(0 1px 2px rgba(120, 53, 15, 0.22));
-}
-
-.preview-custom-corner::before {
-  content: "";
-  position: absolute;
-  left: 0;
   top: 0;
-  width: 0;
-  height: 0;
-  border-top: 30px solid #f59e0b;
-  border-right: 30px solid transparent;
-}
-
-.preview-custom-corner::after {
-  content: "";
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  width: 8px;
-  height: 8px;
-  border: 2px solid #fff7ed;
-  border-top: 0;
-  border-left: 0;
-  transform: rotate(45deg);
+  left: 0;
+  z-index: 2;
+  display: inline-flex;
+  height: 17px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  color: #f5fff0;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #a3ff12 0%, #39ff14 55%, #00dc82 100%);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px rgba(210, 255, 165, 0.52),
+    0 3px 8px rgba(57, 255, 20, 0.24);
+  pointer-events: none;
 }
 
 .preview-image {

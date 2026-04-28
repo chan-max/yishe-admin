@@ -508,6 +508,13 @@
                           <label>素材图片路径 *</label>
                           <el-input v-model="item.imagePath" placeholder="D:\\images\\image.jpg" />
                         </div>
+                        <div class="field-block">
+                          <label>背景图片路径</label>
+                          <el-input
+                            v-model="item.backgroundImagePath"
+                            placeholder="contain 可选，D:\\images\\background.jpg"
+                          />
+                        </div>
                       </div>
                       <div class="form-grid">
                         <div class="field-block">
@@ -669,6 +676,7 @@ type CommandMode = "production" | "debug" | "maintenance";
 interface SmartObjectForm {
   smartObjectName: string;
   imagePath: string;
+  backgroundImagePath: string;
   resizeMode: "contain" | "cover" | "stretch" | "custom";
   tileSize: number;
   customOptionsText: string;
@@ -743,6 +751,7 @@ const analyzeForm = reactive({
 const createSmartObject = (): SmartObjectForm => ({
   smartObjectName: "",
   imagePath: "",
+  backgroundImagePath: "",
   resizeMode: "contain",
   tileSize: 512,
   customOptionsText: "",
@@ -1403,11 +1412,13 @@ const buildProcessRequest = (strict = true) => {
   const smartObjects = processForm.smartObjects
     .map((item, index) => {
       const imagePath = normalizeWindowsPath(item.imagePath);
+      const backgroundImagePath = normalizeWindowsPath(item.backgroundImagePath);
       const smartObjectName = stripQuotes(item.smartObjectName);
       const customOptionsText = item.customOptionsText.trim();
       const hasCustomOptions = customOptionsText.length > 0;
       const hasMeaningfulConfig =
         !!imagePath ||
+        !!backgroundImagePath ||
         !!smartObjectName ||
         hasCustomOptions ||
         item.resizeMode !== "contain" ||
@@ -1430,6 +1441,10 @@ const buildProcessRequest = (strict = true) => {
 
       if (smartObjectName) {
         payload.smart_object_name = smartObjectName;
+      }
+
+      if (backgroundImagePath) {
+        payload.background_image_path = backgroundImagePath;
       }
 
       if (payload.resize_mode === "custom") {

@@ -2020,7 +2020,8 @@ function createDefaultPsdTemplateConfig() {
     smart_objects: [
       {
         image_path: "",
-        resize_mode: "cover",
+        resize_mode: "contain",
+        background_image_path: "",
         tile_size: 512,
       },
     ],
