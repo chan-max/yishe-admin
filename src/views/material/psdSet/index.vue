@@ -250,26 +250,49 @@
       class="psd-set-detail-dialog" @closed="handleCloseDetailDialog">
       <template #header>
         <div class="psd-set-detail-header">
-          <div>
+          <div class="psd-set-detail-heading">
             <div class="psd-set-detail-title">{{ detailData?.name || "套图详情" }}</div>
-            <div class="psd-set-detail-subtitle">查看套图结果、来源素材、模板、配置与元信息</div>
+            <div class="psd-set-detail-subtitle">
+              {{ formatTimestamp(detailData?.createTime) }} 创建
+              <span v-if="detailData?.uploader?.account || detailData?.uploader?.name || detailData?.userId">
+                · {{ detailData?.uploader?.account || detailData?.uploader?.name || detailData?.userId }}
+              </span>
+            </div>
           </div>
           <div class="psd-set-detail-header__tags" v-if="detailData">
-            <el-tag :type="statusTagType(detailData.status)" effect="plain">{{
+            <el-tag :type="statusTagType(detailData.status)" effect="plain" size="small">{{
               statusLabel(detailData.status)
               }}</el-tag>
-            <el-tag type="info" effect="plain">图片 {{ detailImages.length }}</el-tag>
-            <el-tag type="info" effect="plain">素材 {{ detailStickers.length }}</el-tag>
-            <el-tag type="warning" effect="plain">自动任务 {{ detailAutomationCount }}</el-tag>
+            <el-tag type="info" effect="plain" size="small">图片 {{ detailImages.length }}</el-tag>
+            <el-tag type="info" effect="plain" size="small">素材 {{ detailStickers.length }}</el-tag>
+            <el-tag v-if="detailAutomationCount" type="warning" effect="plain" size="small">
+              自动任务 {{ detailAutomationCount }}
+            </el-tag>
           </div>
         </div>
       </template>
 
       <div v-loading="detailLoading" class="psd-set-detail-layout" v-if="detailData">
-        <div class="psd-set-detail-main">
-          <section class="psd-set-detail-panel">
+        <section class="psd-set-detail-top">
+          <div class="psd-set-detail-panel psd-set-detail-panel--hero">
             <div class="detail-header">
-              <span class="detail-label">概览</span>
+              <span class="detail-label">做好的图</span>
+              <span class="detail-count">{{ detailImages.length }} 张</span>
+            </div>
+            <div class="psd-set-detail-image-grid">
+              <div v-for="(img, idx) in detailImages" :key="idx" class="psd-set-detail-image-card">
+                <el-image v-if="img" :src="img" :preview-src-list="detailImages" :initial-index="Number(idx)"
+                  :preview-teleported="true" :hide-on-click-modal="false" class="psd-set-detail-image" fit="contain"
+                  loading="lazy" />
+                <span class="psd-set-detail-image-index">{{ Number(idx) + 1 }}</span>
+              </div>
+              <el-empty v-if="!detailImages.length" description="暂无套图图片" :image-size="80" />
+            </div>
+          </div>
+
+          <div class="psd-set-detail-panel psd-set-detail-panel--compact">
+            <div class="detail-header">
+              <span class="detail-label">套图信息</span>
             </div>
             <div class="psd-set-detail-summary">
               <div class="psd-set-detail-summary__item">
@@ -311,42 +334,6 @@
                 <span class="info-label">发布任务数</span>
                 <span class="info-value">{{ detailPublishTaskCount }}</span>
               </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">自动动作数</span>
-                <span class="info-value">{{ detailAutomationCount }}</span>
-              </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">调度状态</span>
-                <span class="info-value">
-                  <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
-                    {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
-                  </el-tag>
-                </span>
-              </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">执行节点</span>
-                <span class="info-value">{{ getSchedulerAssignedLabel(detailData) }}</span>
-              </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">当前步骤</span>
-                <span class="info-value">{{ detailData?.schedulerMeta?.currentStep || "-" }}</span>
-              </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">执行进度</span>
-                <span class="info-value">{{
-                  formatSchedulerProgress(detailData?.schedulerMeta?.progress)
-                  }}</span>
-              </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">最近心跳</span>
-                <span class="info-value">{{
-                  formatTimestamp(detailData?.schedulerMeta?.lastHeartbeatAt)
-                  }}</span>
-              </div>
-              <div class="psd-set-detail-summary__item">
-                <span class="info-label">最后错误</span>
-                <span class="info-value">{{ detailData?.schedulerMeta?.lastError || "-" }}</span>
-              </div>
             </div>
             <div class="psd-set-detail-text-grid">
               <div class="psd-set-detail-text-card">
@@ -362,27 +349,30 @@
                 <div class="info-value">{{ resolvePsdSetStatusMessage(detailData) }}</div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section class="psd-set-detail-panel">
+        <section class="psd-set-detail-middle">
+          <div class="psd-set-detail-panel psd-set-detail-panel--balanced">
             <div class="detail-header">
-              <span class="detail-label">结果图片</span>
-              <span class="text-xs text-gray-500">{{ detailImages.length }} 张</span>
+              <span class="detail-label">图片信息</span>
+              <span class="detail-count">{{ detailStickers.length }} 项</span>
             </div>
-            <div class="psd-set-detail-image-grid">
-              <div v-for="(img, idx) in detailImages" :key="idx" class="psd-set-detail-image-card">
-                <el-image v-if="img" :src="img" :preview-src-list="detailImages" :initial-index="Number(idx)"
-                  :preview-teleported="true" :hide-on-click-modal="false" class="psd-set-detail-image" fit="contain"
-                  loading="lazy" />
+            <div class="psd-set-detail-meta-list psd-set-detail-meta-list--inline">
+              <div>
+                <span class="info-label">来源贴纸 ID</span>
+                <span class="info-value break-all">{{ detailStickerIdsText }}</span>
               </div>
-              <span v-if="!detailImages.length" class="text-gray-400 text-sm">无套图图片</span>
-            </div>
-          </section>
-
-          <section class="psd-set-detail-panel">
-            <div class="detail-header">
-              <span class="detail-label">素材信息</span>
-              <span class="text-xs text-gray-500">{{ detailStickers.length }} 项</span>
+              <div>
+                <span class="info-label">自动动作</span>
+                <span class="info-value">{{ detailAutomationText }}</span>
+              </div>
+              <div>
+                <span class="info-label">发布任务</span>
+                <span class="info-value">{{
+                  detailPublishTaskCount ? `${detailPublishTaskCount} 条` : "暂无"
+                  }}</span>
+              </div>
             </div>
             <div v-if="detailStickers.length" class="detail-sticker-list">
               <div v-for="sticker in detailStickers" :key="sticker.id" class="detail-sticker-card">
@@ -404,112 +394,126 @@
                 </div>
               </div>
             </div>
-            <span v-else class="text-gray-400 text-sm">无贴纸</span>
-          </section>
-        </div>
+            <el-empty v-else description="暂无来源素材" :image-size="72" />
+          </div>
 
-        <aside class="psd-set-detail-side">
-          <section class="psd-set-detail-panel">
+          <div class="psd-set-detail-panel psd-set-detail-panel--balanced">
             <div class="detail-header">
-              <span class="detail-label">PSD模板</span>
+              <span class="detail-label">PSD 模板信息</span>
             </div>
             <div v-if="detailData.psdTemplate" class="psd-set-detail-side-card">
-              <el-image v-if="detailData.psdTemplate.thumbnail" :src="getPreviewImageUrl(detailData.psdTemplate.thumbnail, {
-                width: 360,
-                quality: 80,
-                format: 'webp',
-              })
-                " :preview-src-list="[detailData.psdTemplate.thumbnail]" :preview-teleported="true"
-                :hide-on-click-modal="false" fit="contain" class="psd-set-detail-template-image" />
-              <div class="detail-sticker-id cursor-pointer" @click="copyId(detailData.psdTemplate.id)">
-                ID: {{ detailData.psdTemplate.id || "-" }}
-                <el-icon class="copy-icon">
-                  <DocumentCopy />
-                </el-icon>
-              </div>
-              <div class="detail-sticker-name">
-                {{ detailData.psdTemplate.name || "未命名模板" }}
-              </div>
-              <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || "-" }}</div>
-              <div class="psd-set-detail-meta-list">
+              <div class="psd-set-detail-meta-list psd-set-detail-meta-list--inline">
                 <div>
-                  <span class="info-label">关键词</span><span class="info-value">{{ detailData.psdTemplate.keywords || "-"
-                    }}</span>
+                  <span class="info-label">模板 ID</span>
+                  <span class="info-value cursor-pointer break-all" @click="copyId(detailData.psdTemplate.id)">
+                    {{ detailData.psdTemplate.id || "-" }}
+                  </span>
                 </div>
                 <div>
-                  <span class="info-label">云资源</span><span class="info-value break-all">{{ detailData.psdTemplate.url ||
-                    "-"
-                    }}</span>
+                  <span class="info-label">模板名称</span>
+                  <span class="info-value">{{ detailData.psdTemplate.name || "未命名模板" }}</span>
                 </div>
                 <div>
-                  <span class="info-label">本地路径</span><span class="info-value break-all">{{
-                    detailData.psdTemplate.windowsLocalPath || "-"
-                    }}</span>
+                  <span class="info-label">关键词</span>
+                  <span class="info-value">{{ detailData.psdTemplate.keywords || "-" }}</span>
+                </div>
+              </div>
+              <div class="detail-template-card detail-template-card--unified">
+                <el-image v-if="detailData.psdTemplate.thumbnail" :src="getPreviewImageUrl(detailData.psdTemplate.thumbnail, {
+                  width: 360,
+                  quality: 80,
+                  format: 'webp',
+                })
+                  " :preview-src-list="[detailData.psdTemplate.thumbnail]" :preview-teleported="true"
+                  :hide-on-click-modal="false" fit="contain" class="detail-thumb-image detail-thumb-image--template" />
+                <span v-else class="text-gray-400 text-xs">无图</span>
+                <div class="detail-sticker-meta">
+                  <div class="detail-sticker-id cursor-pointer" @click="copyId(detailData.psdTemplate.id)">
+                    ID: {{ detailData.psdTemplate.id || "-" }}
+                    <el-icon class="copy-icon">
+                      <DocumentCopy />
+                    </el-icon>
+                  </div>
+                  <div class="detail-sticker-name">
+                    {{ detailData.psdTemplate.name || "未命名模板" }}
+                  </div>
+                  <div class="detail-sticker-desc">{{ detailData.psdTemplate.description || "-" }}</div>
+                  <div class="detail-sticker-keywords">{{ detailData.psdTemplate.keywords || "-" }}</div>
+                  <div class="detail-sticker-path break-all">云资源：{{ detailData.psdTemplate.url || "-" }}</div>
+                  <div class="detail-sticker-path break-all">
+                    本地路径：{{ detailData.psdTemplate.windowsLocalPath || "-" }}
+                  </div>
                 </div>
               </div>
             </div>
             <span v-else class="text-gray-400 text-sm">无模板</span>
-          </section>
+          </div>
+        </section>
 
-          <section class="psd-set-detail-panel">
+        <section class="psd-set-detail-bottom">
+          <div class="psd-set-detail-panel psd-set-detail-panel--muted">
             <div class="detail-header">
-              <span class="detail-label">关联概况</span>
+              <span class="detail-label">配置与元信息</span>
             </div>
-            <div class="psd-set-detail-meta-list">
+            <div class="psd-set-detail-runtime-strip">
               <div>
-                <span class="info-label">来源贴纸 ID</span>
-                <span class="info-value break-all">{{ detailStickerIdsText }}</span>
+                <span class="info-label">调度</span>
+                <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
+                  {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
+                </el-tag>
               </div>
               <div>
-                <span class="info-label">自动动作</span>
-                <span class="info-value">{{ detailAutomationText }}</span>
+                <span class="info-label">进度</span>
+                <span class="info-value">{{ formatSchedulerProgress(detailData?.schedulerMeta?.progress) }}</span>
               </div>
               <div>
-                <span class="info-label">发布任务</span>
-                <span class="info-value">{{
-                  detailPublishTaskCount ? `${detailPublishTaskCount} 条` : "暂无"
-                  }}</span>
+                <span class="info-label">节点</span>
+                <span class="info-value">{{ getSchedulerAssignedLabel(detailData) }}</span>
               </div>
             </div>
-          </section>
+            <div v-if="detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError"
+              class="psd-set-detail-runtime-note">
+              <span>{{ detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError }}</span>
+            </div>
 
-          <section class="psd-set-detail-panel">
-            <div class="detail-header">
-              <span class="detail-label">套图配置</span>
-              <el-button v-if="detailData?.stickerPsdSetConfig" type="info" size="small"
-                @click="configPreviewMode = !configPreviewMode">
-                {{ configPreviewMode ? "收起" : "展开" }}
-              </el-button>
-            </div>
-            <div v-if="configPreviewMode && detailData?.stickerPsdSetConfig" class="config-preview-container">
-              <pre class="config-preview">{{ formattedConfig }}</pre>
-            </div>
-            <div v-else-if="detailData?.stickerPsdSetConfig" class="config-display">
-              <el-tag type="info" size="small">已配置</el-tag>
-            </div>
-            <span v-else class="text-gray-400 text-sm">未配置</span>
-          </section>
+            <div class="psd-set-detail-json-stack">
+              <div class="psd-set-detail-json-block">
+                <div class="psd-set-detail-json-title">
+                  <span>套图配置</span>
+                  <el-tag v-if="detailData?.stickerPsdSetConfig" type="info" size="small" effect="plain">
+                    已配置
+                  </el-tag>
+                </div>
+                <div v-if="detailData?.stickerPsdSetConfig" class="config-preview-container">
+                  <pre class="config-preview">{{ formattedConfig }}</pre>
+                </div>
+                <span v-else class="text-gray-400 text-sm">未配置</span>
+              </div>
 
-          <section class="psd-set-detail-panel">
-            <div class="detail-header">
-              <span class="detail-label">元信息</span>
-            </div>
-            <div v-if="detailMetaFormatted" class="config-preview-container">
-              <pre class="config-preview">{{ detailMetaFormatted }}</pre>
-            </div>
-            <span v-else class="text-gray-400 text-sm">无元信息</span>
-          </section>
+              <div class="psd-set-detail-json-block">
+                <div class="psd-set-detail-json-title">
+                  <span>元信息</span>
+                  <el-tag v-if="detailMetaFormatted" type="info" size="small" effect="plain">JSON</el-tag>
+                </div>
+                <div v-if="detailMetaFormatted" class="config-preview-container">
+                  <pre class="config-preview">{{ detailMetaFormatted }}</pre>
+                </div>
+                <span v-else class="text-gray-400 text-sm">无元信息</span>
+              </div>
 
-          <section class="psd-set-detail-panel">
-            <div class="detail-header">
-              <span class="detail-label">调度信息</span>
+              <div class="psd-set-detail-json-block">
+                <div class="psd-set-detail-json-title">
+                  <span>调度信息</span>
+                  <el-tag v-if="detailSchedulerMetaFormatted" type="info" size="small" effect="plain">JSON</el-tag>
+                </div>
+                <div v-if="detailSchedulerMetaFormatted" class="config-preview-container">
+                  <pre class="config-preview">{{ detailSchedulerMetaFormatted }}</pre>
+                </div>
+                <span v-else class="text-gray-400 text-sm">无调度信息</span>
+              </div>
             </div>
-            <div v-if="detailSchedulerMetaFormatted" class="config-preview-container">
-              <pre class="config-preview">{{ detailSchedulerMetaFormatted }}</pre>
-            </div>
-            <span v-else class="text-gray-400 text-sm">无调度信息</span>
-          </section>
-        </aside>
+          </div>
+        </section>
       </div>
     </el-dialog>
 
@@ -1487,9 +1491,6 @@ const hasActivePsdSetRuntime = computed(() => {
   );
 });
 
-// 配置信息相关状态
-const configPreviewMode = ref(false);
-
 // 编辑配置对话框相关状态
 const configEditDialogVisible = ref(false);
 const configEditDialogLoading = ref(false);
@@ -2156,14 +2157,12 @@ async function handleViewDetail(row: any) {
     return ElMessage.warning("缺少ID，无法查看详情");
   }
   detailDialogVisible.value = true;
-  configPreviewMode.value = false;
   await loadPsdSetDetailById(row.id);
 }
 
 function handleCloseDetailDialog() {
   detailLoading.value = false;
   detailData.value = null;
-  configPreviewMode.value = false;
 }
 
 // 直接编辑配置信息（打开独立的编辑配置对话框）
@@ -3180,140 +3179,201 @@ getList();
 .psd-set-detail-dialog :deep(.el-dialog__body) {
   box-sizing: border-box;
   height: calc(100vh - 78px);
-  padding: 0 20px 20px;
+  padding: 0 22px 22px;
   overflow: hidden;
+  background: var(--el-bg-color-page);
 }
 
 .psd-set-detail-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   width: 100%;
+  padding-right: 28px;
+}
+
+.psd-set-detail-heading {
+  min-width: 0;
 }
 
 .psd-set-detail-title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--el-text-color-primary);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .psd-set-detail-subtitle {
-  margin-top: 6px;
-  font-size: 13px;
+  margin-top: 4px;
+  font-size: 12px;
   color: var(--el-text-color-secondary);
 }
 
 .psd-set-detail-header__tags {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .psd-set-detail-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
-  gap: 18px;
-  height: 100%;
-  overflow: hidden;
-}
-
-.psd-set-detail-main,
-.psd-set-detail-side {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  min-height: 0;
+  gap: 12px;
+  height: 100%;
   overflow-y: auto;
   padding-right: 4px;
 }
 
+.psd-set-detail-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.42fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.psd-set-detail-middle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.psd-set-detail-bottom {
+  display: block;
+}
+
 .psd-set-detail-panel {
-  padding: 16px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 14px;
+  padding: 14px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
   background: var(--el-bg-color);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.psd-set-detail-panel--hero {
+  padding: 16px;
+}
+
+.psd-set-detail-panel--compact,
+.psd-set-detail-panel--muted {
+  padding: 12px;
+}
+
+.psd-set-detail-panel--balanced {
+  display: flex;
+  flex-direction: column;
+  min-height: 420px;
 }
 
 .psd-set-detail-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .psd-set-detail-summary__item,
 .psd-set-detail-text-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  background: var(--el-fill-color-lighter);
+  gap: 4px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
 }
 
 .psd-set-detail-text-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 14px;
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .psd-set-detail-image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
 }
 
 .psd-set-detail-image-card {
-  padding: 8px;
-  border-radius: 12px;
-  background: var(--el-fill-color-lighter);
-  border: 1px solid var(--el-border-color-lighter);
+  position: relative;
+  padding: 6px;
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+  border: 1px solid var(--el-border-color-light);
   min-width: 0;
 }
 
 .psd-set-detail-image {
   width: 100%;
-  height: 180px;
-  border-radius: 8px;
+  height: 190px;
+  border-radius: 6px;
   background: var(--el-bg-color-page);
+}
+
+.psd-set-detail-image-index {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
 .psd-set-detail-side-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  flex: 1;
   min-width: 0;
 }
 
 .psd-set-detail-template-image {
   width: 100%;
-  height: 220px;
-  border-radius: 10px;
+  height: 190px;
+  border-radius: 6px;
   background: var(--el-bg-color-page);
 }
 
 .psd-set-detail-meta-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.psd-set-detail-meta-list--inline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 10px;
 }
 
 .psd-set-detail-meta-list>div {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--el-fill-color-lighter);
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
   min-width: 0;
 }
 
 .detail-sticker-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+  flex: 1;
+  align-content: start;
 }
 
 .detail-info-row {
@@ -3338,19 +3398,26 @@ getList();
 }
 
 .info-value {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--el-text-color-primary);
+  line-height: 1.45;
+}
+
+.info-value--muted {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--el-text-color-secondary);
 }
 
 .detail-sticker-card {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border: 1px solid var(--el-border-color-lighter);
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  background: var(--el-fill-color-lighter);
+  background: var(--el-bg-color);
 }
 
 .detail-sticker-meta {
@@ -3366,12 +3433,25 @@ getList();
   word-break: break-word;
 }
 
-.detail-sticker-id {
+.detail-sticker-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.detail-sticker-desc,
+.detail-sticker-keywords,
+.detail-sticker-path {
   font-size: 12px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
+}
+
+.detail-sticker-id {
+  font-size: 11px;
   color: var(--el-text-color-secondary);
   font-weight: 500;
   font-family: "Courier New", Consolas, monospace;
-  margin-bottom: 2px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -3404,18 +3484,19 @@ getList();
   gap: 8px;
   font-size: 13px;
   line-height: 1.4;
-  margin-bottom: 6px;
-  padding: 4px 8px;
-  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.05) 100%);
-  border-radius: 4px;
-  border-left: 3px solid var(--el-color-primary);
+  margin-bottom: 10px;
 }
 
 .detail-label {
-  color: var(--el-color-primary);
+  color: var(--el-text-color-primary);
   font-weight: 600;
   font-size: 14px;
   white-space: nowrap;
+}
+
+.detail-count {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .detail-sub-grid {
@@ -3449,20 +3530,81 @@ getList();
 }
 
 .detail-thumb-image {
-  width: 100px;
-  height: 100px;
+  width: 78px;
+  height: 78px;
   object-fit: contain;
-  border-radius: 4px;
+  flex: 0 0 auto;
+  border-radius: 6px;
   cursor: pointer;
-  border: 1px solid var(--el-border-color-lighter);
+  border: 1px solid var(--el-border-color-light);
   transition: all 0.2s ease;
   background-color: var(--el-bg-color-page);
 }
 
 .detail-thumb-image:hover {
   border-color: var(--el-color-primary);
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.detail-thumb-image--template {
+  width: 96px;
+  height: 96px;
+}
+
+.detail-template-card--unified {
+  align-items: flex-start;
+  padding: 8px;
+  border-color: var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+}
+
+.psd-set-detail-runtime-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.psd-set-detail-runtime-strip>div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.psd-set-detail-runtime-note {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--el-color-warning-light-9);
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.psd-set-detail-json-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.psd-set-detail-json-block {
+  min-width: 0;
+}
+
+.psd-set-detail-json-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 @media (max-width: 1100px) {
@@ -3471,15 +3613,25 @@ getList();
     min-height: calc(100vh - 78px);
   }
 
-  .psd-set-detail-layout {
+  .psd-set-detail-layout,
+  .psd-set-detail-top,
+  .psd-set-detail-middle,
+  .psd-set-detail-bottom {
     grid-template-columns: 1fr;
     height: auto;
   }
 
-  .psd-set-detail-main,
-  .psd-set-detail-side {
-    overflow: visible;
-    max-height: none;
+  .psd-set-detail-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .psd-set-detail-header__tags {
+    justify-content: flex-start;
+  }
+
+  .psd-set-detail-meta-list--inline {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3715,20 +3867,19 @@ getList();
 }
 
 .config-preview-container {
-  padding: 12px;
-  background: var(--el-fill-color-lighter);
+  padding: 10px;
+  background: var(--el-fill-color-extra-light);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 4px;
-  max-height: 400px;
   overflow: auto;
 }
 
 .config-preview {
   margin: 0;
   font-family: "Courier New", Consolas, monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--el-text-color-regular);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--el-text-color-secondary);
   white-space: pre-wrap;
   word-wrap: break-word;
 }
