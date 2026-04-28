@@ -3103,6 +3103,7 @@ import {
   copyStickers,
   copyStickersToUser,
   moveStickersToUser,
+  getStickerById,
   trimPng,
   svgToPng,
   generateStickerStoryScript,
@@ -3416,18 +3417,6 @@ const gridOptions = computed(() => {
       className: "font-bold",
       slots: { default: "nameBilingualSlot" },
     },
-    {
-      title: "描述（中/英）",
-      field: "description",
-      minWidth: 320,
-      slots: { default: "descriptionBilingualSlot" },
-    },
-    {
-      title: "关键词（中/英）",
-      field: "keywords",
-      minWidth: 280,
-      slots: { default: "keywordsBilingualSlot" },
-    },
     { title: "后缀", field: "suffix", width: 80 }, // 新增后缀列
     {
       title: "文件尺寸",
@@ -3435,12 +3424,6 @@ const gridOptions = computed(() => {
       width: 120,
       slots: { default: "fileSizeSlot" },
     }, // 新增文件尺寸列
-    {
-      title: "适用商品",
-      field: "suitableFor",
-      minWidth: 150,
-      slots: { default: "suitableForSlot" },
-    }, // 新增适用商品列
     { title: "ID", field: "id", width: 80, ellipsis: true },
     { title: "编码", field: "code", width: 120, ellipsis: true },
     {
@@ -3456,12 +3439,6 @@ const gridOptions = computed(() => {
       formatter: ({ row }) =>
         row?.uploader?.account || row?.uploader?.name || row?.uploaderAccount || row?.userId || "-",
     },
-    {
-      title: "色系",
-      field: "colorPalette",
-      width: 200,
-      slots: { default: "colorPaletteSlot" },
-    }, // 新增色系列
     {
       title: "侵权状态",
       field: "isInfringement",
@@ -3484,27 +3461,12 @@ const gridOptions = computed(() => {
 
   // 只有管理员显示的字段
   const adminOnlyColumns = [
-    { title: "感知哈希", field: "phash", width: 80 }, // 新增哈希列
     {
       title: "自定义贴纸",
       field: "isCustom",
       width: 100,
       slots: { default: "isCustomSlot" },
     },
-    {
-      title: "原始地址",
-      field: "originUrl",
-      minWidth: 200,
-      ellipsis: true,
-      slots: { default: "originUrlSlot" },
-    }, // 原始地址列
-    {
-      title: "来源",
-      field: "source",
-      minWidth: 160,
-      ellipsis: true,
-      slots: { default: "sourceSlot" },
-    }, // 来源列
     {
       title: "创建时间",
       field: "createTime",
@@ -3543,6 +3505,7 @@ const gridOptions = computed(() => {
 });
 
 const dataSource = ref([]);
+const stickerDetailCache = new Map<string, any>();
 const loading = ref(false);
 const open = ref(false);
 const title = ref("");
@@ -3985,6 +3948,7 @@ watch(uploadModalVisible, (visible) => {
 
 async function getList() {
   loading.value = true;
+  stickerDetailCache.clear();
   if (similarSearchDisabled) {
     queryParams.phash = "";
   }
@@ -3999,6 +3963,7 @@ async function getList() {
   // 构建查询参数，确保 suffix 和 sizeShape 数组格式正确传递；空字符串转为 null 以兼容后端
   const params = {
     ...queryParams,
+    listMode: "summary",
     folderId: getStickerFolderFilterForQuery(queryParams.folderId),
     isCustom: queryParams.isCustom === "" ? null : queryParams.isCustom,
     isInfringement: queryParams.isInfringement === "" ? null : queryParams.isInfringement,
@@ -4050,6 +4015,40 @@ async function getList() {
 
   // 列表渲染完成后挂载拖拽
   nextTick(setupRowDrag);
+}
+
+function normalizeStickerDetailResponse(res: any) {
+  if (!res) return null;
+  if (res.id) return res;
+  if (res.data?.id) return res.data;
+  if (Array.isArray(res.list) && res.list[0]) return res.list[0];
+  if (Array.isArray(res.data?.list) && res.data.list[0]) return res.data.list[0];
+  return null;
+}
+
+async function fetchStickerDetail(rowOrId: any) {
+  const id = String(typeof rowOrId === "object" ? rowOrId?.id : rowOrId || "").trim();
+  if (!id) {
+    throw new Error("缺少素材ID");
+  }
+
+  const cached = stickerDetailCache.get(id);
+  if (cached) {
+    return cached;
+  }
+
+  const detail = normalizeStickerDetailResponse(await getStickerById(id));
+  if (!detail) {
+    throw new Error("素材详情不存在");
+  }
+
+  const row = dataSource.value.find((item: any) => String(item.id) === id);
+  const merged = row ? { ...row, ...detail } : detail;
+  stickerDetailCache.set(id, merged);
+  if (row) {
+    Object.assign(row, merged);
+  }
+  return merged;
 }
 
 // 图片加载超时处理映射
@@ -5649,11 +5648,20 @@ async function handleFindSimilar(row) {
     ElMessage.warning(SIMILAR_SEARCH_DISABLED_MESSAGE);
     return;
   }
-  if (!row?.phash) {
+  let detail = row;
+  if (!detail?.phash) {
+    try {
+      detail = await fetchStickerDetail(row);
+    } catch (error: any) {
+      ElMessage.error(error?.message || "获取素材详情失败");
+      return;
+    }
+  }
+  if (!detail?.phash) {
     ElMessage.warning("该图片暂无 phash，请先生成后再搜索相似图");
     return;
   }
-  queryParams.phash = (row.phash || "").trim();
+  queryParams.phash = (detail.phash || "").trim();
   queryParams.currentPage = 1;
   // 精确匹配更快，行内查找优先用精确模式；可根据需要再切换
   queryParams.phashMode = "exact";
@@ -5675,34 +5683,42 @@ function applyPreset(preset) {
   handleWidthChange(preset.width);
 }
 
-function handleEdit(row) {
+async function handleEdit(row) {
+  let detail = row;
+  try {
+    detail = await fetchStickerDetail(row);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "获取素材详情失败");
+    return;
+  }
+
   editForm.value = {
-    id: row.id,
-    code: row.code || "",
-    name: row.name || "",
-    nameEn: row.nameEn || "",
-    description: row.description || "",
-    descriptionEn: row.descriptionEn || "",
-    keywords: row.keywords || "",
-    keywordsEn: row.keywordsEn || "",
-    suitableFor: row.suitableFor || "",
-    suffix: row.suffix || "",
-    isCustom: row.isCustom || false,
-    isPublic: row.isPublic || false,
-    isTexture: row.isTexture || false,
-    isInfringement: row.isInfringement || false,
-    isCutout: row.isCutout || false,
-    originUrl: row.originUrl || "",
-    source: row.source || "",
-    folderId: row.folderId ?? row.folder?.id ?? null,
-    folderPath: row.folder || row.folderEntity?.path || "",
+    id: detail.id,
+    code: detail.code || "",
+    name: detail.name || "",
+    nameEn: detail.nameEn || "",
+    description: detail.description || "",
+    descriptionEn: detail.descriptionEn || "",
+    keywords: detail.keywords || "",
+    keywordsEn: detail.keywordsEn || "",
+    suitableFor: detail.suitableFor || "",
+    suffix: detail.suffix || "",
+    isCustom: detail.isCustom || false,
+    isPublic: detail.isPublic || false,
+    isTexture: detail.isTexture || false,
+    isInfringement: detail.isInfringement || false,
+    isCutout: detail.isCutout || false,
+    originUrl: detail.originUrl || "",
+    source: detail.source || "",
+    folderId: detail.folderId ?? detail.folder?.id ?? null,
+    folderPath: detail.folder || detail.folderEntity?.path || "",
     // 只读字段（用于显示）
-    width: row.width || null,
-    height: row.height || null,
-    aspectRatio: row.aspectRatio || null,
-    fileSize: row.fileSize || null,
-    colorPalette: row.colorPalette || "",
-    phash: row.phash || "",
+    width: detail.width || null,
+    height: detail.height || null,
+    aspectRatio: detail.aspectRatio || null,
+    fileSize: detail.fileSize || null,
+    colorPalette: detail.colorPalette || "",
+    phash: detail.phash || "",
   };
   editDialogVisible.value = true;
 }
@@ -5775,6 +5791,15 @@ function openImagePreview(imageUrl: string, imageName?: string) {
 }
 
 // 显示meta详情
+async function handleShowMetaDetail(row: any) {
+  try {
+    const detail = await fetchStickerDetail(row);
+    showMetaDetail(detail.meta);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "获取素材详情失败");
+  }
+}
+
 function showMetaDetail(meta: any) {
   if (!meta) {
     ElMessage.warning("该素材没有元数据信息");
@@ -5903,10 +5928,10 @@ function openImageProcessingWorkbench(row: any, taskType: "process" | "variation
 }
 
 // 处理dropdown操作命令
-function handleOperationCommand(command: string, row: any) {
+async function handleOperationCommand(command: string, row: any) {
   switch (command) {
     case "edit":
-      handleEdit(row);
+      await handleEdit(row);
       break;
     case "download":
       handleDownload(row);
@@ -5918,10 +5943,10 @@ function handleOperationCommand(command: string, row: any) {
       handleGenerateImageInfo(row);
       break;
     case "find-similar":
-      handleFindSimilar(row);
+      await handleFindSimilar(row);
       break;
     case "view-meta":
-      showMetaDetail(row.meta);
+      await handleShowMetaDetail(row);
       break;
     case "trim-png":
       handleTrimPng(row);

@@ -301,15 +301,17 @@ export function calculatePhash(data) {
 /**
  * Get sticker detail by id
  */
-export function getStickerById(id) {
-  return request.post({
-    url: `/sticker/page`,
-    data: {
-      id: id,
-      currentPage: 1,
-      pageSize: 1
-    }
+export async function getStickerById(id) {
+  const detail = await request.get({
+    url: `/sticker/${id}`
   })
+  return {
+    ...(detail || {}),
+    list: detail ? [detail] : [],
+    total: detail ? 1 : 0,
+    currentPage: 1,
+    pageSize: 1
+  }
 }
 
 /**

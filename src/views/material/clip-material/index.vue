@@ -327,6 +327,17 @@
                       <div class="table-file-doc-card__title">{{ row.name || "PDF 文件" }}</div>
                       <div class="table-file-doc-card__tip">点击预览 PDF</div>
                     </div>
+                    <div
+                      v-else-if="row.url && isTextFile(row.suffix)"
+                      class="table-file-doc-card table-file-doc-card--text"
+                      @click="openFilePreview(row)"
+                    >
+                      <el-icon size="24"><Document /></el-icon>
+                      <div class="table-file-doc-card__title">{{ row.name || "文本文件" }}</div>
+                      <div class="table-file-doc-card__tip">
+                        {{ String(row.suffix || "FILE").toUpperCase() }} · 点击预览
+                      </div>
+                    </div>
                     <div v-else class="table-file-doc-card">
                       <el-icon size="24">
                         <component :is="getFileIcon(row.suffix)" />
@@ -381,7 +392,7 @@
                             <el-icon
                               ><VideoPlay v-if="isVideoFile(row.suffix)" /><Headset
                                 v-else-if="isAudioFile(row.suffix)" /><Document
-                                v-else-if="isPdfFile(row.suffix)" /><Picture v-else
+                                v-else-if="isPdfFile(row.suffix) || isTextFile(row.suffix)" /><Picture v-else
                             /></el-icon>
                             <span>预览</span>
                           </el-dropdown-item>
@@ -1233,8 +1244,20 @@ function isImageFile(suffix: string): boolean {
   return imageSuffixes.includes(normalizeSuffix(suffix));
 }
 
+// 判断是否为文本/代码文件
+function isTextFile(suffix: string): boolean {
+  const textSuffixes = [
+    "txt", "md", "json", "xml", "csv", "log",
+    "js", "ts", "jsx", "tsx", "vue", "html", "htm", "css", "scss", "less",
+    "py", "java", "c", "cpp", "h", "hpp", "cs", "go", "rs", "rb", "php", "sh", "bat",
+    "yml", "yaml", "toml", "ini", "cfg", "conf", "env",
+    "sql", "graphql", "prisma",
+  ];
+  return textSuffixes.includes(normalizeSuffix(suffix));
+}
+
 function isPreviewableFile(suffix: string): boolean {
-  return isVideoFile(suffix) || isAudioFile(suffix) || isImageFile(suffix) || isPdfFile(suffix);
+  return isVideoFile(suffix) || isAudioFile(suffix) || isImageFile(suffix) || isPdfFile(suffix) || isTextFile(suffix);
 }
 
 // 获取文件图标

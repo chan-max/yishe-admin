@@ -8,6 +8,7 @@
     @close="handleClose"
   >
     <div class="file-preview-container" :class="`file-preview-container--${previewType}`">
+      <!-- 视频预览 -->
       <video
         v-if="previewType === 'video' && fileUrl"
         :src="fileUrl"
@@ -19,6 +20,7 @@
         您的浏览器不支持视频播放
       </video>
 
+      <!-- 音频预览 -->
       <div v-else-if="previewType === 'audio' && fileUrl" class="preview-audio-shell">
         <el-icon size="56" color="var(--el-color-primary)">
           <Headset />
@@ -37,6 +39,7 @@
         />
       </div>
 
+      <!-- 图片预览 -->
       <img
         v-else-if="previewType === 'image' && fileUrl"
         :src="fileUrl"
@@ -45,6 +48,7 @@
         @error="handleImageError"
       />
 
+      <!-- PDF 预览 -->
       <iframe
         v-else-if="previewType === 'pdf' && fileUrl"
         :src="pdfPreviewUrl"
@@ -52,6 +56,27 @@
         title="PDF 文件预览"
       />
 
+      <!-- 文本/代码文件预览 -->
+      <div v-else-if="previewType === 'text' && textContent !== null" class="preview-text-shell">
+        <div class="preview-text-header">
+          <div class="preview-text-info">
+            <el-icon size="20"><Document /></el-icon>
+            <span class="preview-text-filename">{{ fileName }}</span>
+            <el-tag size="small" type="info">{{ normalizedSuffix.toUpperCase() }}</el-tag>
+          </div>
+          <div class="preview-text-actions">
+            <el-button size="small" @click="copyTextContent">
+              <el-icon><DocumentCopy /></el-icon>
+              复制
+            </el-button>
+          </div>
+        </div>
+        <div class="preview-text-content">
+          <pre><code>{{ textContent }}</code></pre>
+        </div>
+      </div>
+
+      <!-- 不支持预览的类型 -->
       <div v-else class="file-preview-empty">
         <el-icon size="48" color="var(--el-text-color-secondary)">
           <component :is="fallbackIcon" />
@@ -62,9 +87,9 @@
     </div>
 
     <div v-if="previewType === 'pdf' && fileUrl" class="preview-tip">
-      如果浏览器未正常展示 PDF，可尝试“新窗口打开”或“下载”。
+      如果浏览器未正常展示 PDF，可尝试"新窗口打开"或"下载"。
     </div>
-    
+
     <template #footer>
       <el-button @click="handleClose">关闭</el-button>
       <el-button v-if="fileUrl" @click="handleOpenInNewTab">新窗口打开</el-button>
@@ -74,9 +99,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { VideoPlay, Headset, Document, Picture, Folder } from '@element-plus/icons-vue'
+import { VideoPlay, Headset, Document, Picture, Folder, DocumentCopy } from '@element-plus/icons-vue'
 import { downloadFileByElement } from '@/common/download'
 
 const props = defineProps({
@@ -109,7 +134,58 @@ const dialogVisible = computed({
   }
 })
 
+const textContent = ref<string | null>(null)
+const textLoading = ref(false)
+
+// 当对话框打开且是文本文件时，加载文本内容
+watch([() => props.visible, () => props.fileUrl, () => props.fileSuffix], async ([visible, url, suffix]) => {
+  if (!visible || !url) {
+    textContent.value = null
+    return
+  }
+
+  const suffixLower = String(suffix || '').trim().toLowerCase()
+  const textSuffixes = [
+    'txt', 'md', 'json', 'xml', 'csv', 'log',
+    'js', 'ts', 'jsx', 'tsx', 'vue', 'html', 'htm', 'css', 'scss', 'less',
+    'py', 'java', 'c', 'cpp', 'h', 'hpp', 'cs', 'go', 'rs', 'rb', 'php', 'sh', 'bat',
+    'yml', 'yaml', 'toml', 'ini', 'cfg', 'conf', 'env',
+    'sql', 'graphql', 'prisma',
+  ]
+
+  if (textSuffixes.includes(suffixLower)) {
+    await loadTextContent()
+  } else {
+    textContent.value = null
+  }
+})
+
+async function loadTextContent() {
+  if (!props.fileUrl) {
+    textContent.value = null
+    return
+  }
+
+  textLoading.value = true
+  try {
+    const response = await fetch(props.fileUrl)
+    if (!response.ok) {
+      throw new Error('文件加载失败')
+    }
+    const text = await response.text()
+    // 限制显示长度，避免过大文件卡顿
+    textContent.value = text.length > 100000 ? text.substring(0, 100000) + '\n\n... [文件过大，已截断显示前 10 万字符]' : text
+  } catch (error) {
+    console.error('文本文件加载失败:', error)
+    textContent.value = null
+    ElMessage.error('文本文件加载失败')
+  } finally {
+    textLoading.value = false
+  }
+}
+
 function handleClose() {
+  textContent.value = null
   emits('close')
 }
 
@@ -118,7 +194,7 @@ function handleDownload() {
     ElMessage.error('没有可下载的文件')
     return
   }
-  
+
   try {
     const fileName = props.fileName || `file-resource.${normalizedSuffix.value || 'bin'}`
     downloadFileByElement(props.fileUrl, fileName)
@@ -133,13 +209,28 @@ function handleOpenInNewTab() {
   window.open(props.fileUrl, '_blank', 'noopener,noreferrer')
 }
 
+async function copyTextContent() {
+  if (!textContent.value) {
+    ElMessage.warning('没有可复制的内容')
+    return
+  }
+
+  try {
+    await navigator.clipboard.writeText(textContent.value)
+    ElMessage.success('已复制到剪贴板')
+  } catch (error) {
+    console.error('复制失败:', error)
+    ElMessage.error('复制失败')
+  }
+}
+
 const normalizedSuffix = computed(() =>
   String(props.fileSuffix || '')
     .trim()
     .toLowerCase()
 )
 
-const previewType = computed<'video' | 'audio' | 'image' | 'pdf' | 'unknown'>(() => {
+const previewType = computed<'video' | 'audio' | 'image' | 'pdf' | 'text' | 'unknown'>(() => {
   const suffix = normalizedSuffix.value
   if (['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v', '3gp', 'ogv'].includes(suffix)) {
     return 'video'
@@ -152,6 +243,17 @@ const previewType = computed<'video' | 'audio' | 'image' | 'pdf' | 'unknown'>(()
   }
   if (suffix === 'pdf') {
     return 'pdf'
+  }
+  // 文本/代码文件
+  const textSuffixes = [
+    'txt', 'md', 'json', 'xml', 'csv', 'log',
+    'js', 'ts', 'jsx', 'tsx', 'vue', 'html', 'htm', 'css', 'scss', 'less',
+    'py', 'java', 'c', 'cpp', 'h', 'hpp', 'cs', 'go', 'rs', 'rb', 'php', 'sh', 'bat',
+    'yml', 'yaml', 'toml', 'ini', 'cfg', 'conf', 'env',
+    'sql', 'graphql', 'prisma',
+  ]
+  if (textSuffixes.includes(suffix)) {
+    return 'text'
   }
   return 'unknown'
 })
@@ -295,6 +397,86 @@ function handleImageError(event: Event) {
   padding: 10px 4px 0;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+/* 文本文件预览样式 */
+.preview-text-shell {
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-text-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #2d2d2d;
+  border-bottom: 1px solid #3e3e3e;
+}
+
+.preview-text-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d4d4d4;
+}
+
+.preview-text-filename {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.preview-text-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.preview-text-content {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background: #1e1e1e;
+}
+
+.preview-text-content pre {
+  margin: 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #d4d4d4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  tab-size: 2;
+}
+
+.preview-text-content code {
+  font-family: inherit;
+}
+
+/* 滚动条样式 */
+.preview-text-content::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.preview-text-content::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.preview-text-content::-webkit-scrollbar-thumb {
+  background: #4e4e4e;
+  border-radius: 5px;
+}
+
+.preview-text-content::-webkit-scrollbar-thumb:hover {
+  background: #5e5e5e;
 }
 
 /* 响应式设计 */
