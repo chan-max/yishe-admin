@@ -1626,7 +1626,10 @@
                 </template>
                 <template #previewDefaultSlot="{ row }">
                   <div class="table-preview-stack">
-                    <div class="preview-image-wrapper">
+                    <div
+                      class="preview-image-wrapper"
+                      :class="{ 'preview-image-wrapper--custom': isCustomMaterial(row) }"
+                    >
                       <div
                         v-if="isCustomMaterial(row)"
                         class="preview-custom-corner"
@@ -6360,14 +6363,22 @@ async function handleUrlUpload() {
   border-radius: 4px;
 }
 
+.preview-image-wrapper--custom {
+  border: 1px solid rgba(245, 158, 11, 0.42);
+  background:
+    linear-gradient(135deg, rgba(255, 251, 235, 0.92), rgba(255, 255, 255, 0.72));
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1);
+}
+
 .preview-custom-corner {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: -1px;
+  left: -1px;
   z-index: 2;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(120, 53, 15, 0.22));
 }
 
 .preview-custom-corner::before {
@@ -6377,23 +6388,21 @@ async function handleUrlUpload() {
   top: 0;
   width: 0;
   height: 0;
-  border-top: 34px solid #facc15;
-  border-right: 34px solid transparent;
+  border-top: 30px solid #f59e0b;
+  border-right: 30px solid transparent;
 }
 
 .preview-custom-corner::after {
-  content: "定制";
+  content: "";
   position: absolute;
-  top: 7px;
-  left: -6px;
-  width: 42px;
-  color: #7c2d12;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-  text-align: center;
-  transform: rotate(-45deg);
-  transform-origin: center;
+  top: 6px;
+  left: 6px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid #fff7ed;
+  border-top: 0;
+  border-left: 0;
+  transform: rotate(45deg);
 }
 
 .preview-image {
