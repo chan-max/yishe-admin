@@ -10,6 +10,7 @@ import { xianyuHandler } from './xianyu'
 import { doudianHandler } from './doudian'
 import { kuaishouShopHandler } from './kuaishou-shop'
 import { temuHandler } from './temu'
+import { taobaoHandler } from './taobao'
 
 const PLATFORM_HANDLERS: Record<string, PlatformHandler> = {
   douyin: douyinHandler,
@@ -21,7 +22,8 @@ const PLATFORM_HANDLERS: Record<string, PlatformHandler> = {
   xianyu: xianyuHandler,
   doudian: doudianHandler,
   kuaishou_shop: kuaishouShopHandler,
-  temu: temuHandler
+  temu: temuHandler,
+  taobao: taobaoHandler
 }
 
 export type { PlatformHandler } from './types'
@@ -35,6 +37,7 @@ export { xianyuHandler } from './xianyu'
 export { doudianHandler } from './doudian'
 export { kuaishouShopHandler } from './kuaishou-shop'
 export { temuHandler } from './temu'
+export { taobaoHandler } from './taobao'
 
 export function getPlatformHandler(platform: string): PlatformHandler | null {
   return PLATFORM_HANDLERS[platform] || null

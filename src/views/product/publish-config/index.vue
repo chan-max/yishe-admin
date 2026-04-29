@@ -14,7 +14,6 @@ import { formatTime } from "@/utils";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { useWindowSize } from "@vueuse/core";
 import {
-  getAllTaskTypes,
   getTaskTypeConfig,
   getTaskTypeDefaultData,
   resolveTaskTypePlatform,
@@ -28,6 +27,10 @@ import {
 } from "./task-types";
 import { getVendorList, type Vendor, type VendorProductItem } from "@/api/vendor";
 import { derivePublishTaskTypeByPlatform, getTaskTypeLabel } from "@/config/task-types";
+import {
+  publishTaskTypeOptions,
+  refreshPublishTaskTypeOptions,
+} from "@/services/publishTaskCapabilityOptions";
 import { psdTemplateApi } from "@/api/psdTemplate";
 import { getPromptList } from "@/api/prompt";
 import TemuProductTemplateInspector from "./components/platform-inspectors/TemuProductTemplateInspector.vue";
@@ -195,7 +198,7 @@ const currentPlatformConfig = ref<TaskTypeConfig | null>(null);
 const platformConfigData = ref<Record<string, any>>({});
 const vendorRows = ref<Vendor[]>([]);
 const vendorOptions = ref<Array<{ label: string; value: number }>>([]);
-const fixedTitleSupportedPlatforms = new Set(["doudian", "kuaishou_shop", "temu"]);
+const fixedTitleSupportedPlatforms = new Set(["doudian", "kuaishou_shop", "temu", "taobao"]);
 
 const form = reactive({
   id: undefined,
@@ -256,7 +259,7 @@ const titleConfigPanelDesc = computed(() => {
 });
 
 const appendImageUrlValidation = computed(() => {
-  if (resolveTaskTypePlatform(form.taskType) !== "doudian") {
+  if (!["doudian", "taobao"].includes(resolveTaskTypePlatform(form.taskType))) {
     return {
       hasError: false,
       invalidUrls: [] as Array<{ index: number; value: string }>,
@@ -590,9 +593,15 @@ watch(
   },
 );
 
-const baseTaskTypeOptions = getAllTaskTypes();
-
 const taskTypeOptions = computed(() => {
+  const baseTaskTypeOptions = publishTaskTypeOptions.value
+    .filter((item) => !!getTaskTypeConfig(item.value))
+    .map((item) => ({
+      label: item.label,
+      value: item.value,
+      platform: item.platform || resolveTaskTypePlatform(item.value),
+      taskKind: item.taskKind,
+    }));
   const currentTaskType = String(form.taskType || "").trim();
   if (!currentTaskType || baseTaskTypeOptions.some((item) => item.value === currentTaskType)) {
     return baseTaskTypeOptions;
@@ -1007,6 +1016,7 @@ const handleDelete = (row: any) => {
 };
 
 onMounted(() => {
+  void refreshPublishTaskTypeOptions();
   getList();
   loadVendorOptions();
 });
@@ -2368,9 +2378,9 @@ onMounted(() => {
 }
 
 .publish-config-field-tip {
-  margin-top: 8px;
+  margin-top: 4px;
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.45;
   color: var(--el-text-color-secondary);
 }
 

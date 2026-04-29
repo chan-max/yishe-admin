@@ -97,6 +97,7 @@ export interface PublishTaskCapabilityTaskType {
   taskType: string;
   label: string;
   platform?: string | null;
+  platformLabel?: string | null;
   executionTransport: "client-assisted" | "server-only" | "unknown";
   serverPrepareSupported: boolean;
   serverDirectExecuteSupported: boolean;

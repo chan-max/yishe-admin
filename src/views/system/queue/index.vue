@@ -41,7 +41,7 @@
                     @clear="handleTypeClear"
                   >
                     <el-option
-                      v-for="opt in TASK_TYPE_OPTIONS"
+                      v-for="opt in publishTaskTypeOptions"
                       :key="opt.value"
                       :label="opt.label"
                       :value="opt.value"
@@ -376,7 +376,7 @@
             clearable
           >
             <el-option
-              v-for="opt in TASK_TYPE_OPTIONS"
+              v-for="opt in publishTaskTypeOptions"
               :key="opt.value"
               :label="opt.label"
               :value="opt.value"
@@ -942,7 +942,10 @@ import ContentWrap from "@/components/ContentWrap/src/ContentWrap.vue";
 import ListPageLayout from "@/components/ListPageLayout/index.vue";
 import Pagination from "@/components/Pagination/index.vue";
 import { useUserStore } from "@/store/modules/user";
-import { TASK_TYPE_OPTIONS } from "@/config/task-types";
+import {
+  publishTaskTypeOptions,
+  refreshPublishTaskTypeOptions,
+} from "@/services/publishTaskCapabilityOptions";
 import { useClientNodeState } from "@/services/clientNodeState";
 import {
   getBrowserAutomationRuntimeHint,
@@ -3486,6 +3489,7 @@ onMounted(() => {
     getList(),
     refreshStats(),
     refreshClientNodes(),
+    refreshPublishTaskTypeOptions(),
     loadPublishTaskAutoDispatchSettingState(),
     loadPublishTaskSchedulerRuntime(),
     refreshPublishTaskRuntime(),
