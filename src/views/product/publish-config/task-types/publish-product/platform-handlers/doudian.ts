@@ -1,5 +1,5 @@
 import type { PlatformHandler } from './types'
-import { normalizeHttpUrlList } from './shared'
+import { normalizeHttpUrlList, normalizePsdImageIndexes, validatePsdImageIndexes } from './shared'
 
 export const doudianHandler: PlatformHandler = {
   platform: 'doudian',
@@ -16,6 +16,10 @@ export const doudianHandler: PlatformHandler = {
 
     if (vendorId !== undefined && vendorId !== null && vendorId !== '' && !Number.isFinite(Number(vendorId))) {
       errors.push('绑定厂家无效')
+    }
+
+    if (!validatePsdImageIndexes(configData?.psdImageIndexes)) {
+      errors.push('套图图片序号格式不正确，请填写 1、1,3 或 2-5')
     }
 
     if (typeof rawValue === 'string' && rawValue.trim()) {
@@ -63,6 +67,7 @@ export const doudianHandler: PlatformHandler = {
       formatted.stock = Number(formatted.stock)
     }
     formatted.appendImageUrls = normalizeHttpUrlList(formatted.appendImageUrls)
+    formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes) || undefined
 
     return formatted
   },
@@ -76,6 +81,7 @@ export const doudianHandler: PlatformHandler = {
       formatted.vendorId = Number(formatted.vendorId)
     }
     formatted.appendImageUrls = normalizeHttpUrlList(formatted.appendImageUrls)
+    formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes)
     return formatted
   },
 
@@ -84,6 +90,7 @@ export const doudianHandler: PlatformHandler = {
       '支持配置抖店模板 copyId，发布端会优先进入 create?copyid=... 页面',
       '支持绑定厂家，生成 productCode 时会按“素材码-厂家码”拼接',
       '当前先支持标题、描述、图片和少量可选参数透传',
+      '支持按序号选择套图图片，例如 1、1,3 或 2-5；留空默认使用全部套图图片',
       '支持附加图片，会在生成发布任务时追加到商品图片后面',
       '类目、SKU、物流模板等详细字段后续再补充'
     ]

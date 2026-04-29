@@ -24,6 +24,14 @@ export const doudianPlatformConfig: PlatformConfig = {
       span: 24
     },
     {
+      key: 'psdImageIndexes',
+      label: '套图图片序号',
+      type: 'input',
+      placeholder: '留空使用全部，例如：1 或 1,3 或 2-5',
+      span: 24,
+      tooltip: '按套图成品图片顺序选择要发布的图片，序号从 1 开始'
+    },
+    {
       key: 'appendImageUrls',
       label: '附加图片',
       type: 'url-list',

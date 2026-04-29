@@ -125,8 +125,8 @@
               </template>
               <template #statusSlot="{ row }">
                 <div class="status-cell">
-                  <el-tag :type="statusTagType(row.status)" effect="plain" size="small">
-                    {{ statusLabel(row.status) }}
+                  <el-tag :type="statusTagType(getPsdSetDisplayStatus(row))" effect="plain" size="small">
+                    {{ statusLabel(getPsdSetDisplayStatus(row)) }}
                   </el-tag>
                 </div>
               </template>
@@ -260,8 +260,8 @@
             </div>
           </div>
           <div class="psd-set-detail-header__tags" v-if="detailData">
-            <el-tag :type="statusTagType(detailData.status)" effect="plain" size="small">{{
-              statusLabel(detailData.status)
+            <el-tag :type="statusTagType(getPsdSetDisplayStatus(detailData))" effect="plain" size="small">{{
+              statusLabel(getPsdSetDisplayStatus(detailData))
               }}</el-tag>
             <el-tag type="info" effect="plain" size="small">图片 {{ detailImages.length }}</el-tag>
             <el-tag type="info" effect="plain" size="small">素材 {{ detailStickers.length }}</el-tag>
@@ -303,8 +303,8 @@
               </div>
               <div class="psd-set-detail-summary__item">
                 <span class="info-label">状态</span>
-                <el-tag :type="statusTagType(detailData.status)" size="small" effect="plain">
-                  {{ statusLabel(detailData.status) }}
+                <el-tag :type="statusTagType(getPsdSetDisplayStatus(detailData))" size="small" effect="plain">
+                  {{ statusLabel(getPsdSetDisplayStatus(detailData)) }}
                 </el-tag>
               </div>
               <div class="psd-set-detail-summary__item">
@@ -737,7 +737,7 @@
             <span v-else class="text-gray-400">-</span>
           </template>
           <template #taskActionSlot="{ row }">
-            <el-button link type="primary" :disabled="publishTasksLoading || row.status === 'processing'"
+            <el-button link type="primary" :disabled="publishTasksLoading || getPsdSetDisplayStatus(row) === 'processing'"
               @click="handleRegeneratePublishTask(row)">
               重新生成发布数据
             </el-button>
@@ -1252,6 +1252,14 @@ function normalizePsdSetRecord(record: any) {
   };
 }
 
+function normalizePsdSetRuntimeStatus(status?: unknown) {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  if (normalizedStatus === "running" || normalizedStatus === "assigned") {
+    return "processing";
+  }
+  return normalizedStatus;
+}
+
 function resolvePsdSetProgressPercent(progress?: number, total?: number, fallback?: number | null) {
   if (typeof progress !== "number") {
     return typeof fallback === "number" ? fallback : null;
@@ -1326,7 +1334,9 @@ function buildPsdSetRuntimeRecord(
     return target;
   }
 
-  const nextStatus = String(payload.status || target.status || "").trim() || target.status;
+  const rawPayloadStatus = String(payload.status || "").trim().toLowerCase();
+  const nextStatus =
+    normalizePsdSetRuntimeStatus(payload.status || target.status) || target.status;
   const currentMeta = normalizePsdSetSchedulerMeta(target.schedulerMeta) || {};
   const now = new Date().toISOString();
   const nextMeta: Record<string, any> = {
@@ -1353,15 +1363,19 @@ function buildPsdSetRuntimeRecord(
 
   const nextSchedulerStatus =
     payload.schedulerStatus ||
-    (nextStatus === "processing"
-      ? "running"
-      : nextStatus === "completed"
-        ? "completed"
-        : nextStatus === "failed"
-          ? "failed"
-          : nextStatus === "pending"
-            ? "pending"
-            : currentMeta.status || null);
+    (rawPayloadStatus === "assigned"
+      ? "assigned"
+      : rawPayloadStatus === "running"
+        ? "running"
+        : nextStatus === "processing"
+          ? "running"
+          : nextStatus === "completed"
+            ? "completed"
+            : nextStatus === "failed"
+              ? "failed"
+              : nextStatus === "pending"
+                ? "pending"
+                : currentMeta.status || null);
 
   if (nextSchedulerStatus) {
     nextMeta.status = nextSchedulerStatus;
@@ -1401,11 +1415,10 @@ function buildPsdSetRuntimeRecord(
 }
 
 function isPsdSetRuntimePayloadActive(payload: PsdSetRuntimeUpdatePayload) {
-  const status = String(payload.status || "").trim();
+  const status = normalizePsdSetRuntimeStatus(payload.status);
   const schedulerStatus = String(payload.schedulerStatus || "").trim();
   return (
     status === "processing" ||
-    status === "running" ||
     schedulerStatus === "assigned" ||
     schedulerStatus === "running"
   );
@@ -1476,12 +1489,44 @@ function isPsdSetRuntimeActive(record: any) {
   if (!record || typeof record !== "object") {
     return false;
   }
-  const normalizedStatus = String(record.status || "").trim();
+  const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
   if (normalizedStatus === "processing") {
     return true;
   }
   const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
   return schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running";
+}
+
+function isPsdSetActiveBySummary(psdSetId: unknown) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return false;
+  }
+
+  return activePsdSets.value.some((item: any) => {
+    if (normalizePsdSetId(item?.id) !== normalizedId) {
+      return false;
+    }
+    const status = normalizePsdSetRuntimeStatus(item?.status);
+    const schedulerStatus = String(item?.schedulerStatus || "").trim();
+    return (
+      status === "processing" ||
+      schedulerStatus === "assigned" ||
+      schedulerStatus === "running"
+    );
+  });
+}
+
+function getPsdSetDisplayStatus(record: any) {
+  if (!record || typeof record !== "object") {
+    return normalizePsdSetRuntimeStatus(record) || "";
+  }
+
+  if (isPsdSetRuntimeActive(record) || isPsdSetActiveBySummary(record.id)) {
+    return "processing";
+  }
+
+  return normalizePsdSetRuntimeStatus(record.status) || record.status || "";
 }
 
 const hasActivePsdSetRuntime = computed(() => {
@@ -1733,8 +1778,9 @@ async function handleDownloadPsdSetImages(row: any) {
 }
 
 function statusLabel(status: string) {
-  const item = statusOptions.find((s) => s.value === status);
-  return item ? item.label : status || "-";
+  const normalizedStatus = normalizePsdSetRuntimeStatus(status);
+  const item = statusOptions.find((s) => s.value === normalizedStatus);
+  return item ? item.label : normalizedStatus || "-";
 }
 
 function schedulerStatusLabel(status?: string) {
@@ -2035,7 +2081,7 @@ async function handleToggleUserAutoScheduling(enabled: boolean) {
 }
 
 function statusTagType(status: string) {
-  switch (status) {
+  switch (normalizePsdSetRuntimeStatus(status)) {
     case "completed":
       return "success";
     case "processing":
@@ -2835,8 +2881,17 @@ const productionStatusHandler = (data: {
     const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
     if (!normalizedPsdSetId) return;
 
+    const rowIndex = findPsdSetRowIndexById(normalizedPsdSetId);
+    const currentRecord = rowIndex >= 0 ? dataSource.value[rowIndex] : null;
+    const incomingStatus = normalizePsdSetRuntimeStatus(data.status);
+    const nextStatus =
+      incomingStatus === "pending" &&
+        (isPsdSetRuntimeActive(currentRecord) || isPsdSetActiveBySummary(normalizedPsdSetId))
+        ? "processing"
+        : incomingStatus;
+
     applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-      status: data.status,
+      status: nextStatus,
       message: data.message,
       progress: data.progress,
       total: data.total,

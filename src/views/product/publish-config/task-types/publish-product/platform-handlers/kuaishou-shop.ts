@@ -1,4 +1,5 @@
 import type { PlatformHandler } from './types'
+import { normalizePsdImageIndexes, validatePsdImageIndexes } from './shared'
 
 export const kuaishouShopHandler: PlatformHandler = {
   platform: 'kuaishou_shop',
@@ -13,6 +14,9 @@ export const kuaishouShopHandler: PlatformHandler = {
     }
     if (vendorId !== undefined && vendorId !== null && vendorId !== '' && !Number.isFinite(Number(vendorId))) {
       errors.push('绑定厂家无效')
+    }
+    if (!validatePsdImageIndexes(configData?.psdImageIndexes)) {
+      errors.push('套图图片序号格式不正确，请填写 1、1,3 或 2-5')
     }
 
     return {
@@ -32,6 +36,7 @@ export const kuaishouShopHandler: PlatformHandler = {
     } else {
       formatted.vendorId = undefined
     }
+    formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes) || undefined
 
     return formatted
   },
@@ -44,6 +49,7 @@ export const kuaishouShopHandler: PlatformHandler = {
     if (formatted.vendorId !== undefined && formatted.vendorId !== null && formatted.vendorId !== '') {
       formatted.vendorId = Number(formatted.vendorId)
     }
+    formatted.psdImageIndexes = normalizePsdImageIndexes(formatted.psdImageIndexes)
     return formatted
   },
 
@@ -51,6 +57,7 @@ export const kuaishouShopHandler: PlatformHandler = {
     return [
       '支持配置快手小店模板 sameId，发布端会优先进入 add?sameId=... 页面',
       '支持绑定厂家，生成 productCode 时会按“素材码-厂家码”拼接',
+      '支持按序号选择套图图片，例如 1、1,3 或 2-5；留空默认使用全部套图图片',
       '当前先支持标题、描述、图片和少量可选参数透传'
     ]
   }

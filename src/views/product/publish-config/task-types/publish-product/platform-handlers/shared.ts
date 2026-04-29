@@ -15,6 +15,42 @@ export function normalizeHttpUrlList(input: unknown): string[] {
   )
 }
 
+export function normalizePsdImageIndexes(input: unknown): string {
+  if (Array.isArray(input)) {
+    return input.map((item) => String(item || '').trim()).filter(Boolean).join(',')
+  }
+
+  return String(input || '')
+    .trim()
+    .replace(/，/g, ',')
+    .replace(/\s+/g, '')
+}
+
+export function validatePsdImageIndexes(input: unknown): boolean {
+  const normalized = normalizePsdImageIndexes(input)
+  if (!normalized) {
+    return true
+  }
+
+  return normalized
+    .split(',')
+    .filter(Boolean)
+    .every((segment) => {
+      if (/^\d+$/.test(segment)) {
+        return Number(segment) > 0
+      }
+
+      const rangeMatch = segment.match(/^(\d+)-(\d+)$/)
+      if (!rangeMatch) {
+        return false
+      }
+
+      const start = Number(rangeMatch[1])
+      const end = Number(rangeMatch[2])
+      return start > 0 && end >= start
+    })
+}
+
 export function normalizeTemuCategoryPath(input: unknown): string[] {
   if (Array.isArray(input)) {
     return Array.from(
