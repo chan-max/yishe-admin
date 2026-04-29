@@ -24,6 +24,14 @@ export const doudianPlatformConfig: PlatformConfig = {
       span: 24
     },
     {
+      key: 'stock',
+      label: '库存',
+      type: 'number',
+      placeholder: '请输入库存',
+      span: 24,
+      tooltip: '发布端会将库存填入每个 SKU 行'
+    },
+    {
       key: 'psdImageIndexes',
       label: '套图图片序号',
       type: 'input',
