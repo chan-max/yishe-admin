@@ -1334,6 +1334,13 @@ function buildPsdSetRuntimeRecord(
     return target;
   }
 
+  if (
+    isPsdSetTerminalOrManualStatus(target.status) &&
+    isPsdSetRuntimePayloadActive(payload)
+  ) {
+    return target;
+  }
+
   const rawPayloadStatus = String(payload.status || "").trim().toLowerCase();
   const nextStatus =
     normalizePsdSetRuntimeStatus(payload.status || target.status) || target.status;
@@ -1424,6 +1431,15 @@ function isPsdSetRuntimePayloadActive(payload: PsdSetRuntimeUpdatePayload) {
   );
 }
 
+function isPsdSetTerminalOrManualStatus(status: unknown) {
+  const normalizedStatus = normalizePsdSetRuntimeStatus(status);
+  return (
+    normalizedStatus === "completed" ||
+    normalizedStatus === "failed" ||
+    normalizedStatus === "pending"
+  );
+}
+
 function rememberPsdSetRuntimeOverlay(psdSetId: string, payload: PsdSetRuntimeUpdatePayload) {
   const normalizedId = normalizePsdSetId(psdSetId);
   if (!normalizedId) {
@@ -1458,8 +1474,23 @@ function getPsdSetRuntimeOverlay(psdSetId: unknown) {
   return overlay;
 }
 
+function clearPsdSetRuntimeOverlay(psdSetId: unknown) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId || !psdSetRuntimeOverlayMap.value[normalizedId]) {
+    return;
+  }
+
+  const nextMap = { ...psdSetRuntimeOverlayMap.value };
+  delete nextMap[normalizedId];
+  psdSetRuntimeOverlayMap.value = nextMap;
+}
+
 function mergePsdSetRuntimeOverlay(record: any) {
   const overlay = getPsdSetRuntimeOverlay(record?.id);
+  if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalOrManualStatus(record?.status)) {
+    clearPsdSetRuntimeOverlay(record?.id);
+    return record;
+  }
   return overlay ? buildPsdSetRuntimeRecord(record, overlay.payload) : record;
 }
 
@@ -1490,10 +1521,17 @@ function isPsdSetRuntimeActive(record: any) {
     return false;
   }
   const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
+  if (normalizedStatus === "completed" || normalizedStatus === "failed") {
+    return false;
+  }
   if (normalizedStatus === "processing") {
     return true;
   }
   const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
+  const schedulerStatus = String(schedulerMeta?.status || "").trim();
+  if (schedulerStatus === "completed" || schedulerStatus === "failed") {
+    return false;
+  }
   return schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running";
 }
 
@@ -1522,11 +1560,83 @@ function getPsdSetDisplayStatus(record: any) {
     return normalizePsdSetRuntimeStatus(record) || "";
   }
 
+  const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
+  if (
+    normalizedStatus === "completed" ||
+    normalizedStatus === "failed" ||
+    normalizedStatus === "pending"
+  ) {
+    return normalizedStatus;
+  }
+
+  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
+  const schedulerStatus = String(schedulerMeta?.status || "").trim();
+  if (schedulerStatus === "completed" || schedulerStatus === "failed") {
+    return schedulerStatus;
+  }
+
   if (isPsdSetRuntimeActive(record) || isPsdSetActiveBySummary(record.id)) {
     return "processing";
   }
 
-  return normalizePsdSetRuntimeStatus(record.status) || record.status || "";
+  return normalizedStatus || record.status || "";
+}
+
+function applyManualPsdSetStatusLocally(psdSetId: unknown, status: string) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return;
+  }
+
+  clearPsdSetRuntimeOverlay(normalizedId);
+  const normalizedStatus = normalizePsdSetRuntimeStatus(status) || status;
+  const applyToRecord = (record: any) => {
+    if (!record || typeof record !== "object") {
+      return record;
+    }
+
+    const currentMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta) || {};
+    const now = new Date().toISOString();
+    const nextMeta = {
+      ...currentMeta,
+      status: normalizedStatus,
+      progress: normalizedStatus === "completed" ? 100 : normalizedStatus === "pending" ? 0 : currentMeta.progress,
+      finishedAt:
+        normalizedStatus === "completed" || normalizedStatus === "failed"
+          ? currentMeta.finishedAt || now
+          : null,
+      currentStep:
+        normalizedStatus === "completed"
+          ? "制作完成"
+          : normalizedStatus === "failed"
+            ? currentMeta.lastError || "制作失败"
+            : normalizedStatus === "pending"
+              ? "等待调度"
+              : currentMeta.currentStep,
+    };
+
+    if (normalizedStatus === "pending") {
+      nextMeta.assignedClientId = null;
+      nextMeta.assignedMachineCode = null;
+      nextMeta.lastError = null;
+    }
+
+    return {
+      ...record,
+      status: normalizedStatus,
+      statusMessage: resolvePsdSetRuntimeStatusMessage(normalizedStatus, undefined, nextMeta),
+      schedulerMeta: nextMeta,
+    };
+  };
+
+  const rowIndex = findPsdSetRowIndexById(normalizedId);
+  if (rowIndex >= 0) {
+    dataSource.value.splice(rowIndex, 1, applyToRecord(dataSource.value[rowIndex]));
+  }
+
+  if (normalizePsdSetId(detailData.value?.id) === normalizedId) {
+    detailData.value = applyToRecord(detailData.value);
+  }
 }
 
 const hasActivePsdSetRuntime = computed(() => {
@@ -2150,9 +2260,9 @@ function onSelectionChange({ records, reserves }) {
 async function updateRowStatus(row, status: string) {
   try {
     await stickerPsdSetApi.updateStatus(row.id, { status });
-    row.status = status;
+    applyManualPsdSetStatusLocally(row.id, status);
     ElMessage.success("状态已更新");
-    getList();
+    getList(true);
   } catch (error: any) {
     ElMessage.error(error?.message || "状态更新失败");
   }
@@ -2454,6 +2564,7 @@ async function handleBatchUpdateStatus(status: string) {
     for (const id of selectedIds.value) {
       try {
         await stickerPsdSetApi.updateStatus(id, { status });
+        applyManualPsdSetStatusLocally(id, status);
         successCount += 1;
       } catch (error) {
         failCount += 1;
