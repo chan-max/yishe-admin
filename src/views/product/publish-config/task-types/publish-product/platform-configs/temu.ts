@@ -48,18 +48,18 @@ export const temuPlatformConfig: PlatformConfig = {
       span: 24,
       defaultValue: JSON.stringify(
         {
-          carouselImageUrls: [0, 1, 2, 3],
-          materialImgUrl: 0,
-          'productSkcReqs[].productSkuReqs[].thumbUrl': [0, 1, 2, 3],
-          'productSkcReqs[].previewImgUrls': [0, 1, 2, 3],
+          carouselImageUrls: [1, 2, 3, 4],
+          materialImgUrl: 1,
+          'productSkcReqs[].productSkuReqs[].thumbUrl': [1, 2, 3, 4],
+          'productSkcReqs[].previewImgUrls': [1, 2, 3, 4],
         },
         null,
         2
       ),
       placeholder:
-        '{\n  "carouselImageUrls": [0, 1, 2],\n  "materialImgUrl": 0,\n  "productSkcReqs[].productSkuReqs[].thumbUrl": [0, 1, 2, 3],\n  "productSkcReqs[].previewImgUrls": [0, 1]\n}',
+        '{\n  "carouselImageUrls": [1, 2, 3],\n  "materialImgUrl": 1,\n  "productSkcReqs[].productSkuReqs[].thumbUrl": [1, 2, 3, 4],\n  "productSkcReqs[].previewImgUrls": [1, 2]\n}',
       tooltip:
-        '声明 productTemplate 中图片字段如何使用上传后的图片索引。支持的键：carouselImageUrls、materialImgUrl、productSkcReqs[].productSkuReqs[].thumbUrl、productSkcReqs[].previewImgUrls。'
+        '声明 productTemplate 中图片字段如何使用上传后的图片序号，从 1 开始：1 表示第 1 张图。支持的键：carouselImageUrls、materialImgUrl、productSkcReqs[].productSkuReqs[].thumbUrl、productSkcReqs[].previewImgUrls。'
     }
   ]
 }

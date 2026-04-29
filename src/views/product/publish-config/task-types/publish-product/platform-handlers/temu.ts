@@ -43,6 +43,32 @@ function pickTemuConfigFields(configData: Record<string, any> = {}) {
   };
 }
 
+function validateTemplateImageBindingsOneBased(bindings: Record<string, any> | null): boolean {
+  if (!bindings) {
+    return true;
+  }
+
+  const bindingKeys = [
+    "materialImgUrl",
+    "carouselImageUrls",
+    "productSkcReqs[].previewImgUrls",
+    "productSkcReqs[].productSkuReqs[].thumbUrl",
+  ];
+
+  return bindingKeys.every((key) => {
+    const rawValue = bindings[key];
+    if (rawValue === undefined || rawValue === null || rawValue === "") {
+      return true;
+    }
+
+    const values = Array.isArray(rawValue) ? rawValue : [rawValue];
+    return values.every((item) => {
+      const value = Number(item);
+      return Number.isInteger(value) && value > 0;
+    });
+  });
+}
+
 export const temuHandler: PlatformHandler = {
   platform: "temu",
 
@@ -72,6 +98,13 @@ export const temuHandler: PlatformHandler = {
 
     if (hasTemplateImageBindings && !normalizedTemplateImageBindings) {
       errors.push("图片索引绑定格式无效，请输入合法 JSON 对象");
+    }
+
+    if (
+      normalizedTemplateImageBindings &&
+      !validateTemplateImageBindingsOneBased(normalizedTemplateImageBindings)
+    ) {
+      errors.push("图片索引绑定必须从 1 开始，请填写 1、2、3 这样的图片序号");
     }
 
     if (vendorId !== undefined && vendorId !== null && vendorId !== '' && !Number.isFinite(Number(vendorId))) {
