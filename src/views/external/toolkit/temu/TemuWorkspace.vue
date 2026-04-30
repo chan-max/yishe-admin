@@ -526,6 +526,15 @@
                 </el-button>
                 <el-button
                   size="small"
+                  type="warning"
+                  :disabled="!selectedRepriceablePriceReviewRows.length || priceReviewBatchSubmitting"
+                  :loading="priceReviewBatchSubmittingMode === 'reprice'"
+                  @click="submitSelectedPriceReviewRows('reprice')"
+                >
+                  批量重新报价
+                </el-button>
+                <el-button
+                  size="small"
                   type="danger"
                   :disabled="!selectedAbandonablePriceReviewRows.length || priceReviewBatchSubmitting"
                   :loading="priceReviewBatchSubmittingMode === 'abandon'"
@@ -705,6 +714,73 @@
         <div v-else class="temu-workspace__unsupported">正在加载记录详情...</div>
       </div>
     </el-dialog>
+
+    <el-dialog
+      v-model="priceReviewBatchRepriceVisible"
+      title="批量重新报价"
+      width="820px"
+      append-to-body
+      destroy-on-close
+      class="temu-workspace__batch-reprice-dialog"
+    >
+      <div class="temu-workspace__batch-reprice-head">
+        <span v-if="priceReviewBatchSubmittingMode === 'reprice'">
+          处理中 {{ priceReviewBatchFinishedCount }}/{{ priceReviewBatchTotalCount }}
+        </span>
+        <span v-else>已选 {{ priceReviewBatchRepriceRows.length }} 条</span>
+        <small>默认按各自当前价减 0.01，可逐行修改。</small>
+      </div>
+      <div v-if="priceReviewBatchSubmittingMode === 'reprice'" class="temu-workspace__batch-reprice-progress">
+        <el-progress
+          :percentage="priceReviewBatchRepriceProgressPercent"
+          :stroke-width="8"
+          :show-text="false"
+        />
+        <div class="temu-workspace__batch-reprice-stats">
+          <el-tag size="small" effect="plain">成功 {{ priceReviewBatchSuccessCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="danger">失败 {{ priceReviewBatchFailedCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="warning">剩余 {{ priceReviewBatchRemainingCount }}</el-tag>
+        </div>
+      </div>
+      <div class="common-table">
+        <vxe-grid
+          v-bind="priceReviewBatchRepriceGridOptions"
+          :data="priceReviewBatchRepriceRows"
+          class="temu-workspace__batch-reprice-table"
+        >
+          <template #batchRepriceIdentitySlot="{ row }">
+            <div class="temu-workspace__batch-reprice-identity">
+              <strong>{{ row.skuId }}</strong>
+              <span>{{ row.skuExtCode }}</span>
+            </div>
+          </template>
+          <template #batchRepriceInputSlot="{ row }">
+            <el-input-number
+              v-model="priceReviewBatchRepricePrices[row.rowKey]"
+              size="small"
+              :min="0"
+              :precision="2"
+              :step="0.01"
+              controls-position="right"
+              class="temu-workspace__batch-reprice-input"
+            />
+          </template>
+        </vxe-grid>
+      </div>
+      <template #footer>
+        <el-button :disabled="priceReviewBatchSubmittingMode === 'reprice'" @click="priceReviewBatchRepriceVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="warning"
+          :loading="priceReviewBatchSubmittingMode === 'reprice'"
+          :disabled="priceReviewBatchSubmittingMode === 'reprice'"
+          @click="confirmBatchRepriceRows"
+        >
+          提交重新报价
+        </el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
@@ -869,11 +945,16 @@ const priceReviewSubmitMarks = reactive<Record<string, PriceReviewSubmitMark>>({
 const selectedPriceReviewRowKeys = ref<string[]>([]);
 const priceReviewPreviewGridRef = ref<VxeGridInstance<PriceReviewPreviewRow>>();
 const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
-const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("pending");
+const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("all");
 const priceReviewBatchSubmitting = ref(false);
-const priceReviewBatchSubmittingMode = ref<"" | "confirm" | "abandon">("");
+const priceReviewBatchSubmittingMode = ref<"" | "confirm" | "abandon" | "reprice">("");
 const priceReviewBatchFinishedCount = ref(0);
 const priceReviewBatchTotalCount = ref(0);
+const priceReviewBatchSuccessCount = ref(0);
+const priceReviewBatchFailedCount = ref(0);
+const priceReviewBatchRepriceVisible = ref(false);
+const priceReviewBatchRepriceRows = ref<PriceReviewPreviewRow[]>([]);
+const priceReviewBatchRepricePrices = reactive<Record<string, number>>({});
 let taskRunPollTimer: number | null = null;
 
 const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
@@ -1030,6 +1111,39 @@ const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
       fixed: "right",
       align: "center",
       slots: { default: "priceReviewOperationSlot" },
+    },
+  ],
+});
+
+const priceReviewBatchRepriceGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<PriceReviewPreviewRow>),
+  maxHeight: 520,
+  columns: [
+    {
+      title: "SKU",
+      field: "skuId",
+      minWidth: 180,
+      slots: { default: "batchRepriceIdentitySlot" },
+    },
+    {
+      title: "当前价",
+      field: "currentPrice",
+      width: 110,
+      align: "right",
+      formatter: ({ row }) => `¥${row.currentPrice}`,
+    },
+    {
+      title: "默认新价",
+      field: "rowKey",
+      width: 160,
+      align: "right",
+      slots: { default: "batchRepriceInputSlot" },
+    },
+    {
+      title: "商品",
+      field: "productName",
+      minWidth: 220,
+      showOverflow: "tooltip",
     },
   ],
 });
@@ -1690,6 +1804,9 @@ const selectedPriceReviewRows = computed(() => {
 const selectedSubmittablePriceReviewRows = computed(() =>
   selectedPriceReviewRows.value.filter((row) => canSubmitPriceReviewRow(row) && isSelectablePriceReviewRow(row)),
 );
+const selectedRepriceablePriceReviewRows = computed(() =>
+  selectedPriceReviewRows.value.filter((row) => canRepricePriceReviewRow(row) && isSelectablePriceReviewRow(row)),
+);
 const selectedAbandonablePriceReviewRows = computed(() =>
   selectedPriceReviewRows.value.filter((row) => !!row.rawPriceOrderId && isSelectablePriceReviewRow(row)),
 );
@@ -1701,6 +1818,15 @@ const priceReviewBatchProgressText = computed(() => {
     return "";
   }
   return `处理中 ${priceReviewBatchFinishedCount.value}/${priceReviewBatchTotalCount.value}`;
+});
+const priceReviewBatchRemainingCount = computed(() =>
+  Math.max(0, priceReviewBatchTotalCount.value - priceReviewBatchFinishedCount.value),
+);
+const priceReviewBatchRepriceProgressPercent = computed(() => {
+  if (priceReviewBatchTotalCount.value <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((priceReviewBatchFinishedCount.value / priceReviewBatchTotalCount.value) * 100));
 });
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
@@ -2119,8 +2245,17 @@ const refreshTaskRuns = async () => {
 
 const resetPriceReviewFilters = () => {
   priceReviewRiskFilter.value = "all";
-  priceReviewStatusFilter.value = "pending";
+  priceReviewStatusFilter.value = "all";
 };
+
+const parsePriceYuanToCent = (value: any) => {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) {
+    return null;
+  }
+  return Math.round(numericValue * 100);
+};
+const formatPriceCentToYuanNumber = (value: number | null) => Math.max(0, Number(value || 0) - 1) / 100;
 
 const canSubmitPriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
   !!(row?.rawPriceOrderId && row.rawSkuId && row.rawSuggestPrice !== null);
@@ -2243,8 +2378,8 @@ const submitRepricePriceReviewRow = async (row: PriceReviewPreviewRow) => {
         type: "warning",
       },
     );
-    const priceCent = Math.round(Number(value) * 100);
-    if (!Number.isFinite(priceCent) || priceCent < 0) {
+    const priceCent = parsePriceYuanToCent(value);
+    if (priceCent === null) {
       ElMessage.warning("请输入合法价格");
       return;
     }
@@ -2346,7 +2481,7 @@ const onPriceReviewSelectionChange = ({ records }: { records: PriceReviewPreview
     .filter(Boolean);
 };
 
-const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon") => {
+const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "reprice") => {
   if (!props.profileId) {
     ElMessage.warning("请先选择执行环境");
     return;
@@ -2358,13 +2493,36 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon") => {
   }
 
   const rows =
-    mode === "confirm" ? selectedSubmittablePriceReviewRows.value : selectedAbandonablePriceReviewRows.value;
+    mode === "confirm"
+      ? selectedSubmittablePriceReviewRows.value
+      : mode === "reprice"
+        ? selectedRepriceablePriceReviewRows.value
+        : selectedAbandonablePriceReviewRows.value;
   if (!rows.length) {
-    ElMessage.warning(mode === "confirm" ? "没有可确认核价的已选行" : "没有可不核价的已选行");
+    ElMessage.warning(
+      mode === "confirm"
+        ? "没有可确认核价的已选行"
+        : mode === "reprice"
+          ? "没有可重新报价的已选行"
+          : "没有可不核价的已选行",
+    );
     return;
   }
 
-  const actionText = mode === "confirm" ? "批量确认核价" : "批量不核价";
+  const actionText =
+    mode === "confirm" ? "批量确认核价" : mode === "reprice" ? "批量重新报价" : "批量不核价";
+  if (mode === "reprice") {
+    priceReviewBatchRepriceRows.value = rows;
+    Object.keys(priceReviewBatchRepricePrices).forEach((rowKey) => {
+      delete priceReviewBatchRepricePrices[rowKey];
+    });
+    rows.forEach((row) => {
+      priceReviewBatchRepricePrices[row.rowKey] = formatPriceCentToYuanNumber(row.rawCurrentPrice);
+    });
+    priceReviewBatchRepriceVisible.value = true;
+    return;
+  }
+
   try {
     await ElMessageBox.confirm(`确认对 ${rows.length} 条记录执行${actionText}吗？`, actionText, {
       type: mode === "confirm" ? "warning" : "error",
@@ -2379,12 +2537,17 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon") => {
   priceReviewBatchSubmittingMode.value = mode;
   priceReviewBatchFinishedCount.value = 0;
   priceReviewBatchTotalCount.value = rows.length;
+  priceReviewBatchSuccessCount.value = 0;
+  priceReviewBatchFailedCount.value = 0;
   let successCount = 0;
 
   for (const row of rows) {
     const success = await submitPriceReviewRowWithoutConfirm(row, mode);
     if (success) {
       successCount += 1;
+      priceReviewBatchSuccessCount.value += 1;
+    } else {
+      priceReviewBatchFailedCount.value += 1;
     }
     priceReviewBatchFinishedCount.value += 1;
   }
@@ -2396,6 +2559,54 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon") => {
     return !(mark?.status === "success" && mark.markInvalid);
   });
   ElMessage.success(`${actionText}完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+};
+
+const confirmBatchRepriceRows = async () => {
+  const rows = priceReviewBatchRepriceRows.value.filter((row) => isSelectablePriceReviewRow(row));
+  if (!rows.length) {
+    ElMessage.warning("没有可重新报价的记录");
+    return;
+  }
+
+  const priceMap = new Map<string, number>();
+  for (const row of rows) {
+    const priceCent = parsePriceYuanToCent(priceReviewBatchRepricePrices[row.rowKey]);
+    if (priceCent === null) {
+      ElMessage.warning(`SKU ${row.skuId} 的报价不合法`);
+      return;
+    }
+    priceMap.set(row.rowKey, priceCent);
+  }
+
+  priceReviewBatchSubmitting.value = true;
+  priceReviewBatchSubmittingMode.value = "reprice";
+  priceReviewBatchFinishedCount.value = 0;
+  priceReviewBatchTotalCount.value = rows.length;
+  priceReviewBatchSuccessCount.value = 0;
+  priceReviewBatchFailedCount.value = 0;
+  let successCount = 0;
+
+  for (const row of rows) {
+    const success = await submitPriceReviewRowWithoutConfirm(row, "reprice", {
+      overridePrice: priceMap.get(row.rowKey),
+    });
+    if (success) {
+      successCount += 1;
+      priceReviewBatchSuccessCount.value += 1;
+    } else {
+      priceReviewBatchFailedCount.value += 1;
+    }
+    priceReviewBatchFinishedCount.value += 1;
+  }
+
+  priceReviewBatchSubmitting.value = false;
+  priceReviewBatchSubmittingMode.value = "";
+  priceReviewBatchRepriceVisible.value = false;
+  selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
+    const mark = priceReviewSubmitMarks[rowKey];
+    return !(mark?.status === "success" && mark.markInvalid);
+  });
+  ElMessage.success(`批量重新报价完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
 };
 
 const onTaskRunSelectionChange = ({ records }: { records: TemuTaskRunSummary[] }) => {
@@ -3478,6 +3689,69 @@ onBeforeUnmount(() => {
 
 .temu-workspace__price-review-filter {
   width: 220px;
+}
+
+.temu-workspace__batch-reprice-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.temu-workspace__batch-reprice-head small {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.temu-workspace__batch-reprice-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.temu-workspace__batch-reprice-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.temu-workspace__batch-reprice-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.temu-workspace__batch-reprice-identity strong,
+.temu-workspace__batch-reprice-identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__batch-reprice-identity strong {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+}
+
+.temu-workspace__batch-reprice-identity span {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.temu-workspace__batch-reprice-input {
+  width: 132px;
 }
 
 .temu-task-log-list {
