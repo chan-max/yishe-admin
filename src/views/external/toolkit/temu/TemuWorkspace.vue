@@ -381,22 +381,6 @@
           class="temu-workspace__task-detail temu-workspace__task-detail--dialog"
         >
           <div class="temu-workspace__task-detail-head">
-            <div>
-              <div class="temu-workspace__result-title">
-                <span>{{ activeTaskRunDetail.actionLabel }}</span>
-                <el-tag
-                  size="small"
-                  effect="plain"
-                  :type="resolveTaskRunStatusTagType(activeTaskRunDetail.status)"
-                >
-                  {{ resolveTaskRunStatusLabel(activeTaskRunDetail.status) }}
-                </el-tag>
-              </div>
-              <div class="temu-workspace__editor-desc">
-                {{ activeTaskRunDetail.message || "当前记录暂无附加说明。" }}
-              </div>
-            </div>
-
             <div class="temu-workspace__task-head-side">
               <div class="temu-workspace__task-meta-compact">
                 <div>
@@ -508,13 +492,21 @@
           </div>
 
           <div
-            v-if="taskRunPriceReviewPreviewRows.length"
+            v-if="isPriceReviewTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>任务结果列表</span>
                 <el-tag size="small" effect="plain">{{ taskRunPriceReviewPreviewRows.length }}</el-tag>
+                <el-tag
+                  v-if="taskRunPriceReviewTotalCount !== taskRunPriceReviewPreviewRows.length"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
+                  全部 {{ taskRunPriceReviewTotalCount }}
+                </el-tag>
                 <el-tag v-if="selectedPriceReviewRows.length" size="small" effect="plain" type="success">
                   已选 {{ selectedPriceReviewRows.length }}
                 </el-tag>
@@ -522,7 +514,7 @@
                   {{ priceReviewBatchProgressText }}
                 </el-tag>
               </div>
-              <div class="temu-workspace__price-review-batch-actions">
+              <div v-if="isPriceReviewBatchAvailable" class="temu-workspace__price-review-batch-actions">
                 <el-button
                   size="small"
                   type="primary"
@@ -543,8 +535,36 @@
                 </el-button>
               </div>
             </div>
+            <div class="temu-workspace__price-review-filters">
+              <el-select
+                v-model="priceReviewRiskFilter"
+                class="temu-workspace__price-review-filter"
+                size="small"
+                placeholder="价差比"
+              >
+                <el-option label="全部价差比" value="all" />
+                <el-option label="涨价/持平：>= 0%" value="up" />
+                <el-option label="绿色：不错，降幅 0% - 10%" value="green" />
+                <el-option label="黄色：可接受，降幅 10% - 20%" value="yellow" />
+                <el-option label="橙色：偏高，降幅 20% - 30%" value="orange" />
+                <el-option label="红色：较差，降幅 30% - 50%" value="red" />
+                <el-option label="黑红：降幅 > 50%" value="critical" />
+              </el-select>
+              <el-select
+                v-model="priceReviewStatusFilter"
+                class="temu-workspace__price-review-filter"
+                size="small"
+                placeholder="处理状态"
+              >
+                <el-option label="全部状态" value="all" />
+                <el-option label="待处理" value="pending" />
+                <el-option label="已处理" value="processed" />
+              </el-select>
+              <el-button size="small" text @click="resetPriceReviewFilters">重置</el-button>
+            </div>
             <div class="common-table">
               <vxe-grid
+                ref="priceReviewPreviewGridRef"
                 v-bind="priceReviewPreviewGridOptions"
                 :data="taskRunPriceReviewPreviewRows"
                 class="temu-workspace__preview-table"
@@ -592,7 +612,11 @@
                 </template>
 
                 <template #priceReviewPricingSlot="{ row }">
-                  <div class="temu-workspace__price-review-pricing" :class="`is-${row.priceDecisionTone}`">
+                  <div
+                    class="temu-workspace__price-review-pricing"
+                    :class="`is-${row.priceDecisionTone}`"
+                    :style="row.priceDecisionStyle"
+                  >
                     <div class="temu-workspace__price-review-prices">
                       <div>
                         <span>当前价</span>
@@ -608,7 +632,7 @@
                       </div>
                     </div>
                     <div class="temu-workspace__price-review-meter">
-                      <span>{{ row.priceChangeRatioDisplay }}</span>
+                      <strong>{{ row.priceChangeRatioDisplay }}</strong>
                       <em>{{ row.priceDecisionText }}</em>
                     </div>
                   </div>
@@ -688,7 +712,7 @@
 import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useLocalStorage } from "@vueuse/core";
-import type { VxeGridProps } from "vxe-table";
+import type { VxeGridInstance, VxeGridProps } from "vxe-table";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
   batchDeleteTemuTaskRuns,
@@ -768,9 +792,12 @@ interface PriceReviewPreviewRow {
   priceDifferenceRatio: string;
   priceDifferenceDisplay: string;
   priceChangeRatioDisplay: string;
+  priceChangeRatioValue: number | null;
   priceDecisionTone: "success" | "warning" | "danger" | "neutral";
   priceDecisionText: string;
+  priceDecisionStyle: Record<string, string>;
   times: string;
+  processed: boolean;
   invalid: boolean;
   invalidReason: string;
   submitStatus: string;
@@ -785,6 +812,9 @@ interface PriceReviewSubmitMark {
   markInvalid?: boolean;
   completedLabel?: string;
 }
+
+type PriceReviewRiskFilter = "all" | "up" | "green" | "yellow" | "orange" | "red" | "critical";
+type PriceReviewStatusFilter = "all" | "pending" | "processed";
 
 const props = defineProps<{
   clientId?: string;
@@ -837,6 +867,9 @@ const taskRunPollingBusy = ref(false);
 const priceReviewSubmittingKey = ref("");
 const priceReviewSubmitMarks = reactive<Record<string, PriceReviewSubmitMark>>({});
 const selectedPriceReviewRowKeys = ref<string[]>([]);
+const priceReviewPreviewGridRef = ref<VxeGridInstance<PriceReviewPreviewRow>>();
+const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
+const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("pending");
 const priceReviewBatchSubmitting = ref(false);
 const priceReviewBatchSubmittingMode = ref<"" | "confirm" | "abandon">("");
 const priceReviewBatchFinishedCount = ref(0);
@@ -920,6 +953,12 @@ const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
     ...(commonGridOptions as any).rowConfig,
     keyField: "rowKey",
   },
+  rowClassName: ({ row }: { row: PriceReviewPreviewRow }) =>
+    row.processed ? "temu-workspace__price-review-row--processed" : "",
+  checkboxConfig: {
+    ...(commonGridOptions as any).checkboxConfig,
+    checkMethod: ({ row }: { row: PriceReviewPreviewRow }) => isSelectablePriceReviewRow(row),
+  },
   maxHeight: 780,
   columns: [
     { type: "checkbox", width: 46, fixed: "left" },
@@ -929,6 +968,14 @@ const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
       width: 112,
       align: "center",
       slots: { default: "priceReviewImageSlot" },
+    },
+    {
+      title: "价格判断",
+      field: "priceDifference",
+      minWidth: 280,
+      align: "left",
+      headerAlign: "left",
+      slots: { default: "priceReviewPricingSlot" },
     },
     {
       title: "商品",
@@ -960,12 +1007,6 @@ const priceReviewPreviewGridOptions = ref<VxeGridProps<PriceReviewPreviewRow>>({
       field: "skuProperties",
       minWidth: 180,
       showOverflow: "tooltip",
-    },
-    {
-      title: "价格判断",
-      field: "priceDifference",
-      minWidth: 280,
-      slots: { default: "priceReviewPricingSlot" },
     },
     { title: "次数", field: "times", width: 80, align: "center" },
     {
@@ -1269,37 +1310,105 @@ const formatSignedPercent = (value: number | null) => {
   }
   return "0.00%";
 };
+const priceReviewDecisionRanges = [
+  {
+    max: 0,
+    tone: "success" as const,
+    text: "建议涨价，可优先核价",
+    color: "#15803d",
+    textColor: "#14532d",
+    softColor: "rgba(22, 163, 74, 0.07)",
+    badgeColor: "#ecfdf3",
+    borderColor: "rgba(22, 163, 74, 0.42)",
+    gradientColor: "rgba(22, 163, 74, 0.08)",
+  },
+  {
+    max: 0.1,
+    tone: "success" as const,
+    text: "降幅不错，符合标准",
+    color: "#16a34a",
+    textColor: "#14532d",
+    softColor: "rgba(34, 197, 94, 0.06)",
+    badgeColor: "#f0fdf4",
+    borderColor: "rgba(34, 197, 94, 0.38)",
+    gradientColor: "rgba(34, 197, 94, 0.08)",
+  },
+  {
+    max: 0.2,
+    tone: "warning" as const,
+    text: "降幅可接受，核算空间",
+    color: "#b45309",
+    textColor: "#78350f",
+    softColor: "rgba(202, 138, 4, 0.07)",
+    badgeColor: "#fffbeb",
+    borderColor: "rgba(202, 138, 4, 0.42)",
+    gradientColor: "rgba(202, 138, 4, 0.1)",
+  },
+  {
+    max: 0.3,
+    tone: "warning" as const,
+    text: "降幅偏高，谨慎核价",
+    color: "#c2410c",
+    textColor: "#7c2d12",
+    softColor: "rgba(249, 115, 22, 0.08)",
+    badgeColor: "#fff7ed",
+    borderColor: "rgba(249, 115, 22, 0.46)",
+    gradientColor: "rgba(249, 115, 22, 0.12)",
+  },
+  {
+    max: 0.5,
+    tone: "danger" as const,
+    text: "价格较差，强烈复核",
+    color: "#b91c1c",
+    textColor: "#7f1d1d",
+    softColor: "rgba(220, 38, 38, 0.08)",
+    badgeColor: "#fef2f2",
+    borderColor: "rgba(220, 38, 38, 0.52)",
+    gradientColor: "rgba(220, 38, 38, 0.13)",
+  },
+  {
+    max: Infinity,
+    tone: "danger" as const,
+    text: "极端降价，优先排查",
+    color: "#7f1d1d",
+    textColor: "#450a0a",
+    softColor: "rgba(127, 29, 29, 0.1)",
+    badgeColor: "#fecaca",
+    borderColor: "rgba(127, 29, 29, 0.62)",
+    gradientColor: "rgba(127, 29, 29, 0.2)",
+  },
+];
 const resolvePriceDecision = (changeRatio: number | null) => {
   if (changeRatio === null || !Number.isFinite(changeRatio)) {
     return {
       tone: "neutral" as const,
       text: "缺少当前价",
+      style: {
+        "--price-review-risk-color": "var(--el-text-color-regular)",
+        "--price-review-risk-text": "var(--el-text-color-primary)",
+        "--price-review-risk-soft": "rgba(15, 23, 42, 0.06)",
+        "--price-review-risk-badge": "var(--el-fill-color-blank)",
+        "--price-review-risk-border": "var(--el-border-color-lighter)",
+        "--price-review-risk-gradient": "rgba(15, 23, 42, 0.06)",
+      },
     };
   }
 
-  if (changeRatio >= 0) {
-    return {
-      tone: "success" as const,
-      text: "建议涨价，可优先核价",
-    };
-  }
-
-  const discountRatio = Math.abs(changeRatio);
-  if (discountRatio <= 0.03) {
-    return {
-      tone: "success" as const,
-      text: "小幅让利，阻力较低",
-    };
-  }
-  if (discountRatio <= 0.08) {
-    return {
-      tone: "warning" as const,
-      text: "中等让利，核算毛利",
-    };
-  }
+  const riskRatio = changeRatio >= 0 ? 0 : Math.abs(changeRatio);
+  const matchedRange =
+    priceReviewDecisionRanges.find((range) => riskRatio <= range.max) ||
+    priceReviewDecisionRanges[priceReviewDecisionRanges.length - 1];
   return {
-    tone: "danger" as const,
-    text: "大幅让利，谨慎确认",
+    tone: matchedRange.tone,
+    text: matchedRange.text,
+    style: {
+      "--price-review-risk-color": matchedRange.color,
+      "--price-review-risk-text": matchedRange.textColor,
+      "--price-review-risk-soft": matchedRange.softColor,
+      "--price-review-risk-badge": matchedRange.badgeColor,
+      "--price-review-risk-border": matchedRange.borderColor,
+      "--price-review-risk-gradient": matchedRange.gradientColor,
+    },
   };
 };
 const firstTextFromArray = (value: any) => {
@@ -1309,6 +1418,15 @@ const firstTextFromArray = (value: any) => {
   return String(value.find((item) => String(item || "").trim()) || "").trim();
 };
 const toFiniteNumberOrNull = (value: any) => {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (!normalized || normalized === "-") {
+      return null;
+    }
+  }
   const numericValue = Number(value);
   return Number.isFinite(numericValue) ? numericValue : null;
 };
@@ -1357,6 +1475,7 @@ const resolvePriceReviewCompletedLabel = (mark?: PriceReviewSubmitMark) => {
   }
   return "已不核价";
 };
+const isCompletedPriceReviewMark = (mark?: PriceReviewSubmitMark) => !!(mark?.status === "success" && mark.markInvalid);
 const isPriceReviewSkuInvalid = (sku: Record<string, any>) => {
   return sku?.priceReviewStatus !== 1;
 };
@@ -1390,6 +1509,9 @@ const buildPriceReviewPreviewRows = (
           const skuId = sku?.skuId;
           const priceOrderId = toFiniteNumberOrNull(review?.priceOrderId);
           const suggestPrice = toFiniteNumberOrNull(review?.suggestSupplyPrice);
+          if (suggestPrice === null) {
+            return;
+          }
           const currentPrice = toFiniteNumberOrNull(review?.supplyPrice);
           const computedPriceDifference =
             suggestPrice !== null && currentPrice !== null ? suggestPrice - currentPrice : null;
@@ -1409,7 +1531,8 @@ const buildPriceReviewPreviewRows = (
               skuIndex,
             ].join("-");
           const submitMark = priceReviewSubmitMarks[rowKey] || (persistedMarks[rowKey] as PriceReviewSubmitMark);
-          const invalid = isPriceReviewSkuInvalid(sku) || !!submitMark?.markInvalid;
+          const processed = isCompletedPriceReviewMark(submitMark);
+          const invalid = isPriceReviewSkuInvalid(sku) || processed;
           const completedLabel = resolvePriceReviewCompletedLabel(submitMark);
           rows.push({
             rowKey,
@@ -1433,9 +1556,12 @@ const buildPriceReviewPreviewRows = (
             priceDifferenceRatio: formatPercent(review?.priceDifferenceRatio),
             priceDifferenceDisplay: formatSignedCurrency(computedPriceDifference),
             priceChangeRatioDisplay: formatSignedPercent(computedPriceChangeRatio),
+            priceChangeRatioValue: computedPriceChangeRatio,
             priceDecisionTone: priceDecision.tone,
             priceDecisionText: priceDecision.text,
+            priceDecisionStyle: priceDecision.style,
             times: toDisplayText(review?.times),
+            processed,
             invalid,
             invalidReason: invalid ? (completedLabel || "已作废") : "",
             submitStatus: submitMark
@@ -1510,18 +1636,65 @@ const taskRunLogEntries = computed<TemuTaskRunLogEntry[]>(() =>
 const taskRunParamsText = computed(() => jsonText(activeTaskRunDetail.value?.params ?? null));
 const taskRunResultText = computed(() => jsonText(activeTaskRunDetail.value?.result ?? null));
 const taskRunLogsText = computed(() => jsonText(taskRunLogEntries.value));
-const taskRunPriceReviewPreviewRows = computed(() =>
+const isPriceReviewTaskRunResult = computed(
+  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.price-review.list",
+);
+const taskRunPriceReviewRawRows = computed(() =>
   buildPriceReviewPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
+);
+const taskRunPriceReviewTotalCount = computed(() => taskRunPriceReviewRawRows.value.length);
+const matchPriceReviewRiskFilter = (row: PriceReviewPreviewRow) => {
+  const ratio = row.priceChangeRatioValue;
+  if (priceReviewRiskFilter.value === "all") {
+    return true;
+  }
+  if (ratio === null || !Number.isFinite(ratio)) {
+    return false;
+  }
+  if (priceReviewRiskFilter.value === "up") {
+    return ratio >= 0;
+  }
+  const discountRatio = Math.abs(ratio);
+  if (priceReviewRiskFilter.value === "green") {
+    return ratio < 0 && discountRatio <= 0.1;
+  }
+  if (priceReviewRiskFilter.value === "yellow") {
+    return ratio < 0 && discountRatio > 0.1 && discountRatio <= 0.2;
+  }
+  if (priceReviewRiskFilter.value === "orange") {
+    return ratio < 0 && discountRatio > 0.2 && discountRatio <= 0.3;
+  }
+  if (priceReviewRiskFilter.value === "red") {
+    return ratio < 0 && discountRatio > 0.3 && discountRatio <= 0.5;
+  }
+  return ratio < 0 && discountRatio > 0.5;
+};
+const taskRunPriceReviewPreviewRows = computed(() =>
+  taskRunPriceReviewRawRows.value.filter((row) => {
+    if (!matchPriceReviewRiskFilter(row)) {
+      return false;
+    }
+    if (priceReviewStatusFilter.value === "pending" && row.processed) {
+      return false;
+    }
+    if (priceReviewStatusFilter.value === "processed" && !row.processed) {
+      return false;
+    }
+    return true;
+  }),
 );
 const selectedPriceReviewRows = computed(() => {
   const selectedKeys = new Set(selectedPriceReviewRowKeys.value);
   return taskRunPriceReviewPreviewRows.value.filter((row) => selectedKeys.has(row.rowKey));
 });
 const selectedSubmittablePriceReviewRows = computed(() =>
-  selectedPriceReviewRows.value.filter((row) => canSubmitPriceReviewRow(row) && !row.invalid),
+  selectedPriceReviewRows.value.filter((row) => canSubmitPriceReviewRow(row) && isSelectablePriceReviewRow(row)),
 );
 const selectedAbandonablePriceReviewRows = computed(() =>
-  selectedPriceReviewRows.value.filter((row) => !!row.rawPriceOrderId && !row.invalid),
+  selectedPriceReviewRows.value.filter((row) => !!row.rawPriceOrderId && isSelectablePriceReviewRow(row)),
+);
+const isPriceReviewBatchAvailable = computed(() =>
+  taskRunPriceReviewPreviewRows.value.some((row) => isSelectablePriceReviewRow(row)),
 );
 const priceReviewBatchProgressText = computed(() => {
   if (!priceReviewBatchSubmitting.value || priceReviewBatchTotalCount.value <= 0) {
@@ -1944,10 +2117,16 @@ const refreshTaskRuns = async () => {
   await loadTaskRuns();
 };
 
+const resetPriceReviewFilters = () => {
+  priceReviewRiskFilter.value = "all";
+  priceReviewStatusFilter.value = "pending";
+};
+
 const canSubmitPriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
   !!(row?.rawPriceOrderId && row.rawSkuId && row.rawSuggestPrice !== null);
 const canRepricePriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
   !!(row?.rawPriceOrderId && row.rawSkuId && row.rawCurrentPrice !== null);
+const isSelectablePriceReviewRow = (row?: PriceReviewPreviewRow | null) => !!row && !row.invalid && !row.processed;
 
 const buildSinglePriceReviewPayload = (
   row: PriceReviewPreviewRow,
@@ -2162,6 +2341,7 @@ const submitPriceReviewRowWithoutConfirm = async (
 
 const onPriceReviewSelectionChange = ({ records }: { records: PriceReviewPreviewRow[] }) => {
   selectedPriceReviewRowKeys.value = (Array.isArray(records) ? records : [])
+    .filter((row) => isSelectablePriceReviewRow(row))
     .map((row) => String(row?.rowKey || "").trim())
     .filter(Boolean);
 };
@@ -2417,6 +2597,14 @@ watch(activeTaskRunId, () => {
   selectedPriceReviewRowKeys.value = [];
 });
 
+watch(taskRunPriceReviewPreviewRows, (rows) => {
+  const selectableKeys = new Set(rows.filter((row) => isSelectablePriceReviewRow(row)).map((row) => row.rowKey));
+  selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) =>
+    selectableKeys.has(rowKey),
+  );
+  priceReviewPreviewGridRef.value?.clearCheckboxRow?.();
+});
+
 watch(
   () => `${selectedActionKey.value}|${onlyCurrentActionRuns.value}`,
   () => {
@@ -2585,6 +2773,14 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
+.temu-workspace__preview-table :deep(.temu-workspace__price-review-row--processed) {
+  opacity: 0.48;
+}
+
+.temu-workspace__preview-table :deep(.temu-workspace__price-review-row--processed:hover) {
+  opacity: 0.72;
+}
+
 .temu-workspace__preview-image {
   width: 86px;
   height: 86px;
@@ -2652,24 +2848,12 @@ onBeforeUnmount(() => {
   gap: 8px;
   min-width: 0;
   padding: 8px;
-  border: 1px solid var(--el-border-color-lighter);
+  text-align: left;
+  border: 1px solid var(--price-review-risk-border, var(--el-border-color-lighter));
   border-radius: 10px;
-  background: var(--el-fill-color-extra-light);
-}
-
-.temu-workspace__price-review-pricing.is-success {
-  border-color: color-mix(in srgb, var(--el-color-success) 28%, var(--el-border-color-lighter));
-  background: color-mix(in srgb, var(--el-color-success) 8%, var(--el-bg-color));
-}
-
-.temu-workspace__price-review-pricing.is-warning {
-  border-color: color-mix(in srgb, var(--el-color-warning) 34%, var(--el-border-color-lighter));
-  background: color-mix(in srgb, var(--el-color-warning) 10%, var(--el-bg-color));
-}
-
-.temu-workspace__price-review-pricing.is-danger {
-  border-color: color-mix(in srgb, var(--el-color-danger) 34%, var(--el-border-color-lighter));
-  background: color-mix(in srgb, var(--el-color-danger) 9%, var(--el-bg-color));
+  background:
+    linear-gradient(135deg, var(--price-review-risk-gradient, transparent), transparent 72%),
+    var(--price-review-risk-soft, var(--el-fill-color-extra-light));
 }
 
 .temu-workspace__price-review-prices {
@@ -2702,52 +2886,52 @@ onBeforeUnmount(() => {
 
 .temu-workspace__price-review-diff strong {
   font-size: 16px;
-}
-
-.temu-workspace__price-review-pricing.is-success .temu-workspace__price-review-diff strong {
-  color: var(--el-color-success);
-}
-
-.temu-workspace__price-review-pricing.is-warning .temu-workspace__price-review-diff strong {
-  color: var(--el-color-warning);
-}
-
-.temu-workspace__price-review-pricing.is-danger .temu-workspace__price-review-diff strong {
-  color: var(--el-color-danger);
+  color: var(--price-review-risk-color, var(--el-text-color-primary));
 }
 
 .temu-workspace__price-review-meter {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-width: 0;
-  gap: 8px;
+  gap: 10px;
 }
 
-.temu-workspace__price-review-meter span,
+.temu-workspace__price-review-meter strong,
 .temu-workspace__price-review-meter em {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 8px;
+  height: 24px;
   border-radius: 999px;
-  font-size: 11px;
-  line-height: 20px;
   white-space: nowrap;
 }
 
-.temu-workspace__price-review-meter span {
-  background: rgba(15, 23, 42, 0.06);
-  color: var(--el-text-color-primary);
-  font-weight: 700;
+.temu-workspace__price-review-meter strong {
+  min-width: 82px;
+  justify-content: center;
+  padding: 0 10px;
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 24px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 0 0 1px currentColor;
 }
 
 .temu-workspace__price-review-meter em {
   overflow: hidden;
   max-width: 170px;
-  color: var(--el-text-color-regular);
+  padding: 0 8px;
+  color: var(--price-review-risk-text, var(--el-text-color-primary));
+  font-size: 11px;
   font-style: normal;
+  font-weight: 650;
+  line-height: 24px;
   text-overflow: ellipsis;
+}
+
+.temu-workspace__price-review-meter strong {
+  background: var(--price-review-risk-badge, var(--el-fill-color-blank));
+  color: var(--price-review-risk-color, var(--el-text-color-primary));
 }
 
 .temu-workspace__preview-actions {
@@ -3183,7 +3367,7 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__task-dialog :deep(.el-dialog__body) {
-  padding: 18px 24px 24px;
+  padding: 10px 16px 16px;
 }
 
 .temu-workspace__task-dialog-body {
@@ -3193,7 +3377,7 @@ onBeforeUnmount(() => {
 .temu-workspace__task-detail {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -3209,19 +3393,21 @@ onBeforeUnmount(() => {
 
 .temu-workspace__task-head-side {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  max-width: min(760px, 58vw);
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  width: 100%;
   min-width: 0;
 }
 
 .temu-workspace__task-meta-compact {
   display: grid;
-  grid-template-columns: repeat(3, minmax(112px, auto));
-  gap: 4px 10px;
+  grid-template-columns: repeat(6, minmax(92px, auto));
+  gap: 4px 8px;
   justify-content: end;
-  padding: 6px 8px;
+  flex: 1 1 auto;
+  padding: 4px 6px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   background: var(--el-fill-color-extra-light);
@@ -3230,7 +3416,7 @@ onBeforeUnmount(() => {
 .temu-workspace__task-meta-compact div {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 5px;
   min-width: 0;
   white-space: nowrap;
@@ -3244,7 +3430,7 @@ onBeforeUnmount(() => {
 
 .temu-workspace__task-meta-compact strong {
   overflow: hidden;
-  max-width: 190px;
+  max-width: 150px;
   color: var(--el-text-color-primary);
   font-size: 11px;
   font-weight: 650;
@@ -3256,7 +3442,7 @@ onBeforeUnmount(() => {
 .temu-workspace__task-detail-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -3272,13 +3458,26 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   width: 100%;
 }
 
 .temu-workspace__price-review-batch-actions {
   margin-left: auto;
   justify-content: flex-end;
+}
+
+.temu-workspace__price-review-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+
+.temu-workspace__price-review-filter {
+  width: 220px;
 }
 
 .temu-task-log-list {
@@ -3377,7 +3576,7 @@ onBeforeUnmount(() => {
   }
 
   .temu-workspace__task-meta-compact {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: stretch;
   }
 
