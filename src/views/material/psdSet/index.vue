@@ -458,22 +458,22 @@
             <div class="psd-set-detail-runtime-strip">
               <div>
                 <span class="info-label">调度</span>
-                <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
-                  {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
+                <el-tag :type="schedulerStatusTagType(getPsdSetDisplaySchedulerMeta(detailData)?.status)" size="small" effect="plain">
+                  {{ schedulerStatusLabel(getPsdSetDisplaySchedulerMeta(detailData)?.status) }}
                 </el-tag>
               </div>
               <div>
                 <span class="info-label">进度</span>
-                <span class="info-value">{{ formatSchedulerProgress(detailData?.schedulerMeta?.progress) }}</span>
+                <span class="info-value">{{ formatSchedulerProgress(getPsdSetDisplaySchedulerMeta(detailData)?.progress) }}</span>
               </div>
               <div>
                 <span class="info-label">节点</span>
                 <span class="info-value">{{ getSchedulerAssignedLabel(detailData) }}</span>
               </div>
             </div>
-            <div v-if="detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError"
+            <div v-if="getPsdSetDisplaySchedulerMeta(detailData)?.currentStep || getPsdSetDisplaySchedulerMeta(detailData)?.lastError"
               class="psd-set-detail-runtime-note">
-              <span>{{ detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError }}</span>
+              <span>{{ getPsdSetDisplaySchedulerMeta(detailData)?.currentStep || getPsdSetDisplaySchedulerMeta(detailData)?.lastError }}</span>
             </div>
 
             <div class="psd-set-detail-json-stack">
@@ -1308,11 +1308,30 @@ function resolvePsdSetStatusMessage(record: any) {
   if (!record || typeof record !== "object") {
     return "-";
   }
+  const displayStatus = getPsdSetDisplayStatus(record);
+  if (displayStatus === "processing") {
+    const displayMeta = getPsdSetDisplaySchedulerMeta(record);
+    const rawMessage = String(record.statusMessage || "").trim();
+    if (
+      normalizePsdSetRuntimeStatus(record.status) !== "processing" ||
+      isPsdSetOfflineWaitingMessage(rawMessage)
+    ) {
+      return String(displayMeta?.currentStep || "").trim() || "PS 正在处理";
+    }
+    return (
+      resolvePsdSetRuntimeStatusMessage(
+        "processing",
+        record.statusMessage,
+        displayMeta,
+      ) || "PS 正在处理"
+    );
+  }
+
   return (
     resolvePsdSetRuntimeStatusMessage(
       String(record.status || "").trim(),
       record.statusMessage,
-      normalizePsdSetSchedulerMeta(record.schedulerMeta),
+      getPsdSetDisplaySchedulerMeta(record),
     ) || "-"
   );
 }
@@ -1335,7 +1354,7 @@ function buildPsdSetRuntimeRecord(
   }
 
   if (
-    isPsdSetTerminalOrManualStatus(target.status) &&
+    isPsdSetTerminalStatus(target.status) &&
     isPsdSetRuntimePayloadActive(payload)
   ) {
     return target;
@@ -1431,12 +1450,11 @@ function isPsdSetRuntimePayloadActive(payload: PsdSetRuntimeUpdatePayload) {
   );
 }
 
-function isPsdSetTerminalOrManualStatus(status: unknown) {
+function isPsdSetTerminalStatus(status: unknown) {
   const normalizedStatus = normalizePsdSetRuntimeStatus(status);
   return (
     normalizedStatus === "completed" ||
-    normalizedStatus === "failed" ||
-    normalizedStatus === "pending"
+    normalizedStatus === "failed"
   );
 }
 
@@ -1487,7 +1505,7 @@ function clearPsdSetRuntimeOverlay(psdSetId: unknown) {
 
 function mergePsdSetRuntimeOverlay(record: any) {
   const overlay = getPsdSetRuntimeOverlay(record?.id);
-  if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalOrManualStatus(record?.status)) {
+  if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalStatus(record?.status)) {
     clearPsdSetRuntimeOverlay(record?.id);
     return record;
   }
@@ -1555,6 +1573,73 @@ function isPsdSetActiveBySummary(psdSetId: unknown) {
   });
 }
 
+function getPsdSetActiveSummaryItem(psdSetId: unknown) {
+  const normalizedId = normalizePsdSetId(psdSetId);
+  if (!normalizedId) {
+    return null;
+  }
+
+  return (
+    activePsdSets.value.find(
+      (item: any) => normalizePsdSetId(item?.id) === normalizedId,
+    ) || null
+  );
+}
+
+function isPsdSetOfflineWaitingMessage(message: unknown) {
+  const text = String(message || "").trim();
+  return /客户端离线|等待重新调度|正在处理中，请稍后重试|正在制作中，请稍后重试/.test(text);
+}
+
+function getPsdSetDisplaySchedulerMeta(record: any) {
+  const schedulerMeta = normalizePsdSetSchedulerMeta(record?.schedulerMeta) || {};
+  const normalizedStatus = normalizePsdSetRuntimeStatus(record?.status);
+  if (normalizedStatus === "completed" || normalizedStatus === "failed") {
+    return schedulerMeta;
+  }
+
+  const activeItem = getPsdSetActiveSummaryItem(record?.id);
+  const activeStatus = normalizePsdSetRuntimeStatus(activeItem?.status);
+  const activeSchedulerStatus = String(activeItem?.schedulerStatus || "").trim();
+  const recordIsActive = isPsdSetRuntimeActive(record);
+  const isActive =
+    recordIsActive ||
+    activeStatus === "processing" ||
+    activeSchedulerStatus === "assigned" ||
+    activeSchedulerStatus === "running";
+
+  if (!isActive) {
+    return schedulerMeta;
+  }
+
+  const rawStep = String(schedulerMeta.currentStep || record?.statusMessage || "").trim();
+  const schedulerMetaStatus = String(schedulerMeta.status || "").trim();
+  const displaySchedulerStatus =
+    activeSchedulerStatus === "assigned" ||
+    (!activeSchedulerStatus && schedulerMetaStatus === "assigned")
+      ? "assigned"
+      : "running";
+  const shouldOverrideStep =
+    normalizedStatus === "pending" ||
+    schedulerMetaStatus === "pending" ||
+    isPsdSetOfflineWaitingMessage(rawStep);
+
+  return {
+    ...schedulerMeta,
+    status: displaySchedulerStatus,
+    assignedClientId:
+      String(activeItem?.assignedClientId || "").trim() ||
+      schedulerMeta.assignedClientId ||
+      null,
+    assignedMachineCode:
+      String(activeItem?.assignedMachineCode || "").trim() ||
+      schedulerMeta.assignedMachineCode ||
+      null,
+    currentStep: shouldOverrideStep ? "PS 正在处理" : rawStep || "PS 正在处理",
+    lastError: shouldOverrideStep ? null : schedulerMeta.lastError || null,
+  };
+}
+
 function getPsdSetDisplayStatus(record: any) {
   if (!record || typeof record !== "object") {
     return normalizePsdSetRuntimeStatus(record) || "";
@@ -1563,8 +1648,7 @@ function getPsdSetDisplayStatus(record: any) {
   const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
   if (
     normalizedStatus === "completed" ||
-    normalizedStatus === "failed" ||
-    normalizedStatus === "pending"
+    normalizedStatus === "failed"
   ) {
     return normalizedStatus;
   }
@@ -1702,11 +1786,10 @@ const detailMetaFormatted = computed(() => {
 });
 
 const detailSchedulerMetaFormatted = computed(() => {
-  const schedulerMeta = detailData.value?.schedulerMeta;
-  if (!schedulerMeta) return "";
+  const schedulerMeta = getPsdSetDisplaySchedulerMeta(detailData.value);
+  if (!schedulerMeta || !Object.keys(schedulerMeta).length) return "";
   try {
-    const parsed = typeof schedulerMeta === "string" ? JSON.parse(schedulerMeta) : schedulerMeta;
-    return JSON.stringify(parsed, null, 2);
+    return JSON.stringify(schedulerMeta, null, 2);
   } catch (e) {
     return String(schedulerMeta);
   }
@@ -1926,7 +2009,7 @@ function formatSchedulerProgress(progress?: number | null) {
 }
 
 function getSchedulerAssignedLabel(row: any) {
-  const meta = normalizePsdSetSchedulerMeta(row?.schedulerMeta);
+  const meta = getPsdSetDisplaySchedulerMeta(row);
   if (!meta) return "-";
   return meta.assignedMachineCode || meta.assignedClientId || "-";
 }
@@ -2121,7 +2204,7 @@ async function loadPsdSetDetailById(psdSetId: unknown, silent = false) {
     const res = await request.get({
       url: `/sticker-psd-set/${normalizedId}`,
     });
-    detailData.value = normalizePsdSetRecord(res?.data || res || {});
+    detailData.value = mergePsdSetRuntimeOverlay(normalizePsdSetRecord(res?.data || res || {}));
   } catch (error: any) {
     if (!silent) {
       console.error("获取套图详情失败:", error);

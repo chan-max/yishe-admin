@@ -263,6 +263,19 @@ const handleProductionStatus = (event: {
     status === 'timeout'
   ) {
     if (psdSetId) {
+      const realtimeItem = realtimeActivePsdSetMap.value[psdSetId]
+      const realtimeStatus = String(realtimeItem?.status || '').trim().toLowerCase()
+      const realtimeSchedulerStatus = String(realtimeItem?.schedulerStatus || '').trim()
+      if (
+        status === 'pending' &&
+        realtimeItem &&
+        (realtimeStatus === 'processing' ||
+          realtimeSchedulerStatus === 'assigned' ||
+          realtimeSchedulerStatus === 'running')
+      ) {
+        scheduleActiveSummaryRefresh(240)
+        return
+      }
       removeRealtimeActivePsdSet(psdSetId)
     }
     scheduleActiveSummaryRefresh(240)
