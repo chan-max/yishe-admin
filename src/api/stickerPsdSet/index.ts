@@ -4,6 +4,8 @@ export interface ActivePsdSetSummaryItem {
   id: string;
   name?: string | null;
   status?: string | null;
+  statusMessage?: string | null;
+  currentStep?: string | null;
   schedulerStatus?: string | null;
   assignedClientId?: string | null;
   assignedMachineCode?: string | null;

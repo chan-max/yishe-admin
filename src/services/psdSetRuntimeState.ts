@@ -45,6 +45,8 @@ const normalizeActivePsdSetItem = (item: any): ActivePsdSetSummaryItem | null =>
     id,
     name: String(item?.name || '').trim() || null,
     status: String(item?.status || '').trim() || null,
+    statusMessage: String(item?.statusMessage || '').trim() || null,
+    currentStep: String(item?.currentStep || '').trim() || null,
     schedulerStatus: String(item?.schedulerStatus || '').trim() || null,
     assignedClientId: String(item?.assignedClientId || '').trim() || null,
     assignedMachineCode: String(item?.assignedMachineCode || '').trim() || null,
@@ -100,6 +102,8 @@ const syncMergedActiveSummary = () => {
         id: item.id,
         name: item.name,
         status: item.status,
+        statusMessage: item.statusMessage,
+        currentStep: item.currentStep,
         schedulerStatus: item.schedulerStatus,
         assignedClientId: item.assignedClientId,
         assignedMachineCode: item.assignedMachineCode,
@@ -142,6 +146,8 @@ const upsertRealtimeActivePsdSet = (
       id,
       name: patch.name ?? previous?.name ?? null,
       status: patch.status ?? previous?.status ?? 'processing',
+      statusMessage: patch.statusMessage ?? previous?.statusMessage ?? null,
+      currentStep: patch.currentStep ?? previous?.currentStep ?? null,
       schedulerStatus: patch.schedulerStatus ?? previous?.schedulerStatus ?? 'running',
       assignedClientId: patch.assignedClientId ?? previous?.assignedClientId ?? null,
       assignedMachineCode: patch.assignedMachineCode ?? previous?.assignedMachineCode ?? null,
@@ -216,6 +222,8 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
     upsertRealtimeActivePsdSet(psdSetId, {
       name: String(event.currentPsSetName || '').trim() || null,
       status: 'processing',
+      statusMessage: String(event.currentStep || '').trim() || '制作中',
+      currentStep: String(event.currentStep || '').trim() || null,
       schedulerStatus: 'running',
       assignedClientId: String(event.clientId || '').trim() || null,
       updateTime: normalizeRuntimeTime(event.lastHeartbeatAt || event.updatedAt),
@@ -245,6 +253,8 @@ const handleProductionStatus = (event: {
     if (psdSetId) {
       upsertRealtimeActivePsdSet(psdSetId, {
         status: 'processing',
+        statusMessage: String((event as any).message || '').trim() || '制作中',
+        currentStep: String((event as any).message || '').trim() || null,
         schedulerStatus: 'running',
         assignedClientId: String(event.assignedClientId || event.clientId || '').trim() || null,
         assignedMachineCode:

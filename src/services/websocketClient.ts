@@ -69,6 +69,7 @@ interface WsState {
 
 interface ClientInfoPayload {
   clientId: string;
+  machineCode?: string | null;
   source: string;
   timestamp?: string;
   app?: {
@@ -146,6 +147,7 @@ export interface ServiceCommandResultEvent {
 
 export interface PsAutomationStatusEvent {
   clientId: string;
+  machineCode?: string | null;
   enabled?: boolean;
   autoDispatchEnabled?: boolean;
   autoSchedulingEnabled?: boolean;
