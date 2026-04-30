@@ -46,6 +46,9 @@ const normalizeActivePsdSetItem = (item: any): ActivePsdSetSummaryItem | null =>
     name: String(item?.name || '').trim() || null,
     status: String(item?.status || '').trim() || null,
     schedulerStatus: String(item?.schedulerStatus || '').trim() || null,
+    statusMessage: String(item?.statusMessage || '').trim() || null,
+    currentStep: String(item?.currentStep || '').trim() || null,
+    progress: typeof item?.progress === 'number' ? item.progress : null,
     assignedClientId: String(item?.assignedClientId || '').trim() || null,
     assignedMachineCode: String(item?.assignedMachineCode || '').trim() || null,
     updateTime: item?.updateTime || null,
@@ -101,6 +104,9 @@ const syncMergedActiveSummary = () => {
         name: item.name,
         status: item.status,
         schedulerStatus: item.schedulerStatus,
+        statusMessage: item.statusMessage,
+        currentStep: item.currentStep,
+        progress: item.progress,
         assignedClientId: item.assignedClientId,
         assignedMachineCode: item.assignedMachineCode,
         updateTime: item.updateTime,
@@ -143,6 +149,9 @@ const upsertRealtimeActivePsdSet = (
       name: patch.name ?? previous?.name ?? null,
       status: patch.status ?? previous?.status ?? 'processing',
       schedulerStatus: patch.schedulerStatus ?? previous?.schedulerStatus ?? 'running',
+      statusMessage: patch.statusMessage ?? previous?.statusMessage ?? null,
+      currentStep: patch.currentStep ?? previous?.currentStep ?? null,
+      progress: patch.progress ?? previous?.progress ?? null,
       assignedClientId: patch.assignedClientId ?? previous?.assignedClientId ?? null,
       assignedMachineCode: patch.assignedMachineCode ?? previous?.assignedMachineCode ?? null,
       updateTime: patch.updateTime ?? previous?.updateTime ?? new Date().toISOString(),
@@ -217,6 +226,9 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
       name: String(event.currentPsSetName || '').trim() || null,
       status: 'processing',
       schedulerStatus: 'running',
+      statusMessage: String(event.currentStep || '').trim() || null,
+      currentStep: String(event.currentStep || '').trim() || null,
+      progress: typeof event.progress === 'number' ? event.progress : null,
       assignedClientId: String(event.clientId || '').trim() || null,
       updateTime: normalizeRuntimeTime(event.lastHeartbeatAt || event.updatedAt),
     })
@@ -237,15 +249,30 @@ const handleProductionStatus = (event: {
   machineCode?: string
   assignedClientId?: string | null
   assignedMachineCode?: string | null
+  message?: string | null
+  currentStep?: string | null
+  progress?: number | null
+  total?: number | null
 }) => {
   const psdSetId = normalizePsdSetId(event?.psdSetId)
   const status = String(event?.status || '').trim().toLowerCase()
 
   if (status === 'processing' || status === 'running' || status === 'assigned') {
     if (psdSetId) {
+      const progress =
+        typeof event.progress === 'number'
+          ? typeof event.total === 'number' && event.total > 0
+            ? Math.max(0, Math.min(100, Math.round((event.progress / event.total) * 100)))
+            : Math.max(0, Math.min(100, event.progress))
+          : null
+      const statusMessage =
+        String(event.currentStep || '').trim() || String(event.message || '').trim() || null
       upsertRealtimeActivePsdSet(psdSetId, {
         status: 'processing',
         schedulerStatus: 'running',
+        statusMessage,
+        currentStep: statusMessage,
+        progress,
         assignedClientId: String(event.assignedClientId || event.clientId || '').trim() || null,
         assignedMachineCode:
           String(event.assignedMachineCode || event.machineCode || '').trim() || null,

@@ -725,6 +725,101 @@
             </div>
           </div>
 
+          <div
+            v-if="isRealPictureTaskRunResult"
+            class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
+          >
+            <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
+              <div class="temu-workspace__section-title-main">
+                <span>实拍图治理列表</span>
+                <el-tag size="small" effect="plain">{{ taskRunRealPictureRows.length }}</el-tag>
+                <el-tag
+                  v-if="taskRunRealPictureTotalCount !== taskRunRealPictureRows.length"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
+                  全部 {{ taskRunRealPictureTotalCount }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="common-table">
+              <vxe-grid
+                v-bind="realPicturePreviewGridOptions"
+                :data="taskRunRealPictureRows"
+                class="temu-workspace__preview-table"
+              >
+                <template #realPictureImageSlot="{ row }">
+                  <el-image
+                    v-if="row.imageUrl && row.imageUrl !== '-'"
+                    class="temu-workspace__preview-image"
+                    :src="row.imageUrl"
+                    :preview-src-list="row.previewImageUrls"
+                    preview-teleported
+                    fit="cover"
+                  />
+                  <span v-else>-</span>
+                </template>
+                <template #realPictureIdentitySlot="{ row }">
+                  <div class="temu-workspace__price-review-identity">
+                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
+                    <div><span>goodsId</span><strong>{{ row.goodsId }}</strong></div>
+                    <div><span>SKU</span><strong>{{ row.skuSummary }}</strong></div>
+                    <div><span>同图</span><strong>{{ row.isSameSku }}</strong></div>
+                  </div>
+                </template>
+                <template #realPictureRulesSlot="{ row }">
+                  <div class="temu-workspace__preview-product">
+                    <span>{{ row.ruleSummary }}</span>
+                    <small>{{ row.statusSummary }}</small>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+
+          <div
+            v-if="isComplianceTaskRunResult"
+            class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
+          >
+            <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
+              <div class="temu-workspace__section-title-main">
+                <span>合规信息列表</span>
+                <el-tag size="small" effect="plain">{{ taskRunComplianceRows.length }}</el-tag>
+                <el-tag
+                  v-if="taskRunComplianceTotalCount !== taskRunComplianceRows.length"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
+                  全部 {{ taskRunComplianceTotalCount }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="common-table">
+              <vxe-grid
+                v-bind="compliancePreviewGridOptions"
+                :data="taskRunComplianceRows"
+                class="temu-workspace__preview-table"
+              >
+                <template #complianceIdentitySlot="{ row }">
+                  <div class="temu-workspace__price-review-identity">
+                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
+                    <div><span>SKC</span><strong>{{ row.skcId }}</strong></div>
+                    <div><span>SKU</span><strong>{{ row.skuId }}</strong></div>
+                    <div><span>单号</span><strong>{{ row.orderId }}</strong></div>
+                  </div>
+                </template>
+                <template #complianceStatusSlot="{ row }">
+                  <div class="temu-workspace__preview-product">
+                    <span>{{ row.statusText }}</span>
+                    <small>{{ row.typeText }}</small>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+
         </div>
 
         <div v-else class="temu-workspace__unsupported">正在加载记录详情...</div>
@@ -903,6 +998,31 @@ interface PriceReviewSubmitMark {
   time: string;
   markInvalid?: boolean;
   completedLabel?: string;
+}
+
+interface RealPicturePreviewRow {
+  rowKey: string;
+  imageUrl: string;
+  previewImageUrls: string[];
+  spuId: string;
+  goodsId: string;
+  skuSummary: string;
+  isSameSku: string;
+  ruleSummary: string;
+  statusSummary: string;
+  productName: string;
+}
+
+interface CompliancePreviewRow {
+  rowKey: string;
+  spuId: string;
+  skcId: string;
+  skuId: string;
+  orderId: string;
+  statusText: string;
+  typeText: string;
+  productName: string;
+  raw: Record<string, any>;
 }
 
 type PriceReviewRiskFilter = "all" | "up" | "green" | "yellow" | "orange" | "red" | "critical";
@@ -1159,6 +1279,63 @@ const priceReviewBatchRepriceGridOptions = ref<VxeGridProps<PriceReviewPreviewRo
       title: "商品",
       field: "productName",
       minWidth: 220,
+      showOverflow: "tooltip",
+    },
+  ],
+});
+
+const realPicturePreviewGridOptions = ref<VxeGridProps<RealPicturePreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<RealPicturePreviewRow>),
+  maxHeight: 780,
+  columns: [
+    {
+      title: "图片",
+      field: "imageUrl",
+      width: 112,
+      align: "center",
+      slots: { default: "realPictureImageSlot" },
+    },
+    {
+      title: "商品信息",
+      field: "spuId",
+      minWidth: 240,
+      slots: { default: "realPictureIdentitySlot" },
+    },
+    {
+      title: "异常/规则",
+      field: "ruleSummary",
+      minWidth: 280,
+      slots: { default: "realPictureRulesSlot" },
+    },
+    {
+      title: "商品名称",
+      field: "productName",
+      minWidth: 260,
+      showOverflow: "tooltip",
+    },
+  ],
+});
+
+const compliancePreviewGridOptions = ref<VxeGridProps<CompliancePreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<CompliancePreviewRow>),
+  maxHeight: 780,
+  columns: [
+    {
+      title: "商品信息",
+      field: "spuId",
+      minWidth: 260,
+      slots: { default: "complianceIdentitySlot" },
+    },
+    {
+      title: "合规状态",
+      field: "statusText",
+      minWidth: 220,
+      slots: { default: "complianceStatusSlot" },
+    },
+    {
+      title: "商品名称",
+      field: "productName",
+      minWidth: 280,
       showOverflow: "tooltip",
     },
   ],
@@ -1547,6 +1724,39 @@ const firstTextFromArray = (value: any) => {
   }
   return String(value.find((item) => String(item || "").trim()) || "").trim();
 };
+const firstDisplayValue = (...values: any[]) => {
+  for (const value of values) {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return "";
+};
+const collectImageUrls = (value: any): string[] => {
+  const urls: string[] = [];
+  const visit = (current: any) => {
+    if (current === undefined || current === null) {
+      return;
+    }
+    if (typeof current === "string") {
+      const normalized = current.trim();
+      if (/^https?:\/\//i.test(normalized)) {
+        urls.push(normalized);
+      }
+      return;
+    }
+    if (Array.isArray(current)) {
+      current.forEach(visit);
+      return;
+    }
+    if (typeof current === "object") {
+      ["image", "imageUrl", "image_url", "url", "thumbUrl", "thumb_url"].forEach((key) => visit(current[key]));
+    }
+  };
+  visit(value);
+  return Array.from(new Set(urls));
+};
 const toFiniteNumberOrNull = (value: any) => {
   if (value === undefined || value === null) {
     return null;
@@ -1708,6 +1918,92 @@ const buildPriceReviewPreviewRows = (
 
   return rows;
 };
+const buildRealPicturePreviewRows = (
+  response?: TemuActionResponse | Record<string, any> | null,
+): RealPicturePreviewRow[] => {
+  const action = String(response?.action || "").trim();
+  if (action !== "goods.real-picture.list") {
+    return [];
+  }
+
+  const result = asPlainObject(response?.result);
+  const items = Array.isArray(result.items) ? result.items : [];
+  return items.map((item: any, index: number) => {
+    const skuInfo = Array.isArray(item?.skuInfo)
+      ? item.skuInfo
+      : Array.isArray(item?.sku_info)
+        ? item.sku_info
+        : [];
+    const ruleList = Array.isArray(item?.ruleCheckResultList)
+      ? item.ruleCheckResultList
+      : Array.isArray(item?.rule_check_result_list)
+        ? item.rule_check_result_list
+        : [];
+    const labelImageList = Array.isArray(item?.labelImageList)
+      ? item.labelImageList
+      : Array.isArray(item?.label_image_list)
+        ? item.label_image_list
+        : [];
+    const previewImageUrls = collectImageUrls([
+      item?.materialImgUrl,
+      item?.material_img_url,
+      item?.labelImageList,
+      item?.label_image_list,
+      item?.skuInfo,
+      item?.sku_info,
+    ]);
+    const ruleSummary = ruleList
+      .map((rule: any) =>
+        firstDisplayValue(rule?.checkTypeName, rule?.check_type_name, rule?.ruleName, rule?.rule_name, rule?.checkType),
+      )
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(" / ");
+    const skuSummary = skuInfo
+      .map((sku: any) => firstDisplayValue(sku?.skuId, sku?.sku_id))
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(" / ");
+
+    return {
+      rowKey: firstDisplayValue(item?.spuId, item?.spu_id, index),
+      imageUrl: previewImageUrls[0] || "-",
+      previewImageUrls,
+      spuId: toDisplayText(item?.spuId || item?.spu_id),
+      goodsId: toDisplayText(item?.goodsId || item?.goods_id),
+      skuSummary: toDisplayText(skuSummary || skuInfo.length),
+      isSameSku: Number(item?.isSameSku || item?.is_same_sku || 0) === 1 ? "是" : "否",
+      ruleSummary: toDisplayText(ruleSummary),
+      statusSummary: `标签图 ${labelImageList.length} / 规则 ${ruleList.length}`,
+      productName: toDisplayText(item?.productName || item?.product_name || item?.goodsName || item?.goods_name),
+    };
+  });
+};
+const buildCompliancePreviewRows = (
+  response?: TemuActionResponse | Record<string, any> | null,
+): CompliancePreviewRow[] => {
+  const action = String(response?.action || "").trim();
+  if (action !== "compliance.page-query") {
+    return [];
+  }
+
+  const result = asPlainObject(response?.result);
+  const items = Array.isArray(result.items) ? result.items : [];
+  return items.map((item: any, index: number) => {
+    const row = asPlainObject(item);
+    return {
+      rowKey: firstDisplayValue(row?.id, row?.orderId, row?.order_id, row?.spuId, row?.spu_id, index),
+      spuId: toDisplayText(row?.spuId || row?.spu_id || row?.productId || row?.product_id),
+      skcId: toDisplayText(row?.skcId || row?.skc_id || row?.productSkcId || row?.product_skc_id),
+      skuId: toDisplayText(row?.skuId || row?.sku_id || row?.productSkuId || row?.product_sku_id),
+      orderId: toDisplayText(row?.orderId || row?.order_id || row?.id),
+      statusText: toDisplayText(row?.statusText || row?.status_text || row?.statusName || row?.status_name || row?.status),
+      typeText: toDisplayText(row?.typeText || row?.type_text || row?.typeName || row?.type_name || row?.type),
+      productName: toDisplayText(row?.productName || row?.product_name || row?.goodsName || row?.goods_name),
+      raw: row,
+    };
+  });
+};
 const activeActionRunning = computed(() => {
   if (!selectedAction.value?.key) {
     return false;
@@ -1769,6 +2065,12 @@ const taskRunLogsText = computed(() => jsonText(taskRunLogEntries.value));
 const isPriceReviewTaskRunResult = computed(
   () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.price-review.list",
 );
+const isRealPictureTaskRunResult = computed(
+  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.real-picture.list",
+);
+const isComplianceTaskRunResult = computed(
+  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "compliance.page-query",
+);
 const taskRunPriceReviewRawRows = computed(() =>
   buildPriceReviewPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
 );
@@ -1813,6 +2115,20 @@ const taskRunPriceReviewPreviewRows = computed(() =>
     return true;
   }),
 );
+const taskRunRealPictureRows = computed(() =>
+  buildRealPicturePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
+);
+const taskRunRealPictureTotalCount = computed(() => {
+  const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
+  return Number(result.total || taskRunRealPictureRows.value.length || 0) || 0;
+});
+const taskRunComplianceRows = computed(() =>
+  buildCompliancePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
+);
+const taskRunComplianceTotalCount = computed(() => {
+  const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
+  return Number(result.total || taskRunComplianceRows.value.length || 0) || 0;
+});
 const selectedPriceReviewRows = computed(() => {
   const selectedKeys = new Set(selectedPriceReviewRowKeys.value);
   return taskRunPriceReviewPreviewRows.value.filter((row) => selectedKeys.has(row.rowKey));
@@ -1950,17 +2266,6 @@ const syncSelection = () => {
   }
 
   if (!actions.some((item) => item.key === selectedActionKey.value)) {
-    const persistedAction = visibleActions.value.find((action) => action.key === selectedActionKey.value);
-    if (persistedAction) {
-      const persistedGroup = actionCategoryTabs.value.find((group) =>
-        group.actions.some((action) => action.key === persistedAction.key),
-      );
-      if (persistedGroup) {
-        selectedCategoryKey.value = persistedGroup.key;
-        return;
-      }
-    }
-
     const preferredAction = actions.find(
       (item) => item.status === "available" && hasPresetForAction(item.key),
     );

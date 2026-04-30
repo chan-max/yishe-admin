@@ -1213,6 +1213,20 @@ type PsdSetRuntimeUpdatePayload = {
   schedulerStatus?: string;
 };
 
+function buildPsdSetRuntimePayloadFromSummary(item: any): PsdSetRuntimeUpdatePayload {
+  return {
+    status: item?.status || "processing",
+    schedulerStatus: item?.schedulerStatus || undefined,
+    message:
+      String(item?.currentStep || "").trim() ||
+      String(item?.statusMessage || "").trim() ||
+      undefined,
+    progress: typeof item?.progress === "number" ? item.progress : undefined,
+    assignedClientId: item?.assignedClientId ?? null,
+    assignedMachineCode: item?.assignedMachineCode ?? null,
+  };
+}
+
 function normalizePsdSetSchedulerMeta(value: any) {
   if (!value) {
     return null;
@@ -1422,8 +1436,7 @@ function isPsdSetTerminalOrManualStatus(status: unknown) {
   const normalizedStatus = normalizePsdSetRuntimeStatus(status);
   return (
     normalizedStatus === "completed" ||
-    normalizedStatus === "failed" ||
-    normalizedStatus === "pending"
+    normalizedStatus === "failed"
   );
 }
 
@@ -1550,8 +1563,7 @@ function getPsdSetDisplayStatus(record: any) {
   const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
   if (
     normalizedStatus === "completed" ||
-    normalizedStatus === "failed" ||
-    normalizedStatus === "pending"
+    normalizedStatus === "failed"
   ) {
     return normalizedStatus;
   }
@@ -3105,6 +3117,9 @@ watch(
           normalizePsdSetId(item?.id),
           String(item?.status || "").trim(),
           String(item?.schedulerStatus || "").trim(),
+          String(item?.statusMessage || "").trim(),
+          String(item?.currentStep || "").trim(),
+          typeof item?.progress === "number" ? String(item.progress) : "",
           String(item?.updateTime || "").trim(),
         ].join(":"),
       )
@@ -3114,6 +3129,12 @@ watch(
       return;
     }
 
+    activePsdSets.value.forEach((item: any) => {
+      if (!isPsdSetActiveBySummary(item?.id)) {
+        return;
+      }
+      applyPsdSetRuntimeUpdate(item.id, buildPsdSetRuntimePayloadFromSummary(item));
+    });
     void getList(true);
     void loadPsdSetSchedulerRuntime();
     if (detailDialogVisible.value && detailData.value?.id) {
