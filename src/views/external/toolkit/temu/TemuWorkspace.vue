@@ -495,6 +495,22 @@
             v-if="isPriceReviewTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
+            <div v-if="priceReviewBatchSubmitting" class="temu-workspace__price-review-batch-mask">
+              <div class="temu-workspace__price-review-batch-panel">
+                <strong>{{ priceReviewBatchActionText }}</strong>
+                <span>处理中 {{ priceReviewBatchFinishedCount }}/{{ priceReviewBatchTotalCount }}</span>
+                <el-progress
+                  :percentage="priceReviewBatchProgressPercent"
+                  :stroke-width="10"
+                  :show-text="false"
+                />
+                <div class="temu-workspace__price-review-batch-stats">
+                  <el-tag size="small" effect="plain" type="success">成功 {{ priceReviewBatchSuccessCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="danger">失败 {{ priceReviewBatchFailedCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="warning">剩余 {{ priceReviewBatchRemainingCount }}</el-tag>
+                </div>
+              </div>
+            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>任务结果列表</span>
@@ -1819,15 +1835,28 @@ const priceReviewBatchProgressText = computed(() => {
   }
   return `处理中 ${priceReviewBatchFinishedCount.value}/${priceReviewBatchTotalCount.value}`;
 });
+const priceReviewBatchActionText = computed(() => {
+  if (priceReviewBatchSubmittingMode.value === "confirm") {
+    return "批量确认核价";
+  }
+  if (priceReviewBatchSubmittingMode.value === "abandon") {
+    return "批量不核价";
+  }
+  if (priceReviewBatchSubmittingMode.value === "reprice") {
+    return "批量重新报价";
+  }
+  return "批量处理中";
+});
 const priceReviewBatchRemainingCount = computed(() =>
   Math.max(0, priceReviewBatchTotalCount.value - priceReviewBatchFinishedCount.value),
 );
-const priceReviewBatchRepriceProgressPercent = computed(() => {
+const priceReviewBatchProgressPercent = computed(() => {
   if (priceReviewBatchTotalCount.value <= 0) {
     return 0;
   }
   return Math.min(100, Math.round((priceReviewBatchFinishedCount.value / priceReviewBatchTotalCount.value) * 100));
 });
+const priceReviewBatchRepriceProgressPercent = priceReviewBatchProgressPercent;
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
@@ -2977,6 +3006,7 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__task-preview-section {
+  position: relative;
   gap: 10px;
 }
 
@@ -3689,6 +3719,49 @@ onBeforeUnmount(() => {
 
 .temu-workspace__price-review-filter {
   width: 220px;
+}
+
+.temu-workspace__price-review-batch-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(2px);
+}
+
+.temu-workspace__price-review-batch-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, 100%);
+  padding: 18px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color);
+  box-shadow: var(--el-box-shadow-light);
+}
+
+.temu-workspace__price-review-batch-panel strong {
+  color: var(--el-text-color-primary);
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.temu-workspace__price-review-batch-panel > span {
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.temu-workspace__price-review-batch-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .temu-workspace__batch-reprice-head {
