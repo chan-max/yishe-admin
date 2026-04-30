@@ -547,7 +547,7 @@ const autoValidatedTemuSessions = reactive<Record<string, string>>({});
 const pending = reactive<Record<string, string>>({});
 const pendingRunToolFeatureKeys = reactive<Record<string, string>>({});
 const pendingTimeoutHandles = new Map<string, ReturnType<typeof setTimeout>>();
-const TOOLKIT_RUN_TOOL_TIMEOUT_MS = 90_000;
+const TOOLKIT_RUN_TOOL_TIMEOUT_MS = 7 * 60_000;
 const TOOLKIT_COMMAND_TIMEOUT_MS = 20_000;
 
 const toolkitPlatforms = computed<ToolkitPlatformDefinition[]>(() => TOOLKIT_PLATFORM_REGISTRY);

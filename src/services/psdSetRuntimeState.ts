@@ -18,18 +18,54 @@ const serverActivePsdSets = ref<ActivePsdSetSummaryItem[]>([])
 const realtimeActivePsdSetMap = ref<Record<string, RealtimeActivePsdSetSummaryItem>>({})
 const activePsdSets = ref<ActivePsdSetSummaryItem[]>([])
 const activePsdSetIds = ref<string[]>([])
+const terminalPsdSetSuppressionMap = ref<Record<string, number>>({})
 let initialized = false
 let activeSummaryRefreshPromise: Promise<void> | null = null
 let activeSummaryPollingTimer: ReturnType<typeof setInterval> | null = null
 let activeSummaryPollingMs = 0
 let activeSummaryRefreshTimer: ReturnType<typeof setTimeout> | null = null
+let activeSummaryScheduledRefreshPromise: Promise<void> | null = null
+let activeSummaryScheduledRefreshResolve: (() => void) | null = null
+let activeSummaryScheduledSilent = true
+let lastActiveSummaryRefreshAt = 0
 
-const ACTIVE_PSD_SET_POLLING_MS = 5000
-const IDLE_PSD_SET_POLLING_MS = 3000
+const ACTIVE_PSD_SET_POLLING_MS = 10000
+const IDLE_PSD_SET_POLLING_MS = 60000
+const ACTIVE_SUMMARY_REFRESH_MIN_INTERVAL_MS = 2500
 const REALTIME_ACTIVE_PSD_SET_TTL_MS = 10 * 60 * 1000
+const TERMINAL_PSD_SET_SUPPRESSION_MS = 10 * 60 * 1000
 
 const normalizePsdSetId = (value: unknown) => String(value || '').trim()
 const normalizeRuntimeTime = (value: unknown) => String(value || '').trim() || new Date().toISOString()
+const normalizeRuntimeStatus = (value: unknown) => String(value || '').trim().toLowerCase()
+
+const isTerminalRuntimeStatus = (value: unknown) => {
+  const status = normalizeRuntimeStatus(value)
+  return status === 'completed' || status === 'failed' || status === 'timeout'
+}
+
+const markTerminalPsdSetSuppressed = (psdSetId: string) => {
+  const id = normalizePsdSetId(psdSetId)
+  if (!id) return
+  terminalPsdSetSuppressionMap.value = {
+    ...terminalPsdSetSuppressionMap.value,
+    [id]: Date.now() + TERMINAL_PSD_SET_SUPPRESSION_MS,
+  }
+}
+
+const isTerminalPsdSetSuppressed = (psdSetId: string) => {
+  const id = normalizePsdSetId(psdSetId)
+  if (!id) return false
+  const expiresAt = terminalPsdSetSuppressionMap.value[id] || 0
+  if (!expiresAt) return false
+  if (expiresAt <= Date.now()) {
+    const nextMap = { ...terminalPsdSetSuppressionMap.value }
+    delete nextMap[id]
+    terminalPsdSetSuppressionMap.value = nextMap
+    return false
+  }
+  return true
+}
 
 const getResponseData = <T = any>(response: any): T => {
   return response?.data?.data || response?.data || response || ({} as T)
@@ -127,9 +163,23 @@ const syncMergedActiveSummary = () => {
 
 const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | null) => {
   const source = Array.isArray(payload?.items) ? payload?.items : []
+  const serverIds = new Set(
+    source
+      .map((item) => normalizePsdSetId(item?.id))
+      .filter((id) => !!id),
+  )
   serverActivePsdSets.value = source
     .map((item) => normalizeActivePsdSetItem(item))
     .filter((item): item is ActivePsdSetSummaryItem => !!item)
+    .filter((item) => !isTerminalPsdSetSuppressed(item.id))
+  const nextRealtimeMap = Object.fromEntries(
+    Object.entries(realtimeActivePsdSetMap.value).filter(
+      ([id]) => serverIds.has(id) && !isTerminalPsdSetSuppressed(id),
+    ),
+  ) as Record<string, RealtimeActivePsdSetSummaryItem>
+  if (Object.keys(nextRealtimeMap).length !== Object.keys(realtimeActivePsdSetMap.value).length) {
+    realtimeActivePsdSetMap.value = nextRealtimeMap
+  }
   syncMergedActiveSummary()
 }
 
@@ -139,6 +189,7 @@ const upsertRealtimeActivePsdSet = (
 ) => {
   const id = normalizePsdSetId(psdSetId)
   if (!id) return
+  if (isTerminalPsdSetSuppressed(id)) return
   const previous = realtimeActivePsdSetMap.value[id]
   realtimeActivePsdSetMap.value = {
     ...realtimeActivePsdSetMap.value,
@@ -179,13 +230,14 @@ const refreshUserAutoScheduling = async () => {
   }
 }
 
-const refreshActiveSummary = async (silent = false) => {
+const runActiveSummaryRefresh = async (silent = false) => {
   if (activeSummaryRefreshPromise) {
     return activeSummaryRefreshPromise
   }
 
   activeSummaryRefreshPromise = (async () => {
     try {
+      lastActiveSummaryRefreshAt = Date.now()
       const response = await stickerPsdSetApi.getActiveSummary()
       applyActiveSummary(getResponseData(response))
     } catch {
@@ -201,15 +253,62 @@ const refreshActiveSummary = async (silent = false) => {
   return activeSummaryRefreshPromise
 }
 
-const scheduleActiveSummaryRefresh = (delay = 160) => {
+const scheduleActiveSummaryRefresh = (delay = 160, silent = true) => {
+  const elapsed = Date.now() - lastActiveSummaryRefreshAt
+  const throttleDelay =
+    lastActiveSummaryRefreshAt > 0
+      ? Math.max(0, ACTIVE_SUMMARY_REFRESH_MIN_INTERVAL_MS - elapsed)
+      : 0
+  const minDelay = Math.max(0, delay, throttleDelay)
+
+  activeSummaryScheduledSilent = activeSummaryScheduledSilent && silent
+  if (!activeSummaryScheduledRefreshPromise) {
+    activeSummaryScheduledRefreshPromise = new Promise((resolve) => {
+      activeSummaryScheduledRefreshResolve = resolve
+    })
+  }
+
   if (activeSummaryRefreshTimer) {
     clearTimeout(activeSummaryRefreshTimer)
   }
 
   activeSummaryRefreshTimer = setTimeout(() => {
     activeSummaryRefreshTimer = null
-    void refreshActiveSummary(true)
-  }, delay)
+    const resolveScheduledRefresh = activeSummaryScheduledRefreshResolve
+    const scheduledSilent = activeSummaryScheduledSilent
+    activeSummaryScheduledRefreshPromise = null
+    activeSummaryScheduledRefreshResolve = null
+    activeSummaryScheduledSilent = true
+    void runActiveSummaryRefresh(scheduledSilent).finally(() => {
+      resolveScheduledRefresh?.()
+    })
+  }, minDelay)
+
+  return activeSummaryScheduledRefreshPromise
+}
+
+const refreshActiveSummary = async (silent = false) => {
+  if (activeSummaryRefreshPromise) {
+    return activeSummaryRefreshPromise
+  }
+
+  if (activeSummaryScheduledRefreshPromise) {
+    activeSummaryScheduledSilent = activeSummaryScheduledSilent && silent
+    return activeSummaryScheduledRefreshPromise
+  }
+
+  const elapsed = Date.now() - lastActiveSummaryRefreshAt
+  if (
+    lastActiveSummaryRefreshAt > 0 &&
+    elapsed < ACTIVE_SUMMARY_REFRESH_MIN_INTERVAL_MS
+  ) {
+    return scheduleActiveSummaryRefresh(
+      ACTIVE_SUMMARY_REFRESH_MIN_INTERVAL_MS - elapsed,
+      silent,
+    )
+  }
+
+  return runActiveSummaryRefresh(silent)
 }
 
 const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
@@ -219,6 +318,10 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
 
   const psdSetId = normalizePsdSetId(event?.currentPsSetId)
   if (event?.running && psdSetId) {
+    if (isTerminalPsdSetSuppressed(psdSetId)) {
+      scheduleActiveSummaryRefresh(180)
+      return
+    }
     upsertRealtimeActivePsdSet(psdSetId, {
       name: String(event.currentPsSetName || '').trim() || null,
       status: 'processing',
@@ -228,7 +331,7 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
       assignedClientId: String(event.clientId || '').trim() || null,
       updateTime: normalizeRuntimeTime(event.lastHeartbeatAt || event.updatedAt),
     })
-    scheduleActiveSummaryRefresh(80)
+    scheduleActiveSummaryRefresh(ACTIVE_SUMMARY_REFRESH_MIN_INTERVAL_MS)
     return
   }
 
@@ -247,7 +350,11 @@ const handleProductionStatus = (event: {
   assignedMachineCode?: string | null
 }) => {
   const psdSetId = normalizePsdSetId(event?.psdSetId)
-  const status = String(event?.status || '').trim().toLowerCase()
+  const status = normalizeRuntimeStatus(event?.status)
+
+  if (psdSetId && isTerminalRuntimeStatus(status)) {
+    markTerminalPsdSetSuppressed(psdSetId)
+  }
 
   if (status === 'processing' || status === 'running' || status === 'assigned') {
     if (psdSetId) {
@@ -262,7 +369,7 @@ const handleProductionStatus = (event: {
         updateTime: new Date().toISOString(),
       })
     }
-    scheduleActiveSummaryRefresh(140)
+    scheduleActiveSummaryRefresh(ACTIVE_SUMMARY_REFRESH_MIN_INTERVAL_MS)
     return
   }
 

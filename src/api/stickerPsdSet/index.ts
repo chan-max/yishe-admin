@@ -18,10 +18,38 @@ export interface ActivePsdSetSummaryResponse {
   fetchedAt?: string | null;
 }
 
+const ACTIVE_SUMMARY_REQUEST_DEDUP_MS = 2500;
+let activeSummaryRequestPromise: Promise<any> | null = null;
+let activeSummaryCachedResponse: any = null;
+let activeSummaryCachedAt = 0;
+
+const getActiveSummary = () => {
+  const now = Date.now();
+  if (activeSummaryRequestPromise) {
+    return activeSummaryRequestPromise;
+  }
+
+  if (activeSummaryCachedResponse && now - activeSummaryCachedAt < ACTIVE_SUMMARY_REQUEST_DEDUP_MS) {
+    return Promise.resolve(activeSummaryCachedResponse);
+  }
+
+  activeSummaryRequestPromise = request
+    .get<ActivePsdSetSummaryResponse>({ url: "/sticker-psd-set/runtime/active-summary" })
+    .then((response) => {
+      activeSummaryCachedResponse = response;
+      activeSummaryCachedAt = Date.now();
+      return response;
+    })
+    .finally(() => {
+      activeSummaryRequestPromise = null;
+    });
+
+  return activeSummaryRequestPromise;
+};
+
 export const stickerPsdSetApi = {
   page: (data: any) => request.post({ url: "/sticker-psd-set/page", data }),
-  getActiveSummary: () =>
-    request.get<ActivePsdSetSummaryResponse>({ url: "/sticker-psd-set/runtime/active-summary" }),
+  getActiveSummary,
   create: (data: any) => request.post({ url: "/sticker-psd-set", data }),
   batchCreate: (data: {
     stickerIds: string[];
