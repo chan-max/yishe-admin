@@ -166,15 +166,11 @@
             <div class="toolkit-form-panel toolkit-form-panel--acquire">
               <div class="toolkit-form-panel__head">
                 <div>
-                  <div class="toolkit-form-panel__title">获取会话</div>
+                  <div class="toolkit-form-panel__title">账号密码</div>
                   <div class="toolkit-form-panel__desc">
                     当前环境 {{ selectedExecutionProfileDisplayText }}
                   </div>
                 </div>
-
-                <el-tag size="small" effect="plain">
-                  {{ sessionAcquireModeLabel }}
-                </el-tag>
               </div>
 
               <div class="toolkit-form toolkit-form--acquire">
@@ -196,15 +192,6 @@
                   @click="saveTemuCredentials()"
                 >
                   保存账号密码
-                </el-button>
-                <el-button
-                  type="primary"
-                  size="small"
-                  :loading="sessionToolRunning"
-                  :disabled="sessionAcquireActionDisabled"
-                  @click="acquireCurrentSession"
-                >
-                  {{ sessionAcquireSubmitText }}
                 </el-button>
               </div>
             </div>
@@ -469,7 +456,6 @@ import SmallFeatureField from "../browser-automation/components/SmallFeatureFiel
 import { TOOLKIT_PLATFORM_REGISTRY, type ToolkitPlatformDefinition } from "./platformRegistry";
 import {
   TEMU_PLATFORM_KEY,
-  TEMU_SESSION_COLLECT_TOOL_KEY,
   TEMU_SESSION_RESTORE_TOOL_KEY,
   TEMU_SESSION_TOOL_KEY,
 } from "./temu/platform";
@@ -571,18 +557,14 @@ const temuWorkspaceTools = computed(() =>
   toolkitTools.value.filter((item) => {
     const platform = String(item?.platform || "").trim();
     const featureKey = String(item?.key || "").trim();
-    return (
-      platform === TEMU_PLATFORM_KEY &&
-      featureKey !== TEMU_SESSION_TOOL_KEY &&
-      featureKey !== TEMU_SESSION_COLLECT_TOOL_KEY
-    );
+    return platform === TEMU_PLATFORM_KEY && featureKey !== TEMU_SESSION_TOOL_KEY;
   }),
 );
 const temuWorkspaceToolResults = computed(() => toolkitToolResults);
 const sessionToolRunning = computed(
   () =>
     loadingMap.runTool &&
-    [TEMU_SESSION_TOOL_KEY, TEMU_SESSION_COLLECT_TOOL_KEY].includes(runningToolkitFeatureKey.value),
+    runningToolkitFeatureKey.value === TEMU_SESSION_TOOL_KEY,
 );
 const temuWorkspaceRestoreLoading = computed(
   () => loadingMap.runTool && runningToolkitFeatureKey.value === TEMU_SESSION_RESTORE_TOOL_KEY,
@@ -666,11 +648,8 @@ const invalidStoredSessionRows = computed(() =>
 );
 
 const sessionAcquireForm = reactive({
-  acquireMode: "direct",
   account: "",
   password: "",
-  collectRegionCookies: true,
-  keepPageOpen: true,
 });
 const sessionAcquireErrors = reactive<Record<string, string>>({
   account: "",
@@ -678,26 +657,12 @@ const sessionAcquireErrors = reactive<Record<string, string>>({
 });
 const sessionAcquireFieldDefinitions = computed(() => [
   {
-    key: "acquireMode",
-    label: "获取方式",
-    type: "select",
-    required: true,
-    options: [
-      { label: "直接获取", value: "direct" },
-      { label: "登录并获取", value: "login" },
-    ],
-    description: "复用当前登录态，或先登录再采集。",
-  },
-  {
     key: "account",
     label: "账号",
     type: "text",
     required: false,
     placeholder: "请输入 Temu 账号",
-    description: "始终显示，仅“登录并获取”时必填并生效。",
-    requiredWhen: {
-      acquireMode: "login",
-    },
+    description: "用于当前环境未登录时自动登录。",
   },
   {
     key: "password",
@@ -705,26 +670,7 @@ const sessionAcquireFieldDefinitions = computed(() => [
     type: "password",
     required: false,
     placeholder: "请输入 Temu 密码",
-    description: "始终显示，仅“登录并获取”时必填并生效。",
-    requiredWhen: {
-      acquireMode: "login",
-    },
-  },
-  {
-    key: "collectRegionCookies",
-    label: "采集区域 Cookie",
-    type: "boolean",
-    required: false,
-    switchLabel: "补抓区域 Cookie",
-    description: "补抓 global / us / eu Cookie。",
-  },
-  {
-    key: "keepPageOpen",
-    label: "保留页面",
-    type: "boolean",
-    required: false,
-    switchLabel: "执行后保留页面",
-    description: "便于继续观察结果或处理风控。",
+    description: "也可以不保存，改为先在浏览器环境中手动登录。",
   },
 ]);
 const visibleSessionAcquireFields = computed(() =>
@@ -734,12 +680,6 @@ const visibleSessionAcquireFields = computed(() =>
       ...field,
       required: isSessionAcquireFieldRequired(field),
     })),
-);
-const sessionAcquireModeLabel = computed(() =>
-  sessionAcquireForm.acquireMode === "login" ? "登录并获取" : "直接获取",
-);
-const sessionAcquireSubmitText = computed(() =>
-  sessionAcquireForm.acquireMode === "login" ? "登录后采集会话" : "采集当前环境会话",
 );
 const isTemuExecutionProfileLoading = computed(() => false);
 const executionProfileSelectValue = computed({
@@ -834,7 +774,7 @@ const resolveTemuStoredCredentialValue = (
   ).trim();
 };
 const syncTemuSessionAcquireCredentialsFromStoredSession = (profileId?: string) => {
-  // “登录并获取”优先回显当前环境最近一次保存的凭证，减少重复输入。
+  // 优先回显当前环境最近一次保存的凭证，减少重复输入。
   if (selectedPlatformKey.value !== TEMU_PLATFORM_KEY) {
     return;
   }
@@ -1550,7 +1490,6 @@ const saveTemuCredentials = async (profileId?: string | Event | null) => {
 const dispatchTemuSessionAcquire = async (
   profileId: string,
   options?: {
-    acquireMode?: "direct" | "login";
     account?: string;
     password?: string;
     collectRegionCookies?: boolean;
@@ -1563,7 +1502,6 @@ const dispatchTemuSessionAcquire = async (
     return;
   }
 
-  const acquireMode = options?.acquireMode === "login" ? "login" : "direct";
   const account = String(options?.account || "").trim();
   const password = String(options?.password || "").trim();
 
@@ -1573,74 +1511,15 @@ const dispatchTemuSessionAcquire = async (
       runToolkitTool(selectedClientId.value, {
         featureKey: TEMU_SESSION_TOOL_KEY,
         profileId,
-        acquireMode,
         collectRegionCookies: options?.collectRegionCookies !== false,
         keepPageOpen: options?.keepPageOpen !== false,
-        ...(acquireMode === "login" ? { account, password } : {}),
+        ...(account ? { account } : {}),
+        ...(password ? { password } : {}),
       }),
     sentMessage,
     {
       featureKey: TEMU_SESSION_TOOL_KEY,
     },
-  );
-};
-
-const dispatchTemuCurrentSessionCollect = async (
-  profileId: string,
-  options?: {
-    collectRegionCookies?: boolean;
-    keepPageOpen?: boolean;
-  },
-  sentMessage = "Temu 当前环境会话采集命令已发送",
-) => {
-  if (!selectedClientId.value) {
-    ElMessage.warning("请先选择在线客户端");
-    return;
-  }
-
-  await dispatchCommand(
-    "runTool",
-    () =>
-      runToolkitTool(selectedClientId.value, {
-        featureKey: TEMU_SESSION_COLLECT_TOOL_KEY,
-        profileId,
-        collectRegionCookies: options?.collectRegionCookies !== false,
-        keepPageOpen: options?.keepPageOpen !== false,
-      }),
-    sentMessage,
-    {
-      featureKey: TEMU_SESSION_COLLECT_TOOL_KEY,
-    },
-  );
-};
-
-const acquireCurrentSession = async () => {
-  const profileId = String(selectedExecutionProfileId.value || "").trim();
-  if (!profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-
-  sessionAcquireErrors.account = "";
-  sessionAcquireErrors.password = "";
-  const valid = visibleSessionAcquireFields.value.every((field) =>
-    validateSessionAcquireField(field),
-  );
-  if (!valid) {
-    ElMessage.warning("请先完善会话获取参数");
-    return;
-  }
-
-  await dispatchTemuSessionAcquire(
-    profileId,
-    {
-      acquireMode: "login",
-      account: sessionAcquireForm.account,
-      password: sessionAcquireForm.password,
-      collectRegionCookies: sessionAcquireForm.collectRegionCookies,
-      keepPageOpen: sessionAcquireForm.keepPageOpen,
-    },
-    "Temu 登录后采集会话命令已发送",
   );
 };
 
@@ -1656,13 +1535,15 @@ const quickAcquireCurrentSession = async () => {
     return;
   }
 
-  await dispatchTemuCurrentSessionCollect(
+  await dispatchTemuSessionAcquire(
     profileId,
     {
-      collectRegionCookies: sessionAcquireForm.collectRegionCookies,
-      keepPageOpen: sessionAcquireForm.keepPageOpen,
+      account: sessionAcquireForm.account,
+      password: sessionAcquireForm.password,
+      collectRegionCookies: true,
+      keepPageOpen: true,
     },
-    "Temu 当前环境会话采集命令已发送",
+    "Temu 会话采集命令已发送",
   );
 };
 
@@ -1987,17 +1868,16 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
 
       if (
         event.success &&
-        [TEMU_SESSION_TOOL_KEY, TEMU_SESSION_COLLECT_TOOL_KEY].includes(featureKey)
+        featureKey === TEMU_SESSION_TOOL_KEY
       ) {
         const sessionBundle = asPlainObject(result?.sessionBundle);
         const profileId = resolveCollectedProfileId(result);
-        const acquireMode = String(result?.acquireMode || dataObject?.acquireMode || "").trim();
         if (sessionBundle && profileId) {
           try {
             await persistTemuSessionBundle(
               sessionBundle,
               profileId,
-              featureKey === TEMU_SESSION_TOOL_KEY && acquireMode === "login"
+              sessionAcquireForm.account || sessionAcquireForm.password
                 ? {
                     account: sessionAcquireForm.account,
                     password: sessionAcquireForm.password,
@@ -2101,14 +1981,6 @@ watch(
     selectedProfileValue.value = String(activeOption.value || "").trim();
   },
   { immediate: true, deep: true },
-);
-
-watch(
-  () => sessionAcquireForm.acquireMode,
-  () => {
-    sessionAcquireErrors.account = "";
-    sessionAcquireErrors.password = "";
-  },
 );
 
 watch(

@@ -8,7 +8,15 @@ export interface TemuFieldOption {
 export interface TemuActionField {
   key: string;
   label: string;
-  type: "text" | "number" | "select" | "textarea" | "json" | "array-number" | "array-string";
+  type:
+    | "text"
+    | "password"
+    | "number"
+    | "select"
+    | "textarea"
+    | "json"
+    | "array-number"
+    | "array-string";
   required?: boolean;
   placeholder?: string;
   hint?: string;
@@ -60,7 +68,6 @@ export interface TemuIndexedCatalogAction {
 }
 
 export const TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY = "temu-publish-detail-request-capture";
-
 export const REGION_LABELS: Record<TemuRegionKey, string> = {
   global: "全球站",
   us: "美国站",
