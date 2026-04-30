@@ -104,7 +104,7 @@
           class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body psd-set-page__table-body">
             <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="onSelectionChange"
-              @checkbox-all="onSelectionChange" @scroll="handleGridScroll">
+              @checkbox-all="onSelectionChange">
               <template #idSlot="{ row }">
                 <div class="table-cell-copyable" @click="copyId(row.id)">
                   <span class="table-cell-id">{{ row.id }}</span>
@@ -131,11 +131,32 @@
                 </div>
               </template>
               <template #imagesSlot="{ row }">
-                <PsdSetTableImageCell v-memo="[row.id, row.name, row.images, getPreviewImageIndex(row)]"
-                  :row-id="row.id" :name="row.name" :images="row.images" :current-index="getPreviewImageIndex(row)"
-                  @shift="(delta) => shiftPreviewImage(row, delta)"
-                  @preview="(index) => openPsdSetImagePreview(row, index)"
-                  @download="() => handleDownloadPsdSetImages(row)" />
+                <div class="table-preview-stack">
+                  <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="112px"
+                    indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
+                    class="custom-carousel table-preview-carousel">
+                    <el-carousel-item v-for="(url, index) in row.images" :key="index">
+                      <el-image :src="url" :preview-src-list="row.images" :initial-index="Number(index)"
+                        :preview-teleported="true" :hide-on-click-modal="false" :lazy="true" loading="lazy"
+                        class="table-preview-image" fit="contain" @load="handlePreviewImageLoad(url, $event)" />
+                      <div class="table-preview-badge">
+                        {{ Number(index) + 1 }}/{{ row.images.length }}
+                      </div>
+                      <div class="table-preview-dimensions">
+                        {{ getPreviewImageDimensions(url) }}
+                      </div>
+                    </el-carousel-item>
+                  </el-carousel>
+
+                  <span v-else class="table-preview-placeholder">无</span>
+
+                  <el-tooltip v-if="row.images && row.images.length > 0" content="批量下载该套图的所有图片" placement="top">
+                    <el-button type="primary" link size="small" class="table-preview-action"
+                      @click.stop="handleDownloadPsdSetImages(row)">
+                      全部下载
+                    </el-button>
+                  </el-tooltip>
+                </div>
               </template>
               <template #configSlot="{ row }">
                 <div class="flex items-center gap-2">
@@ -437,22 +458,22 @@
             <div class="psd-set-detail-runtime-strip">
               <div>
                 <span class="info-label">调度</span>
-                <el-tag :type="schedulerStatusTagType(getPsdSetDisplaySchedulerMeta(detailData)?.status)" size="small" effect="plain">
-                  {{ schedulerStatusLabel(getPsdSetDisplaySchedulerMeta(detailData)?.status) }}
+                <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
+                  {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
                 </el-tag>
               </div>
               <div>
                 <span class="info-label">进度</span>
-                <span class="info-value">{{ formatSchedulerProgress(getPsdSetDisplaySchedulerMeta(detailData)?.progress) }}</span>
+                <span class="info-value">{{ formatSchedulerProgress(detailData?.schedulerMeta?.progress) }}</span>
               </div>
               <div>
                 <span class="info-label">节点</span>
                 <span class="info-value">{{ getSchedulerAssignedLabel(detailData) }}</span>
               </div>
             </div>
-            <div v-if="resolvePsdSetStatusMessage(detailData)"
+            <div v-if="detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError"
               class="psd-set-detail-runtime-note">
-              <span>{{ resolvePsdSetStatusMessage(detailData) }}</span>
+              <span>{{ detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError }}</span>
             </div>
 
             <div class="psd-set-detail-json-stack">
@@ -785,10 +806,6 @@
     </el-dialog>
 
     <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
-
-    <el-image-viewer v-if="tableImageViewerVisible" :url-list="tableImageViewerUrls"
-      :initial-index="tableImageViewerIndex" :hide-on-click-modal="false" teleported
-      @close="tableImageViewerVisible = false" />
   </ContentWrap>
 </template>
 
@@ -825,7 +842,6 @@ import {
 } from "@/services/autoDispatchSchedulerRuntime";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
-import PsdSetTableImageCell from "./components/PsdSetTableImageCell.vue";
 import {
   derivePublishTaskTypeByPlatform,
   getTaskTypeLabel,
@@ -836,10 +852,7 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
-const tablePreviewImageIndexMap = reactive<Record<string, number>>({});
-const tableImageViewerVisible = ref(false);
-const tableImageViewerUrls = ref<string[]>([]);
-const tableImageViewerIndex = ref(0);
+const previewImageDimensions = reactive<Record<string, { width: number; height: number }>>({});
 const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
 const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
@@ -873,10 +886,6 @@ const publishTasksLoading = ref(false);
 const publishTasks = ref<any[]>([]);
 const currentPublishTasksPsdSetId = ref<string>("");
 let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
-let psdSetListRefreshTimer: ReturnType<typeof setTimeout> | null = null;
-let tableScrollSettledTimer: ReturnType<typeof setTimeout> | null = null;
-let isTableScrolling = false;
-let psdSetListRequestSeq = 0;
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
@@ -893,7 +902,7 @@ const {
 function schedulePsdSetMenuRuntimeSync() {
   void refreshPsdSetRuntimeSummary();
   void refreshClientNodes();
-  scheduleSilentListRefresh(300);
+  void getList(true);
   void loadPsdSetSchedulerRuntime();
   if (psdSetMenuRuntimeSyncTimer) {
     clearTimeout(psdSetMenuRuntimeSyncTimer);
@@ -902,7 +911,7 @@ function schedulePsdSetMenuRuntimeSync() {
     psdSetMenuRuntimeSyncTimer = null;
     void refreshPsdSetRuntimeSummary();
     void refreshClientNodes();
-    scheduleSilentListRefresh(0);
+    void getList(true);
     void loadPsdSetSchedulerRuntime();
     if (detailDialogVisible.value && detailData.value?.id) {
       void loadPsdSetDetailById(detailData.value.id, true);
@@ -1251,21 +1260,6 @@ function normalizePsdSetRuntimeStatus(status?: unknown) {
   return normalizedStatus;
 }
 
-function getDefaultPsdSetStatusMessage(status?: unknown) {
-  switch (normalizePsdSetRuntimeStatus(status)) {
-    case "completed":
-      return "制作完成";
-    case "failed":
-      return "制作失败";
-    case "processing":
-      return "制作中";
-    case "pending":
-      return "等待调度";
-    default:
-      return "";
-  }
-}
-
 function resolvePsdSetProgressPercent(progress?: number, total?: number, fallback?: number | null) {
   if (typeof progress !== "number") {
     return typeof fallback === "number" ? fallback : null;
@@ -1277,25 +1271,50 @@ function resolvePsdSetProgressPercent(progress?: number, total?: number, fallbac
 }
 
 function resolvePsdSetRuntimeStatusMessage(status: string, message?: string, schedulerMeta?: any) {
+  const currentStep = String(schedulerMeta?.currentStep || "").trim();
+  if (
+    currentStep &&
+    (status === "processing" ||
+      schedulerMeta?.status === "assigned" ||
+      schedulerMeta?.status === "running")
+  ) {
+    return currentStep;
+  }
+
   const explicitMessage = String(message || "").trim();
   if (explicitMessage) {
     return explicitMessage;
   }
 
-  const metaMessage = String(schedulerMeta?.statusMessage || "").trim();
-  return metaMessage || getDefaultPsdSetStatusMessage(status);
+  if (currentStep) {
+    return currentStep;
+  }
+
+  switch (status) {
+    case "completed":
+      return "制作完成";
+    case "failed":
+      return String(schedulerMeta?.lastError || "制作失败");
+    case "processing":
+      return "正在处理中...";
+    case "pending":
+      return "等待调度";
+    default:
+      return "";
+  }
 }
 
 function resolvePsdSetStatusMessage(record: any) {
   if (!record || typeof record !== "object") {
     return "-";
   }
-  const status = getPsdSetDisplayStatus(record);
-  const message = String(record.statusMessage || "").trim();
-  if (status === "processing" && /等待调度|重新调度|稍后重试/.test(message)) {
-    return getDefaultPsdSetStatusMessage(status);
-  }
-  return message || getDefaultPsdSetStatusMessage(status) || "-";
+  return (
+    resolvePsdSetRuntimeStatusMessage(
+      String(record.status || "").trim(),
+      record.statusMessage,
+      normalizePsdSetSchedulerMeta(record.schedulerMeta),
+    ) || "-"
+  );
 }
 
 function findPsdSetRowIndexById(psdSetId: unknown) {
@@ -1316,7 +1335,7 @@ function buildPsdSetRuntimeRecord(
   }
 
   if (
-    isPsdSetTerminalStatus(target.status) &&
+    isPsdSetTerminalOrManualStatus(target.status) &&
     isPsdSetRuntimePayloadActive(payload)
   ) {
     return target;
@@ -1412,11 +1431,12 @@ function isPsdSetRuntimePayloadActive(payload: PsdSetRuntimeUpdatePayload) {
   );
 }
 
-function isPsdSetTerminalStatus(status: unknown) {
+function isPsdSetTerminalOrManualStatus(status: unknown) {
   const normalizedStatus = normalizePsdSetRuntimeStatus(status);
   return (
     normalizedStatus === "completed" ||
-    normalizedStatus === "failed"
+    normalizedStatus === "failed" ||
+    normalizedStatus === "pending"
   );
 }
 
@@ -1467,33 +1487,11 @@ function clearPsdSetRuntimeOverlay(psdSetId: unknown) {
 
 function mergePsdSetRuntimeOverlay(record: any) {
   const overlay = getPsdSetRuntimeOverlay(record?.id);
-  if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalStatus(record?.status)) {
+  if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalOrManualStatus(record?.status)) {
     clearPsdSetRuntimeOverlay(record?.id);
     return record;
   }
-  if (overlay) {
-    return buildPsdSetRuntimeRecord(record, overlay.payload);
-  }
-
-  const activeItem = getPsdSetActiveSummaryItem(record?.id);
-  const activeStatus = normalizePsdSetRuntimeStatus(activeItem?.status);
-  const activeSchedulerStatus = String(activeItem?.schedulerStatus || "").trim();
-  if (
-    !isPsdSetTerminalStatus(record?.status) &&
-    (activeStatus === "processing" ||
-      activeSchedulerStatus === "assigned" ||
-      activeSchedulerStatus === "running")
-  ) {
-    return {
-      ...record,
-      status: "processing",
-      statusMessage:
-        String((activeItem as any)?.statusMessage || (activeItem as any)?.currentStep || "").trim() ||
-        "制作中",
-    };
-  }
-
-  return record;
+  return overlay ? buildPsdSetRuntimeRecord(record, overlay.payload) : record;
 }
 
 function applyPsdSetRuntimeUpdate(
@@ -1510,14 +1508,7 @@ function applyPsdSetRuntimeUpdate(
   const rowIndex = findPsdSetRowIndexById(normalizedId);
   if (rowIndex >= 0) {
     const currentRow = dataSource.value[rowIndex];
-    const nextRow = buildPsdSetRuntimeRecord(currentRow, payload);
-    if (nextRow && nextRow !== currentRow) {
-      Object.assign(currentRow, {
-        status: nextRow.status,
-        statusMessage: nextRow.statusMessage,
-        schedulerMeta: nextRow.schedulerMeta,
-      });
-    }
+    dataSource.value.splice(rowIndex, 1, buildPsdSetRuntimeRecord(currentRow, payload));
   }
 
   if (normalizePsdSetId(detailData.value?.id) === normalizedId) {
@@ -1544,74 +1535,24 @@ function isPsdSetRuntimeActive(record: any) {
   return schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running";
 }
 
-function getPsdSetActiveSummaryItem(psdSetId: unknown) {
+function isPsdSetActiveBySummary(psdSetId: unknown) {
   const normalizedId = normalizePsdSetId(psdSetId);
   if (!normalizedId) {
-    return null;
+    return false;
   }
 
-  return (
-    activePsdSets.value.find(
-      (item: any) => normalizePsdSetId(item?.id) === normalizedId,
-    ) || null
-  );
-}
-
-function isPsdSetOfflineWaitingMessage(message: unknown) {
-  const text = String(message || "").trim();
-  return /客户端离线|等待重新调度|正在处理中，请稍后重试|正在制作中，请稍后重试/.test(text);
-}
-
-function getPsdSetDisplaySchedulerMeta(record: any) {
-  const schedulerMeta = normalizePsdSetSchedulerMeta(record?.schedulerMeta) || {};
-  const normalizedStatus = normalizePsdSetRuntimeStatus(record?.status);
-  if (normalizedStatus === "completed" || normalizedStatus === "failed") {
-    return schedulerMeta;
-  }
-
-  const activeItem = getPsdSetActiveSummaryItem(record?.id);
-  const activeStatus = normalizePsdSetRuntimeStatus(activeItem?.status);
-  const activeSchedulerStatus = String(activeItem?.schedulerStatus || "").trim();
-  const recordIsActive = isPsdSetRuntimeActive(record);
-  const isActive =
-    recordIsActive ||
-    activeStatus === "processing" ||
-    activeSchedulerStatus === "assigned" ||
-    activeSchedulerStatus === "running";
-
-  if (!isActive) {
-    return schedulerMeta;
-  }
-
-  const rawStep = String(schedulerMeta.currentStep || record?.statusMessage || "").trim();
-  const schedulerMetaStatus = String(schedulerMeta.status || "").trim();
-  const displaySchedulerStatus =
-    activeSchedulerStatus === "assigned" ||
-    (!activeSchedulerStatus && schedulerMetaStatus === "assigned")
-      ? "assigned"
-      : "running";
-  const shouldOverrideStep =
-    normalizedStatus === "pending" ||
-    schedulerMetaStatus === "pending" ||
-    isPsdSetOfflineWaitingMessage(rawStep);
-
-  return {
-    ...schedulerMeta,
-    status: displaySchedulerStatus,
-    assignedClientId:
-      String(activeItem?.assignedClientId || "").trim() ||
-      schedulerMeta.assignedClientId ||
-      null,
-    assignedMachineCode:
-      String(activeItem?.assignedMachineCode || "").trim() ||
-      schedulerMeta.assignedMachineCode ||
-      null,
-    currentStep:
-      String(record?.statusMessage || "").trim() ||
-      (shouldOverrideStep ? getDefaultPsdSetStatusMessage(normalizedStatus) : rawStep) ||
-      getDefaultPsdSetStatusMessage(normalizedStatus),
-    lastError: shouldOverrideStep ? null : schedulerMeta.lastError || null,
-  };
+  return activePsdSets.value.some((item: any) => {
+    if (normalizePsdSetId(item?.id) !== normalizedId) {
+      return false;
+    }
+    const status = normalizePsdSetRuntimeStatus(item?.status);
+    const schedulerStatus = String(item?.schedulerStatus || "").trim();
+    return (
+      status === "processing" ||
+      schedulerStatus === "assigned" ||
+      schedulerStatus === "running"
+    );
+  });
 }
 
 function getPsdSetDisplayStatus(record: any) {
@@ -1620,6 +1561,24 @@ function getPsdSetDisplayStatus(record: any) {
   }
 
   const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
+  if (
+    normalizedStatus === "completed" ||
+    normalizedStatus === "failed" ||
+    normalizedStatus === "pending"
+  ) {
+    return normalizedStatus;
+  }
+
+  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
+  const schedulerStatus = String(schedulerMeta?.status || "").trim();
+  if (schedulerStatus === "completed" || schedulerStatus === "failed") {
+    return schedulerStatus;
+  }
+
+  if (isPsdSetRuntimeActive(record) || isPsdSetActiveBySummary(record.id)) {
+    return "processing";
+  }
+
   return normalizedStatus || record.status || "";
 }
 
@@ -1653,7 +1612,7 @@ function applyManualPsdSetStatusLocally(psdSetId: unknown, status: string) {
             ? currentMeta.lastError || "制作失败"
             : normalizedStatus === "pending"
               ? "等待调度"
-              : getDefaultPsdSetStatusMessage(normalizedStatus),
+              : currentMeta.currentStep,
     };
 
     if (normalizedStatus === "pending") {
@@ -1665,22 +1624,14 @@ function applyManualPsdSetStatusLocally(psdSetId: unknown, status: string) {
     return {
       ...record,
       status: normalizedStatus,
-      statusMessage: getDefaultPsdSetStatusMessage(normalizedStatus),
+      statusMessage: resolvePsdSetRuntimeStatusMessage(normalizedStatus, undefined, nextMeta),
       schedulerMeta: nextMeta,
     };
   };
 
   const rowIndex = findPsdSetRowIndexById(normalizedId);
   if (rowIndex >= 0) {
-    const currentRow = dataSource.value[rowIndex];
-    const nextRow = applyToRecord(currentRow);
-    if (nextRow && nextRow !== currentRow) {
-      Object.assign(currentRow, {
-        status: nextRow.status,
-        statusMessage: nextRow.statusMessage,
-        schedulerMeta: nextRow.schedulerMeta,
-      });
-    }
+    dataSource.value.splice(rowIndex, 1, applyToRecord(dataSource.value[rowIndex]));
   }
 
   if (normalizePsdSetId(detailData.value?.id) === normalizedId) {
@@ -1751,10 +1702,11 @@ const detailMetaFormatted = computed(() => {
 });
 
 const detailSchedulerMetaFormatted = computed(() => {
-  const schedulerMeta = getPsdSetDisplaySchedulerMeta(detailData.value);
-  if (!schedulerMeta || !Object.keys(schedulerMeta).length) return "";
+  const schedulerMeta = detailData.value?.schedulerMeta;
+  if (!schedulerMeta) return "";
   try {
-    return JSON.stringify(schedulerMeta, null, 2);
+    const parsed = typeof schedulerMeta === "string" ? JSON.parse(schedulerMeta) : schedulerMeta;
+    return JSON.stringify(parsed, null, 2);
   } catch (e) {
     return String(schedulerMeta);
   }
@@ -1820,15 +1772,7 @@ const gridOptions = ref<any>({
   ...commonGridOptions,
   maxHeight: null,
   rowConfig: {
-    ...(commonGridOptions.rowConfig || {}),
     keyField: "id",
-    height: 146,
-    resizable: false,
-  },
-  scrollY: {
-    enabled: true,
-    gt: 8,
-    oSize: 4,
   },
   checkboxConfig: {
     reserve: true,
@@ -1842,136 +1786,7 @@ watchEffect(() => {
   gridOptions.value.maxHeight = height.value - 240;
 });
 
-function comparableText(value: unknown) {
-  return value === null || value === undefined ? "" : String(value);
-}
-
-function arePsdSetImageListsEqual(left: unknown, right: unknown) {
-  const leftImages = Array.isArray(left) ? left : [];
-  const rightImages = Array.isArray(right) ? right : [];
-  if (leftImages.length !== rightImages.length) {
-    return false;
-  }
-
-  for (let index = 0; index < leftImages.length; index += 1) {
-    if (comparableText(leftImages[index]) !== comparableText(rightImages[index])) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function isPsdSetSchedulerMetaEqual(left: any, right: any) {
-  const leftMeta = left && typeof left === "object" ? left : {};
-  const rightMeta = right && typeof right === "object" ? right : {};
-  const keys = [
-    "status",
-    "statusMessage",
-    "currentStep",
-    "progress",
-    "assignedClientId",
-    "assignedMachineCode",
-    "lastError",
-    "lastHeartbeatAt",
-    "startedAt",
-    "finishedAt",
-  ];
-
-  return keys.every((key) => comparableText(leftMeta[key]) === comparableText(rightMeta[key]));
-}
-
-function shouldPatchPsdSetRow(currentRow: any, nextRow: any) {
-  if (!currentRow || !nextRow || typeof currentRow !== "object" || typeof nextRow !== "object") {
-    return true;
-  }
-
-  const fields = [
-    "id",
-    "name",
-    "status",
-    "statusMessage",
-    "processingTime",
-    "createTime",
-    "updateTime",
-    "updatedAt",
-    "stickerPsdSetConfig",
-  ];
-  if (fields.some((field) => comparableText(currentRow[field]) !== comparableText(nextRow[field]))) {
-    return true;
-  }
-
-  if (!arePsdSetImageListsEqual(currentRow.images, nextRow.images)) {
-    return true;
-  }
-
-  return !isPsdSetSchedulerMetaEqual(currentRow.schedulerMeta, nextRow.schedulerMeta);
-}
-
-function assignPsdSetRow(currentRow: any, nextRow: any) {
-  const shouldKeepCurrentImages = arePsdSetImageListsEqual(currentRow?.images, nextRow?.images);
-  const currentImages = currentRow?.images;
-  Object.assign(currentRow, nextRow);
-  if (shouldKeepCurrentImages) {
-    currentRow.images = currentImages;
-  }
-}
-
-function patchDataSourceRows(nextRows: any[], silent: boolean) {
-  if (!silent || dataSource.value.length !== nextRows.length) {
-    dataSource.value = nextRows;
-    return;
-  }
-
-  const sameOrder = nextRows.every(
-    (row, index) => normalizePsdSetId(row?.id) === normalizePsdSetId(dataSource.value[index]?.id),
-  );
-  if (!sameOrder) {
-    dataSource.value = nextRows;
-    return;
-  }
-
-  nextRows.forEach((nextRow, index) => {
-    const currentRow = dataSource.value[index];
-    if (shouldPatchPsdSetRow(currentRow, nextRow)) {
-      assignPsdSetRow(currentRow, nextRow);
-    }
-  });
-}
-
-function scheduleSilentListRefresh(delay = 600) {
-  if (psdSetListRefreshTimer) {
-    clearTimeout(psdSetListRefreshTimer);
-  }
-
-  psdSetListRefreshTimer = setTimeout(() => {
-    psdSetListRefreshTimer = null;
-    if (isTableScrolling) {
-      scheduleSilentListRefresh(600);
-      return;
-    }
-    void getList(true);
-  }, Math.max(0, delay));
-}
-
-function handleGridScroll() {
-  isTableScrolling = true;
-  if (tableScrollSettledTimer) {
-    clearTimeout(tableScrollSettledTimer);
-  }
-  tableScrollSettledTimer = setTimeout(() => {
-    tableScrollSettledTimer = null;
-    isTableScrolling = false;
-  }, 360);
-}
-
 async function getList(silent = false) {
-  if (silent && isTableScrolling) {
-    scheduleSilentListRefresh(600);
-    return;
-  }
-
-  const requestSeq = ++psdSetListRequestSeq;
   if (!silent) {
     loading.value = true;
   }
@@ -1986,16 +1801,12 @@ async function getList(silent = false) {
       startTime: queryParams.startTime || undefined,
       endTime: queryParams.endTime || undefined,
     });
-    if (requestSeq !== psdSetListRequestSeq) {
-      return;
-    }
-    const nextRows = Array.isArray(res.list)
+    dataSource.value = Array.isArray(res.list)
       ? res.list.map((item) => mergePsdSetRuntimeOverlay(normalizePsdSetRecord(item)))
       : [];
-    patchDataSourceRows(nextRows, silent);
     total.value = res.total || 0;
   } finally {
-    if (!silent && requestSeq === psdSetListRequestSeq) {
+    if (!silent) {
       loading.value = false;
     }
   }
@@ -2028,54 +1839,20 @@ function formatProcessingTime(seconds: any): string {
   return `${hours}小时${minutes}分${secs.toFixed(2)}秒`;
 }
 
-function getPreviewImageList(row: any): string[] {
-  return Array.isArray(row?.images)
-    ? row.images.filter((url: any) => typeof url === "string" && url.trim())
-    : [];
-}
-
-function getPreviewImageKey(row: any) {
-  const id = normalizePsdSetId(row?.id);
-  return id || getPreviewImageList(row).join("|");
-}
-
-function getPreviewImageCount(row: any) {
-  return Array.isArray(row?.images) ? row.images.length : 0;
-}
-
-function getPreviewImageIndex(row: any) {
-  const imageCount = getPreviewImageCount(row);
-  if (imageCount <= 0) {
-    return 0;
-  }
-
-  const key = getPreviewImageKey(row);
-  const rawIndex = Number(tablePreviewImageIndexMap[key] ?? 0);
-  const index = Number.isFinite(rawIndex) ? Math.trunc(rawIndex) : 0;
-  return Math.min(Math.max(index, 0), imageCount - 1);
-}
-
-function shiftPreviewImage(row: any, delta: number) {
-  const images = getPreviewImageList(row);
-  if (images.length <= 1) {
+function handlePreviewImageLoad(url: string, event: Event) {
+  const image = event?.target as HTMLImageElement | null;
+  const width = Number(image?.naturalWidth || 0);
+  const height = Number(image?.naturalHeight || 0);
+  if (!url || width <= 0 || height <= 0) {
     return;
   }
 
-  const key = getPreviewImageKey(row);
-  const currentIndex = getPreviewImageIndex(row);
-  tablePreviewImageIndexMap[key] = (currentIndex + delta + images.length) % images.length;
+  previewImageDimensions[url] = { width, height };
 }
 
-function openPsdSetImagePreview(row: any, initialIndex?: number) {
-  const images = getPreviewImageList(row);
-  if (!images.length) {
-    return;
-  }
-
-  tableImageViewerUrls.value = images;
-  const index = typeof initialIndex === "number" ? initialIndex : getPreviewImageIndex(row);
-  tableImageViewerIndex.value = Math.min(Math.max(index, 0), images.length - 1);
-  tableImageViewerVisible.value = true;
+function getPreviewImageDimensions(url: string) {
+  const dimensions = previewImageDimensions[url];
+  return dimensions ? `${dimensions.width} × ${dimensions.height}` : "加载中";
 }
 
 // 批量下载套图图片（与商品页面逻辑一致）
@@ -2149,7 +1926,7 @@ function formatSchedulerProgress(progress?: number | null) {
 }
 
 function getSchedulerAssignedLabel(row: any) {
-  const meta = getPsdSetDisplaySchedulerMeta(row);
+  const meta = normalizePsdSetSchedulerMeta(row?.schedulerMeta);
   if (!meta) return "-";
   return meta.assignedMachineCode || meta.assignedClientId || "-";
 }
@@ -2344,7 +2121,7 @@ async function loadPsdSetDetailById(psdSetId: unknown, silent = false) {
     const res = await request.get({
       url: `/sticker-psd-set/${normalizedId}`,
     });
-    detailData.value = mergePsdSetRuntimeOverlay(normalizePsdSetRecord(res?.data || res || {}));
+    detailData.value = normalizePsdSetRecord(res?.data || res || {});
   } catch (error: any) {
     if (!silent) {
       console.error("获取套图详情失败:", error);
@@ -2374,7 +2151,7 @@ function schedulePsdSetRuntimeRefresh(delay = 600) {
 
   psdSetRuntimeReloadTimer = setTimeout(() => {
     psdSetRuntimeReloadTimer = null;
-    scheduleSilentListRefresh(0);
+    void getList(true);
     void loadPsdSetSchedulerRuntime();
     if (detailDialogVisible.value && detailData.value?.id) {
       void loadPsdSetDetailById(detailData.value.id, true);
@@ -2482,13 +2259,10 @@ function onSelectionChange({ records, reserves }) {
 
 async function updateRowStatus(row, status: string) {
   try {
-    await stickerPsdSetApi.updateStatus(row.id, {
-      status,
-      statusMessage: getDefaultPsdSetStatusMessage(status),
-    });
+    await stickerPsdSetApi.updateStatus(row.id, { status });
     applyManualPsdSetStatusLocally(row.id, status);
     ElMessage.success("状态已更新");
-    scheduleSilentListRefresh(300);
+    getList(true);
   } catch (error: any) {
     ElMessage.error(error?.message || "状态更新失败");
   }
@@ -2789,10 +2563,7 @@ async function handleBatchUpdateStatus(status: string) {
   try {
     for (const id of selectedIds.value) {
       try {
-        await stickerPsdSetApi.updateStatus(id, {
-          status,
-          statusMessage: getDefaultPsdSetStatusMessage(status),
-        });
+        await stickerPsdSetApi.updateStatus(id, { status });
         applyManualPsdSetStatusLocally(id, status);
         successCount += 1;
       } catch (error) {
@@ -3212,8 +2983,6 @@ const productionStatusHandler = (data: {
   message?: string;
   progress?: number;
   total?: number;
-  clientId?: string | null;
-  machineCode?: string | null;
   assignedClientId?: string | null;
   assignedMachineCode?: string | null;
 }) => {
@@ -3221,13 +2990,22 @@ const productionStatusHandler = (data: {
     const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
     if (!normalizedPsdSetId) return;
 
+    const rowIndex = findPsdSetRowIndexById(normalizedPsdSetId);
+    const currentRecord = rowIndex >= 0 ? dataSource.value[rowIndex] : null;
+    const incomingStatus = normalizePsdSetRuntimeStatus(data.status);
+    const nextStatus =
+      incomingStatus === "pending" &&
+        (isPsdSetRuntimeActive(currentRecord) || isPsdSetActiveBySummary(normalizedPsdSetId))
+        ? "processing"
+        : incomingStatus;
+
     applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-      status: normalizePsdSetRuntimeStatus(data.status),
+      status: nextStatus,
       message: data.message,
       progress: data.progress,
       total: data.total,
-      assignedClientId: data.assignedClientId || data.clientId || null,
-      assignedMachineCode: data.assignedMachineCode || data.machineCode || null,
+      assignedClientId: data.assignedClientId,
+      assignedMachineCode: data.assignedMachineCode,
     });
 
     schedulePsdSetRuntimeRefresh(
@@ -3249,7 +3027,6 @@ const psAutomationStatusHandler = (data: PsAutomationStatusEvent) => {
         message: String(data.currentStep || "").trim() || "客户端处理中",
         progress: typeof data.progress === "number" ? data.progress : 0,
         assignedClientId: String(data.clientId || "").trim() || null,
-        assignedMachineCode: String(data.machineCode || "").trim() || null,
         schedulerStatus: "running",
       });
       schedulePsdSetRuntimeRefresh(1200);
@@ -3261,7 +3038,6 @@ const psAutomationStatusHandler = (data: PsAutomationStatusEvent) => {
         status: "failed",
         message: data.lastError,
         assignedClientId: String(data.clientId || "").trim() || null,
-        assignedMachineCode: String(data.machineCode || "").trim() || null,
         schedulerStatus: "failed",
       });
       schedulePsdSetRuntimeRefresh(360);
@@ -3279,6 +3055,7 @@ watch(
       return;
     }
 
+    void getList(true);
     void loadPsdSetSchedulerRuntime();
     if (detailDialogVisible.value && detailData.value?.id) {
       void loadPsdSetDetailById(detailData.value.id, true);
@@ -3289,11 +3066,12 @@ watch(
     }
 
     psdSetActiveRuntimeTimer = setInterval(() => {
+      void getList(true);
       void loadPsdSetSchedulerRuntime();
       if (detailDialogVisible.value && detailData.value?.id) {
         void loadPsdSetDetailById(detailData.value.id, true);
       }
-    }, 8000);
+    }, 3000);
   },
   { immediate: true },
 );
@@ -3315,6 +3093,7 @@ watch(
       return;
     }
 
+    void getList(true);
     void loadPsdSetSchedulerRuntime();
     if (detailDialogVisible.value && detailData.value?.id) {
       void loadPsdSetDetailById(detailData.value.id, true);
@@ -3342,14 +3121,6 @@ onUnmounted(() => {
   if (psdSetRuntimeReloadTimer) {
     clearTimeout(psdSetRuntimeReloadTimer);
     psdSetRuntimeReloadTimer = null;
-  }
-  if (psdSetListRefreshTimer) {
-    clearTimeout(psdSetListRefreshTimer);
-    psdSetListRefreshTimer = null;
-  }
-  if (tableScrollSettledTimer) {
-    clearTimeout(tableScrollSettledTimer);
-    tableScrollSettledTimer = null;
   }
   if (psdSetSchedulerRuntimeTimer) {
     clearInterval(psdSetSchedulerRuntimeTimer);
@@ -4062,6 +3833,155 @@ getList();
 }
 
 /* 操作下拉菜单样式 */
+/* 套图图片预览 */
+.table-preview-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.table-preview-carousel {
+  width: 160px;
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 250, 0.96)),
+    var(--el-fill-color-lighter);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.table-preview-carousel:hover {
+  border-color: rgba(64, 158, 255, 0.45);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.13);
+}
+
+.table-preview-carousel :deep(.el-carousel__container) {
+  width: 100%;
+}
+
+.table-preview-carousel :deep(.el-carousel__item) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-preview-image {
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.table-preview-image :deep(.el-image__inner) {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.table-preview-image :deep(.el-image__placeholder),
+.table-preview-image :deep(.el-image__error) {
+  border-radius: 8px;
+  background: var(--el-fill-color-light);
+}
+
+.table-preview-badge {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 2;
+  min-width: 24px;
+
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.58);
+  color: #fff;
+  font-size: 9px;
+  line-height: 14px;
+  height: 16px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
+.table-preview-dimensions {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+  z-index: 2;
+  max-width: calc(100% - 16px);
+  height: 13px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--el-text-color-secondary);
+  font-size: 9px;
+  line-height: 13px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  backdrop-filter: blur(6px);
+}
+
+.table-preview-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  height: 112px;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 12px;
+  color: var(--el-text-color-placeholder);
+  background: var(--el-fill-color-lighter);
+  font-size: 12px;
+}
+
+.table-preview-action {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(64, 158, 255, 0.08);
+}
+
+.custom-carousel :deep(.el-carousel__arrow) {
+  width: 24px;
+  height: 24px;
+  background-color: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.custom-carousel:hover :deep(.el-carousel__arrow) {
+  opacity: 1;
+}
+
+.custom-carousel :deep(.el-carousel__arrow):hover {
+  transform: translateY(-50%) scale(1.04);
+}
+
+.custom-carousel :deep(.el-carousel__arrow) i {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.custom-carousel :deep(.el-carousel__arrow--left) {
+  left: 8px;
+}
+
+.custom-carousel :deep(.el-carousel__arrow--right) {
+  right: 8px;
+}
+
 /* 素材关联标签样式 */
 .material-association-tag {
   font-weight: 500;
