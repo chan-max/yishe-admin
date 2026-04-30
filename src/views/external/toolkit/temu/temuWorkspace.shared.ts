@@ -218,10 +218,10 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
     fields: [
       createRegionField(),
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
-      createPageSizeField(10),
+      createPageSizeField(1000),
     ],
     note:
-      "获取待核价商品列表；筛选条件固定为 priceReviewStatusList=[0,1,2,3]、removeStatus=0、secondarySelectStatusList=[7]、supplierTodoTypeList=[1]，页码和每页数量可调整。",
+      "获取待核价商品列表；默认每页 1000 条，筛选条件固定为 priceReviewStatusList=[0,1,2,3]、removeStatus=0、secondarySelectStatusList=[7]、supplierTodoTypeList=[1]。",
     buildPayload: buildProfileRegionPayload,
   },
   "activity.list": {

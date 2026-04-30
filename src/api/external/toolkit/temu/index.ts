@@ -155,3 +155,19 @@ export const batchDeleteTemuTaskRuns = (ids: Array<number | string>) => {
     },
   });
 };
+
+export const markTemuTaskRunPriceReviewRow = (data: {
+  id: number | string;
+  rowKey: string;
+  action: "confirm" | "abandon" | "reprice";
+  status: "success" | "failed";
+  completedLabel?: string;
+  message?: string;
+  markInvalid?: boolean;
+  price?: number;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/price-review-mark",
+    data,
+  });
+};
