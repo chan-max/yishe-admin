@@ -104,7 +104,7 @@
           class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body psd-set-page__table-body">
             <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="onSelectionChange"
-              @checkbox-all="onSelectionChange">
+              @checkbox-all="onSelectionChange" @scroll="handleGridScroll">
               <template #idSlot="{ row }">
                 <div class="table-cell-copyable" @click="copyId(row.id)">
                   <span class="table-cell-id">{{ row.id }}</span>
@@ -131,32 +131,11 @@
                 </div>
               </template>
               <template #imagesSlot="{ row }">
-                <div class="table-preview-stack">
-                  <el-carousel v-if="row.images && row.images.length > 0" :interval="3000" height="112px"
-                    indicator-position="none" :arrow="row.images.length > 1 ? 'always' : 'never'"
-                    class="custom-carousel table-preview-carousel">
-                    <el-carousel-item v-for="(url, index) in row.images" :key="index">
-                      <el-image :src="url" :preview-src-list="row.images" :initial-index="Number(index)"
-                        :preview-teleported="true" :hide-on-click-modal="false" :lazy="true" loading="lazy"
-                        class="table-preview-image" fit="contain" @load="handlePreviewImageLoad(url, $event)" />
-                      <div class="table-preview-badge">
-                        {{ Number(index) + 1 }}/{{ row.images.length }}
-                      </div>
-                      <div class="table-preview-dimensions">
-                        {{ getPreviewImageDimensions(url) }}
-                      </div>
-                    </el-carousel-item>
-                  </el-carousel>
-
-                  <span v-else class="table-preview-placeholder">无</span>
-
-                  <el-tooltip v-if="row.images && row.images.length > 0" content="批量下载该套图的所有图片" placement="top">
-                    <el-button type="primary" link size="small" class="table-preview-action"
-                      @click.stop="handleDownloadPsdSetImages(row)">
-                      全部下载
-                    </el-button>
-                  </el-tooltip>
-                </div>
+                <PsdSetTableImageCell v-memo="[row.id, row.name, row.images, getPreviewImageIndex(row)]"
+                  :row-id="row.id" :name="row.name" :images="row.images" :current-index="getPreviewImageIndex(row)"
+                  @shift="(delta) => shiftPreviewImage(row, delta)"
+                  @preview="(index) => openPsdSetImagePreview(row, index)"
+                  @download="() => handleDownloadPsdSetImages(row)" />
               </template>
               <template #configSlot="{ row }">
                 <div class="flex items-center gap-2">
@@ -805,6 +784,10 @@
       </template>
     </el-dialog>
 
+    <el-image-viewer v-if="tableImageViewerVisible" :url-list="tableImageViewerUrls"
+      :initial-index="tableImageViewerIndex" :hide-on-click-modal="false" teleported
+      @close="tableImageViewerVisible = false" />
+
     <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
   </ContentWrap>
 </template>
@@ -842,6 +825,7 @@ import {
 } from "@/services/autoDispatchSchedulerRuntime";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
+import PsdSetTableImageCell from "./components/PsdSetTableImageCell.vue";
 import {
   derivePublishTaskTypeByPlatform,
   getTaskTypeLabel,
@@ -852,7 +836,10 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
-const previewImageDimensions = reactive<Record<string, { width: number; height: number }>>({});
+const tablePreviewImageIndexMap = reactive<Record<string, number>>({});
+const tableImageViewerVisible = ref(false);
+const tableImageViewerUrls = ref<string[]>([]);
+const tableImageViewerIndex = ref(0);
 const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
 const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
@@ -1839,20 +1826,54 @@ function formatProcessingTime(seconds: any): string {
   return `${hours}小时${minutes}分${secs.toFixed(2)}秒`;
 }
 
-function handlePreviewImageLoad(url: string, event: Event) {
-  const image = event?.target as HTMLImageElement | null;
-  const width = Number(image?.naturalWidth || 0);
-  const height = Number(image?.naturalHeight || 0);
-  if (!url || width <= 0 || height <= 0) {
+function getPreviewImageList(row: any): string[] {
+  return Array.isArray(row?.images)
+    ? row.images.filter((url: any) => typeof url === "string" && url.trim())
+    : [];
+}
+
+function getPreviewImageKey(row: any) {
+  const id = normalizePsdSetId(row?.id);
+  return id || getPreviewImageList(row).join("|");
+}
+
+function getPreviewImageCount(row: any) {
+  return getPreviewImageList(row).length;
+}
+
+function getPreviewImageIndex(row: any) {
+  const imageCount = getPreviewImageCount(row);
+  if (imageCount <= 0) {
+    return 0;
+  }
+
+  const key = getPreviewImageKey(row);
+  const rawIndex = Number(tablePreviewImageIndexMap[key] ?? 0);
+  const index = Number.isFinite(rawIndex) ? Math.trunc(rawIndex) : 0;
+  return Math.min(Math.max(index, 0), imageCount - 1);
+}
+
+function shiftPreviewImage(row: any, delta: number) {
+  const images = getPreviewImageList(row);
+  if (images.length <= 1) {
     return;
   }
 
-  previewImageDimensions[url] = { width, height };
+  const key = getPreviewImageKey(row);
+  const currentIndex = getPreviewImageIndex(row);
+  tablePreviewImageIndexMap[key] = (currentIndex + delta + images.length) % images.length;
 }
 
-function getPreviewImageDimensions(url: string) {
-  const dimensions = previewImageDimensions[url];
-  return dimensions ? `${dimensions.width} × ${dimensions.height}` : "加载中";
+function openPsdSetImagePreview(row: any, initialIndex?: number) {
+  const images = getPreviewImageList(row);
+  if (!images.length) {
+    return;
+  }
+
+  tableImageViewerUrls.value = images;
+  const index = typeof initialIndex === "number" ? initialIndex : getPreviewImageIndex(row);
+  tableImageViewerIndex.value = Math.min(Math.max(index, 0), images.length - 1);
+  tableImageViewerVisible.value = true;
 }
 
 // 批量下载套图图片（与商品页面逻辑一致）
@@ -3830,156 +3851,6 @@ getList();
   justify-content: flex-start;
   padding: 4px 0;
   min-width: 120px;
-}
-
-/* 操作下拉菜单样式 */
-/* 套图图片预览 */
-.table-preview-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  min-width: 0;
-}
-
-.table-preview-carousel {
-  width: 160px;
-  max-width: 100%;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(245, 247, 250, 0.96)),
-    var(--el-fill-color-lighter);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-}
-
-.table-preview-carousel:hover {
-  border-color: rgba(64, 158, 255, 0.45);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.13);
-}
-
-.table-preview-carousel :deep(.el-carousel__container) {
-  width: 100%;
-}
-
-.table-preview-carousel :deep(.el-carousel__item) {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.table-preview-image {
-  width: 100%;
-  height: 100%;
-  padding: 8px;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-.table-preview-image :deep(.el-image__inner) {
-  width: 100%;
-  height: 100%;
-  border-radius: 8px;
-  object-fit: contain;
-}
-
-.table-preview-image :deep(.el-image__placeholder),
-.table-preview-image :deep(.el-image__error) {
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
-}
-
-.table-preview-badge {
-  position: absolute;
-  right: 6px;
-  top: 6px;
-  z-index: 2;
-  min-width: 24px;
-
-  padding: 0 5px;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.58);
-  color: #fff;
-  font-size: 9px;
-  line-height: 14px;
-  height: 16px;
-  text-align: center;
-  backdrop-filter: blur(6px);
-}
-
-.table-preview-dimensions {
-  position: absolute;
-  left: 50%;
-  bottom: 5px;
-  z-index: 2;
-  max-width: calc(100% - 16px);
-  height: 13px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  color: var(--el-text-color-secondary);
-  font-size: 9px;
-  line-height: 13px;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  backdrop-filter: blur(6px);
-}
-
-.table-preview-placeholder {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 160px;
-  height: 112px;
-  border: 1px dashed var(--el-border-color);
-  border-radius: 12px;
-  color: var(--el-text-color-placeholder);
-  background: var(--el-fill-color-lighter);
-  font-size: 12px;
-}
-
-.table-preview-action {
-  height: 22px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(64, 158, 255, 0.08);
-}
-
-.custom-carousel :deep(.el-carousel__arrow) {
-  width: 24px;
-  height: 24px;
-  background-color: rgba(15, 23, 42, 0.45);
-  opacity: 0;
-  transform: translateY(-50%);
-  transition: opacity 0.16s ease, transform 0.16s ease;
-}
-
-.custom-carousel:hover :deep(.el-carousel__arrow) {
-  opacity: 1;
-}
-
-.custom-carousel :deep(.el-carousel__arrow):hover {
-  transform: translateY(-50%) scale(1.04);
-}
-
-.custom-carousel :deep(.el-carousel__arrow) i {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.custom-carousel :deep(.el-carousel__arrow--left) {
-  left: 8px;
-}
-
-.custom-carousel :deep(.el-carousel__arrow--right) {
-  right: 8px;
 }
 
 /* 素材关联标签样式 */
