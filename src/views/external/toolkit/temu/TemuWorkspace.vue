@@ -250,94 +250,6 @@
           <pre class="temu-workspace__json">{{ actionResultText }}</pre>
         </div>
 
-        <div v-if="activePriceReviewPreviewRows.length" class="temu-workspace__result-preview">
-          <div class="temu-workspace__result-head">
-            <div class="temu-workspace__result-title">
-              <span>待核价列表预览</span>
-              <el-tag size="small" effect="plain">{{ activePriceReviewPreviewRows.length }}</el-tag>
-            </div>
-            <div class="temu-workspace__editor-desc">
-              仅展示核价提交会用到的关键字段；完整接口返回仍可在执行记录详情里查看。
-            </div>
-          </div>
-
-          <div class="common-table">
-            <vxe-grid
-              v-bind="priceReviewPreviewGridOptions"
-              :data="activePriceReviewPreviewRows"
-              class="temu-workspace__preview-table"
-            >
-              <template #priceReviewImageSlot="{ row }">
-                <el-image
-                  v-if="row.imageUrl && row.imageUrl !== '-'"
-                  class="temu-workspace__preview-image"
-                  :src="row.imageUrl"
-                  :preview-src-list="[row.imageUrl]"
-                  preview-teleported
-                  fit="cover"
-                />
-                <span v-else>-</span>
-              </template>
-
-              <template #priceReviewProductSlot="{ row }">
-                <div class="temu-workspace__preview-product">
-                  <span>{{ row.productName }}</span>
-                  <small>{{ row.categoryName }}</small>
-                </div>
-              </template>
-
-              <template #priceReviewSubmitStatusSlot="{ row }">
-                <div v-if="row.submitStatus !== '-'" class="temu-workspace__submit-status">
-                  <el-tag
-                    size="small"
-                    effect="plain"
-                    :type="row.submitStatus === '成功' ? 'success' : 'danger'"
-                  >
-                    {{ row.submitStatus }}
-                  </el-tag>
-                  <small>{{ row.submitMessage }}</small>
-                </div>
-                <span v-else>-</span>
-              </template>
-
-              <template #priceReviewValiditySlot="{ row }">
-                <el-tag
-                  size="small"
-                  effect="plain"
-                  :type="row.invalid ? 'info' : 'success'"
-                >
-                  {{ row.invalid ? row.invalidReason : "可操作" }}
-                </el-tag>
-              </template>
-
-              <template #priceReviewOperationSlot="{ row }">
-                <div class="temu-workspace__preview-actions">
-                  <el-button
-                    text
-                    size="small"
-                    type="primary"
-                    :loading="priceReviewSubmittingKey === `${row.rowKey}:confirm`"
-                    :disabled="!canSubmitPriceReviewRow(row) || row.invalid"
-                    @click="submitPriceReviewRow(row, 'confirm')"
-                  >
-                    确认核价
-                  </el-button>
-                  <el-button
-                    text
-                    size="small"
-                    type="danger"
-                    :loading="priceReviewSubmittingKey === `${row.rowKey}:abandon`"
-                    :disabled="!row.rawPriceOrderId || row.invalid"
-                    @click="submitPriceReviewRow(row, 'abandon')"
-                  >
-                    不核价
-                  </el-button>
-                </div>
-              </template>
-            </vxe-grid>
-          </div>
-        </div>
-
         <div class="temu-workspace__task-panel">
           <div class="temu-workspace__task-head">
             <div>
@@ -1340,9 +1252,6 @@ const buildPriceReviewPreviewRows = (
 
   return rows;
 };
-const activePriceReviewPreviewRows = computed(() =>
-  buildPriceReviewPreviewRows(activeActionResult.value),
-);
 const activeActionRunning = computed(() => {
   if (!selectedAction.value?.key) {
     return false;
