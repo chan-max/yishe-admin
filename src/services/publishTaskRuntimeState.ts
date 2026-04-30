@@ -241,6 +241,13 @@ const resolveTooltipLabel = (item: NormalizedPublishTaskRuntimeItem) => {
   return item.id;
 };
 
+const isRunningRuntimeStatus = (status?: string | null) =>
+  ["assigned", "running", "processing"].includes(
+    String(status || "")
+      .trim()
+      .toLowerCase(),
+  );
+
 const ensureInitialized = () => {
   if (initialized) return;
   initialized = true;
@@ -257,12 +264,15 @@ export function usePublishTaskRuntimeState() {
 
   const activeTaskNames = computed(() =>
     activeTasks.value
+      .filter((item) => isRunningRuntimeStatus(item.status))
       .map((item) => resolveTooltipLabel(item))
       .map((item) => String(item || "").trim())
       .filter((item) => !!item),
   );
-  const activeTaskCount = computed(
-    () => Number(summary.value.waiting || 0) + Number(summary.value.processing || 0),
+  const activeTaskCount = computed(() =>
+    activeTasks.value.length > 0
+      ? activeTasks.value.filter((item) => isRunningRuntimeStatus(item.status)).length
+      : Number(summary.value.processing || 0),
   );
   const isAnyPublishTaskRunning = computed(() => activeTaskCount.value > 0);
   const hasBrowserAutomationExecutor = computed(
