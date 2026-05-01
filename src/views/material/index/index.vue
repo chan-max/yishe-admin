@@ -791,6 +791,7 @@
 
               <div class="common-table material-publish-config-dialog__table">
                 <vxe-grid
+                  ref="materialPublishConfigGridRef"
                   v-bind="materialPublishConfigGridOptions"
                   :data="materialPublishConfigDataSource"
                   @checkbox-change="handleMaterialPublishConfigCheckboxChange"
@@ -3702,6 +3703,7 @@ const materialPublishConfigCurrentPage = ref(1);
 const materialPublishConfigPageSize = ref(10);
 const materialPublishConfigOptions = ref<any[]>([]);
 const materialPublishConfigSelectedIds = ref<string[]>([]);
+const materialPublishConfigGridRef = ref<any>(null);
 const psdSetMergeSticker = ref(false);
 const psdSetTemplateSearchText = ref("");
 const psdSetAutomationDialogVisible = ref(false);
@@ -4738,6 +4740,8 @@ async function confirmSvgToPng() {
 }
 
 async function openPsdSetDialog(mergeMode?: boolean | any) {
+  resetPsdSetState();
+
   // 如果传入的是对象(row),则是从表格行点击的,默认使用单素材模式
   if (mergeMode && typeof mergeMode === "object") {
     ids.value = [mergeMode.id];
@@ -4764,8 +4768,8 @@ async function openMaterialPublishConfigDialog() {
     return;
   }
 
+  clearMaterialPublishConfigSelection();
   materialPublishConfigDialogVisible.value = true;
-  materialPublishConfigSelectedIds.value = [];
   materialPublishConfigSearchText.value = "";
   materialPublishConfigCurrentPage.value = 1;
   await loadPublishConfigsForMaterialPublishDialog();
@@ -4773,9 +4777,14 @@ async function openMaterialPublishConfigDialog() {
 
 function handleCloseMaterialPublishConfigDialog() {
   materialPublishConfigDialogVisible.value = false;
-  materialPublishConfigSelectedIds.value = [];
+  clearMaterialPublishConfigSelection();
   materialPublishConfigSearchText.value = "";
   materialPublishConfigCurrentPage.value = 1;
+}
+
+function clearMaterialPublishConfigSelection() {
+  materialPublishConfigSelectedIds.value = [];
+  materialPublishConfigGridRef.value?.clearCheckboxRow?.();
 }
 
 function isMaterialPublishConfigUsable(row: any) {
@@ -4839,6 +4848,7 @@ async function handleCreatePsdSetsByPublishConfig() {
       : Number(res?.total || materialPublishConfigTaskCount.value);
     ElMessage.success(`成功创建 ${createdCount} 条套图任务`);
     handleCloseMaterialPublishConfigDialog();
+    resetCheckStatus(ids);
   } catch (error: any) {
     console.error("按发布配置创建套图失败:", error);
     ElMessage.error(error?.message || "按发布配置创建套图失败");
@@ -4957,13 +4967,22 @@ function handleSaveConfigToMemory() {
 // 重置状态
 function resetPsdSetState() {
   selectedPsdTemplateIds.value = [];
+  psdSetTemplates.value = [];
+  templateConfigList.value = [];
+  batchDetailConfigDialogVisible.value = false;
   psdSetMergeSticker.value = false;
   psdSetTemplateSearchText.value = "";
   psdSetAutomationDialogVisible.value = false;
+  psdSetParamsDialogVisible.value = false;
+  psdSetParamsContent.value = "";
+  psdTemplateDetailDialogVisible.value = false;
+  currentPsdTemplate.value = null;
   psdSetTemplatePageParams.currentPage = 1;
+  psdSetTemplatePageParams.pageSize = 12;
   psdSetTemplatePageParams.total = 0;
-  psdSetTemplatePageParams.total = 0;
-  selectedPsdFolderId.value = "__all__";
+  psdSetTemplatePageParams.suitableSizesArray = [];
+  psdSetTemplatePageParams.cutoutModesArray = [];
+  selectedPsdFolderId.value = "__root__";
   psdSetAutomationActions.value = psdSetAutomationActions.value.map((action) => ({
     ...action,
     enabled: false,
@@ -5401,6 +5420,7 @@ async function handleCreatePsdSets() {
     }
     psdSetDialogVisible.value = false;
     resetPsdSetState();
+    resetCheckStatus(ids);
   } catch (error: any) {
     console.error("创建套图失败:", error);
     ElMessage.error(error?.message || "创建套图失败");

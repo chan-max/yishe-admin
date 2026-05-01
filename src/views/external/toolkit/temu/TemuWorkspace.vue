@@ -207,7 +207,7 @@
             <el-button
               type="primary"
               :loading="activeActionRunning"
-              :disabled="!canRunSelectedAction || (isAnyActionRunning && !activeActionRunning)"
+              :disabled="!canRunSelectedAction || activeActionRunning"
               @click="runAction"
             >
               {{ canRunSelectedAction ? "执行动作" : runButtonLabel }}
@@ -2193,9 +2193,6 @@ const canRunSelectedAction = computed(() => {
   return !!(props.profileId && hasUsableSession.value && selectedAction.value.endpoint);
 });
 const runButtonLabel = computed(() => {
-  if (isAnyActionRunning.value && !activeActionRunning.value) {
-    return "动作执行中";
-  }
   if (isToolAction(selectedAction.value) && !props.clientId) {
     return "先选择客户端";
   }
@@ -3085,7 +3082,7 @@ const runAction = async () => {
     return;
   }
 
-  if (runningActionKey.value || props.toolBusy) {
+  if (activeActionRunning.value) {
     ElMessage.warning("当前动作正在提交，请稍候");
     return;
   }
