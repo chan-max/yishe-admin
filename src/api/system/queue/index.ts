@@ -155,6 +155,7 @@ export const getTaskList = (params: {
   id?: string; // 任务ID（可选，不传则查询所有ID）
   sortField?: "createdAt" | "updatedAt" | "processedAt";
   sortOrder?: "ASC" | "DESC";
+  includeTotal?: boolean;
   limit?: number;
   offset?: number;
 }) => {

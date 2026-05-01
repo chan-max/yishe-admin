@@ -205,6 +205,14 @@
           <div class="temu-workspace__runner">
             <el-button @click="resetFormState">重置参数</el-button>
             <el-button
+              v-if="selectedAction?.key === 'compliance.page-query'"
+              :loading="complianceFetchingAll"
+              :disabled="!canRunSelectedAction || activeActionRunning || complianceFetchingAll"
+              @click="fetchAllComplianceRows"
+            >
+              一键获取全部
+            </el-button>
+            <el-button
               type="primary"
               :loading="activeActionRunning"
               :disabled="!canRunSelectedAction || activeActionRunning"
@@ -782,10 +790,26 @@
             v-if="isComplianceTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
+            <div v-if="complianceBatchSubmitting" class="temu-workspace__price-review-batch-mask">
+              <div class="temu-workspace__price-review-batch-panel">
+                <strong>批量处理合规信息</strong>
+                <span>处理中 {{ complianceBatchFinishedCount }}/{{ complianceBatchTotalCount }}</span>
+                <el-progress
+                  :percentage="complianceBatchProgressPercent"
+                  :stroke-width="10"
+                  :show-text="false"
+                />
+                <div class="temu-workspace__price-review-batch-stats">
+                  <el-tag size="small" effect="plain" type="success">成功 {{ complianceBatchSuccessCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="danger">失败 {{ complianceBatchFailedCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="warning">剩余 {{ complianceBatchRemainingCount }}</el-tag>
+                </div>
+              </div>
+            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>合规信息列表</span>
-                <el-tag size="small" effect="plain">{{ taskRunComplianceRows.length }}</el-tag>
+                <el-tag size="small" effect="plain">{{ visibleTaskRunComplianceRows.length }}</el-tag>
                 <el-tag
                   v-if="taskRunComplianceTotalCount !== taskRunComplianceRows.length"
                   size="small"
@@ -794,26 +818,78 @@
                 >
                   全部 {{ taskRunComplianceTotalCount }}
                 </el-tag>
+                <el-tag v-if="selectedComplianceRows.length" size="small" effect="plain" type="success">
+                  已选 {{ selectedComplianceRows.length }}
+                </el-tag>
+                <el-tag v-if="complianceBatchSubmitting" size="small" effect="plain" type="warning">
+                  {{ complianceBatchProgressText }}
+                </el-tag>
+              </div>
+              <div class="temu-workspace__price-review-batch-actions">
+                <el-checkbox
+                  v-model="complianceIgnorePackagingOnly"
+                  size="small"
+                >
+                  忽略包装材料信息收集
+                </el-checkbox>
+                <el-button
+                  size="small"
+                  type="primary"
+                  :disabled="!selectedComplianceRows.length || complianceBatchSubmitting"
+                  :loading="complianceBatchPreparing || complianceBatchSubmitting"
+                  @click="openComplianceBatchEditor"
+                >
+                  批量处理
+                </el-button>
               </div>
             </div>
             <div class="common-table">
               <vxe-grid
                 v-bind="compliancePreviewGridOptions"
-                :data="taskRunComplianceRows"
+                :data="visibleTaskRunComplianceRows"
                 class="temu-workspace__preview-table"
+                @checkbox-change="onComplianceSelectionChange"
+                @checkbox-all="onComplianceSelectionChange"
               >
                 <template #complianceIdentitySlot="{ row }">
                   <div class="temu-workspace__price-review-identity">
                     <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
-                    <div><span>SKC</span><strong>{{ row.skcId }}</strong></div>
-                    <div><span>SKU</span><strong>{{ row.skuId }}</strong></div>
-                    <div><span>单号</span><strong>{{ row.orderId }}</strong></div>
+                    <div><span>类目</span><strong>{{ row.categoryName }}</strong></div>
+                    <div><span>类目ID</span><strong>{{ row.categoryId }}</strong></div>
+                    <div><span>goodsId</span><strong>{{ row.goodsId }}</strong></div>
                   </div>
                 </template>
                 <template #complianceStatusSlot="{ row }">
-                  <div class="temu-workspace__preview-product">
-                    <span>{{ row.statusText }}</span>
-                    <small>{{ row.typeText }}</small>
+                  <div class="temu-workspace__compliance-status-list">
+                    <div
+                      v-for="task in row.actionableTaskGroups"
+                      :key="task.key"
+                      class="temu-workspace__compliance-status-item"
+                    >
+                      <span class="temu-workspace__compliance-status-name">{{ task.name }}</span>
+                      <el-tag
+                        size="small"
+                        effect="plain"
+                        :type="task.tagType"
+                      >
+                        {{ task.statusText }}
+                      </el-tag>
+                      <small>{{ task.requiredText }}</small>
+                    </div>
+                  </div>
+                </template>
+                <template #complianceActionSlot="{ row }">
+                  <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
+                    <el-button
+                      text
+                      size="small"
+                      type="primary"
+                      :loading="complianceDetailLoadingKey === row.rowKey"
+                      :disabled="!isActionableComplianceRow(row)"
+                      @click="openComplianceEditor(row)"
+                    >
+                      处理
+                    </el-button>
                   </div>
                 </template>
               </vxe-grid>
@@ -892,6 +968,120 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="complianceEditorVisible"
+      title="合规信息处理"
+      width="980px"
+      append-to-body
+      destroy-on-close
+      class="temu-workspace__compliance-dialog"
+    >
+      <div
+        v-loading="complianceEditorLoading"
+        class="temu-workspace__compliance-dialog-body"
+      >
+        <div v-if="activeComplianceRow" class="temu-workspace__compliance-dialog-head">
+          <div class="temu-workspace__price-review-identity">
+            <div><span>SPU</span><strong>{{ activeComplianceRow.spuId }}</strong></div>
+            <div><span>类目</span><strong>{{ activeComplianceRow.categoryName }}</strong></div>
+            <div><span>类目ID</span><strong>{{ activeComplianceRow.categoryId }}</strong></div>
+            <div><span>goodsId</span><strong>{{ activeComplianceRow.goodsId }}</strong></div>
+          </div>
+          <el-tag size="small" effect="plain">{{ activeComplianceRow.typeText }}</el-tag>
+        </div>
+        <div v-if="complianceBatchSubmitting" class="temu-workspace__batch-reprice-progress">
+          <div class="temu-workspace__section-title-main">
+            <span>批量处理中 {{ complianceBatchFinishedCount }}/{{ complianceBatchTotalCount }}</span>
+            <el-tag size="small" effect="plain" type="success">成功 {{ complianceBatchSuccessCount }}</el-tag>
+            <el-tag size="small" effect="plain" type="danger">失败 {{ complianceBatchFailedCount }}</el-tag>
+            <el-tag size="small" effect="plain" type="warning">剩余 {{ complianceBatchRemainingCount }}</el-tag>
+          </div>
+          <el-progress
+            :percentage="complianceBatchProgressPercent"
+            :stroke-width="10"
+          />
+        </div>
+
+        <div class="temu-workspace__compliance-editor-grid">
+          <div class="temu-workspace__compliance-picker">
+            <button
+              v-for="task in visibleComplianceEditorTaskGroups"
+              :key="task.key"
+              type="button"
+              class="temu-workspace__compliance-picker-item"
+              :class="{ 'is-active': selectedComplianceTaskKey === task.key }"
+              @click="selectedComplianceTaskKey = task.key"
+            >
+              <span>{{ task.name }}</span>
+              <el-tag size="small" effect="plain" :type="task.tagType">{{ task.statusText }}</el-tag>
+              <small>{{ task.requiredText }}</small>
+            </button>
+          </div>
+
+          <div class="temu-workspace__compliance-editor-panel">
+            <template v-if="selectedComplianceTask">
+              <div class="temu-workspace__compliance-editor-title">
+                <strong>{{ selectedComplianceTask.name }}</strong>
+                <el-tag size="small" effect="plain" :type="selectedComplianceTask.tagType">
+                  {{ selectedComplianceTask.statusText }}
+                </el-tag>
+              </div>
+              <el-form
+                label-position="top"
+                class="temu-workspace__compliance-form"
+              >
+                <el-form-item
+                  v-for="field in selectedComplianceFields"
+                  :key="field.key"
+                  :label="field.label"
+                >
+                  <el-select
+                    v-if="field.controlType !== 'input'"
+                    v-model="complianceEditorForm[field.key]"
+                    filterable
+                    clearable
+                    :disabled="field.disabled || !field.options.length"
+                    :placeholder="field.options.length ? '请选择' : '暂无可选值'"
+                    class="temu-workspace__compliance-control"
+                  >
+                    <el-option
+                      v-for="option in field.options"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                  <el-input
+                    v-else
+                    v-model="complianceEditorForm[field.key]"
+                    clearable
+                    placeholder="请输入"
+                    class="temu-workspace__compliance-control"
+                  />
+                </el-form-item>
+                <el-empty
+                  v-if="!selectedComplianceFields.length"
+                  description="当前模板未解析到可填写字段"
+                />
+              </el-form>
+            </template>
+            <el-empty v-else description="请选择一个合规项" />
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button :disabled="complianceBatchSubmitting" @click="complianceEditorVisible = false">关闭</el-button>
+        <el-button
+          type="primary"
+          :loading="complianceSubmitting || complianceBatchSubmitting"
+          :disabled="complianceEditorLoading || !activeComplianceRow"
+          @click="submitComplianceEditor"
+        >
+          {{ complianceBatchMode ? "批量提交" : "提交" }}
+        </el-button>
+      </template>
+    </el-dialog>
   </section>
 </template>
 
@@ -929,6 +1119,7 @@ import {
   type TemuIndexedCatalogAction,
 } from "./temuWorkspace.shared";
 import {
+  asArray,
   asPlainObject,
   buildActionFeedbackNotices,
   buildDefaultFormState,
@@ -1016,12 +1207,49 @@ interface RealPicturePreviewRow {
 interface CompliancePreviewRow {
   rowKey: string;
   spuId: string;
-  skcId: string;
-  skuId: string;
-  orderId: string;
+  goodsId: string;
+  categoryId: string;
+  categoryName: string;
   statusText: string;
   typeText: string;
   productName: string;
+  taskGroups: ComplianceTaskStatusGroup[];
+  actionableTaskGroups: ComplianceTaskStatusGroup[];
+  actionablePendingCount: number;
+  raw: Record<string, any>;
+}
+
+interface ComplianceTaskStatusGroup {
+  key: string;
+  name: string;
+  status: number | null;
+  statusText: string;
+  requiredText: string;
+  tagType: "success" | "warning" | "info" | "danger";
+  raw: Record<string, any>;
+  children: ComplianceTaskStatusChild[];
+}
+
+interface ComplianceTaskStatusChild {
+  key: string;
+  name: string;
+  taskType: string;
+  status: number | null;
+  statusText: string;
+  requiredText: string;
+  tagType: ComplianceTaskStatusGroup["tagType"];
+  raw: Record<string, any>;
+}
+
+interface ComplianceEditorField {
+  key: string;
+  label: string;
+  propertyId: string;
+  taskType: string;
+  controlType: "select" | "input";
+  options: Array<{ label: string; value: string | number }>;
+  defaultValue: string | number | null;
+  disabled?: boolean;
   raw: Record<string, any>;
 }
 
@@ -1091,6 +1319,26 @@ const priceReviewBatchFailedCount = ref(0);
 const priceReviewBatchRepriceVisible = ref(false);
 const priceReviewBatchRepriceRows = ref<PriceReviewPreviewRow[]>([]);
 const priceReviewBatchRepricePrices = reactive<Record<string, number>>({});
+const complianceEditorVisible = ref(false);
+const complianceEditorLoading = ref(false);
+const complianceDetailLoadingKey = ref("");
+const complianceSubmitting = ref(false);
+const complianceFetchingAll = ref(false);
+const complianceBatchMode = ref(false);
+const complianceBatchPreparing = ref(false);
+const complianceBatchSubmitting = ref(false);
+const complianceBatchRows = ref<CompliancePreviewRow[]>([]);
+const selectedComplianceRowKeys = ref<string[]>([]);
+const complianceIgnorePackagingOnly = ref(false);
+const complianceBatchFinishedCount = ref(0);
+const complianceBatchTotalCount = ref(0);
+const complianceBatchSuccessCount = ref(0);
+const complianceBatchFailedCount = ref(0);
+const activeComplianceRow = ref<CompliancePreviewRow | null>(null);
+const selectedComplianceTaskKey = ref("");
+const complianceDetailResponse = ref<TemuActionResponse | null>(null);
+const complianceTemplateResponse = ref<TemuActionResponse | null>(null);
+const complianceEditorForm = reactive<Record<string, any>>({});
 let taskRunPollTimer: number | null = null;
 
 const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
@@ -1101,6 +1349,7 @@ const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
   },
   checkboxConfig: {
     reserve: true,
+    checkMethod: ({ row }) => isActionableComplianceRow(row as CompliancePreviewRow),
   },
   columns: [
     { type: "checkbox", width: 48 },
@@ -1319,17 +1568,25 @@ const realPicturePreviewGridOptions = ref<VxeGridProps<RealPicturePreviewRow>>({
 const compliancePreviewGridOptions = ref<VxeGridProps<CompliancePreviewRow>>({
   ...(commonGridOptions as VxeGridProps<CompliancePreviewRow>),
   maxHeight: 780,
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "rowKey",
+  },
+  checkboxConfig: {
+    reserve: true,
+  },
   columns: [
+    { type: "checkbox", width: 48 },
     {
       title: "商品信息",
       field: "spuId",
-      minWidth: 260,
+      minWidth: 300,
       slots: { default: "complianceIdentitySlot" },
     },
     {
-      title: "合规状态",
+      title: "上传状态",
       field: "statusText",
-      minWidth: 220,
+      minWidth: 320,
       slots: { default: "complianceStatusSlot" },
     },
     {
@@ -1337,6 +1594,14 @@ const compliancePreviewGridOptions = ref<VxeGridProps<CompliancePreviewRow>>({
       field: "productName",
       minWidth: 280,
       showOverflow: "tooltip",
+    },
+    {
+      title: "操作",
+      field: "rowKey",
+      width: 96,
+      fixed: "right",
+      align: "right",
+      slots: { default: "complianceActionSlot" },
     },
   ],
 });
@@ -1991,18 +2256,336 @@ const buildCompliancePreviewRows = (
   const items = Array.isArray(result.items) ? result.items : [];
   return items.map((item: any, index: number) => {
     const row = asPlainObject(item);
+    const taskGroups = buildComplianceTaskStatusGroups(row);
+    const actionableTaskGroups = taskGroups.filter((task) => !isIgnoredComplianceTaskGroup(task));
+    const actionablePendingCount = actionableTaskGroups.filter((task) => task.status === 2).length;
     return {
       rowKey: firstDisplayValue(row?.id, row?.orderId, row?.order_id, row?.spuId, row?.spu_id, index),
       spuId: toDisplayText(row?.spuId || row?.spu_id || row?.productId || row?.product_id),
-      skcId: toDisplayText(row?.skcId || row?.skc_id || row?.productSkcId || row?.product_skc_id),
-      skuId: toDisplayText(row?.skuId || row?.sku_id || row?.productSkuId || row?.product_sku_id),
-      orderId: toDisplayText(row?.orderId || row?.order_id || row?.id),
-      statusText: toDisplayText(row?.statusText || row?.status_text || row?.statusName || row?.status_name || row?.status),
-      typeText: toDisplayText(row?.typeText || row?.type_text || row?.typeName || row?.type_name || row?.type),
-      productName: toDisplayText(row?.productName || row?.product_name || row?.goodsName || row?.goods_name),
+      goodsId: toDisplayText(row?.goodsId || row?.goods_id),
+      categoryId: toDisplayText(row?.catId || row?.cat_id),
+      categoryName: toDisplayText(row?.catName || row?.cat_name),
+      statusText: `${actionablePendingCount} 个待上传`,
+      typeText: `${actionableTaskGroups.length} 个合规项`,
+      productName: toDisplayText(row?.spuName || row?.spu_name || row?.productName || row?.product_name || row?.goodsName || row?.goods_name),
+      taskGroups,
+      actionableTaskGroups,
+      actionablePendingCount,
       raw: row,
     };
   });
+};
+const getComplianceTaskStatusText = (status: number | null) => {
+  if (status === 2) {
+    return "待上传";
+  }
+  if (status === 3) {
+    return "上传成功";
+  }
+  if (status === 1) {
+    return "待处理";
+  }
+  return status === null ? "未知" : `状态 ${status}`;
+};
+const getComplianceTaskStatusTagType = (status: number | null): ComplianceTaskStatusGroup["tagType"] => {
+  if (status === 2) {
+    return "warning";
+  }
+  if (status === 3) {
+    return "success";
+  }
+  if (status === 1) {
+    return "info";
+  }
+  return "danger";
+};
+const buildComplianceTaskStatusGroups = (row: Record<string, any>): ComplianceTaskStatusGroup[] => {
+  const showList = Array.isArray(row?.waitTaskShowDtoList)
+    ? row.waitTaskShowDtoList
+    : Array.isArray(row?.wait_task_show_dtolist)
+      ? row.wait_task_show_dtolist
+      : [];
+  const fallbackList = Array.isArray(row?.waitTaskDtoList)
+    ? row.waitTaskDtoList
+    : Array.isArray(row?.wait_task_dtolist)
+      ? row.wait_task_dtolist
+      : [];
+  const sourceList = showList.length ? showList : fallbackList;
+
+  return sourceList.map((task: any, index: number) => {
+    const taskRow = asPlainObject(task);
+    const statusValue = Number(taskRow?.status);
+    const status = Number.isFinite(statusValue) ? statusValue : null;
+    const childTasks = Array.isArray(taskRow?.waitTaskDtoList)
+      ? taskRow.waitTaskDtoList
+      : Array.isArray(taskRow?.wait_task_dtolist)
+        ? taskRow.wait_task_dtolist
+        : [];
+    const needUploadCount = childTasks.filter((child: any) => Number(child?.status) === 2).length;
+    const requiredCount = childTasks.filter((child: any) => !child?.is_not_required).length;
+    const children = childTasks.map((child: any, childIndex: number) => {
+      const childRow = asPlainObject(child);
+      const childStatusValue = Number(childRow?.status);
+      const childStatus = Number.isFinite(childStatusValue) ? childStatusValue : null;
+      return {
+        key: firstDisplayValue(childRow?.taskId, childRow?.task_id, childRow?.taskType, childRow?.task_type, childIndex),
+        name: toDisplayText(childRow?.taskName || childRow?.task_name),
+        taskType: toDisplayText(childRow?.taskType || childRow?.task_type),
+        status: childStatus,
+        statusText: getComplianceTaskStatusText(childStatus),
+        requiredText: childRow?.is_not_required ? "非必填" : "必填",
+        tagType: getComplianceTaskStatusTagType(childStatus),
+        raw: childRow,
+      };
+    });
+
+    return {
+      key: firstDisplayValue(taskRow?.showName, taskRow?.show_name, taskRow?.taskId, taskRow?.task_id, index),
+      name: toDisplayText(taskRow?.showName || taskRow?.show_name || taskRow?.taskName || taskRow?.task_name),
+      status,
+      statusText: getComplianceTaskStatusText(status),
+      requiredText: childTasks.length
+        ? `${childTasks.length} 项${needUploadCount ? ` / ${needUploadCount} 待传` : ""}${requiredCount ? ` / ${requiredCount} 必填` : ""}`
+        : toDisplayText(taskRow?.taskType || taskRow?.task_type),
+      tagType: getComplianceTaskStatusTagType(status),
+      raw: taskRow,
+      children,
+    };
+  });
+};
+const COMPLIANCE_TASK_LABELS: Record<number, string> = {
+  3: "加州 65 号提案",
+  4: "制造商/进口商信息",
+  25: "欧盟负责人",
+  33: "型号",
+  42: "其他合规信息",
+  49: "警告或安全信息（补充）",
+  60: "制造商信息",
+  61: "商品识别码",
+  84: "土耳其负责人",
+};
+const getComplianceTaskLabel = (taskType: number | string) =>
+  COMPLIANCE_TASK_LABELS[Number(taskType)] || `任务 ${toDisplayText(taskType)}`;
+const IGNORED_COMPLIANCE_TASK_TYPES = new Set([166]);
+const isIgnoredComplianceTask = (taskType: number, taskName?: string) =>
+  IGNORED_COMPLIANCE_TASK_TYPES.has(taskType) || /包装材料信息收集/.test(String(taskName || ""));
+const isIgnoredComplianceTaskGroup = (task: ComplianceTaskStatusGroup) => {
+  const taskTypes = [
+    Number(task.raw?.task_type || task.raw?.taskType),
+    ...task.children.map((child) => Number(child.raw?.task_type || child.raw?.taskType || child.taskType)),
+  ].filter((taskType) => Number.isFinite(taskType));
+  return taskTypes.some((taskType) => isIgnoredComplianceTask(taskType, task.name));
+};
+const isActionableComplianceRow = (row: CompliancePreviewRow) =>
+  row.actionablePendingCount > 0;
+const HARDCODED_COMPLIANCE_PROPERTY_VALUES: Record<string, Array<string | number>> = {
+  "1000000001": [1000100066],
+  "1000100091": [1000131288],
+  "1000100110": [1000131288],
+  "1000100120": [1000131289],
+  "4094": [69448],
+  "4095": [69450],
+  "4096": [69452],
+  "1000100023": [1000130000],
+  "1000100056": [1000130368],
+  "1000100057": [1000130368],
+};
+const HARDCODED_COMPLIANCE_TASK_DEFAULT_VALUES: Record<number, Array<string | number>> = {
+  4: [1000100066],
+  33: [1000131288],
+  42: [1000131288],
+  49: [1000131289],
+};
+const isComplianceProductIdentifierField = (taskType: number | string, propertyId: number | string) =>
+  Number(taskType) === 61 || String(propertyId) === "1100100115";
+const DEFAULT_COMPLIANCE_PRODUCT_IDENTIFIER = "1sdesign";
+const getComplianceOptionLabel = (option: Record<string, any>) =>
+  toDisplayText(
+    option?.name ||
+      option?.show_name ||
+      option?.showName ||
+      option?.text ||
+      option?.value_name ||
+      option?.valueName ||
+      option?.propertyValueName ||
+      option?.property_value_name ||
+      option?.templatePropertyValueName ||
+      option?.template_property_value_name ||
+      option?.label ||
+      option?.value ||
+      option?.vid ||
+      option?.id,
+  );
+const getComplianceRepresentativeLabel = (rep: Record<string, any>) => {
+  const address = asPlainObject(rep?.rep_address_info || rep?.repAddressInfo);
+  return [rep?.rep_name || rep?.repName, address?.region_name || address?.regionName, rep?.rep_mail || rep?.repMail]
+    .map((item) => toDisplayText(item))
+    .filter((item) => item && item !== "-")
+    .join(" / ") || toDisplayText(rep?.rep_id || rep?.repId);
+};
+const getComplianceOptionValue = (option: Record<string, any>) =>
+  firstDisplayValue(
+    option?.value_id,
+    option?.valueId,
+    option?.propertyValueId,
+    option?.property_value_id,
+    option?.templatePropertyValueId,
+    option?.template_property_value_id,
+    option?.option_id,
+    option?.optionId,
+    option?.vid,
+    option?.id,
+    option?.value,
+  );
+const complianceSelectableDetailList = computed(() => {
+  const payload = asPlainObject(complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result);
+  const result = asPlainObject(payload.result || payload);
+  return asArray<Record<string, any>>(result.template_list || result.templateList);
+});
+const extractComplianceFieldOptions = (property: Record<string, any>) => {
+  const candidateLists = [
+    property?.value_list,
+    property?.valueList,
+    property?.property_value_dtolist,
+    property?.propertyValueDtoList,
+    property?.template_property_value_dtolist,
+    property?.templatePropertyValueDtoList,
+    property?.property_values,
+    property?.propertyValues,
+    property?.values,
+    property?.value_dtolist,
+    property?.valueDtoList,
+    property?.options,
+  ];
+  const source = candidateLists.find((list) => Array.isArray(list)) || [];
+  return asArray<Record<string, any>>(source)
+    .map((option) => ({
+      label: getComplianceOptionLabel(asPlainObject(option)),
+      value: getComplianceOptionValue(asPlainObject(option)),
+    }))
+    .filter((option) => option.label !== "-" && option.value !== "-");
+};
+const buildComplianceSelectableField = (
+  task: Record<string, any>,
+  taskType: number,
+  selectedTaskTypes: Set<number>,
+): ComplianceEditorField[] => {
+  const taskName = toDisplayText(task?.task_name || task?.taskName);
+  if (!selectedTaskTypes.has(taskType) || isIgnoredComplianceTask(taskType, taskName)) {
+    return [];
+  }
+
+  const repList = asArray<Record<string, any>>(task?.rep_detail_list || task?.repDetailList);
+  if (repList.length) {
+    return [
+      {
+        key: `${taskType}:rep_detail`,
+        label: getComplianceTaskLabel(taskType),
+        propertyId: "rep_detail",
+        taskType: String(taskType),
+        controlType: "select",
+        options: repList.map((rep) => ({
+          label: getComplianceRepresentativeLabel(rep),
+          value: firstDisplayValue(rep?.rep_id, rep?.repId),
+        })),
+        defaultValue: firstDisplayValue(repList.find((rep) => rep?.default_select || rep?.defaultSelect)?.rep_id, repList[0]?.rep_id, repList[0]?.repId),
+        raw: task,
+      },
+    ];
+  }
+
+  const fields: ComplianceEditorField[] = [];
+  const properties = asPlainObject(task?.properties);
+  const inputText = asPlainObject(task?.input_text || task?.inputText);
+  const propertyEntries = Object.entries(properties);
+  const templatePropertyIds = getTemplatePropertyIdsByTaskType(taskType);
+  const propertyIds = Array.from(new Set([
+    ...propertyEntries.map(([propertyId]) => propertyId),
+    ...templatePropertyIds,
+  ]));
+
+  propertyIds.forEach((propertyId) => {
+    if (Object.prototype.hasOwnProperty.call(inputText, propertyId)) {
+      return;
+    }
+    const valueList = resolveComplianceHardcodedValues(
+      taskType,
+      propertyId,
+      asArray<string | number>(properties[propertyId]),
+    );
+    if (!valueList.length) {
+      return;
+    }
+    fields.push({
+      key: `${taskType}:${propertyId}`,
+      label: getComplianceTaskLabel(taskType),
+      propertyId,
+      taskType: String(taskType),
+      controlType: "select",
+      options: buildComplianceValueOptions(taskType, propertyId, valueList),
+      defaultValue: valueList[0] ?? null,
+      disabled: OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES.has(taskType),
+      raw: task,
+    });
+  });
+
+  Object.entries(inputText).forEach(([propertyId, input]) => {
+    const inputObject = asPlainObject(input);
+    const names = asArray<Record<string, any>>(inputObject.multi_line_inputs || inputObject.multiLineInputs)
+      .map((item) => firstDisplayValue(item?.name, item?.value))
+      .filter((value) => value !== "-");
+    fields.push({
+      key: `${taskType}:${propertyId}`,
+      label: getComplianceTaskLabel(taskType),
+      propertyId,
+      taskType: String(taskType),
+      controlType: "input",
+      options: [],
+      defaultValue: names[0] ?? DEFAULT_COMPLIANCE_PRODUCT_IDENTIFIER,
+      raw: task,
+    });
+  });
+
+  return fields.filter((field) => field.controlType === "input" || field.options.length);
+};
+const buildComplianceEditorField = (
+  property: Record<string, any>,
+  taskType: string,
+  index: number,
+): ComplianceEditorField | null => {
+  const propertyId = firstDisplayValue(
+    property?.property_id,
+    property?.propertyId,
+    property?.id,
+    index,
+  );
+  if (propertyId === "-") {
+    return null;
+  }
+
+  if (isComplianceProductIdentifierField(taskType, propertyId)) {
+    return {
+      key: `${taskType}:${propertyId}`,
+      label: getComplianceTaskLabel(Number(taskType)),
+      propertyId,
+      taskType,
+      controlType: "input",
+      options: [],
+      defaultValue: DEFAULT_COMPLIANCE_PRODUCT_IDENTIFIER,
+      raw: property,
+    };
+  }
+
+  return {
+    key: `${taskType}:${propertyId}`,
+    label: toDisplayText(property?.property_name || property?.propertyName || property?.name || propertyId),
+    propertyId,
+    taskType,
+    controlType: "select",
+    options: extractComplianceFieldOptions(property),
+    defaultValue: null,
+    raw: property,
+  };
 };
 const activeActionRunning = computed(() => {
   if (!selectedAction.value?.key) {
@@ -2125,9 +2708,194 @@ const taskRunRealPictureTotalCount = computed(() => {
 const taskRunComplianceRows = computed(() =>
   buildCompliancePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
 );
+const visibleTaskRunComplianceRows = computed(() =>
+  complianceIgnorePackagingOnly.value
+    ? taskRunComplianceRows.value.filter((row) => isActionableComplianceRow(row))
+    : taskRunComplianceRows.value,
+);
 const taskRunComplianceTotalCount = computed(() => {
   const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
   return Number(result.total || taskRunComplianceRows.value.length || 0) || 0;
+});
+const selectedComplianceRows = computed(() => {
+  const selectedKeys = new Set(selectedComplianceRowKeys.value);
+  return visibleTaskRunComplianceRows.value.filter((row) =>
+    selectedKeys.has(row.rowKey) && isActionableComplianceRow(row),
+  );
+});
+const complianceBatchProgressText = computed(() => {
+  if (!complianceBatchSubmitting.value || complianceBatchTotalCount.value <= 0) {
+    return "";
+  }
+  return `处理中 ${complianceBatchFinishedCount.value}/${complianceBatchTotalCount.value}`;
+});
+const complianceBatchRemainingCount = computed(() =>
+  Math.max(0, complianceBatchTotalCount.value - complianceBatchFinishedCount.value),
+);
+const complianceBatchProgressPercent = computed(() => {
+  if (complianceBatchTotalCount.value <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((complianceBatchFinishedCount.value / complianceBatchTotalCount.value) * 100));
+});
+const complianceEditorTaskGroups = computed(() => activeComplianceRow.value?.taskGroups || []);
+const visibleComplianceEditorTaskGroups = computed(() =>
+  complianceEditorTaskGroups.value.filter((task) => {
+    const taskTypes = [
+      Number(task.raw?.task_type || task.raw?.taskType),
+      ...task.children.map((child) => Number(child.raw?.task_type || child.raw?.taskType || child.taskType)),
+    ].filter((taskType) => Number.isFinite(taskType));
+    return !taskTypes.some((taskType) => isIgnoredComplianceTask(taskType, task.name));
+  }),
+);
+const selectedComplianceTask = computed(() =>
+  visibleComplianceEditorTaskGroups.value.find((task) => task.key === selectedComplianceTaskKey.value) ||
+  visibleComplianceEditorTaskGroups.value[0] ||
+  null,
+);
+const complianceTemplateSummary = computed(() => {
+  const payload = asPlainObject(complianceTemplateResponse.value?.raw || complianceTemplateResponse.value?.result);
+  const result = asPlainObject(payload.result || payload);
+  const templateList = asArray(result.template_list);
+  return templateList.length ? `${templateList.length} 个模板项` : "-";
+});
+const complianceDetailSummary = computed(() => {
+  const payload = asPlainObject(complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result);
+  const result = asPlainObject(payload.result || payload);
+  const templateList = asArray(result.template_list);
+  return templateList.length ? `${templateList.length} 个已有值项` : "-";
+});
+const complianceTemplateList = computed(() => {
+  const payload = asPlainObject(complianceTemplateResponse.value?.raw || complianceTemplateResponse.value?.result);
+  const result = asPlainObject(payload.result || payload);
+  return asArray<Record<string, any>>(result.template_list);
+});
+const findComplianceTemplateProperty = (taskType: number | string, propertyId: string) => {
+  const template = complianceTemplateList.value.find(
+    (item) => Number(item?.task_type || item?.taskType) === Number(taskType),
+  );
+  return asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)
+    .find((property) =>
+      String(firstDisplayValue(property?.property_id, property?.propertyId, property?.id)) === String(propertyId),
+    );
+};
+const buildComplianceValueOptions = (
+  taskType: number,
+  propertyId: string,
+  values: Array<string | number>,
+) => {
+  const templateProperty = findComplianceTemplateProperty(taskType, propertyId);
+  const templateOptions = templateProperty ? extractComplianceFieldOptions(templateProperty) : [];
+  return values.map((value) => {
+    const matched = templateOptions.find((option) => String(option.value) === String(value));
+    return {
+      label: matched?.label && matched.label !== "-" ? matched.label : String(value),
+      value,
+    };
+  });
+};
+const getKoreaDisclosureTaskTypes = () => {
+  const row = activeComplianceRow.value?.raw || {};
+  const showList = asArray<Record<string, any>>(row.wait_task_show_dtolist || row.waitTaskShowDtoList);
+  const koreaGroup = showList.find((task) =>
+    String(task?.show_name || task?.showName || task?.task_name || task?.taskName || "").includes("韩国公示信息"),
+  );
+  return new Set(
+    asArray<Record<string, any>>(koreaGroup?.wait_task_dtolist || koreaGroup?.waitTaskDtoList)
+      .map((task) => Number(task?.task_type || task?.taskType))
+      .filter((taskType) => Number.isFinite(taskType)),
+  );
+};
+const resolveComplianceHardcodedValues = (
+  taskType: number,
+  propertyId: string,
+  fallbackValues: Array<string | number> = [],
+) => {
+  if (taskType === 3) {
+    return fallbackValues;
+  }
+  const propertyValues = HARDCODED_COMPLIANCE_PROPERTY_VALUES[propertyId];
+  if (propertyValues?.length) {
+    return propertyValues;
+  }
+  if (getKoreaDisclosureTaskTypes().has(taskType)) {
+    return HARDCODED_COMPLIANCE_TASK_DEFAULT_VALUES[taskType] || fallbackValues;
+  }
+  return fallbackValues;
+};
+const getTemplatePropertyIdsByTaskType = (taskType: number) => {
+  const template = complianceTemplateList.value.find(
+    (item) => Number(item?.task_type || item?.taskType) === Number(taskType),
+  );
+  return asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)
+    .map((property) => firstDisplayValue(property?.property_id, property?.propertyId, property?.id))
+    .filter((propertyId) => propertyId !== "-");
+};
+const mergeComplianceFields = (fields: ComplianceEditorField[]) => {
+  const fieldMap = new Map<string, ComplianceEditorField>();
+  fields.forEach((field) => {
+    if (!fieldMap.has(field.key)) {
+      fieldMap.set(field.key, field);
+    }
+  });
+  return Array.from(fieldMap.values());
+};
+const selectedComplianceFields = computed<ComplianceEditorField[]>(() => {
+  const taskTypes = new Set<number>(
+    [
+      Number(selectedComplianceTask.value?.raw?.task_type || selectedComplianceTask.value?.raw?.taskType),
+      ...(selectedComplianceTask.value?.children || []).map((child) =>
+        Number(child.raw?.task_type || child.raw?.taskType || child.taskType),
+      ),
+    ].filter((taskType) => Number.isFinite(taskType)),
+  );
+  const detailFields = complianceSelectableDetailList.value.flatMap((task) =>
+    buildComplianceSelectableField(task, Number(task?.task_type || task?.taskType), taskTypes),
+  );
+
+  const templates = complianceTemplateList.value.filter((template) =>
+    taskTypes.has(Number(template?.task_type || template?.taskType)),
+  );
+  const templateFields = templates.flatMap((template) => {
+    const taskType = Number(template?.task_type || template?.taskType);
+    return asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)
+      .map((property, index) => {
+        const propertyId = firstDisplayValue(property?.property_id, property?.propertyId, property?.id, index);
+        if (isComplianceProductIdentifierField(taskType, propertyId)) {
+          return buildComplianceEditorField(property, String(taskType), index);
+        }
+        if (taskType === 3) {
+          const options = extractComplianceFieldOptions(property);
+          return {
+            key: `${taskType}:${propertyId}`,
+            label: getComplianceTaskLabel(taskType),
+            propertyId,
+            taskType: String(taskType),
+            controlType: "select" as const,
+            options,
+            defaultValue: options[0]?.value ?? null,
+            raw: property,
+          };
+        }
+        const hardcodedValues = resolveComplianceHardcodedValues(taskType, propertyId);
+        if (hardcodedValues.length) {
+          return {
+            key: `${taskType}:${propertyId}`,
+            label: getComplianceTaskLabel(taskType),
+            propertyId,
+            taskType: String(taskType),
+            controlType: "select" as const,
+            options: buildComplianceValueOptions(taskType, propertyId, hardcodedValues),
+            defaultValue: hardcodedValues[0] ?? null,
+            disabled: OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES.has(taskType),
+            raw: property,
+          };
+        }
+        return buildComplianceEditorField(property, String(taskType), index);
+      })
+      .filter((field): field is ComplianceEditorField => !!field);
+  });
+  return mergeComplianceFields([...detailFields, ...templateFields]);
 });
 const selectedPriceReviewRows = computed(() => {
   const selectedKeys = new Set(selectedPriceReviewRowKeys.value);
@@ -2623,6 +3391,416 @@ const buildSinglePriceReviewPayload = (
     ],
     bargainReasonList: [],
   };
+};
+
+const buildComplianceDetailPayload = (row: CompliancePreviewRow) => ({
+  cat_id: Number(row.raw?.cat_id || row.raw?.catId || 0),
+  spu_id: Number(row.raw?.spu_id || row.raw?.spuId || 0),
+  goods_id: Number(row.raw?.goods_id || row.raw?.goodsId || 0),
+  wait_task_list: asArray(row.raw?.wait_task_dtolist || row.raw?.waitTaskDtoList),
+});
+const getComplianceDetailResult = () => {
+  const payload = asPlainObject(complianceDetailResponse.value?.raw || complianceDetailResponse.value?.result);
+  return asPlainObject(payload.result || payload);
+};
+const clonePlainObject = <T = any>(value: T): T => {
+  try {
+    return JSON.parse(JSON.stringify(value ?? null));
+  } catch {
+    return value;
+  }
+};
+const OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES = new Set([4, 33, 42, 49]);
+const getComplianceQueryTaskList = () =>
+  asArray<Record<string, any>>(activeComplianceRow.value?.raw?.wait_task_dtolist || activeComplianceRow.value?.raw?.waitTaskDtoList);
+const resolveComplianceTaskIdMap = () =>
+  getComplianceQueryTaskList().reduce((result, task) => {
+    const taskType = Number(task?.task_type || task?.taskType);
+    const taskId = task?.task_id || task?.taskId;
+    if (Number.isFinite(taskType) && taskId !== undefined && taskId !== null) {
+      result[taskType] = taskId;
+    }
+    return result;
+  }, {} as Record<number, any>);
+const resolveComplianceFieldSelectionMap = () =>
+  selectedComplianceFields.value.reduce((result, field) => {
+    result[field.key] = complianceEditorForm[field.key];
+    return result;
+  }, {} as Record<string, any>);
+const findComplianceTemplateByTaskType = (taskType: number) =>
+  complianceTemplateList.value.find((template) =>
+    Number(template?.task_type || template?.taskType) === Number(taskType),
+  );
+const getFirstTemplatePropertyId = (taskType: number) => {
+  const template = findComplianceTemplateByTaskType(taskType);
+  const property = asArray<Record<string, any>>(template?.template_property_dtolist || template?.templatePropertyDtoList)[0];
+  return firstDisplayValue(property?.property_id, property?.propertyId, property?.id);
+};
+const normalizeComplianceSubmitTask = (
+  sourceTask: Record<string, any>,
+  selectionMap: Record<string, any>,
+) => {
+  const taskType = Number(sourceTask?.task_type || sourceTask?.taskType);
+  const task = clonePlainObject(sourceTask);
+
+  if (OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES.has(taskType)) {
+    const propertyId = getFirstTemplatePropertyId(taskType);
+    const selectedKey = `${taskType}:${propertyId}`;
+    const selectedValue = selectionMap[selectedKey] ?? resolveComplianceHardcodedValues(taskType, propertyId)[0];
+    return {
+      task_id: task.task_id || task.taskId,
+      task_status: task.task_status ?? task.taskStatus ?? task.status ?? 2,
+      task_type: taskType,
+      template_id: task.template_id || task.templateId || findComplianceTemplateByTaskType(taskType)?.template_id,
+      properties: propertyId && propertyId !== "-"
+        ? {
+            [propertyId]: selectedValue === undefined || selectedValue === null || selectedValue === ""
+              ? []
+              : [selectedValue],
+          }
+        : {},
+      images: {},
+      input_text: {},
+    };
+  }
+
+  if (taskType === 61) {
+    const field = selectedComplianceFields.value.find((item) => Number(item.taskType) === 61);
+    const propertyId = field?.propertyId || "1100100115";
+    const selectedValue = selectionMap[`${taskType}:${propertyId}`];
+    return {
+      task_id: task.task_id || task.taskId,
+      task_status: task.task_status ?? task.taskStatus ?? task.status ?? 2,
+      task_type: taskType,
+      template_id: task.template_id || task.templateId || findComplianceTemplateByTaskType(taskType)?.template_id,
+      properties: {},
+      images: {},
+      input_text: {
+        [propertyId]: {
+          multi_line_inputs: [
+            {
+              name: String(selectedValue || ""),
+            },
+          ],
+        },
+      },
+    };
+  }
+
+  if ([25, 60, 84].includes(taskType)) {
+    const repSelectionKey = `${taskType}:rep_detail`;
+    const selectedRepId = selectionMap[repSelectionKey];
+    const repList = asArray<Record<string, any>>(task.rep_detail_list || task.repDetailList);
+    const selectedRep = repList.find((rep) =>
+      String(firstDisplayValue(rep?.rep_id, rep?.repId)) === String(selectedRepId),
+    ) || repList[0];
+    return {
+      task_id: task.task_id || task.taskId,
+      task_type: taskType,
+      is_not_required: task.is_not_required ?? task.isNotRequired,
+      task_name: task.task_name || task.taskName || getComplianceTaskLabel(taskType),
+      status: task.status ?? task.task_status ?? task.taskStatus,
+      punish_time: task.punish_time ?? task.punishTime ?? 0,
+      task_status: task.task_status ?? task.taskStatus ?? task.status,
+      rep_detail_list: selectedRep
+        ? [
+            {
+              rep_id: selectedRep.rep_id || selectedRep.repId,
+              rep_name: selectedRep.rep_name || selectedRep.repName,
+            },
+          ]
+        : [],
+    };
+  }
+
+  return task;
+};
+const applyComplianceEditorSelections = (
+  task: Record<string, any>,
+  selectionMap: Record<string, any>,
+) => {
+  const taskType = Number(task?.task_type || task?.taskType);
+  const propertySelections: Record<string, any[]> = {};
+  Object.entries(selectionMap).forEach(([key, selectedValue]) => {
+    const [fieldTaskType, propertyId] = key.split(":");
+    if (Number(fieldTaskType) !== taskType) {
+      return;
+    }
+    if (taskType === 3) {
+      return;
+    }
+
+    if (propertyId === "rep_detail") {
+      const repList = asArray<Record<string, any>>(task?.rep_detail_list || task?.repDetailList);
+      const selectedRep = repList.find((rep) =>
+        String(firstDisplayValue(rep?.rep_id, rep?.repId)) === String(selectedValue),
+      );
+      task.rep_detail_list = selectedRep ? [selectedRep] : [];
+      return;
+    }
+
+    const field = selectedComplianceFields.value.find((item) => item.key === key);
+    if (field?.controlType === "input") {
+      task.input_text = {
+        ...asPlainObject(task?.input_text || task?.inputText),
+        [propertyId]: {
+          multi_line_inputs: [
+            {
+              name: String(selectedValue || ""),
+            },
+          ],
+        },
+      };
+      return;
+    }
+
+    propertySelections[propertyId] = selectedValue === undefined || selectedValue === null || selectedValue === ""
+      ? []
+      : [selectedValue];
+  });
+
+  if (Object.keys(propertySelections).length) {
+    task.properties = propertySelections;
+  }
+};
+const buildComplianceSubmitPayloadWithSelection = (selectionMap: Record<string, any>) => {
+  const row = activeComplianceRow.value;
+  if (!row) {
+    throw new Error("缺少当前合规行");
+  }
+
+  const detailResult = getComplianceDetailResult();
+  const detailTasks = asArray<Record<string, any>>(detailResult.template_list || detailResult.templateList);
+  const taskIdMap = resolveComplianceTaskIdMap();
+
+  const templateEditRequestList = detailTasks.map((sourceTask) => {
+    const task = normalizeComplianceSubmitTask(sourceTask, selectionMap);
+    const taskType = Number(task?.task_type || task?.taskType);
+    if (taskIdMap[taskType] !== undefined) {
+      task.task_id = taskIdMap[taskType];
+    }
+    if (!OFFICIAL_SIMPLE_COMPLIANCE_TASK_TYPES.has(taskType) && taskType !== 61) {
+      applyComplianceEditorSelections(task, selectionMap);
+    }
+    return task;
+  });
+
+  if (!templateEditRequestList.length) {
+    throw new Error("当前没有可提交的合规项");
+  }
+
+  return {
+    cat_id: Number(row.raw?.cat_id || row.raw?.catId || 0),
+    spu_id: Number(row.raw?.spu_id || row.raw?.spuId || 0),
+    goods_id: Number(row.raw?.goods_id || row.raw?.goodsId || 0),
+    group_sku_by_same_info: Boolean(detailResult.group_sku_by_same_info || detailResult.groupSkuBySameInfo),
+    template_edit_request_list: templateEditRequestList,
+  };
+};
+const buildComplianceSubmitPayload = () =>
+  buildComplianceSubmitPayloadWithSelection(resolveComplianceFieldSelectionMap());
+const fetchComplianceResponsesForRow = async (row: CompliancePreviewRow) => {
+  const payload = buildComplianceDetailPayload(row);
+  if (!payload.cat_id || !payload.spu_id || !payload.goods_id || !payload.wait_task_list.length) {
+    throw new Error("当前行缺少合规详情查询参数");
+  }
+
+  const basePayload = {
+    profileId: props.profileId,
+    region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+    payload,
+  };
+  const [detailResponse, templateResponse] = await Promise.all([
+    executeTemuAction("/temu/compliance/detail", {
+      ...basePayload,
+      detailType: "detail",
+    }),
+    executeTemuAction("/temu/compliance/detail", {
+      ...basePayload,
+      detailType: "template",
+    }),
+  ]);
+  if (!detailResponse?.success || !templateResponse?.success) {
+    throw new Error("合规详情或模板返回失败");
+  }
+  return { detailResponse, templateResponse };
+};
+
+const loadComplianceEditorForRow = async (row: CompliancePreviewRow) => {
+  activeComplianceRow.value = row;
+  const firstVisibleTask = row.taskGroups.find((task) => {
+    const taskTypes = [
+      Number(task.raw?.task_type || task.raw?.taskType),
+      ...task.children.map((child) => Number(child.raw?.task_type || child.raw?.taskType || child.taskType)),
+    ].filter((taskType) => Number.isFinite(taskType));
+    return !taskTypes.some((taskType) => isIgnoredComplianceTask(taskType, task.name));
+  });
+  selectedComplianceTaskKey.value = firstVisibleTask?.key || "";
+  complianceDetailResponse.value = null;
+  complianceTemplateResponse.value = null;
+  Object.keys(complianceEditorForm).forEach((key) => {
+    delete complianceEditorForm[key];
+  });
+  complianceEditorVisible.value = true;
+  complianceEditorLoading.value = true;
+  complianceDetailLoadingKey.value = row.rowKey;
+
+  try {
+    const { detailResponse, templateResponse } = await fetchComplianceResponsesForRow(row);
+    complianceDetailResponse.value = detailResponse;
+    complianceTemplateResponse.value = templateResponse;
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "获取合规详情失败"));
+  } finally {
+    complianceEditorLoading.value = false;
+    complianceDetailLoadingKey.value = "";
+  }
+};
+
+const openComplianceEditor = async (row: CompliancePreviewRow) => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  complianceBatchMode.value = false;
+  complianceBatchRows.value = [];
+  await loadComplianceEditorForRow(row);
+};
+
+const submitComplianceEditor = async () => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  if (complianceBatchMode.value) {
+    await submitComplianceBatchRows();
+    return;
+  }
+
+  let payload: Record<string, any>;
+  try {
+    payload = buildComplianceSubmitPayload();
+  } catch (error: any) {
+    ElMessage.warning(error?.message || "合规提交参数不完整");
+    return;
+  }
+
+  complianceSubmitting.value = true;
+  try {
+    const response = await executeTemuAction("/temu/compliance/submit", {
+      profileId: props.profileId,
+      region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+      payload,
+    });
+
+    if (!response?.success) {
+      ElMessage.error(response?.message || "合规信息提交失败");
+      return;
+    }
+
+    ElMessage.success(response?.message || "合规信息提交成功");
+    complianceEditorVisible.value = false;
+    await loadTaskRunDetail(activeTaskRunId.value || 0, { silent: true });
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "合规信息提交失败"));
+  } finally {
+    complianceSubmitting.value = false;
+  }
+};
+
+const onComplianceSelectionChange = ({ records }: { records: CompliancePreviewRow[] }) => {
+  selectedComplianceRowKeys.value = (Array.isArray(records) ? records : [])
+    .filter((row) => isActionableComplianceRow(row))
+    .map((row) => String(row?.rowKey || "").trim())
+    .filter(Boolean);
+};
+
+const openComplianceBatchEditor = async () => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+  const rows = selectedComplianceRows.value;
+  if (!rows.length) {
+    ElMessage.warning("请先选择要批量处理的合规记录");
+    return;
+  }
+
+  complianceBatchMode.value = true;
+  complianceBatchRows.value = rows;
+  complianceBatchPreparing.value = true;
+  try {
+    await loadComplianceEditorForRow(rows[0]);
+    complianceBatchMode.value = true;
+    complianceBatchRows.value = rows;
+  } finally {
+    complianceBatchPreparing.value = false;
+  }
+};
+
+const submitComplianceBatchRows = async () => {
+  const rows = (complianceBatchRows.value.length ? complianceBatchRows.value : selectedComplianceRows.value)
+    .filter((row) => isActionableComplianceRow(row));
+  if (!rows.length) {
+    ElMessage.warning("没有可批量处理的合规记录");
+    return;
+  }
+
+  const selectionSnapshot = { ...resolveComplianceFieldSelectionMap() };
+  complianceBatchSubmitting.value = true;
+  complianceBatchFinishedCount.value = 0;
+  complianceBatchTotalCount.value = rows.length;
+  complianceBatchSuccessCount.value = 0;
+  complianceBatchFailedCount.value = 0;
+
+  for (const row of rows) {
+    try {
+      activeComplianceRow.value = row;
+      const { detailResponse, templateResponse } = await fetchComplianceResponsesForRow(row);
+      complianceDetailResponse.value = detailResponse;
+      complianceTemplateResponse.value = templateResponse;
+
+      const payload = buildComplianceSubmitPayloadWithSelection(selectionSnapshot);
+      const response = await executeTemuAction("/temu/compliance/submit", {
+        profileId: props.profileId,
+        region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+        payload,
+      });
+      if (!response?.success) {
+        throw new Error(response?.message || "合规信息提交失败");
+      }
+      complianceBatchSuccessCount.value += 1;
+    } catch {
+      complianceBatchFailedCount.value += 1;
+    } finally {
+      complianceBatchFinishedCount.value += 1;
+    }
+  }
+
+  const successCount = complianceBatchSuccessCount.value;
+  const failedCount = complianceBatchFailedCount.value;
+  complianceBatchSubmitting.value = false;
+  complianceBatchMode.value = false;
+  complianceEditorVisible.value = false;
+  selectedComplianceRowKeys.value = [];
+  await loadTaskRunDetail(activeTaskRunId.value || 0, { silent: true });
+  ElMessage.success(`批量处理完成：成功 ${successCount} 条，失败 ${failedCount} 条`);
 };
 
 const submitPriceReviewRow = async (
@@ -3123,6 +4301,59 @@ const runAction = async () => {
   }
 };
 
+const fetchAllComplianceRows = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (!action || action.key !== "compliance.page-query" || !selectedActionPreset.value) {
+    ElMessage.warning("请先选择合规信息查询动作");
+    return;
+  }
+  if (!props.profileId) {
+    ElMessage.warning("请先选择在线客户端和执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  const { valid, parsed } = validateForm();
+  if (!valid) {
+    ElMessage.warning("请先完善动作参数");
+    return;
+  }
+
+  const pageSize = 50;
+  const payload = {
+    ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    pageNum: 1,
+    pageSize,
+    fetchAll: true,
+    allPages: true,
+  };
+
+  complianceFetchingAll.value = true;
+  try {
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    taskRunDetailVisible.value = false;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建一键获取全部执行记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "创建一键获取全部执行记录失败"));
+  } finally {
+    complianceFetchingAll.value = false;
+  }
+};
+
 watch(
   actionCategoryTabs,
   () => {
@@ -3137,6 +4368,7 @@ watch(selectedCategoryKey, () => {
 
 watch(activeTaskRunId, () => {
   selectedPriceReviewRowKeys.value = [];
+  selectedComplianceRowKeys.value = [];
 });
 
 watch(taskRunPriceReviewPreviewRows, (rows) => {
@@ -3146,6 +4378,32 @@ watch(taskRunPriceReviewPreviewRows, (rows) => {
   );
   priceReviewPreviewGridRef.value?.clearCheckboxRow?.();
 });
+
+watch(visibleTaskRunComplianceRows, (rows) => {
+  const visibleKeys = new Set(rows.map((row) => row.rowKey));
+  selectedComplianceRowKeys.value = selectedComplianceRowKeys.value.filter((rowKey) =>
+    visibleKeys.has(rowKey),
+  );
+});
+
+watch(
+  selectedComplianceFields,
+  (fields) => {
+    const validKeys = new Set(fields.map((field) => field.key));
+    Object.keys(complianceEditorForm).forEach((key) => {
+      if (!validKeys.has(key)) {
+        delete complianceEditorForm[key];
+      }
+    });
+    fields.forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(complianceEditorForm, field.key)) {
+        return;
+      }
+      complianceEditorForm[field.key] = field.defaultValue ?? null;
+    });
+  },
+  { immediate: true },
+);
 
 watch(
   () => `${selectedActionKey.value}|${onlyCurrentActionRuns.value}`,
@@ -3353,6 +4611,171 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__preview-product small {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.temu-workspace__compliance-status-list {
+  display: grid;
+  gap: 4px;
+  align-items: start;
+}
+
+.temu-workspace__compliance-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  line-height: 20px;
+}
+
+.temu-workspace__compliance-status-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__compliance-status-item small {
+  flex: 0 0 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__row-actions--right {
+  justify-content: flex-end;
+}
+
+.temu-workspace__compliance-dialog-body {
+  display: grid;
+  gap: 14px;
+}
+
+.temu-workspace__compliance-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-workspace__compliance-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 14px;
+  min-height: 420px;
+}
+
+.temu-workspace__compliance-picker {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.temu-workspace__compliance-picker-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 8px;
+  width: 100%;
+  padding: 9px 10px;
+  text-align: left;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 7px;
+  background: var(--el-bg-color);
+  cursor: pointer;
+}
+
+.temu-workspace__compliance-picker-item.is-active {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.temu-workspace__compliance-picker-item span,
+.temu-workspace__compliance-picker-item small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__compliance-picker-item small {
+  grid-column: 1 / -1;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
+.temu-workspace__compliance-editor-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-extra-light);
+}
+
+.temu-workspace__compliance-editor-title,
+.temu-workspace__compliance-subtask,
+.temu-workspace__compliance-source-grid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.temu-workspace__compliance-editor-title {
+  justify-content: space-between;
+}
+
+.temu-workspace__compliance-subtasks {
+  display: grid;
+  gap: 8px;
+}
+
+.temu-workspace__compliance-subtask {
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+}
+
+.temu-workspace__compliance-subtask span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__compliance-subtask small {
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.temu-workspace__compliance-source-grid {
+  align-items: stretch;
+}
+
+.temu-workspace__compliance-source-grid div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+}
+
+.temu-workspace__compliance-source-grid span {
   color: var(--el-text-color-secondary);
   font-size: 11px;
 }

@@ -1200,9 +1200,14 @@ const autoDispatchTargetClientId = ref("");
 const autoDispatchTargetProfileId = ref("");
 let publishTaskSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let publishTaskRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
+let publishTaskCountersRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 let publishTaskMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 let runtimeLogDialogRefreshTimer: ReturnType<typeof setInterval> | null = null;
 let runtimeLogDialogRefreshing = false;
+let queueListRequestSeq = 0;
+let queueListSilentRequestSeq = 0;
+let queueListVisibleLoadingCount = 0;
+let queueStatsRequestSeq = 0;
 
 // 对话框相关
 const dialogVisible = ref(false);
@@ -2407,8 +2412,19 @@ function normalizeTaskDataRecord(value: any) {
 }
 
 // 获取列表
-async function getList() {
-  loading.value = true;
+async function getList(options?: unknown) {
+  const silent =
+    !!options &&
+    typeof options === "object" &&
+    "silent" in options &&
+    !!(options as { silent?: boolean }).silent;
+  const requestSeq = silent ? queueListRequestSeq : ++queueListRequestSeq;
+  const silentRequestSeq = silent ? ++queueListSilentRequestSeq : 0;
+  if (!silent) {
+    queueListSilentRequestSeq += 1;
+    queueListVisibleLoadingCount += 1;
+    loading.value = true;
+  }
   try {
     const [sortField, sortOrder] = queryParams.sortType.split("_");
     const res = await getTaskList({
@@ -2417,6 +2433,7 @@ async function getList() {
       id: queryParams.id?.trim() || undefined, // 不传 id 则查询所有ID
       sortField: sortField as "createdAt" | "updatedAt" | "processedAt",
       sortOrder: sortOrder as "ASC" | "DESC",
+      includeTotal: false,
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     });
@@ -2431,6 +2448,13 @@ async function getList() {
       ) {
         responseData = res.data;
       }
+    }
+
+    if (
+      requestSeq !== queueListRequestSeq ||
+      (silent && silentRequestSeq !== queueListSilentRequestSeq)
+    ) {
+      return;
     }
 
     if (responseData) {
@@ -2449,22 +2473,39 @@ async function getList() {
               : 0;
 
         dataSource.value = Array.isArray(messages) ? messages : [];
-        total.value = totalCount;
+        if (!silent || responseData.total !== undefined) {
+          total.value = totalCount;
+        }
       } else {
+        if (!silent) {
+          dataSource.value = [];
+          total.value = 0;
+        }
+      }
+    } else {
+      if (!silent) {
         dataSource.value = [];
         total.value = 0;
       }
-    } else {
-      dataSource.value = [];
-      total.value = 0;
     }
-    ids.value = [];
+    if (!silent) {
+      ids.value = [];
+    }
   } catch (error: any) {
-    ElMessage.error(error?.message || "获取列表失败");
-    dataSource.value = [];
-    total.value = 0;
+    if (requestSeq === queueListRequestSeq) {
+      if (!silent) {
+        ElMessage.error(error?.message || "获取列表失败");
+        dataSource.value = [];
+        total.value = 0;
+      }
+    }
   } finally {
-    loading.value = false;
+    if (!silent) {
+      queueListVisibleLoadingCount = Math.max(0, queueListVisibleLoadingCount - 1);
+      if (queueListVisibleLoadingCount === 0) {
+        loading.value = false;
+      }
+    }
   }
 }
 
@@ -2474,6 +2515,7 @@ function handleSortTypeChange() {
 }
 
 async function refreshStats() {
+  const requestSeq = ++queueStatsRequestSeq;
   try {
     const queueName = queryParams.type?.trim() || "";
     const res = await getQueueStats(queueName);
@@ -2492,8 +2534,12 @@ async function refreshStats() {
       }
     }
 
+    if (requestSeq !== queueStatsRequestSeq) {
+      return;
+    }
+
     if (statsData && typeof statsData === "object" && !Array.isArray(statsData)) {
-      stats.value = {
+      const nextStats = {
         queue: statsData.queue || queryParams.type?.trim() || "*",
         pending: Number(statsData.pending) || 0,
         waiting: Number(statsData.waiting) || 0,
@@ -2503,6 +2549,14 @@ async function refreshStats() {
         failed: Number(statsData.failed) || 0,
         total: Number(statsData.total) || 0,
       };
+      stats.value = nextStats;
+      if (!queryParams.id?.trim()) {
+        const statusTotal =
+          queryParams.status && queryParams.status in nextStats
+            ? Number(nextStats[queryParams.status]) || 0
+            : nextStats.total;
+        total.value = statusTotal;
+      }
     }
   } catch {
     // 不显示错误提示，静默失败
@@ -2906,8 +2960,19 @@ function schedulePublishTaskListRefresh() {
 
   publishTaskRuntimeReloadTimer = setTimeout(() => {
     publishTaskRuntimeReloadTimer = null;
-    void Promise.all([getList(), refreshStats()]);
-  }, 260);
+    void Promise.all([getList({ silent: true }), refreshStats()]);
+  }, 1800);
+}
+
+function schedulePublishTaskCountersRefresh() {
+  if (publishTaskCountersRefreshTimer) {
+    clearTimeout(publishTaskCountersRefreshTimer);
+  }
+
+  publishTaskCountersRefreshTimer = setTimeout(() => {
+    publishTaskCountersRefreshTimer = null;
+    void refreshStats();
+  }, 1200);
 }
 
 function schedulePublishTaskMenuRuntimeSync() {
@@ -3060,7 +3125,10 @@ function applyPublishTaskRuntimeEvent(event: PublishTaskRuntimeEvent) {
 
   if (event.status === "completed" || event.status === "failed" || event.status === "pending") {
     schedulePublishTaskListRefresh();
+    return;
   }
+
+  schedulePublishTaskCountersRefresh();
 }
 
 function applyPublishTaskCommandResultEvent(event: ServiceCommandResultEvent) {
@@ -3513,6 +3581,10 @@ onUnmounted(() => {
   if (publishTaskRuntimeReloadTimer) {
     clearTimeout(publishTaskRuntimeReloadTimer);
     publishTaskRuntimeReloadTimer = null;
+  }
+  if (publishTaskCountersRefreshTimer) {
+    clearTimeout(publishTaskCountersRefreshTimer);
+    publishTaskCountersRefreshTimer = null;
   }
   stopRuntimeLogDialogAutoRefresh();
   websocketClient.events.off("publishTaskRuntime", applyPublishTaskRuntimeEvent);

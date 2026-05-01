@@ -328,10 +328,17 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
   "compliance.page-query": {
     fields: [
       createRegionField(),
-      { key: "spuIdList", label: "SPU ID 列表", type: "array-number", required: true },
+      { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
       { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
-      createPageSizeField(100),
+      createPageSizeField(10),
       { key: "type", label: "查询类型", type: "number", defaultValue: 2 },
+      {
+        key: "taskStatusList",
+        label: "任务状态列表",
+        type: "array-number",
+        defaultValue: [2],
+        hint: "默认 [2]，表示待上传。",
+      },
     ],
     buildPayload: buildProfileRegionPayload,
   },
