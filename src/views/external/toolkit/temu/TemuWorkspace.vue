@@ -4035,7 +4035,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   padding: 24px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.76);
+  background: color-mix(in srgb, var(--el-bg-color) 78%, transparent);
   backdrop-filter: blur(2px);
 }
 
@@ -4047,7 +4047,7 @@ onBeforeUnmount(() => {
   padding: 18px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
-  background: var(--el-bg-color);
+  background: var(--el-overlay-color-lighter, var(--el-bg-color-overlay));
   box-shadow: var(--el-box-shadow-light);
 }
 
