@@ -6,7 +6,7 @@ export const temuPlatformConfig: PlatformConfig = {
   description: 'Temu 跨境电商平台配置',
   supportVideo: false,
   supportImage: true,
-  titleMaxLength: 60,
+  titleMaxLength: 230,
   fields: [
     {
       key: 'vendorId',
