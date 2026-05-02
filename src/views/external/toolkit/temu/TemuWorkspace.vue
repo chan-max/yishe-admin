@@ -24,22 +24,6 @@
         </div>
       </div>
 
-      <div v-if="actionCategoryTabs.length" class="temu-workspace__category-bar">
-        <div class="temu-workspace__category-tabs">
-          <button
-            v-for="group in actionCategoryTabs"
-            :key="group.key"
-            type="button"
-            class="temu-category-tab"
-            :class="{ 'is-active': selectedCategoryKey === group.key }"
-            @click="selectedCategoryKey = group.key"
-          >
-            <span>{{ group.label }}</span>
-            <em>{{ group.actions.length }}</em>
-          </button>
-        </div>
-      </div>
-
       <div v-if="selectedCategoryActions.length" class="temu-workspace__action-grid">
         <button
           v-for="action in selectedCategoryActions"
@@ -150,6 +134,7 @@
                 v-if="field.type === 'select'"
                 v-model="activeActionState.formState[field.key]"
                 clearable
+                :multiple="field.multiple"
                 class="temu-field__control"
                 :placeholder="field.placeholder || `请选择${field.label}`"
               >
@@ -209,6 +194,30 @@
               :loading="complianceFetchingAll"
               :disabled="!canRunSelectedAction || activeActionRunning || complianceFetchingAll"
               @click="fetchAllComplianceRows"
+            >
+              一键获取全部
+            </el-button>
+            <el-button
+              v-if="selectedAction?.key === 'goods.real-picture.list'"
+              :loading="realPictureFetchingAll"
+              :disabled="!canRunSelectedAction || activeActionRunning || realPictureFetchingAll"
+              @click="fetchAllRealPictureRows"
+            >
+              一键获取全部
+            </el-button>
+            <el-button
+              v-if="selectedAction?.key === 'goods.price-review.list'"
+              :loading="priceReviewFetchingAll"
+              :disabled="!canRunSelectedAction || activeActionRunning || priceReviewFetchingAll"
+              @click="fetchAllPriceReviewRows"
+            >
+              一键获取全部
+            </el-button>
+            <el-button
+              v-if="selectedAction?.key === 'jit.list'"
+              :loading="jitFetchingAll"
+              :disabled="!canRunSelectedAction || activeActionRunning || jitFetchingAll"
+              @click="fetchAllJitRows"
             >
               一键获取全部
             </el-button>
@@ -538,62 +547,82 @@
                   {{ priceReviewBatchProgressText }}
                 </el-tag>
               </div>
-              <div v-if="isPriceReviewBatchAvailable" class="temu-workspace__price-review-batch-actions">
-                <el-button
-                  size="small"
-                  type="primary"
-                  :disabled="!selectedSubmittablePriceReviewRows.length || priceReviewBatchSubmitting"
-                  :loading="priceReviewBatchSubmittingMode === 'confirm'"
-                  @click="submitSelectedPriceReviewRows('confirm')"
-                >
-                  批量确认核价
-                </el-button>
-                <el-button
-                  size="small"
-                  type="warning"
-                  :disabled="!selectedRepriceablePriceReviewRows.length || priceReviewBatchSubmitting"
-                  :loading="priceReviewBatchSubmittingMode === 'reprice'"
-                  @click="submitSelectedPriceReviewRows('reprice')"
-                >
-                  批量重新报价
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  :disabled="!selectedAbandonablePriceReviewRows.length || priceReviewBatchSubmitting"
-                  :loading="priceReviewBatchSubmittingMode === 'abandon'"
-                  @click="submitSelectedPriceReviewRows('abandon')"
-                >
-                  批量不核价
-                </el-button>
+              <div class="temu-workspace__price-review-toolbar">
+                <div class="temu-workspace__price-review-filters">
+                  <el-select
+                    v-model="priceReviewRiskFilter"
+                    class="temu-workspace__price-review-filter"
+                    size="small"
+                    placeholder="价差比"
+                  >
+                    <el-option label="全部价差比" value="all" />
+                    <el-option label="涨价/持平：>= 0%" value="up" />
+                    <el-option label="绿色：不错，降幅 0% - 10%" value="green" />
+                    <el-option label="黄色：可接受，降幅 10% - 20%" value="yellow" />
+                    <el-option label="橙色：偏高，降幅 20% - 30%" value="orange" />
+                    <el-option label="红色：较差，降幅 30% - 50%" value="red" />
+                    <el-option label="黑红：降幅 > 50%" value="critical" />
+                  </el-select>
+                  <el-select
+                    v-model="priceReviewStatusFilter"
+                    class="temu-workspace__price-review-filter"
+                    size="small"
+                    placeholder="处理状态"
+                  >
+                    <el-option label="全部状态" value="all" />
+                    <el-option label="待处理" value="pending" />
+                    <el-option label="已处理" value="processed" />
+                  </el-select>
+                  <el-input-number
+                    v-model="priceReviewAmountFilterMin"
+                    class="temu-workspace__price-review-filter-number"
+                    size="small"
+                    :precision="2"
+                    :step="1"
+                    controls-position="right"
+                    placeholder="最小价差"
+                  />
+                  <el-input-number
+                    v-model="priceReviewAmountFilterMax"
+                    class="temu-workspace__price-review-filter-number"
+                    size="small"
+                    :precision="2"
+                    :step="1"
+                    controls-position="right"
+                    placeholder="最大价差"
+                  />
+                  <el-button size="small" text @click="resetPriceReviewFilters">重置</el-button>
+                </div>
+                <div v-if="isPriceReviewBatchAvailable" class="temu-workspace__price-review-batch-actions">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    :disabled="!selectedSubmittablePriceReviewRows.length || priceReviewBatchSubmitting"
+                    :loading="priceReviewBatchSubmittingMode === 'confirm'"
+                    @click="submitSelectedPriceReviewRows('confirm')"
+                  >
+                    批量确认核价
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="warning"
+                    :disabled="!selectedRepriceablePriceReviewRows.length || priceReviewBatchSubmitting"
+                    :loading="priceReviewBatchSubmittingMode === 'reprice'"
+                    @click="submitSelectedPriceReviewRows('reprice')"
+                  >
+                    批量重新报价
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="danger"
+                    :disabled="!selectedAbandonablePriceReviewRows.length || priceReviewBatchSubmitting"
+                    :loading="priceReviewBatchSubmittingMode === 'abandon'"
+                    @click="submitSelectedPriceReviewRows('abandon')"
+                  >
+                    批量不核价
+                  </el-button>
+                </div>
               </div>
-            </div>
-            <div class="temu-workspace__price-review-filters">
-              <el-select
-                v-model="priceReviewRiskFilter"
-                class="temu-workspace__price-review-filter"
-                size="small"
-                placeholder="价差比"
-              >
-                <el-option label="全部价差比" value="all" />
-                <el-option label="涨价/持平：>= 0%" value="up" />
-                <el-option label="绿色：不错，降幅 0% - 10%" value="green" />
-                <el-option label="黄色：可接受，降幅 10% - 20%" value="yellow" />
-                <el-option label="橙色：偏高，降幅 20% - 30%" value="orange" />
-                <el-option label="红色：较差，降幅 30% - 50%" value="red" />
-                <el-option label="黑红：降幅 > 50%" value="critical" />
-              </el-select>
-              <el-select
-                v-model="priceReviewStatusFilter"
-                class="temu-workspace__price-review-filter"
-                size="small"
-                placeholder="处理状态"
-              >
-                <el-option label="全部状态" value="all" />
-                <el-option label="待处理" value="pending" />
-                <el-option label="已处理" value="processed" />
-              </el-select>
-              <el-button size="small" text @click="resetPriceReviewFilters">重置</el-button>
             </div>
             <div class="common-table">
               <vxe-grid
@@ -734,9 +763,219 @@
           </div>
 
           <div
+            v-if="isJitListTaskRunResult"
+            class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
+          >
+            <div v-if="jitBatchSubmitting" class="temu-workspace__price-review-batch-mask">
+              <div class="temu-workspace__price-review-batch-panel">
+                <strong>{{ jitBatchModeLabel }}</strong>
+                <span>处理中 {{ jitBatchFinishedCount }}/{{ jitBatchTotalCount }}</span>
+                <small v-if="jitBatchCurrentStage">{{ jitBatchCurrentStage }}</small>
+                <small v-if="jitBatchCurrentRowText">{{ jitBatchCurrentRowText }}</small>
+                <el-progress
+                  :percentage="jitBatchProgressPercent"
+                  :stroke-width="10"
+                  :show-text="false"
+                />
+                <div class="temu-workspace__price-review-batch-stats">
+                  <el-tag size="small" effect="plain" type="success">成功 {{ jitBatchSuccessCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="danger">失败 {{ jitBatchFailedCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="warning">剩余 {{ jitBatchRemainingCount }}</el-tag>
+                </div>
+              </div>
+            </div>
+            <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
+              <div class="temu-workspace__section-title-main">
+                <span>JIT 待处理列表</span>
+                <el-tag size="small" effect="plain">{{ taskRunJitRows.length }}</el-tag>
+                <el-tag v-if="taskRunJitTotalCount !== taskRunJitRows.length" size="small" effect="plain" type="warning">
+                  全部 {{ taskRunJitTotalCount }}
+                </el-tag>
+                <el-tag v-if="selectedJitRows.length" size="small" effect="plain" type="success">
+                  已选 {{ selectedJitRows.length }}
+                </el-tag>
+                <el-tag v-if="jitBatchSubmitting" size="small" effect="plain" type="warning">
+                  {{ jitBatchProgressText }}
+                </el-tag>
+              </div>
+              <div class="temu-workspace__price-review-batch-actions">
+                <el-select
+                  v-model="jitOpenStatusFilter"
+                  size="small"
+                  class="temu-workspace__jit-status-filter"
+                >
+                  <el-option label="全部 JIT 状态" value="all" />
+                  <el-option label="未开通 JIT" value="pending" />
+                  <el-option label="已开通 JIT" value="opened" />
+                </el-select>
+                <el-select
+                  v-model="jitStockStatusFilter"
+                  size="small"
+                  class="temu-workspace__jit-status-filter"
+                >
+                  <el-option label="全部库存状态" value="all" />
+                  <el-option label="未维护库存" value="pending" />
+                  <el-option label="已维护库存" value="maintained" />
+                </el-select>
+                <label class="temu-workspace__jit-stock-field">
+                  <span>目标库存</span>
+                  <el-input-number
+                    v-model="jitStockFinalNum"
+                    size="small"
+                    class="temu-workspace__jit-stock-input"
+                    :min="0"
+                    :step="50"
+                    controls-position="right"
+                  />
+                </label>
+                <el-button
+                  size="small"
+                  type="primary"
+                  :disabled="!selectedOpenableJitRows.length || jitBatchSubmitting"
+                  :loading="jitBatchSubmitting"
+                  @click="submitSelectedJitRows"
+                >
+                  批量开通 JIT
+                </el-button>
+                <el-button
+                  size="small"
+                  type="success"
+                  :disabled="!selectedStockMaintainableJitRows.length || jitBatchSubmitting"
+                  :loading="jitBatchSubmitting"
+                  @click="submitSelectedJitStockRows"
+                >
+                  批量维护库存
+                </el-button>
+                <el-button
+                  size="small"
+                  type="warning"
+                  :disabled="!selectedJitRows.length || jitBatchSubmitting"
+                  :loading="jitBatchSubmitting"
+                  @click="submitSelectedJitOpenAndStockRows"
+                >
+                  批量开通并维护库存
+                </el-button>
+              </div>
+            </div>
+            <div class="common-table">
+              <vxe-grid
+                ref="jitPreviewGridRef"
+                v-bind="jitPreviewGridOptions"
+                :data="taskRunJitRows"
+                class="temu-workspace__preview-table"
+                @checkbox-change="onJitSelectionChange"
+                @checkbox-all="onJitSelectionChange"
+              >
+                <template #jitImageSlot="{ row }">
+                  <el-image
+                    v-if="row.imageUrl && row.imageUrl !== '-'"
+                    :src="row.imageUrl"
+                    :preview-src-list="[row.imageUrl]"
+                    fit="cover"
+                    preview-teleported
+                    class="temu-workspace__preview-image"
+                  />
+                  <span v-else class="temu-workspace__muted">无图</span>
+                </template>
+                <template #jitIdentitySlot="{ row }">
+                  <div class="temu-workspace__price-review-identity">
+                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
+                    <div><span>SKC</span><strong>{{ row.skcId }}</strong></div>
+                    <div><span>SKC货号</span><strong>{{ row.skcExtCode }}</strong></div>
+                  </div>
+                </template>
+                <template #jitStatusSlot="{ row }">
+                  <div class="temu-workspace__submit-status">
+                    <el-tag
+                      size="small"
+                      effect="plain"
+                      :type="row.jitOpened ? 'success' : 'warning'"
+                    >
+                      {{ row.jitStatusText }}
+                    </el-tag>
+                    <template v-if="row.submitStatus !== '-'">
+                      <el-tag
+                        size="small"
+                        effect="plain"
+                        :type="row.submitStatus === '失败' ? 'danger' : 'success'"
+                      >
+                        {{ row.submitStatus }}
+                      </el-tag>
+                      <small>{{ row.submitMessage }}</small>
+                    </template>
+                  </div>
+                </template>
+                <template #jitStockStatusSlot="{ row }">
+                  <div class="temu-workspace__submit-status">
+                    <el-tag
+                      size="small"
+                      effect="plain"
+                      :type="row.stockMaintained ? 'success' : row.stockSubmitStatus === '失败' ? 'danger' : 'info'"
+                    >
+                      {{ row.stockStatusText }}
+                    </el-tag>
+                    <el-tag
+                      v-if="row.stockSubmitStatus !== '-'"
+                      size="small"
+                      effect="plain"
+                      :type="row.stockSubmitStatus === '失败' ? 'danger' : 'success'"
+                    >
+                      {{ row.stockSubmitStatus }}
+                    </el-tag>
+                    <small v-if="row.stockSubmitStatus !== '-'">
+                      {{ row.stockSubmitMessage }}
+                      <template v-if="row.stockFinalNum !== null"> / 目标 {{ row.stockFinalNum }}</template>
+                    </small>
+                  </div>
+                </template>
+                <template #jitOperationSlot="{ row }">
+                  <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
+                    <el-button
+                      text
+                      size="small"
+                      type="primary"
+                      :loading="jitSubmittingKey === row.rowKey"
+                      :disabled="jitBatchSubmitting || row.jitOpened"
+                      @click="submitJitRows([row], false)"
+                    >
+                      {{ row.jitOpened ? "已开通" : "开通 JIT" }}
+                    </el-button>
+                    <el-button
+                      text
+                      size="small"
+                      type="success"
+                      :loading="jitStockSubmittingKey === row.rowKey"
+                      :disabled="jitBatchSubmitting || !row.jitOpened || row.stockMaintained"
+                      @click="submitJitStockRow(row)"
+                    >
+                      {{ row.stockMaintained ? "已维护" : "维护库存" }}
+                    </el-button>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+
+          <div
             v-if="isRealPictureTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
+            <div v-if="realPictureBatchSubmitting" class="temu-workspace__price-review-batch-mask">
+              <div class="temu-workspace__price-review-batch-panel">
+                <strong>批量上传实拍图</strong>
+                <span>处理中 {{ realPictureBatchFinishedCount }}/{{ realPictureBatchTotalCount }}</span>
+                <el-progress
+                  :percentage="realPictureBatchProgressPercent"
+                  :stroke-width="10"
+                  :show-text="false"
+                />
+                <div class="temu-workspace__price-review-batch-stats">
+                  <el-tag size="small" effect="plain" type="success">成功 {{ realPictureBatchSuccessCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="danger">失败 {{ realPictureBatchFailedCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="warning">剩余 {{ realPictureBatchRemainingCount }}</el-tag>
+                </div>
+              </div>
+            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>实拍图治理列表</span>
@@ -749,13 +988,32 @@
                 >
                   全部 {{ taskRunRealPictureTotalCount }}
                 </el-tag>
+                <el-tag v-if="selectedRealPictureRows.length" size="small" effect="plain" type="success">
+                  已选 {{ selectedRealPictureRows.length }}
+                </el-tag>
+                <el-tag v-if="realPictureBatchSubmitting" size="small" effect="plain" type="warning">
+                  {{ realPictureBatchProgressText }}
+                </el-tag>
+              </div>
+              <div class="temu-workspace__price-review-batch-actions">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :disabled="!selectedRealPictureRows.length || realPictureBatchSubmitting"
+                  @click="openRealPictureUploader(selectedRealPictureRows)"
+                >
+                  批量上传
+                </el-button>
               </div>
             </div>
             <div class="common-table">
               <vxe-grid
+                ref="realPicturePreviewGridRef"
                 v-bind="realPicturePreviewGridOptions"
                 :data="taskRunRealPictureRows"
                 class="temu-workspace__preview-table"
+                @checkbox-change="onRealPictureSelectionChange"
+                @checkbox-all="onRealPictureSelectionChange"
               >
                 <template #realPictureImageSlot="{ row }">
                   <el-image
@@ -780,6 +1038,20 @@
                   <div class="temu-workspace__preview-product">
                     <span>{{ row.ruleSummary }}</span>
                     <small>{{ row.statusSummary }}</small>
+                  </div>
+                </template>
+                <template #realPictureOperationSlot="{ row }">
+                  <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
+                    <el-button
+                      text
+                      size="small"
+                      type="primary"
+                      :loading="realPictureSubmittingKey === row.rowKey"
+                      :disabled="realPictureBatchSubmitting"
+                      @click="openRealPictureUploader([row])"
+                    >
+                      上传
+                    </el-button>
                   </div>
                 </template>
               </vxe-grid>
@@ -970,6 +1242,73 @@
     </el-dialog>
 
     <el-dialog
+      v-model="realPictureUploadVisible"
+      title="上传实拍图"
+      width="720px"
+      append-to-body
+      destroy-on-close
+      class="temu-workspace__real-picture-dialog"
+    >
+      <div class="temu-workspace__batch-reprice-head">
+        <span>已选 {{ realPictureUploadRows.length }} 条</span>
+        <small>按 Temu 官方结构分别提交 position 1 和 position 2。</small>
+      </div>
+      <div v-if="realPictureBatchSubmitting" class="temu-workspace__batch-reprice-progress">
+        <el-progress
+          :percentage="realPictureBatchProgressPercent"
+          :stroke-width="8"
+          :show-text="false"
+        />
+        <div class="temu-workspace__batch-reprice-stats">
+          <el-tag size="small" effect="plain">成功 {{ realPictureBatchSuccessCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="danger">失败 {{ realPictureBatchFailedCount }}</el-tag>
+          <el-tag size="small" effect="plain" type="warning">剩余 {{ realPictureBatchRemainingCount }}</el-tag>
+        </div>
+      </div>
+      <el-form label-position="top" class="temu-workspace__real-picture-form">
+        <el-form-item label="位置 1 图片地址">
+          <el-input
+            v-model="realPictureUploadForm.position1ImageUrlsText"
+            type="textarea"
+            :rows="5"
+            placeholder="每行一个 HTTP 图片地址，会提交到 position 1"
+            :disabled="realPictureBatchSubmitting"
+          />
+        </el-form-item>
+        <el-form-item label="位置 2 图片地址">
+          <el-input
+            v-model="realPictureUploadForm.position2ImageUrlsText"
+            type="textarea"
+            :rows="5"
+            placeholder="每行一个 HTTP 图片地址，会提交到 position 2"
+            :disabled="realPictureBatchSubmitting"
+          />
+        </el-form-item>
+        <el-form-item label="上传方式">
+          <el-select
+            v-model="realPictureUploadForm.appendToExisting"
+            :disabled="realPictureBatchSubmitting"
+            class="temu-workspace__compliance-control"
+          >
+            <el-option label="仅使用本次图片" :value="false" />
+            <el-option label="保留已有标签图并追加" :value="true" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button :disabled="realPictureBatchSubmitting" @click="realPictureUploadVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="realPictureBatchSubmitting"
+          :disabled="realPictureBatchSubmitting"
+          @click="submitRealPictureUploadRows"
+        >
+          上传
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
       v-model="complianceEditorVisible"
       title="合规信息处理"
       width="980px"
@@ -1099,6 +1438,7 @@ import {
   getTemuCatalog,
   getTemuTaskRun,
   getTemuTaskRunPage,
+  markTemuTaskRunJitRow,
   markTemuTaskRunPriceReviewRow,
   retryTemuTaskRun,
   type TemuActionResponse,
@@ -1169,6 +1509,7 @@ interface PriceReviewPreviewRow {
   priceDifference: string;
   priceDifferenceRatio: string;
   priceDifferenceDisplay: string;
+  priceDifferenceValue: number | null;
   priceChangeRatioDisplay: string;
   priceChangeRatioValue: number | null;
   priceDecisionTone: "success" | "warning" | "danger" | "neutral";
@@ -1191,17 +1532,69 @@ interface PriceReviewSubmitMark {
   completedLabel?: string;
 }
 
+interface RealPictureSubmitMark {
+  status: "success" | "failed";
+  message: string;
+  time: string;
+}
+
+interface JitSubmitMark {
+  status: "success" | "failed";
+  action?: "open" | "stock";
+  message: string;
+  time: string;
+  markOpened?: boolean;
+  stockMaintained?: boolean;
+  finalNum?: number;
+}
+
+interface JitPreviewRow {
+  rowKey: string;
+  imageUrl: string;
+  spuId: string;
+  skcId: string;
+  rawSpuId: number;
+  rawSkcId: number;
+  applyJitStatus: number | null;
+  jitOpened: boolean;
+  jitStatusText: string;
+  stockMaintained: boolean;
+  stockStatusText: string;
+  stockSubmitStatus: string;
+  stockSubmitMessage: string;
+  stockFinalNum: number | null;
+  skcExtCode: string;
+  productName: string;
+  categoryName: string;
+  submitStatus: string;
+  submitMessage: string;
+  raw: Record<string, any>;
+}
+
 interface RealPicturePreviewRow {
   rowKey: string;
   imageUrl: string;
   previewImageUrls: string[];
   spuId: string;
   goodsId: string;
+  rawSpuId: number;
+  rawGoodsId: number;
+  rawSkuIdList: number[];
+  rawIsSameSku: boolean;
+  existingLabelImageList: Record<string, any>[];
   skuSummary: string;
   isSameSku: string;
   ruleSummary: string;
   statusSummary: string;
   productName: string;
+  submitStatus: string;
+  submitMessage: string;
+  platformStatusText: string;
+  platformStatusTone: "success" | "warning" | "info" | "danger";
+  editStatusText: string;
+  positionImageSummary: string;
+  ruleStatusSummary: string;
+  raw: Record<string, any>;
 }
 
 interface CompliancePreviewRow {
@@ -1272,9 +1665,6 @@ const emit = defineEmits<{
   (e: "run-tool", payload: { featureKey: string; payload: Record<string, any> }): void;
 }>();
 
-const flattenCatalogActions = (groups: Array<{ actions: TemuCatalogAction[] }> = []) =>
-  groups.flatMap((group) => group.actions);
-
 const resetReactiveRecord = (target: Record<string, any>, nextValue: Record<string, any> = {}) => {
   Object.keys(target).forEach((key) => delete target[key]);
   Object.entries(nextValue).forEach(([key, value]) => {
@@ -1284,7 +1674,6 @@ const resetReactiveRecord = (target: Record<string, any>, nextValue: Record<stri
 
 const catalogLoading = ref(false);
 const runningActionKey = ref("");
-const selectedCategoryKey = useLocalStorage("temu-workspace:selected-category-key", "");
 const selectedActionKey = useLocalStorage("temu-workspace:selected-action-key", "");
 const actionSearchKeyword = ref("");
 const catalog = ref<TemuCatalogGroup[]>([]);
@@ -1308,8 +1697,46 @@ const priceReviewSubmittingKey = ref("");
 const priceReviewSubmitMarks = reactive<Record<string, PriceReviewSubmitMark>>({});
 const selectedPriceReviewRowKeys = ref<string[]>([]);
 const priceReviewPreviewGridRef = ref<VxeGridInstance<PriceReviewPreviewRow>>();
+const priceReviewFetchingAll = ref(false);
+const realPictureSubmittingKey = ref("");
+const realPictureSubmitMarks = reactive<Record<string, RealPictureSubmitMark>>({});
+const selectedRealPictureRowKeys = ref<string[]>([]);
+const realPicturePreviewGridRef = ref<VxeGridInstance<RealPicturePreviewRow>>();
+const realPictureUploadVisible = ref(false);
+const realPictureUploadRows = ref<RealPicturePreviewRow[]>([]);
+const realPictureUploadForm = useLocalStorage("temu-workspace:real-picture-upload-form", {
+  position1ImageUrlsText: "",
+  position2ImageUrlsText: "",
+  appendToExisting: false,
+});
+const realPictureBatchSubmitting = ref(false);
+const realPictureBatchFinishedCount = ref(0);
+const realPictureBatchTotalCount = ref(0);
+const realPictureBatchSuccessCount = ref(0);
+const realPictureBatchFailedCount = ref(0);
+const realPictureFetchingAll = ref(false);
+const jitSubmittingKey = ref("");
+const jitStockSubmittingKey = ref("");
+const jitSubmitMarks = reactive<Record<string, JitSubmitMark>>({});
+const jitStockSubmitMarks = reactive<Record<string, JitSubmitMark>>({});
+const selectedJitRowKeys = ref<string[]>([]);
+const jitPreviewGridRef = ref<VxeGridInstance<JitPreviewRow>>();
+const jitOpenStatusFilter = ref<"all" | "pending" | "opened">("all");
+const jitStockStatusFilter = ref<"all" | "pending" | "maintained">("all");
+const jitStockFinalNum = useLocalStorage("temu-workspace:jit-stock-final-num", 500);
+const jitBatchSubmitting = ref(false);
+const jitBatchModeLabel = ref("批量处理 JIT");
+const jitBatchCurrentStage = ref("");
+const jitBatchCurrentRowText = ref("");
+const jitBatchFinishedCount = ref(0);
+const jitBatchTotalCount = ref(0);
+const jitBatchSuccessCount = ref(0);
+const jitBatchFailedCount = ref(0);
+const jitFetchingAll = ref(false);
 const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
 const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("all");
+const priceReviewAmountFilterMin = ref<number | undefined>();
+const priceReviewAmountFilterMax = ref<number | undefined>();
 const priceReviewBatchSubmitting = ref(false);
 const priceReviewBatchSubmittingMode = ref<"" | "confirm" | "abandon" | "reprice">("");
 const priceReviewBatchFinishedCount = ref(0);
@@ -1349,7 +1776,6 @@ const taskRunGridOptions = ref<VxeGridProps<TemuTaskRunSummary>>({
   },
   checkboxConfig: {
     reserve: true,
-    checkMethod: ({ row }) => isActionableComplianceRow(row as CompliancePreviewRow),
   },
   columns: [
     { type: "checkbox", width: 48 },
@@ -1535,8 +1961,17 @@ const priceReviewBatchRepriceGridOptions = ref<VxeGridProps<PriceReviewPreviewRo
 
 const realPicturePreviewGridOptions = ref<VxeGridProps<RealPicturePreviewRow>>({
   ...(commonGridOptions as VxeGridProps<RealPicturePreviewRow>),
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "rowKey",
+  },
+  checkboxConfig: {
+    ...(commonGridOptions as any).checkboxConfig,
+    checkMethod: ({ row }: { row: RealPicturePreviewRow }) => isSelectableRealPictureRow(row),
+  },
   maxHeight: 780,
   columns: [
+    { type: "checkbox", width: 46, fixed: "left" },
     {
       title: "图片",
       field: "imageUrl",
@@ -1561,6 +1996,81 @@ const realPicturePreviewGridOptions = ref<VxeGridProps<RealPicturePreviewRow>>({
       field: "productName",
       minWidth: 260,
       showOverflow: "tooltip",
+    },
+    {
+      title: "操作",
+      field: "operation",
+      width: 96,
+      fixed: "right",
+      align: "right",
+      slots: { default: "realPictureOperationSlot" },
+    },
+  ],
+});
+
+const jitPreviewGridOptions = ref<VxeGridProps<JitPreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<JitPreviewRow>),
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "rowKey",
+  },
+  checkboxConfig: {
+    ...(commonGridOptions as any).checkboxConfig,
+    checkMethod: ({ row }: { row: JitPreviewRow }) => isSelectableJitRow(row),
+  },
+  maxHeight: 780,
+  columns: [
+    { type: "checkbox", width: 46, fixed: "left" },
+    {
+      title: "商品图",
+      field: "imageUrl",
+      width: 112,
+      align: "center",
+      slots: { default: "jitImageSlot" },
+    },
+    {
+      title: "商品信息",
+      field: "spuId",
+      minWidth: 260,
+      slots: { default: "jitIdentitySlot" },
+    },
+    {
+      title: "JIT 状态",
+      field: "jitStatusText",
+      width: 150,
+      slots: { default: "jitStatusSlot" },
+    },
+    {
+      title: "库存状态",
+      field: "stockStatusText",
+      minWidth: 220,
+      slots: { default: "jitStockStatusSlot" },
+    },
+    {
+      title: "商品名称",
+      field: "productName",
+      minWidth: 260,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "类目",
+      field: "categoryName",
+      minWidth: 180,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "处理状态",
+      field: "submitStatus",
+      minWidth: 180,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "操作",
+      field: "operation",
+      width: 190,
+      fixed: "right",
+      align: "right",
+      slots: { default: "jitOperationSlot" },
     },
   ],
 });
@@ -1616,6 +2126,13 @@ const regionCookieCounts = computed(() => ({
 const hasUsableSession = computed(() => regionCookieCounts.value.global > 0);
 
 const normalizedSearchKeyword = computed(() => actionSearchKeyword.value.trim().toLowerCase());
+const SIMPLIFIED_ACTION_KEYS = [
+  "goods.price-review.list",
+  TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
+  "goods.real-picture.list",
+  "compliance.page-query",
+  "jit.list",
+];
 
 const publishDetailToolItem = computed<ToolkitToolItem | null>(() => {
   const matched = (Array.isArray(props.toolItems) ? props.toolItems : []).find(
@@ -1730,16 +2247,26 @@ const catalogGroups = computed(() => {
   }, [] as TemuWorkspaceActionGroup[]);
 });
 
-const actionCategoryTabs = computed(() =>
-  catalogGroups.value.filter((group) => Array.isArray(group.actions) && group.actions.length > 0),
-);
-const selectedCategory = computed(
-  () => actionCategoryTabs.value.find((group) => group.key === selectedCategoryKey.value) || null,
-);
-const selectedCategoryActions = computed(() =>
-  Array.isArray(selectedCategory.value?.actions) ? selectedCategory.value.actions : [],
-);
-const visibleActions = computed(() => flattenCatalogActions(actionCategoryTabs.value));
+const simplifiedActions = computed(() => {
+  const keyword = normalizedSearchKeyword.value;
+  const actionMap = new Map<string, TemuWorkspaceAction>();
+  catalogGroups.value.forEach((group) => {
+    group.actions.forEach((action) => actionMap.set(action.key, action));
+  });
+
+  return SIMPLIFIED_ACTION_KEYS.map((key) => actionMap.get(key))
+    .filter((action): action is TemuWorkspaceAction => !!action)
+    .filter((action) => {
+      if (!keyword) {
+        return true;
+      }
+      return [action.label, action.description, action.key]
+        .filter(Boolean)
+        .some((item) => String(item).toLowerCase().includes(keyword));
+    });
+});
+const selectedCategoryActions = computed(() => simplifiedActions.value);
+const visibleActions = computed(() => simplifiedActions.value);
 const selectedAction = computed<TemuWorkspaceAction | null>(
   () =>
     selectedCategoryActions.value.find((item) => item.key === selectedActionKey.value) ||
@@ -1766,6 +2293,24 @@ const ensureActionWorkspaceState = (actionKey?: string | null) => {
 
   if (!actionWorkspaceStates[normalizedKey]) {
     actionWorkspaceStates[normalizedKey] = createActionWorkspaceState(normalizedKey);
+  } else {
+    const preset = ACTION_PRESETS[normalizedKey];
+    const defaultState = buildDefaultFormState(preset?.fields || []);
+    (preset?.fields || []).forEach((field) => {
+      const currentValue = actionWorkspaceStates[normalizedKey].formState[field.key];
+      const defaultValue = defaultState[field.key];
+      const shouldFillEmptyMultipleSelect =
+        field.type === "select" &&
+        field.multiple &&
+        Array.isArray(currentValue) &&
+        currentValue.length === 0 &&
+        Array.isArray(defaultValue) &&
+        defaultValue.length > 0;
+
+      if (currentValue === undefined || shouldFillEmptyMultipleSelect) {
+        actionWorkspaceStates[normalizedKey].formState[field.key] = defaultValue;
+      }
+    });
   }
 
   return actionWorkspaceStates[normalizedKey];
@@ -2022,6 +2567,104 @@ const collectImageUrls = (value: any): string[] => {
   visit(value);
   return Array.from(new Set(urls));
 };
+const parseImageUrlText = (value: string) =>
+  String(value || "")
+    .split(/[\n,，\s]+/)
+    .map((item) => item.trim())
+    .filter((item) => /^https?:\/\//i.test(item));
+const toNumberList = (value: any): number[] => {
+  const source = Array.isArray(value) ? value : [value];
+  return source
+    .flatMap((item) => {
+      if (Array.isArray(item)) {
+        return item;
+      }
+      if (typeof item === "string") {
+        return item.split(/[\n,，\s]+/);
+      }
+      return [item];
+    })
+    .map((item) => Number(item))
+    .filter((item) => Number.isFinite(item) && item > 0);
+};
+const resolveRealPictureUploadStatus = (status: any) => {
+  const normalized = Number(status);
+  if (normalized === 2) {
+    return { text: "已上传", tone: "success" as const };
+  }
+  if (normalized === 1) {
+    return { text: "待上传", tone: "warning" as const };
+  }
+  if (normalized === 3) {
+    return { text: "审核中", tone: "info" as const };
+  }
+  if (normalized === 4) {
+    return { text: "异常", tone: "danger" as const };
+  }
+  return {
+    text: Number.isFinite(normalized) ? `状态 ${normalized}` : "-",
+    tone: "info" as const,
+  };
+};
+const resolveRealPictureRuleStatusText = (status: any) => {
+  const normalized = Number(status);
+  if (normalized === 2) {
+    return "识别成功";
+  }
+  if (normalized === 3) {
+    return "待建设";
+  }
+  if (normalized === 4) {
+    return "异常";
+  }
+  return Number.isFinite(normalized) ? `状态${normalized}` : "-";
+};
+const buildRealPicturePositionImageSummary = (item: Record<string, any>, labelImageList: any[]) => {
+  const counts: Record<string, number> = {};
+  labelImageList.forEach((image: any) => {
+    const position = firstDisplayValue(image?.position, image?.positionType);
+    if (!position) {
+      return;
+    }
+    counts[position] = (counts[position] || 0) + 1;
+  });
+
+  const positionDetail = asArray<Record<string, any>>(item?.positionDetail || item?.position_detail);
+  positionDetail.forEach((detail) => {
+    const position = firstDisplayValue(detail?.position);
+    if (!position || counts[position]) {
+      return;
+    }
+    const photoList = asArray<Record<string, any>>(detail?.skuPhotoInfoList || detail?.sku_photo_info_list);
+    counts[position] = photoList.reduce((sum, photo) => {
+      const imageList = asArray(photo?.imageList || photo?.image_list);
+      return Math.max(sum, imageList.length);
+    }, 0);
+  });
+
+  return ["1", "2"]
+    .map((position) => `位置${position}:${counts[position] || 0}`)
+    .join(" / ");
+};
+const buildRealPictureRuleStatusSummary = (ruleList: any[]) => {
+  if (!ruleList.length) {
+    return "-";
+  }
+  const failedRules = ruleList.filter((rule: any) => Number(rule?.ruleStatus ?? rule?.rule_status) !== 2);
+  const source = failedRules.length ? failedRules : ruleList;
+  return source
+    .slice(0, 3)
+    .map((rule: any) => {
+      const name = firstDisplayValue(rule?.ruleName, rule?.rule_name, rule?.checkType, rule?.check_type);
+      const statusText = firstDisplayValue(
+        rule?.ruleStatusToast,
+        rule?.rule_status_toast,
+        resolveRealPictureRuleStatusText(rule?.ruleStatus ?? rule?.rule_status),
+      );
+      return `${name}:${statusText}`;
+    })
+    .join(" / ");
+};
 const toFiniteNumberOrNull = (value: any) => {
   if (value === undefined || value === null) {
     return null;
@@ -2160,6 +2803,7 @@ const buildPriceReviewPreviewRows = (
             priceDifference: formatCentPrice(review?.priceDifference),
             priceDifferenceRatio: formatPercent(review?.priceDifferenceRatio),
             priceDifferenceDisplay: formatSignedCurrency(computedPriceDifference),
+            priceDifferenceValue: computedPriceDifference,
             priceChangeRatioDisplay: formatSignedPercent(computedPriceChangeRatio),
             priceChangeRatioValue: computedPriceChangeRatio,
             priceDecisionTone: priceDecision.tone,
@@ -2229,20 +2873,129 @@ const buildRealPicturePreviewRows = (
       .filter(Boolean)
       .slice(0, 4)
       .join(" / ");
+    const rowKey = firstDisplayValue(item?.spuId, item?.spu_id, index);
+    const mark = realPictureSubmitMarks[rowKey] as RealPictureSubmitMark | undefined;
+    const rawSkuIdList = toNumberList(
+      skuInfo.map((sku: any) => firstDisplayValue(sku?.skuId, sku?.sku_id)),
+    );
+    const uploadStatus = resolveRealPictureUploadStatus(item?.uploadStatus ?? item?.upload_status);
+    const canEdit = item?.canEdit ?? item?.can_edit;
+    const editStatusText = canEdit === true ? "可编辑" : canEdit === false ? "不可编辑" : "-";
+    const positionImageSummary = buildRealPicturePositionImageSummary(item, labelImageList);
+    const ruleStatusSummary = buildRealPictureRuleStatusSummary(ruleList);
 
     return {
-      rowKey: firstDisplayValue(item?.spuId, item?.spu_id, index),
+      rowKey,
       imageUrl: previewImageUrls[0] || "-",
       previewImageUrls,
       spuId: toDisplayText(item?.spuId || item?.spu_id),
       goodsId: toDisplayText(item?.goodsId || item?.goods_id),
+      rawSpuId: Number(item?.spuId || item?.spu_id || 0),
+      rawGoodsId: Number(item?.goodsId || item?.goods_id || 0),
+      rawSkuIdList,
+      rawIsSameSku: Number(item?.isSameSku || item?.is_same_sku || 0) === 1,
+      existingLabelImageList: labelImageList,
       skuSummary: toDisplayText(skuSummary || skuInfo.length),
       isSameSku: Number(item?.isSameSku || item?.is_same_sku || 0) === 1 ? "是" : "否",
       ruleSummary: toDisplayText(ruleSummary),
       statusSummary: `标签图 ${labelImageList.length} / 规则 ${ruleList.length}`,
       productName: toDisplayText(item?.productName || item?.product_name || item?.goodsName || item?.goods_name),
+      submitStatus: mark ? (mark.status === "success" ? "成功" : "失败") : "-",
+      submitMessage: mark?.message || "-",
+      platformStatusText: uploadStatus.text,
+      platformStatusTone: uploadStatus.tone,
+      editStatusText,
+      positionImageSummary,
+      ruleStatusSummary,
+      raw: item,
     };
   });
+};
+const resolveJitCategoryName = (item: Record<string, any>) => {
+  const fullCategoryName = Array.isArray(item?.fullCategoryName)
+    ? item.fullCategoryName.map((name: any) => String(name || "").trim()).filter(Boolean)
+    : [];
+  return toDisplayText(fullCategoryName.length ? fullCategoryName.join(" / ") : item?.leafCategoryName);
+};
+const resolveJitImageUrl = (skc: Record<string, any>, item: Record<string, any>) => {
+  const skuList = Array.isArray(skc?.skuList) ? skc.skuList : [];
+  const skuImage = skuList
+    .map((sku: any) => String(sku?.skuPreviewImage || "").trim())
+    .find((url: string) => /^https?:\/\//i.test(url));
+  return toDisplayText(
+    firstTextFromArray(skc?.previewImgUrlList) ||
+      skuImage ||
+      firstTextFromArray(item?.carouselImageUrlList),
+  );
+};
+const buildJitPreviewRows = (
+  response?: TemuActionResponse | Record<string, any> | null,
+): JitPreviewRow[] => {
+  const action = String(response?.action || "").trim();
+  if (action !== "jit.list" && action !== "jit.list-all") {
+    return [];
+  }
+
+  const result = asPlainObject(response?.result);
+  const items = Array.isArray(result.items) ? result.items : [];
+  const persistedMarks = asPlainObject((response as any)?.__jitMarks || result.__jitMarks);
+  const persistedStockMarks = asPlainObject((response as any)?.__jitStockMarks || result.__jitStockMarks);
+  const rows: JitPreviewRow[] = [];
+  const seen = new Set<string>();
+
+  items.forEach((item: any, itemIndex: number) => {
+    const spuId = Number(item?.productId || 0);
+    const productName = toDisplayText(item?.productName);
+    const categoryName = resolveJitCategoryName(item);
+    const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
+    skcList.forEach((skc: any, skcIndex: number) => {
+      const skcId = Number(skc?.skcId || 0);
+      if (!spuId || !skcId) {
+        return;
+      }
+      const rowKey = `${spuId}-${skcId}`;
+      if (seen.has(rowKey)) {
+        return;
+      }
+      seen.add(rowKey);
+      const persistedMark = persistedMarks[rowKey] as JitSubmitMark | undefined;
+      const mark = (jitSubmitMarks[rowKey] || persistedMark) as JitSubmitMark | undefined;
+      const persistedStockMark = persistedStockMarks[rowKey] as JitSubmitMark | undefined;
+      const stockMark = (jitStockSubmitMarks[rowKey] || persistedStockMark) as JitSubmitMark | undefined;
+      const applyJitStatus = toFiniteNumberOrNull(skc?.applyJitStatus);
+      const jitOpened = Number(applyJitStatus) === 3 || !!persistedMark?.markOpened;
+      const stockMaintained = !!stockMark?.stockMaintained;
+      rows.push({
+        rowKey,
+        imageUrl: resolveJitImageUrl(skc, item),
+        spuId: toDisplayText(spuId),
+        skcId: toDisplayText(skcId),
+        rawSpuId: spuId,
+        rawSkcId: skcId,
+        applyJitStatus,
+        jitOpened,
+        jitStatusText: jitOpened ? "已开通 JIT" : "未开通 JIT",
+        stockMaintained,
+        stockStatusText: stockMaintained ? "已维护库存" : "未维护库存",
+        stockSubmitStatus: stockMark ? (stockMark.status === "success" ? "成功" : "失败") : "-",
+        stockSubmitMessage: stockMark?.message || "-",
+        stockFinalNum: Number.isFinite(Number(stockMark?.finalNum)) ? Number(stockMark?.finalNum) : null,
+        skcExtCode: toDisplayText(skc?.extCode),
+        productName,
+        categoryName,
+        submitStatus: mark ? (mark.status === "success" ? "成功" : "失败") : "-",
+        submitMessage: mark?.message || "-",
+        raw: {
+          item,
+          skc,
+          itemIndex,
+          skcIndex,
+        },
+      });
+    });
+  });
+
+  return rows;
 };
 const buildCompliancePreviewRows = (
   response?: TemuActionResponse | Record<string, any> | null,
@@ -2651,6 +3404,9 @@ const isPriceReviewTaskRunResult = computed(
 const isRealPictureTaskRunResult = computed(
   () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.real-picture.list",
 );
+const isJitListTaskRunResult = computed(() =>
+  ["jit.list", "jit.list-all"].includes(String(activeTaskRunDetail.value?.result?.action || "").trim()),
+);
 const isComplianceTaskRunResult = computed(
   () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "compliance.page-query",
 );
@@ -2684,9 +3440,33 @@ const matchPriceReviewRiskFilter = (row: PriceReviewPreviewRow) => {
   }
   return ratio < 0 && discountRatio > 0.5;
 };
+const matchPriceReviewAmountFilter = (row: PriceReviewPreviewRow) => {
+  const minAmount = Number(priceReviewAmountFilterMin.value);
+  const maxAmount = Number(priceReviewAmountFilterMax.value);
+  if (!Number.isFinite(minAmount) && !Number.isFinite(maxAmount)) {
+    return true;
+  }
+
+  const difference = row.priceDifferenceValue;
+  if (difference === null || !Number.isFinite(difference)) {
+    return false;
+  }
+
+  const amount = Math.abs(difference);
+  if (Number.isFinite(minAmount) && amount < minAmount * 100) {
+    return false;
+  }
+  if (Number.isFinite(maxAmount) && amount > maxAmount * 100) {
+    return false;
+  }
+  return true;
+};
 const taskRunPriceReviewPreviewRows = computed(() =>
   taskRunPriceReviewRawRows.value.filter((row) => {
     if (!matchPriceReviewRiskFilter(row)) {
+      return false;
+    }
+    if (!matchPriceReviewAmountFilter(row)) {
       return false;
     }
     if (priceReviewStatusFilter.value === "pending" && row.processed) {
@@ -2705,6 +3485,48 @@ const taskRunRealPictureTotalCount = computed(() => {
   const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
   return Number(result.total || taskRunRealPictureRows.value.length || 0) || 0;
 });
+const selectedRealPictureRows = computed(() => {
+  const selectedKeys = new Set(selectedRealPictureRowKeys.value);
+  return taskRunRealPictureRows.value.filter((row) =>
+    selectedKeys.has(row.rowKey) && isSelectableRealPictureRow(row),
+  );
+});
+const taskRunJitRawRows = computed(() =>
+  buildJitPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
+);
+const taskRunJitRows = computed(() =>
+  taskRunJitRawRows.value.filter((row) => {
+    if (jitOpenStatusFilter.value === "opened") {
+      if (!row.jitOpened) {
+        return false;
+      }
+    }
+    if (jitOpenStatusFilter.value === "pending") {
+      if (row.jitOpened) {
+        return false;
+      }
+    }
+    if (jitStockStatusFilter.value === "maintained") {
+      return row.stockMaintained;
+    }
+    if (jitStockStatusFilter.value === "pending") {
+      return !row.stockMaintained;
+    }
+    return true;
+  }),
+);
+const taskRunJitTotalCount = computed(() => {
+  const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
+  return Number(result.total || taskRunJitRawRows.value.length || 0) || 0;
+});
+const selectedJitRows = computed(() => {
+  const selectedKeys = new Set(selectedJitRowKeys.value);
+  return taskRunJitRows.value.filter((row) => selectedKeys.has(row.rowKey) && isSelectableJitRow(row));
+});
+const selectedOpenableJitRows = computed(() => selectedJitRows.value.filter((row) => isOpenableJitRow(row)));
+const selectedStockMaintainableJitRows = computed(() =>
+  selectedJitRows.value.filter((row) => isStockMaintainableJitRow(row)),
+);
 const taskRunComplianceRows = computed(() =>
   buildCompliancePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
 );
@@ -2737,6 +3559,36 @@ const complianceBatchProgressPercent = computed(() => {
     return 0;
   }
   return Math.min(100, Math.round((complianceBatchFinishedCount.value / complianceBatchTotalCount.value) * 100));
+});
+const realPictureBatchProgressText = computed(() => {
+  if (!realPictureBatchSubmitting.value || realPictureBatchTotalCount.value <= 0) {
+    return "";
+  }
+  return `处理中 ${realPictureBatchFinishedCount.value}/${realPictureBatchTotalCount.value}`;
+});
+const realPictureBatchRemainingCount = computed(() =>
+  Math.max(0, realPictureBatchTotalCount.value - realPictureBatchFinishedCount.value),
+);
+const realPictureBatchProgressPercent = computed(() => {
+  if (realPictureBatchTotalCount.value <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((realPictureBatchFinishedCount.value / realPictureBatchTotalCount.value) * 100));
+});
+const jitBatchProgressText = computed(() => {
+  if (!jitBatchSubmitting.value || jitBatchTotalCount.value <= 0) {
+    return "";
+  }
+  return `处理中 ${jitBatchFinishedCount.value}/${jitBatchTotalCount.value}`;
+});
+const jitBatchRemainingCount = computed(() =>
+  Math.max(0, jitBatchTotalCount.value - jitBatchFinishedCount.value),
+);
+const jitBatchProgressPercent = computed(() => {
+  if (jitBatchTotalCount.value <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((jitBatchFinishedCount.value / jitBatchTotalCount.value) * 100));
 });
 const complianceEditorTaskGroups = computed(() => activeComplianceRow.value?.taskGroups || []);
 const visibleComplianceEditorTaskGroups = computed(() =>
@@ -3006,24 +3858,6 @@ const resolveFieldOptions = (field: TemuActionField) => {
 };
 
 const syncSelection = () => {
-  if (!actionCategoryTabs.value.length) {
-    if (!catalogGroups.value.length) {
-      selectedCategoryKey.value = "";
-      selectedActionKey.value = "";
-    }
-    return;
-  }
-
-  if (!actionCategoryTabs.value.some((group) => group.key === selectedCategoryKey.value)) {
-    const persistedAction = visibleActions.value.find((action) => action.key === selectedActionKey.value);
-    const persistedGroup = persistedAction
-      ? actionCategoryTabs.value.find((group) =>
-          group.actions.some((action) => action.key === persistedAction.key),
-        )
-      : null;
-    selectedCategoryKey.value = persistedGroup?.key || actionCategoryTabs.value[0]?.key || "";
-  }
-
   const actions = selectedCategoryActions.value;
   if (!actions.length) {
     selectedActionKey.value = "";
@@ -3167,7 +4001,6 @@ const focusActionByKey = (actionKey?: string | null, clearSearch = false) => {
     actionSearchKeyword.value = "";
   }
 
-  selectedCategoryKey.value = matched.groupKey;
   selectedActionKey.value = matched.key;
 };
 
@@ -3345,6 +4178,8 @@ const refreshTaskRuns = async () => {
 const resetPriceReviewFilters = () => {
   priceReviewRiskFilter.value = "all";
   priceReviewStatusFilter.value = "all";
+  priceReviewAmountFilterMin.value = undefined;
+  priceReviewAmountFilterMax.value = undefined;
 };
 
 const parsePriceYuanToCent = (value: any) => {
@@ -3361,6 +4196,666 @@ const canSubmitPriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
 const canRepricePriceReviewRow = (row?: PriceReviewPreviewRow | null) =>
   !!(row?.rawPriceOrderId && row.rawSkuId && row.rawCurrentPrice !== null);
 const isSelectablePriceReviewRow = (row?: PriceReviewPreviewRow | null) => !!row && !row.invalid && !row.processed;
+const isOpenableJitRow = (row?: JitPreviewRow | null) => !!(row?.rawSkcId && row.rawSpuId && !row.jitOpened);
+const isStockMaintainableJitRow = (row?: JitPreviewRow | null) =>
+  !!(row?.rawSkcId && row.rawSpuId && row.jitOpened && !row.stockMaintained);
+const isSelectableJitRow = (row?: JitPreviewRow | null) =>
+  isOpenableJitRow(row) || isStockMaintainableJitRow(row);
+const isSelectableRealPictureRow = (row?: RealPicturePreviewRow | null) =>
+  !!(row?.rawSpuId && row.rawGoodsId && row.rawSkuIdList.length);
+
+const buildJitOpenPayload = (rows: JitPreviewRow[]) => ({
+  profileId: props.profileId,
+  region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+  skcSpuList: rows.map((row) => ({
+    skcId: row.rawSkcId,
+    spuId: row.rawSpuId,
+  })),
+});
+
+const buildJitStockPayload = (row: JitPreviewRow) => ({
+  profileId: props.profileId,
+  region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+  skcId: row.rawSkcId,
+  finalNum: Math.max(0, Number(jitStockFinalNum.value || 0) || 0),
+});
+
+const resetJitBatchProgress = (label: string, total: number) => {
+  jitBatchSubmitting.value = true;
+  jitBatchModeLabel.value = label;
+  jitBatchCurrentStage.value = "";
+  jitBatchCurrentRowText.value = "";
+  jitBatchFinishedCount.value = 0;
+  jitBatchTotalCount.value = total;
+  jitBatchSuccessCount.value = 0;
+  jitBatchFailedCount.value = 0;
+};
+
+const setJitBatchCurrent = (stage: string, row?: JitPreviewRow | null) => {
+  jitBatchCurrentStage.value = stage;
+  jitBatchCurrentRowText.value = row ? `SPU ${row.spuId} / SKC ${row.skcId}` : "";
+};
+
+const buildJitStockSuccessMark = (response: TemuActionResponse | null | undefined, finalNum: number): JitSubmitMark => ({
+  status: response?.success ? "success" : "failed",
+  action: "stock",
+  message: String(response?.message || "").trim() || (response?.success ? "库存维护成功" : "库存维护失败"),
+  time: formatDateTime(new Date()),
+  stockMaintained: !!response?.success,
+  finalNum,
+});
+
+const buildJitStockErrorMark = (error: any, finalNum: number): JitSubmitMark => ({
+  status: "failed",
+  action: "stock",
+  message: extractRequestErrorMessage(error, "库存维护失败"),
+  time: formatDateTime(new Date()),
+  stockMaintained: false,
+  finalNum,
+});
+
+const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark) => {
+  if (!activeTaskRunDetail.value?.id) {
+    return;
+  }
+  activeTaskRunDetail.value = await markTemuTaskRunJitRow({
+    id: activeTaskRunDetail.value.id,
+    rowKey: row.rowKey,
+    action: "stock",
+    status: mark.status,
+    message: mark.message,
+    stockMaintained: !!mark.stockMaintained,
+    finalNum: mark.finalNum,
+  });
+};
+
+const submitJitStockRow = async (row: JitPreviewRow) => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+  if (!row?.rawSkcId || !row.jitOpened) {
+    ElMessage.warning("只有已开通 JIT 的记录才能维护库存");
+    return;
+  }
+  if (row.stockMaintained) {
+    ElMessage.warning("该记录已维护库存，无需重复操作");
+    return;
+  }
+
+  const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
+  jitStockSubmittingKey.value = row.rowKey;
+  try {
+    const response = await executeTemuAction("/temu/jit/stock/update", buildJitStockPayload(row));
+    const nextMark = buildJitStockSuccessMark(response, finalNum);
+    jitStockSubmitMarks[row.rowKey] = nextMark;
+    try {
+      await persistJitStockMark(row, nextMark);
+    } catch (error: any) {
+      ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
+    }
+    response?.success ? ElMessage.success(nextMark.message) : ElMessage.error(nextMark.message);
+  } catch (error: any) {
+    const nextMark = buildJitStockErrorMark(error, finalNum);
+    jitStockSubmitMarks[row.rowKey] = nextMark;
+    if (activeTaskRunDetail.value?.id) {
+      markTemuTaskRunJitRow({
+        id: activeTaskRunDetail.value.id,
+        rowKey: row.rowKey,
+        action: "stock",
+        status: nextMark.status,
+        message: nextMark.message,
+        stockMaintained: false,
+        finalNum,
+      }).catch(() => undefined);
+    }
+    ElMessage.error(nextMark.message);
+  } finally {
+    jitStockSubmittingKey.value = "";
+  }
+};
+
+const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return { successCount: 0, failedCount: 0 };
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return { successCount: 0, failedCount: 0 };
+  }
+  const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) => isStockMaintainableJitRow(row));
+  if (!rows.length) {
+    ElMessage.warning("请先选择已开通且未维护库存的记录");
+    return { successCount: 0, failedCount: 0 };
+  }
+
+  const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
+  let successCount = 0;
+  let failedCount = 0;
+  if (batchMode) {
+    resetJitBatchProgress("批量维护库存", rows.length);
+  }
+
+  try {
+    for (const row of rows) {
+      if (batchMode) {
+        setJitBatchCurrent("维护库存中", row);
+      } else {
+        jitStockSubmittingKey.value = row.rowKey;
+      }
+      try {
+        const response = await executeTemuAction("/temu/jit/stock/update", buildJitStockPayload(row));
+        const nextMark = buildJitStockSuccessMark(response, finalNum);
+        jitStockSubmitMarks[row.rowKey] = nextMark;
+        if (nextMark.status === "success") {
+          successCount += 1;
+        } else {
+          failedCount += 1;
+        }
+        try {
+          await persistJitStockMark(row, nextMark);
+        } catch (error: any) {
+          ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
+        }
+      } catch (error: any) {
+        failedCount += 1;
+        const nextMark = buildJitStockErrorMark(error, finalNum);
+        jitStockSubmitMarks[row.rowKey] = nextMark;
+        if (activeTaskRunDetail.value?.id) {
+          markTemuTaskRunJitRow({
+            id: activeTaskRunDetail.value.id,
+            rowKey: row.rowKey,
+            action: "stock",
+            status: nextMark.status,
+            message: nextMark.message,
+            stockMaintained: false,
+            finalNum,
+          }).catch(() => undefined);
+        }
+      } finally {
+        if (batchMode) {
+          jitBatchFinishedCount.value += 1;
+          jitBatchSuccessCount.value = successCount;
+          jitBatchFailedCount.value = failedCount;
+        }
+      }
+    }
+
+    if (batchMode) {
+      selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => {
+        const stockMark = jitStockSubmitMarks[rowKey];
+        return !stockMark?.stockMaintained;
+      });
+      jitPreviewGridRef.value?.clearCheckboxRow?.();
+      ElMessage.success(`库存维护完成：成功 ${successCount} 个，失败 ${failedCount} 个`);
+    }
+    return { successCount, failedCount };
+  } finally {
+    jitStockSubmittingKey.value = "";
+    if (batchMode) {
+      jitBatchCurrentStage.value = "";
+      jitBatchCurrentRowText.value = "";
+      jitBatchSubmitting.value = false;
+    }
+  }
+};
+
+const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+  const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) => isOpenableJitRow(row));
+  if (!rows.length) {
+    ElMessage.warning("请先选择未开通 JIT 的记录");
+    return;
+  }
+
+  if (batchMode) {
+    resetJitBatchProgress("批量开通 JIT", rows.length);
+    setJitBatchCurrent("批量开通请求中");
+  } else {
+    jitSubmittingKey.value = rows[0]?.rowKey || "";
+  }
+
+  try {
+    const response = await executeTemuAction("/temu/jit/open", buildJitOpenPayload(rows));
+    const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
+    const failedSkcIds = new Set(
+      failedItems
+        .map((item) => Number(item?.productSkcId || item?.skcId || 0))
+        .filter((item) => Number.isFinite(item) && item > 0),
+    );
+    let successCount = 0;
+    let failedCount = 0;
+    const persistPayloads: Array<{
+      id: number | string;
+      rowKey: string;
+      action: "open";
+      status: "success" | "failed";
+      message?: string;
+      markOpened?: boolean;
+    }> = [];
+
+    rows.forEach((row) => {
+      const failedItem = failedItems.find(
+        (item) => Number(item?.productSkcId || item?.skcId || 0) === row.rawSkcId,
+      );
+      const success = !!response?.success && !failedSkcIds.has(row.rawSkcId);
+      if (success) {
+        successCount += 1;
+        row.jitOpened = true;
+        row.applyJitStatus = 3;
+        row.jitStatusText = "已开通 JIT";
+      } else {
+        failedCount += 1;
+      }
+      jitSubmitMarks[row.rowKey] = {
+        status: success ? "success" : "failed",
+        action: "open",
+        message: String(failedItem?.msg || failedItem?.message || response?.message || (success ? "开通成功" : "开通失败")),
+        time: formatDateTime(new Date()),
+        markOpened: success,
+      };
+      if (activeTaskRunDetail.value?.id) {
+        persistPayloads.push({
+          id: activeTaskRunDetail.value.id,
+          rowKey: row.rowKey,
+          action: "open",
+          status: jitSubmitMarks[row.rowKey].status,
+          message: jitSubmitMarks[row.rowKey].message,
+          markOpened: success,
+        });
+      }
+    });
+
+    if (persistPayloads.length) {
+      let persistFailed = false;
+      for (const payload of persistPayloads) {
+        try {
+          activeTaskRunDetail.value = await markTemuTaskRunJitRow(payload);
+        } catch {
+          persistFailed = true;
+        }
+      }
+      if (persistFailed) {
+        ElMessage.warning("JIT 开通状态部分持久化失败，请刷新后核对执行记录");
+      }
+    }
+
+    if (batchMode) {
+      jitBatchFinishedCount.value = rows.length;
+      jitBatchSuccessCount.value = successCount;
+      jitBatchFailedCount.value = failedCount;
+      selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => {
+        const mark = jitSubmitMarks[rowKey];
+        return mark?.status !== "success";
+      });
+      jitPreviewGridRef.value?.clearCheckboxRow?.();
+      ElMessage.success(`JIT 开通完成：成功 ${successCount} 个，失败 ${failedCount} 个`);
+    } else {
+      failedCount
+        ? ElMessage.error(rows[0] ? jitSubmitMarks[rows[0].rowKey]?.message || "JIT 开通失败" : "JIT 开通失败")
+        : ElMessage.success("JIT 开通完成");
+    }
+  } catch (error: any) {
+    rows.forEach((row) => {
+      const nextMark: JitSubmitMark = {
+        status: "failed",
+        action: "open",
+        message: extractRequestErrorMessage(error, "JIT 开通失败"),
+        time: formatDateTime(new Date()),
+        markOpened: false,
+      };
+      jitSubmitMarks[row.rowKey] = nextMark;
+      if (activeTaskRunDetail.value?.id) {
+        markTemuTaskRunJitRow({
+          id: activeTaskRunDetail.value.id,
+          rowKey: row.rowKey,
+          action: "open",
+          status: nextMark.status,
+          message: nextMark.message,
+          markOpened: false,
+        }).catch(() => undefined);
+      }
+    });
+    if (batchMode) {
+      jitBatchFinishedCount.value = rows.length;
+      jitBatchFailedCount.value = rows.length;
+    }
+    ElMessage.error(extractRequestErrorMessage(error, "JIT 开通失败"));
+  } finally {
+    jitSubmittingKey.value = "";
+    jitBatchCurrentStage.value = "";
+    jitBatchCurrentRowText.value = "";
+    jitBatchSubmitting.value = false;
+  }
+};
+
+const submitSelectedJitRows = () => submitJitRows(selectedJitRows.value, true);
+const submitSelectedJitStockRows = () => submitJitStockRows(selectedStockMaintainableJitRows.value, true);
+
+const submitSelectedJitOpenAndStockRows = async () => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+  const rows = selectedJitRows.value.filter((row) => !row.stockMaintained);
+  if (!rows.length) {
+    ElMessage.warning("请先选择需要开通或维护库存的记录");
+    return;
+  }
+
+  const openRows = rows.filter((row) => isOpenableJitRow(row));
+  const alreadyOpenRows = rows.filter((row) => isStockMaintainableJitRow(row));
+  resetJitBatchProgress("批量开通并维护库存", rows.length + openRows.length);
+  try {
+    let openSuccessCount = 0;
+    let openFailedCount = 0;
+    let skippedStockCount = 0;
+    const openedRows: JitPreviewRow[] = [];
+
+    if (openRows.length) {
+      setJitBatchCurrent("批量开通请求中");
+      const response = await executeTemuAction("/temu/jit/open", buildJitOpenPayload(openRows));
+      const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
+      const failedSkcIds = new Set(
+        failedItems
+          .map((item) => Number(item?.productSkcId || item?.skcId || 0))
+          .filter((item) => Number.isFinite(item) && item > 0),
+      );
+
+      for (const row of openRows) {
+        setJitBatchCurrent("记录开通结果", row);
+        const failedItem = failedItems.find(
+          (item) => Number(item?.productSkcId || item?.skcId || 0) === row.rawSkcId,
+        );
+        const success = !!response?.success && !failedSkcIds.has(row.rawSkcId);
+        if (success) {
+          openSuccessCount += 1;
+          row.jitOpened = true;
+          row.applyJitStatus = 3;
+          row.jitStatusText = "已开通 JIT";
+          openedRows.push(row);
+        } else {
+          openFailedCount += 1;
+        }
+        const nextMark: JitSubmitMark = {
+          status: success ? "success" : "failed",
+          action: "open",
+          message: String(failedItem?.msg || failedItem?.message || response?.message || (success ? "开通成功" : "开通失败")),
+          time: formatDateTime(new Date()),
+          markOpened: success,
+        };
+        jitSubmitMarks[row.rowKey] = nextMark;
+        if (activeTaskRunDetail.value?.id) {
+          try {
+            activeTaskRunDetail.value = await markTemuTaskRunJitRow({
+              id: activeTaskRunDetail.value.id,
+              rowKey: row.rowKey,
+              action: "open",
+              status: nextMark.status,
+              message: nextMark.message,
+              markOpened: success,
+            });
+          } catch {
+            ElMessage.warning("JIT 开通状态部分持久化失败，请刷新后核对执行记录");
+          }
+        }
+        jitBatchFinishedCount.value += 1;
+        jitBatchSuccessCount.value = openSuccessCount;
+        jitBatchFailedCount.value = openFailedCount;
+        if (!success) {
+          skippedStockCount += 1;
+          jitBatchFinishedCount.value += 1;
+          jitBatchFailedCount.value = openFailedCount + skippedStockCount;
+        }
+      }
+    }
+
+    const stockRows = [...alreadyOpenRows, ...openedRows].filter((row) => !row.stockMaintained);
+    let stockSuccessCount = 0;
+    let stockFailedCount = 0;
+    const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
+    for (const row of stockRows) {
+      setJitBatchCurrent("维护库存中", row);
+      try {
+        const response = await executeTemuAction("/temu/jit/stock/update", buildJitStockPayload(row));
+        const nextMark = buildJitStockSuccessMark(response, finalNum);
+        jitStockSubmitMarks[row.rowKey] = nextMark;
+        if (nextMark.status === "success") {
+          stockSuccessCount += 1;
+        } else {
+          stockFailedCount += 1;
+        }
+        try {
+          await persistJitStockMark(row, nextMark);
+        } catch (error: any) {
+          ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
+        }
+      } catch (error: any) {
+        stockFailedCount += 1;
+        const nextMark = buildJitStockErrorMark(error, finalNum);
+        jitStockSubmitMarks[row.rowKey] = nextMark;
+        if (activeTaskRunDetail.value?.id) {
+          markTemuTaskRunJitRow({
+            id: activeTaskRunDetail.value.id,
+            rowKey: row.rowKey,
+            action: "stock",
+            status: nextMark.status,
+            message: nextMark.message,
+            stockMaintained: false,
+            finalNum,
+          }).catch(() => undefined);
+        }
+      } finally {
+        jitBatchFinishedCount.value += 1;
+        jitBatchSuccessCount.value = openSuccessCount + stockSuccessCount;
+        jitBatchFailedCount.value = openFailedCount + skippedStockCount + stockFailedCount;
+      }
+    }
+
+    selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => {
+      const openMark = jitSubmitMarks[rowKey];
+      const stockMark = jitStockSubmitMarks[rowKey];
+      return !(stockMark?.stockMaintained || (openMark?.markOpened && !stockRows.some((row) => row.rowKey === rowKey)));
+    });
+    jitPreviewGridRef.value?.clearCheckboxRow?.();
+    ElMessage.success(
+      `批量处理完成：开通成功 ${openSuccessCount} 个，开通失败 ${openFailedCount} 个；库存成功 ${stockSuccessCount} 个，库存失败 ${stockFailedCount} 个`,
+    );
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "批量开通并维护库存失败"));
+  } finally {
+    jitBatchCurrentStage.value = "";
+    jitBatchCurrentRowText.value = "";
+    jitBatchSubmitting.value = false;
+  }
+};
+
+const onJitSelectionChange = ({ records }: { records: JitPreviewRow[] }) => {
+  selectedJitRowKeys.value = (Array.isArray(records) ? records : [])
+    .filter((row) => isSelectableJitRow(row))
+    .map((row) => String(row?.rowKey || "").trim())
+    .filter(Boolean);
+};
+
+const buildSingleRealPicturePayload = (
+  row: RealPicturePreviewRow,
+  positionImageUrls: Record<string, string[]>,
+  uploadedPositionImageUrls?: Record<string, string[]>,
+) => ({
+  profileId: props.profileId,
+  region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+  spuId: row.rawSpuId,
+  goodsId: row.rawGoodsId,
+  skuIdList: row.rawSkuIdList,
+  isSameSku: row.rawIsSameSku,
+  ...(uploadedPositionImageUrls ? { uploadedPositionImageUrls } : { positionImageUrls }),
+  appendToExisting: realPictureUploadForm.value.appendToExisting,
+  existingLabelImageList: row.existingLabelImageList,
+  confirmType: 4,
+});
+
+const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+  const usableRows = (Array.isArray(rows) ? rows : []).filter((row) => isSelectableRealPictureRow(row));
+  if (!usableRows.length) {
+    ElMessage.warning("请先从实拍图列表选择可上传的记录");
+    return;
+  }
+  realPictureUploadRows.value = usableRows;
+  realPictureUploadVisible.value = true;
+};
+
+const submitRealPictureRowWithoutConfirm = async (
+  row: RealPicturePreviewRow,
+  positionImageUrls: Record<string, string[]>,
+  options: { showToast?: boolean; uploadedPositionImageUrls?: Record<string, string[]> } = {},
+) => {
+  realPictureSubmittingKey.value = row.rowKey;
+  try {
+    const response = await executeTemuAction(
+      "/temu/goods/real-picture/submit",
+      buildSingleRealPicturePayload(row, positionImageUrls, options.uploadedPositionImageUrls),
+    );
+    const nextMark: RealPictureSubmitMark = {
+      status: response?.success ? "success" : "failed",
+      message: String(response?.message || "").trim() || (response?.success ? "上传成功" : "上传失败"),
+      time: formatDateTime(new Date()),
+    };
+    realPictureSubmitMarks[row.rowKey] = nextMark;
+    if (options.showToast) {
+      response?.success ? ElMessage.success("实拍图上传成功") : ElMessage.error(nextMark.message);
+    }
+    return {
+      success: !!response?.success,
+      uploadedPositionImageUrls: response?.success ? extractUploadedRealPicturePositionMap(response) : null,
+    };
+  } catch (error: any) {
+    const nextMark: RealPictureSubmitMark = {
+      status: "failed",
+      message: extractRequestErrorMessage(error, "实拍图上传失败"),
+      time: formatDateTime(new Date()),
+    };
+    realPictureSubmitMarks[row.rowKey] = nextMark;
+    if (options.showToast) {
+      ElMessage.error(nextMark.message);
+    }
+    return {
+      success: false,
+      uploadedPositionImageUrls: null,
+    };
+  } finally {
+    realPictureSubmittingKey.value = "";
+  }
+};
+
+const extractUploadedRealPicturePositionMap = (response: any) => {
+  const uploadedImages = asArray<Record<string, any>>(response?.result?.uploadedImages);
+  const result: Record<string, string[]> = {};
+  uploadedImages.forEach((item) => {
+    const position = String(item?.position || "").trim();
+    const uploadedUrl = String(item?.uploadedUrl || "").trim();
+    if (!["1", "2"].includes(position) || !/^https?:\/\//i.test(uploadedUrl)) {
+      return;
+    }
+    if (!result[position]) {
+      result[position] = [];
+    }
+    result[position].push(uploadedUrl);
+  });
+  Object.keys(result).forEach((position) => {
+    result[position] = Array.from(new Set(result[position]));
+  });
+  return result["1"]?.length && result["2"]?.length ? result : null;
+};
+
+const submitRealPictureUploadRows = async () => {
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+  const rows = realPictureUploadRows.value.filter((row) => isSelectableRealPictureRow(row));
+  if (!rows.length) {
+    ElMessage.warning("没有可上传的实拍图记录");
+    return;
+  }
+  const position1ImageUrls = Array.from(new Set(parseImageUrlText(realPictureUploadForm.value.position1ImageUrlsText)));
+  const position2ImageUrls = Array.from(new Set(parseImageUrlText(realPictureUploadForm.value.position2ImageUrlsText)));
+  if (!position1ImageUrls.length || !position2ImageUrls.length) {
+    ElMessage.warning("请分别填写位置 1 和位置 2 的 HTTP 图片地址");
+    return;
+  }
+  const positionImageUrls = {
+    "1": position1ImageUrls,
+    "2": position2ImageUrls,
+  };
+
+  realPictureBatchSubmitting.value = true;
+  realPictureBatchFinishedCount.value = 0;
+  realPictureBatchTotalCount.value = rows.length;
+  realPictureBatchSuccessCount.value = 0;
+  realPictureBatchFailedCount.value = 0;
+  let successCount = 0;
+  let reusableUploadedPositionImageUrls: Record<string, string[]> | null = null;
+
+  for (const row of rows) {
+    const result = await submitRealPictureRowWithoutConfirm(row, positionImageUrls, {
+      uploadedPositionImageUrls: reusableUploadedPositionImageUrls || undefined,
+    });
+    if (result.success) {
+      if (!reusableUploadedPositionImageUrls && result.uploadedPositionImageUrls) {
+        reusableUploadedPositionImageUrls = result.uploadedPositionImageUrls;
+      }
+      successCount += 1;
+      realPictureBatchSuccessCount.value += 1;
+    } else {
+      realPictureBatchFailedCount.value += 1;
+    }
+    realPictureBatchFinishedCount.value += 1;
+  }
+
+  realPictureBatchSubmitting.value = false;
+  realPictureUploadVisible.value = false;
+  selectedRealPictureRowKeys.value = selectedRealPictureRowKeys.value.filter((rowKey) => {
+    const mark = realPictureSubmitMarks[rowKey];
+    return mark?.status !== "success";
+  });
+  realPicturePreviewGridRef.value?.clearCheckboxRow?.();
+  ElMessage.success(`实拍图上传完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+};
+
+const onRealPictureSelectionChange = ({ records }: { records: RealPicturePreviewRow[] }) => {
+  selectedRealPictureRowKeys.value = (Array.isArray(records) ? records : [])
+    .filter((row) => isSelectableRealPictureRow(row))
+    .map((row) => String(row?.rowKey || "").trim())
+    .filter(Boolean);
+};
 
 const buildSinglePriceReviewPayload = (
   row: PriceReviewPreviewRow,
@@ -4172,8 +5667,11 @@ const deleteTaskRunById = async (id: number) => {
     }
     if (taskRunList.value.length === 1 && taskRunPage.value > 1) {
       taskRunPage.value -= 1;
+      await loadTaskRuns();
+    } else {
+      taskRunList.value = taskRunList.value.filter((item) => item.id !== id);
+      taskRunTotal.value = Math.max(0, taskRunTotal.value - 1);
     }
-    await loadTaskRuns();
     ElMessage.success(`执行记录 #${id} 已删除`);
   } catch (error: any) {
     if (error !== "cancel") {
@@ -4209,8 +5707,12 @@ const deleteSelectedTaskRuns = async () => {
     }
     if (deleteIds.length >= taskRunList.value.length && taskRunPage.value > 1) {
       taskRunPage.value -= 1;
+      await loadTaskRuns();
+    } else {
+      const deletedIdSet = new Set(deletedIds);
+      taskRunList.value = taskRunList.value.filter((item) => !deletedIdSet.has(item.id));
+      taskRunTotal.value = Math.max(0, taskRunTotal.value - Number(result?.deletedCount || deletedIds.length));
     }
-    await loadTaskRuns();
     ElMessage.success(`已删除 ${Number(result?.deletedCount || deletedIds.length)} 条执行记录`);
   } catch (error: any) {
     if (error !== "cancel") {
@@ -4354,20 +5856,181 @@ const fetchAllComplianceRows = async () => {
   }
 };
 
+const fetchAllPriceReviewRows = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (!action || action.key !== "goods.price-review.list" || !selectedActionPreset.value) {
+    ElMessage.warning("请先选择待核价商品列表动作");
+    return;
+  }
+  if (!props.profileId) {
+    ElMessage.warning("请先选择在线客户端和执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  const { valid, parsed } = validateForm();
+  if (!valid) {
+    ElMessage.warning("请先完善动作参数");
+    return;
+  }
+
+  const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 1000) || 1000));
+  const payload = {
+    ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    pageNum: 1,
+    pageSize,
+    fetchAll: true,
+    allPages: true,
+  };
+
+  priceReviewFetchingAll.value = true;
+  try {
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    taskRunDetailVisible.value = false;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建待核价一键获取全部执行记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "创建待核价一键获取全部执行记录失败"));
+  } finally {
+    priceReviewFetchingAll.value = false;
+  }
+};
+
+const fetchAllRealPictureRows = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (!action || action.key !== "goods.real-picture.list" || !selectedActionPreset.value) {
+    ElMessage.warning("请先选择实拍图列表动作");
+    return;
+  }
+  if (!props.profileId) {
+    ElMessage.warning("请先选择在线客户端和执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  const { valid, parsed } = validateForm();
+  if (!valid) {
+    ElMessage.warning("请先完善动作参数");
+    return;
+  }
+
+  const pageSize = 50;
+  const payload = {
+    ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    page: 1,
+    pageSize,
+    fetchAll: true,
+    allPages: true,
+  };
+
+  realPictureFetchingAll.value = true;
+  try {
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    taskRunDetailVisible.value = false;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建实拍图一键获取全部执行记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "创建实拍图一键获取全部执行记录失败"));
+  } finally {
+    realPictureFetchingAll.value = false;
+  }
+};
+
+const fetchAllJitRows = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (!action || action.key !== "jit.list" || !selectedActionPreset.value) {
+    ElMessage.warning("请先选择 JIT 列表动作");
+    return;
+  }
+  if (!props.profileId) {
+    ElMessage.warning("请先选择在线客户端和执行环境");
+    return;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return;
+  }
+
+  const { valid, parsed } = validateForm();
+  if (!valid) {
+    ElMessage.warning("请先完善动作参数");
+    return;
+  }
+
+  const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 1000) || 1000));
+  const payload = {
+    ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    pageNum: 1,
+    pageSize,
+    fetchAll: true,
+    allPages: true,
+  };
+
+  jitFetchingAll.value = true;
+  try {
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    taskRunDetailVisible.value = false;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建 JIT 一键获取全部执行记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "创建 JIT 一键获取全部执行记录失败"));
+  } finally {
+    jitFetchingAll.value = false;
+  }
+};
+
 watch(
-  actionCategoryTabs,
+  selectedCategoryActions,
   () => {
     syncSelection();
   },
   { deep: true },
 );
 
-watch(selectedCategoryKey, () => {
+watch(actionSearchKeyword, () => {
   syncSelection();
 });
 
 watch(activeTaskRunId, () => {
   selectedPriceReviewRowKeys.value = [];
+  selectedJitRowKeys.value = [];
+  selectedRealPictureRowKeys.value = [];
   selectedComplianceRowKeys.value = [];
 });
 
@@ -4377,6 +6040,20 @@ watch(taskRunPriceReviewPreviewRows, (rows) => {
     selectableKeys.has(rowKey),
   );
   priceReviewPreviewGridRef.value?.clearCheckboxRow?.();
+});
+
+watch(taskRunJitRows, (rows) => {
+  const selectableKeys = new Set(rows.filter((row) => isSelectableJitRow(row)).map((row) => row.rowKey));
+  selectedJitRowKeys.value = selectedJitRowKeys.value.filter((rowKey) => selectableKeys.has(rowKey));
+  jitPreviewGridRef.value?.clearCheckboxRow?.();
+});
+
+watch(taskRunRealPictureRows, (rows) => {
+  const selectableKeys = new Set(rows.filter((row) => isSelectableRealPictureRow(row)).map((row) => row.rowKey));
+  selectedRealPictureRowKeys.value = selectedRealPictureRowKeys.value.filter((rowKey) =>
+    selectableKeys.has(rowKey),
+  );
+  realPicturePreviewGridRef.value?.clearCheckboxRow?.();
 });
 
 watch(visibleTaskRunComplianceRows, (rows) => {
@@ -4406,8 +6083,11 @@ watch(
 );
 
 watch(
-  () => `${selectedActionKey.value}|${onlyCurrentActionRuns.value}`,
+  () => `${taskRunActionKeyFilter.value}|${selectedAction.value?.key || ""}|${onlyCurrentActionRuns.value}`,
   () => {
+    if (onlyCurrentActionRuns.value && selectedActionKey.value && !selectedAction.value) {
+      return;
+    }
     taskRunPage.value = 1;
     taskRunDetailVisible.value = false;
     activeTaskRunId.value = null;
@@ -4973,67 +6653,6 @@ onBeforeUnmount(() => {
   min-width: 0;
 }
 
-.temu-workspace__category-bar {
-  overflow: hidden;
-}
-
-.temu-workspace__category-tabs {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding-bottom: 1px;
-  scrollbar-width: thin;
-}
-
-.temu-category-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  min-width: max-content;
-  padding: 3px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--el-border-color-light);
-  background: var(--el-bg-color);
-  color: var(--el-text-color-regular);
-  cursor: pointer;
-  transition:
-    border-color 0.18s ease,
-    background-color 0.18s ease,
-    color 0.18s ease;
-}
-
-.temu-category-tab span {
-  font-size: 10px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.temu-category-tab em {
-  padding: 0 4px;
-  border-radius: 999px;
-  background: var(--el-fill-color-extra-light);
-  color: var(--el-text-color-regular);
-  font-size: 9px;
-  font-style: normal;
-  line-height: 1.3;
-}
-
-.temu-category-tab:hover {
-  border-color: var(--el-border-color-dark);
-  color: var(--el-text-color-primary);
-}
-
-.temu-category-tab.is-active {
-  border-color: color-mix(in srgb, var(--el-color-primary) 35%, white);
-  background: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-bg-color));
-  color: var(--el-color-primary);
-}
-
-.temu-category-tab.is-active em {
-  background: color-mix(in srgb, var(--el-color-primary) 16%, white);
-  color: var(--el-color-primary);
-}
-
 .temu-function-button,
 .temu-helper-chip {
   appearance: none;
@@ -5428,9 +7047,21 @@ onBeforeUnmount(() => {
   width: 100%;
 }
 
-.temu-workspace__price-review-batch-actions {
-  margin-left: auto;
+.temu-workspace__price-review-toolbar {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.temu-workspace__price-review-batch-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .temu-workspace__price-review-filters {
@@ -5439,11 +7070,31 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  width: 100%;
 }
 
 .temu-workspace__price-review-filter {
   width: 220px;
+}
+
+.temu-workspace__price-review-filter-number {
+  width: 128px;
+}
+
+.temu-workspace__jit-stock-input {
+  width: 132px;
+}
+
+.temu-workspace__jit-stock-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--el-text-color-regular);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.temu-workspace__jit-status-filter {
+  width: 150px;
 }
 
 .temu-workspace__price-review-batch-mask {

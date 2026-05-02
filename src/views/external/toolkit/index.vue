@@ -1861,6 +1861,7 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
       const featureKey = String(
         dataObject?.featureKey || result?.featureKey || pendingFeatureKey,
       ).trim();
+      let handledRunToolFeedback = false;
 
       if (featureKey) {
         toolkitToolResults[featureKey] = buildToolkitToolExecutionRecord(event, featureKey);
@@ -1884,10 +1885,29 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
                   }
                 : undefined,
             );
+            const validation = await validatePlatformSession({
+              platform: TEMU_PLATFORM_KEY,
+              profileId,
+            });
+            await refreshStoredPlatformSessions();
+            handledRunToolFeedback = true;
+            ElMessage[validation?.success ? "success" : "warning"](
+              validation?.success
+                ? "Temu 会话已采集保存，并校验通过"
+                : validation?.message || "Temu 会话已采集保存，但校验未通过，请稍后重试或手动校验身份",
+            );
           } catch (error: any) {
+            handledRunToolFeedback = true;
             ElMessage.warning(`会话获取成功，但自动存储失败：${error?.message || "未知错误"}`);
           }
+        } else {
+          handledRunToolFeedback = true;
+          ElMessage.warning("Temu 会话采集命令已完成，但没有返回可保存的会话数据，请查看客户端日志");
         }
+      }
+
+      if (handledRunToolFeedback) {
+        return;
       }
     }
   }

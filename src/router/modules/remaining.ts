@@ -772,6 +772,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "service-file-cache",
+        component: () => import("@/views/system/service-file-cache/index.vue"),
+        name: "SystemServiceFileCache",
+        meta: {
+          title: "服务缓存文件",
+          requiresAdmin: true,
+        },
+      },
+      {
         path: "operatelog",
         component: () => import("@/views/system/operatelog/index.vue"),
         name: "SystemOperateLog",

@@ -171,3 +171,19 @@ export const markTemuTaskRunPriceReviewRow = (data: {
     data,
   });
 };
+
+export const markTemuTaskRunJitRow = (data: {
+  id: number | string;
+  rowKey: string;
+  action: "open" | "stock";
+  status: "success" | "failed";
+  message?: string;
+  markOpened?: boolean;
+  stockMaintained?: boolean;
+  finalNum?: number;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/jit-mark",
+    data,
+  });
+};

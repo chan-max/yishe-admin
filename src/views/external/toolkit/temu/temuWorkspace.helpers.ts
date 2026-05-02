@@ -706,6 +706,14 @@ export const buildResultInsightCards = (
         buildInsightCard("failed", "失败 SKC", asArray(result.failedSkcList).length, "warning"),
       );
       break;
+    case "jit.open-maintain":
+      cards.push(
+        buildInsightCard("total", "处理 SKC", result.total, "accent"),
+        buildInsightCard("success", "成功", result.successCount, "success"),
+        buildInsightCard("failed", "失败", result.failedCount, result.failedCount ? "warning" : "neutral"),
+        buildInsightCard("final-num", "目标库存", result.finalNum, "success"),
+      );
+      break;
     case "jit.stock.update":
       cards.push(
         buildInsightCard("skc-id", "SKC", result.skcId, "accent"),
@@ -1461,6 +1469,36 @@ export const buildFormSeedActions = (
         patch: {
           region: "global",
           skcSpuList: [{ skcId: 60920034417, spuId: 6307893340 }],
+        },
+      });
+      break;
+    case "jit.open-maintain":
+      if (
+        (lastAction === "jit.list" ||
+          lastAction === "jit.list-all" ||
+          lastAction === "goods.lifecycle") &&
+        asArray(result.skcSpuList).length
+      ) {
+        actions.push({
+          key: "jit-open-maintain-from-list",
+          label: "带入并维护库存",
+          description: `自动填入 ${asArray(result.skcSpuList).length} 条映射`,
+          patch: {
+            region: lastRegion,
+            skcSpuList: result.skcSpuList,
+            finalNum: 500,
+          },
+        });
+      }
+
+      actions.push({
+        key: "jit-open-maintain-example",
+        label: "载入维护模板",
+        description: "开通 JIT 后把 SKU 库存补到目标数量",
+        patch: {
+          region: "global",
+          skcSpuList: [{ skcId: 60920034417, spuId: 6307893340 }],
+          finalNum: 500,
         },
       });
       break;

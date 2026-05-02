@@ -75,6 +75,20 @@ export const REGION_LABELS: Record<TemuRegionKey, string> = {
   seller: "卖家中心",
 };
 
+const formatTemuDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}${month}${day}`;
+};
+
+const getDefaultJitStartDate = () => {
+  const now = new Date();
+  return formatTemuDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+};
+
+const getDefaultJitEndDate = () => formatTemuDate(new Date());
+
 export const QUICK_ACTION_KEYS = [
   "goods.list",
   "goods.detail",
@@ -99,8 +113,8 @@ export const NEXT_ACTION_MAP: Record<string, string[]> = {
   "goods.adjust-price.list": ["goods.adjust-price.reject"],
   "goods.lifecycle": ["jit.open", "jit.stock.update"],
   "goods.real-picture.list": ["goods.real-picture.submit"],
-  "jit.list": ["jit.open", "jit.stock.update"],
-  "jit.list-all": ["jit.open", "jit.stock.update"],
+  "jit.list": ["jit.open"],
+  "jit.list-all": ["jit.open"],
   "compliance.page-query": ["compliance.detail"],
   "compliance.detail": ["compliance.submit"],
 };
@@ -370,18 +384,23 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
   "jit.list": {
     fields: [
       createRegionField(),
+      { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
+      createPageSizeField(1000),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
-      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD" },
-      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD" },
+      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitStartDate() },
+      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitEndDate() },
+      { key: "timeType", label: "时间类型", type: "number", defaultValue: 2, hint: "2=更新时间，按前台默认查询参数对齐。" },
     ],
     buildPayload: buildProfileRegionPayload,
   },
   "jit.list-all": {
     fields: [
       createRegionField(),
+      createPageSizeField(1000),
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
-      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD" },
-      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD" },
+      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitStartDate() },
+      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitEndDate() },
+      { key: "timeType", label: "时间类型", type: "number", defaultValue: 2, hint: "2=更新时间，按前台默认查询参数对齐。" },
     ],
     buildPayload: buildProfileRegionPayload,
   },
@@ -396,6 +415,25 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         rows: 8,
         hint: '格式示例：[{"skcId":60920034417,"spuId":6307893340}]',
       },
+    ],
+    buildPayload: buildProfileRegionPayload,
+  },
+  "jit.open-maintain": {
+    fields: [
+      createRegionField(),
+      {
+        key: "skcSpuList",
+        label: "SKC / SPU 对应 JSON",
+        type: "json",
+        rows: 8,
+        hint: '可选。为空时按 SPU 或日期查询；格式示例：[{"skcId":60920034417,"spuId":6307893340}]',
+      },
+      createPageSizeField(10),
+      { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
+      { key: "startDate", label: "开始日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitStartDate() },
+      { key: "endDate", label: "结束日期", type: "text", placeholder: "YYYYMMDD", defaultValue: getDefaultJitEndDate() },
+      { key: "timeType", label: "时间类型", type: "number", defaultValue: 2, hint: "2=更新时间，按前台默认查询参数对齐。" },
+      { key: "finalNum", label: "目标库存", type: "number", defaultValue: 500 },
     ],
     buildPayload: buildProfileRegionPayload,
   },
@@ -488,6 +526,7 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         label: "商品状态列表",
         type: "select",
         multiple: true,
+        defaultValue: [1, 2],
         options: [
           { label: "在售中", value: 1 },
           { label: "未发布到站点", value: 2 },
@@ -495,13 +534,19 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
           { label: "已终止", value: 4 },
           { label: "已删除", value: 5 },
         ],
-        hint: "可多选；不选则默认不过滤商品状态。",
+        hint: "默认携带在售中、未发布到站点。",
       },
       { key: "blackWordTypeList", label: "敏感词类型列表", type: "array-number" },
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
     ],
-    note: "用于查询待处理的实拍图异常单。通常先查列表，再把结果里的 spuId / skuIdList 带到“提交实拍图”。",
-    buildPayload: buildProfileRegionPayload,
+    note: "用于查询未传图的实拍图异常单。已固定 check_type_status_list=[1]。",
+    buildPayload: (parsed, profileId) => ({
+      ...buildProfileRegionPayload(parsed, profileId),
+      checkTypeStatusList: [1],
+      goodsStatusList: Array.isArray(parsed.goodsStatusList) && parsed.goodsStatusList.length
+        ? parsed.goodsStatusList
+        : [1, 2],
+    }),
   },
   "goods.real-picture.submit": {
     fields: [
