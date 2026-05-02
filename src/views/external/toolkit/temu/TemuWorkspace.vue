@@ -1,24 +1,41 @@
 <template>
   <section class="temu-workspace">
-    <div v-if="priceReviewBatchSubmitting" class="temu-workspace__floating-progress">
+    <div v-if="floatingBatchProgressItems.length" class="temu-workspace__floating-progress" :class="{ 'is-collapsed': floatingProgressCollapsed }">
       <div class="temu-workspace__floating-progress-head">
-        <strong>{{ priceReviewBatchActionText }}</strong>
-        <span>{{ priceReviewBatchProgressText }}</span>
+        <strong>{{ floatingProgressTitle }}</strong>
+        <div class="temu-workspace__floating-progress-actions">
+          <span>{{ floatingProgressSummary }}</span>
+          <el-button text size="small" @click="floatingProgressCollapsed = !floatingProgressCollapsed">
+            {{ floatingProgressCollapsed ? "展开" : "折叠" }}
+          </el-button>
+        </div>
       </div>
-      <el-progress
-        :percentage="priceReviewBatchProgressPercent"
-        :stroke-width="8"
-        :show-text="false"
-      />
-      <div class="temu-workspace__floating-progress-meta">
-        <span v-if="priceReviewBatchCurrentRowText">{{ priceReviewBatchCurrentRowText }}</span>
-        <span v-if="priceReviewBatchCurrentStage">{{ priceReviewBatchCurrentStage }}</span>
-      </div>
-      <div class="temu-workspace__price-review-batch-stats">
-        <el-tag size="small" effect="plain" type="success">成功 {{ priceReviewBatchSuccessCount }}</el-tag>
-        <el-tag size="small" effect="plain" type="danger">失败 {{ priceReviewBatchFailedCount }}</el-tag>
-        <el-tag size="small" effect="plain" type="warning">剩余 {{ priceReviewBatchRemainingCount }}</el-tag>
-      </div>
+      <template v-if="!floatingProgressCollapsed">
+        <div
+          v-for="item in floatingBatchProgressItems"
+          :key="item.key"
+          class="temu-workspace__floating-progress-item"
+        >
+          <div class="temu-workspace__floating-progress-head temu-workspace__floating-progress-head--sub">
+            <strong>{{ item.title }}</strong>
+            <span>{{ item.progressText }}</span>
+          </div>
+          <el-progress
+            :percentage="item.percent"
+            :stroke-width="8"
+            :show-text="false"
+          />
+          <div class="temu-workspace__floating-progress-meta">
+            <span v-if="item.rowText">{{ item.rowText }}</span>
+            <span v-if="item.stage">{{ item.stage }}</span>
+          </div>
+          <div class="temu-workspace__price-review-batch-stats">
+            <el-tag size="small" effect="plain" type="success">成功 {{ item.successCount }}</el-tag>
+            <el-tag size="small" effect="plain" type="danger">失败 {{ item.failedCount }}</el-tag>
+            <el-tag size="small" effect="plain" type="warning">剩余 {{ item.remainingCount }}</el-tag>
+          </div>
+        </div>
+      </template>
     </div>
 
     <section class="temu-workspace__action-shell">
@@ -1104,12 +1121,20 @@
                 <span>合规信息列表</span>
                 <el-tag size="small" effect="plain">{{ visibleTaskRunComplianceRows.length }}</el-tag>
                 <el-tag
-                  v-if="taskRunComplianceTotalCount !== taskRunComplianceRows.length"
+                  v-if="taskRunComplianceTotalCount !== visibleTaskRunComplianceRows.length"
                   size="small"
                   effect="plain"
                   type="warning"
                 >
                   全部 {{ taskRunComplianceTotalCount }}
+                </el-tag>
+                <el-tag
+                  v-if="taskRunComplianceFilteredCount > 0"
+                  size="small"
+                  effect="plain"
+                  type="info"
+                >
+                  已过滤无关数据 {{ taskRunComplianceFilteredCount }} 条
                 </el-tag>
                 <el-tag v-if="selectedComplianceRows.length" size="small" effect="plain" type="success">
                   已选 {{ selectedComplianceRows.length }}
@@ -1119,11 +1144,8 @@
                 </el-tag>
               </div>
               <div class="temu-workspace__price-review-batch-actions">
-                <el-checkbox
-                  v-model="complianceIgnorePackagingOnly"
-                  size="small"
-                >
-                  忽略包装材料信息收集
+                <el-checkbox v-model="complianceIgnoreUselessInfo" size="small">
+                  忽略无用信息
                 </el-checkbox>
                 <el-button
                   size="small"
@@ -1155,7 +1177,7 @@
                 <template #complianceStatusSlot="{ row }">
                   <div class="temu-workspace__compliance-status-list">
                     <div
-                      v-for="task in row.actionableTaskGroups"
+                      v-for="task in row.taskGroups"
                       :key="task.key"
                       class="temu-workspace__compliance-status-item"
                     >
@@ -1272,7 +1294,7 @@
     >
       <div class="temu-workspace__batch-reprice-head">
         <span>已选 {{ realPictureUploadRows.length }} 条</span>
-        <small>按 Temu 官方结构分别提交 position 1 和 position 2。</small>
+        <small>按 Temu 官方结构提交一个或多个 position，每个 position 可填写多张 HTTP 图片。</small>
       </div>
       <div v-if="realPictureBatchSubmitting" class="temu-workspace__batch-reprice-progress">
         <el-progress
@@ -1287,34 +1309,46 @@
         </div>
       </div>
       <el-form label-position="top" class="temu-workspace__real-picture-form">
-        <el-form-item label="位置 1 图片地址">
-          <el-input
-            v-model="realPictureUploadForm.position1ImageUrlsText"
-            type="textarea"
-            :rows="5"
-            placeholder="每行一个 HTTP 图片地址，会提交到 position 1"
-            :disabled="realPictureBatchSubmitting"
-          />
-        </el-form-item>
-        <el-form-item label="位置 2 图片地址">
-          <el-input
-            v-model="realPictureUploadForm.position2ImageUrlsText"
-            type="textarea"
-            :rows="5"
-            placeholder="每行一个 HTTP 图片地址，会提交到 position 2"
-            :disabled="realPictureBatchSubmitting"
-          />
-        </el-form-item>
-        <el-form-item label="上传方式">
-          <el-select
-            v-model="realPictureUploadForm.appendToExisting"
-            :disabled="realPictureBatchSubmitting"
-            class="temu-workspace__compliance-control"
+        <div
+          v-for="(positionItem, index) in realPictureUploadForm.positionItems"
+          :key="positionItem.id || index"
+          class="temu-workspace__real-picture-position-item"
+        >
+          <el-form-item label="位置">
+            <el-input-number
+              v-model="positionItem.position"
+              :min="1"
+              :controls="false"
+              :disabled="realPictureBatchSubmitting"
+              class="temu-workspace__real-picture-position-input"
+            />
+          </el-form-item>
+          <el-form-item label="HTTP 图片地址">
+            <el-input
+              v-model="positionItem.imageUrlsText"
+              type="textarea"
+              :rows="4"
+              placeholder="每行一个 HTTP 图片地址，会提交到该 position"
+              :disabled="realPictureBatchSubmitting"
+            />
+          </el-form-item>
+          <el-button
+            text
+            type="danger"
+            :disabled="realPictureBatchSubmitting || realPictureUploadForm.positionItems.length <= 1"
+            @click="removeRealPicturePositionItem(index)"
           >
-            <el-option label="仅使用本次图片" :value="false" />
-            <el-option label="保留已有标签图并追加" :value="true" />
-          </el-select>
-        </el-form-item>
+            删除
+          </el-button>
+        </div>
+        <el-button
+          plain
+          size="small"
+          :disabled="realPictureBatchSubmitting"
+          @click="addRealPicturePositionItem"
+        >
+          添加位置
+        </el-button>
       </el-form>
       <template #footer>
         <el-button :disabled="realPictureBatchSubmitting" @click="realPictureUploadVisible = false">取消</el-button>
@@ -1455,6 +1489,7 @@ import {
   batchDeleteTemuTaskRuns,
   createTemuTaskRun,
   deleteTemuTaskRun,
+  executeTemuClientAction,
   executeTemuAction,
   getTemuCatalog,
   getTemuTaskRun,
@@ -1714,6 +1749,7 @@ const retryingTaskRunId = ref<number | null>(null);
 const deletingTaskRunId = ref<number | null>(null);
 const batchDeletingTaskRuns = ref(false);
 const taskRunPollingBusy = ref(false);
+const floatingProgressCollapsed = useLocalStorage("temu-workspace:floating-progress-collapsed", false);
 const priceReviewSubmittingKey = ref("");
 const priceReviewSubmitMarks = reactive<Record<string, PriceReviewSubmitMark>>({});
 const selectedPriceReviewRowKeys = ref<string[]>([]);
@@ -1726,9 +1762,15 @@ const realPicturePreviewGridRef = ref<VxeGridInstance<RealPicturePreviewRow>>();
 const realPictureUploadVisible = ref(false);
 const realPictureUploadRows = ref<RealPicturePreviewRow[]>([]);
 const realPictureUploadForm = useLocalStorage("temu-workspace:real-picture-upload-form", {
-  position1ImageUrlsText: "",
-  position2ImageUrlsText: "",
-  appendToExisting: false,
+  positionItems: [
+    { id: "position-1", position: 1, imageUrlsText: "" },
+    { id: "position-2", position: 2, imageUrlsText: "" },
+  ],
+});
+const createRealPicturePositionItem = (position?: number, imageUrlsText = "") => ({
+  id: `position-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  position: position || Math.max(1, ...asArray<Record<string, any>>(realPictureUploadForm.value.positionItems).map((item) => Number(item.position) || 0)) + 1,
+  imageUrlsText,
 });
 const realPictureBatchSubmitting = ref(false);
 const realPictureBatchFinishedCount = ref(0);
@@ -1779,7 +1821,7 @@ const complianceBatchPreparing = ref(false);
 const complianceBatchSubmitting = ref(false);
 const complianceBatchRows = ref<CompliancePreviewRow[]>([]);
 const selectedComplianceRowKeys = ref<string[]>([]);
-const complianceIgnorePackagingOnly = ref(false);
+const complianceIgnoreUselessInfo = useLocalStorage("temu-workspace:compliance-ignore-useless-info", true);
 const complianceBatchFinishedCount = ref(0);
 const complianceBatchTotalCount = ref(0);
 const complianceBatchSuccessCount = ref(0);
@@ -2322,15 +2364,8 @@ const ensureActionWorkspaceState = (actionKey?: string | null) => {
     (preset?.fields || []).forEach((field) => {
       const currentValue = actionWorkspaceStates[normalizedKey].formState[field.key];
       const defaultValue = defaultState[field.key];
-      const shouldFillEmptyMultipleSelect =
-        field.type === "select" &&
-        field.multiple &&
-        Array.isArray(currentValue) &&
-        currentValue.length === 0 &&
-        Array.isArray(defaultValue) &&
-        defaultValue.length > 0;
 
-      if (currentValue === undefined || shouldFillEmptyMultipleSelect) {
+      if (currentValue === undefined) {
         actionWorkspaceStates[normalizedKey].formState[field.key] = defaultValue;
       }
     });
@@ -3033,23 +3068,23 @@ const buildCompliancePreviewRows = (
   return items.map((item: any, index: number) => {
     const row = asPlainObject(item);
     const taskGroups = buildComplianceTaskStatusGroups(row);
-    const actionableTaskGroups = taskGroups.filter((task) => !isIgnoredComplianceTaskGroup(task));
-    const actionablePendingCount = actionableTaskGroups.filter((task) => task.status === 2).length;
+    const actionableTaskGroups = taskGroups.filter(isActionableComplianceTaskGroup);
+    const actionablePendingCount = actionableTaskGroups.length;
     return {
       rowKey: firstDisplayValue(row?.id, row?.orderId, row?.order_id, row?.spuId, row?.spu_id, index),
       spuId: toDisplayText(row?.spuId || row?.spu_id || row?.productId || row?.product_id),
       goodsId: toDisplayText(row?.goodsId || row?.goods_id),
       categoryId: toDisplayText(row?.catId || row?.cat_id),
       categoryName: toDisplayText(row?.catName || row?.cat_name),
-      statusText: `${actionablePendingCount} 个待上传`,
-      typeText: `${actionableTaskGroups.length} 个合规项`,
+      statusText: `${actionablePendingCount} 个待处理`,
+      typeText: `${taskGroups.length} 个合规项`,
       productName: toDisplayText(row?.spuName || row?.spu_name || row?.productName || row?.product_name || row?.goodsName || row?.goods_name),
       taskGroups,
       actionableTaskGroups,
       actionablePendingCount,
       raw: row,
     };
-  });
+  }).filter((row) => row.actionablePendingCount > 0);
 };
 const getComplianceTaskStatusText = (status: number | null) => {
   if (status === 2) {
@@ -3057,6 +3092,15 @@ const getComplianceTaskStatusText = (status: number | null) => {
   }
   if (status === 3) {
     return "上传成功";
+  }
+  if (status === 5) {
+    return "待确认";
+  }
+  if (status === 10) {
+    return "上传中";
+  }
+  if (status === 11) {
+    return "上传失败";
   }
   if (status === 1) {
     return "待处理";
@@ -3069,6 +3113,9 @@ const getComplianceTaskStatusTagType = (status: number | null): ComplianceTaskSt
   }
   if (status === 3) {
     return "success";
+  }
+  if (status === 5 || status === 10) {
+    return "warning";
   }
   if (status === 1) {
     return "info";
@@ -3097,7 +3144,7 @@ const buildComplianceTaskStatusGroups = (row: Record<string, any>): ComplianceTa
       : Array.isArray(taskRow?.wait_task_dtolist)
         ? taskRow.wait_task_dtolist
         : [];
-    const needUploadCount = childTasks.filter((child: any) => Number(child?.status) === 2).length;
+    const needUploadCount = childTasks.filter((child: any) => isActionableComplianceStatus(Number(child?.status))).length;
     const requiredCount = childTasks.filter((child: any) => !child?.is_not_required).length;
     const children = childTasks.map((child: any, childIndex: number) => {
       const childRow = asPlainObject(child);
@@ -3139,19 +3186,25 @@ const COMPLIANCE_TASK_LABELS: Record<number, string> = {
   60: "制造商信息",
   61: "商品识别码",
   84: "土耳其负责人",
+  121: "其他合规信息",
+  181: "其他合规信息",
+  186: "其他合规信息",
 };
 const getComplianceTaskLabel = (taskType: number | string) =>
   COMPLIANCE_TASK_LABELS[Number(taskType)] || `任务 ${toDisplayText(taskType)}`;
-const IGNORED_COMPLIANCE_TASK_TYPES = new Set([166]);
-const isIgnoredComplianceTask = (taskType: number, taskName?: string) =>
-  IGNORED_COMPLIANCE_TASK_TYPES.has(taskType) || /包装材料信息收集/.test(String(taskName || ""));
-const isIgnoredComplianceTaskGroup = (task: ComplianceTaskStatusGroup) => {
-  const taskTypes = [
-    Number(task.raw?.task_type || task.raw?.taskType),
-    ...task.children.map((child) => Number(child.raw?.task_type || child.raw?.taskType || child.taskType)),
-  ].filter((taskType) => Number.isFinite(taskType));
-  return taskTypes.some((taskType) => isIgnoredComplianceTask(taskType, task.name));
-};
+const ACTIONABLE_COMPLIANCE_STATUS_SET = new Set([2, 5, 10, 11]);
+const isActionableComplianceStatus = (status: number | null) =>
+  status !== null && ACTIONABLE_COMPLIANCE_STATUS_SET.has(status);
+const isIgnoredComplianceTask = (_taskType: number, _taskName?: string) => false;
+const isIgnoredComplianceTaskGroup = (_task: ComplianceTaskStatusGroup) => false;
+const isUselessComplianceTaskName = (taskName?: string) =>
+  /包装材料信息收集|GCC资质相关信息/.test(String(taskName || ""));
+const isUselessComplianceTaskGroup = (task: ComplianceTaskStatusGroup) =>
+  isUselessComplianceTaskName(task.name) ||
+  task.children.some((child) => isUselessComplianceTaskName(child.name));
+const isActionableComplianceTaskGroup = (task: ComplianceTaskStatusGroup) =>
+  isActionableComplianceStatus(task.status) ||
+  task.children.some((child) => isActionableComplianceStatus(child.status));
 const isActionableComplianceRow = (row: CompliancePreviewRow) =>
   row.actionablePendingCount > 0;
 const HARDCODED_COMPLIANCE_PROPERTY_VALUES: Record<string, Array<string | number>> = {
@@ -3171,7 +3224,9 @@ const HARDCODED_COMPLIANCE_TASK_DEFAULT_VALUES: Record<number, Array<string | nu
   33: [1000131288],
   42: [1000131288],
   49: [1000131289],
+  181: [1000295043],
 };
+const HARDCODED_SECONDARY_COMPLIANCE_TASKS = new Set([121, 181, 186]);
 const isComplianceProductIdentifierField = (taskType: number | string, propertyId: number | string) =>
   Number(taskType) === 61 || String(propertyId) === "1100100115";
 const DEFAULT_COMPLIANCE_PRODUCT_IDENTIFIER = "1sdesign";
@@ -3553,15 +3608,32 @@ const selectedStockMaintainableJitRows = computed(() =>
 const taskRunComplianceRows = computed(() =>
   buildCompliancePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
 );
-const visibleTaskRunComplianceRows = computed(() =>
-  complianceIgnorePackagingOnly.value
-    ? taskRunComplianceRows.value.filter((row) => isActionableComplianceRow(row))
-    : taskRunComplianceRows.value,
-);
+const visibleTaskRunComplianceRows = computed(() => {
+  if (!complianceIgnoreUselessInfo.value) {
+    return taskRunComplianceRows.value;
+  }
+  return taskRunComplianceRows.value
+    .map((row) => {
+      const taskGroups = row.taskGroups.filter((task) => !isUselessComplianceTaskGroup(task));
+      const actionableTaskGroups = taskGroups.filter(isActionableComplianceTaskGroup);
+      return {
+        ...row,
+        taskGroups,
+        actionableTaskGroups,
+        actionablePendingCount: actionableTaskGroups.length,
+        statusText: `${actionableTaskGroups.length} 个待处理`,
+        typeText: `${taskGroups.length} 个合规项`,
+      };
+    })
+    .filter((row) => row.actionablePendingCount > 0);
+});
 const taskRunComplianceTotalCount = computed(() => {
   const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
   return Number(result.total || taskRunComplianceRows.value.length || 0) || 0;
 });
+const taskRunComplianceFilteredCount = computed(() =>
+  Math.max(0, taskRunComplianceTotalCount.value - visibleTaskRunComplianceRows.value.length),
+);
 const selectedComplianceRows = computed(() => {
   const selectedKeys = new Set(selectedComplianceRowKeys.value);
   return visibleTaskRunComplianceRows.value.filter((row) =>
@@ -3833,6 +3905,85 @@ const setPriceReviewBatchCurrent = (stage: string, row?: PriceReviewPreviewRow |
   priceReviewBatchCurrentStage.value = stage;
   priceReviewBatchCurrentRowText.value = row ? `SKU ${row.skuId} / SPU ${row.spuId}` : "";
 };
+const floatingBatchProgressItems = computed(() => {
+  const items: Array<{
+    key: string;
+    title: string;
+    progressText: string;
+    percent: number;
+    rowText?: string;
+    stage?: string;
+    successCount: number;
+    failedCount: number;
+    remainingCount: number;
+  }> = [];
+
+  if (priceReviewBatchSubmitting.value) {
+    items.push({
+      key: "price-review",
+      title: priceReviewBatchActionText.value,
+      progressText: priceReviewBatchProgressText.value,
+      percent: priceReviewBatchProgressPercent.value,
+      rowText: priceReviewBatchCurrentRowText.value,
+      stage: priceReviewBatchCurrentStage.value,
+      successCount: priceReviewBatchSuccessCount.value,
+      failedCount: priceReviewBatchFailedCount.value,
+      remainingCount: priceReviewBatchRemainingCount.value,
+    });
+  }
+
+  if (jitBatchSubmitting.value) {
+    items.push({
+      key: "jit",
+      title: jitBatchModeLabel.value,
+      progressText: jitBatchProgressText.value,
+      percent: jitBatchProgressPercent.value,
+      rowText: jitBatchCurrentRowText.value,
+      stage: jitBatchCurrentStage.value,
+      successCount: jitBatchSuccessCount.value,
+      failedCount: jitBatchFailedCount.value,
+      remainingCount: jitBatchRemainingCount.value,
+    });
+  }
+
+  if (realPictureBatchSubmitting.value) {
+    items.push({
+      key: "real-picture",
+      title: "批量上传实拍图",
+      progressText: realPictureBatchProgressText.value,
+      percent: realPictureBatchProgressPercent.value,
+      successCount: realPictureBatchSuccessCount.value,
+      failedCount: realPictureBatchFailedCount.value,
+      remainingCount: realPictureBatchRemainingCount.value,
+    });
+  }
+
+  if (complianceBatchSubmitting.value) {
+    items.push({
+      key: "compliance",
+      title: "批量处理合规",
+      progressText: complianceBatchProgressText.value,
+      percent: complianceBatchProgressPercent.value,
+      successCount: complianceBatchSuccessCount.value,
+      failedCount: complianceBatchFailedCount.value,
+      remainingCount: complianceBatchRemainingCount.value,
+    });
+  }
+
+  return items;
+});
+const floatingProgressTitle = computed(() =>
+  floatingBatchProgressItems.value.length > 1
+    ? `批量任务 ${floatingBatchProgressItems.value.length} 个`
+    : floatingBatchProgressItems.value[0]?.title || "批量任务",
+);
+const floatingProgressSummary = computed(() => {
+  const items = floatingBatchProgressItems.value;
+  const totalRemaining = items.reduce((sum, item) => sum + item.remainingCount, 0);
+  const totalSuccess = items.reduce((sum, item) => sum + item.successCount, 0);
+  const totalFailed = items.reduce((sum, item) => sum + item.failedCount, 0);
+  return `成功 ${totalSuccess} / 失败 ${totalFailed} / 剩余 ${totalRemaining}`;
+});
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
@@ -3846,14 +3997,10 @@ const canRunSelectedAction = computed(() => {
     return false;
   }
 
-  if (isToolAction(selectedAction.value)) {
-    return !!(props.clientId && props.profileId && hasUsableSession.value);
-  }
-
-  return !!(props.profileId && hasUsableSession.value && selectedAction.value.endpoint);
+  return !!(props.clientId && props.profileId && hasUsableSession.value && selectedAction.value.endpoint);
 });
 const runButtonLabel = computed(() => {
-  if (isToolAction(selectedAction.value) && !props.clientId) {
+  if (!props.clientId) {
     return "先选择客户端";
   }
   if (!props.profileId) {
@@ -4253,6 +4400,47 @@ const buildJitOpenPayload = (rows: JitPreviewRow[]) => ({
   })),
 });
 
+const requireTemuClientContext = () => {
+  if (!props.clientId) {
+    ElMessage.warning("请先选择在线客户端");
+    return false;
+  }
+  if (!props.profileId) {
+    ElMessage.warning("请先选择执行环境");
+    return false;
+  }
+  if (!hasUsableSession.value) {
+    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+    return false;
+  }
+  return true;
+};
+
+const buildClientTaskPayload = (payload: Record<string, any>) => ({
+  ...payload,
+  clientId: props.clientId,
+});
+
+const runTemuClientAction = <TResult = Record<string, any>>(
+  actionKey: string,
+  payload: Record<string, any>,
+  timeoutMs?: number,
+) => {
+  const region = String(payload?.region || activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global");
+  return executeTemuClientAction<TResult>({
+    clientId: String(props.clientId || ""),
+    actionKey,
+    profileId: String(payload?.profileId || props.profileId || ""),
+    region,
+    timeoutMs,
+    payload: {
+      ...payload,
+      profileId: String(payload?.profileId || props.profileId || ""),
+      region,
+    },
+  });
+};
+
 const buildJitStockPayload = (row: JitPreviewRow) => ({
   profileId: props.profileId,
   region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
@@ -4310,12 +4498,7 @@ const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark) => {
 };
 
 const submitJitStockRow = async (row: JitPreviewRow) => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
   if (!row?.rawSkcId || !row.jitOpened) {
@@ -4330,7 +4513,7 @@ const submitJitStockRow = async (row: JitPreviewRow) => {
   const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
   jitStockSubmittingKey.value = row.rowKey;
   try {
-    const response = await executeTemuAction("/temu/jit/stock/update", buildJitStockPayload(row));
+    const response = await runTemuClientAction("jit.stock.update", buildJitStockPayload(row));
     const nextMark = buildJitStockSuccessMark(response, finalNum);
     jitStockSubmitMarks[row.rowKey] = nextMark;
     try {
@@ -4360,12 +4543,7 @@ const submitJitStockRow = async (row: JitPreviewRow) => {
 };
 
 const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return { successCount: 0, failedCount: 0 };
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return { successCount: 0, failedCount: 0 };
   }
   const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) => isStockMaintainableJitRow(row));
@@ -4389,7 +4567,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
         jitStockSubmittingKey.value = row.rowKey;
       }
       try {
-        const response = await executeTemuAction("/temu/jit/stock/update", buildJitStockPayload(row));
+        const response = await runTemuClientAction("jit.stock.update", buildJitStockPayload(row));
         const nextMark = buildJitStockSuccessMark(response, finalNum);
         jitStockSubmitMarks[row.rowKey] = nextMark;
         if (nextMark.status === "success") {
@@ -4446,12 +4624,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
 };
 
 const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
   const rows = (Array.isArray(inputRows) ? inputRows : []).filter((row) => isOpenableJitRow(row));
@@ -4468,7 +4641,7 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
   }
 
   try {
-    const response = await executeTemuAction("/temu/jit/open", buildJitOpenPayload(rows));
+    const response = await runTemuClientAction("jit.open", buildJitOpenPayload(rows));
     const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
     const failedSkcIds = new Set(
       failedItems
@@ -4585,12 +4758,7 @@ const submitSelectedJitRows = () => submitJitRows(selectedJitRows.value, true);
 const submitSelectedJitStockRows = () => submitJitStockRows(selectedStockMaintainableJitRows.value, true);
 
 const submitSelectedJitOpenAndStockRows = async () => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
   const rows = selectedJitRows.value.filter((row) => !row.stockMaintained);
@@ -4610,7 +4778,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
 
     if (openRows.length) {
       setJitBatchCurrent("批量开通请求中");
-      const response = await executeTemuAction("/temu/jit/open", buildJitOpenPayload(openRows));
+      const response = await runTemuClientAction("jit.open", buildJitOpenPayload(openRows));
       const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
       const failedSkcIds = new Set(
         failedItems
@@ -4673,7 +4841,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
     for (const row of stockRows) {
       setJitBatchCurrent("维护库存中", row);
       try {
-        const response = await executeTemuAction("/temu/jit/stock/update", buildJitStockPayload(row));
+        const response = await runTemuClientAction("jit.stock.update", buildJitStockPayload(row));
         const nextMark = buildJitStockSuccessMark(response, finalNum);
         jitStockSubmitMarks[row.rowKey] = nextMark;
         if (nextMark.status === "success") {
@@ -4745,18 +4913,56 @@ const buildSingleRealPicturePayload = (
   skuIdList: row.rawSkuIdList,
   isSameSku: row.rawIsSameSku,
   ...(uploadedPositionImageUrls ? { uploadedPositionImageUrls } : { positionImageUrls }),
-  appendToExisting: realPictureUploadForm.value.appendToExisting,
+  appendToExisting: false,
   existingLabelImageList: row.existingLabelImageList,
   confirmType: 4,
 });
 
-const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
+const ensureRealPicturePositionItems = () => {
+  const form = realPictureUploadForm.value as Record<string, any>;
+  const existingItems = asArray<Record<string, any>>(form.positionItems);
+  if (existingItems.length) {
+    form.positionItems = existingItems.map((item, index) => ({
+      id: item.id || `position-${index + 1}`,
+      position: Number(item.position || index + 1) || index + 1,
+      imageUrlsText: String(item.imageUrlsText || ""),
+    }));
     return;
   }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  form.positionItems = [
+    createRealPicturePositionItem(1, String(form.position1ImageUrlsText || "")),
+    createRealPicturePositionItem(2, String(form.position2ImageUrlsText || "")),
+  ];
+};
+
+const addRealPicturePositionItem = () => {
+  ensureRealPicturePositionItems();
+  realPictureUploadForm.value.positionItems.push(createRealPicturePositionItem());
+};
+
+const removeRealPicturePositionItem = (index: number) => {
+  ensureRealPicturePositionItems();
+  if (realPictureUploadForm.value.positionItems.length <= 1) {
+    return;
+  }
+  realPictureUploadForm.value.positionItems.splice(index, 1);
+};
+
+const buildRealPicturePositionImageUrlsFromForm = () => {
+  ensureRealPicturePositionItems();
+  return realPictureUploadForm.value.positionItems.reduce((result: Record<string, string[]>, item: any) => {
+    const position = String(Number(item.position || 0) || "").trim();
+    const imageUrls = Array.from(new Set(parseImageUrlText(item.imageUrlsText)));
+    if (!position || !imageUrls.length) {
+      return result;
+    }
+    result[position] = Array.from(new Set([...(result[position] || []), ...imageUrls]));
+    return result;
+  }, {});
+};
+
+const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
+  if (!requireTemuClientContext()) {
     return;
   }
   const usableRows = (Array.isArray(rows) ? rows : []).filter((row) => isSelectableRealPictureRow(row));
@@ -4765,6 +4971,7 @@ const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
     return;
   }
   realPictureUploadRows.value = usableRows;
+  ensureRealPicturePositionItems();
   realPictureUploadVisible.value = true;
 };
 
@@ -4775,9 +4982,10 @@ const submitRealPictureRowWithoutConfirm = async (
 ) => {
   realPictureSubmittingKey.value = row.rowKey;
   try {
-    const response = await executeTemuAction(
-      "/temu/goods/real-picture/submit",
+    const response = await runTemuClientAction(
+      "goods.real-picture.submit",
       buildSingleRealPicturePayload(row, positionImageUrls, options.uploadedPositionImageUrls),
+      10 * 60 * 1000,
     );
     const nextMark: RealPictureSubmitMark = {
       status: response?.success ? "success" : "failed",
@@ -4817,7 +5025,7 @@ const extractUploadedRealPicturePositionMap = (response: any) => {
   uploadedImages.forEach((item) => {
     const position = String(item?.position || "").trim();
     const uploadedUrl = String(item?.uploadedUrl || "").trim();
-    if (!["1", "2"].includes(position) || !/^https?:\/\//i.test(uploadedUrl)) {
+    if (!position || !/^https?:\/\//i.test(uploadedUrl)) {
       return;
     }
     if (!result[position]) {
@@ -4828,16 +5036,11 @@ const extractUploadedRealPicturePositionMap = (response: any) => {
   Object.keys(result).forEach((position) => {
     result[position] = Array.from(new Set(result[position]));
   });
-  return result["1"]?.length && result["2"]?.length ? result : null;
+  return Object.keys(result).length ? result : null;
 };
 
 const submitRealPictureUploadRows = async () => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
   const rows = realPictureUploadRows.value.filter((row) => isSelectableRealPictureRow(row));
@@ -4845,16 +5048,11 @@ const submitRealPictureUploadRows = async () => {
     ElMessage.warning("没有可上传的实拍图记录");
     return;
   }
-  const position1ImageUrls = Array.from(new Set(parseImageUrlText(realPictureUploadForm.value.position1ImageUrlsText)));
-  const position2ImageUrls = Array.from(new Set(parseImageUrlText(realPictureUploadForm.value.position2ImageUrlsText)));
-  if (!position1ImageUrls.length || !position2ImageUrls.length) {
-    ElMessage.warning("请分别填写位置 1 和位置 2 的 HTTP 图片地址");
+  const positionImageUrls = buildRealPicturePositionImageUrlsFromForm();
+  if (!Object.keys(positionImageUrls).length) {
+    ElMessage.warning("请至少填写一个位置的 HTTP 图片地址");
     return;
   }
-  const positionImageUrls = {
-    "1": position1ImageUrls,
-    "2": position2ImageUrls,
-  };
 
   realPictureBatchSubmitting.value = true;
   realPictureBatchFinishedCount.value = 0;
@@ -4957,6 +5155,14 @@ const resolveComplianceTaskIdMap = () =>
     }
     return result;
   }, {} as Record<number, any>);
+const resolveComplianceQueryTaskMap = () =>
+  getComplianceQueryTaskList().reduce((result, task) => {
+    const taskType = Number(task?.task_type || task?.taskType);
+    if (Number.isFinite(taskType)) {
+      result[taskType] = asPlainObject(task);
+    }
+    return result;
+  }, {} as Record<number, Record<string, any>>);
 const resolveComplianceFieldSelectionMap = () =>
   selectedComplianceFields.value.reduce((result, field) => {
     result[field.key] = complianceEditorForm[field.key];
@@ -5002,7 +5208,6 @@ const normalizeComplianceSubmitTask = (
   if (taskType === 61) {
     const field = selectedComplianceFields.value.find((item) => Number(item.taskType) === 61);
     const propertyId = field?.propertyId || "1100100115";
-    const selectedValue = selectionMap[`${taskType}:${propertyId}`];
     return {
       task_id: task.task_id || task.taskId,
       task_status: task.task_status ?? task.taskStatus ?? task.status ?? 2,
@@ -5014,7 +5219,7 @@ const normalizeComplianceSubmitTask = (
         [propertyId]: {
           multi_line_inputs: [
             {
-              name: String(selectedValue || ""),
+              name: DEFAULT_COMPLIANCE_PRODUCT_IDENTIFIER,
             },
           ],
         },
@@ -5046,6 +5251,11 @@ const normalizeComplianceSubmitTask = (
           ]
         : [],
     };
+  }
+
+  const hardcodedSecondaryTask = buildHardcodedSecondaryComplianceTask(taskType, task);
+  if (hardcodedSecondaryTask) {
+    return hardcodedSecondaryTask;
   }
 
   return task;
@@ -5098,6 +5308,73 @@ const applyComplianceEditorSelections = (
     task.properties = propertySelections;
   }
 };
+const buildHardcodedSecondaryComplianceTask = (
+  taskType: number,
+  sourceTask: Record<string, any> | undefined,
+) => {
+  const taskId = sourceTask?.task_id || sourceTask?.taskId;
+  const taskStatus = sourceTask?.task_status ?? sourceTask?.taskStatus ?? sourceTask?.status;
+  if (taskType === 121) {
+    return {
+      task_id: taskId,
+      task_status: taskStatus ?? 2,
+      task_type: 121,
+      template_id: sourceTask?.template_id || sourceTask?.templateId || 262,
+      properties: {},
+      images: {},
+      input_text: {},
+    };
+  }
+  if (taskType === 181) {
+    return {
+      task_id: taskId,
+      task_status: taskStatus ?? 5,
+      task_type: 181,
+      template_id: sourceTask?.template_id || sourceTask?.templateId || 1013,
+      properties: {
+        "1100100490": [1000295043],
+      },
+      images: {},
+      input_text: {},
+    };
+  }
+  if (taskType === 186) {
+    return {
+      task_id: taskId,
+      task_status: taskStatus ?? 5,
+      task_type: 186,
+      template_id: sourceTask?.template_id || sourceTask?.templateId || 1019,
+      properties: {},
+      images: {},
+      input_text: {
+        "1100100494": {
+          name: "Manager",
+        },
+      },
+    };
+  }
+  return null;
+};
+const appendHardcodedSecondaryComplianceTasks = (
+  templateEditRequestList: Record<string, any>[],
+  queryTaskMap: Record<number, Record<string, any>>,
+) => {
+  const existingTaskTypes = new Set(
+    templateEditRequestList
+      .map((task) => Number(task?.task_type || task?.taskType))
+      .filter((taskType) => Number.isFinite(taskType)),
+  );
+  HARDCODED_SECONDARY_COMPLIANCE_TASKS.forEach((taskType) => {
+    if (existingTaskTypes.has(taskType) || !queryTaskMap[taskType]) {
+      return;
+    }
+    const hardcodedTask = buildHardcodedSecondaryComplianceTask(taskType, queryTaskMap[taskType]);
+    if (hardcodedTask) {
+      templateEditRequestList.push(hardcodedTask);
+      existingTaskTypes.add(taskType);
+    }
+  });
+};
 const buildComplianceSubmitPayloadWithSelection = (selectionMap: Record<string, any>) => {
   const row = activeComplianceRow.value;
   if (!row) {
@@ -5107,6 +5384,7 @@ const buildComplianceSubmitPayloadWithSelection = (selectionMap: Record<string, 
   const detailResult = getComplianceDetailResult();
   const detailTasks = asArray<Record<string, any>>(detailResult.template_list || detailResult.templateList);
   const taskIdMap = resolveComplianceTaskIdMap();
+  const queryTaskMap = resolveComplianceQueryTaskMap();
 
   const templateEditRequestList = detailTasks.map((sourceTask) => {
     const task = normalizeComplianceSubmitTask(sourceTask, selectionMap);
@@ -5119,6 +5397,7 @@ const buildComplianceSubmitPayloadWithSelection = (selectionMap: Record<string, 
     }
     return task;
   });
+  appendHardcodedSecondaryComplianceTasks(templateEditRequestList, queryTaskMap);
 
   if (!templateEditRequestList.length) {
     throw new Error("当前没有可提交的合规项");
@@ -5145,16 +5424,14 @@ const fetchComplianceResponsesForRow = async (row: CompliancePreviewRow) => {
     region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
     payload,
   };
-  const [detailResponse, templateResponse] = await Promise.all([
-    executeTemuAction("/temu/compliance/detail", {
-      ...basePayload,
-      detailType: "detail",
-    }),
-    executeTemuAction("/temu/compliance/detail", {
-      ...basePayload,
-      detailType: "template",
-    }),
-  ]);
+  const detailResponse = await runTemuClientAction("compliance.detail", {
+    ...basePayload,
+    detailType: "detail",
+  });
+  const templateResponse = await runTemuClientAction("compliance.detail", {
+    ...basePayload,
+    detailType: "template",
+  });
   if (!detailResponse?.success || !templateResponse?.success) {
     throw new Error("合规详情或模板返回失败");
   }
@@ -5193,13 +5470,7 @@ const loadComplianceEditorForRow = async (row: CompliancePreviewRow) => {
 };
 
 const openComplianceEditor = async (row: CompliancePreviewRow) => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5209,13 +5480,7 @@ const openComplianceEditor = async (row: CompliancePreviewRow) => {
 };
 
 const submitComplianceEditor = async () => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5234,7 +5499,7 @@ const submitComplianceEditor = async () => {
 
   complianceSubmitting.value = true;
   try {
-    const response = await executeTemuAction("/temu/compliance/submit", {
+    const response = await runTemuClientAction("compliance.submit", {
       profileId: props.profileId,
       region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
       payload,
@@ -5263,12 +5528,7 @@ const onComplianceSelectionChange = ({ records }: { records: CompliancePreviewRo
 };
 
 const openComplianceBatchEditor = async () => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
   const rows = selectedComplianceRows.value;
@@ -5312,7 +5572,7 @@ const submitComplianceBatchRows = async () => {
       complianceTemplateResponse.value = templateResponse;
 
       const payload = buildComplianceSubmitPayloadWithSelection(selectionSnapshot);
-      const response = await executeTemuAction("/temu/compliance/submit", {
+      const response = await runTemuClientAction("compliance.submit", {
         profileId: props.profileId,
         region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
         payload,
@@ -5342,13 +5602,7 @@ const submitPriceReviewRow = async (
   row: PriceReviewPreviewRow,
   mode: "confirm" | "abandon",
 ) => {
-  if (!props.profileId) {
-    ElMessage.warning("请先选择执行环境");
-    return;
-  }
-
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5448,8 +5702,8 @@ const submitPriceReviewRowWithoutConfirm = async (
   const submitKey = `${row.rowKey}:${mode}`;
   priceReviewSubmittingKey.value = submitKey;
   try {
-    const response = await executeTemuAction(
-      "/temu/goods/modify-price",
+    const response = await runTemuClientAction(
+      "goods.modify-price",
       buildSinglePriceReviewPayload(row, mode, options.overridePrice),
     );
     const nextMark: PriceReviewSubmitMark = {
@@ -5791,16 +6045,7 @@ const runAction = async () => {
     ElMessage.warning("当前动作暂未配置可执行表单");
     return;
   }
-  if (isToolAction(action) && !props.clientId) {
-    ElMessage.warning("请先选择在线客户端");
-    return;
-  }
-  if (!props.profileId) {
-    ElMessage.warning("请先选择在线客户端和执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5818,14 +6063,14 @@ const runAction = async () => {
   if (isToolAction(action)) {
     emit("run-tool", {
       featureKey: action.featureKey || action.key,
-      payload: selectedActionPreset.value.buildPayload(parsed, props.profileId),
+      payload: buildClientTaskPayload(selectedActionPreset.value.buildPayload(parsed, props.profileId)),
     });
     return;
   }
 
   runningActionKey.value = String(action.key || "").trim();
   try {
-    const payload = selectedActionPreset.value.buildPayload(parsed, props.profileId);
+    const payload = buildClientTaskPayload(selectedActionPreset.value.buildPayload(parsed, props.profileId));
     state.lastResult = null;
     const detail = await createTemuTaskRun({
       actionKey: action.key,
@@ -5852,12 +6097,7 @@ const fetchAllComplianceRows = async () => {
     ElMessage.warning("请先选择合规信息查询动作");
     return;
   }
-  if (!props.profileId) {
-    ElMessage.warning("请先选择在线客户端和执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5870,6 +6110,7 @@ const fetchAllComplianceRows = async () => {
   const pageSize = 50;
   const payload = {
     ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    clientId: props.clientId,
     pageNum: 1,
     pageSize,
     fetchAll: true,
@@ -5905,12 +6146,7 @@ const fetchAllPriceReviewRows = async () => {
     ElMessage.warning("请先选择待核价商品列表动作");
     return;
   }
-  if (!props.profileId) {
-    ElMessage.warning("请先选择在线客户端和执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5923,6 +6159,7 @@ const fetchAllPriceReviewRows = async () => {
   const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 1000) || 1000));
   const payload = {
     ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    clientId: props.clientId,
     pageNum: 1,
     pageSize,
     fetchAll: true,
@@ -5958,12 +6195,7 @@ const fetchAllRealPictureRows = async () => {
     ElMessage.warning("请先选择实拍图列表动作");
     return;
   }
-  if (!props.profileId) {
-    ElMessage.warning("请先选择在线客户端和执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -5976,6 +6208,7 @@ const fetchAllRealPictureRows = async () => {
   const pageSize = 50;
   const payload = {
     ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    clientId: props.clientId,
     page: 1,
     pageSize,
     fetchAll: true,
@@ -6011,12 +6244,7 @@ const fetchAllJitRows = async () => {
     ElMessage.warning("请先选择 JIT 列表动作");
     return;
   }
-  if (!props.profileId) {
-    ElMessage.warning("请先选择在线客户端和执行环境");
-    return;
-  }
-  if (!hasUsableSession.value) {
-    ElMessage.warning("请先采集或选择一个已存储的 Temu 会话");
+  if (!requireTemuClientContext()) {
     return;
   }
 
@@ -6029,6 +6257,7 @@ const fetchAllJitRows = async () => {
   const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 1000) || 1000));
   const payload = {
     ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    clientId: props.clientId,
     pageNum: 1,
     pageSize,
     fetchAll: true,
@@ -7191,11 +7420,20 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 8px;
   width: min(380px, calc(100vw - 32px));
+  max-height: min(70vh, 560px);
+  overflow: auto;
   padding: 12px;
   border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
   background: var(--el-bg-color-overlay);
   box-shadow: var(--el-box-shadow-light);
+}
+
+.temu-workspace__floating-progress.is-collapsed {
+  width: min(300px, calc(100vw - 32px));
+  max-height: none;
+  overflow: hidden;
+  padding: 8px 10px;
 }
 
 .temu-workspace__floating-progress-head,
@@ -7212,6 +7450,18 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
+.temu-workspace__floating-progress-head--sub strong {
+  font-size: 12px;
+}
+
+.temu-workspace__floating-progress-actions {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+  min-width: 0;
+}
+
 .temu-workspace__floating-progress-head span,
 .temu-workspace__floating-progress-meta span {
   overflow: hidden;
@@ -7219,6 +7469,23 @@ onBeforeUnmount(() => {
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.temu-workspace__floating-progress-actions span {
+  max-width: 190px;
+}
+
+.temu-workspace__floating-progress-item {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.temu-workspace__floating-progress-item:first-of-type {
+  padding-top: 0;
+  border-top: 0;
 }
 
 .temu-workspace__batch-reprice-head {

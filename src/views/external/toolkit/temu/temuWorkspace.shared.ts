@@ -347,11 +347,32 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       createPageSizeField(10),
       { key: "type", label: "查询类型", type: "number", defaultValue: 2 },
       {
+        key: "goodsStatusList",
+        label: "商品状态列表",
+        type: "select",
+        multiple: true,
+        defaultValue: [1, 2],
+        options: [
+          { label: "在售", value: 1 },
+          { label: "未发布到站点", value: 2 },
+          { label: "已下架", value: 3 },
+          { label: "已终止", value: 4 },
+          { label: "已删除", value: 5 },
+        ],
+      },
+      {
         key: "taskStatusList",
         label: "任务状态列表",
-        type: "array-number",
+        type: "select",
+        multiple: true,
         defaultValue: [2],
-        hint: "默认 [2]，表示待上传。",
+        options: [
+          { label: "待上传", value: 2 },
+          { label: "上传成功", value: 3 },
+          { label: "待确认", value: 5 },
+          { label: "上传中", value: 10 },
+          { label: "上传失败", value: 11 },
+        ],
       },
     ],
     buildPayload: buildProfileRegionPayload,
@@ -522,6 +543,17 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
         hint: "例如 1 待传图、4 异常",
       },
       {
+        key: "checkTypeStatusList",
+        label: "异常状态列表",
+        type: "select",
+        multiple: true,
+        defaultValue: [1],
+        options: [
+          { label: "未传图", value: 1 },
+        ],
+        hint: "默认选择未传图；清空后传空数组，普通分页和一键获取全部都会使用当前选择。",
+      },
+      {
         key: "goodsStatusList",
         label: "商品状态列表",
         type: "select",
@@ -539,10 +571,12 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
       { key: "blackWordTypeList", label: "敏感词类型列表", type: "array-number" },
       { key: "spuIdList", label: "SPU ID 列表", type: "array-number" },
     ],
-    note: "用于查询未传图的实拍图异常单。已固定 check_type_status_list=[1]。",
+    note: "用于查询实拍图异常单；异常状态默认选择未传图，可清空为全部状态。",
     buildPayload: (parsed, profileId) => ({
       ...buildProfileRegionPayload(parsed, profileId),
-      checkTypeStatusList: [1],
+      checkTypeStatusList: Array.isArray(parsed.checkTypeStatusList)
+        ? parsed.checkTypeStatusList
+        : [],
       goodsStatusList: Array.isArray(parsed.goodsStatusList) && parsed.goodsStatusList.length
         ? parsed.goodsStatusList
         : [1, 2],

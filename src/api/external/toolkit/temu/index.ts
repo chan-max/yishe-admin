@@ -138,6 +138,20 @@ export const retryTemuTaskRun = (id: number | string) => {
   });
 };
 
+export const executeTemuClientAction = <TResult = Record<string, any>>(data: {
+  clientId: string;
+  actionKey: string;
+  profileId?: string;
+  region?: TemuRegionKey | string;
+  payload?: Record<string, any>;
+  timeoutMs?: number;
+}) => {
+  return request.post<TemuActionResponse<TResult>>({
+    url: "/temu/client-action/execute",
+    data,
+  });
+};
+
 export const deleteTemuTaskRun = (id: number | string) => {
   return request.delete<{ id: number }>({
     url: `/temu/task-run/${encodeURIComponent(String(id))}`,
