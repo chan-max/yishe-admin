@@ -77,6 +77,20 @@ export interface TemuTaskRunDetail extends TemuTaskRunSummary {
   logs?: TemuTaskRunLogEntry[];
 }
 
+export interface TemuBatchProgressItem {
+  key: string;
+  title: string;
+  progressText: string;
+  percent: number;
+  rowText?: string;
+  stage?: string;
+  successCount: number;
+  failedCount: number;
+  remainingCount: number;
+  updatedAt?: string;
+  stale?: boolean;
+}
+
 export interface TemuTaskRunPagePayload {
   list: TemuTaskRunSummary[];
   total: number;
@@ -213,5 +227,29 @@ export const markTemuTaskRunRealPictureRow = (data: {
   return request.post<TemuTaskRunDetail>({
     url: "/temu/task-run/real-picture-mark",
     data,
+  });
+};
+
+export const getTemuBatchProgress = (profileId?: string) => {
+  return request.get<{ items: TemuBatchProgressItem[] }>({
+    url: "/temu/batch-progress",
+    params: profileId ? { profileId } : undefined,
+  });
+};
+
+export const updateTemuBatchProgress = (data: {
+  profileId?: string;
+  items: TemuBatchProgressItem[];
+}) => {
+  return request.post<{ items: TemuBatchProgressItem[] }>({
+    url: "/temu/batch-progress",
+    data,
+  });
+};
+
+export const clearTemuBatchProgress = (profileId?: string) => {
+  return request.post<{ items: TemuBatchProgressItem[] }>({
+    url: "/temu/batch-progress/clear",
+    data: profileId ? { profileId } : {},
   });
 };

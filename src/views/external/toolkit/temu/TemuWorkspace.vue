@@ -5,6 +5,9 @@
         <strong>{{ floatingProgressTitle }}</strong>
         <div class="temu-workspace__floating-progress-actions">
           <span>{{ floatingProgressSummary }}</span>
+          <el-button text size="small" type="danger" @click="clearFloatingBatchProgress">
+            清理
+          </el-button>
           <el-button text size="small" @click="floatingProgressCollapsed = !floatingProgressCollapsed">
             {{ floatingProgressCollapsed ? "展开" : "折叠" }}
           </el-button>
@@ -427,6 +430,7 @@
       v-model="taskRunDetailVisible"
       fullscreen
       append-to-body
+      destroy-on-close
       class="temu-workspace__task-dialog"
       :title="activeTaskRunDetail ? `记录详情 #${activeTaskRunDetail.id}` : '记录详情'"
     >
@@ -1490,10 +1494,12 @@ import type { VxeGridInstance, VxeGridProps } from "vxe-table";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
   batchDeleteTemuTaskRuns,
+  clearTemuBatchProgress,
   createTemuTaskRun,
   deleteTemuTaskRun,
   executeTemuClientAction,
   executeTemuAction,
+  getTemuBatchProgress,
   getTemuCatalog,
   getTemuTaskRun,
   getTemuTaskRunPage,
@@ -1501,6 +1507,8 @@ import {
   markTemuTaskRunPriceReviewRow,
   markTemuTaskRunRealPictureRow,
   retryTemuTaskRun,
+  updateTemuBatchProgress,
+  type TemuBatchProgressItem,
   type TemuActionResponse,
   type TemuCatalogAction,
   type TemuCatalogGroup,
@@ -1753,7 +1761,11 @@ const retryingTaskRunId = ref<number | null>(null);
 const deletingTaskRunId = ref<number | null>(null);
 const batchDeletingTaskRuns = ref(false);
 const taskRunPollingBusy = ref(false);
+const taskRunDetailRequestSeq = ref(0);
 const floatingProgressCollapsed = useLocalStorage("temu-workspace:floating-progress-collapsed", false);
+const persistedFloatingBatchProgressItems = ref<TemuBatchProgressItem[]>([]);
+const batchProgressSyncing = ref(false);
+const batchAbortToken = ref(0);
 const priceReviewSubmittingKey = ref("");
 const priceReviewSubmitMarks = reactive<Record<string, PriceReviewSubmitMark>>({});
 const selectedPriceReviewRowKeys = ref<string[]>([]);
@@ -2846,7 +2858,9 @@ const buildPriceReviewPreviewRows = (
               reviewIndex,
               skuIndex,
             ].join("-");
-          const submitMark = priceReviewSubmitMarks[rowKey] || (persistedMarks[rowKey] as PriceReviewSubmitMark);
+          const submitMark =
+            priceReviewSubmitMarks[rowKey] ||
+            (persistedMarks[rowKey] as PriceReviewSubmitMark);
           const processed = isCompletedPriceReviewMark(submitMark);
           const invalid = isPriceReviewSkuInvalid(sku) || processed;
           const completedLabel = resolvePriceReviewCompletedLabel(submitMark);
@@ -3919,18 +3933,8 @@ const setPriceReviewBatchCurrent = (stage: string, row?: PriceReviewPreviewRow |
   priceReviewBatchCurrentStage.value = stage;
   priceReviewBatchCurrentRowText.value = row ? `SKU ${row.skuId} / SPU ${row.spuId}` : "";
 };
-const floatingBatchProgressItems = computed(() => {
-  const items: Array<{
-    key: string;
-    title: string;
-    progressText: string;
-    percent: number;
-    rowText?: string;
-    stage?: string;
-    successCount: number;
-    failedCount: number;
-    remainingCount: number;
-  }> = [];
+const liveFloatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() => {
+  const items: TemuBatchProgressItem[] = [];
 
   if (priceReviewBatchSubmitting.value) {
     items.push({
@@ -3986,6 +3990,11 @@ const floatingBatchProgressItems = computed(() => {
 
   return items;
 });
+const floatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() =>
+  liveFloatingBatchProgressItems.value.length
+    ? liveFloatingBatchProgressItems.value
+    : persistedFloatingBatchProgressItems.value,
+);
 const floatingProgressTitle = computed(() =>
   floatingBatchProgressItems.value.length > 1
     ? `批量任务 ${floatingBatchProgressItems.value.length} 个`
@@ -3998,6 +4007,67 @@ const floatingProgressSummary = computed(() => {
   const totalFailed = items.reduce((sum, item) => sum + item.failedCount, 0);
   return `成功 ${totalSuccess} / 失败 ${totalFailed} / 剩余 ${totalRemaining}`;
 });
+let batchProgressSyncTimer: number | null = null;
+const syncFloatingBatchProgressToServer = () => {
+  if (!liveFloatingBatchProgressItems.value.length || batchProgressSyncTimer !== null) {
+    return;
+  }
+  batchProgressSyncTimer = window.setTimeout(async () => {
+    batchProgressSyncTimer = null;
+    batchProgressSyncing.value = true;
+    try {
+      const response = await updateTemuBatchProgress({
+        profileId: props.profileId,
+        items: liveFloatingBatchProgressItems.value,
+      });
+      persistedFloatingBatchProgressItems.value = response?.items || [];
+    } catch (error) {
+      console.warn("同步批量进度失败", error);
+    } finally {
+      batchProgressSyncing.value = false;
+    }
+  }, 250);
+};
+const loadFloatingBatchProgressFromServer = async () => {
+  try {
+    const response = await getTemuBatchProgress(props.profileId);
+    persistedFloatingBatchProgressItems.value = response?.items || [];
+  } catch (error) {
+    console.warn("获取批量进度失败", error);
+  }
+};
+const stopLiveBatchProgress = () => {
+  priceReviewBatchSubmitting.value = false;
+  priceReviewBatchSubmittingMode.value = "";
+  priceReviewBatchCurrentStage.value = "";
+  priceReviewBatchCurrentRowText.value = "";
+  jitBatchSubmitting.value = false;
+  jitBatchCurrentStage.value = "";
+  jitBatchCurrentRowText.value = "";
+  realPictureBatchSubmitting.value = false;
+  complianceBatchSubmitting.value = false;
+  complianceBatchMode.value = false;
+};
+const clearFloatingBatchProgress = async () => {
+  batchAbortToken.value += 1;
+  stopLiveBatchProgress();
+  persistedFloatingBatchProgressItems.value = [];
+  try {
+    await clearTemuBatchProgress(props.profileId);
+    ElMessage.success("已清理批量进度，并终止当前页面批量循环");
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "清理批量进度失败"));
+  }
+};
+const clearFloatingBatchProgressSilently = async () => {
+  persistedFloatingBatchProgressItems.value = [];
+  try {
+    await clearTemuBatchProgress(props.profileId);
+  } catch (error) {
+    console.warn("清理批量进度失败", error);
+  }
+};
+const shouldAbortBatch = (token: number) => token !== batchAbortToken.value;
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
@@ -4168,6 +4238,40 @@ const syncTaskRunResultToWorkspace = (detail?: TemuTaskRunDetail | null) => {
   state.lastResult = result as TemuActionResponse;
 };
 
+const resetTaskRunDetailDialogState = () => {
+  selectedPriceReviewRowKeys.value = [];
+  selectedJitRowKeys.value = [];
+  selectedRealPictureRowKeys.value = [];
+  selectedComplianceRowKeys.value = [];
+  priceReviewPreviewGridRef.value?.clearCheckboxRow?.();
+  jitPreviewGridRef.value?.clearCheckboxRow?.();
+  realPicturePreviewGridRef.value?.clearCheckboxRow?.();
+  realPictureUploadRows.value = [];
+  realPictureUploadVisible.value = false;
+  complianceEditorVisible.value = false;
+  complianceBatchMode.value = false;
+  complianceBatchRows.value = [];
+  activeComplianceRow.value = null;
+  selectedComplianceTaskKey.value = "";
+  complianceDetailResponse.value = null;
+  complianceTemplateResponse.value = null;
+  Object.keys(complianceEditorForm).forEach((key) => {
+    delete complianceEditorForm[key];
+  });
+};
+
+const applyTaskRunDetailIfCurrent = (detail?: TemuTaskRunDetail | null, expectedId?: number | null) => {
+  const detailId = Number(detail?.id || 0) || null;
+  const targetId = Number(expectedId || detailId || 0) || null;
+  if (!detail || !targetId || activeTaskRunId.value !== targetId) {
+    return false;
+  }
+
+  activeTaskRunDetail.value = detail;
+  syncTaskRunResultToWorkspace(detail);
+  return true;
+};
+
 const validateForm = () => {
   const state = activeActionState.value;
   const parsed: Record<string, any> = {};
@@ -4257,20 +4361,24 @@ const ensureTaskRunPolling = () => {
 
 const loadTaskRunDetail = async (id: number, options: { silent?: boolean } = {}) => {
   if (!id) {
+    taskRunDetailRequestSeq.value += 1;
     activeTaskRunId.value = null;
     activeTaskRunDetail.value = null;
     return null;
   }
 
+  const requestSeq = ++taskRunDetailRequestSeq.value;
   if (!options.silent) {
     taskRunDetailLoading.value = true;
   }
 
   try {
     const detail = await getTemuTaskRun(id);
+    if (requestSeq !== taskRunDetailRequestSeq.value || activeTaskRunId.value !== id) {
+      return null;
+    }
     activeTaskRunId.value = detail?.id ? Number(detail.id) : null;
-    activeTaskRunDetail.value = detail || null;
-    syncTaskRunResultToWorkspace(detail);
+    applyTaskRunDetailIfCurrent(detail, id);
     return detail;
   } catch (error: any) {
     if (!options.silent) {
@@ -4278,7 +4386,7 @@ const loadTaskRunDetail = async (id: number, options: { silent?: boolean } = {})
     }
     return null;
   } finally {
-    if (!options.silent) {
+    if (!options.silent && requestSeq === taskRunDetailRequestSeq.value) {
       taskRunDetailLoading.value = false;
     }
   }
@@ -4364,10 +4472,9 @@ const openTaskRunDetail = async (id: number) => {
     return;
   }
 
+  resetTaskRunDetailDialogState();
   activeTaskRunId.value = id;
-  if (!activeTaskRunDetail.value || activeTaskRunDetail.value.id !== id) {
-    activeTaskRunDetail.value = null;
-  }
+  activeTaskRunDetail.value = null;
   taskRunDetailVisible.value = true;
   await loadTaskRunDetail(id);
 };
@@ -4496,12 +4603,13 @@ const buildJitStockErrorMark = (error: any, finalNum: number): JitSubmitMark => 
   finalNum,
 });
 
-const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark) => {
-  if (!activeTaskRunDetail.value?.id) {
+const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark, ownerRunId?: number) => {
+  const runId = Number(ownerRunId || activeTaskRunDetail.value?.id || 0);
+  if (!runId) {
     return;
   }
-  activeTaskRunDetail.value = await markTemuTaskRunJitRow({
-    id: activeTaskRunDetail.value.id,
+  const detail = await markTemuTaskRunJitRow({
+    id: runId,
     rowKey: row.rowKey,
     action: "stock",
     status: mark.status,
@@ -4509,6 +4617,7 @@ const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark) => {
     stockMaintained: !!mark.stockMaintained,
     finalNum: mark.finalNum,
   });
+  applyTaskRunDetailIfCurrent(detail, runId);
 };
 
 const submitJitStockRow = async (row: JitPreviewRow) => {
@@ -4525,13 +4634,14 @@ const submitJitStockRow = async (row: JitPreviewRow) => {
   }
 
   const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   jitStockSubmittingKey.value = row.rowKey;
   try {
     const response = await runTemuClientAction("jit.stock.update", buildJitStockPayload(row));
     const nextMark = buildJitStockSuccessMark(response, finalNum);
     jitStockSubmitMarks[row.rowKey] = nextMark;
     try {
-      await persistJitStockMark(row, nextMark);
+      await persistJitStockMark(row, nextMark, ownerRunId);
     } catch (error: any) {
       ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
     }
@@ -4539,9 +4649,9 @@ const submitJitStockRow = async (row: JitPreviewRow) => {
   } catch (error: any) {
     const nextMark = buildJitStockErrorMark(error, finalNum);
     jitStockSubmitMarks[row.rowKey] = nextMark;
-    if (activeTaskRunDetail.value?.id) {
+    if (ownerRunId) {
       markTemuTaskRunJitRow({
-        id: activeTaskRunDetail.value.id,
+        id: ownerRunId,
         rowKey: row.rowKey,
         action: "stock",
         status: nextMark.status,
@@ -4572,9 +4682,14 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
   if (batchMode) {
     resetJitBatchProgress("批量维护库存", rows.length);
   }
+  const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
 
   try {
     for (const row of rows) {
+      if (batchMode && shouldAbortBatch(batchToken)) {
+        break;
+      }
       if (batchMode) {
         setJitBatchCurrent("维护库存中", row);
       } else {
@@ -4590,7 +4705,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
           failedCount += 1;
         }
         try {
-          await persistJitStockMark(row, nextMark);
+          await persistJitStockMark(row, nextMark, ownerRunId);
         } catch (error: any) {
           ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
         }
@@ -4598,9 +4713,9 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
         failedCount += 1;
         const nextMark = buildJitStockErrorMark(error, finalNum);
         jitStockSubmitMarks[row.rowKey] = nextMark;
-        if (activeTaskRunDetail.value?.id) {
+        if (ownerRunId) {
           markTemuTaskRunJitRow({
-            id: activeTaskRunDetail.value.id,
+            id: ownerRunId,
             rowKey: row.rowKey,
             action: "stock",
             status: nextMark.status,
@@ -4633,6 +4748,7 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
       jitBatchCurrentStage.value = "";
       jitBatchCurrentRowText.value = "";
       jitBatchSubmitting.value = false;
+      void clearFloatingBatchProgressSilently();
     }
   }
 };
@@ -4653,9 +4769,14 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
   } else {
     jitSubmittingKey.value = rows[0]?.rowKey || "";
   }
+  const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
 
   try {
     const response = await runTemuClientAction("jit.open", buildJitOpenPayload(rows));
+    if (batchMode && shouldAbortBatch(batchToken)) {
+      return;
+    }
     const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
     const failedSkcIds = new Set(
       failedItems
@@ -4693,9 +4814,9 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
         time: formatDateTime(new Date()),
         markOpened: success,
       };
-      if (activeTaskRunDetail.value?.id) {
+      if (ownerRunId) {
         persistPayloads.push({
-          id: activeTaskRunDetail.value.id,
+          id: ownerRunId,
           rowKey: row.rowKey,
           action: "open",
           status: jitSubmitMarks[row.rowKey].status,
@@ -4709,7 +4830,8 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
       let persistFailed = false;
       for (const payload of persistPayloads) {
         try {
-          activeTaskRunDetail.value = await markTemuTaskRunJitRow(payload);
+          const detail = await markTemuTaskRunJitRow(payload);
+          applyTaskRunDetailIfCurrent(detail, Number(payload.id || 0));
         } catch {
           persistFailed = true;
         }
@@ -4765,6 +4887,9 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
     jitBatchCurrentStage.value = "";
     jitBatchCurrentRowText.value = "";
     jitBatchSubmitting.value = false;
+    if (batchMode) {
+      void clearFloatingBatchProgressSilently();
+    }
   }
 };
 
@@ -4784,6 +4909,8 @@ const submitSelectedJitOpenAndStockRows = async () => {
   const openRows = rows.filter((row) => isOpenableJitRow(row));
   const alreadyOpenRows = rows.filter((row) => isStockMaintainableJitRow(row));
   resetJitBatchProgress("批量开通并维护库存", rows.length + openRows.length);
+  const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   try {
     let openSuccessCount = 0;
     let openFailedCount = 0;
@@ -4801,6 +4928,9 @@ const submitSelectedJitOpenAndStockRows = async () => {
       );
 
       for (const row of openRows) {
+        if (shouldAbortBatch(batchToken)) {
+          break;
+        }
         setJitBatchCurrent("记录开通结果", row);
         const failedItem = failedItems.find(
           (item) => Number(item?.productSkcId || item?.skcId || 0) === row.rawSkcId,
@@ -4823,16 +4953,17 @@ const submitSelectedJitOpenAndStockRows = async () => {
           markOpened: success,
         };
         jitSubmitMarks[row.rowKey] = nextMark;
-        if (activeTaskRunDetail.value?.id) {
+        if (ownerRunId) {
           try {
-            activeTaskRunDetail.value = await markTemuTaskRunJitRow({
-              id: activeTaskRunDetail.value.id,
+            const detail = await markTemuTaskRunJitRow({
+              id: ownerRunId,
               rowKey: row.rowKey,
               action: "open",
               status: nextMark.status,
               message: nextMark.message,
               markOpened: success,
             });
+            applyTaskRunDetailIfCurrent(detail, ownerRunId);
           } catch {
             ElMessage.warning("JIT 开通状态部分持久化失败，请刷新后核对执行记录");
           }
@@ -4853,6 +4984,9 @@ const submitSelectedJitOpenAndStockRows = async () => {
     let stockFailedCount = 0;
     const finalNum = Math.max(0, Number(jitStockFinalNum.value || 0) || 0);
     for (const row of stockRows) {
+      if (shouldAbortBatch(batchToken)) {
+        break;
+      }
       setJitBatchCurrent("维护库存中", row);
       try {
         const response = await runTemuClientAction("jit.stock.update", buildJitStockPayload(row));
@@ -4864,7 +4998,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
           stockFailedCount += 1;
         }
         try {
-          await persistJitStockMark(row, nextMark);
+          await persistJitStockMark(row, nextMark, ownerRunId);
         } catch (error: any) {
           ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
         }
@@ -4872,9 +5006,9 @@ const submitSelectedJitOpenAndStockRows = async () => {
         stockFailedCount += 1;
         const nextMark = buildJitStockErrorMark(error, finalNum);
         jitStockSubmitMarks[row.rowKey] = nextMark;
-        if (activeTaskRunDetail.value?.id) {
+        if (ownerRunId) {
           markTemuTaskRunJitRow({
-            id: activeTaskRunDetail.value.id,
+            id: ownerRunId,
             rowKey: row.rowKey,
             action: "stock",
             status: nextMark.status,
@@ -4905,6 +5039,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
     jitBatchCurrentStage.value = "";
     jitBatchCurrentRowText.value = "";
     jitBatchSubmitting.value = false;
+    void clearFloatingBatchProgressSilently();
   }
 };
 
@@ -4996,13 +5131,14 @@ const submitRealPictureRowWithoutConfirm = async (
   options: { showToast?: boolean; uploadedPositionImageUrls?: Record<string, string[]> } = {},
 ) => {
   realPictureSubmittingKey.value = row.rowKey;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   const persistRealPictureMark = async (mark: RealPictureSubmitMark) => {
-    const runId = Number(activeTaskRunDetail.value?.id || 0);
+    const runId = ownerRunId;
     if (!runId) {
       return;
     }
     try {
-      activeTaskRunDetail.value = await markTemuTaskRunRealPictureRow({
+      const detail = await markTemuTaskRunRealPictureRow({
         id: runId,
         rowKey: row.rowKey,
         status: mark.status,
@@ -5010,7 +5146,7 @@ const submitRealPictureRowWithoutConfirm = async (
         spuId: row.rawSpuId,
         goodsId: row.rawGoodsId,
       });
-      syncTaskRunResultToWorkspace(activeTaskRunDetail.value);
+      applyTaskRunDetailIfCurrent(detail, runId);
     } catch (error) {
       console.warn("持久化实拍图上传标注失败", error);
     }
@@ -5097,8 +5233,12 @@ const submitRealPictureUploadRows = async () => {
   realPictureBatchFailedCount.value = 0;
   let successCount = 0;
   let reusableUploadedPositionImageUrls: Record<string, string[]> | null = null;
+  const batchToken = batchAbortToken.value;
 
   for (const row of rows) {
+    if (shouldAbortBatch(batchToken)) {
+      break;
+    }
     const result = await submitRealPictureRowWithoutConfirm(row, positionImageUrls, {
       uploadedPositionImageUrls: reusableUploadedPositionImageUrls || undefined,
     });
@@ -5115,6 +5255,7 @@ const submitRealPictureUploadRows = async () => {
   }
 
   realPictureBatchSubmitting.value = false;
+  void clearFloatingBatchProgressSilently();
   realPictureUploadVisible.value = false;
   selectedRealPictureRowKeys.value = selectedRealPictureRowKeys.value.filter((rowKey) => {
     const mark = realPictureSubmitMarks[rowKey];
@@ -5533,6 +5674,7 @@ const submitComplianceEditor = async () => {
     return;
   }
 
+  const ownerRunId = Number(activeTaskRunId.value || 0);
   complianceSubmitting.value = true;
   try {
     const response = await runTemuClientAction("compliance.submit", {
@@ -5548,7 +5690,7 @@ const submitComplianceEditor = async () => {
 
     ElMessage.success(response?.message || "合规信息提交成功");
     complianceEditorVisible.value = false;
-    await loadTaskRunDetail(activeTaskRunId.value || 0, { silent: true });
+    await loadTaskRunDetail(ownerRunId, { silent: true });
   } catch (error: any) {
     ElMessage.error(extractRequestErrorMessage(error, "合规信息提交失败"));
   } finally {
@@ -5599,8 +5741,13 @@ const submitComplianceBatchRows = async () => {
   complianceBatchTotalCount.value = rows.length;
   complianceBatchSuccessCount.value = 0;
   complianceBatchFailedCount.value = 0;
+  const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunId.value || 0);
 
   for (const row of rows) {
+    if (shouldAbortBatch(batchToken)) {
+      break;
+    }
     try {
       activeComplianceRow.value = row;
       const { detailResponse, templateResponse } = await fetchComplianceResponsesForRow(row);
@@ -5627,10 +5774,11 @@ const submitComplianceBatchRows = async () => {
   const successCount = complianceBatchSuccessCount.value;
   const failedCount = complianceBatchFailedCount.value;
   complianceBatchSubmitting.value = false;
+  void clearFloatingBatchProgressSilently();
   complianceBatchMode.value = false;
   complianceEditorVisible.value = false;
   selectedComplianceRowKeys.value = [];
-  await loadTaskRunDetail(activeTaskRunId.value || 0, { silent: true });
+  await loadTaskRunDetail(ownerRunId, { silent: true });
   ElMessage.success(`批量处理完成：成功 ${successCount} 条，失败 ${failedCount} 条`);
 };
 
@@ -5736,6 +5884,7 @@ const submitPriceReviewRowWithoutConfirm = async (
 ) => {
   const actionText = mode === "confirm" ? "确认核价" : mode === "reprice" ? "重新报价" : "不核价";
   const submitKey = `${row.rowKey}:${mode}`;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
   priceReviewSubmittingKey.value = submitKey;
   try {
     const response = await runTemuClientAction(
@@ -5752,9 +5901,9 @@ const submitPriceReviewRowWithoutConfirm = async (
     };
     priceReviewSubmitMarks[row.rowKey] = nextMark;
 
-    if (activeTaskRunDetail.value?.id) {
+    if (ownerRunId) {
       markTemuTaskRunPriceReviewRow({
-        id: activeTaskRunDetail.value.id,
+        id: ownerRunId,
         rowKey: row.rowKey,
         action: mode,
         status: nextMark.status,
@@ -5764,7 +5913,7 @@ const submitPriceReviewRowWithoutConfirm = async (
         ...(Number.isFinite(options.overridePrice) ? { price: options.overridePrice } : {}),
       })
         .then((detail) => {
-          activeTaskRunDetail.value = detail;
+          applyTaskRunDetailIfCurrent(detail, ownerRunId);
         })
         .catch((error) => {
           ElMessage.warning(extractRequestErrorMessage(error, "核价状态持久化失败"));
@@ -5788,9 +5937,9 @@ const submitPriceReviewRowWithoutConfirm = async (
       time: formatDateTime(new Date()),
     };
     priceReviewSubmitMarks[row.rowKey] = nextMark;
-    if (activeTaskRunDetail.value?.id) {
+    if (ownerRunId) {
       markTemuTaskRunPriceReviewRow({
-        id: activeTaskRunDetail.value.id,
+        id: ownerRunId,
         rowKey: row.rowKey,
         action: mode,
         status: nextMark.status,
@@ -5869,9 +6018,13 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
 
   resetPriceReviewBatchProgress(mode, rows.length);
   let successCount = 0;
+  const batchToken = batchAbortToken.value;
 
   try {
     for (const row of rows) {
+      if (shouldAbortBatch(batchToken)) {
+        break;
+      }
       setPriceReviewBatchCurrent("提交核价中", row);
       const success = await submitPriceReviewRowWithoutConfirm(row, mode);
       if (success) {
@@ -5893,6 +6046,7 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
     priceReviewBatchCurrentRowText.value = "";
     priceReviewBatchSubmitting.value = false;
     priceReviewBatchSubmittingMode.value = "";
+    void clearFloatingBatchProgressSilently();
   }
 };
 
@@ -5916,9 +6070,13 @@ const confirmBatchRepriceRows = async () => {
   resetPriceReviewBatchProgress("reprice", rows.length);
   priceReviewBatchRepriceVisible.value = false;
   let successCount = 0;
+  const batchToken = batchAbortToken.value;
 
   try {
     for (const row of rows) {
+      if (shouldAbortBatch(batchToken)) {
+        break;
+      }
       setPriceReviewBatchCurrent("重新报价中", row);
       const success = await submitPriceReviewRowWithoutConfirm(row, "reprice", {
         overridePrice: priceMap.get(row.rowKey),
@@ -5942,6 +6100,7 @@ const confirmBatchRepriceRows = async () => {
     priceReviewBatchCurrentRowText.value = "";
     priceReviewBatchSubmitting.value = false;
     priceReviewBatchSubmittingMode.value = "";
+    void clearFloatingBatchProgressSilently();
   }
 };
 
@@ -5959,15 +6118,9 @@ const retryTaskRunById = async (id: number) => {
   retryingTaskRunId.value = id;
   try {
     const detail = await retryTemuTaskRun(id);
-    const keepDetailVisible = taskRunDetailVisible.value;
-    activeTaskRunId.value = keepDetailVisible ? Number(detail?.id || 0) || null : null;
-    activeTaskRunDetail.value = keepDetailVisible ? detail || null : null;
     syncTaskRunResultToWorkspace(detail);
     taskRunPage.value = 1;
     await loadTaskRuns();
-    if (keepDetailVisible && detail?.id) {
-      taskRunDetailVisible.value = true;
-    }
     ensureTaskRunPolling();
     ElMessage.success(`已创建重跑记录 #${detail.id}`);
   } catch (error: any) {
@@ -6335,10 +6488,7 @@ watch(actionSearchKeyword, () => {
 });
 
 watch(activeTaskRunId, () => {
-  selectedPriceReviewRowKeys.value = [];
-  selectedJitRowKeys.value = [];
-  selectedRealPictureRowKeys.value = [];
-  selectedComplianceRowKeys.value = [];
+  resetTaskRunDetailDialogState();
 });
 
 watch(taskRunPriceReviewPreviewRows, (rows) => {
@@ -6441,20 +6591,41 @@ watch(
   { immediate: true },
 );
 
+watch(
+  liveFloatingBatchProgressItems,
+  () => {
+    syncFloatingBatchProgressToServer();
+  },
+  { deep: true },
+);
+
+watch(
+  () => props.profileId,
+  () => {
+    void loadFloatingBatchProgressFromServer();
+  },
+);
+
 watch([taskRunDetailVisible, taskRunDetailLoading], ([visible, loading]) => {
   if (visible || loading) {
     return;
   }
 
+  resetTaskRunDetailDialogState();
   activeTaskRunId.value = null;
   activeTaskRunDetail.value = null;
 });
 
 onMounted(() => {
   void loadCatalog();
+  void loadFloatingBatchProgressFromServer();
 });
 
 onBeforeUnmount(() => {
+  if (batchProgressSyncTimer !== null) {
+    window.clearTimeout(batchProgressSyncTimer);
+    batchProgressSyncTimer = null;
+  }
   stopTaskRunPolling();
 });
 </script>
