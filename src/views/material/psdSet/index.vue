@@ -786,7 +786,7 @@
 
     <el-image-viewer v-if="tableImageViewerVisible" :url-list="tableImageViewerUrls"
       :initial-index="tableImageViewerIndex" :hide-on-click-modal="false" teleported
-      @close="tableImageViewerVisible = false" />
+      @switch="handleTableImageViewerSwitch" @close="handleTableImageViewerClose" />
 
     <!-- 状态详情对话框已移除；状态说明使用默认单元格文本显示 -->
   </ContentWrap>
@@ -840,6 +840,12 @@ const tablePreviewImageIndexMap = reactive<Record<string, number>>({});
 const tableImageViewerVisible = ref(false);
 const tableImageViewerUrls = ref<string[]>([]);
 const tableImageViewerIndex = ref(0);
+const tableImageViewerDisplayIndex = computed(() =>
+  tableImageViewerUrls.value.length
+    ? Math.min(Math.max(tableImageViewerIndex.value, 0), tableImageViewerUrls.value.length - 1) + 1
+    : 0,
+);
+let tableImageViewerLabelEl: HTMLDivElement | null = null;
 const DISPATCH_DIALOG_LOADING_TEXT = "正在同步可用节点...";
 const generatingProductId = ref<string>("");
 const batchGeneratingProducts = ref(false);
@@ -1882,10 +1888,79 @@ function openPsdSetImagePreview(row: any, initialIndex?: number) {
     return;
   }
 
-  tableImageViewerUrls.value = images;
   const index = typeof initialIndex === "number" ? initialIndex : getPreviewImageIndex(row);
-  tableImageViewerIndex.value = Math.min(Math.max(index, 0), images.length - 1);
+  tableImageViewerUrls.value = images;
+  tableImageViewerIndex.value = Math.min(Math.max(Math.trunc(index), 0), images.length - 1);
   tableImageViewerVisible.value = true;
+  nextTick(() => {
+    mountTableImageViewerIndexLabel();
+    updateTableImageViewerIndexLabel();
+  });
+}
+
+function handleTableImageViewerSwitch(index: number) {
+  tableImageViewerIndex.value = Math.min(
+    Math.max(Math.trunc(Number(index) || 0), 0),
+    Math.max(tableImageViewerUrls.value.length - 1, 0),
+  );
+  updateTableImageViewerIndexLabel();
+}
+
+function handleTableImageViewerClose() {
+  tableImageViewerVisible.value = false;
+  removeTableImageViewerIndexLabel();
+}
+
+function mountTableImageViewerIndexLabel() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const viewerWrapper = document.querySelector(".el-image-viewer__wrapper");
+  if (!viewerWrapper) {
+    return;
+  }
+
+  if (!tableImageViewerLabelEl) {
+    tableImageViewerLabelEl = document.createElement("div");
+    tableImageViewerLabelEl.className = "psd-set-image-viewer-index-label";
+    tableImageViewerLabelEl.style.cssText = [
+      "position:absolute",
+      "left:24px",
+      "top:24px",
+      "z-index:10",
+      "display:inline-flex",
+      "align-items:center",
+      "justify-content:center",
+      "height:34px",
+      "min-width:104px",
+      "padding:0 14px",
+      "border-radius:999px",
+      "background:rgba(15,23,42,.82)",
+      "color:#fff",
+      "font-size:14px",
+      "line-height:34px",
+      "box-shadow:0 8px 22px rgba(0,0,0,.28)",
+      "pointer-events:none",
+    ].join(";");
+  }
+
+  if (tableImageViewerLabelEl.parentElement !== viewerWrapper) {
+    viewerWrapper.appendChild(tableImageViewerLabelEl);
+  }
+}
+
+function updateTableImageViewerIndexLabel() {
+  if (!tableImageViewerLabelEl) {
+    return;
+  }
+
+  tableImageViewerLabelEl.textContent = `第 ${tableImageViewerDisplayIndex.value} / 共 ${tableImageViewerUrls.value.length} 张`;
+}
+
+function removeTableImageViewerIndexLabel() {
+  tableImageViewerLabelEl?.remove();
+  tableImageViewerLabelEl = null;
 }
 
 // 批量下载套图图片（与商品页面逻辑一致）

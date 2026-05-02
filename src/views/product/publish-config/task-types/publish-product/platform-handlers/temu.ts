@@ -111,15 +111,6 @@ export const temuHandler: PlatformHandler = {
       errors.push('绑定厂家无效');
     }
 
-    const mappings = Array.isArray(configData?.vendorProductMappings)
-      ? configData.vendorProductMappings
-      : [];
-    mappings.forEach((item: any, index: number) => {
-      if (!String(item?.code || '').trim()) {
-        errors.push(`第 ${index + 1} 个供应商商品缺少编码快照`);
-      }
-    });
-
     return {
       valid: errors.length === 0,
       errors,
@@ -154,7 +145,7 @@ export const temuHandler: PlatformHandler = {
             packageSize: String(item?.packageSize || '').trim(),
             sort: index + 1,
           }))
-          .filter((item: any) => item.code)
+          .filter((item: any) => item.vendorProductId !== undefined || item.code || item.name || item.model)
       : [];
 
     if (formatted.supId !== undefined && formatted.supId !== null) {
@@ -212,7 +203,8 @@ export const temuHandler: PlatformHandler = {
     return [
       "Temu 当前仅使用商品模板配置，登录与类目路径已暂时隐藏",
       "商品模板支持 JSON 和合法 JS 对象字面量，保存后会统一转成标准对象",
-      "SKC 货号使用“素材码-厂家码”，SKU 货号按顺序使用“素材码-供应商商品码”",
+      "SKC 货号优先使用“素材码-厂家码”，厂家码为空时使用素材码",
+      "SKU 货号按顺序优先使用“素材码-供应商商品码”，供应商商品码为空时使用素材码",
       "供应商商品映射会保存编码快照，后续发布不再实时查询供应商商品编码",
       "图片字段建议通过“图片索引绑定”声明，由客户端在发布时按上传结果回填到模板",
       "浏览器自动化侧的页面打开与后续动作暂未接入到这里",

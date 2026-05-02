@@ -442,7 +442,7 @@ function applyTemuVendorSnapshotBeforeSubmit() {
             sort: index + 1,
           };
     })
-    .filter((item: any) => item.code);
+    .filter((item: any) => item.vendorProductId !== undefined || item.code || item.name || item.model);
 }
 
 function normalizePublishConfigData(taskType: string, value: Record<string, any> = {}) {
