@@ -727,8 +727,8 @@
                 >
                   <div class="material-publish-config-dialog__material-preview">
                     <img
-                      v-if="material.url"
-                      :src="getFastPreviewImageUrl(material.url, { width: 220 })"
+                      v-if="getMaterialPreviewSource(material)"
+                      :src="getFastPreviewImageUrl(getMaterialPreviewSource(material), { width: 220 })"
                       :alt="material.name || `素材${material.id}`"
                       :title="material.name || `素材${material.id}`"
                     />
@@ -928,7 +928,7 @@
                     <img
                       :src="
                         getFastPreviewImageUrl(
-                          (dataSource.find((i) => String(i.id) === String(id)) || {}).url,
+                          getMaterialPreviewSource(getMaterialById(id)),
                           { width: 150 },
                         )
                       "
@@ -3507,6 +3507,7 @@ const gridOptions = computed(() => {
 
 const dataSource = ref([]);
 const stickerDetailCache = new Map<string, any>();
+const selectedMaterialCache = reactive<Record<string, any>>({});
 const loading = ref(false);
 const open = ref(false);
 const title = ref("");
@@ -3774,11 +3775,21 @@ const psdSetTaskCount = computed(() =>
     ? selectedPsdTemplateIds.value.length
     : ids.value.length * selectedPsdTemplateIds.value.length,
 );
+function cacheSelectedMaterialRows(rows: any[] = []) {
+  rows.forEach((row) => {
+    if (!row?.id) return;
+    selectedMaterialCache[String(row.id)] = {
+      ...(selectedMaterialCache[String(row.id)] || {}),
+      ...row,
+    };
+  });
+}
+
 const selectedMaterialsForPublishConfig = computed(() =>
   ids.value
     .map(
       (id) =>
-        dataSource.value.find((item) => String(item.id) === String(id)) || {
+        getMaterialById(id) || {
           id,
           name: `素材${id}`,
           url: "",
@@ -3786,6 +3797,11 @@ const selectedMaterialsForPublishConfig = computed(() =>
         },
     )
     .filter(Boolean),
+);
+const materialPublishConfigMissingPreviewIds = computed(() =>
+  selectedMaterialsForPublishConfig.value
+    .filter((material: any) => !getMaterialPreviewSource(material))
+    .map((material: any) => String(material.id)),
 );
 const filteredMaterialPublishConfigs = computed(() => {
   const keyword = materialPublishConfigSearchText.value.trim().toLowerCase();
@@ -4014,6 +4030,7 @@ async function getList() {
   dataSource.value.forEach((item) => {
     setupImageLoadTimeout(item);
   });
+  cacheSelectedMaterialRows(dataSource.value.filter((item) => ids.value.includes(String(item.id))));
 
   // 列表渲染完成后挂载拖拽
   nextTick(setupRowDrag);
@@ -4410,12 +4427,14 @@ function handleDelete(row?) {
 function checkboxChange(e) {
   const records = Array.isArray(e.records) ? e.records : [];
   const reserves = Array.isArray(e.reserves) ? e.reserves : [];
+  cacheSelectedMaterialRows([...records, ...reserves]);
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
 }
 
 function checkboxAllChange(e) {
   const records = Array.isArray(e.records) ? e.records : [];
   const reserves = Array.isArray(e.reserves) ? e.reserves : [];
+  cacheSelectedMaterialRows([...records, ...reserves]);
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
 }
 
@@ -4772,6 +4791,7 @@ async function openMaterialPublishConfigDialog() {
   materialPublishConfigDialogVisible.value = true;
   materialPublishConfigSearchText.value = "";
   materialPublishConfigCurrentPage.value = 1;
+  await ensureSelectedMaterialPreviews();
   await loadPublishConfigsForMaterialPublishDialog();
 }
 
@@ -4785,6 +4805,24 @@ function handleCloseMaterialPublishConfigDialog() {
 function clearMaterialPublishConfigSelection() {
   materialPublishConfigSelectedIds.value = [];
   materialPublishConfigGridRef.value?.clearCheckboxRow?.();
+}
+
+async function ensureSelectedMaterialPreviews() {
+  const missingIds = materialPublishConfigMissingPreviewIds.value;
+  if (!missingIds.length) {
+    return;
+  }
+
+  await Promise.allSettled(
+    missingIds.map(async (id) => {
+      try {
+        const detail = await fetchStickerDetail(id);
+        cacheSelectedMaterialRows([detail]);
+      } catch (error) {
+        console.warn("补全素材预览失败", { id, error });
+      }
+    }),
+  );
 }
 
 function isMaterialPublishConfigUsable(row: any) {
@@ -4871,9 +4909,10 @@ function openTemplateDetail(template: any) {
 
 // 获取素材图片URL
 function getMaterialImageUrl(materialId: string | number): string {
-  const material = dataSource.value.find((item) => String(item.id) === String(materialId));
-  if (!material || !material.url) return "";
-  return getFastPreviewImageUrl(material.url, { width: 200 });
+  const material = getMaterialById(materialId);
+  const source = getMaterialPreviewSource(material);
+  if (!source) return "";
+  return getFastPreviewImageUrl(source, { width: 200 });
 }
 
 // 获取与配置项匹配的素材ID
@@ -5431,7 +5470,7 @@ async function handleCreatePsdSets() {
 
 // 判断素材格式是否无效
 function isMaterialFormatInvalid(materialId: string | number): boolean {
-  const material = dataSource.value.find((item) => String(item.id) === String(materialId));
+  const material = getMaterialById(materialId);
   if (!material) return false;
 
   const materialSuffix = (material.suffix || "").toLowerCase().replace(/^\./, "");
@@ -5449,7 +5488,21 @@ function getMaterialSuffix(materialId: string | number): string {
 }
 
 function getMaterialById(materialId: string | number) {
-  return dataSource.value.find((item) => String(item.id) === String(materialId));
+  const id = String(materialId);
+  return dataSource.value.find((item) => String(item.id) === id) || selectedMaterialCache[id];
+}
+
+function getMaterialPreviewSource(material: any): string {
+  return String(
+    material?.url ||
+      material?.previewUrl ||
+      material?.preview ||
+      material?.thumbnail ||
+      material?.imageUrl ||
+      material?.image ||
+      material?.ossObjectName ||
+      "",
+  ).trim();
 }
 
 // 获取素材的形状标签（长图/宽图/正方图）
