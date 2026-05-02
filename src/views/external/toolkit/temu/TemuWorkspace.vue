@@ -1078,6 +1078,18 @@
                     <small>{{ row.statusSummary }}</small>
                   </div>
                 </template>
+                <template #realPictureUploadMarkSlot="{ row }">
+                  <div class="temu-workspace__submit-status">
+                    <el-tag
+                      size="small"
+                      effect="plain"
+                      :type="row.submitStatus === '已上传' ? 'success' : 'info'"
+                    >
+                      {{ row.submitStatus }}
+                    </el-tag>
+                    <small v-if="row.submitMessage !== '-'">{{ row.submitMessage }}</small>
+                  </div>
+                </template>
                 <template #realPictureOperationSlot="{ row }">
                   <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
                     <el-button
@@ -1294,7 +1306,7 @@
     >
       <div class="temu-workspace__batch-reprice-head">
         <span>已选 {{ realPictureUploadRows.length }} 条</span>
-        <small>按 Temu 官方结构提交一个或多个 position，每个 position 可填写多张 HTTP 图片。</small>
+        <small>填写一组 HTTP 图片，会同时上传到商品主体实拍图和商品外包装实拍图。</small>
       </div>
       <div v-if="realPictureBatchSubmitting" class="temu-workspace__batch-reprice-progress">
         <el-progress
@@ -1314,21 +1326,12 @@
           :key="positionItem.id || index"
           class="temu-workspace__real-picture-position-item"
         >
-          <el-form-item label="位置">
-            <el-input-number
-              v-model="positionItem.position"
-              :min="1"
-              :controls="false"
-              :disabled="realPictureBatchSubmitting"
-              class="temu-workspace__real-picture-position-input"
-            />
-          </el-form-item>
-          <el-form-item label="HTTP 图片地址">
+          <el-form-item :label="index === 0 ? 'HTTP 图片地址' : 'HTTP 图片地址补充'">
             <el-input
               v-model="positionItem.imageUrlsText"
               type="textarea"
               :rows="4"
-              placeholder="每行一个 HTTP 图片地址，会提交到该 position"
+              placeholder="每行一个 HTTP 图片地址，会同时提交到商品主体实拍图和商品外包装实拍图"
               :disabled="realPictureBatchSubmitting"
             />
           </el-form-item>
@@ -1347,7 +1350,7 @@
           :disabled="realPictureBatchSubmitting"
           @click="addRealPicturePositionItem"
         >
-          添加位置
+          添加图片输入框
         </el-button>
       </el-form>
       <template #footer>
@@ -1496,6 +1499,7 @@ import {
   getTemuTaskRunPage,
   markTemuTaskRunJitRow,
   markTemuTaskRunPriceReviewRow,
+  markTemuTaskRunRealPictureRow,
   retryTemuTaskRun,
   type TemuActionResponse,
   type TemuCatalogAction,
@@ -2055,6 +2059,12 @@ const realPicturePreviewGridOptions = ref<VxeGridProps<RealPicturePreviewRow>>({
       field: "ruleSummary",
       minWidth: 280,
       slots: { default: "realPictureRulesSlot" },
+    },
+    {
+      title: "上传标注",
+      field: "submitStatus",
+      minWidth: 180,
+      slots: { default: "realPictureUploadMarkSlot" },
     },
     {
       title: "商品名称",
@@ -2895,6 +2905,7 @@ const buildRealPicturePreviewRows = (
 
   const result = asPlainObject(response?.result);
   const items = Array.isArray(result.items) ? result.items : [];
+  const persistedMarks = asPlainObject((response as any)?.__realPictureUploadMarks || result.__realPictureUploadMarks);
   return items.map((item: any, index: number) => {
     const skuInfo = Array.isArray(item?.skuInfo)
       ? item.skuInfo
@@ -2932,7 +2943,8 @@ const buildRealPicturePreviewRows = (
       .slice(0, 4)
       .join(" / ");
     const rowKey = firstDisplayValue(item?.spuId, item?.spu_id, index);
-    const mark = realPictureSubmitMarks[rowKey] as RealPictureSubmitMark | undefined;
+    const persistedMark = asPlainObject(item?.realPictureUploadMark || persistedMarks[rowKey]);
+    const mark = (realPictureSubmitMarks[rowKey] || persistedMark) as RealPictureSubmitMark | undefined;
     const rawSkuIdList = toNumberList(
       skuInfo.map((sku: any) => firstDisplayValue(sku?.skuId, sku?.sku_id)),
     );
@@ -2958,8 +2970,10 @@ const buildRealPicturePreviewRows = (
       ruleSummary: toDisplayText(ruleSummary),
       statusSummary: `标签图 ${labelImageList.length} / 规则 ${ruleList.length}`,
       productName: toDisplayText(item?.productName || item?.product_name || item?.goodsName || item?.goods_name),
-      submitStatus: mark ? (mark.status === "success" ? "成功" : "失败") : "-",
-      submitMessage: mark?.message || "-",
+      submitStatus: mark?.status === "success" ? "已上传" : "未知",
+      submitMessage: mark?.status === "success"
+        ? `${mark.message || "上传成功"}${mark.time ? ` ${mark.time}` : ""}`
+        : "-",
       platformStatusText: uploadStatus.text,
       platformStatusTone: uploadStatus.tone,
       editStatusText,
@@ -4950,15 +4964,16 @@ const removeRealPicturePositionItem = (index: number) => {
 
 const buildRealPicturePositionImageUrlsFromForm = () => {
   ensureRealPicturePositionItems();
-  return realPictureUploadForm.value.positionItems.reduce((result: Record<string, string[]>, item: any) => {
-    const position = String(Number(item.position || 0) || "").trim();
-    const imageUrls = Array.from(new Set(parseImageUrlText(item.imageUrlsText)));
-    if (!position || !imageUrls.length) {
-      return result;
-    }
-    result[position] = Array.from(new Set([...(result[position] || []), ...imageUrls]));
-    return result;
-  }, {});
+  const allImageUrls = Array.from(new Set(
+    realPictureUploadForm.value.positionItems.flatMap((item: any) => parseImageUrlText(item.imageUrlsText)),
+  ));
+  if (!allImageUrls.length) {
+    return {};
+  }
+  return {
+    1: allImageUrls,
+    2: allImageUrls,
+  };
 };
 
 const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
@@ -4981,6 +4996,25 @@ const submitRealPictureRowWithoutConfirm = async (
   options: { showToast?: boolean; uploadedPositionImageUrls?: Record<string, string[]> } = {},
 ) => {
   realPictureSubmittingKey.value = row.rowKey;
+  const persistRealPictureMark = async (mark: RealPictureSubmitMark) => {
+    const runId = Number(activeTaskRunDetail.value?.id || 0);
+    if (!runId) {
+      return;
+    }
+    try {
+      activeTaskRunDetail.value = await markTemuTaskRunRealPictureRow({
+        id: runId,
+        rowKey: row.rowKey,
+        status: mark.status,
+        message: mark.message,
+        spuId: row.rawSpuId,
+        goodsId: row.rawGoodsId,
+      });
+      syncTaskRunResultToWorkspace(activeTaskRunDetail.value);
+    } catch (error) {
+      console.warn("持久化实拍图上传标注失败", error);
+    }
+  };
   try {
     const response = await runTemuClientAction(
       "goods.real-picture.submit",
@@ -4993,6 +5027,7 @@ const submitRealPictureRowWithoutConfirm = async (
       time: formatDateTime(new Date()),
     };
     realPictureSubmitMarks[row.rowKey] = nextMark;
+    await persistRealPictureMark(nextMark);
     if (options.showToast) {
       response?.success ? ElMessage.success("实拍图上传成功") : ElMessage.error(nextMark.message);
     }
@@ -5007,6 +5042,7 @@ const submitRealPictureRowWithoutConfirm = async (
       time: formatDateTime(new Date()),
     };
     realPictureSubmitMarks[row.rowKey] = nextMark;
+    await persistRealPictureMark(nextMark);
     if (options.showToast) {
       ElMessage.error(nextMark.message);
     }

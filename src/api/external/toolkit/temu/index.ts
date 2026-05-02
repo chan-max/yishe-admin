@@ -201,3 +201,17 @@ export const markTemuTaskRunJitRow = (data: {
     data,
   });
 };
+
+export const markTemuTaskRunRealPictureRow = (data: {
+  id: number | string;
+  rowKey: string;
+  status: "success" | "failed";
+  message?: string;
+  spuId?: number;
+  goodsId?: number;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/real-picture-mark",
+    data,
+  });
+};
