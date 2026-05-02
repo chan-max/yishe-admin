@@ -655,6 +655,14 @@ const loadingMap = reactive<Record<string, boolean>>({
   switchProfile: false,
 });
 const pending = reactive<Record<string, string>>({});
+// 按环境锁住打开窗口命令，避免同一 profile 连续点击时拉起多个 Chrome。
+const pendingConnectProfileIds = reactive<Record<string, boolean>>({});
+type PendingCommandMeta = {
+  action: string;
+  profileId?: string;
+  timer?: number;
+};
+const pendingCommandMeta = reactive<Record<string, PendingCommandMeta>>({});
 
 const browserForm = reactive({ port: 9222, headless: false, profileId: "" });
 const openForm = reactive({ url: "" });
@@ -1326,29 +1334,64 @@ const finish = (action?: string) => {
   if (action && action in loadingMap) loadingMap[action] = false;
 };
 
+const clearPendingCommand = (commandId: string) => {
+  const meta = pendingCommandMeta[commandId];
+  if (meta?.timer) {
+    window.clearTimeout(meta.timer);
+  }
+  if (meta?.profileId) {
+    delete pendingConnectProfileIds[meta.profileId];
+  }
+  delete pendingCommandMeta[commandId];
+  delete pending[commandId];
+};
+
 const dispatch = async (
   action: string,
   requestor: () => Promise<BrowserAutomationCommandResponse>,
   okText: string,
+  options: { profileId?: string; timeoutMs?: number } = {},
 ) => {
   if (loadingMap[action]) return;
   loadingMap[action] = true;
+  if (options.profileId) {
+    pendingConnectProfileIds[options.profileId] = true;
+  }
   try {
     const response = await requestor();
     if (!response?.success) {
       finish(action);
+      if (options.profileId) {
+        delete pendingConnectProfileIds[options.profileId];
+      }
       ElMessage.error(response?.message || "命令发送失败");
       return;
     }
     const commandId = response.data?.commandId;
     if (!commandId) {
       finish(action);
+      if (options.profileId) {
+        delete pendingConnectProfileIds[options.profileId];
+      }
       return;
     }
     pending[commandId] = action;
+    pendingCommandMeta[commandId] = {
+      action,
+      profileId: options.profileId,
+      // 服务端事件偶发丢失时释放本地锁，避免按钮长期停在“连接中”。
+      timer: window.setTimeout(() => {
+        finish(action);
+        clearPendingCommand(commandId);
+        void loadClients();
+      }, options.timeoutMs || 90000),
+    };
     ElMessage.success(okText);
   } catch (error: any) {
     finish(action);
+    if (options.profileId) {
+      delete pendingConnectProfileIds[options.profileId];
+    }
     ElMessage.error(error?.message || "命令发送失败");
   }
 };
@@ -1391,6 +1434,11 @@ const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
 const sendConnect = async (profileId?: string | null) => {
   if (!selectedClientId.value) return;
   const normalizedProfileId = String(profileId || browserForm.profileId || "").trim();
+  const connectKey = normalizedProfileId || "__default__";
+  if (pendingConnectProfileIds[connectKey]) {
+    ElMessage.info("该环境正在打开窗口，请稍后");
+    return;
+  }
   const resolvedPort = resolveProfilePort(normalizedProfileId, browserForm.port);
   if (normalizedProfileId) {
     browserForm.profileId = normalizedProfileId;
@@ -1407,6 +1455,10 @@ const sendConnect = async (profileId?: string | null) => {
         ...(normalizedProfileId ? { profileId: normalizedProfileId } : {}),
       }),
     "连接命令已发送",
+    {
+      profileId: connectKey,
+      timeoutMs: 150000,
+    },
   );
 };
 const sendCloseProfile = async (profileId?: string | null) => {
@@ -1494,7 +1546,7 @@ const onCommand = async (event: ServiceCommandResultEvent) => {
   if (!action) {
     return;
   }
-  delete pending[event.commandId];
+  clearPendingCommand(event.commandId);
   finish(action);
   const data = event.data || {};
   const feedback = buildDebugFeedback(event, action);
