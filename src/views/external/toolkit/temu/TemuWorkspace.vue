@@ -7449,8 +7449,8 @@ onBeforeUnmount(() => {
 
 .temu-workspace__floating-progress {
   position: fixed;
-  top: 72px;
   right: 24px;
+  bottom: 24px;
   z-index: 2200;
   display: flex;
   flex-direction: column;
@@ -7466,10 +7466,36 @@ onBeforeUnmount(() => {
 }
 
 .temu-workspace__floating-progress.is-collapsed {
-  width: min(300px, calc(100vw - 32px));
+  width: min(210px, calc(100vw - 32px));
   max-height: none;
   overflow: hidden;
-  padding: 8px 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-head {
+  gap: 6px;
+}
+
+.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-head strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-actions {
+  gap: 4px;
+}
+
+.temu-workspace__floating-progress.is-collapsed .temu-workspace__floating-progress-actions span {
+  display: none;
+}
+
+.temu-workspace__floating-progress.is-collapsed .el-button {
+  height: 22px;
+  padding: 0 4px;
+  font-size: 12px;
 }
 
 .temu-workspace__floating-progress-head,
