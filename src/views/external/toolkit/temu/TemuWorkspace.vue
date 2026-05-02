@@ -1,5 +1,26 @@
 <template>
   <section class="temu-workspace">
+    <div v-if="priceReviewBatchSubmitting" class="temu-workspace__floating-progress">
+      <div class="temu-workspace__floating-progress-head">
+        <strong>{{ priceReviewBatchActionText }}</strong>
+        <span>{{ priceReviewBatchProgressText }}</span>
+      </div>
+      <el-progress
+        :percentage="priceReviewBatchProgressPercent"
+        :stroke-width="8"
+        :show-text="false"
+      />
+      <div class="temu-workspace__floating-progress-meta">
+        <span v-if="priceReviewBatchCurrentRowText">{{ priceReviewBatchCurrentRowText }}</span>
+        <span v-if="priceReviewBatchCurrentStage">{{ priceReviewBatchCurrentStage }}</span>
+      </div>
+      <div class="temu-workspace__price-review-batch-stats">
+        <el-tag size="small" effect="plain" type="success">成功 {{ priceReviewBatchSuccessCount }}</el-tag>
+        <el-tag size="small" effect="plain" type="danger">失败 {{ priceReviewBatchFailedCount }}</el-tag>
+        <el-tag size="small" effect="plain" type="warning">剩余 {{ priceReviewBatchRemainingCount }}</el-tag>
+      </div>
+    </div>
+
     <section class="temu-workspace__action-shell">
       <div class="temu-workspace__toolbar">
         <div class="temu-workspace__toolbar-main">
@@ -1739,6 +1760,8 @@ const priceReviewAmountFilterMin = ref<number | undefined>();
 const priceReviewAmountFilterMax = ref<number | undefined>();
 const priceReviewBatchSubmitting = ref(false);
 const priceReviewBatchSubmittingMode = ref<"" | "confirm" | "abandon" | "reprice">("");
+const priceReviewBatchCurrentStage = ref("");
+const priceReviewBatchCurrentRowText = ref("");
 const priceReviewBatchFinishedCount = ref(0);
 const priceReviewBatchTotalCount = ref(0);
 const priceReviewBatchSuccessCount = ref(0);
@@ -3793,6 +3816,23 @@ const priceReviewBatchProgressPercent = computed(() => {
   return Math.min(100, Math.round((priceReviewBatchFinishedCount.value / priceReviewBatchTotalCount.value) * 100));
 });
 const priceReviewBatchRepriceProgressPercent = priceReviewBatchProgressPercent;
+const resetPriceReviewBatchProgress = (
+  mode: "confirm" | "abandon" | "reprice",
+  total: number,
+) => {
+  priceReviewBatchSubmitting.value = true;
+  priceReviewBatchSubmittingMode.value = mode;
+  priceReviewBatchCurrentStage.value = "";
+  priceReviewBatchCurrentRowText.value = "";
+  priceReviewBatchFinishedCount.value = 0;
+  priceReviewBatchTotalCount.value = total;
+  priceReviewBatchSuccessCount.value = 0;
+  priceReviewBatchFailedCount.value = 0;
+};
+const setPriceReviewBatchCurrent = (stage: string, row?: PriceReviewPreviewRow | null) => {
+  priceReviewBatchCurrentStage.value = stage;
+  priceReviewBatchCurrentRowText.value = row ? `SKU ${row.skuId} / SPU ${row.spuId}` : "";
+};
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
@@ -5537,32 +5577,33 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
     return;
   }
 
-  priceReviewBatchSubmitting.value = true;
-  priceReviewBatchSubmittingMode.value = mode;
-  priceReviewBatchFinishedCount.value = 0;
-  priceReviewBatchTotalCount.value = rows.length;
-  priceReviewBatchSuccessCount.value = 0;
-  priceReviewBatchFailedCount.value = 0;
+  resetPriceReviewBatchProgress(mode, rows.length);
   let successCount = 0;
 
-  for (const row of rows) {
-    const success = await submitPriceReviewRowWithoutConfirm(row, mode);
-    if (success) {
-      successCount += 1;
-      priceReviewBatchSuccessCount.value += 1;
-    } else {
-      priceReviewBatchFailedCount.value += 1;
+  try {
+    for (const row of rows) {
+      setPriceReviewBatchCurrent("提交核价中", row);
+      const success = await submitPriceReviewRowWithoutConfirm(row, mode);
+      if (success) {
+        successCount += 1;
+        priceReviewBatchSuccessCount.value += 1;
+      } else {
+        priceReviewBatchFailedCount.value += 1;
+      }
+      priceReviewBatchFinishedCount.value += 1;
     }
-    priceReviewBatchFinishedCount.value += 1;
-  }
 
-  priceReviewBatchSubmitting.value = false;
-  priceReviewBatchSubmittingMode.value = "";
-  selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
-    const mark = priceReviewSubmitMarks[rowKey];
-    return !(mark?.status === "success" && mark.markInvalid);
-  });
-  ElMessage.success(`${actionText}完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+    selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
+      const mark = priceReviewSubmitMarks[rowKey];
+      return !(mark?.status === "success" && mark.markInvalid);
+    });
+    ElMessage.success(`${actionText}完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+  } finally {
+    priceReviewBatchCurrentStage.value = "";
+    priceReviewBatchCurrentRowText.value = "";
+    priceReviewBatchSubmitting.value = false;
+    priceReviewBatchSubmittingMode.value = "";
+  }
 };
 
 const confirmBatchRepriceRows = async () => {
@@ -5582,35 +5623,36 @@ const confirmBatchRepriceRows = async () => {
     priceMap.set(row.rowKey, priceCent);
   }
 
-  priceReviewBatchSubmitting.value = true;
-  priceReviewBatchSubmittingMode.value = "reprice";
-  priceReviewBatchFinishedCount.value = 0;
-  priceReviewBatchTotalCount.value = rows.length;
-  priceReviewBatchSuccessCount.value = 0;
-  priceReviewBatchFailedCount.value = 0;
+  resetPriceReviewBatchProgress("reprice", rows.length);
+  priceReviewBatchRepriceVisible.value = false;
   let successCount = 0;
 
-  for (const row of rows) {
-    const success = await submitPriceReviewRowWithoutConfirm(row, "reprice", {
-      overridePrice: priceMap.get(row.rowKey),
-    });
-    if (success) {
-      successCount += 1;
-      priceReviewBatchSuccessCount.value += 1;
-    } else {
-      priceReviewBatchFailedCount.value += 1;
+  try {
+    for (const row of rows) {
+      setPriceReviewBatchCurrent("重新报价中", row);
+      const success = await submitPriceReviewRowWithoutConfirm(row, "reprice", {
+        overridePrice: priceMap.get(row.rowKey),
+      });
+      if (success) {
+        successCount += 1;
+        priceReviewBatchSuccessCount.value += 1;
+      } else {
+        priceReviewBatchFailedCount.value += 1;
+      }
+      priceReviewBatchFinishedCount.value += 1;
     }
-    priceReviewBatchFinishedCount.value += 1;
-  }
 
-  priceReviewBatchSubmitting.value = false;
-  priceReviewBatchSubmittingMode.value = "";
-  priceReviewBatchRepriceVisible.value = false;
-  selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
-    const mark = priceReviewSubmitMarks[rowKey];
-    return !(mark?.status === "success" && mark.markInvalid);
-  });
-  ElMessage.success(`批量重新报价完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+    selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
+      const mark = priceReviewSubmitMarks[rowKey];
+      return !(mark?.status === "success" && mark.markInvalid);
+    });
+    ElMessage.success(`批量重新报价完成：成功 ${successCount} 条，失败 ${rows.length - successCount} 条`);
+  } finally {
+    priceReviewBatchCurrentStage.value = "";
+    priceReviewBatchCurrentRowText.value = "";
+    priceReviewBatchSubmitting.value = false;
+    priceReviewBatchSubmittingMode.value = "";
+  }
 };
 
 const onTaskRunSelectionChange = ({ records }: { records: TemuTaskRunSummary[] }) => {
@@ -7138,6 +7180,45 @@ onBeforeUnmount(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.temu-workspace__floating-progress {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 2200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(380px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+}
+
+.temu-workspace__floating-progress-head,
+.temu-workspace__floating-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.temu-workspace__floating-progress-head strong {
+  color: var(--el-text-color-primary);
+  font-size: 13px;
+}
+
+.temu-workspace__floating-progress-head span,
+.temu-workspace__floating-progress-meta span {
+  overflow: hidden;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .temu-workspace__batch-reprice-head {
