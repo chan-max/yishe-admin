@@ -1491,6 +1491,13 @@ function clearPsdSetRuntimeOverlay(psdSetId: unknown) {
   psdSetRuntimeOverlayMap.value = nextMap;
 }
 
+function clearAllPsdSetRuntimeOverlays() {
+  if (!Object.keys(psdSetRuntimeOverlayMap.value).length) {
+    return;
+  }
+  psdSetRuntimeOverlayMap.value = {};
+}
+
 function mergePsdSetRuntimeOverlay(record: any) {
   const overlay = getPsdSetRuntimeOverlay(record?.id);
   if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalOrManualStatus(record?.status)) {
@@ -3201,6 +3208,14 @@ watch(
       .join("|"),
   (fingerprint) => {
     if (!fingerprint) {
+      clearAllPsdSetRuntimeOverlays();
+      stopPsdSetActiveRuntimeRefresh();
+      if (psdSetRuntimeReloadTimer) {
+        clearTimeout(psdSetRuntimeReloadTimer);
+        psdSetRuntimeReloadTimer = null;
+      }
+      void getList(true);
+      void loadPsdSetSchedulerRuntime();
       return;
     }
 
