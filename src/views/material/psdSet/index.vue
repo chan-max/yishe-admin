@@ -40,6 +40,16 @@
                     value-format="YYYY-MM-DD HH:mm:ss" :shortcuts="dateShortcuts" @change="handleDateRangeChange" />
                 </el-form-item>
               </el-col>
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6">
+                <el-form-item label="查重配置">
+                  <el-select v-model="queryParams.publishUsageConfigId" size="small" placeholder="选择后标记已用图片"
+                    clearable filterable multiple collapse-tags collapse-tags-tooltip
+                    @change="handlePublishUsageViewChange">
+                    <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
+                      :label="formatPublishUsageConfigLabel(item)" :value="item.id" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
             </el-row>
             <div class="list-page-search-form__actions psd-set-page__actions">
               <el-button size="small" type="primary" :icon="Search" :loading="loading"
@@ -103,8 +113,9 @@
         <div
           class="common-table list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
           <div class="list-page-table-panel__body psd-set-page__table-body">
-            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading" @checkbox-change="onSelectionChange"
-              @checkbox-all="onSelectionChange" @scroll="handleGridScroll">
+            <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading"
+              :row-class-name="psdSetRowClassName" @checkbox-change="onSelectionChange"
+              @checkbox-all="onSelectionChange" @cell-click="handlePsdSetCellClick" @scroll="handleGridScroll">
               <template #idSlot="{ row }">
                 <div class="table-cell-copyable" @click="copyId(row.id)">
                   <span class="table-cell-id">{{ row.id }}</span>
@@ -200,6 +211,9 @@
                       </div>
                       <div class="op-menu-item" @click="() => handleViewPublishTasks(row)">
                         <span class="op-menu-label">查看发布任务</span>
+                      </div>
+                      <div class="op-menu-item" @click="() => handleViewPublishUsageRecords(row)">
+                        <span class="op-menu-label">查看使用记录</span>
                       </div>
 
                       <div class="op-divider"></div>
@@ -784,6 +798,29 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="publishUsageDialogVisible" title="图片使用记录" width="920px" :destroy-on-close="true">
+      <div v-loading="publishUsageLoading" class="publish-usage-dialog">
+        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无使用记录" />
+        <vxe-grid v-else v-bind="publishUsageGridOptions" :data="publishUsageRecords">
+          <template #usageImageSlot="{ row }">
+            <el-image v-if="row.imageUrl" :src="row.imageUrl" fit="cover" class="publish-usage-image"
+              :preview-src-list="[row.imageUrl]" :preview-teleported="true" />
+          </template>
+          <template #usageConfigSlot="{ row }">
+            <div class="publish-usage-config-cell">
+              <span>{{ row.publishConfig?.name || row.publishConfigId || "-" }}</span>
+              <el-tag size="small" effect="plain">{{ formatPlatformName(row.publishConfig?.platform) }}</el-tag>
+            </div>
+          </template>
+          <template #usageStatusSlot="{ row }">
+            <el-tag :type="getPublishUsageStatusTag(row.status)" size="small">
+              {{ getPublishUsageStatusLabel(row.status) }}
+            </el-tag>
+          </template>
+        </vxe-grid>
+      </div>
+    </el-dialog>
+
     <el-image-viewer v-if="tableImageViewerVisible" :url-list="tableImageViewerUrls"
       :initial-index="tableImageViewerIndex" :hide-on-click-modal="false" teleported
       @switch="handleTableImageViewerSwitch" @close="handleTableImageViewerClose" />
@@ -878,6 +915,10 @@ const publishTasksVisible = ref(false);
 const publishTasksLoading = ref(false);
 const publishTasks = ref<any[]>([]);
 const currentPublishTasksPsdSetId = ref<string>("");
+const publishUsageConfigOptions = ref<any[]>([]);
+const publishUsageDialogVisible = ref(false);
+const publishUsageLoading = ref(false);
+const publishUsageRecords = ref<any[]>([]);
 let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 客户端连接状态（参考 header 中的状态检测方式）
@@ -932,6 +973,34 @@ function formatPlatformName(platform?: string) {
 
 function formatTaskTypeName(taskType?: string, platform?: string) {
   return getTaskTypeLabel(taskType || derivePublishTaskTypeByPlatform(platform), platform);
+}
+
+function formatPublishUsageConfigLabel(config: any) {
+  const name = String(config?.name || "").trim();
+  const platform = formatPlatformName(config?.platform);
+  return name ? `${name} / ${platform}` : platform;
+}
+
+function getPublishUsageStatusLabel(status?: string) {
+  const map: Record<string, string> = {
+    pending: "发布中",
+    success: "已使用",
+    failed: "失败",
+    expired: "已过期",
+    deleted: "已释放",
+  };
+  return map[String(status || "")] || String(status || "-");
+}
+
+function getPublishUsageStatusTag(status?: string) {
+  const map: Record<string, "info" | "warning" | "success" | "danger"> = {
+    pending: "warning",
+    success: "success",
+    failed: "danger",
+    expired: "info",
+    deleted: "info",
+  };
+  return map[String(status || "")] || "info";
 }
 
 function getPublishTaskStatusLabel(status?: string) {
@@ -1049,6 +1118,31 @@ const publishTasksGridOptions = computed(() => ({
   ],
 }));
 
+const publishUsageGridOptions = computed(() => ({
+  ...commonGridOptions,
+  maxHeight: Math.max(height.value - 260, 360),
+  rowConfig: { isHover: true, keyField: "id" },
+  columnConfig: { resizable: true },
+  columns: [
+    { field: "imageUrl", title: "图片", width: 96, slots: { default: "usageImageSlot" } },
+    { field: "publishConfigId", title: "发布配置", minWidth: 220, slots: { default: "usageConfigSlot" } },
+    { field: "status", title: "状态", width: 110, slots: { default: "usageStatusSlot" } },
+    { field: "taskId", title: "任务ID", minWidth: 220, showOverflow: true },
+    {
+      field: "createTime",
+      title: "创建时间",
+      width: 170,
+      formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
+    },
+    {
+      field: "updateTime",
+      title: "更新时间",
+      width: 170,
+      formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
+    },
+  ],
+}));
+
 const publishTaskStatusCount = computed(() => {
   const summary = {
     completed: 0,
@@ -1079,6 +1173,7 @@ const queryParams = reactive({
   sortingFields: defaultSortingValue(),
   startTime: "",
   endTime: "",
+  publishUsageConfigId: [] as string[],
 });
 
 const dateRange = ref<[string, string] | null>(null);
@@ -1727,7 +1822,6 @@ const detailSchedulerMetaFormatted = computed(() => {
 function getColumns() {
   const baseColumns = [
     { type: "checkbox", width: 50, fixed: "left" as const },
-
     { title: "套图图片", field: "images", width: 200, slots: { default: "imagesSlot" } },
     { title: "套图名称", field: "name", minWidth: 180 },
     { title: "多素材关联", field: "stickers", width: 120, slots: { default: "stickersCountSlot" } },
@@ -1792,6 +1886,25 @@ const gridOptions = ref<any>({
   columns: getColumns(),
 });
 
+function psdSetRowClassName({ row }: any) {
+  if (row?.publishUsage?.occupied === true) {
+    return "is-publish-usage-occupied has-publish-usage-badge";
+  }
+  if (row?.publishUsage?.occupied === false) {
+    return "is-publish-usage-available has-publish-usage-badge";
+  }
+  return "";
+}
+
+function handlePsdSetCellClick({ row, column }: any) {
+  if (!row?.publishUsage) {
+    return;
+  }
+  if (String(column?.type || "") === "checkbox" || String(column?.field || "") === "checkbox") {
+    void handleViewPublishUsageRecords(row);
+  }
+}
+
 const { height } = useWindowSize();
 
 watchEffect(() => {
@@ -1812,6 +1925,9 @@ async function getList(silent = false) {
       sortingFields: queryParams.sortingFields,
       startTime: queryParams.startTime || undefined,
       endTime: queryParams.endTime || undefined,
+      publishUsageConfigId: queryParams.publishUsageConfigId.length
+        ? queryParams.publishUsageConfigId
+        : undefined,
     });
     dataSource.value = Array.isArray(res.list)
       ? res.list.map((item) => mergePsdSetRuntimeOverlay(normalizePsdSetRecord(item)))
@@ -1855,6 +1971,11 @@ function getPreviewImageList(row: any): string[] {
   return Array.isArray(row?.images)
     ? row.images.filter((url: any) => typeof url === "string" && url.trim())
     : [];
+}
+
+function handlePublishUsageViewChange() {
+  queryParams.currentPage = 1;
+  getList();
 }
 
 function getPreviewImageKey(row: any) {
@@ -2883,6 +3004,43 @@ async function handleViewPublishTasks(row: any) {
   }
 }
 
+async function handleViewPublishUsageRecords(row: any) {
+  if (!row?.id) {
+    return ElMessage.warning("缺少ID，无法查看使用记录");
+  }
+  publishUsageDialogVisible.value = true;
+  publishUsageLoading.value = true;
+  publishUsageRecords.value = [];
+  try {
+    const res = await stickerPsdSetApi.getPublishUsageRecords({ psdSetId: row.id });
+    publishUsageRecords.value = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+        ? (res as any).data
+        : [];
+  } catch (error: any) {
+    console.error("获取使用记录失败:", error);
+    ElMessage.error(error?.message || "获取使用记录失败");
+    publishUsageDialogVisible.value = false;
+  } finally {
+    publishUsageLoading.value = false;
+  }
+}
+
+async function loadPublishUsageConfigOptions() {
+  try {
+    const res = await stickerPsdSetApi.getPublishUsageConfigOptions();
+    publishUsageConfigOptions.value = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+        ? (res as any).data
+        : [];
+  } catch (error) {
+    console.error("获取查重配置选项失败:", error);
+    publishUsageConfigOptions.value = [];
+  }
+}
+
 async function reloadCurrentPublishTasks() {
   if (!currentPublishTasksPsdSetId.value) {
     return;
@@ -3236,7 +3394,11 @@ watch(
 onMounted(() => {
   websocketClient.events.on("production-status", productionStatusHandler);
   websocketClient.events.on("psAutomationStatus", psAutomationStatusHandler);
-  void Promise.all([refreshUserAutoSchedulingSetting(), loadPsdSetSchedulerRuntime()]);
+  void Promise.all([
+    refreshUserAutoSchedulingSetting(),
+    loadPsdSetSchedulerRuntime(),
+    loadPublishUsageConfigOptions(),
+  ]);
   psdSetSchedulerRuntimeTimer = setInterval(() => {
     void loadPsdSetSchedulerRuntime();
   }, 10000);
@@ -3418,6 +3580,54 @@ getList();
 
 .psd-set-page :deep(.list-page-table-panel__pagination--flat) {
   padding-top: 10px;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.is-publish-usage-occupied .vxe-body--column) {
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.is-publish-usage-available .vxe-body--column) {
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.is-publish-usage-occupied:hover .vxe-body--column) {
+  background: rgba(245, 158, 11, 0.16) !important;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.is-publish-usage-available:hover .vxe-body--column) {
+  background: rgba(34, 197, 94, 0.13) !important;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child) {
+  position: relative;
+  cursor: pointer;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child::before) {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  z-index: 4;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.is-publish-usage-occupied .vxe-body--column:first-child::before) {
+  content: "已用";
+  background: rgba(217, 119, 6, 0.94);
+}
+
+.psd-set-page :deep(.vxe-table--body tbody tr.is-publish-usage-available .vxe-body--column:first-child::before) {
+  content: "未用";
+  background: rgba(22, 163, 74, 0.94);
 }
 
 .status-message {
@@ -4408,6 +4618,21 @@ getList();
   justify-content: flex-end;
   gap: 8px;
   width: 100%;
+}
+
+.publish-usage-image {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-light);
+}
+
+.publish-usage-config-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 @media (max-width: 768px) {

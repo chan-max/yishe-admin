@@ -21,6 +21,10 @@ export interface ActivePsdSetSummaryResponse {
 
 export const stickerPsdSetApi = {
   page: (data: any) => request.post({ url: "/sticker-psd-set/page", data }),
+  getPublishUsageRecords: (params: { psdSetId?: string; stickerId?: string; imageUrl?: string; publishConfigId?: string }) =>
+    request.get({ url: "/pod-publish-image-binding/records", params }),
+  getPublishUsageConfigOptions: () =>
+    request.get({ url: "/pod-publish-image-binding/publish-config-options" }),
   getActiveSummary: () =>
     request.get<ActivePsdSetSummaryResponse>({ url: "/sticker-psd-set/runtime/active-summary" }),
   create: (data: any) => request.post({ url: "/sticker-psd-set", data }),

@@ -396,6 +396,35 @@
                   </div>
                 </el-form-item>
               </el-col>
+              <el-col
+                class="list-page-search-form__col--wide"
+                :xs="24"
+                :sm="12"
+                :md="12"
+                :lg="6"
+                :xl="6"
+              >
+                <el-form-item label="查重配置">
+                  <el-select
+                    v-model="queryParams.publishUsageConfigId"
+                    size="small"
+                    placeholder="选择后标记已用图片"
+                    clearable
+                    filterable
+                    multiple
+                    collapse-tags
+                    collapse-tags-tooltip
+                    @change="handlePublishUsageViewChange"
+                  >
+                    <el-option
+                      v-for="item in publishUsageConfigOptions"
+                      :key="item.id"
+                      :label="formatPublishUsageConfigLabel(item)"
+                      :value="item.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
             </el-row>
             <div class="list-page-search-form__actions material-index-search-form__actions">
               <el-button
@@ -620,6 +649,24 @@
                 <el-option label="svg" value="svg" />
                 <el-option label="bmp" value="bmp" />
                 <el-option label="tiff" value="tiff" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="查重配置">
+              <el-select
+                v-model="queryParams.publishUsageConfigId"
+                placeholder="选择后标记已用图片"
+                clearable
+                filterable
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+              >
+                <el-option
+                  v-for="item in publishUsageConfigOptions"
+                  :key="item.id"
+                  :label="formatPublishUsageConfigLabel(item)"
+                  :value="item.id"
+                />
               </el-select>
             </el-form-item>
             <el-form-item label="随机顺序">
@@ -1619,6 +1666,7 @@
                 :data="dataSource"
                 :loading="loading"
                 :row-class-name="materialRowClassName"
+                @cell-click="handleMaterialCellClick"
                 @checkbox-change="checkboxChange"
                 @checkbox-all="checkboxAllChange"
               >
@@ -2098,6 +2146,12 @@
                                 @click="() => handleOperationCommand('find-similar', row)"
                               >
                                 找相似图
+                              </div>
+                              <div
+                                class="op-submenu-item"
+                                @click="() => handleOperationCommand('view-publish-usage', row)"
+                              >
+                                查看发布绑定
                               </div>
                               <div
                                 v-if="isAdmin && (row.suffix || '').toLowerCase() === 'png'"
@@ -3069,6 +3123,35 @@
       :image-url="currentImageUrl"
       @close="closeImagePreview"
     />
+
+    <el-dialog v-model="publishUsageDialogVisible" title="图片发布绑定" width="920px" :destroy-on-close="true">
+      <div v-loading="publishUsageLoading" class="publish-usage-dialog">
+        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无发布绑定" />
+        <vxe-grid v-else v-bind="publishUsageGridOptions" :data="publishUsageRecords">
+          <template #usageImageSlot="{ row }">
+            <el-image
+              v-if="row.imageUrl"
+              :src="row.imageUrl"
+              fit="cover"
+              class="publish-usage-image"
+              :preview-src-list="[row.imageUrl]"
+              :preview-teleported="true"
+            />
+          </template>
+          <template #usageConfigSlot="{ row }">
+            <div class="publish-usage-config-cell">
+              <span>{{ row.publishConfig?.name || row.publishConfigId || "-" }}</span>
+              <el-tag size="small" effect="plain">{{ formatPlatformName(row.publishConfig?.platform) }}</el-tag>
+            </div>
+          </template>
+          <template #usageStatusSlot="{ row }">
+            <el-tag :type="getPublishUsageStatusTag(row.status)" size="small">
+              {{ getPublishUsageStatusLabel(row.status) }}
+            </el-tag>
+          </template>
+        </vxe-grid>
+      </div>
+    </el-dialog>
   </ContentWrap>
 </template>
 
@@ -3356,7 +3439,132 @@ const queryParams = reactive({
   sizeShape: [] as string[], // 尺寸形状：landscape(横图) | portrait(竖图) | square(正方图) | ultra-wide | wide | slightly-wide | slightly-long | long | ultra-long（支持多选）
   random: false, // 是否随机
   folderId: FOLDER_FILTER.ALL as string | null | undefined, // 文件夹ID
+  publishUsageConfigId: [] as string[],
 });
+
+const publishUsageConfigOptions = ref<any[]>([]);
+const publishUsageDialogVisible = ref(false);
+const publishUsageLoading = ref(false);
+const publishUsageRecords = ref<any[]>([]);
+
+const publishPlatformNameMap: Record<string, string> = {
+  douyin: "抖音",
+  kuaishou: "快手",
+  xiaohongshu: "小红书",
+  weibo: "微博",
+  doudian: "抖店",
+  kuaishou_shop: "快手小店",
+  xianyu: "闲鱼",
+  bilibili: "Bilibili",
+  tiktok: "TikTok",
+  youtube: "YouTube",
+  temu: "Temu",
+  taobao: "淘宝",
+};
+
+function formatPlatformName(platform?: string) {
+  return publishPlatformNameMap[String(platform || "")] || String(platform || "-");
+}
+
+function formatPublishUsageConfigLabel(config: any) {
+  const name = String(config?.name || "").trim();
+  const platform = formatPlatformName(config?.platform);
+  return name ? `${name} / ${platform}` : platform;
+}
+
+function getPublishUsageStatusLabel(status?: string) {
+  const map: Record<string, string> = {
+    pending: "发布中",
+    success: "已使用",
+    failed: "失败",
+    expired: "已过期",
+    deleted: "已释放",
+  };
+  return map[String(status || "")] || String(status || "-");
+}
+
+function getPublishUsageStatusTag(status?: string) {
+  const map: Record<string, "info" | "warning" | "success" | "danger"> = {
+    pending: "warning",
+    success: "success",
+    failed: "danger",
+    expired: "info",
+    deleted: "info",
+  };
+  return map[String(status || "")] || "info";
+}
+
+const publishUsageGridOptions = computed(() => ({
+  ...commonGridOptions,
+  maxHeight: Math.max(height.value - 260, 360),
+  rowConfig: { isHover: true, keyField: "id" },
+  columnConfig: { resizable: true },
+  columns: [
+    { field: "imageUrl", title: "图片", width: 96, slots: { default: "usageImageSlot" } },
+    { field: "publishConfigId", title: "发布配置", minWidth: 220, slots: { default: "usageConfigSlot" } },
+    { field: "status", title: "状态", width: 110, slots: { default: "usageStatusSlot" } },
+    { field: "taskId", title: "任务ID", minWidth: 220, showOverflow: true },
+    {
+      field: "createTime",
+      title: "创建时间",
+      width: 170,
+      formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
+    },
+    {
+      field: "updateTime",
+      title: "更新时间",
+      width: 170,
+      formatter: ({ cellValue }: any) => formatTimestamp(cellValue),
+    },
+  ],
+}));
+
+function handlePublishUsageViewChange() {
+  queryParams.currentPage = 1;
+  getList();
+}
+
+async function loadPublishUsageConfigOptions() {
+  try {
+    const res = await stickerPsdSetApi.getPublishUsageConfigOptions();
+    publishUsageConfigOptions.value = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+        ? (res as any).data
+        : [];
+  } catch (error) {
+    console.error("获取查重配置选项失败:", error);
+    publishUsageConfigOptions.value = [];
+  }
+}
+
+async function handleViewPublishUsageRecords(row: any) {
+  const stickerId = String(row?.id || "").trim();
+  const imageUrl = String(row?.url || row?.originUrl || "").trim();
+  if (!stickerId && !imageUrl) {
+    return ElMessage.warning("缺少图片ID，无法查看发布绑定");
+  }
+  publishUsageDialogVisible.value = true;
+  publishUsageLoading.value = true;
+  publishUsageRecords.value = [];
+  try {
+    const res = await stickerPsdSetApi.getPublishUsageRecords({
+      stickerId: stickerId || undefined,
+      imageUrl: stickerId ? undefined : imageUrl,
+    });
+    publishUsageRecords.value = Array.isArray(res)
+      ? res
+      : Array.isArray((res as any)?.data)
+        ? (res as any).data
+        : [];
+  } catch (error: any) {
+    console.error("获取发布绑定失败:", error);
+    ElMessage.error(error?.message || "获取发布绑定失败");
+    publishUsageDialogVisible.value = false;
+  } finally {
+    publishUsageLoading.value = false;
+  }
+}
 
 // 尺寸形状选项配置
 const sizeShapeOptions = {
@@ -3530,7 +3738,23 @@ function materialRowClassName({ row }: any) {
   if (dragState.dragging && dragState.draggingIds.includes(String(row.id))) {
     return "is-dragging-row";
   }
+  if (row?.publishUsage?.occupied === true) {
+    return "is-publish-usage-occupied has-publish-usage-badge";
+  }
+  if (row?.publishUsage?.occupied === false) {
+    return "is-publish-usage-available has-publish-usage-badge";
+  }
   return "";
+}
+
+function handleMaterialCellClick({ row, column }: any) {
+  if (!row?.publishUsage) {
+    return;
+  }
+  const firstColumnFields = new Set(["dragHandle", "checkbox"]);
+  if (firstColumnFields.has(String(column?.field || ""))) {
+    void handleViewPublishUsageRecords(row);
+  }
 }
 
 function isCustomMaterial(row: any) {
@@ -3996,6 +4220,9 @@ async function getList() {
       : queryParams.sizeShape
         ? [queryParams.sizeShape]
         : [],
+    publishUsageConfigId: queryParams.publishUsageConfigId.length
+      ? queryParams.publishUsageConfigId
+      : undefined,
   };
 
   let res = await getMaterialList(params).finally(() => {
@@ -4317,6 +4544,7 @@ watch(selectedStickerFolderPath, (newPath) => {
 // 初始化时加载文件夹树
 loadStickerFolderTree();
 
+loadPublishUsageConfigOptions();
 getList();
 
 // 批量移动素材到文件夹
@@ -6018,6 +6246,9 @@ async function handleOperationCommand(command: string, row: any) {
     case "find-similar":
       await handleFindSimilar(row);
       break;
+    case "view-publish-usage":
+      await handleViewPublishUsageRecords(row);
+      break;
     case "view-meta":
       await handleShowMetaDetail(row);
       break;
@@ -6522,6 +6753,21 @@ async function handleUrlUpload() {
   z-index: 1;
 }
 
+.publish-usage-image {
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-light);
+}
+
+.publish-usage-config-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .design-model-dialog :deep(.el-dialog__body) {
   max-height: calc(100vh - 160px);
   overflow: hidden;
@@ -6997,6 +7243,60 @@ async function handleUrlUpload() {
 .material-dnd-grid :deep(.vxe-table--body tbody tr.is-dragging-row) {
   opacity: 0.6 !important;
   background: var(--el-color-primary-light-9) !important;
+}
+
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-publish-usage-occupied .vxe-body--column) {
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+.material-dnd-grid :deep(.vxe-table--body tbody tr.is-publish-usage-available .vxe-body--column) {
+  background: rgba(34, 197, 94, 0.08) !important;
+}
+
+.material-dnd-grid
+  :deep(.vxe-table--body tbody tr.is-publish-usage-occupied:hover .vxe-body--column) {
+  background: rgba(245, 158, 11, 0.16) !important;
+}
+
+.material-dnd-grid
+  :deep(.vxe-table--body tbody tr.is-publish-usage-available:hover .vxe-body--column) {
+  background: rgba(34, 197, 94, 0.13) !important;
+}
+
+.material-dnd-grid
+  :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child) {
+  position: relative;
+  cursor: pointer;
+}
+
+.material-dnd-grid
+  :deep(.vxe-table--body tbody tr.has-publish-usage-badge .vxe-body--column:first-child::before) {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  z-index: 4;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  pointer-events: none;
+}
+
+.material-dnd-grid
+  :deep(.vxe-table--body tbody tr.is-publish-usage-occupied .vxe-body--column:first-child::before) {
+  content: "已用";
+  background: rgba(217, 119, 6, 0.94);
+}
+
+.material-dnd-grid
+  :deep(.vxe-table--body tbody tr.is-publish-usage-available .vxe-body--column:first-child::before) {
+  content: "未用";
+  background: rgba(22, 163, 74, 0.94);
 }
 
 .material-drag-ghost {
