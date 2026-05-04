@@ -1827,6 +1827,10 @@ const priceReviewBatchFailedCount = ref(0);
 const priceReviewBatchRepriceVisible = ref(false);
 const priceReviewBatchRepriceRows = ref<PriceReviewPreviewRow[]>([]);
 const priceReviewBatchRepricePrices = reactive<Record<string, number>>({});
+const PRICE_REVIEW_ROW_TIMEOUT_MS = 90_000;
+const PRICE_REVIEW_MARK_CONCURRENCY = 1;
+const priceReviewMarkQueue: Array<() => Promise<void>> = [];
+let priceReviewMarkRunningCount = 0;
 const complianceEditorVisible = ref(false);
 const complianceEditorLoading = ref(false);
 const complianceDetailLoadingKey = ref("");
@@ -4068,6 +4072,65 @@ const clearFloatingBatchProgressSilently = async () => {
   }
 };
 const shouldAbortBatch = (token: number) => token !== batchAbortToken.value;
+const withPriceReviewRowTimeout = async <T,>(
+  promise: Promise<T>,
+  context: {
+    row: PriceReviewPreviewRow;
+    mode: "confirm" | "abandon" | "reprice";
+    index?: number;
+    total?: number;
+    stage: string;
+    timeoutMs?: number;
+    ownerRunId?: number;
+  },
+) => {
+  const timeoutMs = context.timeoutMs || PRICE_REVIEW_ROW_TIMEOUT_MS;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          const positionText =
+            context.index && context.total ? `第 ${context.index}/${context.total} 条` : "当前行";
+          reject(
+            new Error(
+              `${positionText}核价在「${context.stage}」阶段超过 ${Math.round(timeoutMs / 1000)} 秒未返回`,
+            ),
+          );
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
+const drainPriceReviewMarkQueue = () => {
+  while (
+    priceReviewMarkRunningCount < PRICE_REVIEW_MARK_CONCURRENCY &&
+    priceReviewMarkQueue.length
+  ) {
+    const task = priceReviewMarkQueue.shift();
+    if (!task) {
+      continue;
+    }
+    priceReviewMarkRunningCount += 1;
+    void task()
+      .catch((error) => {
+        console.warn("核价状态持久化失败", error);
+      })
+      .finally(() => {
+        priceReviewMarkRunningCount = Math.max(0, priceReviewMarkRunningCount - 1);
+        drainPriceReviewMarkQueue();
+      });
+  }
+};
+const enqueuePriceReviewMark = (task: () => Promise<void>) => {
+  priceReviewMarkQueue.push(task);
+  drainPriceReviewMarkQueue();
+};
 const hasSelectedTaskRuns = computed(() => selectedTaskRunIds.value.length > 0);
 const hasRunningTaskRuns = computed(() => {
   const listHasRunning = taskRunList.value.some((item) =>
@@ -4238,6 +4301,39 @@ const syncTaskRunResultToWorkspace = (detail?: TemuTaskRunDetail | null) => {
   state.lastResult = result as TemuActionResponse;
 };
 
+const unwrapTemuApiPayload = <T = any,>(value: any): T => {
+  let current = value;
+  for (let index = 0; index < 3; index += 1) {
+    if (
+      current &&
+      typeof current === "object" &&
+      !Array.isArray(current) &&
+      "data" in current &&
+      !("action" in current) &&
+      !("id" in current)
+    ) {
+      current = current.data;
+      continue;
+    }
+    break;
+  }
+  return current as T;
+};
+
+const normalizeTemuActionResponse = <TResult = Record<string, any>>(
+  value: any,
+): TemuActionResponse<TResult> => {
+  const unwrapped = unwrapTemuApiPayload<any>(value);
+  const nestedResult = unwrapTemuApiPayload<any>(unwrapped?.result);
+  if (nestedResult && typeof nestedResult === "object" && "success" in nestedResult) {
+    return nestedResult as TemuActionResponse<TResult>;
+  }
+  return unwrapped as TemuActionResponse<TResult>;
+};
+
+const normalizeTemuTaskRunDetail = (value: any): TemuTaskRunDetail | null =>
+  unwrapTemuApiPayload<TemuTaskRunDetail | null>(value);
+
 const resetTaskRunDetailDialogState = () => {
   selectedPriceReviewRowKeys.value = [];
   selectedJitRowKeys.value = [];
@@ -4373,7 +4469,7 @@ const loadTaskRunDetail = async (id: number, options: { silent?: boolean } = {})
   }
 
   try {
-    const detail = await getTemuTaskRun(id);
+    const detail = normalizeTemuTaskRunDetail(await getTemuTaskRun(id));
     if (requestSeq !== taskRunDetailRequestSeq.value || activeTaskRunId.value !== id) {
       return null;
     }
@@ -5281,6 +5377,13 @@ const buildSinglePriceReviewPayload = (
     profileId: props.profileId,
     region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
     priceOrderId: row.rawPriceOrderId,
+    traceId: `price-review-${Date.now()}-${row.rowKey}`,
+    rowTrace: {
+      rowKey: row.rowKey,
+      priceOrderId: row.priceOrderId,
+      skuId: row.skuId,
+      spuId: row.spuId,
+    },
   };
 
   if (mode === "abandon") {
@@ -5880,17 +5983,42 @@ const submitRepricePriceReviewRow = async (row: PriceReviewPreviewRow) => {
 const submitPriceReviewRowWithoutConfirm = async (
   row: PriceReviewPreviewRow,
   mode: "confirm" | "abandon" | "reprice",
-  options: { showToast?: boolean; overridePrice?: number } = {},
+  options: {
+    showToast?: boolean;
+    overridePrice?: number;
+    batchIndex?: number;
+    batchTotal?: number;
+    ownerRunId?: number;
+    timeoutMs?: number;
+  } = {},
 ) => {
   const actionText = mode === "confirm" ? "确认核价" : mode === "reprice" ? "重新报价" : "不核价";
   const submitKey = `${row.rowKey}:${mode}`;
-  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  const ownerRunId = Number(options.ownerRunId || activeTaskRunDetail.value?.id || 0);
+  const batchLabel =
+    options.batchIndex && options.batchTotal
+      ? `第 ${options.batchIndex}/${options.batchTotal} 条`
+      : "单条";
   priceReviewSubmittingKey.value = submitKey;
   try {
-    const response = await runTemuClientAction(
-      "goods.modify-price",
-      buildSinglePriceReviewPayload(row, mode, options.overridePrice),
+    const payload = buildSinglePriceReviewPayload(row, mode, options.overridePrice);
+    const rawResponse = await withPriceReviewRowTimeout(
+      runTemuClientAction(
+        "goods.modify-price",
+        payload,
+        Math.max(10_000, Math.min(options.timeoutMs || PRICE_REVIEW_ROW_TIMEOUT_MS, PRICE_REVIEW_ROW_TIMEOUT_MS)),
+      ),
+      {
+        row,
+        mode,
+        index: options.batchIndex,
+        total: options.batchTotal,
+        stage: "客户端执行 goods.modify-price",
+        timeoutMs: options.timeoutMs,
+        ownerRunId,
+      },
     );
+    const response = normalizeTemuActionResponse(rawResponse);
     const nextMark: PriceReviewSubmitMark = {
       status: response?.success ? "success" : "failed",
       action: mode,
@@ -5902,22 +6030,19 @@ const submitPriceReviewRowWithoutConfirm = async (
     priceReviewSubmitMarks[row.rowKey] = nextMark;
 
     if (ownerRunId) {
-      markTemuTaskRunPriceReviewRow({
-        id: ownerRunId,
-        rowKey: row.rowKey,
-        action: mode,
-        status: nextMark.status,
-        message: nextMark.message,
-        markInvalid: nextMark.markInvalid,
-        completedLabel: nextMark.completedLabel,
-        ...(Number.isFinite(options.overridePrice) ? { price: options.overridePrice } : {}),
-      })
-        .then((detail) => {
-          applyTaskRunDetailIfCurrent(detail, ownerRunId);
-        })
-        .catch((error) => {
-          ElMessage.warning(extractRequestErrorMessage(error, "核价状态持久化失败"));
+      enqueuePriceReviewMark(async () => {
+        const detail = await markTemuTaskRunPriceReviewRow({
+          id: ownerRunId,
+          rowKey: row.rowKey,
+          action: mode,
+          status: nextMark.status,
+          message: nextMark.message,
+          markInvalid: nextMark.markInvalid,
+          completedLabel: nextMark.completedLabel,
+          ...(Number.isFinite(options.overridePrice) ? { price: options.overridePrice } : {}),
         });
+        applyTaskRunDetailIfCurrent(normalizeTemuTaskRunDetail(detail), ownerRunId);
+      });
     }
 
     if (options.showToast) {
@@ -5938,15 +6063,17 @@ const submitPriceReviewRowWithoutConfirm = async (
     };
     priceReviewSubmitMarks[row.rowKey] = nextMark;
     if (ownerRunId) {
-      markTemuTaskRunPriceReviewRow({
-        id: ownerRunId,
-        rowKey: row.rowKey,
-        action: mode,
-        status: nextMark.status,
-        message: nextMark.message,
-        markInvalid: false,
-        ...(Number.isFinite(options.overridePrice) ? { price: options.overridePrice } : {}),
-      }).catch(() => undefined);
+      enqueuePriceReviewMark(async () => {
+        await markTemuTaskRunPriceReviewRow({
+          id: ownerRunId,
+          rowKey: row.rowKey,
+          action: mode,
+          status: nextMark.status,
+          message: nextMark.message,
+          markInvalid: false,
+          ...(Number.isFinite(options.overridePrice) ? { price: options.overridePrice } : {}),
+        });
+      });
     }
     if (options.showToast) {
       ElMessage.error(extractRequestErrorMessage(error, `${actionText}提交失败`));
@@ -6019,14 +6146,17 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
   resetPriceReviewBatchProgress(mode, rows.length);
   let successCount = 0;
   const batchToken = batchAbortToken.value;
-
   try {
-    for (const row of rows) {
+    for (const [index, row] of rows.entries()) {
       if (shouldAbortBatch(batchToken)) {
         break;
       }
-      setPriceReviewBatchCurrent("提交核价中", row);
-      const success = await submitPriceReviewRowWithoutConfirm(row, mode);
+      setPriceReviewBatchCurrent(`提交核价中：第 ${index + 1}/${rows.length} 条`, row);
+      const success = await submitPriceReviewRowWithoutConfirm(row, mode, {
+        batchIndex: index + 1,
+        batchTotal: rows.length,
+        ownerRunId: Number(activeTaskRunDetail.value?.id || 0),
+      });
       if (success) {
         successCount += 1;
         priceReviewBatchSuccessCount.value += 1;
@@ -6071,15 +6201,17 @@ const confirmBatchRepriceRows = async () => {
   priceReviewBatchRepriceVisible.value = false;
   let successCount = 0;
   const batchToken = batchAbortToken.value;
-
   try {
-    for (const row of rows) {
+    for (const [index, row] of rows.entries()) {
       if (shouldAbortBatch(batchToken)) {
         break;
       }
-      setPriceReviewBatchCurrent("重新报价中", row);
+      setPriceReviewBatchCurrent(`重新报价中：第 ${index + 1}/${rows.length} 条`, row);
       const success = await submitPriceReviewRowWithoutConfirm(row, "reprice", {
         overridePrice: priceMap.get(row.rowKey),
+        batchIndex: index + 1,
+        batchTotal: rows.length,
+        ownerRunId: Number(activeTaskRunDetail.value?.id || 0),
       });
       if (success) {
         successCount += 1;

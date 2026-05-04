@@ -138,10 +138,17 @@ export const getTemuTaskRunPage = (data: {
   });
 };
 
-export const getTemuTaskRun = (id: number | string) => {
+export const getTemuTaskRun = (
+  id: number | string,
+  options?: {
+    includeParams?: boolean;
+    includeResult?: boolean;
+    includeLogs?: boolean;
+  },
+) => {
   return request.get<TemuTaskRunDetail | null>({
     url: "/temu/task-run/get",
-    params: { id },
+    params: { id, ...(options || {}) },
   });
 };
 
