@@ -150,6 +150,9 @@ const platformActionThemes: Record<
   kuaishou_shop: {
     color: "#ff6a00",
   },
+  qianniu: {
+    color: "#ff6a00",
+  },
 };
 
 const platformActionButtonStyle = computed<CSSProperties>(() => {

@@ -683,6 +683,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "快手小店",
         },
       },
+      {
+        path: "qianniu",
+        component: () => import("@/views/external/toolkit/qianniu/index.vue"),
+        name: "OperationToolkitQianniu",
+        meta: {
+          title: "千牛",
+        },
+      },
     ],
   },
   {
