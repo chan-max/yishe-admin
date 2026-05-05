@@ -772,6 +772,14 @@
                       isMaterialFormatInvalid(material.id),
                   }"
                 >
+                  <button
+                    type="button"
+                    class="material-publish-config-dialog__material-remove"
+                    title="移除该图片"
+                    @click.stop="removeSelectedMaterial(material.id)"
+                  >
+                    ×
+                  </button>
                   <div class="material-publish-config-dialog__material-preview">
                     <img
                       v-if="getMaterialPreviewSource(material)"
@@ -971,6 +979,14 @@
                   class="thumb"
                   :class="{ 'thumb-invalid-format': isMaterialFormatInvalid(id) }"
                 >
+                  <button
+                    type="button"
+                    class="thumb-remove"
+                    title="移除该图片"
+                    @click.stop="removeSelectedMaterial(id)"
+                  >
+                    ×
+                  </button>
                   <div class="thumb-image-wrapper">
                     <img
                       :src="
@@ -4666,6 +4682,23 @@ function checkboxAllChange(e) {
   ids.value = [...records.map((item) => item.id), ...reserves.map((item) => item.id)];
 }
 
+function removeSelectedMaterial(materialId: string | number) {
+  const normalizedId = String(materialId);
+  ids.value = ids.value.filter((id) => String(id) !== normalizedId);
+  const tableRef = gridRef.value;
+  const row =
+    dataSource.value.find((item) => String(item.id) === normalizedId) ||
+    selectedMaterialCache[normalizedId];
+  if (row) {
+    tableRef?.setCheckboxRow?.(row, false);
+  }
+  tableRef?.removeCheckboxReserveRow?.(row || { id: normalizedId });
+  if (!ids.value.length) {
+    materialPublishConfigSelectedIds.value = [];
+    selectedPsdTemplateIds.value = [];
+  }
+}
+
 async function handleDownload(row) {
   // 处理图片下载
   try {
@@ -8052,6 +8085,7 @@ h1 {
 }
 
 .material-publish-config-dialog__material-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -8730,6 +8764,37 @@ h1 {
 .psd-set-materials .thumb.thumb-invalid-format {
   border-color: var(--el-color-danger);
   box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
+}
+
+.psd-set-materials .thumb-remove,
+.material-publish-config-dialog__material-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.68);
+  color: #fff;
+  font-size: 18px;
+  line-height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.18);
+  transition:
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+
+.psd-set-materials .thumb-remove:hover,
+.material-publish-config-dialog__material-remove:hover {
+  background: var(--el-color-danger);
+  transform: scale(1.04);
 }
 
 .psd-set-materials .thumb-image-wrapper {
