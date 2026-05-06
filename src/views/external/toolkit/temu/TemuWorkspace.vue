@@ -615,6 +615,18 @@
                     <el-option label="待处理" value="pending" />
                     <el-option label="已处理" value="processed" />
                   </el-select>
+                  <el-select
+                    v-model="priceReviewSortMode"
+                    class="temu-workspace__price-review-filter"
+                    size="small"
+                    placeholder="排序"
+                  >
+                    <el-option label="默认排序" value="default" />
+                    <el-option label="差价绝对值从高到低" value="difference-desc" />
+                    <el-option label="差价绝对值从低到高" value="difference-asc" />
+                    <el-option label="差价率绝对值从高到低" value="ratio-desc" />
+                    <el-option label="差价率绝对值从低到高" value="ratio-asc" />
+                  </el-select>
                   <el-input-number
                     v-model="priceReviewAmountFilterMin"
                     class="temu-workspace__price-review-filter-number"
@@ -1716,6 +1728,12 @@ interface ComplianceEditorField {
 
 type PriceReviewRiskFilter = "all" | "up" | "green" | "yellow" | "orange" | "red" | "critical";
 type PriceReviewStatusFilter = "all" | "pending" | "processed";
+type PriceReviewSortMode =
+  | "default"
+  | "difference-desc"
+  | "difference-asc"
+  | "ratio-desc"
+  | "ratio-asc";
 
 const props = defineProps<{
   clientId?: string;
@@ -1814,6 +1832,7 @@ const jitBatchFailedCount = ref(0);
 const jitFetchingAll = ref(false);
 const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
 const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("all");
+const priceReviewSortMode = ref<PriceReviewSortMode>("default");
 const priceReviewAmountFilterMin = ref<number | undefined>();
 const priceReviewAmountFilterMax = ref<number | undefined>();
 const priceReviewBatchSubmitting = ref(false);
@@ -3571,8 +3590,43 @@ const matchPriceReviewAmountFilter = (row: PriceReviewPreviewRow) => {
   }
   return true;
 };
-const taskRunPriceReviewPreviewRows = computed(() =>
-  taskRunPriceReviewRawRows.value.filter((row) => {
+const getPriceReviewSortValue = (row: PriceReviewPreviewRow, mode: PriceReviewSortMode) => {
+  if (mode === "difference-desc" || mode === "difference-asc") {
+    const value = Number(row.priceDifferenceValue);
+    return Number.isFinite(value) ? Math.abs(value) : null;
+  }
+  if (mode === "ratio-desc" || mode === "ratio-asc") {
+    const value = Number(row.priceChangeRatioValue);
+    return Number.isFinite(value) ? Math.abs(value) : null;
+  }
+  return null;
+};
+const sortPriceReviewRows = (rows: PriceReviewPreviewRow[]) => {
+  const mode = priceReviewSortMode.value;
+  if (mode === "default") {
+    return rows;
+  }
+
+  const direction = mode.endsWith("-asc") ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    const leftValue = getPriceReviewSortValue(left, mode);
+    const rightValue = getPriceReviewSortValue(right, mode);
+    const leftMissing = leftValue === null;
+    const rightMissing = rightValue === null;
+    if (leftMissing && rightMissing) {
+      return 0;
+    }
+    if (leftMissing) {
+      return 1;
+    }
+    if (rightMissing) {
+      return -1;
+    }
+    return (leftValue - rightValue) * direction;
+  });
+};
+const taskRunPriceReviewPreviewRows = computed(() => {
+  const rows = taskRunPriceReviewRawRows.value.filter((row) => {
     if (!matchPriceReviewRiskFilter(row)) {
       return false;
     }
@@ -3586,8 +3640,9 @@ const taskRunPriceReviewPreviewRows = computed(() =>
       return false;
     }
     return true;
-  }),
-);
+  });
+  return sortPriceReviewRows(rows);
+});
 const taskRunRealPictureRows = computed(() =>
   buildRealPicturePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
 );
@@ -4356,15 +4411,31 @@ const resetTaskRunDetailDialogState = () => {
   });
 };
 
-const applyTaskRunDetailIfCurrent = (detail?: TemuTaskRunDetail | null, expectedId?: number | null) => {
+const applyTaskRunDetailIfCurrent = (
+  detail?: TemuTaskRunDetail | null,
+  expectedId?: number | null,
+  options: { preserveResult?: boolean } = {},
+) => {
   const detailId = Number(detail?.id || 0) || null;
   const targetId = Number(expectedId || detailId || 0) || null;
   if (!detail || !targetId || activeTaskRunId.value !== targetId) {
     return false;
   }
 
-  activeTaskRunDetail.value = detail;
-  syncTaskRunResultToWorkspace(detail);
+  const previousDetail = activeTaskRunDetail.value;
+  const nextDetail =
+    options.preserveResult && previousDetail?.id === targetId
+      ? {
+          ...previousDetail,
+          ...detail,
+          params: detail.params ?? previousDetail.params,
+          result: detail.result ?? previousDetail.result,
+          logs: Array.isArray(detail.logs) ? detail.logs : previousDetail.logs,
+        }
+      : detail;
+
+  activeTaskRunDetail.value = nextDetail;
+  syncTaskRunResultToWorkspace(nextDetail);
   return true;
 };
 
@@ -4455,7 +4526,13 @@ const ensureTaskRunPolling = () => {
   }, 2500);
 };
 
-const loadTaskRunDetail = async (id: number, options: { silent?: boolean } = {}) => {
+const loadTaskRunDetail = async (
+  id: number,
+  options: {
+    silent?: boolean;
+    light?: boolean;
+  } = {},
+) => {
   if (!id) {
     taskRunDetailRequestSeq.value += 1;
     activeTaskRunId.value = null;
@@ -4469,12 +4546,23 @@ const loadTaskRunDetail = async (id: number, options: { silent?: boolean } = {})
   }
 
   try {
-    const detail = normalizeTemuTaskRunDetail(await getTemuTaskRun(id));
+    const detail = normalizeTemuTaskRunDetail(
+      await getTemuTaskRun(
+        id,
+        options.light
+          ? {
+              includeParams: false,
+              includeResult: false,
+              includeLogs: true,
+            }
+          : undefined,
+      ),
+    );
     if (requestSeq !== taskRunDetailRequestSeq.value || activeTaskRunId.value !== id) {
       return null;
     }
     activeTaskRunId.value = detail?.id ? Number(detail.id) : null;
-    applyTaskRunDetailIfCurrent(detail, id);
+    applyTaskRunDetailIfCurrent(detail, id, { preserveResult: options.light });
     return detail;
   } catch (error: any) {
     if (!options.silent) {
@@ -4536,7 +4624,10 @@ const loadTaskRuns = async (options: { silent?: boolean } = {}) => {
         ["queued", "running"].includes(String(activeTaskRunDetail.value.status).trim()));
 
     if (shouldRefreshDetail) {
-      await loadTaskRunDetail(activeTaskRunId.value, { silent: true });
+      const summary = taskRunList.value.find((item) => item.id === activeTaskRunId.value);
+      const summaryStatus = String(summary?.status || "").trim();
+      const light = ["queued", "running"].includes(summaryStatus);
+      await loadTaskRunDetail(activeTaskRunId.value, { silent: true, light });
     }
   } catch (error: any) {
     if (!options.silent) {
@@ -4582,6 +4673,7 @@ const refreshTaskRuns = async () => {
 const resetPriceReviewFilters = () => {
   priceReviewRiskFilter.value = "all";
   priceReviewStatusFilter.value = "all";
+  priceReviewSortMode.value = "default";
   priceReviewAmountFilterMin.value = undefined;
   priceReviewAmountFilterMax.value = undefined;
 };
