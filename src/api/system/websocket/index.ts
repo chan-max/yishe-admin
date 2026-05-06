@@ -438,6 +438,18 @@ export const togglePsAutomationAutoDispatch = (clientId: string, enabled: boolea
   });
 };
 
+export const resetPsAutomationRuntime = (clientId: string) => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: `/websocket/ps-automation/${clientId}/reset-runtime`,
+  });
+};
+
+export const resetAllPsAutomationRuntime = () => {
+  return request.post<{ success: boolean; message: string; data?: any }>({
+    url: "/websocket/ps-automation/reset-runtime",
+  });
+};
+
 export const triggerPsdSetAutoDispatch = () => {
   return request.post<{
     success: boolean;

@@ -102,6 +102,9 @@
                     @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
                     {{ userAutoSchedulingEnabled ? "关闭自动调度" : "开启自动调度" }}
                   </el-button>
+                  <el-button size="small" :loading="resettingPsRuntime" @click="handleResetAllPsAutomationRuntime">
+                    重置状态
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -869,6 +872,7 @@ import { ClientControlService } from "@/services/clientControl";
 import { usePsdSetRuntimeState } from "@/services/psdSetRuntimeState";
 import {
   getPsdSetAutoDispatchRuntime,
+  resetAllPsAutomationRuntime,
   type AutoDispatchSchedulerRuntime,
 } from "@/api/system/websocket";
 import {
@@ -909,6 +913,7 @@ const productionDispatchDialogVisible = ref(false);
 const productionDispatchLoading = ref(false);
 const productionDispatchRow = ref<any>(null);
 const selectedDispatchClientId = ref("");
+const resettingPsRuntime = ref(false);
 const userAutoSchedulingLoading = ref(false);
 const psdSetSchedulerRuntime = ref<AutoDispatchSchedulerRuntime | null>(null);
 const generateProductDialogVisible = ref(false);
@@ -3418,6 +3423,38 @@ async function handleConfirmStartProduction() {
     console.error("开始制作失败:", error);
     ElMessage.error(error?.message || "开始制作失败，请检查客户端连接状态");
     startingProductionId.value = "";
+  }
+}
+
+async function handleResetAllPsAutomationRuntime() {
+  try {
+    await ElMessageBox.confirm(
+      "确认重置当前账号所有客户端的 PS 自动化运行态吗？该操作只清理残留的忙碌状态、当前任务标记和进度，不会删除套图或制作结果。",
+      "重置状态确认",
+      {
+        confirmButtonText: "重置",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
+  }
+
+  resettingPsRuntime.value = true;
+  try {
+    const response = await resetAllPsAutomationRuntime();
+    ElMessage.success(response?.message || "状态已重置");
+    schedulePsdSetMenuRuntimeSync();
+    await Promise.all([
+      refreshClientNodes(),
+      refreshPsdSetRuntimeSummary(),
+      loadPsdSetSchedulerRuntime(),
+    ]);
+  } catch (error: any) {
+    ElMessage.error(error?.message || "重置状态失败");
+  } finally {
+    resettingPsRuntime.value = false;
   }
 }
 

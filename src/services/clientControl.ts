@@ -14,7 +14,7 @@ export class ClientControlService {
    */
   static async getMyClients(): Promise<WebsocketConnectionVO[]> {
     try {
-      const response = await WebsocketApi.getMyWebsocketConnectionViews()
+      const response: any = await WebsocketApi.getMyWebsocketConnectionViews()
       // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
       if (Array.isArray(response)) {
         return response
@@ -179,16 +179,6 @@ export class ClientControlService {
     silent: boolean = false
   ): Promise<boolean> {
     try {
-      const myClients = await this.getMyClients()
-      const targetClient = myClients.find((client) => client.id === clientId)
-
-      if (!targetClient) {
-        if (!silent) {
-          ElMessage.error('无法操作该客户端：不属于当前用户或节点不存在')
-        }
-        return false
-      }
-
       const response = await WebsocketApi.togglePsAutomationAutoDispatch(clientId, enabled)
       if (response.success) {
         if (!silent) {
@@ -240,27 +230,14 @@ export class ClientControlService {
         | undefined
 
       if (enabled) {
-        try {
-          const response: any = await WebsocketApi.triggerPsdSetAutoDispatch()
-          const data =
-            response?.data && typeof response.data === 'object' && !Array.isArray(response.data)
-              ? response.data
-              : response
-
-          triggerResult = {
-            success: typeof data?.success === 'boolean' ? data.success : true,
-            dispatched: !!data?.dispatched,
-            reason: data?.reason,
-            message: data?.message
-          }
-        } catch (error: any) {
+        void WebsocketApi.triggerPsdSetAutoDispatch().catch((error: any) => {
           console.error('[ClientControlService] 后台触发套图自动调度失败:', error)
-          triggerResult = {
-            success: false,
-            dispatched: false,
-            reason: 'trigger-failed',
-            message: error?.message || '自动调度已开启，但立即触发失败，稍后服务端会继续轮询'
-          }
+        })
+        triggerResult = {
+          success: true,
+          dispatched: false,
+          reason: 'trigger-queued',
+          message: '已开启服务端自动调度，后台正在检查待处理套图'
         }
       }
 

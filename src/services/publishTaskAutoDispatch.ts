@@ -42,17 +42,13 @@ export const enablePublishTaskAutoDispatch = async (target: {
     },
   });
 
-  let triggerResult: any;
-  try {
-    triggerResult = await triggerPublishTaskAutoDispatch();
-  } catch (error: any) {
-    triggerResult = {
-      success: false,
-      dispatched: false,
-      reason: "trigger-failed",
-      message: error?.message || "自动调度已开启，但立即触发失败",
-    };
-  }
+  const triggerResult = {
+    success: true,
+    dispatched: false,
+    reason: "trigger-scheduled",
+    message: "已保存自动调度目标并开启自动执行，后台将立即尝试调度",
+  };
+  void triggerPublishTaskAutoDispatch().catch(() => undefined);
 
   return {
     setting: nextSetting,

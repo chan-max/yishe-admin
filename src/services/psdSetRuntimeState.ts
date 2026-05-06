@@ -133,11 +133,6 @@ const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | nul
   serverActivePsdSets.value = source
     .map((item) => normalizeActivePsdSetItem(item))
     .filter((item): item is ActivePsdSetSummaryItem => !!item)
-
-  if (hasServerItems && serverActivePsdSets.value.length === 0) {
-    // The server summary is authoritative here; clear transient websocket items immediately.
-    realtimeActivePsdSetMap.value = {}
-  }
   syncMergedActiveSummary()
 }
 
