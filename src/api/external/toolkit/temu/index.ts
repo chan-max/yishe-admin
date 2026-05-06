@@ -237,6 +237,58 @@ export const markTemuTaskRunRealPictureRow = (data: {
   });
 };
 
+export const batchMarkTemuTaskRunPriceReviewRows = (data: {
+  id: number | string;
+  items: Array<{
+    rowKey: string;
+    action: "confirm" | "abandon" | "reprice";
+    status: "success" | "failed";
+    completedLabel?: string;
+    message?: string;
+    markInvalid?: boolean;
+    price?: number;
+  }>;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/price-review-mark-batch",
+    data,
+  });
+};
+
+export const batchMarkTemuTaskRunRealPictureRows = (data: {
+  id: number | string;
+  items: Array<{
+    rowKey: string;
+    status: "success" | "failed";
+    message?: string;
+    spuId?: number;
+    goodsId?: number;
+  }>;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/real-picture-mark-batch",
+    data,
+  });
+};
+
+export const batchMarkTemuTaskRunJitRows = (data: {
+  id: number | string;
+  items: Array<{
+    rowKey: string;
+    action: "open" | "stock";
+    status: "success" | "failed";
+    message?: string;
+    markOpened?: boolean;
+    stockMaintained?: boolean;
+    finalNum?: number;
+  }>;
+}) => {
+  return request.post<TemuTaskRunDetail>({
+    url: "/temu/task-run/jit-mark-batch",
+    data,
+  });
+};
+
 export const getTemuBatchProgress = (profileId?: string) => {
   return request.get<{ items: TemuBatchProgressItem[] }>({
     url: "/temu/batch-progress",

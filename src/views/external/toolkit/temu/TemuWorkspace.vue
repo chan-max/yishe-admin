@@ -1506,6 +1506,9 @@ import type { VxeGridInstance, VxeGridProps } from "vxe-table";
 import type { ToolkitToolItem } from "@/api/external/toolkit";
 import {
   batchDeleteTemuTaskRuns,
+  batchMarkTemuTaskRunJitRows,
+  batchMarkTemuTaskRunPriceReviewRows,
+  batchMarkTemuTaskRunRealPictureRows,
   clearTemuBatchProgress,
   createTemuTaskRun,
   deleteTemuTaskRun,
@@ -4808,6 +4811,28 @@ const persistJitStockMark = async (row: JitPreviewRow, mark: JitSubmitMark, owne
   applyTaskRunDetailIfCurrent(detail, runId);
 };
 
+const persistJitMarksBatch = async (
+  runId: number,
+  items: Array<{
+    rowKey: string;
+    action: "open" | "stock";
+    status: "success" | "failed";
+    message?: string;
+    markOpened?: boolean;
+    stockMaintained?: boolean;
+    finalNum?: number;
+  }>,
+) => {
+  if (!runId || !items.length) {
+    return;
+  }
+  const detail = await batchMarkTemuTaskRunJitRows({
+    id: runId,
+    items,
+  });
+  applyTaskRunDetailIfCurrent(detail, runId);
+};
+
 const submitJitStockRow = async (row: JitPreviewRow) => {
   if (!requireTemuClientContext()) {
     return;
@@ -4872,6 +4897,14 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
   }
   const batchToken = batchAbortToken.value;
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  const batchMarks: Array<{
+    rowKey: string;
+    action: "stock";
+    status: "success" | "failed";
+    message?: string;
+    stockMaintained?: boolean;
+    finalNum?: number;
+  }> = [];
 
   try {
     for (const row of rows) {
@@ -4892,16 +4925,36 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
         } else {
           failedCount += 1;
         }
-        try {
-          await persistJitStockMark(row, nextMark, ownerRunId);
-        } catch (error: any) {
-          ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
+        if (batchMode) {
+          batchMarks.push({
+            rowKey: row.rowKey,
+            action: "stock",
+            status: nextMark.status,
+            message: nextMark.message,
+            stockMaintained: !!nextMark.stockMaintained,
+            finalNum: nextMark.finalNum,
+          });
+        } else {
+          try {
+            await persistJitStockMark(row, nextMark, ownerRunId);
+          } catch (error: any) {
+            ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
+          }
         }
       } catch (error: any) {
         failedCount += 1;
         const nextMark = buildJitStockErrorMark(error, finalNum);
         jitStockSubmitMarks[row.rowKey] = nextMark;
-        if (ownerRunId) {
+        if (batchMode) {
+          batchMarks.push({
+            rowKey: row.rowKey,
+            action: "stock",
+            status: nextMark.status,
+            message: nextMark.message,
+            stockMaintained: false,
+            finalNum,
+          });
+        } else if (ownerRunId) {
           markTemuTaskRunJitRow({
             id: ownerRunId,
             rowKey: row.rowKey,
@@ -4918,6 +4971,14 @@ const submitJitStockRows = async (inputRows: JitPreviewRow[], batchMode = false)
           jitBatchSuccessCount.value = successCount;
           jitBatchFailedCount.value = failedCount;
         }
+      }
+    }
+
+    if (batchMode && ownerRunId && batchMarks.length) {
+      try {
+        await persistJitMarksBatch(ownerRunId, batchMarks);
+      } catch (error: any) {
+        ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态批量持久化失败"));
       }
     }
 
@@ -5014,7 +5075,16 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
       }
     });
 
-    if (persistPayloads.length) {
+    if (batchMode && ownerRunId && persistPayloads.length) {
+      try {
+        await persistJitMarksBatch(
+          ownerRunId,
+          persistPayloads.map(({ id: _id, ...item }) => item),
+        );
+      } catch (error: any) {
+        ElMessage.warning(extractRequestErrorMessage(error, "JIT 开通状态批量持久化失败"));
+      }
+    } else if (persistPayloads.length) {
       let persistFailed = false;
       for (const payload of persistPayloads) {
         try {
@@ -5104,6 +5174,15 @@ const submitSelectedJitOpenAndStockRows = async () => {
     let openFailedCount = 0;
     let skippedStockCount = 0;
     const openedRows: JitPreviewRow[] = [];
+    const batchMarks: Array<{
+      rowKey: string;
+      action: "open" | "stock";
+      status: "success" | "failed";
+      message?: string;
+      markOpened?: boolean;
+      stockMaintained?: boolean;
+      finalNum?: number;
+    }> = [];
 
     if (openRows.length) {
       setJitBatchCurrent("批量开通请求中");
@@ -5142,19 +5221,13 @@ const submitSelectedJitOpenAndStockRows = async () => {
         };
         jitSubmitMarks[row.rowKey] = nextMark;
         if (ownerRunId) {
-          try {
-            const detail = await markTemuTaskRunJitRow({
-              id: ownerRunId,
-              rowKey: row.rowKey,
-              action: "open",
-              status: nextMark.status,
-              message: nextMark.message,
-              markOpened: success,
-            });
-            applyTaskRunDetailIfCurrent(detail, ownerRunId);
-          } catch {
-            ElMessage.warning("JIT 开通状态部分持久化失败，请刷新后核对执行记录");
-          }
+          batchMarks.push({
+            rowKey: row.rowKey,
+            action: "open",
+            status: nextMark.status,
+            message: nextMark.message,
+            markOpened: success,
+          });
         }
         jitBatchFinishedCount.value += 1;
         jitBatchSuccessCount.value = openSuccessCount;
@@ -5185,30 +5258,42 @@ const submitSelectedJitOpenAndStockRows = async () => {
         } else {
           stockFailedCount += 1;
         }
-        try {
-          await persistJitStockMark(row, nextMark, ownerRunId);
-        } catch (error: any) {
-          ElMessage.warning(extractRequestErrorMessage(error, "库存维护状态持久化失败"));
+        if (ownerRunId) {
+          batchMarks.push({
+            rowKey: row.rowKey,
+            action: "stock",
+            status: nextMark.status,
+            message: nextMark.message,
+            stockMaintained: !!nextMark.stockMaintained,
+            finalNum: nextMark.finalNum,
+          });
         }
       } catch (error: any) {
         stockFailedCount += 1;
         const nextMark = buildJitStockErrorMark(error, finalNum);
         jitStockSubmitMarks[row.rowKey] = nextMark;
         if (ownerRunId) {
-          markTemuTaskRunJitRow({
-            id: ownerRunId,
+          batchMarks.push({
             rowKey: row.rowKey,
             action: "stock",
             status: nextMark.status,
             message: nextMark.message,
             stockMaintained: false,
             finalNum,
-          }).catch(() => undefined);
+          });
         }
       } finally {
         jitBatchFinishedCount.value += 1;
         jitBatchSuccessCount.value = openSuccessCount + stockSuccessCount;
         jitBatchFailedCount.value = openFailedCount + skippedStockCount + stockFailedCount;
+      }
+    }
+
+    if (ownerRunId && batchMarks.length) {
+      try {
+        await persistJitMarksBatch(ownerRunId, batchMarks);
+      } catch (error: any) {
+        ElMessage.warning(extractRequestErrorMessage(error, "JIT 批量状态持久化失败"));
       }
     }
 
@@ -5316,7 +5401,11 @@ const openRealPictureUploader = (rows: RealPicturePreviewRow[]) => {
 const submitRealPictureRowWithoutConfirm = async (
   row: RealPicturePreviewRow,
   positionImageUrls: Record<string, string[]>,
-  options: { showToast?: boolean; uploadedPositionImageUrls?: Record<string, string[]> } = {},
+  options: {
+    showToast?: boolean;
+    uploadedPositionImageUrls?: Record<string, string[]>;
+    persist?: boolean;
+  } = {},
 ) => {
   realPictureSubmittingKey.value = row.rowKey;
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
@@ -5351,7 +5440,9 @@ const submitRealPictureRowWithoutConfirm = async (
       time: formatDateTime(new Date()),
     };
     realPictureSubmitMarks[row.rowKey] = nextMark;
-    await persistRealPictureMark(nextMark);
+    if (options.persist !== false) {
+      await persistRealPictureMark(nextMark);
+    }
     if (options.showToast) {
       response?.success ? ElMessage.success("实拍图上传成功") : ElMessage.error(nextMark.message);
     }
@@ -5366,7 +5457,9 @@ const submitRealPictureRowWithoutConfirm = async (
       time: formatDateTime(new Date()),
     };
     realPictureSubmitMarks[row.rowKey] = nextMark;
-    await persistRealPictureMark(nextMark);
+    if (options.persist !== false) {
+      await persistRealPictureMark(nextMark);
+    }
     if (options.showToast) {
       ElMessage.error(nextMark.message);
     }
@@ -5422,6 +5515,14 @@ const submitRealPictureUploadRows = async () => {
   let successCount = 0;
   let reusableUploadedPositionImageUrls: Record<string, string[]> | null = null;
   const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  const batchMarks: Array<{
+    rowKey: string;
+    status: "success" | "failed";
+    message?: string;
+    spuId?: number;
+    goodsId?: number;
+  }> = [];
 
   for (const row of rows) {
     if (shouldAbortBatch(batchToken)) {
@@ -5429,7 +5530,18 @@ const submitRealPictureUploadRows = async () => {
     }
     const result = await submitRealPictureRowWithoutConfirm(row, positionImageUrls, {
       uploadedPositionImageUrls: reusableUploadedPositionImageUrls || undefined,
+      persist: false,
     });
+    const mark = realPictureSubmitMarks[row.rowKey];
+    if (mark) {
+      batchMarks.push({
+        rowKey: row.rowKey,
+        status: mark.status,
+        message: mark.message,
+        spuId: row.rawSpuId,
+        goodsId: row.rawGoodsId,
+      });
+    }
     if (result.success) {
       if (!reusableUploadedPositionImageUrls && result.uploadedPositionImageUrls) {
         reusableUploadedPositionImageUrls = result.uploadedPositionImageUrls;
@@ -5440,6 +5552,18 @@ const submitRealPictureUploadRows = async () => {
       realPictureBatchFailedCount.value += 1;
     }
     realPictureBatchFinishedCount.value += 1;
+  }
+
+  if (ownerRunId && batchMarks.length) {
+    try {
+      const detail = await batchMarkTemuTaskRunRealPictureRows({
+        id: ownerRunId,
+        items: batchMarks,
+      });
+      applyTaskRunDetailIfCurrent(detail, ownerRunId);
+    } catch (error) {
+      console.warn("批量持久化实拍图上传标注失败", error);
+    }
   }
 
   realPictureBatchSubmitting.value = false;
@@ -6082,6 +6206,7 @@ const submitPriceReviewRowWithoutConfirm = async (
     batchTotal?: number;
     ownerRunId?: number;
     timeoutMs?: number;
+    persist?: boolean;
   } = {},
 ) => {
   const actionText = mode === "confirm" ? "确认核价" : mode === "reprice" ? "重新报价" : "不核价";
@@ -6121,7 +6246,7 @@ const submitPriceReviewRowWithoutConfirm = async (
     };
     priceReviewSubmitMarks[row.rowKey] = nextMark;
 
-    if (ownerRunId) {
+    if (ownerRunId && options.persist !== false) {
       enqueuePriceReviewMark(async () => {
         const detail = await markTemuTaskRunPriceReviewRow({
           id: ownerRunId,
@@ -6154,7 +6279,7 @@ const submitPriceReviewRowWithoutConfirm = async (
       time: formatDateTime(new Date()),
     };
     priceReviewSubmitMarks[row.rowKey] = nextMark;
-    if (ownerRunId) {
+    if (ownerRunId && options.persist !== false) {
       enqueuePriceReviewMark(async () => {
         await markTemuTaskRunPriceReviewRow({
           id: ownerRunId,
@@ -6238,6 +6363,15 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
   resetPriceReviewBatchProgress(mode, rows.length);
   let successCount = 0;
   const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  const batchMarks: Array<{
+    rowKey: string;
+    action: "confirm" | "abandon" | "reprice";
+    status: "success" | "failed";
+    completedLabel?: string;
+    message?: string;
+    markInvalid?: boolean;
+  }> = [];
   try {
     for (const [index, row] of rows.entries()) {
       if (shouldAbortBatch(batchToken)) {
@@ -6247,8 +6381,20 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
       const success = await submitPriceReviewRowWithoutConfirm(row, mode, {
         batchIndex: index + 1,
         batchTotal: rows.length,
-        ownerRunId: Number(activeTaskRunDetail.value?.id || 0),
+        ownerRunId,
+        persist: false,
       });
+      const mark = priceReviewSubmitMarks[row.rowKey];
+      if (mark) {
+        batchMarks.push({
+          rowKey: row.rowKey,
+          action: mode,
+          status: mark.status,
+          message: mark.message,
+          markInvalid: mark.markInvalid,
+          completedLabel: mark.completedLabel,
+        });
+      }
       if (success) {
         successCount += 1;
         priceReviewBatchSuccessCount.value += 1;
@@ -6256,6 +6402,14 @@ const submitSelectedPriceReviewRows = async (mode: "confirm" | "abandon" | "repr
         priceReviewBatchFailedCount.value += 1;
       }
       priceReviewBatchFinishedCount.value += 1;
+    }
+
+    if (ownerRunId && batchMarks.length) {
+      const detail = await batchMarkTemuTaskRunPriceReviewRows({
+        id: ownerRunId,
+        items: batchMarks,
+      });
+      applyTaskRunDetailIfCurrent(detail, ownerRunId);
     }
 
     selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
@@ -6293,6 +6447,16 @@ const confirmBatchRepriceRows = async () => {
   priceReviewBatchRepriceVisible.value = false;
   let successCount = 0;
   const batchToken = batchAbortToken.value;
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  const batchMarks: Array<{
+    rowKey: string;
+    action: "reprice";
+    status: "success" | "failed";
+    completedLabel?: string;
+    message?: string;
+    markInvalid?: boolean;
+    price?: number;
+  }> = [];
   try {
     for (const [index, row] of rows.entries()) {
       if (shouldAbortBatch(batchToken)) {
@@ -6303,8 +6467,21 @@ const confirmBatchRepriceRows = async () => {
         overridePrice: priceMap.get(row.rowKey),
         batchIndex: index + 1,
         batchTotal: rows.length,
-        ownerRunId: Number(activeTaskRunDetail.value?.id || 0),
+        ownerRunId,
+        persist: false,
       });
+      const mark = priceReviewSubmitMarks[row.rowKey];
+      if (mark) {
+        batchMarks.push({
+          rowKey: row.rowKey,
+          action: "reprice",
+          status: mark.status,
+          message: mark.message,
+          markInvalid: mark.markInvalid,
+          completedLabel: mark.completedLabel,
+          price: priceMap.get(row.rowKey),
+        });
+      }
       if (success) {
         successCount += 1;
         priceReviewBatchSuccessCount.value += 1;
@@ -6312,6 +6489,14 @@ const confirmBatchRepriceRows = async () => {
         priceReviewBatchFailedCount.value += 1;
       }
       priceReviewBatchFinishedCount.value += 1;
+    }
+
+    if (ownerRunId && batchMarks.length) {
+      const detail = await batchMarkTemuTaskRunPriceReviewRows({
+        id: ownerRunId,
+        items: batchMarks,
+      });
+      applyTaskRunDetailIfCurrent(detail, ownerRunId);
     }
 
     selectedPriceReviewRowKeys.value = selectedPriceReviewRowKeys.value.filter((rowKey) => {
