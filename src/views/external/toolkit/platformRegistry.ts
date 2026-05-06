@@ -1,4 +1,5 @@
 import type { Component } from "vue";
+import { ALIBABA_1688_TOOLKIT_PLATFORM } from "./alibaba-1688/platform";
 import { TEMU_TOOLKIT_PLATFORM } from "./temu/platform";
 
 export interface ToolkitPlatformDefinition {
@@ -13,4 +14,7 @@ export interface ToolkitPlatformDefinition {
   workspaceComponent?: Component | null;
 }
 
-export const TOOLKIT_PLATFORM_REGISTRY: ToolkitPlatformDefinition[] = [TEMU_TOOLKIT_PLATFORM];
+export const TOOLKIT_PLATFORM_REGISTRY: ToolkitPlatformDefinition[] = [
+  TEMU_TOOLKIT_PLATFORM,
+  ALIBABA_1688_TOOLKIT_PLATFORM,
+];

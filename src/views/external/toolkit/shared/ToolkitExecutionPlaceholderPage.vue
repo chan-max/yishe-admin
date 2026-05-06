@@ -153,6 +153,9 @@ const platformActionThemes: Record<
   qianniu: {
     color: "#ff6a00",
   },
+  alibaba_1688: {
+    color: "#ff6a00",
+  },
 };
 
 const platformActionButtonStyle = computed<CSSProperties>(() => {

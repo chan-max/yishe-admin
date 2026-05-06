@@ -691,6 +691,15 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "千牛",
         },
       },
+      {
+        path: "alibaba-1688",
+        component: () => import("@/views/external/toolkit/alibaba-1688/index.vue"),
+        name: "OperationToolkitAlibaba1688",
+        meta: {
+          title: "1688",
+          toolkitPlatform: "alibaba_1688",
+        },
+      },
     ],
   },
   {
