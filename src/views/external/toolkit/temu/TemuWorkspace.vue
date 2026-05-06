@@ -3056,12 +3056,12 @@ const buildJitPreviewRows = (
   const seen = new Set<string>();
 
   items.forEach((item: any, itemIndex: number) => {
-    const spuId = Number(item?.productId || 0);
+    const spuId = Number(item?.productId || item?.spuId || 0);
     const productName = toDisplayText(item?.productName);
     const categoryName = resolveJitCategoryName(item);
     const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
     skcList.forEach((skc: any, skcIndex: number) => {
-      const skcId = Number(skc?.skcId || 0);
+      const skcId = Number(skc?.skcId || skc?.productSkcId || 0);
       if (!spuId || !skcId) {
         return;
       }
@@ -5022,7 +5022,7 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
   const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
 
   try {
-    const response = await runTemuClientAction("jit.open", buildJitOpenPayload(rows));
+    const response = normalizeTemuActionResponse(await runTemuClientAction("jit.open", buildJitOpenPayload(rows)));
     if (batchMode && shouldAbortBatch(batchToken)) {
       return;
     }
@@ -5115,6 +5115,13 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
         : ElMessage.success("JIT 开通完成");
     }
   } catch (error: any) {
+    const failedBatchMarks: Array<{
+      rowKey: string;
+      action: "open";
+      status: "failed";
+      message?: string;
+      markOpened?: boolean;
+    }> = [];
     rows.forEach((row) => {
       const nextMark: JitSubmitMark = {
         status: "failed",
@@ -5124,9 +5131,17 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
         markOpened: false,
       };
       jitSubmitMarks[row.rowKey] = nextMark;
-      if (activeTaskRunDetail.value?.id) {
+      if (batchMode && ownerRunId) {
+        failedBatchMarks.push({
+          rowKey: row.rowKey,
+          action: "open",
+          status: nextMark.status,
+          message: nextMark.message,
+          markOpened: false,
+        });
+      } else if (ownerRunId) {
         markTemuTaskRunJitRow({
-          id: activeTaskRunDetail.value.id,
+          id: ownerRunId,
           rowKey: row.rowKey,
           action: "open",
           status: nextMark.status,
@@ -5138,6 +5153,13 @@ const submitJitRows = async (inputRows: JitPreviewRow[], batchMode = false) => {
     if (batchMode) {
       jitBatchFinishedCount.value = rows.length;
       jitBatchFailedCount.value = rows.length;
+      if (failedBatchMarks.length) {
+        try {
+          await persistJitMarksBatch(ownerRunId, failedBatchMarks);
+        } catch (persistError: any) {
+          ElMessage.warning(extractRequestErrorMessage(persistError, "JIT 开通失败状态批量持久化失败"));
+        }
+      }
     }
     ElMessage.error(extractRequestErrorMessage(error, "JIT 开通失败"));
   } finally {
@@ -5186,7 +5208,7 @@ const submitSelectedJitOpenAndStockRows = async () => {
 
     if (openRows.length) {
       setJitBatchCurrent("批量开通请求中");
-      const response = await runTemuClientAction("jit.open", buildJitOpenPayload(openRows));
+      const response = normalizeTemuActionResponse(await runTemuClientAction("jit.open", buildJitOpenPayload(openRows)));
       const failedItems = asArray<Record<string, any>>(response?.result?.failedSkcList);
       const failedSkcIds = new Set(
         failedItems
