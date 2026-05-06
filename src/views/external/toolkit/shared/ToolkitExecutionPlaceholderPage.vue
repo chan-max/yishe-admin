@@ -56,7 +56,7 @@
             </template>
             <template v-else>
               <div class="toolkit-placeholder-workspace__head">
-                <div class="toolkit-placeholder-workspace__title">小功能</div>
+                <div class="toolkit-placeholder-workspace__title">{{ title }}工具</div>
                 <el-button size="small" :loading="toolsLoading" @click="loadPlatformTools">
                   刷新工具
                 </el-button>
@@ -219,9 +219,23 @@ const lastRunResultText = computed(() => {
 });
 
 const syncPlatformTools = (items: ToolkitToolItem[] = []) => {
-  platformTools.value = items.filter(
-    (item) => String(item?.platform || "").trim() === String(props.platformKey || "").trim(),
-  );
+  platformTools.value = items
+    .filter((item) => String(item?.platform || "").trim() === String(props.platformKey || "").trim())
+    .sort((left, right) => {
+      const getWeight = (item: ToolkitToolItem) => {
+        const category = String(item?.category || "").trim();
+        const key = String(item?.key || "").trim();
+        if (category === "navigation" || key.endsWith("-open-workspace")) {
+          return 0;
+        }
+        if (category === "session" || key.endsWith("-check-login")) {
+          return 1;
+        }
+        return 2;
+      };
+
+      return getWeight(left) - getWeight(right);
+    });
 };
 
 const loadPlatformTools = async () => {

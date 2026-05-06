@@ -673,6 +673,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "OperationToolkitDoudian",
         meta: {
           title: "抖店",
+          toolkitPlatform: "doudian",
         },
       },
       {
@@ -681,6 +682,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "OperationToolkitKuaishouShop",
         meta: {
           title: "快手小店",
+          toolkitPlatform: "kuaishou_shop",
         },
       },
       {
@@ -689,6 +691,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "OperationToolkitQianniu",
         meta: {
           title: "千牛",
+          toolkitPlatform: "qianniu",
         },
       },
       {
