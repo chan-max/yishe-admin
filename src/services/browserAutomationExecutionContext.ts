@@ -161,6 +161,32 @@ export const normalizeBrowserAutomationProfilesPayload = (
   };
 };
 
+const hasBrowserAutomationProfilesPayloadSignal = (
+  payload?: Partial<BrowserAutomationProfilesPayload> | Record<string, any> | null,
+) => {
+  if (!isPlainProfileRecord(payload)) {
+    return false;
+  }
+  const source = payload as Record<string, any>;
+
+  return (
+    Array.isArray(source.items) ||
+    Array.isArray(source.profiles) ||
+    normalizeProfileString(source.activeProfileId) ||
+    isPlainProfileRecord(source.activeProfile)
+  );
+};
+
+const hasBrowserAutomationProfileListSignal = (
+  payload?: Partial<BrowserAutomationProfilesPayload> | Record<string, any> | null,
+) => {
+  if (!isPlainProfileRecord(payload)) {
+    return false;
+  }
+  const source = payload as Record<string, any>;
+  return Array.isArray(source.items) || Array.isArray(source.profiles);
+};
+
 const formatTimeText = (value?: string | null) =>
   value ? formatDate(new Date(value), "YYYY-MM-DD HH:mm") : "";
 
@@ -212,7 +238,7 @@ export function useBrowserAutomationExecutionContext() {
     loading,
     refresh,
     getServiceRuntime,
-  } = usePluginClientNodes("browser-automation");
+  } = usePluginClientNodes("browser-automation", { includeOffline: true });
 
   const selectedClientId = ref("");
   const selectedProfileValue = ref("");
@@ -330,6 +356,10 @@ export function useBrowserAutomationExecutionContext() {
   });
 
   const syncClientSelection = () => {
+    if (loading.value || !clients.value.length) {
+      return;
+    }
+
     if (
       selectedClientId.value &&
       !clients.value.some((item) => item.clientId === selectedClientId.value)
@@ -356,6 +386,18 @@ export function useBrowserAutomationExecutionContext() {
   };
 
   const setProfilesPayload = (payload?: Partial<BrowserAutomationProfilesPayload> | null) => {
+    if (!hasBrowserAutomationProfilesPayloadSignal(payload) && selectedProfileValue.value) {
+      return;
+    }
+
+    if (
+      selectedProfileValue.value &&
+      profileItems.value.length &&
+      !hasBrowserAutomationProfileListSignal(payload)
+    ) {
+      return;
+    }
+
     profilePayload.value = normalizeBrowserAutomationProfilesPayload(payload);
     syncProfileSelection();
   };
