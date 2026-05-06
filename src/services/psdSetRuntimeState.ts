@@ -133,6 +133,10 @@ const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | nul
   serverActivePsdSets.value = source
     .map((item) => normalizeActivePsdSetItem(item))
     .filter((item): item is ActivePsdSetSummaryItem => !!item)
+
+  if (hasServerItems && serverActivePsdSets.value.length === 0) {
+    realtimeActivePsdSetMap.value = {}
+  }
   syncMergedActiveSummary()
 }
 
@@ -167,6 +171,21 @@ const removeRealtimeActivePsdSet = (psdSetId: string) => {
   if (!id || !realtimeActivePsdSetMap.value[id]) return
   const nextMap = { ...realtimeActivePsdSetMap.value }
   delete nextMap[id]
+  realtimeActivePsdSetMap.value = nextMap
+  syncMergedActiveSummary()
+}
+
+const removeRealtimeActivePsdSetsByClientId = (clientId: unknown) => {
+  const normalizedClientId = String(clientId || '').trim()
+  if (!normalizedClientId) return
+  const nextMap = Object.fromEntries(
+    Object.entries(realtimeActivePsdSetMap.value).filter(
+      ([, item]) => String(item?.assignedClientId || '').trim() !== normalizedClientId,
+    ),
+  )
+  if (Object.keys(nextMap).length === Object.keys(realtimeActivePsdSetMap.value).length) {
+    return
+  }
   realtimeActivePsdSetMap.value = nextMap
   syncMergedActiveSummary()
 }
@@ -237,8 +256,12 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
     return
   }
 
-  if (!event?.running && psdSetId) {
-    removeRealtimeActivePsdSet(psdSetId)
+  if (!event?.running) {
+    if (psdSetId) {
+      removeRealtimeActivePsdSet(psdSetId)
+    } else {
+      removeRealtimeActivePsdSetsByClientId(event?.clientId)
+    }
     scheduleActiveSummaryRefresh(180)
   }
 }
