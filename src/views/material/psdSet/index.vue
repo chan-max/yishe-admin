@@ -659,6 +659,13 @@
                 </div>
               </div>
             </div>
+            <el-alert
+              class="publish-config-template-alert"
+              :type="publishConfigTargetTemplateAlert.type"
+              :title="publishConfigTargetTemplateAlert.title"
+              show-icon
+              :closable="false"
+            />
             <div class="publish-config-toolbar__actions">
               <el-input v-model="publishConfigSearchText" placeholder="搜索任务配置名称、任务类型或平台..." clearable
                 @input="publishConfigCurrentPage = 1" class="publish-config-search" />
@@ -671,7 +678,16 @@
           <div class="common-table publish-config-grid-wrap">
             <vxe-grid v-bind="publishConfigGridOptions" :data="publishConfigDataSource"
               @checkbox-change="handlePublishConfigCheckboxChange"
-              @checkbox-all="handlePublishConfigCheckboxAllChange" />
+              @checkbox-all="handlePublishConfigCheckboxAllChange">
+              <template #publishConfigTemplateSlot="{ row }">
+                <span>{{ getPublishConfigBindingLabel(row) }}</span>
+              </template>
+              <template #publishConfigMatchSlot="{ row }">
+                <el-tag :type="getPublishConfigMatchInfo(row).type" size="small" effect="plain">
+                  {{ getPublishConfigMatchInfo(row).label }}
+                </el-tag>
+              </template>
+            </vxe-grid>
           </div>
 
           <div class="publish-config-pagination">
@@ -873,6 +889,7 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const total = ref(0);
 const selectedIds = ref<string[]>([]);
+const selectedPsdSetRows = ref<any[]>([]);
 const tablePreviewImageIndexMap = reactive<Record<string, number>>({});
 const tableImageViewerVisible = ref(false);
 const tableImageViewerUrls = ref<string[]>([]);
@@ -908,6 +925,7 @@ const publishConfigSubmitting = ref(false);
 const publishConfigOptions = ref<any[]>([]);
 const publishConfigSelectedIds = ref<string[]>([]);
 const publishConfigTargetIds = ref<string[]>([]);
+const publishConfigTargetRows = ref<any[]>([]);
 const publishConfigSearchText = ref("");
 const publishConfigCurrentPage = ref(1);
 const publishConfigPageSize = ref(10);
@@ -1047,6 +1065,52 @@ const publishConfigSelectedNames = computed(() =>
     .filter(Boolean),
 );
 
+const publishConfigTargetTemplateIds = computed(() =>
+  Array.from(
+    new Set(
+      publishConfigTargetRows.value
+        .map((item) => getPsdSetTemplateId(item))
+        .filter(Boolean),
+    ),
+  ),
+);
+
+const publishConfigTargetTemplateMode = computed(() => {
+  const hasMissingTemplate = publishConfigTargetRows.value.some((item) => !getPsdSetTemplateId(item));
+  if (publishConfigTargetTemplateIds.value.length === 1 && !hasMissingTemplate) {
+    return "single";
+  }
+  if (publishConfigTargetTemplateIds.value.length > 1) {
+    return "multiple";
+  }
+  return "unknown";
+});
+
+const publishConfigTargetTemplateAlert = computed(() => {
+  if (publishConfigTargetTemplateMode.value === "single") {
+    return {
+      type: "success" as const,
+      title: `当前选择来自同一 PSD 模板（${publishConfigTargetTemplateIds.value[0]}），可使用通用配置或该模板绑定配置。`,
+    };
+  }
+  if (publishConfigTargetTemplateMode.value === "multiple") {
+    return {
+      type: "warning" as const,
+      title: `当前选择包含 ${publishConfigTargetTemplateIds.value.length} 个 PSD 模板，仅可使用通用任务配置。`,
+    };
+  }
+  if (publishConfigTargetTemplateIds.value.length === 1) {
+    return {
+      type: "warning" as const,
+      title: "当前选择中有套图缺少 PSD 模板信息，仅可使用通用任务配置。",
+    };
+  }
+  return {
+    type: "warning" as const,
+    title: "当前套图缺少 PSD 模板信息，仅可使用通用任务配置。",
+  };
+});
+
 const publishConfigDataSource = computed(() => {
   const start = (publishConfigCurrentPage.value - 1) * publishConfigPageSize.value;
   const end = start + publishConfigPageSize.value;
@@ -1063,6 +1127,7 @@ const publishConfigGridOptions = computed(() => ({
     checkRowKeys: publishConfigSelectedIds.value,
     highlight: true,
     trigger: "row" as const,
+    checkMethod: ({ row }: any) => isPublishConfigSelectable(row),
   },
   columns: [
     { type: "checkbox" as any, width: 60, align: "center" as any },
@@ -1073,6 +1138,19 @@ const publishConfigGridOptions = computed(() => ({
       formatter: ({ row }: any) => formatTaskTypeName(row?.taskType, row?.platform),
     },
     { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
+    {
+      field: "templateBinding",
+      title: "绑定模板",
+      width: 180,
+      showOverflow: true,
+      slots: { default: "publishConfigTemplateSlot" },
+    },
+    {
+      field: "matchStatus",
+      title: "匹配状态",
+      width: 160,
+      slots: { default: "publishConfigMatchSlot" },
+    },
     { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
   ],
 }));
@@ -1302,6 +1380,62 @@ const detailPublishTaskCount = computed(() => {
 
 function normalizePsdSetId(value: unknown) {
   return String(value || "").trim();
+}
+
+function getPsdSetTemplateId(row: any) {
+  return String(row?.psdTemplateId || row?.psdTemplate?.id || "").trim();
+}
+
+function getPublishConfigBoundTemplateId(config: any) {
+  return String(config?.configData?.templateBinding?.psdTemplateId || "").trim();
+}
+
+function getPublishConfigBindingLabel(config: any) {
+  const boundTemplateId = getPublishConfigBoundTemplateId(config);
+  return boundTemplateId || "通用配置";
+}
+
+function getPublishConfigMatchInfo(config: any) {
+  const boundTemplateId = getPublishConfigBoundTemplateId(config);
+  if (!boundTemplateId) {
+    return {
+      selectable: true,
+      label: "可选",
+      type: "success" as const,
+      reason: "",
+    };
+  }
+
+  if (publishConfigTargetTemplateMode.value === "multiple") {
+    return {
+      selectable: false,
+      label: "多模板不可用",
+      type: "warning" as const,
+      reason: "所选套图包含多个 PSD 模板，绑定模板配置需按模板分批生成",
+    };
+  }
+
+  if (publishConfigTargetTemplateMode.value !== "single") {
+    return {
+      selectable: false,
+      label: "缺少模板",
+      type: "warning" as const,
+      reason: "当前套图缺少 PSD 模板信息，无法使用绑定模板配置",
+    };
+  }
+
+  const targetTemplateId = publishConfigTargetTemplateIds.value[0];
+  const matched = boundTemplateId === targetTemplateId;
+  return {
+    selectable: matched,
+    label: matched ? "模板匹配" : "模板不一致",
+    type: matched ? ("success" as const) : ("danger" as const),
+    reason: matched ? "" : "任务配置绑定的 PSD 模板与当前套图模板不一致",
+  };
+}
+
+function isPublishConfigSelectable(config: any) {
+  return getPublishConfigMatchInfo(config).selectable;
 }
 
 type PsdSetRuntimeUpdatePayload = {
@@ -2490,7 +2624,9 @@ async function copyId(id: string) {
 function onSelectionChange({ records, reserves }) {
   const current = Array.isArray(records) ? records : [];
   const reserveList = Array.isArray(reserves) ? reserves : [];
-  selectedIds.value = [...current, ...reserveList].map((item) => item.id);
+  const selectedRows = [...current, ...reserveList];
+  selectedIds.value = selectedRows.map((item) => item.id);
+  selectedPsdSetRows.value = selectedRows;
 }
 
 async function updateRowStatus(row, status: string) {
@@ -2861,7 +2997,22 @@ async function openPublishConfigDialog(ids: string[]) {
     return ElMessage.warning("请选择需要生成发布任务的套图");
   }
 
+  const selectedRowMap = new Map<string, any>();
+  selectedPsdSetRows.value.forEach((item) => {
+    const id = normalizePsdSetId(item?.id);
+    if (id) {
+      selectedRowMap.set(id, item);
+    }
+  });
+  dataSource.value.forEach((item) => {
+    const id = normalizePsdSetId(item?.id);
+    if (id && !selectedRowMap.has(id)) {
+      selectedRowMap.set(id, item);
+    }
+  });
+
   publishConfigTargetIds.value = normalizedIds;
+  publishConfigTargetRows.value = normalizedIds.map((id) => selectedRowMap.get(id) || { id });
   publishConfigSelectedIds.value = [];
   publishConfigSearchText.value = "";
   publishConfigCurrentPage.value = 1;
@@ -2873,11 +3024,16 @@ function handleClosePublishConfigDialog() {
   publishConfigDialogVisible.value = false;
   publishConfigSelectedIds.value = [];
   publishConfigTargetIds.value = [];
+  publishConfigTargetRows.value = [];
   publishConfigSearchText.value = "";
   publishConfigCurrentPage.value = 1;
 }
 
 function handlePublishConfigCheckboxChange({ checked, row }) {
+  if (checked && !isPublishConfigSelectable(row)) {
+    ElMessage.warning(getPublishConfigMatchInfo(row).reason || "当前任务配置不可选");
+    return;
+  }
   if (checked) {
     if (!publishConfigSelectedIds.value.includes(row.id)) {
       publishConfigSelectedIds.value.push(row.id);
@@ -2888,7 +3044,9 @@ function handlePublishConfigCheckboxChange({ checked, row }) {
 }
 
 function handlePublishConfigCheckboxAllChange({ checked }) {
-  const currentPageIds = publishConfigDataSource.value.map((item: any) => item.id);
+  const currentPageIds = publishConfigDataSource.value
+    .filter((item: any) => isPublishConfigSelectable(item))
+    .map((item: any) => item.id);
   if (checked) {
     currentPageIds.forEach((id: string) => {
       if (!publishConfigSelectedIds.value.includes(id)) {
@@ -2922,6 +3080,20 @@ async function handleSubmitCreatePublishTask() {
   }
   if (!publishConfigSelectedIds.value.length) {
     return ElMessage.warning("请选择任务配置");
+  }
+
+  const invalidSelectedConfigs = publishConfigSelectedIds.value
+    .map((id) => publishConfigOptions.value.find((item: any) => item.id === id))
+    .filter((item) => item && !isPublishConfigSelectable(item));
+  if (invalidSelectedConfigs.length) {
+    const firstInvalid = invalidSelectedConfigs[0];
+    publishConfigSelectedIds.value = publishConfigSelectedIds.value.filter((id) => {
+      const config = publishConfigOptions.value.find((item: any) => item.id === id);
+      return config && isPublishConfigSelectable(config);
+    });
+    return ElMessage.warning(
+      getPublishConfigMatchInfo(firstInvalid).reason || "已选任务配置与当前套图模板不匹配",
+    );
   }
 
   publishConfigSubmitting.value = true;
@@ -4394,6 +4566,11 @@ getList();
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.publish-config-template-alert {
+  flex: 1 1 360px;
+  min-width: 280px;
 }
 
 .publish-config-stat-card {
