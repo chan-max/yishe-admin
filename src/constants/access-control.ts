@@ -76,6 +76,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
     options: [
       { key: "product.category", label: "商品种类" },
       { key: "product.index", label: "商品" },
+      { key: "product.generation-template", label: "商品生成模板" },
       { key: "product.psd-set", label: "套图" },
       { key: "product.design-request", label: "设计需求" },
       { key: "product.publish-config", label: "任务配置" },
@@ -155,6 +156,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   Prompt: "ai.prompt",
   ProductCategory: "product.category",
   ProductIndex: "product.index",
+  ProductGenerationTemplate: "product.generation-template",
   PsdSet: "product.psd-set",
   DesignRequest: "product.design-request",
   PublishConfig: "product.publish-config",

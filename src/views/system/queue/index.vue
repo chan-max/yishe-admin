@@ -119,6 +119,15 @@
               >
                 批量删除
               </el-button>
+              <el-button
+                size="small"
+                type="warning"
+                :disabled="!ids.length"
+                :loading="batchResetPendingLoading"
+                @click="handleBatchResetPublishTasksToPending"
+              >
+                批量重置为未运行
+              </el-button>
             </div>
           </el-form>
         </div>
@@ -927,6 +936,7 @@ import {
   getQueueStats,
   updateTaskData,
   updateTaskStatus,
+  batchResetPublishTasksToPending,
   type QueueMessage,
   type QueueStats,
 } from "@/api/system/queue";
@@ -1184,6 +1194,7 @@ const submitLoading = ref(false);
 const statusSubmitLoading = ref(false);
 const dataUpdateSubmitting = ref(false);
 const deleteLoading = ref(false);
+const batchResetPendingLoading = ref(false);
 const publishTaskAutoDispatchEnabled = ref(false);
 const publishTaskAutoDispatchLoading = ref(false);
 const publishTaskSchedulerRuntime = ref<AutoDispatchSchedulerRuntime | null>(null);
@@ -2572,6 +2583,11 @@ function checkboxAllChange(e) {
   ids.value = e.records.map((item) => item.id);
 }
 
+function getSelectedQueueRows() {
+  const selectedIdSet = new Set(ids.value.map((id) => String(id || "").trim()).filter(Boolean));
+  return dataSource.value.filter((row) => selectedIdSet.has(String(row.id || "").trim()));
+}
+
 // 任务类型清空处理
 function handleTypeClear() {
   dataSource.value = [];
@@ -3210,6 +3226,57 @@ function handleDelete(row?: QueueMessage) {
       }
     })
     .catch(() => {});
+}
+
+async function handleBatchResetPublishTasksToPending() {
+  if (batchResetPendingLoading.value) return;
+  const selectedRows = getSelectedQueueRows();
+  if (!selectedRows.length) {
+    return ElMessage.warning("请选择要重置的平台任务");
+  }
+
+  const publishRows = selectedRows.filter((row) => isPublishTaskRow(row));
+  const ignoredNonPublishCount = selectedRows.length - publishRows.length;
+  if (!publishRows.length) {
+    return ElMessage.warning("选中的数据里没有平台发布任务");
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认将选中的 ${publishRows.length} 条平台任务重置为未运行吗？执行中的任务会自动跳过。`,
+      "批量重置为未运行",
+      {
+        type: "warning",
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+      },
+    );
+
+    batchResetPendingLoading.value = true;
+    const response: any = await batchResetPublishTasksToPending(publishRows.map((row) => row.id));
+    const payload = response?.data?.data ?? response?.data ?? response;
+    const updated = Number(payload?.updated) || 0;
+    const skipped = Array.isArray(payload?.skipped) ? payload.skipped : [];
+    const skippedCount = skipped.length + ignoredNonPublishCount;
+
+    if (updated > 0 && skippedCount > 0) {
+      ElMessage.warning(`已重置 ${updated} 条，跳过 ${skippedCount} 条`);
+    } else if (updated > 0) {
+      ElMessage.success(`已重置 ${updated} 条平台任务`);
+    } else {
+      ElMessage.warning(skipped[0]?.reason || "没有可重置的平台任务");
+    }
+
+    schedulePublishTaskMenuRuntimeSync();
+    await refreshPublishDispatchPageState();
+  } catch (error: any) {
+    if (error === "cancel" || error === "close") {
+      return;
+    }
+    ElMessage.error(error?.message || "批量重置失败");
+  } finally {
+    batchResetPendingLoading.value = false;
+  }
 }
 
 // 提交表单

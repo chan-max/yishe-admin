@@ -244,6 +244,21 @@ export const updateTaskStatus = (
   return request.post({ url: "/queue/message/status", data: { type, messageId, status, error } });
 };
 
+export const batchResetPublishTasksToPending = (ids: string[]) => {
+  return request.post<{
+    success: boolean;
+    message: string;
+    data: {
+      total: number;
+      updated: number;
+      skipped: Array<{ id: string; reason: string }>;
+    };
+  }>({
+    url: "/queue/messages/status-batch/pending",
+    data: { ids },
+  });
+};
+
 export const updateTaskExecutionReadiness = (
   type: string,
   messageId: string,
