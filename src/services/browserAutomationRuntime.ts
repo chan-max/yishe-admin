@@ -23,6 +23,7 @@ export const BROWSER_AUTOMATION_EXECUTABLE_TASK_TYPES = [
   "publish-product-kuaishou_shop",
   "publish-product-temu",
   "publish-product-taobao",
+  "publish-product-pdd",
   "publish-product-xiaohongshu",
   "publish-product-weibo",
 ] as const;

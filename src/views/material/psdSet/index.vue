@@ -18,6 +18,18 @@
                 </el-form-item>
               </el-col>
               <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="图片ID">
+                  <el-input v-model="queryParams.stickerId" size="small" placeholder="素材/图片ID" clearable
+                    @change="handleStickerIdChange" />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="PSD模板ID">
+                  <el-input v-model="queryParams.psdTemplateId" size="small" placeholder="PSD模板ID" clearable
+                    @change="handlePsdTemplateIdChange" />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
                 <el-form-item label="状态">
                   <el-select v-model="queryParams.status" size="small" placeholder="全部状态" clearable @change="getList">
                     <el-option v-for="item in statusOptions" :key="item.value" :label="item.label"
@@ -42,7 +54,7 @@
               </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="12" :lg="6">
                 <el-form-item label="查重配置">
-                  <el-select v-model="queryParams.publishUsageConfigId" size="small" placeholder="选择后标记已用图片"
+                  <el-select v-model="queryParams.publishUsageConfigId" size="small" placeholder="选择后标记已用套图"
                     clearable filterable multiple collapse-tags collapse-tags-tooltip
                     @change="handlePublishUsageViewChange">
                     <el-option v-for="item in publishUsageConfigOptions" :key="item.id"
@@ -118,7 +130,7 @@
           <div class="list-page-table-panel__body psd-set-page__table-body">
             <vxe-grid v-bind="gridOptions" :data="dataSource" :loading="loading"
               :row-class-name="psdSetRowClassName" @checkbox-change="onSelectionChange"
-              @checkbox-all="onSelectionChange" @cell-click="handlePsdSetCellClick" @scroll="handleGridScroll">
+              @checkbox-all="onSelectionChange" @cell-click="handlePsdSetCellClick">
               <template #idSlot="{ row }">
                 <div class="table-cell-copyable" @click="copyId(row.id)">
                   <span class="table-cell-id">{{ row.id }}</span>
@@ -237,7 +249,7 @@
         <div
           class="pagination-container list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
           <pagination :total="total" v-model:page="queryParams.currentPage" v-model:limit="queryParams.pageSize"
-            @pagination="getList" />
+            @pagination="() => getList()" />
         </div>
       </template>
     </ListPageLayout>
@@ -817,9 +829,9 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="publishUsageDialogVisible" title="图片使用记录" width="920px" :destroy-on-close="true">
+    <el-dialog v-model="publishUsageDialogVisible" title="套图使用记录" width="920px" :destroy-on-close="true">
       <div v-loading="publishUsageLoading" class="publish-usage-dialog">
-        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无使用记录" />
+        <el-empty v-if="!publishUsageLoading && !publishUsageRecords.length" description="暂无套图使用记录" />
         <vxe-grid v-else v-bind="publishUsageGridOptions" :data="publishUsageRecords">
           <template #usageImageSlot="{ row }">
             <el-image v-if="row.imageUrl" :src="row.imageUrl" fit="cover" class="publish-usage-image"
@@ -988,6 +1000,7 @@ const publishPlatformNameMap: Record<string, string> = {
   tiktok: "TikTok",
   youtube: "YouTube",
   temu: "Temu",
+  pdd: "拼多多",
 };
 
 function formatPlatformName(platform?: string) {
@@ -1007,6 +1020,9 @@ function formatPublishUsageConfigLabel(config: any) {
 function getPublishUsageStatusLabel(status?: string) {
   const map: Record<string, string> = {
     pending: "发布中",
+    waiting: "等待中",
+    processing: "发布中",
+    completed: "已使用",
     success: "已使用",
     failed: "失败",
     expired: "已过期",
@@ -1018,6 +1034,9 @@ function getPublishUsageStatusLabel(status?: string) {
 function getPublishUsageStatusTag(status?: string) {
   const map: Record<string, "info" | "warning" | "success" | "danger"> = {
     pending: "warning",
+    waiting: "warning",
+    processing: "warning",
+    completed: "success",
     success: "success",
     failed: "danger",
     expired: "info",
@@ -1207,7 +1226,7 @@ const publishUsageGridOptions = computed(() => ({
   rowConfig: { isHover: true, keyField: "id" },
   columnConfig: { resizable: true },
   columns: [
-    { field: "imageUrl", title: "图片", width: 96, slots: { default: "usageImageSlot" } },
+    { field: "imageUrl", title: "关联图片", width: 96, slots: { default: "usageImageSlot" } },
     { field: "publishConfigId", title: "发布配置", minWidth: 220, slots: { default: "usageConfigSlot" } },
     { field: "status", title: "状态", width: 110, slots: { default: "usageStatusSlot" } },
     { field: "taskId", title: "任务ID", minWidth: 220, showOverflow: true },
@@ -1252,6 +1271,8 @@ const queryParams = reactive({
   pageSize: 20,
   id: "",
   keyword: "",
+  stickerId: "",
+  psdTemplateId: "",
   status: "",
   sortingFields: defaultSortingValue(),
   startTime: "",
@@ -2058,6 +2079,8 @@ async function getList(silent = false) {
     const res = await stickerPsdSetApi.page({
       ...queryParams,
       id: queryParams.id?.trim() || undefined,
+      stickerId: queryParams.stickerId?.trim() || undefined,
+      psdTemplateId: queryParams.psdTemplateId?.trim() || undefined,
       status: queryParams.status || undefined,
       keyword: queryParams.keyword?.trim() || undefined,
       includeDetails: showDetails.value,
@@ -2086,6 +2109,18 @@ function handleIdChange(val: string) {
 }
 
 function handleKeywordChange(val: string) {
+  if (!val) {
+    getList();
+  }
+}
+
+function handleStickerIdChange(val: string) {
+  if (!val) {
+    getList();
+  }
+}
+
+function handlePsdTemplateIdChange(val: string) {
   if (!val) {
     getList();
   }
@@ -3183,21 +3218,25 @@ async function handleViewPublishTasks(row: any) {
 
 async function handleViewPublishUsageRecords(row: any) {
   if (!row?.id) {
-    return ElMessage.warning("缺少ID，无法查看使用记录");
+    return ElMessage.warning("缺少套图ID，无法查看使用记录");
   }
   publishUsageDialogVisible.value = true;
   publishUsageLoading.value = true;
   publishUsageRecords.value = [];
   try {
-    const res = await stickerPsdSetApi.getPublishUsageRecords({ psdSetId: row.id });
+    const activeUsageConfigId = queryParams.publishUsageConfigId[0] || undefined;
+    const res = await stickerPsdSetApi.getPublishUsageRecords({
+      psdSetId: row.id,
+      publishConfigId: activeUsageConfigId,
+    });
     publishUsageRecords.value = Array.isArray(res)
       ? res
       : Array.isArray((res as any)?.data)
         ? (res as any).data
         : [];
   } catch (error: any) {
-    console.error("获取使用记录失败:", error);
-    ElMessage.error(error?.message || "获取使用记录失败");
+    console.error("获取套图使用记录失败:", error);
+    ElMessage.error(error?.message || "获取套图使用记录失败");
     publishUsageDialogVisible.value = false;
   } finally {
     publishUsageLoading.value = false;

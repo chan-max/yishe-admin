@@ -17,6 +17,7 @@ export const TASK_TYPE_OPTIONS = [
   { label: '发布商品-TikTok', value: 'publish-product-tiktok' },
   { label: '发布商品-Temu', value: 'publish-product-temu' },
   { label: '发布商品-淘宝', value: 'publish-product-taobao' },
+  { label: '发布商品-拼多多', value: 'publish-product-pdd' },
   // 后续可在此添加更多任务类型
 ] as const
 
@@ -41,7 +42,8 @@ export const PLATFORM_LABEL_MAP: Record<string, string> = {
   bilibili: 'B站',
   zhihu: '知乎',
   temu: 'Temu',
-  taobao: '淘宝'
+  taobao: '淘宝',
+  pdd: '拼多多'
 }
 
 export function resolveTaskTypePlatform(taskType?: string): string {

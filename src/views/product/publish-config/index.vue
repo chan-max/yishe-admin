@@ -198,7 +198,7 @@ const currentPlatformConfig = ref<TaskTypeConfig | null>(null);
 const platformConfigData = ref<Record<string, any>>({});
 const vendorRows = ref<Vendor[]>([]);
 const vendorOptions = ref<Array<{ label: string; value: number }>>([]);
-const fixedTitleSupportedPlatforms = new Set(["doudian", "kuaishou_shop", "temu", "taobao"]);
+const fixedTitleSupportedPlatforms = new Set(["doudian", "kuaishou_shop", "temu", "taobao", "pdd"]);
 
 const form = reactive({
   id: undefined,
@@ -2378,8 +2378,8 @@ onMounted(() => {
 }
 
 .publish-config-field-tip {
-  margin-top: 4px;
-  font-size: 12px;
+  margin: 4px;
+  font-size: 10px;
   line-height: 1.45;
   color: var(--el-text-color-secondary);
 }

@@ -3474,6 +3474,7 @@ const publishPlatformNameMap: Record<string, string> = {
   youtube: "YouTube",
   temu: "Temu",
   taobao: "淘宝",
+  pdd: "拼多多",
 };
 
 function formatPlatformName(platform?: string) {

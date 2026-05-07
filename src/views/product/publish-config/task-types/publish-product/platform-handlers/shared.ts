@@ -51,6 +51,67 @@ export function validatePsdImageIndexes(input: unknown): boolean {
     })
 }
 
+export function parsePsdImageIndexes(input: unknown): number[] {
+  const normalized = normalizePsdImageIndexes(input)
+  if (!normalized) {
+    return []
+  }
+
+  const indexes: number[] = []
+  normalized
+    .split(',')
+    .filter(Boolean)
+    .forEach((segment) => {
+      if (/^\d+$/.test(segment)) {
+        const index = Number(segment)
+        if (index > 0) {
+          indexes.push(index)
+        }
+        return
+      }
+
+      const rangeMatch = segment.match(/^(\d+)-(\d+)$/)
+      if (!rangeMatch) {
+        return
+      }
+
+      const start = Number(rangeMatch[1])
+      const end = Number(rangeMatch[2])
+      if (start <= 0 || end < start) {
+        return
+      }
+
+      for (let index = start; index <= end; index += 1) {
+        indexes.push(index)
+      }
+    })
+
+  return Array.from(new Set(indexes))
+}
+
+export function normalizeIndexList(input: unknown): string {
+  if (Array.isArray(input)) {
+    return input.map((item) => String(item || '').trim()).filter(Boolean).join(',')
+  }
+
+  return String(input || '')
+    .trim()
+    .replace(/，/g, ',')
+    .replace(/\s+/g, '')
+}
+
+export function validatePositiveIndexList(input: unknown): boolean {
+  const normalized = normalizeIndexList(input)
+  if (!normalized) {
+    return true
+  }
+
+  return normalized
+    .split(',')
+    .filter(Boolean)
+    .every((segment) => /^\d+$/.test(segment) && Number(segment) > 0)
+}
+
 export function normalizeTemuCategoryPath(input: unknown): string[] {
   if (Array.isArray(input)) {
     return Array.from(

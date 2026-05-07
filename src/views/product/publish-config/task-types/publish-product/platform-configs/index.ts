@@ -11,6 +11,7 @@ import { kuaishouShopPlatformConfig } from './kuaishou-shop'
 import { xianyuPlatformConfig } from './xianyu'
 import { temuPlatformConfig } from './temu'
 import { taobaoPlatformConfig } from './taobao'
+import { pddPlatformConfig } from './pdd'
 import type { PlatformConfig, TaskTypeConfig } from './types'
 
 export type { FieldConfig, PlatformConfig, TaskTypeConfig } from './types'
@@ -26,6 +27,7 @@ export { kuaishouShopPlatformConfig } from './kuaishou-shop'
 export { xianyuPlatformConfig } from './xianyu'
 export { temuPlatformConfig } from './temu'
 export { taobaoPlatformConfig } from './taobao'
+export { pddPlatformConfig } from './pdd'
 
 export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
   douyin: douyinPlatformConfig,
@@ -38,7 +40,8 @@ export const PLATFORM_CONFIGS: Record<string, PlatformConfig> = {
   kuaishou_shop: kuaishouShopPlatformConfig,
   xianyu: xianyuPlatformConfig,
   temu: temuPlatformConfig,
-  taobao: taobaoPlatformConfig
+  taobao: taobaoPlatformConfig,
+  pdd: pddPlatformConfig
 }
 
 export function getPlatformConfig(platform: string): PlatformConfig | null {
