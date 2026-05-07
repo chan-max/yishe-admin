@@ -12,6 +12,11 @@ export interface ProductVO {
   stock: number
   specifications: string
   tags: string
+  slug?: string
+  seoTitle?: string
+  seoDescription?: string
+  sourceType?: string
+  meta?: any
   isActive: boolean
   isPublish?: boolean // 是否已发布
   createTime: Date

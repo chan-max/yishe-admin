@@ -235,7 +235,7 @@
                           </el-icon>
                           <span>生成产品代码</span>
                         </el-dropdown-item>
-                        <el-dropdown-item v-if="row.psdSetId" command="copy-images-from-psdset">
+                        <el-dropdown-item v-if="getProductSourcePsdSetId(row)" command="copy-images-from-psdset">
                           <el-icon>
                             <Picture />
                           </el-icon>
@@ -478,7 +478,33 @@
                 <!-- 关联信息列：显示关联了哪个内容 -->
                 <template #relationsSlot="{ row }">
                   <div class="relations-summary">
-                    <div v-if="row.psdSet" class="relations-info">
+                    <div v-if="hasProductRelationInfo(row)" class="relations-info">
+                      <div class="relation-source-card">
+                        <div class="relation-source-row">
+                          <span class="relation-source-label">来源</span>
+                          <span class="relation-source-value">{{
+                            formatSourceType(row.sourceType)
+                          }}</span>
+                        </div>
+                        <div class="relation-source-row">
+                          <span class="relation-source-label">套图</span>
+                          <span class="relation-source-value">{{
+                            getProductSourcePsdSetText(row)
+                          }}</span>
+                        </div>
+                        <div class="relation-source-row">
+                          <span class="relation-source-label">商品模板</span>
+                          <span class="relation-source-value">{{
+                            getProductSourceTemplateText(row)
+                          }}</span>
+                        </div>
+                        <div class="relation-source-row">
+                          <span class="relation-source-label">发布配置</span>
+                          <span class="relation-source-value">{{
+                            getProductSourcePublishConfigText(row)
+                          }}</span>
+                        </div>
+                      </div>
                       <!-- PSD 套图 -->
                       <div v-if="row.psdSet" class="relation-section-item">
                         <div class="relation-header">
@@ -1696,6 +1722,32 @@
                 <div class="product-info-value">{{ formatSourceType(productDetail.sourceType) }}</div>
               </div>
               <div class="product-info-item">
+                <div class="product-info-label">来源套图</div>
+                <div class="product-info-value">
+                  {{
+                    productDetail.meta?.psdSet?.name ||
+                    productDetail.meta?.psdSetId ||
+                    "未关联"
+                  }}
+                </div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">生成模板</div>
+                <div class="product-info-value">
+                  {{
+                    productDetail.meta?.productGenerationTemplateName ||
+                    productDetail.meta?.productGenerationTemplateId ||
+                    "未关联"
+                  }}
+                </div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">关联发布配置</div>
+                <div class="product-info-value">
+                  {{ formatSourceIdList(productDetail.meta?.publishConfigIds) }}
+                </div>
+              </div>
+              <div class="product-info-item">
                 <div class="product-info-label">发布状态</div>
                 <div class="product-info-value">
                   <el-tag v-if="productDetail.isPublish" type="success" size="small">已发布</el-tag>
@@ -1864,7 +1916,7 @@
           <!-- 关联信息 -->
           <div
             class="product-detail-section mb-4"
-            v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet"
+            v-if="productDetail.customModel || productDetail.sticker || productDetail.meta?.psdSet"
           >
             <div class="product-detail-section-title">
               <el-icon>
@@ -1875,7 +1927,7 @@
             <div class="relations-detail-content">
               <!-- 使用已有的关联信息展示逻辑 -->
               <div
-                v-if="productDetail.customModel || productDetail.sticker || productDetail.psdSet"
+                v-if="productDetail.customModel || productDetail.sticker || productDetail.meta?.psdSet"
                 class="relations-info"
               >
                 <!-- 设计模型 -->
@@ -1990,12 +2042,12 @@
                 </div>
 
                 <!-- PSD 套图 -->
-                <div v-if="productDetail.psdSet" class="relation-section-item">
+                <div v-if="productDetail.meta?.psdSet" class="relation-section-item">
                   <div class="relation-header">
                     <span class="relation-label">PSD套图：</span>
                   </div>
                   <vxe-grid
-                    :data="[productDetail.psdSet]"
+                    :data="[productDetail.meta.psdSet]"
                     :show-header="true"
                     border
                     size="mini"
@@ -2093,6 +2145,8 @@ import {
   batchMoveProducts,
   aiGenerateProductInfo,
 } from "@/api/product";
+import { productGenerationTemplateApi } from "@/api/product-generation-template";
+import { getPublishConfigListApi } from "@/api/product/publishConfig";
 import { uploadToCOS } from "@/api/cos";
 import { copyLink } from "@/utils/clipboard";
 import { getDraftList } from "@/api/draft";
@@ -2391,6 +2445,10 @@ const productVideoUploadRef = ref();
 const productDetailVisible = ref(false);
 const productDetailLoading = ref(false);
 const productDetail = ref<any>(null);
+const productGenerationTemplateMap = ref<Record<string, any>>({});
+const publishConfigMap = ref<Record<string, any>>({});
+const relationDictionaryLoaded = ref(false);
+const relationDictionaryLoading = ref(false);
 
 // 发布结果相关
 const publishResultVisible = ref(false);
@@ -2780,6 +2838,152 @@ const formatSourceType = (value?: string) => {
   return map[value || ""] || value || "未设置";
 };
 
+const formatSourceIdList = (value?: any) => {
+  const list = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[,，\s]+/)
+      : [];
+  const normalized = list.map((item) => String(item || "").trim()).filter(Boolean);
+  return normalized.length ? normalized.join("、") : "未关联";
+};
+
+const normalizeRelationIdList = (value?: any): string[] => {
+  const list = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[,，\s]+/)
+      : [];
+  return Array.from(new Set(list.map((item) => String(item || "").trim()).filter(Boolean)));
+};
+
+const getProductSourceMeta = (row: any) => {
+  const meta = row?.meta && typeof row.meta === "object" ? row.meta : {};
+  return { meta };
+};
+
+const getProductSourcePsdSetId = (row: any) => {
+  const { meta } = getProductSourceMeta(row);
+  return String(meta.psdSetId || meta.psdSet?.id || "").trim();
+};
+
+const getPsdSetAutomationConfigIds = (row: any, actionType: string, key: string) => {
+  const automations = Array.isArray(row?.meta?.psdSet?.meta?.automations)
+    ? row.meta.psdSet.meta.automations
+    : [];
+  return normalizeRelationIdList(
+    automations
+      .filter((item: any) => item?.action_type === actionType)
+      .flatMap((item: any) => item?.config?.[key] || []),
+  );
+};
+
+const getProductSourcePsdSetText = (row: any) => {
+  const { meta } = getProductSourceMeta(row);
+  return (
+    meta.psdSet?.name ||
+    meta.psdSetId ||
+    "未关联"
+  );
+};
+
+const getProductSourceTemplateIds = (row: any) => {
+  const { meta } = getProductSourceMeta(row);
+  const fromProduct = normalizeRelationIdList([meta.productGenerationTemplateId]);
+  const fromPsdSet = getPsdSetAutomationConfigIds(
+    row,
+    "generate_product",
+    "productGenerationTemplateIds",
+  );
+  return Array.from(new Set([...fromProduct, ...fromPsdSet]));
+};
+
+const getProductSourcePublishConfigIds = (row: any) => {
+  const { meta } = getProductSourceMeta(row);
+  const fromProduct = normalizeRelationIdList(meta.publishConfigIds);
+  const fromPsdSet = getPsdSetAutomationConfigIds(
+    row,
+    "create_publish_task_from_config",
+    "publishConfigIds",
+  );
+  return Array.from(new Set([...fromProduct, ...fromPsdSet]));
+};
+
+const formatRelationNames = (
+  ids: string[],
+  map: Record<string, any>,
+  fallbackName?: string,
+) => {
+  if (fallbackName && !ids.length) return fallbackName;
+  const values = ids
+    .map((id) => {
+      const item = map[id];
+      return item?.name || item?.taskType || item?.platform || id;
+    })
+    .filter(Boolean);
+  return values.length ? values.join("、") : "未关联";
+};
+
+const getProductSourceTemplateText = (row: any) => {
+  const { meta } = getProductSourceMeta(row);
+  return formatRelationNames(
+    getProductSourceTemplateIds(row),
+    productGenerationTemplateMap.value,
+    meta.productGenerationTemplateName,
+  );
+};
+
+const getProductSourcePublishConfigText = (row: any) =>
+  formatRelationNames(getProductSourcePublishConfigIds(row), publishConfigMap.value);
+
+const hasProductRelationInfo = (row: any) =>
+  !!(
+    getProductSourcePsdSetId(row) ||
+    row?.meta?.psdSet ||
+    getProductSourceTemplateIds(row).length ||
+    getProductSourcePublishConfigIds(row).length
+  );
+
+const loadRelationDictionaries = async () => {
+  if (relationDictionaryLoaded.value || relationDictionaryLoading.value) return;
+  relationDictionaryLoading.value = true;
+  try {
+    const [templateRes, configRes] = await Promise.allSettled([
+      productGenerationTemplateApi.getList({ currentPage: 1, pageSize: 500, isActive: true }),
+      getPublishConfigListApi(),
+    ]);
+
+    if (templateRes.status === "fulfilled") {
+      const list = Array.isArray((templateRes.value as any)?.list)
+        ? (templateRes.value as any).list
+        : Array.isArray((templateRes.value as any)?.data?.list)
+          ? (templateRes.value as any).data.list
+          : [];
+      productGenerationTemplateMap.value = Object.fromEntries(
+        list.map((item: any) => [String(item.id), item]),
+      );
+    }
+
+    if (configRes.status === "fulfilled") {
+      const list = Array.isArray(configRes.value)
+        ? configRes.value
+        : Array.isArray((configRes.value as any)?.data)
+          ? (configRes.value as any).data
+          : Array.isArray((configRes.value as any)?.list)
+            ? (configRes.value as any).list
+            : [];
+      publishConfigMap.value = Object.fromEntries(
+        list.map((item: any) => [String(item.id), item]),
+      );
+    }
+    relationDictionaryLoaded.value = true;
+  } catch (error) {
+    console.warn("[商品列表] 加载关联配置字典失败", error);
+  } finally {
+    relationDictionaryLoading.value = false;
+  }
+};
+
 // 复制 ID
 async function copyId(id: string) {
   if (!id) return;
@@ -2819,10 +3023,14 @@ async function copyText(text: string, label?: string) {
 getList();
 async function getList() {
   loading.value = true;
+  if (showRelations.value) {
+    loadRelationDictionaries();
+  }
 
   let params: any = {
     currentPage: queryParams.currentPage,
     pageSize: queryParams.pageSize,
+    includeRelations: showRelations.value,
   };
 
   // 通用搜索文本：只在有值时才传递
@@ -2893,6 +3101,10 @@ const handleSearch = () => {
 // 处理显示关联信息切换
 const handleShowRelationsChange = () => {
   // 列配置会自动更新，因为使用了 computed
+  if (showRelations.value) {
+    loadRelationDictionaries();
+  }
+  getList();
 };
 
 // 查看产品详情
@@ -3585,7 +3797,7 @@ async function handleDeleteVideo(row: any, url: string) {
 // 复制关联 PSD 套图信息到商品
 async function handleCopyImagesFromPsdSet(row: any) {
   if (!row?.id) return;
-  if (!row?.psdSetId) {
+  if (!getProductSourcePsdSetId(row)) {
     return ElMessage.warning("该商品未关联PSD套图");
   }
   try {
@@ -4638,6 +4850,39 @@ function getPublishTaskType(platform: string) {
   flex-direction: column;
   gap: 8px;
   width: 100%;
+}
+
+.relation-source-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+}
+
+.relation-source-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.relation-source-label {
+  flex: 0 0 auto;
+  color: var(--el-text-color-secondary);
+}
+
+.relation-source-value {
+  min-width: 0;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .relation-section-item {
