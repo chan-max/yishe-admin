@@ -22,10 +22,10 @@ export function useClientNodeState() {
 
 export function usePluginClientNodes(
   pluginKey: ClientPluginKey,
-  options: { includeOffline?: boolean } = {},
+  options: { includeOffline?: boolean; summary?: boolean } = {},
 ) {
   const store = useClientNodeStore();
-  store.ensureInitialized();
+  store.ensureInitialized({ summary: options.summary === true });
   const { loading } = storeToRefs(store);
 
   const clients = computed(() => store.getPluginClients(pluginKey, options));

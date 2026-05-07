@@ -22,6 +22,8 @@ export type ClientPluginSummary = "available" | "offline";
 type ClientNodeRefreshOptions = { summary?: boolean };
 
 const listenersBound = ref(false);
+const CLIENT_NODE_SUMMARY_CACHE_KEY = "yishe-admin:client-node-summary-cache";
+const CLIENT_NODE_SUMMARY_CACHE_TTL_MS = 2 * 60_000;
 
 const resolveConnectionViews = (response: unknown): WebsocketConnectionVO[] => {
   if (Array.isArray(response)) {
@@ -56,6 +58,35 @@ export const normalizeClientPluginKey = (value?: string | null) => {
     photoshop: "ps-automation",
   };
   return aliasMap[normalized] || normalized;
+};
+
+const readClientNodeSummaryCache = (): WebsocketConnectionVO[] => {
+  try {
+    const raw = sessionStorage.getItem(CLIENT_NODE_SUMMARY_CACHE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const updatedAt = Number(parsed?.updatedAt || 0);
+    if (!updatedAt || Date.now() - updatedAt > CLIENT_NODE_SUMMARY_CACHE_TTL_MS) {
+      return [];
+    }
+    return resolveConnectionViews(parsed?.items).sort(compareClientNodes);
+  } catch {
+    return [];
+  }
+};
+
+const writeClientNodeSummaryCache = (items: WebsocketConnectionVO[]) => {
+  try {
+    sessionStorage.setItem(
+      CLIENT_NODE_SUMMARY_CACHE_KEY,
+      JSON.stringify({
+        updatedAt: Date.now(),
+        items,
+      }),
+    );
+  } catch {
+    // 缓存只是为了改善下拉首屏体验，失败不影响真实数据刷新。
+  }
 };
 
 export const getClientServiceRuntime = (
@@ -105,6 +136,9 @@ export const useClientNodeStore = defineStore("client-node", () => {
       const response = await getMyWebsocketConnectionViews({ summary });
       clients.value = resolveConnectionViews(response).sort(compareClientNodes);
       detailLevel.value = summary ? "summary" : "full";
+      if (summary) {
+        writeClientNodeSummaryCache(clients.value);
+      }
     } finally {
       loading.value = false;
     }
@@ -291,6 +325,13 @@ export const useClientNodeStore = defineStore("client-node", () => {
     }
     if (!initialized.value) {
       initialized.value = true;
+      if (options.summary === true && !clients.value.length) {
+        const cachedClients = readClientNodeSummaryCache();
+        if (cachedClients.length) {
+          clients.value = cachedClients;
+          detailLevel.value = "summary";
+        }
+      }
       void refresh(options);
       return;
     }

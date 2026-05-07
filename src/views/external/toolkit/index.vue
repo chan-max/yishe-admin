@@ -42,7 +42,7 @@
                     class="toolkit-hero__select"
                     size="small"
                     placeholder="请选择客户端"
-                    :loading="loading"
+                    :loading="loading && !clientOptions.length"
                     clearable
                     filterable
                   >
@@ -62,7 +62,7 @@
                     class="toolkit-hero__select"
                     size="small"
                     placeholder="请选择环境"
-                    :loading="loadingMap.profiles"
+                    :loading="loadingMap.profiles && !visibleExecutionProfileOptions.length"
                     :disabled="!selectedClientId"
                     clearable
                   >
@@ -689,6 +689,16 @@ const executionProfileSelectValue = computed({
   },
 });
 const visibleExecutionProfileOptions = computed(() => profileOptions.value);
+const selectedClientRuntimeDetailsSignature = computed(() => {
+  const details = asPlainObject(selectedClient.value?.runtime?.details);
+  const profiles = Array.isArray(details.profiles) ? details.profiles : [];
+  const instances = Array.isArray(details.instances) ? details.instances : [];
+  return JSON.stringify({
+    activeProfileId: String(details.activeProfileId || "").trim(),
+    profileIds: profiles.map((item: any) => String(item?.id || "").trim()).filter(Boolean),
+    instanceIds: instances.map((item: any) => String(item?.profileId || "").trim()).filter(Boolean),
+  });
+});
 const selectedExecutionProfileId = computed(
   () => effectiveProfileId.value || selectedProfile.value?.id || activeProfile.value?.id || "",
 );
@@ -1972,12 +1982,11 @@ watch(
 );
 
 watch(
-  () => selectedClient.value?.runtime?.details,
-  (details) => {
-    const dataObject = asPlainObject(details);
-    setProfilesPayload(dataObject);
+  selectedClientRuntimeDetailsSignature,
+  () => {
+    setProfilesPayload(asPlainObject(selectedClient.value?.runtime?.details));
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 );
 
 watch(
@@ -2000,7 +2009,7 @@ watch(
 
     selectedProfileValue.value = String(activeOption.value || "").trim();
   },
-  { immediate: true, deep: true },
+  { immediate: true },
 );
 
 watch(
@@ -2057,7 +2066,7 @@ watch(
 
 onMounted(async () => {
   websocketClient.events.on("serviceCommandResult", onCommand);
-  await loadClients();
+  void loadClients();
   if (selectedClientId.value) {
     void sendTools();
   }

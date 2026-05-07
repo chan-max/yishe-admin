@@ -412,8 +412,6 @@
                     clearable
                     filterable
                     multiple
-                    collapse-tags
-                    collapse-tags-tooltip
                     @change="handlePublishUsageViewChange"
                   >
                     <el-option

@@ -23,7 +23,6 @@ export interface BrowserAutomationExecutionClientOption {
   label: string;
   meta: string;
   hint: string;
-  client: BrowserAutomationExecutionClient;
 }
 
 export interface BrowserAutomationExecutionProfileOption {
@@ -238,7 +237,7 @@ export function useBrowserAutomationExecutionContext() {
     loading,
     refresh,
     getServiceRuntime,
-  } = usePluginClientNodes("browser-automation", { includeOffline: true });
+  } = usePluginClientNodes("browser-automation", { includeOffline: true, summary: true });
 
   const selectedClientId = ref("");
   const selectedProfileValue = ref("");
@@ -276,7 +275,6 @@ export function useBrowserAutomationExecutionContext() {
       label: client.machine?.code || client.clientId,
       meta: buildClientMeta(client),
       hint: getBrowserAutomationRuntimeHint(client.runtime),
-      client,
     })),
   );
 
