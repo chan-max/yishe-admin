@@ -1402,39 +1402,72 @@
                     :rows="field.rows || 2"
                     :placeholder="field.placeholder"
                   />
-                  <el-select
-                    v-else-if="field.component === 'select-single'"
-                    v-model="action.params[field.key]"
-                    clearable
-                    filterable
-                    :loading="psdSetAutomationPromptLoading"
-                    :placeholder="field.placeholder"
+                  <div
+                    v-else-if="field.component === 'product-template-list'"
+                    class="psd-set-automation-list"
                   >
-                    <el-option
-                      v-for="prompt in psdSetAutomationPromptOptions"
-                      :key="prompt.id"
-                      :label="prompt.title"
-                      :value="prompt.id"
+                    <div class="psd-set-automation-list__toolbar">
+                      <el-input
+                        v-model="psdSetAutomationProductTemplateSearchText"
+                        size="small"
+                        clearable
+                        placeholder="搜索模板名称/商品类型/标签"
+                      />
+                      <el-tag size="small" type="info">
+                        已选 {{ action.params[field.key]?.length || 0 }} 个模板
+                      </el-tag>
+                    </div>
+                    <vxe-grid
+                      class="psd-set-automation-list__grid"
+                      border
+                      size="mini"
+                      :loading="psdSetAutomationProductTemplatesLoading"
+                      :data="filteredPsdSetAutomationProductTemplates"
+                      :columns="psdSetAutomationProductTemplateColumns"
+                      :max-height="360"
+                      :row-config="{ keyField: 'id', isHover: true }"
+                      :checkbox-config="{ checkRowKeys: action.params[field.key] || [] }"
+                      @checkbox-change="
+                        (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
+                      "
+                      @checkbox-all="
+                        (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
+                      "
                     />
-                  </el-select>
-                  <el-select
-                    v-else-if="field.component === 'select-multiple'"
-                    v-model="action.params[field.key]"
-                    multiple
-                    clearable
-                    filterable
-                    collapse-tags
-                    collapse-tags-tooltip
-                    :loading="psdSetAutomationPublishConfigsLoading"
-                    :placeholder="field.placeholder"
+                  </div>
+                  <div
+                    v-else-if="field.component === 'publish-config-list'"
+                    class="psd-set-automation-list"
                   >
-                    <el-option
-                      v-for="config in psdSetAutomationPublishConfigs"
-                      :key="config.id"
-                      :label="`${config.name} [${getTaskTypeLabel(config.taskType || derivePublishTaskTypeByPlatform(config.platform), config.platform)}]`"
-                      :value="config.id"
+                    <div class="psd-set-automation-list__toolbar">
+                      <el-input
+                        v-model="psdSetAutomationPublishConfigSearchText"
+                        size="small"
+                        clearable
+                        placeholder="搜索任务配置名称、任务类型或平台"
+                      />
+                      <el-tag size="small" type="info">
+                        已选 {{ action.params[field.key]?.length || 0 }} 个配置
+                      </el-tag>
+                    </div>
+                    <vxe-grid
+                      class="psd-set-automation-list__grid"
+                      border
+                      size="mini"
+                      :loading="psdSetAutomationPublishConfigsLoading"
+                      :data="filteredPsdSetAutomationPublishConfigs"
+                      :columns="psdSetAutomationPublishConfigColumns"
+                      :max-height="360"
+                      :row-config="{ keyField: 'id', isHover: true }"
+                      :checkbox-config="{ checkRowKeys: action.params[field.key] || [] }"
+                      @checkbox-change="
+                        (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
+                      "
+                      @checkbox-all="
+                        (event) => handlePsdSetAutomationListCheckboxChange(action, field.key, event)
+                      "
                     />
-                  </el-select>
+                  </div>
                   <el-input
                     v-else
                     v-model="action.params[field.key]"
@@ -3263,7 +3296,7 @@ import { getTitleTemplateList } from "@/api/publish";
 import { downloadCrossOriginImage, downloadFileByElement, downloadImage } from "@/common/download";
 import { getConfigTemplateList } from "@/api/publish/config";
 import { getPublishConfigListApi } from "@/api/product/publishConfig";
-import { getPromptList } from "@/api/prompt";
+import { productGenerationTemplateApi } from "@/api/product-generation-template";
 import genPicture from "./genPicture.vue";
 import { getAccessToken } from "@/utils/auth";
 import { getTenantId } from "@/utils/auth";
@@ -3949,8 +3982,10 @@ const psdSetTemplateSearchText = ref("");
 const psdSetAutomationDialogVisible = ref(false);
 const psdSetAutomationPublishConfigsLoading = ref(false);
 const psdSetAutomationPublishConfigs = ref<any[]>([]);
-const psdSetAutomationPromptLoading = ref(false);
-const psdSetAutomationPromptOptions = ref<any[]>([]);
+const psdSetAutomationPublishConfigSearchText = ref("");
+const psdSetAutomationProductTemplatesLoading = ref(false);
+const psdSetAutomationProductTemplates = ref<any[]>([]);
+const psdSetAutomationProductTemplateSearchText = ref("");
 const psdSetAutomationActions = ref([
   {
     key: "generate_product",
@@ -3958,14 +3993,14 @@ const psdSetAutomationActions = ref([
     description: "套图制作完成后自动创建商品，并进入商品生成流程。",
     enabled: false,
     params: {
-      promptId: null as number | null,
+      productGenerationTemplateIds: [] as string[],
     },
     fields: [
       {
-        key: "promptId",
-        label: "AI 提示词",
-        component: "select-single",
-        placeholder: "可选：选择生成商品名称、描述、关键词时使用的 AI 提示词",
+        key: "productGenerationTemplateIds",
+        label: "商品生成模板",
+        component: "product-template-list",
+        placeholder: "选择一个或多个商品生成模板",
       },
     ],
   },
@@ -3981,7 +4016,7 @@ const psdSetAutomationActions = ref([
       {
         key: "publishConfigIds",
         label: "任务配置",
-        component: "select-multiple",
+        component: "publish-config-list",
         placeholder: "选择一个或多个任务配置",
       },
     ],
@@ -4119,6 +4154,64 @@ const materialPublishConfigGridOptions = computed(() => ({
     { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
   ],
 }));
+const filteredPsdSetAutomationPublishConfigs = computed(() => {
+  const keyword = psdSetAutomationPublishConfigSearchText.value.trim().toLowerCase();
+  if (!keyword) {
+    return psdSetAutomationPublishConfigs.value;
+  }
+  return psdSetAutomationPublishConfigs.value.filter((item: any) => {
+    const taskTypeLabel = getTaskTypeLabel(
+      item?.taskType || derivePublishTaskTypeByPlatform(item?.platform),
+      item?.platform,
+    ).toLowerCase();
+    return [item?.name, item?.description, item?.platform]
+      .map((value) => String(value || "").toLowerCase())
+      .some((value) => value.includes(keyword)) || taskTypeLabel.includes(keyword);
+  });
+});
+const filteredPsdSetAutomationProductTemplates = computed(() => {
+  const keyword = psdSetAutomationProductTemplateSearchText.value.trim().toLowerCase();
+  if (!keyword) {
+    return psdSetAutomationProductTemplates.value;
+  }
+  return psdSetAutomationProductTemplates.value.filter((item: any) =>
+    [item?.name, item?.productType, item?.tags]
+      .map((value) => String(value || "").toLowerCase())
+      .some((value) => value.includes(keyword)),
+  );
+});
+const psdSetAutomationProductTemplateColumns: any[] = [
+  { type: "checkbox", width: 48 },
+  { field: "name", title: "模板名称", minWidth: 180, showOverflow: true },
+  { field: "productType", title: "商品类型", width: 120, showOverflow: true },
+  {
+    field: "salePrice",
+    title: "售价",
+    width: 90,
+    formatter: ({ cellValue }: any) => {
+      const amount = Number(cellValue || 0);
+      return amount > 0 ? amount.toFixed(2) : "-";
+    },
+  },
+  { field: "stock", title: "库存", width: 80 },
+  { field: "tags", title: "标签", minWidth: 180, showOverflow: true },
+];
+const psdSetAutomationPublishConfigColumns: any[] = [
+  { type: "checkbox", width: 48 },
+  {
+    field: "taskType",
+    title: "任务类型",
+    width: 170,
+    formatter: ({ row }: any) =>
+      getTaskTypeLabel(
+        row?.taskType || derivePublishTaskTypeByPlatform(row?.platform),
+        row?.platform,
+      ),
+  },
+  { field: "name", title: "配置名称", minWidth: 180, showOverflow: true },
+  { field: "platform", title: "平台", width: 110, showOverflow: true },
+  { field: "description", title: "备注说明", minWidth: 220, showOverflow: true },
+];
 const enabledPsdSetAutomationCount = computed(
   () => psdSetAutomationActions.value.filter((action) => action.enabled).length,
 );
@@ -5121,6 +5214,12 @@ function handleMaterialPublishConfigCheckboxAllChange({ checked }) {
   }
 }
 
+function handlePsdSetAutomationListCheckboxChange(action: any, fieldKey: string, event: any) {
+  action.params[fieldKey] = (event?.records || [])
+    .map((item: any) => String(item?.id || "").trim())
+    .filter(Boolean);
+}
+
 async function handleCreatePsdSetsByPublishConfig() {
   if (!ids.value.length) {
     return ElMessage.warning("请先勾选素材");
@@ -5288,30 +5387,35 @@ function resetPsdSetState() {
     params: {
       ...(action.params || {}),
       promptId: null,
+      productGenerationTemplateIds: [],
       publishConfigIds: [],
     },
   }));
 }
 
-async function loadPromptOptionsForPsdAutomation() {
-  if (psdSetAutomationPromptLoading.value || psdSetAutomationPromptOptions.value.length > 0) {
+async function loadProductTemplatesForPsdAutomation() {
+  if (
+    psdSetAutomationProductTemplatesLoading.value ||
+    psdSetAutomationProductTemplates.value.length > 0
+  ) {
     return;
   }
 
-  psdSetAutomationPromptLoading.value = true;
+  psdSetAutomationProductTemplatesLoading.value = true;
   try {
-    const res = await getPromptList({
+    const res = await productGenerationTemplateApi.getList({
       currentPage: 1,
       pageSize: 1000,
+      isActive: true,
     });
-    psdSetAutomationPromptOptions.value = Array.isArray((res as any)?.list)
+    psdSetAutomationProductTemplates.value = Array.isArray((res as any)?.list)
       ? (res as any).list
       : [];
   } catch (error) {
-    console.error("加载提示词失败:", error);
-    ElMessage.error("加载提示词失败");
+    console.error("加载商品生成模板失败:", error);
+    ElMessage.error("加载商品生成模板失败");
   } finally {
-    psdSetAutomationPromptLoading.value = false;
+    psdSetAutomationProductTemplatesLoading.value = false;
   }
 }
 
@@ -5479,7 +5583,7 @@ watch(psdSetTemplateSearchText, () => {
 
 watch(psdSetAutomationDialogVisible, (visible) => {
   if (visible) {
-    loadPromptOptionsForPsdAutomation();
+    loadProductTemplatesForPsdAutomation();
     loadPublishConfigsForPsdAutomation();
   }
 });
@@ -7227,6 +7331,61 @@ async function handleUrlUpload() {
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.psd-set-automation-list {
+  width: 100%;
+}
+
+.psd-set-automation-list__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.psd-set-automation-list__toolbar .el-input {
+  max-width: 360px;
+  min-width: 240px;
+}
+
+.psd-set-automation-list__grid {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.psd-set-automation-list__grid :deep(.vxe-table) {
+  font-size: 12px;
+}
+
+.psd-set-automation-list__grid :deep(.vxe-header--row) {
+  height: 34px;
+}
+
+.psd-set-automation-list__grid :deep(.vxe-header--column) {
+  height: 34px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 12px !important;
+  background: var(--el-fill-color-light);
+}
+
+.psd-set-automation-list__grid :deep(.vxe-header--column .vxe-cell),
+.psd-set-automation-list__grid :deep(.vxe-header--column .vxe-cell--title) {
+  min-height: 18px !important;
+  line-height: 18px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.psd-set-automation-list__grid :deep(.vxe-body--column) {
+  height: 32px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .footer-actions {

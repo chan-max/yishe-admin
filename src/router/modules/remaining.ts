@@ -442,6 +442,14 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "generation-template",
+        component: () => import("@/views/product/generation-template/index.vue"),
+        name: "ProductGenerationTemplate",
+        meta: {
+          title: "商品生成模板",
+        },
+      },
+      {
         path: "psd-set",
         component: () => import("@/views/material/psdSet/index.vue"),
         name: "PsdSet",

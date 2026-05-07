@@ -605,6 +605,42 @@
             </el-form-item>
           </el-col>
 
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="原价" prop="price">
+              <el-input-number
+                v-model="form.price"
+                :min="0"
+                :precision="2"
+                :step="1"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="售价" prop="salePrice">
+              <el-input-number
+                v-model="form.salePrice"
+                :min="0"
+                :precision="2"
+                :step="1"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="库存" prop="stock">
+              <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="URL别名" prop="slug">
+              <el-input v-model="form.slug" placeholder="独立站商品URL别名" />
+            </el-form-item>
+          </el-col>
+
           <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
             <el-form-item label="商品描述" prop="description">
               <el-input
@@ -674,6 +710,54 @@
                 v-model="form.images"
                 :max-count="10"
                 @files-change="handleFilesChange"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="详情图片" prop="detailImages">
+              <ProductImageUpload
+                v-model="form.detailImages"
+                :max-count="30"
+                @files-change="handleDetailFilesChange"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="12" :xl="12">
+            <el-form-item label="SEO标题" prop="seoTitle">
+              <el-input v-model="form.seoTitle" placeholder="请输入独立站SEO标题" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="12" :xl="12">
+            <el-form-item label="来源" prop="sourceType">
+              <el-select v-model="form.sourceType" placeholder="请选择商品来源" style="width: 100%">
+                <el-option label="手动创建" value="manual" />
+                <el-option label="PSD套图" value="psd_set" />
+                <el-option label="导入" value="import" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="SEO描述" prop="seoDescription">
+              <el-input
+                v-model="form.seoDescription"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入独立站SEO描述"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="规格配置" prop="specifications">
+              <el-input
+                v-model="form.specificationsText"
+                type="textarea"
+                :rows="4"
+                placeholder='可填写 JSON，例如 {"options":[{"name":"Size","values":["S","M"]}]}'
               />
             </el-form-item>
           </el-col>
@@ -1596,6 +1680,22 @@
                 <div class="product-info-value">{{ productDetail.type || "未设置" }}</div>
               </div>
               <div class="product-info-item">
+                <div class="product-info-label">原价</div>
+                <div class="product-info-value">{{ formatMoney(productDetail.price) }}</div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">售价</div>
+                <div class="product-info-value">{{ formatMoney(productDetail.salePrice) }}</div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">库存</div>
+                <div class="product-info-value">{{ productDetail.stock ?? 0 }}</div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">来源</div>
+                <div class="product-info-value">{{ formatSourceType(productDetail.sourceType) }}</div>
+              </div>
+              <div class="product-info-item">
                 <div class="product-info-label">发布状态</div>
                 <div class="product-info-value">
                   <el-tag v-if="productDetail.isPublish" type="success" size="small">已发布</el-tag>
@@ -1627,6 +1727,18 @@
                 <div class="product-info-value">
                   {{ productDetail.enSearchKeywords || "未设置" }}
                 </div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">URL别名</div>
+                <div class="product-info-value">{{ productDetail.slug || "未设置" }}</div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">SEO标题</div>
+                <div class="product-info-value">{{ productDetail.seoTitle || "未设置" }}</div>
+              </div>
+              <div class="product-info-item">
+                <div class="product-info-label">SEO描述</div>
+                <div class="product-info-value">{{ productDetail.seoDescription || "未设置" }}</div>
               </div>
               <div class="product-info-item">
                 <div class="product-info-label">创建人</div>
@@ -1680,6 +1792,31 @@
                 :key="index"
                 :src="url"
                 :preview-src-list="productDetail.images"
+                :initial-index="index"
+                :preview-teleported="true"
+                :hide-on-click-modal="false"
+                class="w-32 h-32 object-cover rounded cursor-pointer"
+                fit="cover"
+              />
+            </div>
+          </div>
+
+          <div
+            class="product-detail-section mb-4"
+            v-if="productDetail.detailImages && productDetail.detailImages.length > 0"
+          >
+            <div class="product-detail-section-title">
+              <el-icon>
+                <Picture />
+              </el-icon>
+              <span>详情图片 ({{ productDetail.detailImages.length }})</span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <el-image
+                v-for="(url, index) in productDetail.detailImages"
+                :key="index"
+                :src="url"
+                :preview-src-list="productDetail.detailImages"
                 :initial-index="index"
                 :preview-teleported="true"
                 :hide-on-click-modal="false"
@@ -2194,6 +2331,7 @@ const existingImages = ref([]);
 const videoFileList = ref([]);
 const pendingVideoFiles = ref([]);
 const existingVideos = ref([]);
+const pendingDetailFiles = ref([]);
 const deletingVideoKey = ref<string>("");
 const publishDialogVisible = ref(false);
 
@@ -2388,6 +2526,16 @@ interface ProductForm {
   type: string;
   images: string[];
   videos: string[];
+  detailImages: string[];
+  price: number;
+  salePrice: number;
+  stock: number;
+  specifications?: any;
+  specificationsText: string;
+  slug: string;
+  seoTitle: string;
+  seoDescription: string;
+  sourceType: string;
   tags: string;
   isActive: boolean;
   isPublish?: boolean;
@@ -2409,6 +2557,16 @@ const form = ref<ProductForm>({
   type: "",
   images: [] as string[],
   videos: [] as string[],
+  detailImages: [] as string[],
+  price: 0,
+  salePrice: 0,
+  stock: 0,
+  specifications: null,
+  specificationsText: "",
+  slug: "",
+  seoTitle: "",
+  seoDescription: "",
+  sourceType: "manual",
   tags: "",
   isActive: true,
   isPublish: false,
@@ -2429,6 +2587,7 @@ const dialogClose = () => {
   videoFileList.value = [];
   pendingVideoFiles.value = [];
   existingVideos.value = [];
+  pendingDetailFiles.value = [];
   submitLoading.value = false;
 };
 
@@ -2454,6 +2613,10 @@ const handleVideoFilesChange = (files) => {
   pendingVideoFiles.value = files.filter((file) => file.raw).map((file) => file.raw);
 };
 
+const handleDetailFilesChange = (files) => {
+  pendingDetailFiles.value = files.filter((file) => file.raw).map((file) => file.raw);
+};
+
 // 处理图片加载错误
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement;
@@ -2476,6 +2639,17 @@ const submitForm = async () => {
     if (!isEdit.value && (!formData.code || formData.code.trim() === "")) {
       delete formData.code;
     }
+    if (form.value.specificationsText?.trim()) {
+      try {
+        formData.specifications = JSON.parse(form.value.specificationsText);
+      } catch (error) {
+        ElMessage.error("规格配置必须是合法 JSON");
+        return;
+      }
+    } else {
+      formData.specifications = null;
+    }
+    delete formData.specificationsText;
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     const userAccount =
@@ -2535,10 +2709,36 @@ const submitForm = async () => {
         return;
       }
     }
+    let newDetailImageUrls: string[] = [];
+    if (pendingDetailFiles.value.length > 0) {
+      const uploadPromises = pendingDetailFiles.value.map(async (file) => {
+        try {
+          const result = await uploadToCOS({
+            file,
+            category: "product",
+            account: userAccount,
+            userId,
+            entityId: productId,
+          });
+          return result.url;
+        } catch (error) {
+          ElMessage.error(`详情图片 ${file.name} 上传失败`);
+          throw error;
+        }
+      });
+      try {
+        const results = await Promise.all(uploadPromises);
+        newDetailImageUrls = results.filter((url) => url !== null);
+      } catch (error) {
+        ElMessage.error("详情图片上传失败，请重试");
+        return;
+      }
+    }
     // 合并已有图片和新上传的图片URL
     formData.images = [...form.value.images, ...newImageUrls];
     // 合并已有视频和新上传的视频URL
     formData.videos = [...form.value.videos, ...newVideoUrls];
+    formData.detailImages = [...form.value.detailImages, ...newDetailImageUrls];
     if (isEdit.value) {
       await updateProduct(formData);
       ElMessage.success("更新成功");
@@ -2564,6 +2764,20 @@ function handlePreview(row) {
 
 const copyUrl = (url: string) => {
   copyLink(url);
+};
+
+const formatMoney = (value: any) => {
+  const amount = Number(value || 0);
+  return amount > 0 ? amount.toFixed(2) : "未设置";
+};
+
+const formatSourceType = (value?: string) => {
+  const map: Record<string, string> = {
+    manual: "手动创建",
+    psd_set: "PSD套图",
+    import: "导入",
+  };
+  return map[value || ""] || value || "未设置";
 };
 
 // 复制 ID
@@ -2759,6 +2973,16 @@ function handleAdd() {
     type: "",
     images: [] as string[],
     videos: [] as string[],
+    detailImages: [] as string[],
+    price: 0,
+    salePrice: 0,
+    stock: 0,
+    specifications: null,
+    specificationsText: "",
+    slug: "",
+    seoTitle: "",
+    seoDescription: "",
+    sourceType: "manual",
     tags: "",
     isActive: true,
     isPublish: false,
@@ -2777,10 +3001,20 @@ function handleEdit(row) {
   dialogTitle.value = "编辑商品";
   const images = Array.isArray(row.images) ? row.images : [];
   const videos = Array.isArray(row.videos) ? row.videos : [];
+  const detailImages = Array.isArray(row.detailImages) ? row.detailImages : [];
   form.value = {
     ...row,
     images,
     videos,
+    detailImages,
+    price: Number(row.price || 0),
+    salePrice: Number(row.salePrice || 0),
+    stock: Number(row.stock || 0),
+    specificationsText: row.specifications ? JSON.stringify(row.specifications, null, 2) : "",
+    slug: row.slug || "",
+    seoTitle: row.seoTitle || "",
+    seoDescription: row.seoDescription || "",
+    sourceType: row.sourceType || "manual",
   };
   if (images.length > 0) {
     fileList.value = images.map((url, index) => ({

@@ -599,7 +599,7 @@
           <div>
             <div class="generate-product-dialog-title">套图生成产品</div>
             <div class="generate-product-dialog-subtitle">
-              已选择 {{ generateProductTargetIds.length }} 个套图，配置商品信息生成提示词
+              已选择 {{ generateProductTargetIds.length }} 个套图，配置商品生成模板
             </div>
           </div>
         </div>
@@ -609,19 +609,35 @@
         <div class="generate-product-panel">
           <div class="generate-product-panel-title">基础配置</div>
           <el-form label-position="top">
-            <el-form-item label="AI 提示词">
-              <el-select v-model="generateProductForm.promptId" filterable clearable placeholder="请选择提示词"
-                class="w-full">
-                <el-option v-for="item in generateProductPromptOptions" :key="item.id" :label="item.title"
-                  :value="item.id">
-                  <div class="generate-product-option">
-                    <span>{{ item.title }}</span>
-                    <span class="generate-product-option-id">#{{ item.id }}</span>
-                  </div>
-                </el-option>
-              </el-select>
+            <el-form-item label="商品生成模板">
+              <div class="generate-product-template-toolbar">
+                <el-input
+                  v-model="generateProductTemplateSearchText"
+                  size="small"
+                  clearable
+                  placeholder="搜索模板名称/商品类型/标签"
+                />
+                <el-tag size="small" type="info">
+                  已选 {{ generateProductSelectedTemplateIds.length }} 个模板
+                </el-tag>
+                <el-tag size="small" type="warning">
+                  预计生成 {{ generateProductExpectedCount }} 个商品
+                </el-tag>
+              </div>
+              <vxe-grid
+                class="generate-product-template-grid"
+                border
+                size="mini"
+                :data="filteredGenerateProductTemplateOptions"
+                :columns="generateProductTemplateColumns"
+                :max-height="360"
+                :row-config="{ keyField: 'id', isHover: true }"
+                :checkbox-config="{ checkRowKeys: generateProductSelectedTemplateIds }"
+                @checkbox-change="handleGenerateProductTemplateCheckboxChange"
+                @checkbox-all="handleGenerateProductTemplateCheckboxChange"
+              />
               <div class="generate-product-tip">
-                用于生成商品的名称、描述、关键词等信息，与发布平台无关。
+                用于生成商品的名称、描述、关键词、价格、库存等独立站商品信息，与发布平台无关。
               </div>
             </el-form-item>
           </el-form>
@@ -870,7 +886,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { buildOperationColumn, commonGridOptions } from "@/common/table";
 import { formatTimestamp } from "@/common/date";
 import { stickerPsdSetApi } from "@/api/stickerPsdSet";
-import { getPromptList } from "@/api/prompt";
+import { productGenerationTemplateApi } from "@/api/product-generation-template";
 import {
   getPublishConfigListApi,
   createPublishTaskApi,
@@ -932,10 +948,39 @@ const generateProductDialogVisible = ref(false);
 const generateProductDialogLoading = ref(false);
 const generateProductSubmitting = ref(false);
 const generateProductTargetIds = ref<string[]>([]);
-const generateProductPromptOptions = ref<any[]>([]);
-const generateProductForm = reactive({
-  promptId: null as number | null,
+const generateProductTemplateOptions = ref<any[]>([]);
+const generateProductSelectedTemplateIds = ref<string[]>([]);
+const generateProductTemplateSearchText = ref("");
+const generateProductExpectedCount = computed(
+  () => generateProductTargetIds.value.length * generateProductSelectedTemplateIds.value.length,
+);
+const filteredGenerateProductTemplateOptions = computed(() => {
+  const keyword = generateProductTemplateSearchText.value.trim().toLowerCase();
+  if (!keyword) {
+    return generateProductTemplateOptions.value;
+  }
+  return generateProductTemplateOptions.value.filter((item) =>
+    [item.name, item.productType, item.tags]
+      .map((value) => String(value || "").toLowerCase())
+      .some((value) => value.includes(keyword)),
+  );
 });
+const generateProductTemplateColumns: any[] = [
+  { type: "checkbox", width: 48 },
+  { field: "name", title: "模板名称", minWidth: 180, showOverflow: true },
+  { field: "productType", title: "商品类型", width: 120, showOverflow: true },
+  {
+    field: "salePrice",
+    title: "售价",
+    width: 90,
+    formatter: ({ cellValue }) => {
+      const amount = Number(cellValue || 0);
+      return amount > 0 ? amount.toFixed(2) : "-";
+    },
+  },
+  { field: "stock", title: "库存", width: 80 },
+  { field: "tags", title: "标签", minWidth: 180, showOverflow: true },
+];
 const publishConfigDialogVisible = ref(false);
 const publishConfigDialogLoading = ref(false);
 const publishConfigSubmitting = ref(false);
@@ -3303,12 +3348,13 @@ async function handleRegeneratePublishTask(row: any) {
 }
 
 async function ensureGenerateProductDialogOptions() {
-  if (!generateProductPromptOptions.value.length) {
-    const res = await getPromptList({
+  if (!generateProductTemplateOptions.value.length) {
+    const res = await productGenerationTemplateApi.getList({
       currentPage: 1,
       pageSize: 1000,
+      isActive: true,
     });
-    generateProductPromptOptions.value = Array.isArray(res?.list) ? res.list : [];
+    generateProductTemplateOptions.value = Array.isArray(res?.list) ? res.list : [];
   }
 }
 
@@ -3321,7 +3367,8 @@ async function openGenerateProductDialog(ids: string[]) {
   }
 
   generateProductTargetIds.value = normalizedIds;
-  generateProductForm.promptId = null;
+  generateProductSelectedTemplateIds.value = [];
+  generateProductTemplateSearchText.value = "";
   generateProductDialogVisible.value = true;
   generateProductDialogLoading.value = true;
 
@@ -3338,15 +3385,36 @@ async function openGenerateProductDialog(ids: string[]) {
 function handleCloseGenerateProductDialog() {
   generateProductDialogVisible.value = false;
   generateProductTargetIds.value = [];
-  generateProductForm.promptId = null;
+  generateProductSelectedTemplateIds.value = [];
+  generateProductTemplateSearchText.value = "";
   generatingProductId.value = "";
   batchGeneratingProducts.value = false;
+}
+
+function handleGenerateProductTemplateCheckboxChange(event: any) {
+  generateProductSelectedTemplateIds.value = (event?.records || [])
+    .map((item: any) => String(item?.id || "").trim())
+    .filter(Boolean);
 }
 
 async function handleSubmitGenerateProduct() {
   if (!generateProductTargetIds.value.length) {
     return ElMessage.warning("未选择套图");
   }
+  if (!generateProductSelectedTemplateIds.value.length) {
+    return ElMessage.warning("请选择商品生成模板");
+  }
+
+  const expectedCount = generateProductExpectedCount.value;
+  await ElMessageBox.confirm(
+    `将为 ${generateProductTargetIds.value.length} 个套图 × ${generateProductSelectedTemplateIds.value.length} 个模板生成 ${expectedCount} 个商品，是否继续？`,
+    "确认生成商品",
+    {
+      confirmButtonText: "确定生成",
+      cancelButtonText: "取消",
+      type: "warning",
+    },
+  );
 
   generateProductSubmitting.value = true;
   let successCount = 0;
@@ -3354,15 +3422,17 @@ async function handleSubmitGenerateProduct() {
 
   try {
     for (const id of generateProductTargetIds.value) {
-      try {
-        await stickerPsdSetApi.generateProduct({
-          id,
-          promptId: generateProductForm.promptId,
-        });
-        successCount += 1;
-      } catch (error) {
-        failCount += 1;
-        console.error(`生成产品失败（ID: ${id}）`, error);
+      for (const templateId of generateProductSelectedTemplateIds.value) {
+        try {
+          await stickerPsdSetApi.generateProduct({
+            id,
+            productGenerationTemplateId: templateId,
+          });
+          successCount += 1;
+        } catch (error) {
+          failCount += 1;
+          console.error(`生成产品失败（套图ID: ${id}, 模板ID: ${templateId}）`, error);
+        }
       }
     }
 
@@ -4717,6 +4787,57 @@ getList();
   flex-shrink: 0;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.generate-product-template-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.generate-product-template-toolbar .el-input {
+  max-width: 360px;
+  min-width: 240px;
+}
+
+.generate-product-template-grid {
+  width: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.generate-product-template-grid :deep(.vxe-table) {
+  font-size: 12px;
+}
+
+.generate-product-template-grid :deep(.vxe-header--row) {
+  height: 34px;
+}
+
+.generate-product-template-grid :deep(.vxe-header--column) {
+  height: 34px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+  font-size: 12px !important;
+  background: var(--el-fill-color-light);
+}
+
+.generate-product-template-grid :deep(.vxe-header--column .vxe-cell),
+.generate-product-template-grid :deep(.vxe-header--column .vxe-cell--title) {
+  min-height: 18px !important;
+  line-height: 18px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.generate-product-template-grid :deep(.vxe-body--column) {
+  height: 32px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .generate-product-tip {
