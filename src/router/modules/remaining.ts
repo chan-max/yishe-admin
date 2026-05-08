@@ -417,11 +417,11 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/product",
     component: Layout,
     name: "Product",
-    redirect: "/product/index",
+    redirect: "/product/category",
     meta: {
       title: "商品与发布",
       icon: "ep:goods",
-      order: 5,
+      order: 6,
       alwaysShow: true,
     },
     children: [
@@ -431,22 +431,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "ProductCategory",
         meta: {
           title: "商品种类",
-        },
-      },
-      {
-        path: "index",
-        component: () => import("@/views/product/index/index.vue"),
-        name: "ProductIndex",
-        meta: {
-          title: "商品",
-        },
-      },
-      {
-        path: "generation-template",
-        component: () => import("@/views/product/generation-template/index.vue"),
-        name: "ProductGenerationTemplate",
-        meta: {
-          title: "商品生成模板",
+          order: 1,
         },
       },
       {
@@ -458,14 +443,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
           hidden: false,
           noTagsView: false,
           title: "套图",
-        },
-      },
-      {
-        path: "design-request",
-        component: () => import("@/views/material/designRequest/index.vue"),
-        name: "DesignRequest",
-        meta: {
-          title: "设计请求",
+          order: 2,
         },
       },
       {
@@ -474,6 +452,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "PublishConfig",
         meta: {
           title: "任务配置",
+          order: 3,
         },
       },
       {
@@ -482,6 +461,58 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "SystemQueue",
         meta: {
           title: "平台任务",
+          order: 4,
+        },
+      },
+    ],
+  },
+  {
+    path: "/independent-site",
+    component: Layout,
+    name: "IndependentSite",
+    redirect: "/independent-site/product",
+    meta: {
+      title: "独立站",
+      icon: "ep:shop",
+      order: 5,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: "product",
+        component: () => import("@/views/product/index/index.vue"),
+        name: "ProductIndex",
+        meta: {
+          title: "商品模块",
+          order: 1,
+        },
+      },
+      {
+        path: "generation-template",
+        component: () => import("@/views/product/generation-template/index.vue"),
+        name: "ProductGenerationTemplate",
+        meta: {
+          title: "商品生成模板",
+          order: 2,
+        },
+      },
+      {
+        path: "design-request",
+        component: () => import("@/views/material/designRequest/index.vue"),
+        name: "DesignRequest",
+        meta: {
+          title: "设计请求",
+          order: 3,
+        },
+      },
+      {
+        path: "public-user",
+        component: () => import("@/views/system/public-user/index.vue"),
+        name: "PublicUser",
+        meta: {
+          title: "开放用户管理",
+          requiresAdmin: true,
+          order: 4,
         },
       },
     ],
@@ -753,6 +784,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "SystemAiApiKeyIndex",
         meta: {
           title: "AI API Key",
+          order: 1,
         },
       },
       {
@@ -761,6 +793,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         name: "MessagePushIndex",
         meta: {
           title: "消息推送",
+          order: 2,
         },
       },
       {
@@ -770,6 +803,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "用户管理",
           requiresAdmin: true,
+          order: 3,
         },
       },
       {
@@ -779,15 +813,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "公司管理",
           requiresAdmin: true,
-        },
-      },
-      {
-        path: "public-user",
-        component: () => import("@/views/system/public-user/index.vue"),
-        name: "PublicUser",
-        meta: {
-          title: "开放用户管理",
-          requiresAdmin: true,
+          order: 4,
         },
       },
       {
@@ -797,6 +823,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "远程连接",
           requiresAdmin: true,
+          order: 5,
         },
       },
       {
@@ -806,6 +833,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "服务缓存文件",
           requiresAdmin: true,
+          order: 6,
         },
       },
       {
@@ -815,6 +843,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "操作日志",
           requiresAdmin: true,
+          order: 7,
         },
       },
       {
@@ -824,6 +853,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
         meta: {
           title: "系统日志",
           requiresAdmin: true,
+          order: 8,
         },
       },
     ],
@@ -1038,8 +1068,26 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/product/catalog/index",
-    redirect: "/product/index",
+    redirect: "/independent-site/product",
     name: "ProductCatalogIndexCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/product/index",
+    redirect: "/independent-site/product",
+    name: "ProductIndexCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/product/generation-template",
+    redirect: "/independent-site/generation-template",
+    name: "ProductGenerationTemplateCompat",
     meta: {
       hidden: true,
       noTagsView: true,
@@ -1056,7 +1104,7 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/product/designRequest",
-    redirect: "/product/design-request",
+    redirect: "/independent-site/design-request",
     name: "ProductDesignRequestCompat",
     meta: {
       hidden: true,
@@ -1064,8 +1112,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
     },
   },
   {
+    path: "/product/design-request",
+    redirect: "/independent-site/design-request",
+    name: "ProductDesignRequestKebabCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
     path: "/product/collaboration/design-request",
-    redirect: "/product/design-request",
+    redirect: "/independent-site/design-request",
     name: "ProductCollaborationDesignRequestCompat",
     meta: {
       hidden: true,
@@ -1155,8 +1212,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
   },
   {
     path: "/system/organization/public-user",
-    redirect: "/system/public-user",
+    redirect: "/independent-site/public-user",
     name: "SystemOrganizationPublicUserCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/system/public-user",
+    redirect: "/independent-site/public-user",
+    name: "SystemPublicUserCompat",
     meta: {
       hidden: true,
       noTagsView: true,

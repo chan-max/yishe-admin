@@ -75,12 +75,18 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
     label: "商品与发布",
     options: [
       { key: "product.category", label: "商品种类" },
-      { key: "product.index", label: "商品" },
-      { key: "product.generation-template", label: "商品生成模板" },
       { key: "product.psd-set", label: "套图" },
-      { key: "product.design-request", label: "设计需求" },
       { key: "product.publish-config", label: "任务配置" },
       { key: "product.queue", label: "任务队列" },
+    ],
+  },
+  {
+    label: "独立站",
+    options: [
+      { key: "product.index", label: "商品模块" },
+      { key: "product.generation-template", label: "商品生成模板" },
+      { key: "product.design-request", label: "设计需求" },
+      { key: "system.public-user", label: "开放用户管理" },
     ],
   },
   {
@@ -106,7 +112,6 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "system.message-push", label: "消息推送" },
       { key: "system.user", label: "用户管理", adminOnly: true },
       { key: "system.company", label: "公司管理", adminOnly: true },
-      { key: "system.public-user", label: "开放用户管理" },
       { key: "system.websocket", label: "远程连接", adminOnly: true },
       { key: "system.service-file-cache", label: "服务缓存文件", adminOnly: true },
       { key: "system.operatelog", label: "操作日志", adminOnly: true },

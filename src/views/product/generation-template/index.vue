@@ -360,3 +360,22 @@ onMounted(getList);
     </el-dialog>
   </ContentWrap>
 </template>
+
+<style scoped>
+:deep(.product-generation-template-page) {
+  gap: 10px;
+  padding: 8px 0 0;
+}
+
+:deep(.product-generation-template-page .list-page-layout__main) {
+  gap: 10px;
+}
+
+:deep(.product-generation-template-page .list-page-filter--flat) {
+  padding-bottom: 10px;
+}
+
+:deep(.product-generation-template-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
+}
+</style>
