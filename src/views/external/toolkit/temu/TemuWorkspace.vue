@@ -562,22 +562,6 @@
             v-if="isPriceReviewTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
-            <div v-if="priceReviewBatchSubmitting" class="temu-workspace__price-review-batch-mask">
-              <div class="temu-workspace__price-review-batch-panel">
-                <strong>{{ priceReviewBatchActionText }}</strong>
-                <span>处理中 {{ priceReviewBatchFinishedCount }}/{{ priceReviewBatchTotalCount }}</span>
-                <el-progress
-                  :percentage="priceReviewBatchProgressPercent"
-                  :stroke-width="10"
-                  :show-text="false"
-                />
-                <div class="temu-workspace__price-review-batch-stats">
-                  <el-tag size="small" effect="plain" type="success">成功 {{ priceReviewBatchSuccessCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="danger">失败 {{ priceReviewBatchFailedCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="warning">剩余 {{ priceReviewBatchRemainingCount }}</el-tag>
-                </div>
-              </div>
-            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>任务结果列表</span>
@@ -828,24 +812,6 @@
             v-if="isJitListTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
-            <div v-if="jitBatchSubmitting" class="temu-workspace__price-review-batch-mask">
-              <div class="temu-workspace__price-review-batch-panel">
-                <strong>{{ jitBatchModeLabel }}</strong>
-                <span>处理中 {{ jitBatchFinishedCount }}/{{ jitBatchTotalCount }}</span>
-                <small v-if="jitBatchCurrentStage">{{ jitBatchCurrentStage }}</small>
-                <small v-if="jitBatchCurrentRowText">{{ jitBatchCurrentRowText }}</small>
-                <el-progress
-                  :percentage="jitBatchProgressPercent"
-                  :stroke-width="10"
-                  :show-text="false"
-                />
-                <div class="temu-workspace__price-review-batch-stats">
-                  <el-tag size="small" effect="plain" type="success">成功 {{ jitBatchSuccessCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="danger">失败 {{ jitBatchFailedCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="warning">剩余 {{ jitBatchRemainingCount }}</el-tag>
-                </div>
-              </div>
-            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>JIT 待处理列表</span>
@@ -1022,22 +988,6 @@
             v-if="isRealPictureTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
-            <div v-if="realPictureBatchSubmitting" class="temu-workspace__price-review-batch-mask">
-              <div class="temu-workspace__price-review-batch-panel">
-                <strong>批量上传实拍图</strong>
-                <span>处理中 {{ realPictureBatchFinishedCount }}/{{ realPictureBatchTotalCount }}</span>
-                <el-progress
-                  :percentage="realPictureBatchProgressPercent"
-                  :stroke-width="10"
-                  :show-text="false"
-                />
-                <div class="temu-workspace__price-review-batch-stats">
-                  <el-tag size="small" effect="plain" type="success">成功 {{ realPictureBatchSuccessCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="danger">失败 {{ realPictureBatchFailedCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="warning">剩余 {{ realPictureBatchRemainingCount }}</el-tag>
-                </div>
-              </div>
-            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>实拍图治理列表</span>
@@ -1136,22 +1086,6 @@
             v-if="isComplianceTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
-            <div v-if="complianceBatchSubmitting" class="temu-workspace__price-review-batch-mask">
-              <div class="temu-workspace__price-review-batch-panel">
-                <strong>批量处理合规信息</strong>
-                <span>处理中 {{ complianceBatchFinishedCount }}/{{ complianceBatchTotalCount }}</span>
-                <el-progress
-                  :percentage="complianceBatchProgressPercent"
-                  :stroke-width="10"
-                  :show-text="false"
-                />
-                <div class="temu-workspace__price-review-batch-stats">
-                  <el-tag size="small" effect="plain" type="success">成功 {{ complianceBatchSuccessCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="danger">失败 {{ complianceBatchFailedCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="warning">剩余 {{ complianceBatchRemainingCount }}</el-tag>
-                </div>
-              </div>
-            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>合规信息列表</span>
@@ -1251,22 +1185,6 @@
             v-if="isConfirmationTaskRunResult"
             class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
           >
-            <div v-if="confirmationBatchSubmitting" class="temu-workspace__price-review-batch-mask">
-              <div class="temu-workspace__price-review-batch-panel">
-                <strong>批量确认商品</strong>
-                <span>处理中 {{ confirmationBatchFinishedCount }}/{{ confirmationBatchTotalCount }}</span>
-                <el-progress
-                  :percentage="confirmationBatchProgressPercent"
-                  :stroke-width="10"
-                  :show-text="false"
-                />
-                <div class="temu-workspace__price-review-batch-stats">
-                  <el-tag size="small" effect="plain" type="success">成功 {{ confirmationBatchSuccessCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="danger">失败 {{ confirmationBatchFailedCount }}</el-tag>
-                  <el-tag size="small" effect="plain" type="warning">剩余 {{ confirmationBatchRemainingCount }}</el-tag>
-                </div>
-              </div>
-            </div>
             <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
               <div class="temu-workspace__section-title-main">
                 <span>商品确认列表</span>
@@ -1382,18 +1300,6 @@
         <span v-else>已选 {{ priceReviewBatchRepriceRows.length }} 条</span>
         <small>默认按各自当前价减 0.01，可逐行修改。</small>
       </div>
-      <div v-if="priceReviewBatchSubmittingMode === 'reprice'" class="temu-workspace__batch-reprice-progress">
-        <el-progress
-          :percentage="priceReviewBatchRepriceProgressPercent"
-          :stroke-width="8"
-          :show-text="false"
-        />
-        <div class="temu-workspace__batch-reprice-stats">
-          <el-tag size="small" effect="plain">成功 {{ priceReviewBatchSuccessCount }}</el-tag>
-          <el-tag size="small" effect="plain" type="danger">失败 {{ priceReviewBatchFailedCount }}</el-tag>
-          <el-tag size="small" effect="plain" type="warning">剩余 {{ priceReviewBatchRemainingCount }}</el-tag>
-        </div>
-      </div>
       <div class="common-table">
         <vxe-grid
           v-bind="priceReviewBatchRepriceGridOptions"
@@ -1445,18 +1351,6 @@
       <div class="temu-workspace__batch-reprice-head">
         <span>已选 {{ realPictureUploadRows.length }} 条</span>
         <small>填写一组 HTTP 图片，会同时上传到商品主体实拍图和商品外包装实拍图。</small>
-      </div>
-      <div v-if="realPictureBatchSubmitting" class="temu-workspace__batch-reprice-progress">
-        <el-progress
-          :percentage="realPictureBatchProgressPercent"
-          :stroke-width="8"
-          :show-text="false"
-        />
-        <div class="temu-workspace__batch-reprice-stats">
-          <el-tag size="small" effect="plain">成功 {{ realPictureBatchSuccessCount }}</el-tag>
-          <el-tag size="small" effect="plain" type="danger">失败 {{ realPictureBatchFailedCount }}</el-tag>
-          <el-tag size="small" effect="plain" type="warning">剩余 {{ realPictureBatchRemainingCount }}</el-tag>
-        </div>
       </div>
       <el-form label-position="top" class="temu-workspace__real-picture-form">
         <div
@@ -1525,19 +1419,6 @@
           </div>
           <el-tag size="small" effect="plain">{{ activeComplianceRow.typeText }}</el-tag>
         </div>
-        <div v-if="complianceBatchSubmitting" class="temu-workspace__batch-reprice-progress">
-          <div class="temu-workspace__section-title-main">
-            <span>批量处理中 {{ complianceBatchFinishedCount }}/{{ complianceBatchTotalCount }}</span>
-            <el-tag size="small" effect="plain" type="success">成功 {{ complianceBatchSuccessCount }}</el-tag>
-            <el-tag size="small" effect="plain" type="danger">失败 {{ complianceBatchFailedCount }}</el-tag>
-            <el-tag size="small" effect="plain" type="warning">剩余 {{ complianceBatchRemainingCount }}</el-tag>
-          </div>
-          <el-progress
-            :percentage="complianceBatchProgressPercent"
-            :stroke-width="10"
-          />
-        </div>
-
         <div class="temu-workspace__compliance-editor-grid">
           <div class="temu-workspace__compliance-picker">
             <button
@@ -4008,6 +3889,12 @@ const selectedConfirmationRows = computed(() => {
   const selectedKeys = new Set(selectedConfirmationRowKeys.value);
   return taskRunConfirmationRows.value.filter((row) => selectedKeys.has(row.rowKey) && !row.confirmed);
 });
+const confirmationBatchProgressText = computed(() => {
+  if (!confirmationBatchSubmitting.value || confirmationBatchTotalCount.value <= 0) {
+    return "";
+  }
+  return `处理中 ${confirmationBatchFinishedCount.value}/${confirmationBatchTotalCount.value}`;
+});
 const confirmationBatchProgressPercent = computed(() => {
   if (confirmationBatchTotalCount.value <= 0) {
     return 0;
@@ -4299,7 +4186,6 @@ const priceReviewBatchProgressPercent = computed(() => {
   }
   return Math.min(100, Math.round((priceReviewBatchFinishedCount.value / priceReviewBatchTotalCount.value) * 100));
 });
-const priceReviewBatchRepriceProgressPercent = priceReviewBatchProgressPercent;
 const resetPriceReviewBatchProgress = (
   mode: "confirm" | "abandon" | "reprice",
   total: number,
@@ -4369,6 +4255,18 @@ const liveFloatingBatchProgressItems = computed<TemuBatchProgressItem[]>(() => {
       successCount: complianceBatchSuccessCount.value,
       failedCount: complianceBatchFailedCount.value,
       remainingCount: complianceBatchRemainingCount.value,
+    });
+  }
+
+  if (confirmationBatchSubmitting.value) {
+    items.push({
+      key: "confirmation",
+      title: "批量确认商品",
+      progressText: confirmationBatchProgressText.value,
+      percent: confirmationBatchProgressPercent.value,
+      successCount: confirmationBatchSuccessCount.value,
+      failedCount: confirmationBatchFailedCount.value,
+      remainingCount: confirmationBatchRemainingCount.value,
     });
   }
 
@@ -7033,22 +6931,30 @@ const deleteSelectedTaskRuns = async () => {
   batchDeletingTaskRuns.value = true;
   try {
     const result = await batchDeleteTemuTaskRuns(deleteIds);
-    const deletedIds = Array.isArray(result?.ids) ? result.ids : deleteIds;
+    const deletedIds = (Array.isArray(result?.ids) ? result.ids : [])
+      .map((id) => Number(id))
+      .filter((id) => Number.isInteger(id) && id > 0);
+    const deletedCount = Number(result?.deletedCount || deletedIds.length || 0);
+    if (!deletedIds.length || deletedCount <= 0) {
+      ElMessage.warning("未删除任何执行记录，请刷新后重试");
+      await loadTaskRuns();
+      return;
+    }
     selectedTaskRunIds.value = selectedTaskRunIds.value.filter((id) => !deletedIds.includes(id));
     if (activeTaskRunId.value && deletedIds.includes(activeTaskRunId.value)) {
       activeTaskRunId.value = null;
       activeTaskRunDetail.value = null;
       taskRunDetailVisible.value = false;
     }
-    if (deleteIds.length >= taskRunList.value.length && taskRunPage.value > 1) {
+    if (deletedCount >= taskRunList.value.length && taskRunPage.value > 1) {
       taskRunPage.value -= 1;
-      await loadTaskRuns();
     } else {
       const deletedIdSet = new Set(deletedIds);
       taskRunList.value = taskRunList.value.filter((item) => !deletedIdSet.has(item.id));
-      taskRunTotal.value = Math.max(0, taskRunTotal.value - Number(result?.deletedCount || deletedIds.length));
+      taskRunTotal.value = Math.max(0, taskRunTotal.value - deletedCount);
     }
-    ElMessage.success(`已删除 ${Number(result?.deletedCount || deletedIds.length)} 条执行记录`);
+    await loadTaskRuns();
+    ElMessage.success(`已删除 ${deletedCount} 条执行记录`);
   } catch (error: any) {
     if (error !== "cancel") {
       ElMessage.error(extractRequestErrorMessage(error, "批量删除 Temu 执行记录失败"));
@@ -8482,42 +8388,6 @@ onBeforeUnmount(() => {
   width: 150px;
 }
 
-.temu-workspace__price-review-batch-mask {
-  position: absolute;
-  inset: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--el-bg-color) 78%, transparent);
-  backdrop-filter: blur(2px);
-}
-
-.temu-workspace__price-review-batch-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: min(420px, 100%);
-  padding: 18px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-overlay-color-lighter, var(--el-bg-color-overlay));
-  box-shadow: var(--el-box-shadow-light);
-}
-
-.temu-workspace__price-review-batch-panel strong {
-  color: var(--el-text-color-primary);
-  font-size: 16px;
-  font-weight: 750;
-}
-
-.temu-workspace__price-review-batch-panel > span {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
 .temu-workspace__price-review-batch-stats {
   display: flex;
   align-items: center;
@@ -8643,24 +8513,6 @@ onBeforeUnmount(() => {
   color: var(--el-text-color-secondary);
   font-size: 12px;
   font-weight: 400;
-}
-
-.temu-workspace__batch-reprice-progress {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-extra-light);
-}
-
-.temu-workspace__batch-reprice-stats {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .temu-workspace__batch-reprice-identity {
