@@ -2595,7 +2595,6 @@ interface ProductForm {
   seoDescription: string;
   sourceType: string;
   tags: string;
-  isActive: boolean;
   isPublish?: boolean;
   createTime?: Date;
   updateTime?: Date;
@@ -2626,7 +2625,6 @@ const form = ref<ProductForm>({
   seoDescription: "",
   sourceType: "manual",
   tags: "",
-  isActive: true,
   isPublish: false,
   file: null,
 });
@@ -3196,7 +3194,6 @@ function handleAdd() {
     seoDescription: "",
     sourceType: "manual",
     tags: "",
-    isActive: true,
     isPublish: false,
     file: null,
   };
