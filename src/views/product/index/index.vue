@@ -29,6 +29,18 @@
                   />
                 </el-form-item>
               </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="按SKU">
+                  <el-input
+                    v-model="queryParams.sku"
+                    size="small"
+                    clearable
+                    placeholder="输入SKU"
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
               <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="5">
                 <el-form-item label="搜索">
                   <el-input
@@ -70,6 +82,191 @@
                       @change="handleShowRelationsChange"
                     />
                   </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="商品分类">
+                  <el-select
+                    v-model="queryParams.categoryId"
+                    size="small"
+                    clearable
+                    filterable
+                    placeholder="全部分类"
+                    @change="handleSearch"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="cat in categoryList"
+                      :key="cat.id"
+                      :label="cat.name"
+                      :value="cat.id"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="商品类型">
+                  <el-select
+                    v-model="queryParams.type"
+                    size="small"
+                    clearable
+                    filterable
+                    placeholder="全部类型"
+                    @change="handleSearch"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="category in PRODUCT_CATEGORIES"
+                      :key="category.value"
+                      :label="category.label"
+                      :value="category.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="品牌">
+                  <el-input
+                    v-model="queryParams.brand"
+                    size="small"
+                    clearable
+                    placeholder="输入品牌"
+                    @keyup.enter="handleSearch"
+                    @clear="handleSearch"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="商品状态">
+                  <el-select
+                    v-model="queryParams.status"
+                    size="small"
+                    clearable
+                    placeholder="全部状态"
+                    @change="handleSearch"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in productStatusOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="库存状态">
+                  <el-select
+                    v-model="queryParams.inventoryStatus"
+                    size="small"
+                    clearable
+                    placeholder="全部库存"
+                    @change="handleSearch"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in inventoryStatusOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="发布状态">
+                  <el-select
+                    v-model="queryParams.isPublish"
+                    size="small"
+                    clearable
+                    placeholder="全部"
+                    @change="handleSearch"
+                    style="width: 100%"
+                  >
+                    <el-option label="已发布" :value="true" />
+                    <el-option label="未发布" :value="false" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="价格区间">
+                  <div class="flex gap-1 items-center">
+                    <el-input-number
+                      v-model="queryParams.priceMin"
+                      size="small"
+                      :min="0"
+                      :precision="2"
+                      controls-position="right"
+                      placeholder="最低"
+                      style="width: 100px"
+                    />
+                    <span class="text-gray-400">-</span>
+                    <el-input-number
+                      v-model="queryParams.priceMax"
+                      size="small"
+                      :min="0"
+                      :precision="2"
+                      controls-position="right"
+                      placeholder="最高"
+                      style="width: 100px"
+                    />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="精选商品">
+                  <div class="product-page__switch">
+                    <el-switch
+                      v-model="queryParams.isFeatured"
+                      size="small"
+                      @change="handleSearch"
+                    />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="新品">
+                  <div class="product-page__switch">
+                    <el-switch v-model="queryParams.isNew" size="small" @change="handleSearch" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="热销">
+                  <div class="product-page__switch">
+                    <el-switch v-model="queryParams.isHot" size="small" @change="handleSearch" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="3">
+                <el-form-item label="促销">
+                  <div class="product-page__switch">
+                    <el-switch v-model="queryParams.isOnSale" size="small" @change="handleSearch" />
+                  </div>
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--base" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="排序">
+                  <el-select
+                    v-model="queryParams.sortBy"
+                    size="small"
+                    clearable
+                    placeholder="默认排序"
+                    @change="handleSearch"
+                    style="width: 100%"
+                  >
+                    <el-option label="创建时间" value="createTime" />
+                    <el-option label="更新时间" value="updateTime" />
+                    <el-option label="售价" value="salePrice" />
+                    <el-option label="销量" value="salesCount" />
+                    <el-option label="浏览量" value="viewCount" />
+                    <el-option label="评分" value="rating" />
+                    <el-option label="自定义排序" value="sort" />
+                    <el-option label="名称" value="name" />
+                  </el-select>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -475,6 +672,11 @@
                   </el-tag>
                 </template>
 
+                <template #isFeaturedSlot="{ row }">
+                  <el-tag v-if="row.isFeatured" type="warning" size="small" effect="plain">精选</el-tag>
+                  <span v-else class="table-cell-empty">-</span>
+                </template>
+
                 <!-- 关联信息列：显示关联了哪个内容 -->
                 <template #relationsSlot="{ row }">
                   <div class="relations-summary">
@@ -626,8 +828,33 @@
           </el-col>
 
           <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="商品状态" prop="status">
+              <el-select v-model="form.status" placeholder="请选择商品状态" style="width: 100%">
+                <el-option
+                  v-for="item in productStatusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
             <el-form-item label="商品番号" prop="code">
               <el-input v-model="form.code" placeholder="留空则自动生成" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="SKU" prop="sku">
+              <el-input v-model="form.sku" placeholder="标准SKU" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="SPU" prop="spu">
+              <el-input v-model="form.spu" placeholder="标准SPU" />
             </el-form-item>
           </el-col>
 
@@ -656,8 +883,159 @@
           </el-col>
 
           <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="划线价" prop="compareAtPrice">
+              <el-input-number
+                v-model="form.compareAtPrice"
+                :min="0"
+                :precision="2"
+                :step="1"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="币种" prop="currency">
+              <el-select v-model="form.currency" filterable allow-create style="width: 100%">
+                <el-option label="人民币 CNY" value="CNY" />
+                <el-option label="美元 USD" value="USD" />
+                <el-option label="欧元 EUR" value="EUR" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
             <el-form-item label="库存" prop="stock">
               <el-input-number v-model="form.stock" :min="0" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="库存状态" prop="inventoryStatus">
+              <el-select v-model="form.inventoryStatus" style="width: 100%">
+                <el-option
+                  v-for="item in inventoryStatusOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="低库存阈值" prop="lowStockThreshold">
+              <el-input-number v-model="form.lowStockThreshold" :min="0" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="商品分类" prop="categoryId">
+              <el-select
+                v-model="form.categoryId"
+                placeholder="请选择商品分类"
+                clearable
+                filterable
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="cat in categoryList"
+                  :key="cat.id"
+                  :label="cat.name"
+                  :value="cat.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="品牌" prop="brand">
+              <el-input v-model="form.brand" placeholder="请输入品牌名称" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="材质" prop="material">
+              <el-input v-model="form.material" placeholder="如：纯棉、涤纶、陶瓷" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="条码/SKU" prop="barcode">
+              <el-input v-model="form.barcode" placeholder="商品条码或SKU编码" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="重量(克)" prop="weight">
+              <el-input-number v-model="form.weight" :min="0" :precision="2" :step="10" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="尺寸规格" prop="dimensions">
+              <el-input v-model="form.dimensions" placeholder="如：120x60cm" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="计量单位" prop="unit">
+              <el-select v-model="form.unit" style="width: 100%">
+                <el-option label="件" value="件" />
+                <el-option label="个" value="个" />
+                <el-option label="套" value="套" />
+                <el-option label="对" value="对" />
+                <el-option label="条" value="条" />
+                <el-option label="箱" value="箱" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="成本价" prop="costPrice">
+              <el-input-number v-model="form.costPrice" :min="0" :precision="2" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="起订量" prop="minOrderQuantity">
+              <el-input-number v-model="form.minOrderQuantity" :min="1" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="产地" prop="origin">
+              <el-input v-model="form.origin" placeholder="如：中国、美国" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="排序值" prop="sort">
+              <el-input-number v-model="form.sort" :min="0" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="精选推荐" prop="isFeatured">
+              <el-switch v-model="form.isFeatured" active-text="是" inactive-text="否" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="新品" prop="isNew">
+              <el-switch v-model="form.isNew" active-text="是" inactive-text="否" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="热销" prop="isHot">
+              <el-switch v-model="form.isHot" active-text="是" inactive-text="否" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="促销" prop="isOnSale">
+              <el-switch v-model="form.isOnSale" active-text="是" inactive-text="否" />
             </el-form-item>
           </el-col>
 
@@ -785,6 +1163,47 @@
                 :rows="4"
                 placeholder='可填写 JSON，例如 {"options":[{"name":"Size","values":["S","M"]}]}'
               />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
+            <el-form-item label="商品属性" prop="attributes">
+              <el-input
+                v-model="form.attributesText"
+                type="textarea"
+                :rows="4"
+                placeholder='可填写 JSON，例如 {"color":"black","style":"minimal","scene":["home","office"]}'
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="运费模板" prop="shippingTemplateId">
+              <el-input v-model="form.shippingTemplateId" placeholder="运费模板ID" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="6" :xl="6">
+            <el-form-item label="包裹重量" prop="packageWeight">
+              <el-input-number v-model="form.packageWeight" :min="0" :precision="2" :step="10" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="4" :xl="4">
+            <el-form-item label="包裹长" prop="packageLength">
+              <el-input-number v-model="form.packageLength" :min="0" :precision="2" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="4" :xl="4">
+            <el-form-item label="包裹宽" prop="packageWidth">
+              <el-input-number v-model="form.packageWidth" :min="0" :precision="2" :step="1" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+
+          <el-col :xs="24" :sm="12" :md="12" :lg="4" :xl="4">
+            <el-form-item label="包裹高" prop="packageHeight">
+              <el-input-number v-model="form.packageHeight" :min="0" :precision="2" :step="1" style="width: 100%" />
             </el-form-item>
           </el-col>
 
@@ -2145,6 +2564,7 @@ import {
   batchMoveProducts,
   aiGenerateProductInfo,
 } from "@/api/product";
+import { productCategoryApi } from "@/api/product-category";
 import { productGenerationTemplateApi } from "@/api/product-generation-template";
 import { getPublishConfigListApi } from "@/api/product/publishConfig";
 import { uploadToCOS } from "@/api/cos";
@@ -2169,6 +2589,8 @@ const queryParams = reactive({
   pageSize: 20,
   id: "",
   code: "",
+  sku: "",
+  spu: "",
   searchText: "",
   search: "",
   isPublish: undefined as boolean | undefined,
@@ -2176,7 +2598,45 @@ const queryParams = reactive({
   startTime: "",
   endTime: "",
   folderId: "",
+  categoryId: "",
+  brand: "",
+  type: "",
+  status: "",
+  inventoryStatus: "",
+  priceMin: undefined as number | undefined,
+  priceMax: undefined as number | undefined,
+  isFeatured: undefined as boolean | undefined,
+  isNew: undefined as boolean | undefined,
+  isHot: undefined as boolean | undefined,
+  isOnSale: undefined as boolean | undefined,
+  sortBy: "",
+  sortDir: "DESC",
 });
+
+const productStatusOptions = [
+  { label: "在售", value: "active" },
+  { label: "草稿", value: "draft" },
+  { label: "归档", value: "archived" },
+];
+
+const inventoryStatusOptions = [
+  { label: "有库存", value: "in_stock" },
+  { label: "无库存", value: "out_of_stock" },
+  { label: "预售", value: "preorder" },
+];
+
+const optionLabel = (options: Array<{ label: string; value: string }>, value?: string) =>
+  options.find((item) => item.value === value)?.label || value || "-";
+
+const categoryList = ref<any[]>([]);
+const loadCategoryList = async () => {
+  try {
+    const res = await productCategoryApi.getAll();
+    categoryList.value = Array.isArray(res) ? res : (res?.list || res?.data || []);
+  } catch (e) {
+    categoryList.value = [];
+  }
+};
 
 // 文件夹变更处理
 const handleFolderChange = ({ folderId }) => {
@@ -2279,11 +2739,108 @@ const gridColumns = computed(() => {
       slots: { default: "codeSlot" },
     },
     {
+      title: "SKU/SPU",
+      field: "sku",
+      width: 150,
+      showOverflow: true,
+      formatter: ({ row }) => [row.sku, row.spu].filter(Boolean).join(" / ") || "-",
+    },
+    {
       title: "商品类型",
       field: "type",
       width: 140,
       showOverflow: true,
       slots: { default: "typeSlot" },
+    },
+    {
+      title: "分类",
+      field: "categoryId",
+      width: 120,
+      showOverflow: true,
+      formatter: ({ row }) => {
+        const cat = categoryList.value.find((c) => c.id === row.categoryId);
+        return cat?.name || "-";
+      },
+    },
+    {
+      title: "品牌",
+      field: "brand",
+      width: 100,
+      showOverflow: true,
+      formatter: ({ cellValue }) => cellValue || "-",
+    },
+    {
+      title: "状态",
+      field: "status",
+      width: 80,
+      formatter: ({ cellValue }) => optionLabel(productStatusOptions, cellValue),
+    },
+    {
+      title: "原价",
+      field: "price",
+      width: 90,
+      align: "right",
+      formatter: ({ cellValue }) => {
+        const v = Number(cellValue || 0);
+        return v > 0 ? `¥${v.toFixed(2)}` : "-";
+      },
+    },
+    {
+      title: "售价",
+      field: "salePrice",
+      width: 90,
+      align: "right",
+      formatter: ({ cellValue }) => {
+        const v = Number(cellValue || 0);
+        return v > 0 ? `¥${v.toFixed(2)}` : "-";
+      },
+    },
+    {
+      title: "划线价",
+      field: "compareAtPrice",
+      width: 90,
+      align: "right",
+      formatter: ({ cellValue }) => {
+        const v = Number(cellValue || 0);
+        return v > 0 ? `¥${v.toFixed(2)}` : "-";
+      },
+    },
+    {
+      title: "库存",
+      field: "stock",
+      width: 70,
+      align: "right",
+    },
+    {
+      title: "库存状态",
+      field: "inventoryStatus",
+      width: 90,
+      formatter: ({ cellValue }) => optionLabel(inventoryStatusOptions, cellValue),
+    },
+    {
+      title: "销量",
+      field: "salesCount",
+      width: 70,
+      align: "right",
+      formatter: ({ cellValue }) => cellValue || 0,
+    },
+    {
+      title: "精选",
+      field: "isFeatured",
+      width: 60,
+      align: "center",
+      slots: { default: "isFeaturedSlot" },
+    },
+    {
+      title: "标签",
+      field: "commerceFlags",
+      width: 120,
+      formatter: ({ row }) =>
+        [
+          row.isNew ? "新品" : "",
+          row.isHot ? "热销" : "",
+          row.isOnSale ? "促销" : "",
+        ].filter(Boolean).join(" / ") || "-",
     },
     {
       title: "发布状态",
@@ -2582,6 +3139,28 @@ interface ProductForm {
   searchKeywords: string;
   enSearchKeywords: string;
   type: string;
+  status: string;
+  sku: string;
+  spu: string;
+  categoryId: string;
+  brand: string;
+  material: string;
+  weight: number;
+  dimensions: string;
+  unit: string;
+  barcode: string;
+  origin: string;
+  costPrice: number;
+  compareAtPrice: number;
+  currency: string;
+  inventoryStatus: string;
+  lowStockThreshold: number;
+  minOrderQuantity: number;
+  sort: number;
+  isFeatured: boolean;
+  isNew: boolean;
+  isHot: boolean;
+  isOnSale: boolean;
   images: string[];
   videos: string[];
   detailImages: string[];
@@ -2590,10 +3169,17 @@ interface ProductForm {
   stock: number;
   specifications?: any;
   specificationsText: string;
+  attributes?: any;
+  attributesText: string;
   slug: string;
   seoTitle: string;
   seoDescription: string;
   sourceType: string;
+  shippingTemplateId: string;
+  packageWeight: number;
+  packageLength: number;
+  packageWidth: number;
+  packageHeight: number;
   tags: string;
   isPublish?: boolean;
   createTime?: Date;
@@ -2612,6 +3198,28 @@ const form = ref<ProductForm>({
   searchKeywords: "",
   enSearchKeywords: "",
   type: "",
+  status: "active",
+  sku: "",
+  spu: "",
+  categoryId: "",
+  brand: "",
+  material: "",
+  weight: 0,
+  dimensions: "",
+  unit: "件",
+  barcode: "",
+  origin: "",
+  costPrice: 0,
+  compareAtPrice: 0,
+  currency: "CNY",
+  inventoryStatus: "in_stock",
+  lowStockThreshold: 0,
+  minOrderQuantity: 1,
+  sort: 0,
+  isFeatured: false,
+  isNew: false,
+  isHot: false,
+  isOnSale: false,
   images: [] as string[],
   videos: [] as string[],
   detailImages: [] as string[],
@@ -2620,10 +3228,17 @@ const form = ref<ProductForm>({
   stock: 0,
   specifications: null,
   specificationsText: "",
+  attributes: null,
+  attributesText: "",
   slug: "",
   seoTitle: "",
   seoDescription: "",
   sourceType: "manual",
+  shippingTemplateId: "",
+  packageWeight: 0,
+  packageLength: 0,
+  packageWidth: 0,
+  packageHeight: 0,
   tags: "",
   isPublish: false,
   file: null,
@@ -2706,6 +3321,17 @@ const submitForm = async () => {
       formData.specifications = null;
     }
     delete formData.specificationsText;
+    if (form.value.attributesText?.trim()) {
+      try {
+        formData.attributes = JSON.parse(form.value.attributesText);
+      } catch (error) {
+        ElMessage.error("商品属性必须是合法 JSON");
+        return;
+      }
+    } else {
+      formData.attributes = null;
+    }
+    delete formData.attributesText;
     // 上传所有待上传的图片到COS
     let newImageUrls: string[] = [];
     const userAccount =
@@ -3019,6 +3645,7 @@ async function copyText(text: string, label?: string) {
 }
 
 getList();
+loadCategoryList();
 async function getList() {
   loading.value = true;
   if (showRelations.value) {
@@ -3043,6 +3670,12 @@ async function getList() {
   if (queryParams.code && String(queryParams.code).trim()) {
     params.code = String(queryParams.code).trim();
   }
+  if (queryParams.sku && String(queryParams.sku).trim()) {
+    params.sku = String(queryParams.sku).trim();
+  }
+  if (queryParams.spu && String(queryParams.spu).trim()) {
+    params.spu = String(queryParams.spu).trim();
+  }
 
   // 如果选择了发布状态，添加到查询参数中
   if (queryParams.isPublish !== undefined) {
@@ -3061,6 +3694,50 @@ async function getList() {
   }
   params.random = queryParams.random;
 
+  // 分类筛选
+  if (queryParams.categoryId) {
+    params.categoryId = queryParams.categoryId;
+  }
+  // 品牌筛选
+  if (queryParams.brand && String(queryParams.brand).trim()) {
+    params.brand = String(queryParams.brand).trim();
+  }
+  // 类型筛选
+  if (queryParams.type) {
+    params.type = queryParams.type;
+  }
+  if (queryParams.status) {
+    params.status = queryParams.status;
+  }
+  if (queryParams.inventoryStatus) {
+    params.inventoryStatus = queryParams.inventoryStatus;
+  }
+  // 价格区间
+  if (queryParams.priceMin !== undefined && queryParams.priceMin !== null) {
+    params.priceMin = queryParams.priceMin;
+  }
+  if (queryParams.priceMax !== undefined && queryParams.priceMax !== null) {
+    params.priceMax = queryParams.priceMax;
+  }
+  // 精选筛选
+  if (queryParams.isFeatured !== undefined && queryParams.isFeatured !== null) {
+    params.isFeatured = queryParams.isFeatured;
+  }
+  if (queryParams.isNew !== undefined && queryParams.isNew !== null) {
+    params.isNew = queryParams.isNew;
+  }
+  if (queryParams.isHot !== undefined && queryParams.isHot !== null) {
+    params.isHot = queryParams.isHot;
+  }
+  if (queryParams.isOnSale !== undefined && queryParams.isOnSale !== null) {
+    params.isOnSale = queryParams.isOnSale;
+  }
+  // 排序
+  if (queryParams.sortBy) {
+    params.sortBy = queryParams.sortBy;
+    params.sortDir = queryParams.sortDir || "DESC";
+  }
+
   try {
     let res = await getProductList(params);
     dataSource.value = res.list || [];
@@ -3078,16 +3755,31 @@ async function getList() {
 
 // 重置查询参数
 const resetQuery = () => {
-  queryParams.currentPage = 1; // 搜索时重置到第一页
+  queryParams.currentPage = 1;
   queryParams.pageSize = 20;
   queryParams.id = "";
   queryParams.code = "";
+  queryParams.sku = "";
+  queryParams.spu = "";
   queryParams.searchText = "";
   queryParams.search = "";
   queryParams.isPublish = undefined;
   queryParams.random = false;
   queryParams.startTime = "";
   queryParams.endTime = "";
+  queryParams.categoryId = "";
+  queryParams.brand = "";
+  queryParams.type = "";
+  queryParams.status = "";
+  queryParams.inventoryStatus = "";
+  queryParams.priceMin = undefined;
+  queryParams.priceMax = undefined;
+  queryParams.isFeatured = undefined;
+  queryParams.isNew = undefined;
+  queryParams.isHot = undefined;
+  queryParams.isOnSale = undefined;
+  queryParams.sortBy = "";
+  queryParams.sortDir = "DESC";
 };
 
 // 搜索按钮点击事件
@@ -3181,6 +3873,28 @@ function handleAdd() {
     searchKeywords: "",
     enSearchKeywords: "",
     type: "",
+    status: "active",
+    sku: "",
+    spu: "",
+    categoryId: "",
+    brand: "",
+    material: "",
+    weight: 0,
+    dimensions: "",
+    unit: "件",
+    barcode: "",
+    origin: "",
+    costPrice: 0,
+    compareAtPrice: 0,
+    currency: "CNY",
+    inventoryStatus: "in_stock",
+    lowStockThreshold: 0,
+    minOrderQuantity: 1,
+    sort: 0,
+    isFeatured: false,
+    isNew: false,
+    isHot: false,
+    isOnSale: false,
     images: [] as string[],
     videos: [] as string[],
     detailImages: [] as string[],
@@ -3189,10 +3903,17 @@ function handleAdd() {
     stock: 0,
     specifications: null,
     specificationsText: "",
+    attributes: null,
+    attributesText: "",
     slug: "",
     seoTitle: "",
     seoDescription: "",
     sourceType: "manual",
+    shippingTemplateId: "",
+    packageWeight: 0,
+    packageLength: 0,
+    packageWidth: 0,
+    packageHeight: 0,
     tags: "",
     isPublish: false,
     file: null,
@@ -3216,14 +3937,42 @@ function handleEdit(row) {
     images,
     videos,
     detailImages,
+    categoryId: row.categoryId || "",
+    status: row.status || "active",
+    sku: row.sku || "",
+    spu: row.spu || "",
+    brand: row.brand || "",
+    material: row.material || "",
+    weight: Number(row.weight || 0),
+    dimensions: row.dimensions || "",
+    unit: row.unit || "件",
+    barcode: row.barcode || "",
+    origin: row.origin || "",
+    costPrice: Number(row.costPrice || 0),
+    compareAtPrice: Number(row.compareAtPrice || 0),
+    currency: row.currency || "CNY",
+    inventoryStatus: row.inventoryStatus || "in_stock",
+    lowStockThreshold: Number(row.lowStockThreshold || 0),
+    minOrderQuantity: Number(row.minOrderQuantity || 1),
+    sort: Number(row.sort || 0),
+    isFeatured: !!row.isFeatured,
+    isNew: !!row.isNew,
+    isHot: !!row.isHot,
+    isOnSale: !!row.isOnSale,
     price: Number(row.price || 0),
     salePrice: Number(row.salePrice || 0),
     stock: Number(row.stock || 0),
     specificationsText: row.specifications ? JSON.stringify(row.specifications, null, 2) : "",
+    attributesText: row.attributes ? JSON.stringify(row.attributes, null, 2) : "",
     slug: row.slug || "",
     seoTitle: row.seoTitle || "",
     seoDescription: row.seoDescription || "",
     sourceType: row.sourceType || "manual",
+    shippingTemplateId: row.shippingTemplateId || "",
+    packageWeight: Number(row.packageWeight || 0),
+    packageLength: Number(row.packageLength || 0),
+    packageWidth: Number(row.packageWidth || 0),
+    packageHeight: Number(row.packageHeight || 0),
   };
   if (images.length > 0) {
     fileList.value = images.map((url, index) => ({
