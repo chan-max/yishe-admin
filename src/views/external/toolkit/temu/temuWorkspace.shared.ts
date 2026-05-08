@@ -93,6 +93,7 @@ export const QUICK_ACTION_KEYS = [
   "goods.list",
   "goods.detail",
   "goods.price-review.list",
+  "goods.confirmation.list",
   "activity.list",
   "finance.history",
   "goods.adjust-price.list",
@@ -235,6 +236,20 @@ export const ACTION_PRESETS: Record<string, TemuActionPreset> = {
     note:
       "获取待核价商品列表；默认每页 1000 条，筛选条件固定为 priceReviewStatusList=[0,1,2,3]、removeStatus=0、secondarySelectStatusList=[7]、supplierTodoTypeList=[1]。",
     buildPayload: buildProfileRegionPayload,
+  },
+  "goods.confirmation.list": {
+    fields: [
+      createRegionField(),
+      { key: "pageNum", label: "页码", type: "number", defaultValue: 1 },
+      createPageSizeField(100),
+    ],
+    note:
+      "获取商品确认列表；默认每页 100 条，筛选条件固定为 removeStatus=0、supplierTodoTypeList=[6]。",
+    buildPayload: (parsed, profileId) => ({
+      ...buildProfileRegionPayload(parsed, profileId),
+      removeStatus: 0,
+      supplierTodoTypeList: [6],
+    }),
   },
   "activity.list": {
     fields: [createRegionField()],

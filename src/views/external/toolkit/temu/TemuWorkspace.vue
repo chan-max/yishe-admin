@@ -263,6 +263,14 @@
               一键获取全部
             </el-button>
             <el-button
+              v-if="selectedAction?.key === 'goods.confirmation.list'"
+              :loading="confirmationFetchingAll"
+              :disabled="!canRunSelectedAction || activeActionRunning || confirmationFetchingAll"
+              @click="fetchAllConfirmationRows"
+            >
+              一键获取全部
+            </el-button>
+            <el-button
               type="primary"
               :loading="activeActionRunning"
               :disabled="!canRunSelectedAction || activeActionRunning"
@@ -1239,6 +1247,120 @@
             </div>
           </div>
 
+          <div
+            v-if="isConfirmationTaskRunResult"
+            class="temu-workspace__task-detail-section temu-workspace__task-preview-section"
+          >
+            <div v-if="confirmationBatchSubmitting" class="temu-workspace__price-review-batch-mask">
+              <div class="temu-workspace__price-review-batch-panel">
+                <strong>批量确认商品</strong>
+                <span>处理中 {{ confirmationBatchFinishedCount }}/{{ confirmationBatchTotalCount }}</span>
+                <el-progress
+                  :percentage="confirmationBatchProgressPercent"
+                  :stroke-width="10"
+                  :show-text="false"
+                />
+                <div class="temu-workspace__price-review-batch-stats">
+                  <el-tag size="small" effect="plain" type="success">成功 {{ confirmationBatchSuccessCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="danger">失败 {{ confirmationBatchFailedCount }}</el-tag>
+                  <el-tag size="small" effect="plain" type="warning">剩余 {{ confirmationBatchRemainingCount }}</el-tag>
+                </div>
+              </div>
+            </div>
+            <div class="temu-workspace__section-title temu-workspace__price-review-list-head">
+              <div class="temu-workspace__section-title-main">
+                <span>商品确认列表</span>
+                <el-tag size="small" effect="plain">{{ taskRunConfirmationRows.length }}</el-tag>
+                <el-tag
+                  v-if="taskRunConfirmationTotalCount !== taskRunConfirmationRows.length"
+                  size="small"
+                  effect="plain"
+                  type="warning"
+                >
+                  全部 {{ taskRunConfirmationTotalCount }}
+                </el-tag>
+                <el-tag v-if="unconfirmedConfirmationRows.length" size="small" effect="plain" type="info">
+                  未确认 {{ unconfirmedConfirmationRows.length }}
+                </el-tag>
+              </div>
+              <div class="temu-workspace__section-title-actions">
+                <el-button
+                  size="small"
+                  type="primary"
+                  :loading="confirmationBatchSubmitting"
+                  :disabled="!selectedConfirmationRows.length"
+                  @click="submitSelectedConfirmationRows"
+                >
+                  批量确认 ({{ selectedConfirmationRows.length }})
+                </el-button>
+              </div>
+            </div>
+            <div class="common-table">
+              <vxe-grid
+                ref="confirmationPreviewGridRef"
+                v-bind="confirmationPreviewGridOptions"
+                :data="taskRunConfirmationRows"
+                class="temu-workspace__preview-table"
+                @checkbox-change="onConfirmationSelectionChange"
+                @checkbox-all="onConfirmationSelectionChange"
+              >
+                <template #confirmationImageSlot="{ row }">
+                  <el-image
+                    v-if="row.imageUrl && row.imageUrl !== '-'"
+                    class="temu-workspace__preview-image"
+                    :src="row.imageUrl"
+                    :preview-src-list="[row.imageUrl]"
+                    preview-teleported
+                    fit="cover"
+                  />
+                  <span v-else>-</span>
+                </template>
+                <template #confirmationIdentitySlot="{ row }">
+                  <div class="temu-workspace__price-review-identity">
+                    <div><span>SPU</span><strong>{{ row.spuId }}</strong></div>
+                    <div><span>SKC</span><strong>{{ row.skcId }}</strong></div>
+                    <div><span>货号</span><strong>{{ row.extCode }}</strong></div>
+                  </div>
+                </template>
+                <template #confirmationStatusSlot="{ row }">
+                  <el-tag
+                    v-if="row.confirmed"
+                    size="small"
+                    effect="plain"
+                    type="success"
+                  >
+                    已确认
+                  </el-tag>
+                  <el-tag
+                    v-else-if="row.submitStatus === '失败'"
+                    size="small"
+                    effect="plain"
+                    type="danger"
+                  >
+                    确认失败
+                  </el-tag>
+                  <el-tag v-else size="small" effect="plain" type="info">
+                    待确认
+                  </el-tag>
+                </template>
+                <template #confirmationOperationSlot="{ row }">
+                  <div class="temu-workspace__row-actions temu-workspace__row-actions--right">
+                    <el-button
+                      text
+                      size="small"
+                      type="primary"
+                      :loading="confirmationSubmittingKey === row.rowKey"
+                      :disabled="confirmationBatchSubmitting || row.confirmed"
+                      @click="submitSingleConfirmationRow(row)"
+                    >
+                      {{ row.confirmed ? "已确认" : "确认" }}
+                    </el-button>
+                  </div>
+                </template>
+              </vxe-grid>
+            </div>
+          </div>
+
         </div>
 
         <div v-else class="temu-workspace__unsupported">正在加载记录详情...</div>
@@ -1654,6 +1776,32 @@ interface JitPreviewRow {
   raw: Record<string, any>;
 }
 
+interface ConfirmationPreviewRow {
+  rowKey: string;
+  imageUrl: string;
+  spuId: string;
+  skcId: string;
+  rawSpuId: number;
+  rawSkcId: number;
+  rawGoodsId: number;
+  siteVersion: number;
+  goodsSkuIdList: number[];
+  extCode: string;
+  productName: string;
+  categoryName: string;
+  createTime: string;
+  confirmed: boolean;
+  submitStatus: string;
+  submitMessage: string;
+  raw: Record<string, any>;
+}
+
+interface ConfirmationSubmitMark {
+  status: "success" | "failed";
+  message: string;
+  time: string;
+}
+
 interface RealPicturePreviewRow {
   rowKey: string;
   imageUrl: string;
@@ -1833,6 +1981,16 @@ const jitBatchTotalCount = ref(0);
 const jitBatchSuccessCount = ref(0);
 const jitBatchFailedCount = ref(0);
 const jitFetchingAll = ref(false);
+const confirmationFetchingAll = ref(false);
+const confirmationSubmitMarks = reactive<Record<string, ConfirmationSubmitMark>>({});
+const confirmationSubmittingKey = ref("");
+const confirmationBatchSubmitting = ref(false);
+const confirmationBatchFinishedCount = ref(0);
+const confirmationBatchTotalCount = ref(0);
+const confirmationBatchSuccessCount = ref(0);
+const confirmationBatchFailedCount = ref(0);
+const selectedConfirmationRowKeys = ref<string[]>([]);
+const confirmationPreviewGridRef = ref<VxeGridInstance<ConfirmationPreviewRow>>();
 const priceReviewRiskFilter = ref<PriceReviewRiskFilter>("all");
 const priceReviewStatusFilter = ref<PriceReviewStatusFilter>("all");
 const priceReviewSortMode = ref<PriceReviewSortMode>("default");
@@ -2188,6 +2346,68 @@ const jitPreviewGridOptions = ref<VxeGridProps<JitPreviewRow>>({
   ],
 });
 
+const confirmationPreviewGridOptions = ref<VxeGridProps<ConfirmationPreviewRow>>({
+  ...(commonGridOptions as VxeGridProps<ConfirmationPreviewRow>),
+  maxHeight: 780,
+  rowConfig: {
+    ...(commonGridOptions as any).rowConfig,
+    keyField: "rowKey",
+  },
+  checkboxConfig: {
+    ...(commonGridOptions as any).checkboxConfig,
+    checkMethod: ({ row }: { row: ConfirmationPreviewRow }) => !row.confirmed,
+  },
+  columns: [
+    { type: "checkbox", width: 46, fixed: "left" },
+    {
+      title: "商品图",
+      field: "imageUrl",
+      width: 112,
+      align: "center",
+      slots: { default: "confirmationImageSlot" },
+    },
+    {
+      title: "商品信息",
+      field: "spuId",
+      minWidth: 260,
+      slots: { default: "confirmationIdentitySlot" },
+    },
+    {
+      title: "商品名称",
+      field: "productName",
+      minWidth: 260,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "类目",
+      field: "categoryName",
+      minWidth: 180,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "确认状态",
+      field: "submitStatus",
+      width: 120,
+      align: "center",
+      slots: { default: "confirmationStatusSlot" },
+    },
+    {
+      title: "创建时间",
+      field: "createTime",
+      width: 160,
+      showOverflow: "tooltip",
+    },
+    {
+      title: "操作",
+      field: "operation",
+      width: 120,
+      fixed: "right",
+      align: "right",
+      slots: { default: "confirmationOperationSlot" },
+    },
+  ],
+});
+
 const compliancePreviewGridOptions = ref<VxeGridProps<CompliancePreviewRow>>({
   ...(commonGridOptions as VxeGridProps<CompliancePreviewRow>),
   maxHeight: 780,
@@ -2241,6 +2461,7 @@ const hasUsableSession = computed(() => regionCookieCounts.value.global > 0);
 const normalizedSearchKeyword = computed(() => actionSearchKeyword.value.trim().toLowerCase());
 const SIMPLIFIED_ACTION_KEYS = [
   "goods.price-review.list",
+  "goods.confirmation.list",
   TEMU_PUBLISH_DETAIL_REQUEST_CAPTURE_ACTION_KEY,
   "goods.real-picture.list",
   "compliance.page-query",
@@ -3109,6 +3330,81 @@ const buildJitPreviewRows = (
 
   return rows;
 };
+const buildConfirmationPreviewRows = (
+  response?: TemuActionResponse | Record<string, any> | null,
+): ConfirmationPreviewRow[] => {
+  const action = String(response?.action || "").trim();
+  if (action !== "goods.confirmation.list") {
+    return [];
+  }
+
+  const result = asPlainObject(response?.result);
+  const items = Array.isArray(result.items) ? result.items : [];
+  const rows: ConfirmationPreviewRow[] = [];
+  const seen = new Set<string>();
+
+  items.forEach((item: any, itemIndex: number) => {
+    const spuId = Number(item?.productId || item?.spuId || 0);
+    const rawGoodsId = Number(item?.goodsId || spuId || 0);
+    const siteVersion = Number(item?.siteVersion || 10002);
+    const productName = toDisplayText(item?.productName);
+    const fullCategoryName = String(item?.fullCategoryName || "").trim();
+    const leafCategoryName = String(item?.leafCategoryName || "").trim();
+    const categoryName = toDisplayText(
+      fullCategoryName.length ? fullCategoryName : leafCategoryName,
+    );
+    const carouselImageUrlList = Array.isArray(item?.carouselImageUrlList) ? item.carouselImageUrlList : [];
+    const imageUrl = carouselImageUrlList.length ? String(carouselImageUrlList[0]).trim() : "";
+    const createTime = toDisplayText(item?.createTime);
+    const skcList = Array.isArray(item?.skcList) ? item.skcList : [];
+
+    skcList.forEach((skc: any, skcIndex: number) => {
+      const skcId = Number(skc?.skcId || skc?.productSkcId || 0);
+      if (!spuId || !skcId) {
+        return;
+      }
+      const rowKey = `${spuId}-${skcId}`;
+      if (seen.has(rowKey)) {
+        return;
+      }
+      seen.add(rowKey);
+      const skcImageUrl = Array.isArray(skc?.previewImgUrlList) && skc.previewImgUrlList.length
+        ? String(skc.previewImgUrlList[0]).trim()
+        : "";
+      const goodsSkuIdList = Array.isArray(skc?.productSkuIdList)
+        ? skc.productSkuIdList.map(Number).filter(Boolean)
+        : [];
+      const mark = confirmationSubmitMarks[rowKey];
+      const confirmed = mark?.status === "success";
+      rows.push({
+        rowKey,
+        imageUrl: skcImageUrl || imageUrl,
+        spuId: toDisplayText(spuId),
+        skcId: toDisplayText(skcId),
+        rawSpuId: spuId,
+        rawSkcId: skcId,
+        rawGoodsId,
+        siteVersion,
+        goodsSkuIdList,
+        extCode: toDisplayText(skc?.extCode),
+        productName,
+        categoryName,
+        createTime,
+        confirmed,
+        submitStatus: mark ? (mark.status === "success" ? "成功" : "失败") : "-",
+        submitMessage: mark?.message || "",
+        raw: {
+          item,
+          skc,
+          itemIndex,
+          skcIndex,
+        },
+      });
+    });
+  });
+
+  return rows;
+};
 const buildCompliancePreviewRows = (
   response?: TemuActionResponse | Record<string, any> | null,
 ): CompliancePreviewRow[] => {
@@ -3542,6 +3838,9 @@ const isJitListTaskRunResult = computed(() =>
 const isComplianceTaskRunResult = computed(
   () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "compliance.page-query",
 );
+const isConfirmationTaskRunResult = computed(
+  () => String(activeTaskRunDetail.value?.result?.action || "").trim() === "goods.confirmation.list",
+);
 const taskRunPriceReviewRawRows = computed(() =>
   buildPriceReviewPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
 );
@@ -3694,6 +3993,29 @@ const selectedJitRows = computed(() => {
 const selectedOpenableJitRows = computed(() => selectedJitRows.value.filter((row) => isOpenableJitRow(row)));
 const selectedStockMaintainableJitRows = computed(() =>
   selectedJitRows.value.filter((row) => isStockMaintainableJitRow(row)),
+);
+const taskRunConfirmationRows = computed(() =>
+  buildConfirmationPreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
+);
+const taskRunConfirmationTotalCount = computed(() => {
+  const result = asPlainObject(activeTaskRunDetail.value?.result?.result);
+  return Number(result.total || taskRunConfirmationRows.value.length || 0) || 0;
+});
+const unconfirmedConfirmationRows = computed(() =>
+  taskRunConfirmationRows.value.filter((row) => !row.confirmed),
+);
+const selectedConfirmationRows = computed(() => {
+  const selectedKeys = new Set(selectedConfirmationRowKeys.value);
+  return taskRunConfirmationRows.value.filter((row) => selectedKeys.has(row.rowKey) && !row.confirmed);
+});
+const confirmationBatchProgressPercent = computed(() => {
+  if (confirmationBatchTotalCount.value <= 0) {
+    return 0;
+  }
+  return Math.min(100, Math.round((confirmationBatchFinishedCount.value / confirmationBatchTotalCount.value) * 100));
+});
+const confirmationBatchRemainingCount = computed(() =>
+  Math.max(0, confirmationBatchTotalCount.value - confirmationBatchFinishedCount.value),
 );
 const taskRunComplianceRows = computed(() =>
   buildCompliancePreviewRows(activeTaskRunDetail.value?.result as Record<string, any> | null),
@@ -4397,9 +4719,11 @@ const resetTaskRunDetailDialogState = () => {
   selectedJitRowKeys.value = [];
   selectedRealPictureRowKeys.value = [];
   selectedComplianceRowKeys.value = [];
+  selectedConfirmationRowKeys.value = [];
   priceReviewPreviewGridRef.value?.clearCheckboxRow?.();
   jitPreviewGridRef.value?.clearCheckboxRow?.();
   realPicturePreviewGridRef.value?.clearCheckboxRow?.();
+  confirmationPreviewGridRef.value?.clearCheckboxRow?.();
   realPictureUploadRows.value = [];
   realPictureUploadVisible.value = false;
   complianceEditorVisible.value = false;
@@ -5341,6 +5665,101 @@ const submitSelectedJitOpenAndStockRows = async () => {
 const onJitSelectionChange = ({ records }: { records: JitPreviewRow[] }) => {
   selectedJitRowKeys.value = (Array.isArray(records) ? records : [])
     .filter((row) => isSelectableJitRow(row))
+    .map((row) => String(row?.rowKey || "").trim())
+    .filter(Boolean);
+};
+
+const submitConfirmationRows = async (rows: ConfirmationPreviewRow[], batchMode = false) => {
+  if (!requireTemuClientContext()) {
+    return;
+  }
+  const validRows = rows.filter((row) => !row.confirmed && row.rawGoodsId > 0);
+  if (!validRows.length) {
+    ElMessage.warning("请先选择未确认的记录");
+    return;
+  }
+  if (batchMode) {
+    confirmationBatchSubmitting.value = true;
+    confirmationBatchFinishedCount.value = 0;
+    confirmationBatchTotalCount.value = validRows.length;
+    confirmationBatchSuccessCount.value = 0;
+    confirmationBatchFailedCount.value = 0;
+  }
+  const ownerRunId = Number(activeTaskRunDetail.value?.id || 0);
+  let successCount = 0;
+  let failedCount = 0;
+  for (let i = 0; i < validRows.length; i += 1) {
+    const row = validRows[i];
+    if (batchMode) {
+      confirmationBatchFinishedCount.value = i;
+    } else {
+      confirmationSubmittingKey.value = row.rowKey;
+    }
+    try {
+      const response = await runTemuClientAction("goods.confirmation.confirm", {
+        profileId: props.profileId,
+        region: String(activeTaskRunDetail.value?.region || activeActionResult.value?.region || "global"),
+        goodsId: row.rawGoodsId,
+        siteVersion: row.siteVersion,
+        priceConfirmKeyStr: "1",
+        goodsSkuIdList: row.goodsSkuIdList.length ? row.goodsSkuIdList : [row.rawSkcId],
+      });
+      const success = !!(response as any)?.success;
+      if (success) {
+        successCount += 1;
+      } else {
+        failedCount += 1;
+      }
+      confirmationSubmitMarks[row.rowKey] = {
+        status: success ? "success" : "failed",
+        message: String((response as any)?.message || (success ? "确认成功" : "确认失败")),
+        time: formatDateTime(new Date()),
+      };
+      if (success) {
+        row.confirmed = true;
+        row.submitStatus = "成功";
+        row.submitMessage = confirmationSubmitMarks[row.rowKey].message;
+      }
+    } catch (error: any) {
+      failedCount += 1;
+      confirmationSubmitMarks[row.rowKey] = {
+        status: "failed",
+        message: String(error?.message || "确认失败"),
+        time: formatDateTime(new Date()),
+      };
+    }
+  }
+  if (batchMode) {
+    confirmationBatchFinishedCount.value = validRows.length;
+    confirmationBatchSuccessCount.value = successCount;
+    confirmationBatchFailedCount.value = failedCount;
+  }
+  confirmationSubmittingKey.value = "";
+  confirmationBatchSubmitting.value = false;
+  if (ownerRunId) {
+    try {
+      await loadTaskRunDetail(ownerRunId, { silent: true });
+    } catch {
+      // ignore
+    }
+  }
+  if (batchMode) {
+    ElMessage.success(`批量确认完成：成功 ${successCount} 条，失败 ${failedCount} 条`);
+  } else if (failedCount) {
+    ElMessage.error("确认失败");
+  } else {
+    ElMessage.success("确认成功");
+  }
+};
+
+const submitSelectedConfirmationRows = () =>
+  submitConfirmationRows(selectedConfirmationRows.value, true);
+
+const submitSingleConfirmationRow = (row: ConfirmationPreviewRow) =>
+  submitConfirmationRows([row], false);
+
+const onConfirmationSelectionChange = ({ records }: { records: ConfirmationPreviewRow[] }) => {
+  selectedConfirmationRowKeys.value = (Array.isArray(records) ? records : [])
     .map((row) => String(row?.rowKey || "").trim())
     .filter(Boolean);
 };
@@ -6906,6 +7325,55 @@ const fetchAllJitRows = async () => {
   }
 };
 
+const fetchAllConfirmationRows = async () => {
+  const state = activeActionState.value;
+  const action = selectedAction.value;
+  if (!action || action.key !== "goods.confirmation.list" || !selectedActionPreset.value) {
+    ElMessage.warning("请先选择商品确认列表动作");
+    return;
+  }
+  if (!requireTemuClientContext()) {
+    return;
+  }
+
+  const { valid, parsed } = validateForm();
+  if (!valid) {
+    ElMessage.warning("请先完善动作参数");
+    return;
+  }
+
+  const pageSize = Math.min(1000, Math.max(1, Number(parsed.pageSize || 100) || 100));
+  const payload = {
+    ...selectedActionPreset.value.buildPayload(parsed, props.profileId),
+    clientId: props.clientId,
+    pageNum: 1,
+    pageSize,
+    fetchAll: true,
+    allPages: true,
+  };
+
+  confirmationFetchingAll.value = true;
+  try {
+    state.lastResult = null;
+    const detail = await createTemuTaskRun({
+      actionKey: action.key,
+      payload,
+    });
+    syncTaskRunResultToWorkspace(detail);
+    taskRunPage.value = 1;
+    activeTaskRunId.value = null;
+    activeTaskRunDetail.value = null;
+    taskRunDetailVisible.value = false;
+    await loadTaskRuns();
+    ensureTaskRunPolling();
+    ElMessage.success(`已创建商品确认一键获取全部执行记录 #${detail.id}`);
+  } catch (error: any) {
+    ElMessage.error(extractRequestErrorMessage(error, "创建商品确认一键获取全部执行记录失败"));
+  } finally {
+    confirmationFetchingAll.value = false;
+  }
+};
+
 watch(
   selectedCategoryActions,
   () => {
@@ -6949,6 +7417,14 @@ watch(visibleTaskRunComplianceRows, (rows) => {
   selectedComplianceRowKeys.value = selectedComplianceRowKeys.value.filter((rowKey) =>
     visibleKeys.has(rowKey),
   );
+});
+
+watch(taskRunConfirmationRows, (rows) => {
+  const selectableKeys = new Set(rows.filter((row) => !row.confirmed).map((row) => row.rowKey));
+  selectedConfirmationRowKeys.value = selectedConfirmationRowKeys.value.filter((rowKey) =>
+    selectableKeys.has(rowKey),
+  );
+  confirmationPreviewGridRef.value?.clearCheckboxRow?.();
 });
 
 watch(

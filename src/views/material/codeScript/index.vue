@@ -30,21 +30,6 @@
               </el-col>
             </el-row>
             <div class="list-page-search-form__actions">
-              <div
-                class="sandbox-inline-status"
-                :class="`is-${sandboxStatusTone}`"
-                :title="sandboxStatusMeta"
-              >
-                <span class="sandbox-inline-status__dot" />
-                <span class="sandbox-inline-status__label">沙盒服务</span>
-                <span class="sandbox-inline-status__text">{{ sandboxStatusText }}</span>
-              </div>
-              <span
-                class="sandbox-inline-meta max-w-[280px] truncate text-xs text-[var(--el-text-color-secondary)]"
-                :title="sandboxStatusMeta"
-              >
-                {{ sandboxStatusMeta }}
-              </span>
               <el-button
                 size="small"
                 type="primary"
@@ -64,9 +49,6 @@
                 @click="handleDelete(null)"
               >
                 批量删除 ({{ ids.length }})
-              </el-button>
-              <el-button size="small" @click="checkSandboxHealth" :loading="sandboxStatus.loading">
-                刷新状态
               </el-button>
             </div>
           </el-form>
@@ -517,13 +499,6 @@ import {
   runCodeScript,
   updateCodeScript,
 } from "@/api/codeScript";
-import {
-  refreshServiceHealth,
-  resolveServiceHealthText,
-  resolveServiceHealthTone,
-  resolveServiceHealthTooltip,
-  useServiceHealthState,
-} from "@/services/serviceHealthState";
 
 const { height } = useWindowSize();
 const router = useRouter();
@@ -598,22 +573,6 @@ const loading = ref(false);
 const dataSource = ref<any[]>([]);
 const ids = ref<number[]>([]);
 const total = ref(0);
-const sandboxStatus = useServiceHealthState("sandbox");
-
-const sandboxStatusTone = computed(() =>
-  resolveServiceHealthTone(sandboxStatus) === "available"
-    ? "success"
-    : resolveServiceHealthTone(sandboxStatus) === "offline"
-      ? "danger"
-      : "warning",
-);
-
-const sandboxStatusText = computed(() => {
-  const text = resolveServiceHealthText(sandboxStatus);
-  return text === "未检测" ? "检测中" : text;
-});
-
-const sandboxStatusMeta = computed(() => resolveServiceHealthTooltip(sandboxStatus));
 
 const runLoading = ref(false);
 const runDataSource = ref<any[]>([]);
@@ -752,10 +711,6 @@ async function getList() {
   } finally {
     loading.value = false;
   }
-}
-
-async function checkSandboxHealth() {
-  await refreshServiceHealth("sandbox");
 }
 
 async function getRunList() {
@@ -1178,7 +1133,7 @@ async function openRunDetail(row) {
 }
 
 onMounted(async () => {
-  await Promise.all([getList(), checkSandboxHealth()]);
+  await getList();
 });
 
 onBeforeUnmount(() => {
@@ -1207,73 +1162,6 @@ onBeforeUnmount(() => {
 
 :deep(.code-script-page .list-page-table-panel__pagination--flat) {
   padding-top: 10px;
-}
-
-.sandbox-inline-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding: 0 2px 0 0;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
-}
-
-.sandbox-inline-status__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--el-text-color-placeholder);
-  flex-shrink: 0;
-}
-
-.sandbox-inline-status__label {
-  color: var(--el-text-color-primary);
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.sandbox-inline-status__text {
-  font-size: 12px;
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.sandbox-inline-meta {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-}
-
-.sandbox-inline-status.is-success .sandbox-inline-status__dot {
-  background: #67c23a;
-  box-shadow: 0 0 0 0 rgb(103 194 58 / 28%);
-  animation: sandbox-status-breathe-success 2s ease-in-out infinite;
-}
-
-.sandbox-inline-status.is-warning .sandbox-inline-status__dot {
-  background: #e6a23c;
-  box-shadow: 0 0 0 0 rgb(230 162 60 / 28%);
-  animation: sandbox-status-breathe-warning 2s ease-in-out infinite;
-}
-
-.sandbox-inline-status.is-danger .sandbox-inline-status__dot {
-  background: #f56c6c;
-  box-shadow: 0 0 0 0 rgb(245 108 108 / 24%);
-  animation: sandbox-status-breathe-danger 2s ease-in-out infinite;
-}
-
-.sandbox-inline-status.is-success .sandbox-inline-status__text {
-  color: #67c23a;
-}
-
-.sandbox-inline-status.is-warning .sandbox-inline-status__text {
-  color: #e6a23c;
-}
-
-.sandbox-inline-status.is-danger .sandbox-inline-status__text {
-  color: #f56c6c;
 }
 
 .run-detail-dialog {
