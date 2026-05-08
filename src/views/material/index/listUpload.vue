@@ -158,6 +158,19 @@
             >
               <el-button type="primary" plain :icon="UploadFilled">选择图片</el-button>
             </el-upload>
+            <input
+              ref="folderInputRef"
+              class="folder-input"
+              type="file"
+              accept="image/*"
+              multiple
+              webkitdirectory
+              directory
+              @change="handleFolderChange"
+            />
+            <el-button plain :icon="FolderOpened" @click="openFolderPicker">
+              选择文件夹
+            </el-button>
           </div>
 
           <div class="action-button-row">
@@ -213,7 +226,7 @@ import { computed, onBeforeUnmount, ref } from "vue";
 import type { PropType } from "vue";
 import type { UploadFile } from "element-plus";
 import { ElMessage, ElNotification } from "element-plus";
-import { Close, Loading, PictureFilled, UploadFilled } from "@element-plus/icons-vue";
+import { Close, FolderOpened, Loading, PictureFilled, UploadFilled } from "@element-plus/icons-vue";
 import { uploadToCOS } from "@/api/cos";
 import { uploadMaterialFile } from "@/api/material";
 import { useUserStore } from "@/store/modules/user";
@@ -231,6 +244,7 @@ interface UploadImageItem {
   url: string;
   size: number;
   raw: File;
+  relativePath?: string;
   width: number;
   height: number;
   rename: string;
@@ -253,6 +267,7 @@ defineProps({
 const emits = defineEmits(["single-file-uploaded"]);
 
 const fileList = ref<UploadImageItem[]>([]);
+const folderInputRef = ref<HTMLInputElement | null>(null);
 const usePreview = ref(true);
 const useAiGenerate = ref(false);
 
@@ -288,20 +303,33 @@ const getImageDimensions = (file: File): Promise<{ width: number; height: number
   });
 };
 
-const handleFileChange = async (file: UploadFile) => {
-  const rawFile = file.raw as File | undefined;
-  if (!rawFile) return;
+const isImageFile = (file: File) => {
+  if (file.type?.startsWith("image/")) {
+    return true;
+  }
+  return /\.(apng|avif|bmp|gif|ico|jpe?g|jfif|pjpeg|pjp|png|svg|webp)$/i.test(file.name || "");
+};
 
+const buildFileUid = (file: File, fallback?: string | number) => {
+  const relativePath = String((file as any).webkitRelativePath || "").trim();
+  return fallback || `${relativePath || file.name}-${file.size}-${file.lastModified}`;
+};
+
+const appendRawFile = async (rawFile: File, uid?: string | number) => {
+  if (!rawFile || !isImageFile(rawFile)) return false;
+
+  const relativePath = String((rawFile as any).webkitRelativePath || "").trim();
   const url = URL.createObjectURL(rawFile);
   const info = await getImageDimensions(rawFile);
 
   fileList.value.push({
-    uid: file.uid,
-    name: file.name,
+    uid: buildFileUid(rawFile, uid),
+    name: rawFile.name,
     nameEn: "",
     url,
-    size: file.size || rawFile.size,
+    size: rawFile.size,
     raw: rawFile,
+    relativePath,
     width: info.width,
     height: info.height,
     rename: "",
@@ -311,6 +339,38 @@ const handleFileChange = async (file: UploadFile) => {
     keywords: "",
     keywordsEn: "",
   });
+
+  return true;
+};
+
+const handleFileChange = async (file: UploadFile) => {
+  const rawFile = file.raw as File | undefined;
+  if (!rawFile) return;
+  await appendRawFile(rawFile, file.uid);
+};
+
+const openFolderPicker = () => {
+  folderInputRef.value?.click();
+};
+
+const handleFolderChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []).filter(isImageFile);
+  input.value = "";
+
+  if (!files.length) {
+    ElMessage.warning("文件夹里没有可上传的图片文件");
+    return;
+  }
+
+  let addedCount = 0;
+  for (const file of files) {
+    if (await appendRawFile(file)) {
+      addedCount += 1;
+    }
+  }
+
+  ElMessage.success(`已从文件夹选择 ${addedCount} 张图片`);
 };
 
 const revokeFileUrl = (index: number) => {
@@ -830,7 +890,14 @@ onBeforeUnmount(() => {
 }
 
 .local-select {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
+}
+
+.folder-input {
+  display: none;
 }
 
 .local-select :deep(.el-upload) {

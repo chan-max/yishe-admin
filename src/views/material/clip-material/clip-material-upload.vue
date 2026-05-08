@@ -168,6 +168,18 @@
             >
               <el-button type="primary" plain :icon="UploadFilled">选择文件</el-button>
             </el-upload>
+            <input
+              ref="folderInputRef"
+              class="folder-input"
+              type="file"
+              multiple
+              webkitdirectory
+              directory
+              @change="handleFolderChange"
+            />
+            <el-button plain :icon="FolderOpened" @click="openFolderPicker">
+              选择文件夹
+            </el-button>
           </div>
 
           <div class="action-button-row">
@@ -206,6 +218,7 @@ import {
   Close,
   Document,
   Folder,
+  FolderOpened,
   Loading,
   Picture,
   UploadFilled,
@@ -239,6 +252,7 @@ interface FileUploadItem {
   status: UploadStatus;
   file: File;
   url: string;
+  relativePath?: string;
   id?: string | number;
 }
 
@@ -253,6 +267,7 @@ const emits = defineEmits(["single-file-uploaded"]);
 const userStore = useUserStore();
 
 const fileList = ref<FileUploadItem[]>([]);
+const folderInputRef = ref<HTMLInputElement | null>(null);
 
 const totalCount = computed(() => fileList.value.length);
 const successCount = computed(
@@ -297,20 +312,25 @@ function formatFileSize(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-function handleFileChange(file: UploadFile | File) {
-  const actualFile = (file as UploadFile).raw || (file as File);
-  if (!actualFile) return;
+function buildFileUid(file: File, fallback?: string | number) {
+  const relativePath = String((file as any).webkitRelativePath || "").trim();
+  return fallback || `${relativePath || file.name}-${file.size}-${file.lastModified}`;
+}
+
+function appendRawFile(actualFile: File, uid?: string | number) {
+  if (!actualFile) return false;
 
   const maxSize = 1024 * 1024 * 1024;
   if (actualFile.size > maxSize) {
-    ElMessage.error("文件大小不能超过1GB");
-    return;
+    ElMessage.error(`文件 ${actualFile.name} 大小不能超过1GB`);
+    return false;
   }
 
   const suffix = actualFile.name.split(".").pop()?.toLowerCase() || "unknown";
+  const relativePath = String((actualFile as any).webkitRelativePath || "").trim();
 
   fileList.value.push({
-    uid: (file as UploadFile).uid || `${Date.now()}-${Math.random()}`,
+    uid: buildFileUid(actualFile, uid),
     name: actualFile.name.replace(/\.[^/.]+$/, ""),
     description: "",
     keywords: "",
@@ -321,7 +341,40 @@ function handleFileChange(file: UploadFile | File) {
     status: UploadStatus.Waiting,
     file: actualFile,
     url: "",
+    relativePath,
   });
+
+  return true;
+}
+
+function handleFileChange(file: UploadFile | File) {
+  const actualFile = (file as UploadFile).raw || (file as File);
+  if (!actualFile) return;
+  appendRawFile(actualFile, (file as UploadFile).uid);
+}
+
+function openFolderPicker() {
+  folderInputRef.value?.click();
+}
+
+function handleFolderChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const files = Array.from(input.files || []);
+  input.value = "";
+
+  if (!files.length) {
+    ElMessage.warning("文件夹里没有可上传的文件");
+    return;
+  }
+
+  let addedCount = 0;
+  for (const file of files) {
+    if (appendRawFile(file)) {
+      addedCount += 1;
+    }
+  }
+
+  ElMessage.success(`已从文件夹选择 ${addedCount} 个文件`);
 }
 
 function handleRemove(index: number) {
@@ -849,7 +902,14 @@ async function uploadSingleFile(fileItem: FileUploadItem) {
 }
 
 .local-select {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   width: 100%;
+}
+
+.folder-input {
+  display: none;
 }
 
 .local-select :deep(.el-upload) {
