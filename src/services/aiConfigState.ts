@@ -1,5 +1,9 @@
 import { reactive } from "vue";
-import { getAiApiKeyUsageOptions, type AiApiKeyConfig } from "@/api/aiApiKey";
+import {
+  getAiApiKeyUsageOptions,
+  getAiFeatureRegistry,
+  type AiApiKeyConfig,
+} from "@/api/aiApiKey";
 import { getAiSetting, type UserAiSetting } from "@/api/user";
 
 type AiConfigState = {
@@ -9,6 +13,7 @@ type AiConfigState = {
   reason: string;
   enabledKeyCount: number;
   boundFeatureCount: number;
+  totalFeatureCount: number;
   validBoundFeatureCount: number;
   invalidBoundFeatureCount: number;
 };
@@ -20,6 +25,7 @@ export const aiConfigState = reactive<AiConfigState>({
   reason: "",
   enabledKeyCount: 0,
   boundFeatureCount: 0,
+  totalFeatureCount: 0,
   validBoundFeatureCount: 0,
   invalidBoundFeatureCount: 0,
 });
@@ -57,6 +63,7 @@ const buildEnabledKeyIdSet = (keys: AiApiKeyConfig[]) => {
 const resolveMissingReason = (summary: {
   enabledKeyCount: number;
   boundFeatureCount: number;
+  totalFeatureCount: number;
   validBoundFeatureCount: number;
   invalidBoundFeatureCount: number;
 }) => {
@@ -65,6 +72,9 @@ const resolveMissingReason = (summary: {
   }
   if (summary.boundFeatureCount <= 0) {
     return "还没有给 AI 功能分配 Key";
+  }
+  if (summary.boundFeatureCount < summary.totalFeatureCount) {
+    return `还有 ${summary.totalFeatureCount - summary.boundFeatureCount} 个 AI 功能未分配 Key`;
   }
   if (summary.validBoundFeatureCount <= 0) {
     return "当前 AI 功能绑定的 Key 不可用";
@@ -83,11 +93,16 @@ export async function refreshAiConfigState() {
   pendingRefresh = (async () => {
     aiConfigState.loading = true;
     try {
-      const [keyList, aiSetting] = await Promise.all([
+      const [keyList, aiSetting, registry] = await Promise.all([
         getAiApiKeyUsageOptions(),
         getAiSetting(),
+        getAiFeatureRegistry(),
       ]);
       const keys = Array.isArray(keyList) ? keyList : [];
+      const features = Array.isArray(registry) ? registry : [];
+      const featureCodes = new Set(
+        features.map((item) => String(item?.code || "").trim()).filter(Boolean),
+      );
       const enabledKeyIds = buildEnabledKeyIdSet(keys);
       const featureKeys = normalizeFeatureKeys(aiSetting || {});
 
@@ -95,7 +110,10 @@ export async function refreshAiConfigState() {
       let validBoundFeatureCount = 0;
       let invalidBoundFeatureCount = 0;
 
-      Object.values(featureKeys).forEach((rawKeyId) => {
+      Object.entries(featureKeys).forEach(([featureCode, rawKeyId]) => {
+        if (featureCodes.size && !featureCodes.has(String(featureCode || "").trim())) {
+          return;
+        }
         const keyId = normalizeKeyId(rawKeyId);
         if (!keyId) {
           return;
@@ -113,6 +131,7 @@ export async function refreshAiConfigState() {
         loading: false,
         enabledKeyCount: enabledKeyIds.size,
         boundFeatureCount,
+        totalFeatureCount: featureCodes.size || Object.keys(featureKeys).length,
         validBoundFeatureCount,
         invalidBoundFeatureCount,
       };

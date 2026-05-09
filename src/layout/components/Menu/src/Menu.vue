@@ -145,7 +145,7 @@ export default defineComponent({
       title: string,
       options?: {
         enabled?: boolean;
-        variant?: "queue" | "psd" | "message";
+        variant?: "queue" | "psd" | "message" | "ai";
         label?: string;
       },
     ) => {
@@ -372,19 +372,25 @@ export default defineComponent({
       );
     };
 
-    const renderAiConfigDot = (routePath: string) => {
+    const renderAiConfigBadge = (routePath: string) => {
       if (
         routePath !== "/system/ai-api-key" ||
         !aiConfigState.initialized ||
-        !aiConfigState.missing
+        aiConfigState.totalFeatureCount <= 0
       ) {
         return undefined;
       }
 
-      return renderMenuStatusHint(
-        <span class={[`${prefixCls}__status-dot`, `${prefixCls}__status-dot--offline`]} />,
-        `AI 配置未完成：${aiConfigState.reason}。点击进入 AI API Key 补充配置`,
-      );
+      const label = `${aiConfigState.boundFeatureCount}/${aiConfigState.totalFeatureCount}`;
+      const title = aiConfigState.missing
+        ? `AI 配置未完成：${aiConfigState.reason}。已设置 ${label}`
+        : `AI 功能 Key 已全部设置：${label}`;
+
+      return renderAutoModeBadge(title, {
+        enabled: !aiConfigState.missing,
+        variant: "ai",
+        label,
+      });
     };
 
     const renderMessagePushBadge = (routePath: string) => {
@@ -609,7 +615,7 @@ export default defineComponent({
                           onClick={() => selectMenu(childPath)}
                         >
                           <span class={`${prefixCls}__link-text`}>{child.meta?.title}</span>
-                          {renderAiConfigDot(childPath) ||
+                          {renderAiConfigBadge(childPath) ||
                             renderMessagePushBadge(childPath) ||
                             renderPsdSetAutoDot(childPath) ||
                             renderPublishTaskAutoBadge(childPath) ||
@@ -936,6 +942,25 @@ $prefix-cls: #{$namespace}-menu;
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 6%),
       0 4px 12px rgb(34 197 94 / 12%);
+  }
+
+  &__auto-badge--ai {
+    min-width: 34px;
+    padding: 0 5px;
+    letter-spacing: 0;
+    text-indent: 0;
+  }
+
+  &__auto-badge--ai.#{$prefix-cls}__auto-badge--enabled {
+    border-color: rgb(34 197 94 / 30%);
+    background: rgb(34 197 94 / 14%);
+    color: rgb(134 239 172 / 94%);
+  }
+
+  &__auto-badge--ai.#{$prefix-cls}__auto-badge--muted {
+    border-color: rgb(245 158 11 / 28%);
+    background: rgb(245 158 11 / 14%);
+    color: rgb(253 186 116 / 95%);
   }
 
   &__auto-badge--muted {
