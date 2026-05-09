@@ -24,9 +24,9 @@ let activeSummaryPollingTimer: ReturnType<typeof setInterval> | null = null
 let activeSummaryPollingMs = 0
 let activeSummaryRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
-const ACTIVE_PSD_SET_POLLING_MS = 5000
-const IDLE_PSD_SET_POLLING_MS = 3000
-const REALTIME_ACTIVE_PSD_SET_TTL_MS = 10 * 60 * 1000
+const ACTIVE_PSD_SET_POLLING_MS = 8000
+const IDLE_PSD_SET_POLLING_MS = 15000
+const REALTIME_ACTIVE_PSD_SET_TTL_MS = 45 * 1000
 
 const normalizePsdSetId = (value: unknown) => String(value || '').trim()
 const normalizeRuntimeTime = (value: unknown) => String(value || '').trim() || new Date().toISOString()

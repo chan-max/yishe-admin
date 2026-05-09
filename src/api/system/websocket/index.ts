@@ -466,8 +466,14 @@ export interface AutoDispatchSchedulerRuntime {
   online: boolean;
   timerActive: boolean;
   running: boolean;
+  cycleInFlight?: boolean;
+  cycleElapsedMs?: number;
   dispatchIntervalMs: number;
   timeoutMs: number;
+  cycleTimeoutMs?: number;
+  staleCycleReleaseMs?: number;
+  currentCycleStage?: string | null;
+  currentCycleStageStartedAt?: string | null;
   lastCycleStartedAt?: string | null;
   lastCycleFinishedAt?: string | null;
   lastHeartbeatAt?: string | null;
@@ -478,6 +484,11 @@ export interface AutoDispatchSchedulerRuntime {
   lastDispatchMessage?: string | null;
   lastDispatchSuccess?: boolean | null;
   lastDispatchDispatched?: boolean | null;
+  dbCooldownUntil?: string | null;
+  dbCooldownRemainingMs?: number;
+  schedulerCooldownUntil?: string | null;
+  schedulerCooldownRemainingMs?: number;
+  lastCooldownReason?: 'db' | 'timeout' | null;
 }
 
 export const getPsdSetAutoDispatchRuntime = () => {
