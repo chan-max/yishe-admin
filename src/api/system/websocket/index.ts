@@ -447,6 +447,7 @@ export const resetPsAutomationRuntime = (clientId: string) => {
 export const resetAllPsAutomationRuntime = () => {
   return request.post<{ success: boolean; message: string; data?: any }>({
     url: "/websocket/ps-automation/reset-runtime",
+    timeout: 15000,
   });
 };
 

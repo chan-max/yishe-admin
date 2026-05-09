@@ -214,6 +214,8 @@ const refreshActiveSummary = async (silent = false) => {
     } catch {
       if (!silent) {
         applyActiveSummary({ items: [] })
+      } else {
+        syncMergedActiveSummary()
       }
     } finally {
       activeSummaryLoaded.value = true

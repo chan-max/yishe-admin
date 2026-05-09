@@ -3555,11 +3555,14 @@ async function handleResetAllPsAutomationRuntime() {
     const response = await resetAllPsAutomationRuntime();
     ElMessage.success(response?.message || "状态已重置");
     schedulePsdSetMenuRuntimeSync();
-    await Promise.all([
+    resettingPsRuntime.value = false;
+    void Promise.allSettled([
       refreshClientNodes(),
       refreshPsdSetRuntimeSummary(),
       loadPsdSetSchedulerRuntime(),
-    ]);
+    ]).catch((refreshError) => {
+      console.warn("重置状态后的运行态刷新失败:", refreshError);
+    });
   } catch (error: any) {
     ElMessage.error(error?.message || "重置状态失败");
   } finally {
