@@ -118,7 +118,7 @@ const applySummary = (payload?: Partial<PublishTaskRuntimeSummary> | null) => {
     active:
       Number(next.active) ||
       items.length ||
-      (Number(next.waiting) || 0) + (Number(next.processing) || 0),
+      (Number(next.processing) || 0),
     items,
     fetchedAt: String(next.fetchedAt || "").trim() || null,
   };

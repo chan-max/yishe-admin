@@ -1319,7 +1319,7 @@ const showPublishDispatchPanel = computed(() => {
 });
 
 const publishTaskRunningCount = computed(
-  () => Number(stats.value.waiting || 0) + Number(stats.value.processing || 0),
+  () => Number(stats.value.processing || 0),
 );
 
 const publishTaskAutoDispatchStatusText = computed(() => {
@@ -1457,7 +1457,7 @@ const currentAutoDispatchRunningRows = computed(() =>
     if (target.profileId !== autoDispatchTargetProfileId.value) {
       return false;
     }
-    return row.status === "processing" || row.status === "waiting";
+    return row.status === "processing";
   }),
 );
 
