@@ -355,6 +355,28 @@ const remainingRouter: AppRouteRecordRaw[] = [
     ],
   },
   {
+    path: "/design-tool",
+    component: Layout,
+    name: "DesignTool",
+    redirect: "/design-tool/connection",
+    meta: {
+      title: "设计工具",
+      icon: "ep:edit",
+      order: 4.5,
+      alwaysShow: true,
+    },
+    children: [
+      {
+        path: "connection",
+        component: () => import("@/views/external/design-tool/index.vue"),
+        name: "DesignToolConnection",
+        meta: {
+          title: "连接管理",
+        },
+      },
+    ],
+  },
+  {
     path: "/ai",
     component: Layout,
     name: "AiService",

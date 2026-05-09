@@ -61,6 +61,13 @@
               </div>
               <span class="header-connection-status__metric-value">{{ clientRuntimeCount }}</span>
             </div>
+            <div class="header-connection-status__metric">
+              <div class="header-connection-status__metric-head">
+                <span class="header-connection-status__metric-dot is-design-tool" />
+                <span>设计工具</span>
+              </div>
+              <span class="header-connection-status__metric-value">{{ designToolCount }}</span>
+            </div>
           </div>
         </section>
 
@@ -117,6 +124,21 @@
                 </div>
               </div>
             </div>
+
+            <div class="header-connection-status__status-line">
+              <div class="header-connection-status__status-main">
+                <span
+                  class="header-connection-status__status-dot"
+                  :class="designToolCount > 0 ? 'is-online' : 'is-offline'"
+                />
+                <div class="header-connection-status__status-copy">
+                  <div class="header-connection-status__status-title">设计工具</div>
+                  <div class="header-connection-status__status-meta">
+                    {{ designToolStatusText }} · {{ designToolStatusMeta }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -167,7 +189,7 @@ const offlineClientCount = computed(
 const onlineRuntimeConnections = computed(() =>
   runtimeConnections.value.filter((connection) => connection.isOnline !== false),
 );
-const runtimeConnectionCountBySource = (source: "extension" | "admin" | "client") =>
+const runtimeConnectionCountBySource = (source: "extension" | "admin" | "client" | "design-tool") =>
   onlineRuntimeConnections.value.filter(
     (connection) => resolveRuntimeConnectionSourceKey(connection) === source,
   ).length;
@@ -178,7 +200,8 @@ const adminCount = computed(() =>
 const clientRuntimeCount = computed(() =>
   Math.max(runtimeConnectionCountBySource("client"), onlineClientCount.value),
 );
-const runtimeTotalCount = computed(() => adminCount.value + clientRuntimeCount.value);
+const designToolCount = computed(() => runtimeConnectionCountBySource("design-tool"));
+const runtimeTotalCount = computed(() => adminCount.value + clientRuntimeCount.value + designToolCount.value);
 const isRefreshing = computed(() => clientRefreshLoading.value || runtimeConnectionLoading.value);
 const triggerSummaryText = computed(() => {
   const nodeText = clientRecordCount.value
@@ -212,6 +235,10 @@ const clientNodeMeta = computed(() => {
 const extensionStatusText = computed(() => `${extensionCount.value} 个连接`);
 const extensionStatusMeta = computed(() =>
   extensionCount.value > 0 ? "当前账号在线" : "进入远程连接页查看",
+);
+const designToolStatusText = computed(() => `${designToolCount.value} 个连接`);
+const designToolStatusMeta = computed(() =>
+  designToolCount.value > 0 ? "当前账号在线" : "暂无连接",
 );
 
 let timers: { localTimer: number; remoteTimer: number } | null = null;
@@ -493,6 +520,10 @@ onUnmounted(() => {
 
 .header-connection-status__metric-dot.is-client {
   background: #e6a23c;
+}
+
+.header-connection-status__metric-dot.is-design-tool {
+  background: #13c2c2;
 }
 
 .header-connection-status__status-dot {

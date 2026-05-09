@@ -1,6 +1,6 @@
 import type { WebsocketConnectionVO } from "@/api/system/websocket";
 
-export type RuntimeConnectionSourceKey = "extension" | "admin" | "client" | "unknown";
+export type RuntimeConnectionSourceKey = "extension" | "admin" | "client" | "design-tool" | "unknown";
 
 export const resolveRuntimeConnectionSourceKey = (
   row?: Partial<WebsocketConnectionVO> | null,
@@ -9,6 +9,7 @@ export const resolveRuntimeConnectionSourceKey = (
   if (source === "yishe-extension") return "extension";
   if (source === "管理后台") return "admin";
   if (source === "客户端") return "client";
+  if (source === "设计工具") return "design-tool";
   return "unknown";
 };
 
@@ -20,6 +21,8 @@ export const formatRuntimeConnectionSourceLabel = (row?: Partial<WebsocketConnec
       return "管理端";
     case "client":
       return "客户端";
+    case "design-tool":
+      return "设计工具";
     default:
       return "未知端";
   }
@@ -33,6 +36,8 @@ export const getRuntimeConnectionSourceTagType = (row?: Partial<WebsocketConnect
       return "primary";
     case "client":
       return "warning";
+    case "design-tool":
+      return "success";
     default:
       return "info";
   }

@@ -62,6 +62,12 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
     ],
   },
   {
+    label: "设计工具",
+    options: [
+      { key: "design-tool.connection", label: "连接管理" },
+    ],
+  },
+  {
     label: "AI创作",
     options: [
       { key: "ai.assistant", label: "智能助手" },
@@ -152,6 +158,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   ExternalTemuLegacy: "external.toolkit.temu",
   ExternalBrowserAutomation: "external.browser-automation",
   ExternalBrowserPlugin: "external.browser-plugin",
+  DesignToolConnection: "design-tool.connection",
   ExternalPsAutomation: "external.ps-automation",
   ExternalGoogleArt: "external.google-art",
   AiAssistant: "ai.assistant",
