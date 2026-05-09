@@ -15,7 +15,7 @@
           <el-switch v-model="autoRefresh" size="small" />
         </div>
 
-        <el-button size="small" type="primary" plain :loading="loading" @click="refreshConnections">
+        <el-button size="small" type="primary" plain :loading="refreshing" @click="refreshConnections">
           <Icon icon="ep:refresh" class="mr-5px" />
           刷新列表
         </el-button>
@@ -60,7 +60,7 @@
       </div>
 
       <el-empty
-        v-if="!loading && pluginConnections.length === 0"
+        v-if="!initialLoading && pluginConnections.length === 0"
         class="browser-plugin-empty"
         description="当前没有已连接的浏览器插件"
       />
@@ -68,7 +68,7 @@
       <el-table
         v-else
         :data="pluginConnections"
-        v-loading="loading"
+        v-loading="initialLoading"
         class="browser-plugin-table"
         size="small"
         stripe
@@ -146,7 +146,8 @@ defineOptions({ name: "ExternalBrowserPlugin" });
 const PLUGIN_CLIENT_SOURCE = "yishe-extension";
 const AUTO_REFRESH_INTERVAL_MS = 10_000;
 
-const loading = ref(false);
+const initialLoading = ref(true);
+const refreshing = ref(false);
 const autoRefresh = ref(true);
 const pluginConnections = ref<WebsocketConnectionVO[]>([]);
 const refreshTimer = ref<number | null>(null);
@@ -189,7 +190,7 @@ const browserDistributionText = computed(() => {
 
 const lastRefreshText = computed(() => {
   if (!lastRefreshAt.value) {
-    return loading.value ? "读取中" : "-";
+    return initialLoading.value ? "读取中" : "-";
   }
   return formatDateTime(lastRefreshAt.value);
 });
@@ -212,11 +213,11 @@ const normalizeConnectionRows = (response: unknown): WebsocketConnectionVO[] => 
 };
 
 const refreshConnections = async () => {
-  if (loading.value) {
+  if (refreshing.value) {
     return;
   }
 
-  loading.value = true;
+  refreshing.value = true;
   try {
     const response = await getMyRuntimeWebsocketConnectionViews();
     const rows = normalizeConnectionRows(response)
@@ -229,7 +230,8 @@ const refreshConnections = async () => {
     pluginConnections.value = rows;
     lastRefreshAt.value = new Date().toISOString();
   } finally {
-    loading.value = false;
+    refreshing.value = false;
+    initialLoading.value = false;
   }
 };
 
