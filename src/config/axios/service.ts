@@ -41,6 +41,7 @@ const legacyOwnershipWriteKeywords = [
   "/create",
   "/design-request",
   "/common-url",
+  "/text-document",
   "/product",
   "/product-model",
   "/ai/tti-record",

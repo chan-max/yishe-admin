@@ -225,6 +225,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
           title: "文案管理",
         },
       },
+      {
+        path: "text-document",
+        component: () => import("@/views/material/textDocument/index.vue"),
+        name: "TextDocument",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "文档库",
+        },
+      },
     ],
   },
   {
@@ -956,6 +967,24 @@ const remainingRouter: AppRouteRecordRaw[] = [
     path: "/ai/assets/prompt",
     redirect: "/ai/prompt",
     name: "AiAssetsPromptCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/resource/content-assets/text-document",
+    redirect: "/resource/text-document",
+    name: "ResourceContentAssetsTextDocumentCompat",
+    meta: {
+      hidden: true,
+      noTagsView: true,
+    },
+  },
+  {
+    path: "/text-document",
+    redirect: "/resource/text-document",
+    name: "TextDocumentCompat",
     meta: {
       hidden: true,
       noTagsView: true,

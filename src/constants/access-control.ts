@@ -41,6 +41,7 @@ export const MENU_ACCESS_GROUPS: MenuAccessGroup[] = [
       { key: "resource.psd", label: "PSD模板" },
       { key: "resource.story-script", label: "故事脚本" },
       { key: "resource.sentence", label: "文案管理" },
+      { key: "resource.text-document", label: "文档库" },
     ],
   },
   {
@@ -143,6 +144,7 @@ export const ROUTE_MENU_KEY_MAP: Record<string, string> = {
   Psd: "resource.psd",
   StoryScript: "resource.story-script",
   Sentence: "resource.sentence",
+  TextDocument: "resource.text-document",
   CodeScript: "content.code-script",
   CodeScriptSchedule: "content.code-script-schedule",
   RemotionVideoRecord: "content.remotion-video-record",
