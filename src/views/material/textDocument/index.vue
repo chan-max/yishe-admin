@@ -152,7 +152,13 @@
       </template>
     </ListPageLayout>
 
-    <el-dialog :title="dialogTitle" v-model="dialogVisible" width="980px" @close="dialogClose" align-center>
+    <el-dialog
+      :title="dialogTitle"
+      v-model="dialogVisible"
+      fullscreen
+      class="text-document-editor-dialog"
+      @close="dialogClose"
+    >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="86px">
         <el-row :gutter="16">
           <el-col :span="14">
@@ -199,18 +205,33 @@
               <el-input v-model="form.summary" type="textarea" :rows="2" placeholder="可选" />
             </el-form-item>
           </el-col>
-          <el-col :span="14">
+          <el-col :span="12">
             <el-form-item label="内容" prop="content">
+              <div class="document-content-toolbar">
+                <el-upload
+                  action="#"
+                  :auto-upload="false"
+                  :show-file-list="false"
+                  accept=".txt,.md,.markdown,.tex,.latex,.html,.htm,.json,.csv,.log,text/*"
+                  :on-change="handleFileSelected"
+                >
+                  <el-button size="small">从文件读取</el-button>
+                </el-upload>
+                <span class="document-content-toolbar__tip">
+                  支持常见文本文件，读取后会覆盖当前正文
+                </span>
+              </div>
               <el-input
                 v-model="form.content"
+                class="document-content-input"
                 type="textarea"
-                :rows="18"
+                :rows="28"
                 resize="vertical"
                 placeholder="请输入文本内容"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="10">
+          <el-col :span="12">
             <div class="preview-panel">
               <div class="preview-panel__header">预览</div>
               <div class="preview-panel__body">
@@ -258,6 +279,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watchEffect } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import { Delete, Plus, Search } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 import { useWindowSize } from '@vueuse/core'
@@ -449,6 +471,51 @@ function handlePreview(row: TextDocument) {
   previewVisible.value = true
 }
 
+function inferContentTypeByFileName(fileName: string): TextDocumentContentType {
+  const lowerName = fileName.toLowerCase()
+  if (lowerName.endsWith('.md') || lowerName.endsWith('.markdown')) {
+    return 'markdown'
+  }
+  if (lowerName.endsWith('.tex') || lowerName.endsWith('.latex')) {
+    return 'latex'
+  }
+  if (lowerName.endsWith('.html') || lowerName.endsWith('.htm')) {
+    return 'html'
+  }
+  return 'plain'
+}
+
+function getFileTitle(fileName: string) {
+  return fileName.replace(/\.[^.]+$/, '')
+}
+
+function handleFileSelected(uploadFile: UploadFile) {
+  const rawFile = uploadFile.raw
+  if (!rawFile) {
+    ElMessage.error('读取文件失败')
+    return
+  }
+
+  if (rawFile.size > 1024 * 1024 * 5) {
+    ElMessage.warning('文本文件不能超过 5MB')
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = () => {
+    form.value.content = String(reader.result || '')
+    form.value.contentType = inferContentTypeByFileName(rawFile.name)
+    if (!form.value.title) {
+      form.value.title = getFileTitle(rawFile.name)
+    }
+    ElMessage.success('文件内容已读取到正文')
+  }
+  reader.onerror = () => {
+    ElMessage.error('读取文件失败')
+  }
+  reader.readAsText(rawFile)
+}
+
 function checkboxChange(e) {
   ids.value = e.records.map((item) => item.id)
 }
@@ -574,6 +641,19 @@ onMounted(() => {
   gap: 4px;
 }
 
+.document-content-toolbar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.document-content-toolbar__tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
 .preview-panel {
   overflow: hidden;
   border: 1px solid var(--el-border-color);
@@ -594,8 +674,19 @@ onMounted(() => {
   border-bottom: 1px solid var(--el-border-color);
 }
 
+.text-document-editor-dialog :deep(.el-dialog__body) {
+  height: calc(100vh - 104px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 16px 20px;
+}
+
+.text-document-editor-dialog :deep(.document-content-input .el-textarea__inner) {
+  min-height: calc(100vh - 238px) !important;
+}
+
 .preview-panel__body {
-  height: 438px;
+  height: calc(100vh - 292px);
   overflow: auto;
 }
 
@@ -611,7 +702,7 @@ onMounted(() => {
 
 .html-preview {
   width: 100%;
-  height: 438px;
+  height: calc(100vh - 292px);
   border: 0;
 }
 

@@ -278,9 +278,6 @@
                       >
                         查看日志
                       </el-button>
-                      <span class="queue-runtime-log-cell__count">
-                        {{ getTaskLogCount(row) }} 条
-                      </span>
                     </div>
                   </template>
 
@@ -2444,7 +2441,7 @@ async function getList(options?: unknown) {
       id: queryParams.id?.trim() || undefined, // 不传 id 则查询所有ID
       sortField: sortField as "createdAt" | "updatedAt" | "processedAt",
       sortOrder: sortOrder as "ASC" | "DESC",
-      includeTotal: false,
+      includeTotal: true,
       limit: queryParams.pageSize,
       offset: (queryParams.currentPage - 1) * queryParams.pageSize,
     });

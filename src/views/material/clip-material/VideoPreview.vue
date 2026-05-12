@@ -2,9 +2,11 @@
   <el-dialog
     v-model="dialogVisible"
     :title="`文件预览 - ${fileName}`"
-    width="80%"
+    width="100vw"
+    fullscreen
+    class="file-preview-dialog"
     :destroy-on-close="true"
-    align-center
+    :close-on-click-modal="true"
     @close="handleClose"
   >
     <div class="file-preview-container" :class="`file-preview-container--${previewType}`">
@@ -57,7 +59,7 @@
       />
 
       <!-- 文本/代码文件预览 -->
-      <div v-else-if="previewType === 'text' && textContent !== null" class="preview-text-shell">
+      <div v-else-if="previewType === 'text'" class="preview-text-shell">
         <div class="preview-text-header">
           <div class="preview-text-info">
             <el-icon size="20"><Document /></el-icon>
@@ -65,13 +67,17 @@
             <el-tag size="small" type="info">{{ normalizedSuffix.toUpperCase() }}</el-tag>
           </div>
           <div class="preview-text-actions">
-            <el-button size="small" @click="copyTextContent">
+            <el-button size="small" :disabled="textLoading || textContent === null" @click="copyTextContent">
               <el-icon><DocumentCopy /></el-icon>
               复制
             </el-button>
           </div>
         </div>
-        <div class="preview-text-content">
+        <div v-if="textLoading" class="preview-text-loading">
+          <el-icon class="is-loading" size="22"><Loading /></el-icon>
+          <span>正在加载完整文件内容...</span>
+        </div>
+        <div v-else class="preview-text-content">
           <pre><code>{{ textContent }}</code></pre>
         </div>
       </div>
@@ -86,10 +92,6 @@
       </div>
     </div>
 
-    <div v-if="previewType === 'pdf' && fileUrl" class="preview-tip">
-      如果浏览器未正常展示 PDF，可尝试"新窗口打开"或"下载"。
-    </div>
-
     <template #footer>
       <el-button @click="handleClose">关闭</el-button>
       <el-button v-if="fileUrl" @click="handleOpenInNewTab">新窗口打开</el-button>
@@ -101,7 +103,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { VideoPlay, Headset, Document, Picture, Folder, DocumentCopy } from '@element-plus/icons-vue'
+import { VideoPlay, Headset, Document, Picture, Folder, DocumentCopy, Loading } from '@element-plus/icons-vue'
 import { downloadFileByElement } from '@/common/download'
 
 const props = defineProps({
@@ -173,8 +175,7 @@ async function loadTextContent() {
       throw new Error('文件加载失败')
     }
     const text = await response.text()
-    // 限制显示长度，避免过大文件卡顿
-    textContent.value = text.length > 100000 ? text.substring(0, 100000) + '\n\n... [文件过大，已截断显示前 10 万字符]' : text
+    textContent.value = text
   } catch (error) {
     console.error('文本文件加载失败:', error)
     textContent.value = null
@@ -292,14 +293,51 @@ function handleImageError(event: Event) {
 </script>
 
 <style scoped>
+:deep(.file-preview-dialog.el-dialog) {
+  --file-preview-footer-height: 54px;
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+:deep(.file-preview-dialog .el-dialog__header) {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 14px 48px 12px 18px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+:deep(.file-preview-dialog .el-dialog__title) {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:deep(.file-preview-dialog .el-dialog__body) {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+:deep(.file-preview-dialog .el-dialog__footer) {
+  flex: 0 0 var(--file-preview-footer-height);
+  height: var(--file-preview-footer-height);
+  padding: 10px 16px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
 .file-preview-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   background: var(--el-fill-color-blank);
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -312,21 +350,20 @@ function handleImageError(event: Event) {
 .preview-video {
   width: 100%;
   height: 100%;
-  max-height: 600px;
   object-fit: contain;
   background: #000;
 }
 
 .preview-image {
   max-width: 100%;
-  max-height: 600px;
+  max-height: 100%;
   object-fit: contain;
   background: var(--el-fill-color-blank);
 }
 
 .preview-pdf {
   width: 100%;
-  min-height: 72vh;
+  height: 100%;
   border: 0;
   background: #fff;
 }
@@ -370,7 +407,7 @@ function handleImageError(event: Event) {
 }
 
 .file-preview-empty {
-  min-height: 320px;
+  min-height: 0;
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -402,12 +439,11 @@ function handleImageError(event: Event) {
 /* 文本文件预览样式 */
 .preview-text-shell {
   width: 100%;
-  height: 70vh;
-  min-height: 500px;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #1e1e1e;
-  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -440,8 +476,20 @@ function handleImageError(event: Event) {
 
 .preview-text-content {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 16px;
+  background: #1e1e1e;
+}
+
+.preview-text-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #d4d4d4;
   background: #1e1e1e;
 }
 
@@ -481,18 +529,6 @@ function handleImageError(event: Event) {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .file-preview-container {
-    min-height: 300px;
-  }
-  
-  .preview-video {
-    max-height: 400px;
-  }
-
-  .preview-pdf {
-    min-height: 56vh;
-  }
-
   .preview-audio-shell {
     padding: 20px 16px;
   }

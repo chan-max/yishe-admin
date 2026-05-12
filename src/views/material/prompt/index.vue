@@ -142,7 +142,27 @@
                 </template>
 
                 <template #contentSlot="{ row }">
-                  <div class="prompt-content">{{ row.content }}</div>
+                  <el-tooltip
+                    v-if="row.content"
+                    :content="row.content"
+                    placement="top"
+                    effect="light"
+                    :show-after="300"
+                    transition=""
+                    popper-class="prompt-content-tooltip"
+                  >
+                    <div
+                      class="prompt-content"
+                      role="button"
+                      tabindex="0"
+                      @click.stop="copyPromptContent(row.content)"
+                      @keydown.enter.stop.prevent="copyPromptContent(row.content)"
+                    >
+                      <span class="prompt-content__text">{{ row.content }}</span>
+                      <el-icon class="prompt-content__copy"><DocumentCopy /></el-icon>
+                    </div>
+                  </el-tooltip>
+                  <div v-else class="prompt-content prompt-content--empty">-</div>
                 </template>
 
                 <template #descriptionSlot="{ row }">
@@ -197,13 +217,13 @@
     <el-dialog
       :title="dialogTitle"
       v-model="dialogVisible"
-      width="700px"
+      fullscreen
+      class="prompt-editor-dialog"
       @close="dialogClose"
-      align-center
     >
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-row>
-          <el-col :span="24">
+      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" class="prompt-editor-form">
+        <el-row :gutter="16">
+          <el-col :xs="24" :md="12">
             <el-form-item label="提示词标题" prop="title">
               <el-input
                 v-model="form.title"
@@ -214,7 +234,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :md="12">
             <el-form-item label="所属文件夹">
               <el-select
                 v-model="form.folderId"
@@ -237,8 +257,9 @@
             <el-form-item label="提示词内容" prop="content">
               <el-input
                 v-model="form.content"
+                class="prompt-editor-content-input"
                 type="textarea"
-                :rows="8"
+                :rows="24"
                 placeholder="请输入提示词内容"
                 maxlength="5000"
                 show-word-limit
@@ -246,7 +267,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :md="12">
             <el-form-item label="描述" prop="description">
               <el-input
                 v-model="form.description"
@@ -259,7 +280,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="24">
+          <el-col :xs="24" :md="12">
             <el-form-item label="标签" prop="tags">
               <el-input
                 v-model="form.tags"
@@ -286,7 +307,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watchEffect } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { DArrowLeft, DArrowRight, Delete, Plus, Search } from "@element-plus/icons-vue";
+import { DArrowLeft, DArrowRight, Delete, DocumentCopy, Plus, Search } from "@element-plus/icons-vue";
 import { useLocalStorage, useWindowSize } from "@vueuse/core";
 import {
   batchMovePrompt,
@@ -430,6 +451,22 @@ function getTagsArray(tags?: string) {
     .split(",")
     .map((tag) => tag.trim())
     .filter((tag) => tag);
+}
+
+async function copyPromptContent(content?: string) {
+  const text = String(content || "").trim();
+  if (!text) {
+    ElMessage.warning("暂无可复制内容");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    ElMessage.success("提示词内容已复制");
+  } catch (error) {
+    console.error("复制提示词内容失败:", error);
+    ElMessage.error("复制失败");
+  }
 }
 
 function getDefaultFormFolderId() {
@@ -676,48 +713,68 @@ onMounted(async () => {
   font-weight: 500;
   color: var(--el-text-color-primary);
   max-width: 220px;
-  word-break: break-all;
-}
-
-:deep(.prompt-page .vxe-body--row) {
-  height: auto !important;
-}
-
-:deep(.prompt-page .common-table__body-cell) {
-  height: auto !important;
-}
-
-:deep(.prompt-page .prompt-content-cell) {
-  vertical-align: top !important;
-}
-
-:deep(.prompt-page .prompt-content-cell .vxe-cell),
-:deep(.prompt-page .prompt-content-cell .vxe-cell--wrapper),
-:deep(.prompt-page .prompt-content-cell .vxe-cell--label) {
-  height: auto !important;
-  max-height: none !important;
-  overflow: visible !important;
-  white-space: normal !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prompt-content {
   width: 100%;
   max-width: none;
   box-sizing: border-box;
-  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 8px;
   border-radius: 8px;
   background: var(--el-fill-color-light);
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.55;
+  line-height: 1.5;
   font-size: 12px;
   color: var(--el-text-color-regular);
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
+  cursor: pointer;
+}
+
+.prompt-content:hover {
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.prompt-content__text {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.prompt-content__copy {
+  flex: 0 0 auto;
+  color: var(--el-text-color-secondary);
+}
+
+.prompt-content--empty {
+  color: var(--el-text-color-secondary);
+  cursor: default;
+}
+
+:global(.prompt-content-tooltip) {
+  max-width: min(720px, 80vw);
+  max-height: 50vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--el-text-color-primary) !important;
+  background: var(--el-bg-color-overlay) !important;
+  border: 1px solid var(--el-border-color-light) !important;
+  box-shadow: var(--el-box-shadow-light);
+  transition: none !important;
+  animation: none !important;
+}
+
+:global(.prompt-content-tooltip.el-popper.is-light .el-popper__arrow::before) {
+  background: var(--el-bg-color-overlay) !important;
+  border-color: var(--el-border-color-light) !important;
 }
 
 .prompt-description {
@@ -749,6 +806,22 @@ onMounted(async () => {
   margin-top: 4px;
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+.prompt-editor-dialog :deep(.el-dialog__body) {
+  height: calc(100vh - 104px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 18px 22px;
+}
+
+.prompt-editor-form {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.prompt-editor-dialog :deep(.prompt-editor-content-input .el-textarea__inner) {
+  min-height: calc(100vh - 320px) !important;
 }
 
 @media (max-width: 600px) {
