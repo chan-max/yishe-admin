@@ -182,6 +182,17 @@ const remainingRouter: AppRouteRecordRaw[] = [
         },
       },
       {
+        path: "asset-3d",
+        component: () => import("@/views/material/asset3d/index.vue"),
+        name: "Asset3d",
+        meta: {
+          canTo: true,
+          hidden: false,
+          noTagsView: false,
+          title: "3D资源",
+        },
+      },
+      {
         path: "font",
         component: () => import("@/views/material/fontTemplate/index.vue"),
         name: "Font",

@@ -118,8 +118,8 @@ const TOP_LEVEL_FIELD_META: Record<string, TemuFieldMeta> = {
     description: "前台展示的尺码模板 ID 列表。",
   },
   goodsModelReqs: {
-    label: "商品模型",
-    description: "商品模型或展示模型相关配置。",
+    label: "3D资源",
+    description: "3D资源或展示模型相关配置。",
   },
   productWhExtAttrReq: {
     label: "仓储扩展属性",

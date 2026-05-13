@@ -86,6 +86,12 @@
                   </div>
                 </template>
 
+                <template #headless_default="{ row }">
+                  <el-tag :type="getProfileHeadlessTagType(row.instance)" effect="plain">
+                    {{ getProfileHeadlessText(row.instance) }}
+                  </el-tag>
+                </template>
+
                 <template #pageCount_default="{ row }">
                   {{ row.instance?.pageCount ?? 0 }}
                 </template>
@@ -116,8 +122,11 @@
                       </el-button>
                       <template #dropdown>
                         <el-dropdown-menu class="operation-menu-compact">
-                          <el-dropdown-item command="connect">
-                            <span>{{ row.instance?.connected ? "重新连接" : "打开窗口" }}</span>
+                          <el-dropdown-item command="connectNormal">
+                            <span>{{ row.instance?.connected ? "重新普通打开" : "普通打开" }}</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="connectHeadless">
+                            <span>{{ row.instance?.connected ? "重新无头打开" : "无头打开" }}</span>
                           </el-dropdown-item>
                           <el-dropdown-item
                             command="close"
@@ -193,6 +202,24 @@
                       active-text="无头"
                       inactive-text="普通"
                       :disabled="!serviceEnabled"
+                    />
+                    <span class="browser-window-size-label">宽</span>
+                    <el-input-number
+                      v-model="browserForm.windowWidth"
+                      :min="640"
+                      :max="7680"
+                      :step="40"
+                      controls-position="right"
+                      :disabled="!serviceEnabled || browserForm.headless"
+                    />
+                    <span class="browser-window-size-label">高</span>
+                    <el-input-number
+                      v-model="browserForm.windowHeight"
+                      :min="640"
+                      :max="4320"
+                      :step="40"
+                      controls-position="right"
+                      :disabled="!serviceEnabled || browserForm.headless"
                     />
                   </div>
                   <div class="row wrap">
@@ -664,7 +691,13 @@ type PendingCommandMeta = {
 };
 const pendingCommandMeta = reactive<Record<string, PendingCommandMeta>>({});
 
-const browserForm = reactive({ port: 9222, headless: false, profileId: "" });
+const browserForm = reactive({
+  port: 9222,
+  headless: false,
+  profileId: "",
+  windowWidth: 1440,
+  windowHeight: 900,
+});
 const openForm = reactive({ url: "" });
 const profileForm = reactive({
   id: "",
@@ -803,6 +836,14 @@ const profileGridOptions = ref<VxeGridProps<any>>({
       align: "left",
       headerAlign: "left",
       slots: { default: "instance_default" },
+    },
+    {
+      field: "headless",
+      title: "运行模式",
+      width: 100,
+      align: "left",
+      headerAlign: "left",
+      slots: { default: "headless_default" },
     },
     {
       field: "pageCount",
@@ -1202,6 +1243,18 @@ const getProfileInstanceHint = (instance?: BrowserAutomationProfileInstanceSumma
   }
   return "浏览器窗口未打开";
 };
+const getProfileHeadlessText = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
+  if (!instance?.hasInstance && !instance?.connected && !instance?.connecting) return "未启动";
+  if (instance.headless === true) return "无头";
+  if (instance.headless === false) return "普通";
+  return "未知";
+};
+const getProfileHeadlessTagType = (instance?: BrowserAutomationProfileInstanceSummary | null) => {
+  if (!instance?.hasInstance && !instance?.connected && !instance?.connecting) return "info";
+  if (instance.headless === true) return "warning";
+  if (instance.headless === false) return "success";
+  return "info";
+};
 const setOperationProfile = (profileId?: string | null) => {
   const normalizedProfileId = String(profileId || "").trim();
   browserForm.profileId = normalizedProfileId;
@@ -1247,7 +1300,11 @@ const handleProfileOperationCommand = (
 ) => {
   switch (command) {
     case "connect":
-      void sendConnect(row.id);
+    case "connectNormal":
+      void sendConnect(row.id, { headless: false });
+      break;
+    case "connectHeadless":
+      void sendConnect(row.id, { headless: true });
       break;
     case "close":
       void sendCloseProfile(row.id);
@@ -1431,7 +1488,10 @@ const sendSimple = async (kind: "checkStatus" | "close" | "pages") => {
   );
 };
 
-const sendConnect = async (profileId?: string | null) => {
+const sendConnect = async (
+  profileId?: string | null,
+  options: { headless?: boolean } = {},
+) => {
   if (!selectedClientId.value) return;
   const normalizedProfileId = String(profileId || browserForm.profileId || "").trim();
   const connectKey = normalizedProfileId || "__default__";
@@ -1446,11 +1506,19 @@ const sendConnect = async (profileId?: string | null) => {
   if (resolvedPort) {
     browserForm.port = resolvedPort;
   }
+  const nextHeadless =
+    typeof options.headless === "boolean" ? options.headless : browserForm.headless;
+  browserForm.headless = nextHeadless;
+  const windowWidth = Number(browserForm.windowWidth) || 1440;
+  const windowHeight = Number(browserForm.windowHeight) || 900;
   return dispatch(
     "connect",
     () =>
       connectBrowserAutomation(selectedClientId.value, {
         ...browserForm,
+        headless: nextHeadless,
+        windowWidth,
+        windowHeight,
         ...(resolvedPort ? { port: resolvedPort } : {}),
         ...(normalizedProfileId ? { profileId: normalizedProfileId } : {}),
       }),
@@ -2053,6 +2121,12 @@ onUnmounted(() => {
 
 .profile-form :deep(.el-form-item) {
   margin-bottom: 18px;
+}
+
+.browser-window-size-label {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 1;
 }
 
 .debug-page-meta {

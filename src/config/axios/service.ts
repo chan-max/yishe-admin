@@ -43,7 +43,7 @@ const legacyOwnershipWriteKeywords = [
   "/common-url",
   "/text-document",
   "/product",
-  "/product-model",
+  "/asset-3d",
   "/ai/tti-record",
   "/ai/tts-record",
   "/ai/tts/custom-voice",

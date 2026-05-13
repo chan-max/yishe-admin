@@ -708,7 +708,7 @@
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleDispatchOptionRowClick"
             >
-              <el-table-column label="" width="44" align="center">
+              <el-table-column label="选择" width="56" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -723,12 +723,6 @@
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="connectedAtLabel"
-                label="连接时间"
-                width="144"
-                show-overflow-tooltip
-              />
               <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
                   <span
@@ -746,6 +740,16 @@
                     :class="resolveDispatchStatusTextClass(row.serviceTag.type)"
                   >
                     {{ row.serviceTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="模式" width="76" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.runtimeModeTag.type)"
+                  >
+                    {{ row.runtimeModeTag.text }}
                   </span>
                 </template>
               </el-table-column>
@@ -827,7 +831,7 @@
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleAutoDispatchOptionRowClick"
             >
-              <el-table-column label="" width="44" align="center">
+              <el-table-column label="选择" width="56" align="center">
                 <template #default="{ row }">
                   <el-radio
                     :value="row.optionKey"
@@ -842,12 +846,6 @@
                   <div class="publish-dispatch-dialog__primary">{{ row.clientLabel }}</div>
                 </template>
               </el-table-column>
-              <el-table-column
-                prop="connectedAtLabel"
-                label="连接时间"
-                width="144"
-                show-overflow-tooltip
-              />
               <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
                   <span
@@ -865,6 +863,16 @@
                     :class="resolveDispatchStatusTextClass(row.serviceTag.type)"
                   >
                     {{ row.serviceTag.text }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="模式" width="76" align="center">
+                <template #default="{ row }">
+                  <span
+                    class="publish-dispatch-dialog__state-text"
+                    :class="resolveDispatchStatusTextClass(row.runtimeModeTag.type)"
+                  >
+                    {{ row.runtimeModeTag.text }}
                   </span>
                 </template>
               </el-table-column>
@@ -978,7 +986,6 @@ import {
   type PublishTaskAutoDispatchSetting,
 } from "@/services/publishTaskAutoDispatch";
 import { getClientServiceRuntime } from "@/store/modules/clientNode";
-import { formatDate } from "@/utils/formatTime";
 
 type QueueTagType = "success" | "warning" | "info" | "primary" | "danger";
 
@@ -1003,6 +1010,7 @@ interface DispatchProfileOption {
   enabled: boolean;
   connected: boolean;
   busy: boolean;
+  runtimeModeTag?: DispatchStatusTag;
   isAuto?: boolean;
 }
 
@@ -1015,11 +1023,11 @@ interface ManualDispatchOptionRow {
   optionKey: string;
   clientId: string;
   clientLabel: string;
-  connectedAtLabel: string;
   onlineTag: DispatchStatusTag;
   serviceTag: DispatchStatusTag;
   profileId: string | null;
   profileLabel: string;
+  runtimeModeTag: DispatchStatusTag;
   profileTag: DispatchStatusTag;
   description: string;
   selectable: boolean;
@@ -1029,11 +1037,11 @@ interface DispatchOptionRow {
   optionKey: string;
   clientId: string;
   clientLabel: string;
-  connectedAtLabel: string;
   onlineTag: DispatchStatusTag;
   serviceTag: DispatchStatusTag;
   profileId: string | null;
   profileLabel: string;
+  runtimeModeTag: DispatchStatusTag;
   profileTag: DispatchStatusTag;
   description: string;
   selectable: boolean;
@@ -1471,7 +1479,6 @@ const dispatchAvailableRows = computed<ManualDispatchOptionRow[]>(() => {
   const taskType = dispatchTargetTask.value?.type;
   return dispatchClientCandidates.value
     .flatMap((client) => {
-      const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
       const onlineTag = getDispatchClientOnlineTag(client);
       const serviceTag = getDispatchClientServiceTag(client);
       const taskState = getClientTaskTypeState(client, taskType);
@@ -1496,11 +1503,13 @@ const dispatchAvailableRows = computed<ManualDispatchOptionRow[]>(() => {
         optionKey: buildDispatchOptionKey(client.id, option.profileId),
         clientId: String(client.id || "").trim(),
         clientLabel: formatClientNodeName(client),
-        connectedAtLabel,
         onlineTag,
         serviceTag,
         profileId: option.profileId,
         profileLabel: option.label,
+        runtimeModeTag: option.runtimeModeTag || getDispatchProfileRuntimeModeTag(null, {
+          isAuto: option.isAuto === true,
+        }),
         profileTag: getDispatchProfileTag(client, option, taskType),
         description: taskState.enabled ? option.description : taskState.text,
         selectable: taskState.enabled && option.enabled,
@@ -1525,7 +1534,6 @@ const autoDispatchRows = computed<DispatchOptionRow[]>(() =>
   dispatchClientCandidates.value
     .flatMap((client) => {
       const runtime = getBrowserAutomationRuntime(client) as Record<string, any>;
-      const connectedAtLabel = formatDispatchDateTime(getClientDispatchConnectedAt(client));
       const onlineTag = getDispatchClientOnlineTag(client);
       const serviceTag = getDispatchClientServiceTag(client);
       const profileOptions = resolveAutoDispatchTargetProfileOptions(client);
@@ -1537,11 +1545,11 @@ const autoDispatchRows = computed<DispatchOptionRow[]>(() =>
             optionKey: `${String(client?.id || "").trim()}::__unavailable__`,
             clientId: String(client?.id || "").trim(),
             clientLabel: formatClientNodeName(client),
-            connectedAtLabel,
             onlineTag,
             serviceTag,
             profileId: null,
             profileLabel: "无可绑定环境",
+            runtimeModeTag: getDispatchProfileRuntimeModeTag(null),
             profileTag: getAutoDispatchUnavailableTag(client),
             description: resolveAutoDispatchUnavailableReason(client),
             selectable: false,
@@ -1553,11 +1561,11 @@ const autoDispatchRows = computed<DispatchOptionRow[]>(() =>
         optionKey: buildDispatchOptionKey(client.id, option.profileId),
         clientId: String(client.id || "").trim(),
         clientLabel: formatClientNodeName(client),
-        connectedAtLabel,
         onlineTag,
         serviceTag,
         profileId: option.profileId,
         profileLabel: option.label,
+        runtimeModeTag: option.runtimeModeTag || getDispatchProfileRuntimeModeTag(null),
         profileTag: getAutoDispatchProfileTag(client, option),
         description: clientReady ? option.description : resolveAutoDispatchUnavailableReason(client),
         selectable: clientReady && !!option.profileId,
@@ -1712,23 +1720,29 @@ function getClientDispatchProfiles(client: any) {
   return Array.isArray(profiles) ? profiles : [];
 }
 
-function formatDispatchDateTime(value?: string | null) {
-  if (!value) {
-    return "-";
+function getDispatchProfileRuntimeModeTag(
+  instance?: Record<string, any> | null,
+  options: { isAuto?: boolean } = {},
+): DispatchStatusTag {
+  if (options.isAuto) {
+    return { text: "自动", type: "info" };
   }
-
-  try {
-    return formatDate(new Date(value), "YYYY-MM-DD HH:mm:ss");
-  } catch {
-    return String(value || "-");
-  }
-}
-
-function getClientDispatchConnectedAt(client: any) {
-  return (
-    String(client?.connectedAt || client?.lastOnlineAt || client?.lastOfflineAt || "").trim() ||
-    null
+  const started = !!(
+    instance?.hasInstance ||
+    instance?.connected ||
+    instance?.isConnected ||
+    instance?.connecting
   );
+  if (!started) {
+    return { text: "未启动", type: "info" };
+  }
+  if (instance?.headless === true) {
+    return { text: "无头", type: "warning" };
+  }
+  if (instance?.headless === false) {
+    return { text: "普通", type: "success" };
+  }
+  return { text: "未知", type: "info" };
 }
 
 function getDispatchClientOnlineTag(client: any): DispatchStatusTag {
@@ -1856,6 +1870,7 @@ function resolveAutoDispatchTargetProfileOptions(client: any): Array<
         enabled: true,
         connected,
         busy,
+        runtimeModeTag: getDispatchProfileRuntimeModeTag(instance),
       };
     })
     .filter(Boolean) as Array<
@@ -1936,6 +1951,7 @@ function resolveClientDispatchProfileOptions(
       enabled: !busy,
       connected,
       busy,
+      runtimeModeTag: getDispatchProfileRuntimeModeTag(instance),
     } satisfies DispatchProfileOption;
   });
 
@@ -1956,6 +1972,7 @@ function resolveClientDispatchProfileOptions(
       enabled: autoEnabled,
       connected: !!runtime?.available,
       busy: !autoEnabled,
+      runtimeModeTag: getDispatchProfileRuntimeModeTag(null, { isAuto: true }),
       isAuto: true,
     },
     ...concreteOptions,

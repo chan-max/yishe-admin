@@ -51,6 +51,7 @@ export interface BrowserAutomationProfileInstanceSummary {
   lastActivity?: string | null;
   lastError?: string | null;
   browserVersion?: string;
+  headless?: boolean | null;
   hasInstance?: boolean;
   connecting?: boolean;
   userDataDir?: string | null;
@@ -201,7 +202,13 @@ export const checkBrowserAutomationStatus = (clientId: string) => {
 
 export const connectBrowserAutomation = (
   clientId: string,
-  data?: { port?: number; headless?: boolean; profileId?: string },
+  data?: {
+    port?: number;
+    headless?: boolean;
+    profileId?: string;
+    windowWidth?: number;
+    windowHeight?: number;
+  },
 ) => {
   return request.post<BrowserAutomationCommandResponse>({
     url: `/external/browser-automation/${clientId}/connect`,
