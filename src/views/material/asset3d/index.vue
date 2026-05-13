@@ -1,78 +1,137 @@
 <template>
-  <div class="asset3d-page">
-    <div class="asset3d-toolbar">
-      <div class="asset3d-toolbar__filters">
-        <el-input
-          v-model="queryParams.name"
-          clearable
-          placeholder="搜索资源名称"
-          class="asset3d-search"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-        <el-button @click="handleSearch">查询</el-button>
-        <el-button @click="resetSearch">重置</el-button>
-      </div>
-      <div class="asset3d-toolbar__actions">
-        <el-button type="danger" :disabled="!ids.length" @click="handleDelete()">
-          批量删除
-        </el-button>
-        <el-button type="primary" @click="handleCreate">新增3D资源</el-button>
-      </div>
-    </div>
+  <ContentWrap :plain="true">
+    <ListPageLayout class="clip-material-page asset3d-page">
+      <template #filter>
+        <div class="list-page-filter list-page-filter--flat">
+          <el-form :model="queryParams" label-position="top" class="list-page-search-form">
+            <el-row :gutter="12" class="list-page-search-form__row">
+              <el-col class="list-page-search-form__col--wide" :xs="24" :sm="12" :md="8" :lg="6">
+                <el-form-item label="按名称搜索">
+                  <el-input
+                    v-model="queryParams.name"
+                    size="small"
+                    clearable
+                    placeholder="请输入名称、描述或关键词"
+                    @change="
+                      (val) => {
+                        if (!val) getList();
+                      }
+                    "
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col class="list-page-search-form__col--narrow" :xs="24" :sm="12" :md="8" :lg="4">
+                <el-form-item label="排序">
+                  <el-select
+                    v-model="queryParams.sortingFields"
+                    size="small"
+                    placeholder="请选择排序方式"
+                    @change="getList"
+                  >
+                    <el-option label="创建时间倒序" value="createTime DESC" />
+                    <el-option label="创建时间正序" value="createTime ASC" />
+                  </el-select>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="list-page-search-form__actions">
+              <el-button size="small" type="primary" :icon="Search" :loading="loading" @click="getList"
+                >搜索</el-button
+              >
+              <el-button size="small" type="primary" @click="handleCreate">上传</el-button>
+              <el-button size="small" @click="handleMultiDownload">下载 ({{ ids.length }})</el-button>
+              <el-button size="small" type="danger" :disabled="!ids.length" @click="handleDelete()">
+                批量删除 ({{ ids.length }})
+              </el-button>
+              <el-button v-if="isMobile" size="small" @click="filterDialogVisible = true">筛选</el-button>
+            </div>
+          </el-form>
+        </div>
 
-    <div class="common-table">
-      <vxe-grid
-        v-bind="gridOptions"
-        :data="dataSource"
-        :loading="loading"
-        @checkbox-change="checkboxChange"
-        @checkbox-all="checkboxAllChange"
-      >
-        <template #operationDefaultSlot="{ row }">
-          <el-dropdown
-            class="operation-dropdown"
-            placement="bottom-end"
-            @command="(command) => handleOperationCommand(String(command), row)"
-          >
-            <el-button type="primary" link size="small" class="operation-trigger-button">
-              操作
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu class="operation-menu-compact">
-                <el-dropdown-item command="edit">
-                  <el-icon><Edit /></el-icon>
-                  <span>编辑</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="copy-url" :disabled="!row.url">
-                  <el-icon><DocumentCopy /></el-icon>
-                  <span>复制模型地址</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="ai-generate" :disabled="!row.thumbnail">
-                  <el-icon><MagicStick /></el-icon>
-                  <span>AI生成内容</span>
-                </el-dropdown-item>
-                <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
-                  <el-icon><Delete /></el-icon>
-                  <span>删除</span>
-                </el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-        </template>
+        <el-dialog v-model="filterDialogVisible" title="筛选" width="90%" align-center>
+          <el-form :model="queryParams" label-width="80px">
+            <el-form-item label="按名称搜索">
+              <el-input v-model="queryParams.name" placeholder="请输入名称、描述或关键词" clearable />
+            </el-form-item>
+            <el-form-item label="排序">
+              <el-select v-model="queryParams.sortingFields" placeholder="请选择排序方式">
+                <el-option label="创建时间倒序" value="createTime DESC" />
+                <el-option label="创建时间正序" value="createTime ASC" />
+              </el-select>
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="filterDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="onMobileFilterSubmit">确定</el-button>
+          </template>
+        </el-dialog>
+      </template>
 
-        <template #thumbnailSlot="{ row }">
-          <el-image
-            v-if="row.thumbnail"
-            :src="row.thumbnail"
-            :lazy="true"
-            class="asset3d-thumb"
-            fit="cover"
-            :preview-src-list="[row.thumbnail]"
-            :preview-teleported="true"
-          />
-          <div v-else class="asset3d-thumb asset3d-thumb--empty">无预览</div>
-        </template>
+      <template #table>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel list-page-table-panel--flat">
+          <div class="list-page-table-panel__body">
+            <div class="common-table">
+              <vxe-grid
+                v-bind="gridOptions"
+                :data="dataSource"
+                :loading="loading"
+                @checkbox-change="checkboxChange"
+                @checkbox-all="checkboxAllChange"
+              >
+                <template #previewDefaultSlot="{ row }">
+                  <div class="table-media-cell table-file-cell p-2">
+                    <img
+                      v-if="row.thumbnail"
+                      :src="row.thumbnail"
+                      :alt="row.name || '3D素材'"
+                      class="table-file-cell__image"
+                      @click="openPreview(row)"
+                    />
+                    <div v-else class="table-file-doc-card">
+                      <el-icon size="24"><Box /></el-icon>
+                      <div class="table-file-doc-card__title">{{ row.name || "3D素材" }}</div>
+                      <div class="table-file-doc-card__tip">{{ getModelSuffix(row.url).toUpperCase() || "MODEL" }}</div>
+                    </div>
+                  </div>
+                </template>
+
+                <template #operationDefaultSlot="{ row }">
+                  <div class="flex items-center">
+                    <el-dropdown
+                      class="operation-dropdown"
+                      placement="bottom-end"
+                      @command="(command) => handleOperationCommand(String(command), row)"
+                    >
+                      <el-button type="primary" link size="small" class="operation-trigger-button"
+                        >操作</el-button
+                      >
+                      <template #dropdown>
+                        <el-dropdown-menu class="operation-menu-compact">
+                          <el-dropdown-item command="edit">
+                            <el-icon><Edit /></el-icon>
+                            <span>编辑</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="download" :disabled="!row.url">
+                            <el-icon><Download /></el-icon>
+                            <span>下载</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="copy-url" :disabled="!row.url">
+                            <el-icon><DocumentCopy /></el-icon>
+                            <span>复制模型地址</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="ai-generate" :disabled="!row.thumbnail">
+                            <el-icon><MagicStick /></el-icon>
+                            <span>AI生成内容</span>
+                          </el-dropdown-item>
+                          <el-dropdown-item command="delete" divided class="operation-menu-item--danger">
+                            <el-icon><Delete /></el-icon>
+                            <span>删除</span>
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </div>
+                </template>
 
         <template #nameSlot="{ row }">
           <div class="asset3d-name">{{ row.name || "-" }}</div>
@@ -83,9 +142,7 @@
         </template>
 
         <template #urlSlot="{ row }">
-          <el-link v-if="row.url" type="primary" :href="row.url" target="_blank">
-            打开模型文件
-          </el-link>
+          <el-tag v-if="row.url" size="small" type="info">{{ getModelSuffix(row.url).toUpperCase() || "MODEL" }}</el-tag>
           <span v-else>-</span>
         </template>
 
@@ -100,17 +157,23 @@
         <template #updateTimeSlot="{ row }">
           <span>{{ formatDateTime(row.updateTime) }}</span>
         </template>
-      </vxe-grid>
-    </div>
+              </vxe-grid>
+            </div>
+          </div>
+        </div>
+      </template>
 
-    <div class="py-4 flex justify-end">
-      <pagination
-        :total="total"
-        v-model:page="queryParams.currentPage"
-        v-model:limit="queryParams.pageSize"
-        @pagination="getList"
-      />
-    </div>
+      <template #pagination>
+        <div class="list-page-panel list-page-panel--flat list-page-table-panel__pagination list-page-table-panel__pagination--flat">
+          <pagination
+            :total="total"
+            v-model:page="queryParams.currentPage"
+            v-model:limit="queryParams.pageSize"
+            @pagination="getList"
+          />
+        </div>
+      </template>
+    </ListPageLayout>
 
     <el-dialog
       :title="dialogTitle"
@@ -215,14 +278,15 @@
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </ContentWrap>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from "vue";
+import { computed, reactive, ref, onMounted, watchEffect } from "vue";
+import { useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import type { UploadFile } from "element-plus";
-import { Delete, DocumentCopy, Edit, MagicStick } from "@element-plus/icons-vue";
+import { Box, Delete, DocumentCopy, Download, Edit, MagicStick, Search } from "@element-plus/icons-vue";
 import {
   batchDeleteAsset3d,
   createAsset3d,
@@ -237,37 +301,59 @@ import request from "@/config/axios";
 import { isQueuedAiTaskResult, notifyQueuedAiTask, unwrapAiTaskResult } from "@/utils/aiTask";
 
 const userStore = useUserStore();
+const { height } = useWindowSize();
 
 const queryParams = reactive({
   currentPage: 1,
   pageSize: 20,
   name: "",
+  sortingFields: "createTime DESC",
 });
+
+const isMobile = computed(() => window.innerWidth <= 768);
+const filterDialogVisible = ref(false);
 
 const gridOptions = ref({
   ...commonGridOptions,
+  maxHeight: null,
+  rowConfig: {
+    keyField: "id",
+  },
+  checkboxConfig: {
+    reserve: true,
+  },
   columns: [
-    { type: "checkbox", width: 50 },
-    { title: "缩略图", field: "thumbnail", width: 120, slots: { default: "thumbnailSlot" } },
-    { title: "资源名称", field: "name", minWidth: 180, slots: { default: "nameSlot" } },
-    { title: "模型文件", field: "url", width: 130, slots: { default: "urlSlot" } },
+    { type: "checkbox", width: 50, ellipsis: true, reserve: true },
     {
-      title: "资源描述",
+      title: "文件预览",
+      field: "thumbnail",
+      width: 400,
+      slots: { default: "previewDefaultSlot" },
+    },
+    { title: "资源名称", field: "name", minWidth: 180, className: "font-bold", slots: { default: "nameSlot" } },
+    {
+      title: "描述",
       field: "description",
-      minWidth: 260,
+      minWidth: 200,
       slots: { default: "descriptionSlot" },
     },
-    { title: "关键词", field: "keywords", minWidth: 180, slots: { default: "keywordsSlot" } },
+    { title: "关键词", field: "keywords", minWidth: 160, slots: { default: "keywordsSlot" } },
+    { title: "后缀", field: "url", width: 80, slots: { default: "urlSlot" } },
     {
       title: "上传者",
       field: "uploader",
       width: 140,
       formatter: ({ row }) => row?.uploader?.account || row?.uploader?.name || row?.userId || "-",
     },
-    { title: "创建时间", field: "createTime", width: 160, slots: { default: "createTimeSlot" } },
-    { title: "更新时间", field: "updateTime", width: 160, slots: { default: "updateTimeSlot" } },
+    { title: "ID", field: "id", width: 80 },
+    { title: "创建时间", field: "createTime", width: 150, slots: { default: "createTimeSlot" } },
+    { title: "更新时间", field: "updateTime", width: 150, slots: { default: "updateTimeSlot" } },
     buildOperationColumn("operationDefaultSlot"),
   ],
+});
+
+watchEffect(() => {
+  gridOptions.value.maxHeight = height.value - 260;
 });
 
 const dataSource = ref<any[]>([]);
@@ -397,7 +483,13 @@ function handleSearch() {
 
 function resetSearch() {
   queryParams.name = "";
+  queryParams.sortingFields = "createTime DESC";
   handleSearch();
+}
+
+function onMobileFilterSubmit() {
+  filterDialogVisible.value = false;
+  getList();
 }
 
 function handleCreate() {
@@ -491,11 +583,15 @@ function handleDelete(row?: any) {
 }
 
 function checkboxChange(e: any) {
-  ids.value = e.records.map((item: any) => item.id);
+  const records = Array.isArray(e.records) ? e.records : [];
+  const reserves = Array.isArray(e.reserves) ? e.reserves : [];
+  ids.value = [...records.map((item: any) => item.id), ...reserves.map((item: any) => item.id)];
 }
 
 function checkboxAllChange(e: any) {
-  ids.value = e.records.map((item: any) => item.id);
+  const records = Array.isArray(e.records) ? e.records : [];
+  const reserves = Array.isArray(e.reserves) ? e.reserves : [];
+  ids.value = [...records.map((item: any) => item.id), ...reserves.map((item: any) => item.id)];
 }
 
 function dialogClose() {
@@ -521,6 +617,50 @@ async function copyText(value: string) {
   if (!value) return;
   await navigator.clipboard.writeText(value);
   ElMessage.success("已复制");
+}
+
+function getModelSuffix(url = "") {
+  const cleanUrl = String(url || "").split("?")[0];
+  const suffix = cleanUrl.split(".").pop() || "";
+  return suffix.length <= 8 ? suffix : "";
+}
+
+function openPreview(row: any) {
+  if (row.thumbnail) {
+    window.open(row.thumbnail, "_blank");
+  }
+}
+
+function downloadFileByElement(url: string, filename: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.target = "_blank";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function handleDownload(row: any) {
+  if (!row?.url) {
+    ElMessage.warning("缺少下载链接");
+    return;
+  }
+  downloadFileByElement(row.url, row.name || `asset-3d-${row.id}.${getModelSuffix(row.url) || "glb"}`);
+}
+
+function handleMultiDownload() {
+  if (!ids.value.length) {
+    ElMessage.warning("请选择要下载的数据");
+    return;
+  }
+  ids.value.forEach((id, index) => {
+    const row = dataSource.value.find((item) => item.id === id);
+    if (!row?.url) {
+      return;
+    }
+    setTimeout(() => handleDownload(row), 500 * index);
+  });
 }
 
 function onAiTableAutoGenerate(row: any) {
@@ -568,6 +708,9 @@ function handleOperationCommand(command: string, row: any) {
     case "copy-url":
       copyText(row.url);
       break;
+    case "download":
+      handleDownload(row);
+      break;
     case "ai-generate":
       onAiTableAutoGenerate(row);
       break;
@@ -580,46 +723,24 @@ function handleOperationCommand(command: string, row: any) {
 onMounted(getList);
 </script>
 
-<style scoped>
-.asset3d-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.asset3d-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.asset3d-toolbar__filters,
-.asset3d-toolbar__actions {
-  display: flex;
-  align-items: center;
+<style lang="less" scoped>
+:deep(.clip-material-page) {
   gap: 10px;
-  flex-wrap: wrap;
+  padding: 8px 0 0;
 }
 
-.asset3d-search {
-  width: 240px;
+:deep(.clip-material-page .list-page-layout__body),
+:deep(.clip-material-page .list-page-layout__main) {
+  gap: 10px;
 }
 
-.asset3d-thumb {
-  width: 84px;
-  height: 84px;
-  border-radius: 6px;
-  background: var(--el-fill-color-light);
+:deep(.clip-material-page .list-page-filter--flat) {
+  gap: 10px;
+  padding-bottom: 10px;
 }
 
-.asset3d-thumb--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
+:deep(.clip-material-page .list-page-table-panel__pagination--flat) {
+  padding-top: 10px;
 }
 
 .asset3d-name,
@@ -662,16 +783,59 @@ onMounted(getList);
   font-size: 14px;
 }
 
-@media (max-width: 700px) {
-  .asset3d-toolbar,
-  .asset3d-toolbar__filters,
-  .asset3d-toolbar__actions,
-  .asset3d-search {
-    width: 100%;
-  }
+.table-file-cell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
 
+.table-file-cell__image {
+  display: block;
+  width: 180px;
+  max-width: 180px;
+  max-height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-light);
+  object-fit: contain;
+  cursor: pointer;
+}
+
+.table-file-doc-card {
+  width: 180px;
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-fill-color-blank);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  align-items: center;
+  text-align: center;
+  color: var(--el-text-color-secondary);
+}
+
+.table-file-doc-card__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  word-break: break-word;
+}
+
+.table-file-doc-card__tip {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+@media (max-width: 700px) {
   .asset3d-upload-row {
     grid-template-columns: 1fr;
   }
 }
+
 </style>
