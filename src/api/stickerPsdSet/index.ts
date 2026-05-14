@@ -10,6 +10,7 @@ export interface ActivePsdSetSummaryItem {
   progress?: number | null;
   assignedClientId?: string | null;
   assignedMachineCode?: string | null;
+  profileId?: string | null;
   updateTime?: string | null;
 }
 

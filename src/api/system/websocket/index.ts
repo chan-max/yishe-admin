@@ -200,6 +200,7 @@ export interface WebsocketClientInfo {
     currentPsSetName?: string | null;
     currentStep?: string | null;
     progress?: number | null;
+    dispatchToken?: string | null;
     lastError?: string | null;
     lastHeartbeatAt?: string | null;
     updatedAt?: string | null;
@@ -485,6 +486,8 @@ export interface AutoDispatchSchedulerRuntime {
   lastDispatchMessage?: string | null;
   lastDispatchSuccess?: boolean | null;
   lastDispatchDispatched?: boolean | null;
+  timeoutScanIntervalMs?: number;
+  lastTimeoutScanAt?: string | null;
   dbCooldownUntil?: string | null;
   dbCooldownRemainingMs?: number;
   schedulerCooldownUntil?: string | null;

@@ -91,32 +91,48 @@
                 :disabled="!selectedIds.length || loading">
                 批量删除 ({{ selectedIds.length }})
               </el-button>
-              <div class="psd-set-page__auto-dispatch">
-                <div class="psd-set-page__auto-dispatch-main">
-                  <div class="psd-set-page__auto-dispatch-title">自动调度</div>
-
-                  <div class="psd-set-page__auto-dispatch-runtime" :class="`is-${psdSetSchedulerIndicator.tone}`">
-                    <span class="psd-set-page__auto-dispatch-runtime-dot" />
-                    <span>{{ psdSetSchedulerIndicator.text }}</span>
-                    <span v-if="psdSetSchedulerMeta" class="psd-set-page__auto-dispatch-runtime-meta">
-                      {{ psdSetSchedulerMeta }}
-                    </span>
+              <div class="psd-set-page__auto-dispatch-row">
+                <div class="psd-set-page__auto-dispatch">
+                  <div class="psd-set-page__auto-dispatch-head">
+                    <div class="psd-set-page__auto-dispatch-runtime" :class="`is-${psdSetSchedulerIndicator.tone}`">
+                      <span class="psd-set-page__auto-dispatch-runtime-dot" />
+                      <span>{{ psdSetSchedulerIndicator.text }}</span>
+                    </div>
                   </div>
-                </div>
-                <div class="psd-set-page__auto-dispatch-side">
-                  <span class="psd-set-page__auto-dispatch-status"
-                    :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
-                    <span class="psd-set-page__auto-dispatch-dot" />
-                    <span>{{ userAutoSchedulingEnabled ? "已开启" : "已关闭" }}</span>
-                  </span>
-                  <el-button size="small" :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
-                    :loading="userAutoSchedulingLoading"
-                    @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
-                    {{ userAutoSchedulingEnabled ? "关闭自动调度" : "开启自动调度" }}
-                  </el-button>
-                  <el-button size="small" :loading="resettingPsRuntime" @click="handleResetAllPsAutomationRuntime">
-                    重置状态
-                  </el-button>
+                  <div class="psd-set-page__auto-dispatch-work">
+                    <template v-if="autoDispatchProcessingRows.length">
+                      <div v-for="item in autoDispatchProcessingRows" :key="item.key"
+                        class="psd-set-page__auto-dispatch-work-item">
+                        <span class="psd-set-page__auto-dispatch-client">{{ item.clientLabel }}</span>
+                        <span class="psd-set-page__auto-dispatch-action">正在处理</span>
+                        <span class="psd-set-page__auto-dispatch-task">
+                          <span class="psd-set-page__auto-dispatch-task-id">{{ item.taskId }}</span>
+                          <span v-if="item.taskName" class="psd-set-page__auto-dispatch-task-name">{{ item.taskName }}</span>
+                        </span>
+                        <span v-if="item.stepLabel" class="psd-set-page__auto-dispatch-step">{{ item.stepLabel }}</span>
+                      </div>
+                    </template>
+                    <div v-else class="psd-set-page__auto-dispatch-empty">
+                      <span>{{ psdSetAutoDispatchTargetLabel || "未选择目标客户端" }}</span>
+                      <span>{{ psdSetSchedulerRuntimeSummary }}</span>
+                      <span>待制作 {{ schedulerClientStats.pending }}</span>
+                    </div>
+                  </div>
+                  <div class="psd-set-page__auto-dispatch-side">
+                    <span class="psd-set-page__auto-dispatch-status"
+                      :class="userAutoSchedulingEnabled ? 'is-success' : 'is-info'">
+                      <span class="psd-set-page__auto-dispatch-dot" />
+                      <span>{{ userAutoSchedulingEnabled ? "已开启" : "已关闭" }}</span>
+                    </span>
+                    <el-button size="small" :type="userAutoSchedulingEnabled ? 'danger' : 'success'"
+                      :loading="userAutoSchedulingLoading"
+                      @click="handleToggleUserAutoScheduling(!userAutoSchedulingEnabled)">
+                      {{ userAutoSchedulingEnabled ? "关闭自动制作" : "开启自动制作" }}
+                    </el-button>
+                    <el-button size="small" :loading="resettingPsRuntime" @click="handleResetAllPsAutomationRuntime">
+                      重置状态
+                    </el-button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -463,26 +479,6 @@
             <div class="detail-header">
               <span class="detail-label">配置与元信息</span>
             </div>
-            <div class="psd-set-detail-runtime-strip">
-              <div>
-                <span class="info-label">调度</span>
-                <el-tag :type="schedulerStatusTagType(detailData?.schedulerMeta?.status)" size="small" effect="plain">
-                  {{ schedulerStatusLabel(detailData?.schedulerMeta?.status) }}
-                </el-tag>
-              </div>
-              <div>
-                <span class="info-label">进度</span>
-                <span class="info-value">{{ formatSchedulerProgress(detailData?.schedulerMeta?.progress) }}</span>
-              </div>
-              <div>
-                <span class="info-label">节点</span>
-                <span class="info-value">{{ getSchedulerAssignedLabel(detailData) }}</span>
-              </div>
-            </div>
-            <div v-if="detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError"
-              class="psd-set-detail-runtime-note">
-              <span>{{ detailData?.schedulerMeta?.currentStep || detailData?.schedulerMeta?.lastError }}</span>
-            </div>
 
             <div class="psd-set-detail-json-stack">
               <div class="psd-set-detail-json-block">
@@ -507,17 +503,6 @@
                   <pre class="config-preview">{{ detailMetaFormatted }}</pre>
                 </div>
                 <span v-else class="text-gray-400 text-sm">无元信息</span>
-              </div>
-
-              <div class="psd-set-detail-json-block">
-                <div class="psd-set-detail-json-title">
-                  <span>调度信息</span>
-                  <el-tag v-if="detailSchedulerMetaFormatted" type="info" size="small" effect="plain">JSON</el-tag>
-                </div>
-                <div v-if="detailSchedulerMetaFormatted" class="config-preview-container">
-                  <pre class="config-preview">{{ detailSchedulerMetaFormatted }}</pre>
-                </div>
-                <span v-else class="text-gray-400 text-sm">无调度信息</span>
               </div>
             </div>
           </div>
@@ -789,8 +774,8 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="productionDispatchDialogVisible" width="760px" title="开始制作" align-center append-to-body
-      destroy-on-close class="production-dispatch-dialog" @open="handleOpenProductionDispatchDialog"
+    <el-dialog v-model="productionDispatchDialogVisible" width="760px" :title="productionDispatchDialogTitle"
+      align-center append-to-body destroy-on-close class="production-dispatch-dialog" @open="handleOpenProductionDispatchDialog"
       @closed="handleCloseProductionDispatchDialog">
       <div class="production-dispatch-dialog__body">
         <div v-loading="productionDispatchLoading" :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
@@ -808,6 +793,14 @@
               </el-table-column>
               <el-table-column prop="clientLabel" label="客户端节点" min-width="140" show-overflow-tooltip />
               <el-table-column prop="connectedAtLabel" label="连接时间" min-width="150" show-overflow-tooltip />
+              <el-table-column label="当前套图" min-width="190" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <div class="production-dispatch-dialog__task">
+                    <span>{{ row.activeTaskLabel }}</span>
+                    <small v-if="row.activeTaskStep">{{ row.activeTaskStep }}</small>
+                  </div>
+                </template>
+              </el-table-column>
               <el-table-column label="在线" width="76" align="center">
                 <template #default="{ row }">
                   <span class="production-dispatch-dialog__state-text" :class="`is-${row.onlineStatusTone}`">
@@ -837,9 +830,10 @@
       <template #footer>
         <div class="production-dispatch-dialog__footer">
           <el-button @click="productionDispatchDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="startingProductionId === productionDispatchRow?.id"
-            :disabled="!selectedDispatchClientId || !selectedDispatchClient" @click="handleConfirmStartProduction">
-            开始制作
+          <el-button type="primary" :loading="productionDispatchSubmitting"
+            :disabled="!selectedDispatchClientId || !selectedDispatchClient"
+            @click="handleConfirmStartProduction">
+            {{ productionDispatchConfirmText }}
           </el-button>
         </div>
       </template>
@@ -906,7 +900,6 @@ import {
 import {
   normalizeAutoDispatchSchedulerRuntime,
   resolveAutoDispatchSchedulerIndicator,
-  resolveAutoDispatchSchedulerMeta,
 } from "@/services/autoDispatchSchedulerRuntime";
 import { sortTypeOptions, defaultSortingValue } from "@/common/sort";
 import { getPreviewImageUrl } from "@/utils/image";
@@ -940,6 +933,7 @@ const startingProductionId = ref<string>("");
 const productionDispatchDialogVisible = ref(false);
 const productionDispatchLoading = ref(false);
 const productionDispatchRow = ref<any>(null);
+const productionDispatchMode = ref<"manual" | "auto">("manual");
 const selectedDispatchClientId = ref("");
 const resettingPsRuntime = ref(false);
 const userAutoSchedulingLoading = ref(false);
@@ -1000,23 +994,25 @@ const publishUsageDialogVisible = ref(false);
 const publishUsageLoading = ref(false);
 const publishUsageRecords = ref<any[]>([]);
 let psdSetMenuRuntimeSyncTimer: ReturnType<typeof setTimeout> | null = null;
+let psdSetListRequestSeq = 0;
 
 // 客户端连接状态（参考 header 中的状态检测方式）
 const isClientConnected = computed(() => isLocalConnected.value);
 const { clients: clientNodes, refresh: refreshClientNodes } = useClientNodeState();
 const {
   userAutoSchedulingEnabled,
+  userAutoDispatchClientId,
   activePsdSets,
   activePsdSetClientIds,
   refreshActiveSummary: refreshPsdSetRuntimeSummary,
   refreshUserAutoScheduling,
   setUserAutoSchedulingEnabled,
+  setUserAutoDispatchTarget,
 } = usePsdSetRuntimeState();
 
 function schedulePsdSetMenuRuntimeSync() {
   void refreshPsdSetRuntimeSummary();
   void refreshClientNodes();
-  void getList(true);
   void loadPsdSetSchedulerRuntime();
   if (psdSetMenuRuntimeSyncTimer) {
     clearTimeout(psdSetMenuRuntimeSyncTimer);
@@ -1509,54 +1505,11 @@ function isPublishConfigSelectable(config: any) {
   return getPublishConfigMatchInfo(config).selectable;
 }
 
-type PsdSetRuntimeUpdatePayload = {
-  status?: string;
-  message?: string;
-  progress?: number;
-  total?: number;
-  assignedClientId?: string | null;
-  assignedMachineCode?: string | null;
-  schedulerStatus?: string;
-};
-
-function buildPsdSetRuntimePayloadFromSummary(item: any): PsdSetRuntimeUpdatePayload {
-  return {
-    status: item?.status || "processing",
-    schedulerStatus: item?.schedulerStatus || undefined,
-    message:
-      String(item?.currentStep || "").trim() ||
-      String(item?.statusMessage || "").trim() ||
-      undefined,
-    progress: typeof item?.progress === "number" ? item.progress : undefined,
-    assignedClientId: item?.assignedClientId ?? null,
-    assignedMachineCode: item?.assignedMachineCode ?? null,
-  };
-}
-
-function normalizePsdSetSchedulerMeta(value: any) {
-  if (!value) {
-    return null;
-  }
-  if (typeof value === "string") {
-    try {
-      const parsed = JSON.parse(value);
-      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-  return typeof value === "object" && !Array.isArray(value) ? { ...value } : null;
-}
-
 function normalizePsdSetRecord(record: any) {
   if (!record || typeof record !== "object" || Array.isArray(record)) {
     return record;
   }
-  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
-  return {
-    ...record,
-    ...(schedulerMeta ? { schedulerMeta } : {}),
-  };
+  return { ...record };
 }
 
 function normalizePsdSetRuntimeStatus(status?: unknown) {
@@ -1567,61 +1520,11 @@ function normalizePsdSetRuntimeStatus(status?: unknown) {
   return normalizedStatus;
 }
 
-function resolvePsdSetProgressPercent(progress?: number, total?: number, fallback?: number | null) {
-  if (typeof progress !== "number") {
-    return typeof fallback === "number" ? fallback : null;
-  }
-  if (typeof total === "number" && total > 0) {
-    return Math.max(0, Math.min(100, Math.round((progress / total) * 100)));
-  }
-  return Math.max(0, Math.min(100, progress));
-}
-
-function resolvePsdSetRuntimeStatusMessage(status: string, message?: string, schedulerMeta?: any) {
-  const currentStep = String(schedulerMeta?.currentStep || "").trim();
-  if (
-    currentStep &&
-    (status === "processing" ||
-      schedulerMeta?.status === "assigned" ||
-      schedulerMeta?.status === "running")
-  ) {
-    return currentStep;
-  }
-
-  const explicitMessage = String(message || "").trim();
-  if (explicitMessage) {
-    return explicitMessage;
-  }
-
-  if (currentStep) {
-    return currentStep;
-  }
-
-  switch (status) {
-    case "completed":
-      return "制作完成";
-    case "failed":
-      return String(schedulerMeta?.lastError || "制作失败");
-    case "processing":
-      return "正在处理中...";
-    case "pending":
-      return "等待调度";
-    default:
-      return "";
-  }
-}
-
 function resolvePsdSetStatusMessage(record: any) {
   if (!record || typeof record !== "object") {
     return "-";
   }
-  return (
-    resolvePsdSetRuntimeStatusMessage(
-      String(record.status || "").trim(),
-      record.statusMessage,
-      normalizePsdSetSchedulerMeta(record.schedulerMeta),
-    ) || "-"
-  );
+  return String(record.statusMessage || "").trim() || "-";
 }
 
 function findPsdSetRowIndexById(psdSetId: unknown) {
@@ -1633,330 +1536,55 @@ function findPsdSetRowIndexById(psdSetId: unknown) {
   return dataSource.value.findIndex((item) => normalizePsdSetId(item?.id) === normalizedId);
 }
 
-function buildPsdSetRuntimeRecord(
-  target: any,
-  payload: PsdSetRuntimeUpdatePayload,
-) {
+function buildPsdSetStatusRecord(target: any, status: string, statusMessage?: string) {
   if (!target || typeof target !== "object") {
     return target;
   }
-
-  if (
-    isPsdSetTerminalOrManualStatus(target.status) &&
-    isPsdSetRuntimePayloadActive(payload)
-  ) {
-    return target;
-  }
-
-  const rawPayloadStatus = String(payload.status || "").trim().toLowerCase();
-  const nextStatus =
-    normalizePsdSetRuntimeStatus(payload.status || target.status) || target.status;
-  const currentMeta = normalizePsdSetSchedulerMeta(target.schedulerMeta) || {};
-  const now = new Date().toISOString();
-  const nextMeta: Record<string, any> = {
-    ...currentMeta,
-    lastHeartbeatAt: now,
-    assignedClientId:
-      payload.assignedClientId !== undefined
-        ? payload.assignedClientId
-        : currentMeta.assignedClientId || null,
-    assignedMachineCode:
-      payload.assignedMachineCode !== undefined
-        ? payload.assignedMachineCode
-        : currentMeta.assignedMachineCode || null,
-    currentStep:
-      payload.message !== undefined
-        ? payload.message || currentMeta.currentStep || null
-        : currentMeta.currentStep || null,
-    progress: resolvePsdSetProgressPercent(
-      payload.progress,
-      payload.total,
-      currentMeta.progress ?? null,
-    ),
-  };
-
-  const nextSchedulerStatus =
-    payload.schedulerStatus ||
-    (rawPayloadStatus === "assigned"
-      ? "assigned"
-      : rawPayloadStatus === "running"
-        ? "running"
-        : nextStatus === "processing"
-          ? "running"
-          : nextStatus === "completed"
-            ? "completed"
-            : nextStatus === "failed"
-              ? "failed"
-              : nextStatus === "pending"
-                ? "pending"
-                : currentMeta.status || null);
-
-  if (nextSchedulerStatus) {
-    nextMeta.status = nextSchedulerStatus;
-  }
-
-  if (nextSchedulerStatus === "assigned") {
-    nextMeta.progress = 0;
-    nextMeta.startedAt = null;
-    nextMeta.finishedAt = null;
-    nextMeta.lastError = null;
-    nextMeta.currentStep = payload.message || currentMeta.currentStep || "等待客户端接收任务";
-  } else if (nextSchedulerStatus === "running") {
-    nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
-    nextMeta.finishedAt = null;
-    nextMeta.lastError = null;
-  } else if (nextSchedulerStatus === "completed") {
-    nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
-    nextMeta.finishedAt = now;
-    nextMeta.progress = 100;
-    nextMeta.lastError = null;
-  } else if (nextSchedulerStatus === "failed") {
-    nextMeta.startedAt = currentMeta.startedAt || currentMeta.assignedAt || now;
-    nextMeta.finishedAt = now;
-    nextMeta.lastError = payload.message || currentMeta.lastError || "制作失败";
-  } else if (nextSchedulerStatus === "pending") {
-    nextMeta.finishedAt = null;
-    nextMeta.assignedClientId = null;
-    nextMeta.assignedMachineCode = null;
-  }
+  const nextStatus = normalizePsdSetRuntimeStatus(status || target.status) || target.status;
 
   return {
     ...target,
     status: nextStatus,
-    statusMessage: resolvePsdSetRuntimeStatusMessage(nextStatus, payload.message, nextMeta),
-    schedulerMeta: nextMeta,
+    statusMessage: String(statusMessage ?? target.statusMessage ?? "").trim(),
   };
 }
 
-function isPsdSetRuntimePayloadActive(payload: PsdSetRuntimeUpdatePayload) {
-  const status = normalizePsdSetRuntimeStatus(payload.status);
-  const schedulerStatus = String(payload.schedulerStatus || "").trim();
-  return (
-    status === "processing" ||
-    schedulerStatus === "assigned" ||
-    schedulerStatus === "running"
-  );
-}
-
-function isPsdSetTerminalOrManualStatus(status: unknown) {
-  const normalizedStatus = normalizePsdSetRuntimeStatus(status);
-  return (
-    normalizedStatus === "completed" ||
-    normalizedStatus === "failed"
-  );
-}
-
-function rememberPsdSetRuntimeOverlay(psdSetId: string, payload: PsdSetRuntimeUpdatePayload) {
+function applyPsdSetStatusLocally(psdSetId: unknown, status: string, statusMessage?: string) {
   const normalizedId = normalizePsdSetId(psdSetId);
   if (!normalizedId) {
     return;
   }
-
-  psdSetRuntimeOverlayMap.value = {
-    ...psdSetRuntimeOverlayMap.value,
-    [normalizedId]: {
-      payload,
-      expiresAt: isPsdSetRuntimePayloadActive(payload)
-        ? Date.now() + PSD_SET_RUNTIME_ACTIVE_OVERLAY_TTL_MS
-        : Date.now() + PSD_SET_RUNTIME_TERMINAL_OVERLAY_TTL_MS,
-    },
-  };
-}
-
-function getPsdSetRuntimeOverlay(psdSetId: unknown) {
-  const normalizedId = normalizePsdSetId(psdSetId);
-  const overlay = normalizedId ? psdSetRuntimeOverlayMap.value[normalizedId] : null;
-  if (!overlay) {
-    return null;
-  }
-
-  if (overlay.expiresAt && overlay.expiresAt <= Date.now()) {
-    const nextMap = { ...psdSetRuntimeOverlayMap.value };
-    delete nextMap[normalizedId];
-    psdSetRuntimeOverlayMap.value = nextMap;
-    return null;
-  }
-
-  return overlay;
-}
-
-function clearPsdSetRuntimeOverlay(psdSetId: unknown) {
-  const normalizedId = normalizePsdSetId(psdSetId);
-  if (!normalizedId || !psdSetRuntimeOverlayMap.value[normalizedId]) {
-    return;
-  }
-
-  const nextMap = { ...psdSetRuntimeOverlayMap.value };
-  delete nextMap[normalizedId];
-  psdSetRuntimeOverlayMap.value = nextMap;
-}
-
-function clearAllPsdSetRuntimeOverlays() {
-  if (!Object.keys(psdSetRuntimeOverlayMap.value).length) {
-    return;
-  }
-  psdSetRuntimeOverlayMap.value = {};
-}
-
-function mergePsdSetRuntimeOverlay(record: any) {
-  const overlay = getPsdSetRuntimeOverlay(record?.id);
-  if (overlay && isPsdSetRuntimePayloadActive(overlay.payload) && isPsdSetTerminalOrManualStatus(record?.status)) {
-    clearPsdSetRuntimeOverlay(record?.id);
-    return record;
-  }
-  return overlay ? buildPsdSetRuntimeRecord(record, overlay.payload) : record;
-}
-
-function applyPsdSetRuntimeUpdate(
-  psdSetId: unknown,
-  payload: PsdSetRuntimeUpdatePayload,
-) {
-  const normalizedId = normalizePsdSetId(psdSetId);
-  if (!normalizedId) {
-    return;
-  }
-
-  rememberPsdSetRuntimeOverlay(normalizedId, payload);
-
+  const normalizedStatus = normalizePsdSetRuntimeStatus(status) || status;
   const rowIndex = findPsdSetRowIndexById(normalizedId);
   if (rowIndex >= 0) {
-    const currentRow = dataSource.value[rowIndex];
-    dataSource.value.splice(rowIndex, 1, buildPsdSetRuntimeRecord(currentRow, payload));
+    const nextRow = buildPsdSetStatusRecord(
+      dataSource.value[rowIndex],
+      normalizedStatus,
+      statusMessage,
+    );
+    dataSource.value.splice(rowIndex, 1, nextRow);
   }
 
   if (normalizePsdSetId(detailData.value?.id) === normalizedId) {
-    detailData.value = buildPsdSetRuntimeRecord(detailData.value, payload);
-  }
-}
-
-function isPsdSetRuntimeActive(record: any) {
-  if (!record || typeof record !== "object") {
-    return false;
-  }
-  const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
-  if (normalizedStatus === "completed" || normalizedStatus === "failed") {
-    return false;
-  }
-  if (normalizedStatus === "processing") {
-    return true;
-  }
-  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
-  const schedulerStatus = String(schedulerMeta?.status || "").trim();
-  if (schedulerStatus === "completed" || schedulerStatus === "failed") {
-    return false;
-  }
-  return schedulerMeta?.status === "assigned" || schedulerMeta?.status === "running";
-}
-
-function isPsdSetActiveBySummary(psdSetId: unknown) {
-  const normalizedId = normalizePsdSetId(psdSetId);
-  if (!normalizedId) {
-    return false;
-  }
-
-  return activePsdSets.value.some((item: any) => {
-    if (normalizePsdSetId(item?.id) !== normalizedId) {
-      return false;
-    }
-    const status = normalizePsdSetRuntimeStatus(item?.status);
-    const schedulerStatus = String(item?.schedulerStatus || "").trim();
-    return (
-      status === "processing" ||
-      schedulerStatus === "assigned" ||
-      schedulerStatus === "running"
+    detailData.value = buildPsdSetStatusRecord(
+      detailData.value,
+      normalizedStatus,
+      statusMessage,
     );
-  });
+  }
 }
 
 function getPsdSetDisplayStatus(record: any) {
   if (!record || typeof record !== "object") {
     return normalizePsdSetRuntimeStatus(record) || "";
   }
-
-  const normalizedStatus = normalizePsdSetRuntimeStatus(record.status);
-  if (
-    normalizedStatus === "completed" ||
-    normalizedStatus === "failed"
-  ) {
-    return normalizedStatus;
-  }
-
-  const schedulerMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta);
-  const schedulerStatus = String(schedulerMeta?.status || "").trim();
-  if (schedulerStatus === "completed" || schedulerStatus === "failed") {
-    return schedulerStatus;
-  }
-
-  if (isPsdSetRuntimeActive(record) || isPsdSetActiveBySummary(record.id)) {
-    return "processing";
-  }
-
-  return normalizedStatus || record.status || "";
+  return normalizePsdSetRuntimeStatus(record.status) || record.status || "";
 }
 
 function applyManualPsdSetStatusLocally(psdSetId: unknown, status: string) {
-  const normalizedId = normalizePsdSetId(psdSetId);
-  if (!normalizedId) {
-    return;
-  }
-
-  clearPsdSetRuntimeOverlay(normalizedId);
   const normalizedStatus = normalizePsdSetRuntimeStatus(status) || status;
-  const applyToRecord = (record: any) => {
-    if (!record || typeof record !== "object") {
-      return record;
-    }
-
-    const currentMeta = normalizePsdSetSchedulerMeta(record.schedulerMeta) || {};
-    const now = new Date().toISOString();
-    const nextMeta = {
-      ...currentMeta,
-      status: normalizedStatus,
-      progress: normalizedStatus === "completed" ? 100 : normalizedStatus === "pending" ? 0 : currentMeta.progress,
-      finishedAt:
-        normalizedStatus === "completed" || normalizedStatus === "failed"
-          ? currentMeta.finishedAt || now
-          : null,
-      currentStep:
-        normalizedStatus === "completed"
-          ? "制作完成"
-          : normalizedStatus === "failed"
-            ? currentMeta.lastError || "制作失败"
-            : normalizedStatus === "pending"
-              ? "等待调度"
-              : currentMeta.currentStep,
-    };
-
-    if (normalizedStatus === "pending") {
-      nextMeta.assignedClientId = null;
-      nextMeta.assignedMachineCode = null;
-      nextMeta.lastError = null;
-    }
-
-    return {
-      ...record,
-      status: normalizedStatus,
-      statusMessage: resolvePsdSetRuntimeStatusMessage(normalizedStatus, undefined, nextMeta),
-      schedulerMeta: nextMeta,
-    };
-  };
-
-  const rowIndex = findPsdSetRowIndexById(normalizedId);
-  if (rowIndex >= 0) {
-    dataSource.value.splice(rowIndex, 1, applyToRecord(dataSource.value[rowIndex]));
-  }
-
-  if (normalizePsdSetId(detailData.value?.id) === normalizedId) {
-    detailData.value = applyToRecord(detailData.value);
-  }
+  applyPsdSetStatusLocally(psdSetId, normalizedStatus, "");
 }
-
-const hasActivePsdSetRuntime = computed(() => {
-  return (
-    dataSource.value.some((item) => isPsdSetRuntimeActive(item)) ||
-    isPsdSetRuntimeActive(detailData.value)
-  );
-});
 
 // 编辑配置对话框相关状态
 const configEditDialogVisible = ref(false);
@@ -1969,12 +1597,6 @@ let configValidateTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let psdSetRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
 let psdSetActiveRuntimeTimer: ReturnType<typeof setInterval> | null = null;
-const PSD_SET_RUNTIME_ACTIVE_OVERLAY_TTL_MS = 10 * 60 * 1000;
-const PSD_SET_RUNTIME_TERMINAL_OVERLAY_TTL_MS = 10000;
-const psdSetRuntimeOverlayMap = ref<
-  Record<string, { payload: PsdSetRuntimeUpdatePayload; expiresAt: number | null }>
->({});
-
 // 查看配置对话框相关状态
 const configViewDialogVisible = ref(false);
 const configViewDialogLoading = ref(false);
@@ -2013,17 +1635,6 @@ const detailMetaFormatted = computed(() => {
   }
 });
 
-const detailSchedulerMetaFormatted = computed(() => {
-  const schedulerMeta = detailData.value?.schedulerMeta;
-  if (!schedulerMeta) return "";
-  try {
-    const parsed = typeof schedulerMeta === "string" ? JSON.parse(schedulerMeta) : schedulerMeta;
-    return JSON.stringify(parsed, null, 2);
-  } catch (e) {
-    return String(schedulerMeta);
-  }
-});
-
 function getColumns() {
   const baseColumns = [
     { type: "checkbox", width: 50, fixed: "left" as const },
@@ -2042,7 +1653,7 @@ function getColumns() {
     {
       title: "状态说明",
       field: "statusMessage",
-      width: 320,
+      width: 280,
       showOverflow: true,
       formatter: ({ row }) => resolvePsdSetStatusMessage(row),
     },
@@ -2117,6 +1728,7 @@ watchEffect(() => {
 });
 
 async function getList(silent = false) {
+  const requestSeq = ++psdSetListRequestSeq;
   if (!silent) {
     loading.value = true;
   }
@@ -2136,12 +1748,16 @@ async function getList(silent = false) {
         ? queryParams.publishUsageConfigId
         : undefined,
     });
-    dataSource.value = Array.isArray(res.list)
-      ? res.list.map((item) => mergePsdSetRuntimeOverlay(normalizePsdSetRecord(item)))
+    if (requestSeq !== psdSetListRequestSeq) {
+      return;
+    }
+    const normalizedList = Array.isArray(res.list)
+      ? res.list.map((item) => normalizePsdSetRecord(item))
       : [];
+    dataSource.value = normalizedList;
     total.value = res.total || 0;
   } finally {
-    if (!silent) {
+    if (!silent && requestSeq === psdSetListRequestSeq) {
       loading.value = false;
     }
   }
@@ -2348,44 +1964,6 @@ function statusLabel(status: string) {
   return item ? item.label : normalizedStatus || "-";
 }
 
-function schedulerStatusLabel(status?: string) {
-  const map: Record<string, string> = {
-    pending: "待调度",
-    assigned: "已分配",
-    running: "执行中",
-    completed: "已完成",
-    failed: "失败",
-    timeout: "超时",
-  };
-  return map[String(status || "").trim()] || "待调度";
-}
-
-function schedulerStatusTagType(status?: string) {
-  switch (status) {
-    case "completed":
-      return "success";
-    case "running":
-      return "warning";
-    case "assigned":
-      return "info";
-    case "failed":
-    case "timeout":
-      return "danger";
-    default:
-      return "info";
-  }
-}
-
-function formatSchedulerProgress(progress?: number | null) {
-  return typeof progress === "number" ? `${progress}%` : "-";
-}
-
-function getSchedulerAssignedLabel(row: any) {
-  const meta = normalizePsdSetSchedulerMeta(row?.schedulerMeta);
-  if (!meta) return "-";
-  return meta.assignedMachineCode || meta.assignedClientId || "-";
-}
-
 function getClientPhotoshopService(client: any) {
   return (
     client?.clientInfo?.services?.["ps-automation"] ||
@@ -2398,19 +1976,47 @@ function getClientDisplayName(client: any) {
   return client?.clientInfo?.machine?.code || client?.id || "-";
 }
 
+function getClientRuntimePsdSet(client: any) {
+  const psAutomation = client?.clientInfo?.psAutomation || {};
+  const service = getClientPhotoshopService(client) || {};
+  const progress = typeof psAutomation?.progress === "number" ? psAutomation.progress : null;
+  const running = psAutomation?.running === true || service?.busy === true;
+  const psdSetId =
+    String(psAutomation?.currentPsSetId || "").trim() ||
+    String(service?.currentTaskId || "").trim();
+  if (!running) {
+    return null;
+  }
+  return {
+    id: psdSetId || String(client?.id || "ps-running"),
+    name: String(psAutomation?.currentPsSetName || "").trim() || null,
+    currentStep:
+      String(psAutomation?.currentStep || "").trim() ||
+      String(service?.message || "").trim() ||
+      "Photoshop 正在制作",
+    progress,
+  };
+}
+
 function getDispatchClientActivePsdSets(client: any) {
   const clientId = String(client?.id || "").trim();
   if (!clientId) {
     return [];
   }
-  return activePsdSets.value.filter(
+  const activeItems = activePsdSets.value.filter(
     (item) => String(item?.assignedClientId || "").trim() === clientId,
   );
+  if (activeItems.length) {
+    return activeItems;
+  }
+  const runtimeItem = getClientRuntimePsdSet(client);
+  return runtimeItem ? [runtimeItem] : [];
 }
 
 function isDispatchClientBusy(client: any) {
   const clientId = String(client?.id || "").trim();
-  return !!clientId && activePsdSetClientIds.value.includes(clientId);
+  const runtimeItem = getClientRuntimePsdSet(client);
+  return !!clientId && (activePsdSetClientIds.value.includes(clientId) || !!runtimeItem);
 }
 
 function isDispatchClientExecutable(client: any) {
@@ -2482,6 +2088,8 @@ const dispatchClientRows = computed(() =>
         psStatusTone: psStatus.tone,
         productionStatusText: productionStatus.text,
         productionStatusTone: productionStatus.tone,
+        activeTaskLabel: getDispatchClientTaskLabel(client),
+        activeTaskStep: getDispatchClientTaskStep(client),
         selectable: isDispatchClientExecutable(client),
       };
     })
@@ -2493,6 +2101,181 @@ const dispatchClientRows = computed(() =>
     }),
 );
 
+function getDispatchClientTaskLabel(client: any) {
+  const item = getDispatchClientActivePsdSets(client)[0];
+  if (!item) {
+    return "无";
+  }
+  return String(item?.name || item?.id || "未命名套图");
+}
+
+function formatDispatchTaskStep(item: any) {
+  if (!item) {
+    return "";
+  }
+  const runtimeItem = item as any;
+  const progress = typeof runtimeItem?.progress === "number" ? `${runtimeItem.progress}%` : "";
+  const step = String(runtimeItem?.currentStep || runtimeItem?.statusMessage || "").trim();
+  return [step, progress].filter(Boolean).join(" · ");
+}
+
+function getDispatchClientTaskStep(client: any) {
+  return formatDispatchTaskStep(getDispatchClientActivePsdSets(client)[0]);
+}
+
+const schedulerClientStats = computed(() => {
+  const online = dispatchCandidateClients.value.filter((client) => client?.isOnline).length;
+  const idle = dispatchCandidateClients.value.filter((client) => isDispatchClientExecutable(client)).length;
+  const running = dataSource.value.filter((item) => normalizePsdSetRuntimeStatus(item?.status) === "processing").length;
+  const pending = dataSource.value.filter((item) => normalizePsdSetRuntimeStatus(item?.status) === "pending").length;
+  return { online, idle, running, pending };
+});
+
+function getDispatchClientLabelById(clientId: unknown, fallbackMachineCode?: unknown) {
+  const normalizedClientId = String(clientId || "").trim();
+  const client = dispatchCandidateClients.value.find((item) => item.id === normalizedClientId);
+  return (
+    (client ? getClientDisplayName(client) : "") ||
+    String(fallbackMachineCode || "").trim() ||
+    normalizedClientId ||
+    "未知客户端"
+  );
+}
+
+function getPsdSetProcessingRuntimeSource(item: any) {
+  return {
+    id: normalizePsdSetId(item?.id),
+    name: String(item?.name || "").trim() || null,
+    assignedClientId: String(item?.assignedClientId || "").trim() || null,
+    assignedMachineCode: String(item?.assignedMachineCode || "").trim() || null,
+    currentStep: String(item?.currentStep || item?.statusMessage || "").trim() || null,
+    progress: typeof item?.progress === "number" ? item.progress : null,
+  };
+}
+
+function mergePsdSetProcessingRuntimeSource(target: any, source: any) {
+  return {
+    id: target?.id || source?.id || "",
+    name: target?.name || source?.name || null,
+    assignedClientId: target?.assignedClientId || source?.assignedClientId || null,
+    assignedMachineCode: target?.assignedMachineCode || source?.assignedMachineCode || null,
+    currentStep: target?.currentStep || source?.currentStep || null,
+    progress:
+      typeof target?.progress === "number"
+        ? target.progress
+        : typeof source?.progress === "number"
+          ? source.progress
+          : null,
+  };
+}
+
+function getAutoDispatchProcessingRowKey(source: any, clientId?: string) {
+  return source?.id || (clientId ? `client:${clientId}` : "ps-running");
+}
+
+function buildAutoDispatchProcessingRow(client: any, item: any) {
+  const runtimeSource = getPsdSetProcessingRuntimeSource(item);
+  const clientId = String(client?.id || runtimeSource.assignedClientId || "").trim();
+  const taskId = runtimeSource.id || "ps-running";
+  return {
+    key: getAutoDispatchProcessingRowKey(runtimeSource, clientId),
+    clientId,
+    clientLabel: client ? getClientDisplayName(client) : getDispatchClientLabelById(clientId, runtimeSource.assignedMachineCode),
+    taskId,
+    taskName: String(runtimeSource.name || "").trim(),
+    taskLabel: String(runtimeSource.name || runtimeSource.id || "未命名套图"),
+    stepLabel: formatDispatchTaskStep(runtimeSource),
+  };
+}
+
+function mergeAutoDispatchProcessingRows(
+  clientRow: ReturnType<typeof buildAutoDispatchProcessingRow>,
+  taskRow: ReturnType<typeof buildAutoDispatchProcessingRow>,
+) {
+  return {
+    ...taskRow,
+    key: taskRow.key || clientRow.key,
+    clientId: clientRow.clientId || taskRow.clientId,
+    clientLabel:
+      clientRow.clientLabel && clientRow.clientLabel !== "未知客户端"
+        ? clientRow.clientLabel
+        : taskRow.clientLabel,
+    stepLabel: clientRow.stepLabel || taskRow.stepLabel,
+  };
+}
+
+const autoDispatchProcessingRows = computed(() => {
+  const rowMap = new Map<string, ReturnType<typeof buildAutoDispatchProcessingRow>>();
+  const clientRows: Array<ReturnType<typeof buildAutoDispatchProcessingRow>> = [];
+  const dataRows = dataSource.value
+    .filter((item) => normalizePsdSetRuntimeStatus(item?.status) === "processing")
+    .map((item: any) => buildAutoDispatchProcessingRow(null, item));
+
+  const upsertRow = (client: any, item: any) => {
+    const nextRow = buildAutoDispatchProcessingRow(client, item);
+    const previous = rowMap.get(nextRow.key);
+    if (!previous) {
+      rowMap.set(nextRow.key, nextRow);
+      return;
+    }
+
+    const previousSource = {
+      id: previous.taskId,
+      name: previous.taskLabel,
+      assignedClientId: previous.clientId,
+      assignedMachineCode: null,
+      currentStep: previous.stepLabel,
+      progress: null,
+    };
+    const nextSource = getPsdSetProcessingRuntimeSource(item);
+    const mergedSource = mergePsdSetProcessingRuntimeSource(
+      nextRow.clientId ? nextSource : previousSource,
+      nextRow.clientId ? previousSource : nextSource,
+    );
+    const mergedClientId = nextRow.clientId || previous.clientId;
+    rowMap.set(nextRow.key, {
+      ...previous,
+      ...nextRow,
+      clientId: mergedClientId,
+      clientLabel:
+        nextRow.clientLabel !== "未知客户端"
+          ? nextRow.clientLabel
+          : previous.clientLabel,
+      taskName: String(mergedSource.name || "").trim(),
+      taskLabel: String(mergedSource.name || mergedSource.id || previous.taskLabel || nextRow.taskLabel),
+      stepLabel: formatDispatchTaskStep(mergedSource),
+    });
+  };
+
+  dispatchCandidateClients.value.forEach((client) => {
+    getDispatchClientActivePsdSets(client).forEach((item: any) => {
+      clientRows.push(buildAutoDispatchProcessingRow(client, item));
+    });
+  });
+
+  if (clientRows.length === 1 && dataRows.length === 1) {
+    return [mergeAutoDispatchProcessingRows(clientRows[0], dataRows[0])];
+  }
+
+  clientRows.forEach((row) => rowMap.set(row.key, row));
+  dataRows.forEach((row) => {
+    const previous = rowMap.get(row.key);
+    if (!previous) {
+      rowMap.set(row.key, row);
+      return;
+    }
+    rowMap.set(row.key, mergeAutoDispatchProcessingRows(previous, row));
+  });
+
+  if (!dataRows.length) {
+    activePsdSets.value.forEach((item: any) => {
+      upsertRow(null, item);
+    });
+  }
+
+  return Array.from(rowMap.values());
+});
+
 const dispatchableClients = computed(() =>
   dispatchCandidateClients.value.filter((client) => isDispatchClientExecutable(client)),
 );
@@ -2503,17 +2286,66 @@ const selectedDispatchClient = computed(
     null,
 );
 
+const productionDispatchDialogTitle = computed(() =>
+  productionDispatchMode.value === "auto" ? "开启自动制作" : "开始制作",
+);
+
+const productionDispatchConfirmText = computed(() =>
+  productionDispatchMode.value === "auto" ? "开启自动制作" : "开始制作",
+);
+
+const productionDispatchSubmitting = computed(() =>
+  productionDispatchMode.value === "auto"
+    ? userAutoSchedulingLoading.value
+    : !!productionDispatchRow.value?.id &&
+      startingProductionId.value === productionDispatchRow.value.id,
+);
+
+const psdSetAutoDispatchTargetLabel = computed(() => {
+  const clientId = String(userAutoDispatchClientId.value || "").trim();
+  if (!clientId) {
+    return "";
+  }
+  const client = dispatchCandidateClients.value.find((item) => item.id === clientId);
+  const clientLabel = client ? getClientDisplayName(client) : clientId;
+  return `目标 / ${clientLabel}`;
+});
+
 const psdSetSchedulerIndicator = computed(() =>
   resolveAutoDispatchSchedulerIndicator(psdSetSchedulerRuntime.value),
 );
 
-const psdSetSchedulerMeta = computed(() =>
-  resolveAutoDispatchSchedulerMeta(psdSetSchedulerRuntime.value),
-);
+const formatDurationSeconds = (milliseconds?: number | null) => {
+  const seconds = Math.max(0, Math.round(Number(milliseconds || 0) / 1000));
+  return `${seconds}s`;
+};
+
+const psdSetSchedulerRuntimeSummary = computed(() => {
+  const runtime = psdSetSchedulerRuntime.value;
+  if (!runtime) {
+    return "等待检测";
+  }
+  if (runtime.running) {
+    return `检测中 ${formatDurationSeconds(runtime.cycleElapsedMs)}`;
+  }
+  return runtime.dispatchIntervalMs > 0
+    ? `${Math.round(runtime.dispatchIntervalMs / 1000)} 秒检测`
+    : "实时检测";
+});
 
 async function openProductionDispatchDialog(row: any) {
+  productionDispatchMode.value = "manual";
   productionDispatchRow.value = row;
   selectedDispatchClientId.value = "";
+  productionDispatchLoading.value = true;
+  productionDispatchDialogVisible.value = true;
+}
+
+async function openAutoSchedulingDispatchDialog() {
+  userAutoSchedulingLoading.value = false;
+  productionDispatchMode.value = "auto";
+  productionDispatchRow.value = null;
+  selectedDispatchClientId.value = userAutoDispatchClientId.value || "";
   productionDispatchLoading.value = true;
   productionDispatchDialogVisible.value = true;
 }
@@ -2533,6 +2365,7 @@ async function handleOpenProductionDispatchDialog() {
 function handleCloseProductionDispatchDialog() {
   productionDispatchLoading.value = false;
   productionDispatchRow.value = null;
+  productionDispatchMode.value = "manual";
   selectedDispatchClientId.value = "";
 }
 
@@ -2623,13 +2456,22 @@ function stopPsdSetActiveRuntimeRefresh() {
 }
 
 async function handleToggleUserAutoScheduling(enabled: boolean) {
+  if (enabled) {
+    await openAutoSchedulingDispatchDialog();
+    return;
+  }
+
   const previousEnabled = userAutoSchedulingEnabled.value;
+  const previousClientId = userAutoDispatchClientId.value;
   setUserAutoSchedulingEnabled(enabled);
   userAutoSchedulingLoading.value = true;
   try {
     const result = await ClientControlService.setPsAutomationUserAutoScheduling(enabled);
     if (!result.success) {
       setUserAutoSchedulingEnabled(previousEnabled);
+      setUserAutoDispatchTarget({
+        clientId: previousClientId,
+      });
       return;
     }
 
@@ -3474,7 +3316,8 @@ async function handleStartProduction(row: any) {
 
 async function handleConfirmStartProduction() {
   const row = productionDispatchRow.value;
-  if (!row?.id) {
+  const isAutoMode = productionDispatchMode.value === "auto";
+  if (!isAutoMode && !row?.id) {
     return ElMessage.warning("缺少ID，无法开始制作");
   }
 
@@ -3492,8 +3335,10 @@ async function handleConfirmStartProduction() {
 
   try {
     await ElMessageBox.confirm(
-      `确认由客户端 ${getClientDisplayName(selectedDispatchClient.value)} 开始制作该套图吗？`,
-      "开始制作确认",
+      isAutoMode
+        ? `确认开启自动制作，并固定使用客户端 ${getClientDisplayName(selectedDispatchClient.value)} 吗？`
+        : `确认由客户端 ${getClientDisplayName(selectedDispatchClient.value)} 开始制作该套图吗？`,
+      isAutoMode ? "开启自动制作确认" : "开始制作确认",
       {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
@@ -3505,7 +3350,42 @@ async function handleConfirmStartProduction() {
   }
 
   try {
-    startingProductionId.value = row.id;
+    startingProductionId.value = isAutoMode ? "" : row.id;
+
+    if (isAutoMode) {
+      const previousEnabled = userAutoSchedulingEnabled.value;
+      const previousClientId = userAutoDispatchClientId.value;
+      userAutoSchedulingLoading.value = true;
+      setUserAutoSchedulingEnabled(true);
+      setUserAutoDispatchTarget({
+        clientId: selectedDispatchClientId.value,
+      });
+      try {
+        const result = await ClientControlService.setPsAutomationUserAutoScheduling(
+          true,
+          false,
+          {
+            clientId: selectedDispatchClientId.value,
+          },
+        );
+        if (!result.success) {
+          setUserAutoSchedulingEnabled(previousEnabled);
+          setUserAutoDispatchTarget({
+            clientId: previousClientId,
+          });
+          return;
+        }
+        productionDispatchDialogVisible.value = false;
+        void refreshPsdSetRuntimeSummary();
+        schedulePsdSetRuntimeRefresh(120);
+        void loadPsdSetSchedulerRuntime();
+      } finally {
+        startingProductionId.value = "";
+        userAutoSchedulingLoading.value = false;
+      }
+      return;
+    }
+
     const response = await stickerPsdSetApi.dispatch(row.id, {
       clientId: selectedDispatchClientId.value,
     });
@@ -3513,15 +3393,11 @@ async function handleConfirmStartProduction() {
     productionDispatchDialogVisible.value = false;
 
     if (response?.success) {
-      applyPsdSetRuntimeUpdate(row.id, {
-        status: "processing",
-        message: response.message || "任务已分配，等待客户端执行",
-        progress: 0,
-        assignedClientId:
-          String(response?.data?.clientId || selectedDispatchClientId.value).trim() || null,
-        assignedMachineCode: String(response?.data?.machineCode || "").trim() || null,
-        schedulerStatus: "assigned",
-      });
+      applyPsdSetStatusLocally(
+        row.id,
+        "processing",
+        response.message || "任务已分配，等待客户端执行",
+      );
       schedulePsdSetMenuRuntimeSync();
       ElMessage.success(response.message || "制作任务已调度");
       await Promise.all([getList(), refreshClientNodes()]);
@@ -3575,32 +3451,20 @@ const productionStatusHandler = (data: {
   psdSetId?: string;
   status: string;
   message?: string;
-  progress?: number;
-  total?: number;
-  assignedClientId?: string | null;
-  assignedMachineCode?: string | null;
 }) => {
   try {
     const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
     if (!normalizedPsdSetId) return;
 
-    const rowIndex = findPsdSetRowIndexById(normalizedPsdSetId);
-    const currentRecord = rowIndex >= 0 ? dataSource.value[rowIndex] : null;
     const incomingStatus = normalizePsdSetRuntimeStatus(data.status);
-    const nextStatus =
-      incomingStatus === "pending" &&
-        (isPsdSetRuntimeActive(currentRecord) || isPsdSetActiveBySummary(normalizedPsdSetId))
-        ? "processing"
-        : incomingStatus;
-
-    applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-      status: nextStatus,
-      message: data.message,
-      progress: data.progress,
-      total: data.total,
-      assignedClientId: data.assignedClientId,
-      assignedMachineCode: data.assignedMachineCode,
-    });
+    if (!["pending", "processing", "completed", "failed"].includes(incomingStatus)) {
+      return;
+    }
+    applyPsdSetStatusLocally(
+      normalizedPsdSetId,
+      incomingStatus,
+      incomingStatus === "processing" ? "制作中" : data.message,
+    );
 
     schedulePsdSetRuntimeRefresh(
       data.status === "completed" || data.status === "failed" ? 260 : 900,
@@ -3611,64 +3475,12 @@ const productionStatusHandler = (data: {
 };
 
 const psAutomationStatusHandler = (data: PsAutomationStatusEvent) => {
-  try {
-    const normalizedPsdSetId = normalizePsdSetId(data?.currentPsSetId);
-    if (!normalizedPsdSetId) return;
-
-    if (data.running) {
-      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-        status: "processing",
-        message: String(data.currentStep || "").trim() || "客户端处理中",
-        progress: typeof data.progress === "number" ? data.progress : 0,
-        assignedClientId: String(data.clientId || "").trim() || null,
-        schedulerStatus: "running",
-      });
-      schedulePsdSetRuntimeRefresh(1200);
-      return;
-    }
-
-    if (data.lastError) {
-      applyPsdSetRuntimeUpdate(normalizedPsdSetId, {
-        status: "failed",
-        message: data.lastError,
-        assignedClientId: String(data.clientId || "").trim() || null,
-        schedulerStatus: "failed",
-      });
-      schedulePsdSetRuntimeRefresh(360);
-    }
-  } catch (e) {
-    console.error("处理 ps-automation-status 事件失败", e);
+  if (data?.running || data?.lastError) {
+    void refreshClientNodes();
+    void refreshPsdSetRuntimeSummary();
+    void loadPsdSetSchedulerRuntime();
   }
 };
-
-watch(
-  hasActivePsdSetRuntime,
-  (active) => {
-    if (!active) {
-      stopPsdSetActiveRuntimeRefresh();
-      return;
-    }
-
-    void getList(true);
-    void loadPsdSetSchedulerRuntime();
-    if (detailDialogVisible.value && detailData.value?.id) {
-      void loadPsdSetDetailById(detailData.value.id, true);
-    }
-
-    if (psdSetActiveRuntimeTimer) {
-      return;
-    }
-
-    psdSetActiveRuntimeTimer = setInterval(() => {
-      void getList(true);
-      void loadPsdSetSchedulerRuntime();
-      if (detailDialogVisible.value && detailData.value?.id) {
-        void loadPsdSetDetailById(detailData.value.id, true);
-      }
-    }, 3000);
-  },
-  { immediate: true },
-);
 
 watch(
   () =>
@@ -3687,28 +3499,16 @@ watch(
       .join("|"),
   (fingerprint) => {
     if (!fingerprint) {
-      clearAllPsdSetRuntimeOverlays();
       stopPsdSetActiveRuntimeRefresh();
       if (psdSetRuntimeReloadTimer) {
         clearTimeout(psdSetRuntimeReloadTimer);
         psdSetRuntimeReloadTimer = null;
       }
-      void getList(true);
       void loadPsdSetSchedulerRuntime();
       return;
     }
 
-    activePsdSets.value.forEach((item: any) => {
-      if (!isPsdSetActiveBySummary(item?.id)) {
-        return;
-      }
-      applyPsdSetRuntimeUpdate(item.id, buildPsdSetRuntimePayloadFromSummary(item));
-    });
-    void getList(true);
     void loadPsdSetSchedulerRuntime();
-    if (detailDialogVisible.value && detailData.value?.id) {
-      void loadPsdSetDetailById(detailData.value.id, true);
-    }
   },
 );
 
@@ -3766,35 +3566,49 @@ getList();
 
 .psd-set-page__actions {
   justify-content: flex-start;
-  align-items: center;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.psd-set-page__auto-dispatch-row {
+  display: flex;
+  flex: 0 0 100%;
+  justify-content: flex-start;
+  min-width: 0;
+  width: 100%;
 }
 
 .psd-set-page__auto-dispatch {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr) 226px;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  min-height: 40px;
-  padding: 10px 12px;
-  margin-right: 6px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  background: var(--el-fill-color-light);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+  min-height: 38px;
+  padding: 5px 6px 5px 8px;
+  overflow: hidden;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  background: var(--el-bg-color);
+  box-shadow: none;
 }
 
-.psd-set-page__auto-dispatch-main {
+.psd-set-page__auto-dispatch-head {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
   min-width: 0;
 }
 
 .psd-set-page__auto-dispatch-title {
-  font-size: 13px;
+  min-width: 0;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--el-text-color-primary);
 }
 
@@ -3802,11 +3616,14 @@ getList();
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
+  min-width: 0;
+  height: 16px;
   color: var(--el-text-color-secondary);
   font-size: 11px;
-  line-height: 1.4;
-  flex-wrap: wrap;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .psd-set-page__auto-dispatch-runtime.is-success {
@@ -3843,55 +3660,175 @@ getList();
   animation: status-breath-warning 1.8s infinite ease-in-out;
 }
 
-.psd-set-page__auto-dispatch-runtime-meta {
-  color: var(--el-text-color-placeholder);
+.psd-set-page__auto-dispatch-work {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 28px;
+  overflow: hidden;
 }
 
-.psd-set-page__auto-dispatch-side {
+.psd-set-page__auto-dispatch-work-item,
+.psd-set-page__auto-dispatch-empty {
+  display: inline-grid;
+  align-items: center;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  min-width: 0;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.psd-set-page__auto-dispatch-work-item {
+  gap: 8px;
+  width: max-content;
+  max-width: none;
+}
+
+.psd-set-page__auto-dispatch-empty {
+  gap: 10px;
+  width: 100%;
+}
+
+.psd-set-page__auto-dispatch-client,
+.psd-set-page__auto-dispatch-step,
+.psd-set-page__auto-dispatch-empty span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.psd-set-page__auto-dispatch-client {
+  width: max-content;
+  max-width: 160px;
+  height: 20px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.psd-set-page__auto-dispatch-action {
+  min-width: max-content;
+  color: var(--el-text-color-regular);
+}
+
+.psd-set-page__auto-dispatch-task {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+}
+
+.psd-set-page__auto-dispatch-task-id {
+  flex: 0 0 auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.psd-set-page__auto-dispatch-task-name {
+  flex: 0 1 auto;
+  max-width: min(560px, 32vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.psd-set-page__auto-dispatch-step {
+  min-width: max-content;
+  max-width: none;
+  padding-left: 8px;
+  border-left: 1px solid var(--el-border-color-light);
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.psd-set-page__auto-dispatch-empty span:first-child {
+  color: var(--el-text-color-regular);
+  font-weight: 600;
+}
+
+.psd-set-page__auto-dispatch-side {
+  display: inline-grid;
+  grid-template-columns: 64px 92px 62px;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.psd-set-page__auto-dispatch-side .el-button {
+  width: 100%;
+  margin-left: 0;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 .psd-set-page__auto-dispatch-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--el-border-color);
-  border-radius: 999px;
-  background: var(--el-bg-color);
-  font-size: 12px;
+  gap: 5px;
+  justify-content: center;
+  height: 22px;
+  min-width: 0;
+  padding: 0 6px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 11px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
 }
 
 .psd-set-page__auto-dispatch-status.is-success {
-  border-color: rgb(103 194 58 / 24%);
   color: #67c23a;
 }
 
 .psd-set-page__auto-dispatch-status.is-info {
-  border-color: rgb(144 147 153 / 24%);
   color: #909399;
 }
 
 .psd-set-page__auto-dispatch-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: currentColor;
 }
 
 .psd-set-page__auto-dispatch-status.is-success .psd-set-page__auto-dispatch-dot {
-  box-shadow: 0 0 0 0 rgb(103 194 58 / 32%);
-  animation: status-breath-success 1.8s infinite ease-in-out;
+  box-shadow: none;
+  animation: none;
 }
 
 .psd-set-page__table-body {
   padding: 0;
+}
+
+.psd-set-page__auto-dispatch-status span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .psd-set-page :deep(.list-page-filter--flat) {
@@ -4899,6 +4836,7 @@ getList();
 .production-dispatch-dialog__body {
   display: flex;
   flex-direction: column;
+  gap: 10px;
   min-height: 204px;
 }
 
@@ -4990,6 +4928,33 @@ getList();
   color: var(--el-text-color-secondary);
 }
 
+.production-dispatch-dialog__task {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.production-dispatch-dialog__task span,
+.production-dispatch-dialog__task small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.production-dispatch-dialog__task span {
+  color: var(--el-text-color-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.production-dispatch-dialog__task small {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+
 .production-dispatch-dialog__footer {
   display: flex;
   justify-content: flex-end;
@@ -5014,13 +4979,35 @@ getList();
 
 @media (max-width: 768px) {
   .psd-set-page__auto-dispatch {
+    grid-template-columns: 1fr;
+    flex-basis: 100%;
     width: 100%;
-    align-items: flex-start;
+    height: auto;
+    min-height: 86px;
+    padding: 6px;
+  }
+
+  .psd-set-page__auto-dispatch-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .psd-set-page__auto-dispatch-work {
+    width: 100%;
+    height: auto;
+    overflow-x: auto;
+  }
+
+  .psd-set-page__auto-dispatch-work-item,
+  .psd-set-page__auto-dispatch-empty {
+    min-width: max-content;
   }
 
   .psd-set-page__auto-dispatch-side {
+    grid-template-columns: 64px 1fr 62px;
     width: 100%;
-    justify-content: flex-start;
   }
 
   .production-dispatch-dialog__table :deep(.el-table) {

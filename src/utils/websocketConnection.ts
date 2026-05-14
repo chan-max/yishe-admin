@@ -9,7 +9,9 @@ export const resolveRuntimeConnectionSourceKey = (
   if (source === "yishe-extension") return "extension";
   if (source === "管理后台") return "admin";
   if (source === "客户端") return "client";
-  if (source === "设计工具") return "design-tool";
+  if (source === "设计工具" || source === "设计端") return "design-tool";
+  if (String(row?.clientInfo?.app?.name || "").trim() === "yishe-tool") return "design-tool";
+  if (String(row?.id || "").trim().startsWith("designtool-")) return "design-tool";
   return "unknown";
 };
 

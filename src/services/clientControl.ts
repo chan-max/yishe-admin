@@ -215,13 +215,20 @@ export class ClientControlService {
 
   static async setPsAutomationUserAutoScheduling(
     enabled: boolean,
-    silent: boolean = false
+    silent: boolean = false,
+    target?: { clientId?: string | null }
   ): Promise<{ success: boolean; dispatched?: boolean; reason?: string; message?: string }> {
     try {
+      const clientId = String(target?.clientId || '').trim()
       await updateUserSetting({
         key: 'psAutomation',
         data: {
-          autoSchedulingEnabled: enabled
+          autoSchedulingEnabled: enabled,
+          ...(enabled
+            ? {
+                autoDispatchClientId: clientId
+              }
+            : {})
         }
       })
 
@@ -237,7 +244,7 @@ export class ClientControlService {
           success: true,
           dispatched: false,
           reason: 'trigger-queued',
-          message: '已开启服务端自动调度，后台正在检查待处理套图'
+          message: '已保存自动调度目标，后台正在检查待处理套图'
         }
       }
 

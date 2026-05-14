@@ -152,7 +152,7 @@ import { formatDate, formatPast } from "@/utils/formatTime";
 
 defineOptions({ name: "DesignToolConnection" });
 
-const DESIGN_TOOL_SOURCE = "设计工具";
+const DESIGN_TOOL_SOURCES = new Set(["设计工具", "设计端"]);
 const AUTO_REFRESH_INTERVAL_MS = 10_000;
 
 const initialLoading = ref(true);
@@ -203,6 +203,15 @@ const resolveClientSource = (row?: WebsocketConnectionVO | null) => {
   return Array.isArray(source) ? source[0] : source || "";
 };
 
+const isDesignToolConnection = (row?: WebsocketConnectionVO | null) => {
+  const source = String(resolveClientSource(row)).trim();
+  return (
+    DESIGN_TOOL_SOURCES.has(source) ||
+    String(row?.clientInfo?.app?.name || "").trim() === "yishe-tool" ||
+    String(row?.id || "").trim().startsWith("designtool-")
+  );
+};
+
 const normalizeConnectionRows = (response: unknown): WebsocketConnectionVO[] => {
   if (Array.isArray(response)) return response as WebsocketConnectionVO[];
   if (response && typeof response === "object" && Array.isArray((response as any).data))
@@ -216,7 +225,7 @@ const refreshConnections = async () => {
   try {
     const response = await getMyRuntimeWebsocketConnectionViews();
     const rows = normalizeConnectionRows(response)
-      .filter((row) => resolveClientSource(row) === DESIGN_TOOL_SOURCE)
+      .filter((row) => isDesignToolConnection(row))
       .sort((a, b) => {
         const aTime = a.connectedAt || "";
         const bTime = b.connectedAt || "";

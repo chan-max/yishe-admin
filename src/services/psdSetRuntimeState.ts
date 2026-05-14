@@ -12,6 +12,7 @@ type RealtimeActivePsdSetSummaryItem = ActivePsdSetSummaryItem & {
 }
 
 const userAutoSchedulingEnabled = ref(false)
+const userAutoDispatchClientId = ref('')
 const settingLoaded = ref(false)
 const activeSummaryLoaded = ref(false)
 const serverActivePsdSets = ref<ActivePsdSetSummaryItem[]>([])
@@ -29,7 +30,11 @@ const IDLE_PSD_SET_POLLING_MS = 15000
 const REALTIME_ACTIVE_PSD_SET_TTL_MS = 45 * 1000
 
 const normalizePsdSetId = (value: unknown) => String(value || '').trim()
-const normalizeRuntimeTime = (value: unknown) => String(value || '').trim() || new Date().toISOString()
+
+const isActiveRuntimeItem = (item: ActivePsdSetSummaryItem | null | undefined) => {
+  const status = String(item?.status || '').trim().toLowerCase()
+  return status === 'processing'
+}
 
 const getResponseData = <T = any>(response: any): T => {
   return response?.data?.data || response?.data || response || ({} as T)
@@ -98,7 +103,7 @@ const syncMergedActiveSummary = () => {
     }
   })
   realtimeItems.forEach((item) => {
-    if (item?.id) {
+    if (item?.id && isActiveRuntimeItem(item)) {
       const runtimeItem: ActivePsdSetSummaryItem = {
         id: item.id,
         name: item.name,
@@ -118,7 +123,7 @@ const syncMergedActiveSummary = () => {
     }
   })
 
-  const nextItems = Array.from(mergedMap.values())
+  const nextItems = Array.from(mergedMap.values()).filter(isActiveRuntimeItem)
   const nextIds = nextItems.map((item) => item.id)
 
   activePsdSets.value = nextItems
@@ -133,10 +138,6 @@ const applyActiveSummary = (payload?: Partial<ActivePsdSetSummaryResponse> | nul
   serverActivePsdSets.value = source
     .map((item) => normalizeActivePsdSetItem(item))
     .filter((item): item is ActivePsdSetSummaryItem => !!item)
-
-  if (hasServerItems && serverActivePsdSets.value.length === 0) {
-    realtimeActivePsdSetMap.value = {}
-  }
   syncMergedActiveSummary()
 }
 
@@ -175,28 +176,15 @@ const removeRealtimeActivePsdSet = (psdSetId: string) => {
   syncMergedActiveSummary()
 }
 
-const removeRealtimeActivePsdSetsByClientId = (clientId: unknown) => {
-  const normalizedClientId = String(clientId || '').trim()
-  if (!normalizedClientId) return
-  const nextMap = Object.fromEntries(
-    Object.entries(realtimeActivePsdSetMap.value).filter(
-      ([, item]) => String(item?.assignedClientId || '').trim() !== normalizedClientId,
-    ),
-  )
-  if (Object.keys(nextMap).length === Object.keys(realtimeActivePsdSetMap.value).length) {
-    return
-  }
-  realtimeActivePsdSetMap.value = nextMap
-  syncMergedActiveSummary()
-}
-
 const refreshUserAutoScheduling = async () => {
   try {
     const response: any = await getUserSetting({ key: 'psAutomation' })
     const data = getResponseData(response)
     userAutoSchedulingEnabled.value = !!data?.autoSchedulingEnabled
+    userAutoDispatchClientId.value = String(data?.autoDispatchClientId || '').trim()
   } catch {
     userAutoSchedulingEnabled.value = false
+    userAutoDispatchClientId.value = ''
   } finally {
     settingLoaded.value = true
   }
@@ -241,31 +229,6 @@ const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
   if (typeof event?.autoSchedulingEnabled === 'boolean') {
     userAutoSchedulingEnabled.value = event.autoSchedulingEnabled
   }
-
-  const psdSetId = normalizePsdSetId(event?.currentPsSetId)
-  if (event?.running && psdSetId) {
-    upsertRealtimeActivePsdSet(psdSetId, {
-      name: String(event.currentPsSetName || '').trim() || null,
-      status: 'processing',
-      schedulerStatus: 'running',
-      statusMessage: String(event.currentStep || '').trim() || null,
-      currentStep: String(event.currentStep || '').trim() || null,
-      progress: typeof event.progress === 'number' ? event.progress : null,
-      assignedClientId: String(event.clientId || '').trim() || null,
-      updateTime: normalizeRuntimeTime(event.lastHeartbeatAt || event.updatedAt),
-    })
-    scheduleActiveSummaryRefresh(80)
-    return
-  }
-
-  if (!event?.running) {
-    if (psdSetId) {
-      removeRealtimeActivePsdSet(psdSetId)
-    } else {
-      removeRealtimeActivePsdSetsByClientId(event?.clientId)
-    }
-    scheduleActiveSummaryRefresh(180)
-  }
 }
 
 const handleProductionStatus = (event: {
@@ -295,7 +258,7 @@ const handleProductionStatus = (event: {
         String(event.currentStep || '').trim() || String(event.message || '').trim() || null
       upsertRealtimeActivePsdSet(psdSetId, {
         status: 'processing',
-        schedulerStatus: 'running',
+        schedulerStatus: null,
         statusMessage,
         currentStep: statusMessage,
         progress,
@@ -373,8 +336,13 @@ export function usePsdSetRuntimeState() {
     userAutoSchedulingEnabled.value = enabled
   }
 
+  const setUserAutoDispatchTarget = (target?: { clientId?: string | null }) => {
+    userAutoDispatchClientId.value = String(target?.clientId || '').trim()
+  }
+
   return {
     userAutoSchedulingEnabled: readonly(userAutoSchedulingEnabled),
+    userAutoDispatchClientId: readonly(userAutoDispatchClientId),
     settingLoaded: readonly(settingLoaded),
     activeSummaryLoaded: readonly(activeSummaryLoaded),
     activePsdSets: readonly(activePsdSets),
@@ -386,6 +354,7 @@ export function usePsdSetRuntimeState() {
     refresh,
     refreshActiveSummary,
     refreshUserAutoScheduling,
-    setUserAutoSchedulingEnabled
+    setUserAutoSchedulingEnabled,
+    setUserAutoDispatchTarget
   }
 }

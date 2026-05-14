@@ -78,7 +78,7 @@
 
                 <template #clientSource_default="{ row }">
                   <div class="websocket-source-tags">
-                    <el-tag :type="getSourceTagType(row)" size="small">
+                    <el-tag :type="getSourceTagType(row)" size="small" effect="plain">
                       {{ formatSourceLabel(row) }}
                     </el-tag>
                   </div>
@@ -139,7 +139,7 @@
           <el-input :value="currentConnection?.id" disabled />
         </el-form-item>
         <el-form-item label="连接类型">
-          <el-tag :type="getSourceTagType(currentConnection)" size="small">
+          <el-tag :type="getSourceTagType(currentConnection)" size="small" effect="plain">
             {{ formatSourceLabel(currentConnection) }}
           </el-tag>
         </el-form-item>
@@ -224,6 +224,9 @@ const resolveConnectionSourceKey = (row?: Partial<WebsocketConnectionRow> | null
   if (source === "yishe-extension") return "extension";
   if (source === "管理后台") return "admin";
   if (source === "客户端") return "client";
+  if (source === "设计工具" || source === "设计端") return "design-tool";
+  if (String(row?.clientInfo?.app?.name || "").trim() === "yishe-tool") return "design-tool";
+  if (String(row?.id || "").trim().startsWith("designtool-")) return "design-tool";
   return "unknown";
 };
 
@@ -300,13 +303,26 @@ const formatSourceLabel = (row?: Partial<WebsocketConnectionRow> | null) => {
       return "管理端";
     case "client":
       return "客户端";
+    case "design-tool":
+      return "设计端";
     default:
       return "未知端";
   }
 };
 
 const getSourceTagType = (row?: Partial<WebsocketConnectionRow> | null) => {
-  return row?.isOnline === false ? "danger" : "success";
+  switch (resolveConnectionSourceKey(row)) {
+    case "extension":
+      return "danger";
+    case "admin":
+      return "primary";
+    case "client":
+      return "warning";
+    case "design-tool":
+      return "info";
+    default:
+      return "info";
+  }
 };
 
 const formatQuery = (query?: Record<string, string | string[]>) => {
