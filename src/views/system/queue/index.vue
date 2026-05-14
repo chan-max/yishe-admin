@@ -192,16 +192,14 @@
                 >
                   {{ publishTaskAutoDispatchTargetHint }}
                 </span>
-                <el-tooltip
-                  effect="light"
-                  placement="top"
-                  popper-class="queue-dispatch-filter-tooltip"
-                  :content="publishTaskAutoDispatchFilterDetail"
-                >
+                <span class="queue-dispatch-panel__filter-wrap">
                   <span class="queue-dispatch-panel__filter">
                     {{ publishTaskAutoDispatchFilterSummary }}
                   </span>
-                </el-tooltip>
+                  <span class="queue-dispatch-panel__filter-popover">
+                    {{ publishTaskAutoDispatchFilterDetail }}
+                  </span>
+                </span>
               </div>
               <el-button
                 size="small"
@@ -3949,7 +3947,7 @@ onUnmounted(() => {
   gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .queue-dispatch-panel__title {
@@ -3996,15 +3994,54 @@ onUnmounted(() => {
   font-size: 11px;
 }
 
-.queue-dispatch-panel__filter {
+.queue-dispatch-panel__filter-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   flex: 0 1 150px;
   min-width: 86px;
+  max-width: 180px;
+}
+
+.queue-dispatch-panel__filter {
+  display: inline-block;
+  width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--el-text-color-secondary);
   font-size: 11px;
   line-height: 1;
+}
+
+.queue-dispatch-panel__filter-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  width: max-content;
+  max-width: 520px;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 4px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+  color: var(--el-text-color-regular);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: none;
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+  white-space: pre-line;
+  line-height: 1.6;
+  font-size: 12px;
+}
+
+.queue-dispatch-panel__filter-wrap:hover .queue-dispatch-panel__filter-popover {
+  opacity: 1;
+  visibility: visible;
 }
 
 .queue-dispatch-panel__binding.is-success .queue-dispatch-panel__binding-value {
