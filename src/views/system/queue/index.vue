@@ -156,28 +156,24 @@
               <span class="queue-stats-pill__label">总计</span>
               <span class="queue-stats-pill__value">{{ stats.total }}</span>
             </div>
-          </div>
 
-          <div
-            v-if="showPublishDispatchPanel"
-            class="queue-dispatch-panel list-page-panel list-page-panel--flat"
-          >
-            <div class="queue-dispatch-panel__summary">
+            <div v-if="showPublishDispatchPanel" class="queue-dispatch-panel">
               <div class="queue-dispatch-panel__main">
-                <div class="queue-dispatch-panel__title">发布任务调度</div>
+                <span class="queue-dispatch-panel__title">自动制作</span>
+                <span
+                  class="queue-dispatch-panel__status"
+                  :class="publishTaskAutoDispatchStatusClass"
+                >
+                  <span class="queue-dispatch-panel__status-dot" />
+                  <span>{{ publishTaskAutoDispatchStatusText }}</span>
+                </span>
                 <div
                   class="queue-dispatch-panel__binding"
                   :class="publishTaskAutoDispatchTargetClass"
                 >
-                  <span class="queue-dispatch-panel__binding-label">自动调度目标</span>
+                  <span class="queue-dispatch-panel__binding-label">目标</span>
                   <span class="queue-dispatch-panel__binding-value">
                     {{ publishTaskAutoDispatchTargetText }}
-                  </span>
-                  <span
-                    v-if="publishTaskAutoDispatchTargetHint"
-                    class="queue-dispatch-panel__binding-meta"
-                  >
-                    {{ publishTaskAutoDispatchTargetHint }}
                   </span>
                 </div>
                 <div
@@ -190,24 +186,32 @@
                     {{ publishTaskSchedulerMeta }}
                   </span>
                 </div>
-              </div>
-              <div class="queue-dispatch-panel__side">
                 <span
-                  class="queue-dispatch-panel__status"
-                  :class="publishTaskAutoDispatchStatusClass"
+                  v-if="publishTaskAutoDispatchTargetHint"
+                  class="queue-dispatch-panel__binding-meta"
                 >
-                  <span class="queue-dispatch-panel__status-dot" />
-                  <span>{{ publishTaskAutoDispatchStatusText }}</span>
+                  {{ publishTaskAutoDispatchTargetHint }}
                 </span>
-                <el-button
-                  size="small"
-                  :type="publishTaskAutoDispatchEnabled ? 'danger' : 'success'"
-                  :loading="publishTaskAutoDispatchLoading"
-                  @click="handleTogglePublishAutoDispatch(!publishTaskAutoDispatchEnabled)"
+                <el-tooltip
+                  effect="light"
+                  placement="top"
+                  popper-class="queue-dispatch-filter-tooltip"
+                  :content="publishTaskAutoDispatchFilterDetail"
                 >
-                  {{ publishTaskAutoDispatchEnabled ? "关闭自动执行" : "开启自动执行" }}
-                </el-button>
+                  <span class="queue-dispatch-panel__filter">
+                    {{ publishTaskAutoDispatchFilterSummary }}
+                  </span>
+                </el-tooltip>
               </div>
+              <el-button
+                size="small"
+                plain
+                :type="publishTaskAutoDispatchEnabled ? 'danger' : 'success'"
+                :loading="publishTaskAutoDispatchLoading"
+                @click="handleTogglePublishAutoDispatch(!publishTaskAutoDispatchEnabled)"
+              >
+                {{ publishTaskAutoDispatchEnabled ? "关闭" : "开启" }}
+              </el-button>
             </div>
           </div>
 
@@ -703,7 +707,6 @@
               border
               size="small"
               row-key="optionKey"
-              :max-height="332"
               class="publish-dispatch-dialog__table-main"
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleDispatchOptionRowClick"
@@ -803,7 +806,7 @@
 
     <el-dialog
       v-model="autoDispatchTargetDialogVisible"
-      title="设置自动调度目标"
+      title="自动执行设置"
       width="1220px"
       :center="false"
       align-center
@@ -811,12 +814,65 @@
       @open="handleOpenAutoDispatchTargetDialog"
     >
       <div class="publish-dispatch-dialog__body">
+        <div class="publish-dispatch-dialog__panel publish-dispatch-filter-panel">
+          <div class="publish-dispatch-dialog__panel-title">任务过滤</div>
+          <el-form
+            label-width="72px"
+            size="small"
+            class="publish-dispatch-filter-form"
+          >
+            <el-form-item label="任务类型">
+              <el-select
+                v-model="autoDispatchFilterForm.taskTypes"
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+                clearable
+                filterable
+                placeholder="全部发布任务类型"
+              >
+                <el-option
+                  v-for="opt in publishTaskTypeOptions"
+                  :key="opt.value"
+                  :label="opt.label"
+                  :value="opt.value"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="创建时间">
+              <el-date-picker
+                v-model="autoDispatchFilterDateRange"
+                type="datetimerange"
+                range-separator="至"
+                start-placeholder="开始时间"
+                end-placeholder="结束时间"
+                value-format="YYYY-MM-DD HH:mm:ss"
+                clearable
+                class="publish-dispatch-filter-form__date"
+              />
+            </el-form-item>
+            <el-form-item label="包含词">
+              <el-input
+                v-model="autoDispatchFilterForm.includeKeywordsText"
+                clearable
+                placeholder="多个关键词用逗号或换行分隔"
+              />
+            </el-form-item>
+            <el-form-item label="排除词">
+              <el-input
+                v-model="autoDispatchFilterForm.excludeKeywordsText"
+                clearable
+                placeholder="命中这些关键词的任务不自动执行"
+              />
+            </el-form-item>
+          </el-form>
+        </div>
         <div
           v-loading="autoDispatchTargetDialogLoading"
           :element-loading-text="DISPATCH_DIALOG_LOADING_TEXT"
           class="publish-dispatch-dialog__panel"
         >
-          <div class="publish-dispatch-dialog__panel-title">浏览器自动化节点</div>
+          <div class="publish-dispatch-dialog__panel-title">执行环境</div>
           <div
             v-if="!autoDispatchTargetDialogLoading && autoDispatchRows.length"
             class="publish-dispatch-dialog__table"
@@ -826,7 +882,6 @@
               border
               size="small"
               row-key="optionKey"
-              :max-height="332"
               class="publish-dispatch-dialog__table-main"
               :row-class-name="getDispatchOptionRowClassName"
               @row-click="handleAutoDispatchOptionRowClick"
@@ -878,7 +933,7 @@
               </el-table-column>
               <el-table-column
                 prop="profileLabel"
-                label="自动调度环境"
+                label="执行环境"
                 min-width="156"
                 show-overflow-tooltip
               />
@@ -983,6 +1038,7 @@ import {
   disablePublishTaskAutoDispatch,
   enablePublishTaskAutoDispatch,
   loadPublishTaskAutoDispatchSetting as fetchPublishTaskAutoDispatchSetting,
+  type PublishTaskAutoDispatchFilter,
   type PublishTaskAutoDispatchSetting,
 } from "@/services/publishTaskAutoDispatch";
 import { getClientServiceRuntime } from "@/store/modules/clientNode";
@@ -1214,6 +1270,12 @@ const selectedDispatchClientId = ref("");
 const selectedDispatchProfileId = ref("");
 const autoDispatchTargetClientId = ref("");
 const autoDispatchTargetProfileId = ref("");
+const autoDispatchFilterForm = reactive({
+  taskTypes: [] as string[],
+  includeKeywordsText: "",
+  excludeKeywordsText: "",
+});
+const autoDispatchFilterDateRange = ref<[string, string] | []>([]);
 let publishTaskSchedulerRuntimeTimer: ReturnType<typeof setInterval> | null = null;
 let publishTaskRuntimeReloadTimer: ReturnType<typeof setTimeout> | null = null;
 let publishTaskCountersRefreshTimer: ReturnType<typeof setTimeout> | null = null;
@@ -1403,7 +1465,7 @@ const publishTaskAutoDispatchTargetHint = computed(() => {
   const runningCount = currentAutoDispatchRunningRows.value.length;
   const client = publishTaskAutoDispatchTargetClient.value;
   if (!autoDispatchTargetClientId.value || !autoDispatchTargetProfileId.value) {
-    return "当前尚未绑定自动调度目标";
+    return "当前尚未绑定自动执行目标";
   }
   if (!client) {
     return "目标客户端当前不在已连接列表中";
@@ -1428,6 +1490,14 @@ const publishTaskAutoDispatchTargetHint = computed(() => {
   const baseText = matchedRow?.description || targetProfile?.description || "目标已绑定";
   return runningCount > 0 ? `${baseText}，当前运行 ${runningCount} 条任务` : baseText;
 });
+
+const publishTaskAutoDispatchFilterSummary = computed(() =>
+  getAutoDispatchFilterSummary(buildAutoDispatchFilterFromForm()),
+);
+
+const publishTaskAutoDispatchFilterDetail = computed(() =>
+  getAutoDispatchFilterDetail(buildAutoDispatchFilterFromForm()),
+);
 
 const publishTaskAutoDispatchTargetClass = computed(() => ({
   "is-success":
@@ -1851,7 +1921,7 @@ function resolveAutoDispatchTargetProfileOptions(client: any): Array<
       const busy = instance?.busy === true;
       const pageCount = typeof instance?.pageCount === "number" ? Number(instance.pageCount) : null;
 
-      let description = "浏览器未打开，自动调度执行时会拉起";
+      let description = "浏览器未打开，自动执行时会拉起";
       if (busy) {
         description = instance?.currentTaskId
           ? `当前实例忙碌中，任务 ${instance.currentTaskId} 正在执行`
@@ -2345,14 +2415,6 @@ function extractTaskRuntime(data: any, runtimeLog?: any) {
   };
 }
 
-function getTaskLogCount(row?: QueueMessage | null) {
-  const runtime = extractTaskRuntime(normalizeTaskDataRecord(row?.data), row?.taskRuntimeLog);
-  if (typeof runtime?.logCount === "number") {
-    return runtime.logCount;
-  }
-  return Array.isArray(runtime?.logs) ? runtime.logs.length : 0;
-}
-
 function formatLogTimestamp(value: any) {
   if (!value) return "-";
   const date = new Date(value);
@@ -2806,11 +2868,119 @@ function openAutoDispatchTargetDialog() {
   autoDispatchTargetDialogVisible.value = true;
 }
 
+function splitAutoDispatchKeywordText(value: string) {
+  return String(value || "")
+    .split(/[,，\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function joinAutoDispatchKeywords(value?: string[] | null) {
+  return (Array.isArray(value) ? value : [])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join("，");
+}
+
+function buildAutoDispatchFilterFromForm(): PublishTaskAutoDispatchFilter {
+  const [createdAfter = "", createdBefore = ""] = Array.isArray(
+    autoDispatchFilterDateRange.value,
+  )
+    ? autoDispatchFilterDateRange.value
+    : [];
+
+  return {
+    taskTypes: autoDispatchFilterForm.taskTypes
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+    includeKeywords: splitAutoDispatchKeywordText(
+      autoDispatchFilterForm.includeKeywordsText,
+    ),
+    excludeKeywords: splitAutoDispatchKeywordText(
+      autoDispatchFilterForm.excludeKeywordsText,
+    ),
+    createdAfter: String(createdAfter || "").trim(),
+    createdBefore: String(createdBefore || "").trim(),
+  };
+}
+
+function applyAutoDispatchFilterToForm(filter?: Partial<PublishTaskAutoDispatchFilter> | null) {
+  autoDispatchFilterForm.taskTypes = Array.isArray(filter?.taskTypes)
+    ? filter.taskTypes.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  autoDispatchFilterForm.includeKeywordsText = joinAutoDispatchKeywords(
+    filter?.includeKeywords,
+  );
+  autoDispatchFilterForm.excludeKeywordsText = joinAutoDispatchKeywords(
+    filter?.excludeKeywords,
+  );
+  const createdAfter = String(filter?.createdAfter || "").trim();
+  const createdBefore = String(filter?.createdBefore || "").trim();
+  autoDispatchFilterDateRange.value =
+    createdAfter || createdBefore ? [createdAfter, createdBefore] : [];
+}
+
+function getAutoDispatchFilterSummary(filter?: Partial<PublishTaskAutoDispatchFilter> | null) {
+  const parts: string[] = [];
+  const taskTypeCount = Array.isArray(filter?.taskTypes) ? filter.taskTypes.length : 0;
+  const includeCount = Array.isArray(filter?.includeKeywords)
+    ? filter.includeKeywords.length
+    : 0;
+  const excludeCount = Array.isArray(filter?.excludeKeywords)
+    ? filter.excludeKeywords.length
+    : 0;
+
+  if (taskTypeCount > 0) {
+    parts.push(`${taskTypeCount} 类任务`);
+  }
+  if (includeCount > 0) {
+    parts.push(`包含 ${includeCount}`);
+  }
+  if (excludeCount > 0) {
+    parts.push(`排除 ${excludeCount}`);
+  }
+  if (filter?.createdAfter || filter?.createdBefore) {
+    parts.push("限定时间");
+  }
+
+  return parts.length ? `过滤：${parts.join(" / ")}` : "过滤：全部待处理";
+}
+
+function getAutoDispatchTaskTypeLabel(type: string) {
+  const normalizedType = String(type || "").trim();
+  const matched = publishTaskTypeOptions.value.find((item) => item.value === normalizedType);
+  return matched?.label ? `${matched.label}（${normalizedType}）` : normalizedType;
+}
+
+function getAutoDispatchFilterDetail(filter?: Partial<PublishTaskAutoDispatchFilter> | null) {
+  const taskTypes = Array.isArray(filter?.taskTypes)
+    ? filter.taskTypes.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  const includeKeywords = Array.isArray(filter?.includeKeywords)
+    ? filter.includeKeywords.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  const excludeKeywords = Array.isArray(filter?.excludeKeywords)
+    ? filter.excludeKeywords.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+  const createdAfter = String(filter?.createdAfter || "").trim();
+  const createdBefore = String(filter?.createdBefore || "").trim();
+
+  return [
+    `任务类型：${
+      taskTypes.length ? taskTypes.map(getAutoDispatchTaskTypeLabel).join("、") : "全部"
+    }`,
+    `创建时间：${createdAfter || "不限"} 至 ${createdBefore || "不限"}`,
+    `包含词：${includeKeywords.length ? includeKeywords.join("、") : "无"}`,
+    `排除词：${excludeKeywords.length ? excludeKeywords.join("、") : "无"}`,
+  ].join("\n");
+}
+
 function applyPublishTaskAutoDispatchSettingState(setting: PublishTaskAutoDispatchSetting) {
   publishTaskAutoDispatchEnabled.value = !!setting.autoSchedulingEnabled;
   setPublishTaskAutoSchedulingEnabled(!!setting.autoSchedulingEnabled);
   autoDispatchTargetClientId.value = String(setting.autoDispatchClientId || "").trim();
   autoDispatchTargetProfileId.value = String(setting.autoDispatchProfileId || "").trim();
+  applyAutoDispatchFilterToForm(setting.autoDispatchFilter);
 }
 
 async function refreshPublishDispatchPageState(
@@ -2912,7 +3082,7 @@ async function handleConfirmPublishDispatch() {
 async function handleConfirmAutoDispatchTarget() {
   const selectedRow = selectedAutoDispatchRow.value;
   if (!selectedRow?.selectable || !selectedRow.profileId) {
-    ElMessage.warning("请选择一个可绑定的自动调度环境");
+    ElMessage.warning("请选择一个可绑定的执行环境");
     return;
   }
 
@@ -2922,22 +3092,23 @@ async function handleConfirmAutoDispatchTarget() {
     const { setting, triggerResult } = await enablePublishTaskAutoDispatch({
       clientId: selectedRow.clientId,
       profileId: selectedRow.profileId,
+      filter: buildAutoDispatchFilterFromForm(),
     });
     applyPublishTaskAutoDispatchSettingState(setting);
     autoDispatchTargetDialogVisible.value = false;
 
     schedulePublishTaskMenuRuntimeSync();
     if (triggerResult?.success === false) {
-      ElMessage.warning(triggerResult?.message || "已保存自动调度目标，但立即触发失败");
+      ElMessage.warning(triggerResult?.message || "已保存自动执行设置，但立即触发失败");
     } else {
-      ElMessage.success(triggerResult?.message || "已保存自动调度目标并开启自动执行");
+      ElMessage.success(triggerResult?.message || "已保存自动执行设置并开启");
     }
     await refreshPublishDispatchPageState({
       includeAutoDispatchSetting: true,
       includeSchedulerRuntime: true,
     });
   } catch (error: any) {
-    ElMessage.error(error?.message || "保存自动调度目标失败");
+    ElMessage.error(error?.message || "保存自动执行设置失败");
   } finally {
     autoDispatchTargetSubmitting.value = false;
     publishTaskAutoDispatchLoading.value = false;
@@ -2969,6 +3140,7 @@ async function handleTogglePublishAutoDispatch(enabled: boolean) {
     const setting = await disablePublishTaskAutoDispatch({
       clientId: autoDispatchTargetClientId.value || undefined,
       profileId: autoDispatchTargetProfileId.value || undefined,
+      filter: buildAutoDispatchFilterFromForm(),
     });
     applyPublishTaskAutoDispatchSettingState(setting);
     ElMessage.success("已关闭自动执行");
@@ -3700,32 +3872,44 @@ onUnmounted(() => {
 .queue-page__stats-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 0;
 }
 
 .queue-stats-pill {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 0 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 999px;
-  background: var(--el-fill-color-light);
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--el-text-color-secondary);
 }
 
 .queue-stats-pill__label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 500;
   line-height: 1;
 }
 
 .queue-stats-pill__value {
-  font-size: 14px;
+  min-width: 20px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
   color: var(--el-text-color-primary);
+}
+
+.queue-stats-pill + .queue-stats-pill::before {
+  content: "";
+  width: 1px;
+  height: 12px;
+  margin-right: 2px;
+  background: var(--el-border-color-lighter);
 }
 
 .queue-stats-pill--pending .queue-stats-pill__value {
@@ -3746,65 +3930,81 @@ onUnmounted(() => {
 
 .queue-dispatch-panel {
   display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
-  overflow: hidden;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 12px;
-  background: var(--el-fill-color-light);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-}
-
-.queue-dispatch-panel__summary {
-  display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  min-height: 40px;
-  width: 100%;
-  padding: 10px 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--el-border-color-lighter) 88%, transparent 12%);
+  gap: 8px;
+  flex: 1 1 520px;
+  min-width: min(100%, 380px);
+  min-height: 28px;
+  padding: 0 0 0 8px;
+  border: 0;
+  border-left: 1px solid var(--el-border-color-lighter);
+  border-radius: 0;
   background: transparent;
 }
 
 .queue-dispatch-panel__main {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .queue-dispatch-panel__title {
-  font-size: 13px;
+  flex: 0 0 auto;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 1.3;
+  line-height: 1;
   color: var(--el-text-color-primary);
 }
 
 .queue-dispatch-panel__binding {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 6px;
+  gap: 5px;
+  flex: 1 1 180px;
+  min-width: 120px;
+  overflow: hidden;
   color: var(--el-text-color-secondary);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .queue-dispatch-panel__binding-label {
+  flex: 0 0 auto;
   font-weight: 600;
-  color: var(--el-text-color-primary);
+  color: var(--el-text-color-secondary);
 }
 
 .queue-dispatch-panel__binding-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 600;
 }
 
 .queue-dispatch-panel__binding-meta {
+  flex: 1 1 140px;
+  min-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--el-text-color-placeholder);
+  font-size: 11px;
+}
+
+.queue-dispatch-panel__filter {
+  flex: 0 1 150px;
+  min-width: 86px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+  line-height: 1;
 }
 
 .queue-dispatch-panel__binding.is-success .queue-dispatch-panel__binding-value {
@@ -3822,12 +4022,15 @@ onUnmounted(() => {
 .queue-dispatch-panel__runtime {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
+  gap: 5px;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 210px;
+  overflow: hidden;
   color: var(--el-text-color-secondary);
   font-size: 11px;
-  line-height: 1.4;
-  flex-wrap: wrap;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .queue-dispatch-panel__runtime.is-success {
@@ -3865,26 +4068,23 @@ onUnmounted(() => {
 }
 
 .queue-dispatch-panel__runtime-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--el-text-color-placeholder);
-}
-
-.queue-dispatch-panel__side {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
 }
 
 .queue-dispatch-panel__status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--el-border-color);
+  gap: 5px;
+  flex: 0 0 auto;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 999px;
-  background: var(--el-bg-color);
-  font-size: 12px;
+  background: var(--el-fill-color-light);
+  font-size: 11px;
   font-weight: 600;
   color: var(--el-text-color-secondary);
 }
@@ -3905,8 +4105,8 @@ onUnmounted(() => {
 }
 
 .queue-dispatch-panel__status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 999px;
   background: currentColor;
 }
@@ -3979,14 +4179,15 @@ onUnmounted(() => {
 .publish-dispatch-dialog__body {
   display: flex;
   flex-direction: column;
+  gap: 10px;
   min-height: 204px;
 }
 
 .publish-dispatch-dialog__panel {
-  padding: 10px;
+  padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--el-border-color) 62%, transparent 38%);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--el-bg-color) 94%, var(--el-fill-color-light) 6%);
+  border-radius: 6px;
+  background: var(--el-bg-color);
   min-height: 206px;
 }
 
@@ -4005,6 +4206,27 @@ onUnmounted(() => {
 
 .publish-dispatch-dialog__table {
   overflow: hidden;
+}
+
+.publish-dispatch-filter-panel {
+  min-height: 0;
+}
+
+.publish-dispatch-filter-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  column-gap: 16px;
+  row-gap: 2px;
+}
+
+.publish-dispatch-filter-form .el-form-item {
+  margin-bottom: 8px;
+}
+
+.publish-dispatch-filter-form .el-select,
+.publish-dispatch-filter-form .el-input,
+.publish-dispatch-filter-form__date {
+  width: 100%;
 }
 
 .publish-dispatch-dialog__table :deep(.el-table) {
@@ -4835,18 +5057,21 @@ onUnmounted(() => {
   }
 
   .queue-stats-pill {
-    min-height: 32px;
-    padding: 0 10px;
+    min-height: 24px;
+    padding: 0 3px;
   }
 
-  .queue-dispatch-panel__summary {
+  .queue-dispatch-panel {
     width: 100%;
-    align-items: flex-start;
+    flex: 1 1 100%;
+    padding-top: 6px;
+    border-top: 1px solid var(--el-border-color-lighter);
+    border-left: 0;
   }
 
-  .queue-dispatch-panel__side {
-    width: 100%;
-    justify-content: flex-start;
+  .queue-dispatch-panel__main {
+    flex-wrap: wrap;
+    row-gap: 6px;
   }
 
   .queue-json-editor-layout {
@@ -4887,15 +5112,9 @@ onUnmounted(() => {
     gap: 10px;
   }
 
-  .queue-page .list-page-search-form__actions .el-button,
-  .queue-dispatch-panel .el-button {
+  .queue-page .list-page-search-form__actions .el-button {
     min-height: 42px;
     padding: 0 18px;
-  }
-
-  .queue-dispatch-panel__summary,
-  .queue-dispatch-panel__side {
-    gap: 14px;
   }
 
   .publish-dispatch-dialog__client-list {

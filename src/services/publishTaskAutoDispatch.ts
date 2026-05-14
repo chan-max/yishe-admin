@@ -5,12 +5,40 @@ export interface PublishTaskAutoDispatchSetting {
   autoSchedulingEnabled: boolean;
   autoDispatchClientId: string;
   autoDispatchProfileId: string;
+  autoDispatchFilter: PublishTaskAutoDispatchFilter;
 }
+
+export interface PublishTaskAutoDispatchFilter {
+  taskTypes: string[];
+  includeKeywords: string[];
+  excludeKeywords: string[];
+  createdAfter: string;
+  createdBefore: string;
+}
+
+const normalizeStringArray = (value?: any): string[] => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  return String(value || "")
+    .split(/[,，\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const normalizePublishTaskAutoDispatchFilter = (value?: any): PublishTaskAutoDispatchFilter => ({
+  taskTypes: normalizeStringArray(value?.taskTypes),
+  includeKeywords: normalizeStringArray(value?.includeKeywords),
+  excludeKeywords: normalizeStringArray(value?.excludeKeywords),
+  createdAfter: String(value?.createdAfter || "").trim(),
+  createdBefore: String(value?.createdBefore || "").trim(),
+});
 
 const normalizePublishTaskAutoDispatchSetting = (value?: any): PublishTaskAutoDispatchSetting => ({
   autoSchedulingEnabled: !!value?.autoSchedulingEnabled,
   autoDispatchClientId: String(value?.autoDispatchClientId || "").trim(),
   autoDispatchProfileId: String(value?.autoDispatchProfileId || "").trim(),
+  autoDispatchFilter: normalizePublishTaskAutoDispatchFilter(value?.autoDispatchFilter),
 });
 
 export const loadPublishTaskAutoDispatchSetting = async () => {
@@ -26,11 +54,13 @@ export const loadPublishTaskAutoDispatchSetting = async () => {
 export const enablePublishTaskAutoDispatch = async (target: {
   clientId: string;
   profileId: string;
+  filter?: Partial<PublishTaskAutoDispatchFilter>;
 }) => {
   const nextSetting = normalizePublishTaskAutoDispatchSetting({
     autoSchedulingEnabled: true,
     autoDispatchClientId: target.clientId,
     autoDispatchProfileId: target.profileId,
+    autoDispatchFilter: target.filter,
   });
 
   await updateUserSetting({
@@ -39,6 +69,7 @@ export const enablePublishTaskAutoDispatch = async (target: {
       autoSchedulingEnabled: true,
       autoDispatchClientId: nextSetting.autoDispatchClientId,
       autoDispatchProfileId: nextSetting.autoDispatchProfileId,
+      autoDispatchFilter: nextSetting.autoDispatchFilter,
     },
   });
 
@@ -46,7 +77,7 @@ export const enablePublishTaskAutoDispatch = async (target: {
     success: true,
     dispatched: false,
     reason: "trigger-scheduled",
-    message: "已保存自动调度目标并开启自动执行，后台将立即尝试调度",
+    message: "已保存自动执行设置并开启，后台将立即尝试执行",
   };
   void triggerPublishTaskAutoDispatch().catch(() => undefined);
 
@@ -59,11 +90,13 @@ export const enablePublishTaskAutoDispatch = async (target: {
 export const disablePublishTaskAutoDispatch = async (currentSetting?: {
   clientId?: string | null;
   profileId?: string | null;
+  filter?: Partial<PublishTaskAutoDispatchFilter> | null;
 }) => {
   const nextSetting = normalizePublishTaskAutoDispatchSetting({
     autoSchedulingEnabled: false,
     autoDispatchClientId: currentSetting?.clientId,
     autoDispatchProfileId: currentSetting?.profileId,
+    autoDispatchFilter: currentSetting?.filter,
   });
 
   await updateUserSetting({
@@ -72,6 +105,7 @@ export const disablePublishTaskAutoDispatch = async (currentSetting?: {
       autoSchedulingEnabled: false,
       autoDispatchClientId: nextSetting.autoDispatchClientId || undefined,
       autoDispatchProfileId: nextSetting.autoDispatchProfileId || undefined,
+      autoDispatchFilter: nextSetting.autoDispatchFilter,
     },
   });
 
