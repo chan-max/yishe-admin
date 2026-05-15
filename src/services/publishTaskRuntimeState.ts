@@ -25,8 +25,13 @@ interface NormalizedPublishTaskRuntimeItem extends PublishTaskRuntimeSummaryItem
   updatedAt: string | null;
 }
 
+type RealtimePublishTaskRuntimeItem = NormalizedPublishTaskRuntimeItem & {
+  runtimeExpiresAt: number;
+};
+
 const ACTIVE_PUBLISH_TASK_POLLING_MS = 30000;
 const PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS = 8000;
+const REALTIME_PUBLISH_TASK_TTL_MS = 45 * 1000;
 
 const createDefaultSummary = (): PublishTaskRuntimeSummary => ({
   typePrefix: "publish-product-",
@@ -47,6 +52,8 @@ const loading = ref(false);
 const hasServerDirectExecutableTypes = ref(false);
 const autoSchedulingEnabled = ref(false);
 const autoSchedulingSettingLoaded = ref(false);
+const serverActiveTasks = ref<NormalizedPublishTaskRuntimeItem[]>([]);
+const realtimeActiveTaskMap = ref<Record<string, RealtimePublishTaskRuntimeItem>>({});
 const activeTasks = ref<NormalizedPublishTaskRuntimeItem[]>([]);
 
 let initialized = false;
@@ -55,6 +62,17 @@ let activeSummaryPollingTimer: ReturnType<typeof setInterval> | null = null;
 let activeSummaryRefreshTimer: ReturnType<typeof setTimeout> | null = null;
 
 const normalizeTaskId = (value: unknown) => String(value || "").trim();
+
+const isRunningRuntimeStatus = (status?: string | null) =>
+  ["assigned", "running", "processing"].includes(
+    String(status || "")
+      .trim()
+      .toLowerCase(),
+  );
+
+const isRunningRuntimeItem = (item?: NormalizedPublishTaskRuntimeItem | null) =>
+  !!item &&
+  (isRunningRuntimeStatus(item.status) || isRunningRuntimeStatus(item.dispatchStatus));
 
 const normalizeRuntimeItem = (item: any): NormalizedPublishTaskRuntimeItem | null => {
   const id = normalizeTaskId(item?.id);
@@ -80,7 +98,9 @@ const normalizeRuntimeItem = (item: any): NormalizedPublishTaskRuntimeItem | nul
 
 const syncActiveSummaryPolling = () => {
   const shouldPoll =
-    Number(summary.value.waiting || 0) > 0 || Number(summary.value.processing || 0) > 0;
+    activeTasks.value.length > 0 ||
+    Number(summary.value.waiting || 0) > 0 ||
+    Number(summary.value.processing || 0) > 0;
   if (!shouldPoll) {
     if (activeSummaryPollingTimer) {
       clearInterval(activeSummaryPollingTimer);
@@ -98,6 +118,41 @@ const syncActiveSummaryPolling = () => {
   }, ACTIVE_PUBLISH_TASK_POLLING_MS);
 };
 
+const syncMergedActiveTasks = () => {
+  const now = Date.now();
+  const realtimeItems = Object.values(realtimeActiveTaskMap.value).filter(
+    (item) => item.runtimeExpiresAt > now,
+  );
+  if (realtimeItems.length !== Object.keys(realtimeActiveTaskMap.value).length) {
+    realtimeActiveTaskMap.value = realtimeItems.reduce(
+      (result, item) => {
+        result[item.id] = item;
+        return result;
+      },
+      {} as Record<string, RealtimePublishTaskRuntimeItem>,
+    );
+  }
+
+  const mergedMap = new Map<string, NormalizedPublishTaskRuntimeItem>();
+  serverActiveTasks.value.forEach((item) => {
+    if (item?.id && isRunningRuntimeItem(item)) {
+      mergedMap.set(item.id, item);
+    }
+  });
+  realtimeItems.forEach((item) => {
+    if (item?.id && isRunningRuntimeItem(item)) {
+      const { runtimeExpiresAt: _runtimeExpiresAt, ...runtimeItem } = item;
+      mergedMap.set(item.id, {
+        ...(mergedMap.get(item.id) || {}),
+        ...runtimeItem,
+      });
+    }
+  });
+
+  activeTasks.value = Array.from(mergedMap.values()).filter(isRunningRuntimeItem);
+  syncActiveSummaryPolling();
+};
+
 const applySummary = (payload?: Partial<PublishTaskRuntimeSummary> | null) => {
   const next = payload || {};
   const items = Array.isArray(next.items)
@@ -106,7 +161,7 @@ const applySummary = (payload?: Partial<PublishTaskRuntimeSummary> | null) => {
         .filter((item): item is NormalizedPublishTaskRuntimeItem => !!item)
     : [];
 
-  activeTasks.value = items;
+  serverActiveTasks.value = items.filter(isRunningRuntimeItem);
   summary.value = {
     typePrefix: String(next.typePrefix || "publish-product-"),
     pending: Number(next.pending) || 0,
@@ -123,7 +178,63 @@ const applySummary = (payload?: Partial<PublishTaskRuntimeSummary> | null) => {
     items,
     fetchedAt: String(next.fetchedAt || "").trim() || null,
   };
-  syncActiveSummaryPolling();
+  syncMergedActiveTasks();
+};
+
+const upsertRealtimeActiveTask = (
+  taskId: string,
+  patch: Partial<NormalizedPublishTaskRuntimeItem> = {},
+) => {
+  const id = normalizeTaskId(taskId);
+  if (!id) return;
+  const previous = realtimeActiveTaskMap.value[id];
+  const status = String(patch.status || previous?.status || "processing").trim() || "processing";
+  realtimeActiveTaskMap.value = {
+    ...realtimeActiveTaskMap.value,
+    [id]: {
+      id,
+      taskType:
+        String(patch.taskType || previous?.taskType || "").trim() || "publish-product-runtime",
+      label: patch.label ?? previous?.label ?? null,
+      status,
+      dispatchStatus: patch.dispatchStatus ?? previous?.dispatchStatus ?? status,
+      currentStep: patch.currentStep ?? previous?.currentStep ?? null,
+      lastError: patch.lastError ?? previous?.lastError ?? null,
+      assignedClientId: patch.assignedClientId ?? previous?.assignedClientId ?? null,
+      assignedMachineCode: patch.assignedMachineCode ?? previous?.assignedMachineCode ?? null,
+      profileId: patch.profileId ?? previous?.profileId ?? null,
+      updatedAt: patch.updatedAt ?? previous?.updatedAt ?? new Date().toISOString(),
+      runtimeExpiresAt: Date.now() + REALTIME_PUBLISH_TASK_TTL_MS,
+    },
+  };
+  const realtimeProcessingCount = Object.values(realtimeActiveTaskMap.value).filter(
+    isRunningRuntimeItem,
+  ).length;
+  if (realtimeProcessingCount > Number(summary.value.processing || 0)) {
+    summary.value = {
+      ...summary.value,
+      processing: realtimeProcessingCount,
+      active: Math.max(Number(summary.value.active || 0), realtimeProcessingCount),
+    };
+  }
+  syncMergedActiveTasks();
+};
+
+const removeRealtimeActiveTask = (taskId: string) => {
+  const id = normalizeTaskId(taskId);
+  if (!id) return;
+  serverActiveTasks.value = serverActiveTasks.value.filter((item) => item.id !== id);
+  if (realtimeActiveTaskMap.value[id]) {
+    const nextMap = { ...realtimeActiveTaskMap.value };
+    delete nextMap[id];
+    realtimeActiveTaskMap.value = nextMap;
+  }
+  summary.value = {
+    ...summary.value,
+    processing: Math.max(0, Number(summary.value.processing || 0) - 1),
+    active: Math.max(0, Number(summary.value.active || 0) - 1),
+  };
+  syncMergedActiveTasks();
 };
 
 const refreshSummary = async (silent = false) => {
@@ -178,10 +289,30 @@ const handlePublishTaskRuntime = (event: PublishTaskRuntimeEvent) => {
 
   if (
     eventStatus === "assigned" ||
-    eventStatus === "waiting" ||
     eventStatus === "running" ||
     eventStatus === "processing"
   ) {
+    if (taskId) {
+      const currentStep =
+        String(event?.currentStep || "").trim() || String(event?.message || "").trim() || null;
+      upsertRealtimeActiveTask(taskId, {
+        taskType: String(event?.taskType || event?.queue || "").trim() || undefined,
+        label: null,
+        status: "processing",
+        dispatchStatus: eventStatus,
+        currentStep,
+        lastError: null,
+        assignedClientId: String(event?.clientId || "").trim() || null,
+        assignedMachineCode: String(event?.machineCode || "").trim() || null,
+        profileId: String(event?.profileId || "").trim() || null,
+        updatedAt: event?.reportedAt || new Date().toISOString(),
+      });
+    }
+    scheduleActiveSummaryRefresh(PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS);
+    return;
+  }
+
+  if (eventStatus === "waiting") {
     scheduleActiveSummaryRefresh(PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS);
     return;
   }
@@ -192,6 +323,9 @@ const handlePublishTaskRuntime = (event: PublishTaskRuntimeEvent) => {
     eventStatus === "pending" ||
     eventStatus === "timeout"
   ) {
+    if (taskId) {
+      removeRealtimeActiveTask(taskId);
+    }
     scheduleActiveSummaryRefresh(PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS);
     return;
   }
@@ -242,13 +376,6 @@ const resolveTooltipLabel = (item: NormalizedPublishTaskRuntimeItem) => {
   return item.id;
 };
 
-const isRunningRuntimeStatus = (status?: string | null) =>
-  ["assigned", "running", "processing"].includes(
-    String(status || "")
-      .trim()
-      .toLowerCase(),
-  );
-
 const ensureInitialized = () => {
   if (initialized) return;
   initialized = true;
@@ -265,15 +392,13 @@ export function usePublishTaskRuntimeState() {
 
   const activeTaskNames = computed(() =>
     activeTasks.value
-      .filter((item) => isRunningRuntimeStatus(item.status))
+      .filter(isRunningRuntimeItem)
       .map((item) => resolveTooltipLabel(item))
       .map((item) => String(item || "").trim())
       .filter((item) => !!item),
   );
   const activeTaskCount = computed(() =>
-    activeTasks.value.length > 0
-      ? activeTasks.value.filter((item) => isRunningRuntimeStatus(item.status)).length
-      : Number(summary.value.processing || 0),
+    activeTasks.value.filter(isRunningRuntimeItem).length,
   );
   const isAnyPublishTaskRunning = computed(() => activeTaskCount.value > 0);
   const hasBrowserAutomationExecutor = computed(

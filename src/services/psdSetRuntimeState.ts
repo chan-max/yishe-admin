@@ -17,6 +17,7 @@ const settingLoaded = ref(false)
 const activeSummaryLoaded = ref(false)
 const serverActivePsdSets = ref<ActivePsdSetSummaryItem[]>([])
 const realtimeActivePsdSetMap = ref<Record<string, RealtimeActivePsdSetSummaryItem>>({})
+const clientActivePsdSetMap = ref<Record<string, string>>({})
 const activePsdSets = ref<ActivePsdSetSummaryItem[]>([])
 const activePsdSetIds = ref<string[]>([])
 let initialized = false
@@ -34,7 +35,14 @@ const normalizePsdSetId = (value: unknown) => String(value || '').trim()
 
 const isActiveRuntimeItem = (item: ActivePsdSetSummaryItem | null | undefined) => {
   const status = String(item?.status || '').trim().toLowerCase()
-  return status === 'processing'
+  const schedulerStatus = String(item?.schedulerStatus || '').trim().toLowerCase()
+  return (
+    status === 'processing' ||
+    status === 'running' ||
+    status === 'assigned' ||
+    schedulerStatus === 'running' ||
+    schedulerStatus === 'assigned'
+  )
 }
 
 const getResponseData = <T = any>(response: any): T => {
@@ -170,7 +178,12 @@ const upsertRealtimeActivePsdSet = (
 
 const removeRealtimeActivePsdSet = (psdSetId: string) => {
   const id = normalizePsdSetId(psdSetId)
-  if (!id || !realtimeActivePsdSetMap.value[id]) return
+  if (!id) return
+  serverActivePsdSets.value = serverActivePsdSets.value.filter((item) => item.id !== id)
+  if (!realtimeActivePsdSetMap.value[id]) {
+    syncMergedActiveSummary()
+    return
+  }
   const nextMap = { ...realtimeActivePsdSetMap.value }
   delete nextMap[id]
   realtimeActivePsdSetMap.value = nextMap
@@ -229,6 +242,51 @@ const scheduleActiveSummaryRefresh = (delay = 160) => {
 const handlePsAutomationStatus = (event: PsAutomationStatusEvent) => {
   if (typeof event?.autoSchedulingEnabled === 'boolean') {
     userAutoSchedulingEnabled.value = event.autoSchedulingEnabled
+  }
+
+  const clientId = String(event?.clientId || '').trim()
+  const psdSetId = normalizePsdSetId(event?.currentPsSetId)
+
+  if (event?.running && psdSetId) {
+    const previousPsdSetId = clientId ? clientActivePsdSetMap.value[clientId] : ''
+    if (previousPsdSetId && previousPsdSetId !== psdSetId) {
+      removeRealtimeActivePsdSet(previousPsdSetId)
+    }
+    if (clientId) {
+      clientActivePsdSetMap.value = {
+        ...clientActivePsdSetMap.value,
+        [clientId]: psdSetId,
+      }
+    }
+
+    const currentStep =
+      String(event.currentStep || '').trim() || String(event.lastError || '').trim() || null
+    upsertRealtimeActivePsdSet(psdSetId, {
+      name: String(event.currentPsSetName || '').trim() || null,
+      status: 'processing',
+      schedulerStatus: 'running',
+      statusMessage: currentStep,
+      currentStep,
+      progress: typeof event.progress === 'number' ? event.progress : null,
+      assignedClientId: clientId || null,
+      updateTime: event.lastHeartbeatAt || event.updatedAt || new Date().toISOString(),
+    })
+    scheduleActiveSummaryRefresh(PSD_SET_RUNTIME_EVENT_REFRESH_DELAY_MS)
+    return
+  }
+
+  if (event?.running === false) {
+    const fallbackPsdSetId = clientId ? clientActivePsdSetMap.value[clientId] : ''
+    const targetPsdSetId = psdSetId || fallbackPsdSetId
+    if (targetPsdSetId) {
+      removeRealtimeActivePsdSet(targetPsdSetId)
+    }
+    if (clientId && fallbackPsdSetId) {
+      const nextMap = { ...clientActivePsdSetMap.value }
+      delete nextMap[clientId]
+      clientActivePsdSetMap.value = nextMap
+    }
+    scheduleActiveSummaryRefresh(PSD_SET_RUNTIME_EVENT_REFRESH_DELAY_MS)
   }
 }
 
