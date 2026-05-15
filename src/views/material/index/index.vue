@@ -405,22 +405,28 @@
                 :xl="6"
               >
                 <el-form-item label="查重配置">
-                  <el-select
-                    v-model="queryParams.publishUsageConfigId"
-                    size="small"
-                    placeholder="选择后标记已用图片"
-                    clearable
-                    filterable
-                    multiple
-                    @change="handlePublishUsageViewChange"
-                  >
-                    <el-option
-                      v-for="item in publishUsageConfigOptions"
-                      :key="item.id"
-                      :label="formatPublishUsageConfigLabel(item)"
-                      :value="item.id"
-                    />
-                  </el-select>
+                  <div class="flex items-center gap-2" style="min-width: 0">
+                    <el-select
+                      v-model="queryParams.publishUsageConfigId"
+                      size="small"
+                      placeholder="选择后标记已用图片"
+                      clearable
+                      filterable
+                      multiple
+                      style="min-width: 200px"
+                      @change="handlePublishUsageViewChange"
+                    >
+                      <el-option
+                        v-for="item in publishUsageConfigOptions"
+                        :key="item.id"
+                        :label="formatPublishUsageConfigLabel(item)"
+                        :value="item.id"
+                      />
+                    </el-select>
+                    <el-button size="small" @click="toggleSelectAll">
+                      {{ isAllSelected ? "取消全选" : "全选" }}
+                    </el-button>
+                  </div>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -650,22 +656,28 @@
               </el-select>
             </el-form-item>
             <el-form-item label="查重配置">
-              <el-select
-                v-model="queryParams.publishUsageConfigId"
-                placeholder="选择后标记已用图片"
-                clearable
-                filterable
-                multiple
-                collapse-tags
-                collapse-tags-tooltip
-              >
-                <el-option
-                  v-for="item in publishUsageConfigOptions"
-                  :key="item.id"
-                  :label="formatPublishUsageConfigLabel(item)"
-                  :value="item.id"
-                />
-              </el-select>
+              <div class="flex items-center gap-2">
+                <el-select
+                  v-model="queryParams.publishUsageConfigId"
+                  placeholder="选择后标记已用图片"
+                  clearable
+                  filterable
+                  multiple
+                  collapse-tags
+                  collapse-tags-tooltip
+                  style="min-width: 200px"
+                >
+                  <el-option
+                    v-for="item in publishUsageConfigOptions"
+                    :key="item.id"
+                    :label="formatPublishUsageConfigLabel(item)"
+                    :value="item.id"
+                  />
+                </el-select>
+                <el-button size="small" @click="toggleSelectAll">
+                  {{ isAllSelected ? "取消全选" : "全选" }}
+                </el-button>
+              </div>
             </el-form-item>
             <el-form-item label="随机顺序">
               <el-switch v-model="queryParams.random" active-text="随机" inactive-text="默认" />
@@ -3568,6 +3580,23 @@ const publishUsageGridOptions = computed(() => ({
 }));
 
 function handlePublishUsageViewChange() {
+  queryParams.currentPage = 1;
+  getList();
+}
+
+const isAllSelected = computed(() => {
+  return (
+    publishUsageConfigOptions.value.length > 0 &&
+    queryParams.publishUsageConfigId.length === publishUsageConfigOptions.value.length
+  );
+});
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    queryParams.publishUsageConfigId = [];
+  } else {
+    queryParams.publishUsageConfigId = publishUsageConfigOptions.value.map((item) => item.id);
+  }
   queryParams.currentPage = 1;
   getList();
 }
