@@ -7,7 +7,7 @@ import {
 import { getAccessToken } from "@/utils/auth";
 import { isClientAuthorized as checkClientAuthApi } from "@/api/user";
 import {
-  getMyWebsocketConnectionViews,
+  getMyClientNodeViews,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
 
@@ -92,7 +92,7 @@ export const refreshMyClients = async () => {
 
   clientRefreshLoading.value = true;
   try {
-    const response = await getMyWebsocketConnectionViews({ summary: true });
+    const response = await getMyClientNodeViews({ summary: true });
     const clients = resolveConnectionViews(response);
     setMyClients(clients);
     return clients;

@@ -1,5 +1,5 @@
 import {
-  getMyRuntimeWebsocketConnectionViews,
+  getMyOnlineRuntimeConnectionViews,
   sendServiceCommand,
   type ServiceCommandDTO,
   type WebsocketConnectionVO,
@@ -93,7 +93,7 @@ function mapConnectionToGoogleArtClient(connection: WebsocketConnectionVO): Goog
 }
 
 export async function getGoogleArtClients() {
-  const list = await getMyRuntimeWebsocketConnectionViews()
+  const list = await getMyOnlineRuntimeConnectionViews()
   return (Array.isArray(list) ? list : [])
     .map(mapConnectionToGoogleArtClient)
     .filter((item) => {

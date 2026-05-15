@@ -25,7 +25,8 @@ interface NormalizedPublishTaskRuntimeItem extends PublishTaskRuntimeSummaryItem
   updatedAt: string | null;
 }
 
-const ACTIVE_PUBLISH_TASK_POLLING_MS = 5000;
+const ACTIVE_PUBLISH_TASK_POLLING_MS = 30000;
+const PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS = 8000;
 
 const createDefaultSummary = (): PublishTaskRuntimeSummary => ({
   typePrefix: "publish-product-",
@@ -181,7 +182,7 @@ const handlePublishTaskRuntime = (event: PublishTaskRuntimeEvent) => {
     eventStatus === "running" ||
     eventStatus === "processing"
   ) {
-    scheduleActiveSummaryRefresh(140);
+    scheduleActiveSummaryRefresh(PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS);
     return;
   }
 
@@ -191,11 +192,11 @@ const handlePublishTaskRuntime = (event: PublishTaskRuntimeEvent) => {
     eventStatus === "pending" ||
     eventStatus === "timeout"
   ) {
-    scheduleActiveSummaryRefresh(240);
+    scheduleActiveSummaryRefresh(PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS);
     return;
   }
 
-  scheduleActiveSummaryRefresh(180);
+  scheduleActiveSummaryRefresh(PUBLISH_TASK_RUNTIME_EVENT_REFRESH_DELAY_MS);
 };
 
 const refreshCapabilityCatalog = async () => {

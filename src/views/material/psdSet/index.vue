@@ -1972,6 +1972,10 @@ function getClientPhotoshopService(client: any) {
   );
 }
 
+function isPhotoshopServiceReady(service: any) {
+  return !!(service?.available === true || service?.details?.photoshopReady === true);
+}
+
 function getClientDisplayName(client: any) {
   return client?.clientInfo?.machine?.code || client?.id || "-";
 }
@@ -2023,7 +2027,7 @@ function isDispatchClientExecutable(client: any) {
   const service = getClientPhotoshopService(client);
   if (!client?.isOnline || !service) return false;
   if (isDispatchClientBusy(client)) return false;
-  return service.available === true;
+  return isPhotoshopServiceReady(service);
 }
 
 function getDispatchClientOnlineStatus(client: any) {
@@ -2041,7 +2045,7 @@ function getDispatchClientPsStatus(client: any) {
   if (service.status === "error" || service.state === "error") {
     return { text: "异常", tone: "danger" };
   }
-  if (service.available) {
+  if (isPhotoshopServiceReady(service)) {
     return { text: "已开启", tone: "success" };
   }
   if (service.connected) {

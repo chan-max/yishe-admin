@@ -5,6 +5,7 @@ const MY_CONNECTION_VIEW_REFRESH_INTERVAL_MS = 3_000;
 interface ConnectionViewRequestOptions {
   force?: boolean;
   summary?: boolean;
+  compact?: boolean;
 }
 
 function cloneConnectionViewResponse<T>(payload: T): T {
@@ -247,18 +248,29 @@ export const getRuntimeWebsocketConnectionViews = () => {
 const fetchMyWebsocketConnectionViews = createDedupedPostRequest(
   (options) =>
     request.post<WebsocketConnectionVO[]>({
-      url: "/websocket/my-connections-view",
-      data: options.summary === true ? { summary: true } : undefined,
+      url: "/websocket/my-client-node-views",
+      data: {
+        summary: options.summary !== false,
+        compact: options.compact !== false,
+      },
     }),
   MY_CONNECTION_VIEW_REFRESH_INTERVAL_MS,
 );
 
-export const getMyWebsocketConnectionViews = (options?: ConnectionViewRequestOptions) => {
+export const getMyClientNodeViews = (options?: ConnectionViewRequestOptions) => {
   return fetchMyWebsocketConnectionViews(options);
 };
 
-export const getMyRuntimeWebsocketConnectionViews = () => {
-  return request.post<WebsocketConnectionVO[]>({ url: "/websocket/my-runtime-connections-view" });
+export const getMyOnlineRuntimeConnectionViews = (
+  options: ConnectionViewRequestOptions = { summary: true, compact: true },
+) => {
+  return request.post<WebsocketConnectionVO[]>({
+    url: "/websocket/my-online-runtime-connection-views",
+    data: {
+      summary: options.summary !== false,
+      compact: options.compact !== false,
+    },
+  });
 };
 
 export const sendMessageToConnection = (connectionId: string, data: any, event?: string) => {

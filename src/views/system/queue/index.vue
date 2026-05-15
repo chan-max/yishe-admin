@@ -3183,7 +3183,7 @@ function schedulePublishTaskMenuRuntimeSync() {
   publishTaskMenuRuntimeSyncTimer = setTimeout(() => {
     publishTaskMenuRuntimeSyncTimer = null;
     void refreshPublishTaskRuntime();
-  }, 1500);
+  }, 8000);
 }
 
 function findQueueTaskIndexById(taskId: unknown) {

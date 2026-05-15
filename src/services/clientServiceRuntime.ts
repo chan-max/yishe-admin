@@ -15,7 +15,8 @@ export function hasClientServiceRuntime(runtime?: ClientServiceRuntimeLike): boo
 }
 
 export function isClientServiceRuntimeAvailable(runtime?: ClientServiceRuntimeLike): boolean {
-  return !!getClientServiceRuntimeSafe(runtime).available;
+  const safeRuntime = getClientServiceRuntimeSafe(runtime);
+  return !!(safeRuntime.available || safeRuntime.details?.photoshopReady === true);
 }
 
 export function isClientServiceRuntimeBusy(runtime?: ClientServiceRuntimeLike): boolean {

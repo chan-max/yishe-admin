@@ -1,7 +1,7 @@
 import { ref, watch } from "vue";
 import { defineStore, storeToRefs } from "pinia";
 import {
-  getMyRuntimeWebsocketConnectionViews,
+  getMyOnlineRuntimeConnectionViews,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
 import { websocketClient, type RuntimeConnectionChangedEvent } from "@/services/websocketClient";
@@ -53,7 +53,7 @@ export const useMyRuntimeConnectionStore = defineStore("my-runtime-connection", 
   const refresh = async () => {
     loading.value = true;
     try {
-      const response = await getMyRuntimeWebsocketConnectionViews();
+      const response = await getMyOnlineRuntimeConnectionViews();
       connections.value = resolveConnectionViews(response)
         .map((item) => ({
           ...item,

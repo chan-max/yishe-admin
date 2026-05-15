@@ -14,7 +14,7 @@ export class ClientControlService {
    */
   static async getMyClients(): Promise<WebsocketConnectionVO[]> {
     try {
-      const response: any = await WebsocketApi.getMyWebsocketConnectionViews()
+      const response: any = await WebsocketApi.getMyClientNodeViews()
       // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
       if (Array.isArray(response)) {
         return response

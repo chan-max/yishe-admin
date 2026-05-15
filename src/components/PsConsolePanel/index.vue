@@ -881,7 +881,7 @@ const resolvePsRuntimeDisplay = (service?: any) => {
 
   const details = service?.details || {};
   const connected = !!service.connected;
-  const available = !!service.available;
+  const available = !!(service.available || details?.photoshopReady === true);
   const busy = !!service.busy;
   const hasError = hasPsServiceError(service);
   const photoshopRunning = !!(

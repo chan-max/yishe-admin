@@ -25,8 +25,9 @@ let activeSummaryPollingTimer: ReturnType<typeof setInterval> | null = null
 let activeSummaryPollingMs = 0
 let activeSummaryRefreshTimer: ReturnType<typeof setTimeout> | null = null
 
-const ACTIVE_PSD_SET_POLLING_MS = 8000
-const IDLE_PSD_SET_POLLING_MS = 15000
+const ACTIVE_PSD_SET_POLLING_MS = 30000
+const IDLE_PSD_SET_POLLING_MS = 60000
+const PSD_SET_RUNTIME_EVENT_REFRESH_DELAY_MS = 8000
 const REALTIME_ACTIVE_PSD_SET_TTL_MS = 45 * 1000
 
 const normalizePsdSetId = (value: unknown) => String(value || '').trim()
@@ -268,7 +269,7 @@ const handleProductionStatus = (event: {
         updateTime: new Date().toISOString(),
       })
     }
-    scheduleActiveSummaryRefresh(140)
+    scheduleActiveSummaryRefresh(PSD_SET_RUNTIME_EVENT_REFRESH_DELAY_MS)
     return
   }
 
@@ -281,7 +282,7 @@ const handleProductionStatus = (event: {
     if (psdSetId) {
       removeRealtimeActivePsdSet(psdSetId)
     }
-    scheduleActiveSummaryRefresh(240)
+    scheduleActiveSummaryRefresh(PSD_SET_RUNTIME_EVENT_REFRESH_DELAY_MS)
   }
 }
 

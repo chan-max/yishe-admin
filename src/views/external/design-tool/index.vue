@@ -144,7 +144,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
-  getMyRuntimeWebsocketConnectionViews,
+  getMyOnlineRuntimeConnectionViews,
   type WebsocketConnectionVO,
 } from "@/api/system/websocket";
 import { websocketClient } from "@/services/websocketClient";
@@ -223,7 +223,7 @@ const refreshConnections = async () => {
   if (refreshing.value) return;
   refreshing.value = true;
   try {
-    const response = await getMyRuntimeWebsocketConnectionViews();
+    const response = await getMyOnlineRuntimeConnectionViews();
     const rows = normalizeConnectionRows(response)
       .filter((row) => isDesignToolConnection(row))
       .sort((a, b) => {
