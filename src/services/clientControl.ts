@@ -1,7 +1,11 @@
-import * as WebsocketApi from '@/api/system/websocket'
-import type { WebsocketConnectionVO } from '@/api/system/websocket'
-import { getUserSetting, updateUserSetting } from '@/api/user'
-import { ElMessage } from 'element-plus'
+import * as WebsocketApi from "@/api/system/websocket";
+import type { WebsocketConnectionVO } from "@/api/system/websocket";
+import { getUserSetting, updateUserSetting } from "@/api/user";
+import { ElMessage } from "element-plus";
+
+function getResponseData<T = any>(response: any): T {
+  return response?.data?.data || response?.data || response || ({} as T);
+}
 
 /**
  * 客户端控制服务
@@ -14,23 +18,23 @@ export class ClientControlService {
    */
   static async getMyClients(): Promise<WebsocketConnectionVO[]> {
     try {
-      const response: any = await WebsocketApi.getMyClientNodeViews()
+      const response: any = await WebsocketApi.getMyClientNodeViews();
       // 处理响应数据：可能是数组，也可能是包装后的对象 { data: [...], code: 0, ... }
       if (Array.isArray(response)) {
-        return response
-      } else if (response && typeof response === 'object' && Array.isArray(response.data)) {
-        return response.data
+        return response;
+      } else if (response && typeof response === "object" && Array.isArray(response.data)) {
+        return response.data;
       } else {
-        console.warn('[ClientControlService] 意外的响应格式:', response)
-        return []
+        console.warn("[ClientControlService] 意外的响应格式:", response);
+        return [];
       }
     } catch (error: any) {
-      console.error('[ClientControlService] 获取客户端列表失败:', error)
-      ElMessage.error(error?.message || '获取客户端列表失败')
-      return []
+      console.error("[ClientControlService] 获取客户端列表失败:", error);
+      ElMessage.error(error?.message || "获取客户端列表失败");
+      return [];
     }
   }
-  
+
   /**
    * 发送消息到指定的客户端
    * @param connectionId 连接 ID (clientId)
@@ -42,44 +46,44 @@ export class ClientControlService {
   static async sendMessage(
     connectionId: string,
     data: any,
-    event: string = 'admin-message',
-    silent: boolean = false
+    event: string = "admin-message",
+    silent: boolean = false,
   ): Promise<boolean> {
     try {
       // 先验证该连接是否属于当前用户
-      const myClients = await this.getMyClients()
-      const targetClient = myClients.find((client) => client.id === connectionId)
-      
+      const myClients = await this.getMyClients();
+      const targetClient = myClients.find((client) => client.id === connectionId);
+
       if (!targetClient) {
         if (!silent) {
-          ElMessage.error('无法操作该客户端：不属于当前用户或连接不存在')
+          ElMessage.error("无法操作该客户端：不属于当前用户或连接不存在");
         }
-        return false
+        return false;
       }
-      
+
       // 发送消息
-      const response = await WebsocketApi.sendMessageToConnection(connectionId, data, event)
-      
+      const response = await WebsocketApi.sendMessageToConnection(connectionId, data, event);
+
       if (response.success) {
         if (!silent) {
-          ElMessage.success('消息发送成功')
+          ElMessage.success("消息发送成功");
         }
-        return true
+        return true;
       } else {
         if (!silent) {
-          ElMessage.error(response.message || '消息发送失败')
+          ElMessage.error(response.message || "消息发送失败");
         }
-        return false
+        return false;
       }
     } catch (error: any) {
-      console.error('[ClientControlService] 发送消息失败:', error)
+      console.error("[ClientControlService] 发送消息失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || '发送消息失败')
+        ElMessage.error(error?.message || "发送消息失败");
       }
-      return false
+      return false;
     }
   }
-  
+
   /**
    * 发送文本消息到指定的客户端
    * @param connectionId 连接 ID
@@ -87,7 +91,7 @@ export class ClientControlService {
    * @returns 是否发送成功
    */
   static async sendTextMessage(connectionId: string, text: string): Promise<boolean> {
-    return this.sendMessage(connectionId, { message: text, type: 'text' })
+    return this.sendMessage(connectionId, { message: text, type: "text" });
   }
 
   static async sendServiceCommand(
@@ -95,18 +99,18 @@ export class ClientControlService {
     service: string,
     action: string,
     payload?: any,
-    mode: 'production' | 'debug' | 'maintenance' = 'production',
-    silent: boolean = false
+    mode: "production" | "debug" | "maintenance" = "production",
+    silent: boolean = false,
   ): Promise<boolean> {
     try {
-      const myClients = await this.getMyClients()
-      const targetClient = myClients.find((client) => client.id === clientId)
+      const myClients = await this.getMyClients();
+      const targetClient = myClients.find((client) => client.id === clientId);
 
       if (!targetClient) {
         if (!silent) {
-          ElMessage.error('无法操作该客户端：不属于当前用户或连接不存在')
+          ElMessage.error("无法操作该客户端：不属于当前用户或连接不存在");
         }
-        return false
+        return false;
       }
 
       const response = await WebsocketApi.sendServiceCommand({
@@ -114,196 +118,195 @@ export class ClientControlService {
         service,
         action,
         mode,
-        payload
-      })
+        payload,
+      });
 
       if (response.success) {
         if (!silent) {
-          ElMessage.success('服务命令已发送')
+          ElMessage.success("服务命令已发送");
         }
-        return true
+        return true;
       }
 
       if (!silent) {
-        ElMessage.error(response.message || '服务命令发送失败')
+        ElMessage.error(response.message || "服务命令发送失败");
       }
-      return false
+      return false;
     } catch (error: any) {
-      console.error('[ClientControlService] 发送服务命令失败:', error)
+      console.error("[ClientControlService] 发送服务命令失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || '发送服务命令失败')
+        ElMessage.error(error?.message || "发送服务命令失败");
       }
-      return false
+      return false;
     }
   }
 
-  static async setPsAutomationEnabled(clientId: string, enabled: boolean, silent: boolean = false): Promise<boolean> {
+  static async setPsAutomationEnabled(
+    clientId: string,
+    enabled: boolean,
+    silent: boolean = false,
+  ): Promise<boolean> {
     try {
-      const myClients = await this.getMyClients()
-      const targetClient = myClients.find((client) => client.id === clientId)
+      const myClients = await this.getMyClients();
+      const targetClient = myClients.find((client) => client.id === clientId);
 
       if (!targetClient) {
         if (!silent) {
-          ElMessage.error('无法操作该客户端：不属于当前用户或连接不存在')
+          ElMessage.error("无法操作该客户端：不属于当前用户或连接不存在");
         }
-        return false
+        return false;
       }
 
       const response = enabled
         ? await WebsocketApi.enablePsAutomation(clientId)
-        : await WebsocketApi.disablePsAutomation(clientId)
+        : await WebsocketApi.disablePsAutomation(clientId);
 
       if (response.success) {
         if (!silent) {
-          ElMessage.success(enabled ? '已发送开启自动制作命令' : '已发送关闭自动制作命令')
+          ElMessage.success(enabled ? "已发送开启自动制作命令" : "已发送关闭自动制作命令");
         }
-        return true
+        return true;
       }
 
       if (!silent) {
-        ElMessage.error(response.message || '自动制作命令发送失败')
+        ElMessage.error(response.message || "自动制作命令发送失败");
       }
-      return false
+      return false;
     } catch (error: any) {
-      console.error('[ClientControlService] 设置自动制作状态失败:', error)
+      console.error("[ClientControlService] 设置自动制作状态失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || '设置自动制作状态失败')
+        ElMessage.error(error?.message || "设置自动制作状态失败");
       }
-      return false
+      return false;
     }
   }
 
   static async setPsAutomationAutoDispatchEnabled(
     clientId: string,
     enabled: boolean,
-    silent: boolean = false
+    silent: boolean = false,
   ): Promise<boolean> {
     try {
-      const response = await WebsocketApi.togglePsAutomationAutoDispatch(clientId, enabled)
+      const response = await WebsocketApi.togglePsAutomationAutoDispatch(clientId, enabled);
       if (response.success) {
         if (!silent) {
-          ElMessage.success(enabled ? '已开启节点自动调度' : '已关闭节点自动调度')
+          ElMessage.success(enabled ? "已开启节点自动调度" : "已关闭节点自动调度");
         }
-        return true
+        return true;
       }
 
       if (!silent) {
-        ElMessage.error(response.message || '节点自动调度更新失败')
+        ElMessage.error(response.message || "节点自动调度更新失败");
       }
-      return false
+      return false;
     } catch (error: any) {
-      console.error('[ClientControlService] 设置节点自动调度失败:', error)
+      console.error("[ClientControlService] 设置节点自动调度失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || '设置节点自动调度失败')
+        ElMessage.error(error?.message || "设置节点自动调度失败");
       }
-      return false
+      return false;
     }
   }
 
   static async getPsAutomationUserSetting(): Promise<{ autoSchedulingEnabled: boolean }> {
     try {
-      const response: any = await getUserSetting({ key: 'psAutomation' })
-      const data = response?.data || response || {}
+      const response: any = await getUserSetting({ key: "psAutomation" });
+      const data = response?.data || response || {};
       return {
-        autoSchedulingEnabled: !!data?.autoSchedulingEnabled
-      }
+        autoSchedulingEnabled: !!data?.autoSchedulingEnabled,
+      };
     } catch (error: any) {
-      console.error('[ClientControlService] 获取用户调度设置失败:', error)
-      return { autoSchedulingEnabled: false }
+      console.error("[ClientControlService] 获取用户调度设置失败:", error);
+      return { autoSchedulingEnabled: false };
     }
   }
 
   static async setPsAutomationUserAutoScheduling(
     enabled: boolean,
     silent: boolean = false,
-    target?: { clientId?: string | null }
+    target?: { clientId?: string | null },
   ): Promise<{ success: boolean; dispatched?: boolean; reason?: string; message?: string }> {
     try {
-      const clientId = String(target?.clientId || '').trim()
+      const clientId = String(target?.clientId || "").trim();
       await updateUserSetting({
-        key: 'psAutomation',
+        key: "psAutomation",
         data: {
           autoSchedulingEnabled: enabled,
           ...(enabled
             ? {
-                autoDispatchClientId: clientId
+                autoDispatchClientId: clientId,
               }
-            : {})
-        }
-      })
+            : {}),
+        },
+      });
 
       let triggerResult:
         | { success: boolean; dispatched: boolean; reason?: string; message?: string }
-        | undefined
+        | undefined;
 
-      if (enabled) {
-        void WebsocketApi.triggerPsdSetAutoDispatch().catch((error: any) => {
-          console.error('[ClientControlService] 后台触发套图自动调度失败:', error)
-        })
-        triggerResult = {
-          success: true,
-          dispatched: false,
-          reason: 'trigger-queued',
-          message: '已保存自动调度目标，后台正在检查待处理套图'
-        }
-      }
+      triggerResult = getResponseData(await WebsocketApi.triggerPsdSetAutoDispatch());
 
       const resultMessage = !enabled
-        ? '已关闭服务端自动调度'
-        : triggerResult?.message || '已开启服务端自动调度'
+        ? "已关闭服务端自动调度"
+        : triggerResult?.message || "已开启服务端自动调度";
 
       if (!silent) {
         if (!enabled) {
-          ElMessage.success('已关闭服务端自动调度')
-        } else if (triggerResult?.reason === 'dispatched') {
-          ElMessage.success(triggerResult.message || '已开启服务端自动调度，并已自动分配待处理套图')
+          ElMessage.success("已关闭服务端自动调度");
+        } else if (triggerResult?.reason === "dispatched") {
+          ElMessage.success(
+            triggerResult.message || "已开启服务端自动调度，并已自动分配待处理套图",
+          );
         } else if (
-          triggerResult?.reason === 'no-pending' ||
-          triggerResult?.reason === 'no-client' ||
-          triggerResult?.reason === 'disabled'
+          triggerResult?.reason === "no-pending" ||
+          triggerResult?.reason === "no-client" ||
+          triggerResult?.reason === "has-processing" ||
+          triggerResult?.reason === "no-binding" ||
+          triggerResult?.reason === "disabled" ||
+          triggerResult?.reason === "client-pull-required"
         ) {
-          ElMessage.info(resultMessage)
-        } else if (!triggerResult?.success || triggerResult?.reason === 'dispatch-failed') {
-          ElMessage.warning(resultMessage)
+          ElMessage.info(resultMessage);
+        } else if (!triggerResult?.success || triggerResult?.reason === "dispatch-failed") {
+          ElMessage.warning(resultMessage);
         } else {
-          ElMessage.success(resultMessage)
+          ElMessage.success(resultMessage);
         }
       }
       return {
         success: true,
         dispatched: triggerResult?.dispatched,
         reason: triggerResult?.reason,
-        message: resultMessage
-      }
+        message: resultMessage,
+      };
     } catch (error: any) {
-      console.error('[ClientControlService] 设置用户调度开关失败:', error)
+      console.error("[ClientControlService] 设置用户调度开关失败:", error);
       if (!silent) {
-        ElMessage.error(error?.message || '设置服务端自动调度失败')
+        ElMessage.error(error?.message || "设置服务端自动调度失败");
       }
       return {
         success: false,
         dispatched: false,
-        message: error?.message || '设置服务端自动调度失败'
-      }
+        message: error?.message || "设置服务端自动调度失败",
+      };
     }
   }
-  
+
   /**
    * 检查连接是否属于当前用户
    * @param connectionId 连接 ID
    * @returns 是否属于当前用户
    */
   static async isMyClient(connectionId: string): Promise<boolean> {
-    const myClients = await this.getMyClients()
-    return myClients.some((client) => client.id === connectionId)
+    const myClients = await this.getMyClients();
+    return myClients.some((client) => client.id === connectionId);
   }
-  
+
   /**
    * 获取当前用户的客户端数量
    * @returns 客户端数量
    */
   static async getMyClientCount(): Promise<number> {
-    const myClients = await this.getMyClients()
-    return myClients.length
+    const myClients = await this.getMyClients();
+    return myClients.length;
   }
 }

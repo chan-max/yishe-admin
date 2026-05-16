@@ -1536,6 +1536,11 @@ function findPsdSetRowIndexById(psdSetId: unknown) {
   return dataSource.value.findIndex((item) => normalizePsdSetId(item?.id) === normalizedId);
 }
 
+function findPsdSetRowById(psdSetId: unknown) {
+  const index = findPsdSetRowIndexById(psdSetId);
+  return index >= 0 ? dataSource.value[index] : null;
+}
+
 function buildPsdSetStatusRecord(target: any, status: string, statusMessage?: string) {
   if (!target || typeof target !== "object") {
     return target;
@@ -1972,8 +1977,72 @@ function getClientPhotoshopService(client: any) {
   );
 }
 
+function isPhotoshopRuntimeErrorMessage(message: unknown) {
+  const text = String(message || "").toLowerCase();
+  const hasPhotoshopSignal =
+    text.includes("ps 自动化") ||
+    text.includes("photoshop") ||
+    text.includes("localhost:1595") ||
+    text.includes("ps 处理服务");
+  return !!(
+    hasPhotoshopSignal &&
+    (
+      text.includes("ps 自动化连接异常") ||
+      text.includes("network error") ||
+      text.includes("econnrefused") ||
+      text.includes("econnreset") ||
+      text.includes("econnaborted") ||
+      text.includes("etimedout") ||
+      text.includes("timeout") ||
+      text.includes("timed out") ||
+      text.includes("socket hang up") ||
+      text.includes("ps 处理服务未启动") ||
+      text.includes("photoshop 处理请求超时") ||
+      text.includes("状态检测暂时未响应") ||
+      text.includes("网络") ||
+      text.includes("连接")
+    )
+  );
+}
+
 function isPhotoshopServiceReady(service: any) {
+  if (!service) {
+    return false;
+  }
+  const state = String(service?.state || service?.status || "").toLowerCase();
+  if (
+    state === "error" ||
+    state === "offline" ||
+    state === "disconnected" ||
+    isPhotoshopRuntimeErrorMessage(service?.lastError)
+  ) {
+    return false;
+  }
   return !!(service?.available === true || service?.details?.photoshopReady === true);
+}
+
+function getDispatchClientUnavailableReason(client: any) {
+  if (!client?.isOnline) {
+    return "所选客户端不在线";
+  }
+  const service = getClientPhotoshopService(client);
+  if (!service) {
+    return "所选客户端未上报 PS 自动化服务";
+  }
+  if (isDispatchClientBusy(client)) {
+    return "所选客户端正在制作其他套图";
+  }
+  const state = String(service?.state || service?.status || "").toLowerCase();
+  if (state === "error" || isPhotoshopRuntimeErrorMessage(service?.lastError)) {
+    return service?.lastError || service?.message || "所选客户端 PS 自动化异常";
+  }
+  if (state === "offline" || state === "disconnected") {
+    return service?.message || "所选客户端 PS 自动化未连接";
+  }
+  if (!isPhotoshopServiceReady(service)) {
+    return service?.message || "所选客户端 PS 未就绪";
+  }
+  return "";
 }
 
 function getClientDisplayName(client: any) {
@@ -2002,19 +2071,24 @@ function getClientRuntimePsdSet(client: any) {
   };
 }
 
+function getDispatchClientRuntimeBusyLabel(client: any) {
+  const runtimeItem = getClientRuntimePsdSet(client);
+  if (!runtimeItem) {
+    return "";
+  }
+  const taskLabel = String(runtimeItem.name || runtimeItem.id || "").trim();
+  const step = String(runtimeItem.currentStep || "").trim();
+  return [taskLabel, step].filter(Boolean).join(" · ");
+}
+
 function getDispatchClientActivePsdSets(client: any) {
   const clientId = String(client?.id || "").trim();
   if (!clientId) {
     return [];
   }
-  const activeItems = activePsdSets.value.filter(
+  return activePsdSets.value.filter(
     (item) => String(item?.assignedClientId || "").trim() === clientId,
   );
-  if (activeItems.length) {
-    return activeItems;
-  }
-  const runtimeItem = getClientRuntimePsdSet(client);
-  return runtimeItem ? [runtimeItem] : [];
 }
 
 function isDispatchClientBusy(client: any) {
@@ -2024,10 +2098,7 @@ function isDispatchClientBusy(client: any) {
 }
 
 function isDispatchClientExecutable(client: any) {
-  const service = getClientPhotoshopService(client);
-  if (!client?.isOnline || !service) return false;
-  if (isDispatchClientBusy(client)) return false;
-  return isPhotoshopServiceReady(service);
+  return !getDispatchClientUnavailableReason(client);
 }
 
 function getDispatchClientOnlineStatus(client: any) {
@@ -2042,7 +2113,11 @@ function getDispatchClientPsStatus(client: any) {
   if (!service) {
     return { text: "未开启", tone: "muted" };
   }
-  if (service.status === "error" || service.state === "error") {
+  if (
+    service.status === "error" ||
+    service.state === "error" ||
+    isPhotoshopRuntimeErrorMessage(service?.lastError)
+  ) {
     return { text: "异常", tone: "danger" };
   }
   if (isPhotoshopServiceReady(service)) {
@@ -2061,6 +2136,9 @@ function getDispatchClientProductionStatus(client: any) {
       text: activeItems.length > 1 ? `制作中(${activeItems.length})` : "制作中",
       tone: "warning",
     };
+  }
+  if (getClientRuntimePsdSet(client)) {
+    return { text: "忙碌", tone: "warning" };
   }
   return { text: "空闲", tone: isDispatchClientExecutable(client) ? "success" : "muted" };
 }
@@ -2108,7 +2186,7 @@ const dispatchClientRows = computed(() =>
 function getDispatchClientTaskLabel(client: any) {
   const item = getDispatchClientActivePsdSets(client)[0];
   if (!item) {
-    return "无";
+    return getClientRuntimePsdSet(client) ? "客户端忙碌，等待服务端确认" : "无";
   }
   return String(item?.name || item?.id || "未命名套图");
 }
@@ -2124,7 +2202,8 @@ function formatDispatchTaskStep(item: any) {
 }
 
 function getDispatchClientTaskStep(client: any) {
-  return formatDispatchTaskStep(getDispatchClientActivePsdSets(client)[0]);
+  const activeItem = getDispatchClientActivePsdSets(client)[0];
+  return activeItem ? formatDispatchTaskStep(activeItem) : getDispatchClientRuntimeBusyLabel(client);
 }
 
 const schedulerClientStats = computed(() => {
@@ -2154,22 +2233,6 @@ function getPsdSetProcessingRuntimeSource(item: any) {
     assignedMachineCode: String(item?.assignedMachineCode || "").trim() || null,
     currentStep: String(item?.currentStep || item?.statusMessage || "").trim() || null,
     progress: typeof item?.progress === "number" ? item.progress : null,
-  };
-}
-
-function mergePsdSetProcessingRuntimeSource(target: any, source: any) {
-  return {
-    id: target?.id || source?.id || "",
-    name: target?.name || source?.name || null,
-    assignedClientId: target?.assignedClientId || source?.assignedClientId || null,
-    assignedMachineCode: target?.assignedMachineCode || source?.assignedMachineCode || null,
-    currentStep: target?.currentStep || source?.currentStep || null,
-    progress:
-      typeof target?.progress === "number"
-        ? target.progress
-        : typeof source?.progress === "number"
-          ? source.progress
-          : null,
   };
 }
 
@@ -2210,58 +2273,18 @@ function mergeAutoDispatchProcessingRows(
 
 const autoDispatchProcessingRows = computed(() => {
   const rowMap = new Map<string, ReturnType<typeof buildAutoDispatchProcessingRow>>();
-  const clientRows: Array<ReturnType<typeof buildAutoDispatchProcessingRow>> = [];
   const dataRows = dataSource.value
     .filter((item) => normalizePsdSetRuntimeStatus(item?.status) === "processing")
     .map((item: any) => buildAutoDispatchProcessingRow(null, item));
-
-  const upsertRow = (client: any, item: any) => {
-    const nextRow = buildAutoDispatchProcessingRow(client, item);
-    const previous = rowMap.get(nextRow.key);
-    if (!previous) {
-      rowMap.set(nextRow.key, nextRow);
-      return;
-    }
-
-    const previousSource = {
-      id: previous.taskId,
-      name: previous.taskLabel,
-      assignedClientId: previous.clientId,
-      assignedMachineCode: null,
-      currentStep: previous.stepLabel,
-      progress: null,
-    };
-    const nextSource = getPsdSetProcessingRuntimeSource(item);
-    const mergedSource = mergePsdSetProcessingRuntimeSource(
-      nextRow.clientId ? nextSource : previousSource,
-      nextRow.clientId ? previousSource : nextSource,
-    );
-    const mergedClientId = nextRow.clientId || previous.clientId;
-    rowMap.set(nextRow.key, {
-      ...previous,
-      ...nextRow,
-      clientId: mergedClientId,
-      clientLabel:
-        nextRow.clientLabel !== "未知客户端"
-          ? nextRow.clientLabel
-          : previous.clientLabel,
-      taskName: String(mergedSource.name || "").trim(),
-      taskLabel: String(mergedSource.name || mergedSource.id || previous.taskLabel || nextRow.taskLabel),
-      stepLabel: formatDispatchTaskStep(mergedSource),
-    });
-  };
-
-  dispatchCandidateClients.value.forEach((client) => {
-    getDispatchClientActivePsdSets(client).forEach((item: any) => {
-      clientRows.push(buildAutoDispatchProcessingRow(client, item));
-    });
+  const activeSummaryRows = activePsdSets.value.map((item: any) => {
+    const clientId = String(item?.assignedClientId || "").trim();
+    const client = clientId
+      ? dispatchCandidateClients.value.find((candidate) => candidate.id === clientId) || null
+      : null;
+    return buildAutoDispatchProcessingRow(client, item);
   });
 
-  if (clientRows.length === 1 && dataRows.length === 1) {
-    return [mergeAutoDispatchProcessingRows(clientRows[0], dataRows[0])];
-  }
-
-  clientRows.forEach((row) => rowMap.set(row.key, row));
+  activeSummaryRows.forEach((row) => rowMap.set(row.key, row));
   dataRows.forEach((row) => {
     const previous = rowMap.get(row.key);
     if (!previous) {
@@ -2270,12 +2293,6 @@ const autoDispatchProcessingRows = computed(() => {
     }
     rowMap.set(row.key, mergeAutoDispatchProcessingRows(previous, row));
   });
-
-  if (!dataRows.length) {
-    activePsdSets.value.forEach((item: any) => {
-      upsertRow(null, item);
-    });
-  }
 
   return Array.from(rowMap.values());
 });
@@ -3333,8 +3350,9 @@ async function handleConfirmStartProduction() {
     return ElMessage.warning("所选客户端不存在，请刷新后重试");
   }
 
-  if (!isDispatchClientExecutable(selectedDispatchClient.value)) {
-    return ElMessage.warning("所选客户端当前不可执行，请重新选择");
+  const unavailableReason = getDispatchClientUnavailableReason(selectedDispatchClient.value);
+  if (unavailableReason) {
+    return ElMessage.warning(unavailableReason);
   }
 
   try {
@@ -3455,6 +3473,7 @@ const productionStatusHandler = (data: {
   psdSetId?: string;
   status: string;
   message?: string;
+  name?: string | null;
 }) => {
   try {
     const normalizedPsdSetId = normalizePsdSetId(data?.psdSetId);
@@ -3469,6 +3488,16 @@ const productionStatusHandler = (data: {
       incomingStatus,
       incomingStatus === "processing" ? "制作中" : data.message,
     );
+
+    if (incomingStatus === "processing" && !findPsdSetRowById(normalizedPsdSetId)) {
+      dataSource.value.unshift({
+        id: normalizedPsdSetId,
+        name: String(data?.name || normalizedPsdSetId).trim(),
+        status: "processing",
+        statusMessage: "制作中",
+        updateTime: new Date().toISOString(),
+      });
+    }
 
     schedulePsdSetRuntimeRefresh(
       data.status === "completed" || data.status === "failed" ? 260 : 900,
