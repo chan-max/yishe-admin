@@ -54,12 +54,26 @@
               <el-button
                 v-if="isAdmin"
                 size="small"
-                type="success"
-                @click="handleBatchAiGenerate"
-                :disabled="!ids.length"
-                :loading="batchAiLoading"
+                type="primary"
+                @click="handleBatchGenerateThumbnail"
+                :loading="batchGenerateThumbnailLoading"
               >
-                批量AI补全 ({{ ids.length }})
+                <template v-if="batchGenerateThumbnailLoading">
+                  生成中 {{ batchGenerateThumbnailProgress.processed }}/{{
+                    batchGenerateThumbnailProgress.total
+                  }}
+                </template>
+                <template v-else>
+                  批量生成缩略图并补全 {{ ids.length ? `(${ids.length})` : "" }}
+                </template>
+              </el-button>
+              <el-button
+                v-if="batchGenerateThumbnailLoading"
+                size="small"
+                type="warning"
+                @click="cancelBatchGenerateThumbnail"
+              >
+                取消生成
               </el-button>
               <el-button
                 v-if="isAdmin"
@@ -850,7 +864,9 @@
                 {{ item.label }}
               </el-tag>
               <span
-                v-if="fontTemplateUserTransferIds.length > fontTemplateUserTransferPreviewItems.length"
+                v-if="
+                  fontTemplateUserTransferIds.length > fontTemplateUserTransferPreviewItems.length
+                "
                 class="sticker-user-transfer-preview__more"
               >
                 等 {{ fontTemplateUserTransferIds.length }} 条
@@ -1222,6 +1238,16 @@ const currentImageUrl = ref("");
 const fontLoading = ref(false);
 const loadedFontFamily = ref("");
 
+// 批量生成缩略图相关状态
+const batchGenerateThumbnailLoading = ref(false);
+const batchGenerateThumbnailProgress = ref({
+  total: 0,
+  processed: 0,
+  success: 0,
+  failed: 0,
+});
+const batchGenerateThumbnailAbortController = ref<AbortController | null>(null);
+
 async function getList() {
   loading.value = true;
 
@@ -1403,7 +1429,6 @@ function handleFolderChange(payload: { folderId: string | null }) {
 
 // 搜索功能
 function handleSearch() {
-  queryParams.currentPage = 1;
   getList();
 }
 
@@ -1968,6 +1993,146 @@ async function submitFrontendGenerateThumbnail() {
   } finally {
     frontendGenerateLoading.value = false;
   }
+}
+
+// 批量生成缩略图
+async function handleBatchGenerateThumbnail() {
+  // 获取要处理的字体列表：选中的或者全部没有缩略图的
+  let fontsToProcess = [];
+  if (ids.value.length > 0) {
+    // 使用选中的
+    fontsToProcess = dataSource.value.filter((item) => ids.value.includes(item.id));
+  } else {
+    // 使用当前列表中没有缩略图的
+    fontsToProcess = dataSource.value.filter((item) => !item.thumbnail);
+  }
+
+  if (fontsToProcess.length === 0) {
+    ElMessage.warning("没有需要生成缩略图的字体模板");
+    return;
+  }
+
+  // 确认操作
+  try {
+    await ElMessageBox.confirm(
+      `即将为 ${fontsToProcess.length} 个字体模板批量生成缩略图，是否继续？`,
+      "批量生成缩略图",
+      { type: "warning" },
+    );
+  } catch {
+    return; // 用户取消
+  }
+
+  // 开始批量处理
+  batchGenerateThumbnailLoading.value = true;
+  batchGenerateThumbnailProgress.value = {
+    total: fontsToProcess.length,
+    processed: 0,
+    success: 0,
+    failed: 0,
+  };
+  batchGenerateThumbnailAbortController.value = new AbortController();
+
+  const templateText = defaultTemplates[0].content; // 使用默认模板文字
+
+  for (let i = 0; i < fontsToProcess.length; i++) {
+    // 检查是否被取消
+    if (batchGenerateThumbnailAbortController.value?.signal.aborted) {
+      ElMessage.warning("批量生成已取消");
+      break;
+    }
+
+    const font = fontsToProcess[i];
+    console.log(`\n--- 批量生成 ${i + 1}/${fontsToProcess.length} ---`);
+    console.log(`处理: ${font.name || font.id}`);
+
+    try {
+      // 1. 打开生成缩略图弹窗（这会设置 currentRow 并加载字体）
+      handleGenerateThumbnail(font);
+
+      // 2. 等待弹窗打开和字体加载完成
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // 3. 检查弹窗是否打开
+      if (!generateThumbnailDialogVisible.value) {
+        throw new Error("弹窗未打开");
+      }
+
+      // 4. 找到预览元素并生成图片
+      const previewElement = document.querySelector(".single-preview") as HTMLElement;
+      if (!previewElement) {
+        throw new Error("找不到预览元素");
+      }
+
+      // 5. 确保字体应用到预览元素
+      if (loadedFontFamily.value) {
+        previewElement.style.fontFamily = loadedFontFamily.value;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      // 6. 生成 PNG 文件
+      const file = await htmlToPngFile(previewElement, `${font.name || "font"}_thumbnail.png`);
+
+      // 7. 上传到 COS
+      const userAccount =
+        (userStore.user as any)?.account ||
+        userStore.user?.shortName ||
+        userStore.user?.name ||
+        "anonymous";
+      const userId = (userStore.user as any)?.id || (userStore as any).userInfo?.id;
+      const cos = await uploadToCOS({
+        file,
+        category: "font-template",
+        account: userAccount,
+        userId,
+        entityId: font.id,
+        isThumbnail: true,
+      });
+      const { url } = cos;
+
+      // 8. 更新数据库
+      await fontTemplateApi.updateFontTemplate({
+        id: font.id,
+        thumbnail: url,
+      });
+
+      // 9. 关闭弹窗
+      generateThumbnailDialogVisible.value = false;
+
+      // 10. 触发 AI 补全（异步，不等待）
+      fontTemplateApi.aiCompleteContent(font.id).catch(() => {});
+
+      batchGenerateThumbnailProgress.value.success++;
+      console.log(`  [OK] ${font.name || font.id}`);
+    } catch (error: any) {
+      batchGenerateThumbnailProgress.value.failed++;
+      console.error(`  [FAIL] ${font.name || font.id}:`, error.message);
+      // 确保弹窗关闭
+      generateThumbnailDialogVisible.value = false;
+    }
+
+    batchGenerateThumbnailProgress.value.processed++;
+
+    // 延迟一下，避免太快
+    if (i < fontsToProcess.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+
+  // 完成
+  batchGenerateThumbnailLoading.value = false;
+  batchGenerateThumbnailAbortController.value = null;
+
+  const { success, failed, total } = batchGenerateThumbnailProgress.value;
+  ElMessage.success(`批量生成完成：成功 ${success} 个，失败 ${failed} 个，共 ${total} 个`);
+
+  // 刷新列表
+  getList();
+}
+
+// 取消批量生成
+function cancelBatchGenerateThumbnail() {
+  batchGenerateThumbnailAbortController.value?.abort();
 }
 
 // 字体加载预览相关方法
