@@ -614,9 +614,7 @@ import {
 } from "@/api/external/browserAutomation";
 import {
   getBrowserAutomationBrowserText,
-  getBrowserAutomationBrowserTone,
   getBrowserAutomationServiceText,
-  getBrowserAutomationServiceTone,
 } from "@/services/browserAutomationRuntime";
 import { websocketClient, type ServiceCommandResultEvent } from "@/services/websocketClient";
 import { usePluginClientNodes } from "@/services/clientNodeState";
@@ -663,6 +661,15 @@ const operationDialogVisible = ref(false);
 const profileDialogVisible = ref(false);
 const editingProfileId = ref<string | null>(null);
 const profileFormRef = ref<FormInstance>();
+const stableProfileCache = reactive<
+  Record<
+    string,
+    {
+      profiles: BrowserAutomationProfileSummary[];
+      instances: BrowserAutomationProfileInstanceSummary[];
+    }
+  >
+>({});
 
 const loadingMap = reactive<Record<string, boolean>>({
   checkStatus: false,
@@ -769,13 +776,20 @@ const selectedService = computed<BrowserAutomationServiceStatus | null>(
   () => selectedClient.value?.uploader || null,
 );
 const selectedDetails = computed(() => selectedService.value?.details || {});
+const selectedProfileCache = computed(
+  () =>
+    stableProfileCache[selectedClientId.value] || {
+      profiles: [],
+      instances: [],
+    },
+);
 const profileItems = computed<BrowserAutomationProfileSummary[]>(() => {
   const profiles = selectedDetails.value?.profiles;
-  return Array.isArray(profiles) ? profiles : [];
+  return Array.isArray(profiles) ? profiles : selectedProfileCache.value.profiles;
 });
 const profileInstances = computed<BrowserAutomationProfileInstanceSummary[]>(() => {
   const instances = selectedDetails.value?.instances;
-  return Array.isArray(instances) ? instances : [];
+  return Array.isArray(instances) ? instances : selectedProfileCache.value.instances;
 });
 const profileInstanceMap = computed(
   () =>
@@ -1647,6 +1661,25 @@ watch(clients, (list) => {
     selectedClientId.value = list[0]?.clientId || "";
   }
 });
+
+watch(
+  [selectedClientId, selectedDetails],
+  ([clientId, details]) => {
+    if (!clientId) return;
+    const profiles = details?.profiles;
+    const instances = details?.instances;
+    const cache = stableProfileCache[clientId] || { profiles: [], instances: [] };
+
+    if (Array.isArray(profiles)) {
+      cache.profiles = [...profiles];
+    }
+    if (Array.isArray(instances)) {
+      cache.instances = [...instances];
+    }
+    stableProfileCache[clientId] = cache;
+  },
+  { deep: true, immediate: true },
+);
 
 watch(
   selectedDetails,

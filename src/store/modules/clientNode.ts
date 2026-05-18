@@ -24,6 +24,10 @@ type ClientNodeRefreshOptions = { summary?: boolean };
 const listenersBound = ref(false);
 const CLIENT_NODE_SUMMARY_CACHE_KEY = "yishe-admin:client-node-summary-cache";
 const CLIENT_NODE_SUMMARY_CACHE_TTL_MS = 2 * 60_000;
+const SERVICE_ALIAS_MAP: Partial<Record<ClientPluginKey, string[]>> = {
+  "browser-automation": ["uploader", "browser"],
+  "ps-automation": ["photoshop"],
+};
 
 const resolveConnectionViews = (response: unknown): WebsocketConnectionVO[] => {
   if (Array.isArray(response)) {
@@ -57,7 +61,7 @@ export const normalizeClientPluginKey = (value?: string | null) => {
     browser: "browser-automation",
     photoshop: "ps-automation",
   };
-  return aliasMap[normalized] || normalized;
+  return aliasMap[normalized] || (normalized as ClientPluginKey);
 };
 
 const readClientNodeSummaryCache = (): WebsocketConnectionVO[] => {
@@ -88,6 +92,77 @@ const writeClientNodeSummaryCache = (items: WebsocketConnectionVO[]) => {
     // 缓存只是为了改善下拉首屏体验，失败不影响真实数据刷新。
   }
 };
+
+const mergeServiceRuntime = (
+  previous?: Record<string, any> | null,
+  incoming?: Record<string, any> | null,
+) => {
+  const prev = previous && typeof previous === "object" ? previous : {};
+  const next = incoming && typeof incoming === "object" ? incoming : {};
+  const prevDetails = prev.details && typeof prev.details === "object" ? prev.details : {};
+  const nextDetails = next.details && typeof next.details === "object" ? next.details : {};
+
+  return {
+    ...prev,
+    ...next,
+    details: {
+      ...prevDetails,
+      ...nextDetails,
+      profiles: Array.isArray(nextDetails.profiles) ? nextDetails.profiles : prevDetails.profiles,
+      instances: Array.isArray(nextDetails.instances)
+        ? nextDetails.instances
+        : prevDetails.instances,
+      activeProfile: nextDetails.activeProfile ?? prevDetails.activeProfile,
+      activeProfileId: nextDetails.activeProfileId ?? prevDetails.activeProfileId,
+      browserConnected: nextDetails.browserConnected ?? prevDetails.browserConnected,
+      hasInstance: nextDetails.hasInstance ?? prevDetails.hasInstance,
+      profilesRootDir: nextDetails.profilesRootDir ?? prevDetails.profilesRootDir,
+      workspaceDir: nextDetails.workspaceDir ?? prevDetails.workspaceDir,
+      connection: nextDetails.connection ?? prevDetails.connection,
+      pageCount: nextDetails.pageCount ?? prevDetails.pageCount,
+    },
+  };
+};
+
+const mergeServiceMap = (
+  previous?: Record<string, any> | null,
+  incoming?: Record<string, any> | null,
+) => {
+  const prev = previous && typeof previous === "object" ? previous : {};
+  const next = incoming && typeof incoming === "object" ? incoming : {};
+  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+  const merged: Record<string, any> = {};
+
+  Object.entries(SERVICE_ALIAS_MAP).forEach(([pluginKey, aliasList]) => {
+    const aliases = aliasList || [];
+    if ([pluginKey, ...aliases].some((key) => prev[key] || next[key])) {
+      keys.add(pluginKey);
+    }
+  });
+
+  keys.forEach((key) => {
+    const aliases = SERVICE_ALIAS_MAP[key as ClientPluginKey] || [];
+    const previousRuntime = prev[key] || aliases.map((alias) => prev[alias]).find(Boolean);
+    const incomingRuntime = next[key] || aliases.map((alias) => next[alias]).find(Boolean);
+    merged[key] = mergeServiceRuntime(previousRuntime, incomingRuntime);
+  });
+
+  return merged;
+};
+
+const mergeClientNodeView = (
+  previous: WebsocketConnectionVO | undefined,
+  incoming: WebsocketConnectionVO,
+): WebsocketConnectionVO =>
+  ({
+    ...(previous || {}),
+    ...incoming,
+    clientInfo: {
+      ...(previous?.clientInfo || {}),
+      ...(incoming.clientInfo || {}),
+      services: mergeServiceMap(previous?.clientInfo?.services, incoming.clientInfo?.services),
+    },
+  }) as WebsocketConnectionVO;
 
 export const getClientServiceRuntime = (
   client: Pick<WebsocketConnectionVO, "clientInfo"> | Record<string, any> | undefined | null,
@@ -134,7 +209,10 @@ export const useClientNodeStore = defineStore("client-node", () => {
     try {
       const summary = options.summary === true;
       const response = await getMyClientNodeViews({ summary });
-      clients.value = resolveConnectionViews(response).sort(compareClientNodes);
+      const previousMap = new Map(clients.value.map((item) => [item.id, item]));
+      clients.value = resolveConnectionViews(response)
+        .map((item) => mergeClientNodeView(previousMap.get(item.id), item))
+        .sort(compareClientNodes);
       detailLevel.value = summary ? "summary" : "full";
       if (summary) {
         writeClientNodeSummaryCache(clients.value);
@@ -219,10 +297,10 @@ export const useClientNodeStore = defineStore("client-node", () => {
             ...(previous?.clientInfo || {}),
             services: {
               ...(previous?.clientInfo?.services || {}),
-              [pluginKey]: {
-                ...(previous?.clientInfo?.services?.[pluginKey] || {}),
-                ...(event.runtime || {}),
-              },
+              [pluginKey]: mergeServiceRuntime(
+                getClientServiceRuntime(previous, pluginKey),
+                event.runtime || {},
+              ),
             },
           },
         }) as WebsocketConnectionVO,
@@ -276,10 +354,7 @@ export const useClientNodeStore = defineStore("client-node", () => {
               eventClient.workspaceDirectory ?? previous?.clientInfo?.workspaceDirectory,
             machine: event.client.machine ?? previous?.clientInfo?.machine,
             location: event.client.location ?? previous?.clientInfo?.location,
-            services: {
-              ...(previous?.clientInfo?.services || {}),
-              ...(event.client.services || {}),
-            },
+            services: mergeServiceMap(previous?.clientInfo?.services, event.client.services || {}),
             psAutomation: event.client.psAutomation ?? previous?.clientInfo?.psAutomation,
           },
         }) as WebsocketConnectionVO,
