@@ -1,283 +1,328 @@
 <template>
-  <el-container class="ai-assistant">
-    <el-aside class="ai-assistant__sidebar" width="260px">
-      <div class="sidebar-header">
-        <div class="sidebar-title">
-          <span>会话</span>
-          <el-tag size="small" effect="plain" round>{{ conversations.length }}</el-tag>
-        </div>
-        <el-button size="small" type="primary" plain :icon="Plus" @click="handleCreateConversation">
-          新会话
-        </el-button>
-      </div>
+  <XProvider :theme="xTheme" component-size="small">
+    <section class="ai-assistant">
+      <aside class="ai-assistant__sidebar">
+        <header class="ai-assistant__sidebar-head">
+          <div class="ai-assistant__sidebar-title">
+            <span>智能助手</span>
+            <ATag>{{ conversations.length }}</ATag>
+          </div>
+          <Actions :items="sidebarActions" variant="borderless" @click="handleSidebarAction" />
+        </header>
 
-      <el-scrollbar class="conversation-list">
-        <button
-          v-for="conv in conversations"
-          :key="conv.id"
-          class="conversation-item"
-          :class="{ active: currentConversationId === conv.id }"
-          @click="selectConversation(conv.id)"
-        >
-          <span class="conversation-title">{{ conv.title }}</span>
-          <span class="conversation-meta">
-            <el-tag size="small" effect="plain">{{ conv.persona.name }}</el-tag>
-            <el-button
-              class="delete-btn"
-              size="small"
-              text
-              :icon="Delete"
-              @click.stop="handleDeleteConversation(conv.id)"
+        <div class="ai-assistant__conversation-body">
+          <Conversations
+            v-if="conversationItems.length"
+            class="ai-assistant__conversation-list"
+            :items="conversationItems"
+            :active-key="activeConversationKey"
+            :menu="conversationMenu"
+            :on-active-change="handleConversationChange"
+          />
+          <AEmpty v-else class="ai-assistant__empty-side" :image="emptyImage" description="暂无会话" />
+        </div>
+      </aside>
+
+      <main class="ai-assistant__main">
+        <header class="ai-assistant__header">
+          <div class="ai-assistant__header-main">
+            <div class="ai-assistant__title-row">
+              <h2>{{ activeConversationTitle }}</h2>
+              <ATag v-if="activePersonaName">{{ activePersonaName }}</ATag>
+              <ATooltip v-if="currentRunId" :title="currentRunId">
+                <ATag color="blue">Run {{ currentRunId.slice(-8) }}</ATag>
+              </ATooltip>
+            </div>
+            <div class="ai-assistant__subtitle">{{ statusText }}</div>
+          </div>
+          <Actions
+            v-if="headerActions.length"
+            :items="headerActions"
+            variant="borderless"
+            @click="handleHeaderAction"
+          />
+        </header>
+
+        <section class="ai-assistant__content">
+          <div v-if="showEmptyState" class="ai-assistant__empty-main">
+            <Welcome
+              class="ai-assistant__welcome"
+              variant="borderless"
+              title="智能助手"
             />
-          </span>
-        </button>
-        <el-empty v-if="!conversations.length" description="暂无会话" :image-size="54" />
-      </el-scrollbar>
-    </el-aside>
-
-    <el-main class="ai-assistant__main">
-      <header class="assistant-toolbar">
-        <div class="assistant-heading">
-          <div class="assistant-title">
-            <el-avatar :size="28" class="assistant-title__avatar">
-              <el-icon><ChatDotRound /></el-icon>
-            </el-avatar>
-            <div>
-              <strong>智能助手</strong>
-              <span>{{ statusText }}</span>
-            </div>
+            <Prompts
+              class="ai-assistant__prompt-list"
+              :items="promptItems"
+              wrap
+              :on-item-click="handlePromptClick"
+            />
           </div>
-        </div>
-        <el-tooltip v-if="currentRunId" :content="currentRunId" placement="bottom">
-          <el-tag size="small" type="info" effect="plain" class="run-tag">
-            Run {{ currentRunId.slice(-8) }}
-          </el-tag>
-        </el-tooltip>
-      </header>
 
-      <el-scrollbar ref="messageScrollbarRef" class="message-scrollbar">
-        <div ref="messageListRef" class="message-list">
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            class="message-item"
-            :class="[`message-${msg.role}`]"
+          <BubbleList
+            v-else
+            ref="bubbleListRef"
+            class="ai-assistant__bubble-list"
+            :items="bubbleItems"
+            :roles="bubbleRoles"
+            :auto-scroll="true"
+            :on-scroll="handleBubbleScroll"
           >
-            <div v-if="msg.role === 'user'" class="message-content message-content--user">
-              <div class="message-text">{{ msg.content }}</div>
-            </div>
-
-            <div v-else-if="msg.role === 'assistant'" class="message-content message-content--assistant">
-              <el-avatar :size="28" class="message-avatar">
-                <el-icon><ChatDotRound /></el-icon>
-              </el-avatar>
-              <div class="message-body">
-                <div class="message-text" v-html="renderMarkdown(msg.content)"></div>
+            <template #header="{ item }">
+              <div class="ai-assistant__bubble-head">
+                <span>{{ getBubbleLabel(item) }}</span>
+                <span>{{ getBubbleTime(item) }}</span>
+                <ATag v-if="isInterruptBubble(item)" color="gold">交互</ATag>
               </div>
-            </div>
+            </template>
 
-            <div v-else class="message-content message-content--tool">
-              <el-alert
-                class="message-tool"
-                :type="msg.toolResult?.success === false ? 'error' : 'info'"
-                :closable="false"
-                show-icon
+            <template #message="{ item }">
+              <div
+                v-if="getBubbleMessage(item).role === 'tool'"
+                class="ai-assistant__tool-message"
               >
-                <template #title>
-                  <span class="tool-title">{{ msg.toolLabel || msg.toolKey || "工具" }}</span>
-                  <span class="tool-result">{{ msg.content }}</span>
-                </template>
-              </el-alert>
-            </div>
-          </div>
-
-          <div v-if="loading" class="message-item message-assistant">
-            <div class="message-content message-content--assistant">
-              <el-avatar :size="28" class="message-avatar">
-                <el-icon><ChatDotRound /></el-icon>
-              </el-avatar>
-              <div class="message-body">
-                <el-skeleton animated :rows="2" class="assistant-skeleton" />
+                <div class="ai-assistant__tool-line">
+                  <ATag :color="getToolTagColor(item)">{{ getToolTagText(item) }}</ATag>
+                  <strong>{{ getBubbleMessage(item).toolLabel || getBubbleMessage(item).toolKey || "工具" }}</strong>
+                </div>
+                <p>{{ getBubbleMessage(item).content }}</p>
               </div>
-            </div>
-          </div>
 
-          <el-empty v-if="!messages.length && !loading" description="发送消息开始对话" :image-size="72" />
-        </div>
-      </el-scrollbar>
-
-      <section v-if="pendingInteraction" class="interaction-panel">
-        <div class="interaction-main">
-          <el-tag type="warning" effect="plain" round>{{ interactionTag }}</el-tag>
-          <div>
-            <div class="interaction-title">{{ pendingInteraction.label || "需要用户参与" }}</div>
-            <pre>{{ pendingInteraction.question }}</pre>
-          </div>
-        </div>
-
-        <template v-if="pendingInteraction.type === 'choice'">
-          <el-checkbox-group
-            v-if="pendingInteraction.multiple"
-            v-model="pendingChoiceList"
-            class="choice-list"
-          >
-            <el-checkbox
-              v-for="option in normalizedOptions"
-              :key="option.value"
-              :label="option.value"
-              border
-            >
-              <span>{{ option.label }}</span>
-              <small v-if="option.description">{{ option.description }}</small>
-            </el-checkbox>
-          </el-checkbox-group>
-          <el-radio-group v-else v-model="pendingChoice" class="choice-list">
-            <el-radio
-              v-for="option in normalizedOptions"
-              :key="option.value"
-              :label="option.value"
-              border
-            >
-              <span>{{ option.label }}</span>
-              <small v-if="option.description">{{ option.description }}</small>
-            </el-radio>
-          </el-radio-group>
-        </template>
-
-        <template v-else-if="pendingInteraction.type === 'form'">
-          <el-form label-position="top" class="interaction-form">
-            <el-form-item
-              v-for="field in normalizedFields"
-              :key="field.name"
-              :label="field.label"
-              :required="field.required"
-            >
-              <el-switch
-                v-if="field.type === 'boolean'"
-                v-model="pendingForm[field.name]"
+              <MarkdownView
+                v-else-if="getBubbleMessage(item).role === 'assistant'"
+                class="ai-assistant__markdown"
+                :content="getBubbleMessage(item).content || ''"
               />
-              <el-select
-                v-else-if="field.type === 'select'"
-                v-model="pendingForm[field.name]"
-                :placeholder="field.placeholder || '请选择'"
-                filterable
+
+              <div v-else class="ai-assistant__user-message">
+                {{ getBubbleMessage(item).content }}
+              </div>
+            </template>
+          </BubbleList>
+
+          <AButton
+            v-if="showScrollToBottom"
+            class="ai-assistant__scroll-bottom"
+            size="small"
+            shape="circle"
+            :icon="h(DownOutlined)"
+            @click="scrollToBottom"
+          />
+        </section>
+
+        <section v-if="pendingInteraction" class="ai-assistant__interaction">
+          <div class="ai-assistant__interaction-head">
+            <ATag color="gold">{{ interactionTag }}</ATag>
+            <strong>{{ pendingInteraction.label || "需要用户参与" }}</strong>
+            <span v-if="pendingInteraction.toolName || pendingInteraction.tool">
+              {{ pendingInteraction.toolName || pendingInteraction.tool }}
+            </span>
+          </div>
+          <div class="ai-assistant__interaction-question">
+            {{ pendingInteraction.question }}
+          </div>
+
+          <template v-if="pendingInteraction.type === 'choice'">
+            <div class="ai-assistant__choice-list">
+              <ACheckboxGroup
+                v-if="pendingInteraction.multiple"
+                v-model:value="pendingChoiceList"
+                class="ai-assistant__choice-group"
               >
-                <el-option
-                  v-for="option in normalizeOptions(field.options)"
+                <label
+                  v-for="option in normalizedOptions"
                   :key="option.value"
-                  :label="option.label"
-                  :value="option.value"
-                />
-              </el-select>
-              <el-date-picker
-                v-else-if="field.type === 'date' || field.type === 'datetime'"
-                v-model="pendingForm[field.name]"
-                :type="field.type === 'datetime' ? 'datetime' : 'date'"
-                :placeholder="field.placeholder || '请选择时间'"
-                value-format="YYYY-MM-DD HH:mm:ss"
-              />
-              <el-input-number
-                v-else-if="field.type === 'number'"
-                v-model="pendingForm[field.name]"
-                controls-position="right"
-              />
-              <el-input
+                  class="ai-assistant__choice-option"
+                >
+                  <ACheckbox :value="option.value" />
+                  <span>
+                    <strong>{{ option.label }}</strong>
+                    <small v-if="option.description">{{ option.description }}</small>
+                  </span>
+                </label>
+              </ACheckboxGroup>
+
+              <ARadioGroup
                 v-else
-                v-model="pendingForm[field.name]"
-                :type="field.type === 'textarea' ? 'textarea' : 'text'"
-                :rows="field.type === 'textarea' ? 3 : undefined"
-                :placeholder="field.placeholder || '请输入'"
+                v-model:value="pendingChoice"
+                class="ai-assistant__choice-group"
+              >
+                <label
+                  v-for="option in normalizedOptions"
+                  :key="option.value"
+                  class="ai-assistant__choice-option"
+                >
+                  <ARadio :value="option.value" />
+                  <span>
+                    <strong>{{ option.label }}</strong>
+                    <small v-if="option.description">{{ option.description }}</small>
+                  </span>
+                </label>
+              </ARadioGroup>
+            </div>
+          </template>
+
+          <template v-else-if="pendingInteraction.type === 'form'">
+            <AForm layout="vertical" class="ai-assistant__form" :colon="false">
+              <AFormItem
+                v-for="field in normalizedFields"
+                :key="field.name"
+                :label="field.label"
+                :required="field.required"
+              >
+                <ASwitch
+                  v-if="field.type === 'boolean'"
+                  v-model:checked="pendingForm[field.name]"
+                />
+                <ASelect
+                  v-else-if="field.type === 'select'"
+                  v-model:value="pendingForm[field.name]"
+                  :options="normalizeOptions(field.options)"
+                  :placeholder="field.placeholder || '请选择'"
+                  allow-clear
+                />
+                <ADatePicker
+                  v-else-if="field.type === 'date' || field.type === 'datetime'"
+                  :value="getDatePickerValue(field)"
+                  :format="field.type === 'datetime' ? 'YYYY-MM-DD HH:mm:ss' : 'YYYY-MM-DD'"
+                  :show-time="field.type === 'datetime'"
+                  :placeholder="field.placeholder || '请选择时间'"
+                  class="ai-assistant__date-picker"
+                  @change="(_, value) => handleDateFieldChange(field, value)"
+                />
+                <AInputNumber
+                  v-else-if="field.type === 'number'"
+                  v-model:value="pendingForm[field.name]"
+                  class="ai-assistant__number-input"
+                />
+                <AInput.TextArea
+                  v-else-if="field.type === 'textarea'"
+                  v-model:value="pendingForm[field.name]"
+                  :rows="3"
+                  :placeholder="field.placeholder || '请输入'"
+                />
+                <AInput
+                  v-else
+                  v-model:value="pendingForm[field.name]"
+                  :placeholder="field.placeholder || '请输入'"
+                />
+              </AFormItem>
+            </AForm>
+          </template>
+
+          <template v-else-if="pendingInteraction.type === 'feedback'">
+            <div class="ai-assistant__feedback">
+              <ASpace wrap>
+                <AButton
+                  v-for="option in normalizedOptions"
+                  :key="option.value"
+                  size="small"
+                  :type="pendingChoice === option.value ? 'primary' : 'default'"
+                  @click="pendingChoice = option.value"
+                >
+                  {{ option.label }}
+                </AButton>
+              </ASpace>
+              <AInput.TextArea
+                v-model:value="pendingTextInput"
+                :rows="2"
+                placeholder="可选反馈"
               />
-            </el-form-item>
-          </el-form>
-        </template>
+            </div>
+          </template>
 
-        <template v-else-if="pendingInteraction.type === 'feedback'">
-          <div class="feedback-actions">
-            <el-button
-              v-for="option in normalizedOptions"
-              :key="option.value"
-              size="small"
-              :type="pendingChoice === option.value ? 'primary' : 'default'"
-              @click="pendingChoice = option.value"
-            >
-              {{ option.label }}
-            </el-button>
+          <template v-else-if="pendingInteraction.type !== 'confirm'">
+            <AInput.TextArea
+              v-model:value="pendingTextInput"
+              :rows="2"
+              :placeholder="pendingInteraction.placeholder || '请输入'"
+            />
+          </template>
+
+          <AInput
+            v-if="pendingInteraction.type === 'confirm'"
+            v-model:value="pendingReason"
+            placeholder="可选备注"
+          />
+
+          <div class="ai-assistant__interaction-actions">
+            <AButton size="small" @click="handleRejectInteraction">
+              {{ pendingInteraction.type === "confirm" ? "取消" : "跳过" }}
+            </AButton>
+            <AButton size="small" type="primary" @click="handleSubmitInteraction">
+              {{ pendingInteraction.type === "confirm" ? "确认继续" : "提交" }}
+            </AButton>
           </div>
-          <el-input
-            v-model="pendingTextInput"
-            type="textarea"
-            :rows="2"
-            placeholder="可选：补充反馈"
-          />
-        </template>
+        </section>
 
-        <template v-else-if="pendingInteraction.type !== 'confirm'">
-          <el-input
-            v-model="pendingTextInput"
-            type="textarea"
-            :rows="2"
-            :placeholder="pendingInteraction.placeholder || '请输入'"
-          />
-        </template>
-
-        <el-input
-          v-if="pendingInteraction.type === 'confirm'"
-          v-model="pendingReason"
-          size="small"
-          placeholder="可选：给这次确认补充一句备注"
-        />
-        <div class="interaction-actions">
-          <el-button size="small" @click="handleRejectInteraction">
-            {{ pendingInteraction.type === "confirm" ? "取消" : "跳过" }}
-          </el-button>
-          <el-button size="small" type="primary" @click="handleSubmitInteraction">
-            {{ pendingInteraction.type === "confirm" ? "确认继续" : "提交" }}
-          </el-button>
-        </div>
-      </section>
-
-      <footer class="input-area">
-        <el-input
-          v-model="inputMessage"
-          type="textarea"
-          :rows="3"
-          placeholder="输入消息，Enter 发送，Shift+Enter 换行"
-          :disabled="loading || !!pendingInteraction"
-          @keydown="handleKeydown"
-        />
-        <div class="input-actions">
-          <span class="input-hint">Enter 发送，Shift+Enter 换行</span>
-          <el-button
-            type="primary"
-            :icon="Promotion"
+        <footer class="ai-assistant__composer">
+          <Sender
+            ref="senderRef"
+            class="ai-assistant__sender"
+            :value="inputMessage"
             :loading="loading"
-            :disabled="!inputMessage.trim() || !!pendingInteraction"
-            @click="handleSend"
-          >
-            发送
-          </el-button>
-          <el-button v-if="messages.length" type="danger" plain @click="handleClear">
-            清空记录
-          </el-button>
-        </div>
-      </footer>
-    </el-main>
-  </el-container>
+            :disabled="Boolean(pendingInteraction)"
+            :send-disabled="!canSend"
+            :placeholder="senderPlaceholder"
+            :auto-size="{ minRows: 2, maxRows: 5 }"
+            :on-change="handleDraftChange"
+            :on-submit="handleSend"
+          />
+        </footer>
+      </main>
+    </section>
+  </XProvider>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, h, nextTick, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { ChatDotRound, Delete, Plus, Promotion } from "@element-plus/icons-vue";
-import type { ScrollbarInstance } from "element-plus";
-import { marked } from "marked";
+import dayjs, { type Dayjs } from "dayjs";
+import {
+  ClearOutlined,
+  DownOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  RobotOutlined,
+  ToolOutlined,
+  UserOutlined,
+} from "@ant-design/icons-vue";
+import {
+  Avatar as AAvatar,
+  Button as AButton,
+  Checkbox as ACheckbox,
+  CheckboxGroup as ACheckboxGroup,
+  DatePicker as ADatePicker,
+  Empty as AEmpty,
+  Form as AForm,
+  FormItem as AFormItem,
+  Input as AInput,
+  InputNumber as AInputNumber,
+  message as antMessage,
+  Modal,
+  Radio as ARadio,
+  RadioGroup as ARadioGroup,
+  Select as ASelect,
+  Space as ASpace,
+  Switch as ASwitch,
+  Tag as ATag,
+  Tooltip as ATooltip,
+} from "ant-design-vue";
+import {
+  Actions,
+  BubbleList,
+  Conversations,
+  Prompts,
+  Sender,
+  Welcome,
+  XProvider,
+  type ActionItem,
+} from "ant-design-x-vue";
 import {
   AiAssistantApi,
   type AiAssistantConversation,
   type AiAssistantMessage,
 } from "@/api/aiAssistant";
+import MarkdownView from "@/components/MarkdownView/index.vue";
 
 interface PendingInteraction {
   type: string;
@@ -316,9 +361,29 @@ interface InteractionField {
   options?: Array<string | Record<string, any>>;
 }
 
+type AssistantBubbleItem = Record<string, any> & {
+  raw: AiAssistantMessage;
+};
+
+type BubbleListExpose = {
+  nativeElement?: HTMLDivElement;
+  scrollTo?: (info: {
+    offset?: number;
+    key?: string | number;
+    behavior?: ScrollBehavior;
+    block?: ScrollLogicalPosition;
+  }) => void;
+};
+
+type SenderExpose = {
+  focus?: (options?: { cursor?: "start" | "end" | "all" }) => void;
+  blur?: () => void;
+};
+
 const route = useRoute();
-const messageListRef = ref<HTMLElement>();
-const messageScrollbarRef = ref<ScrollbarInstance>();
+const emptyImage = AEmpty.PRESENTED_IMAGE_SIMPLE;
+const senderRef = ref<SenderExpose | null>(null);
+const bubbleListRef = ref<BubbleListExpose | null>(null);
 const inputMessage = ref("");
 const pendingReason = ref("");
 const pendingTextInput = ref("");
@@ -328,30 +393,166 @@ const pendingForm = ref<Record<string, any>>({});
 const loading = ref(false);
 const runtimeStatus = ref("idle");
 const currentRunId = ref("");
+const isBubbleReachEnd = ref(true);
 const pendingInteraction = ref<PendingInteraction | null>(null);
 const messages = ref<AiAssistantMessage[]>([]);
 const conversations = ref<AiAssistantConversation[]>([]);
 const currentConversationId = ref<number | null>(null);
 
+const xTheme = {
+  token: {
+    borderRadius: 8,
+    fontSize: 13,
+    fontSizeSM: 12,
+    colorPrimary: "#1677ff",
+    wireframe: false,
+  },
+};
+
+const bubbleRoles = {
+  assistant: {
+    placement: "start",
+    variant: "outlined",
+    shape: "corner",
+    avatar: () =>
+      h(AAvatar, { size: 24, class: "ai-assistant__avatar ai-assistant__avatar--ai" }, () =>
+        h(RobotOutlined),
+      ),
+  },
+  user: {
+    placement: "end",
+    variant: "filled",
+    shape: "corner",
+    avatar: () =>
+      h(AAvatar, { size: 24, class: "ai-assistant__avatar ai-assistant__avatar--user" }, () =>
+        h(UserOutlined),
+      ),
+  },
+  tool: {
+    placement: "start",
+    variant: "outlined",
+    shape: "corner",
+    avatar: () =>
+      h(AAvatar, { size: 24, class: "ai-assistant__avatar ai-assistant__avatar--tool" }, () =>
+        h(ToolOutlined),
+      ),
+  },
+} as const;
+
+const activeConversation = computed(() =>
+  conversations.value.find((item) => item.id === currentConversationId.value),
+);
+
+const activeConversationKey = computed(() =>
+  currentConversationId.value ? String(currentConversationId.value) : undefined,
+);
+
+const activePersonaName = computed(() => activeConversation.value?.persona?.name || "");
+
+const activeConversationTitle = computed(() =>
+  activeConversation.value?.title || "新会话",
+);
+
 const statusText = computed(() => {
   if (pendingInteraction.value) return "等待用户参与";
-  if (loading.value) return runtimeStatus.value === "tool_calling" ? "工具执行中" : "思考中";
-  return "空闲";
+  if (loading.value) return runtimeStatus.value === "tool_calling" ? "工具执行中" : "流式响应中";
+  if (activeConversation.value?.lastMessageAt) {
+    return `最近更新 ${formatDateTime(activeConversation.value.lastMessageAt)}`;
+  }
+  return "准备就绪";
 });
+
+const senderPlaceholder = computed(() => {
+  if (pendingInteraction.value) return "先完成上方交互";
+  if (loading.value) return "智能助手正在处理";
+  return "输入你的目标或问题";
+});
+
+const canSend = computed(
+  () => Boolean(inputMessage.value.trim()) && !loading.value && !pendingInteraction.value,
+);
+
+const showEmptyState = computed(
+  () => !messages.value.length && !loading.value && !pendingInteraction.value,
+);
+
+const showScrollToBottom = computed(
+  () => !isBubbleReachEnd.value && messages.value.length > 2,
+);
+
+const sidebarActions = computed<ActionItem[]>(() => [
+  { key: "refresh", label: "刷新", icon: h(ReloadOutlined) },
+  { key: "new", label: "新会话", icon: h(PlusOutlined) },
+]);
+
+const headerActions = computed<ActionItem[]>(() => {
+  if (!messages.value.length) return [];
+  return [{ key: "clear", label: "清空记录", icon: h(ClearOutlined) }];
+});
+
+const conversationItems = computed(() =>
+  conversations.value.map((item) => ({
+    key: String(item.id),
+    label: item.title || "未命名会话",
+    timestamp: item.updatedAt ? new Date(item.updatedAt).getTime() : undefined,
+  })),
+);
+
+const promptItems = [
+  {
+    key: "page",
+    label: "分析当前页面",
+  },
+  {
+    key: "plan",
+    label: "先拆解任务",
+  },
+  {
+    key: "confirm",
+    label: "先问我问题",
+  },
+];
+
+const promptTextMap: Record<string, string> = {
+  page: "请结合当前页面上下文，帮我分析我下一步可以做什么。",
+  plan: "请先把这个任务拆成可执行步骤，再开始处理。",
+  confirm: "如果你需要我确认、选择或补充参数，请直接暂停并向我提问。",
+};
+
+const bubbleItems = computed<any[]>(() =>
+  messages.value.map((message) => ({
+    key: String(message.id),
+    role: message.role,
+    content: message.content,
+    raw: message,
+    rootClassName: [
+      "ai-assistant__bubble",
+      `ai-assistant__bubble--${message.role}`,
+      message.runTrace?.interrupt ? "is-interrupt" : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    loading:
+      message.role === "assistant" &&
+      !message.content &&
+      loading.value &&
+      message.runTrace?.runId === currentRunId.value,
+  })),
+);
 
 const interactionTag = computed(() => {
   switch (pendingInteraction.value?.type) {
     case "choice":
-      return "请选择";
+      return "选择";
     case "form":
-      return "请填写";
+      return "填写";
     case "feedback":
-      return "请反馈";
+      return "反馈";
     case "input":
     case "clarify":
-      return "请补充";
+      return "补充";
     default:
-      return "需要确认";
+      return "确认";
   }
 });
 
@@ -365,9 +566,58 @@ const normalizedFields = computed<InteractionField[]>(() =>
     .filter(Boolean) as InteractionField[],
 );
 
-function renderMarkdown(text: string): string {
-  if (!text) return "";
-  return marked(text, { breaks: true }) as string;
+function handleSidebarAction(info: { key: string }) {
+  if (info.key === "new") {
+    handleCreateConversation();
+  }
+  if (info.key === "refresh") {
+    loadConversations();
+  }
+}
+
+function handleHeaderAction(info: { key: string }) {
+  if (info.key === "clear") {
+    handleClear();
+  }
+}
+
+function conversationMenu(item: { key: string }) {
+  return {
+    items: [{ key: "delete", label: "删除", danger: true }],
+    onClick(info: any) {
+      info.domEvent?.stopPropagation?.();
+      if (info.key === "delete") {
+        handleDeleteConversation(Number(item.key));
+      }
+    },
+  };
+}
+
+function handlePromptClick(info: { data: { key: string; label?: string } }) {
+  inputMessage.value =
+    promptTextMap[info.data.key] || String(info.data.label || "");
+  nextTick(() => senderRef.value?.focus?.({ cursor: "end" }));
+}
+
+function handleDraftChange(value: string) {
+  inputMessage.value = value;
+}
+
+function handleBubbleScroll(event: Event) {
+  const target = event.target as HTMLElement;
+  isBubbleReachEnd.value =
+    target.scrollHeight - Math.abs(target.scrollTop) - target.clientHeight < 24;
+}
+
+function scrollToBottom() {
+  nextTick(() => {
+    const element = bubbleListRef.value?.nativeElement;
+    bubbleListRef.value?.scrollTo({
+      offset: element?.scrollHeight || 0,
+      behavior: "smooth",
+    });
+    isBubbleReachEnd.value = true;
+  });
 }
 
 async function loadConversations() {
@@ -375,6 +625,7 @@ async function loadConversations() {
     conversations.value = await AiAssistantApi.getConversations();
   } catch (error) {
     console.error("加载会话列表失败:", error);
+    antMessage.error("加载会话失败");
   }
 }
 
@@ -386,10 +637,13 @@ async function loadMessages() {
     scrollToBottom();
   } catch (error) {
     console.error("加载消息失败:", error);
+    antMessage.error("加载消息失败");
   }
 }
 
-async function selectConversation(id: number) {
+async function handleConversationChange(key: string) {
+  const id = Number(key);
+  if (!Number.isFinite(id) || currentConversationId.value === id) return;
   currentConversationId.value = id;
   pendingInteraction.value = null;
   await loadMessages();
@@ -402,28 +656,37 @@ async function handleCreateConversation() {
     currentConversationId.value = result.id;
     messages.value = [];
     pendingInteraction.value = null;
+    resetInteractionDrafts();
+    nextTick(() => senderRef.value?.focus?.({ cursor: "end" }));
   } catch (error) {
-    ElMessage.error("创建会话失败");
+    console.error("创建会话失败:", error);
+    antMessage.error("创建会话失败");
   }
 }
 
 async function handleDeleteConversation(id: number) {
+  const confirmed = await confirmAction("删除会话", "删除后无法恢复，确认继续？");
+  if (!confirmed) return;
+
   try {
-    await ElMessageBox.confirm("确认删除此会话？", "提示", { type: "warning" });
     await AiAssistantApi.deleteConversation(id);
-    conversations.value = conversations.value.filter((c) => c.id !== id);
+    conversations.value = conversations.value.filter((item) => item.id !== id);
     if (currentConversationId.value === id) {
       currentConversationId.value = conversations.value[0]?.id || null;
-      await loadMessages();
+      messages.value = [];
+      if (currentConversationId.value) {
+        await loadMessages();
+      }
     }
-    ElMessage.success("已删除");
+    antMessage.success("会话已删除");
   } catch (error) {
-    if (error !== "cancel") ElMessage.error("删除失败");
+    console.error("删除会话失败:", error);
+    antMessage.error("删除失败");
   }
 }
 
-async function handleSend() {
-  const message = inputMessage.value.trim();
+async function handleSend(submitted?: string) {
+  const message = String(submitted ?? inputMessage.value).trim();
   if (!message || loading.value || pendingInteraction.value) return;
 
   inputMessage.value = "";
@@ -433,7 +696,6 @@ async function handleSend() {
   pendingInteraction.value = null;
 
   messages.value.push(createLocalMessage({ role: "user", content: message }));
-  scrollToBottom();
 
   await consumeStream((handlers) =>
     AiAssistantApi.chatStream(
@@ -447,7 +709,11 @@ async function handleSend() {
   );
 }
 
-async function resumeInteraction(confirmed: boolean, resumeInput: Record<string, any>, reason: string) {
+async function resumeInteraction(
+  confirmed: boolean,
+  resumeInput: Record<string, any>,
+  reason: string,
+) {
   const pending = pendingInteraction.value;
   if (!pending?.runId || loading.value) return;
 
@@ -510,7 +776,7 @@ async function consumeStream(
       },
       onError(error) {
         console.error("流式请求失败:", error);
-        ElMessage.error("请求失败，请重试");
+        antMessage.error("请求失败，请重试");
       },
       onDone() {
         loading.value = false;
@@ -518,7 +784,7 @@ async function consumeStream(
     });
   } catch (error) {
     console.error("发送失败:", error);
-    ElMessage.error("发送失败");
+    antMessage.error("发送失败");
   } finally {
     loading.value = false;
     if (!pendingInteraction.value) runtimeStatus.value = "idle";
@@ -535,6 +801,7 @@ function handleStreamEvent(event: string, data: any, context: StreamContext) {
     case "run.started":
     case "run.resumed":
       runtimeStatus.value = "thinking";
+      ensureAssistantMessage(context);
       break;
     case "assistant.status":
       runtimeStatus.value = data?.status || "thinking";
@@ -571,28 +838,39 @@ function handleStreamEvent(event: string, data: any, context: StreamContext) {
       runtimeStatus.value = "waiting_user";
       break;
     case "run.completed":
-      if (data?.reply && !context.assistantMsg) {
-        messages.value.push(createLocalMessage({ role: "assistant", content: data.reply }));
+      if (data?.reply) {
+        if (context.assistantMsg && !context.assistantMsg.content) {
+          context.assistantMsg.content = data.reply;
+        } else if (!context.assistantMsg) {
+          messages.value.push(createLocalMessage({ role: "assistant", content: data.reply }));
+        }
       }
       runtimeStatus.value = "idle";
       break;
     case "run.error":
     case "error":
-      ElMessage.error(data?.error || "智能助手执行失败");
+      antMessage.error(data?.error || "智能助手执行失败");
       runtimeStatus.value = "idle";
       break;
   }
-  scrollToBottom();
+}
+
+function ensureAssistantMessage(context: StreamContext) {
+  if (context.assistantMsg) return context.assistantMsg;
+  context.assistantMsg = createLocalMessage({
+    role: "assistant",
+    content: "",
+    runTrace: { runId: currentRunId.value },
+  });
+  messages.value.push(context.assistantMsg);
+  return context.assistantMsg;
 }
 
 function appendAssistantDelta(content: string, context: StreamContext) {
   if (!content) return;
-  if (!context.assistantMsg) {
-    context.assistantMsg = createLocalMessage({ role: "assistant", content: "" });
-    messages.value.push(context.assistantMsg);
-  }
+  const assistantMessage = ensureAssistantMessage(context);
   context.fullReply += content;
-  context.assistantMsg.content = context.fullReply;
+  assistantMessage.content = context.fullReply;
 }
 
 function applyInterrupt(payload: any) {
@@ -638,7 +916,7 @@ function applyInterrupt(payload: any) {
     createLocalMessage({
       role: "assistant",
       content: question,
-      runTrace: { interrupt },
+      runTrace: { interrupt, runId },
     }),
   );
 }
@@ -668,7 +946,7 @@ function initializeInteractionDrafts(interaction: PendingInteraction) {
           ? normalized.defaultValue
           : normalized.type === "boolean"
             ? false
-            : "";
+            : undefined;
     }
     pendingForm.value = nextForm;
   }
@@ -735,7 +1013,7 @@ function validateInteractionInput(
       ? Array.isArray(input.selected) && input.selected.length > 0
       : Boolean(input.selected);
     if (!hasValue) {
-      ElMessage.warning("请选择一个选项");
+      antMessage.warning("请选择一个选项");
       return false;
     }
   }
@@ -746,7 +1024,7 @@ function validateInteractionInput(
         field.required &&
         (value === undefined || value === null || String(value).trim() === "")
       ) {
-        ElMessage.warning(`请填写${field.label}`);
+        antMessage.warning(`请填写${field.label}`);
         return false;
       }
     }
@@ -755,7 +1033,7 @@ function validateInteractionInput(
     (interaction.type === "input" || interaction.type === "clarify") &&
     !String(input.value || "").trim()
   ) {
-    ElMessage.warning("请先输入内容");
+    antMessage.warning("请先输入内容");
     return false;
   }
   return true;
@@ -827,6 +1105,17 @@ function normalizeFieldType(type: unknown) {
   return "text";
 }
 
+function getDatePickerValue(field: InteractionField): Dayjs | null {
+  const value = pendingForm.value[field.name];
+  if (!value) return null;
+  const parsed = dayjs(value);
+  return parsed.isValid() ? parsed : null;
+}
+
+function handleDateFieldChange(field: InteractionField, value: string | string[]) {
+  pendingForm.value[field.name] = Array.isArray(value) ? value[0] : value;
+}
+
 function upsertToolMessage(
   toolKey: string,
   label: string,
@@ -858,23 +1147,19 @@ function upsertToolMessage(
 }
 
 async function handleClear() {
+  const confirmed = await confirmAction("清空记录", "确认清空当前会话的所有消息？");
+  if (!confirmed) return;
+
   try {
-    await ElMessageBox.confirm("确认清空当前会话的所有消息？", "提示", { type: "warning" });
     await AiAssistantApi.clearMessages({
       conversationId: currentConversationId.value || undefined,
     });
     messages.value = [];
     pendingInteraction.value = null;
-    ElMessage.success("已清空");
+    antMessage.success("已清空");
   } catch (error) {
-    if (error !== "cancel") ElMessage.error("清空失败");
-  }
-}
-
-function handleKeydown(e: KeyboardEvent) {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    handleSend();
+    console.error("清空失败:", error);
+    antMessage.error("清空失败");
   }
 }
 
@@ -906,12 +1191,62 @@ function createLocalMessage(partial: Partial<AiAssistantMessage>): AiAssistantMe
   };
 }
 
-function scrollToBottom() {
-  nextTick(() => {
-    const height = messageListRef.value?.scrollHeight || 0;
-    if (messageScrollbarRef.value) {
-      messageScrollbarRef.value.setScrollTop(height);
-    }
+function getBubbleItem(item: unknown): AssistantBubbleItem {
+  return item as AssistantBubbleItem;
+}
+
+function getBubbleMessage(item: unknown): AiAssistantMessage {
+  return getBubbleItem(item).raw;
+}
+
+function getBubbleLabel(item: unknown) {
+  const message = getBubbleMessage(item);
+  if (message.role === "user") return "你";
+  if (message.role === "tool") return message.toolLabel || message.toolKey || "工具";
+  if (message.runTrace?.interrupt) return "需要用户参与";
+  return "智能助手";
+}
+
+function getBubbleTime(item: unknown) {
+  return formatDateTime(getBubbleMessage(item).createdAt);
+}
+
+function isInterruptBubble(item: unknown) {
+  return Boolean(getBubbleMessage(item).runTrace?.interrupt);
+}
+
+function getToolTagColor(item: unknown) {
+  const message = getBubbleMessage(item);
+  if (message.toolResult?.success === false) return "red";
+  if (message.content === "执行中...") return "blue";
+  return "green";
+}
+
+function getToolTagText(item: unknown) {
+  const message = getBubbleMessage(item);
+  if (message.toolResult?.success === false) return "失败";
+  if (message.content === "执行中...") return "执行中";
+  return "完成";
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "";
+  const date = dayjs(value);
+  if (!date.isValid()) return "";
+  return date.isSame(dayjs(), "day") ? date.format("HH:mm") : date.format("MM-DD HH:mm");
+}
+
+function confirmAction(title: string, content: string) {
+  return new Promise<boolean>((resolve) => {
+    Modal.confirm({
+      title,
+      content,
+      okText: "确认",
+      cancelText: "取消",
+      centered: true,
+      onOk: () => resolve(true),
+      onCancel: () => resolve(false),
+    });
   });
 }
 
@@ -926,109 +1261,108 @@ onMounted(async () => {
 
 <style scoped>
 .ai-assistant {
+  --ai-bg: #f6f7f9;
+  --ai-surface: #ffffff;
+  --ai-surface-soft: #fafbfc;
+  --ai-border: #e7e9ee;
+  --ai-border-strong: #d9dde5;
+  --ai-text: #1f2329;
+  --ai-text-secondary: #5d6676;
+  --ai-text-tertiary: #8a93a3;
+  --ai-primary: #1677ff;
   display: flex;
   height: 100%;
   min-height: 0;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
   overflow: hidden;
-  background: var(--el-bg-color);
-  color: var(--el-text-color-primary);
+  border: 1px solid var(--ai-border);
+  border-radius: 8px;
+  background: var(--ai-surface);
+  color: var(--ai-text);
+  font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
   font-size: 13px;
+  letter-spacing: 0;
+}
+
+.ai-assistant * {
+  box-sizing: border-box;
+  letter-spacing: 0;
 }
 
 .ai-assistant__sidebar {
-  border-right: 1px solid var(--el-border-color-lighter);
+  width: 252px;
+  min-width: 252px;
   display: flex;
   flex-direction: column;
-  background: var(--el-fill-color-blank);
   min-height: 0;
+  border-right: 1px solid var(--ai-border);
+  background: var(--ai-surface-soft);
 }
 
-.sidebar-header {
+.ai-assistant__sidebar-head,
+.ai-assistant__header {
   min-height: 48px;
-  padding: 8px 10px 8px 12px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ai-border);
+  background: var(--ai-surface);
+}
+
+.ai-assistant__sidebar-title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
   gap: 8px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  color: var(--ai-text);
+  font-size: 13px;
   font-weight: 600;
 }
 
-.sidebar-title {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--el-text-color-primary);
-}
-
-.conversation-list {
+.ai-assistant__conversation-body {
   flex: 1;
   min-height: 0;
-}
-
-.conversation-list :deep(.el-scrollbar__view) {
+  overflow: hidden;
   padding: 8px;
 }
 
-.conversation-item {
-  width: 100%;
-  padding: 8px 9px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-bottom: 6px;
-  color: var(--el-text-color-primary);
-  background: transparent;
-  text-align: left;
+.ai-assistant__conversation-list {
+  height: 100%;
+  overflow-y: auto;
+}
+
+:deep(.ai-assistant__conversation-list.ant-conversations) {
+  display: block;
+}
+
+:deep(.ant-conversations-item) {
+  min-height: 34px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  color: var(--ai-text-secondary);
   transition:
     background-color 0.16s ease,
-    border-color 0.16s ease,
     color 0.16s ease;
 }
 
-.conversation-item:hover {
-  background: var(--el-fill-color-lighter);
-  border-color: var(--el-border-color-lighter);
+:deep(.ant-conversations-item:hover) {
+  background: #eef3ff;
+  color: var(--ai-text);
 }
 
-.conversation-item.active {
-  background: var(--el-color-primary-light-9);
-  border-color: var(--el-color-primary-light-6);
+:deep(.ant-conversations-item-active) {
+  background: #e8f1ff;
+  color: var(--ai-primary);
 }
 
-.conversation-title {
-  display: block;
-  font-size: 13px;
-  line-height: 18px;
-  margin-bottom: 6px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.conversation-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 6px;
+:deep(.ant-conversations-label) {
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  font-weight: 500;
 }
 
-.delete-btn {
-  opacity: 0;
-  width: 22px;
-  height: 22px;
-  color: var(--el-text-color-secondary);
-  transition: opacity 0.2s;
-}
-
-.conversation-item:hover .delete-btn {
-  opacity: 1;
+.ai-assistant__empty-side {
+  padding-top: 64px;
 }
 
 .ai-assistant__main {
@@ -1037,327 +1371,423 @@ onMounted(async () => {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 0;
-  background: var(--el-bg-color);
+  background: var(--ai-surface);
 }
 
-.assistant-toolbar {
-  min-height: 48px;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: var(--el-fill-color-blank);
-}
-
-.assistant-heading {
+.ai-assistant__header-main {
   min-width: 0;
 }
 
-.assistant-title {
+.ai-assistant__title-row {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 7px;
   min-width: 0;
 }
 
-.assistant-title strong {
-  display: block;
+.ai-assistant__title-row h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ai-text);
   font-size: 14px;
-  line-height: 18px;
   font-weight: 650;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.assistant-title span {
-  display: block;
-  margin-top: 1px;
-  color: var(--el-text-color-secondary);
+.ai-assistant__subtitle {
+  margin-top: 2px;
+  color: var(--ai-text-tertiary);
   font-size: 12px;
   line-height: 16px;
 }
 
-.assistant-title__avatar {
-  background: var(--el-color-primary-light-9);
-  color: var(--el-color-primary);
-}
-
-.run-tag {
-  max-width: 110px;
-  flex-shrink: 0;
-}
-
-.message-scrollbar {
+.ai-assistant__content {
+  position: relative;
   flex: 1;
   min-height: 0;
-  background:
-    linear-gradient(var(--el-fill-color-extra-light), transparent 120px),
-    var(--el-bg-color);
+  background: var(--ai-bg);
 }
 
-.message-list {
-  min-height: 100%;
-  padding: 18px 20px 20px;
-}
-
-.message-item {
-  margin-bottom: 14px;
-}
-
-.message-content {
+.ai-assistant__empty-main {
+  height: 100%;
   display: flex;
-  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 24px;
 }
 
-.message-content--user {
-  justify-content: flex-end;
+.ai-assistant__welcome {
+  padding: 0;
+  background: transparent;
 }
 
-.message-content--user .message-text {
-  background: var(--el-color-primary);
-  color: #fff;
-  border-color: transparent;
-  border-radius: 8px 8px 2px 8px;
-  max-width: min(640px, 72%);
-}
-
-.message-content--assistant {
-  gap: 8px;
-  align-items: flex-start;
-}
-
-.message-avatar {
-  flex-shrink: 0;
-  background: var(--el-fill-color-light);
-  color: var(--el-text-color-secondary);
-}
-
-.message-body {
-  max-width: min(720px, 76%);
-  min-width: 0;
-}
-
-.message-text {
-  padding: 9px 11px;
-  border: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-extra-light);
-  border-radius: 2px 8px 8px 8px;
-  word-break: break-word;
-  line-height: 1.62;
-  font-size: 13px;
-  color: var(--el-text-color-primary);
-}
-
-.message-text :deep(p) {
+:deep(.ai-assistant__welcome .ant-welcome-title) {
   margin: 0 0 6px;
+  color: var(--ai-text);
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 24px;
 }
 
-.message-text :deep(p:last-child) {
+:deep(.ai-assistant__welcome .ant-welcome-description) {
+  color: var(--ai-text-secondary);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+:deep(.ai-assistant__prompt-list .ant-prompts-list) {
+  gap: 8px;
+}
+
+:deep(.ai-assistant__prompt-list .ant-prompts-item) {
+  min-width: 168px;
+  padding: 9px 10px;
+  border: 1px solid var(--ai-border);
+  border-radius: 8px;
+  background: var(--ai-surface);
+  box-shadow: none;
+}
+
+:deep(.ai-assistant__prompt-list .ant-prompts-label) {
+  margin: 0;
+  color: var(--ai-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+:deep(.ai-assistant__prompt-list .ant-prompts-desc) {
+  margin: 3px 0 0;
+  color: var(--ai-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.ai-assistant__bubble-list {
+  height: 100%;
+  padding: 16px 20px 18px;
+  gap: 12px;
+}
+
+:deep(.ai-assistant__bubble .ant-bubble-content-wrapper) {
+  max-width: min(720px, 82%);
+}
+
+:deep(.ai-assistant__bubble .ant-bubble-content) {
+  min-height: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border-color: var(--ai-border);
+  box-shadow: none;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+:deep(.ai-assistant__bubble--assistant .ant-bubble-content) {
+  background: var(--ai-surface);
+}
+
+:deep(.ai-assistant__bubble--user .ant-bubble-content) {
+  background: var(--ai-primary);
+  color: #fff;
+}
+
+:deep(.ai-assistant__bubble--tool .ant-bubble-content) {
+  background: #f8fafc;
+}
+
+:deep(.ai-assistant__bubble.is-interrupt .ant-bubble-content) {
+  border-color: #f4c97b;
+  background: #fffaf0;
+}
+
+.ai-assistant__bubble-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 16px;
+  color: var(--ai-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+:deep(.ai-assistant__avatar) {
+  flex: 0 0 auto;
+  border: 1px solid var(--ai-border);
+  background: var(--ai-surface);
+  color: var(--ai-text-secondary);
+}
+
+:deep(.ai-assistant__avatar--ai) {
+  color: var(--ai-primary);
+}
+
+:deep(.ai-assistant__avatar--user) {
+  border-color: #c8dafd;
+  background: #eef4ff;
+  color: var(--ai-primary);
+}
+
+:deep(.ai-assistant__avatar--tool) {
+  color: #748094;
+}
+
+.ai-assistant__markdown {
+  color: var(--ai-text);
+}
+
+.ai-assistant__markdown :deep(.markdown-view) {
+  --markdown-font-size: 12px;
+  --markdown-line-height: 1.6;
+  --markdown-letter-spacing: 0;
+  --markdown-paragraph-gap: 5px;
+  --markdown-heading-gap-top: 14px;
+  --markdown-heading-gap-bottom: 6px;
+  --markdown-code-border-color: var(--ai-border);
+  --markdown-code-bg: #f8fafc;
+}
+
+.ai-assistant__user-message {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-assistant__tool-message {
+  display: grid;
+  gap: 6px;
+  color: var(--ai-text-secondary);
+}
+
+.ai-assistant__tool-message p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-assistant__tool-line {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.ai-assistant__tool-line strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-assistant__scroll-bottom {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2;
+  box-shadow: none;
+}
+
+.ai-assistant__interaction {
+  flex-shrink: 0;
+  display: grid;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--ai-border);
+  background: #fffdf7;
+}
+
+.ai-assistant__interaction-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  color: var(--ai-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.ai-assistant__interaction-head strong {
+  color: var(--ai-text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.ai-assistant__interaction-question {
+  color: var(--ai-text);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-assistant__choice-list,
+.ai-assistant__feedback {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-assistant__choice-group {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-assistant__choice-option {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--ai-border);
+  border-radius: 8px;
+  background: var(--ai-surface);
+  cursor: pointer;
+}
+
+.ai-assistant__choice-option strong {
+  display: block;
+  color: var(--ai-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.ai-assistant__choice-option small {
+  display: block;
+  margin-top: 2px;
+  color: var(--ai-text-tertiary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.ai-assistant__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px 12px;
+}
+
+.ai-assistant__form :deep(.ant-form-item) {
   margin-bottom: 0;
 }
 
-.message-text :deep(ul),
-.message-text :deep(ol) {
-  margin: 4px 0 6px;
-  padding-left: 18px;
+.ai-assistant__form :deep(.ant-form-item-label) {
+  padding-bottom: 3px;
 }
 
-.message-text :deep(code) {
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: var(--el-fill-color);
-  color: var(--el-color-primary);
-  font-size: 12px;
-}
-
-.message-content--tool {
-  width: min(680px, calc(100% - 40px));
-  padding-left: 36px;
-}
-
-.message-tool {
-  --el-alert-padding: 6px 9px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-}
-
-.message-tool :deep(.el-alert__title) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.tool-title {
-  flex-shrink: 0;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.tool-result {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--el-text-color-secondary);
-}
-
-.assistant-skeleton {
-  width: min(360px, 60vw);
-  padding: 10px 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 2px 8px 8px 8px;
-  background: var(--el-fill-color-extra-light);
-}
-
-.assistant-skeleton :deep(.el-skeleton__item) {
-  height: 12px;
-}
-
-.interaction-panel {
-  border-top: 1px solid var(--el-border-color-lighter);
-  padding: 12px 16px;
-  display: grid;
-  gap: 10px;
-  background: var(--el-color-warning-light-9);
-}
-
-.interaction-main {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.interaction-main > div {
-  min-width: 0;
-}
-
-.interaction-title {
-  font-size: 13px;
-  line-height: 18px;
-  font-weight: 650;
-  margin-bottom: 3px;
-}
-
-.interaction-panel pre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-family: inherit;
-  color: var(--el-text-color-regular);
-  font-size: 12px;
-  line-height: 1.55;
-}
-
-.choice-list,
-.interaction-form,
-.feedback-actions {
-  display: grid;
-  gap: 8px;
-}
-
-.choice-list :deep(.el-radio),
-.choice-list :deep(.el-checkbox) {
-  width: 100%;
+.ai-assistant__form :deep(.ant-form-item-label > label) {
   height: auto;
-  min-height: 34px;
-  margin-right: 0;
-  padding: 7px 10px;
-  border-radius: 6px;
-  background: var(--el-bg-color);
-}
-
-.choice-list :deep(.el-radio__label),
-.choice-list :deep(.el-checkbox__label) {
+  color: var(--ai-text-secondary);
   font-size: 12px;
-  line-height: 18px;
 }
 
-.choice-list small {
-  display: block;
-  margin-top: 1px;
-  color: var(--el-text-color-secondary);
-  line-height: 1.4;
-}
-
-.interaction-form :deep(.el-form-item) {
-  margin-bottom: 8px;
-}
-
-.interaction-form :deep(.el-form-item__label) {
-  margin-bottom: 3px;
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-}
-
-.interaction-form :deep(.el-select),
-.interaction-form :deep(.el-date-editor),
-.interaction-form :deep(.el-input-number) {
+.ai-assistant__date-picker,
+.ai-assistant__number-input {
   width: 100%;
 }
 
-.interaction-panel :deep(.el-input__wrapper),
-.interaction-panel :deep(.el-textarea__inner) {
-  border-radius: 6px;
-}
-
-.feedback-actions {
-  grid-template-columns: repeat(auto-fit, minmax(76px, max-content));
-}
-
-.interaction-actions {
+.ai-assistant__interaction-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
 
-.input-area {
+.ai-assistant__composer {
+  flex-shrink: 0;
   padding: 10px 12px 12px;
-  border-top: 1px solid var(--el-border-color-lighter);
-  background: var(--el-fill-color-blank);
+  border-top: 1px solid var(--ai-border);
+  background: var(--ai-surface);
 }
 
-.input-area :deep(.el-textarea__inner) {
-  min-height: 72px !important;
+.ai-assistant__sender {
   border-radius: 8px;
-  font-size: 13px;
-  line-height: 1.55;
-  box-shadow: 0 0 0 1px var(--el-border-color-lighter) inset;
+  box-shadow: none;
 }
 
-.input-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
+:deep(.ai-assistant__sender.ant-sender) {
+  border-color: var(--ai-border);
 }
 
-.input-hint {
-  color: var(--el-text-color-placeholder);
+:deep(.ai-assistant__sender .ant-sender-input) {
   font-size: 12px;
-  line-height: 22px;
+  line-height: 1.6;
 }
 
-@media (max-width: 860px) {
+:deep(.ant-tag) {
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+:deep(.ant-actions-list) {
+  gap: 4px;
+}
+
+:deep(.ant-actions-list-item) {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--ai-text-secondary);
+}
+
+:deep(.ant-btn) {
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+:deep(.ant-input),
+:deep(.ant-input-number),
+:deep(.ant-select-selector),
+:deep(.ant-picker) {
+  border-radius: 8px !important;
+  font-size: 12px;
+}
+
+@media (max-width: 920px) {
   .ai-assistant__sidebar {
-    width: 210px;
+    width: 220px;
+    min-width: 220px;
   }
 
-  .message-body,
-  .message-content--user .message-text {
-    max-width: 86%;
+  :deep(.ai-assistant__bubble .ant-bubble-content-wrapper) {
+    max-width: 90%;
+  }
+}
+
+@media (max-width: 720px) {
+  .ai-assistant {
+    flex-direction: column;
   }
 
-  .message-list {
-    padding: 14px;
+  .ai-assistant__sidebar {
+    width: 100%;
+    min-width: 0;
+    max-height: 188px;
+    border-right: 0;
+    border-bottom: 1px solid var(--ai-border);
   }
 
-  .input-hint {
-    display: none;
+  .ai-assistant__conversation-body {
+    padding: 6px;
+  }
+
+  .ai-assistant__bubble-list {
+    padding: 12px;
+  }
+
+  .ai-assistant__form {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
